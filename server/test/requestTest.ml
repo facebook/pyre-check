@@ -61,6 +61,7 @@ let test_process_type_query_request context =
   let { ScratchServer.configuration; state; _ } =
     ScratchServer.start
       ~context
+      ~show_error_traces:true
       [
         "test.py", {|
         def foo(a: int) -> int:
@@ -126,6 +127,8 @@ let test_process_type_query_request context =
                 {
                     "line": 4,
                     "column": 2,
+                    "stop_line": 4,
+                    "stop_column": 12,
                     "path": "await.py",
                     "code": 1001,
                     "name": "Unawaited awaitable",
@@ -171,6 +174,7 @@ let test_process_type_query_request context =
     {|
     {
         "response": {
+            "typing.Iterable.__iter__": [],
             "contextlib.ContextManager.__enter__": [],
             "await.bar": [
                 {
@@ -198,7 +202,6 @@ let test_process_type_query_request context =
             "str.substr": [],
             "str.lower": [],
             "str.format": [],
-            "typing.Iterable.__iter__": [],
             "test.foo": []
         }
     }
@@ -277,20 +280,20 @@ let test_process_type_query_request context =
     {
       "response": [
         {
-          "name": "define_test.with_var",
+          "name": "define_test.with_kwargs",
           "parameters": [
             {
-              "name": "*args",
+              "name": "**kwargs",
               "annotation": null
             }
           ],
           "return_annotation": null
         },
         {
-          "name": "define_test.with_kwargs",
+          "name": "define_test.with_var",
           "parameters": [
             {
-              "name": "**kwargs",
+              "name": "*args",
               "annotation": null
             }
           ],
@@ -364,9 +367,7 @@ let test_process_type_query_request context =
 
 
 let assert_errors_equal ~actual_errors ~expected_errors =
-  let actual_errors =
-    List.map actual_errors ~f:(Error.Instantiated.description ~show_error_traces:false)
-  in
+  let actual_errors = List.map actual_errors ~f:Error.Instantiated.description in
   let equal left right =
     List.equal
       String.equal
@@ -829,7 +830,7 @@ let test_open_document_state context =
     let ({ state = { open_documents; _ }; _ } : Request.response) =
       Request.process ~configuration:server_configuration ~state ~request
     in
-    assert_true (Reference.Table.equal open_documents expected String.equal)
+    assert_true (Reference.Table.equal String.equal open_documents expected)
   in
   assert_open_documents
     ~start:(Reference.Table.create ())

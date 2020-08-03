@@ -81,7 +81,6 @@ module DependencyKey : sig
     val collected_map_reduce
       :  Scheduler.t ->
       policy:Scheduler.Policy.t ->
-      configuration:Configuration.Analysis.t ->
       initial:'state ->
       map:('state -> 'input list -> 'intermediate) ->
       reduce:('intermediate -> 'state -> 'state) ->

@@ -19,10 +19,10 @@ let test_check_coverage context =
     |> Format.asprintf "from builtins import A\nimport typing\ndef foo(a: A) -> None:\n%s\n"
   in
   let assert_covered ?(additional_errors = []) source =
-    assert_type_errors
-      ~context
-      (preprocess source)
-      (additional_errors @ ["Undefined attribute [16]: `A` has no attribute `undefined`."])
+    let undefined_attribute_errors =
+      ["Undefined attribute [16]: `A` has no attribute `undefined`."]
+    in
+    assert_type_errors ~context (preprocess source) (additional_errors @ undefined_attribute_errors)
   in
 
   (* Return statement. *)
@@ -98,15 +98,15 @@ let test_check_coverage context =
   assert_covered
     ~additional_errors:
       [
-        "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter to call \
-         `int.__ror__` but got `unknown`.";
+        "Incompatible parameter type [6]: `|` is not supported for operand types `unknown` and \
+         `int`.";
       ]
     "ERROR | 1";
   assert_covered
     ~additional_errors:
       [
-        "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter to call \
-         `int.__mod__` but got `unknown`.";
+        "Incompatible parameter type [6]: `%` is not supported for operand types `int` and \
+         `unknown`.";
       ]
     "1 % ERROR";
 
@@ -119,7 +119,13 @@ let test_check_coverage context =
 
   (* Comparison operator. *)
   assert_covered "1 == ERROR";
-  assert_covered "ERROR < 1";
+  assert_covered
+    ~additional_errors:
+      [
+        "Incompatible parameter type [6]: `<` is not supported for operand types `unknown` and \
+         `int`.";
+      ]
+    "ERROR < 1";
 
   (* Dictionaries. *)
   assert_covered "{ ERROR: 1 }";

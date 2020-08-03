@@ -10,7 +10,7 @@ open Analysis
 open Inference
 open Test
 
-let configuration = Configuration.Analysis.create ~infer:true ()
+let configuration = Configuration.Analysis.create ~infer:true ~source_path:[] ()
 
 let assert_backward ~resolution precondition statement postcondition =
   let module State = State (struct
@@ -185,11 +185,13 @@ let test_backward context =
 let get_inference_errors ~context source =
   let source, configuration, ast_environment, global_resolution =
     let project = ScratchProject.setup ~context ["test.py", source] in
-    let { ScratchProject.BuiltGlobalEnvironment.ast_environment; global_environment; _ } =
+    let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
       ScratchProject.build_global_environment project
     in
     let configuration = ScratchProject.configuration_of project in
-    let ast_environment = AstEnvironment.read_only ast_environment in
+    let ast_environment =
+      AnnotatedGlobalEnvironment.ast_environment global_environment |> AstEnvironment.read_only
+    in
     let source =
       AstEnvironment.ReadOnly.get_processed_source ast_environment (Reference.create "test")
       |> fun option -> Option.value_exn option
@@ -197,25 +199,25 @@ let get_inference_errors ~context source =
     ( source,
       { configuration with infer = true },
       ast_environment,
-      GlobalResolution.create global_environment )
+      AnnotatedGlobalEnvironment.read_only global_environment |> GlobalResolution.create )
   in
   Inference.run ~configuration ~global_resolution ~source
   |> List.map
        ~f:
          (AnalysisError.instantiate
+            ~show_error_traces:false
             ~lookup:(AstEnvironment.ReadOnly.get_real_path_relative ~configuration ast_environment))
 
 
+let assert_inference_errors ~context ~expected source =
+  let errors = get_inference_errors ~context source in
+  let actual = List.map errors ~f:AnalysisError.Instantiated.description in
+  assert_equal ~cmp:(List.equal String.equal) ~printer:(String.concat ~sep:"\n") expected actual;
+  Memory.reset_shared_memory ()
+
+
 let test_check_missing_parameter context =
-  let assert_inference_errors ~expected source =
-    let errors = get_inference_errors ~context source in
-    let actual =
-      List.map errors ~f:(fun error ->
-          AnalysisError.Instantiated.description error ~show_error_traces:false)
-    in
-    assert_equal ~cmp:(List.equal String.equal) ~printer:(String.concat ~sep:"\n") expected actual;
-    Memory.reset_shared_memory ()
-  in
+  let assert_inference_errors = assert_inference_errors ~context in
   assert_inference_errors
     {|
       def foo(x = 5) -> int:
@@ -243,6 +245,20 @@ let test_check_missing_parameter context =
       ]
 
 
+let test_check_missing_return context =
+  let assert_inference_errors = assert_inference_errors ~context in
+  assert_inference_errors
+    {|
+      def foo():
+        pass
+    |}
+    ~expected:["Missing return annotation [3]: Returning `None` but no return type is specified."];
+  assert_inference_errors {|
+      def foo() -> int:
+        pass
+    |} ~expected:[]
+
+
 let assert_infer ?(fields = ["description"]) ~context source errors =
   let fields_of_error error =
     let field_of_error field =
@@ -253,7 +269,7 @@ let assert_infer ?(fields = ["description"]) ~context source errors =
         | _ -> `String "TEST FAIL: ERROR ACCESSING FIELD IN ERROR JSON"
       in
       List.fold
-        ~init:(AnalysisError.Instantiated.to_json ~show_error_traces:false error)
+        ~init:(AnalysisError.Instantiated.to_yojson error)
         ~f:access_field
         (String.split ~on:'.' field)
     in
@@ -816,6 +832,7 @@ let () =
   >::: [
          "backward" >:: test_backward;
          "missing_parameter" >:: test_check_missing_parameter;
+         "missing_return" >:: test_check_missing_return;
          "infer" >:: test_infer;
          "infer_backward" >:: test_infer_backward;
        ]

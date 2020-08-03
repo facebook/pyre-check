@@ -6,15 +6,13 @@
 import io
 import sys
 import unittest
-from pathlib import Path
 from typing import IO, List, Optional
 from unittest.mock import MagicMock, patch
 
-from ... import commands, filesystem
+from ... import commands, filesystem, recently_used_configurations
 from ...analysis_directory import AnalysisDirectory
 from ...commands.command import Result
 from ...commands.rage import Rage
-from ...commands.servers import ServerDetails
 from .command_test import mock_arguments, mock_configuration
 
 
@@ -76,6 +74,8 @@ class RageTest(unittest.TestCase):
         )
         self.assert_output(stdout)
 
+    # pyre-fixme[56]: Argument `tools.pyre.client.filesystem` to decorator factory
+    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(filesystem, "acquire_lock")
     @patch("subprocess.run")
     @patch.object(
@@ -120,10 +120,14 @@ class RageTest(unittest.TestCase):
             )
             self.assert_output(output_content)
 
-    @patch.object(commands.Servers, "_all_server_details")
+    @patch.object(recently_used_configurations.Cache, "get_all_items")
+    @patch.object(commands.Servers, "is_root_server_running", return_value=True)
     @patch.object(commands.Command, "_call_client")
-    def test_call_client_for_root_project__server_exists(
-        self, call_client: MagicMock, all_server_details: MagicMock
+    def test_call_client_for_root_project__root_server_running(
+        self,
+        call_client: MagicMock,
+        is_root_server_running: MagicMock,
+        get_recently_used_configurations: MagicMock,
     ) -> None:
         arguments = mock_arguments()
         configuration = mock_configuration()
@@ -137,17 +141,47 @@ class RageTest(unittest.TestCase):
             output_path=None,
         )
         rage_command._log_directory_for_binary = "/some-log-directory"
-        all_server_details.return_value = [
-            ServerDetails(pid=1, local_root=".", server_pid_path=Path("something")),
-            ServerDetails(pid=1, local_root="bar", server_pid_path=Path("something")),
-        ]
         rage_command._call_client_for_root_project(sys.stdout)
         call_client.assert_called_once()
 
-    @patch.object(commands.Servers, "_all_server_details")
+    # pyre-fixme[56]: Argument `[]` to decorator factory
+    #  `unittest.mock.patch.object` could not be resolved in a global scope.
+    @patch.object(recently_used_configurations.Cache, "get_all_items", return_value=[])
+    @patch.object(commands.Servers, "is_root_server_running", return_value=False)
+    @patch.object(commands.Command, "_call_client")
+    def test_call_client_for_root_project__no_root_server_or_recent_local_roots(
+        self,
+        call_client: MagicMock,
+        is_root_server_running: MagicMock,
+        get_recently_used_configurations: MagicMock,
+    ) -> None:
+        arguments = mock_arguments()
+        configuration = mock_configuration()
+        original_directory = "/original/directory"
+        analysis_directory = AnalysisDirectory(".")
+        rage_command = Rage(
+            arguments,
+            original_directory=original_directory,
+            configuration=configuration,
+            analysis_directory=analysis_directory,
+            output_path=None,
+        )
+        rage_command._log_directory_for_binary = "/some-log-directory"
+        rage_command._call_client_for_root_project(sys.stdout)
+        call_client.assert_called_once()
+
+    @patch.object(
+        recently_used_configurations.Cache,
+        "get_all_items",
+        return_value=["foo", "bar/baz"],
+    )
+    @patch.object(commands.Servers, "is_root_server_running", return_value=False)
     @patch.object(commands.Command, "_call_client", autospec=True)
-    def test_call_client_for_root_project__server_does_not_exist(
-        self, call_client: MagicMock, all_server_details: MagicMock
+    def test_call_client_for_root_project__recent_local_roots(
+        self,
+        call_client: MagicMock,
+        is_root_server_running: MagicMock,
+        get_recently_used_configurations: MagicMock,
     ) -> None:
         arguments = mock_arguments()
         configuration = mock_configuration()
@@ -161,11 +195,6 @@ class RageTest(unittest.TestCase):
             output_path=None,
         )
 
-        all_server_details.return_value = [
-            ServerDetails(pid=1, local_root="foo", server_pid_path=Path("something")),
-            ServerDetails(pid=1, local_root="bar", server_pid_path=Path("something")),
-        ]
-
         log_directories: List[str] = []
 
         def mock_call_client(_object: Rage, **kwargs: object) -> MagicMock:
@@ -177,4 +206,4 @@ class RageTest(unittest.TestCase):
         rage_command._call_client_for_root_project(sys.stdout)
 
         self.assertEqual(call_client.call_count, 2)
-        self.assertEqual(log_directories, [".pyre/foo", ".pyre/bar"])
+        self.assertEqual(log_directories, [".pyre/foo", ".pyre/bar/baz"])

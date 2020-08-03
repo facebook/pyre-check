@@ -23,7 +23,7 @@ let make_attributes ~class_name =
       ~uninstantiated_annotation:(Some annotation)
       ~visibility:ReadWrite
       ~abstract:false
-      ~async:false
+      ~async_property:false
       ~class_variable:false
       ~defined:true
       ~initialized:OnClass
@@ -126,7 +126,7 @@ let test_add_constraint context =
     |}
       context
   in
-  let resolution = GlobalResolution.create environment in
+  let resolution = AnnotatedGlobalEnvironment.read_only environment |> GlobalResolution.create in
   let default_postprocess annotation = Type.Variable.mark_all_variables_as_bound annotation in
   let prep annotation =
     let aliases a =
@@ -169,20 +169,29 @@ let test_add_constraint context =
     in
     annotation |> Type.create ~aliases |> Type.expression
   in
-  let assert_add
+  let parse_annotation annotation ~do_prep =
+    annotation
+    |> String.substr_replace_all ~pattern:"typing.Callable[V" ~with_:"typing.Callable[test.V"
+    |> parse_single_expression
+    |> (if do_prep then prep else Fn.id)
+    |> GlobalResolution.parse_annotation ~validation:NoValidation resolution
+  in
+  let assert_add_direct
       ~left
       ~right
       ?(is_protocol = fun _ ~protocol_assumptions:_ -> false)
       ?(attributes = fun _ ~assumptions:_ -> None)
       ?constraints
-      ?(leave_unbound_in_left = [])
       ?(postprocess = default_postprocess)
       ?(do_prep = true)
       expected
     =
     let handler =
       let class_hierarchy =
-        GlobalResolution.create environment |> GlobalResolution.class_hierarchy |> hierarchy
+        AnnotatedGlobalEnvironment.read_only environment
+        |> GlobalResolution.create
+        |> GlobalResolution.class_hierarchy
+        |> hierarchy
       in
       let metaclass name ~assumptions:_ = GlobalResolution.metaclass ~resolution name in
       let order =
@@ -222,53 +231,7 @@ let test_add_constraint context =
       in
       { order with all_attributes = attributes; attribute = attribute_from_attributes attributes }
     in
-    let leave_unbound_in_left = List.map leave_unbound_in_left ~f:(fun a -> "test." ^ a) in
-    let parse_annotation annotation =
-      annotation
-      |> String.substr_replace_all ~pattern:"typing.Callable[V" ~with_:"typing.Callable[test.V"
-      |> parse_single_expression
-      |> (if do_prep then prep else Fn.id)
-      |> GlobalResolution.parse_annotation ~validation:NoValidation resolution
-    in
-    let left =
-      let mark_unary ({ Type.Variable.Unary.variable = name; _ } as variable) =
-        if List.mem leave_unbound_in_left name ~equal:Identifier.equal then
-          None
-        else
-          Some (Type.Variable (Type.Variable.Unary.mark_as_bound variable))
-      in
-      let mark_parameter_variadic variable =
-        if
-          List.mem
-            leave_unbound_in_left
-            (Type.Variable.Variadic.Parameters.name variable)
-            ~equal:Identifier.equal
-        then
-          None
-        else
-          Some
-            (Type.Callable.ParameterVariadicTypeVariable
-               { head = []; variable = Type.Variable.Variadic.Parameters.mark_as_bound variable })
-      in
-      let mark_list_variadic variable =
-        if
-          List.mem
-            leave_unbound_in_left
-            (Type.Variable.Variadic.List.name variable)
-            ~equal:Identifier.equal
-        then
-          None
-        else
-          Some
-            (Type.Variable.Variadic.List.self_reference
-               (Type.Variable.Variadic.List.mark_as_bound variable))
-      in
-      parse_annotation left
-      |> Type.Variable.GlobalTransforms.Unary.replace_all mark_unary
-      |> Type.Variable.GlobalTransforms.ParameterVariadic.replace_all mark_parameter_variadic
-      |> Type.Variable.GlobalTransforms.ListVariadic.replace_all mark_list_variadic
-    in
-    let right = parse_annotation right in
+    let parse_annotation = parse_annotation ~do_prep in
     let expected =
       let parse_pairs pairs =
         let parse_pair (variable, value) =
@@ -284,14 +247,16 @@ let test_add_constraint context =
                 | _ -> failwith "impossible"
               in
               let parse_ordered_types ordered =
-                if ordered = "" then
+                if String.equal ordered "" then
                   Type.OrderedTypes.Concrete []
                 else
                   match parse_annotation (Printf.sprintf "typing.Tuple[%s]" ordered) with
                   | Type.Tuple (Bounded ordered) -> ordered
                   | _ -> failwith "impossible"
               in
-              let global_resolution = GlobalResolution.create environment in
+              let global_resolution =
+                AnnotatedGlobalEnvironment.read_only environment |> GlobalResolution.create
+              in
               match GlobalResolution.aliases global_resolution primitive with
               | Some (Type.VariableAlias (ParameterVariadic variable)) ->
                   Type.Variable.ParameterVariadicPair (variable, parse_parameters value)
@@ -355,6 +320,51 @@ let test_add_constraint context =
           ~order:handler
       |> List.filter_map ~f:(OrderedConstraints.solve ~order:handler) )
   in
+  let assert_add ?(do_prep = true) ?(leave_unbound_in_left = []) ~left ~right =
+    let parse_annotation = parse_annotation ~do_prep in
+    let leave_unbound_in_left = List.map leave_unbound_in_left ~f:(fun a -> "test." ^ a) in
+    let left =
+      let mark_unary ({ Type.Variable.Unary.variable = name; _ } as variable) =
+        if List.mem leave_unbound_in_left name ~equal:Identifier.equal then
+          None
+        else
+          Some (Type.Variable (Type.Variable.Unary.mark_as_bound variable))
+      in
+      let mark_parameter_variadic variable =
+        if
+          List.mem
+            leave_unbound_in_left
+            (Type.Variable.Variadic.Parameters.name variable)
+            ~equal:Identifier.equal
+        then
+          None
+        else
+          Some
+            (Type.Callable.ParameterVariadicTypeVariable
+               { head = []; variable = Type.Variable.Variadic.Parameters.mark_as_bound variable })
+      in
+      let mark_list_variadic variable =
+        if
+          List.mem
+            leave_unbound_in_left
+            (Type.Variable.Variadic.List.name variable)
+            ~equal:Identifier.equal
+        then
+          None
+        else
+          Some
+            (Type.Variable.Variadic.List.self_reference
+               (Type.Variable.Variadic.List.mark_as_bound variable))
+      in
+      parse_annotation left
+      |> Type.Variable.GlobalTransforms.Unary.replace_all mark_unary
+      |> Type.Variable.GlobalTransforms.ParameterVariadic.replace_all mark_parameter_variadic
+      |> Type.Variable.GlobalTransforms.ListVariadic.replace_all mark_list_variadic
+    in
+    let right = parse_annotation right in
+    assert_add_direct ~left ~right ~do_prep
+  in
+
   assert_add
     ~leave_unbound_in_left:["T_Unconstrained"]
     ~left:"typing.Optional[T_Unconstrained]"
@@ -879,6 +889,27 @@ let test_add_constraint context =
     ~left:"typing.Callable[[str], bool]"
     ~right:"BoundMethod[typing.Callable[[int, str], bool], int]"
     [];
+
+  let { Type.Variable.Variadic.Parameters.Components.positional_component; keyword_component } =
+    Type.Variable.Variadic.Parameters.create "TParams"
+    |> Type.Variable.Variadic.Parameters.decompose
+  in
+
+  assert_add_direct
+    ~left:positional_component
+    ~right:(parse_annotation "typing.Tuple[object, ...]")
+    [[]];
+  assert_add_direct
+    ~left:positional_component
+    ~right:(parse_annotation "typing.Iterable[object]")
+    [[]];
+  assert_add_direct ~left:positional_component ~right:(parse_annotation "typing.Iterable[int]") [];
+
+  assert_add_direct
+    ~left:keyword_component
+    ~right:(parse_annotation "typing.Mapping[str, object]")
+    [[]];
+  assert_add_direct ~left:keyword_component ~right:(parse_annotation "typing.Mapping[str, int]") [];
   ()
 
 
@@ -892,7 +923,7 @@ let test_instantiate_protocol_parameters context =
       expected
     =
     let environment = environment ?source context in
-    let resolution = GlobalResolution.create environment in
+    let resolution = AnnotatedGlobalEnvironment.read_only environment |> GlobalResolution.create in
     let substitute name =
       name
       |> String.substr_replace_all ~pattern:"P" ~with_:"test.P"
@@ -932,7 +963,7 @@ let test_instantiate_protocol_parameters context =
         | Type.Primitive primitive, _ -> List.Assoc.mem protocols primitive ~equal:String.equal
         | _ -> false
       in
-      let handler = GlobalResolution.create environment |> GlobalResolution.class_hierarchy in
+      let handler = GlobalResolution.class_hierarchy resolution in
       {
         ConstraintsSet.class_hierarchy = hierarchy handler;
         all_attributes = attributes;
@@ -1116,7 +1147,11 @@ let test_mark_escaped_as_escaped context =
     Type.Callable.create ~annotation:variable ~parameters:(Type.Callable.Defined []) ()
   in
   let result =
-    let handler = GlobalResolution.create environment |> GlobalResolution.class_hierarchy in
+    let handler =
+      AnnotatedGlobalEnvironment.read_only environment
+      |> GlobalResolution.create
+      |> GlobalResolution.class_hierarchy
+    in
     let handler =
       {
         ConstraintsSet.class_hierarchy = hierarchy handler;

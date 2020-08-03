@@ -138,7 +138,7 @@ type jumps = {
   yield: Node.t;
 }
 
-let equal left right = Hashtbl.equal left right Node.equal
+let equal left right = Core.Hashtbl.equal Node.equal left right
 
 let pp format graph =
   let print_node index = Format.fprintf format "%a\n" Node.pp (Hashtbl.find_exn graph index) in

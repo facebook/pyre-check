@@ -29,6 +29,6 @@ exception VersionMismatch of version_mismatch
 
 val start : connections:State.connections -> configuration:Configuration.Server.t -> unit -> State.t
 
-val stop : reason:string -> configuration:Configuration.Server.t -> 'a
+val stop : reason:string -> configuration:Configuration.Server.t -> scheduler:Scheduler.t -> 'a
 
 val connect : retries:int -> configuration:Configuration.Analysis.t -> Socket.t

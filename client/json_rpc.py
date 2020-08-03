@@ -30,17 +30,27 @@ class JSONRPC(object):
     def json(self) -> str:
         pass
 
+    def format(self) -> bytes:
+        payload = self.json()
+        length = len(payload.encode("utf-8"))
+
+        response = ("Content-Length: {}\r\n\r\n{}").format(length, payload)
+        return response.encode("utf-8")
+
     def write(self, file: BinaryIO) -> bool:
         try:
-            payload = self.json()
-            length = len(payload.encode("utf-8"))
-
-            response = ("Content-Length: {}\r\n\r\n{}").format(length, payload)
-            file.write(response.encode("utf-8"))
+            file.write(self.format())
             file.flush()
             return True
         except (ValueError, OSError):
             return False
+
+    @classmethod
+    def from_json(cls, json_body: JSON) -> "JSONRPC":
+        if "params" in json_body.keys():
+            return Request.from_json(json_body)
+        else:
+            return Response.from_json(json_body)
 
 
 class Request(JSONRPC):
@@ -53,11 +63,19 @@ class Request(JSONRPC):
 
     def json(self) -> str:
         json_object: Dict[str, Any] = {"jsonrpc": "2.0", "method": self.method}
-        if self.id:
+        if self.id is not None:
             json_object["id"] = self.id
-        if self.parameters:
+        if self.parameters is not None:
             json_object["params"] = self.parameters
         return json.dumps(json_object)
+
+    @classmethod
+    def from_json(cls, json: JSON) -> "Request":
+        request_keys = json.keys()
+        method = json["method"]
+        id = json["id"] if "id" in request_keys else None
+        parameters = json["params"] if "params" in request_keys else None
+        return Request(method=method, id=id, parameters=parameters)
 
     @staticmethod
     def validate_payload(payload: JSON) -> bool:
@@ -85,6 +103,14 @@ class Response(JSONRPC):
 
     def json(self) -> str:
         return json.dumps({"jsonrpc": "2.0", "id": self.id, "result": self.result})
+
+    @classmethod
+    def from_json(cls, json: JSON) -> "Response":
+        response_keys = json.keys()
+        id = json["id"] if "id" in response_keys else None
+        result = json["result"] if "result" in response_keys else None
+        error = json["error"] if "error" in response_keys else None
+        return Response(result=result, id=id, error=error)
 
 
 def parse_content_length(line: bytes) -> Optional[int]:

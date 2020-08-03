@@ -78,9 +78,8 @@ val select: 'a handle list -> 'a selected
 (* Returns the worker which produces this handle *)
 val get_worker: 'a handle -> t
 
-(* Killall the workers *)
-val killall: unit -> unit
-
+(* Kill a worker *)
+val kill: t -> unit
 
 (* Return the id of the worker to which the current process belong. 0 means the master process *)
 val current_worker_id: unit -> int

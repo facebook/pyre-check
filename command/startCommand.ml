@@ -34,7 +34,7 @@ let is_connection_reset_error = function
 let computation_thread
     request_queue
     ({ Configuration.Server.pid_path; configuration = analysis_configuration; _ } as configuration)
-    ({ Server.State.ast_environment; _ } as state)
+    ({ Server.State.environment; scheduler; _ } as state)
   =
   let errors_to_lsp_responses { Server.State.open_documents; _ } errors =
     let build_file_to_error_map error_list =
@@ -58,7 +58,7 @@ let computation_thread
         let open Analysis in
         reference
         |> Analysis.AstEnvironment.ReadOnly.get_real_path_relative
-             (AstEnvironment.read_only ast_environment)
+             (TypeEnvironment.ast_environment environment |> AstEnvironment.read_only)
              ~configuration:analysis_configuration
         >>| Hashtbl.update table ~f:update
         |> ignore
@@ -145,7 +145,7 @@ let computation_thread
             ( match request with
             | Server.Protocol.Request.StopRequest ->
                 write_to_json_socket (Jsonrpc.Response.Stop.to_json ());
-                Operations.stop ~reason:"explicit request" ~configuration
+                Operations.stop ~reason:"explicit request" ~configuration ~scheduler
             | _ -> () );
             let { Request.state; response } = process_request ~state ~request in
             ( match response with
@@ -196,14 +196,14 @@ let computation_thread
           (* Stop if the server is idle. *)
           let current_time = Unix.time () in
           let stop_after_idle_for = 24.0 *. 60.0 *. 60.0 (* 1 day *) in
-          if current_time -. state.last_request_time > stop_after_idle_for then
-            Mutex.critical_section state.connections.lock ~f:(fun () ->
-                Operations.stop ~reason:"idle" ~configuration);
+          if Float.(current_time -. state.last_request_time > stop_after_idle_for) then
+            Error_checking_mutex.critical_section state.connections.lock ~f:(fun () ->
+                Operations.stop ~reason:"idle" ~configuration ~scheduler);
 
           (* Stop if there's any inconsistencies in the .pyre directory. *)
           let last_integrity_check =
             let integrity_check_every = 60.0 (* 1 minute *) in
-            if current_time -. state.last_integrity_check > integrity_check_every then
+            if Float.(current_time -. state.last_integrity_check > integrity_check_every) then
               try
                 let pid =
                   let pid_file = Path.absolute pid_path |> In_channel.create in
@@ -216,8 +216,8 @@ let computation_thread
                 current_time
               with
               | _ ->
-                  Mutex.critical_section state.connections.lock ~f:(fun () ->
-                      Operations.stop ~reason:"failed integrity check" ~configuration)
+                  Error_checking_mutex.critical_section state.connections.lock ~f:(fun () ->
+                      Operations.stop ~reason:"failed integrity check" ~configuration ~scheduler)
             else
               state.last_integrity_check
           in
@@ -241,17 +241,18 @@ let request_handler_thread
           _;
         } as server_configuration ),
       ({ Server.State.lock; connections = raw_connections } as connections),
+      scheduler,
       request_queue )
   =
   let queue_request ~origin request =
     match request, origin with
     | Protocol.Request.StopRequest, Protocol.Request.NewConnectionSocket socket ->
         Socket.write socket StopResponse;
-        Operations.stop ~reason:"explicit request" ~configuration:server_configuration
+        Operations.stop ~reason:"explicit request" ~configuration:server_configuration ~scheduler
     | Protocol.Request.StopRequest, Protocol.Request.JSONSocket _ ->
         Squeue.push_or_drop request_queue (origin, request) |> ignore
     | Protocol.Request.StopRequest, _ ->
-        Operations.stop ~reason:"explicit request" ~configuration:server_configuration
+        Operations.stop ~reason:"explicit request" ~configuration:server_configuration ~scheduler
     | Protocol.Request.ClientConnectionRequest client, Protocol.Request.NewConnectionSocket socket
       ->
         Log.log ~section:`Server "Adding %s client" (show_client client);
@@ -316,13 +317,13 @@ let request_handler_thread
       _;
     }
       =
-      Mutex.critical_section lock ~f:(fun () -> !raw_connections)
+      Error_checking_mutex.critical_section lock ~f:(fun () -> !raw_connections)
     in
     if not (PyrePath.is_directory local_root) then (
       Log.error
         "Stopping server due to missing source root, %s is not a directory."
         (Path.show local_root);
-      Operations.stop ~reason:"missing source root" ~configuration:server_configuration );
+      Operations.stop ~reason:"missing source root" ~configuration:server_configuration ~scheduler );
     let readable =
       Unix.select
         ~restart:true
@@ -386,10 +387,12 @@ let request_handler_thread
         | Sys_error error
         | Yojson.Json_error error ->
             Log.warning "Failed to complete handshake: %s" error
-      else if Mutex.critical_section lock ~f:(fun () -> Map.mem persistent_clients socket) then
+      else if
+        Error_checking_mutex.critical_section lock ~f:(fun () -> Map.mem persistent_clients socket)
+      then
         handle_readable_persistent socket
       else if
-        Mutex.critical_section lock ~f:(fun () ->
+        Error_checking_mutex.critical_section lock ~f:(fun () ->
             List.mem ~equal:Unix.File_descr.equal adapter_sockets socket)
       then
         handle_readable_json_request ~remove_socket:Connections.remove_adapter_socket socket
@@ -406,16 +409,11 @@ let request_handler_thread
   try loop () with
   | uncaught_exception ->
       Statistics.log_exception uncaught_exception ~fatal:true ~origin:"server";
-      Operations.stop ~reason:"exception" ~configuration:server_configuration
+      Operations.stop ~reason:"exception" ~configuration:server_configuration ~scheduler
 
 
 (** Main server either as a daemon or in terminal *)
-let serve
-    ~socket
-    ~json_socket
-    ~adapter_socket
-    ~server_configuration:({ Configuration.Server.configuration; _ } as server_configuration)
-  =
+let serve ~socket ~json_socket ~adapter_socket ~server_configuration =
   Version.log_version_banner ();
   (fun () ->
     Log.log ~section:`Server "Starting daemon server loop...";
@@ -423,7 +421,7 @@ let serve
     let request_queue = Squeue.create 25 in
     let connections =
       {
-        lock = Mutex.create ();
+        lock = Error_checking_mutex.create ();
         connections =
           ref
             {
@@ -437,18 +435,27 @@ let serve
             };
       }
     in
+    let state = Operations.start ~connections ~configuration:server_configuration () in
     (* Register signal handlers. *)
     Signal.Expert.handle Signal.int (fun _ ->
-        Operations.stop ~reason:"interrupt" ~configuration:server_configuration);
+        Operations.stop
+          ~reason:"interrupt"
+          ~configuration:server_configuration
+          ~scheduler:state.scheduler);
     Signal.Expert.handle Signal.pipe (fun _ -> ());
-    Thread.create request_handler_thread (server_configuration, connections, request_queue)
+    Thread.create
+      ~on_uncaught_exn:`Kill_whole_process
+      request_handler_thread
+      (server_configuration, connections, state.scheduler, request_queue)
     |> ignore;
-    let state = Operations.start ~connections ~configuration:server_configuration () in
     try computation_thread request_queue server_configuration state with
     | uncaught_exception ->
         Statistics.log_exception uncaught_exception ~fatal:true ~origin:"server";
-        Operations.stop ~reason:"exception" ~configuration:server_configuration)
-  |> Scheduler.run_process ~configuration
+        Operations.stop
+          ~reason:"exception"
+          ~configuration:server_configuration
+          ~scheduler:state.scheduler)
+  |> Scheduler.run_process
 
 
 (* Create lock file and pid file. Used for both daemon mode and in-terminal *)
@@ -461,7 +468,13 @@ let acquire_lock ~server_configuration:{ Configuration.Server.lock_path; pid_pat
 
 
 type run_server_daemon_entry =
-  ( Socket.t * Socket.t * Socket.t * Configuration.Server.t,
+  ( Socket.t
+    * Socket.t
+    * Socket.t
+    * Configuration.Server.t
+    * Log.GlobalState.t
+    * Profiling.GlobalState.t
+    * Statistics.GlobalState.t,
     unit Daemon.in_channel,
     unit Daemon.out_channel )
   Daemon.entry
@@ -472,11 +485,22 @@ type run_server_daemon_entry =
 let run_server_daemon_entry : run_server_daemon_entry =
   Daemon.register_entry_point
     "server_daemon"
-    (fun (socket, json_socket, adapter_socket, server_configuration)
+    (fun ( socket,
+           json_socket,
+           adapter_socket,
+           server_configuration,
+           log_state,
+           profiling_state,
+           statistics_state )
          (parent_in_channel, parent_out_channel)
          ->
       Daemon.close_in parent_in_channel;
       Daemon.close_out parent_out_channel;
+
+      (* Restore global states *)
+      Log.GlobalState.restore log_state;
+      Profiling.GlobalState.restore profiling_state;
+      Statistics.GlobalState.restore statistics_state;
 
       (* Detach the from a controlling terminal *)
       Unix.Terminal_io.setsid () |> ignore;
@@ -497,7 +521,7 @@ let run
         adapter_socket = { path = adapter_socket_path; _ };
         log_path;
         daemonize;
-        configuration = { incremental_style; _ } as configuration;
+        configuration = { incremental_style; _ };
         _;
       } as server_configuration )
   =
@@ -528,7 +552,13 @@ let run
           Daemon.spawn
             (stdin, stdout, stdout)
             run_server_daemon_entry
-            (socket, json_socket, adapter_socket, server_configuration)
+            ( socket,
+              json_socket,
+              adapter_socket,
+              server_configuration,
+              Log.GlobalState.get (),
+              Profiling.GlobalState.get (),
+              Statistics.GlobalState.get () )
         in
         Daemon.close handle;
         Log.log ~section:`Server "Forked off daemon with pid %d" pid;
@@ -541,7 +571,7 @@ let run
     | AlreadyRunning ->
         Log.info "Server is already running";
         0)
-  |> Scheduler.run_process ~configuration
+  |> Scheduler.run_process
 
 
 (** Default configuration when run from command line *)
@@ -555,17 +585,15 @@ let run_start_command
     saved_state_metadata
     configuration_file_hash
     store_type_check_resolution
-    _transitive
     new_incremental_check
     perform_autocompletion
     features
-    verbose
+    _verbose
     expected_version
     sections
     debug
     strict
     show_error_traces
-    _infer
     sequential
     filter_directories
     ignore_all_errors
@@ -575,6 +603,7 @@ let run_start_command
     profiling_output
     memory_profiling_output
     project_root
+    source_path
     search_path
     taint_model_paths
     excludes
@@ -583,6 +612,11 @@ let run_start_command
     local_root
     ()
   =
+  let source_path = Option.value source_path ~default:[local_root] in
+  let local_root = Path.create_absolute local_root in
+  Log.GlobalState.initialize ~debug ~sections;
+  Statistics.GlobalState.initialize ~log_identifier ?logger ~project_name:(Path.last local_root) ();
+  Profiling.GlobalState.initialize ~profiling_output ~memory_profiling_output ();
   let filter_directories =
     filter_directories
     >>| String.split_on_chars ~on:[';']
@@ -603,28 +637,23 @@ let run_start_command
         Shallow
     in
     Configuration.Analysis.create
-      ~verbose
       ?expected_version
-      ~sections
       ~debug
       ~infer:false
       ?configuration_file_hash
       ~strict
       ~show_error_traces
-      ~log_identifier
-      ?logger
-      ?profiling_output
-      ?memory_profiling_output
       ~parallel:(not sequential)
       ?filter_directories
       ?ignore_all_errors
       ~number_of_workers
       ~project_root:(Path.create_absolute project_root)
-      ~search_path:(List.map search_path ~f:SearchPath.create)
+      ~search_path:(List.map search_path ~f:SearchPath.create_normalized)
       ~taint_model_paths:(List.map taint_model_paths ~f:Path.create_absolute)
       ~excludes
       ~extensions
-      ~local_root:(Path.create_absolute local_root)
+      ~local_root
+      ~source_path:(List.map source_path ~f:Path.create_absolute)
       ~store_type_check_resolution
       ~incremental_style
       ~perform_autocompletion
@@ -707,7 +736,6 @@ let command =
            "-store-type-check-resolution"
            no_arg
            ~doc:"Store extra information, needed for `types_at_position` and `types` queries."
-      +> flag "-transitive" no_arg ~doc:"Calculate dependencies of changed files transitively."
       +> flag "-new-incremental-check" no_arg ~doc:"Use the new fine grain dependency incremental"
       +> flag "-autocomplete" no_arg ~doc:"Process autocomplete requests."
       +> flag

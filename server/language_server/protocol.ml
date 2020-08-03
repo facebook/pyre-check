@@ -28,24 +28,16 @@ module TextDocumentDefinitionRequest = Types.TextDocumentDefinitionRequest
 module PublishDiagnostics = struct
   include Types.PublishDiagnostics
 
-  let diagnostic_severity error =
-    let kind = AnalysisError.Instantiated.kind error in
-    match AnalysisError.language_server_hint kind with
-    | true -> Some DiagnosticSeverity.Information
-    | false -> Some DiagnosticSeverity.Error
-
-
   let of_errors path errors =
     let diagnostic_of_error error =
       let { Ast.Location.WithPath.start; stop; _ } = TypeCheck.Error.Instantiated.location error in
       Diagnostic.
         {
           range = Range.create ~start ~stop;
-          severity = diagnostic_severity error;
+          severity = Some DiagnosticSeverity.Error;
           code = None;
           source = Some "Pyre";
-          message =
-            TypeCheck.Error.Instantiated.description error ~show_error_traces:true ~separator:"\n";
+          message = TypeCheck.Error.Instantiated.description error;
         }
     in
     {
@@ -315,7 +307,7 @@ let read_message channel =
     let content_buffer = Buffer.create 10 in
     let rec skip_header () =
       match In_channel.input_line channel with
-      | Some line when line <> "" -> skip_header ()
+      | Some line when not (String.is_empty line) -> skip_header ()
       | other -> other
     in
     skip_header () (* ignore any other header lines *)

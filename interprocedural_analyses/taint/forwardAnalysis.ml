@@ -99,7 +99,8 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       let open Features in
       let already_has_first feature =
         match feature.Abstract.OverUnderSetDomain.element with
-        | Simple.Breadcrumb (Breadcrumb.First { kind = has_kind; _ }) -> has_kind = kind
+        | Simple.Breadcrumb (Breadcrumb.First { kind = has_kind; _ }) ->
+            [%compare.equal: Breadcrumb.first_kind] has_kind kind
         | _ -> false
       in
       if List.exists set ~f:already_has_first then
@@ -914,6 +915,30 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           analyze_expression ~resolution ~state ~expression:base
           |>> ForwardState.Tree.read [Abstract.TreeDomain.Label.DictionaryKeys]
           |>> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.Any]
+      (* `locals()` is a dictionary from all local names -> values. *)
+      | { callee = { Node.value = Name (Name.Identifier "locals"); _ }; arguments = [] } ->
+          let add_root_taint locals_taint root =
+            let path_of_root =
+              match root with
+              | AccessPath.Root.Variable variable ->
+                  [Abstract.TreeDomain.Label.Field (Identifier.sanitized variable)]
+              | NamedParameter { name }
+              | PositionalParameter { name; _ } ->
+                  [Abstract.TreeDomain.Label.Field (Identifier.sanitized name)]
+              | _ -> [Abstract.TreeDomain.Label.Any]
+            in
+            let root_taint =
+              ForwardState.read ~root ~path:[] state.taint |> ForwardState.Tree.prepend path_of_root
+            in
+            ForwardState.Tree.join locals_taint root_taint
+          in
+          let taint =
+            List.fold
+              (ForwardState.roots state.taint)
+              ~init:ForwardState.Tree.bottom
+              ~f:add_root_taint
+          in
+          taint, state
       | _ -> (
           let call = { Call.callee; arguments } in
           let { Call.callee; arguments } =
@@ -1191,33 +1216,43 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           | _ -> state )
       | Statement.Assign { target = { Node.location; value = target_value } as target; value; _ }
         -> (
-          match target_value with
-          | Name (Name.Attribute { base; attribute; _ }) -> (
-              let property_targets =
-                Interprocedural.CallResolution.resolve_property_targets
-                  ~resolution
-                  ~base
-                  ~attribute
-                  ~setter:true
-              in
-              match property_targets with
-              | Some targets ->
-                  let taint, state =
-                    apply_call_targets
-                      ~resolution
-                      ~callee:target
-                      (Location.with_module ~qualifier:FunctionContext.qualifier location)
-                      [{ Call.Argument.value; name = None }]
-                      state
-                      targets
-                  in
-                  store_taint_option (AccessPath.of_expression ~resolution base) taint state
-              | None ->
-                  let taint, state = analyze_expression ~resolution ~state ~expression:value in
-                  analyze_assignment ~resolution target taint taint state )
-          | _ ->
-              let taint, state = analyze_expression ~resolution ~state ~expression:value in
-              analyze_assignment ~resolution target taint taint state )
+          let target_is_sanitized =
+            (* Optimization: We only view names as being sanitizable to avoid unnecessary type
+               checking. *)
+            match Node.value target with
+            | Name (Name.Attribute _) -> Model.global_is_sanitized ~resolution ~expression:target
+            | _ -> false
+          in
+          if target_is_sanitized then
+            analyze_expression ~resolution ~state ~expression:value |> snd
+          else
+            match target_value with
+            | Name (Name.Attribute { base; attribute; _ }) -> (
+                let property_targets =
+                  Interprocedural.CallResolution.resolve_property_targets
+                    ~resolution
+                    ~base
+                    ~attribute
+                    ~setter:true
+                in
+                match property_targets with
+                | Some targets ->
+                    let taint, state =
+                      apply_call_targets
+                        ~resolution
+                        ~callee:target
+                        (Location.with_module ~qualifier:FunctionContext.qualifier location)
+                        [{ Call.Argument.value; name = None }]
+                        state
+                        targets
+                    in
+                    store_taint_option (AccessPath.of_expression ~resolution base) taint state
+                | None ->
+                    let taint, state = analyze_expression ~resolution ~state ~expression:value in
+                    analyze_assignment ~resolution target taint taint state )
+            | _ ->
+                let taint, state = analyze_expression ~resolution ~state ~expression:value in
+                analyze_assignment ~resolution target taint taint state )
       | Assert { test; _ } -> analyze_condition ~resolution test state
       | Break
       | Class _
@@ -1379,7 +1414,7 @@ let extract_source_model ~define ~resolution ~features_to_attach exit_taint =
        * setter and the pre-existing taint (as we wouldn't know what taint to delete, etc. Marking
        * self as implicitly returned here allows this handling to work and simulates runtime
        * behavior accurately. *)
-      if Reference.last name = "__init__" || Define.is_property_setter define then
+      if String.equal (Reference.last name) "__init__" || Define.is_property_setter define then
         match parameters with
         | { Node.value = { Parameter.name = self_parameter; _ }; _ } :: _ ->
             AccessPath.Root.Variable self_parameter

@@ -7,17 +7,15 @@
 
 import logging
 from importlib import import_module
-from typing import Callable, Iterable, List, Optional, Type
-
-from .model_generator import ModelGenerator
+from typing import Callable, Iterable, List, Type, TypeVar
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
+T = TypeVar("T")
 
 
-def all_subclasses(parent_class: Type[object]) -> Iterable[Type[object]]:
+def all_subclasses(parent_class: Type[T]) -> Iterable[Type[T]]:
     return set(parent_class.__subclasses__()).union(
-        # pyre-fixme[10]: Name `c` is used but not defined.
         [s for c in parent_class.__subclasses__() for s in all_subclasses(c)]
     )
 

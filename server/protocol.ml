@@ -61,6 +61,7 @@ module TypeQuery = struct
     | LessOrEqual of Expression.t * Expression.t
     | Meet of Expression.t * Expression.t
     | Methods of Expression.t
+    | NamesInFiles of Path.t list
     | NormalizeType of Expression.t
     | PathOfModule of Reference.t
     | RunCheck of {
@@ -124,9 +125,29 @@ module TypeQuery = struct
   }
   [@@deriving eq, show, to_yojson]
 
-  type types_at_file = {
+  type types_at_path = {
     path: PyrePath.t;
     types: type_at_location list;
+  }
+  [@@deriving eq, show, to_yojson]
+
+  type qualified_name_at_location = {
+    location: Location.t;
+    qualified_name: Reference.t;
+  }
+  [@@deriving eq, show, to_yojson]
+
+  let qualified_name_at_location_to_yojson { location; qualified_name } =
+    `Assoc
+      [
+        "location", Location.to_yojson location;
+        "qualified_name", `String (Reference.show qualified_name);
+      ]
+
+
+  type qualified_names_at_path = {
+    path: PyrePath.t;
+    qualified_names: qualified_name_at_location list;
   }
   [@@deriving eq, show, to_yojson]
 
@@ -223,13 +244,14 @@ module TypeQuery = struct
     | FoundPath of string
     | FoundSignature of found_signature list
     | Help of string
+    | NamesByPath of qualified_names_at_path list
     | Path of Path.t
     | References of Reference.t list
     | Success of string
     | Superclasses of superclasses_mapping list
     | Type of Type.t
     | TypeAtLocation of type_at_location
-    | TypesByFile of types_at_file list
+    | TypesByPath of types_at_path list
   [@@deriving eq, show]
 
   and response =
@@ -305,11 +327,7 @@ module TypeQuery = struct
         `Assoc
           [
             ( "errors",
-              `List
-                (List.map
-                   ~f:(fun error ->
-                     AnalysisError.Instantiated.to_json ~show_error_traces:true error)
-                   errors) );
+              `List (List.map ~f:(fun error -> AnalysisError.Instantiated.to_yojson error) errors) );
           ]
     | Help string -> `Assoc ["help", `String string]
     | Path path -> `Assoc ["path", `String (Path.absolute path)]
@@ -361,6 +379,8 @@ module TypeQuery = struct
     | FoundPath path -> `Assoc ["path", `String path]
     | FoundSignature signatures ->
         `Assoc ["signature", `List (List.map signatures ~f:found_signature_to_yojson)]
+    | NamesByPath paths_to_qualified_names ->
+        `List (List.map paths_to_qualified_names ~f:qualified_names_at_path_to_yojson)
     | References references ->
         let json_references =
           List.map references ~f:(fun reference -> `String (Reference.show reference))
@@ -382,8 +402,8 @@ module TypeQuery = struct
             `List (List.map class_to_superclasses_mapping ~f:superclasses_to_json) )
     | Type annotation -> `Assoc ["type", Type.to_yojson annotation]
     | TypeAtLocation annotation -> type_at_location_to_yojson annotation
-    | TypesByFile paths_to_annotations ->
-        `List (List.map paths_to_annotations ~f:types_at_file_to_yojson)
+    | TypesByPath paths_to_annotations ->
+        `List (List.map paths_to_annotations ~f:types_at_path_to_yojson)
 
 
   and response_to_yojson = function
@@ -392,6 +412,8 @@ module TypeQuery = struct
 
 
   let create_type_at_location (location, annotation) = { location; annotation }
+
+  let create_qualified_name_at_location (location, qualified_name) = { location; qualified_name }
 
   let json_socket_response response =
     `Assoc ["jsonrpc", `String "2.0"; "error", `Null; "result", response_to_yojson response]
@@ -420,7 +442,6 @@ module Request = struct
     | HoverRequest of DefinitionRequest.t
     | InitializeRequest of LanguageServer.Types.RequestId.t
     | InitializedRequest
-    | GetServerUuid
     | LanguageServerProtocolRequest of string
     | OpenDocument of Path.t
     | RageRequest of LanguageServer.Types.RequestId.t
@@ -459,7 +480,6 @@ module Request = struct
     | DocumentChange _ -> "DocumentChange"
     | ExecuteCommandRequest _ -> "ExecuteCommandRequest"
     | GetDefinitionRequest _ -> "GetDefinition"
-    | GetServerUuid -> "GetServerUuid"
     | HoverRequest _ -> "Hover"
     | InitializeRequest _ -> "Initialize"
     | InitializedRequest -> "Initialized"

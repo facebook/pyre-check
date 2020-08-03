@@ -634,6 +634,7 @@ let test_check_attributes context =
 
 let test_attribute_decorators context =
   let assert_type_errors = assert_type_errors ~context in
+  let assert_strict_type_errors = assert_strict_type_errors ~context in
   (* Attributes defined with property decorators. *)
   assert_type_errors
     {|
@@ -646,6 +647,31 @@ let test_attribute_decorators context =
     ["Incompatible return type [7]: Expected `str` but got `int`."];
 
   (* Attributes defined with getters and setters. *)
+  assert_strict_type_errors
+    {|
+      class Foo:
+        _a: int = 1
+        def __init__(self) -> None:
+          self.a = 1 + 1
+        @property
+        def a(self) -> int:
+          return self._a
+        @a.setter
+        def a(self, value: int) -> None:
+          self._a = value
+    |}
+    [];
+  assert_strict_type_errors
+    {|
+      class Foo:
+        _a: int = 1
+        def __init__(self) -> None:
+          self.a = 1 + 1
+        @property
+        def a(self) -> int:
+          return self._a
+    |}
+    ["Invalid assignment [41]: `self.a` cannot be reassigned. It is a read-only property."];
   assert_type_errors
     {|
       class Foo:

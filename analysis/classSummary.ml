@@ -77,7 +77,9 @@ let has_decorator { decorators; _ } decorator =
   Expression.exists_in_list ~expression_list:decorators decorator
 
 
-let is_final definition = has_decorator definition "typing.final"
+let is_final definition =
+  has_decorator definition "typing.final" || has_decorator definition "typing_extensions.final"
+
 
 let is_abstract { bases; _ } =
   let abstract_metaclass { Expression.Call.Argument.value; _ } =

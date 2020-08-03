@@ -16,15 +16,22 @@ exception IncorrectParameters of Type.t
 
 exception MissingFunction of Reference.t
 
-let errors_of_path ~configuration ~state:{ State.module_tracker; errors; _ } path =
-  ModuleTracker.lookup_path ~configuration module_tracker path
-  >>= (fun { SourcePath.qualifier; _ } -> Hashtbl.find errors qualifier)
-  |> Option.value ~default:[]
+let errors_of_path ~configuration ~state:{ State.environment; errors; _ } path =
+  let module_tracker = TypeEnvironment.module_tracker environment in
+  match ModuleTracker.lookup_path ~configuration module_tracker path with
+  | ModuleTracker.PathLookup.Found { SourcePath.qualifier; _ } ->
+      Hashtbl.find errors qualifier |> Option.value ~default:[]
+  | _ -> []
 
 
-let instantiate_error ~configuration ~state:{ State.ast_environment; _ } error =
-  let ast_environment = AstEnvironment.read_only ast_environment in
+let instantiate_error
+    ~configuration:({ Configuration.Analysis.show_error_traces; _ } as configuration)
+    ~state:{ State.environment; _ }
+    error
+  =
+  let ast_environment = TypeEnvironment.ast_environment environment |> AstEnvironment.read_only in
   AnalysisError.instantiate
+    ~show_error_traces
     ~lookup:(AstEnvironment.ReadOnly.get_real_path_relative ~configuration ast_environment)
     error
 
@@ -155,12 +162,14 @@ let process_client_shutdown_request ~state ~id =
 
 
 let rec process_type_query_request
-    ~state:({ State.module_tracker; environment; _ } as state)
+    ~state:({ State.environment; _ } as state)
     ~configuration
     ~request
   =
   let process_request () =
-    let global_resolution = TypeEnvironment.global_resolution environment in
+    let module_tracker = TypeEnvironment.module_tracker environment in
+    let read_only_environment = TypeEnvironment.read_only environment in
+    let global_resolution = TypeEnvironment.ReadOnly.global_resolution read_only_environment in
     let order = GlobalResolution.class_hierarchy global_resolution in
     let resolution =
       TypeCheck.resolution
@@ -217,7 +226,7 @@ let rec process_type_query_request
       else
         raise (ClassHierarchy.Untracked annotation)
     in
-    let global_environment = TypeEnvironment.global_environment environment in
+    let global_environment = TypeEnvironment.ReadOnly.global_environment read_only_environment in
     let class_metadata_environment =
       GlobalResolution.class_metadata_environment global_resolution
     in
@@ -228,12 +237,34 @@ let rec process_type_query_request
     let unannotated_global_environment =
       GlobalResolution.unannotated_global_environment global_resolution
     in
+    let get_error_paths errors =
+      List.fold
+        ~init:""
+        ~f:(fun sofar (path, error_reason) ->
+          let print_reason = function
+            | Some LookupCache.StubShadowing -> " (file shadowed by .pyi stub file)"
+            | Some LookupCache.FileNotFound -> " (file not found)"
+            | None -> ""
+          in
+          Format.asprintf
+            "%s%s`%a`%s"
+            sofar
+            (if String.is_empty sofar then "" else ", ")
+            PyrePath.pp
+            path
+            (print_reason error_reason))
+        errors
+    in
     match request with
     | TypeQuery.RunCheck { check_name; paths } ->
         let source_paths =
-          List.filter_map
-            paths
-            ~f:(Analysis.ModuleTracker.lookup_path ~configuration module_tracker)
+          let lookup_path path =
+            ModuleTracker.lookup_path ~configuration module_tracker path
+            |> function
+            | ModuleTracker.PathLookup.Found source_path -> Some source_path
+            | _ -> None
+          in
+          List.filter_map paths ~f:lookup_path
         in
         let errors =
           IncrementalStaticAnalysis.run_additional_check
@@ -298,7 +329,7 @@ let rec process_type_query_request
             ~lookup:
               (AstEnvironment.ReadOnly.get_real_path_relative
                  ~configuration
-                 (AstEnvironment.read_only state.ast_environment))
+                 (TypeEnvironment.ReadOnly.ast_environment read_only_environment))
         in
         let callees =
           (* We don't yet support a syntax for fetching property setters. *)
@@ -428,7 +459,7 @@ let rec process_type_query_request
         in
         TypeQuery.Response (TypeQuery.Decoded decoded)
     | TypeQuery.Defines module_or_class_names ->
-        let ast_environment = TypeEnvironment.ast_environment environment in
+        let ast_environment = TypeEnvironment.ReadOnly.ast_environment read_only_environment in
         let defines_of_module module_or_class_name =
           let module_name, filter_define =
             if AstEnvironment.ReadOnly.is_module ast_environment module_or_class_name then
@@ -503,14 +534,14 @@ let rec process_type_query_request
                 ~lookup:
                   (AstEnvironment.ReadOnly.get_real_path_relative
                      ~configuration
-                     (AstEnvironment.read_only state.ast_environment))
+                     (TypeEnvironment.ReadOnly.ast_environment read_only_environment))
             in
             Callgraph.get ~caller:(Callgraph.FunctionCaller caller)
             |> List.map ~f:(fun { Callgraph.callee; locations } ->
                    { TypeQuery.callee; locations = List.map locations ~f:instantiate })
             |> fun callees -> { Protocol.TypeQuery.caller; callees }
           in
-          let ast_environment = Analysis.AstEnvironment.read_only state.ast_environment in
+          let ast_environment = TypeEnvironment.ReadOnly.ast_environment read_only_environment in
           AstEnvironment.ReadOnly.get_processed_source ast_environment module_qualifier
           >>| Preprocessing.defines ~include_toplevels:false ~include_stubs:false
           >>| List.map ~f:callees
@@ -519,7 +550,6 @@ let rec process_type_query_request
         let qualifiers = ModuleTracker.tracked_explicit_modules module_tracker in
         TypeQuery.Response (TypeQuery.Callgraph (List.concat_map qualifiers ~f:get_callgraph))
     | TypeQuery.DumpClassHierarchy ->
-        let global_environment = TypeEnvironment.global_environment environment in
         let resolution = GlobalResolution.create global_environment in
         let class_hierarchy_json =
           let indices =
@@ -627,6 +657,24 @@ let rec process_type_query_request
              ~default:
                (TypeQuery.Error
                   (Format.sprintf "No class definition found for %s" (Expression.show annotation)))
+    | TypeQuery.NamesInFiles paths ->
+        let qualified_names = LookupCache.find_all_qualified_names ~state ~configuration ~paths in
+        let create_result = function
+          | { LookupCache.path; qualified_names_by_location = Some qualified_names; _ } ->
+              Either.First
+                {
+                  TypeQuery.path;
+                  qualified_names =
+                    List.map ~f:TypeQuery.create_qualified_name_at_location qualified_names;
+                }
+          | { LookupCache.path; error_reason; _ } -> Either.Second (path, error_reason)
+        in
+        let results, errors = List.partition_map ~f:create_result qualified_names in
+        if List.is_empty errors then
+          TypeQuery.Response (TypeQuery.NamesByPath results)
+        else
+          TypeQuery.Error
+            (Format.asprintf "Not able to get lookups in: %s" (get_error_paths errors))
     | TypeQuery.NormalizeType expression ->
         parse_and_validate expression
         |> fun annotation -> TypeQuery.Response (TypeQuery.Type annotation)
@@ -703,8 +751,9 @@ let rec process_type_query_request
           >>| GlobalResolution.successors ~resolution:global_resolution
           >>| List.map ~f:(fun name -> Type.Primitive name)
           >>| (fun classes ->
-                `Fst { TypeQuery.class_name = Type.class_name class_type; superclasses = classes })
-          |> Option.value ~default:(`Snd class_name)
+                Either.First
+                  { TypeQuery.class_name = Type.class_name class_type; superclasses = classes })
+          |> Option.value ~default:(Either.Second class_name)
         in
         let results, errors = List.partition_map ~f:get_superclasses class_names in
         if List.is_empty errors then
@@ -744,21 +793,17 @@ let rec process_type_query_request
     | TypeQuery.TypesInFiles paths ->
         let annotations = LookupCache.find_all_annotations_batch ~state ~configuration ~paths in
         let create_result = function
-          | { LookupCache.path; types_by_location = Some types } ->
-              `Fst { TypeQuery.path; types = List.map ~f:TypeQuery.create_type_at_location types }
-          | { LookupCache.path; _ } -> `Snd path
+          | { LookupCache.path; types_by_location = Some types; _ } ->
+              Either.First
+                { TypeQuery.path; types = List.map ~f:TypeQuery.create_type_at_location types }
+          | { LookupCache.path; error_reason; _ } -> Either.Second (path, error_reason)
         in
         let results, errors = List.partition_map ~f:create_result annotations in
         if List.is_empty errors then
-          TypeQuery.Response (TypeQuery.TypesByFile results)
+          TypeQuery.Response (TypeQuery.TypesByPath results)
         else
-          let paths =
-            List.fold
-              ~init:""
-              ~f:(fun sofar path -> Format.asprintf "%s\n\t`%a`" sofar PyrePath.pp path)
-              errors
-          in
-          TypeQuery.Error (Format.asprintf "Not able to get lookups in: %s" paths)
+          TypeQuery.Error
+            (Format.asprintf "Not able to get lookups in: %s" (get_error_paths errors))
     | TypeQuery.ValidateTaintModels path -> (
         try
           let paths =
@@ -766,7 +811,9 @@ let rec process_type_query_request
             | Some path -> [path]
             | None -> configuration.Configuration.Analysis.taint_model_paths
           in
-          let configuration = Taint.TaintConfiguration.create ~rule_filter:None ~paths in
+          let configuration =
+            Taint.TaintConfiguration.create ~rule_filter:None ~find_obscure_flows:false ~paths
+          in
           let get_model_errors sources =
             let model_errors (path, source) =
               Taint.Model.parse
@@ -811,10 +858,8 @@ let rec process_type_query_request
   { state; response = Some (TypeQueryResponse response) }
 
 
-let process_type_check_request ~state ~configuration paths =
-  let ({ errors; _ } as state), _ =
-    IncrementalCheck.recheck_with_state ~state ~configuration paths
-  in
+let process_type_check_request ~state:({ errors; _ } as state) ~configuration paths =
+  let _ = IncrementalCheck.recheck_with_state ~state ~configuration paths in
   let response =
     Hashtbl.data errors |> List.concat |> List.map ~f:(instantiate_error ~configuration ~state)
   in
@@ -833,7 +878,7 @@ let process_display_type_errors_request ~state ~configuration paths =
 
 
 let process_get_definition_request
-    ~state:({ State.module_tracker; _ } as state)
+    ~state:({ State.environment; _ } as state)
     ~configuration
     ~request:{ DefinitionRequest.id; path; position }
   =
@@ -843,11 +888,12 @@ let process_get_definition_request
       match LookupCache.find_definition ~state ~configuration path position with
       | None -> TextDocumentDefinitionResponse.create_empty ~id
       | Some { Location.start; stop } -> (
+          let module_tracker = TypeEnvironment.module_tracker environment in
           match ModuleTracker.lookup_path ~configuration module_tracker path with
-          | None -> TextDocumentDefinitionResponse.create_empty ~id
-          | Some source_path ->
+          | ModuleTracker.PathLookup.Found source_path ->
               let path = SourcePath.full_path ~configuration source_path in
-              TextDocumentDefinitionResponse.create ~id ~start ~stop ~path )
+              TextDocumentDefinitionResponse.create ~id ~start ~stop ~path
+          | _ -> TextDocumentDefinitionResponse.create_empty ~id )
     in
     TextDocumentDefinitionResponse.to_yojson response
     |> Yojson.Safe.to_string
@@ -858,7 +904,7 @@ let process_get_definition_request
 
 
 let rec process
-    ~state:({ State.module_tracker; connections; _ } as state)
+    ~state:({ State.environment; connections; scheduler; _ } as state)
     ~configuration:({ configuration; _ } as server_configuration)
     ~request
   =
@@ -869,6 +915,7 @@ let rec process
     configuration
   in
   let timer = Timer.start () in
+  let module_tracker = TypeEnvironment.module_tracker environment in
   let log_request_error ~error =
     Statistics.event
       ~section:`Error
@@ -880,7 +927,7 @@ let rec process
   let update_open_documents ~state path =
     let { State.open_documents; _ } = state in
     match ModuleTracker.lookup_path ~configuration module_tracker path with
-    | Some { SourcePath.qualifier; _ } ->
+    | ModuleTracker.PathLookup.Found { SourcePath.qualifier; _ } ->
         Reference.Table.set
           open_documents
           ~key:qualifier
@@ -897,8 +944,11 @@ let rec process
       match request with
       | TypeCheckRequest paths -> process_type_check_request ~state ~configuration paths
       | StopRequest ->
-          Mutex.critical_section connections.lock ~f:(fun () ->
-              Operations.stop ~reason:"explicit request" ~configuration:server_configuration)
+          Error_checking_mutex.critical_section connections.lock ~f:(fun () ->
+              Operations.stop
+                ~reason:"explicit request"
+                ~configuration:server_configuration
+                ~scheduler)
       | TypeQueryRequest request -> process_type_query_request ~state ~configuration ~request
       | UnparsableQuery { query; reason } ->
           let response = TypeQuery.Error (Format.sprintf "Unable to parse %s: %s" query reason) in
@@ -997,7 +1047,12 @@ let rec process
           in
           let response =
             let open LanguageServer.Protocol in
-            let { Configuration.Server.server_uuid; _ } = server_configuration in
+            let { State.server_uuid; _ } = state in
+            let command =
+              server_uuid
+              >>| (fun server_uuid -> "add_pyre_annotation_" ^ server_uuid)
+              |> Option.value ~default:"add_pyre_annotation"
+            in
             let code_actions =
               diagnostics
               |> List.filter_map
@@ -1016,7 +1071,7 @@ let rec process
                                  Some
                                    {
                                      title = "Fix it";
-                                     command = "add_pyre_annotation_" ^ server_uuid;
+                                     command;
                                      arguments =
                                        [
                                          {
@@ -1068,7 +1123,7 @@ let rec process
           let { State.open_documents; _ } = state in
           let relative_path =
             match ModuleTracker.lookup_path ~configuration module_tracker path with
-            | Some { SourcePath.qualifier; relative; _ } ->
+            | ModuleTracker.PathLookup.Found { SourcePath.qualifier; relative; _ } ->
                 Reference.Table.remove open_documents qualifier;
                 Some relative
             | _ -> None
@@ -1095,13 +1150,8 @@ let rec process
               let { Configuration.Analysis.local_root; filter_directories; project_root; _ } =
                 configuration
               in
-              let { Configuration.Server.server_uuid; _ } = server_configuration in
               Telemetry.send_telemetry () ~f:(fun _ ->
-                  Telemetry.create_update_message
-                    ~local_root
-                    ~project_root
-                    ~filter_directories
-                    ~server_uuid) );
+                  Telemetry.create_update_message ~local_root ~project_root ~filter_directories) );
 
           (* On save, evict entries from the lookup cache. The updated source will be picked up at
              the next lookup (if any). *)
@@ -1116,17 +1166,13 @@ let rec process
             | _ -> StatusUpdate.warning
           in
           update_function ~message ~state;
-
           { state; response = None }
-      | GetServerUuid ->
-          let { Configuration.Server.server_uuid; _ } = server_configuration in
-          { state; response = Some (ServerUuidResponse server_uuid) }
       (* Requests that cannot be fulfilled here. *)
       | ClientConnectionRequest _ ->
           Log.warning "Explicitly ignoring ClientConnectionRequest request";
           { state; response = None }
       | InitializeRequest request_id ->
-          let { Configuration.Server.server_uuid; _ } = server_configuration in
+          let server_uuid = Uuid_unix.create () |> Uuid.to_string in
           let response =
             LanguageServer.Protocol.InitializeResponse.default
               ~server_uuid
@@ -1137,6 +1183,7 @@ let rec process
             |> (fun response -> LanguageServerProtocolResponse response)
             |> Option.some
           in
+          let state = { state with server_uuid = Some server_uuid } in
           { state; response }
       | InitializedRequest ->
           expected_version
@@ -1159,8 +1206,11 @@ let rec process
         { state; response = None }
     | Worker.Worker_exited_abnormally (pid, status) ->
         Statistics.log_worker_exception ~pid status ~origin:"server";
-        Mutex.critical_section connections.lock ~f:(fun () ->
-            Operations.stop ~reason:"Worker exited abnormally" ~configuration:server_configuration)
+        Error_checking_mutex.critical_section connections.lock ~f:(fun () ->
+            Operations.stop
+              ~reason:"Worker exited abnormally"
+              ~configuration:server_configuration
+              ~scheduler)
     | uncaught_exception ->
         let should_stop =
           match request with
@@ -1171,8 +1221,11 @@ let rec process
         in
         Statistics.log_exception uncaught_exception ~fatal:should_stop ~origin:"server";
         if should_stop then
-          Mutex.critical_section connections.lock ~f:(fun () ->
-              Operations.stop ~reason:"uncaught exception" ~configuration:server_configuration);
+          Error_checking_mutex.critical_section connections.lock ~f:(fun () ->
+              Operations.stop
+                ~reason:"uncaught exception"
+                ~configuration:server_configuration
+                ~scheduler);
         { state; response = None }
   in
   Statistics.performance

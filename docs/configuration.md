@@ -77,6 +77,15 @@ $ pyre -l project
   Checking...
 ```
 
+### Nested Local Configurations
+Nesting local configurations is not recommended. The configuration should live at the root of your
+project unit and inclusion/exclusion of files from type checking can be done by specifying sources, using
+`ignore_all_errors`, or by adding [local suppression](error_suppression.md).
+
+If in rare cases the nested configuration cannot be combined upward and the parent cannot be split apart, the
+parent configuration must list the directory containing the nested configuration in its `ignore_all_errors` field.
+Pyre will warn if this is not the case, which prevents the possibility of introducing conflicting type errors.
+
 
 # Command Line Arguments and Flags
 

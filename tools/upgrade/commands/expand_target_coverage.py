@@ -4,7 +4,6 @@
 # LICENSE file in the root directory of this source tree.
 
 import argparse
-import json
 import logging
 from pathlib import Path
 from typing import Optional
@@ -15,25 +14,47 @@ from ..configuration import Configuration
 from ..errors import Errors
 from ..filesystem import LocalMode, add_local_mode, find_files
 from ..repository import Repository
-from .command import ErrorSuppressingCommand
+from .command import CommandArguments, ErrorSuppressingCommand
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
 
 class ExpandTargetCoverage(ErrorSuppressingCommand):
-    def __init__(self, arguments: argparse.Namespace, repository: Repository) -> None:
-        super().__init__(arguments, repository)
-        self._subdirectory: Final[Optional[str]] = arguments.subdirectory
-        self._fixme_threshold: bool = arguments.fixme_threshold
-        self._no_commit: bool = arguments.no_commit
-        self._submit: bool = arguments.submit
-        self._lint: bool = arguments.lint
+    def __init__(
+        self,
+        command_arguments: CommandArguments,
+        *,
+        repository: Repository,
+        subdirectory: Optional[str],
+        fixme_threshold: bool,
+        no_commit: bool,
+        submit: bool,
+    ) -> None:
+        super().__init__(command_arguments, repository)
+        self._subdirectory: Final[Optional[str]] = subdirectory
+        self._fixme_threshold: bool = fixme_threshold
+        self._no_commit: bool = no_commit
+        self._submit: bool = submit
 
     @staticmethod
-    def add_arguments(parser: argparse.ArgumentParser) -> None:
-        super(ExpandTargetCoverage, ExpandTargetCoverage).add_arguments(parser)
-        parser.set_defaults(command=ExpandTargetCoverage)
+    def from_arguments(
+        arguments: argparse.Namespace, repository: Repository
+    ) -> "ExpandTargetCoverage":
+        command_arguments = CommandArguments.from_arguments(arguments)
+        return ExpandTargetCoverage(
+            command_arguments,
+            repository=repository,
+            subdirectory=arguments.subdirectory,
+            fixme_threshold=arguments.fixme_threshold,
+            no_commit=arguments.no_commit,
+            submit=arguments.submit,
+        )
+
+    @classmethod
+    def add_arguments(cls, parser: argparse.ArgumentParser) -> None:
+        super(ExpandTargetCoverage, cls).add_arguments(parser)
+        parser.set_defaults(command=cls.from_arguments)
         parser.add_argument(
             "--subdirectory", help="Only upgrade TARGETS files within this directory."
         )
@@ -46,7 +67,6 @@ class ExpandTargetCoverage(ErrorSuppressingCommand):
             "--no-commit", action="store_true", help="Keep changes in working state."
         )
         parser.add_argument("--submit", action="store_true", help=argparse.SUPPRESS)
-        parser.add_argument("--lint", action="store_true", help=argparse.SUPPRESS)
 
     def run(self) -> None:
         subdirectory = self._subdirectory
@@ -69,13 +89,10 @@ class ExpandTargetCoverage(ErrorSuppressingCommand):
             LOG.warning("Could not find a local configuration to codemod.")
             return
         LOG.info("Expanding typecheck targets in `%s`", local_configuration)
-        with open(local_configuration) as configuration_file:
-            configuration = Configuration(
-                local_configuration, json.load(configuration_file)
-            )
-            configuration.add_targets(["//" + str(subdirectory) + "/..."])
-            configuration.deduplicate_targets()
-            configuration.write()
+        configuration = Configuration(local_configuration)
+        configuration.add_targets(["//" + str(subdirectory) + "/..."])
+        configuration.deduplicate_targets()
+        configuration.write()
 
         # Suppress errors
         all_errors = configuration.get_errors()

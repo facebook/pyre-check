@@ -270,11 +270,25 @@ let test_check_init context =
     {|
       class C:
         def __init__(self, x: int) -> None:
+          self._a = x
+        def a(self) -> int:
+          return self._a
+    |}
+    [];
+  assert_type_errors
+    {|
+      class C:
+        def __init__(self, x: int) -> None:
           self.a = x
         def a(self) -> int:
           return self.a
     |}
-    [];
+    [
+      "Incompatible attribute type [8]: Attribute `a` declared in class `C` has type "
+      ^ "`BoundMethod[typing.Callable(C.a)[[Named(self, C)], int], C]` but is used as type `int`.";
+      "Incompatible return type [7]: Expected `int` but got "
+      ^ "`BoundMethod[typing.Callable(C.a)[[Named(self, C)], int], C]`.";
+    ];
   assert_type_errors
     {|
       class C:
@@ -302,12 +316,12 @@ let test_check_init context =
         return x
       class C:
         def __init__(self, x: int) -> None:
-          self.a = identity(x)
+          self._a = identity(x)
         def a(self) -> int:
-          return self.a
+          return self._a
     |}
     [
-      "Missing attribute annotation [4]: Attribute `a`"
+      "Missing attribute annotation [4]: Attribute `_a`"
       ^ " of class `C` has type `int` but no type is specified.";
       "Incompatible return type [7]: Expected `int` but got `unknown`.";
     ];

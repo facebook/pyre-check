@@ -11,10 +11,7 @@ let test_scheduling context =
   (* Top-level is scheduled. *)
   assert_type_errors
     "'string' + 1"
-    [
-      "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st positional only parameter to call `int.__radd__` but got `str`.";
-    ];
+    ["Incompatible parameter type [6]: `+` is not supported for operand types `str` and `int`."];
 
   (* Functions are scheduled. *)
   assert_type_errors
@@ -23,20 +20,14 @@ let test_scheduling context =
       def foo() -> None:
         'string' + 1
     |}
-    [
-      "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st positional only parameter to call `int.__radd__` but got `str`.";
-    ];
+    ["Incompatible parameter type [6]: `+` is not supported for operand types `str` and `int`."];
   assert_type_errors
     {|
       def bar() -> None:
         def foo() -> None:
           'string' + 1
     |}
-    [
-      "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st positional only parameter to call `int.__radd__` but got `str`.";
-    ];
+    ["Incompatible parameter type [6]: `+` is not supported for operand types `str` and `int`."];
 
   (* Class bodies are scheduled. *)
   assert_type_errors
@@ -44,10 +35,7 @@ let test_scheduling context =
       class Foo:
         'string' + 1
     |}
-    [
-      "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st positional only parameter to call `int.__radd__` but got `str`.";
-    ];
+    ["Incompatible parameter type [6]: `+` is not supported for operand types `str` and `int`."];
 
   (* Methods are scheduled. *)
   assert_type_errors
@@ -56,10 +44,7 @@ let test_scheduling context =
         def foo(self) -> None:
           'string' + 1
     |}
-    [
-      "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st positional only parameter to call `int.__radd__` but got `str`.";
-    ];
+    ["Incompatible parameter type [6]: `+` is not supported for operand types `str` and `int`."];
 
   (* Property getters and setters are both scheduled *)
   assert_type_errors
@@ -186,7 +171,10 @@ let test_check_ternary context =
         else:
           return 1
     |}
-    ["Undefined attribute [16]: `Optional` has no attribute `__gt__`."];
+    [
+      "Incompatible parameter type [6]: `>` is not supported for operand types `Optional[int]` and \
+       `int`.";
+    ];
   assert_type_errors
     {|
       import typing
@@ -582,10 +570,7 @@ let test_check_while context =
         while x < 1.0:
           pass
     |}
-    [
-      "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter to call \
-       `int.__lt__` but got `float`.";
-    ];
+    [];
   assert_type_errors
     {|
       from typing import Dict, Any

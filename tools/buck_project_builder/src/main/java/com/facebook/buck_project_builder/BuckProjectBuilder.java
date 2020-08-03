@@ -17,22 +17,24 @@ import java.io.IOException;
 
 public final class BuckProjectBuilder {
 
+  public static BuilderCommand parseCommandLineArguments(String[] arguments) {
+    try {
+      return BuilderCommand.fromCommandLineArguments(arguments);
+    } catch (BuilderException exception) {
+      SimpleLogger.error(exception.getMessage());
+      System.exit(1);
+      throw new RuntimeException(); // unreachable
+    }
+  }
+
   /**
    * Prints nothing if the build is successful. Otherwise, exit by 1 then prints the failure reason
    * in standard error.
    */
   public BuckProjectBuilder(
-      String[] arguments, PlatformSelector platformSelector, CommandRewriter commandRewriter)
+      BuilderCommand command, PlatformSelector platformSelector, CommandRewriter commandRewriter)
       throws IOException {
     long start = System.currentTimeMillis();
-    BuilderCommand command;
-    try {
-      command = BuilderCommand.fromCommandLineArguments(arguments);
-    } catch (BuilderException exception) {
-      SimpleLogger.error(exception.getMessage());
-      System.exit(1);
-      return;
-    }
     String buckRoot = command.getBuckRoot();
     String outputDirectory = command.getOutputDirectory();
     ImmutableList<String> targets = command.getTargets();
@@ -69,6 +71,10 @@ public final class BuckProjectBuilder {
 
   public static void main(String[] arguments) throws IOException {
     System.setProperty("java.net.preferIPv6Addresses", "true");
-    new BuckProjectBuilder(arguments, new PlatformSelector() {}, new CommandRewriter() {});
+    new BuckProjectBuilder(
+        parseCommandLineArguments(arguments),
+        new PlatformSelector() {},
+        new CommandRewriter() {}
+      );
   }
 }

@@ -47,7 +47,6 @@ module Analysis = struct
   [@@deriving show]
 
   type t = {
-    start_time: float;
     infer: bool;
     configuration_file_hash: string option;
     parallel: bool;
@@ -56,26 +55,20 @@ module Analysis = struct
     ignore_all_errors: Path.t list option;
     number_of_workers: int;
     local_root: Path.t;
-    sections: string list;
     debug: bool;
     project_root: Path.t;
+    source_path: Path.t list;
     search_path: SearchPath.t list;
     taint_model_paths: Path.t list;
-    verbose: bool;
     expected_version: string option;
     strict: bool;
     show_error_traces: bool;
-    log_identifier: string;
-    logger: string option;
-    profiling_output: string option;
-    memory_profiling_output: string option;
     excludes: Str.regexp list; [@opaque]
     extensions: string list;
     store_type_check_resolution: bool;
     incremental_style: incremental_style;
     include_hints: bool;
     perform_autocompletion: bool;
-    go_to_definition_enabled: bool;
     features: Features.t;
     ignore_infer: Path.t list;
     log_directory: Path.t;
@@ -89,7 +82,6 @@ module Analysis = struct
 
 
   let create
-      ?(start_time = Unix.time ())
       ?(infer = false)
       ?configuration_file_hash
       ?(parallel = true)
@@ -98,33 +90,26 @@ module Analysis = struct
       ?ignore_all_errors
       ?(number_of_workers = 4)
       ?(local_root = Path.current_working_directory ())
-      ?(sections = [])
       ?(project_root = Path.create_absolute "/")
       ?(search_path = [])
       ?(taint_model_paths = [])
-      ?(verbose = false)
       ?expected_version
       ?(strict = false)
       ?(debug = false)
       ?(show_error_traces = false)
-      ?(log_identifier = "")
-      ?logger
-      ?profiling_output
-      ?memory_profiling_output
       ?(excludes = [])
       ?(extensions = [])
       ?(store_type_check_resolution = true)
       ?(incremental_style = Shallow)
       ?(include_hints = false)
       ?(perform_autocompletion = false)
-      ?(go_to_definition_enabled = false)
       ?(features = Features.default)
       ?(ignore_infer = [])
       ?log_directory
+      ~source_path
       ()
     =
     {
-      start_time;
       infer;
       configuration_file_hash;
       parallel;
@@ -133,19 +118,14 @@ module Analysis = struct
       ignore_all_errors;
       number_of_workers;
       local_root;
-      sections;
       debug;
       project_root;
+      source_path;
       search_path;
       taint_model_paths;
-      verbose;
       expected_version;
       strict;
       show_error_traces;
-      log_identifier;
-      logger;
-      profiling_output;
-      memory_profiling_output;
       excludes =
         List.map excludes ~f:(fun exclude_regex ->
             Str.global_substitute
@@ -158,7 +138,6 @@ module Analysis = struct
       incremental_style;
       include_hints;
       perform_autocompletion;
-      go_to_definition_enabled;
       features;
       ignore_infer;
       log_directory =
@@ -168,18 +147,12 @@ module Analysis = struct
     }
 
 
-  let global : t option ref = ref None
-
-  let set_global configuration = global := Some configuration
-
-  let get_global () = !global
-
   let log_directory { log_directory; _ } = log_directory
 
-  let search_path { local_root; search_path; _ } =
-    (* Have an ordering of search_path > local_root with the parser. search_path precedes
+  let search_path { source_path; search_path; _ } =
+    (* Have an ordering of search_path > source_path with the parser. search_path precedes
      * local_root due to the possibility of having a subdirectory of the root in the search path. *)
-    search_path @ [SearchPath.Root local_root]
+    search_path @ List.map source_path ~f:(fun path -> SearchPath.Root path)
 
 
   let features { features; _ } = features
@@ -219,7 +192,6 @@ module Server = struct
     saved_state_action: saved_state_action option;
     (* Analysis configuration *)
     configuration: Analysis.t;
-    server_uuid: string;
   }
 
   (* Required to appease the compiler. *)
@@ -238,5 +210,6 @@ module StaticAnalysis = struct
     (* Analysis configuration *)
     configuration: Analysis.t;
     rule_filter: int list option;
+    find_obscure_flows: bool;
   }
 end

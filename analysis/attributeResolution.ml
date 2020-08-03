@@ -161,6 +161,7 @@ module TypeParameterValidationTypes = struct
     | IncorrectNumberOfParameters of {
         actual: int;
         expected: int;
+        can_accept_more_parameters: bool;
       }
     | ViolateConstraints of {
         actual: Type.t;
@@ -382,7 +383,7 @@ module ClassDecorators = struct
               kind = Attribute (Callable callable);
             }
           ~abstract:false
-          ~async:false
+          ~async_property:false
           ~class_variable:false
           ~defined:true
           ~initialized:OnClass
@@ -791,6 +792,11 @@ class base class_metadata_environment dependency =
               | "typing_extensions.Final"
               | "typing.Optional" ->
                   [Type.Variable.Unary (Type.Variable.Unary.create "T")]
+              | "typing.Callable" ->
+                  [
+                    Type.Variable.ParameterVariadic (Type.Variable.Variadic.Parameters.create "Ps");
+                    Type.Variable.Unary (Type.Variable.Unary.create "R");
+                  ]
               | _ ->
                   ClassHierarchyEnvironment.ReadOnly.variables
                     (class_hierarchy_environment class_metadata_environment)
@@ -850,21 +856,32 @@ class base class_metadata_environment dependency =
                   |> fun (parameters, errors) ->
                   Type.parametric name parameters, List.filter_map errors ~f:Fn.id @ sofar
               | None ->
+                  let annotation, can_accept_more_parameters =
+                    match name with
+                    | "typing.Callable" -> Type.Callable.create ~annotation:Type.Any (), false
+                    | "tuple" -> Type.Tuple (Type.Unbounded Type.Any), true
+                    | _ ->
+                        ( Type.parametric
+                            name
+                            (List.map generics ~f:(function
+                                | Type.Variable.Unary _ -> Type.Parameter.Single Type.Any
+                                | ListVariadic _ -> Group Any
+                                | ParameterVariadic _ -> CallableParameters Undefined)),
+                          false )
+                  in
                   let mismatch =
                     {
                       name;
                       kind =
                         IncorrectNumberOfParameters
-                          { actual = List.length given; expected = List.length generics };
+                          {
+                            actual = List.length given;
+                            expected = List.length generics;
+                            can_accept_more_parameters;
+                          };
                     }
                   in
-                  ( Type.parametric
-                      name
-                      (List.map generics ~f:(function
-                          | Type.Variable.Unary _ -> Type.Parameter.Single Type.Any
-                          | ListVariadic _ -> Group Any
-                          | ParameterVariadic _ -> CallableParameters Undefined)),
-                    mismatch :: sofar )
+                  annotation, mismatch :: sofar
             in
             match annotation with
             | Type.Primitive ("typing.Final" | "typing_extensions.Final") -> annotation, sofar
@@ -875,6 +892,38 @@ class base class_metadata_environment dependency =
                 annotation, sofar
             | Type.Parametric { name; parameters } ->
                 invalid_type_parameters ~name ~given:parameters
+            | Type.IntExpression _ ->
+                let invalid_generic_int given =
+                  let generic_int =
+                    Type.Variable.Unary.create
+                      "T"
+                      ~constraints:(Type.Record.Variable.Bound (Primitive "int"))
+                  in
+                  let invalid =
+                    let order = self#full_order ~assumptions in
+                    let pair = Type.Variable.UnaryPair (generic_int, given) in
+                    TypeOrder.OrderedConstraints.add_lower_bound TypeConstraints.empty ~order ~pair
+                    >>= TypeOrder.OrderedConstraints.add_upper_bound ~order ~pair
+                    |> Option.is_none
+                  in
+                  if invalid then
+                    Some
+                      {
+                        name = "IntExpression";
+                        kind = ViolateConstraints { actual = given; expected = generic_int };
+                      }
+                  else
+                    None
+                in
+                let errors =
+                  Type.Variable.GlobalTransforms.Unary.collect_all annotation
+                  |> List.filter_map ~f:(fun variable ->
+                         invalid_generic_int (Type.Variable variable))
+                in
+                if List.length errors > 0 then
+                  Any, errors @ sofar
+                else
+                  annotation, sofar
             | _ -> annotation, sofar
           in
           { Type.Transform.transformed_annotation; new_state }
@@ -1007,7 +1056,7 @@ class base class_metadata_environment dependency =
         AnnotatedAttribute.create_uninstantiated
           ~abstract:false
           ~uninstantiated_annotation:(create_uninstantiated_method constructor)
-          ~async:false
+          ~async_property:false
           ~class_variable:false
           ~defined:true
           ~initialized:OnClass
@@ -1027,7 +1076,7 @@ class base class_metadata_environment dependency =
               UninstantiatedAnnotation.accessed_via_metaclass = false;
               kind = UninstantiatedAnnotation.Attribute annotation;
             }
-          ~async:false
+          ~async_property:false
           ~class_variable:false
           ~defined:true
           ~initialized:OnClass
@@ -1183,7 +1232,7 @@ class base class_metadata_environment dependency =
           AnnotatedAttribute.create_uninstantiated
             ~uninstantiated_annotation
             ~abstract:false
-            ~async:false
+            ~async_property:false
             ~class_variable:false
             ~defined:true
             ~initialized:OnClass
@@ -1245,7 +1294,7 @@ class base class_metadata_environment dependency =
                        kind = Attribute (Callable callable);
                      }
                    ~abstract:false
-                   ~async:false
+                   ~async_property:false
                    ~class_variable:false
                    ~defined:true
                    ~initialized:OnClass
@@ -1423,7 +1472,7 @@ class base class_metadata_environment dependency =
             ~uninstantiated_annotation:None
             ~visibility:ReadWrite
             ~abstract:false
-            ~async:false
+            ~async_property:false
             ~class_variable:false
             ~defined:true
             ~initialized:OnClass
@@ -2144,7 +2193,7 @@ class base class_metadata_environment dependency =
           | Method { signatures; _ } ->
               List.exists signatures ~f:Define.Signature.is_abstract_method
           | _ -> false )
-        ~async:
+        ~async_property:
           ( match kind with
           | Property { async; _ } -> async
           | _ -> false )
@@ -2429,14 +2478,21 @@ class base class_metadata_environment dependency =
 
     method resolve_define ~assumptions ~implementation ~overloads =
       let apply_decorator (index, { Decorator.name; arguments }) argument =
+        let name = Node.value name |> Reference.delocalize in
         let decorator =
-          Node.value name
-          |> UnannotatedGlobalEnvironment.ReadOnly.legacy_resolve_exports
-               (unannotated_global_environment class_metadata_environment)
-               ?dependency
-          |> Reference.show
+          UnannotatedGlobalEnvironment.ReadOnly.resolve_exports
+            (unannotated_global_environment class_metadata_environment)
+            ?dependency
+            name
         in
-        match decorator, argument with
+        let simple_decorator_name =
+          match decorator with
+          | Some (ModuleAttribute { from; name; remaining; _ }) ->
+              Reference.create_from_list (Reference.as_list from @ (name :: remaining))
+              |> Reference.show
+          | _ -> Reference.show name
+        in
+        match simple_decorator_name, argument with
         | ("click.decorators.pass_context" | "click.decorators.pass_obj"), Type.Callable callable ->
             (* Suppress caller/callee parameter matching by altering the click entry point to have a
                generic parameter list. *)
@@ -2482,6 +2538,9 @@ class base class_metadata_environment dependency =
                 overloads = List.map old_overloads ~f:process_overload;
               }
             |> Result.return
+        | name, callable when String.is_suffix name ~suffix:".validator" ->
+            (* TODO(T70606997): We should be type checking attr validators properly. *)
+            Result.return callable
         | "contextlib.contextmanager", Callable callable ->
             let process_overload ({ Type.Callable.annotation; _ } as overload) =
               let joined =
@@ -2522,11 +2581,10 @@ class base class_metadata_environment dependency =
         | "staticmethod", _ ->
             Type.Parametric { name = "typing.StaticMethod"; parameters = [Single argument] }
             |> Result.return
-        | name, _ -> (
+        | _ -> (
             let make_error reason =
               Result.Error (AnnotatedAttribute.InvalidDecorator { index; reason })
             in
-            let name = Reference.create name |> Reference.delocalize in
             let { decorator_assumptions; _ } = assumptions in
             if
               Assumptions.DecoratorAssumptions.not_a_decorator decorator_assumptions ~candidate:name
@@ -2567,15 +2625,22 @@ class base class_metadata_environment dependency =
                 >>| List.map ~f:Annotation.annotation
                 >>= join_all
               in
-              let rec resolver name =
-                match
-                  self#global_annotation ~assumptions name, Reference.as_list name |> List.rev
-                with
-                | Some { Global.annotation = { annotation; _ }; _ }, _ -> Some annotation
-                | None, ([] | [_]) -> None
-                | None, attribute_name :: reversed_head ->
-                    resolver (Reference.create_from_list (List.rev reversed_head))
-                    >>= resolve_attribute_access ~attribute_name
+              let resolver = function
+                | UnannotatedGlobalEnvironment.ResolvedReference.Module _ -> None
+                | PlaceholderStub _ -> Some Type.Any
+                | ModuleAttribute { from; name; remaining; _ } ->
+                    let rec resolve_remaining base ~remaining =
+                      match remaining with
+                      | [] -> Some base
+                      | attribute_name :: remaining ->
+                          resolve_attribute_access base ~attribute_name
+                          >>= resolve_remaining ~remaining
+                    in
+                    Reference.create_from_list [name]
+                    |> Reference.combine from
+                    |> self#global_annotation ~assumptions
+                    >>| (fun { Global.annotation = { annotation; _ }; _ } -> annotation)
+                    >>= resolve_remaining ~remaining
               in
               let extract_callable = function
                 | Type.Callable callable -> Some callable
@@ -2610,7 +2675,7 @@ class base class_metadata_environment dependency =
                     | { Node.value = Expression.Expression.Name name; _ } ->
                         Expression.name_to_reference name
                         >>| Reference.delocalize
-                        >>| UnannotatedGlobalEnvironment.ReadOnly.legacy_resolve_exports
+                        >>= UnannotatedGlobalEnvironment.ReadOnly.resolve_exports
                               (unannotated_global_environment class_metadata_environment)
                               ?dependency
                         >>= resolver
@@ -2645,7 +2710,7 @@ class base class_metadata_environment dependency =
                 Result.map arguments ~f:select |> Result.bind ~f:extract
               in
               let resolved_decorator =
-                match resolver name with
+                match decorator >>= resolver with
                 | None -> make_error CouldNotResolve
                 | Some Any -> Ok Type.Any
                 | Some fetched -> (
@@ -3049,10 +3114,10 @@ class base class_metadata_environment dependency =
                   match kind with
                   | SingleStar -> (
                       match resolved with
-                      | Type.Tuple (Bounded ordered_types) -> `Fst ordered_types
+                      | Type.Tuple (Bounded ordered_types) -> Either.First ordered_types
                       (* We don't support expanding indefinite containers into ListVariadics *)
-                      | annotation -> `Snd { expression; annotation } )
-                  | _ -> `Fst (Type.OrderedTypes.Concrete [resolved])
+                      | annotation -> Either.Second { expression; annotation } )
+                  | _ -> Either.First (Type.OrderedTypes.Concrete [resolved])
                 in
                 List.rev arguments |> List.partition_map ~f:extract
               in

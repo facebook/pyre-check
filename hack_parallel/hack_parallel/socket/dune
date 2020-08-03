@@ -1,6 +1,5 @@
 (library
-  (name socket)
-  (public_name hack_parallel.socket)
-  (wrapped false)
-  (libraries
-    hack_parallel.utils))
+ (name socket)
+ (public_name hack_parallel.socket)
+ (wrapped false)
+ (libraries hack_parallel.utils))

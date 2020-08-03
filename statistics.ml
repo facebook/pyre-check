@@ -6,38 +6,64 @@
 open Core
 open Pyre
 
-let enabled = ref true
+module GlobalState = struct
+  type t = {
+    mutable logger: string option;
+    mutable last_flush_timestamp: float;
+    mutable log_identifier: string;
+    mutable project_name: string;
+    mutable start_time: float;
+  }
+
+  let flush_size = 500
+
+  let flush_timeout = 6.0 *. 3600.0 (* Seconds. *)
+
+  let username = Option.value (Sys.getenv "USER") ~default:(Unix.getlogin ())
+
+  let hostname = Option.value (Sys.getenv "HOSTNAME") ~default:(Unix.gethostname ())
+
+  let global_state =
+    let current_time = Unix.time () in
+    {
+      logger = None;
+      last_flush_timestamp = current_time;
+      log_identifier = "";
+      project_name = "";
+      start_time = current_time;
+    }
+
+
+  let initialize ?logger ?log_identifier ?project_name () =
+    Option.iter logger ~f:(fun logger -> global_state.logger <- Some logger);
+    Option.iter log_identifier ~f:(fun identifier -> global_state.log_identifier <- identifier);
+    Option.iter project_name ~f:(fun name -> global_state.project_name <- name);
+    ()
+
+
+  let get () = global_state
+
+  let restore old_state =
+    global_state.logger <- old_state.logger;
+    global_state.last_flush_timestamp <- old_state.last_flush_timestamp;
+    global_state.log_identifier <- old_state.log_identifier;
+    global_state.project_name <- old_state.project_name;
+    global_state.start_time <- old_state.start_time
+end
 
 module Cache : sig
   val with_cache : f:(string list String.Table.t -> 'a) -> 'a
 end = struct
   let cache = String.Table.create ()
 
-  let lock = Mutex.create ()
+  let lock = Error_checking_mutex.create ()
 
-  let with_cache ~f = Mutex.critical_section lock ~f:(fun () -> f cache)
+  let with_cache ~f = Error_checking_mutex.critical_section lock ~f:(fun () -> f cache)
 end
 
-let size = 500
-
-let flush_timeout = 6.0 *. 3600.0 (* Seconds. *)
-
-let username = Option.value (Sys.getenv "USER") ~default:(Unix.getlogin ())
-
-let hostname = Option.value (Sys.getenv "HOSTNAME") ~default:(Unix.gethostname ())
-
-let disable () = enabled := false
+let disable () = GlobalState.global_state.logger <- None
 
 let sample ?(integers = []) ?(normals = []) ?(metadata = true) () =
-  let open Configuration.Analysis in
-  let local_root, start_time, log_identifier =
-    match get_global () with
-    | Some { local_root; start_time; log_identifier; _ } ->
-        Path.last local_root, start_time, log_identifier
-    | _ ->
-        Log.warning "Trying to log without a global configuration";
-        "LOGGED WITHOUT CONFIGURATION", 0.0, "no configuration"
-  in
   let server_configuration_metadata =
     match Configuration.Server.get_global () with
     | Some { Configuration.Server.socket = { path = socket_path; _ }; saved_state_action; _ } ->
@@ -67,10 +93,10 @@ let sample ?(integers = []) ?(normals = []) ?(metadata = true) () =
     if metadata then
       [
         "binary", Sys.argv.(0);
-        "root", local_root;
-        "username", username;
-        "hostname", hostname;
-        "identifier", log_identifier;
+        "root", GlobalState.global_state.project_name;
+        "username", GlobalState.username;
+        "hostname", GlobalState.hostname;
+        "identifier", GlobalState.global_state.log_identifier;
       ]
       @ server_configuration_metadata
       @ normals
@@ -79,7 +105,11 @@ let sample ?(integers = []) ?(normals = []) ?(metadata = true) () =
   in
   let integers =
     if metadata then
-      ["time", Unix.time () |> Int.of_float; "start_time", start_time |> Int.of_float] @ integers
+      [
+        "time", Unix.time () |> Int.of_float;
+        "start_time", GlobalState.global_state.start_time |> Int.of_float;
+      ]
+      @ integers
     else
       integers
   in
@@ -91,25 +121,22 @@ let sample ?(integers = []) ?(normals = []) ?(metadata = true) () =
       ])
 
 
-let last_flush_timestamp = ref (Unix.time ())
-
 let flush () =
-  let flush_category ~key ~data =
-    Configuration.Analysis.get_global ()
-    >>= (fun { Configuration.Analysis.logger; _ } -> logger)
-    >>| (fun logger -> Format.sprintf "%s %s" logger key)
-    >>| (fun command ->
-          let out_channel = Unix.open_process_out command in
-          List.iter ~f:(Printf.fprintf out_channel "%s\n") data;
-          Out_channel.flush out_channel;
-          Unix.close_process_out out_channel |> ignore)
-    |> ignore
-  in
-  Cache.with_cache ~f:(fun cache ->
-      if !enabled then
-        Hashtbl.iteri ~f:flush_category cache;
-      Hashtbl.clear cache);
-  last_flush_timestamp := Unix.time ()
+  match GlobalState.global_state.logger with
+  | None -> ()
+  | Some logger ->
+      let flush_category ~key ~data =
+        let command = Format.sprintf "%s %s" logger key in
+        let out_channel = Unix.open_process_out command in
+        List.iter ~f:(Printf.fprintf out_channel "%s\n") data;
+        Out_channel.flush out_channel;
+        Unix.close_process_out out_channel |> ignore
+      in
+      Cache.with_cache ~f:(fun cache ->
+          Hashtbl.iteri ~f:flush_category cache;
+          Hashtbl.clear cache);
+      GlobalState.global_state.last_flush_timestamp <- Unix.time ();
+      ()
 
 
 let flush_cache = flush
@@ -126,9 +153,10 @@ let log ?(flush = false) ?(randomly_log_every = 1) category sample =
   in
   let exceeds_timeout () =
     let current_time = Unix.time () in
-    current_time -. !last_flush_timestamp >= flush_timeout
+    Float.(
+      current_time -. GlobalState.global_state.last_flush_timestamp >= GlobalState.flush_timeout)
   in
-  if flush || samples_count () >= size || exceeds_timeout () then
+  if flush || samples_count () >= GlobalState.flush_size || exceeds_timeout () then
     flush_cache ()
 
 

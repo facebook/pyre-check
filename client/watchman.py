@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Any, Dict, List, NamedTuple
 
 from .filesystem import acquire_lock, remove_if_exists
-from .process import register_unique_process
+from .process import Process
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -68,6 +68,7 @@ class Subscriber(object):
             return pywatchman.client(timeout=None)
         except ImportError as exception:
             LOG.info(f"Not starting {self._name} due to {exception}")
+            # pyre-fixme[7]: Expected `client` but got implicit return value of `None`.
             sys.exit(1)
 
     def _subscribe_to_watchman(self, subscription: Subscription) -> None:
@@ -87,7 +88,7 @@ class Subscriber(object):
         # Die silently if unable to acquire the lock.
         try:
             with acquire_lock(lock_path, blocking=False), (
-                register_unique_process(
+                Process.register_unique_process(
                     os.getpid(), compute_pid_path(self._base_path, self._name)
                 )
             ):

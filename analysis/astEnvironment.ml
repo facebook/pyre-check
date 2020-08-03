@@ -10,14 +10,22 @@ open PyreParser
 
 type t = { module_tracker: ModuleTracker.t }
 
+module ParserError = struct
+  type t = {
+    source_path: SourcePath.t;
+    message: string;
+  }
+  [@@deriving sexp, compare, hash]
+end
+
 module RawSourceValue = struct
-  type t = Source.t
+  type t = (Source.t, ParserError.t) Result.t
 
   let prefix = Prefix.make ()
 
   let description = "Unprocessed source"
 
-  let compare = Source.compare
+  let compare = Result.compare Source.compare ParserError.compare
 
   let unmarshall value = Marshal.from_string value 0
 end
@@ -73,8 +81,12 @@ let wildcard_exports_of ({ Source.source_path = { SourcePath.is_stub; _ }; _ } a
 
 
 module Raw = struct
-  let add_source _ ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source) =
-    RawSources.add qualifier source
+  let add_parsed_source _ ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source) =
+    RawSources.add qualifier (Result.Ok source)
+
+
+  let add_unparsed_source _ ({ ParserError.source_path = { SourcePath.qualifier; _ }; _ } as error) =
+    RawSources.add qualifier (Result.Error error)
 
 
   let update_and_compute_dependencies _ ~update ~scheduler ~configuration qualifiers =
@@ -91,8 +103,7 @@ end
 
 type parse_result =
   | Success of Source.t
-  | SyntaxError of string
-  | SystemError of string
+  | Error of string
 
 let parse_source ~configuration ({ SourcePath.relative; qualifier; _ } as source_path) =
   let parse_lines lines =
@@ -101,57 +112,29 @@ let parse_source ~configuration ({ SourcePath.relative; qualifier; _ } as source
       let statements = Parser.parse ~relative lines in
       Success (Source.create_from_source_path ~metadata ~source_path statements)
     with
-    | Parser.Error error -> SyntaxError error
-    | Failure error -> SystemError error
+    | Parser.Error error
+    | Failure error ->
+        Error error
   in
   let path = SourcePath.full_path ~configuration source_path in
-  match File.lines (File.create path) with
-  | Some lines -> parse_lines lines
-  | None ->
-      let message = Format.asprintf "Cannot open file %a" Path.pp path in
-      SystemError message
+  try File.lines_exn (File.create path) |> parse_lines with
+  | Sys_error error ->
+      let message = Format.asprintf "Cannot open file `%a` due to: %s" Path.pp path error in
+      Error message
 
-
-module RawParseResult = struct
-  type t = {
-    parsed: Reference.t list;
-    syntax_error: SourcePath.t list;
-    system_error: SourcePath.t list;
-  }
-
-  let empty = { parsed = []; syntax_error = []; system_error = [] }
-
-  let merge
-      { parsed = left_parsed; syntax_error = left_syntax_error; system_error = left_system_error }
-      {
-        parsed = right_parsed;
-        syntax_error = right_syntax_error;
-        system_error = right_system_error;
-      }
-    =
-    {
-      parsed = left_parsed @ right_parsed;
-      syntax_error = left_syntax_error @ right_syntax_error;
-      system_error = left_system_error @ right_system_error;
-    }
-end
 
 let parse_raw_sources ~configuration ~scheduler ~ast_environment source_paths =
-  let parse_and_categorize
-      ({ RawParseResult.parsed; syntax_error; system_error } as result)
-      source_path
-    =
+  let parse_and_categorize result source_path =
     match parse_source ~configuration source_path with
     | Success ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source) ->
         let source = Preprocessing.preprocess_phase0 source in
-        Raw.add_source ast_environment source;
-        { result with parsed = qualifier :: parsed }
-    | SyntaxError message ->
-        Log.log ~section:`Parser "%s" message;
-        { result with syntax_error = source_path :: syntax_error }
-    | SystemError message ->
-        Log.error "%s" message;
-        { result with system_error = source_path :: system_error }
+        Raw.add_parsed_source ast_environment source;
+        qualifier :: result
+    | Error message ->
+        let { SourcePath.qualifier; _ } = source_path in
+        let message = String.split_lines message |> List.hd |> Option.value ~default:"" in
+        Raw.add_unparsed_source ast_environment { ParserError.source_path; message };
+        qualifier :: result
   in
   Scheduler.map_reduce
     scheduler
@@ -161,10 +144,9 @@ let parse_raw_sources ~configuration ~scheduler ~ast_environment source_paths =
          ~minimum_chunk_size:100
          ~preferred_chunks_per_worker:5
          ())
-    ~configuration
-    ~initial:RawParseResult.empty
-    ~map:(fun _ -> List.fold ~init:RawParseResult.empty ~f:parse_and_categorize)
-    ~reduce:RawParseResult.merge
+    ~initial:[]
+    ~map:(fun _ -> List.fold ~init:[] ~f:parse_and_categorize)
+    ~reduce:List.append
     ~inputs:source_paths
     ()
 
@@ -203,8 +185,10 @@ let expand_wildcard_imports ?dependency ~ast_environment source =
               | Error _ -> ()
               | Ok () -> (
                   match Raw.get_source ast_environment qualifier ?dependency with
-                  | None -> ()
-                  | Some source ->
+                  | None
+                  | Some (Result.Error _) ->
+                      ()
+                  | Some (Result.Ok source) ->
                       wildcard_exports_of source |> List.iter ~f:(Hash_set.add transitive_exports);
                       Visitor.visit [] source |> Queue.enqueue_all worklist )
             in
@@ -222,21 +206,21 @@ let expand_wildcard_imports ?dependency ~ast_environment source =
                 String.equal (Reference.show name) "*")
           in
           match starred_import with
-          | Some { Import.name = { Node.location; _ }; _ } ->
+          | Some _ ->
               let expanded_import =
                 match get_transitive_exports (Node.value from) ~ast_environment ?dependency with
-                | [] -> statement
+                | [] -> []
                 | exports ->
                     List.map exports ~f:(fun name ->
                         {
-                          Import.name = Node.create ~location (Reference.create name);
-                          alias = Some (Node.create ~location name);
+                          Import.name = Node.create ~location:Location.any (Reference.create name);
+                          alias = Some (Node.create ~location:Location.any name);
                         })
                     |> (fun expanded ->
                          Statement.Import { Import.from = Some from; imports = expanded })
-                    |> fun value -> { statement with Node.value }
+                    |> fun value -> [{ statement with Node.value }]
               in
-              state, [expanded_import]
+              state, expanded_import
           | None -> state, [statement] )
       | _ -> state, [statement]
   end)
@@ -251,88 +235,39 @@ let get_and_preprocess_source ?dependency ({ module_tracker } as ast_environment
   (* Preprocessing a module depends on the module itself is implicitly assumed in `update`. No need
      to explicitly record the dependency. *)
   Raw.get_source ast_environment qualifier ?dependency:None
-  >>| fun source ->
-  let source = ProjectSpecificPreprocessing.preprocess ~module_exists source in
-  expand_wildcard_imports ?dependency ~ast_environment source |> Preprocessing.preprocess_phase1
+  >>| function
+  | Result.Ok source ->
+      let source = ProjectSpecificPreprocessing.preprocess ~module_exists source in
+      expand_wildcard_imports ?dependency ~ast_environment source |> Preprocessing.preprocess_phase1
+  | Result.Error
+      { ParserError.source_path = { SourcePath.qualifier; relative; _ } as source_path; _ } ->
+      (* Files that have parser errors fall back into getattr-any. *)
+      let fallback_source = ["import typing"; "def __getattr__(name: str) -> typing.Any: ..."] in
+      let metadata = Source.Metadata.parse ~qualifier fallback_source in
+      let statements = Parser.parse ~relative fallback_source in
+      Source.create_from_source_path ~metadata ~source_path statements
+      |> Preprocessing.preprocess_phase1
 
-
-type parse_sources_result = {
-  parsed: Reference.t list;
-  syntax_error: SourcePath.t list;
-  system_error: SourcePath.t list;
-}
 
 let parse_sources ~configuration ~scheduler ~ast_environment source_paths =
-  let { RawParseResult.parsed; syntax_error; system_error } =
-    parse_raw_sources ~configuration ~scheduler ~ast_environment source_paths
-  in
-  { parsed = List.sort parsed ~compare:Reference.compare; syntax_error; system_error }
-
-
-let log_parse_errors ~syntax_error ~system_error =
-  let syntax_errors = List.length syntax_error in
-  let system_errors = List.length system_error in
-  let count = syntax_errors + system_errors in
-  if count > 0 then (
-    let hint =
-      if syntax_errors > 0 && not (Log.is_enabled `Parser) then
-        Format.asprintf
-          " Run `pyre %s` without `--hide-parse-errors` for more details%s."
-          ( try Array.nget Sys.argv 1 with
-          | _ -> "restart" )
-          (if system_errors > 0 then " on the syntax errors" else "")
-      else
-        ""
-    in
-    let details =
-      let to_string count description =
-        Format.sprintf "%d %s%s" count description (if count == 1 then "" else "s")
-      in
-      if syntax_errors > 0 && system_errors > 0 then
-        Format.sprintf
-          ": %s, %s"
-          (to_string syntax_errors "syntax error")
-          (to_string system_errors "system error")
-      else if syntax_errors > 0 then
-        " due to syntax errors"
-      else
-        " due to system errors"
-    in
-    Log.warning "Could not parse %d file%s%s!%s" count (if count > 1 then "s" else "") details hint;
-    let trace list =
-      List.map list ~f:(fun { SourcePath.relative; _ } -> relative) |> String.concat ~sep:";"
-    in
-    Statistics.event
-      ~flush:true
-      ~name:"parse errors"
-      ~integers:["syntax errors", syntax_errors; "system errors", system_errors]
-      ~normals:
-        ["syntax errors trace", trace syntax_error; "system errors trace", trace system_error]
-      () )
+  parse_raw_sources ~configuration ~scheduler ~ast_environment source_paths
+  |> List.sort ~compare:Reference.compare
 
 
 module UpdateResult = struct
   type t = {
     triggered_dependencies: SharedMemoryKeys.DependencyKey.RegisteredSet.t;
     invalidated_modules: Reference.t list;
-    syntax_error: SourcePath.t list;
-    system_error: SourcePath.t list;
   }
 
   let triggered_dependencies { triggered_dependencies; _ } = triggered_dependencies
 
   let invalidated_modules { invalidated_modules; _ } = invalidated_modules
 
-  let syntax_errors { syntax_error; _ } = syntax_error
-
-  let system_errors { system_error; _ } = system_error
-
   let create_for_testing () =
     {
       triggered_dependencies = SharedMemoryKeys.DependencyKey.RegisteredSet.empty;
       invalidated_modules = [];
-      syntax_error = [];
-      system_error = [];
     }
 end
 
@@ -360,14 +295,12 @@ let update
             List.map reparse_source_paths ~f:(fun { SourcePath.qualifier; _ } -> qualifier)
           in
           Raw.remove_sources ast_environment (List.append removed_modules directly_changed_modules);
-          let { parsed; syntax_error; system_error } =
+          let parsed =
             parse_sources ~configuration ~scheduler ~ast_environment reparse_source_paths
           in
           {
             UpdateResult.triggered_dependencies = SharedMemoryKeys.DependencyKey.RegisteredSet.empty;
             invalidated_modules = List.append updated_submodules parsed;
-            syntax_error;
-            system_error;
           }
       | _ ->
           let changed_modules =
@@ -377,13 +310,9 @@ let update
             List.concat [removed_modules; updated_submodules; reparse_modules]
           in
           let update_raw_sources () =
-            let ({ RawParseResult.syntax_error; system_error; _ } as result) =
-              parse_raw_sources ~configuration ~scheduler ~ast_environment reparse_source_paths
-            in
-            log_parse_errors ~syntax_error ~system_error;
-            result
+            parse_raw_sources ~configuration ~scheduler ~ast_environment reparse_source_paths
           in
-          let { RawParseResult.syntax_error; system_error; _ }, triggered_dependencies =
+          let _, triggered_dependencies =
             Profiling.track_duration_and_shared_memory
               "Parse Raw Sources"
               ~tags:["phase_name", "Parsing"]
@@ -407,18 +336,17 @@ let update
               (RawSources.KeySet.of_list changed_modules)
             |> RawSources.KeySet.elements
           in
-          { UpdateResult.triggered_dependencies; invalidated_modules; syntax_error; system_error } )
+          { UpdateResult.triggered_dependencies; invalidated_modules } )
   | ColdStart ->
       let timer = Timer.start () in
       Log.info
         "Parsing %d stubs and sources..."
         (ModuleTracker.explicit_module_count module_tracker);
       let ast_environment = create module_tracker in
-      let { parsed; syntax_error; system_error } =
+      let parsed =
         ModuleTracker.source_paths module_tracker
         |> parse_sources ~configuration ~scheduler ~ast_environment
       in
-      log_parse_errors ~syntax_error ~system_error;
       Statistics.performance
         ~name:"sources parsed"
         ~phase_name:"Parsing and preprocessing"
@@ -427,8 +355,6 @@ let update
       {
         UpdateResult.invalidated_modules = parsed;
         triggered_dependencies = SharedMemoryKeys.DependencyKey.RegisteredSet.empty;
-        syntax_error;
-        system_error;
       }
 
 
@@ -446,21 +372,25 @@ let shared_memory_hash_to_key_map qualifiers = RawSources.compute_hashes_to_keys
 let serialize_decoded decoded =
   match decoded with
   | RawSources.Decoded (key, value) ->
-      Some (RawSourceValue.description, Reference.show key, Option.map value ~f:Source.show)
+      let show_value = function
+        | Result.Ok source -> Source.show source
+        | Result.Error error -> Sexp.to_string (ParserError.sexp_of_t error)
+      in
+      Some (RawSourceValue.description, Reference.show key, Option.map value ~f:show_value)
   | _ -> None
 
 
 let decoded_equal first second =
   match first, second with
   | RawSources.Decoded (_, first), RawSources.Decoded (_, second) ->
-      Some (Option.equal Source.equal first second)
+      Some ([%compare.equal: (Source.t, ParserError.t) Result.t option] first second)
   | _ -> None
 
 
 module ReadOnly = struct
   type t = {
     get_processed_source: track_dependency:bool -> Reference.t -> Source.t option;
-    get_raw_source: Reference.t -> Source.t option;
+    get_raw_source: Reference.t -> (Source.t, ParserError.t) Result.t option;
     get_source_path: Reference.t -> SourcePath.t option;
     is_module: Reference.t -> bool;
     all_explicit_modules: unit -> Reference.t list;
@@ -542,3 +472,6 @@ let read_only ({ module_tracker } as environment) =
     all_explicit_modules = (fun () -> ModuleTracker.tracked_explicit_modules module_tracker);
     is_module_tracked;
   }
+
+
+let module_tracker { module_tracker } = module_tracker

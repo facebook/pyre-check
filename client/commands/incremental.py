@@ -130,8 +130,11 @@ class Incremental(Reporting):
         if self._state() != State.DEAD:
             LOG.info("Waiting for server...")
 
-        request = json_rpc.Request(method="displayTypeErrors", parameters={"files": []})
-        self._send_and_handle_socket_request(request, self._version_hash)
+        with self._analysis_directory.acquire_shared_reader_lock():
+            request = json_rpc.Request(
+                method="displayTypeErrors", parameters={"files": []}
+            )
+            self._send_and_handle_socket_request(request, self._version_hash)
 
     def _socket_result_handler(self, result: Result) -> None:
         errors = self._get_errors(result)
@@ -166,5 +169,5 @@ class Incremental(Reporting):
         if self._no_watchman:
             return
         ProjectFilesMonitor.restart_if_dead(
-            self._configuration, self._current_directory, self._analysis_directory
+            self._configuration, self._project_root, self._analysis_directory
         )

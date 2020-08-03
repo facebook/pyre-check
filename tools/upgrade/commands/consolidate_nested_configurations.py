@@ -4,7 +4,6 @@
 # LICENSE file in the root directory of this source tree.
 
 import argparse
-import json
 import logging
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -15,28 +14,45 @@ from ..configuration import Configuration
 from ..errors import Errors
 from ..filesystem import find_files
 from ..repository import Repository
-from .command import ErrorSuppressingCommand
+from .command import CommandArguments, ErrorSuppressingCommand
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
 
 class ConsolidateNestedConfigurations(ErrorSuppressingCommand):
-    def __init__(self, arguments: argparse.Namespace, repository: Repository) -> None:
-        super().__init__(arguments, repository)
-        self._subdirectory: Final[Optional[str]] = arguments.subdirectory
-        self._lint: bool = arguments.lint
-        self._no_commit: bool = arguments.no_commit
-        self._submit: bool = arguments.submit
+    def __init__(
+        self,
+        command_arguments: CommandArguments,
+        *,
+        repository: Repository,
+        subdirectory: Optional[str],
+        no_commit: bool,
+        submit: bool,
+    ) -> None:
+        super().__init__(command_arguments, repository)
+        self._subdirectory: Final[Optional[str]] = subdirectory
+        self._no_commit: bool = no_commit
+        self._submit: bool = submit
 
     @staticmethod
-    def add_arguments(parser: argparse.ArgumentParser) -> None:
-        super(
-            ConsolidateNestedConfigurations, ConsolidateNestedConfigurations
-        ).add_arguments(parser)
-        parser.set_defaults(command=ConsolidateNestedConfigurations)
+    def from_arguments(
+        arguments: argparse.Namespace, repository: Repository
+    ) -> "ConsolidateNestedConfigurations":
+        command_arguments = CommandArguments.from_arguments(arguments)
+        return ConsolidateNestedConfigurations(
+            command_arguments,
+            repository=repository,
+            subdirectory=arguments.subdirectory,
+            no_commit=arguments.no_commit,
+            submit=arguments.submit,
+        )
+
+    @classmethod
+    def add_arguments(cls, parser: argparse.ArgumentParser) -> None:
+        super(ConsolidateNestedConfigurations, cls).add_arguments(parser)
+        parser.set_defaults(command=cls.from_arguments)
         parser.add_argument("--subdirectory")
-        parser.add_argument("--lint", action="store_true", help=argparse.SUPPRESS)
         parser.add_argument(
             "--no-commit", action="store_true", help="Keep changes in working state."
         )
@@ -74,18 +90,14 @@ class ConsolidateNestedConfigurations(ErrorSuppressingCommand):
     def consolidate(self, topmost: Path, nested: List[Path]) -> None:
         total_targets = []
         for nested_configuration in nested:
-            with open(nested_configuration) as configuration_file:
-                configuration = Configuration(
-                    nested_configuration, json.load(configuration_file)
-                )
-                targets = configuration.targets
-                if targets:
-                    total_targets.extend(targets)
-        with open(topmost) as configuration_file:
-            configuration = Configuration(topmost, json.load(configuration_file))
-            configuration.add_targets(total_targets)
-            configuration.deduplicate_targets()
-            configuration.write()
+            configuration = Configuration(nested_configuration)
+            targets = configuration.targets
+            if targets:
+                total_targets.extend(targets)
+        configuration = Configuration(topmost)
+        configuration.add_targets(total_targets)
+        configuration.deduplicate_targets()
+        configuration.write()
         self._repository.remove_paths(nested)
 
         # Suppress errors
@@ -98,6 +110,8 @@ class ConsolidateNestedConfigurations(ErrorSuppressingCommand):
         subdirectory = Path(subdirectory) if subdirectory else Path.cwd()
 
         # Find configurations
+        # pyre-fixme[6]: Expected `Iterable[Variable[_LT (bound to
+        #  _SupportsLessThan)]]` for 1st param but got `List[str]`.
         configurations = sorted(find_files(subdirectory, ".pyre_configuration.local"))
         if not configurations:
             LOG.warning(

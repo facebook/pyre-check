@@ -316,7 +316,7 @@ let fallback_attribute ~resolution ~name class_name =
                  ~original_annotation:return_annotation
                  ~uninstantiated_annotation:(Some return_annotation)
                  ~abstract:false
-                 ~async:false
+                 ~async_property:false
                  ~class_variable:false
                  ~defined:true
                  ~initialized:NotInitialized

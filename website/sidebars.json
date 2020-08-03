@@ -1,6 +1,6 @@
 {
   "overview": {
-    "Contents": [
+    "Pyre": [
       "overview",
       "installation",
       "guided-tour",
@@ -26,6 +26,6 @@
           "pysa-additional-resources"
         ]
       }
-    ]
+   ]
   }
 }

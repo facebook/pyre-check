@@ -25,7 +25,7 @@ let test_persistent_client_connect context =
   let client_socket = bracket set_up tear_down context in
   Socket.write client_socket (Protocol.Request.ClientConnectionRequest Protocol.Persistent);
   assert_equal
-    ~cmp:( = )
+    ~cmp:Protocol.equal_response
     (Socket.read client_socket)
     (Protocol.ClientConnectionResponse Protocol.Persistent)
 

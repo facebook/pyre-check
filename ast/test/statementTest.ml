@@ -854,16 +854,16 @@ let test_assume _ =
 let test_pp _ =
   let assert_pretty_print ~expected source =
     let pretty_print_expected =
-      expected |> String.lstrip ~drop:(( = ) '\n') |> Test.trim_extra_indentation
+      expected |> String.lstrip ~drop:(Char.equal '\n') |> Test.trim_extra_indentation
     in
-    let source = Test.trim_extra_indentation source |> String.rstrip ~drop:(( = ) '\n') in
+    let source = Test.trim_extra_indentation source |> String.rstrip ~drop:(Char.equal '\n') in
     let pretty_print_of_source =
       source
       |> String.split_on_chars ~on:['\n']
       |> Parser.parse
       |> List.map ~f:show
       |> String.concat ~sep:"\n"
-      |> String.rstrip ~drop:(( = ) '\n')
+      |> String.rstrip ~drop:(Char.equal '\n')
     in
     assert_equal ~printer:Fn.id pretty_print_expected pretty_print_of_source
   in

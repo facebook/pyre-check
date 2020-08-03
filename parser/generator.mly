@@ -417,7 +417,7 @@ simple_statement:
   ;
 
 small_statement:
-  | subscript = subscript; compound = compound_operator; value = test {
+  | subscript = subscript; compound = compound_operator; value = value {
       let value =
         binary_operator
           ~compound:true
@@ -1679,7 +1679,7 @@ yield:
          test
         |> Option.value ~default:(Location.create ~start ~stop)
       in
-      has_from <> None,
+      Option.is_some has_from,
       {
         Node.location;
         value = Expression.Yield test;

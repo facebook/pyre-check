@@ -22,7 +22,6 @@ let base_command_line_arguments =
     +> flag "-debug" no_arg ~doc:"Turn on debug mode"
     +> flag "-strict" no_arg ~doc:"Turn on strict mode"
     +> flag "-show-error-traces" no_arg ~doc:"Outputs additional error information"
-    +> flag "-infer" no_arg ~doc:"Outputs extra information and errors for inference purposes"
     +> flag "-sequential" no_arg ~doc:"Turn off parallel processing (parallel on by default)."
     +> flag
          "-filter-directories"
@@ -56,7 +55,11 @@ let base_command_line_arguments =
     +> flag
          "-project-root"
          (optional_with_default "/" string)
-         ~doc:"ROOT Only check sources under this root directory."
+         ~doc:"ROOT Where `.pyre_configuration` lives."
+    +> flag
+         "-source-path"
+         (optional (Arg_type.comma_separated string))
+         ~doc:"DIRECTORY1,... Only check sources under these directories."
     +> flag
          "-search-path"
          (optional_with_default [] (Arg_type.comma_separated string))
@@ -74,4 +77,4 @@ let base_command_line_arguments =
          (listed string)
          ~doc:".EXT Consider the given extension as equivalent to `.py` for type checking."
     +> flag "-log-directory" (optional string) ~doc:"Location to write logs and other data"
-    +> anon (maybe_with_default "." ("source-root" %: string)))
+    +> anon (maybe_with_default "." ("local-root" %: string)))

@@ -17,7 +17,7 @@ from typing import Optional
 import psutil
 
 from .. import configuration_monitor, recently_used_configurations, watchman
-from ..analysis_directory import AnalysisDirectory
+from ..analysis_directory import BUCK_BUILDER_CACHE_PREFIX, AnalysisDirectory
 from ..configuration import Configuration
 from ..find_directories import BINARY_NAME, CLIENT_NAME
 from ..project_files_monitor import ProjectFilesMonitor
@@ -136,7 +136,7 @@ class Kill(Command):
         try:
             scratch_path = (
                 subprocess.check_output(
-                    f"mkscratch path --subdir pyre {self._current_directory}".split()
+                    f"mkscratch path --subdir pyre {self._project_root}".split()
                 )
                 .decode()
                 .strip()
@@ -145,7 +145,7 @@ class Kill(Command):
             LOG.debug("Could not find scratch path because of exception: %s", exception)
         if scratch_path is not None:
             for buck_builder_cache_directory in Path(scratch_path).glob(
-                ".buck_builder_cache*"
+                f"{BUCK_BUILDER_CACHE_PREFIX}*"
             ):
                 try:
                     LOG.debug(
@@ -158,7 +158,7 @@ class Kill(Command):
                         "Failed to delete buck builder cache due to exception: %s.",
                         exception,
                     )
-        recently_used_configurations.delete_cache(self._dot_pyre_directory)
+        recently_used_configurations.Cache(self._dot_pyre_directory).delete()
 
     def _kill_processes_by_name(self, name: str) -> None:
         for process in psutil.process_iter(attrs=["name"]):
@@ -225,7 +225,7 @@ class Kill(Command):
             ).run()
 
     def _run(self) -> None:
-        explicit_local = self.local_configuration
+        explicit_local = self.local_root
         if explicit_local:
             LOG.warning(
                 "Pyre kill will terminate all running servers. "

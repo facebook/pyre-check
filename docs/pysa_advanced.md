@@ -82,3 +82,10 @@ instead force it to use only the user defined models for determining taint flow:
 ```python
 def qualifier.dont_generate_models(argument) -> SkipAnalysis: ...
 ```
+
+`SkipAnalysis` can be applied at the class level as a shorthand to prevent pysa
+from infering models for all functions in a class:
+
+```python
+class skip_analysis.SkipMe(SkipAnalysis): ...
+```

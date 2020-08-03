@@ -16,7 +16,7 @@ let connections persistent_clients =
     |> Network.Socket.Map.of_alist_exn
   in
   {
-    Server.State.lock = Mutex.create ();
+    Server.State.lock = Error_checking_mutex.create ();
     connections =
       ref
         {
@@ -32,7 +32,7 @@ let connections persistent_clients =
 
 
 let initialize_server ?incremental_style ~context ~initial_sources =
-  let ({ ScratchProject.module_tracker; _ } as project) =
+  let project =
     let internal_sources, external_sources =
       let fold_source (internal_sources, external_sources) (is_external, source) =
         if is_external then
@@ -44,9 +44,7 @@ let initialize_server ?incremental_style ~context ~initial_sources =
     in
     ScratchProject.setup ?incremental_style ~context ~external_sources internal_sources
   in
-  let ( { ScratchProject.BuiltTypeEnvironment.ast_environment; type_environment = environment; _ },
-        type_errors )
-    =
+  let { ScratchProject.BuiltTypeEnvironment.type_environment = environment; _ }, type_errors =
     ScratchProject.build_type_environment_and_postprocess project
   in
   let errors = Reference.Table.create () in
@@ -55,9 +53,7 @@ let initialize_server ?incremental_style ~context ~initial_sources =
       Hashtbl.add_multi errors ~key ~data:error);
   let state =
     {
-      Server.State.module_tracker;
-      connections = connections [];
-      ast_environment;
+      Server.State.connections = connections [];
       environment;
       lookups = String.Table.create ();
       symlink_targets_to_sources = String.Table.create ();
@@ -66,6 +62,7 @@ let initialize_server ?incremental_style ~context ~initial_sources =
       open_documents = Reference.Table.create ();
       errors;
       scheduler = Test.mock_scheduler ();
+      server_uuid = None;
     }
   in
   project, state

@@ -10,10 +10,10 @@ import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, call, mock_open, patch
 
-from ... import errors, filesystem, upgrade
+from ... import errors, filesystem
 from ...repository import Repository
 from .. import expand_target_coverage
-from ..expand_target_coverage import ExpandTargetCoverage
+from ..expand_target_coverage import ErrorSuppressingCommand, ExpandTargetCoverage
 
 
 repository = Repository()
@@ -26,7 +26,7 @@ class ExpandTargetCoverageTest(unittest.TestCase):
     @patch(f"{expand_target_coverage.__name__}.Configuration.get_errors")
     @patch(f"{expand_target_coverage.__name__}.Configuration.deduplicate_targets")
     @patch(f"{expand_target_coverage.__name__}.add_local_mode")
-    @patch.object(upgrade.ErrorSuppressingCommand, "_suppress_errors")
+    @patch.object(ErrorSuppressingCommand, "_suppress_errors")
     @patch(f"{expand_target_coverage.__name__}.Repository.format")
     @patch(f"{expand_target_coverage.__name__}.find_files")
     def test_run_expand_target_coverage(
@@ -76,7 +76,7 @@ class ExpandTargetCoverageTest(unittest.TestCase):
 
         # Skip if nested configurations found
         find_files.return_value = ["nested/.pyre_configuration.local"]
-        ExpandTargetCoverage(arguments, repository).run()
+        ExpandTargetCoverage.from_arguments(arguments, repository).run()
         open_mock.assert_not_called()
         suppress_errors.assert_not_called()
 
@@ -92,13 +92,13 @@ class ExpandTargetCoverageTest(unittest.TestCase):
                 mock_open(read_data="{}").return_value,
             ]
             open_mock.side_effect = mocks
-            ExpandTargetCoverage(arguments, repository).run()
+            ExpandTargetCoverage.from_arguments(arguments, repository).run()
             expected_configuration_contents = {
                 "targets": ["//existing:target", "//subdirectory/..."]
             }
             open_mock.assert_has_calls(
                 [
-                    call(Path("subdirectory/.pyre_configuration.local")),
+                    call(Path("subdirectory/.pyre_configuration.local"), "r"),
                     call(Path("subdirectory/.pyre_configuration.local"), "w"),
                 ]
             )
@@ -120,13 +120,13 @@ class ExpandTargetCoverageTest(unittest.TestCase):
                 mock_open(read_data="{}").return_value,
             ]
             open_mock.side_effect = mocks
-            ExpandTargetCoverage(arguments, repository).run()
+            ExpandTargetCoverage.from_arguments(arguments, repository).run()
             expected_configuration_contents = {
                 "targets": ["//existing:target", "//subdirectory/..."]
             }
             open_mock.assert_has_calls(
                 [
-                    call(Path("subdirectory/.pyre_configuration.local")),
+                    call(Path("subdirectory/.pyre_configuration.local"), "r"),
                     call(Path("subdirectory/.pyre_configuration.local"), "w"),
                 ]
             )
@@ -149,13 +149,13 @@ class ExpandTargetCoverageTest(unittest.TestCase):
                 mock_open(read_data="{}").return_value,
             ]
             open_mock.side_effect = mocks
-            ExpandTargetCoverage(arguments, repository).run()
+            ExpandTargetCoverage.from_arguments(arguments, repository).run()
             expected_configuration_contents = {
                 "targets": ["//existing:target", "//subdirectory/..."]
             }
             open_mock.assert_has_calls(
                 [
-                    call(Path("subdirectory/.pyre_configuration.local")),
+                    call(Path("subdirectory/.pyre_configuration.local"), "r"),
                     call(Path("subdirectory/.pyre_configuration.local"), "w"),
                 ]
             )

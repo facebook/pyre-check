@@ -257,71 +257,6 @@
     "callable": "dictionary.lists_of_dictionary_iteration_is_precise",
     "callable_line": 108,
     "code": 5002,
-    "line": 114,
-    "start": 20,
-    "end": 43,
-    "filename": "dictionary.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "root": {
-              "filename": "dictionary.py",
-              "line": 110,
-              "start": 25,
-              "end": 40
-            },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "__test_source",
-                "on_all_flows": true
-              }
-            ],
-            "features": [
-              { "always-via": "special_source" },
-              { "always-via": "obscure" },
-              { "always-has": "first-index" },
-              { "always-first-index": "without_feature" }
-            ]
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "root": {
-              "filename": "dictionary.py",
-              "line": 114,
-              "start": 20,
-              "end": 43
-            },
-            "leaves": [
-              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
-            ],
-            "features": [ { "always-via": "special_sink" } ]
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "always-via": "obscure" },
-      { "always-has": "first-index" },
-      { "always-first-index": "without_feature" }
-    ]
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "dictionary.lists_of_dictionary_iteration_is_precise",
-    "callable_line": 108,
-    "code": 5002,
     "line": 113,
     "start": 20,
     "end": 40,
@@ -384,12 +319,12 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "dictionary.test_keys_and_values",
-    "callable_line": 158,
+    "callable": "dictionary.lists_of_dictionary_iteration_is_precise",
+    "callable_line": 108,
     "code": 5002,
-    "line": 161,
-    "start": 16,
-    "end": 39,
+    "line": 114,
+    "start": 20,
+    "end": 43,
     "filename": "dictionary.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -399,9 +334,9 @@
           {
             "root": {
               "filename": "dictionary.py",
-              "line": 159,
-              "start": 43,
-              "end": 58
+              "line": 110,
+              "start": 25,
+              "end": 40
             },
             "leaves": [
               {
@@ -410,7 +345,12 @@
                 "on_all_flows": true
               }
             ],
-            "features": [ { "always-via": "special_source" } ]
+            "features": [
+              { "always-via": "special_source" },
+              { "always-via": "obscure" },
+              { "always-has": "first-index" },
+              { "always-first-index": "without_feature" }
+            ]
           }
         ]
       },
@@ -420,9 +360,9 @@
           {
             "root": {
               "filename": "dictionary.py",
-              "line": 161,
-              "start": 16,
-              "end": 39
+              "line": 114,
+              "start": 20,
+              "end": 43
             },
             "leaves": [
               { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
@@ -434,7 +374,10 @@
     ],
     "features": [
       { "always-via": "special_source" },
-      { "always-via": "special_sink" }
+      { "always-via": "special_sink" },
+      { "always-via": "obscure" },
+      { "always-has": "first-index" },
+      { "always-first-index": "without_feature" }
     ]
   }
 }
@@ -545,6 +488,63 @@
               "line": 170,
               "start": 16,
               "end": 35
+            },
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "dictionary.test_keys_and_values",
+    "callable_line": 158,
+    "code": 5002,
+    "line": 161,
+    "start": 16,
+    "end": 39,
+    "filename": "dictionary.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "dictionary.py",
+              "line": 159,
+              "start": 43,
+              "end": 58
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-via": "special_source" } ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "dictionary.py",
+              "line": 161,
+              "start": 16,
+              "end": 39
             },
             "leaves": [
               { "kind": "Test", "name": "__test_sink", "on_all_flows": true }

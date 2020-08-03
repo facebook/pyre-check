@@ -5,20 +5,23 @@
 
 # pyre-unsafe
 
-import io
+import argparse
 import unittest
-from pathlib import Path
-from typing import List, Optional
-from unittest.mock import MagicMock, Mock, mock_open, patch
+from typing import List
+from unittest.mock import MagicMock, Mock, patch
 
 from ... import commands
 from ...analysis_directory import AnalysisDirectory
+from ...process import Process
 from ...tests.mocks import mock_arguments, mock_configuration
 from ..command import __name__ as client_name
 
 
 class CommandTest(unittest.TestCase):
     @patch("{}.find_project_root".format(client_name), return_value=".")
+    # pyre-fixme[56]: Argument
+    #  `"{}.find_local_root".format(tools.pyre.client.commands.command.__name__)` to
+    #  decorator factory `unittest.mock.patch` could not be resolved in a global scope.
     @patch("{}.find_local_root".format(client_name), return_value=None)
     def test_relative_path(self, find_local_root, find_project_root) -> None:
         arguments = mock_arguments()
@@ -38,31 +41,36 @@ class CommandTest(unittest.TestCase):
             ".",
         )
 
-    @patch("os.kill")
-    def test_state(self, os_kill) -> None:
+    @patch.object(Process, "is_alive", return_value=True)
+    def test_state__alive(self, is_alive: MagicMock) -> None:
         arguments = mock_arguments()
         configuration = mock_configuration()
+        analysis_directory = AnalysisDirectory(".")
         original_directory = "/original/directory"
+        self.assertEqual(
+            commands.Command(
+                arguments, original_directory, configuration, analysis_directory
+            )._state(),
+            commands.command.State.RUNNING,
+        )
 
-        with patch("builtins.open", mock_open()) as open:
-            open.side_effect = [io.StringIO("1")]
-            self.assertEqual(
-                commands.Command(
-                    arguments, original_directory, configuration, AnalysisDirectory(".")
-                )._state(),
-                commands.command.State.RUNNING,
-            )
-
-        with patch("builtins.open", mock_open()) as open:
-            open.side_effect = [io.StringIO("derp")]
-            self.assertEqual(
-                commands.Command(
-                    arguments, original_directory, configuration, AnalysisDirectory(".")
-                )._state(),
-                commands.command.State.DEAD,
-            )
+    @patch.object(Process, "is_alive", return_value=False)
+    def test_state__dead(self, is_alive: MagicMock) -> None:
+        arguments = mock_arguments()
+        configuration = mock_configuration()
+        analysis_directory = AnalysisDirectory(".")
+        original_directory = "/original/directory"
+        self.assertEqual(
+            commands.Command(
+                arguments, original_directory, configuration, analysis_directory
+            )._state(),
+            commands.command.State.DEAD,
+        )
 
     @patch("{}.find_project_root".format(client_name), return_value=".")
+    # pyre-fixme[56]: Argument
+    #  `"{}.find_local_root".format(tools.pyre.client.commands.command.__name__)` to
+    #  decorator factory `unittest.mock.patch` could not be resolved in a global scope.
     @patch("{}.find_local_root".format(client_name), return_value=None)
     def test_logger(self, find_local_root, find_project_root) -> None:
         arguments = mock_arguments()
@@ -102,6 +110,28 @@ class CommandTest(unittest.TestCase):
                 ".pyre",
             ],
         )
+        with patch.object(
+            commands.Command, "generate_configuration", return_value=configuration
+        ):
+            test_command = commands.Command(
+                arguments,
+                original_directory=original_directory,
+                configuration=None,
+                analysis_directory=analysis_directory,
+            )
+            self.assertEqual(
+                test_command._flags(),
+                [
+                    "-logging-sections",
+                    "parser,-progress",
+                    "-project-root",
+                    ".",
+                    "-logger",
+                    "/foo/bar",
+                    "-log-directory",
+                    ".pyre",
+                ],
+            )
 
     @patch("os.path.isdir", Mock(return_value=True))
     @patch("os.listdir")
@@ -129,3 +159,14 @@ class CommandTest(unittest.TestCase):
                 "root/third_party/2and3",
             ],
         )
+
+    def test_argument_parsing(self) -> None:
+        parser = argparse.ArgumentParser()
+        commands.Command.add_arguments(parser)
+        self.assertEqual(
+            parser.parse_args(["--use-buck-builder"]).use_buck_builder, True
+        )
+        self.assertEqual(
+            parser.parse_args(["--use-legacy-buck-builder"]).use_buck_builder, False
+        )
+        self.assertEqual(parser.parse_args([]).use_buck_builder, None)

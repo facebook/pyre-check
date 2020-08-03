@@ -214,10 +214,20 @@ let widen_if_necessary step callable ~old_model ~new_model result =
     Fixpoint.{ is_partial = true; model; result }
 
 
-let initialize kinds ~configuration ~environment ~functions =
-  let initialize_each models (Result.Analysis { kind; analysis }) =
+type initialize_result = {
+  initial_models: InterproceduralResult.model_t Callable.Map.t;
+  skip_overrides: Ast.Reference.Set.t;
+}
+
+let initialize kinds ~configuration ~environment ~functions ~stubs =
+  let initialize_each
+      { initial_models = models; skip_overrides }
+      (Result.Analysis { kind; analysis })
+    =
     let module Analysis = (val analysis) in
-    let new_models = Analysis.init ~configuration ~environment ~functions in
+    let { Result.initial_models = new_models; skip_overrides = new_skip_overrides } =
+      Analysis.init ~configuration ~environment ~functions ~stubs
+    in
     let add_analysis_model existing model =
       let open Result in
       let package = Pkg { kind = ModelPart kind; value = model } in
@@ -228,10 +238,16 @@ let initialize kinds ~configuration ~environment ~functions =
       | `Left existing -> Some existing
       | `Right new_model -> Some (add_analysis_model Result.empty_model new_model)
     in
-    Callable.Map.merge models new_models ~f:merge
+    {
+      initial_models = Callable.Map.merge models new_models ~f:merge;
+      skip_overrides = Reference.Set.union skip_overrides new_skip_overrides;
+    }
   in
   let accumulate model kind = initialize_each model (Result.get_abstract_analysis kind) in
-  List.fold kinds ~init:Callable.Map.empty ~f:accumulate
+  List.fold
+    kinds
+    ~init:{ initial_models = Callable.Map.empty; skip_overrides = Reference.Set.empty }
+    ~f:accumulate
 
 
 let analyze_define
@@ -321,14 +337,15 @@ let analyze_overrides ({ Fixpoint.iteration; _ } as step) callable =
     let get_override_model override =
       match Fixpoint.get_model override with
       | None ->
-          (* inidicates this is the leaf and not explicitly represented *)
+          (* indicates this is the leaf and not explicitly represented *)
           Fixpoint.get_model (Callable.get_corresponding_method override)
       | model -> model
     in
     let lookup_and_join ({ Result.is_obscure; models } as result) override =
       match get_override_model override with
       | None ->
-          Log.dump
+          Log.log
+            ~section:`Interprocedural
             "During override analysis, can't find model for %a"
             Callable.pretty_print
             override;
@@ -427,7 +444,7 @@ let get_errors results =
 let externalize_analysis ~filename_lookup kind callable models results =
   let open Result in
   let merge kind_candidate model_opt result_opt =
-    if kind_candidate = kind then
+    if Poly.equal kind_candidate kind then
       match model_opt, result_opt with
       | Some model, _ -> Some (model, result_opt)
       | None, Some (Pkg { kind = ResultPart kind; _ }) ->
@@ -570,7 +587,6 @@ let compute_callables_to_reanalyze
 
 
 let compute_fixpoint
-    ~configuration
     ~scheduler
     ~environment
     ~analyses
@@ -638,7 +654,6 @@ let compute_fixpoint
           Scheduler.map_reduce
             scheduler
             ~policy:(Scheduler.Policy.legacy_fixed_chunk_size 1000)
-            ~configuration
             ~map:(fun _ callables -> one_analysis_pass ~analyses ~step ~environment ~callables)
             ~initial:{ callables_processed = 0; callables_to_dump = Callable.Set.empty }
             ~reduce
@@ -705,7 +720,7 @@ let compute_fixpoint
       raise exn
 
 
-let extract_errors scheduler ~configuration all_callables =
+let extract_errors scheduler all_callables =
   let extract_errors callables =
     List.fold
       ~f:(fun errors callable -> (Fixpoint.get_result callable |> get_errors) :: errors)
@@ -716,7 +731,6 @@ let extract_errors scheduler ~configuration all_callables =
   Scheduler.map_reduce
     scheduler
     ~policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
-    ~configuration
     ~initial:[]
     ~map:(fun _ callables -> extract_errors callables)
     ~reduce:List.cons

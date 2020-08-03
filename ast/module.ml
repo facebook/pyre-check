@@ -30,7 +30,19 @@ module ExportMap = struct
 
   let empty = Identifier.Map.Tree.empty
 
-  let lookup = Identifier.Map.Tree.find
+  let lookup map name =
+    match Identifier.Map.Tree.find map name with
+    | Some _ as export -> export
+    | None -> (
+        match name with
+        | "__doc__"
+        | "__file__"
+        | "__name__"
+        | "__package__"
+        | "__dict__" ->
+            Some (Export.Name Export.Name.GlobalVariable)
+        | _ -> None )
+
 
   let to_alist = Identifier.Map.Tree.to_alist
 
@@ -155,9 +167,19 @@ let create
       | TupleAssign _ ->
           Identifier.Map.set sofar ~key:name ~data:Export.(Name GlobalVariable)
     in
-    Collector.from_source source
-    |> List.fold ~init:Identifier.Map.empty ~f:collect_export
-    |> Map.to_tree
+    let collected =
+      Collector.from_source source |> List.fold ~init:Identifier.Map.empty ~f:collect_export
+    in
+    let collected =
+      if Reference.is_empty qualifier then
+        (* We need to pretend None is in the builtins.pyi stub, even though it's missing *)
+        match Identifier.Map.add collected ~key:"None" ~data:Export.(Name GlobalVariable) with
+        | `Duplicate -> collected
+        | `Ok ok -> ok
+      else
+        collected
+    in
+    Map.to_tree collected
   in
   let legacy_aliased_exports =
     let aliased_exports aliases { Node.value; _ } =
@@ -211,9 +233,12 @@ let create
 let create_implicit ?(empty_stub = false) () = Implicit { empty_stub }
 
 let get_export considered_module name =
-  match considered_module with
-  | Explicit { exports; _ } -> ExportMap.lookup exports name
-  | Implicit _ -> None
+  let exports =
+    match considered_module with
+    | Explicit { exports; _ } -> exports
+    | Implicit _ -> ExportMap.empty
+  in
+  ExportMap.lookup exports name
 
 
 let get_all_exports considered_module =

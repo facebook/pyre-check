@@ -17,6 +17,7 @@ from . import UserError, ast
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
+MAX_LINES_PER_FIXME: int = 4
 
 
 class PartialErrorSuppression(Exception):
@@ -36,26 +37,35 @@ class Errors:
 
     @staticmethod
     def from_json(
-        json_string: str, only_fix_error_code: Optional[int] = None
+        json_string: str,
+        only_fix_error_code: Optional[int] = None,
+        from_stdin: bool = False,
     ) -> "Errors":
         try:
             errors = json.loads(json_string)
             return Errors(_filter_errors(errors, only_fix_error_code))
         except json.decoder.JSONDecodeError:
-            raise UserError(
-                "Received invalid JSON as input. "
-                "If piping from `pyre check` be sure to use `--output=json`."
-            )
+            if from_stdin:
+                raise UserError(
+                    "Received invalid JSON as input. "
+                    "If piping from `pyre check` be sure to use `--output=json`."
+                )
+            else:
+                raise UserError(
+                    f"Encountered invalid output when checking for pyre errors: `{json_string}`."
+                )
 
     @staticmethod
     def from_stdin(only_fix_error_code: Optional[int] = None) -> "Errors":
         input = sys.stdin.read()
-        return Errors.from_json(input)
+        return Errors.from_json(input, only_fix_error_code, from_stdin=True)
 
     def __init__(self, errors: List[Dict[str, Any]]) -> None:
         self.errors: List[Dict[str, Any]] = errors
         self.error_iterator: Iterator[
             Tuple[str, Iterator[Dict[str, Any]]]
+            # pyre-fixme[6]: Expected `(_T) -> _SupportsLessThan` for 2nd param but got
+            #  `(error: Dict[str, typing.Any]) -> str`.
         ] = itertools.groupby(sorted(errors, key=error_path), error_path)
         self.length: int = len(errors)
 
@@ -73,8 +83,8 @@ class Errors:
 
     def suppress(
         self,
-        comment: str = "",
-        max_line_length: int = 0,
+        comment: Optional[str] = None,
+        max_line_length: Optional[int] = None,
         truncate: bool = False,
         unsafe: bool = False,
     ) -> None:
@@ -89,7 +99,9 @@ class Errors:
                     input,
                     _build_error_map(errors),
                     comment,
-                    max_line_length if max_line_length > 0 else None,
+                    max_line_length
+                    if max_line_length and max_line_length > 0
+                    else None,
                     truncate,
                     unsafe,
                 )
@@ -264,18 +276,21 @@ def _suppress_errors(
         if number not in errors:
             new_lines.append(line)
             continue
-        if errors[number][0]["code"] == "0":
+
+        if any(error["code"] == "0" for error in errors[number]):
             # Handle unused ignores.
             replacement = re.sub(r"# pyre-(ignore|fixme).*$", "", line).rstrip()
             if replacement == "":
                 removing_pyre_comments = True
                 _remove_comment_preamble(new_lines)
+                continue
             else:
-                new_lines.append(replacement)
-            continue
+                line = replacement
 
         comments = []
         for error in errors[number]:
+            if error["code"] == "0":
+                continue
             indent = len(line) - len(line.lstrip(" "))
             description = custom_comment if custom_comment else error["description"]
             comment = "{}# pyre-fixme[{}]: {}".format(
@@ -285,12 +300,14 @@ def _suppress_errors(
             if not max_line_length or len(comment) <= max_line_length:
                 comments.append(comment)
             else:
-                if truncate:
-                    comments.append(comment[: (max_line_length - 3)] + "...")
+                truncated_comment = comment[: (max_line_length - 3)] + "..."
+                split_comment_lines = _split_across_lines(
+                    comment, indent, max_line_length
+                )
+                if truncate or len(split_comment_lines) > MAX_LINES_PER_FIXME:
+                    comments.append(truncated_comment)
                 else:
-                    comments.extend(
-                        _split_across_lines(comment, indent, max_line_length)
-                    )
+                    comments.extend(split_comment_lines)
 
         LOG.info(
             "Adding comment%s on line %d: %s",

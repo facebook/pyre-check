@@ -14,7 +14,7 @@ let test_simple_registration context =
   let assert_registers source name ?original expected =
     let project = ScratchProject.setup ["test.py", source] ~context in
     let ast_environment = ScratchProject.build_ast_environment project in
-    let update_result =
+    let _, update_result =
       update_environments
         ~ast_environment
         ~configuration:(ScratchProject.configuration_of project)
@@ -88,7 +88,7 @@ let test_updates context =
         ~context
     in
     let ast_environment = ScratchProject.build_ast_environment project in
-    let update_result =
+    let _, update_result =
       update_environments
         ~ast_environment
         ~configuration:(ScratchProject.configuration_of project)
@@ -137,7 +137,7 @@ let test_updates context =
     let { ScratchProject.module_tracker; _ } = project in
     let { Configuration.Analysis.local_root; _ } = configuration in
     let path = Path.create_relative ~root:local_root ~relative:"test.py" in
-    let update_result =
+    let _, update_result =
       ModuleTracker.update ~configuration ~paths:[path] module_tracker
       |> (fun updates -> AstEnvironment.Update updates)
       |> update_environments

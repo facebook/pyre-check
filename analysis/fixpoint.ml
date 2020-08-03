@@ -43,7 +43,7 @@ module Make (State : State) = struct
 
   type t = State.t Int.Table.t
 
-  let equal ~f left right = Int.Table.equal left right f
+  let equal ~f left right = Core.Hashtbl.equal f left right
 
   let pp format fixpoint =
     let print_state ~key ~data = Format.fprintf format "%d -> %a\n" key State.pp data in

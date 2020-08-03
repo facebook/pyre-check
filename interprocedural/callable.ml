@@ -232,6 +232,13 @@ let get_corresponding_override = function
   | `Method method_name -> `OverrideTarget method_name
 
 
+let get_real_target = function
+  | `Function name -> Some (`Function name)
+  | `Method method_name -> Some (`Method method_name)
+  | `OverrideTarget method_name -> Some (`Method method_name)
+  | `Object _ -> None
+
+
 let show = function
   | `Function target -> Format.sprintf "%s (fun)" target
   | `Method { class_name; method_name } -> Format.sprintf "%s::%s (method)" class_name method_name

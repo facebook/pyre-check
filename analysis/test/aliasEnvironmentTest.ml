@@ -14,9 +14,10 @@ let test_simple_registration context =
   let assert_registers source name expected =
     let project = ScratchProject.setup ["test.py", source] ~include_typeshed_stubs:false ~context in
     let ast_environment = ScratchProject.build_ast_environment project in
+    let alias_environment = AliasEnvironment.create ast_environment in
     let update_result =
       AliasEnvironment.update_this_and_all_preceding_environments
-        ast_environment
+        alias_environment
         ~scheduler:(mock_scheduler ())
         ~configuration:(ScratchProject.configuration_of project)
         ColdStart
@@ -62,9 +63,10 @@ let test_harder_registrations context =
   let assert_registers source name ~parser expected =
     let project = ScratchProject.setup ["test.py", source] ~context in
     let ast_environment = ScratchProject.build_ast_environment project in
+    let alias_environment = AliasEnvironment.create ast_environment in
     let update_result =
       AliasEnvironment.update_this_and_all_preceding_environments
-        ast_environment
+        alias_environment
         ~scheduler:(mock_scheduler ())
         ~configuration:(ScratchProject.configuration_of project)
         ColdStart
@@ -138,10 +140,11 @@ let test_updates context =
     in
     let configuration = ScratchProject.configuration_of project in
     let ast_environment = ScratchProject.build_ast_environment project in
+    let alias_environment = AliasEnvironment.create ast_environment in
     let update trigger =
       let scheduler = Test.mock_scheduler () in
       AliasEnvironment.update_this_and_all_preceding_environments
-        ast_environment
+        alias_environment
         ~scheduler
         ~configuration
         trigger

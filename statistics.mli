@@ -3,6 +3,16 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree. *)
 
+module GlobalState : sig
+  type t
+
+  val initialize : ?logger:string -> ?log_identifier:string -> ?project_name:string -> unit -> unit
+
+  val get : unit -> t
+
+  val restore : t -> unit
+end
+
 val disable : unit -> unit
 
 val sample

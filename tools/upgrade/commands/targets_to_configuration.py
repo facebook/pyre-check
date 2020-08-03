@@ -4,7 +4,6 @@
 # LICENSE file in the root directory of this source tree.
 
 import argparse
-import json
 import logging
 import subprocess
 from pathlib import Path
@@ -25,7 +24,7 @@ from ..filesystem import (
     remove_non_pyre_ignores,
 )
 from ..repository import Repository
-from .command import ErrorSuppressingCommand
+from .command import CommandArguments, ErrorSuppressingCommand
 from .strict_default import StrictDefault
 
 
@@ -59,21 +58,49 @@ class TargetPyreRemover(libcst.CSTTransformer):
 
 
 class TargetsToConfiguration(ErrorSuppressingCommand):
-    def __init__(self, arguments: argparse.Namespace, repository: Repository) -> None:
-        super().__init__(arguments, repository)
-        self._subdirectory: Final[Optional[str]] = arguments.subdirectory
-        self._glob: int = arguments.glob
-        self._lint: bool = arguments.lint
-        self._fixme_threshold: int = arguments.fixme_threshold
-        self._no_commit: bool = arguments.no_commit
-        self._submit: bool = arguments.submit
-        self._pyre_only: bool = arguments.pyre_only
-        self._strict: bool = arguments.strict
+    def __init__(
+        self,
+        command_arguments: CommandArguments,
+        *,
+        repository: Repository,
+        subdirectory: Optional[str],
+        glob: int,
+        fixme_threshold: int,
+        no_commit: bool,
+        submit: bool,
+        pyre_only: bool,
+        strict: bool,
+    ) -> None:
+        super().__init__(command_arguments, repository)
+        self._subdirectory: Final[Optional[str]] = subdirectory
+        self._glob: int = glob
+        self._fixme_threshold: int = fixme_threshold
+        self._no_commit: bool = no_commit
+        self._submit: bool = submit
+        self._pyre_only: bool = pyre_only
+        self._strict: bool = strict
 
     @staticmethod
-    def add_arguments(parser: argparse.ArgumentParser) -> None:
-        super(TargetsToConfiguration, TargetsToConfiguration).add_arguments(parser)
-        parser.set_defaults(command=TargetsToConfiguration)
+    def from_arguments(
+        arguments: argparse.Namespace, repository: Repository
+    ) -> "TargetsToConfiguration":
+        command_arguments = CommandArguments.from_arguments(arguments)
+        return TargetsToConfiguration(
+            command_arguments,
+            repository=repository,
+            subdirectory=arguments.subdirectory,
+            glob=arguments.glob,
+            fixme_threshold=arguments.fixme_threshold,
+            no_commit=arguments.no_commit,
+            submit=arguments.submit,
+            pyre_only=arguments.pyre_only,
+            strict=arguments.strict,
+        )
+
+    @classmethod
+    def add_arguments(cls, parser: argparse.ArgumentParser) -> None:
+        super(TargetsToConfiguration, cls).add_arguments(parser)
+        parser.set_defaults(command=cls.from_arguments)
         parser.add_argument(
             "--subdirectory", help="Only upgrade TARGETS files within this directory."
         )
@@ -84,7 +111,6 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
             Fall back to individual targets if errors per file ever hits given \
             threshold.",
         )
-        parser.add_argument("--lint", action="store_true", help=argparse.SUPPRESS)
         parser.add_argument(
             "--fixme-threshold",
             type=int,
@@ -158,13 +184,10 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
                 Amending targets to existing configuration.",
                 configuration_path,
             )
-            with open(configuration_path) as configuration_file:
-                configuration = Configuration(
-                    configuration_path, json.load(configuration_file)
-                )
-                configuration.add_targets(new_targets)
-                configuration.deduplicate_targets()
-                configuration.write()
+            configuration = Configuration(configuration_path)
+            configuration.add_targets(new_targets)
+            configuration.deduplicate_targets()
+            configuration.write()
         else:
             LOG.info("Creating local configuration at %s.", configuration_path)
             configuration_contents = {"targets": new_targets}
@@ -216,14 +239,13 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
                 "Some targets were running strict type checking. "
                 "Adding strict setting to configuration."
             )
-            # TODO(T67960514): Define constructors from concrete elements to
-            # avoid altering arguments.
-            strict_arguments = self._arguments
-            strict_arguments.lint = False
-            strict_arguments.fixme_threshold = 0
-            strict_arguments.local_configuration = directory
-            strict_arguments.remove_strict_headers = True
-            strict_codemod = StrictDefault(strict_arguments, self._repository)
+            strict_codemod = StrictDefault(
+                self._command_arguments,
+                repository=self._repository,
+                local_configuration=directory,
+                remove_strict_headers=True,
+                fixme_threshold=0,
+            )
             strict_codemod.run()
 
         # Lint and re-run pyre once to resolve most formatting issues
@@ -279,6 +301,8 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
         ]
         sorted_directories = sorted(
             (directory.split("/") for directory in configuration_directories),
+            # pyre-fixme[6]: Expected `(_T) -> _SupportsLessThan` for 2nd param but
+            #  got `(directory: Any) -> Tuple[int, typing.Any]`.
             key=lambda directory: (len(directory), directory),
         )
         if len(configuration_directories) == 0:

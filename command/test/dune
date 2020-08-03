@@ -2,28 +2,11 @@
  (name commandTest)
  (public_name pyrelib.commandTest)
  (modules commandTest)
- (libraries
-  oUnit
-  pyrelib.commands
-  pyrelib.languageServer
-  pyrelib.server
-  pyrelib.test
-  pyrelib.ast
-  pyrelib.analysis))
+ (libraries oUnit pyrelib.commands pyrelib.languageServer pyrelib.server
+   pyrelib.test pyrelib.ast pyrelib.analysis))
 
 (tests
- (names
-  languageServerTest
-  persistentClientTest
-  serverProtocolTest
-  serverTest)
+ (names languageServerTest persistentClientTest serverProtocolTest serverTest)
  (modules :standard \ commandTest)
- (libraries
-  oUnit
-  pyrelib.test
-  pyrelib.commandTest
-  pyrelib.commands
-  pyrelib.languageServer
-  pyrelib.network
-  pyrelib.server
-  pyrelib.ast))
+ (libraries oUnit pyrelib.test pyrelib.commandTest pyrelib.commands
+   pyrelib.languageServer pyrelib.network pyrelib.server pyrelib.ast))

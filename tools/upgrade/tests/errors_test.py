@@ -5,6 +5,7 @@
 
 # pyre-unsafe
 
+import json
 import textwrap
 import unittest
 from typing import Dict, List, Optional
@@ -26,6 +27,39 @@ class ErrorsTest(unittest.TestCase):
             Errors.from_json('[{ "path": "test.py", "key": "value" }]'),
             Errors([{"path": "test.py", "key": "value"}]),
         )
+        with patch(
+            "sys.stdin.read", return_value='[{ "path": "test.py", "key": "value" }]'
+        ):
+            self.assertEqual(
+                Errors.from_stdin(), Errors([{"path": "test.py", "key": "value"}])
+            )
+
+        self.assertEqual(
+            Errors.from_json(
+                json.dumps(
+                    [
+                        {"path": "test.py", "key": "value", "code": 1},
+                        {"path": "test.py", "key": "value", "code": 2},
+                    ]
+                ),
+                only_fix_error_code=1,
+            ),
+            Errors([{"path": "test.py", "key": "value", "code": 1}]),
+        )
+        with patch(
+            "sys.stdin.read",
+            return_value=json.dumps(
+                [
+                    {"path": "test.py", "key": "value", "code": 1},
+                    {"path": "test.py", "key": "value", "code": 2},
+                ]
+            ),
+        ):
+            self.assertEqual(
+                Errors.from_stdin(only_fix_error_code=1),
+                Errors([{"path": "test.py", "key": "value", "code": 1}]),
+            )
+
         with self.assertRaises(UserError):
             Errors.from_json('[{ "path": "test.py", "key": "value" }')
 
@@ -199,7 +233,6 @@ class ErrorsTest(unittest.TestCase):
             """,
         )
 
-        # Multiple Errors
         self.assertSuppressErrors(
             {
                 1: [
@@ -275,6 +308,50 @@ class ErrorsTest(unittest.TestCase):
             def foo() -> None: pass
             """,
         )
+        self.assertSuppressErrors(
+            {
+                1: [{"code": "0", "description": "description"}],
+                2: [{"code": "0", "description": "description"}],
+            },
+            """
+            # FIXME[1]: ignore
+            # FIXME[2]: ignore
+            def foo() -> None: pass
+            """,
+            """
+            def foo() -> None: pass
+            """,
+        )
+        self.assertSuppressErrors(
+            {
+                1: [
+                    {"code": "0", "description": "description"},
+                    {"code": "2", "description": "new error"},
+                ]
+            },
+            """
+            def foo() -> None: pass  # FIXME[1]
+            """,
+            """
+            # FIXME[2]: new error
+            def foo() -> None: pass
+            """,
+        )
+        self.assertSuppressErrors(
+            {
+                1: [
+                    {"code": "2", "description": "new error"},
+                    {"code": "0", "description": "description"},
+                ]
+            },
+            """
+            def foo() -> None: pass  # FIXME[1]
+            """,
+            """
+            # FIXME[2]: new error
+            def foo() -> None: pass
+            """,
+        )
 
         # Truncate long comments.
         self.assertSuppressErrors(
@@ -288,4 +365,24 @@ class ErrorsTest(unittest.TestCase):
             """,
             max_line_length=25,
             truncate=True,
+        )
+
+        self.assertSuppressErrors(
+            {
+                1: [
+                    {
+                        "code": "1",
+                        "description": "this description takes up over four lines \
+                        of content when it is split, given the max line length",
+                    }
+                ]
+            },
+            """
+            def foo() -> None: pass
+            """,
+            """
+            # FIXME[1]: this ...
+            def foo() -> None: pass
+            """,
+            max_line_length=25,
         )

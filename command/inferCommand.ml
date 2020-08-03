@@ -10,13 +10,12 @@ open Service
 
 let run_infer
     ignore_infer
-    verbose
+    _verbose
     expected_version
     sections
     debug
     strict
     show_error_traces
-    _
     sequential
     filter_directories
     ignore_all_errors
@@ -26,6 +25,7 @@ let run_infer
     profiling_output
     memory_profiling_output
     project_root
+    source_path
     search_path
     _taint_models_directory
     excludes
@@ -34,6 +34,11 @@ let run_infer
     local_root
     ()
   =
+  let source_path = Option.value source_path ~default:[local_root] in
+  let local_root = Path.create_absolute local_root in
+  Log.GlobalState.initialize ~debug ~sections;
+  Statistics.GlobalState.initialize ~log_identifier ?logger ~project_name:(Path.last local_root) ();
+  Profiling.GlobalState.initialize ~profiling_output ~memory_profiling_output ();
   let argument_to_paths argument =
     argument
     >>| String.split_on_chars ~on:[';']
@@ -45,35 +50,30 @@ let run_infer
   let ignore_all_errors = argument_to_paths ignore_all_errors in
   let configuration =
     Configuration.Analysis.create
-      ~verbose
       ?expected_version
-      ~sections
       ~debug
       ~strict
       ~show_error_traces
-      ~log_identifier
-      ?logger
-      ?profiling_output
-      ?memory_profiling_output
       ~infer:true
       ~project_root:(Path.create_absolute project_root)
       ~parallel:(not sequential)
       ?filter_directories
       ?ignore_all_errors
       ~number_of_workers
-      ~search_path:(List.map search_path ~f:SearchPath.create)
+      ~search_path:(List.map search_path ~f:SearchPath.create_normalized)
       ~excludes
       ~extensions
       ?log_directory
       ?ignore_infer
-      ~local_root:(Path.create_absolute local_root)
+      ~local_root
+      ~source_path:(List.map source_path ~f:Path.create_absolute)
       ()
   in
   (fun () ->
-    let scheduler = Scheduler.create ~configuration () in
     let errors, ast_environment =
-      let { Infer.errors; ast_environment; _ } = Infer.infer ~configuration ~scheduler () in
-      errors, ast_environment
+      Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->
+          let { Infer.errors; ast_environment; _ } = Infer.infer ~configuration ~scheduler () in
+          errors, ast_environment)
     in
     if debug then
       Memory.report_statistics ();
@@ -85,19 +85,17 @@ let run_infer
         errors
         ~f:
           (InferenceError.instantiate
+             ~show_error_traces
              ~lookup:(AstEnvironment.ReadOnly.get_real_path_relative ~configuration ast_environment))
     in
     Yojson.Safe.to_string
       (`Assoc
         [
           ( "errors",
-            `List
-              (List.map
-                 ~f:(fun error -> InferenceError.Instantiated.to_json ~show_error_traces error)
-                 errors) );
+            `List (List.map ~f:(fun error -> InferenceError.Instantiated.to_yojson error) errors) );
         ])
     |> Log.print "%s")
-  |> Scheduler.run_process ~configuration
+  |> Scheduler.run_process
 
 
 let infer_command =

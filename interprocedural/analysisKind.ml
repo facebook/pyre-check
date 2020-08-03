@@ -54,7 +54,7 @@ let register_option abstract_kind name = analysis_map := (name, abstract_kind) :
 let analysis_by_name analysis_name =
   let rec find = function
     | [] -> None
-    | (name, kind) :: _ when name = analysis_name -> Some kind
+    | (name, kind) :: _ when String.equal name analysis_name -> Some kind
     | _ :: rest -> find rest
   in
   find !analysis_map

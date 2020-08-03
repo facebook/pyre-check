@@ -19,26 +19,23 @@ let assert_taint ?models ~context source expect =
     | Some models -> [handle, source; "models.py", models]
     | None -> [handle, source]
   in
-  let {
-    Test.ScratchProject.BuiltTypeEnvironment.ast_environment;
-    type_environment = environment;
-    _;
-  }
-    =
+  let { Test.ScratchProject.BuiltTypeEnvironment.type_environment = environment; _ } =
     let project = Test.ScratchProject.setup ~context sources in
     Test.ScratchProject.build_type_environment project
   in
   let source =
     AstEnvironment.ReadOnly.get_processed_source
-      (AstEnvironment.read_only ast_environment)
+      (TypeEnvironment.ast_environment environment |> AstEnvironment.read_only)
       qualifier
     |> fun option -> Option.value_exn option
   in
-  let global_resolution = TypeEnvironment.global_resolution environment in
+  let global_resolution =
+    TypeEnvironment.read_only environment |> TypeEnvironment.ReadOnly.global_resolution
+  in
   models
   >>| Test.trim_extra_indentation
   >>| (fun model_source ->
-        let { Model.models; errors } =
+        let { Model.models; errors; _ } =
           Model.parse
             ~resolution:(TypeCheck.resolution global_resolution (module TypeCheck.DummyContext))
             ~source:model_source

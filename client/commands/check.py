@@ -62,7 +62,7 @@ class Check(Reporting):
             self._targets,
             self._configuration,
             self._original_directory,
-            self._current_directory,
+            self._project_root,
             filter_directory=self._filter_directory,
             use_buck_builder=self._use_buck_builder,
             debug=self._debug,
@@ -74,6 +74,8 @@ class Check(Reporting):
         flags = super()._flags()
         filter_directories = self._get_directories_to_analyze()
         if len(filter_directories):
+            # pyre-fixme[6]: Expected `Iterable[Variable[_LT (bound to
+            #  _SupportsLessThan)]]` for 1st param but got `Set[str]`.
             flags.extend(["-filter-directories", ";".join(sorted(filter_directories))])
         flags.extend(["-workers", str(self._number_of_workers)])
         search_path = self._configuration.search_path + typeshed_search_path(

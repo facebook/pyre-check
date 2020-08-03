@@ -20,7 +20,7 @@ from typing import IO, Iterable, List, Optional
 
 from typing_extensions import Final
 
-from .. import json_rpc, log, terminal
+from .. import json_rpc, log, recently_used_configurations, terminal
 from ..analysis_directory import AnalysisDirectory, resolve_analysis_directory
 from ..configuration import Configuration
 from ..exceptions import EnvironmentException
@@ -31,8 +31,7 @@ from ..find_directories import (
     find_project_root,
 )
 from ..log import StreamLogger
-from ..process import register_non_unique_process
-from ..recently_used_configurations import log_as_recently_used
+from ..process import Process
 from ..resources import LOG_DIRECTORY, find_log_directory
 from ..socket_connection import SocketConnection, SocketException
 
@@ -114,6 +113,8 @@ def typeshed_search_path(typeshed_root: str) -> List[str]:
             continue
 
         # Always prefer newer version over older version
+        # pyre-fixme[6]: Expected `Iterable[Variable[_LT (bound to
+        #  _SupportsLessThan)]]` for 1st param but got `List[str]`.
         version_names = sorted(os.listdir(typeshed_subdirectory), reverse=True)
         for version_name in version_names:
             # Anything under 2/ or 2.x is unusable for Pyre
@@ -154,7 +155,6 @@ class CommandArguments:
     additional_checks: List[str]
     show_error_traces: bool
     output: str
-    verbose: bool
     enable_profiling: bool
     enable_memory_profiling: bool
     noninteractive: bool
@@ -164,7 +164,7 @@ class CommandArguments:
     logger: Optional[str]
     formatter: List[str]
     targets: List[str]
-    use_buck_builder: bool
+    use_buck_builder: Optional[bool]
     source_directories: List[str]
     filter_directory: Optional[str]
     buck_mode: Optional[str]
@@ -192,7 +192,6 @@ class CommandArguments:
             additional_checks=arguments.additional_check,
             show_error_traces=arguments.show_error_traces,
             output=arguments.output,
-            verbose=arguments.verbose,
             enable_profiling=arguments.enable_profiling,
             enable_memory_profiling=arguments.enable_memory_profiling,
             noninteractive=arguments.noninteractive,
@@ -238,7 +237,6 @@ class CommandParser(ABC):
         self._additional_checks: List[str] = self._command_arguments.additional_checks
         self._show_error_traces: bool = self._command_arguments.show_error_traces
         self._output: str = self._command_arguments.output
-        self._verbose: bool = self._command_arguments.verbose
         self._enable_profiling: bool = self._command_arguments.enable_profiling
         self._enable_memory_profiling: bool = (
             self._command_arguments.enable_memory_profiling
@@ -249,7 +247,9 @@ class CommandParser(ABC):
         self._formatter: List[str] = self._command_arguments.formatter
 
         self._targets: List[str] = self._command_arguments.targets
-        self._use_buck_builder: bool = self._command_arguments.use_buck_builder
+        self._use_buck_builder: Optional[
+            bool
+        ] = self._command_arguments.use_buck_builder
 
         self._source_directories: List[str] = self._command_arguments.source_directories
         self._filter_directory: Optional[str] = self._command_arguments.filter_directory
@@ -279,24 +279,20 @@ class CommandParser(ABC):
         # Derived arguments
         self._capable_terminal: bool = terminal.is_capable()
         self._original_directory: str = original_directory
-        self._current_directory: str = find_project_root(self._original_directory)
+        self._project_root: str = find_project_root(self._original_directory)
 
-        local_configuration = self._command_arguments.local_configuration
-        if local_configuration and local_configuration.endswith(
-            LOCAL_CONFIGURATION_FILE
-        ):
-            local_configuration = local_configuration[: -len(LOCAL_CONFIGURATION_FILE)]
-        self._local_configuration: Final[Optional[str]] = find_local_root(
-            self._original_directory, local_configuration
+        local_root = self._command_arguments.local_configuration
+        if local_root and local_root.endswith(LOCAL_CONFIGURATION_FILE):
+            local_root = local_root[: -len(LOCAL_CONFIGURATION_FILE)]
+        self._local_root: Final[Optional[str]] = find_local_root(
+            self._original_directory, local_root
         )
         self._dot_pyre_directory: Path = (
             self._command_arguments.dot_pyre_directory
-            or Path(self._current_directory, LOG_DIRECTORY)
+            or Path(self._project_root, LOG_DIRECTORY)
         )
         self._log_directory: str = find_log_directory(
-            self._current_directory,
-            self._local_configuration,
-            str(self._dot_pyre_directory),
+            self._project_root, self._local_root, str(self._dot_pyre_directory)
         )
         Path(self._log_directory).mkdir(parents=True, exist_ok=True)
 
@@ -333,9 +329,6 @@ class CommandParser(ABC):
         # Logging.
         parser.add_argument(
             "--output", choices=[TEXT, JSON], default=TEXT, help="How to format output"
-        )
-        parser.add_argument(
-            "--verbose", action="store_true", help="Enable verbose logging"
         )
         parser.add_argument(
             "--enable-profiling", action="store_true", help=argparse.SUPPRESS
@@ -379,11 +372,22 @@ class CommandParser(ABC):
             default=[],
             help="The buck target to check",
         )
-        buck_arguments.add_argument(
+
+        use_buck_builder_group = buck_arguments.add_mutually_exclusive_group()
+        use_buck_builder_group.add_argument(
             "--use-buck-builder",
-            action="store_true",
+            action="store_const",
+            const=True,
             help="Use Pyre's experimental builder for Buck projects.",
         )
+        use_buck_builder_group.add_argument(
+            "--use-legacy-buck-builder",
+            dest="use_buck_builder",
+            action="store_const",
+            const=False,
+            help="Use the legacy builder for Buck projects.",
+        )
+
         buck_arguments.add_argument(
             "--buck-mode", type=str, help="Mode to pass to `buck query`"
         )
@@ -497,12 +501,12 @@ class CommandParser(ABC):
         return None
 
     @property
-    def current_directory(self) -> Optional[str]:
-        return self._current_directory
+    def project_root(self) -> Optional[str]:
+        return self._project_root
 
     @property
-    def local_configuration(self) -> Optional[str]:
-        return self._local_configuration
+    def local_root(self) -> Optional[str]:
+        return self._local_root
 
     @property
     def log_directory(self) -> str:
@@ -514,15 +518,13 @@ class CommandParser(ABC):
 
     @property
     def relative_local_root(self) -> Optional[str]:
-        if not self.local_configuration:
+        if not self.local_root:
             return None
         return str(Path(self.log_directory).relative_to(self._dot_pyre_directory))
 
 
 class Command(CommandParser, ABC):
     _buffer: List[str] = []
-
-    _local_root: str = ""
 
     def __init__(
         self,
@@ -532,16 +534,6 @@ class Command(CommandParser, ABC):
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> None:
         super(Command, self).__init__(command_arguments, original_directory)
-        local_configuration = self._local_configuration
-        if local_configuration:
-            self._local_root = (
-                local_configuration
-                if os.path.isdir(local_configuration)
-                else os.path.dirname(local_configuration)
-            )
-        else:
-            self._local_root = self._original_directory
-
         logger = self._command_arguments.logger
         if logger:
             logger = translate_path(self._original_directory, logger)
@@ -551,9 +543,7 @@ class Command(CommandParser, ABC):
         self._strict: bool = (
             self._command_arguments.strict or self._configuration.strict
         )
-        self._logger: Final[Optional[str]] = logger or (
-            configuration and configuration.logger
-        )
+        self._logger: Final[Optional[str]] = logger or (self._configuration.logger)
         self._ignore_all_errors_paths: Iterable[str] = (
             self._configuration.ignore_all_errors
         )
@@ -576,7 +566,8 @@ class Command(CommandParser, ABC):
 
     def generate_configuration(self, logger: Optional[str]) -> Configuration:
         return Configuration(
-            local_configuration=self._local_configuration,
+            project_root=self._project_root,
+            local_root=self._local_root,
             search_path=self._search_path,
             binary=self._binary,
             typeshed=self._typeshed,
@@ -597,7 +588,7 @@ class Command(CommandParser, ABC):
                 self._targets,
                 configuration,
                 self._original_directory,
-                self._current_directory,
+                self._project_root,
                 filter_directory=self._filter_directory,
                 use_buck_builder=self._use_buck_builder,
                 debug=self._debug,
@@ -610,10 +601,11 @@ class Command(CommandParser, ABC):
         if configuration and configuration.disabled:
             LOG.log(log.SUCCESS, "Pyre will not run due to being explicitly disabled")
         else:
-            log_as_recently_used(
-                local_configuration=self.relative_local_root,
-                dot_pyre_directory=self._dot_pyre_directory,
-            )
+            relative_local_root = self.relative_local_root
+            if relative_local_root:
+                recently_used_configurations.Cache(self._dot_pyre_directory).put(
+                    relative_local_root
+                )
             self._run()
         return self
 
@@ -636,8 +628,6 @@ class Command(CommandParser, ABC):
             flags.append(",".join(self._additional_checks))
         if self._show_error_traces:
             flags.append("-show-error-traces")
-        if self._verbose:
-            flags.append("-verbose")
         if not self._hide_parse_errors:
             self._enable_logging_section("parser")
         logging_sections = self._logging_sections
@@ -657,8 +647,8 @@ class Command(CommandParser, ABC):
         if self._enable_profiling or self._enable_memory_profiling:
             # Clear the profiling log first since in pyre binary it's append-only
             remove_if_exists(self.profiling_log_path())
-        if self._current_directory:
-            flags.extend(["-project-root", self._current_directory])
+        if self._project_root:
+            flags.extend(["-project-root", self._project_root])
         if self._log_identifier:
             flags.extend(["-log-identifier", self._log_identifier])
         if self._logger:
@@ -733,7 +723,7 @@ class Command(CommandParser, ABC):
             # pyre-fixme[6]: Expected `Iterable[str]` for 1st param but got
             #  `Optional[IO[typing.Any]]`.
             with StreamLogger(process.stderr) as stream_logger:
-                with register_non_unique_process(
+                with Process.register_non_unique_process(
                     process.pid, self.NAME, self.log_directory
                 ):
                     # Wait for the process to finish and clean up.
@@ -757,14 +747,8 @@ class Command(CommandParser, ABC):
         return os.path.relpath(path, self._original_directory)
 
     def _state(self) -> State:
-        pid_path = os.path.join(self._log_directory, "server/server.pid")
-        try:
-            with open(pid_path) as file:
-                pid = int(file.read())
-                os.kill(pid, 0)  # throws if process is not running
-            return State.RUNNING
-        except Exception:
-            return State.DEAD
+        pid_path = Path(self._log_directory, "server/server.pid")
+        return State.RUNNING if Process.is_alive(pid_path) else State.DEAD
 
     # will open a socket, send a request, read the response and close the socket.
     def _send_and_handle_socket_request(

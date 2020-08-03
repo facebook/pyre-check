@@ -5,11 +5,6 @@
 
 open OUnit2
 
-let () =
-  let configuration = Configuration.Analysis.create () in
-  Configuration.Analysis.set_global configuration
-
-
 let test_request_sample_format _ =
   let sample =
     Statistics.sample

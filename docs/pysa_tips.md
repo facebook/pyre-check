@@ -200,11 +200,6 @@ analyzes the function (which could be many times) it will update it's
 understanding of the taint flowing into the function and output the current
 state. The final output will be the most complete.
 
-`reveal_taint` is a new feature, and is may not always give correct results. A
-simple debugging technique when `reveal_taint` fails is to inject a call to a
-known sink for your source, such as `eval`, rather than `reveal_taint`. You can
-then run Pysa and see if your injected flow is detected.
-
 ### `results.json`
 
 Another strategy for getting a bit more metadata is adding a function into your
@@ -236,3 +231,11 @@ development easier.
 On large projects, Pysa can take a long time to run. When you're iterating on a
 single rule, pass the `--rule` option to Pysa to speed things up a bit by
 omitting processing on all other rules. Eg. `pyre analyze --rule 5000`
+
+## Usage Examples
+
+Not all Pysa features will be covered in these docs, and provided examples won't
+always be complete. Every feature, however, _will_ be covered in the tests
+located
+[here](https://github.com/facebook/pyre-check/tree/master/interprocedural_analyses/taint/test/integration).
+These tests can be a useful resource to discover how to use Pysa features.

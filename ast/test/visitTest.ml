@@ -184,6 +184,24 @@ let test_collect_location _ =
     ]
 
 
+let test_collect_non_generic_type_names _ =
+  let assert_non_generic_type_names expression expected =
+    assert_equal
+      ~cmp:[%equal: string list]
+      ~printer:[%show: string list]
+      expected
+      (Visit.collect_non_generic_type_names (parse_single_expression ~preprocess:true expression))
+  in
+  assert_non_generic_type_names "typing.Tuple" ["typing.Tuple"];
+  assert_non_generic_type_names "typing.Tuple[int]" ["int"];
+  assert_non_generic_type_names "typing.Mapping[str, typing.Any]" ["str"; "typing.Any"];
+  assert_non_generic_type_names "typing.Literal['typing.Any']" [];
+  assert_non_generic_type_names "typing.Callable[[int], str]" ["int"; "str"];
+  assert_non_generic_type_names "typing.Union[typing.Callable[[int], str]]" ["int"; "str"];
+  assert_non_generic_type_names "typing.Union[typing.Tuple]" ["typing.Tuple"];
+  ()
+
+
 let test_node_visitor _ =
   let module Visitor = struct
     type t = int String.Table.t
@@ -321,6 +339,7 @@ let () =
   >::: [
          "collect" >:: test_collect;
          "collect_location" >:: test_collect_location;
+         "collect_non_generic_type_names" >:: test_collect_non_generic_type_names;
          "node_visitor" >:: test_node_visitor;
          "statement_visitor" >:: test_statement_visitor;
          "statement_visitor_source" >:: test_statement_visitor_source;

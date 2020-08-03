@@ -13,7 +13,7 @@ open Statement
 
 let initialize () =
   Memory.initialize_for_tests ();
-  Log.initialize_for_tests ();
+  Log.GlobalState.initialize_for_tests ();
   Statistics.disable ()
 
 
@@ -421,6 +421,8 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
 
         def __test_sink(arg: Any) -> None: ...
         def __test_source() -> Any: ...
+        class TestCallableTarget: ...
+        def to_callable_target(f: typing.Callable[..., Any]) -> TestCallableTarget: ...
         def __tito( *x: Any, **kw: Any) -> Any: ...
         __global_sink: Any
         def copy(obj: object) -> object: ...
@@ -562,6 +564,11 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
           def __neg__(self) -> float: ...
           def __abs__(self) -> float: ...
           def __round__(self) -> int: ...
+          def __lt__(self, x: float) -> bool: ...
+          def __le__(self, x: float) -> bool: ...
+          def __gt__(self, x: float) -> bool: ...
+          def __ge__(self, x: float) -> bool: ...
+
 
         class int:
           @overload
@@ -1105,11 +1112,19 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         |}
     );
     "builtins.pyi", builtins;
-    ( "django/http.pyi",
+    ( "django/http/__init__.pyi",
       {|
-        class HttpRequest: ...
+        from django.http.request import HttpRequest as HttpRequest
+
         class HttpResponse: ...
         class Request:
+          GET: typing.Dict[str, typing.Any] = ...
+          POST: typing.Dict[str, typing.Any] = ...
+        |}
+    );
+    ( "django/http/request.pyi",
+      {|
+        class HttpRequest:
           GET: typing.Dict[str, typing.Any] = ...
           POST: typing.Dict[str, typing.Any] = ...
         |}
@@ -1331,11 +1346,11 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
     ( "unittest/case.pyi",
       {|
         class TestCase:
-            def assertIsNotNone(self, x: Any) -> Bool:
+            def assertIsNotNone(self, x: Any, msg: Any = ...) -> Bool:
               ...
-            def assertTrue(self, x: Any) -> Bool:
+            def assertTrue(self, x: Any, msg: Any = ...) -> Bool:
               ...
-            def assertFalse(self, x: Any) -> Bool:
+            def assertFalse(self, x: Any, msg: Any = ...) -> Bool:
               ...
         |}
     );
@@ -1346,12 +1361,16 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         import type_variable_operators
 
         _T = TypeVar("_T")
+        _A = TypeVar("_A", bound=int)
+        _B = TypeVar("_B", bound=int)
 
         def none_throws(optional: Optional[_T]) -> _T: ...
         def safe_cast(new_type: Type[_T], value: Any) -> _T: ...
         def ParameterSpecification(__name: str) -> List[Type]: ...
         def ListVariadic(__name: str) -> Type: ...
         def classproperty(f: Any) -> Any: ...
+        class Add(Generic[_A, _B], int): pass
+        class Multiply(Generic[_A, _B], int): pass
         |}
     );
     ( "pyre_extensions/type_variable_operators.pyi",
@@ -2519,11 +2538,13 @@ let update_environments
     ~ast_environment
     ast_environment_trigger
   =
-  AnnotatedGlobalEnvironment.update_this_and_all_preceding_environments
-    ast_environment
-    ~scheduler
-    ~configuration
-    ast_environment_trigger
+  let environment = AnnotatedGlobalEnvironment.create ast_environment in
+  ( environment,
+    AnnotatedGlobalEnvironment.update_this_and_all_preceding_environments
+      environment
+      ~scheduler
+      ~configuration
+      ast_environment_trigger )
 
 
 module ScratchProject = struct
@@ -2536,7 +2557,6 @@ module ScratchProject = struct
   module BuiltTypeEnvironment = struct
     type t = {
       sources: Source.t list;
-      ast_environment: AstEnvironment.t;
       type_environment: TypeEnvironment.t;
     }
   end
@@ -2544,8 +2564,7 @@ module ScratchProject = struct
   module BuiltGlobalEnvironment = struct
     type t = {
       sources: Source.t list;
-      ast_environment: AstEnvironment.t;
-      global_environment: AnnotatedGlobalEnvironment.ReadOnly.t;
+      global_environment: AnnotatedGlobalEnvironment.t;
     }
   end
 
@@ -2567,6 +2586,7 @@ module ScratchProject = struct
       ?(incremental_style = Configuration.Analysis.FineGrained)
       ~context
       ?(external_sources = [])
+      ?(show_error_traces = false)
       ?(include_typeshed_stubs = true)
       ?(include_helper_builtins = true)
       sources
@@ -2576,16 +2596,22 @@ module ScratchProject = struct
       let file = File.create ~content (Path.create_relative ~root ~relative) in
       File.write file
     in
+    (* We assume that there's only one checked source directory that acts as the local root as well. *)
     let local_root = bracket_tmpdir context |> Path.create_absolute in
+    (* We assume that there's only one external source directory that acts as the local root as
+       well. *)
     let external_root = bracket_tmpdir context |> Path.create_absolute in
     let configuration =
       Configuration.Analysis.create
         ~local_root
+        ~source_path:[local_root]
         ~search_path:[SearchPath.Root external_root]
         ~filter_directories:[local_root]
         ~ignore_all_errors:[external_root]
         ~incremental_style
         ~features:{ Configuration.Features.default with go_to_definition = true }
+        ~show_error_traces
+        ~parallel:false
         ()
     in
     let external_sources =
@@ -2603,7 +2629,7 @@ module ScratchProject = struct
   (* Incremental checks already call ModuleTracker.update, so we don't need to update the state
      here. *)
   let add_source
-      { configuration = { Configuration.Analysis.local_root; search_path; _ }; _ }
+      { configuration = { Configuration.Analysis.source_path; search_path; _ }; _ }
       ~is_external
       (relative, content)
     =
@@ -2616,7 +2642,9 @@ module ScratchProject = struct
               failwith
                 "Scratch projects should have the external root at the start of their search path."
         else
-          local_root
+          match source_path with
+          | root :: _ -> root
+          | _ -> failwith "Scratch projects should have only one source path."
       in
       Path.create_relative ~root ~relative
     in
@@ -2627,8 +2655,6 @@ module ScratchProject = struct
   let configuration_of { configuration; _ } = configuration
 
   let source_paths_of { module_tracker; _ } = ModuleTracker.source_paths module_tracker
-
-  let local_root_of { configuration = { Configuration.Analysis.local_root; _ }; _ } = local_root
 
   let qualifiers_of { module_tracker; _ } =
     ModuleTracker.source_paths module_tracker
@@ -2661,22 +2687,14 @@ module ScratchProject = struct
            ~scheduler:(mock_scheduler ())
            ast_environment
     in
-    (* Normally we shouldn't have any parse errors in tests *)
-    let errors =
-      AstEnvironment.UpdateResult.system_errors ast_environment_update_result
-      @ AstEnvironment.UpdateResult.syntax_errors ast_environment_update_result
-    in
-    ( if not (List.is_empty errors) then
-        let relative_paths =
-          List.map errors ~f:(fun { SourcePath.relative; _ } -> relative) |> String.concat ~sep:", "
-        in
-        raise (Parser.Error (Format.sprintf "Could not parse files at `%s`" relative_paths)) );
     ast_environment, ast_environment_update_result
 
 
   let build_global_environment ({ configuration; _ } as project) =
     let ast_environment = build_ast_environment project in
-    let update_result = update_environments ~ast_environment ~configuration ColdStart in
+    let global_environment, update_result =
+      update_environments ~ast_environment ~configuration ColdStart
+    in
     let sources =
       AnnotatedGlobalEnvironment.UpdateResult.ast_environment_update_result update_result
       |> AstEnvironment.UpdateResult.invalidated_modules
@@ -2685,14 +2703,11 @@ module ScratchProject = struct
              (AstEnvironment.ReadOnly.get_processed_source
                 (AstEnvironment.read_only ast_environment))
     in
-    let global_environment = AnnotatedGlobalEnvironment.UpdateResult.read_only update_result in
-    { BuiltGlobalEnvironment.sources; ast_environment; global_environment }
+    { BuiltGlobalEnvironment.sources; global_environment }
 
 
   let build_type_environment ?call_graph_builder project =
-    let { BuiltGlobalEnvironment.sources; ast_environment; global_environment } =
-      build_global_environment project
-    in
+    let { BuiltGlobalEnvironment.sources; global_environment } = build_global_environment project in
     let type_environment = TypeEnvironment.create global_environment in
     let configuration = configuration_of project in
     List.map sources ~f:(fun { Source.source_path = { SourcePath.qualifier; _ }; _ } -> qualifier)
@@ -2701,7 +2716,7 @@ module ScratchProject = struct
          ~configuration
          ~environment:type_environment
          ?call_graph_builder;
-    { BuiltTypeEnvironment.sources; ast_environment; type_environment }
+    { BuiltTypeEnvironment.sources; type_environment }
 
 
   let build_type_environment_and_postprocess ?call_graph_builder project =
@@ -2718,17 +2733,16 @@ module ScratchProject = struct
     built_type_environment, errors
 
 
-  let build_resolution project =
+  let build_global_resolution project =
     let { BuiltGlobalEnvironment.global_environment; _ } = build_global_environment project in
-    let global_resolution = GlobalResolution.create global_environment in
+    AnnotatedGlobalEnvironment.read_only global_environment |> GlobalResolution.create
+
+
+  let build_resolution project =
+    let global_resolution = build_global_resolution project in
     TypeCheck.resolution
       global_resolution (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
       (module TypeCheck.DummyContext)
-
-
-  let build_global_resolution project =
-    let { BuiltGlobalEnvironment.global_environment; _ } = build_global_environment project in
-    GlobalResolution.create global_environment
 end
 
 type test_update_environment_with_t = {
@@ -2768,13 +2782,13 @@ let assert_errors
           in
           ScratchProject.setup ~context ~external_sources [handle, source]
         in
-        let { ScratchProject.BuiltGlobalEnvironment.sources; ast_environment; global_environment } =
+        let { ScratchProject.BuiltGlobalEnvironment.sources; global_environment } =
           ScratchProject.build_global_environment project
         in
         let configuration = ScratchProject.configuration_of project in
         ( configuration,
           sources,
-          AstEnvironment.read_only ast_environment,
+          AnnotatedGlobalEnvironment.ast_environment global_environment |> AstEnvironment.read_only,
           TypeEnvironment.create global_environment )
       in
       let configuration = { configuration with debug; strict; infer } in
@@ -2786,6 +2800,7 @@ let assert_errors
       |> List.map
            ~f:
              (AnalysisError.instantiate
+                ~show_error_traces
                 ~lookup:
                   (AstEnvironment.ReadOnly.get_real_path_relative ~configuration ast_environment))
     in
@@ -2794,19 +2809,19 @@ let assert_errors
           let location = AnalysisError.Instantiated.location error in
           Option.some_if (Location.WithPath.equal location Location.WithPath.any) location)
     in
+    let show_description ~concise error =
+      if concise then
+        AnalysisError.Instantiated.concise_description error
+      else
+        AnalysisError.Instantiated.description error
+    in
     let found_any = not (List.is_empty errors_with_any_location) in
     ( if found_any then
-        let errors =
-          List.map
-            ~f:(fun error ->
-              AnalysisError.Instantiated.description error ~show_error_traces ~concise)
-            errors
-          |> String.concat ~sep:"\n"
-        in
+        let errors = List.map ~f:(show_description ~concise) errors |> String.concat ~sep:"\n" in
         Format.sprintf "\nLocation.any cannot be attached to errors: %s\n" errors |> ignore );
     assert_false found_any;
     let to_string error =
-      let description = AnalysisError.Instantiated.description error ~show_error_traces ~concise in
+      let description = show_description ~concise error in
       if include_line_numbers then
         let line = AnalysisError.Instantiated.location error |> Location.WithPath.line in
         Format.sprintf "%d: %s" line description
@@ -2826,7 +2841,9 @@ let assert_equivalent_attributes ~context source expected =
     let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
       ScratchProject.setup ~context [handle, source] |> ScratchProject.build_global_environment
     in
-    let global_resolution = GlobalResolution.create global_environment in
+    let global_resolution =
+      AnnotatedGlobalEnvironment.read_only global_environment |> GlobalResolution.create
+    in
     let compare_by_name left right =
       String.compare (Annotated.Attribute.name left) (Annotated.Attribute.name right)
     in

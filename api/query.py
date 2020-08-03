@@ -126,7 +126,6 @@ def get_class_hierarchy(pyre_connection: PyreConnection) -> Optional[ClassHierar
     hierarchy = {
         key: edges
         for annotation_and_edges in result["response"]
-        # pyre-fixme[10]: Name `annotation_and_edges` is used but not defined.
         for key, edges in annotation_and_edges.items()
     }
     return ClassHierarchy(hierarchy)

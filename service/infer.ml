@@ -47,7 +47,6 @@ let run_infer ~scheduler ~configuration ~global_resolution qualifiers =
     Scheduler.map_reduce
       scheduler
       ~policy:(Scheduler.Policy.legacy_fixed_chunk_size 75)
-      ~configuration
       ~initial:([], 0)
       ~map
       ~reduce
@@ -60,7 +59,7 @@ let run_infer ~scheduler ~configuration ~global_resolution qualifiers =
 
 let infer
     ~configuration:
-      ({ Configuration.Analysis.project_root; local_root; search_path; _ } as configuration)
+      ({ Configuration.Analysis.project_root; source_path; search_path; _ } as configuration)
     ~scheduler
     ()
   =
@@ -69,7 +68,7 @@ let infer
     if not (Path.is_directory directory) then
       raise (Invalid_argument (Format.asprintf "`%a` is not a directory" Path.pp directory))
   in
-  check_directory_exists local_root;
+  List.iter source_path ~f:check_directory_exists;
   check_directory_exists project_root;
   search_path |> List.map ~f:SearchPath.to_path |> List.iter ~f:check_directory_exists;
 
@@ -80,8 +79,9 @@ let infer
 
     let timer = Timer.start () in
     let update_result =
+      let annotated_global_environment = AnnotatedGlobalEnvironment.create ast_environment in
       AnnotatedGlobalEnvironment.update_this_and_all_preceding_environments
-        ast_environment
+        annotated_global_environment
         ~scheduler
         ~configuration
         ColdStart

@@ -75,7 +75,7 @@ def _log_statistics(
                 "runtime": int((time.time() - start_time) * 1000),
             },
             normals={
-                "root": configuration.local_configuration_root,
+                "root": configuration.local_root,
                 "cwd": os.getcwd(),
                 "client_version": __version__,
                 "command": command.NAME,
@@ -120,7 +120,17 @@ def run_pyre(arguments: argparse.Namespace) -> ExitCode:
             )
             exit_code = command.run().exit_code()
     except analysis_directory.NotWithinLocalConfigurationException as error:
-        if not command:
+        if arguments.command == commands.Persistent.from_arguments:
+            try:
+                commands.Persistent.run_null_server(timeout=3600 * 12)
+                exit_code = ExitCode.SUCCESS
+            except Exception as error:
+                client_exception_message = str(error)
+                exit_code = ExitCode.FAILURE
+            except KeyboardInterrupt:
+                LOG.warning("Interrupted by user")
+                exit_code = ExitCode.SUCCESS
+        elif not command:
             client_exception_message = str(error)
             exit_code = ExitCode.FAILURE
         else:
@@ -184,9 +194,9 @@ def _run_pyre_with_retry(arguments: argparse.Namespace) -> ExitCode:
         exit_code = exception.exit_code
         client_exception_message = exception.exception_message
 
-    configurations = recently_used_configurations.get_recently_used_configurations(
+    configurations = recently_used_configurations.Cache(
         command._dot_pyre_directory
-    )
+    ).get_all_items()
     if not configurations:
         LOG.error(client_exception_message)
         return exit_code

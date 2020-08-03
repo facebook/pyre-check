@@ -164,3 +164,13 @@ class OverloadedOverride(D):
 
     def methodA(self, arg):
         return arg
+
+
+class SkippedOverrides:
+    def method(self, arg):
+        return arg
+
+
+class ExtendsSkipped(SkippedOverrides):
+    def method(self, arg):
+        __test_sink(arg)

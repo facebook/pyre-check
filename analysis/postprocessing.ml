@@ -108,8 +108,7 @@ let add_local_mode_errors
 
 
 let filter_errors
-    ~configuration:
-      ({ Configuration.Analysis.include_hints; features = { click_to_fix; _ }; _ } as configuration)
+    ~configuration
     ~global_resolution
     ~metadata:{ Source.Metadata.local_mode; ignore_codes; _ }
     errors_by_define
@@ -119,13 +118,7 @@ let filter_errors
     let keep_error error = not (Error.suppress ~mode ~ignore_codes error) in
     List.filter ~f:keep_error errors
   in
-  let filter_hints errors =
-    match mode with
-    | Unsafe when (not include_hints) || not click_to_fix ->
-        List.filter errors ~f:(fun { Error.kind; _ } -> not (Error.language_server_hint kind))
-    | _ -> errors
-  in
-  List.map errors_by_define ~f:(fun errors -> filter errors |> filter_hints)
+  List.map errors_by_define ~f:(fun errors -> filter errors)
   |> List.concat_map ~f:(Error.join_at_define ~resolution:global_resolution)
   |> Error.join_at_source ~resolution:global_resolution
 
@@ -154,7 +147,34 @@ let run ~scheduler ~configuration ~environment sources =
     let run_on_module module_name =
       match AstEnvironment.ReadOnly.get_raw_source ast_environment module_name with
       | None -> []
-      | Some ({ Source.source_path = { SourcePath.is_external; _ }; _ } as source) ->
+      | Some (Result.Error { AstEnvironment.ParserError.message; _ }) ->
+          let location =
+            {
+              Location.start = { Location.line = 1; column = 1 };
+              stop = { Location.line = 1; column = 1 };
+            }
+          in
+          let location_with_module =
+            {
+              Location.WithModule.path = module_name;
+              start = Location.start location;
+              stop = Location.stop location;
+            }
+          in
+          let define =
+            Statement.Define.create_toplevel
+              ~unbound_names:[]
+              ~qualifier:(Some module_name)
+              ~statements:[]
+            |> Node.create ~location
+          in
+          [
+            AnalysisError.create
+              ~location:location_with_module
+              ~kind:(AnalysisError.ParserFailure message)
+              ~define;
+          ]
+      | Some (Result.Ok ({ Source.source_path = { SourcePath.is_external; _ }; _ } as source)) ->
           if is_external then
             []
           else
@@ -186,7 +206,6 @@ let run ~scheduler ~configuration ~environment sources =
            ~minimum_chunks_per_worker:2
            ~preferred_chunk_size:250
            ())
-      ~configuration
       ~initial:(0, [])
       ~map
       ~reduce

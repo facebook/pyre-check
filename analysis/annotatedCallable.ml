@@ -87,7 +87,9 @@ let create_overload_without_applying_decorators
           | Some variable -> (
               let parsed_head =
                 let extract_positional_only = function
-                  | Type.Callable.Parameter.PositionalOnly { annotation; _ } -> Some annotation
+                  | Type.Callable.Parameter.PositionalOnly { annotation; _ }
+                  | Named { annotation; _ } ->
+                      Some annotation
                   | _ -> None
                 in
                 List.rev reversed_head

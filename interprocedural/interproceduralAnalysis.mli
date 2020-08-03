@@ -19,8 +19,7 @@ val one_analysis_pass
 
 (* Returns number of iterations. *)
 val compute_fixpoint
-  :  configuration:Configuration.Analysis.t ->
-  scheduler:Scheduler.t ->
+  :  scheduler:Scheduler.t ->
   environment:Analysis.TypeEnvironment.ReadOnly.t ->
   analyses:Kind.abstract list ->
   dependencies:DependencyGraph.t ->
@@ -35,11 +34,7 @@ val externalize
   Callable.t ->
   Yojson.Safe.json list
 
-val extract_errors
-  :  Scheduler.t ->
-  configuration:Configuration.Analysis.t ->
-  Callable.t list ->
-  InterproceduralError.t list
+val extract_errors : Scheduler.t -> Callable.t list -> InterproceduralError.t list
 
 val save_results
   :  configuration:Configuration.StaticAnalysis.t ->
@@ -48,13 +43,19 @@ val save_results
   Callable.t list ->
   unit
 
+type initialize_result = {
+  initial_models: InterproceduralResult.model_t Callable.Map.t;
+  skip_overrides: Ast.Reference.Set.t;
+}
+
 (* Calls init on all specified analyses to get initial models *)
 val initialize
   :  Kind.abstract list ->
   configuration:Yojson.Safe.json ->
   environment:Analysis.TypeEnvironment.ReadOnly.t ->
   functions:Callable.t list ->
-  InterproceduralResult.model_t Callable.Map.t
+  stubs:Callable.t list ->
+  initialize_result
 
 val record_initial_models
   :  functions:Callable.t list ->

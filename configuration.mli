@@ -25,7 +25,6 @@ module Analysis : sig
   [@@deriving show]
 
   type t = {
-    start_time: float;
     infer: bool;
     configuration_file_hash: string option;
     parallel: bool;
@@ -34,26 +33,20 @@ module Analysis : sig
     ignore_all_errors: Path.t list option;
     number_of_workers: int;
     local_root: Path.t;
-    sections: string list;
     debug: bool;
     project_root: Path.t;
+    source_path: Path.t list;
     search_path: SearchPath.t list;
     taint_model_paths: Path.t list;
-    verbose: bool;
     expected_version: string option;
     strict: bool;
     show_error_traces: bool;
-    log_identifier: string;
-    logger: string option;
-    profiling_output: string option;
-    memory_profiling_output: string option;
     excludes: Str.regexp list;
     extensions: string list;
     store_type_check_resolution: bool;
     incremental_style: incremental_style;
     include_hints: bool;
     perform_autocompletion: bool;
-    go_to_definition_enabled: bool;
     features: Features.t;
     ignore_infer: Path.t list;
     log_directory: Path.t;
@@ -61,8 +54,7 @@ module Analysis : sig
   [@@deriving show, eq]
 
   val create
-    :  ?start_time:float ->
-    ?infer:bool ->
+    :  ?infer:bool ->
     ?configuration_file_hash:string ->
     ?parallel:bool ->
     ?analyze_external_sources:bool ->
@@ -70,35 +62,25 @@ module Analysis : sig
     ?ignore_all_errors:Path.t list ->
     ?number_of_workers:int ->
     ?local_root:Path.t ->
-    ?sections:string list ->
     ?project_root:Path.t ->
     ?search_path:SearchPath.t list ->
     ?taint_model_paths:Path.t list ->
-    ?verbose:bool ->
     ?expected_version:string ->
     ?strict:bool ->
     ?debug:bool ->
     ?show_error_traces:bool ->
-    ?log_identifier:string ->
-    ?logger:string ->
-    ?profiling_output:string ->
-    ?memory_profiling_output:string ->
     ?excludes:string list ->
     ?extensions:string list ->
     ?store_type_check_resolution:bool ->
     ?incremental_style:incremental_style ->
     ?include_hints:bool ->
     ?perform_autocompletion:bool ->
-    ?go_to_definition_enabled:bool ->
     ?features:Features.t ->
     ?ignore_infer:Path.t list ->
     ?log_directory:string ->
+    source_path:Path.t list ->
     unit ->
     t
-
-  val set_global : t -> unit
-
-  val get_global : unit -> t option
 
   val log_directory : t -> Path.t
 
@@ -142,7 +124,6 @@ module Server : sig
     saved_state_action: saved_state_action option;
     (* Analysis configuration *)
     configuration: Analysis.t;
-    server_uuid: string;
   }
 
   val set_global : t -> unit
@@ -159,5 +140,6 @@ module StaticAnalysis : sig
     (* Analysis configuration *)
     configuration: Analysis.t;
     rule_filter: int list option;
+    find_obscure_flows: bool;
   }
 end

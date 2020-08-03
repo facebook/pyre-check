@@ -4,36 +4,16 @@
  (modules testHelper)
  (preprocess
   (pps ppx_sexp_message))
- (libraries
-  oUnit
-  pyrelib.test
-  pyrelib.ast
-  pyrelib.analysis
-  pyrelib.interprocedural
-  pyrelib.taint))
+ (libraries oUnit pyrelib.test pyrelib.ast pyrelib.analysis
+   pyrelib.interprocedural pyrelib.taint))
 
 (tests
- (names
-  accessPathTest
-  callGraphBuilderTest
-  configurationTest
-  domainTest
-  integrationTest
-  featuresTest
-  fixpointTest
-  flowTest
-  forwardAnalysisTest
-  backwardAnalysisTest
-  modelTest)
+ (names accessPathTest callGraphBuilderTest configurationTest domainTest
+   integrationTest featuresTest fixpointTest flowTest forwardAnalysisTest
+   backwardAnalysisTest modelTest)
  (modules :standard \ testHelper)
  (preprocess
   (pps ppx_sexp_message))
- (libraries
-  oUnit
-  pyrelib.test
-  pyrelib.ast
-  pyrelib.analysis
-  pyrelib.interprocedural
-  pyrelib.taint
-  pyrelib.taintTestHelper
-  pyrelib.taintIntegrationTest))
+ (libraries oUnit pyrelib.test pyrelib.ast pyrelib.analysis
+   pyrelib.interprocedural pyrelib.taint pyrelib.taintTestHelper
+   pyrelib.taintIntegrationTest))

@@ -101,9 +101,9 @@ class Start(Reporting):
                 self._command_arguments,
                 self._configuration,
                 self._analysis_directory,
-                self._current_directory,
+                self._project_root,
                 self._original_directory,
-                self.local_configuration,
+                self.local_root,
                 self._configuration.other_critical_files,
             ).daemonize()
 
@@ -140,7 +140,7 @@ class Start(Reporting):
                         try:
                             file_monitor = project_files_monitor.ProjectFilesMonitor(
                                 self._configuration,
-                                self._current_directory,
+                                self._project_root,
                                 self._analysis_directory,
                             )
                             file_monitor.daemonize()
@@ -163,6 +163,8 @@ class Start(Reporting):
                 flags.extend(["-taint-models", path])
         filter_directories = self._get_directories_to_analyze()
         if len(filter_directories):
+            # pyre-fixme[6]: Expected `Iterable[Variable[_LT (bound to
+            #  _SupportsLessThan)]]` for 1st param but got `Set[str]`.
             flags.extend(["-filter-directories", ";".join(sorted(filter_directories))])
         if len(self._configuration.ignore_all_errors):
             flags.extend(
@@ -183,9 +185,9 @@ class Start(Reporting):
         saved_state_project = self._saved_state_project
         if saved_state_project:
             flags.extend(["-saved-state-project", saved_state_project])
-            local_configuration_root = self._configuration.local_configuration_root
-            if local_configuration_root is not None:
-                relative = os.path.relpath(local_configuration_root)
+            local_root = self._configuration.local_root
+            if local_root is not None:
+                relative = os.path.relpath(local_root)
                 flags.extend(["-saved-state-metadata", relative.replace("/", "$")])
         configuration_file_hash = self._configuration.file_hash
         if configuration_file_hash:

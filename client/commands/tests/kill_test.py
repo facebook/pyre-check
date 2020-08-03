@@ -22,6 +22,8 @@ from .command_test import mock_arguments, mock_configuration
 
 
 class KillTest(unittest.TestCase):
+    # pyre-fixme[56]: Argument `os` to decorator factory
+    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(os, "getenv")
     def test_get_process_name(self, get_environment: MagicMock) -> None:
         get_environment.return_value = None
@@ -30,6 +32,8 @@ class KillTest(unittest.TestCase):
         self.assertEqual(_get_process_name("PYRE_BINARY", "foo"), "main.exe")
 
     @patch.object(kill, "Rage")
+    # pyre-fixme[56]: Argument `tempfile` to decorator factory
+    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(tempfile, "NamedTemporaryFile")
     def test_rage(self, named_temporary_file: MagicMock, rage: MagicMock) -> None:
         original_directory = "/original/directory"
@@ -62,6 +66,8 @@ class KillTest(unittest.TestCase):
     @patch.object(psutil, "process_iter")
     @patch.object(os, "getpgid", side_effect=lambda id: id)
     @patch.object(os, "getpid", return_value=1234)
+    # pyre-fixme[56]: Argument `os` to decorator factory
+    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(os, "kill")
     @patch.object(Kill, "__init__", return_value=None)
     def test_kill_processes_by_name(
@@ -112,6 +118,8 @@ class KillTest(unittest.TestCase):
         # Ensure that we don't crash even if os.kill fails due to permissions.
         kill_command._kill_processes_by_name("pyre-client")
 
+    # pyre-fixme[56]: Argument `tools.pyre.client.watchman` to decorator factory
+    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(watchman, "stop_subscriptions")
     @patch.object(Kill, "_kill_processes_by_name")
     @patch.object(Kill, "__init__", return_value=None)
@@ -142,7 +150,9 @@ class KillTest(unittest.TestCase):
     @patch.object(
         subprocess, "check_output", return_value=b"/some/scratch/directory/pyre\n"
     )
-    @patch.object(recently_used_configurations, "delete_cache")
+    @patch.object(recently_used_configurations.Cache, "delete")
+    # pyre-fixme[56]: Argument `shutil` to decorator factory
+    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(shutil, "rmtree")
     @patch.object(Kill, "__init__", return_value=None)
     def test_delete_caches(
@@ -160,7 +170,7 @@ class KillTest(unittest.TestCase):
             analysis_directory=MagicMock(),
             with_fire=MagicMock(),
         )
-        kill_command._current_directory = "/root"
+        kill_command._project_root = "/root"
         kill_command._dot_pyre_directory = Path("/some/log/directory/.pyre")
         kill_command._log_directory = "/some/log/directory/.pyre/foo"
         path_glob.return_value = [
@@ -178,6 +188,8 @@ class KillTest(unittest.TestCase):
         delete_recent_cache.assert_called_once()
 
     @patch.object(subprocess, "check_output")
+    # pyre-fixme[56]: Argument `shutil` to decorator factory
+    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(shutil, "rmtree")
     @patch.object(Kill, "__init__", return_value=None)
     def test_delete_caches_scratch_path_exception(
@@ -190,7 +202,7 @@ class KillTest(unittest.TestCase):
             analysis_directory=MagicMock(),
             with_fire=MagicMock(),
         )
-        kill_command._current_directory = "/root"
+        kill_command._project_root = "/root"
         kill_command._dot_pyre_directory = Path("/some/log/directory/.pyre")
         kill_command._log_directory = "/some/log/directory/.pyre/foo"
         check_output.side_effect = Exception
@@ -199,6 +211,8 @@ class KillTest(unittest.TestCase):
 
     @patch.object(os, "remove")
     @patch.object(os, "unlink")
+    # pyre-fixme[56]: Argument `os` to decorator factory
+    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(os, "readlink", return_value="/tmp/actual_socket")
     def test_delete_linked_paths(
         self, readlink: MagicMock, unlink: MagicMock, remove: MagicMock
@@ -208,6 +222,8 @@ class KillTest(unittest.TestCase):
         remove.assert_called_once_with("/tmp/actual_socket")
         unlink.assert_called_once_with(socket_path)
 
+    # pyre-fixme[56]: Argument `tools.pyre.client.commands.kill` to decorator
+    #  factory `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(kill, "_get_process_name", return_value="foo.exe")
     @patch.object(Kill, "_kill_processes_by_name")
     @patch.object(Kill, "__init__", return_value=None)

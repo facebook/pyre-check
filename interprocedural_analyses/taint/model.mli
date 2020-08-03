@@ -33,8 +33,16 @@ val get_global_tito_model
   expression:Expression.t ->
   Domains.BackwardState.Tree.t option
 
+val global_is_sanitized : resolution:Resolution.t -> expression:Expression.t -> bool
+
 val get_model_sources : paths:Path.t list -> (Path.t * string) list
 
 val infer_class_models
   :  environment:TypeEnvironment.ReadOnly.t ->
   TaintResult.call_model Callable.Map.t
+
+val add_obscure_sink
+  :  resolution:Resolution.t ->
+  call_target:[< Callable.t ] ->
+  TaintResult.call_model ->
+  TaintResult.call_model

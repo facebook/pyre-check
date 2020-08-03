@@ -243,6 +243,7 @@ class StubFile:
         """
         classes = defaultdict(list)
         typing_imports = set()
+        alphabetical_imports = []
         contents = ""
         stubs_in_file = []
         for stub in self._fields:
@@ -273,15 +274,14 @@ class StubFile:
         for stub in stubs_in_file:
             typing_imports.update(stub.get_typing_imports())
             alphabetical_imports = sorted(list(typing_imports))
-            if alphabetical_imports and contents != "":
-                contents = (
-                    "from typing import {}\n\n".format(
-                        ", ".join(
-                            str(type_import) for type_import in alphabetical_imports
-                        )
-                    )
-                    + contents
+
+        if alphabetical_imports and contents != "":
+            contents = (
+                "from typing import {}\n\n".format(
+                    ", ".join(str(type_import) for type_import in alphabetical_imports)
                 )
+                + contents
+            )
         return contents
 
     def is_empty(self):
@@ -563,7 +563,7 @@ class Infer(Reporting):
             if self._in_place is not None:
                 LOG.info("Annotating files")
                 annotate_paths(
-                    self._configuration.local_configuration_root,
+                    self._configuration.local_root,
                     self._formatter,
                     stubs,
                     type_directory,
@@ -577,6 +577,8 @@ class Infer(Reporting):
         flags = super()._flags()
         filter_directories = self._get_directories_to_analyze()
         if len(filter_directories):
+            # pyre-fixme[6]: Expected `Iterable[Variable[_LT (bound to
+            #  _SupportsLessThan)]]` for 1st param but got `Set[str]`.
             flags.extend(["-filter-directories", ";".join(sorted(filter_directories))])
         search_path = self._configuration.search_path + typeshed_search_path(
             self._configuration.typeshed

@@ -67,7 +67,7 @@ end) : Connections = struct
 
 
   let broadcast_response ~connections:{ State.lock; connections; _ } ~response =
-    Mutex.critical_section lock ~f:(fun () ->
+    Error_checking_mutex.critical_section lock ~f:(fun () ->
         let ({ State.persistent_clients; _ } as cached_connections) = !connections in
         let persistent_clients =
           Map.fold
@@ -80,14 +80,14 @@ end) : Connections = struct
 
 
   let write_to_persistent_client ~connections:{ State.lock; connections; _ } ~socket ~response =
-    Mutex.critical_section lock ~f:(fun () ->
+    Error_checking_mutex.critical_section lock ~f:(fun () ->
         let ({ State.persistent_clients; _ } as cached_connections) = !connections in
         let persistent_clients = write_to_persistent_client persistent_clients ~socket ~response in
         connections := { cached_connections with persistent_clients })
 
 
   let add_persistent_client ~connections:{ State.lock; connections; _ } ~socket =
-    Mutex.critical_section lock ~f:(fun () ->
+    Error_checking_mutex.critical_section lock ~f:(fun () ->
         let ({ State.persistent_clients; _ } as cached_connections) = !connections in
         connections :=
           {
@@ -97,7 +97,7 @@ end) : Connections = struct
 
 
   let remove_persistent_client ~connections:{ State.lock; connections; _ } ~socket =
-    Mutex.critical_section lock ~f:(fun () ->
+    Error_checking_mutex.critical_section lock ~f:(fun () ->
         let ({ State.persistent_clients; _ } as cached_connections) = !connections in
         Socket.close socket;
         connections :=
@@ -105,18 +105,18 @@ end) : Connections = struct
 
 
   let add_json_socket ~connections:{ State.lock; connections; _ } ~socket =
-    Mutex.critical_section lock ~f:(fun () ->
+    Error_checking_mutex.critical_section lock ~f:(fun () ->
         let { State.json_sockets; _ } = !connections in
         connections := { !connections with json_sockets = socket :: json_sockets })
 
 
   let remove_json_socket ~connections:{ State.lock; connections; _ } ~socket =
-    Mutex.critical_section lock ~f:(fun () ->
+    Error_checking_mutex.critical_section lock ~f:(fun () ->
         let ({ State.json_sockets; sockets_to_close; _ } as cached_connections) = !connections in
         let json_sockets, to_close =
           List.partition_tf
             ~f:(fun file_notifier_socket ->
-              if socket = file_notifier_socket then (
+              if Unix.File_descr.equal socket file_notifier_socket then (
                 Log.log ~section:`Server "Adding json socket to be removed.";
                 false )
               else
@@ -128,7 +128,7 @@ end) : Connections = struct
 
 
   let close_json_sockets ~connections:{ State.lock; connections; _ } =
-    Mutex.critical_section lock ~f:(fun () ->
+    Error_checking_mutex.critical_section lock ~f:(fun () ->
         let ({ State.sockets_to_close; _ } as cached_connections) = !connections in
         List.iter sockets_to_close ~f:(fun socket -> Socket.close socket);
         connections := { cached_connections with sockets_to_close = [] })
@@ -147,17 +147,18 @@ end) : Connections = struct
 
 
   let add_adapter_socket ~connections:{ State.lock; connections; _ } ~socket =
-    Mutex.critical_section lock ~f:(fun () ->
+    Error_checking_mutex.critical_section lock ~f:(fun () ->
         let { State.adapter_sockets; _ } = !connections in
         connections := { !connections with adapter_sockets = socket :: adapter_sockets })
 
 
   let remove_adapter_socket ~connections:{ State.lock; connections; _ } ~socket =
-    Mutex.critical_section lock ~f:(fun () ->
+    Error_checking_mutex.critical_section lock ~f:(fun () ->
         let ({ State.adapter_sockets; _ } as cached_connections) = !connections in
         Socket.close socket;
         let adapter_sockets =
-          List.filter adapter_sockets ~f:(fun adapter_socket -> not (socket = adapter_socket))
+          List.filter adapter_sockets ~f:(fun adapter_socket ->
+              not (Unix.File_descr.equal socket adapter_socket))
         in
         connections := { cached_connections with adapter_sockets })
 
@@ -165,7 +166,7 @@ end) : Connections = struct
   let broadcast_to_adapter_sockets ~connections:{ State.lock; connections; _ } ~response =
     match response with
     | Protocol.LanguageServerProtocolResponse response ->
-        Mutex.critical_section lock ~f:(fun () ->
+        Error_checking_mutex.critical_section lock ~f:(fun () ->
             let ({ State.adapter_sockets; _ } as cached_connections) = !connections in
             let adapter_sockets =
               List.filter adapter_sockets ~f:(fun socket ->

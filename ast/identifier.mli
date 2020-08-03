@@ -17,6 +17,8 @@ include Hashable with type t := t
 
 val sanitized : t -> t
 
+val is_sanitized : t -> bool
+
 val equal_sanitized : t -> t -> bool
 
 val pp : Format.formatter -> t -> unit

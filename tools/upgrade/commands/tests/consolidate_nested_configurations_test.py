@@ -10,10 +10,13 @@ import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, call, mock_open, patch
 
-from ... import errors, upgrade
+from ... import errors
 from ...repository import Repository
 from .. import consolidate_nested_configurations
-from ..consolidate_nested_configurations import ConsolidateNestedConfigurations
+from ..consolidate_nested_configurations import (
+    ConsolidateNestedConfigurations,
+    ErrorSuppressingCommand,
+)
 
 
 repository = Repository()
@@ -24,7 +27,7 @@ class ConsolidateNestedConfigurationsTest(unittest.TestCase):
         arguments = MagicMock()
         configurations = []
         expected_mapping = {}
-        mapping = ConsolidateNestedConfigurations(
+        mapping = ConsolidateNestedConfigurations.from_arguments(
             arguments, repository
         ).gather_nested_configuration_mapping(configurations)
         self.assertEqual(expected_mapping, mapping)
@@ -38,7 +41,7 @@ class ConsolidateNestedConfigurationsTest(unittest.TestCase):
             "a/.pyre_configuration.local": ["a/b/.pyre_configuration.local"],
             "b/.pyre_configuration.local": [],
         }
-        mapping = ConsolidateNestedConfigurations(
+        mapping = ConsolidateNestedConfigurations.from_arguments(
             arguments, repository
         ).gather_nested_configuration_mapping(configurations)
         self.assertEqual(expected_mapping, mapping)
@@ -50,7 +53,7 @@ class ConsolidateNestedConfigurationsTest(unittest.TestCase):
         f"{consolidate_nested_configurations.__name__}.Configuration.deduplicate_targets"
     )
     @patch(f"{consolidate_nested_configurations.__name__}.Configuration.add_strict")
-    @patch.object(upgrade.ErrorSuppressingCommand, "_suppress_errors")
+    @patch.object(ErrorSuppressingCommand, "_suppress_errors")
     def test_consolidate(
         self,
         suppress_errors,
@@ -70,7 +73,9 @@ class ConsolidateNestedConfigurationsTest(unittest.TestCase):
                 mock_open(read_data="{}").return_value,
             ]
             open_mock.side_effect = mocks
-            ConsolidateNestedConfigurations(arguments, repository).consolidate(
+            ConsolidateNestedConfigurations.from_arguments(
+                arguments, repository
+            ).consolidate(
                 Path("subdirectory/.pyre_configuration.local"),
                 [
                     Path("subdirectory/a/.pyre_configuration.local"),
@@ -82,9 +87,9 @@ class ConsolidateNestedConfigurationsTest(unittest.TestCase):
             }
             open_mock.assert_has_calls(
                 [
-                    call(Path("subdirectory/a/.pyre_configuration.local")),
-                    call(Path("subdirectory/b/.pyre_configuration.local")),
-                    call(Path("subdirectory/.pyre_configuration.local")),
+                    call(Path("subdirectory/a/.pyre_configuration.local"), "r"),
+                    call(Path("subdirectory/b/.pyre_configuration.local"), "r"),
+                    call(Path("subdirectory/.pyre_configuration.local"), "r"),
                     call(Path("subdirectory/.pyre_configuration.local"), "w"),
                 ]
             )
@@ -115,13 +120,13 @@ class ConsolidateNestedConfigurationsTest(unittest.TestCase):
 
         # Skip if no configurations found
         find_files.return_value = []
-        ConsolidateNestedConfigurations(arguments, repository).run()
+        ConsolidateNestedConfigurations.from_arguments(arguments, repository).run()
         gather.assert_not_called()
         consolidate.assert_not_called()
 
         # Skip if only one configuration found
         find_files.return_value = ["subdirectory/.pyre_configuration.local"]
-        ConsolidateNestedConfigurations(arguments, repository).run()
+        ConsolidateNestedConfigurations.from_arguments(arguments, repository).run()
         gather.assert_not_called()
         consolidate.assert_not_called()
 
@@ -138,7 +143,7 @@ class ConsolidateNestedConfigurationsTest(unittest.TestCase):
                 "subdirectory/b/.pyre_configuration.local",
             ]
         }
-        ConsolidateNestedConfigurations(arguments, repository).run()
+        ConsolidateNestedConfigurations.from_arguments(arguments, repository).run()
         gather.assert_called_once_with(configurations)
         consolidate.assert_called_once_with(
             Path("subdirectory/.pyre_configuration.local"),
@@ -160,6 +165,6 @@ class ConsolidateNestedConfigurationsTest(unittest.TestCase):
             "subdirectory/a/.pyre_configuration.local": [],
             "subdirectory/b/.pyre_configuration.local": [],
         }
-        ConsolidateNestedConfigurations(arguments, repository).run()
+        ConsolidateNestedConfigurations.from_arguments(arguments, repository).run()
         gather.assert_called_once_with(configurations)
         consolidate.assert_not_called()

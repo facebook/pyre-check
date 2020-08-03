@@ -5,6 +5,10 @@
 
 open Pyre
 
+module Adapter : sig
+  val log_path : Configuration.Analysis.t -> Path.t
+end
+
 module Persistent : sig
   val log_path : Configuration.Analysis.t -> Path.t
 end

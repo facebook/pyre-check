@@ -12,6 +12,7 @@ from typing import Generator, Optional
 from unittest.mock import MagicMock, patch
 
 from .. import watchman
+from ..process import Process
 from ..watchman import Subscriber
 
 
@@ -24,12 +25,14 @@ def send_sigint_to_self(
 
 
 class SubscriberTest(unittest.TestCase):
-    @patch.object(watchman, "register_unique_process")
+    @patch.object(Process, "register_unique_process")
     @patch.object(watchman, "remove_if_exists")
     @patch.object(watchman, "acquire_lock")
     @patch.object(sys, "exit")
     @patch.object(os, "close")
     @patch.object(os, "fork", return_value=0)
+    # pyre-fixme[56]: Argument `os` to decorator factory
+    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(os, "makedirs")
     def test_cleanup_on_sigint(
         self,
@@ -53,6 +56,8 @@ class SubscriberTest(unittest.TestCase):
             os.path.join(".pyre", "test", "foo_subscriber.lock")
         )
 
+    # pyre-fixme[56]: Argument `os` to decorator factory
+    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(os, "kill")
     @patch.object(watchman.Path, "read_text")
     def test_stop_subscription(self, read_text: MagicMock, os_kill: MagicMock) -> None:
@@ -60,6 +65,8 @@ class SubscriberTest(unittest.TestCase):
         watchman.stop_subscriptions(".pyre/foo", "some_monitor")
         os_kill.assert_called_once_with(123, signal.SIGINT)
 
+    # pyre-fixme[56]: Argument `os` to decorator factory
+    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(os, "kill")
     @patch.object(watchman.Path, "read_text")
     def test_stop_subscription_handle_exception(

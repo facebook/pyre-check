@@ -95,6 +95,9 @@ class Servers(Command):
         subparsers.add_parser("list", help="List running servers.")
         subparsers.add_parser("stop", help="Stop all running servers.")
 
+    def is_root_server_running(self) -> bool:
+        return any(server.is_root() for server in self._all_server_details())
+
     @staticmethod
     def _print_server_details(
         all_server_details: List[ServerDetails], output_format: str
@@ -130,9 +133,7 @@ class Servers(Command):
             LOG.warning("Stopping server for `%s` with pid %d", server.name, server.pid)
             Stop(
                 command_arguments=self._command_arguments,
-                original_directory=str(
-                    Path(self._current_directory, server.local_root)
-                ),
+                original_directory=str(Path(self._project_root, server.local_root)),
             ).run()
 
     def _run(self) -> None:

@@ -3,6 +3,19 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree. *)
 
+module GlobalState : sig
+  type t
+
+  (* Setup the logging environment where `sections` is a list of sections that are enabled. *)
+  val initialize : debug:bool -> sections:string list -> unit
+
+  val initialize_for_tests : unit -> unit
+
+  val get : unit -> t
+
+  val restore : t -> unit
+end
+
 type section =
   [ `Check
   | `Coverage
@@ -28,11 +41,6 @@ type section =
   ]
 
 val is_enabled : section -> bool
-
-(* Setup the logging environment where `sections` is a list of sections that are enabled. *)
-val initialize : verbose:bool -> sections:string list -> unit
-
-val initialize_for_tests : unit -> unit
 
 val log : section:section -> ('a, Format.formatter, unit, unit, unit, unit) Core.format6 -> 'a
 

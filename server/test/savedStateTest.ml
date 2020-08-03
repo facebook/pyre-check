@@ -41,7 +41,10 @@ let test_restore_symbolic_links context =
       ~printer:(List.to_string ~f:Path.show)
       ~cmp:(List.equal Path.equal)
       expected
-      (Server.SavedState.restore_symbolic_links ~changed_paths:names ~local_root ~get_old_link_path)
+      (Server.SavedState.restore_symbolic_links
+         ~changed_paths:names
+         ~source_path:[local_root]
+         ~get_old_link_path)
   in
   (* For changed files, the new set of links is prioritized. *)
   assert_restored
@@ -67,7 +70,11 @@ let test_restore_symbolic_links context =
       ];
   assert_restored
     ~names:[Path.create_relative ~root:local_root ~relative:"unlinked.py"]
-    ~expected:[Path.create_relative ~root:local_root ~relative:"unlinked.py"]
+    ~expected:[Path.create_relative ~root:local_root ~relative:"unlinked.py"];
+
+  (* Do not drop paths even if they might not correspond to an old link. *)
+  assert_restored ~names:[path "nonexist.py"] ~expected:[path "nonexist.py"];
+  ()
 
 
 type locally_changed_file = {

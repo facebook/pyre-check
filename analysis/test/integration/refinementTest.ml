@@ -41,6 +41,22 @@ let test_assert_is_none context =
           self.x = x
 
       class FakeTest(unittest.TestCase):
+        def foo(self) -> None:
+          a = A(3)
+          x = a.x
+          self.assertIsNotNone(x, 'x should not be None')
+          reveal_type(x)
+    |}
+    ["Revealed type [-1]: Revealed type for `x` is `int`."];
+  assert_type_errors
+    {|
+      import typing
+      import unittest
+      class A:
+        def __init__(self, x: typing.Optional[int]) -> None:
+          self.x = x
+
+      class FakeTest(unittest.TestCase):
         def foo(self, iter: typing.List[A]) -> None:
           a = None
           for i in iter:
@@ -88,7 +104,39 @@ let test_assert_is_none context =
         def foo(self) -> None:
           a = A(3)
           x = a.x
+          self.assertTrue(x is not None, "x should not be None")
+          reveal_type(x)
+    |}
+    ["Revealed type [-1]: Revealed type for `x` is `int`."];
+  assert_type_errors
+    {|
+      import typing
+      import unittest
+      class A:
+        def __init__(self, x: typing.Optional[int]) -> None:
+          self.x = x
+
+      class FakeTest(unittest.TestCase):
+        def foo(self) -> None:
+          a = A(3)
+          x = a.x
           self.assertFalse(x is None)
+          reveal_type(x)
+    |}
+    ["Revealed type [-1]: Revealed type for `x` is `int`."];
+  assert_type_errors
+    {|
+      import typing
+      import unittest
+      class A:
+        def __init__(self, x: typing.Optional[int]) -> None:
+          self.x = x
+
+      class FakeTest(unittest.TestCase):
+        def foo(self) -> None:
+          a = A(3)
+          x = a.x
+          self.assertFalse(x is None, "x should not be None")
           reveal_type(x)
     |}
     ["Revealed type [-1]: Revealed type for `x` is `int`."];
@@ -264,6 +312,21 @@ let test_assert_is_none context =
       "Revealed type [-1]: Revealed type for `frozen_dataclass.inner.x` is `Optional[int]` \
        (inferred: `int`).";
     ];
+  ()
+
+
+let test_assert_is context =
+  assert_type_errors
+    ~context
+    {|
+      from typing import Type
+      class Foo:
+        x: int = 1
+      def foo(o: Type[object]) -> None:
+        if (o is Foo):
+          o.x
+    |}
+    [];
   ()
 
 
@@ -923,6 +986,7 @@ let () =
   "refinement"
   >::: [
          "check_assert_is_none" >:: test_assert_is_none;
+         "check_assert_is" >:: test_assert_is;
          "check_global_refinement" >:: test_check_global_refinement;
          "check_local_refinement" >:: test_check_local_refinement;
          "check_isinstance" >:: test_check_isinstance;

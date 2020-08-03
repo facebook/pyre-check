@@ -7,12 +7,6 @@ open Core
 open OUnit2
 module Json = Yojson.Safe
 
-let set_profiling_output path =
-  let configuration = Configuration.Analysis.create () in
-  let configuration = { configuration with Configuration.Analysis.profiling_output = Some path } in
-  Configuration.Analysis.set_global configuration
-
-
 let assert_string_equal = assert_equal ~cmp:String.equal ~printer:Fn.id
 
 let assert_int_equal = assert_equal ~cmp:Int.equal ~printer:Int.to_string
@@ -46,7 +40,10 @@ let assert_event ?name ?event_type ?timestamp ?tags log_file =
 
 let test_event_format _ =
   let output_name = Filename.temp_file "event_format" "test" in
-  set_profiling_output output_name;
+  Profiling.GlobalState.initialize
+    ~profiling_output:(Some output_name)
+    ~memory_profiling_output:None
+    ();
   let assert_event ~name ~event_type ~timestamp ~tags event =
     Sys.remove output_name;
     Profiling.log_performance_event event;
@@ -75,25 +72,33 @@ let test_event_format _ =
     ~name:"baz"
     ~event_type:"[\"Counter\", \"[Luck 7] Ice Cream\"]"
     ~timestamp:1
-    ~tags:["hello", "42"]
+    ~tags:["hello", "42"];
+
+  Sys.remove output_name;
+  ()
 
 
 let test_event_track _ =
   let output_name = Filename.temp_file "event_track" "test" in
-  set_profiling_output output_name;
+  Profiling.GlobalState.initialize
+    ~profiling_output:(Some output_name)
+    ~memory_profiling_output:None
+    ();
   let foo x = Profiling.track_duration_event "foo" ~tags:["hello", "world"] ~f:(fun _ -> x + 1) in
   let y = foo 42 in
   assert_int_equal 43 y;
-  assert_event output_name ~name:"foo" ~tags:["hello", "world"]
+  assert_event output_name ~name:"foo" ~tags:["hello", "world"];
+
+  Sys.remove output_name;
+  ()
 
 
 let test_memory_profiling _ =
   let output_name = Filename.temp_file "event_track" "test" in
-  let configuration = Configuration.Analysis.create () in
-  let configuration =
-    { configuration with Configuration.Analysis.memory_profiling_output = Some output_name }
-  in
-  Configuration.Analysis.set_global configuration;
+  Profiling.GlobalState.initialize
+    ~profiling_output:None
+    ~memory_profiling_output:(Some output_name)
+    ();
   Profiling.track_shared_memory_usage ~name:"foo" ();
   assert_event
     output_name
@@ -106,6 +111,8 @@ let test_memory_profiling _ =
         "used_hash_slots", "0";
         "used_dependency_slots", "0";
       ];
+
+  Sys.remove output_name;
   ()
 
 

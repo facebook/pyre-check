@@ -5,6 +5,7 @@
 
 # pyre-unsafe
 
+import builtins
 import errno
 import fcntl
 import os
@@ -15,7 +16,7 @@ import unittest
 from contextlib import contextmanager
 from unittest.mock import MagicMock, Mock, call, patch
 
-from .. import __name__ as client_name, buck, commands, filesystem
+from .. import buck, commands, filesystem
 from ..analysis_directory import (
     NotWithinLocalConfigurationException,
     SharedAnalysisDirectory,
@@ -65,7 +66,11 @@ class FilesystemTest(unittest.TestCase):
         create_symlink("mypy/my.py", "mypy/another.pyi")
         create_symlink("scipyi/sci.pyi", "scipyi/another.py")
         actual_paths = sorted(
-            os.path.relpath(path, root) for path in find_python_paths(root)
+            # pyre-fixme[6]: Expected `Iterable[Variable[_LT (bound to
+            #  _SupportsLessThan)]]` for 1st param but got `Generator[str, None,
+            #  None]`.
+            os.path.relpath(path, root)
+            for path in find_python_paths(root)
         )
         self.assertEqual(
             actual_paths,
@@ -134,27 +139,56 @@ class FilesystemTest(unittest.TestCase):
             with acquire_lock(path, blocking=False):
                 pass
 
+    @patch.object(builtins, "open")
+    # pyre-ignore[56]: Argument `fcntl` to decorator factory
+    # `unittest.mock.patch.object` could not be resolved in a global scope.
+    @patch.object(fcntl, "lockf")
+    def test_acquire_lock__release_even_on_exception(
+        self, lock_file: MagicMock, open_file: MagicMock
+    ) -> None:
+        class SomeException(Exception):
+            pass
+
+        with self.assertRaises(SomeException):
+            with acquire_lock("foo.txt", blocking=True):
+                raise SomeException
+
+        file_descriptor = open_file().__enter__().fileno()
+        lock_file.assert_has_calls(
+            [call(file_descriptor, fcntl.LOCK_EX), call(file_descriptor, fcntl.LOCK_UN)]
+        )
+
+    def test_lock_command(self) -> None:
+        self.assertEqual(
+            filesystem._lock_command(blocking=True, is_shared_reader=True),
+            fcntl.LOCK_SH,
+        )
+        self.assertEqual(
+            filesystem._lock_command(blocking=True, is_shared_reader=False),
+            fcntl.LOCK_EX,
+        )
+        self.assertEqual(
+            filesystem._lock_command(blocking=False, is_shared_reader=True),
+            fcntl.LOCK_SH | fcntl.LOCK_NB,
+        )
+        self.assertEqual(
+            filesystem._lock_command(blocking=False, is_shared_reader=False),
+            fcntl.LOCK_EX | fcntl.LOCK_NB,
+        )
+
+    # pyre-fixme[56]: Argument `tools.pyre.client.filesystem` to decorator factory
+    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(filesystem, "acquire_lock")
     def test_acquire_lock_if_needed(self, acquire_lock: MagicMock) -> None:
         acquire_lock_if_needed("/some/path", blocking=True, needed=True)
         acquire_lock.assert_called_once()
 
+    # pyre-fixme[56]: Argument `tools.pyre.client.filesystem` to decorator factory
+    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(filesystem, "acquire_lock")
     def test_acquire_lock_if_needed__not_needed(self, acquire_lock: MagicMock) -> None:
         acquire_lock_if_needed("/some/path", blocking=True, needed=False)
         acquire_lock.assert_not_called()
-
-    @patch("shutil.rmtree")
-    def test_cleanup(self, rmtree) -> None:
-        shared_analysis_directory = SharedAnalysisDirectory(["first", "second"], [])
-        shared_analysis_directory.cleanup()
-        rmtree.assert_not_called()
-
-        shared_analysis_directory = SharedAnalysisDirectory(
-            ["first", "second"], [], isolate=True
-        )
-        shared_analysis_directory.cleanup()
-        rmtree.assert_called_with(shared_analysis_directory.get_root())
 
     def test_filesystem_list_bare(self):
         filesystem = Filesystem()
@@ -289,7 +323,9 @@ class FilesystemTest(unittest.TestCase):
         # No scratch, no local configuration
         check_output.side_effect = FileNotFoundError
         getcwd.return_value = "default"
-        shared_analysis_directory = SharedAnalysisDirectory(["first", "second"], [])
+        shared_analysis_directory = SharedAnalysisDirectory(
+            ["first", "second"], [], project_root="default"
+        )
 
         directory = shared_analysis_directory.get_scratch_directory()
         self.assertEqual(directory, "default/.pyre")
@@ -300,7 +336,9 @@ class FilesystemTest(unittest.TestCase):
         # Scratch, no local configuration
         check_output.side_effect = None
         check_output.return_value = "/scratch\n".encode("utf-8")
-        shared_analysis_directory = SharedAnalysisDirectory(["first", "second"], [])
+        shared_analysis_directory = SharedAnalysisDirectory(
+            ["first", "second"], [], project_root="default"
+        )
         directory = shared_analysis_directory.get_scratch_directory()
         self.assertEqual(directory, "/scratch")
 
@@ -313,6 +351,7 @@ class FilesystemTest(unittest.TestCase):
         shared_analysis_directory = SharedAnalysisDirectory(
             ["first", "second"],
             [],
+            project_root="default",
             filter_paths={"path/to/local"},
             local_configuration_root="path/to/local",
         )
@@ -329,6 +368,7 @@ class FilesystemTest(unittest.TestCase):
         shared_analysis_directory = SharedAnalysisDirectory(
             ["first", "second"],
             [],
+            project_root="default",
             filter_paths={"path/to/local"},
             local_configuration_root="path/to/local",
         )
@@ -351,7 +391,9 @@ class FilesystemTest(unittest.TestCase):
         with patch.object(SharedAnalysisDirectory, "_clear") as clear, patch.object(
             SharedAnalysisDirectory, "_merge"
         ) as merge:
-            shared_analysis_directory = SharedAnalysisDirectory(["first", "second"], [])
+            shared_analysis_directory = SharedAnalysisDirectory(
+                ["first", "second"], [], project_root="/"
+            )
             acquire_lock.side_effect = acquire
             shared_analysis_directory.prepare()
             merge.assert_has_calls([call()])
@@ -363,6 +405,9 @@ class FilesystemTest(unittest.TestCase):
     @patch("os.getcwd", return_value="/root")
     @patch("os.path.exists", return_value=True)
     @patch("{}.find_project_root".format(command_name), return_value="/root/local")
+    # pyre-fixme[56]: Argument
+    #  `"{}.find_local_root".format(tools.pyre.client.commands.command.__name__)` to
+    #  decorator factory `unittest.mock.patch` could not be resolved in a global scope.
     @patch("{}.find_local_root".format(command_name), return_value=None)
     @patch("os.chdir")
     def test_resolve_source_directories(
@@ -385,7 +430,7 @@ class FilesystemTest(unittest.TestCase):
         arguments.logger = None
         configuration = MagicMock()
         configuration.source_directories = []
-        configuration.local_configuration_root = "/root/local"
+        configuration.local_root = "/root/local"
         configuration.use_buck_builder = False
         configuration.ignore_unbuilt_dependencies = False
 
@@ -394,6 +439,7 @@ class FilesystemTest(unittest.TestCase):
             analysis_directory = SharedAnalysisDirectory(
                 [],
                 [],
+                project_root="/root",
                 original_directory="/root",
                 filter_paths=set(),
                 buck_builder=buck_builder,
@@ -411,6 +457,7 @@ class FilesystemTest(unittest.TestCase):
             analysis_directory = SharedAnalysisDirectory(
                 ["some_source_directory"],
                 ["configuration_source_directory"],
+                project_root="/root",
                 original_directory="/root",
                 filter_paths=set(),
                 buck_builder=buck_builder,

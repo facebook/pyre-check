@@ -14,7 +14,7 @@ let clean_environment () =
      that the library modifies. *)
   Unix.unsetenv "HH_SERVER_DAEMON_PARAM";
   Unix.unsetenv "HH_SERVER_DAEMON";
-  Worker.killall ()
+  ()
 
 
 let mock_analysis_configuration
@@ -22,7 +22,13 @@ let mock_analysis_configuration
     ?expected_version
     ()
   =
-  Configuration.Analysis.create ~debug:false ~parallel:false ?expected_version ~local_root ()
+  Configuration.Analysis.create
+    ~debug:false
+    ~parallel:false
+    ?expected_version
+    ~local_root
+    ~source_path:[local_root]
+    ()
 
 
 let mock_server_configuration ~local_root ?expected_version () =
@@ -37,7 +43,7 @@ let start_server ~local_root ?expected_version () =
 
 
 (* NOTE: This function runs a standalone type-check pass and therefore needs to nuke shared memory. *)
-let make_errors ~context ?(handle = "test.py") source =
+let make_errors ~context ?(handle = "test.py") ?(show_error_traces = false) source =
   let project =
     let builtins_source =
       {|
@@ -55,22 +61,25 @@ let make_errors ~context ?(handle = "test.py") source =
     |} in
     ScratchProject.setup
       ~context
+      ~show_error_traces
       ~include_typeshed_stubs:false
       ~external_sources:["builtins.pyi", builtins_source; "typing.pyi", typing_source]
       [handle, source]
   in
-  let { ScratchProject.BuiltTypeEnvironment.ast_environment; _ }, errors =
+  let { ScratchProject.BuiltTypeEnvironment.type_environment; _ }, errors =
     ScratchProject.build_type_environment_and_postprocess project
   in
   let errors =
+    let { Configuration.Analysis.show_error_traces; _ } = ScratchProject.configuration_of project in
     List.map
       errors
       ~f:
         (AnalysisError.instantiate
+           ~show_error_traces
            ~lookup:
              (AstEnvironment.ReadOnly.get_real_path_relative
                 ~configuration:(ScratchProject.configuration_of project)
-                (AstEnvironment.read_only ast_environment)))
+                (TypeEnvironment.ast_environment type_environment |> AstEnvironment.read_only)))
   in
   Memory.reset_shared_memory ();
   errors
@@ -150,26 +159,26 @@ module ScratchServer = struct
     state: Server.State.t;
   }
 
-  let local_root_of { configuration = { Configuration.Analysis.local_root; _ }; _ } = local_root
-
   let start
       ?(incremental_style = Configuration.Analysis.FineGrained)
+      ?(show_error_traces = false)
       ~context
       ?(external_sources = [])
       sources
     =
-    let configuration, module_tracker, ast_environment, environment, type_errors =
-      let ({ ScratchProject.module_tracker; configuration; _ } as project) =
-        ScratchProject.setup ~context ~external_sources ~include_helper_builtins:false sources
+    let configuration, environment, type_errors =
+      let ({ ScratchProject.configuration; _ } as project) =
+        ScratchProject.setup
+          ~context
+          ~external_sources
+          ~include_helper_builtins:false
+          ~show_error_traces
+          sources
       in
-      let { ScratchProject.BuiltTypeEnvironment.ast_environment; type_environment; _ }, type_errors =
+      let { ScratchProject.BuiltTypeEnvironment.type_environment; _ }, type_errors =
         ScratchProject.build_type_environment_and_postprocess project
       in
-      ( { configuration with incremental_style },
-        module_tracker,
-        ast_environment,
-        type_environment,
-        type_errors )
+      { configuration with incremental_style }, type_environment, type_errors
     in
     (* Associate the new errors with new files *)
     let errors = Ast.Reference.Table.create () in
@@ -188,9 +197,7 @@ module ScratchServer = struct
     in
     let state =
       {
-        Server.State.module_tracker;
-        ast_environment;
-        environment;
+        Server.State.environment;
         errors;
         symlink_targets_to_sources = String.Table.create ();
         last_request_time = Unix.time ();
@@ -198,7 +205,7 @@ module ScratchServer = struct
         lookups = String.Table.create ();
         connections =
           {
-            lock = Mutex.create ();
+            lock = Error_checking_mutex.create ();
             connections =
               ref
                 {
@@ -211,8 +218,9 @@ module ScratchServer = struct
                   adapter_sockets = [];
                 };
           };
-        scheduler = Test.mock_scheduler ();
+        scheduler = Scheduler.create_sequential ();
         open_documents = Ast.Reference.Table.create ();
+        server_uuid = None;
       }
     in
     { configuration; server_configuration; state }

@@ -24,8 +24,10 @@ let test_global_registration context =
     let project = ScratchProject.setup ["test.py", source] ~context in
     let ast_environment = ScratchProject.build_ast_environment project in
     let update_result =
+      UnannotatedGlobalEnvironment.create ast_environment
+      |> fun unannotated_global_environment ->
       UnannotatedGlobalEnvironment.update_this_and_all_preceding_environments
-        ast_environment
+        unannotated_global_environment
         ~scheduler:(mock_scheduler ())
         ~configuration:(ScratchProject.configuration_of project)
         ColdStart
@@ -48,9 +50,10 @@ let test_define_registration context =
   let assert_registers ~expected source =
     let project = ScratchProject.setup ["test.py", source] ~context in
     let ast_environment = ScratchProject.build_ast_environment project in
+    let unannotated_global_environment = UnannotatedGlobalEnvironment.create ast_environment in
     let update_result =
       UnannotatedGlobalEnvironment.update_this_and_all_preceding_environments
-        ast_environment
+        unannotated_global_environment
         ~scheduler:(mock_scheduler ())
         ~configuration:(ScratchProject.configuration_of project)
         ColdStart
@@ -249,9 +252,10 @@ let test_simple_global_registration context =
   let assert_registers source name expected =
     let project = ScratchProject.setup ["test.py", source] ~context in
     let ast_environment = ScratchProject.build_ast_environment project in
+    let unannotated_global_environment = UnannotatedGlobalEnvironment.create ast_environment in
     let update_result =
       UnannotatedGlobalEnvironment.update_this_and_all_preceding_environments
-        ast_environment
+        unannotated_global_environment
         ~scheduler:(mock_scheduler ())
         ~configuration:(ScratchProject.configuration_of project)
         ColdStart
@@ -366,10 +370,11 @@ let test_updates context =
         ~context
     in
     let ast_environment = ScratchProject.build_ast_environment project in
+    let unannotated_global_environment = UnannotatedGlobalEnvironment.create ast_environment in
     let configuration = ScratchProject.configuration_of project in
     let update_result =
       UnannotatedGlobalEnvironment.update_this_and_all_preceding_environments
-        ast_environment
+        unannotated_global_environment
         ~scheduler:(mock_scheduler ())
         ~configuration
         ColdStart
@@ -475,7 +480,7 @@ let test_updates context =
       ModuleTracker.update ~configuration ~paths:[path] module_tracker
       |> (fun updates -> AstEnvironment.Update updates)
       |> UnannotatedGlobalEnvironment.update_this_and_all_preceding_environments
-           ast_environment
+           unannotated_global_environment
            ~scheduler:(mock_scheduler ())
            ~configuration
     in
@@ -1747,8 +1752,9 @@ let test_builtin_modules context =
       ScratchProject.configuration_of project, ScratchProject.build_ast_environment project
     in
     let update_result =
+      let unannotated_global_environment = UnannotatedGlobalEnvironment.create ast_environment in
       UnannotatedGlobalEnvironment.update_this_and_all_preceding_environments
-        ast_environment
+        unannotated_global_environment
         ~scheduler:(mock_scheduler ())
         ~configuration
         ColdStart
@@ -1789,22 +1795,26 @@ let test_builtin_modules context =
 
 let test_resolve_exports context =
   let open UnannotatedGlobalEnvironment in
-  let assert_resolved ~expected ?from ~reference sources =
+  let assert_resolved ?(include_typeshed = false) ~expected ?from ~reference sources =
     Memory.reset_shared_memory ();
     let configuration, ast_environment =
       let project =
-        ScratchProject.setup
-          ~context
-          ~include_typeshed_stubs:false
-          ~include_helper_builtins:false
-          ~external_sources:["builtins.py", ""]
-          sources
+        if include_typeshed then
+          ScratchProject.setup ~context sources
+        else
+          ScratchProject.setup
+            ~context
+            ~include_typeshed_stubs:false
+            ~include_helper_builtins:false
+            ~external_sources:["builtins.py", ""]
+            sources
       in
       ScratchProject.configuration_of project, ScratchProject.build_ast_environment project
     in
     let update_result =
+      let unannotated_global_environment = UnannotatedGlobalEnvironment.create ast_environment in
       UnannotatedGlobalEnvironment.update_this_and_all_preceding_environments
-        ast_environment
+        unannotated_global_environment
         ~scheduler:(mock_scheduler ())
         ~configuration
         ColdStart
@@ -1986,10 +1996,32 @@ let test_resolve_exports context =
     ~reference:!&"a.c.d"
     ~expected:(Some (resolved_placeholder_stub !&"b" ~remaining:["c"; "d"]));
   (* Cyclic imports *)
+  assert_resolved ["a.py", "from a import b"] ~reference:!&"a.b" ~expected:None;
+  assert_resolved
+    ["a.py", "from b import c"; "b.py", "from a import c"]
+    ~reference:!&"a.c"
+    ~expected:None;
   assert_resolved
     ["a.py", "from b import c"; "b.py", "from d import c"; "d.py", "from b import c"]
     ~reference:!&"a.c"
     ~expected:None;
+  (* Self-cycle is OK in certain circumstances. *)
+  assert_resolved ["a/__init__.py", "from a import b"] ~reference:!&"a.b" ~expected:None;
+  assert_resolved
+    ["a/__init__.py", "from a import b"; "a/b.py", ""]
+    ~reference:!&"a.b"
+    ~expected:(Some (resolved_module !&"a.b"));
+  assert_resolved
+    ["a/__init__.py", "from a import b as c"; "a/b.py", ""]
+    ~reference:!&"a.c"
+    ~expected:(Some (resolved_module !&"a.b"));
+  (* TODO: We might want to ban this in the future since it is technically not OK at runtime. *)
+  assert_resolved
+    ["a.py", "from a import b"; "a/b.py", ""]
+    ~reference:!&"a.b"
+    ~expected:(Some (resolved_module !&"a.b"));
+  (* This is technically OK at runtime but we don't want to support it. *)
+  assert_resolved ["a.py", "b = 1\nfrom a import b"] ~reference:!&"a.b" ~expected:None;
   (* Runtime does not allow `from X import ...` when `X` is itself a module alias. *)
   assert_resolved
     ["a.py", "from b.c import d"; "b.py", "import c"; "c.py", "d = 42"]
@@ -2039,6 +2071,44 @@ let test_resolve_exports context =
     ~from:!&"qualifier.a"
     ~reference:!&"foo"
     ~expected:(Some (resolved_attribute !&"qualifier.a" "foo" ~export:Export.Name.GlobalVariable));
+
+  assert_resolved
+    ~include_typeshed:true
+    ~expected:(Some (resolved_attribute !&"" "None" ~export:GlobalVariable))
+    ~reference:!&"None"
+    [];
+
+  (* Special attribute tests. *)
+  assert_resolved
+    ["foo.py", ""]
+    ~reference:!&"foo.__doc__"
+    ~expected:(Some (resolved_attribute !&"foo" "__doc__" ~export:GlobalVariable));
+  assert_resolved
+    ["foo.py", ""]
+    ~reference:!&"foo.__file__"
+    ~expected:(Some (resolved_attribute !&"foo" "__file__" ~export:GlobalVariable));
+  assert_resolved
+    ["foo.py", ""]
+    ~reference:!&"foo.__name__"
+    ~expected:(Some (resolved_attribute !&"foo" "__name__" ~export:GlobalVariable));
+  assert_resolved
+    ["foo.py", ""]
+    ~reference:!&"foo.__package__"
+    ~expected:(Some (resolved_attribute !&"foo" "__package__" ~export:GlobalVariable));
+  assert_resolved
+    ["foo.py", ""]
+    ~reference:!&"foo.__dict__"
+    ~expected:(Some (resolved_attribute !&"foo" "__dict__" ~export:GlobalVariable));
+  (* Implicit modules also contain speical attributes. *)
+  assert_resolved
+    ["foo/bar.py", ""]
+    ~reference:!&"foo.__name__"
+    ~expected:(Some (resolved_attribute !&"foo" "__name__" ~export:GlobalVariable));
+  (* Explicitly defined special attributes take precedence over the default ones. *)
+  assert_resolved
+    ["foo.py", "from bar import __name__"; "bar.py", ""]
+    ~reference:!&"foo.__name__"
+    ~expected:(Some (resolved_attribute !&"bar" "__name__" ~export:GlobalVariable));
   ()
 
 

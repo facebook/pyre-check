@@ -91,10 +91,11 @@ let run_command
     ()
   =
   let local_root = Path.create_absolute local_root in
+  Statistics.GlobalState.initialize ~log_identifier ~project_name:(Path.last local_root) ();
   let configuration =
     Configuration.Analysis.create
       ~local_root
-      ~log_identifier
+      ~source_path:[local_root]
       ?log_directory
       ~perform_autocompletion
       ~features:(Configuration.Features.create features)

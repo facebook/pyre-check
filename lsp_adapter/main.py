@@ -6,6 +6,7 @@
 import argparse
 import asyncio
 import json
+import logging
 import os
 import random
 import re
@@ -16,7 +17,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
 from ..client.find_directories import find_local_root
-from ..client.json_rpc import JSON, Request, Response
+from ..client.json_rpc import JSON, JSONRPC, Request, Response
 from ..client.resources import get_configuration_value, log_directory
 from ..client.socket_connection import SocketConnection
 
@@ -29,6 +30,11 @@ def _should_run_null_server(null_server_flag: bool) -> bool:
     # TODO[T58989824]: We also need to check if the project can be run here.
     # Needs updating to mimic the current implementation (i.e. catch the buck errors)
     return null_server_flag
+
+
+def _get_log_file(current_directory: str) -> str:
+    local_root = find_local_root(original_directory=current_directory)
+    return str(log_directory(current_directory, local_root, "server") / "adapter.log")
 
 
 def _socket_exists(current_directory: str) -> bool:
@@ -51,9 +57,12 @@ def _null_initialize_response(request_id: Optional[Union[str, int]]) -> None:
     response.write(sys.stdout.buffer)
 
 
-def _parse_json_rpc(data: bytes) -> JSON:
-    body = re.sub(r"Content-Length:.+\d*\r\n\r\n", "", data.decode("utf-8"))
-    return json.loads(body)
+def _parse_json_rpc(data: bytes) -> List[JSON]:
+    json_bodies = []
+    for request_data in re.split(r"Content-Length:.+\d*\r\n\r\n", data.decode("utf-8")):
+        if not request_data == "":
+            json_bodies.append(json.loads(request_data))
+    return json_bodies
 
 
 def _should_restart(data: JSON) -> bool:
@@ -89,7 +98,7 @@ class Notifications:
 class NullServerAdapterProtocol(asyncio.Protocol):
     def data_received(self, data: bytes) -> None:
         json_body = _parse_json_rpc(data)
-        _null_initialize_response(json_body["id"])
+        _null_initialize_response(json_body[0]["id"])
 
 
 class AdapterProtocol(asyncio.Protocol):
@@ -102,15 +111,17 @@ class AdapterProtocol(asyncio.Protocol):
         self.transport = transport
 
     def data_received(self, data: bytes) -> None:
-        json_body = _parse_json_rpc(data)
-        if _should_restart(json_body):
-            transport = self.transport
-            if transport:
-                transport.close()
-            raise AdapterException
-        else:
-            self.socket.output.write(data)
-            self.socket.output.flush()
+        json_bodies = _parse_json_rpc(data)
+        for json_body in json_bodies:
+            if _should_restart(json_body):
+                transport = self.transport
+                if transport:
+                    transport.close()
+                raise AdapterException
+            else:
+                request = JSONRPC.from_json(json_body)
+                self.socket.output.write(request.format())
+                self.socket.output.flush()
 
 
 class SocketProtocol(asyncio.Protocol):
@@ -146,11 +157,24 @@ def add_socket_connection(loop: AbstractEventLoop, root: str) -> SocketConnectio
 
 def error_handler(loop: AbstractEventLoop, context: Dict[str, Any]) -> None:
     if isinstance(context["exception"], AdapterException):
-        loop.stop()
-        loop.close()
+        try:
+            loop.stop()
+            loop.close()
+        except Exception as exception:
+            logging.debug(exception)
+    else:
+        logging.debug(context)
 
 
 def run_server(loop: AbstractEventLoop, root: str) -> None:
+    logging.basicConfig(
+        filename=_get_log_file(root),
+        level=logging.DEBUG,
+        format="%(asctime)s %(message)s",
+        datefmt="%m/%d/%Y %I:%M:%S %p",
+        filemode="w",
+    )
+    logging.info("Starting adapter.")
     socket_connection = add_socket_connection(loop, root)
     stdin_pipe_reader = loop.connect_read_pipe(
         lambda: AdapterProtocol(socket_connection, root), sys.stdin

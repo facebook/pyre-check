@@ -21,13 +21,13 @@ let run_analysis
     dump_call_graph
     repository_root
     rule_filter
-    verbose
+    find_obscure_flows
+    _verbose
     expected_version
     sections
     debug
     strict
     show_error_traces
-    _infer
     sequential
     filter_directories
     ignore_all_errors
@@ -37,6 +37,7 @@ let run_analysis
     profiling_output
     memory_profiling_output
     project_root
+    source_path
     search_path
     taint_models_paths
     excludes
@@ -45,6 +46,11 @@ let run_analysis
     local_root
     ()
   =
+  let source_path = Option.value source_path ~default:[local_root] in
+  let local_root = Path.create_absolute local_root in
+  Log.GlobalState.initialize ~debug ~sections;
+  Statistics.GlobalState.initialize ~log_identifier ?logger ~project_name:(Path.last local_root) ();
+  Profiling.GlobalState.initialize ~profiling_output ~memory_profiling_output ();
   let filter_directories =
     filter_directories
     >>| String.split_on_chars ~on:[';']
@@ -60,28 +66,23 @@ let run_analysis
   let repository_root = repository_root >>| Path.create_absolute in
   let configuration =
     Configuration.Analysis.create
-      ~verbose
       ?expected_version
-      ~sections
       ~debug
       ~strict
       ~show_error_traces
-      ~log_identifier
-      ?logger
-      ?profiling_output
-      ?memory_profiling_output
       ~infer:false
       ~project_root:(Path.create_absolute project_root)
       ~parallel:(not sequential)
       ?filter_directories
       ?ignore_all_errors
       ~number_of_workers
-      ~search_path:(List.map search_path ~f:SearchPath.create)
+      ~search_path:(List.map search_path ~f:SearchPath.create_normalized)
       ~taint_model_paths:(List.map taint_models_paths ~f:Path.create_absolute)
       ~excludes
       ~extensions
       ?log_directory
-      ~local_root:(Path.create_absolute local_root)
+      ~local_root
+      ~source_path:(List.map source_path ~f:Path.create_absolute)
       ()
   in
   let result_json_path = result_json_path >>| Path.create_absolute ~follow_symbolic_links:false in
@@ -94,7 +95,6 @@ let run_analysis
   in
   (fun () ->
     let timer = Timer.start () in
-    let scheduler = Scheduler.create ~configuration () in
     (* In order to save time, sanity check models before starting the analysis. *)
     Log.info "Verifying model syntax and configuration.";
     Taint.Model.get_model_sources ~paths:configuration.Configuration.Analysis.taint_model_paths
@@ -104,71 +104,79 @@ let run_analysis
       ~paths:configuration.Configuration.Analysis.taint_model_paths
     |> ignore;
 
-    let environment, ast_environment, qualifiers =
-      let configuration =
-        (* In order to get an accurate call graph and type information, we need to ensure that we
-           schedule a type check for external files. *)
-        { configuration with analyze_external_sources = true }
-      in
-      Service.Check.check
-        ~scheduler
-        ~configuration
-        ~call_graph_builder:(module Taint.CallGraphBuilder)
-      |> fun { module_tracker; environment; ast_environment; _ } ->
-      let qualifiers = Analysis.ModuleTracker.tracked_explicit_modules module_tracker in
-      environment, Analysis.AstEnvironment.read_only ast_environment, qualifiers
-    in
-    let filename_lookup path_reference =
-      match repository_root with
-      | Some root ->
-          Analysis.AstEnvironment.ReadOnly.get_real_path
+    Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->
+        let environment, ast_environment, qualifiers =
+          let configuration =
+            (* In order to get an accurate call graph and type information, we need to ensure that
+               we schedule a type check for external files. *)
+            { configuration with analyze_external_sources = true }
+          in
+          Service.Check.check
+            ~scheduler
             ~configuration
-            ast_environment
-            path_reference
-          >>= Pyre.Path.follow_symbolic_link
-          >>= fun path -> Pyre.Path.get_relative_to_root ~root ~path
-      | None ->
-          Analysis.AstEnvironment.ReadOnly.get_real_path_relative
-            ~configuration
-            ast_environment
-            path_reference
-    in
-    let errors =
-      Service.StaticAnalysis.analyze
-        ~scheduler
-        ~analysis_kind:(get_analysis_kind analysis)
-        ~configuration:
-          {
-            Configuration.StaticAnalysis.configuration;
-            result_json_path;
-            dump_call_graph;
-            verify_models = not no_verify;
-            rule_filter;
-          }
-        ~filename_lookup
-        ~environment:(Analysis.TypeEnvironment.read_only environment)
-        ~qualifiers
-        ()
-    in
-    let { Caml.Gc.minor_collections; major_collections; compactions; _ } = Caml.Gc.stat () in
-    Statistics.performance
-      ~name:"analyze"
-      ~timer
-      ~integers:
-        [
-          "gc_minor_collections", minor_collections;
-          "gc_major_collections", major_collections;
-          "gc_compactions", compactions;
-        ]
-      ();
+            ~call_graph_builder:(module Taint.CallGraphBuilder)
+          |> fun { environment; _ } ->
+          let qualifiers =
+            Analysis.TypeEnvironment.module_tracker environment
+            |> Analysis.ModuleTracker.tracked_explicit_modules
+          in
+          ( environment,
+            Analysis.TypeEnvironment.ast_environment environment
+            |> Analysis.AstEnvironment.read_only,
+            qualifiers )
+        in
+        let filename_lookup path_reference =
+          match repository_root with
+          | Some root ->
+              Analysis.AstEnvironment.ReadOnly.get_real_path
+                ~configuration
+                ast_environment
+                path_reference
+              >>= Pyre.Path.follow_symbolic_link
+              >>= fun path -> Pyre.Path.get_relative_to_root ~root ~path
+          | None ->
+              Analysis.AstEnvironment.ReadOnly.get_real_path_relative
+                ~configuration
+                ast_environment
+                path_reference
+        in
+        let errors =
+          Service.StaticAnalysis.analyze
+            ~scheduler
+            ~analysis_kind:(get_analysis_kind analysis)
+            ~configuration:
+              {
+                Configuration.StaticAnalysis.configuration;
+                result_json_path;
+                dump_call_graph;
+                verify_models = not no_verify;
+                rule_filter;
+                find_obscure_flows;
+              }
+            ~filename_lookup
+            ~environment:(Analysis.TypeEnvironment.read_only environment)
+            ~qualifiers
+            ()
+        in
+        let { Caml.Gc.minor_collections; major_collections; compactions; _ } = Caml.Gc.stat () in
+        Statistics.performance
+          ~name:"analyze"
+          ~timer
+          ~integers:
+            [
+              "gc_minor_collections", minor_collections;
+              "gc_major_collections", major_collections;
+              "gc_compactions", compactions;
+            ]
+          ();
 
-    (* Print results. *)
-    List.map errors ~f:(fun error ->
-        Interprocedural.Error.instantiate ~lookup:filename_lookup error
-        |> Interprocedural.Error.Instantiated.to_json ~show_error_traces)
-    |> (fun result -> Yojson.Safe.pretty_to_string (`List result))
-    |> Log.print "%s")
-  |> Scheduler.run_process ~configuration
+        (* Print results. *)
+        List.map errors ~f:(fun error ->
+            Interprocedural.Error.instantiate ~show_error_traces ~lookup:filename_lookup error
+            |> Interprocedural.Error.Instantiated.to_yojson)
+        |> (fun result -> Yojson.Safe.pretty_to_string (`List result))
+        |> Log.print "%s"))
+  |> Scheduler.run_process
 
 
 let command =
@@ -194,5 +202,9 @@ let command =
            "-rules"
            (optional (Arg_type.comma_separated int))
            ~doc:"If set, filter the analysis to only consider the provided rule numbers."
+      +> flag
+           "-find-obscure-flows"
+           no_arg
+           ~doc:"Perform a taint analysis to find flows through obscure models."
       ++ Specification.base_command_line_arguments)
     run_analysis

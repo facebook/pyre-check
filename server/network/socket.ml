@@ -14,9 +14,9 @@ module Map = Map.Make (struct
 
   let compare = Unix.File_descr.compare
 
-  let sexp_of_t = Unix.File_descr.sexp_of_t
+  let sexp_of_t descriptor = Unix.File_descr.to_int descriptor |> Int.sexp_of_t
 
-  let t_of_sexp = Unix.File_descr.t_of_sexp
+  let t_of_sexp sexp = Int.t_of_sexp sexp |> Unix.File_descr.of_int
 end)
 
 let initialize_unix_socket path = Socket.unix_socket (Path.absolute path)

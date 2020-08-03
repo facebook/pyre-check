@@ -9,6 +9,8 @@ open Ast
 open Service
 module ModuleTracker = Analysis.ModuleTracker
 module AstEnvironment = Analysis.AstEnvironment
+module AnnotatedGlobalEnvironment = Analysis.AnnotatedGlobalEnvironment
+module TypeEnvironment = Analysis.TypeEnvironment
 
 module SymlinkTargetsToSources = Memory.Serializer (struct
   type t = Path.t String.Table.t
@@ -67,19 +69,22 @@ end)
 exception IncompatibleState of string
 
 (* Return symlinks for files for a pyre project that are links to a separate project root. *)
-let restore_symbolic_links ~changed_paths ~local_root ~get_old_link_path =
+let restore_symbolic_links ~changed_paths ~source_path ~get_old_link_path =
   let new_paths, removed_paths = List.partition_tf ~f:Path.file_exists changed_paths in
   (* We need to get the deleted paths from shared memory, as the version of the server launched from
      the saved state will have references to this files, whereas they won't be present in the new
      project root, meaning that we need to clean up the environment from them. *)
-  let removed_paths = List.filter_map removed_paths ~f:get_old_link_path in
+  let removed_paths =
+    List.map removed_paths ~f:(fun path -> get_old_link_path path |> Option.value ~default:path)
+  in
   (* Any member of new_paths might not have existed when the saved state was being created. *)
   let new_paths =
     let local_root_links =
       let file_filter file =
         Filename.check_suffix file ".py" || Filename.check_suffix file ".pyi"
       in
-      Path.list ~file_filter ~root:local_root () |> fun links -> Path.build_symlink_map ~links
+      List.concat_map source_path ~f:(fun root -> Path.list ~file_filter ~root ())
+      |> fun links -> Path.build_symlink_map ~links
     in
     List.filter_map new_paths ~f:(Map.find local_root_links)
   in
@@ -111,7 +116,9 @@ let compute_locally_changed_paths
     let changed_path ({ SourcePath.qualifier; _ } as source_path) =
       let old_hash =
         AstEnvironment.ReadOnly.get_raw_source ast_environment qualifier
-        >>| fun { Source.metadata = { Source.Metadata.raw_hash; _ }; _ } -> raw_hash
+        >>= function
+        | Result.Ok { Source.metadata = { Source.Metadata.raw_hash; _ }; _ } -> Some raw_hash
+        | Result.Error _ -> None
       in
       let path = SourcePath.full_path ~configuration source_path in
       let current_hash = File.hash (File.create path) in
@@ -126,7 +133,6 @@ let compute_locally_changed_paths
     Scheduler.map_reduce
       scheduler
       ~policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
-      ~configuration
       ~initial:[]
       ~map:changed_paths
       ~reduce:( @ )
@@ -156,7 +162,7 @@ let load
           {
             Configuration.Analysis.expected_version;
             project_root;
-            local_root;
+            source_path;
             configuration_file_hash;
             _;
           } as configuration;
@@ -209,6 +215,7 @@ let load
   Memory.load_shared_memory ~path:(Path.absolute shared_memory_path) ~configuration;
   let module_tracker = ModuleTracker.SharedMemory.load () in
   let ast_environment = AstEnvironment.load module_tracker in
+  let environment = AnnotatedGlobalEnvironment.create ast_environment |> TypeEnvironment.create in
   let old_configuration = StoredConfiguration.load () in
   if not (Configuration.Analysis.equal old_configuration configuration) then
     raise (IncompatibleState "configuration mismatch");
@@ -217,7 +224,7 @@ let load
   let changed_paths =
     match changed_paths with
     | Some changed_paths ->
-        restore_symbolic_links ~changed_paths ~local_root ~get_old_link_path:(fun path ->
+        restore_symbolic_links ~changed_paths ~source_path ~get_old_link_path:(fun path ->
             Hashtbl.find symlink_targets_to_sources (Path.absolute path))
     | None ->
         compute_locally_changed_paths
@@ -228,22 +235,9 @@ let load
   in
   let errors = ServerErrors.load () in
   Log.info "Reanalyzing %d files and their dependencies." (List.length changed_paths);
-  let environment, _ =
-    IncrementalCheck.recheck
-      ~module_tracker
-      ~ast_environment
-      ~errors
-      ~scheduler
-      ~connections
-      ~lookups:(String.Table.create ())
-      ~configuration
-      changed_paths
-  in
   let state =
     {
-      State.module_tracker;
-      ast_environment;
-      environment;
+      State.environment;
       errors;
       symlink_targets_to_sources;
       scheduler;
@@ -252,21 +246,23 @@ let load
       connections;
       lookups = String.Table.create ();
       open_documents = Reference.Table.create ();
+      server_uuid = None;
     }
   in
+  let _ = IncrementalCheck.recheck_with_state ~state ~configuration changed_paths in
   state
 
 
 let save
     ~configuration
     ~saved_state_path
-    { State.errors; module_tracker; ast_environment; symlink_targets_to_sources; _ }
+    { State.errors; environment; symlink_targets_to_sources; _ }
   =
   Log.info "Saving server state to %s" saved_state_path;
   Memory.SharedMemory.collect `aggressive;
-  ModuleTracker.SharedMemory.store module_tracker;
+  TypeEnvironment.module_tracker environment |> ModuleTracker.SharedMemory.store;
   SymlinkTargetsToSources.store symlink_targets_to_sources;
-  AstEnvironment.store ast_environment;
+  TypeEnvironment.ast_environment environment |> AstEnvironment.store;
   StoredConfiguration.store configuration;
   ServerErrors.store errors;
   Analysis.SharedMemoryKeys.DependencyKey.Registry.store ();

@@ -8,7 +8,7 @@ open Core
 module Error = AnalysisError
 
 type t = {
-  global_environment: AnnotatedGlobalEnvironment.ReadOnly.t;
+  global_environment: AnnotatedGlobalEnvironment.t;
   set_errors: Reference.t -> Error.t list -> unit;
   set_local_annotations: Reference.t -> LocalAnnotationMap.ReadOnly.t -> unit;
   invalidate: Reference.t list -> unit;
@@ -18,10 +18,12 @@ type t = {
 
 let global_environment { global_environment; _ } = global_environment
 
-let global_resolution { global_environment; _ } = GlobalResolution.create global_environment
-
 let ast_environment { global_environment; _ } =
-  AnnotatedGlobalEnvironment.ReadOnly.ast_environment global_environment
+  AnnotatedGlobalEnvironment.ast_environment global_environment
+
+
+let module_tracker type_environment =
+  ast_environment type_environment |> AstEnvironment.module_tracker
 
 
 let set_errors { set_errors; _ } = set_errors
@@ -107,4 +109,7 @@ module ReadOnly = struct
 end
 
 let read_only { global_environment; get_errors; get_local_annotations; _ } =
-  ReadOnly.create ~get_errors ~get_local_annotations global_environment
+  ReadOnly.create
+    ~get_errors
+    ~get_local_annotations
+    (AnnotatedGlobalEnvironment.read_only global_environment)

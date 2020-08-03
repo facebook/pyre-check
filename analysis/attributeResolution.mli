@@ -26,6 +26,7 @@ type generic_type_problems =
   | IncorrectNumberOfParameters of {
       actual: int;
       expected: int;
+      can_accept_more_parameters: bool;
     }
   | ViolateConstraints of {
       actual: Type.t;
@@ -179,6 +180,7 @@ module AttributeReadOnly : sig
   val get_global : t -> ?dependency:DependencyKey.registered -> Reference.t -> Global.t option
 end
 
-include Environment.S with module ReadOnly = AttributeReadOnly
-
-module PreviousEnvironment = ClassMetadataEnvironment
+include
+  Environment.S
+    with module ReadOnly = AttributeReadOnly
+     and module PreviousEnvironment = ClassMetadataEnvironment

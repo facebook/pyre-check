@@ -61,7 +61,6 @@ let create_configuration ?(daemonize = true) ?log_path ?saved_state_action confi
     daemonize;
     saved_state_action;
     configuration;
-    server_uuid = Uuid_unix.create () |> Uuid.to_string;
   }
 
 
@@ -74,7 +73,7 @@ let start_from_scratch ~connections ~configuration () =
   let scheduler = Scheduler.create ~configuration () in
   SharedMem.collect `aggressive;
   let timer = Timer.start () in
-  let { Check.module_tracker; ast_environment; environment; errors } =
+  let { Check.environment; errors } =
     Check.check
       ~scheduler
       ~configuration
@@ -88,7 +87,9 @@ let start_from_scratch ~connections ~configuration () =
       | None -> ()
       | Some symlink_target -> Hashtbl.set table ~key:symlink_target ~data:symlink_source
     in
-    Analysis.ModuleTracker.source_paths module_tracker |> List.iter ~f:add_source_path;
+    Analysis.TypeEnvironment.module_tracker environment
+    |> Analysis.ModuleTracker.source_paths
+    |> List.iter ~f:add_source_path;
     table
   in
   Statistics.performance
@@ -110,8 +111,6 @@ let start_from_scratch ~connections ~configuration () =
     table
   in
   {
-    module_tracker;
-    ast_environment;
     environment;
     errors;
     symlink_targets_to_sources;
@@ -121,6 +120,7 @@ let start_from_scratch ~connections ~configuration () =
     connections;
     lookups = String.Table.create ();
     open_documents = Ast.Reference.Table.create ();
+    server_uuid = None;
   }
 
 
@@ -144,7 +144,6 @@ let start
               project_root;
               _;
             } as configuration;
-          server_uuid;
           saved_state_action;
           _;
         } as server_configuration )
@@ -181,7 +180,7 @@ let start
   | _ -> () );
   log_configuration configuration;
   Telemetry.send_telemetry () ~f:(fun _ ->
-      Telemetry.create_session_start_message ~local_root ~project_root ~server_uuid);
+      Telemetry.create_session_start_message ~local_root ~project_root);
   state
 
 
@@ -195,6 +194,7 @@ let stop
         pid_path;
         _;
       }
+    ~scheduler
   =
   Statistics.event ~flush:true ~name:"stop server" ~normals:["reason", reason] ();
 
@@ -206,7 +206,7 @@ let stop
   Path.remove json_socket_link;
   Path.remove adapter_link;
   Path.remove pid_path;
-  Worker.killall ();
+  Scheduler.destroy scheduler;
   exit 0
 
 

@@ -33,11 +33,12 @@ let assert_errors
       ~search_path
       ~project_root:root
       ~local_root:root
+      ~source_path:[root]
       ()
   in
   let scheduler = Test.mock_scheduler () in
   List.iter ~f:File.write files;
-  let { Service.Check.ast_environment; errors; _ } =
+  let { Service.Check.environment; errors; _ } =
     Service.Check.check
       ~scheduler
       ~configuration
@@ -47,12 +48,14 @@ let assert_errors
     errors
     |> List.map ~f:(fun error ->
            Analysis.AnalysisError.instantiate
+             ~show_error_traces:false
              ~lookup:
                (Analysis.AstEnvironment.ReadOnly.get_real_path_relative
                   ~configuration
-                  (Analysis.AstEnvironment.read_only ast_environment))
+                  ( Analysis.TypeEnvironment.ast_environment environment
+                  |> Analysis.AstEnvironment.read_only ))
              error
-           |> Analysis.AnalysisError.Instantiated.description ~show_error_traces:false)
+           |> Analysis.AnalysisError.Instantiated.description)
   in
   Memory.reset_shared_memory ();
   assert_equal

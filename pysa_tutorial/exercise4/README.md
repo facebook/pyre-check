@@ -1,41 +1,127 @@
-# Pysa Tutorial: Model Generators
+# Pysa Tutorial: Features and SAPP
 
-The purpose of this exercise is to learn how to dynamically generate _models_ for sources and sinks. This is useful when there are too many sources/sinks to write by hand, or they change too quickly to be maintainable.
+The purpose of this exercise is to learn how to add _features_ to issues, so
+that we can filter down to only the interesting issues with the _Static Analysis
+Post Processor (SAPP)_.
 
-The functions in `views.py` have been ported to use two different ways of passing data into a Django-like API. In the process, they were made vulnerable to RCE again, but Pysa cannot catch the issues yet. The goal of this exercise is the make changes to `generate_models.py` so that it can dynamically generate source annotations for `views.py`, allowing Pysa to catch the RCE vulnerabilities.
-
-**If you directly modify any file other than `generate_models.py` in this exercise, you are doing something wrong.**
+Like the previous exercise, none of the functions in `views.py` are vulnerable,
+but they will all show up in `pyre analyze` as false positives. The goal of this
+exercise is to make changes to `features.pysa`, `taint.config`, and `views.py`
+in order to add features that will allow the false positives to be filtered out
+when browsing via SAPP.
 
 ## What you need to know
 
-### Dynamic Model Generators
+### Features
 
-Dynamic model generators run before Pysa, and generate `.pysa` files to identify sources and sinks that are too difficult to write or maintain by hand. The selection of model generators is always expanding, and they live in the [`pyre-check`](https://github.com/facebook/pyre-check) repository within `tools/generate_taint_models/get_*.py`. A summary of generators is available in the [public docs](https://pyre-check.org/docs/pysa-model-generators.html#example-model-generators).
+[_Features_](https://pyre-check.org/docs/pysa-features.html) are declared in
+`taint.config` files and used in `.pysa` files, just like sources and sinks. An
+example of both the declaration and usage are provided in `taint.config` and
+`features.pysa` respectively. You will need to copy these examples to add a new
+feature of your own.
+
+### Static Analysis Post Processor (SAPP)
+
+The [_Static Analysis Post Processor
+(SAPP)_](https://pyre-check.org/docs/static-analysis-post-processor.html) ships
+in a sperate package from Pysa, which you should have already installed during
+the initial setup of this tutorial. For projects larger than the toy examples in
+these tutorials, SAPP is the prefered way to browse issues.
 
 ## Instructions
 
-### Use `generate_models.py`
+1. The numeric operations from the previous tutorial have been replaced with a
+   set of `and` and `or` operations in this tutorial. These operations have been
+   crafted carefully to ensure that they are not exploitable for RCE, however,
+   they still trigger Pysa issues. Your goal is to use _features_ to filter
+   these issues out while browsing results in SAPP.
 
-The `operate_on_twos` function accepts a raw string in its interface, which is extracted from the request URL, according to the pattern specified in `urls.py`. This string is user-controlled, but Pysa does not know that. Update `generate_models.py` to correctly generate a `.pysa` file, which will tell Pysa that the `operator` argument to `operate_on_twos` is user-controlled.
+   To start, run Pysa and open the results in SAPP:
 
-_Note that this `urls.py` + `views.py` pattern is designed to closely resemble how Django dispatches incoming requests._
+   ```
+   pyre analyze --save-results-to .
+   sapp analyze taint-output.json
+   sapp explore
+   ```
 
-1. Run `python3 generate_models.py --output-directory .` from this directory
+   Within the SAPP prompt (you should see `>>>`), type `issues` and observe the
+   output:
 
-1. Verify that you have a `.pysa` file generated for you, and that the file correctly declares the `operator` argument to `operate_on_twos` as `TaintSource[UserControlled]`
+   ```
+   ====================================================
+   Interactive issue exploration. Type 'help' for help.
+   ====================================================
 
-1. Run `pyre analyze`, and verify you see **1 issue** in the output.
+   [ run 1 ]
+   >>> issues
+   ```
 
-### Extend `generate_models.py`
+   You will know you are done this step when you see **2 issues** displayed.
 
-The `operate_on_threes` function uses a custom decorator which extracts user-controlled data from the request and passes it in as arguments. Pysa doesn't have good insight into decorators, so it misses this taint pattern. Update `generate_models.py` to correctly generate a `.pysa` file, which will tell Pysa that the `operator` argument to `operate_on_threes` is user-controlled.
+1. `do_and` ensures RCE is not possible by converting both user controlled
+   arguments to `bool`. Try to identify an _automatically added feature_ that
+   indicates `bool` was used, and use that feature to filter out `do_and` from
+   your results.
 
-1. Look through the available dynamic model generators in in `pyre-check/tools/generate_taint_models/`, or read a summary of a few in the [public docs](https://pyre-check.org/docs/pysa-model-generators.html#example-model-generators). Identify which one would be useful in this scenario
+   1. Find the issue representing `do_and` in the issues output you got in the
+      previous step; try looking for `Callable: views.do_and` in the output.
 
-1. Update `generate_models.py` to also call the generator you identified.
+   1. Look at the features listed for this issue, and identify one which looks
+      like it indicates all flows were converted to `bool`.
 
-1. Run `python3 generate_models.py --output-directory .` from this directory
+   1. Filter out this issue within the SAPP prompt:
 
-1. Verify that you have a new `.pysa` file generated, in addition to the one from the previous section. Check that this file is correctly declaring the `operator` argument to `operate_on_threes` as `TaintSource[UserControlled]`
+      ```
+      >>> issues(exclude_features=["<REPLACE_ME>"])
+      ```
 
-1. Run `pyre analyze`, and verify you see **2 issues** in the output.
+      You will know you are done this section when you see **one issue**
+      displayed.
+
+1. `do_or` ensures RCE is not possible by asserting that both user controlled
+   arguments are numeric. Try to add a feauture to all arguments passed to
+   `assert_numeric`, and use that feature to filter out `do_or` from your
+   results.
+
+   1. Update `taint.config` to contain a new entry for the feature you're going
+      to add.
+
+   1. Update `features.pysa` to contain a model that will add a feature to all
+      arguments passed into `assert_numeric`
+
+   1. Re-run pysa and open the new results in SAPP
+
+      ```
+      pyre analyze --save-results-to .
+      sapp analyze taint-output.json
+      sapp explore
+      ```
+
+   1. Query issues with the `issues(exclude_features=["<REPLACE_ME>"])`
+      query you wrote in the previous step. The issue representing `do_or`
+      should be the only remaining issue you see in your SAPP output; ensure you
+      see `Callable: views.do_or` the issue output.
+
+   1. Identify the featue you added in the SAPP issue output, and update your
+      query to filter out this issue:
+
+      ```
+      >>> issues(exclude_features=["<REPLACE_ME>", "<AND_REPLACE_ME>"])
+      ```
+
+      You will know you are done this exercise when you see **zero issue**
+      displayed.
+
+## Debugging Tips
+
+- `pyre analyze` erroring out? Try these strategies:
+  -  Make sure type annotations didn't sneak into your `.pysa` model files. The
+     only annotations you should have should be feature annoations:
+     `AddFeatureToArgument[Via[FEATURE_NAME]]`. Make sure you remove all type
+     annotations such as `-> None` from your `.pysa` files.
+  - Make sure you're using **fully qualified names**. All of your models for
+    functions in this file should look like `def
+    FILE_NAME.function_name(argument: ANNOTATION): ...`
+- `sapp` erroring out? Try these strategies:
+  - Make sure you installed the necessary dependencies described in
+    `pyre-check/pysa_tutorial/README.md`

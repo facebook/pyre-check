@@ -11,6 +11,7 @@ def __import__(
 ): ...
 def pickle.loads(
   data: TaintSink[RemoteCodeExecution],
+  /,
   *,
   fix_imports=...,
   encoding=...,

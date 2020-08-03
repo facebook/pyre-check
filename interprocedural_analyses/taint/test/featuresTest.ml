@@ -14,7 +14,9 @@ let test_add_type_breadcrumb context =
     let { Test.ScratchProject.BuiltTypeEnvironment.type_environment; _ } =
       Test.ScratchProject.build_type_environment project
     in
-    let resolution = TypeEnvironment.global_resolution type_environment in
+    let resolution =
+      TypeEnvironment.read_only type_environment |> TypeEnvironment.ReadOnly.global_resolution
+    in
     let actual =
       let open Abstract.OverUnderSetDomain in
       add_type_breadcrumb ~resolution (Some annotation) []

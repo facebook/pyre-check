@@ -1399,6 +1399,86 @@ let test_callable_parameter_variadics context =
       "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter to call \
        `H.f` but got `str`.";
     ];
+
+  assert_type_errors
+    {|
+      from typing import Callable
+      import pyre_extensions
+
+      TParams = pyre_extensions.ParameterSpecification("TParams")
+      def outer(f: Callable[TParams, int]) -> None:
+        def foo(x: int, *args: TParams.args, **kwargs: TParams.kwargs) -> None:
+          pass
+        def bar(__x: int, *args: TParams.args, **kwargs: TParams.kwargs) -> None:
+          pass
+        def baz(x: int, /, *args: TParams.args, **kwargs: TParams.kwargs) -> None:
+          pass
+        reveal_type(foo)
+        reveal_type(bar)
+        reveal_type(baz)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `foo` is \
+       `typing.Callable[pyre_extensions.type_variable_operators.Concatenate[int, test.TParams], \
+       None]`.";
+      "Revealed type [-1]: Revealed type for `bar` is \
+       `typing.Callable[pyre_extensions.type_variable_operators.Concatenate[int, test.TParams], \
+       None]`.";
+      "Revealed type [-1]: Revealed type for `baz` is \
+       `typing.Callable[pyre_extensions.type_variable_operators.Concatenate[int, test.TParams], \
+       None]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Callable
+      import pyre_extensions
+
+      TParams = pyre_extensions.ParameterSpecification("TParams")
+      def outer(f: Callable[TParams, int]) -> Callable[TParams, None]:
+        def foo(x: int, *args: TParams.args, **kwargs: TParams.kwargs) -> None:
+          f( *args, **kwargs)
+        def bar( *args: TParams.args, **kwargs: TParams.kwargs) -> None:
+          foo(1, *args, **kwargs) # Accepted
+          foo(x=1, *args, **kwargs) # Rejected
+        return bar
+    |}
+    ["Unexpected keyword [28]: Unexpected keyword argument `x` to anonymous call."];
+  assert_type_errors
+    {|
+      from typing import Protocol, Callable, TypeVar, overload, Union
+      import pyre_extensions
+      TParams = pyre_extensions.ParameterSpecification("TParams")
+
+      def doesnt_care_positional( *args: object) -> None:
+        pass
+
+      def doesnt_care_keywords( **kwargs: object) -> None:
+        pass
+
+      def does_care_positional( *args: int) -> None:
+        pass
+
+      def does_care_keywords( **kwargs: int) -> None:
+        pass
+
+      def outer(f: Callable[TParams, int]) -> Callable[TParams, None]:
+        def foo( *args: TParams.args, **kwargs: TParams.kwargs) -> None:
+          doesnt_care_positional( *args)
+          doesnt_care_keywords( **kwargs)
+
+          does_care_positional( *args)
+          does_care_keywords( **kwargs)
+
+
+          f( *args, **kwargs)
+        return foo
+    |}
+    [
+      "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter to call \
+       `does_care_positional` but got `object`.";
+      "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter to call \
+       `does_care_keywords` but got `object`.";
+    ];
   ()
 
 

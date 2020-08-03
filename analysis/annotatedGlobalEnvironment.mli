@@ -22,6 +22,7 @@ module AnnotatedReadOnly : sig
   val ast_environment : t -> AstEnvironment.ReadOnly.t
 end
 
-include Environment.S with module ReadOnly = AnnotatedReadOnly
-
-module PreviousEnvironment = AttributeResolution
+include
+  Environment.S
+    with module ReadOnly = AnnotatedReadOnly
+     and module PreviousEnvironment = AttributeResolution

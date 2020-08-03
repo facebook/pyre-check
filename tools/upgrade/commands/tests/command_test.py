@@ -5,11 +5,16 @@
 
 # pyre-unsafe
 
+import argparse
 import unittest
 from unittest.mock import MagicMock, call
 
 from ...errors import PartialErrorSuppression
-from ..command import ErrorSuppressingCommand
+from ..command import (
+    ErrorSource,
+    ErrorSuppressingCommand,
+    ProjectErrorSuppressingCommand,
+)
 
 
 class CommandTest(unittest.TestCase):
@@ -95,3 +100,14 @@ class CommandTest(unittest.TestCase):
                 ),
             ]
         )
+
+    def test_argument_parsing(self) -> None:
+        parser = argparse.ArgumentParser()
+        ProjectErrorSuppressingCommand.add_arguments(parser)
+        self.assertEqual(
+            parser.parse_args(["--error-source", "stdin"]).error_source,
+            ErrorSource.STDIN,
+        )
+        self.assertEqual(parser.parse_args([]).error_source, ErrorSource.GENERATE)
+        with self.assertRaises(SystemExit):
+            parser.parse_args(["--error-source", "foo"]).error_source,

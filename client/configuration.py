@@ -145,7 +145,6 @@ class _ConfigurationFile:
             "unstable_client",
             "saved_state",
             "taint_models_path",
-            "oncall",
         }
 
 
@@ -154,7 +153,8 @@ class Configuration:
 
     def __init__(
         self,
-        local_configuration: Optional[str] = None,
+        project_root: str,
+        local_root: Optional[str] = None,
         search_path: Optional[List[str]] = None,
         binary: Optional[str] = None,
         typeshed: Optional[str] = None,
@@ -170,7 +170,8 @@ class Configuration:
         self.formatter = formatter
         self.ignore_all_errors = []
         self.number_of_workers: int = 0
-        self.local_configuration: Optional[str] = None
+        self.project_root: str = project_root
+        self._local_root: Optional[str] = local_root
         self.taint_models_path: List[str] = []
         self.file_hash: Optional[str] = None
         self.extensions: List[str] = []
@@ -206,8 +207,8 @@ class Configuration:
         if excludes:
             self.excludes.extend(excludes)
 
-        if local_configuration:
-            self._check_read_local_configuration(local_configuration)
+        if local_root:
+            self._check_read_local_configuration(local_root)
         if log_directory:
             self.ignore_all_errors.append(log_directory)
 
@@ -215,8 +216,10 @@ class Configuration:
 
         self.other_critical_files: List[str] = []
 
+        project_configuration = os.path.join(project_root, CONFIGURATION_FILE)
+
         # Order matters. The values will only be updated if a field is None.
-        self._read(CONFIGURATION_FILE)
+        self._read(project_configuration)
         self._override_version_hash()
         self._resolve_versioned_paths()
         self._apply_defaults()
@@ -320,30 +323,10 @@ class Configuration:
                     if path not in non_existent_infer_paths
                 ]
 
-            typeshed_subdirectories = os.listdir(self.typeshed)
-            if "stdlib" not in typeshed_subdirectories:
-                LOG.warning(
-                    "Typeshed at `%s` contains subdirectories:\n%s",
-                    self.typeshed,
-                    typeshed_subdirectories,
-                )
-                raise InvalidConfiguration(
-                    "`typeshed` location must contain a `stdlib` directory."
-                )
-
-            for typeshed_subdirectory_name in typeshed_subdirectories:
+            for typeshed_subdirectory_name in ["stdlib", "third_party"]:
                 typeshed_subdirectory = os.path.join(
                     self.typeshed, typeshed_subdirectory_name
                 )
-                if (
-                    not os.path.isdir(typeshed_subdirectory)
-                    or typeshed_subdirectory_name == "tests"
-                    or typeshed_subdirectory_name[0] == "."
-                    or typeshed_subdirectory_name == "__pycache__"
-                ):
-                    # Ignore some well-known directories we do not care about.
-                    continue
-
                 assert_readable_directory(typeshed_subdirectory)
                 for typeshed_version_directory_name in os.listdir(
                     typeshed_subdirectory
@@ -361,7 +344,10 @@ class Configuration:
 
             # Validate elements of the search path.
             for element in self._search_path:
-                assert_readable_directory(element.path())
+                assert_readable_directory(
+                    element.path(),
+                    error_message_prefix="Invalid search_path in configuration: ",
+                )
 
             if not is_list_of_strings(self.other_critical_files):
                 raise InvalidConfiguration(
@@ -403,13 +389,8 @@ class Configuration:
         return [element.command_line_argument() for element in self._search_path]
 
     @property
-    def local_configuration_root(self) -> Optional[str]:
-        local_configuration = self.local_configuration
-        if local_configuration:
-            if os.path.isdir(local_configuration):
-                return local_configuration
-            else:
-                return os.path.dirname(local_configuration)
+    def local_root(self) -> Optional[str]:
+        return self._local_root
 
     @property
     def log_directory(self) -> str:
@@ -440,7 +421,8 @@ class Configuration:
         local_root: Path = Path(local_root).resolve()
         try:
             parent_local_configuration = Configuration(
-                local_configuration=parent_local_root,
+                project_root=self.project_root,
+                local_root=parent_local_root,
                 search_path=[search_path.root for search_path in self._search_path],
                 binary=self._binary,
                 typeshed=self._typeshed,
@@ -476,21 +458,21 @@ class Configuration:
                 "Local configuration path `{}` does not exist.".format(path)
             )
 
-        if os.path.isdir(path):
-            local_configuration = os.path.join(path, CONFIGURATION_FILE + ".local")
-            local_root = path
-            if not os.path.exists(local_configuration):
-                raise EnvironmentException(
-                    "Local configuration directory `{}` does not contain "
-                    "a `{}` file.".format(path, CONFIGURATION_FILE + ".local")
-                )
-        else:
-            local_configuration = path
-            local_root = path[: -len(LOCAL_CONFIGURATION_FILE)]
+        local_configuration = os.path.join(path, LOCAL_CONFIGURATION_FILE)
+        if not os.path.exists(local_configuration):
+            raise EnvironmentException(
+                "Local configuration directory `{}` does not contain "
+                "a `{}` file.".format(path, LOCAL_CONFIGURATION_FILE)
+            )
 
-        self.local_configuration = local_configuration
-        self._check_nested_configurations(local_root)
+        self._check_nested_configurations(path)
         self._read(local_configuration)
+        if not self.source_directories and not self.targets:
+            raise EnvironmentException(
+                "Local configuration `{}` does not specify any sources to type check.".format(
+                    local_configuration
+                )
+            )
 
     def _read(self, path: str) -> None:
         try:

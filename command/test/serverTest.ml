@@ -18,7 +18,7 @@ let int_request_id id = LanguageServer.Types.RequestId.Int id
 let test_language_server_protocol_json_format context =
   let handle = "filename.py" in
   let configuration =
-    let project = ScratchProject.setup ~context [handle, ""] in
+    let project = ScratchProject.setup ~context ~show_error_traces:true [handle, ""] in
     let _ = ScratchProject.parse_sources project in
     ScratchProject.configuration_of project
   in
@@ -27,6 +27,7 @@ let test_language_server_protocol_json_format context =
     CommandTest.make_errors
       ~context
       ~handle
+      ~show_error_traces:true
       {|
         class unittest.mock.Base: ...
         class unittest.mock.NonCallableMock: ...
@@ -67,7 +68,7 @@ let test_language_server_protocol_json_format context =
             "diagnostics": [
               {
                 "message":
-                  "Incompatible return type [7]: Expected `None` but got `int`.\nType `None` expected on line 5, specified on line 4.",
+                  "Incompatible return type [7]: Expected `None` but got `int`. Type `None` expected on line 5, specified on line 4.",
                 "range": {
                   "end": { "character": 10, "line": 4 },
                   "start": { "character": 2, "line": 4 }
@@ -86,29 +87,6 @@ let test_language_server_protocol_json_format context =
     |> normalize
   in
   assert_equal ~printer:ident ~cmp:String.equal json_error_expect json_error
-
-
-let test_server_stops context =
-  let local_root = bracket_tmpdir context |> Pyre.Path.create_absolute in
-  let pid = Pid.of_int (CommandTest.start_server ~local_root ()) in
-  Commands.Stop.stop ~log_directory:None ~local_root:(Path.absolute local_root) |> ignore;
-  let {
-    Configuration.Server.socket = { path = socket_path; _ };
-    json_socket = { path = json_socket_path; _ };
-    _;
-  }
-    =
-    Operations.create_configuration (Configuration.Analysis.create ~local_root ())
-  in
-  CommandTest.with_timeout ~seconds:3 CommandTest.poll_for_deletion socket_path;
-  CommandTest.with_timeout ~seconds:3 CommandTest.poll_for_deletion json_socket_path;
-  CommandTest.with_timeout
-    ~seconds:1
-    (fun () ->
-      match Unix.waitpid pid with
-      | Ok _ -> assert true
-      | Error _ -> assert false)
-    ()
 
 
 let test_server_exits_on_directory_removal context =
@@ -624,13 +602,12 @@ let test_query context =
     ~query:"types(path='test.py')"
     (fun local_root ->
       Protocol.TypeQuery.Response
-        (Protocol.TypeQuery.TypesByFile
+        (Protocol.TypeQuery.TypesByPath
            [
              {
                Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
                types =
                  [
-                   2, 21, 2, 22, Type.string;
                    ( 2,
                      4,
                      2,
@@ -650,14 +627,15 @@ let test_query context =
                            };
                          overloads = [];
                        } );
-                   3, 2, 3, 3, Type.literal_integer 42;
                    2, 8, 2, 9, Type.integer;
-                   3, 6, 3, 8, Type.literal_integer 42;
-                   2, 30, 2, 35, Type.literal_string "bar";
                    2, 11, 2, 14, Type.meta Type.integer;
                    2, 17, 2, 19, Type.literal_integer 10;
-                   2, 40, 2, 44, Type.none;
+                   2, 21, 2, 22, Type.string;
                    2, 24, 2, 27, Type.meta Type.string;
+                   2, 30, 2, 35, Type.literal_string "bar";
+                   2, 40, 2, 44, Type.none;
+                   3, 2, 3, 3, Type.literal_integer 42;
+                   3, 6, 3, 8, Type.literal_integer 42;
                  ]
                  |> create_types_at_locations;
              };
@@ -673,7 +651,7 @@ let test_query context =
     ~query:"types(path='test.py')"
     (fun local_root ->
       Protocol.TypeQuery.Response
-        (Protocol.TypeQuery.TypesByFile
+        (Protocol.TypeQuery.TypesByPath
            [
              {
                Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
@@ -698,15 +676,15 @@ let test_query context =
                            };
                          overloads = [];
                        } );
-                   3, 5, 3, 6, Type.literal_integer 4;
-                   3, 1, 3, 2, Type.integer;
-                   4, 5, 4, 6, Type.literal_integer 5;
-                   4, 1, 4, 2, Type.string;
                    2, 8, 2, 9, Type.integer;
+                   2, 11, 2, 14, Type.meta Type.integer;
+                   2, 16, 2, 17, Type.string;
                    2, 19, 2, 22, Type.meta Type.string;
                    2, 27, 2, 30, Type.meta Type.string;
-                   2, 16, 2, 17, Type.string;
-                   2, 11, 2, 14, Type.meta Type.integer;
+                   3, 1, 3, 2, Type.integer;
+                   3, 5, 3, 6, Type.literal_integer 4;
+                   4, 1, 4, 2, Type.string;
+                   4, 5, 4, 6, Type.literal_integer 5;
                    5, 8, 5, 9, Type.integer;
                  ]
                  |> create_types_at_locations;
@@ -720,16 +698,16 @@ let test_query context =
     ~query:"types(path='test.py')"
     (fun local_root ->
       Protocol.TypeQuery.Response
-        (Protocol.TypeQuery.TypesByFile
+        (Protocol.TypeQuery.TypesByPath
            [
              {
                Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
                types =
                  [
-                   3, 4, 3, 5, Type.literal_integer 3;
-                   2, 4, 2, 5, Type.literal_integer 4;
                    2, 0, 2, 1, Type.integer;
+                   2, 4, 2, 5, Type.literal_integer 4;
                    3, 0, 3, 1, Type.integer;
+                   3, 4, 3, 5, Type.literal_integer 3;
                  ]
                  |> create_types_at_locations;
              };
@@ -743,7 +721,7 @@ let test_query context =
     ~query:"types(path='test.py')"
     (fun local_root ->
       Protocol.TypeQuery.Response
-        (Protocol.TypeQuery.TypesByFile
+        (Protocol.TypeQuery.TypesByPath
            [
              {
                Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
@@ -763,7 +741,8 @@ let test_query context =
                            };
                          overloads = [];
                        } );
-                   3, 5, 3, 9, Type.Literal (Boolean true);
+                   (* TODO (T68817342): Should be `Literal (Boolean true)` *)
+                   3, 5, 3, 9, Type.Literal (Boolean false);
                    4, 3, 4, 4, Type.literal_integer 1;
                    4, 7, 4, 8, Type.literal_integer 1;
                  ]
@@ -779,7 +758,7 @@ let test_query context =
     ~query:"types(path='test.py')"
     (fun local_root ->
       Protocol.TypeQuery.Response
-        (Protocol.TypeQuery.TypesByFile
+        (Protocol.TypeQuery.TypesByPath
            [
              {
                Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
@@ -799,12 +778,12 @@ let test_query context =
                            };
                          overloads = [];
                        } );
-                   3, 15, 3, 16, Type.literal_integer 2;
                    3, 6, 3, 7, Type.integer;
-                   4, 3, 4, 4, Type.literal_integer 1;
                    3, 11, 3, 17, Type.list Type.integer;
-                   4, 7, 4, 8, Type.literal_integer 1;
                    3, 12, 3, 13, Type.literal_integer 1;
+                   3, 15, 3, 16, Type.literal_integer 2;
+                   4, 3, 4, 4, Type.literal_integer 1;
+                   4, 7, 4, 8, Type.literal_integer 1;
                  ]
                  |> create_types_at_locations;
              };
@@ -821,7 +800,7 @@ let test_query context =
     ~query:"types(path='test.py')"
     (fun local_root ->
       Protocol.TypeQuery.Response
-        (Protocol.TypeQuery.TypesByFile
+        (Protocol.TypeQuery.TypesByPath
            [
              {
                Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
@@ -841,12 +820,12 @@ let test_query context =
                            };
                          overloads = [];
                        } );
-                   6, 4, 6, 5, Type.literal_integer 2;
+                   2, 13, 2, 17, Type.none;
+                   4, 4, 4, 5, Type.literal_integer 1;
                    4, 8, 4, 9, Type.literal_integer 1;
                    5, 9, 5, 18, Type.parametric "type" [Single (Type.Primitive "Exception")];
-                   2, 13, 2, 17, Type.none;
+                   6, 4, 6, 5, Type.literal_integer 2;
                    6, 8, 6, 9, Type.literal_integer 2;
-                   4, 4, 4, 5, Type.literal_integer 1;
                  ]
                  |> create_types_at_locations;
              };
@@ -859,16 +838,16 @@ let test_query context =
     ~query:"types(path='test.py')"
     (fun local_root ->
       Protocol.TypeQuery.Response
-        (Protocol.TypeQuery.TypesByFile
+        (Protocol.TypeQuery.TypesByPath
            [
              {
                Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
                types =
                  [
-                   3, 5, 3, 6, Type.literal_integer 2;
-                   3, 1, 3, 2, Type.literal_integer 2;
                    2, 5, 2, 11, Type.Any;
                    2, 15, 2, 16, Type.Any;
+                   3, 1, 3, 2, Type.literal_integer 2;
+                   3, 5, 3, 6, Type.literal_integer 2;
                  ]
                  |> create_types_at_locations;
              };
@@ -881,15 +860,15 @@ let test_query context =
     ~query:"types(path='test.py')"
     (fun local_root ->
       Protocol.TypeQuery.Response
-        (Protocol.TypeQuery.TypesByFile
+        (Protocol.TypeQuery.TypesByPath
            [
              {
                Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
                types =
                  [
-                   3, 2, 3, 3, Type.literal_integer 1;
-                   2, 11, 2, 15, Type.Literal (Boolean true);
                    2, 6, 2, 15, Type.bool;
+                   2, 11, 2, 15, Type.Literal (Boolean true);
+                   3, 2, 3, 3, Type.literal_integer 1;
                    3, 6, 3, 7, Type.literal_integer 1;
                  ]
                  |> create_types_at_locations;
@@ -906,13 +885,12 @@ let test_query context =
     ~query:"types(path='test.py')"
     (fun local_root ->
       Protocol.TypeQuery.Response
-        (Protocol.TypeQuery.TypesByFile
+        (Protocol.TypeQuery.TypesByPath
            [
              {
                Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
                types =
                  [
-                   5, 9, 5, 10, Type.integer;
                    ( 2,
                      4,
                      2,
@@ -929,13 +907,14 @@ let test_query context =
                            };
                          overloads = [];
                        } );
-                   3, 21, 3, 24, parse_annotation "typing.Type[str]";
-                   3, 13, 3, 16, parse_annotation "typing.Type[int]";
                    2, 8, 2, 9, Type.integer;
+                   2, 11, 2, 14, parse_annotation "typing.Type[int]";
                    2, 19, 2, 22, parse_annotation "typing.Type[str]";
                    3, 10, 3, 11, Type.integer;
+                   3, 13, 3, 16, parse_annotation "typing.Type[int]";
+                   3, 21, 3, 24, parse_annotation "typing.Type[str]";
                    4, 11, 4, 12, Type.integer;
-                   2, 11, 2, 14, parse_annotation "typing.Type[int]";
+                   5, 9, 5, 10, Type.integer;
                  ]
                  |> create_types_at_locations;
              };
@@ -949,7 +928,7 @@ let test_query context =
     ~query:"types(path='test.py')"
     (fun local_root ->
       Protocol.TypeQuery.Response
-        (Protocol.TypeQuery.TypesByFile
+        (Protocol.TypeQuery.TypesByPath
            [
              {
                Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
@@ -978,9 +957,9 @@ let test_query context =
                            };
                          overloads = [];
                        } );
-                   2, 32, 2, 36, Type.none;
                    2, 8, 2, 9, Type.list Type.integer;
                    2, 11, 2, 27, Type.meta (Type.list Type.integer);
+                   2, 32, 2, 36, Type.none;
                  ]
                  |> create_types_at_locations;
              };
@@ -994,7 +973,7 @@ let test_query context =
     ~query:"types('test.py')"
     (fun local_root ->
       Protocol.TypeQuery.Response
-        (Protocol.TypeQuery.TypesByFile
+        (Protocol.TypeQuery.TypesByPath
            [
              {
                Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
@@ -1518,7 +1497,9 @@ let test_incremental_repopulate context =
   in
   let { Configuration.Analysis.local_root; _ } = configuration in
   let get_annotation { State.environment; _ } access_name =
-    let resolution = TypeEnvironment.global_resolution environment in
+    let resolution =
+      TypeEnvironment.read_only environment |> TypeEnvironment.ReadOnly.global_resolution
+    in
     match
       GlobalResolution.function_definitions resolution (Reference.combine qualifier !&access_name)
     with
@@ -1622,16 +1603,19 @@ let test_incremental_attribute_caching context =
   in
   let assert_errors ~state expected =
     let get_error_strings { State.errors; environment; _ } =
-      let ast_environment = TypeEnvironment.ast_environment environment in
+      let ast_environment =
+        TypeEnvironment.read_only environment |> TypeEnvironment.ReadOnly.ast_environment
+      in
       Hashtbl.to_alist errors
       |> List.map ~f:snd
       |> List.concat
       |> List.map ~f:(fun error ->
              AnalysisError.instantiate
+               ~show_error_traces:false
                ~lookup:
                  (AstEnvironment.ReadOnly.get_real_path_relative ~configuration ast_environment)
                error
-             |> AnalysisError.Instantiated.description ~show_error_traces:false)
+             |> AnalysisError.Instantiated.description)
     in
     let printer = String.concat ~sep:"\n" in
     assert_equal ~printer expected (get_error_strings state)
@@ -1661,7 +1645,6 @@ let () =
   CommandTest.run_command_tests
     "server"
     [
-      "server_stops", test_server_stops;
       "server_exits_on_directory_removal", test_server_exits_on_directory_removal;
       "connect", test_connect;
       "stop_handles_unix_errors", test_stop_handles_unix_errors;

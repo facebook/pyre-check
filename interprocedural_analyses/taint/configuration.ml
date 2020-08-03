@@ -42,6 +42,7 @@ type t = {
   implicit_sinks: implicit_sinks;
   partial_sink_converter: partial_sink_converter;
   acceptable_sink_labels: string list String.Map.Tree.t;
+  find_obscure_flows: bool;
 }
 
 let empty =
@@ -53,6 +54,7 @@ let empty =
     partial_sink_converter = String.Map.Tree.empty;
     implicit_sinks = empty_implicit_sinks;
     acceptable_sink_labels = String.Map.Tree.empty;
+    find_obscure_flows = false;
   }
 
 
@@ -140,7 +142,7 @@ let parse source_jsons =
     let parse_sink (sinks, acceptable_sink_labels) json =
       let sink = Json.Util.member "name" json |> Json.Util.to_string in
       let acceptable_sink_labels =
-        if List.exists ~f:(( = ) "multi_sink_labels") (Json.Util.keys json) then
+        if List.exists ~f:(String.equal "multi_sink_labels") (Json.Util.keys json) then
           Json.Util.member "multi_sink_labels" json
           |> Json.Util.to_list
           |> List.map ~f:Json.Util.to_string
@@ -309,6 +311,7 @@ let parse source_jsons =
     partial_sink_converter;
     implicit_sinks;
     acceptable_sink_labels;
+    find_obscure_flows = false;
   }
 
 
@@ -434,6 +437,24 @@ let default =
     partial_sink_converter = String.Map.Tree.empty;
     implicit_sinks = empty_implicit_sinks;
     acceptable_sink_labels = String.Map.Tree.empty;
+    find_obscure_flows = false;
+  }
+
+
+let obscure_flows_configuration configuration =
+  {
+    configuration with
+    rules =
+      [
+        {
+          sources = List.map ~f:(fun source -> Sources.NamedSource source) configuration.sources;
+          sinks = [Sinks.NamedSink "Obscure"];
+          code = 6002;
+          name = "Obscure flow.";
+          message_format = "Data from [{$sources}] source(s) may reach an obscure model";
+        };
+      ];
+    find_obscure_flows = true;
   }
 
 
@@ -443,7 +464,7 @@ let get () =
   | Some configuration -> configuration
 
 
-let create ~rule_filter ~paths =
+let create ~rule_filter ~find_obscure_flows ~paths =
   let file_paths = Path.get_matching_files_recursively ~suffix:".config" ~paths in
   let parse_configuration config_file =
     if not (Path.file_exists config_file) then
@@ -465,12 +486,19 @@ let create ~rule_filter ~paths =
   let configurations = file_paths |> List.filter_map ~f:parse_configuration in
   if List.is_empty configurations then
     raise (Invalid_argument "No `.config` was found in the taint directories.");
-  let ({ rules; _ } as configuration) = parse configurations in
+  let configuration = parse configurations in
   validate configuration;
+  let configuration =
+    if find_obscure_flows then
+      obscure_flows_configuration configuration
+    else
+      configuration
+  in
   match rule_filter with
   | None -> configuration
   | Some rule_filter ->
       let codes_to_keep = Int.Set.of_list rule_filter in
+      let { rules; _ } = configuration in
       let rules = List.filter rules ~f:(fun { code; _ } -> Set.mem codes_to_keep code) in
       { configuration with rules }
 

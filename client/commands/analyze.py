@@ -35,6 +35,7 @@ class Analyze(Check):
         dump_call_graph: bool,
         repository_root: Optional[str],
         rules: Optional[List[int]],
+        find_obscure_flows: bool = False,
     ) -> None:
         super(Analyze, self).__init__(
             command_arguments,
@@ -51,6 +52,7 @@ class Analyze(Check):
         self._dump_call_graph: bool = dump_call_graph
         self._repository_root: Final[Optional[str]] = repository_root
         self._rules: Final[Optional[List[int]]] = rules
+        self._find_obscure_flows: bool = find_obscure_flows
 
     @staticmethod
     def from_arguments(
@@ -71,6 +73,7 @@ class Analyze(Check):
             dump_call_graph=arguments.dump_call_graph,
             repository_root=arguments.repository_root,
             rules=arguments.rule,
+            find_obscure_flows=arguments.find_obscure_flows,
         )
 
     @classmethod
@@ -104,6 +107,11 @@ class Analyze(Check):
         analyze.add_argument("--dump-call-graph", action="store_true")
         analyze.add_argument("--repository-root", type=os.path.abspath)
         analyze.add_argument("--rule", action="append", type=int)
+        analyze.add_argument(
+            "--find-obscure-flows",
+            action="store_true",
+            help="Perform a taint analysis to find flows through obscure models.",
+        )
 
     def generate_analysis_directory(self) -> AnalysisDirectory:
         return resolve_analysis_directory(
@@ -111,7 +119,7 @@ class Analyze(Check):
             self._targets,
             self._configuration,
             self._original_directory,
-            self._current_directory,
+            self._project_root,
             filter_directory=self._filter_directory,
             use_buck_builder=self._use_buck_builder,
             debug=self._debug,
@@ -138,6 +146,8 @@ class Analyze(Check):
         rules = self._rules
         if rules is not None:
             flags.extend(["-rules", ",".join(str(rule) for rule in rules)])
+        if self._find_obscure_flows:
+            flags.append("-find-obscure-flows")
         return flags
 
     def _run(self, retries: int = 1) -> None:

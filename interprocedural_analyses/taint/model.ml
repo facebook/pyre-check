@@ -21,6 +21,33 @@ type t = {
 }
 [@@deriving show]
 
+let add_obscure_sink ~resolution ~call_target model =
+  match Callable.get_real_target call_target with
+  | None -> model
+  | Some real_target -> (
+      match
+        Callable.get_module_and_definition
+          ~resolution:(Resolution.global_resolution resolution)
+          real_target
+      with
+      | None ->
+          let () = Log.warning "Found no definition for %s" (Callable.show call_target) in
+          model
+      | Some (_, { value = { signature = { parameters; _ }; _ }; _ }) ->
+          let open Domains in
+          let sink =
+            BackwardState.Tree.create_leaf (BackwardTaint.singleton (Sinks.NamedSink "Obscure"))
+          in
+          let parameters = AccessPath.Root.normalize_parameters parameters in
+          let add_parameter_sink sink_taint (root, _, _) =
+            BackwardState.assign ~root ~path:[] sink sink_taint
+          in
+          let sink_taint =
+            List.fold_left ~init:BackwardState.empty ~f:add_parameter_sink parameters
+          in
+          { model with backward = { model.backward with sink_taint } } )
+
+
 let get_callsite_model ~call_target ~arguments =
   let call_target = (call_target :> Callable.t) in
   match Interprocedural.Fixpoint.get_model call_target with
@@ -122,7 +149,9 @@ let get_global_model ~resolution ~expression =
   | None -> None
 
 
-let global_root = AccessPath.Root.PositionalParameter { position = 0; name = "$global" }
+let global_root =
+  AccessPath.Root.PositionalParameter { position = 0; name = "$global"; positional_only = false }
+
 
 let get_global_sink_model ~resolution ~location ~expression =
   let to_sink
@@ -146,6 +175,15 @@ let get_global_tito_model ~resolution ~expression =
     BackwardState.read ~root:global_root ~path:[] taint_in_taint_out
   in
   get_global_model ~resolution ~expression >>| to_tito
+
+
+let global_is_sanitized ~resolution ~expression =
+  let is_sanitized (_, { model = { TaintResult.mode; _ }; _ }) =
+    match mode with
+    | TaintResult.Sanitize -> true
+    | _ -> false
+  in
+  get_global_model ~resolution ~expression >>| is_sanitized |> Option.value ~default:false
 
 
 let get_model_sources ~paths =
@@ -178,7 +216,8 @@ let infer_class_models ~environment =
                 ]))
     in
     BackwardState.assign
-      ~root:(AccessPath.Root.PositionalParameter { position; name = attribute })
+      ~root:
+        (AccessPath.Root.PositionalParameter { position; name = attribute; positional_only = false })
       ~path:[]
       leaf
       existing_state
@@ -212,7 +251,9 @@ let infer_class_models ~environment =
   let compute_named_tuple_model class_summary =
     let attributes = attributes class_summary |> Option.value ~default:[] in
     (* If a user-specified constructor exists, don't override it. *)
-    if List.exists attributes ~f:(fun attribute -> Annotated.Attribute.name attribute = "__init__")
+    if
+      List.exists attributes ~f:(fun attribute ->
+          String.equal (Annotated.Attribute.name attribute) "__init__")
     then
       None
     else

@@ -37,7 +37,9 @@ let find_module_reference ~cursor_position:{ Location.line; column } source =
   >>= fun line ->
   let reference_end_position = dot_column - 1 in
   String.rfindi line ~pos:reference_end_position ~f:(fun _ character ->
-      character <> '.' && character <> '_' && not (Char.is_alphanum character))
+      (not (Char.equal character '.'))
+      && (not (Char.equal character '_'))
+      && not (Char.is_alphanum character))
   >>| ( + ) 1 (* Module start is one character after position of the non-identifier character. *)
   >>| fun module_start_column ->
   line
@@ -136,10 +138,13 @@ let get_module_members_list ~resolution ~cursor_position:{ Location.line; column
 
 
 let get_completion_items ~state ~configuration ~path ~cursor_position =
-  let { State.open_documents; module_tracker; environment; _ } = state in
-  match Analysis.ModuleTracker.lookup_path ~configuration module_tracker path with
-  | None -> []
-  | Some { SourcePath.qualifier; _ } -> (
+  let { State.open_documents; environment; _ } = state in
+  let module_tracker = Analysis.TypeEnvironment.module_tracker environment in
+  match ModuleTracker.lookup_path ~configuration module_tracker path with
+  | ModuleTracker.PathLookup.NotFound
+  | ModuleTracker.PathLookup.ShadowedBy _ ->
+      []
+  | ModuleTracker.PathLookup.Found { SourcePath.qualifier; _ } -> (
       match Reference.Table.find open_documents qualifier with
       | None -> []
       | Some content ->
@@ -163,7 +168,7 @@ let get_completion_items ~state ~configuration ~path ~cursor_position =
 
             let run () =
               (* Update server state with the newly added dummy file *)
-              let state, _ =
+              let _ =
                 IncrementalCheck.recheck_with_state
                   ~state
                   ~configuration:
@@ -194,7 +199,9 @@ let get_completion_items ~state ~configuration ~path ~cursor_position =
           let get_items file state =
             (* This is the position of the item before DOT *)
             let item_position = { cursor_position with column = cursor_position.column - 2 } in
-            let global_resolution = TypeEnvironment.global_resolution environment in
+            let global_resolution =
+              TypeEnvironment.read_only environment |> TypeEnvironment.ReadOnly.global_resolution
+            in
             let resolution =
               TypeCheck.resolution
                 global_resolution

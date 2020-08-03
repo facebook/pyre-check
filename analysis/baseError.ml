@@ -35,19 +35,19 @@ module type Error = sig
   [@@deriving compare, eq, show, sexp, hash]
 
   module Instantiated : sig
-    type t [@@deriving sexp, compare, eq, show, hash]
+    type t [@@deriving sexp, compare, eq, show, hash, yojson { strict = false }]
 
     val location : t -> Location.WithPath.t
 
     val path : t -> string
 
-    val kind : t -> kind
-
     val code : t -> int
 
-    val description : ?separator:string -> ?concise:bool -> t -> show_error_traces:bool -> string
+    val description : t -> string
 
-    val to_json : show_error_traces:bool -> t -> Yojson.Safe.json
+    val long_description : t -> string
+
+    val concise_description : t -> string
   end
 
   include Hashable with type t := t
@@ -60,7 +60,11 @@ module type Error = sig
 
   val code : t -> int
 
-  val instantiate : lookup:(Reference.t -> string option) -> t -> Instantiated.t
+  val instantiate
+    :  show_error_traces:bool ->
+    lookup:(Reference.t -> string option) ->
+    t ->
+    Instantiated.t
 end
 
 module Make (Kind : Kind) = struct
@@ -96,70 +100,83 @@ module Make (Kind : Kind) = struct
 
   module Instantiated = struct
     type t = {
-      location: Location.WithPath.t;
-      kind: Kind.t;
-      signature: Define.Signature.t Node.t;
+      line: int;
+      column: int;
+      stop_line: int;
+      stop_column: int;
+      path: string;
+      code: int;
+      name: string;
+      description: string;
+      long_description: string;
+      concise_description: string;
+      (* TODO (T70359404): This field does not belong here. *)
+      inference: (Yojson.Safe.t[@sexp.opaque] [@compare.ignore]);
+      define: string;
     }
-    [@@deriving sexp, compare, show, hash]
+    [@@deriving sexp, compare, show, hash, yojson { strict = false }]
 
     let equal = [%compare.equal: t]
 
-    let location { location; _ } = location
+    let location { line; column; stop_line; stop_column; path; _ } =
+      { Location.start = { line; column }; stop = { line = stop_line; column = stop_column } }
+      |> Location.with_path ~path
 
-    let path { location = { Location.WithPath.path; _ }; _ } = path
 
-    let kind { kind; _ } = kind
+    let path { path; _ } = path
 
-    let code { kind; _ } = Kind.code kind
+    let code { code; _ } = code
 
-    let description
-        ?(separator = " ")
-        ?(concise = false)
-        { kind; location; signature; _ }
+    let description { description; _ } = description
+
+    let long_description { long_description; _ } = long_description
+
+    let concise_description { concise_description; _ } = concise_description
+
+    let create
+        ~location:
+          ( {
+              Location.WithPath.path;
+              start = { Location.line = start_line; column = start_column };
+              stop = { Location.line = stop_line; column = stop_column };
+            } as location )
+        ~kind
+        ~signature:({ Node.value = signature; _ } as signature_node)
         ~show_error_traces
+        ()
       =
-      let messages = Kind.messages ~concise ~signature location kind in
-      Format.asprintf
-        "%s [%d]: %s"
-        (Kind.name kind)
-        (Kind.code kind)
-        ( if show_error_traces then
-            String.concat ~sep:separator messages
-        else
-          List.nth_exn messages 0 )
-
-
-    let to_json
-        ~show_error_traces
-        ( {
-            location =
-              {
-                Location.WithPath.path;
-                start = { Location.line = start_line; column = start_column };
-                _;
-              };
-            kind;
-            signature = { Node.value = signature; _ } as signature_node;
-            _;
-          } as error )
-      =
-      `Assoc
-        [
-          "line", `Int start_line;
-          "column", `Int start_column;
-          "path", `String path;
-          "code", `Int (Kind.code kind);
-          "name", `String (Kind.name kind);
-          "description", `String (description error ~show_error_traces);
-          "long_description", `String (description error ~show_error_traces:true ~separator:"\n");
-          ( "concise_description",
-            `String (description error ~show_error_traces ~concise:true ~separator:"\n") );
-          "inference", Kind.inference_information ~signature:signature_node kind;
-          ( "define",
-            `String (Reference.show_sanitized (Reference.delocalize (Node.value signature.name))) );
-        ]
+      let description ~concise ~separator ~show_error_traces =
+        let messages = Kind.messages ~concise ~signature:signature_node location kind in
+        Format.asprintf
+          "%s [%d]: %s"
+          (Kind.name kind)
+          (Kind.code kind)
+          ( if show_error_traces then
+              String.concat ~sep:separator messages
+          else
+            List.nth_exn messages 0 )
+      in
+      {
+        line = start_line;
+        column = start_column;
+        stop_line;
+        stop_column;
+        path;
+        code = Kind.code kind;
+        name = Kind.name kind;
+        description = description ~show_error_traces ~concise:false ~separator:" ";
+        long_description = description ~show_error_traces:true ~concise:false ~separator:"\n";
+        concise_description = description ~show_error_traces ~concise:true ~separator:"\n";
+        inference = Kind.inference_information ~signature:signature_node kind;
+        define = Reference.show_sanitized (Reference.delocalize (Node.value signature.name));
+      }
   end
 
-  let instantiate ~lookup { location; kind; signature } =
-    { Instantiated.location = Location.WithModule.instantiate ~lookup location; kind; signature }
+  let instantiate ~show_error_traces ~lookup { location; kind; signature } =
+    Instantiated.create
+      ~location:(Location.WithModule.instantiate ~lookup location)
+      ~kind
+      ~signature
+      ~show_error_traces
+      ()
 end

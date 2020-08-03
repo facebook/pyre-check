@@ -104,13 +104,13 @@ module State (Context : Context) = struct
               ast_environment
               reference
           in
-          Error.instantiate ~lookup error
+          Error.instantiate ~show_error_traces:true ~lookup error
         in
         Format.asprintf
           "    %a -> %s"
           Location.WithPath.pp
           (Error.Instantiated.location error)
-          (Error.Instantiated.description error ~show_error_traces:true)
+          (Error.Instantiated.description error)
       in
       List.map (Map.data errors) ~f:error_to_string |> String.concat ~sep:"\n"
     in

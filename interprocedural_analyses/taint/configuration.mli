@@ -36,6 +36,7 @@ type t = {
   implicit_sinks: implicit_sinks;
   partial_sink_converter: partial_sink_converter;
   acceptable_sink_labels: string list Core.String.Map.Tree.t;
+  find_obscure_flows: bool;
 }
 
 val empty : t
@@ -54,7 +55,7 @@ val register : t -> unit
 
 val default : t
 
-val create : rule_filter:int list option -> paths:Path.t list -> t
+val create : rule_filter:int list option -> find_obscure_flows:bool -> paths:Path.t list -> t
 
 val validate : t -> unit
 

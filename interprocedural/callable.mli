@@ -79,6 +79,8 @@ val get_corresponding_method : override_target -> [> method_target ]
 
 val get_corresponding_override : method_target -> [> override_target ]
 
+val get_real_target : [< t ] -> [> real_target ] option
+
 (* function or method name, no class or anything else *)
 val get_short_name : [< t ] -> string
 

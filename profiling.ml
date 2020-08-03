@@ -7,6 +7,28 @@ open Core
 open Pyre
 module Worker = Hack_parallel.Std.Worker
 
+module GlobalState = struct
+  type t = {
+    mutable profiling_output: string option;
+    mutable memory_profiling_output: string option;
+  }
+
+  let global_state = { profiling_output = None; memory_profiling_output = None }
+
+  let initialize ?profiling_output ?memory_profiling_output () =
+    Option.iter profiling_output ~f:(fun output -> global_state.profiling_output <- output);
+    Option.iter memory_profiling_output ~f:(fun output ->
+        global_state.memory_profiling_output <- output);
+    ()
+
+
+  let get () = global_state
+
+  let restore old_state =
+    global_state.profiling_output <- old_state.profiling_output;
+    global_state.memory_profiling_output <- old_state.memory_profiling_output
+end
+
 module Event = struct
   type event_type =
     | Duration of int
@@ -46,15 +68,11 @@ let log_to_path path ~event_creator =
 
 (* Taking a constructor instead of an event here so that events can be created lazily *)
 let log_performance_event event_creator =
-  Configuration.Analysis.get_global ()
-  >>= (fun { Configuration.Analysis.profiling_output; _ } -> profiling_output)
-  |> Option.iter ~f:(log_to_path ~event_creator)
+  Option.iter GlobalState.global_state.profiling_output ~f:(log_to_path ~event_creator)
 
 
 let log_memory_event event_creator =
-  Configuration.Analysis.get_global ()
-  >>= (fun { Configuration.Analysis.memory_profiling_output; _ } -> memory_profiling_output)
-  |> Option.iter ~f:(log_to_path ~event_creator)
+  Option.iter GlobalState.global_state.memory_profiling_output ~f:(log_to_path ~event_creator)
 
 
 type 'a result_with_tags = {

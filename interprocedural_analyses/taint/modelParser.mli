@@ -12,6 +12,7 @@ end
 module T : sig
   type parse_result = {
     models: TaintResult.call_model Interprocedural.Callable.Map.t;
+    skip_overrides: Ast.Reference.Set.t;
     errors: string list;
   }
 end

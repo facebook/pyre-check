@@ -7,10 +7,14 @@ open Pyre
 
 exception IncompatibleState of string
 
+module ServerErrors : sig
+  val load : unit -> Analysis.TypeEnvironment.Error.t list Ast.Reference.Table.t
+end
+
 (* Exposed for testing. *)
 val restore_symbolic_links
   :  changed_paths:Path.t list ->
-  local_root:Path.t ->
+  source_path:Path.t list ->
   get_old_link_path:(Path.t -> Path.t option) ->
   Path.t list
 

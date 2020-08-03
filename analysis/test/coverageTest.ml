@@ -15,7 +15,8 @@ let test_coverage context =
       Test.ScratchProject.build_global_environment project
     in
     let unannotated_global_environment =
-      AnnotatedGlobalEnvironment.ReadOnly.unannotated_global_environment global_environment
+      AnnotatedGlobalEnvironment.read_only global_environment
+      |> AnnotatedGlobalEnvironment.ReadOnly.unannotated_global_environment
     in
     List.map sources ~f:(fun { Ast.Source.source_path = { Ast.SourcePath.qualifier; _ }; _ } ->
         qualifier)

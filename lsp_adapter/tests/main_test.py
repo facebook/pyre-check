@@ -7,7 +7,7 @@ import sys
 import unittest
 from unittest.mock import MagicMock, patch
 
-from ..main import NullServerAdapterProtocol
+from ..main import NullServerAdapterProtocol, _parse_json_rpc
 
 
 class AdapterProtocolTest(unittest.TestCase):
@@ -18,4 +18,31 @@ class AdapterProtocolTest(unittest.TestCase):
         adapter.data_received(example_request)
         stdout_write.assert_called_once_with(
             b'Content-Length: 59\r\n\r\n{"jsonrpc": "2.0", "id": 0, "result": {"capabilities": {}}}'  # noqa
+        )
+
+    def test_parse_json(self) -> None:
+        """
+        Sample_data in this test looks like two jsonrpc requests in one.
+        {
+            "jsonrpc": "2.0",
+            "method": "initialized",
+            "params": {}
+        }Content-Length: 7273\r\n\r\n{
+            "jsonrpc": "2.0",
+            "method": "textDocument/didOpen",
+            "params": {
+                "textDocument": {
+                    "uri": "file:///example/main.py",
+                    "languageId": "python",
+                    "version": 1,
+                    "text": "# Example file text."
+                }
+            }
+        }
+        """
+        sample_data = b'{"jsonrpc":"2.0","method":"initialized","params":{}}Content-Length: 7273\r\n\r\n{"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{"uri":"file:///example/main.py","languageId":"python","version":1,"text":"# Example file text."}}}'  # noqa
+        parsed_data = _parse_json_rpc(sample_data)
+        self.assertEqual(2, len(parsed_data))
+        self.assertEqual(
+            {"jsonrpc": "2.0", "method": "initialized", "params": {}}, parsed_data[0]
         )

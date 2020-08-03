@@ -15,7 +15,7 @@ import tempfile
 from argparse import Namespace
 from contextlib import contextmanager
 from logging import Logger
-from typing import Generator
+from typing import Generator, Optional
 from zipfile import ZipFile
 
 
@@ -123,6 +123,8 @@ class Repository:
         assert_readable_directory(repository_path)
         self._base_repository_path = os.path.realpath(repository_path)
         commits_list = os.listdir(self._base_repository_path)
+        # pyre-fixme[6]: Expected `List[Variable[_LT (bound to _SupportsLessThan)]]`
+        #  for 1st param but got `List[str]`.
         list.sort(commits_list)
         for commit in commits_list:
             assert_readable_directory(os.path.join(self._base_repository_path, commit))
@@ -302,6 +304,31 @@ def _watch_directory(source_directory) -> Generator[None, None, None]:
     )
 
 
+def run(repository_location: str, typeshed_zip_path: Optional[str], debug: bool) -> int:
+    retries = 3
+    typeshed_zip_path = typeshed_zip_path or str(
+        pathlib.Path.cwd() / "stubs/typeshed/typeshed.zip"
+    )
+    original_directory: str = os.getcwd()
+    while retries > 0:
+        try:
+            os.chdir(original_directory)
+            exit_code = run_integration_test(
+                typeshed_zip_path, repository_location, debug
+            )
+            if exit_code != 0:
+                sys.exit(exit_code)
+            print("### Running Saved State Test ###")
+            os.chdir(original_directory)
+            return run_saved_state_test(typeshed_zip_path, repository_location)
+        except Exception as e:
+            LOG.error("Exception raised in integration test:\n %s \nretrying...", e)
+            # Retry the integration test for uncaught exceptions. Caught issues will
+            # result in an exit code of 1.
+            retries = retries - 1
+    return 1
+
+
 if __name__ == "__main__":
     logging.basicConfig(
         level=logging.INFO, format=" >>> %(asctime)s %(levelname)s %(message)s"
@@ -317,27 +344,6 @@ if __name__ == "__main__":
     )
     parser.add_argument("--debug", action="store_true", default=False)
     arguments: Namespace = parser.parse_args()
-    retries = 3
-    typeshed_zip_path = arguments.typeshed_zip_path or str(
-        pathlib.Path.cwd() / "stubs/typeshed/typeshed.zip"
+    sys.exit(
+        run(arguments.repository_location, arguments.typeshed_zip_path, arguments.debug)
     )
-    original_directory: str = os.getcwd()
-    while retries > 0:
-        try:
-            os.chdir(original_directory)
-            exit_code = run_integration_test(
-                typeshed_zip_path, arguments.repository_location, arguments.debug
-            )
-            if exit_code != 0:
-                sys.exit(exit_code)
-            print("### Running Saved State Test ###")
-            os.chdir(original_directory)
-            sys.exit(
-                run_saved_state_test(typeshed_zip_path, arguments.repository_location)
-            )
-        except Exception as e:
-            LOG.error("Exception raised in integration test:\n %s \nretrying...", e)
-            # Retry the integration test for uncaught exceptions. Caught issues will
-            # result in an exit code of 1.
-            retries = retries - 1
-    exit(1)

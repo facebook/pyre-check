@@ -42,7 +42,7 @@ path](https://docs.djangoproject.com/en/2.2/topics/http/urls/#example).
 
 This generator is intended to taint all data returned from [Django view
 functions](https://docs.djangoproject.com/en/2.2/topics/http/views/) as
-`ReturnedToUser`. This us useful when you have decorators which allow your view
+`ReturnedToUser`. This is useful when you have decorators which allow your view
 functions to return raw python types, rather than `HttpResponse` objects. Note
 that you do not need this generator if you always construct `HttpResponse`
 objects, because they are already annotated as `ReturnedToUser` sinks.
@@ -80,9 +80,9 @@ provides an example of how to add a new model generator.
 The basic workflow is:
 
 1. Create a new file under `generate_taint_models` of the form `get_<pattern of model>`.
-2. Write a class that inherits from ModelGenerator.
+2. Write a class that inherits from [ModelGenerator](https://github.com/facebook/pyre-check/blob/master/tools/generate_taint_models/model_generator.py).
 3. Collect all the callables you're interested in modeling via `gather_functions_to_model`.
-4. Convert the callables you've collected into models. The CallableModel class is a convenience that pretty prints things in the right way - you just need to specify what kind of taint the parameters and return value should have, specify the callable to model, and call generate().
+4. Convert the callables you've collected into models. The [CallableModel](https://github.com/facebook/pyre-check/blob/master/tools/generate_taint_models/model.py) class is a convenience that pretty prints things in the right way - you just need to specify what kind of taint the parameters and return value should have, specify the callable to model, and call generate().
 5. Register your class in the registry ([example](https://github.com/facebook/pyre-check/blob/922410239404aa436691754402b0c3db68c5a46f/tools/generate_taint_models/get_graphql_sources.py#L73-L75)).
 6. Write unit tests ([example](https://github.com/facebook/pyre-check/blob/922410239404aa436691754402b0c3db68c5a46f/tools/generate_taint_models/tests/get_annotated_free_functions_with_decorator_test.py)).
 7. Import your new class in the `__init__` file ([example](https://github.com/facebook/pyre-check/blob/922410239404aa436691754402b0c3db68c5a46f/tools/generate_taint_models/__init__.py#L7)).

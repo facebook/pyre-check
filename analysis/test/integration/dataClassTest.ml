@@ -202,10 +202,7 @@ let test_check_attr context =
         def check(self, attribute: attr.Attribute[int], value: typing.Optional[int]) -> None:
           pass
     |}
-    [
-      "Invalid decoration [56]: Decorator `test.C.x.validator` could not be resolved in a global \
-       scope.";
-    ]
+    []
 
 
 let () =

@@ -132,7 +132,7 @@ let test_create _ =
   assert_create "typing.Tuple[int, str]" (Type.tuple [Type.integer; Type.string]);
   assert_create "typing.Tuple[int, ...]" (Type.Tuple (Type.Unbounded Type.integer));
   assert_create "typing.Tuple[()]" (Type.tuple []);
-  assert_create "tuple" (Type.Tuple (Type.Unbounded Type.Any));
+  assert_create "tuple" (Type.Primitive "tuple");
   assert_create "typing.Any" Type.Any;
   assert_create "typing.Optional[int]" (Type.optional Type.integer);
   assert_create "typing.Optional.__getitem__(int)" (Type.optional Type.integer);
@@ -193,7 +193,7 @@ let test_create _ =
   assert_create
     "typing.TypeVar('_CallableT', bound='typing.Callable')"
     (Type.variable
-       ~constraints:(Type.Variable.Bound (Type.Callable.create ~annotation:Type.Any ()))
+       ~constraints:(Type.Variable.Bound (Type.Primitive "typing.Callable"))
        "_CallableT");
 
   (* Check that type aliases are resolved. *)
@@ -293,7 +293,7 @@ let test_create _ =
   (* Callables. *)
   let default_overload = { Type.Callable.annotation = Type.Top; parameters = Undefined } in
   let open Type.Callable in
-  assert_create "typing.Callable" (Type.Callable.create ~annotation:Type.Any ());
+  assert_create "typing.Callable" (Type.Primitive "typing.Callable");
   assert_create "typing.Callable[..., int]" (Type.Callable.create ~annotation:Type.integer ());
   assert_create
     "typing.Callable.__getitem__((..., int))"
@@ -447,6 +447,11 @@ let test_create _ =
              (create_concatenation ~mappers:["list"] (Type.Variable.Variadic.List.create "Ts")))));
 
   assert_create "typing_extensions.Literal['foo']" (Type.literal_string "foo");
+  assert_create "typing_extensions.Literal[u'foo']" (Type.literal_string "foo");
+  assert_create "typing_extensions.Literal[b'foo']" (Type.literal_bytes "foo");
+  assert_create
+    "typing_extensions.Literal[u'foo', b'foo']"
+    (Type.union [Type.literal_string "foo"; Type.literal_bytes "foo"]);
   assert_create
     "typing_extensions.Literal[Foo.ONE]"
     (Type.Literal
@@ -461,6 +466,7 @@ let test_create _ =
            (Type.EnumerationMember { enumeration_type = Type.Primitive "Foo"; member_name = "TWO" });
        ]);
   assert_create "typing_extensions.Literal[ONE]" Type.Top;
+  assert_create "typing_extensions.Literal[None]" Type.none;
   ()
 
 
@@ -706,6 +712,7 @@ let test_weaken_literals _ =
   in
   assert_weakened_literal (Type.literal_integer 1) Type.integer;
   assert_weakened_literal (Type.literal_string "foo") Type.string;
+  assert_weakened_literal (Type.literal_bytes "foo") Type.bytes;
   assert_weakened_literal (Type.Literal (Type.Boolean true)) Type.bool;
   assert_weakened_literal
     (Type.Literal
@@ -915,7 +922,56 @@ let test_map_callable_annotation _ =
   ()
 
 
+let test_type_parameters_for_bounded_tuple_union _ =
+  let assert_type_parameters actual expected =
+    assert_equal
+      ~cmp:[%equal: Type.t list option]
+      ~printer:[%show: Type.t list option]
+      expected
+      (Type.type_parameters_for_bounded_tuple_union actual)
+  in
+  assert_type_parameters Type.integer None;
+  assert_type_parameters
+    (Type.union [Type.tuple [Type.integer; Type.string]; Type.tuple [Type.bool]])
+    None;
+  assert_type_parameters
+    (Type.union
+       [Type.tuple [Type.integer; Type.string]; Type.tuple [Type.bool; Type.list Type.integer]])
+    (Some [Type.union [Type.integer; Type.bool]; Type.union [Type.string; Type.list Type.integer]]);
+  ()
+
+
 let test_contains_any _ = assert_true (Type.contains_any Type.Any)
+
+let test_expression_contains_any _ =
+  assert_true
+    (Type.expression_contains_any
+       (parse_single_expression ~preprocess:true "typing.Dict[typing.Any, typing.Any]"));
+  assert_false (Type.expression_contains_any (parse_single_expression ~preprocess:true "dict"));
+  assert_false
+    (Type.expression_contains_any (parse_single_expression ~preprocess:true "typing.Type"));
+  assert_false
+    (Type.expression_contains_any (parse_single_expression ~preprocess:true "typing.Callable"));
+  assert_false
+    (Type.expression_contains_any (parse_single_expression ~preprocess:true "typing.Tuple"));
+  assert_true
+    (Type.expression_contains_any
+       (parse_single_expression ~preprocess:true "typing.Union[typing.Any, None]"));
+  assert_false
+    (Type.expression_contains_any
+       (parse_single_expression ~preprocess:true "typing.Union[typing.Callable]"));
+  assert_false
+    (Type.expression_contains_any
+       (parse_single_expression
+          ~preprocess:true
+          "pyre_extensions.type_variable_operators.Map[typing.List, int]"));
+  assert_false
+    (Type.expression_contains_any
+       (parse_single_expression
+          ~preprocess:true
+          "foo[pyre_extensions.type_variable_operators.Concatenate[int, bool, Ts]]"));
+  ()
+
 
 let test_is_concrete _ =
   assert_true (Type.is_concrete Type.none);
@@ -1273,7 +1329,8 @@ let test_visit _ =
     let visit state annotation =
       let new_state, transformed_annotation =
         match annotation with
-        | Type.Primitive integer when integer = "int" && state > 0 -> state - 1, Type.string
+        | Type.Primitive integer when String.equal integer "int" && state > 0 ->
+            state - 1, Type.string
         | _ -> state, annotation
       in
       { Type.Transform.transformed_annotation; new_state }
@@ -2305,6 +2362,102 @@ let test_is_unit_test _ =
   ()
 
 
+let test_polynomial_create_from_list _ =
+  let assert_create given expected =
+    let given = Type.Polynomial.create_from_list given in
+    assert_equal ~printer:Fn.id expected (Type.Polynomial.show_normal given)
+  in
+  let x = Type.Variable.Unary.create "x" in
+  let y = Type.Variable.Unary.create "y" in
+  let z = Type.Variable.Unary.create "z" in
+  assert_create [] "0";
+  assert_create [1, []] "1";
+  assert_create [1, [x, 1]] "x";
+  assert_create [3, [x, 1]] "3x";
+  assert_create [3, [x, 2]] "3x^2";
+  assert_create [5, [y, 1; z, 1; x, 1]] "5xyz";
+  assert_create [5, [y, 2; z, 1; x, 3]] "5x^3y^2z";
+  assert_create [4, []; 3, [x, 2]] "4 + 3x^2";
+  assert_create [3, [x, 2]; 4, [y, 2]] "3x^2 + 4y^2";
+  assert_create [3, [x, 2; y, 1]; 4, [y, 2]] "4y^2 + 3x^2y";
+  assert_create [1, [y, 1]; 1, [x, 1]; 2, []] "2 + x + y";
+  assert_create
+    [
+      2, [y, 1]; 1, [x, 1]; 1, [x, 2; y, 1]; 1, [z, 1]; 1, [y, 1; z, 1; x, 1]; 1, [x, 1; y, 2]; 2, [];
+    ]
+    "2 + x + 2y + z + x^2y + xy^2 + xyz";
+  ()
+
+
+let test_add_polynomials _ =
+  let assert_add given1 given2 expected =
+    let given1 = Type.Polynomial.create_from_list given1 in
+    let given2 = Type.Polynomial.create_from_list given2 in
+    assert_equal
+      ~printer:Fn.id
+      expected
+      (Type.Polynomial.show_normal (Type.Polynomial.add given1 given2));
+    assert_equal
+      ~printer:Fn.id
+      expected
+      (Type.Polynomial.show_normal (Type.Polynomial.add given2 given1))
+  in
+  let x = Type.Variable.Unary.create "x" in
+  let y = Type.Variable.Unary.create "y" in
+  let z = Type.Variable.Unary.create "z" in
+  assert_add [3, []] [2, []] "5";
+  assert_add [1, []; 3, [x, 1]; 2, [y, 1]] [2, []; 1, [x, 1]; 1, [z, 1]] "3 + 4x + 2y + z";
+  ()
+
+
+let test_subtract_polynomials _ =
+  let assert_subtract given1 given2 expected =
+    let given1 = Type.Polynomial.create_from_list given1 in
+    let given2 = Type.Polynomial.create_from_list given2 in
+    assert_equal
+      ~printer:Fn.id
+      expected
+      (Type.Polynomial.show_normal (Type.Polynomial.subtract given1 given2))
+  in
+  let x = Type.Variable.Unary.create "x" in
+  let y = Type.Variable.Unary.create "y" in
+  let z = Type.Variable.Unary.create "z" in
+  assert_subtract [] [3, []] "-3";
+  assert_subtract [3, []] [3, []] "0";
+  assert_subtract [3, [x, 1]] [3, [x, 1]] "0";
+  assert_subtract [] [1, [x, 1]] "-x";
+  assert_subtract [2, []] [3, []] "-1";
+  assert_subtract [1, []; 3, [x, 1]; 2, [y, 1]] [2, []; 1, [x, 1]; 1, [z, 1]] "-1 + 2x + 2y + -z";
+  ()
+
+
+let test_multiply_polynomial _ =
+  let assert_multiply given1 given2 expected =
+    let given1 = Type.Polynomial.create_from_list given1 in
+    let given2 = Type.Polynomial.create_from_list given2 in
+    assert_equal
+      ~printer:Fn.id
+      expected
+      (Type.Polynomial.show_normal (Type.Polynomial.multiply given1 given2));
+    assert_equal
+      ~printer:Fn.id
+      expected
+      (Type.Polynomial.show_normal (Type.Polynomial.multiply given2 given1))
+  in
+  let x = Type.Variable.Unary.create "x" in
+  let y = Type.Variable.Unary.create "y" in
+  let z = Type.Variable.Unary.create "z" in
+  assert_multiply [1, []] [] "0";
+  assert_multiply [1, [x, 1]] [] "0";
+  assert_multiply [2, []] [4, []] "8";
+  assert_multiply [2, [y, 1]] [1, [z, 1]] "2yz";
+  assert_multiply [2, [y, 1]] [1, [x, 1]] "2xy";
+  assert_multiply [2, [y, 1]] [1, [x, 1; z, 1]] "2xyz";
+  assert_multiply [3, []; 1, [x, 1]] [1, [y, 1]] "3y + xy";
+  assert_multiply [1, [x, 1]; 3, [z, 1]] [2, []; 1, [y, 2]] "2x + 6z + xy^2 + 3y^2z";
+  ()
+
+
 let () =
   "type"
   >::: [
@@ -2320,6 +2473,7 @@ let () =
          "is_async_generator" >:: test_is_generator;
          "contains_callable" >:: test_contains_callable;
          "contains_any" >:: test_contains_any;
+         "expression_contains_any" >:: test_expression_contains_any;
          "is_concrete" >:: test_is_concrete;
          "is_not_instantiated" >:: test_is_not_instantiated;
          "is_meta" >:: test_is_meta;
@@ -2355,6 +2509,11 @@ let () =
          "infer_transform" >:: test_infer_transform;
          "fields_from_constructor" >:: test_fields_from_constructor;
          "map_callable_annotation" >:: test_map_callable_annotation;
+         "type_parameters_for_bounded_tuple_union" >:: test_type_parameters_for_bounded_tuple_union;
+         "polynomial_create_from_list" >:: test_polynomial_create_from_list;
+         "add_polynomials" >:: test_add_polynomials;
+         "subtract_polynomials" >:: test_subtract_polynomials;
+         "multiply_polynomial" >:: test_multiply_polynomial;
        ]
   |> Test.run;
   "primitive" >::: ["is unit test" >:: test_is_unit_test] |> Test.run;

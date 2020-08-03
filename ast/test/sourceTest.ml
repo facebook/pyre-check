@@ -34,6 +34,8 @@ let test_parse _ =
   assert_mode "  # pyre-ignore-all-errors" None;
   assert_mode "\t# pyre-ignore-all-errors" None;
   assert_mode " # pyre-strict" (Some (create_mode 1 1 14 Source.Strict));
+  assert_mode " ## pyre-strict" (Some (create_mode 1 1 15 Source.Strict));
+  assert_mode " #? pyre-strict" None;
   assert_mode " # pyre-stric" None;
   assert_mode "  # pyre-strict" None;
   assert_mode "\t# pyre-strict" None;
@@ -184,18 +186,18 @@ let test_mode _ =
     let actual_mode = Source.mode ~configuration ~local_mode in
     assert_equal actual_mode expected_mode
   in
-  let configuration = Configuration.Analysis.create () in
+  let configuration = Configuration.Analysis.create ~source_path:[] () in
   assert_mode ~configuration None Source.Unsafe;
   assert_mode ~configuration (Some (Node.create_with_default_location Source.Strict)) Source.Strict;
   assert_mode ~configuration (Some (Node.create_with_default_location Source.Debug)) Source.Debug;
 
-  let configuration = Configuration.Analysis.create ~strict:true () in
+  let configuration = Configuration.Analysis.create ~strict:true ~source_path:[] () in
   assert_mode ~configuration None Source.Strict;
   assert_mode ~configuration (Some (Node.create_with_default_location Source.Unsafe)) Source.Unsafe;
   assert_mode ~configuration (Some (Node.create_with_default_location Source.Strict)) Source.Strict;
   assert_mode ~configuration (Some (Node.create_with_default_location Source.Debug)) Source.Debug;
 
-  let configuration = Configuration.Analysis.create ~debug:true () in
+  let configuration = Configuration.Analysis.create ~debug:true ~source_path:[] () in
   assert_mode ~configuration None Source.Debug;
   assert_mode ~configuration (Some (Node.create_with_default_location Source.Strict)) Source.Debug;
   assert_mode ~configuration (Some (Node.create_with_default_location Source.Unsafe)) Source.Debug

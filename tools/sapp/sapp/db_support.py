@@ -265,6 +265,7 @@ class PrimaryKeyBase(PrepareMixin, RecordMixin):  # noqa
 
     __tablename__ = "primary_keys"
 
+    # pyre-fixme[8]: Attribute has type `str`; used as `Column[str]`.
     table_name: str = Column(
         String(length=100),
         doc="Name of the table that this row stores the next available primary key for",
@@ -272,6 +273,8 @@ class PrimaryKeyBase(PrepareMixin, RecordMixin):  # noqa
         primary_key=True,
     )
 
+    # pyre-fixme[8]: Attribute has type `int`; used as
+    #  `Column[Variable[sqlalchemy.sql.type_api._U]]`.
     current_id: int = Column(
         BIGINT(unsigned=True).with_variant(BIGINT, "sqlite"),
         doc="The current/latest id used in the table.",

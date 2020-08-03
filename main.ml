@@ -12,7 +12,7 @@ let commands =
     "check", Check.check_command;
     "rage", Rage.command;
     "infer", Infer.infer_command;
-    "lint", Lint.command;
+    "newserver", NewServer.command;
     "persistent", Persistent.command;
     "start", Start.command;
     "stop", Stop.command;

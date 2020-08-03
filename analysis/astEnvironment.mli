@@ -4,16 +4,25 @@
  * LICENSE file in the root directory of this source tree. *)
 
 open Ast
+open Core
 open SharedMemoryKeys
 
 type t
+
+module ParserError : sig
+  type t = {
+    source_path: SourcePath.t;
+    message: string;
+  }
+  [@@deriving sexp, compare, hash]
+end
 
 module ReadOnly : sig
   type t
 
   val create
     :  ?get_processed_source:(track_dependency:bool -> Reference.t -> Source.t option) ->
-    ?get_raw_source:(Reference.t -> Source.t option) ->
+    ?get_raw_source:(Reference.t -> (Source.t, ParserError.t) Result.t option) ->
     ?get_source_path:(Reference.t -> SourcePath.t option) ->
     ?is_module:(Reference.t -> bool) ->
     ?all_explicit_modules:(unit -> Reference.t list) ->
@@ -23,7 +32,7 @@ module ReadOnly : sig
 
   val get_processed_source : t -> ?track_dependency:bool -> Reference.t -> Source.t option
 
-  val get_raw_source : t -> Reference.t -> Source.t option
+  val get_raw_source : t -> Reference.t -> (Source.t, ParserError.t) Result.t option
 
   val get_source_path : t -> Reference.t -> SourcePath.t option
 
@@ -48,6 +57,8 @@ module ReadOnly : sig
   val is_module_tracked : t -> Reference.t -> bool
 end
 
+val module_tracker : t -> ModuleTracker.t
+
 (* Store the environment to saved-state *)
 val store : t -> unit
 
@@ -69,10 +80,6 @@ module UpdateResult : sig
   val triggered_dependencies : t -> DependencyKey.RegisteredSet.t
 
   val invalidated_modules : t -> Reference.t list
-
-  val syntax_errors : t -> SourcePath.t list
-
-  val system_errors : t -> SourcePath.t list
 
   val create_for_testing : unit -> t
 end

@@ -158,7 +158,7 @@ module UpdateDependencyTest = struct
     let _, actual =
       StringDependencyKey.Transaction.empty
         ~scheduler:(Test.mock_scheduler ())
-        ~configuration:(Configuration.Analysis.create ())
+        ~configuration:(Configuration.Analysis.create ~source_path:[] ())
       |> TableA.add_to_transaction ~keys
       |> StringDependencyKey.Transaction.execute ~update
     in

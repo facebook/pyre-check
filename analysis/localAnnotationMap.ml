@@ -37,7 +37,7 @@ end
    is computed from a tuple CFG node ID and and statement index (see Fixpoint.forward) *)
 type t = Annotations.t Int.Table.t
 
-let equal left right = Hashtbl.equal left right Annotations.equal
+let equal left right = Core.Hashtbl.equal Annotations.equal left right
 
 let empty () = Int.Table.create ()
 

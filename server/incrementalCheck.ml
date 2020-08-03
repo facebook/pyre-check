@@ -12,25 +12,19 @@ open Pyre
 type errors = Analysis.AnalysisError.t list [@@deriving show]
 
 let recheck
-    ~module_tracker
-    ~ast_environment
-    ~errors
-    ~scheduler
-    ~connections
-    ~lookups
     ~configuration:({ incremental_style; _ } as configuration)
+    ~scheduler
+    ~environment
+    ~errors
     paths
   =
   let timer = Timer.start () in
+  let ast_environment = TypeEnvironment.ast_environment environment in
+  let module_tracker = AstEnvironment.module_tracker ast_environment in
   let module_updates = ModuleTracker.update module_tracker ~configuration ~paths in
   Scheduler.once_per_worker scheduler ~configuration ~f:SharedMem.invalidate_caches;
   SharedMem.invalidate_caches ();
   SharedMem.collect `aggressive;
-  Log.info "Parsing %d updated modules..." (List.length module_updates);
-  StatusUpdate.write
-    ~message:"Reparsing updated modules..."
-    ~connections
-    ~message_type:WarningMessage;
   Log.log
     ~section:`Server
     "Incremental Module Update %a"
@@ -38,14 +32,11 @@ let recheck
     [%message (module_updates : ModuleTracker.IncrementalUpdate.t list)];
   (* Repopulate the environment. *)
   Log.info "Repopulating the environment...";
-  StatusUpdate.write
-    ~message:"Repopulating the environment"
-    ~connections
-    ~message_type:WarningMessage;
 
   let annotated_global_environment_update_result =
+    let annotated_global_environment = AnnotatedGlobalEnvironment.create ast_environment in
     AnnotatedGlobalEnvironment.update_this_and_all_preceding_environments
-      ast_environment
+      annotated_global_environment
       ~configuration
       ~scheduler
       (Update module_updates)
@@ -54,10 +45,6 @@ let recheck
     AnnotatedGlobalEnvironment.UpdateResult.ast_environment_update_result
       annotated_global_environment_update_result
     |> AstEnvironment.UpdateResult.invalidated_modules
-  in
-  let environment =
-    TypeEnvironment.create
-      (AnnotatedGlobalEnvironment.UpdateResult.read_only annotated_global_environment_update_result)
   in
   let recheck_modules, new_errors, total_rechecked_functions =
     match incremental_style with
@@ -196,8 +183,6 @@ let recheck
     ~integers:["size", Memory.heap_size ()]
     ();
 
-  (* Clean up all lookup data related to updated files. *)
-  List.iter recheck_modules ~f:(LookupCache.evict ~lookups);
   (* Kill all previous errors for new files we just checked *)
   List.iter ~f:(Hashtbl.remove errors) recheck_modules;
 
@@ -219,26 +204,20 @@ let recheck
         "number of re-checked functions", total_rechecked_functions;
       ]
     ();
-  StatusUpdate.write ~message:"Done recheck." ~connections ~message_type:InfoMessage;
-  environment, new_errors
+  recheck_modules, new_errors
 
 
 let recheck_with_state
-    ~state:
-      ( { State.module_tracker; ast_environment; errors; scheduler; connections; lookups; _ } as
-      state )
+    ~state:{ State.environment; errors; scheduler; connections; lookups; _ }
     ~configuration
     paths
   =
-  let _, new_errors =
-    recheck
-      ~module_tracker
-      ~ast_environment
-      ~errors
-      ~scheduler
-      ~connections
-      ~lookups
-      ~configuration
-      paths
-  in
-  state, new_errors
+  StatusUpdate.write
+    ~message:"Incremental recheck in progress..."
+    ~connections
+    ~message_type:WarningMessage;
+  let recheck_modules, new_errors = recheck ~configuration ~scheduler ~environment ~errors paths in
+  (* Clean up all lookup data related to updated files. *)
+  List.iter recheck_modules ~f:(LookupCache.evict ~lookups);
+  StatusUpdate.write ~message:"Done recheck." ~connections ~message_type:InfoMessage;
+  new_errors

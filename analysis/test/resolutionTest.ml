@@ -1240,14 +1240,16 @@ let test_function_definitions context =
 
 let test_source_is_unit_test context =
   let assert_is_unit_test ?(expected = true) ?(extra_sources = []) source =
-    let { ScratchProject.BuiltGlobalEnvironment.ast_environment; global_environment; _ } =
+    let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
       ScratchProject.setup ~context (["test.py", source] @ extra_sources)
       |> ScratchProject.build_global_environment
     in
-    let resolution = GlobalResolution.create global_environment in
+    let resolution =
+      AnnotatedGlobalEnvironment.read_only global_environment |> GlobalResolution.create
+    in
     let source =
       AstEnvironment.ReadOnly.get_processed_source
-        (AstEnvironment.read_only ast_environment)
+        (AnnotatedGlobalEnvironment.ast_environment global_environment |> AstEnvironment.read_only)
         (Reference.create "test")
       |> fun option -> Option.value_exn option
     in
@@ -1276,17 +1278,19 @@ let test_source_is_unit_test context =
 
 let test_fallback_attribute context =
   let assert_fallback_attribute ~name source annotation =
-    let { ScratchProject.BuiltGlobalEnvironment.ast_environment; global_environment; _ } =
+    let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
     in
-    let global_resolution = GlobalResolution.create global_environment in
+    let global_resolution =
+      AnnotatedGlobalEnvironment.read_only global_environment |> GlobalResolution.create
+    in
     let resolution = TypeCheck.resolution global_resolution (module TypeCheck.DummyContext) in
 
     let attribute =
       let qualifier = Reference.create "test" in
       let source =
         AstEnvironment.ReadOnly.get_processed_source
-          (AstEnvironment.read_only ast_environment)
+          (AnnotatedGlobalEnvironment.ast_environment global_environment |> AstEnvironment.read_only)
           qualifier
       in
       let last_statement_exn = function

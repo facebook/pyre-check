@@ -128,7 +128,7 @@ type call_model = {
 let pp_call_model formatter { forward; backward; mode } =
   Format.fprintf
     formatter
-    "  Forward:\n%a\n  Backward:\n%a\n  Mode:%a"
+    "  Forward:\n%a\n  Backward:\n%a\n  Mode:%a\n"
     Forward.pp_model
     forward
     Backward.pp_model

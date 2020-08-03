@@ -165,10 +165,7 @@ let test_check_tuple context =
       def foo() -> typing.Tuple:
         return ()
     |}
-    [
-      "Missing return annotation [3]: Return type must be specified as "
-      ^ "type that does not contain `Any`.";
-    ];
+    ["Invalid type parameters [24]: Generic type `tuple` expects at least 1 type parameter."];
   assert_type_errors
     {|
       import typing
@@ -391,6 +388,19 @@ let test_check_tuple context =
       X(dates="foo")
     |}
     [];
+  assert_type_errors
+    {|
+      from typing import List, Tuple, Union
+      def foo() -> None:
+        union_of_bounded_tuples: Union[Tuple[int, str], Tuple[bool, List[int]]]
+        a, b = union_of_bounded_tuples
+        reveal_type(a)
+        reveal_type(b)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `a` is `Union[bool, int]`.";
+      "Revealed type [-1]: Revealed type for `b` is `Union[List[int], str]`.";
+    ];
   ()
 
 

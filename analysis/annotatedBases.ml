@@ -12,7 +12,7 @@ let find_propagated_type_variables bases ~parse_annotation =
     parse_annotation value |> Type.Variable.all_free_variables
   in
   List.concat_map ~f:find_type_variables bases
-  |> List.dedup ~compare:Type.Variable.compare
+  |> List.dedup_and_sort ~compare:Type.Variable.compare
   |> List.map ~f:Type.Variable.to_parameter
 
 

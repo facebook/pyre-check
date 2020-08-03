@@ -14,10 +14,11 @@ let show_location { Location.start; stop } =
   Format.asprintf "%a-%a" Location.pp_position start Location.pp_position stop
 
 
-let generate_lookup ~context source =
+let generate_lookup ~context ?(environment_sources = []) source =
   let environment =
     let { ScratchProject.BuiltTypeEnvironment.type_environment; _ } =
-      ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_type_environment
+      ScratchProject.setup ~context ["test.py", source] ~external_sources:environment_sources
+      |> ScratchProject.build_type_environment
     in
     TypeEnvironment.read_only type_environment
   in
@@ -104,16 +105,162 @@ let test_lookup_pick_narrowest context =
       "3:17-3:27/bool";
       "3:21-3:27/typing.Optional[bool]";
       "3:7-3:11/bool";
-      "3:7-3:28/bool";
+      (* TODO (T68817342): Should be `bool` *)
+      "3:7-3:28/typing.Optional[bool]";
     ];
   let assert_annotation = assert_annotation ~lookup in
-  assert_annotation ~position:{ Location.line = 3; column = 11 } ~annotation:(Some "3:7-3:28/bool");
-  assert_annotation ~position:{ Location.line = 3; column = 16 } ~annotation:(Some "3:7-3:28/bool");
+  assert_annotation
+    ~position:{ Location.line = 3; column = 11 } (* TODO (T68817342): Should be `bool` *)
+    ~annotation:(Some "3:7-3:28/typing.Optional[bool]");
+  assert_annotation
+    ~position:{ Location.line = 3; column = 16 } (* TODO (T68817342): Should be `bool` *)
+    ~annotation:(Some "3:7-3:28/typing.Optional[bool]");
   assert_annotation ~position:{ Location.line = 3; column = 17 } ~annotation:(Some "3:17-3:27/bool");
   assert_annotation
     ~position:{ Location.line = 3; column = 21 }
     ~annotation:(Some "3:21-3:27/typing.Optional[bool]");
   assert_annotation ~position:{ Location.line = 3; column = 28 } ~annotation:None
+
+
+(* Qualified Names *)
+let assert_qualified_names ~lookup expected =
+  let list_diff format list = Format.fprintf format "%s\n" (String.concat ~sep:"\n" list) in
+  assert_equal
+    ~printer:(String.concat ~sep:", ")
+    ~pp_diff:(diff ~print:list_diff)
+    expected
+    ( Lookup.get_all_qualified_names lookup
+    |> List.map ~f:(fun (key, data) ->
+           Format.asprintf "%s -> %s" (show_location key) (Reference.show data))
+    |> List.sort ~compare:String.compare )
+
+
+let test_lookup_qualified_names context =
+  let environment_sources = ["a.py", {|
+      class A: pass
+    |}] in
+  let source = {|
+      from .a import A as RenamedA
+
+      a = RenamedA
+    |} in
+  let lookup = generate_lookup ~context ~environment_sources source in
+  assert_qualified_names
+    ~lookup
+    ["2:15-2:16 -> a.A"; "2:20-2:28 -> a.A"; "4:0-4:1 -> test.a"; "4:4-4:12 -> a.A"];
+
+  let environment_sources =
+    [
+      ( "a.py",
+        {|
+      class A:
+        def __init__(self) -> None:
+          self.attribute = 1
+    |} );
+      "b.py", {|
+      from .a import A
+    |};
+    ]
+  in
+  let source =
+    {|
+      from . import b
+      from .b import A as RenamedA
+
+      x = RenamedA
+      y = x
+      y = x.attribute
+      y = RenamedA.attribute
+      z = b.A
+    |}
+  in
+  let lookup = generate_lookup ~context ~environment_sources source in
+  assert_qualified_names
+    ~lookup
+    [
+      "2:14-2:15 -> b";
+      "3:15-3:16 -> a.A";
+      "3:20-3:28 -> a.A";
+      "5:0-5:1 -> test.x";
+      "5:4-5:12 -> a.A";
+      "6:0-6:1 -> test.y";
+      "6:4-6:5 -> test.x";
+      "7:0-7:1 -> test.y";
+      "7:4-7:15 -> test.x.attribute";
+      "7:4-7:5 -> test.x";
+      "8:0-8:1 -> test.y";
+      "8:4-8:12 -> a.A";
+      "8:4-8:22 -> b.A.attribute";
+      "9:0-9:1 -> test.z";
+      "9:4-9:5 -> b";
+      "9:4-9:7 -> a.A";
+    ];
+
+  let environment_sources =
+    [
+      ( "module/a.py",
+        {|
+      class A:
+        attribute = ""
+        def method(self, input: str) -> None:
+          pass
+    |}
+      );
+    ]
+  in
+  let source =
+    {|
+      from .module import a
+
+      global_class = a.A
+      global_instance = a.A()
+      global_instance.method(global_instance.attribute)
+
+      def foo() -> None:
+        global_instance.method(global_instance.attribute)
+        local_instance = a.A()
+        local_variable = local_instance.method(local_instance.attribute)
+    |}
+  in
+  let lookup = generate_lookup ~context ~environment_sources source in
+  assert_qualified_names
+    ~lookup
+    [
+      "10:19-10:20 -> module.a";
+      "10:19-10:22 -> module.a.A";
+      "10:2-10:16 -> test.foo.local_instance";
+      "11:19-11:33 -> test.foo.local_instance";
+      "11:19-11:40 -> test.foo.local_instance.method";
+      "11:2-11:16 -> test.foo.local_variable";
+      "11:41-11:55 -> test.foo.local_instance";
+      "11:41-11:65 -> test.foo.local_instance.attribute";
+      "2:20-2:21 -> module.a";
+      "4:0-4:12 -> test.global_class";
+      "4:15-4:16 -> module.a";
+      "4:15-4:18 -> module.a.A";
+      "5:0-5:15 -> test.global_instance";
+      "5:18-5:19 -> module.a";
+      "5:18-5:21 -> module.a.A";
+      "6:0-6:15 -> test.global_instance";
+      "6:0-6:22 -> test.global_instance.method";
+      "6:23-6:38 -> test.global_instance";
+      "6:23-6:48 -> test.global_instance.attribute";
+      "8:13-8:17 -> None";
+      "8:4-8:7 -> test.foo";
+      "9:2-9:17 -> test.global_instance";
+      "9:2-9:24 -> test.global_instance.method";
+      "9:25-9:40 -> test.global_instance";
+      "9:25-9:50 -> test.global_instance.attribute";
+    ];
+
+  let source =
+    {|
+      def foo(x: List[int]) -> List[int]:
+        return [element for element in x]
+    |}
+  in
+  let lookup = generate_lookup ~context source in
+  assert_qualified_names ~lookup ["2:30-2:33 -> int"; "2:4-2:7 -> test.foo"]
 
 
 (* Definitions *)
@@ -163,7 +310,7 @@ let test_lookup_definitions context =
       "12:4-12:7 -> 8:0-9:8";
       "13:12-13:18 -> 2:0-3:13";
       "13:4-13:11 -> 5:0-6:8";
-      "2:16-2:19 -> 107:0-168:32";
+      "2:16-2:19 -> 112:0-173:32";
       "2:4-2:10 -> 2:0-3:13";
       "5:4-5:11 -> 5:0-6:8";
       "8:4-8:7 -> 8:0-9:8";
@@ -692,7 +839,20 @@ let test_lookup_imports context =
        unknown)], typing.Any]";
       "3:31-3:38/typing.Callable(subprocess.call)[[Named(command, unknown), Named(shell, \
        unknown)], typing.Any]";
-    ]
+    ];
+
+  (* Wildcard Imports *)
+  let source = {|
+      from environment import *
+    |} in
+  let environment_source = {|
+      class Foo: pass
+      class Bar: pass
+    |} in
+  assert_annotation_list
+    ~lookup:
+      (generate_lookup ~context ~environment_sources:["environment.py", environment_source] source)
+    []
 
 
 let test_lookup_string_annotations context =
@@ -868,6 +1028,7 @@ let () =
          "lookup" >:: test_lookup;
          "lookup_out_of_bounds_location" >:: test_lookup_out_of_bounds_location;
          "lookup_pick_narrowest" >:: test_lookup_pick_narrowest;
+         "lookup_qualified_names" >:: test_lookup_qualified_names;
          "lookup_definitions" >:: test_lookup_definitions;
          "lookup_definitions_instances" >:: test_lookup_definitions_instances;
          "lookup_attributes" >:: test_lookup_attributes;

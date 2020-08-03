@@ -75,6 +75,12 @@ val widen : t -> widening_threshold:int -> previous:Type.t -> next:Type.t -> ite
 
 val legacy_resolve_exports : t -> reference:Reference.t -> Reference.t
 
+val resolve_exports
+  :  t ->
+  ?from:Reference.t ->
+  Reference.t ->
+  UnannotatedGlobalEnvironment.ResolvedReference.t option
+
 val ast_environment : t -> AstEnvironment.ReadOnly.t
 
 val annotated_global_environment : t -> AnnotatedGlobalEnvironment.ReadOnly.t

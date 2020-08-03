@@ -41,6 +41,8 @@ end
 
 module Make (In : In) = struct
   module UnmanagedCache = struct
+    let enabled = ref false
+
     let cache = In.HashableKey.Table.create ()
 
     let clear () = In.HashableKey.Table.clear cache
@@ -83,14 +85,12 @@ module Make (In : In) = struct
 
   let update_this_and_all_preceding_environments ast_environment ~scheduler ~configuration =
     let () =
-      (* We really need the configuration to be consistent between the update call and the get call.
-         In theory we could use the configuration we're passed, but using the global one
-         consistently makes this more un-screw-up-able *)
-      match Configuration.Analysis.get_global () with
-      | None
-      | Some { incremental_style = FineGrained; _ } ->
+      match configuration with
+      | { Configuration.Analysis.incremental_style = FineGrained; _ } ->
+          UnmanagedCache.enabled := false;
           ()
       | _ ->
+          UnmanagedCache.enabled := true;
           Scheduler.once_per_worker scheduler ~configuration ~f:UnmanagedCache.clear;
           UnmanagedCache.clear ()
     in
@@ -103,11 +103,9 @@ module Make (In : In) = struct
     include ReadOnly
 
     let get read_only ?dependency key =
-      match Configuration.Analysis.get_global () with
-      | None
-      | Some { incremental_style = FineGrained; _ } ->
-          get read_only ?dependency key
-      | _ ->
+      match !UnmanagedCache.enabled with
+      | false -> get read_only ?dependency key
+      | true ->
           let default () = In.produce_value (upstream_environment read_only) key ~dependency:None in
           Hashtbl.find_or_add UnmanagedCache.cache key ~default
   end

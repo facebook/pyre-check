@@ -81,6 +81,11 @@ type 'part pkg =
     }
       -> 'part pkg
 
+type 'call_model initialize_result = {
+  initial_models: 'call_model Callable.Map.t;
+  skip_overrides: Ast.Reference.Set.t;
+}
+
 module type ANALYZER = sig
   type result
 
@@ -99,7 +104,8 @@ module type ANALYZER = sig
     :  configuration:Yojson.Safe.json ->
     environment:Analysis.TypeEnvironment.ReadOnly.t ->
     functions:Callable.t list ->
-    call_model Callable.Map.t
+    stubs:Callable.t list ->
+    call_model initialize_result
 end
 
 module type ANALYSIS_RESULT = sig

@@ -322,13 +322,12 @@ let test_type_collection context =
   let assert_type_collection source ~handle ~expected =
     let configuration, source, environment =
       let project = ScratchProject.setup ~context [handle, source] in
-      let { ScratchProject.BuiltTypeEnvironment.ast_environment; type_environment = environment; _ }
-        =
+      let { ScratchProject.BuiltTypeEnvironment.type_environment = environment; _ } =
         ScratchProject.build_type_environment project
       in
       let source =
         AstEnvironment.ReadOnly.get_processed_source
-          (AstEnvironment.read_only ast_environment)
+          (TypeEnvironment.ast_environment environment |> AstEnvironment.read_only)
           (Reference.create (String.chop_suffix_exn handle ~suffix:".py"))
         |> fun option -> Option.value_exn option
       in

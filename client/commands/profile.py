@@ -146,7 +146,7 @@ def to_traceevents(events: Sequence[Event]) -> List[Dict[str, Any]]:
 
 
 def split_pre_and_post_initialization(
-    events: Sequence[Event]
+    events: Sequence[Event],
 ) -> Tuple[Sequence[Event], Sequence[Event]]:
     initialization_point = next(
         (
@@ -206,6 +206,8 @@ class TableStatistics:
                 return float(number[:-1]) * (10 ** 3)
             return float(number)
 
+        # pyre-fixme[6]: Expected `(Tuple[str, str]) -> _SupportsLessThan` for 1st
+        #  param but got `(x: Any) -> float`.
         items.sort(key=lambda x: parse(x[1]), reverse=True)
 
     def add(self, line: str) -> None:

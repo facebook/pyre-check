@@ -76,8 +76,11 @@ let description ~resolution error =
   let ast_environment =
     Resolution.global_resolution resolution |> GlobalResolution.ast_environment
   in
-  Error.instantiate ~lookup:(AstEnvironment.ReadOnly.get_relative ast_environment) error
-  |> Error.Instantiated.description ~show_error_traces:false
+  Error.instantiate
+    ~show_error_traces:false
+    ~lookup:(AstEnvironment.ReadOnly.get_relative ast_environment)
+    error
+  |> Error.Instantiated.description
 
 
 let test_initial context =
@@ -619,14 +622,14 @@ let test_forward_expression context =
     ~postcondition:["Container", dictionary_set_union]
     "1 in Container"
     Type.bool;
-  assert_forward "undefined < 1" Type.Any;
+  assert_forward "undefined < 1" Type.bool;
   assert_forward "undefined == undefined" Type.Any;
 
   (* Complex literal. *)
   assert_forward "1j" Type.complex;
   assert_forward "1" (Type.literal_integer 1);
-  assert_forward "\"\"" (Type.literal_string "");
-  assert_forward "b\"\"" Type.bytes;
+  assert_forward {|""|} (Type.literal_string "");
+  assert_forward {|b""|} (Type.literal_bytes "");
 
   (* Dictionaries. *)
   assert_forward "{1: 1}" (Type.dictionary ~key:Type.integer ~value:Type.integer);
@@ -772,7 +775,13 @@ let test_forward_expression context =
   assert_forward "f'string{undefined}'" Type.string;
 
   (* Ternaries. *)
-  assert_forward "3 if True else 1" Type.integer;
+  assert_forward "3 if True else 1" (Type.union [Type.literal_integer 3; Type.literal_integer 1]);
+  assert_forward
+    "True if True else False"
+    (Type.union [Type.Literal (Type.Boolean true); Type.Literal (Type.Boolean false)]);
+  assert_forward
+    "'foo' if True else 'bar'"
+    (Type.union [Type.literal_string "foo"; Type.literal_string "bar"]);
   assert_forward "1.0 if True else 1" Type.float;
   assert_forward "1 if True else 1.0" Type.float;
   assert_forward "undefined if True else 1" Type.Top;

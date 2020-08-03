@@ -203,7 +203,7 @@ module In = struct
       | Worker _ -> failwith "Can only decode from master"
 
 
-    let collected_map_reduce scheduler ~policy ~configuration ~initial ~map ~reduce ~inputs () =
+    let collected_map_reduce scheduler ~policy ~initial ~map ~reduce ~inputs () =
       let map sofar inputs =
         if Scheduler.is_master () then
           map sofar inputs, []
@@ -222,7 +222,7 @@ module In = struct
         List.iter keys ~f:register;
         reduce payload sofar
       in
-      Scheduler.map_reduce scheduler ~policy ~configuration ~initial ~map ~reduce ~inputs ()
+      Scheduler.map_reduce scheduler ~policy ~initial ~map ~reduce ~inputs ()
   end
 end
 

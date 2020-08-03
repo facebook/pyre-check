@@ -26,14 +26,14 @@ LOG: Logger = logging.getLogger(__name__)
 
 
 def find_log_directory(
-    current_directory: str, local_configuration: Optional[str], dot_pyre_directory: str
+    project_root: str, local_configuration: Optional[str], dot_pyre_directory: str
 ) -> str:
     """Pyre outputs all logs to a .pyre directory that lives in the project root."""
     log_directory = dot_pyre_directory
     if local_configuration:
         # `log_directory` will never escape `.pyre/` because in `switch_root` we have
         # guaranteed that configurations are never deeper than local configurations
-        relative = os.path.relpath(local_configuration, current_directory)
+        relative = os.path.relpath(local_configuration, project_root)
         log_directory = os.path.join(log_directory, relative)
     return log_directory
 
@@ -75,18 +75,18 @@ def get_dot_pyre_directory(root_directory: str) -> str:
 
 
 def log_directory(
-    current_directory: str,
+    project_root: str,
     local_root: Optional[str] = None,
     subdirectory: Optional[str] = None,
 ) -> Path:
-    dot_pyre = get_dot_pyre_directory(root_directory=current_directory)
+    dot_pyre = get_dot_pyre_directory(root_directory=project_root)
     if local_root is None:
         return Path(dot_pyre)
-    project_root = find_project_root(original_directory=current_directory)
+    project_root = find_project_root(original_directory=project_root)
     log_directory = Path(
         find_log_directory(
             dot_pyre_directory=dot_pyre,
-            current_directory=project_root,
+            project_root=project_root,
             local_configuration=local_root,
         )
     )

@@ -88,7 +88,7 @@ class Reporting(Command):
             error["path"] = relative_path
             ignore_error = False
             external_to_global_root = True
-            if path.startswith(self._current_directory):
+            if path.startswith(self._project_root):
                 external_to_global_root = False
             if not os.path.exists(path):
                 # Nonexistent paths can be created when search path stubs are renamed.
@@ -107,7 +107,7 @@ class Reporting(Command):
                 for error in errors
                 if (
                     not error.is_ignored()
-                    and (self._verbose or not (error.is_external_to_global_root()))
+                    and (not (error.is_external_to_global_root()))
                 )
             ]
             sorted_errors = sorted(

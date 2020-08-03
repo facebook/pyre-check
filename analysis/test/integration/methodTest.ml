@@ -192,10 +192,133 @@ let test_check_method_returns context =
       ]
     |}
     [];
+  assert_type_errors
+    ~context
+    {|
+      import typing
+      def foo() -> None:
+          f: typing.Callable
+          f(1, 2)
+    |}
+    ["Invalid type parameters [24]: Generic type `typing.Callable` expects 2 type parameters."];
+  assert_type_errors
+    ~context
+    {|
+      import typing
+      def foo() -> None:
+          x: typing.Tuple
+          x = (1, 2)
+    |}
+    ["Invalid type parameters [24]: Generic type `tuple` expects at least 1 type parameter."];
   ()
 
 
 let test_check_inverse_operator context =
+  assert_type_errors
+    ~context
+    {|
+      from typing import Optional, Tuple
+      x: int
+      optional_x: Optional[int]
+
+      class C:
+        def __rrshift__(self, other: int) -> int: ...
+
+      class D:
+        def __rshift__(self, other: int) -> int: ...
+
+      # Only one of them has the operator.
+      x < optional_x
+      optional_x < x
+      x + optional_x
+      optional_x + x
+      optional_x == x
+      optional_x != x
+
+      # Both have the operator.
+      "foo" >> C()
+      D() >> "foo"
+      D() >> C()
+
+      # Neither has the operator.
+      D() + C()
+      C() << C()
+    |}
+    [
+      "Incompatible parameter type [6]: `<` is not supported for operand types `int` and \
+       `Optional[int]`.";
+      "Incompatible parameter type [6]: `<` is not supported for operand types `Optional[int]` and \
+       `int`.";
+      "Incompatible parameter type [6]: `+` is not supported for operand types `int` and \
+       `Optional[int]`.";
+      "Incompatible parameter type [6]: `+` is not supported for operand types `Optional[int]` and \
+       `int`.";
+      "Incompatible parameter type [6]: `>>` is not supported for operand types `str` and `C`.";
+      "Incompatible parameter type [6]: `>>` is not supported for operand types `D` and `str`.";
+      "Incompatible parameter type [6]: `>>` is not supported for operand types `D` and `C`.";
+      "Incompatible parameter type [6]: `+` is not supported for operand types `D` and `C`.";
+      "Incompatible parameter type [6]: `<<` is not supported for operand types `C` and `C`.";
+    ];
+  (* Explicit use of `__lt__` gets the full error message. *)
+  assert_type_errors
+    ~context
+    {|
+      from typing import Optional
+
+      x: int
+      optional_x: Optional[int]
+      x.__lt__(optional_x)
+      x < optional_x
+    |}
+    [
+      "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter to call \
+       `int.__lt__` but got `Optional[int]`.";
+      "Incompatible parameter type [6]: `<` is not supported for operand types `int` and \
+       `Optional[int]`.";
+    ];
+  (* TODO(T69286342): Inferred literal types give the incompatible parameter type error. *)
+  assert_type_errors
+    ~context
+    {|
+      def foo() -> None:
+        y = 1
+        reveal_type(y)
+        y += "some string"
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `y` is `typing_extensions.Literal[1]`.";
+      "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter to call \
+       `int.__add__` but got `str`.";
+    ];
+  assert_type_errors
+    ~context
+    {|
+      class C:
+        pass
+
+      class D:
+        def __gt__(self, other: object) -> bool: ...
+        def __lt__(self, other: object) -> bool: ...
+        def __le__(self, other: object) -> bool: ...
+        def __ge__(self, other: object) -> bool: ...
+
+      def expects_bool(x: bool) -> None: ...
+
+      expects_bool(C() < D())
+      expects_bool(C() > D())
+      expects_bool(C() <= D())
+      expects_bool(C() >= D())
+    |}
+    [];
+  assert_type_errors
+    ~context
+    {|
+      x1: bool = 5 < 6.0
+      x2: bool = 5 > 6.0
+      x3: bool = 5 <= 6.0
+      x4: bool = 5 >= 6.0
+    |}
+    [];
   assert_type_errors
     ~context
     {|
@@ -220,7 +343,7 @@ let test_check_inverse_operator context =
       def foo() -> int:
         return (C() >> D())
     |}
-    ["Undefined attribute [16]: `C` has no attribute `__rshift__`."];
+    ["Incompatible parameter type [6]: `>>` is not supported for operand types `C` and `D`."];
   assert_type_errors
     ~context
     {|
@@ -270,11 +393,7 @@ let test_check_inverse_operator context =
       def foo() -> None:
         z = ("foo" >> C())
     |}
-    (* Make sure that if the operands don't typecheck, we raise an error for the left operand. *)
-    [
-      "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter to call \
-       `C.__rrshift__` but got `str`.";
-    ];
+    ["Incompatible parameter type [6]: `>>` is not supported for operand types `str` and `C`."];
   assert_type_errors
     ~context
     {|
@@ -456,10 +575,7 @@ let test_check_method_parameters context =
       def foo(input: str) -> None:
         input + 1
     |}
-    [
-      "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st positional only parameter to call `int.__radd__` but got `str`.";
-    ];
+    ["Incompatible parameter type [6]: `+` is not supported for operand types `str` and `int`."];
   assert_type_errors
     {|
       def foo(input: str) -> str:
@@ -1704,7 +1820,7 @@ let test_check_callable_protocols context =
   assert_type_errors
     {|
       from typing import Callable
-      def foo() -> None: 
+      def foo() -> None:
         q = Callable[[int], str]
         reveal_type(q)
         f = q(1)
@@ -1753,6 +1869,47 @@ let test_check_callable_protocols context =
       "Incompatible variable type [9]: f is declared to have type `typing.Callable[[int], C]` but \
        is used as type `typing.Type[C]`.";
     ];
+  assert_default_type_errors
+    {|
+      from typing import Any
+
+      class C:
+        __call__: Any = 1
+
+      def foo(c: C) -> None:
+        x = c()
+        reveal_type(x)
+    |}
+    ["Revealed type [-1]: Revealed type for `x` is `typing.Any`."];
+  assert_default_type_errors
+    {|
+      from typing import Any
+
+      class C:
+        __init__: Any = 1
+
+      def foo() -> None:
+        x = C()
+        reveal_type(x)
+    |}
+    ["Revealed type [-1]: Revealed type for `x` is `typing.Any`."];
+  assert_default_type_errors
+    {|
+      from typing import Any
+
+      def unannotated_decorator(x):
+        return x
+
+      class C:
+        @unannotated_decorator
+        def __init__(self) -> None:
+          pass
+
+      def foo() -> None:
+        x = C()
+        reveal_type(x)
+    |}
+    ["Revealed type [-1]: Revealed type for `x` is `typing.Any`."];
   ()
 
 

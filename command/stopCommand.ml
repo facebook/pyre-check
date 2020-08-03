@@ -14,7 +14,8 @@ exception NotRunning
 
 let stop ~log_directory ~local_root =
   let configuration =
-    Configuration.Analysis.create ?log_directory ~local_root:(Path.create_absolute local_root) ()
+    let local_root = Path.create_absolute local_root in
+    Configuration.Analysis.create ?log_directory ~local_root ~source_path:[local_root] ()
   in
   try
     let in_channel, _ =
@@ -43,7 +44,7 @@ let stop ~log_directory ~local_root =
       let start_time = Unix.time () in
       let timeout = 3.0 in
       let rec poll () =
-        if Unix.time () -. start_time >=. timeout then (
+        if Float.(Unix.time () -. start_time >=. timeout) then (
           Log.warning "Timed out while polling for server to stop.";
           1 )
         else if List.exists ~f:Path.file_exists paths then (

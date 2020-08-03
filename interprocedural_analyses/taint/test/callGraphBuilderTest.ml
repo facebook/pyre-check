@@ -26,8 +26,8 @@ let assert_call_graph ~context source expected =
       ~cmp:(List.equal Analysis.Callgraph.equal_callee)
       ~printer:(fun callees ->
         List.map callees ~f:Analysis.Callgraph.show_callee |> String.concat ~sep:", ")
-      expected
-      actual
+      (List.sort ~compare:Analysis.Callgraph.compare_callee expected)
+      (List.sort ~compare:Analysis.Callgraph.compare_callee actual)
   in
   List.iter expected ~f:assert_call_graph_consistent
 

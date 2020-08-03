@@ -38,7 +38,10 @@ let assert_model ?source ?rules ~context ~model_source ~expect () =
   let models =
     let source = Test.trim_extra_indentation model_source in
     let resolution =
-      let global_resolution = Analysis.GlobalResolution.create global_environment in
+      let global_resolution =
+        Analysis.AnnotatedGlobalEnvironment.read_only global_environment
+        |> Analysis.GlobalResolution.create
+      in
       TypeCheck.resolution global_resolution (module TypeCheck.DummyContext)
     in
 
@@ -48,7 +51,7 @@ let assert_model ?source ?rules ~context ~model_source ~expect () =
           Some (List.map rules ~f:(fun { Taint.TaintConfiguration.Rule.code; _ } -> code))
       | None -> None
     in
-    let { Taint.Model.models; errors } =
+    let { Taint.Model.models; errors; _ } =
       Taint.Model.parse ~resolution ?rule_filter ~source ~configuration Callable.Map.empty
     in
     assert_bool
@@ -1032,6 +1035,38 @@ let test_invalid_models context =
     ~expect:
       "Invalid model for `test.f`: Cross repository taint must be of the form \
        CrossRepositoryTaint[taint, canonical_name, canonical_port, producer_id]."
+    ();
+  (* Ensure that we're verifying models against the undecorated signature. *)
+  assert_valid_model
+    ~source:
+      {|
+    from typing import Callable
+    def decorate(f: Callable[[int], int]) -> Callable[[], int]:
+      def g() -> int:
+        return f(42)
+      return g
+    @decorate
+    def foo(parameter: int) -> int:
+      return parameter
+    |}
+    ~model_source:"def test.foo(parameter): ..."
+    ();
+  assert_invalid_model
+    ~source:
+      {|
+    from typing import Callable
+    def decorate(f: Callable[[int], int]) -> Callable[[], int]:
+      def g() -> int:
+        return f(42)
+      return g
+    @decorate
+    def foo(parameter: int) -> int:
+      return parameter
+    |}
+    ~model_source:"def test.foo(): ..."
+    ~expect:
+      "Invalid model for `test.foo`: Model signature parameters do not match implementation `def \
+       foo(parameter: int) -> int: ...`. Reason(s): missing named parameters: `parameter`."
     ()
 
 

@@ -59,7 +59,9 @@ module ResultA = Interprocedural.Result.Make (struct
 end)
 
 module AnalysisA = ResultA.Register (struct
-  let init ~configuration:_ ~environment:_ ~functions:_ = Callable.Map.empty
+  let init ~configuration:_ ~environment:_ ~functions:_ ~stubs:_ =
+    { Result.initial_models = Callable.Map.empty; skip_overrides = Ast.Reference.Set.empty }
+
 
   let analyze ~callable:_ ~environment:_ ~qualifier:_ ~define:_ ~existing:_ = "A", 5
 end)
@@ -81,7 +83,7 @@ module ResultB = Interprocedural.Result.Make (struct
 
   let widen ~iteration ~previous ~next = join ~iteration previous next
 
-  let reached_fixpoint ~iteration:_ ~previous ~next = next <= previous
+  let reached_fixpoint ~iteration:_ ~previous ~next = String.(next <= previous)
 
   let externalize ~filename_lookup:_ callable result_option model =
     let result_json =
@@ -106,7 +108,9 @@ module ResultB = Interprocedural.Result.Make (struct
 end)
 
 module AnalysisB = ResultB.Register (struct
-  let init ~configuration:_ ~environment:_ ~functions:_ = Callable.Map.empty
+  let init ~configuration:_ ~environment:_ ~functions:_ ~stubs:_ =
+    { Result.initial_models = Callable.Map.empty; skip_overrides = Reference.Set.empty }
+
 
   let analyze ~callable:_ ~environment:_ ~qualifier:_ ~define:_ ~existing:_ = 7, "B"
 end)

@@ -204,6 +204,7 @@ let test_check_missing_return context =
           return 1
     |}
     [
+      "Incompatible parameter type [6]: `>` is not supported for operand types `unknown` and `int`.";
       "Unbound name [10]: Name `a` is used but not defined in the current scope.";
       "Incompatible return type [7]: Expected `None` but got `int`.";
     ];
@@ -296,10 +297,7 @@ let test_check_missing_return context =
     {|
       1 + 'asdf'  # report in top-level function
     |}
-    [
-      "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st positional only parameter to call `int.__add__` but got `str`.";
-    ];
+    ["Incompatible parameter type [6]: `+` is not supported for operand types `int` and `str`."];
   assert_type_errors
     {|
       from builtins import condition
@@ -383,8 +381,8 @@ let test_check_missing_return context =
           return None
     |}
     [
-      "Missing return annotation [3]: Returning `typing.Union[int, None, int, str]` "
-      ^ "but no return type is specified.";
+      "Missing return annotation [3]: Returning `typing.Union[None, int, str]` but no return type \
+       is specified.";
     ];
   assert_type_errors
     {|

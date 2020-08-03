@@ -53,28 +53,39 @@ let section_to_string = function
   | `Warning -> "Warning"
 
 
-let enabled =
-  String.Hash_set.of_list ["Dump"; "Error"; "Info"; "Memory"; "Progress"; "Performance"; "Warning"]
+module GlobalState = struct
+  let enabled =
+    String.Hash_set.of_list
+      ["Dump"; "Error"; "Info"; "Memory"; "Progress"; "Performance"; "Warning"]
 
 
-let is_enabled section = Hash_set.mem enabled (section_to_string section)
-
-let initialize ~verbose ~sections =
-  if verbose then
-    Hash_set.add enabled "Debug";
-  let handle_section section =
-    let normalize section = String.lowercase section |> String.capitalize in
-    match String.chop_prefix ~prefix:"-" section with
-    | Some section -> normalize section |> Hash_set.remove enabled
-    | None -> normalize section |> Hash_set.add enabled
-  in
-  List.iter ~f:handle_section sections
+  let initialize ~debug ~sections =
+    if debug then
+      Hash_set.add enabled "Debug";
+    let handle_section section =
+      let normalize section = String.lowercase section |> String.capitalize in
+      match String.chop_prefix ~prefix:"-" section with
+      | Some section -> normalize section |> Hash_set.remove enabled
+      | None -> normalize section |> Hash_set.add enabled
+    in
+    List.iter ~f:handle_section sections
 
 
-let initialize_for_tests () =
-  Hash_set.clear enabled;
-  Hash_set.add enabled "Dump"
+  let initialize_for_tests () =
+    Hash_set.clear enabled;
+    Hash_set.add enabled "Dump"
 
+
+  type t = string list
+
+  let get () = Hash_set.to_list enabled
+
+  let restore saved_state =
+    Hash_set.clear enabled;
+    List.iter saved_state ~f:(Hash_set.add enabled)
+end
+
+let is_enabled section = Hash_set.mem GlobalState.enabled (section_to_string section)
 
 let time_zone = ref None
 
@@ -95,7 +106,7 @@ let get_time_zone () =
 
 let log ~section format =
   let section = section_to_string section in
-  if Hash_set.mem enabled section then
+  if Hash_set.mem GlobalState.enabled section then
     let zone = get_time_zone () in
     Format.fprintf
       Format.err_formatter
@@ -153,7 +164,11 @@ let rotate ?(number_to_keep = 10) basename =
   let is_file_or_link path =
     try
       let { Unix.st_kind; _ } = Unix.lstat path in
-      st_kind = Unix.S_LNK || st_kind = Unix.S_REG
+      match st_kind with
+      | Unix.S_LNK
+      | Unix.S_REG ->
+          true
+      | _ -> false
     with
     | Unix.Unix_error _ -> false
   in

@@ -11,9 +11,7 @@ let assert_incremental_check_errors ~context ~initial_sources ~updated_sources ~
   let initial_sources = List.map initial_sources ~f:trim in
   let updated_sources = List.map updated_sources ~f:trim in
   (* Setup a server. *)
-  let ( ({ ScratchProject.module_tracker; _ } as project),
-        ({ Server.State.ast_environment; _ } as state) )
-    =
+  let ({ ScratchProject.module_tracker; _ } as project), ({ Server.State.environment; _ } as state) =
     ServerTest.initialize_server ~incremental_style:FineGrained ~context ~initial_sources
   in
   let update_module_tracker (is_external, source) =
@@ -34,18 +32,16 @@ let assert_incremental_check_errors ~context ~initial_sources ~updated_sources ~
     let description error =
       AnalysisError.instantiate
         error
+        ~show_error_traces:false
         ~lookup:
           (AstEnvironment.ReadOnly.get_real_path_relative
              ~configuration
-             (AstEnvironment.read_only ast_environment))
-      |> AnalysisError.Instantiated.description ~show_error_traces:false ~concise:false
+             (TypeEnvironment.ast_environment environment |> AstEnvironment.read_only))
+      |> AnalysisError.Instantiated.description
     in
-    Server.IncrementalCheck.recheck_with_state ~state ~configuration paths
-    |> fst
-    |> (fun { Server.State.errors; _ } -> errors)
-    |> Reference.Table.data
-    |> List.concat
-    |> List.map ~f:description
+    let _ = Server.IncrementalCheck.recheck_with_state ~state ~configuration paths in
+    let { Server.State.errors; _ } = state in
+    Reference.Table.data errors |> List.concat |> List.map ~f:description
   in
   assert_equal ~printer:(String.concat ~sep:"\n") expected errors;
   Memory.reset_shared_memory ()

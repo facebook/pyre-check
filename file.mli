@@ -14,7 +14,11 @@ val path : t -> Path.t
 
 val content : t -> string option
 
+val content_exn : t -> string
+
 val lines : t -> string list option
+
+val lines_exn : t -> string list
 
 val hash : t -> int option
 

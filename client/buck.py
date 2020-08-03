@@ -120,7 +120,7 @@ class FastBuckBuilder(BuckBuilder):
                 )
 
     def _read_stderr(
-        self, stream: Iterable[str], default_logging_section: int = logging.ERROR
+        self, stream: Iterable[str], default_logging_section: int = logging.INFO
     ) -> None:
         for line in stream:
             line = line.rstrip()

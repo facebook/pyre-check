@@ -100,11 +100,16 @@ class Query(Command):
         return flags
 
     def _run(self) -> None:
-        request = json_rpc.Request(method="typeQuery", parameters={"query": self.query})
-        self._send_and_handle_socket_request(request, self._version_hash)
+        LOG.info("Waiting for server...")
+        with self._analysis_directory.acquire_shared_reader_lock():
+            request = json_rpc.Request(
+                method="typeQuery", parameters={"query": self.query}
+            )
+            self._send_and_handle_socket_request(request, self._version_hash)
 
     def _socket_result_handler(self, result: Result) -> None:
         self._result = result
+        LOG.log(log.SUCCESS, "Received response from server")
         if self.query == "help":
             response = json.loads(result.output).get("response")
             log.stdout.write(response.get("help"))

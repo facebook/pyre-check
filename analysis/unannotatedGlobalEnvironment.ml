@@ -219,12 +219,20 @@ module ReadOnly = struct
                                 ~names_to_resolve:rest_names
                                 () )
                       | Some (Module.Export.NameAlias { from; name }) ->
-                          (* We don't know if `name` refers to a module or not. Move forward on the
-                             alias chain. *)
-                          resolve_module_alias
-                            ~current_module:from
-                            ~names_to_resolve:(name :: rest_names)
-                            ()
+                          if Reference.equal current_module from then
+                            (* This could legitimately happen when an __init__ module trying to
+                               import its sibling modules *)
+                            resolve_module_alias
+                              ~current_module:(Reference.create name |> Reference.combine from)
+                              ~names_to_resolve:rest_names
+                              ()
+                          else
+                            (* We don't know if `name` refers to a module or not. Move forward on
+                               the alias chain. *)
+                            resolve_module_alias
+                              ~current_module:from
+                              ~names_to_resolve:(name :: rest_names)
+                              ()
                       | Some (Module.Export.Module name) ->
                           (* `name` is definitely a module. *)
                           resolve_module_alias ~current_module:name ~names_to_resolve:rest_names ()
@@ -887,8 +895,8 @@ let collect_unannotated_globals ({ Source.source_path = { SourcePath.qualifier; 
     let not_defines, defines =
       List.partition_map unannotated_globals_alist ~f:(function
           | { UnannotatedGlobal.Collector.Result.name; unannotated_global = Define defines } ->
-              `Snd (name, defines)
-          | x -> `Fst x)
+              Either.Second (name, defines)
+          | x -> Either.First x)
     in
     let add_to_map sofar (name, defines) =
       let merge_with_existing to_merge = function
@@ -974,7 +982,19 @@ module UpdateResult = struct
   let read_only { read_only; _ } = read_only
 end
 
-let update_this_and_all_preceding_environments ast_environment ~scheduler ~configuration trigger =
+type t = { ast_environment: AstEnvironment.t }
+
+let create ast_environment = { ast_environment }
+
+let ast_environment { ast_environment } = ast_environment
+
+let read_only { ast_environment } =
+  let ast_environment = AstEnvironment.read_only ast_environment in
+  WriteOnly.read_only ~ast_environment
+
+
+let update_this_and_all_preceding_environments { ast_environment } ~scheduler ~configuration trigger
+  =
   let upstream = AstEnvironment.update ~configuration ~scheduler ast_environment trigger in
   let ast_environment = AstEnvironment.read_only ast_environment in
   let map sources =
@@ -999,7 +1019,6 @@ let update_this_and_all_preceding_environments ast_environment ~scheduler ~confi
            ~minimum_chunk_size:100
            ~preferred_chunks_per_worker:5
            ())
-      ~configuration
       ~f:map
       ~inputs:modified_qualifiers
   in

@@ -254,7 +254,7 @@ let attribute_from_class_name
               ~original_annotation:Type.Top
               ~uninstantiated_annotation:(Some Type.Top)
               ~abstract:false
-              ~async:false
+              ~async_property:false
               ~class_variable:false
               ~defined:false
               ~initialized:NotInitialized
@@ -412,6 +412,14 @@ let legacy_resolve_exports ({ dependency; _ } as resolution) ~reference =
   UnannotatedGlobalEnvironment.ReadOnly.legacy_resolve_exports
     ?dependency
     (unannotated_global_environment resolution)
+    reference
+
+
+let resolve_exports ({ dependency; _ } as resolution) ?from reference =
+  UnannotatedGlobalEnvironment.ReadOnly.resolve_exports
+    ?dependency
+    (unannotated_global_environment resolution)
+    ?from
     reference
 
 

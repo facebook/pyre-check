@@ -17,13 +17,11 @@ type raw_connections = {
 }
 
 type connections = {
-  lock: Mutex.t;
+  lock: Error_checking_mutex.t;
   connections: raw_connections ref;
 }
 
 type t = {
-  module_tracker: Analysis.ModuleTracker.t;
-  ast_environment: Analysis.AstEnvironment.t;
   environment: Analysis.TypeEnvironment.t;
   errors: Analysis.AnalysisError.t list Ast.Reference.Table.t;
   lookups: Analysis.Lookup.t String.Table.t;
@@ -33,4 +31,5 @@ type t = {
   last_request_time: float;
   connections: connections;
   open_documents: string Ast.Reference.Table.t;
+  server_uuid: string option;
 }

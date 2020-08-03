@@ -93,7 +93,7 @@ let test_parse_stubs_modules_list context =
               ];
             _;
           }
-        when Statement.Define.is_stub define = is_stub ->
+        when Bool.equal (Statement.Define.is_stub define) is_stub ->
           Node.value name
       | _ -> failwith "Could not get source."
     in
@@ -184,6 +184,7 @@ let test_parse_sources context =
     let configuration =
       Configuration.Analysis.create
         ~local_root
+        ~source_path:[local_root]
         ~search_path:[SearchPath.Root module_root; SearchPath.Root typeshed_root]
         ~filter_directories:[local_root]
         ()
@@ -225,6 +226,7 @@ let test_parse_sources context =
     let configuration =
       Configuration.Analysis.create
         ~local_root
+        ~source_path:[local_root]
         ~search_path:[SearchPath.Root stub_root]
         ~filter_directories:[local_root]
         ()
@@ -659,7 +661,12 @@ let test_parse_repository context =
         "a.py", "def a.foo() -> int: ...";
         "b.pyi", "from a import foo as foo";
         "c.py", "from b import foo as foo";
-      ]
+      ];
+  (* Unparsable source turns into getattr-any *)
+  assert_repository_parses_to
+    ["a.py", "def foo() -> int:"]
+    ~expected:["a.py", "import typing\ndef a.__getattr__($parameter$name: str) -> typing.Any: ..."];
+  ()
 
 
 module IncrementalTest = struct

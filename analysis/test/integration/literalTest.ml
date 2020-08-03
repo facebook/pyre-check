@@ -189,10 +189,121 @@ let test_enumeration_literal context =
   ()
 
 
+let test_ternary_with_literals context =
+  let assert_type_errors = assert_type_errors ~context in
+  assert_type_errors
+    {|
+      from typing import Union
+      from typing_extensions import Literal
+
+      def takes_literal(x: Union[Literal["a"], Literal["b"]]) -> None: ...
+
+      some_bool: bool
+
+      y = "a" if some_bool else "b"
+      reveal_type(y)
+      takes_literal(y)
+
+      reveal_type("a" if some_bool else "b")
+      takes_literal("a" if some_bool else "b")
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `y` is `str` (inferred: \
+       `Union[typing_extensions.Literal['a'], typing_extensions.Literal['b']]`).";
+      "Revealed type [-1]: Revealed type for `\"a\" if some_bool else \"b\"` is \
+       `Union[typing_extensions.Literal['a'], typing_extensions.Literal['b']]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Union
+      from typing_extensions import Literal
+      import enum
+
+      class ActualEnum(enum.Enum):
+        A = "a"
+        B = "b"
+
+      def takes_literal(x: Union[Literal[ActualEnum.A], Literal[ActualEnum.B]]) -> None: ...
+
+      some_bool: bool
+
+      y: Union[Literal[ActualEnum.A], Literal[ActualEnum.B]] = (
+        ActualEnum.A if some_bool else ActualEnum.B
+      )
+      reveal_type(y)
+      takes_literal(y)
+
+      reveal_type(ActualEnum.A if some_bool else ActualEnum.B)
+      takes_literal(ActualEnum.A if some_bool else ActualEnum.B)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `y` is \
+       `Union[typing_extensions.Literal[ActualEnum.A], typing_extensions.Literal[ActualEnum.B]]`.";
+      "Revealed type [-1]: Revealed type for `test.ActualEnum.A if some_bool else \
+       test.ActualEnum.B` is `Union[typing_extensions.Literal[ActualEnum.A], \
+       typing_extensions.Literal[ActualEnum.B]]`.";
+    ];
+  ()
+
+
+let test_bytes_literals context =
+  let assert_type_errors = assert_type_errors ~context in
+  assert_type_errors
+    {|
+      from typing_extensions import Literal
+
+      def expects_bytes(s: bytes) -> None: ...
+
+      x: Literal[b"byte1"] = b"byte1"
+      x: Literal[b"byte1"] = u"byte1"
+
+      y: Literal[b"byte2"]
+      expects_bytes(y)
+
+      x2: Literal[b"byte1", b"byte2", u"string", 42] = b"byte1"
+      x2 = b"byte1"
+    |}
+    [
+      "Incompatible variable type [9]: x is declared to have type \
+       `typing_extensions.Literal[b'byte1']` but is used as type \
+       `typing_extensions.Literal['byte1']`.";
+    ];
+  ()
+
+
+let test_literal_none context =
+  let assert_type_errors = assert_type_errors ~context in
+  assert_type_errors
+    {|
+      from typing_extensions import Literal
+
+      def expects_literal_none(s: Literal[None]) -> None: ...
+
+      x: Literal[None] = None
+
+      x2: Literal[42, None] = None
+      reveal_type(x2)
+
+      y: Literal[None]
+      expects_literal_none(y)
+      expects_literal_none(None)
+
+      y2: None = y
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x2` is \
+       `typing.Optional[typing_extensions.Literal[42]]`.";
+    ];
+  ()
+
+
 let () =
   "literal"
   >::: [
          "boolean_literal" >:: test_boolean_literal;
          "enumeration_literal" >:: test_enumeration_literal;
+         "ternary_with_literals" >:: test_ternary_with_literals;
+         "bytes_literals" >:: test_bytes_literals;
+         "literal_none" >:: test_literal_none;
        ]
   |> Test.run

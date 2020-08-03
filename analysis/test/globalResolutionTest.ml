@@ -181,7 +181,9 @@ let test_constructors context =
     let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
     in
-    let resolution = GlobalResolution.create global_environment in
+    let resolution =
+      AnnotatedGlobalEnvironment.read_only global_environment |> GlobalResolution.create
+    in
     let instantiated =
       parse_single_expression instantiated
       |> GlobalResolution.parse_annotation ~validation:ValidatePrimitives resolution
@@ -483,7 +485,7 @@ let test_class_attributes context =
     let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
     in
-    GlobalResolution.create global_environment
+    AnnotatedGlobalEnvironment.read_only global_environment |> GlobalResolution.create
   in
   let resolution =
     setup
@@ -522,7 +524,7 @@ let test_class_attributes context =
       ~annotation
       ~original_annotation:annotation
       ~uninstantiated_annotation
-      ~async:false
+      ~async_property:false
       ~class_variable
       ~defined:true
       ~initialized
@@ -700,7 +702,7 @@ let test_class_attributes context =
          ~original_annotation:annotation
          ~uninstantiated_annotation
          ~abstract:false
-         ~async:false
+         ~async_property:false
          ~class_variable
          ~defined
          ~initialized
@@ -885,7 +887,7 @@ let test_attribute_type context =
       let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
         ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
       in
-      GlobalResolution.create global_environment
+      AnnotatedGlobalEnvironment.read_only global_environment |> GlobalResolution.create
     in
     let parse annotation =
       parse_single_expression ~preprocess:true annotation
@@ -922,13 +924,106 @@ let test_attribute_type context =
   ()
 
 
+let test_invalid_type_parameters context =
+  let open AttributeResolution in
+  let assert_invalid_type_parameters
+      ?(source = "")
+      ~given_type
+      ~expected_transformed_type
+      expected_mismatches
+    =
+    let parse annotation =
+      parse_single_expression ~preprocess:true annotation
+      (* Avoid `GlobalResolution.parse_annotation` because that calls
+         `check_invalid_type_parameters`. *)
+      |> Type.create ~aliases:(fun _ -> None)
+    in
+    let global_resolution =
+      let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
+        ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
+      in
+      AnnotatedGlobalEnvironment.read_only global_environment |> GlobalResolution.create
+    in
+    let actual_mismatches, actual_transformed_type =
+      GlobalResolution.check_invalid_type_parameters global_resolution (parse given_type)
+    in
+    assert_equal
+      ~cmp:[%equal: Type.t]
+      ~printer:[%show: Type.t]
+      (parse expected_transformed_type)
+      actual_transformed_type;
+    assert_equal
+      ~cmp:[%equal: type_parameters_mismatch list]
+      ~printer:[%show: type_parameters_mismatch list]
+      expected_mismatches
+      actual_mismatches
+  in
+  assert_invalid_type_parameters
+    ~given_type:"typing.List[str, int]"
+    ~expected_transformed_type:"typing.List[typing.Any]"
+    [
+      {
+        name = "list";
+        kind =
+          IncorrectNumberOfParameters
+            { actual = 2; expected = 1; can_accept_more_parameters = false };
+      };
+    ];
+  assert_invalid_type_parameters
+    ~given_type:"typing.List"
+    ~expected_transformed_type:"typing.List[typing.Any]"
+    [
+      {
+        name = "list";
+        kind =
+          IncorrectNumberOfParameters
+            { actual = 0; expected = 1; can_accept_more_parameters = false };
+      };
+    ];
+  assert_invalid_type_parameters
+    ~given_type:"typing.Callable[[int, str], bool]"
+    ~expected_transformed_type:"typing.Callable[[int, str], bool]"
+    [];
+  assert_invalid_type_parameters
+    ~given_type:"typing.Callable"
+    ~expected_transformed_type:"typing.Callable[..., typing.Any]"
+    [
+      {
+        name = "typing.Callable";
+        kind =
+          IncorrectNumberOfParameters
+            { actual = 0; expected = 2; can_accept_more_parameters = false };
+      };
+    ];
+  assert_invalid_type_parameters
+    ~given_type:"typing.Tuple[int, ...]"
+    ~expected_transformed_type:"typing.Tuple[int, ...]"
+    [];
+  assert_invalid_type_parameters
+    ~given_type:"typing.Tuple[int, str]"
+    ~expected_transformed_type:"typing.Tuple[int, str]"
+    [];
+  assert_invalid_type_parameters
+    ~given_type:"tuple"
+    ~expected_transformed_type:"typing.Tuple[typing.Any, ...]"
+    [
+      {
+        name = "tuple";
+        kind =
+          IncorrectNumberOfParameters
+            { actual = 0; expected = 1; can_accept_more_parameters = true };
+      };
+    ];
+  ()
+
+
 let test_meet context =
   let assert_meet ?(source = "") ~left ~right expected =
     let global_resolution =
       let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
         ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
       in
-      GlobalResolution.create global_environment
+      AnnotatedGlobalEnvironment.read_only global_environment |> GlobalResolution.create
     in
     let parse annotation =
       parse_single_expression ~preprocess:true annotation
@@ -955,7 +1050,7 @@ let test_join context =
       let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
         ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
       in
-      GlobalResolution.create global_environment
+      AnnotatedGlobalEnvironment.read_only global_environment |> GlobalResolution.create
     in
     let parse annotation =
       parse_single_expression ~preprocess:true annotation
@@ -1134,7 +1229,7 @@ let test_typed_dictionary_individual_attributes context =
          ~original_annotation:annotation
          ~uninstantiated_annotation
          ~abstract:false
-         ~async:false
+         ~async_property:false
          ~class_variable:false
          ~defined
          ~initialized
@@ -1692,7 +1787,9 @@ let test_constraints context =
     let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
     in
-    let resolution = GlobalResolution.create global_environment in
+    let resolution =
+      AnnotatedGlobalEnvironment.read_only global_environment |> GlobalResolution.create
+    in
     let constraints =
       GlobalResolution.constraints ~target ~resolution ?parameters ~instantiated ()
     in
@@ -1943,7 +2040,7 @@ let test_metaclasses context =
   let assert_metaclass ~source ~target metaclass =
     let target = "test." ^ target in
     let metaclass =
-      if metaclass = "type" then
+      if String.equal metaclass "type" then
         metaclass
       else
         "test." ^ metaclass
@@ -1951,7 +2048,9 @@ let test_metaclasses context =
     let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
     in
-    let resolution = GlobalResolution.create global_environment in
+    let resolution =
+      AnnotatedGlobalEnvironment.read_only global_environment |> GlobalResolution.create
+    in
     assert_equal (Some (Type.Primitive metaclass)) (GlobalResolution.metaclass ~resolution target)
   in
   assert_metaclass ~source:{|
@@ -2244,6 +2343,7 @@ let () =
          "overrides" >:: test_overrides;
          "extract_type_parameter" >:: test_extract_type_parameter;
          "test_attribute_from_annotation" >:: test_attribute_type;
+         "test_invalid_type_parameters" >:: test_invalid_type_parameters;
          "test_meet" >:: test_meet;
          "test_join" >:: test_join;
        ]
