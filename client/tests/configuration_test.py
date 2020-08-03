@@ -324,7 +324,7 @@ class ConfigurationTest(unittest.TestCase):
             ]
             configuration = Configuration("")
             self.assertEqual(configuration.typeshed, "/TYPE/VERSION/SHED/")
-            self.assertEqual(configuration.search_path, ["/root/simple_string/"])
+            self.assertEqual(configuration.search_path, ["simple_string/"])
             self.assertEqual(
                 configuration.taint_models_path, ["/root/.pyre/taint_models"]
             )
@@ -343,7 +343,7 @@ class ConfigurationTest(unittest.TestCase):
                 project_root="/root", local_root="/root/local"
             )
             self.assertEqual(configuration.typeshed, "/TYPE/VERSION/SHED/")
-            self.assertEqual(configuration.search_path, ["/root/simple_string/"])
+            self.assertEqual(configuration.search_path, ["simple_string/"])
             self.assertEqual(
                 configuration.taint_models_path, ["/root/local/.pyre/taint_models"]
             )
@@ -363,7 +363,7 @@ class ConfigurationTest(unittest.TestCase):
                 project_root="/root", local_root="/root/local"
             )
             self.assertEqual(configuration.typeshed, "/TYPE/VERSION/SHED/")
-            self.assertEqual(configuration.search_path, ["/root/simple_string/"])
+            self.assertEqual(configuration.search_path, ["simple_string/"])
             self.assertEqual(
                 configuration.taint_models_path,
                 ["/root/local/.pyre/taint_models", "/root/global/taint_models"],
@@ -468,7 +468,9 @@ class ConfigurationTest(unittest.TestCase):
         self.assertEqual(configuration.excludes, ["regexp1", "regexp2"])
 
         json_load.side_effect = [{"exclude": ["regexp1", "regexp2"]}, {}]
-        configuration = Configuration(project_root="", excludes=["regexp3", "regexp4"])
+        configuration = Configuration(
+            project_root="/root", excludes=["regexp3", "regexp4"]
+        )
         self.assertEqual(
             configuration.excludes, ["regexp3", "regexp4", "regexp1", "regexp2"]
         )
