@@ -42,13 +42,19 @@ class SearchPathElement:
         self.subdirectory = subdirectory
 
     @staticmethod
-    def expand(path: Union[Dict[str, str], str]) -> "SearchPathElement":
+    def expand(
+        path: Union[Dict[str, str], str], base: Optional[str] = None
+    ) -> "SearchPathElement":
         if isinstance(path, str):
+            if base:
+                path = expand_relative_path(base, path)
             return SearchPathElement(path)
         else:
             if "root" in path and "subdirectory" in path:
                 root = path["root"]
                 subdirectory = path["subdirectory"]
+                if base:
+                    root = expand_relative_path(base, root)
                 return SearchPathElement(root, subdirectory)
             elif "site-package" in path:
                 site_root = site.getsitepackages()
@@ -478,6 +484,7 @@ class Configuration:
         try:
             with open(path) as file:
                 LOG.debug("Reading configuration `%s`...", path)
+                configuration_directory = os.path.dirname(os.path.realpath(path))
                 configuration = _ConfigurationFile(file)
 
                 source_directories = configuration.consume(
@@ -487,17 +494,10 @@ class Configuration:
                     print_on_success=True,
                     raise_on_override=True,
                 )
-                configuration_directory = os.path.dirname(path)
-                if configuration_directory:
-                    self.source_directories = [
-                        os.path.join(configuration_directory, directory)
-                        for directory in source_directories
-                    ]
-                else:
-                    self.source_directories = [
-                        os.path.expanduser(directory)
-                        for directory in source_directories
-                    ]
+                self.source_directories = [
+                    expand_relative_path(configuration_directory, directory)
+                    for directory in source_directories
+                ]
 
                 self.targets = configuration.consume(
                     "targets",
@@ -510,21 +510,22 @@ class Configuration:
                 if configuration.consume("disabled", default=False):
                     self.disabled = True
 
-                self.logger = configuration.consume("logger", current=self.logger)
+                logger = configuration.consume("logger", current=self.logger)
+                if logger:
+                    self.logger = expand_relative_path(configuration_directory, logger)
 
                 self.formatter = configuration.consume(
                     "formatter", current=self.formatter
                 )
 
                 self.strict = configuration.consume("strict", default=self.strict)
+
                 ignore_all_errors = configuration.consume(
                     "ignore_all_errors", default=[]
                 )
-
-                configuration_path = os.path.dirname(os.path.realpath(path))
                 self.ignore_all_errors.extend(
                     [
-                        expand_relative_path(root=configuration_path, path=path)
+                        expand_relative_path(root=configuration_directory, path=path)
                         for path in ignore_all_errors
                     ]
                 )
@@ -532,7 +533,7 @@ class Configuration:
                 ignore_infer = configuration.consume("ignore_infer", default=[])
                 self.ignore_infer.extend(
                     [
-                        expand_relative_path(root=configuration_path, path=path)
+                        expand_relative_path(root=configuration_directory, path=path)
                         for path in ignore_infer
                     ]
                 )
@@ -546,7 +547,7 @@ class Configuration:
                 binary = configuration.consume("binary", current=self._binary)
                 assert binary is None or isinstance(binary, str)
                 if binary is not None:
-                    binary = expand_relative_path(configuration_path, binary)
+                    binary = expand_relative_path(configuration_directory, binary)
                 self._binary = binary
 
                 buck_builder_binary = configuration.consume(
@@ -554,7 +555,7 @@ class Configuration:
                 )
                 if buck_builder_binary is not None:
                     self._buck_builder_binary = expand_relative_path(
-                        root=configuration_path, path=buck_builder_binary
+                        root=configuration_directory, path=buck_builder_binary
                     )
 
                 additional_search_path = configuration.consume(
@@ -564,12 +565,18 @@ class Configuration:
                 if isinstance(additional_search_path, list):
                     self._search_path.extend(
                         [
-                            SearchPathElement.expand(path)
+                            SearchPathElement.expand(path, base=configuration_directory)
                             for path in additional_search_path
                         ]
                     )
                 else:
-                    self._search_path.append(SearchPathElement(additional_search_path))
+                    self._search_path.append(
+                        SearchPathElement(
+                            expand_relative_path(
+                                configuration_directory, additional_search_path
+                            )
+                        )
+                    )
 
                 version_hash = configuration.consume(
                     "version", current=self._version_hash
@@ -580,7 +587,7 @@ class Configuration:
                 typeshed = configuration.consume("typeshed", current=self._typeshed)
                 assert typeshed is None or isinstance(typeshed, str)
                 if typeshed is not None:
-                    typeshed = expand_relative_path(configuration_path, typeshed)
+                    typeshed = expand_relative_path(configuration_directory, typeshed)
                 self._typeshed = typeshed
 
                 taint_models_path = configuration.consume("taint_models_path")
@@ -589,15 +596,14 @@ class Configuration:
                     or isinstance(taint_models_path, str)
                     or isinstance(taint_models_path, list)
                 )
-                configuration_directory = os.path.dirname(os.path.realpath(path))
                 if isinstance(taint_models_path, str):
                     self.taint_models_path.append(
-                        os.path.join(configuration_directory, taint_models_path)
+                        expand_relative_path(configuration_directory, taint_models_path)
                     )
                 elif isinstance(taint_models_path, list):
                     self.taint_models_path.extend(
                         [
-                            os.path.join(configuration_directory, path)
+                            expand_relative_path(configuration_directory, path)
                             for path in taint_models_path
                         ]
                     )
@@ -621,9 +627,11 @@ class Configuration:
 
                 self.autocomplete = configuration.consume("autocomplete", default=False)
 
-                self.other_critical_files = configuration.consume(
-                    "critical_files", default=[]
-                )
+                critical_files = configuration.consume("critical_files", default=[])
+                self.other_critical_files = [
+                    expand_relative_path(root=configuration_directory, path=path)
+                    for path in critical_files
+                ]
 
                 # Warn on deprecated fields.
                 for deprecated_field in configuration._deprecated.keys():
