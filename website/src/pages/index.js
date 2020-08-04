@@ -21,10 +21,9 @@ const features = [
     // imageUrl: 'img/pyre.svg',
     description: (
       <>
-        Built from the ground up to support gradual typing
-        and deliver responsive incremental checks. Performant
-        on large codebases with millions of lines of Python.
-
+        Built from the ground up to support gradual typing and deliver
+        responsive incremental checks. Performant on large codebases with
+        millions of lines of Python.
       </>
     ),
   },
@@ -33,9 +32,9 @@ const features = [
     // imageUrl: 'img/undraw_docusaurus_tree.svg',
     description: (
       <>
-        Designed to help improve code quality and development
-        speed by flagging type errors interactively in your
-        terminal or live in your favorite editor.
+        Designed to help improve code quality and development speed by flagging
+        type errors interactively in your terminal or live in your favorite
+        editor.
       </>
     ),
   },
@@ -44,10 +43,11 @@ const features = [
     // imageUrl: 'img/undraw_docusaurus_react.svg',
     description: (
       <>
-        Follows the typing standards introduced in
-        PEPs 484, 526, & 612, and is built to support
-        custom static analyses on top of type checking.
-
+        Follows the typing standards introduced in{' '}
+        <Link to="https://www.python.org/dev/peps/pep-0484/">PEPs 484</Link>,{' '}
+        <Link to="https://www.python.org/dev/peps/pep-0526/">526</Link>, and{' '}
+        <Link to="https://www.python.org/dev/peps/pep-0612/">612</Link>, and is
+        built to support custom static analyses on top of type checking.
       </>
     ),
   },
@@ -56,10 +56,9 @@ const features = [
     // imageUrl: 'img/undraw_docusaurus_react.svg',
     description: (
       <>
-        Pyre is constantly being improved. We hope you'll
-        join the community and try it out on your own projects,
-        leave us feedback, and consider contributing!
-
+        Pyre is constantly being improved. We hope you'll join the community and
+        try it out on your own projects, leave us feedback, and consider
+        contributing!
       </>
     ),
   },
@@ -89,7 +88,7 @@ function Home() {
       description="A performant type-checker for Python 3.">
       <header className={classnames('hero hero--primary', styles.heroBanner)}>
         <div className="container">
-          <img src='img/pyre.svg' alt="Pyre logo." width="100"/>
+          <img src="img/pyre.svg" alt="Pyre logo." width="100" />
           <h1 className="hero__title">{siteConfig.title}</h1>
           <p className="hero__subtitle">{siteConfig.tagline}</p>
           <div className={styles.buttons}>
