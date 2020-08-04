@@ -6,10 +6,11 @@
 module Callable = Interprocedural.Callable
 open Core
 open Pyre
+open Taint
 
 (* Registers the Taint analysis with the interprocedural analysis framework. *)
-include TaintResult.Register (struct
-  include TaintResult
+include Taint.Result.Register (struct
+  include Taint.Result
 
   let init ~configuration ~environment ~functions:_ ~stubs =
     let global_resolution = Analysis.TypeEnvironment.ReadOnly.global_resolution environment in
@@ -51,7 +52,7 @@ include TaintResult.Register (struct
     let add_obscure_sinks models =
       let add_obscure_sink models callable =
         let model =
-          Model.add_obscure_sink ~resolution ~call_target:callable TaintResult.empty_model
+          Model.add_obscure_sink ~resolution ~call_target:callable Taint.Result.empty_model
         in
         Callable.Map.set models ~key:callable ~data:model
       in
@@ -69,8 +70,8 @@ include TaintResult.Register (struct
       | _ -> (
           try
             let paths = List.map model_paths ~f:Path.create_absolute in
-            let configuration = Configuration.create ~rule_filter ~find_obscure_flows ~paths in
-            Configuration.register configuration;
+            let configuration = TaintConfiguration.create ~rule_filter ~find_obscure_flows ~paths in
+            TaintConfiguration.register configuration;
             let models, errors, skip_overrides =
               Model.get_model_sources ~paths |> create_models ~configuration
             in

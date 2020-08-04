@@ -125,7 +125,7 @@ let test_integration context =
       Analysis.compute_fixpoint
         ~scheduler:(Test.mock_scheduler ())
         ~environment
-        ~analyses:[Taint.Analysis.abstract_kind]
+        ~analyses:[TaintAnalysis.abstract_kind]
         ~dependencies
         ~filtered_callables:Callable.Set.empty
         ~all_callables
@@ -137,10 +137,7 @@ let test_integration context =
             TypeEnvironment.ReadOnly.ast_environment environment
             |> AstEnvironment.ReadOnly.get_relative
           in
-          Interprocedural.Analysis.externalize
-            ~filename_lookup
-            Taint.Analysis.abstract_kind
-            callable
+          Interprocedural.Analysis.externalize ~filename_lookup TaintAnalysis.abstract_kind callable
           |> List.map ~f:(fun json -> Yojson.Safe.pretty_to_string ~std:true json ^ "\n")
           |> String.concat ~sep:""
         in

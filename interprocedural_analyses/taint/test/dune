@@ -16,4 +16,4 @@
   (pps ppx_sexp_message))
  (libraries oUnit pyrelib.test pyrelib.ast pyrelib.analysis
    pyrelib.interprocedural pyrelib.taint pyrelib.taintTestHelper
-   pyrelib.taintIntegrationTest))
+   pyrelib.taintAnalysis pyrelib.taintIntegrationTest))

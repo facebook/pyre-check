@@ -8,4 +8,4 @@
    ppx_deriving_yojson ppx_deriving_yojson.runtime pyrelib.service
    pyrelib.ast pyrelib.analysis pyrelib.fetchSavedState pyrelib.pyre
    pyrelib.server pyrelib.newserver pyrelib.network pyrelib.languageServer
-   pyrelib.version))
+   pyrelib.version pyrelib.taintAnalysis))

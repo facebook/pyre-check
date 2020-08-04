@@ -4,7 +4,6 @@
  * LICENSE file in the root directory of this source tree. *)
 
 module AccessPath = AccessPath
-module Analysis = TaintAnalysis
 module BackwardAnalysis = BackwardAnalysis
 module CallGraphBuilder = CallGraphBuilder
 module TaintConfiguration = Configuration
