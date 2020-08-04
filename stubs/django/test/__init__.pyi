@@ -2,8 +2,8 @@
 
 from unittest import TestCase
 
-from django.test.client import Client
-from django.test.utils import override_settings
+from django.test.client import Client as Client
+from django.test.utils import override_settings as override_settings
 
 class SimpleTestCase(TestCase):
     client: testing.client.base.TestClient = ...

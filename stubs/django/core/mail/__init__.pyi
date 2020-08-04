@@ -3,7 +3,11 @@
 from email.mime.base import MIMEBase
 from typing import Any, Iterable, Optional, Tuple, Union
 
-from django.core.mail.message import EmailMessage, SafeMIMEMultipart, SafeMIMEText
+from django.core.mail.message import (
+    EmailMessage as EmailMessage,
+    SafeMIMEMultipart as SafeMIMEMultipart,
+    SafeMIMEText as SafeMIMEText,
+)
 
 def send_mail(
     subject: Any,

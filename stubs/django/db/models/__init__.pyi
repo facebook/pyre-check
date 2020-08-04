@@ -15,36 +15,39 @@ from django.db.aggregates import (
     Variance as Variance,
 )
 from django.db.models.deletion import (
-    CASCADE,
-    DO_NOTHING,
-    PROTECT,
-    RESTRICT,
-    SET_DEFAULT,
-    SET_NULL,
+    CASCADE as CASCADE,
+    DO_NOTHING as DO_NOTHING,
+    PROTECT as PROTECT,
+    RESTRICT as RESTRICT,
+    SET_DEFAULT as SET_DEFAULT,
+    SET_NULL as SET_NULL,
 )
-from django.db.models.enums import IntegerChoices, TextChoices
+from django.db.models.enums import (
+    IntegerChoices as IntegerChoices,
+    TextChoices as TextChoices,
+)
 from django.db.models.fields import (
-    AutoField,
-    BigIntegerField,
-    BooleanField,
-    CharField,
-    DateField,
-    DateTimeField,
-    DecimalField,
-    EmailField,
-    FloatField,
-    IntegerField,
-    NullBooleanField,
-    PositiveIntegerField,
-    PositiveSmallIntegerField,
-    SmallAutoField,
-    TextField,
-    TimeField,
-    URLField,
+    AutoField as AutoField,
+    BigIntegerField as BigIntegerField,
+    BooleanField as BooleanField,
+    CharField as CharField,
+    DateField as DateField,
+    DateTimeField as DateTimeField,
+    DecimalField as DecimalField,
+    EmailField as EmailField,
+    FloatField as FloatField,
+    IntegerField as IntegerField,
+    NullBooleanField as NullBooleanField,
+    PositiveIntegerField as PositiveIntegerField,
+    PositiveSmallIntegerField as PositiveSmallIntegerField,
+    SmallAutoField as SmallAutoField,
+    TextField as TextField,
+    TimeField as TimeField,
+    URLField as URLField,
 )
-from django.db.models.fields.related import ForeignKey
-from django.db.models.fields.subclassing import SubfieldBase
-from django.db.models.manager import Manager
+from django.db.models.fields.related import ForeignKey as ForeignKey
+from django.db.models.fields.subclassing import SubfieldBase as SubfieldBase
+from django.db.models.manager import Manager as Manager
 from django.db.models.options import Options
 
 class Model:
