@@ -22,8 +22,12 @@ module Model = struct
 
   let verify_model_syntax = ModelParser.verify_model_syntax
 
+  type nonrec taint_annotation = taint_annotation
+
   (* Exposed for testing. *)
   let demangle_class_attribute = ModelVerifier.demangle_class_attribute
+
+  let add_taint_annotation_to_model = ModelParser.add_taint_annotation_to_model
 end
 
 module Result = TaintResult

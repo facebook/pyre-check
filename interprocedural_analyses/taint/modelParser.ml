@@ -15,11 +15,55 @@ open Domains
 open TaintResult
 open Model
 
+module T = struct
+  type parse_result = {
+    models: TaintResult.call_model Interprocedural.Callable.Map.t;
+    skip_overrides: Reference.Set.t;
+    errors: string list;
+  }
+
+  type breadcrumbs = Features.Simple.t list [@@deriving show]
+
+  let _ = show_breadcrumbs (* unused but derived *)
+
+  type leaf_kind =
+    | Leaf of string
+    | Breadcrumbs of breadcrumbs
+
+  type taint_annotation =
+    | Sink of {
+        sink: Sinks.t;
+        breadcrumbs: breadcrumbs;
+        path: Abstract.TreeDomain.Label.path;
+        leaf_name_provided: bool;
+      }
+    | Source of {
+        source: Sources.t;
+        breadcrumbs: breadcrumbs;
+        path: Abstract.TreeDomain.Label.path;
+        leaf_name_provided: bool;
+      }
+    | Tito of {
+        tito: Sinks.t;
+        breadcrumbs: breadcrumbs;
+        path: Abstract.TreeDomain.Label.path;
+      }
+    | AddFeatureToArgument of {
+        breadcrumbs: breadcrumbs;
+        path: Abstract.TreeDomain.Label.path;
+      }
+    | SkipAnalysis (* Don't analyze methods with SkipAnalysis *)
+    | SkipOverrides (* Analyze as normally, but assume no overrides exist. *)
+    | Sanitize
+
+  type annotation_kind =
+    | ParameterAnnotation of AccessPath.Root.t
+    | ReturnAnnotation
+end
+
+include T
+
 let raise_invalid_model message = raise (Model.InvalidModel message)
-
-type breadcrumbs = Features.Simple.t list [@@deriving show]
-
-let _ = show_breadcrumbs (* unused but derived *)
 
 let add_breadcrumbs breadcrumbs init = List.rev_append breadcrumbs init
 
@@ -71,46 +115,6 @@ let class_definitions resolution reference =
       ClassDefinitionsCache.set reference result;
       result
 
-
-module T = struct
-  type parse_result = {
-    models: TaintResult.call_model Interprocedural.Callable.Map.t;
-    skip_overrides: Reference.Set.t;
-    errors: string list;
-  }
-end
-
-include T
-
-type leaf_kind =
-  | Leaf of string
-  | Breadcrumbs of breadcrumbs
-
-type taint_annotation =
-  | Sink of {
-      sink: Sinks.t;
-      breadcrumbs: breadcrumbs;
-      path: Abstract.TreeDomain.Label.path;
-      leaf_name_provided: bool;
-    }
-  | Source of {
-      source: Sources.t;
-      breadcrumbs: breadcrumbs;
-      path: Abstract.TreeDomain.Label.path;
-      leaf_name_provided: bool;
-    }
-  | Tito of {
-      tito: Sinks.t;
-      breadcrumbs: breadcrumbs;
-      path: Abstract.TreeDomain.Label.path;
-    }
-  | AddFeatureToArgument of {
-      breadcrumbs: breadcrumbs;
-      path: Abstract.TreeDomain.Label.path;
-    }
-  | SkipAnalysis (* Don't analyze methods with SkipAnalysis *)
-  | SkipOverrides (* Analyze as normally, but assume no overrides exist. *)
-  | Sanitize
 
 (* Don't propagate inferred model of methods with Sanitize *)
 
@@ -657,92 +661,88 @@ let add_signature_based_breadcrumbs ~resolution root ~callable_annotation breadc
   | _ -> breadcrumbs
 
 
-let taint_parameter
-    ~configuration
-    ~resolution
-    ~parameters
-    model
-    (root, _name, parameter)
-    ~callable_annotation
-    ~sources_to_keep
-    ~sinks_to_keep
-  =
-  let add_to_model model annotation =
-    match annotation with
-    | Sink { sink; breadcrumbs; path; leaf_name_provided } ->
-        List.map ~f:Features.SimpleSet.inject breadcrumbs
-        |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
-        |> introduce_sink_taint ~root ~path ~leaf_name_provided ~sinks_to_keep model sink
-    | Source { source; breadcrumbs; path; leaf_name_provided } ->
-        List.map ~f:Features.SimpleSet.inject breadcrumbs
-        |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
-        |> introduce_source_taint ~root ~path ~leaf_name_provided ~sources_to_keep model source
-    | Tito { tito; breadcrumbs; path } ->
-        (* For tito, both the parameter and the return type can provide type based breadcrumbs *)
-        List.map ~f:Features.SimpleSet.inject breadcrumbs
-        |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
-        |> add_signature_based_breadcrumbs
-             ~resolution
-             AccessPath.Root.LocalResult
-             ~callable_annotation
-        |> introduce_taint_in_taint_out ~root ~path model tito
-    | AddFeatureToArgument { breadcrumbs; path } ->
-        List.map ~f:Features.SimpleSet.inject breadcrumbs
-        |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
-        |> introduce_sink_taint
-             ~root
-             ~path
-             ~leaf_name_provided:false
-             ~sinks_to_keep
-             model
-             Sinks.AddFeatureToArgument
-    | SkipAnalysis -> raise_invalid_model "SkipAnalysis annotation must be in return position"
-    | SkipOverrides -> raise_invalid_model "SkipOverrides annotation must be in return position"
-    | Sanitize -> raise_invalid_model "Sanitize annotation must be in return position"
-  in
+let parse_parameter_taint ~configuration ~parameters (root, _name, parameter) =
   let annotation = parameter.Node.value.Parameter.annotation in
-  parse_annotations ~configuration ~parameters annotation |> List.fold ~init:model ~f:add_to_model
+  parse_annotations ~configuration ~parameters annotation
+  |> List.map ~f:(fun annotation -> annotation, ParameterAnnotation root)
 
 
-let taint_return
-    ~configuration
+let add_taint_annotation_to_model
     ~resolution
-    ~parameters
-    ~name
-    model
-    expression
+    ~annotation_kind
     ~callable_annotation
     ~sources_to_keep
     ~sinks_to_keep
+    ~name
+    (model, skipped_override)
+    annotation
   =
-  let add_to_model (model, skipped_override) annotation =
-    let root = AccessPath.Root.LocalResult in
-    let model =
-      match annotation with
-      | Sink { sink; breadcrumbs; path; leaf_name_provided } ->
-          List.map ~f:Features.SimpleSet.inject breadcrumbs
-          |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
-          |> introduce_sink_taint ~root ~path ~leaf_name_provided ~sinks_to_keep model sink
-      | Source { source; breadcrumbs; path; leaf_name_provided } ->
-          List.map ~f:Features.SimpleSet.inject breadcrumbs
-          |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
-          |> introduce_source_taint ~root ~path ~leaf_name_provided ~sources_to_keep model source
-      | Tito _ -> raise_invalid_model "Invalid return annotation: TaintInTaintOut"
-      | AddFeatureToArgument _ ->
-          raise_invalid_model "Invalid return annotation: AddFeatureToArgument"
-      | SkipAnalysis -> { model with mode = TaintResult.SkipAnalysis }
-      | SkipOverrides -> model
-      | Sanitize -> { model with mode = TaintResult.Sanitize }
-    in
-    let skipped_override =
-      match annotation with
-      | SkipOverrides -> Some name
-      | _ -> skipped_override
-    in
-    model, skipped_override
-  in
+  match annotation_kind with
+  | ReturnAnnotation ->
+      let root = AccessPath.Root.LocalResult in
+      let model =
+        match annotation with
+        | Sink { sink; breadcrumbs; path; leaf_name_provided } ->
+            List.map ~f:Features.SimpleSet.inject breadcrumbs
+            |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
+            |> introduce_sink_taint ~root ~path ~leaf_name_provided ~sinks_to_keep model sink
+        | Source { source; breadcrumbs; path; leaf_name_provided } ->
+            List.map ~f:Features.SimpleSet.inject breadcrumbs
+            |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
+            |> introduce_source_taint ~root ~path ~leaf_name_provided ~sources_to_keep model source
+        | Tito _ -> raise_invalid_model "Invalid return annotation: TaintInTaintOut"
+        | AddFeatureToArgument _ ->
+            raise_invalid_model "Invalid return annotation: AddFeatureToArgument"
+        | SkipAnalysis -> { model with mode = TaintResult.SkipAnalysis }
+        | SkipOverrides -> model
+        | Sanitize -> { model with mode = TaintResult.Sanitize }
+      in
+      let skipped_override =
+        match annotation with
+        | SkipOverrides -> Some name
+        | _ -> skipped_override
+      in
+      model, skipped_override
+  | ParameterAnnotation root ->
+      let model =
+        match annotation with
+        | Sink { sink; breadcrumbs; path; leaf_name_provided } ->
+            List.map ~f:Features.SimpleSet.inject breadcrumbs
+            |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
+            |> introduce_sink_taint ~root ~path ~leaf_name_provided ~sinks_to_keep model sink
+        | Source { source; breadcrumbs; path; leaf_name_provided } ->
+            List.map ~f:Features.SimpleSet.inject breadcrumbs
+            |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
+            |> introduce_source_taint ~root ~path ~leaf_name_provided ~sources_to_keep model source
+        | Tito { tito; breadcrumbs; path } ->
+            (* For tito, both the parameter and the return type can provide type based breadcrumbs *)
+            List.map ~f:Features.SimpleSet.inject breadcrumbs
+            |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
+            |> add_signature_based_breadcrumbs
+                 ~resolution
+                 AccessPath.Root.LocalResult
+                 ~callable_annotation
+            |> introduce_taint_in_taint_out ~root ~path model tito
+        | AddFeatureToArgument { breadcrumbs; path } ->
+            List.map ~f:Features.SimpleSet.inject breadcrumbs
+            |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
+            |> introduce_sink_taint
+                 ~root
+                 ~path
+                 ~leaf_name_provided:false
+                 ~sinks_to_keep
+                 model
+                 Sinks.AddFeatureToArgument
+        | SkipAnalysis -> raise_invalid_model "SkipAnalysis annotation must be in return position"
+        | SkipOverrides -> raise_invalid_model "SkipOverrides annotation must be in return position"
+        | Sanitize -> raise_invalid_model "Sanitize annotation must be in return position"
+      in
+      model, skipped_override
+
+
+let parse_return_taint ~configuration ~parameters expression =
   parse_annotations ~configuration ~parameters expression
-  |> List.fold ~init:(model, None) ~f:add_to_model
+  |> List.map ~f:(fun annotation -> annotation, ReturnAnnotation)
 
 
 let create ~resolution ?path ~configuration ~rule_filter source =
@@ -1142,30 +1142,29 @@ let create ~resolution ?path ~configuration ~rule_filter source =
       let () =
         ModelVerifier.verify_signature ~normalized_model_parameters ~name callable_annotation
       in
-      normalized_model_parameters
-      |> List.fold
-           ~init:TaintResult.empty_model
-           ~f:
-             (taint_parameter
-                ~configuration
-                ~resolution:global_resolution
-                ~parameters
-                ~callable_annotation
-                ~sources_to_keep
-                ~sinks_to_keep)
-      |> (fun model ->
-           taint_return
-             ~configuration
-             ~resolution:global_resolution
-             ~parameters
-             ~name
-             model
-             return_annotation
-             ~callable_annotation
-             ~sources_to_keep
-             ~sinks_to_keep)
-      |> fun (model, skipped_overload) ->
-      Core.Result.Ok ({ model; call_target; is_obscure = false }, skipped_overload)
+      let annotations =
+        List.rev_append
+          (List.concat_map
+             normalized_model_parameters
+             ~f:(parse_parameter_taint ~configuration ~parameters))
+          (parse_return_taint ~configuration ~parameters return_annotation)
+      in
+      let model, skipped_override =
+        List.fold
+          annotations
+          ~init:(TaintResult.empty_model, None)
+          ~f:(fun accumulator (annotation, annotation_kind) ->
+            add_taint_annotation_to_model
+              ~resolution:(Resolution.global_resolution resolution)
+              ~annotation_kind
+              ~callable_annotation
+              ~sources_to_keep
+              ~sinks_to_keep
+              ~name
+              accumulator
+              annotation)
+      in
+      Core.Result.Ok ({ model; call_target; is_obscure = false }, skipped_override)
     with
     | Failure message
     | Model.InvalidModel message ->
