@@ -10,18 +10,22 @@
       "error-types",
       "lsp-integration",
       "watchman-integration",
-      "querying-pyre"
-    ],
-    "Pysa": [
-      "pysa-basics",
-      "pysa-running",
-      "pysa-features",
-      "pysa-advanced",
-      "pysa-model-generators",
-      "pysa-tips",
-      "pysa-coverage",
-      "static-analysis-post-processor",
-      "pysa-additional-resources"
-    ]
+      "querying-pyre",
+      {
+        "type": "category",
+        "label": "Pyre Static Analysis (Pysa)",
+        "items": [
+          "pysa-basics",
+          "pysa-running",
+          "pysa-features",
+          "pysa-advanced",
+          "pysa-model-generators",
+          "pysa-tips",
+          "pysa-coverage",
+          "static-analysis-post-processor",
+          "pysa-additional-resources"
+        ]
+      }
+   ]
   }
 }
