@@ -24,3 +24,7 @@
   height: 110px;
   width: 100%;
 }
+
+.navbar__link {
+  margin-top: 15px;
+}
