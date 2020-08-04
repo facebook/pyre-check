@@ -22,7 +22,31 @@ module Model = struct
 
   let verify_model_syntax = ModelParser.verify_model_syntax
 
-  type nonrec taint_annotation = taint_annotation
+  type nonrec taint_annotation = taint_annotation =
+    | Sink of {
+        sink: Sinks.t;
+        breadcrumbs: breadcrumbs;
+        path: Abstract.TreeDomain.Label.path;
+        leaf_name_provided: bool;
+      }
+    | Source of {
+        source: Sources.t;
+        breadcrumbs: breadcrumbs;
+        path: Abstract.TreeDomain.Label.path;
+        leaf_name_provided: bool;
+      }
+    | Tito of {
+        tito: Sinks.t;
+        breadcrumbs: breadcrumbs;
+        path: Abstract.TreeDomain.Label.path;
+      }
+    | AddFeatureToArgument of {
+        breadcrumbs: breadcrumbs;
+        path: Abstract.TreeDomain.Label.path;
+      }
+    | SkipAnalysis (* Don't analyze methods with SkipAnalysis *)
+    | SkipOverrides (* Analyze as normally, but assume no overrides exist. *)
+    | Sanitize
 
   (* Exposed for testing. *)
   let demangle_class_attribute = ModelVerifier.demangle_class_attribute

@@ -16,13 +16,7 @@ open TaintResult
 open Model
 
 module T = struct
-  type parse_result = {
-    models: TaintResult.call_model Interprocedural.Callable.Map.t;
-    skip_overrides: Reference.Set.t;
-    errors: string list;
-  }
-
-  type breadcrumbs = Features.Simple.t list [@@deriving show]
+  type breadcrumbs = Features.Simple.t list [@@deriving show, compare]
 
   let _ = show_breadcrumbs (* unused but derived *)
 
@@ -55,10 +49,43 @@ module T = struct
     | SkipAnalysis (* Don't analyze methods with SkipAnalysis *)
     | SkipOverrides (* Analyze as normally, but assume no overrides exist. *)
     | Sanitize
+  [@@deriving show, compare]
 
   type annotation_kind =
     | ParameterAnnotation of AccessPath.Root.t
     | ReturnAnnotation
+
+  module ModelQuery = struct
+    type model_constraint = NameConstraint of string [@@deriving compare, show]
+
+    type kind =
+      | FunctionModel
+      | MethodModel
+    [@@deriving show, compare]
+
+    type production =
+      | AllParametersTaint of taint_annotation list
+      | ParameterTaint of {
+          name: string;
+          taint: taint_annotation list;
+        }
+      | ReturnTaint of taint_annotation list
+    [@@deriving show, compare]
+
+    type rule = {
+      query: model_constraint list;
+      productions: production list;
+      rule_kind: kind;
+    }
+    [@@deriving show, compare]
+  end
+
+  type parse_result = {
+    models: TaintResult.call_model Interprocedural.Callable.Map.t;
+    queries: ModelQuery.rule list;
+    skip_overrides: Reference.Set.t;
+    errors: string list;
+  }
 end
 
 include T
@@ -619,6 +646,87 @@ let introduce_source_taint
     taint
 
 
+let parse_find_clause ({ Node.value; _ } as expression) =
+  match value with
+  | Expression.String { StringLiteral.value; _ } -> (
+      match value with
+      | "functions" -> Core.Result.Ok ModelQuery.FunctionModel
+      | unsupported -> Core.Result.Error (Format.sprintf "Unsupported find clause `%s`" unsupported)
+      )
+  | _ ->
+      Core.Result.Error
+        (Format.sprintf "Find clauses must be strings, got: `%s`" (Expression.show expression))
+
+
+let parse_where_clause ({ Node.value; _ } as expression) =
+  let open Core.Result in
+  let parse_constraint ({ Node.value; _ } as constraint_expression) =
+    match value with
+    | Expression.Call
+        {
+          Call.callee =
+            {
+              Node.value =
+                Expression.Name
+                  (Name.Attribute
+                    {
+                      base = { Node.value = Name (Name.Identifier "name"); _ };
+                      attribute = "matches";
+                      _;
+                    });
+              _;
+            };
+          arguments =
+            [
+              {
+                Call.Argument.value =
+                  { Node.value = Expression.String { StringLiteral.value = name_constraint; _ }; _ };
+                _;
+              };
+            ];
+        } ->
+        Ok (ModelQuery.NameConstraint name_constraint)
+    | Expression.Call { Call.callee; arguments = _ } ->
+        Error (Format.sprintf "Unsupported callee: %s" (Expression.show callee))
+    | _ ->
+        Error (Format.sprintf "Unsupported constraint: %s" (Expression.show constraint_expression))
+  in
+  match value with
+  | Expression.List items -> List.map items ~f:parse_constraint |> all
+  | _ -> parse_constraint expression >>| List.return
+
+
+let parse_model_clause ~configuration ({ Node.value; _ } as expression) =
+  let open Core.Result in
+  let parse_model ({ Node.value; _ } as model_expression) =
+    match value with
+    | Expression.Call
+        {
+          Call.callee = { Node.value = Name (Name.Identifier "Returns"); _ };
+          arguments = [{ Call.Argument.value = taint; _ }];
+        } -> (
+        try
+          match Node.value taint with
+          | Expression.List taint_annotations ->
+              List.concat_map taint_annotations ~f:(fun annotation ->
+                  parse_annotations ~configuration ~parameters:[] (Some annotation))
+              |> (fun annotations -> ModelQuery.ReturnTaint annotations)
+              |> return
+          | _ ->
+              Ok
+                (ModelQuery.ReturnTaint
+                   (parse_annotations ~configuration ~parameters:[] (Some taint)))
+        with
+        | Failure failure -> Core.Result.Error failure )
+    | _ ->
+        Error
+          (Format.sprintf "Unexpected model expression: `%s`" (Expression.show model_expression))
+  in
+  match value with
+  | Expression.List items -> List.map items ~f:parse_model |> all
+  | _ -> parse_model expression >>| List.return
+
+
 let find_positional_parameter_annotation position parameters =
   List.nth parameters position >>= Type.Record.Callable.RecordParameter.annotation
 
@@ -745,6 +853,14 @@ let parse_return_taint ~configuration ~parameters expression =
   |> List.map ~f:(fun annotation -> annotation, ReturnAnnotation)
 
 
+type parsed_signature_or_query =
+  | ParsedSignature of Define.Signature.t * Location.t * Callable.t
+  | ParsedQuery of ModelQuery.rule
+
+type model_or_query =
+  | Model of (Model.t * Reference.t option)
+  | Query of ModelQuery.rule
+
 let create ~resolution ?path ~configuration ~rule_filter source =
   let sources_to_keep, sinks_to_keep =
     match rule_filter with
@@ -785,7 +901,7 @@ let create ~resolution ?path ~configuration ~rule_filter source =
     Core.Result.Error message
   in
 
-  let signatures, errors =
+  let signatures_and_queries, errors =
     let filter_define_signature = function
       | {
           Node.value =
@@ -804,7 +920,7 @@ let create ~resolution ?path ~configuration ~rule_filter source =
             | Some _ -> Callable.create_method name
             | None -> Callable.create_function name
           in
-          Core.Result.Ok [signature, location, call_target]
+          Core.Result.Ok [ParsedSignature (signature, location, call_target)]
       | {
           Node.value =
             Class
@@ -879,14 +995,15 @@ let create ~resolution ?path ~configuration ~rule_filter source =
                             else
                               []
                           in
-                          ( {
-                              signature with
-                              Define.Signature.parameters;
-                              return_annotation = source_annotation;
-                              decorators;
-                            },
-                            location,
-                            Callable.create_method name )
+                          ParsedSignature
+                            ( {
+                                signature with
+                                Define.Signature.parameters;
+                                return_annotation = source_annotation;
+                                decorators;
+                              },
+                              location,
+                              Callable.create_method name )
                         in
                         let sources =
                           List.map source_annotations ~f:(fun source_annotation ->
@@ -936,7 +1053,7 @@ let create ~resolution ?path ~configuration ~rule_filter source =
               nesting_define = None;
             }
           in
-          Core.Result.Ok [signature, location, Callable.create_object name]
+          Core.Result.Ok [ParsedSignature (signature, location, Callable.create_object name)]
       | {
           Node.value =
             Assign
@@ -963,7 +1080,7 @@ let create ~resolution ?path ~configuration ~rule_filter source =
               nesting_define = None;
             }
           in
-          Core.Result.Ok [signature, location, Callable.create_object name]
+          Core.Result.Ok [ParsedSignature (signature, location, Callable.create_object name)]
       | {
           Node.value =
             Assign
@@ -988,7 +1105,43 @@ let create ~resolution ?path ~configuration ~rule_filter source =
               nesting_define = None;
             }
           in
-          Core.Result.Ok [signature, location, Callable.create_object name]
+          Core.Result.Ok [ParsedSignature (signature, location, Callable.create_object name)]
+      | {
+          Node.value =
+            Expression
+              {
+                Node.value =
+                  Expression.Call
+                    {
+                      Call.callee =
+                        { Node.value = Expression.Name (Name.Identifier "ModelQuery"); _ };
+                      arguments =
+                        [
+                          {
+                            Call.Argument.name = Some { Node.value = "find"; _ };
+                            value = find_clause;
+                          };
+                          {
+                            Call.Argument.name = Some { Node.value = "where"; _ };
+                            value = where_clause;
+                          };
+                          {
+                            Call.Argument.name = Some { Node.value = "model"; _ };
+                            value = model_clause;
+                          };
+                        ];
+                    };
+                _;
+              };
+          _;
+        } ->
+          let open Core.Result in
+          parse_find_clause find_clause
+          >>= fun rule_kind ->
+          parse_where_clause where_clause
+          >>= fun query ->
+          parse_model_clause ~configuration model_clause
+          >>| fun productions -> [ParsedQuery { ModelQuery.rule_kind; query; productions }]
       | _ -> Core.Result.Ok []
     in
     String.split ~on:'\n' source
@@ -1164,20 +1317,36 @@ let create ~resolution ?path ~configuration ~rule_filter source =
               accumulator
               annotation)
       in
-      Core.Result.Ok ({ model; call_target; is_obscure = false }, skipped_override)
+      Core.Result.Ok (Model ({ model; call_target; is_obscure = false }, skipped_override))
     with
     | Failure message
     | Model.InvalidModel message ->
         invalid_model_error ~location ~name message
   in
+  let signatures, queries =
+    List.fold signatures_and_queries ~init:([], []) ~f:(fun (signatures, queries) ->
+      function
+      | ParsedSignature (signature, location, callable) ->
+          (signature, location, callable) :: signatures, queries
+      | ParsedQuery query -> signatures, query :: queries)
+  in
   List.rev_append
     (List.map errors ~f:(fun error -> Core.Result.Error error))
-    (List.map signatures ~f:create_model)
+    ( List.map signatures ~f:create_model
+    |> List.rev_append (List.map queries ~f:(fun query -> Core.Result.return (Query query))) )
 
 
 let parse ~resolution ?path ?rule_filter ~source ~configuration models =
-  let new_models, errors =
+  let new_models_and_queries, errors =
     create ~resolution ?path ~rule_filter ~configuration source |> List.partition_result
+  in
+  let new_models, new_queries =
+    List.fold
+      new_models_and_queries
+      ~f:(fun (models, queries) -> function
+        | Model (model, skipped_override) -> (model, skipped_override) :: models, queries
+        | Query query -> models, query :: queries)
+      ~init:([], [])
   in
   {
     models =
@@ -1192,6 +1361,7 @@ let parse ~resolution ?path ?rule_filter ~source ~configuration models =
     skip_overrides =
       List.filter_map new_models ~f:(fun (_, skipped_override) -> skipped_override)
       |> Reference.Set.of_list;
+    queries = new_queries;
     errors;
   }
 

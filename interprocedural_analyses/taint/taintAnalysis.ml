@@ -41,7 +41,7 @@ include Taint.Result.Register (struct
         sources
         ~init:(models, [], Ast.Reference.Set.empty)
         ~f:(fun (models, errors, skip_overrides) (path, source) ->
-          let { ModelParser.T.models; errors = new_errors; skip_overrides = new_skip_overrides } =
+          let { ModelParser.T.models; errors = new_errors; skip_overrides = new_skip_overrides; _ } =
             ModelParser.parse ~resolution ~path ~source ~configuration ?rule_filter models
           in
           models, List.rev_append new_errors errors, Set.union skip_overrides new_skip_overrides)

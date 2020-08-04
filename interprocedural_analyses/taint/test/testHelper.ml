@@ -431,7 +431,7 @@ let initialize
     match models with
     | None -> inferred_models, Reference.Set.empty
     | Some source ->
-        let { Taint.Model.models; errors; skip_overrides } =
+        let { Taint.Model.models; errors; skip_overrides; _ } =
           Model.parse
             ~resolution:
               (TypeCheck.resolution

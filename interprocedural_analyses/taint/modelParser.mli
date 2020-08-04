@@ -10,13 +10,7 @@ module ClassDefinitionsCache : sig
 end
 
 module T : sig
-  type parse_result = {
-    models: TaintResult.call_model Interprocedural.Callable.Map.t;
-    skip_overrides: Ast.Reference.Set.t;
-    errors: string list;
-  }
-
-  type breadcrumbs = Features.Simple.t list
+  type breadcrumbs = Features.Simple.t list [@@deriving show, compare]
 
   type leaf_kind =
     | Leaf of string
@@ -51,6 +45,38 @@ module T : sig
   type annotation_kind =
     | ParameterAnnotation of AccessPath.Root.t
     | ReturnAnnotation
+
+  module ModelQuery : sig
+    type model_constraint = NameConstraint of string [@@deriving show, compare]
+
+    type kind =
+      | FunctionModel
+      | MethodModel
+    [@@deriving show, compare]
+
+    type production =
+      | AllParametersTaint of taint_annotation list
+      | ParameterTaint of {
+          name: string;
+          taint: taint_annotation list;
+        }
+      | ReturnTaint of taint_annotation list
+    [@@deriving show, compare]
+
+    type rule = {
+      query: model_constraint list;
+      productions: production list;
+      rule_kind: kind;
+    }
+    [@@deriving show, compare]
+  end
+
+  type parse_result = {
+    models: TaintResult.call_model Interprocedural.Callable.Map.t;
+    queries: ModelQuery.rule list;
+    skip_overrides: Ast.Reference.Set.t;
+    errors: string list;
+  }
 end
 
 val parse
