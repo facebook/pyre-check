@@ -45,14 +45,15 @@ module.exports = {
   ],
 
   themeConfig: {
-    disableDarkMode: true,
+    colorMode: {
+      disableSwitch: true,
+    },
     navbar: {
-      textColor: '#091E42',
       logo: {
         alt: 'Pyre Logo',
         src: 'img/integrated_logo_light.png',
       },
-      links: [
+      items: [
         {to: 'docs/installation', label: 'Getting Started', position: 'left'},
         {to: 'docs/overview', label: 'Documentation', position: 'left'},
         {
