@@ -26,7 +26,7 @@ let instantiate_error
 
 
 let find_critical_file ~server_configuration:{ ServerConfiguration.critical_files; _ } paths =
-  ServerConfiguration.CriticalFiles.find critical_files paths
+  ServerConfiguration.CriticalFile.find critical_files ~within:paths
 
 
 let process_request

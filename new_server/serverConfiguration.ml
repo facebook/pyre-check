@@ -6,20 +6,43 @@
 open Core
 open Pyre
 
-module CriticalFiles = struct
-  type t = string list [@@deriving sexp, compare, hash]
+module CriticalFile = struct
+  type t =
+    | BaseName of string
+    | FullPath of Path.t
+  [@@deriving sexp, compare, hash]
 
   let of_yojson = function
-    | `Null -> Result.Ok []
-    | _ as elements -> [%of_yojson: string list] elements
+    | `Assoc [("base_name", `String name)] -> Result.Ok (BaseName name)
+    | `Assoc [("full_path", `String path)] ->
+        Result.Ok (FullPath (Path.create_absolute ~follow_symbolic_links:false path))
+    | _ as json ->
+        let message =
+          Format.sprintf "Malformed critical file JSON: %s" (Yojson.Safe.to_string json)
+        in
+        Result.Error message
 
 
-  let to_yojson = [%to_yojson: string list]
+  let to_yojson = function
+    | BaseName name -> `Assoc ["base_name", `String name]
+    | FullPath path -> `Assoc ["full_path", `String (Path.absolute path)]
 
-  let find critical_files paths =
-    List.find paths ~f:(fun path ->
-        let base_name = Path.last path in
-        List.exists critical_files ~f:(String.equal base_name))
+
+  let base_name_of = function
+    | BaseName name -> name
+    | FullPath path -> Path.last path
+
+
+  let matches ~path = function
+    | BaseName expect_name ->
+        let actual_name = Path.last path in
+        String.equal expect_name actual_name
+    | FullPath expect_path -> Path.equal expect_path path
+
+
+  let matches_any ~path patterns = List.exists patterns ~f:(matches ~path)
+
+  let find ~within patterns = List.find within ~f:(fun path -> matches_any ~path patterns)
 end
 
 module SavedStateAction = struct
@@ -125,7 +148,7 @@ type t = {
   strict: bool;
   show_error_traces: bool;
   store_type_check_resolution: bool;
-  critical_files: CriticalFiles.t;
+  critical_files: CriticalFile.t list;
   saved_state_action: SavedStateAction.t option;
   (* Parallelism controls *)
   parallel: bool;
@@ -164,6 +187,10 @@ let of_yojson json =
     in
     let string_list_member = list_member ~f:to_string in
     let path_list_member = list_member ~f:to_path in
+    let critial_file_list_member =
+      let to_critical_file json = CriticalFile.of_yojson json |> Result.ok_or_failwith in
+      list_member ~f:to_critical_file
+    in
 
     (* Parsing logic *)
     let source_paths = json |> path_list_member "source_paths" in
@@ -190,9 +217,7 @@ let of_yojson json =
     let debug = json |> bool_member "debug" ~default:false in
     let strict = json |> bool_member "strict" ~default:false in
     let show_error_traces = json |> bool_member "show_error_traces" ~default:false in
-    let critical_files =
-      json |> member "critical_files" |> CriticalFiles.of_yojson |> Result.ok_or_failwith
-    in
+    let critical_files = json |> critial_file_list_member "critical_files" ~default:[] in
     let saved_state_action =
       json
       |> member "saved_state_action"
@@ -273,7 +298,7 @@ let to_yojson
       "debug", [%to_yojson: bool] debug;
       "strict", [%to_yojson: bool] strict;
       "show_error_traces", [%to_yojson: bool] show_error_traces;
-      "critical_files", [%to_yojson: string list] critical_files;
+      "critical_files", [%to_yojson: CriticalFile.t list] critical_files;
       "store_type_check_resolution", [%to_yojson: bool] store_type_check_resolution;
       "parallel", [%to_yojson: bool] parallel;
       "number_of_workers", [%to_yojson: int] number_of_workers;

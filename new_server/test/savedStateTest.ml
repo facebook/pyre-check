@@ -12,8 +12,10 @@ module Path = Pyre.Path
 let test_query context =
   let watchman_root = Path.create_absolute ~follow_symbolic_links:false "/fake/root" in
   let target = Path.create_absolute ~follow_symbolic_links:false "/fake/target" in
-  let critical_files = [".pyre_configuration"] in
-  let watchman_filter = { Watchman.Filter.base_names = critical_files; suffixes = [".py"] } in
+  let critical_files = [ServerConfiguration.CriticalFile.BaseName ".pyre_configuration"] in
+  let watchman_filter =
+    { Watchman.Filter.base_names = [".pyre_configuration"]; suffixes = [".py"] }
+  in
   let assert_request ~expected ~project_name ~project_metadata () =
     let request_mailbox = Lwt_mvar.create_empty () in
     let mock_raw =

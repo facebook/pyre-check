@@ -227,7 +227,8 @@ let get_watchman_subscriber
       let subscriber_setting =
         let filter =
           let base_names =
-            String.Set.of_list critical_files
+            List.map critical_files ~f:ServerConfiguration.CriticalFile.base_name_of
+            |> String.Set.of_list
             |> fun set ->
             Set.add set ".pyre_configuration"
             |> fun set -> Set.add set ".pyre_configuration.local" |> Set.to_list
