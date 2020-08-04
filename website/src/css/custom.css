@@ -16,7 +16,8 @@
   --ifm-navbar-link-color:rgb(190, 186, 186);
   --ifm-link-color:#c25725;
   --ifm-menu-color:#c25725;
-  --ifm-menu-color-background-active:#c25725;
+  --ifm-menu-color-active: #c25725;
+  --ifm-menu-color-background-active:rgba(0, 0, 0, 0.05);
   --ifm-footer-color:#5e5e5e;
 }
 
