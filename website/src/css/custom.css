@@ -29,3 +29,11 @@
 .navbar__link {
   margin-top: 15px;
 }
+
+.table-of-contents__link:hover {
+  color:#c25725;
+}
+
+.table-of-contents__link--active {
+  color:#c25725;
+}
