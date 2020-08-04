@@ -1,10 +1,8 @@
 ---
 id: pysa-basics
-title: Basics
-sidebar_label: Basics
+title: Overview
+sidebar_label: Overview
 ---
-
-## Overview
 
 Pyre has applications beyond type checking python code; it can also run static
 analysis to identify potential security issues. These security issues are
