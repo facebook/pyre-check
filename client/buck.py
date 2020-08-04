@@ -291,18 +291,9 @@ def find_buck_root(path: str) -> Optional[str]:
     return find_root(path, ".buckconfig")
 
 
-def query_buck_relative_paths(
-    project_paths: Iterable[str], targets: Iterable[str]
-) -> Dict[str, str]:
-    """Return a mapping from each absolute project path to its relative location
-    in the buck output directory.
-    This queries buck and only returns paths that are covered by `targets`."""
-    buck_root = find_buck_root(os.getcwd())
-    if buck_root is None:
-        LOG.error(
-            "Buck root couldn't be found. Returning empty analysis directory mapping."
-        )
-        return {}
+@functools.lru_cache()
+def _buck_query(project_paths: Tuple[str], targets: Tuple[str]) -> str:
+    """We accept Tuples because `lru_cache` expects hashable arguments."""
     target_string = " ".join(targets)
     command = [
         "buck",
@@ -316,12 +307,34 @@ def query_buck_relative_paths(
         *project_paths,
     ]
     LOG.info(f"Running command: {command}")
-    try:
-        owner_output = json.loads(
-            subprocess.check_output(command, timeout=30, stderr=subprocess.DEVNULL)
-            .decode()
-            .strip()
+    return (
+        subprocess.check_output(command, timeout=30, stderr=subprocess.DEVNULL)
+        .decode()
+        .strip()
+    )
+
+
+def clear_buck_query_cache() -> None:
+    _buck_query.cache_clear()
+
+
+def query_buck_relative_paths(
+    project_paths: Iterable[str], targets: Iterable[str]
+) -> Dict[str, str]:
+    """Return a mapping from each absolute project path to its relative location
+    in the buck output directory.
+    This queries buck and only returns paths that are covered by `targets`."""
+    buck_root = find_buck_root(os.getcwd())
+    if buck_root is None:
+        LOG.error(
+            "Buck root couldn't be found. Returning empty analysis directory mapping."
         )
+        return {}
+
+    project_paths = tuple(project_paths)
+    targets = tuple(targets)
+    try:
+        owner_output = json.loads(_buck_query(project_paths, targets))
     except (
         subprocess.TimeoutExpired,
         subprocess.CalledProcessError,

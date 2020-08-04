@@ -458,6 +458,56 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
 
     @patch.object(analysis_directory, "add_symbolic_link")
     @patch.object(SharedAnalysisDirectory, "get_root", return_value="scratch")
+    @patch.object(subprocess, "check_output")
+    @patch.object(SharedAnalysisDirectory, "rebuild")
+    @patch.object(SharedAnalysisDirectory, "should_rebuild", return_value=False)
+    @patch.object(os, "getcwd", return_value="project")
+    @patch.object(os.path, "isfile", return_value=True)
+    # pyre-fixme[56]: Argument `os.path` to decorator factory
+    #  `unittest.mock.patch.object` could not be resolved in a global scope.
+    @patch.object(os.path, "abspath", side_effect=lambda path: path)
+    def test_process_updated_files__untracked_new_file(
+        self,
+        abspath: MagicMock,
+        isfile: MagicMock,
+        getcwd: MagicMock,
+        should_rebuild: MagicMock,
+        rebuild: MagicMock,
+        check_output: MagicMock,
+        get_root: MagicMock,
+        add_symbolic_link: MagicMock,
+    ) -> None:
+        shared_analysis_directory = SharedAnalysisDirectory(
+            project_root="project",
+            source_directories=[],
+            targets=["target1"],
+            search_path=["baz$hello"],
+        )
+
+        check_output.return_value = b"{}"
+
+        symbolic_links = {}
+        shared_analysis_directory._symbolic_links = symbolic_links
+        actual = shared_analysis_directory._process_updated_files(
+            ["project/something/untracked_new_file.py"]
+        )
+        expected = UpdatedPaths(updated_paths=[], deleted_paths=[])
+        self.assertEqual(actual, expected)
+        self.assertEqual(shared_analysis_directory._symbolic_links, symbolic_links)
+        rebuild.assert_not_called()
+        check_output.assert_called_once()
+
+        # Should not call `buck query` on the untracked file a second time.
+        check_output.reset_mock()
+        actual = shared_analysis_directory._process_updated_files(
+            ["project/something/untracked_new_file.py"]
+        )
+        expected = UpdatedPaths(updated_paths=[], deleted_paths=[])
+        self.assertEqual(actual, expected)
+        check_output.assert_not_called()
+
+    @patch.object(analysis_directory, "add_symbolic_link")
+    @patch.object(SharedAnalysisDirectory, "get_root", return_value="scratch")
     @patch.object(buck, "query_buck_relative_paths")
     @patch.object(SharedAnalysisDirectory, "rebuild")
     @patch.object(SharedAnalysisDirectory, "should_rebuild", return_value=False)
@@ -612,15 +662,17 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
         self.assertIsNone(shared_analysis_directory._last_singly_deleted_path_and_link)
 
     @patch.object(analysis_directory, "time")
+    @patch.object(os.path, "getmtime")
     # pyre-fixme[56]: Argument `os.path` to decorator factory
     #  `unittest.mock.patch.object` could not be resolved in a global scope.
-    @patch.object(os.path, "getmtime")
+    @patch.object(buck, "clear_buck_query_cache")
     @patch.object(SharedAnalysisDirectory, "_notify_about_rebuild")
     @patch.object(SharedAnalysisDirectory, "rebuild")
     def test_process_rebuilt_files(
         self,
         rebuild: MagicMock,
         notify_about_rebuild: MagicMock,
+        clear_buck_query_cache: MagicMock,
         get_modified_time: MagicMock,
         time: MagicMock,
     ) -> None:
@@ -676,6 +728,7 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
             ["scratch/deleted_by_rebuild.py"],
         )
         self.assertEqual(actual, expected)
+        clear_buck_query_cache.assert_called_once()
 
     @patch.object(SharedAnalysisDirectory, "get_root", return_value="/scratch/foo")
     # pyre-ignore[56]: Argument `tools.pyre.client.analysis_directory` to

@@ -438,6 +438,7 @@ class SharedAnalysisDirectory(AnalysisDirectory):
         self.rebuild()
         new_paths = set(self._symbolic_links.keys())
 
+        buck.clear_buck_query_cache()
         self._notify_about_rebuild(is_start_message=False)
 
         newly_created_paths = new_paths - old_paths
