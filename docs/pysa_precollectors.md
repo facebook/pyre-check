@@ -4,8 +4,6 @@ title: Dynamically Generating Models
 sidebar_label: Dynamically Generating Models
 ---
 
-## Overview
-
 Some sources and sinks may be too numerous or too rapidly changing for defining
 them statically to be practical. For these scenarios, Pysa has the concept of
 model generators, which can generate taint stubs by reading the project's source code before static analysis is

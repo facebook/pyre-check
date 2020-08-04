@@ -4,8 +4,6 @@ title: Advanced Topics
 sidebar_label: Advanced Topics
 ---
 
-## Overview
-
 This page documents less straightforward bits of Pysa.
 
 ## Annotating `dataclass` Models

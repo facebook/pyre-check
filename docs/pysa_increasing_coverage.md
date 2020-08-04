@@ -4,8 +4,6 @@ title: Coverage Increasing Strategies
 sidebar_label: Coverage Increasing Strategies
 ---
 
-## Overview
-
 Pysa relies on good type information and compete models in order to accurately analyze code. This page describes a number of strategies for increasing typing and model coverage to help Pysa. These strategies can be used once, with the results committed to your repository, or run as an ephemeral step in your analysis process prior to running `pyre analyze`.
 
 ## `pyre infer`

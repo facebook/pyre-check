@@ -4,8 +4,6 @@ title: Feature Annotations
 sidebar_label: Feature Annotations
 ---
 
-## Overview
-
 Features (sometimes called breadcrumbs) are additional metadata that are
 associated with taint flows. They can be useful for helping to filter out false
 positives, or for zeroing in on high-signal subsets of a rule. Some are

@@ -4,7 +4,7 @@ title: Guided Tour
 sidebar_label: Guided Tour
 ---
 
-# First Steps
+## First Steps
 Assuming you have completed your setup (see [Installation](installation.md)), you're now ready to
 use Pyre. The following will give a short overview of the basic workflows that we recommend.
 
@@ -36,7 +36,7 @@ As your codebase grows, this will get slower and slower. Pyre supports increment
 which we'll cover in the next section.
 
 
-# Running a Server
+## Running a Server
 Pyre's incremental mode depends on [Watchman](https://facebook.github.io/watchman/docs/install.html)
 to get notifications about changes on the filesystem. Without watchman, or an editor supporting LSP,
 you cannot use Pyre's incremental mode.
@@ -55,7 +55,7 @@ changes and will be much faster than the initial request. The server can be stop
 `pyre stop`.
 
 
-# Configuring your Setup
+## Configuring your Setup
 Pyre's configuration typically sits at the root of the repository in `.pyre_configuration`.
 You can override that configuration locally to set up your own default target to check.
 
@@ -75,7 +75,7 @@ See [Configuring Pyre](configuration.md) for examples and
 additional configuration settings.
 
 
-# Using pyre-upgrade
+## Using pyre-upgrade
 
 `pyre-upgrade` is a tool to help you convert files to use `# pyre-strict`. You can use it
 to automatically add `fixmes` to errors in the code, and help you improve strict coverage as you go.
@@ -85,7 +85,7 @@ Steps
 2. Run `pyre --output=json | pyre-upgrade fixme` to automatically add fixmes to all new errors
 
 
-# Using pyre infer
+## Using pyre infer
 Pyre infer helps you generate stubs and add annotations to your code. To generate stubs, simply run
 
 `pyre infer`

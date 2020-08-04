@@ -4,8 +4,6 @@ title: Querying Pyre
 sidebar_label: Querying Pyre
 ---
 
-# Overview
-
 Pyre has a subcommand called `query` allows you to hook into a Pyre server and get type-related
 information without having to run a full type check.
 

@@ -4,7 +4,7 @@ title: Configuring Pyre
 sidebar_label: Configuring Pyre
 ---
 
-# Persistent Configuration
+## Persistent Configuration
 The recommended way to use Pyre is with a configuration file set.
 You can generate an initial configuration in the root of your project with
 ```bash
@@ -62,7 +62,7 @@ provides typed stubs for library functions.
 Empty string indicates extensionless files.
 
 
-# Local Configuration
+## Local Configuration
 If you have sub-projects within your project root that you would like to run Pyre on, you
 can create a `.pyre_configuration.local` at the root of your subproject and override any
 of the fields set in `.pyre_configuration` above.
@@ -87,7 +87,7 @@ parent configuration must list the directory containing the nested configuration
 Pyre will warn if this is not the case, which prevents the possibility of introducing conflicting type errors.
 
 
-# Command Line Arguments and Flags
+## Command Line Arguments and Flags
 
 The Pyre command line flags can be summarized by running `pyre --help` or `pyre -h`:
 
@@ -135,7 +135,7 @@ source-directories:
                         The source directory to check
 ```
 
-## Positional Arguments
+### Positional Arguments
 If [Watchman](https://facebook.github.io/watchman/docs/install/) is
 installed, running `pyre` with no positional arguments defaults to incremental,
 otherwise defaults to check.
