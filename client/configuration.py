@@ -609,6 +609,7 @@ class Configuration:
                     )
 
                 excludes = configuration.consume("exclude", default=[])
+                # TODO(T71120969): Deprecate use of regexes for configuration paths.
                 if isinstance(excludes, list):
                     self.excludes.extend(excludes)
                 else:
