@@ -96,8 +96,6 @@ def run_pyre(arguments: argparse.Namespace) -> ExitCode:
     exit_code = ExitCode.FAILURE
     try:
         original_directory = os.getcwd()
-        # TODO(T57959968): Stop changing the directory in the client
-        os.chdir(find_project_root(original_directory))
 
         if arguments.version:
             try:

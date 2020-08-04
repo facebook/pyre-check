@@ -187,7 +187,7 @@ class Start(Reporting):
             flags.extend(["-saved-state-project", saved_state_project])
             local_root = self._configuration.local_root
             if local_root is not None:
-                relative = os.path.relpath(local_root)
+                relative = os.path.relpath(local_root, self._project_root)
                 flags.extend(["-saved-state-metadata", relative.replace("/", "$")])
         configuration_file_hash = self._configuration.file_hash
         if configuration_file_hash:
