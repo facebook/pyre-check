@@ -45,20 +45,20 @@ const features = [
       <>
         Follows the typing standards introduced in{' '}
         <Link to="https://www.python.org/dev/peps/pep-0484/">PEPs 484</Link>,{' '}
-        <Link to="https://www.python.org/dev/peps/pep-0526/">526</Link>, and{' '}
+        <Link to="https://www.python.org/dev/peps/pep-0526/">526</Link>,{' '}
         <Link to="https://www.python.org/dev/peps/pep-0612/">612</Link>, and is
-        built to support custom static analyses on top of type checking.
+        being actively developed and constantly improved.
       </>
     ),
   },
   {
-    title: <>Actively Developed</>,
+    title: <>Built For Security</>,
     // imageUrl: 'img/undraw_docusaurus_react.svg',
     description: (
       <>
-        Pyre is constantly being improved. We hope you'll join the community and
-        try it out on your own projects, leave us feedback, and consider
-        contributing!
+        Pyre ships with <Link to="docs/pysa-basics">Pysa</Link>, a security
+        focused static analysis tool we've built to reasons about data flows in
+        Python applications at scale.
       </>
     ),
   },
