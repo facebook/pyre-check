@@ -3,6 +3,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree. *)
 
+open Core
 module AccessPath = AccessPath
 module BackwardAnalysis = BackwardAnalysis
 module CallGraphBuilder = CallGraphBuilder
@@ -22,7 +23,7 @@ module Model = struct
 
   let verify_model_syntax = ModelParser.verify_model_syntax
 
-  type nonrec taint_annotation = taint_annotation =
+  type taint_annotation = ModelParser.T.taint_annotation =
     | Sink of {
         sink: Sinks.t;
         breadcrumbs: breadcrumbs;
@@ -47,6 +48,7 @@ module Model = struct
     | SkipAnalysis (* Don't analyze methods with SkipAnalysis *)
     | SkipOverrides (* Analyze as normally, but assume no overrides exist. *)
     | Sanitize
+  [@@deriving show, compare]
 
   (* Exposed for testing. *)
   let demangle_class_attribute = ModelVerifier.demangle_class_attribute

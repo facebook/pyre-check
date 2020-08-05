@@ -54,6 +54,7 @@ module T = struct
   type annotation_kind =
     | ParameterAnnotation of AccessPath.Root.t
     | ReturnAnnotation
+  [@@deriving show, compare]
 
   module ModelQuery = struct
     type model_constraint = NameConstraint of string [@@deriving compare, show]

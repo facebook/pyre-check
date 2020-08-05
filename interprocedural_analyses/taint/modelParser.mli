@@ -45,6 +45,7 @@ module T : sig
   type annotation_kind =
     | ParameterAnnotation of AccessPath.Root.t
     | ReturnAnnotation
+  [@@deriving show, compare]
 
   module ModelQuery : sig
     type model_constraint = NameConstraint of string [@@deriving show, compare]
