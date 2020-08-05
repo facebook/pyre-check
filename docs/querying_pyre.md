@@ -17,14 +17,14 @@ Note: The responses in the examples are prettified using the `pyre query <query>
 
 This command gives you the list of attributes for a class.
 
-```
+```python
 # a.py
 class C:
     a: int = 2
     def foo(self) -> str:
         return ""
 ```
-```
+```bash
 $ pyre query "attributes(a.C)"
 {
     "response": {
@@ -54,7 +54,7 @@ The command `dump_class_hierarchy()` returns the entire class hierarchy as Pyre 
 
 This command uses Pyre's type engine to find a common superclass for two types.
 
-```
+```bash
 $ pyre query "join(typing.Iterable[int], typing.Iterable[str])"
 {
     "response": {
@@ -67,7 +67,7 @@ $ pyre query "join(typing.Iterable[int], typing.Iterable[str])"
 
 This command returns whether the type on the left can be used when the type on the right is expected.
 
-```
+```python
 # a.py
 class C:
   pass
@@ -76,7 +76,7 @@ class D(C):
   pass
 ```
 
-```
+```bash
 $ pyre query "less_or_equal(a.D, a.C)"
 {"response":{"boolean":true}}
 
@@ -88,7 +88,7 @@ $ pyre query "less_or_equal(a.C, a.D)"
 
 This command uses Pyre's type engine to find a common subclass for two types.
 
-```
+```bash
 $ pyre query "meet(typing.Iterable[int], typing.Iterable[typing.Union[int, str]])"
 {
     "response": {
@@ -101,14 +101,14 @@ $ pyre query "meet(typing.Iterable[int], typing.Iterable[typing.Union[int, str]]
 
 This command returns the list of methods for a type, excluding inherited ones.
 
-```
+```python
 # a.py
 class C:
   def f(self, x: int) -> str:
     return ""
 ```
 
-```
+```bash
 $ pyre query "methods(a.C)"
 {
     "response": {
@@ -130,13 +130,13 @@ $ pyre query "methods(a.C)"
 
 This command resolves type aliases for a given type.
 
-```
+```python
 # a.py
 A = typing.Union[int, str]
 B = typing.Union[A, typing.List[str]]
 ```
 
-```
+```bash
 $ pyre query "normalize_type(a.B)"
 {
     "response": {
@@ -150,13 +150,13 @@ $ pyre query "normalize_type(a.B)"
 Returns the type signature of a function.
 
 
-```
+```python
 # a.py
 def foo(x: int) -> str:
   ...
 ```
 
-```
+```bash
 $ pyre query "signature(a.foo)"
 {
     "response": {
@@ -179,7 +179,7 @@ $ pyre query "signature(a.foo)"
 
 Displays the superclasses of a given class name.
 
-```
+```bash
 $ pyre query "superclasses(int)"
 {
     "response": {
@@ -202,7 +202,7 @@ $ pyre query "superclasses(int)"
 
 Evaluates the type of the given expression.
 
-```
+```bash
 $ pyre query "type([1 + 2, ''])"
 {
     "response": {
@@ -216,12 +216,12 @@ $ pyre query "type([1 + 2, ''])"
 
 This command returns the type of the symbol at the provided position.
 
-```
+```python
 # a.py
 variable = 2
 ```
 
-```
+```bash
 $ pyre query "type_at_position('a.py', 1, 2)"
 {
     "response": {
@@ -245,13 +245,13 @@ $ pyre query "type_at_position('a.py', 1, 2)"
 
 This command returns all the types for a file that Pyre has been able to resolve.
 
-```
+```python
 # a.py
 class C:
   attribute = ""
 ```
 
-```
+```bash
 $ pyre query "types(path='a.py')"
 {
     "response": [
