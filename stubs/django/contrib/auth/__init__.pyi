@@ -2,13 +2,16 @@
 
 from typing import Any, Type
 
-from django.contrib.auth.models import AbstractBaseUser
+from django.contrib.auth.models import AbstractBaseUser as AbstractBaseUser
 from django.http import HttpRequest
 
 # Import functions that are accessed through django.contrib.auth, but are
 # actually defined and overridden in util.asyncio.third_party_patches:
 # https://fburl.com/diffusion/s4pwj22n
-from util.asyncio.third_party_patches import async_authenticate, async_logout
+from util.asyncio.third_party_patches import (
+    async_authenticate as async_authenticate,
+    async_logout as async_logout,
+)
 
 REDIRECT_FIELD_NAME: str = ...
 SESSION_KEY: str = ...

@@ -1,15 +1,22 @@
-from django.http.cookie import SimpleCookie
-from django.http.request import HttpRequest, QueryDict, build_request_repr
-from django.http.response import (
-    Http404,
-    HttpResponse,
-    HttpResponseBadRequest,
-    HttpResponseForbidden,
-    HttpResponseNotAllowed,
-    HttpResponseNotFound,
-    HttpResponsePermanentRedirect,
-    HttpResponseRedirect,
-    HttpResponseServerError,
-    StreamingHttpResponse,
+from django.http.cookie import SimpleCookie as SimpleCookie
+from django.http.request import (
+    HttpRequest as HttpRequest,
+    QueryDict as QueryDict,
+    build_request_repr as build_request_repr,
 )
-from django.http.utils import conditional_content_removal, fix_location_header
+from django.http.response import (
+    Http404 as Http404,
+    HttpResponse as HttpResponse,
+    HttpResponseBadRequest as HttpResponseBadRequest,
+    HttpResponseForbidden as HttpResponseForbidden,
+    HttpResponseNotAllowed as HttpResponseNotAllowed,
+    HttpResponseNotFound as HttpResponseNotFound,
+    HttpResponsePermanentRedirect as HttpResponsePermanentRedirect,
+    HttpResponseRedirect as HttpResponseRedirect,
+    HttpResponseServerError as HttpResponseServerError,
+    StreamingHttpResponse as StreamingHttpResponse,
+)
+from django.http.utils import (
+    conditional_content_removal as conditional_content_removal,
+    fix_location_header as fix_location_header,
+)

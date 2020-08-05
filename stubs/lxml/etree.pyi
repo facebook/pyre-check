@@ -1,7 +1,11 @@
 from typing import Any, List, Optional
 
 # Lazy hack to not have to stub those out.
-from lxml.unstubbed import Element, SubElement, _Element
+from lxml.unstubbed import (
+    Element as Element,
+    SubElement as SubElement,
+    _Element as _Element,
+)
 
 def parse(source, parser=..., base_url=...): ...
 def fromstring(input: str) -> Any: ...
