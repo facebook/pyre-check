@@ -1,15 +1,13 @@
 {
   "overview": {
     "Pyre": [
-      "overview",
+      "getting-started",
       "installation",
-      "guided-tour",
       "configuration",
       "gradual-typing",
       "error-suppression",
       "error-types",
       "lsp-integration",
-      "watchman-integration",
       "querying-pyre"
     ],
     "Pysa": [
