@@ -92,9 +92,9 @@ class ConfigurationTest(unittest.TestCase):
             self.assertEqual(configuration.source_directories, ["local/path/a"])
 
         json_load.side_effect = [{"source_directories": ["a"]}, {"version": "abc"}, {}]
-        configuration = Configuration("local/path", log_directory=".pyre/local/path")
+        configuration = Configuration("local/path", log_directory="/.pyre/local/path")
         self.assertEqual(configuration.source_directories, ["local/path/a"])
-        self.assertEqual(configuration.ignore_all_errors, [".pyre/local/path"])
+        self.assertEqual(configuration.ignore_all_errors, ["/.pyre/local/path"])
 
         # Configuration fields
         json_load.side_effect = [{"targets": ["//a/b/c"], "disabled": 1}, {}]
