@@ -7,7 +7,14 @@ sidebar_label: Installation
 We recommend that you use our binary distribution through [pypi](https://pypi.org/) inside of a virtual environment and support both *MacOs* and *Linux*. On *Windows* we have successfully got `pyre` to work through [WSL](https://en.wikipedia.org/wiki/Windows_Subsystem_for_Linux) but do not officially support it.
 
 ## Binary Distribution
-Please refer to our [Getting Started](getting_started.md) section for instructions to get the latest version of `pyre` inside your virtual environment.
+You can get Pyre through [pypi](https://pypi.org/). In your virtual environment, run
+```bash
+$ (venv) $ pip install pyre-check
+```
+and you should be good to go!
+
+## IDE Integration
+Pyre supports the [Language Server Protocol](https://en.wikipedia.org/wiki/Language_Server_Protocol). We provide an [extension for *VS Code*](https://marketplace.visualstudio.com/items?itemName=fb-pyre-check.pyre-vscode) that will automatically try to connect to a running server. You can also directly interact with the LSP by piping the appropriate `JSON` into `pyre persistent`.
 
 ## Building from Source
 These instructions are known to work on Mac OS X (tested on High

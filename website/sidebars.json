@@ -7,7 +7,6 @@
       "gradual-typing",
       "error-suppression",
       "error-types",
-      "lsp-integration",
       "querying-pyre"
     ],
     "Pysa": [
