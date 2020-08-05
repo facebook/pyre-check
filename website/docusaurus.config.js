@@ -53,8 +53,7 @@ module.exports = {
         src: 'img/integrated_logo_light.png',
       },
       links: [
-        {to: 'docs/getting-started', label: 'Getting Started', position: 'left'},
-        {to: 'docs/overview', label: 'Documentation', position: 'left'},
+        {to: 'docs/getting-started', label: 'Documentation', position: 'left'},
         {
           href: 'https://github.com/facebook/pyre-check',
           label: 'GitHub',
