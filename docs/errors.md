@@ -170,6 +170,35 @@ This is usually caused by failing to import the proper module.
 Pyre will raise error 21 instead ("Undefined import") when the import statement is present, but the module to be imported could not be found in the search path.
 If the module provides stub files, please provide their location via the `--search-path` commandline parameter.
 
+### 34: Invalid type variable
+
+Type variables can only be used as types when they have already been placed "in scope".
+A type variable can be placed into scope via:
+
+* Generic class declarations
+  * for example, `class C(Generic[T]):` puts `T` into scope for the body of the class
+* The **parameter** types of a generic function
+  * for example, `def foo(x: T)` puts `T` into scope for the body and return type annotation of the function
+
+Something notably absent from this list is "inside of a `typing.Callable` type".
+This means that `Callable[[T], T]` does not spell the type of a generic function, but rather a specific identity function, with the `T` defined by an outer scope.
+Therefore, if you want to spell the signature of a function that takes/returns a generic function, you will need to declare it separately via a callback protocol.
+
+```python
+T = TypeVar("T")
+
+def returns_identity() -> Callable[[T], T]: ... # Rejected
+
+class IdentityFunction(Protocol):
+  def __call__(self, x: T) -> T: ...
+
+def returns_identity() -> IdentityFunction: # Accepted
+  def inner(x: T) -> T:
+    return x
+  return inner
+```
+
+
 ### 35: Invalid type variance
 In brief, read-only data types can be covariant, write-only data types can be contravariant, and data types that support both reads and writes must be invariant.
 If a data type implements any functions accepting parameters of that type, we cannot guarantee that writes are not happening. If a data type implements any functions returning values of that type, we cannot guarantee that reads are not happening.
