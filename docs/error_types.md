@@ -203,3 +203,100 @@ float_list: MyList[float] = ...
 takes_int_list(float_list)  # this call is OK because MyList is contravariant: MyList[float] < MyList[int]
 # problem with return above is clear
 ```
+
+## Pyre Error \[56\]: Invalid decoration
+
+This error code is a catch-all for a variety of problems that can arise in the course of resolving the type of a decorated function.
+In all of these cases, these decoration failures will lead to the function being registered with type `Any` to avoid any spurious downstream errors.
+
+### "Pyre was not able to infer the type of the decorator ..."
+
+This should only happen when the decorator access itself is invalid, e.g. when you use a decorator which isn't declared in the stubs for a third-party library.
+
+### "Pyre was not able to infer the type of argument ..."
+
+When using the "decorator factory" pattern, we need to resolve the type of both the decorator factory itself as well as the arguments passed to the decorator factory.
+This is because the types of these arguments can alter the behavior of the returned decorator via overloads or type variables.
+However, this resolution has to happen early in the environment-building pipeline, when we don't yet have all of the context we need in order to resolve the types of arbitrary expressions.
+We support resolving literals and simple globals as arguments, but using anything else will result in this error.
+
+To work around this, you can statically type your arguments to the decorator factory as separate globals, which can be validated later in the type-checking pipeline.
+
+```python
+T = TypeVar("T")
+def decorator_factory(x: T) -> Callable[[Callable[[int], str]], Callable[[str], T]]:
+  ...
+# pyre-fixme[56]: Pyre was not able to infer the type of argument
+#  `complex_expression()` to decorator factory `decorator_factory`.
+@decorator_factory(complex_expression())
+def foo(x: int) -> str:
+  ...
+
+
+argument: float = complex_expression()
+
+@decorator_factory(argument) # Accepted!  bar resolves to Callable[[str], float]
+def bar(x: int) -> str:
+  ...
+```
+
+### "Decorator factory \`X\` could not be called"
+
+This corresponds to when the decorator factory access resolves to a type that is not callable (i.e. has no `__call__` method).
+
+```python
+not_a_factory: int = 5
+
+# pyre-fixme[56]: Decorator factory `not_a_factory` could not be called, because its 
+# type `int` is not callable
+@not_a_factory(1)
+def bar() -> None:
+  pass
+```
+
+### "Decorator \`X\` could not be called"
+
+Similarly, these errors correspond to when the entire decorator expression (potentially including arguments to a decorator factory), resolves to a non-callable type.
+
+
+```python
+def foo() -> int:
+  return 42
+
+# pyre-fixme[56]: Decorator `foo()` could not be called, because its 
+# type `int` is not callable
+@foo()
+def bar() -> None:
+  pass
+```
+
+### "While applying decorator factory ..." 
+
+These errors are emitted from attempting to pass the resolved factory arguments to the factory, as with any other function call.
+
+```python
+def factory(x: str) -> Callable[[object], object]: 
+  ...
+
+# pyre-fixme[56]: While applying decorator factory `factory`: 
+# Expected `str` for 1st param but got `int`.
+@factory(1)
+def foo() -> None:
+  pass
+```
+
+### "While applying decorator ..."
+
+Correspondingly, these errors are emitted from trying to pass the decorated function as an argument to the resolved decorator type.
+
+```python
+def decorator(f: Callable[[int], str]) -> int:
+  ...
+
+# pyre-fixme[56]: While applying decorator `decorator`:
+# Expected `Callable[[int], str]` for 1st param but got `Callable[[str], int]`.
+@decorator
+def foo(x: str) -> int:
+  return 5
+```
+
