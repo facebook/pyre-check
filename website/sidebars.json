@@ -5,8 +5,7 @@
       "installation",
       "configuration",
       "gradual-typing",
-      "error-suppression",
-      "error-types",
+      "errors",
       "querying-pyre"
     ],
     "Pysa": [
