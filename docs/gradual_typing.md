@@ -11,7 +11,7 @@ By default, untyped expressions are assumed to be type Any, which is defined as 
 every attribute and being a sub- and super-type of every other known type.
 This is useful for annotating functions relying on untyped library code:
 
-```
+```python
   def foo() -> int:
     return unannotated_library_function() # has type `Any`, which is a subtype of `int`
 ```
@@ -25,7 +25,7 @@ This can be desirable or necessary, but also gives us very weak guarantees about
 Pyre supports a strict mode where the above code will no longer type check.
 Strict mode can be enabled by annotating a file with `# pyre-strict`.
 
-```
+```python
   # pyre-strict
   def foo() -> int:
     return unannotated_library_function()  # type error: expected `int` but got `Any`
@@ -40,7 +40,7 @@ Pyre also supports custom, repository local stubs.
 
 In case we're in control of the library function we can now go in and annotate that function too
 
-```
+```python
   def unannotated_library_function() -> int:
     return sometimes_returns_a_string(return_string=False)  # uh oh...
 ```
@@ -50,7 +50,7 @@ We could go in, refactor and clean up sometimes_returns_a_string to behave more 
 but more likely than not this will just put us in the same situation over and over again.
 
 Pyre solves this problem with a per-file declarative mode:
-```
+```python
   # pyre-ignore-all-errors
   def unannotated_library_function() -> int:
     return sometimes_returns_a_string(return_string=False)  # this is fine
@@ -65,7 +65,7 @@ of dynamic behavior.
 If we have a file with several of these above kind of incompatible return type errors, we could
 suppress all of them, but no other kinds of errors with:
 
-```
+```python
   # pyre-ignore-all-errors[7]
 
   def unannotated_library_function_A() -> int:
@@ -87,7 +87,7 @@ getting accurate annotations for - say, `file.py`.
 In this case, you can add a stub `file.pyi` in the same directory that contains
 the annotations for classes & functions, and omit the implementations.
 
-```
+```python
   # file.py
   from memoizer import memoize
 
