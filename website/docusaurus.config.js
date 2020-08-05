@@ -45,9 +45,11 @@ module.exports = {
   ],
 
   themeConfig: {
-    disableDarkMode: true,
+    colorMode: {
+      defaultMode: 'light',
+      disableSwitch: true,
+    },
     navbar: {
-      textColor: '#091E42',
       logo: {
         alt: 'Pyre Logo',
         src: 'img/integrated_logo_light.png',
