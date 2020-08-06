@@ -78,10 +78,8 @@ class Reporting(Command):
         results: List[Dict[str, Any]] = self._load_errors_from_json(result.output)
 
         for error in results:
-            path = os.path.realpath(error["path"])
             analysis_root = os.path.realpath(self._analysis_directory.get_root())
-            if not Path(analysis_root) in Path(path).parents:
-                path = os.path.realpath(os.path.join(analysis_root, error["path"]))
+            path = os.path.realpath(os.path.join(analysis_root, error["path"]))
 
             # Relativize path to user's cwd.
             relative_path = self._relative_path(path)
