@@ -26,8 +26,8 @@
   width: 100%;
 }
 
-.navbar__link {
-  margin-top: 15px;
+.navbar__logo {
+  padding-bottom: 0.75rem;
 }
 
 .table-of-contents__link:hover {
