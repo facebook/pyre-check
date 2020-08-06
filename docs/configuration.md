@@ -44,7 +44,8 @@ completely ignored by Pyre. The regular expression will be matched against the
 - `ignore_all_errors`: A list of paths to omit from type-checking. This may be
 useful for generated files, virtualenv directories, etc.  These should be paths
 relative to the location of the configuration file (or the local configuration
-if applicable).  These can also include basic globs using *. **Note**: files
+if applicable).  These can also include basic globs using `*`.
+**Note**: Files
 matching these paths will still be processed (i.e. type and module names in those files are still visible to Pyre). Please refer to the `exclude`
 configuration item if you have files that are intended to be hidden from Pyre.
 
@@ -84,7 +85,7 @@ $ pyre -l project
 #### Nested Local Configurations
 Nesting local configurations is not recommended. The configuration should live at the root of your
 project unit and inclusion/exclusion of files from type checking can be done by specifying sources, using
-`ignore_all_errors`, or by adding [local suppression](error_suppression.md).
+`ignore_all_errors`, or by adding [local suppression](errors#suppressing-individual-errors).
 
 If in rare cases the nested configuration cannot be combined upward and the parent cannot be split apart, the
 parent configuration must list the directory containing the nested configuration in its `ignore_all_errors` field.
@@ -113,7 +114,7 @@ When Pyre is run incrementally, you can control the Pyre's *server* working in t
 - `kill`: In case somethign goes wrong and the server becomes unresponsivbe `kill` will attempt to terminate any processes.
 - `rage`: Print server logs for debugging or for context when reporting server errors.
 
-### Commonly used Flags
+### Commonly Used Flags
 These flags can be passed in before any of the positional arguments above. For example:
 ```bash
 $ pyre --source-directory "." --noninteractive check
