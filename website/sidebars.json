@@ -4,7 +4,7 @@
       "getting-started",
       "installation",
       "configuration",
-      "gradual-typing",
+      "types-in-python",
       "errors",
       "querying-pyre"
     ],

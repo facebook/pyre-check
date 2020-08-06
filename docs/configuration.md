@@ -63,6 +63,8 @@ provides typed stubs for library functions.
 - `extensions`: Consider extensions in this list equivalent to `.py` for type checking.
 Empty string indicates extensionless files.
 
+- `strict`: Setting this to `true` will make [strict mode](types-in-python#strict-mode) the default in your project.
+
 
 ### Local
 If you have sub-projects within your project root that you would like to run Pyre on, you
