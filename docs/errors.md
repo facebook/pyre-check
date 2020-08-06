@@ -182,7 +182,7 @@ A type variable can be placed into scope via:
 
 Something notably absent from this list is "inside of a `typing.Callable` type".
 This means that `Callable[[T], T]` does not spell the type of a generic function, but rather a specific identity function, with the `T` defined by an outer scope.
-Therefore, if you want to spell the signature of a function that takes/returns a generic function, you will need to declare it separately via a callback protocol.
+Therefore, if you want to spell the signature of a function that takes/returns a generic function, you will need to declare it separately via a callback protocol:
 
 ```python
 T = TypeVar("T")
