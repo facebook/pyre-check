@@ -467,6 +467,7 @@ let test_create _ =
        ]);
   assert_create "typing_extensions.Literal[ONE]" Type.Top;
   assert_create "typing_extensions.Literal[None]" Type.none;
+  assert_create "_NotImplementedType" Type.Any;
   ()
 
 

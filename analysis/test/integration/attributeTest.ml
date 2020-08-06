@@ -1027,7 +1027,24 @@ let test_check_attribute_initialization context =
         class Baz(Foo, Bar):
           pass
     |}
-    []
+    [];
+
+  assert_type_errors
+    {|
+        import abc
+
+        class Foo(abc.ABC):
+            LIMIT: int = NotImplemented
+
+            def is_ok(self, var: int) -> bool:
+                return var < self.LIMIT
+
+        class Bar(Foo):
+            LIMIT = 2 
+    |}
+    [];
+
+  ()
 
 
 let test_check_missing_attribute context =

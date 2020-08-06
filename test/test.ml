@@ -828,6 +828,14 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
               def write(self, __s: Any) -> Any: ...
           # This is only available after from __future__ import print_function.
           def print( *values: object, sep: Optional[Text] = ..., end: Optional[Text] = ..., file: Optional[_Writer] = ...) -> None: ...
+
+        class _NotImplementedType(Any):  # type: ignore
+            # A little weird, but typing the __call__ as NotImplemented makes the error message
+            # for NotImplemented() much better
+            __call__: NotImplemented  # type: ignore
+
+        NotImplemented: _NotImplementedType
+ 
       |}
     in
     if include_helper_builtins then

@@ -1929,6 +1929,8 @@ let primitive_substitution_map =
        https://github.com/python/typeshed/pull/991#issuecomment-288160993 *)
     "PathLike", Primitive "_PathLike";
     "TSelf", variable "_PathLike";
+    (* This inherits from Any, and is expected to act just like Any *)
+    "_NotImplementedType", Any;
   ]
   |> Identifier.Table.of_alist_exn
 
