@@ -1,6 +1,6 @@
 # (c) Facebook, Inc. and its affiliates. Confidential and proprietary.
 
-from typing import Dict, List, Set, Tuple
+from typing import Dict, List, Optional, Set, Tuple
 
 import graphene
 from graphene import relay
@@ -53,8 +53,10 @@ class Query(graphene.ObjectType):
         codes=graphene.List(graphene.Int, default_value=["%"]),
         callables=graphene.List(graphene.String, default_value=["%"]),
         file_names=graphene.List(graphene.String, default_value=["%"]),
-        trace_length_to_sinks=graphene.List(graphene.String, default_value=["%"]),
-        trace_length_to_sources=graphene.List(graphene.String, default_value=["%"]),
+        min_trace_length_to_sinks=graphene.Int(),
+        max_trace_length_to_sinks=graphene.Int(),
+        min_trace_length_to_sources=graphene.Int(),
+        max_trace_length_to_sources=graphene.Int(),
     )
     trace = relay.ConnectionField(TraceFrameConnection, issue_id=graphene.ID())
 
@@ -64,8 +66,10 @@ class Query(graphene.ObjectType):
         codes: List[int],
         callables: List[str],
         file_names: List[str],
-        trace_length_to_sinks: List[str],
-        trace_length_to_sources: List[str],
+        min_trace_length_to_sinks: Optional[int] = None,
+        max_trace_length_to_sinks: Optional[int] = None,
+        min_trace_length_to_sources: Optional[int] = None,
+        max_trace_length_to_sources: Optional[int] = None,
         **args
     ) -> List[IssueQueryResult]:
         session = get_session(info.context)
@@ -77,6 +81,12 @@ class Query(graphene.ObjectType):
             .where_codes_is_any_of(codes)
             .where_callables_is_any_of(callables)
             .where_file_names_is_any_of(file_names)
+            .where_trace_length_to_sinks(
+                min_trace_length_to_sinks, max_trace_length_to_sinks
+            )
+            .where_trace_length_to_sources(
+                min_trace_length_to_sources, max_trace_length_to_sources
+            )
         )
 
         return builder.get()
