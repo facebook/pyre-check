@@ -2,6 +2,26 @@
 {
   "kind": "model",
   "data": {
+    "callable": "model_query.C.foo",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "Test" } ],
+            "features": [ { "always-via": "string_concat_rhs" } ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "model_query.barfoo",
     "sources": [
       {

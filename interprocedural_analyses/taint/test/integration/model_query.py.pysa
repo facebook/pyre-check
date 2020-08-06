@@ -5,3 +5,11 @@ ModelQuery(
     Returns(TaintSource[Test, Via[string_concat_lhs]]),
   ]
 )
+
+ModelQuery(
+  find = "methods",
+  where = [name.matches("foo")],
+  model = [
+    Returns(TaintSource[Test, Via[string_concat_rhs]]),
+  ]
+)

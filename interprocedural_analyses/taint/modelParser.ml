@@ -652,6 +652,7 @@ let parse_find_clause ({ Node.value; _ } as expression) =
   | Expression.String { StringLiteral.value; _ } -> (
       match value with
       | "functions" -> Core.Result.Ok ModelQuery.FunctionModel
+      | "methods" -> Core.Result.Ok ModelQuery.MethodModel
       | unsupported -> Core.Result.Error (Format.sprintf "Unsupported find clause `%s`" unsupported)
       )
   | _ ->
