@@ -1,0 +1,7 @@
+ModelQuery(
+  find = "functions",
+  where = [name.matches("foo")],
+  model = [
+    Returns(TaintSource[Test, Via[string_concat_lhs]]),
+  ]
+)

@@ -5,6 +5,7 @@
 
 open Core
 open Ast
+open Analysis
 open Interprocedural
 open Taint
 open Model
@@ -64,3 +65,60 @@ let apply_query_rule ~resolution ~rule:{ ModelQuery.rule_kind; query; production
     apply_productions ~resolution ~productions ~callable
   else
     []
+
+
+let apply_all_rules
+    ~resolution
+    ~configuration
+    ~rule_filter
+    ~rules
+    ~callables
+    ~models
+    ~skip_overrides
+  =
+  let global_resolution = Resolution.global_resolution resolution in
+  if List.length rules > 0 then
+    let sources_to_keep, sinks_to_keep =
+      ModelParser.compute_sources_and_sinks_to_keep ~configuration ~rule_filter
+    in
+    let apply_rules (models, skip_overrides) callable =
+      let taint_to_model =
+        List.concat_map rules ~f:(fun rule ->
+            apply_query_rule ~resolution:global_resolution ~rule ~callable)
+      in
+      if not (List.is_empty taint_to_model) then
+        match
+          ModelParser.create_model_from_annotations
+            ~resolution
+            ~callable
+            ~sources_to_keep
+            ~sinks_to_keep
+            taint_to_model
+        with
+        | Some (model, skipped_override) ->
+            let models =
+              let model =
+                match Callable.Map.find models (callable :> Callable.t) with
+                | Some existing_model -> Taint.Result.join ~iteration:0 existing_model model
+                | None -> model
+              in
+              Callable.Map.set models ~key:(callable :> Callable.t) ~data:model
+            in
+            let skip_overrides =
+              match skipped_override with
+              | Some skipped_override ->
+                  Ast.Reference.Set.add skip_overrides (Ast.Node.value skipped_override)
+              | None -> skip_overrides
+            in
+            models, skip_overrides
+        | _ -> models, skip_overrides
+      else
+        models, skip_overrides
+    in
+    List.filter_map callables ~f:(function
+        | `Function _ as callable -> Some (callable :> Callable.real_target)
+        | `Method _ as callable -> Some (callable :> Callable.real_target)
+        | _ -> None)
+    |> List.fold ~init:(models, skip_overrides) ~f:apply_rules
+  else
+    models, skip_overrides

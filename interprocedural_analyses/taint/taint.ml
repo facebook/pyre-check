@@ -53,7 +53,9 @@ module Model = struct
   (* Exposed for testing. *)
   let demangle_class_attribute = ModelVerifier.demangle_class_attribute
 
-  let add_taint_annotation_to_model = ModelParser.add_taint_annotation_to_model
+  let compute_sources_and_sinks_to_keep = ModelParser.compute_sources_and_sinks_to_keep
+
+  let create_model_from_annotations = ModelParser.create_model_from_annotations
 end
 
 module Result = TaintResult

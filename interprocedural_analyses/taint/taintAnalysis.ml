@@ -12,7 +12,7 @@ open Taint
 include Taint.Result.Register (struct
   include Taint.Result
 
-  let init ~configuration ~environment ~functions:_ ~stubs =
+  let init ~configuration ~environment ~functions ~stubs =
     let global_resolution = Analysis.TypeEnvironment.ReadOnly.global_resolution environment in
     let resolution =
       Analysis.TypeCheck.resolution
@@ -39,12 +39,21 @@ include Taint.Result.Register (struct
     let create_models ~configuration sources =
       List.fold
         sources
-        ~init:(models, [], Ast.Reference.Set.empty)
-        ~f:(fun (models, errors, skip_overrides) (path, source) ->
-          let { ModelParser.T.models; errors = new_errors; skip_overrides = new_skip_overrides; _ } =
+        ~init:(models, [], Ast.Reference.Set.empty, [])
+        ~f:(fun (models, errors, skip_overrides, queries) (path, source) ->
+          let {
+            ModelParser.T.models;
+            errors = new_errors;
+            skip_overrides = new_skip_overrides;
+            queries = new_queries;
+          }
+            =
             ModelParser.parse ~resolution ~path ~source ~configuration ?rule_filter models
           in
-          models, List.rev_append new_errors errors, Set.union skip_overrides new_skip_overrides)
+          ( models,
+            List.rev_append new_errors errors,
+            Set.union skip_overrides new_skip_overrides,
+            List.rev_append new_queries queries ))
     in
     let remove_sinks models =
       Callable.Map.map ~f:(fun model -> { model with backward = Backward.empty }) models
@@ -72,12 +81,29 @@ include Taint.Result.Register (struct
             let paths = List.map model_paths ~f:Path.create_absolute in
             let configuration = TaintConfiguration.create ~rule_filter ~find_obscure_flows ~paths in
             TaintConfiguration.register configuration;
-            let models, errors, skip_overrides =
+            let models, errors, skip_overrides, queries =
               Model.get_model_sources ~paths |> create_models ~configuration
             in
             List.iter errors ~f:(fun error -> Log.error "%s" error);
             if verify && not (List.is_empty errors) then
               raise (Model.InvalidModel (List.hd_exn errors));
+            let models, skip_overrides =
+              let callables =
+                List.rev_append stubs functions
+                |> List.filter_map ~f:(function
+                       | `Function _ as callable -> Some (callable :> Callable.real_target)
+                       | `Method _ as callable -> Some (callable :> Callable.real_target)
+                       | _ -> None)
+              in
+              TaintModelQuery.ModelQuery.apply_all_rules
+                ~resolution
+                ~configuration
+                ~rule_filter
+                ~rules:queries
+                ~callables
+                ~models
+                ~skip_overrides
+            in
             if find_obscure_flows then
               models |> remove_sinks |> add_obscure_sinks, skip_overrides
             else

@@ -426,18 +426,26 @@ let initialize
 
   let environment = TypeEnvironment.read_only environment in
   let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
+  let resolution =
+    TypeCheck.resolution
+      global_resolution
+      (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
+      (module TypeCheck.DummyContext)
+  in
+  let callables, stubs =
+    Service.StaticAnalysis.regular_and_filtered_callables ~resolution:global_resolution ~source
+    |> fst
+    |> List.map ~f:(fun (callable, define) -> (callable :> Callable.t), define.Node.value)
+    |> List.partition_tf ~f:(fun (_callable, define) -> not (Statement.Define.is_stub define))
+  in
   let initial_models, skip_overrides =
     let inferred_models = Model.infer_class_models ~environment in
     match models with
     | None -> inferred_models, Reference.Set.empty
     | Some source ->
-        let { Taint.Model.models; errors; skip_overrides; _ } =
+        let { Taint.Model.models; errors; skip_overrides; queries = rules } =
           Model.parse
-            ~resolution:
-              (TypeCheck.resolution
-                 global_resolution
-                 (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
-                 (module TypeCheck.DummyContext))
+            ~resolution
             ~source:(Test.trim_extra_indentation source)
             ~configuration:taint_configuration
             inferred_models
@@ -447,7 +455,19 @@ let initialize
              "The models shouldn't have any parsing errors: %s."
              (List.to_string errors ~f:ident))
           (List.is_empty errors);
-        models, skip_overrides
+
+        TaintModelQuery.ModelQuery.apply_all_rules
+          ~resolution
+          ~configuration:taint_configuration
+          ~rule_filter:None
+          ~rules
+          ~models
+          ~skip_overrides
+          ~callables:
+            (List.filter_map (List.rev_append stubs callables) ~f:(function
+                | (`Function _ as callable), _ -> Some (callable :> Callable.real_target)
+                | (`Method _ as callable), _ -> Some (callable :> Callable.real_target)
+                | _ -> None))
   in
   (* Overrides must be done first, as they influence the call targets. *)
   let overrides =
@@ -464,12 +484,7 @@ let initialize
       ~call_graph:DependencyGraph.empty_callgraph
       ~source
   in
-  let callables, stubs =
-    Service.StaticAnalysis.regular_and_filtered_callables ~resolution:global_resolution ~source
-    |> fst
-    |> List.map ~f:(fun (callable, define) -> (callable :> Callable.t), define.Node.value)
-    |> List.partition_tf ~f:(fun (_callable, define) -> not (Statement.Define.is_stub define))
-  in
+
   let callables = List.map ~f:fst callables |> List.rev_append (Callable.Map.keys overrides) in
   let stubs = List.map ~f:fst stubs in
   let all_callables = List.rev_append stubs callables in

@@ -862,28 +862,94 @@ type model_or_query =
   | Model of (Model.t * Reference.t option)
   | Query of ModelQuery.rule
 
+let callable_annotation
+    ~resolution
+    ({ Define.Signature.name = { Node.value = name; _ }; decorators; _ } as define)
+  =
+  (* Since properties and setters share the same undecorated name, we need to special-case them. *)
+  let global_resolution = Resolution.global_resolution resolution in
+  let global_type () =
+    match GlobalResolution.global global_resolution name with
+    | Some { AttributeResolution.Global.undecorated_signature; annotation; _ } -> (
+        match undecorated_signature with
+        | Some signature -> Type.Callable signature |> Annotation.create
+        | None -> annotation )
+    | None ->
+        (* Fallback for fields, which are not globals. *)
+        from_reference name ~location:Location.any
+        |> Resolution.resolve_expression_to_annotation resolution
+  in
+  let parent = Option.value_exn (Reference.prefix name) in
+  let get_matching_method ~predicate =
+    let get_matching_define = function
+      | { Node.value = Statement.Define ({ signature; _ } as define); _ } ->
+          if
+            predicate define
+            && Reference.equal (Node.value define.Define.signature.Define.Signature.name) name
+          then
+            let parser = GlobalResolution.annotation_parser global_resolution in
+            let variables = GlobalResolution.variables global_resolution in
+            Annotated.Define.Callable.create_overload_without_applying_decorators
+              ~parser
+              ~variables
+              signature
+            |> Type.Callable.create_from_implementation
+            |> Option.some
+          else
+            None
+      | _ -> None
+    in
+    class_definitions global_resolution parent
+    >>= List.hd
+    >>| (fun definition -> definition.Node.value.Class.body)
+    >>= List.find_map ~f:get_matching_define
+    >>| Annotation.create
+    |> function
+    | Some annotation -> annotation
+    | None -> global_type ()
+  in
+  if signature_is_property define then
+    get_matching_method ~predicate:is_property
+  else if Define.Signature.is_property_setter define then
+    get_matching_method ~predicate:Define.is_property_setter
+  else if not (List.is_empty decorators) then
+    (* Ensure that models don't declare decorators that our taint analyses doesn't understand. *)
+    raise_invalid_model
+      (Format.sprintf
+         "Unexpected decorators found when parsing model: `%s`"
+         ( List.map decorators ~f:Decorator.to_expression
+         |> List.map ~f:Expression.show
+         |> String.concat ~sep:", " ))
+  else
+    global_type ()
+
+
+let compute_sources_and_sinks_to_keep ~configuration ~rule_filter =
+  match rule_filter with
+  | None -> None, None
+  | Some rule_filter ->
+      let rule_filter = Int.Set.of_list rule_filter in
+      let sources_to_keep, sinks_to_keep =
+        let { Configuration.rules; _ } = configuration in
+        let rules =
+          List.filter_map rules ~f:(fun { Configuration.Rule.code; sources; sinks; _ } ->
+              if Core.Set.mem rule_filter code then Some (sources, sinks) else None)
+        in
+        List.fold
+          rules
+          ~init:
+            ( Sources.Set.singleton Sources.Attach,
+              Sinks.Set.of_list [Sinks.AddFeatureToArgument; Sinks.Attach] )
+          ~f:(fun (sources, sinks) (rule_sources, rule_sinks) ->
+            ( Core.Set.union sources (Sources.Set.of_list rule_sources),
+              Core.Set.union sinks (Sinks.Set.of_list rule_sinks) ))
+      in
+      Some sources_to_keep, Some sinks_to_keep
+
+
 let create ~resolution ?path ~configuration ~rule_filter source =
   let sources_to_keep, sinks_to_keep =
-    match rule_filter with
-    | None -> None, None
-    | Some rule_filter ->
-        let rule_filter = Int.Set.of_list rule_filter in
-        let sources_to_keep, sinks_to_keep =
-          let { Configuration.rules; _ } = configuration in
-          let rules =
-            List.filter_map rules ~f:(fun { Configuration.Rule.code; sources; sinks; _ } ->
-                if Core.Set.mem rule_filter code then Some (sources, sinks) else None)
-          in
-          List.fold
-            rules
-            ~init:
-              ( Sources.Set.singleton Sources.Attach,
-                Sinks.Set.of_list [Sinks.AddFeatureToArgument; Sinks.Attach] )
-            ~f:(fun (sources, sinks) (rule_sources, rule_sinks) ->
-              ( Core.Set.union sources (Sources.Set.of_list rule_sources),
-                Core.Set.union sinks (Sinks.Set.of_list rule_sinks) ))
-        in
-        Some sources_to_keep, Some sinks_to_keep
+    compute_sources_and_sinks_to_keep ~configuration ~rule_filter
   in
   let global_resolution = Resolution.global_resolution resolution in
   let invalid_model_error ~location ~name message =
@@ -1154,78 +1220,15 @@ let create ~resolution ?path ~configuration ~rule_filter source =
     |> fun (results, errors) -> List.concat results, errors
   in
   let create_model
-      ( ( {
-            Define.Signature.name = { Node.value = name; _ };
-            parameters;
-            return_annotation;
-            decorators;
-            _;
-          } as define ),
+      ( ( { Define.Signature.name = { Node.value = name; _ }; parameters; return_annotation; _ } as
+        define ),
         location,
         call_target )
     =
     (* Make sure we know about what we model. *)
-    let global_resolution = Resolution.global_resolution resolution in
     try
+      let callable_annotation = callable_annotation ~resolution define in
       let call_target = (call_target :> Callable.t) in
-      let callable_annotation =
-        (* Since properties and setters share the same undecorated name, we need to special-case
-           them. *)
-        let global_type () =
-          match GlobalResolution.global (Resolution.global_resolution resolution) name with
-          | Some { AttributeResolution.Global.undecorated_signature; annotation; _ } -> (
-              match undecorated_signature with
-              | Some signature -> Type.Callable signature |> Annotation.create
-              | None -> annotation )
-          | None ->
-              (* Fallback for fields, which are not globals. *)
-              from_reference name ~location:Location.any
-              |> Resolution.resolve_expression_to_annotation resolution
-        in
-        let parent = Option.value_exn (Reference.prefix name) in
-        let get_matching_method ~predicate =
-          let get_matching_define = function
-            | { Node.value = Statement.Define ({ signature; _ } as define); _ } ->
-                if
-                  predicate define
-                  && Reference.equal (Node.value define.Define.signature.Define.Signature.name) name
-                then
-                  let parser = GlobalResolution.annotation_parser global_resolution in
-                  let variables = GlobalResolution.variables global_resolution in
-                  Annotated.Define.Callable.create_overload_without_applying_decorators
-                    ~parser
-                    ~variables
-                    signature
-                  |> Type.Callable.create_from_implementation
-                  |> Option.some
-                else
-                  None
-            | _ -> None
-          in
-          class_definitions global_resolution parent
-          >>= List.hd
-          >>| (fun definition -> definition.Node.value.Class.body)
-          >>= List.find_map ~f:get_matching_define
-          >>| Annotation.create
-          |> function
-          | Some annotation -> annotation
-          | None -> global_type ()
-        in
-        if signature_is_property define then
-          get_matching_method ~predicate:is_property
-        else if Define.Signature.is_property_setter define then
-          get_matching_method ~predicate:Define.is_property_setter
-        else if not (List.is_empty decorators) then
-          (* Ensure that models don't declare decorators that our taint analyses doesn't understand. *)
-          raise_invalid_model
-            (Format.sprintf
-               "Unexpected decorators found when parsing model: `%s`"
-               ( List.map decorators ~f:Decorator.to_expression
-               |> List.map ~f:Expression.show
-               |> String.concat ~sep:", " ))
-        else
-          global_type ()
-      in
       let () =
         if
           Type.is_top (Annotation.annotation callable_annotation)
@@ -1365,6 +1368,40 @@ let parse ~resolution ?path ?rule_filter ~source ~configuration models =
     queries = new_queries;
     errors;
   }
+
+
+let create_model_from_annotations ~resolution ~callable ~sources_to_keep ~sinks_to_keep annotations =
+  let global_resolution = Resolution.global_resolution resolution in
+  match
+    Interprocedural.Callable.get_module_and_definition ~resolution:global_resolution callable
+  with
+  | None -> None
+  | Some (_, { Node.value = { Define.signature = { Define.Signature.name; _ } as define; _ }; _ })
+    ->
+      let callable_annotation =
+        callable_annotation ~resolution define
+        |> Annotation.annotation
+        |> function
+        | Type.Callable t -> Some t
+        | Type.Parametric
+            { name = "BoundMethod"; parameters = [Type.Parameter.Single (Type.Callable t); _] } ->
+            Some t
+        | _ -> None
+      in
+      List.fold
+        annotations
+        ~init:(TaintResult.empty_model, None)
+        ~f:(fun accumulator (annotation_kind, annotation) ->
+          add_taint_annotation_to_model
+            ~resolution:global_resolution
+            ~annotation_kind
+            ~callable_annotation
+            ~sources_to_keep
+            ~sinks_to_keep
+            ~name
+            accumulator
+            annotation)
+      |> Option.some
 
 
 let verify_model_syntax ~path ~source =

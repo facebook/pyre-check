@@ -1,0 +1,41 @@
+@generated
+{
+  "kind": "model",
+  "data": {
+    "callable": "model_query.barfoo",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "Test" } ],
+            "features": [ { "always-via": "string_concat_lhs" } ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "model_query.foo",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "Test" } ],
+            "features": [ { "always-via": "string_concat_lhs" } ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}

@@ -5,7 +5,7 @@
  (preprocess
   (pps ppx_sexp_message))
  (libraries oUnit pyrelib.test pyrelib.ast pyrelib.analysis
-   pyrelib.interprocedural pyrelib.taint))
+   pyrelib.interprocedural pyrelib.taint pyrelib.taintModelQuery))
 
 (tests
  (names accessPathTest callGraphBuilderTest configurationTest domainTest

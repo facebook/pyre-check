@@ -1,0 +1,5 @@
+@generated
+Call dependencies
+model_query.C::foo (method) -> []
+model_query.barfoo (fun) -> []
+model_query.foo (fun) -> []

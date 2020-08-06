@@ -91,13 +91,15 @@ val parse
 
 val verify_model_syntax : path:Path.t -> source:string -> unit
 
-val add_taint_annotation_to_model
-  :  resolution:Analysis.GlobalResolution.t ->
-  annotation_kind:T.annotation_kind ->
-  callable_annotation:Type.t Type.Callable.record option ->
+val compute_sources_and_sinks_to_keep
+  :  configuration:Configuration.t ->
+  rule_filter:int list option ->
+  Sources.Set.t option * Sinks.Set.t option
+
+val create_model_from_annotations
+  :  resolution:Analysis.Resolution.t ->
+  callable:Interprocedural.Callable.real_target ->
   sources_to_keep:Sources.Set.t option ->
   sinks_to_keep:Sinks.Set.t option ->
-  name:string ->
-  TaintResult.call_model * string option ->
-  T.taint_annotation ->
-  TaintResult.call_model * string option
+  (T.annotation_kind * T.taint_annotation) list ->
+  (TaintResult.call_model * Ast.Reference.t Ast.Node.t option) option
