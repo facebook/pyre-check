@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState} from 'react';
 import {
   ApolloClient,
   InMemoryCache,
@@ -6,7 +6,7 @@ import {
   useQuery,
   gql,
 } from '@apollo/client';
-import IssueInstance from './IssueInstance'
+import IssueInstances from './IssueInstances';
 
 const client = new ApolloClient({
   uri: 'http://localhost:5000/graphql',
@@ -14,72 +14,92 @@ const client = new ApolloClient({
 });
 
 const ISSUE_QUERY = gql`
-    query IssueInstances($after: String) {
-      issues(first: 1 after: $after){
-        edges {
-          node {
-            issue_id
-            filename
-            location
-            code
-            callable
-            message
-            min_trace_length_to_sources
-            min_trace_length_to_sinks
-          }
-        }
-        pageInfo {
-          endCursor
+  query IssueInstances($after: String, $codes: [Int], $file_names: [String], $callables: [String]) {
+    issues(first: 2, after: $after, codes: $codes, file_names: $file_names, callables: $callables) {
+      edges {
+        node {
+          issue_id
+          filename
+          location
+          code
+          callable
+          message
+          min_trace_length_to_sources
+          min_trace_length_to_sinks
         }
       }
+      pageInfo {
+        endCursor
+      }
     }
-  `;
+  }
+`;
 
-function IssueInstances() {
-  const {loading, error, data, fetchMore} = useQuery(ISSUE_QUERY, {variables: {after: null}});
+function IssuesPage() {
+  const [codes, setCodes] = useState("");
+  const [file_names, setFileNames] = useState("");
+  const [callables, setCallables] = useState("");
+
+  const {loading, error, data, fetchMore, refetch} = useQuery(ISSUE_QUERY);
 
   if (loading) return <p>Loading...</p>;
   if (error) return <p>Error :(</p>;
 
+  function parse_filter(filter) {
+    if (filter !== '' && filter != null) {
+      return filter.trim().split(';');
+    }
+    return undefined;
+  }
+
+  const handleSubmit = event => {
+    event.preventDefault();
+
+    let variables = {};
+    variables.codes = parse_filter(codes) !== undefined ? parse_filter(codes).map(Number) : undefined;
+    variables.names = parse_filter(file_names);
+    variables.callables = parse_filter(callables);
+
+    refetch(variables);
+  };
+
   return (
     <>
-      <ul>
-        {data.issues.edges.map(({node}) => (
-          <IssueInstance
-            issue_id={node.issue_id}
-            filename={node.filename}
-            location={node.location}
-            code={node.code}
-            callable={node.callable}
-            message={node.message}
-            min_trace_length_to_sources={node.min_trace_length_to_sources}
-            min_trace_length_to_sinks={node.min_trace_length_to_sinks}
-          />))}
-      </ul>
-      <button onClick={() => {
-        const endCursor = data.issues.pageInfo.endCursor;
-        fetchMore({
-          variables: {after: endCursor},
-          updateQuery: (prevResult, {fetchMoreResult}) => {
-            fetchMoreResult.issues.edges = [
-              ...prevResult.issues.edges,
-              ...fetchMoreResult.issues.edges,
-            ];
-            return fetchMoreResult
-          }
-        });
-        }}> More </button>
-      </>
-  )
+      <div>
+        <h2>IssueInstances</h2>
+        <IssueInstances data={data} fetchMore={fetchMore}/>
+        <form onSubmit={handleSubmit}>
+          <label>
+            Codes
+            <input
+              type="text"
+              value={codes}
+              onChange={e => setCodes(e.target.value)}
+            />
+            File Names
+            <input
+              type="text"
+              value={file_names}
+              onChange={e => setFileNames(e.target.value)}
+            />
+            Callables
+            <input
+              type="text"
+              value={callables}
+              onChange={e => setCallables(e.target.value)}
+            />
+          </label>
+          <input type="submit" value="Submit" />
+        </form>
+      </div>
+    </>
+  );
 }
 
 function App() {
   return (
     <ApolloProvider client={client}>
-      <div>
-        <h2>IssueInstances</h2>
-        <IssueInstances />
-      </div>
+      <IssuesPage />
     </ApolloProvider>
   );
 }
