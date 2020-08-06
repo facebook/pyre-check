@@ -5,7 +5,7 @@ sidebar_label: Configuration
 ---
 
 ## Configuration Files
-We recommend that you always run Pyre with a configuration that you commit to your source control. This ensures everyone working on your project is working with the same settings. Pyre has two types of configurations: a global configuration covering the full project, and local configurations that apply to subdirectories of the project. In most cases you will only need a global configuration but local configurations can be useful if you are dealing with a big repository containing heterogenous projects.
+We recommend that you always run Pyre with a configuration that you commit to your version control system. This ensures everyone working on your project is working with the same settings. Pyre has two types of configurations: a global configuration covering the full project, and local configurations that apply to subdirectories of the project. In most cases you will only need a global configuration but local configurations can be useful if you are dealing with a big repository containing heterogenous projects.
 
 ### Global
 You can generate an initial configuration in the root of your project with
