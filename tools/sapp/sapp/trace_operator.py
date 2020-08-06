@@ -37,6 +37,7 @@ class TraceFrameQueryResultType(graphene.ObjectType):
     kind = graphene.String()
     filename = graphene.String()
     trace_length = graphene.Int()
+    file_content = graphene.String()
 
     def resolve_trace_id(self, info):
         return self.id
@@ -54,6 +55,7 @@ class TraceFrameQueryResult(NamedTuple):
     kind: Optional[TraceKind] = None
     filename: Optional[str] = None
     trace_length: Optional[int] = None
+    file_content: Optional[str] = None
 
 
 class TraceTuple(NamedTuple):
@@ -77,8 +79,21 @@ class TraceOperator:
     def initial_trace_frames(
         session: Session, issue_id: int, kind
     ) -> List[TraceFrameQueryResult]:
-        return (
-            session.query(
+        return [
+            TraceFrameQueryResult(
+                id=result.id,
+                caller=result.caller,
+                caller_port=result.caller_port,
+                callee=result.callee,
+                callee_port=result.callee_port,
+                caller_id=result.caller_id,
+                callee_id=result.callee_id,
+                callee_location=result.callee_location,
+                kind=result.kind,
+                filename=result.filename,
+                trace_length=result.trace_length,
+            )
+            for result in session.query(
                 TraceFrame.id,
                 TraceFrame.caller_id,
                 CallerText.contents.label("caller"),
@@ -106,7 +121,7 @@ class TraceOperator:
             .group_by(TraceFrame.id)
             .order_by(TraceFrameLeafAssoc.trace_length, TraceFrame.callee_location)
             .all()
-        )
+        ]
 
     @staticmethod
     def navigate_trace_frames(

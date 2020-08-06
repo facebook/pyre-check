@@ -1,5 +1,6 @@
 # (c) Facebook, Inc. and its affiliates. Confidential and proprietary.
 
+import os
 from typing import Dict, List, Optional, Set, Tuple
 
 import graphene
@@ -92,7 +93,7 @@ class Query(graphene.ObjectType):
         return builder.get()
 
     def resolve_trace(
-        self, info: ResolveInfo, issue_id: int
+        self, info: ResolveInfo, issue_id: int, **args
     ) -> List[TraceFrameQueryResult]:
         session = info.context.get("session")
 
@@ -158,7 +159,11 @@ class Query(graphene.ObjectType):
             + [frame_tuple[0] for frame_tuple in precondition_navigation]
         )
 
-        return trace_frames
+        return [
+            frame._replace(file_content=Query.file_content(frame.filename))
+            for frame in trace_frames
+            if frame.filename
+        ]
 
     @staticmethod
     def _get_leaves_issue_instance(
@@ -215,6 +220,16 @@ class Query(graphene.ObjectType):
             .filter(Run.status == RunStatus.FINISHED)
             .scalar()
         )
+
+    @staticmethod
+    def file_content(filename: str) -> str:
+        repository_directory = os.getcwd()
+        file_path = os.path.join(repository_directory, filename)
+        try:
+            with open(file_path, "r") as file:
+                return "".join(file.readlines())
+        except FileNotFoundError:
+            return "File not found"
 
 
 schema = graphene.Schema(query=Query, auto_camelcase=False)
