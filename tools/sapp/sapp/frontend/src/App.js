@@ -1,20 +1,14 @@
 import React, {useState} from 'react';
 import {
-  ApolloClient,
-  InMemoryCache,
-  ApolloProvider,
   useQuery,
   gql,
 } from '@apollo/client';
+
 import IssueInstances from './IssueInstances';
 
-const client = new ApolloClient({
-  uri: 'http://localhost:5000/graphql',
-  cache: new InMemoryCache(),
-});
 
-const ISSUE_QUERY = gql`
-  query IssueInstances($after: String, $codes: [Int], $file_names: [String], $callables: [String]) {
+const IssueQuery = gql`
+  query Issue($after: String, $codes: [Int], $file_names: [String], $callables: [String]) {
     issues(first: 2, after: $after, codes: $codes, file_names: $file_names, callables: $callables) {
       edges {
         node {
@@ -35,15 +29,15 @@ const ISSUE_QUERY = gql`
   }
 `;
 
-function IssuesPage() {
+const IssuesPage = () => {
   const [codes, setCodes] = useState("");
   const [file_names, setFileNames] = useState("");
   const [callables, setCallables] = useState("");
 
-  const {loading, error, data, fetchMore, refetch} = useQuery(ISSUE_QUERY);
+  const {loading, error, data, fetchMore, refetch} = useQuery(IssueQuery);
 
   if (loading) return <p>Loading...</p>;
-  if (error) return <p>Error :(</p>;
+  if (error) return <p>Error:(</p>;
 
   function parse_filter(filter) {
     if (filter !== '' && filter != null) {
@@ -98,9 +92,7 @@ function IssuesPage() {
 
 function App() {
   return (
-    <ApolloProvider client={client}>
       <IssuesPage />
-    </ApolloProvider>
   );
 }
 
