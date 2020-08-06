@@ -93,11 +93,11 @@ class Query(graphene.ObjectType):
         return builder.get()
 
     def resolve_trace(
-        self, info: ResolveInfo, issue_id: int, **args
+        self, info: ResolveInfo, issue_id: DBID, **args
     ) -> List[TraceFrameQueryResult]:
         session = info.context.get("session")
 
-        run_id = Query.latest_run_id(session)
+        run_id = DBID(Query.latest_run_id(session))
 
         issue = (
             IssueQueryBuilder(run_id)
@@ -168,7 +168,7 @@ class Query(graphene.ObjectType):
     @staticmethod
     def _get_leaves_issue_instance(
         session: Session,
-        issue_instance_id: int,
+        issue_instance_id: DBID,
         kind: SharedTextKind,
         leaf_kinds: Tuple[Dict[int, str], Dict[int, str], Dict[int, str]],
     ) -> Set[str]:
@@ -214,11 +214,13 @@ class Query(graphene.ObjectType):
         )
 
     @staticmethod
-    def latest_run_id(session: Session) -> int:
-        return (
-            session.query(func.max(Run.id))
-            .filter(Run.status == RunStatus.FINISHED)
-            .scalar()
+    def latest_run_id(session: Session) -> DBID:
+        return DBID(
+            (
+                session.query(func.max(Run.id))
+                .filter(Run.status == RunStatus.FINISHED)
+                .scalar()
+            )
         )
 
     @staticmethod

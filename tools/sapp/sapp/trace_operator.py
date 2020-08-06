@@ -127,7 +127,7 @@ class TraceOperator:
     def navigate_trace_frames(
         leaf_dicts: Tuple[Dict[int, str], Dict[int, str], Dict[int, str]],
         session: Session,
-        current_run_id: int,
+        current_run_id: DBID,
         sources: Set[str],
         sinks: Set[str],
         initial_trace_frames: List[TraceFrameQueryResult],
@@ -177,7 +177,7 @@ class TraceOperator:
     def next_forward_trace_frames(
         leaf_dicts: Tuple[Dict[int, str], Dict[int, str], Dict[int, str]],
         session: Session,
-        current_run_id: int,
+        current_run_id: DBID,
         sources: Set[str],
         sinks: Set[str],
         trace_frame: TraceFrameQueryResult,
@@ -198,7 +198,7 @@ class TraceOperator:
     def next_trace_frames(
         leaf_dicts: Tuple[Dict[int, str], Dict[int, str], Dict[int, str]],
         session: Session,
-        current_run_id: int,
+        current_run_id: DBID,
         sources: Set[str],
         sinks: Set[str],
         trace_frame: TraceFrameQueryResult,

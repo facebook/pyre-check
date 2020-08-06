@@ -7,6 +7,7 @@ from sqlalchemy.orm.query import Query
 from sqlalchemy.sql.expression import or_
 
 from .models import (
+    DBID,
     Issue,
     IssueInstance,
     IssueInstanceSharedTextAssoc,
@@ -34,7 +35,7 @@ class Filter(Enum):
 
 
 class IssueQueryBuilder:
-    def __init__(self, current_run_id: int):
+    def __init__(self, current_run_id: Union[DBID, int]):
         self._session = None
         self.current_run_id = current_run_id
         self.issue_filters: Dict[
