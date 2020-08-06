@@ -47,13 +47,13 @@ $ pyre query "attributes(a.C)"
 
 The command `callees` returns a list of all calls from a given function, including locations if using `callees_from_location`.
 
-```
+```python
 # a.py
 def foo() -> None: pass
 def bar() -> None:
     foo()
 ```
-```
+```bash
 $ pyre query "callees(a.bar)"
 {
     "response": {
@@ -66,7 +66,7 @@ $ pyre query "callees(a.bar)"
     }
 }
 ```
-```
+```bash
 $ pyre query "callees_with_location(a.bar)"
 {
     "response": {
@@ -97,7 +97,7 @@ $ pyre query "callees_with_location(a.bar)"
 
 The command `defines` returns all function and method definitions for a given module or class.
 
-```
+```python
 # a.py
 class C:
     a: int = 2
@@ -106,7 +106,7 @@ class C:
 
 def bar() -> None: pass
 ```
-```
+```bash
 $ pyre query "defines(a.C)"
 {
     "response": [
@@ -122,7 +122,8 @@ $ pyre query "defines(a.C)"
         }
     ]
 }
-
+```
+```bash
 $ pyre query "defines(a)"
 {
     "response": [
@@ -252,8 +253,8 @@ $ pyre query "normalize_type(a.B)"
 
 The command `path_of_module` returns the full absolute path for a given module.
 
-```
-# pyre query "path_of_module(module_name)"
+```bash
+$ pyre query "path_of_module(module_name)"
 {
     "response": {
         "path": "/Users/user/my_project/module_name.py"
@@ -265,7 +266,7 @@ The command `path_of_module` returns the full absolute path for a given module.
 
 The command `qualified_names` returns a map from each given path to a list of all qualified names contained in that path. It can be called on multiple files at once with `qualified_names('path1', 'path2', ...)`.
 
-```
+```python
 # a.py
 class A: pass
 
@@ -274,7 +275,7 @@ from .a import A as RenamedA
 
 a = RenamedA
 ```
-```
+```bash
 $ pyre query "qualified_names(path='b.py')"
 {
     "response": [
@@ -343,7 +344,7 @@ $ pyre query "qualified_names(path='b.py')"
 
 The command `save_server_state` saves the server's serialized state into the given `path`, which can the be used to start up the identical server without re-analyzing all project files.
 
-```
+```bash
 $ pyre query "save_server_state('my_saved_state')"
 {
     "response": {
@@ -539,7 +540,7 @@ We determine locations for expressions using the following guidelines:
 ### Batching Queries
 The `batch` command can be used to run several queries at once and return a map of responses. The list of queries to batch may include any combination of other valid queries except for `batch` itself.
 
-```
+```bash
 $ pyre query "batch(less_or_equal(int, str), join(int, str))"
 {
     "response": [
