@@ -51,6 +51,16 @@ class QueryBuilderTest(TestCase):
         )
         self.fakes.save_all(self.db)
 
+        issue4 = self.fakes.issue(code=6019)
+        self.fakes.instance(
+            issue_id=issue4.id,
+            callable="module.function3",
+            filename="module/__init__.py",
+            min_trace_length_to_sources=0,
+            min_trace_length_to_sinks=0,
+        )
+        self.fakes.save_all(self.db)
+
         with self.db.make_session() as session:
             session.add(run)
             session.commit()
@@ -279,6 +289,28 @@ class QueryBuilderTest(TestCase):
             self.assertIn(1, issue_ids)
             self.assertNotIn(2, issue_ids)
             self.assertNotIn(3, issue_ids)
+
+            builder = IssueQueryBuilder(latest_run_id)
+            builder = builder.with_session(session)
+            issue_ids = {
+                int(issue.id)
+                for issue in builder.where_trace_length_to_sources(0, 0).get()
+            }
+            self.assertNotIn(1, issue_ids)
+            self.assertNotIn(2, issue_ids)
+            self.assertNotIn(3, issue_ids)
+            self.assertIn(4, issue_ids)
+
+            builder = IssueQueryBuilder(latest_run_id)
+            builder = builder.with_session(session)
+            issue_ids = {
+                int(issue.id)
+                for issue in builder.where_trace_length_to_sinks(0, 0).get()
+            }
+            self.assertNotIn(1, issue_ids)
+            self.assertNotIn(2, issue_ids)
+            self.assertNotIn(3, issue_ids)
+            self.assertIn(4, issue_ids)
 
     def testWhereAnyFeatures(self) -> None:
         self.fakes.instance()

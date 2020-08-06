@@ -71,9 +71,9 @@ class IssueQueryBuilder:
                     filter_type == Filter.trace_length_to_sources
                     or filter_type == Filter.trace_length_to_sinks
                 ):
-                    if filter_condition[0]:
+                    if filter_condition[0] is not None:
                         query = query.filter(column >= filter_condition[0])
-                    if filter_condition[1]:
+                    if filter_condition[1] is not None:
                         query = query.filter(column <= filter_condition[1])
                 else:
                     if not filter_condition:
