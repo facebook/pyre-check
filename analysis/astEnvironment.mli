@@ -12,6 +12,7 @@ type t
 module ParserError : sig
   type t = {
     source_path: SourcePath.t;
+    is_suppressed: bool;
     message: string;
   }
   [@@deriving sexp, compare, hash]

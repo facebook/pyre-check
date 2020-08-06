@@ -16,6 +16,40 @@ let test_basic context =
     "def good_syntax() -> int: ..."
     ~update_environment_with:[{ Test.handle = "foo.py"; source = "def bad_syntax(" }]
     [];
+  assert_type_errors {|
+      # pyre-ignore-all-errors
+      def bad_syntax(
+    |} [];
+  assert_type_errors {|
+      # pyre-placeholder-stub
+      def bad_syntax(
+    |} [];
+  assert_type_errors
+    {|
+      # pyre-ignore-all-errors[10]
+      def bad_syntax(
+    |}
+    ["Parsing failure [404]: Could not parse file at test.py:4:0-4:0"];
+  assert_type_errors {|
+      # pyre-ignore-all-errors[404]
+      def bad_syntax(
+    |} [];
+  assert_type_errors {|
+      # pyre-ignore-all-errors[10, 404]
+      def bad_syntax(
+    |} [];
+  assert_type_errors
+    {|
+      # pyre-unsafe
+      def bad_syntax(
+    |}
+    ["Parsing failure [404]: Could not parse file at test.py:4:0-4:0"];
+  assert_type_errors
+    {|
+      # pyre-strict
+      def bad_syntax(
+    |}
+    ["Parsing failure [404]: Could not parse file at test.py:4:0-4:0"];
   ()
 
 

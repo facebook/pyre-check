@@ -153,6 +153,7 @@ let run ~scheduler ~configuration ~environment sources =
               { AstEnvironment.ParserError.source_path = { SourcePath.is_external; _ }; _ } )
         when is_external ->
           []
+      | Some (Result.Error { AstEnvironment.ParserError.is_suppressed; _ }) when is_suppressed -> []
       | Some (Result.Error { AstEnvironment.ParserError.message; _ }) ->
           let location =
             {
