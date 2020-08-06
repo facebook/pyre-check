@@ -1,10 +1,14 @@
 import React from 'react';
 import { withRouter } from "react-router";
+import {Controlled as CodeMirror} from 'react-codemirror2';
 
 import {
   useQuery,
   gql,
 } from '@apollo/client';
+
+require('codemirror/lib/codemirror.css');
+require('codemirror/mode/python/python.js');
 
 const TraceQuery = gql`
   query Trace($issue_id: ID) {
@@ -15,6 +19,7 @@ const TraceQuery = gql`
           callee_port
           filename
           callee_location
+          file_content
         }
       }
     }
@@ -37,11 +42,21 @@ function Trace(props) {
             <ul>
                 {data.trace.edges.map(({node}, index) => (
                     <>
-                    <h4>{index + 1}</h4>
-                    <p>Callable: {node.callee}</p>
-                    <p>Port: {node.callee}</p>
-                    <p>Location: {node.filename}:{node.callee_location}</p>
-                    <br/>
+                      <h4>{index + 1}</h4>
+                      <p>Callable: {node.callee}</p>
+                      <p>Port: {node.callee}</p>
+                      <p>Location: {node.filename}:{node.callee_location}</p>
+                      <br/>
+                      <CodeMirror
+                        value={node.file_content}
+                        onBeforeChange={(editor, data, value) => {
+                        }}
+                        options={{
+                          lineNumbers: true
+                        }}
+                        onChange={(editor, data, value) => {
+                        }}
+                      />
                     </>
             ))}
             </ul>
