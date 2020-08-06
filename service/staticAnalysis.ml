@@ -216,6 +216,7 @@ let analyze
       Analysis.initialize
         analyses
         ~configuration:configuration_json
+        ~scheduler
         ~environment
         ~functions:callables
         ~stubs

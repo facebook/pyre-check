@@ -11,6 +11,7 @@ val apply_query_rule
 
 val apply_all_rules
   :  resolution:Analysis.Resolution.t ->
+  scheduler:Scheduler.t ->
   configuration:Taint.TaintConfiguration.t ->
   rule_filter:int list option ->
   rules:Taint.Model.ModelQuery.rule list ->

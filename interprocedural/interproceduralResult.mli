@@ -112,6 +112,7 @@ module type ANALYZER = sig
   (* Called once on master before analysis of individual callables. *)
   val init
     :  configuration:Yojson.Safe.json ->
+    scheduler:Scheduler.t ->
     environment:Analysis.TypeEnvironment.ReadOnly.t ->
     functions:Callable.t list ->
     stubs:Callable.t list ->

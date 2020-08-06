@@ -459,6 +459,7 @@ let initialize
         TaintModelQuery.ModelQuery.apply_all_rules
           ~resolution
           ~configuration:taint_configuration
+          ~scheduler:(Test.mock_scheduler ())
           ~rule_filter:None
           ~rules
           ~models

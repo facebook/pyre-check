@@ -12,7 +12,7 @@ open Taint
 include Taint.Result.Register (struct
   include Taint.Result
 
-  let init ~configuration ~environment ~functions ~stubs =
+  let init ~configuration ~scheduler ~environment ~functions ~stubs =
     let global_resolution = Analysis.TypeEnvironment.ReadOnly.global_resolution environment in
     let resolution =
       Analysis.TypeCheck.resolution
@@ -97,6 +97,7 @@ include Taint.Result.Register (struct
               in
               TaintModelQuery.ModelQuery.apply_all_rules
                 ~resolution
+                ~scheduler
                 ~configuration
                 ~rule_filter
                 ~rules:queries

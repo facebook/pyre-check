@@ -52,6 +52,7 @@ type initialize_result = {
 val initialize
   :  Kind.abstract list ->
   configuration:Yojson.Safe.json ->
+  scheduler:Scheduler.t ->
   environment:Analysis.TypeEnvironment.ReadOnly.t ->
   functions:Callable.t list ->
   stubs:Callable.t list ->
