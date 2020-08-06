@@ -1,5 +1,6 @@
 from typing import Dict, Iterable, List, NamedTuple, Optional, Set, Tuple, Union
 
+import graphene
 from sqlalchemy.orm import Session, aliased
 
 from .models import (
@@ -19,6 +20,26 @@ CallableText = aliased(SharedText)
 CallerText = aliased(SharedText)
 CalleeText = aliased(SharedText)
 MessageText = aliased(SharedText)
+
+
+class TraceFrameQueryResultType(graphene.ObjectType):
+    class Meta:
+        interfaces = (graphene.relay.Node,)
+
+    trace_id = graphene.ID()
+    caller = graphene.String()
+    caller_port = graphene.String()
+    callee = graphene.String()
+    callee_port = graphene.String()
+    caller_id = graphene.ID()
+    callee_id = graphene.ID()
+    callee_location = graphene.ID()
+    kind = graphene.String()
+    filename = graphene.String()
+    trace_length = graphene.Int()
+
+    def resolve_trace_id(self, info):
+        return self.id
 
 
 class TraceFrameQueryResult(NamedTuple):

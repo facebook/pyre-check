@@ -53,7 +53,7 @@ class IssueQueryBuilder:
         return self
 
     def get(self) -> List:
-        query = self._get_session_query(self._session)
+        query = self.get_session_query(self._session)
         for filter_type, filter_conditions in self.issue_filters.items():
             if filter_type == Filter.codes:
                 column = Issue.code
@@ -179,7 +179,7 @@ class IssueQueryBuilder:
             for issue in issues
         ]
 
-    def _get_session_query(self, session: Session) -> Query:
+    def get_session_query(self, session: Session) -> Query:
         return (
             session.query(
                 IssueInstance.id,
