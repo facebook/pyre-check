@@ -88,14 +88,22 @@ let should_type_check
   && not (List.exists ignore_all_errors ~f:(directory_contains ~path))
 
 
-let create ~configuration:({ Configuration.Analysis.excludes; _ } as configuration) path =
+let create ~configuration:({ Configuration.Analysis.excludes; extensions; _ } as configuration) path
+  =
+  let has_valid_extensions ~extensions path =
+    let valid_suffixes = ".py" :: ".pyi" :: extensions in
+    List.exists valid_suffixes ~f:(fun suffix -> String.is_suffix ~suffix path)
+  in
   let absolute_path = Path.absolute path in
-  match List.exists excludes ~f:(fun regexp -> Str.string_match regexp absolute_path 0) with
-  | true -> None
-  | false ->
-      let search_paths = Configuration.Analysis.search_path configuration in
-      let is_external = not (should_type_check ~configuration path) in
-      create_from_search_path ~is_external ~search_paths path
+  match has_valid_extensions ~extensions absolute_path with
+  | false -> None
+  | true -> (
+      match List.exists excludes ~f:(fun regexp -> Str.string_match regexp absolute_path 0) with
+      | true -> None
+      | false ->
+          let search_paths = Configuration.Analysis.search_path configuration in
+          let is_external = not (should_type_check ~configuration path) in
+          create_from_search_path ~is_external ~search_paths path )
 
 
 let create_for_testing ~relative ~is_external ~priority =

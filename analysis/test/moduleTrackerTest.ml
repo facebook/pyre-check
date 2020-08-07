@@ -247,6 +247,8 @@ let test_creation context =
       ~is_init:false;
     assert_create_fail external_root "thereisnospoon.py";
     assert_create_fail external_root "foo/thereisnospoon.py";
+    assert_create_fail local_root "untracked_extension.txt";
+    assert_create_fail external_root "untracked_extension.txt";
     let extension_first = create_exn local_root "dir/a.first" in
     let extension_second = create_exn local_root "dir/a.second" in
     let extension_third = create_exn local_root "dir/a.third" in
@@ -1145,6 +1147,18 @@ let test_update context =
       { handle = "a.pyi"; operation = FileOperation.Add };
     ]
     ~expected:[Event.create_new_explicit "a.pyi"];
+  assert_incremental
+    [
+      { handle = "a.py"; operation = FileOperation.Add };
+      { handle = "b.thrift"; operation = FileOperation.Add };
+    ]
+    ~expected:[Event.create_new_explicit "a.py"];
+  assert_incremental
+    [
+      { handle = "a.py"; operation = FileOperation.LeftAlone };
+      { handle = "a.thrift"; operation = FileOperation.Add };
+    ]
+    ~expected:[];
 
   (* Adding new shadowing file for an existing module *)
   assert_incremental
@@ -1210,6 +1224,18 @@ let test_update context =
         { handle = "a/__init__.pyi"; operation = FileOperation.Remove };
       ]
     ~expected:[Event.Delete "a"];
+  assert_incremental
+    [
+      { handle = "a.py"; operation = FileOperation.Remove };
+      { handle = "a.thrift"; operation = FileOperation.Remove };
+    ]
+    ~expected:[Event.Delete "a"];
+  assert_incremental
+    [
+      { handle = "a.py"; operation = FileOperation.LeftAlone };
+      { handle = "b.thrift"; operation = FileOperation.Remove };
+    ]
+    ~expected:[];
 
   (* Removing shadowing file for a module *)
   assert_incremental
@@ -1275,6 +1301,13 @@ let test_update context =
       { handle = "a.pyi"; operation = FileOperation.LeftAlone };
     ]
     ~expected:[];
+  assert_incremental [{ handle = "a.thrift"; operation = FileOperation.Update }] ~expected:[];
+  assert_incremental
+    [
+      { handle = "a.py"; operation = FileOperation.Update };
+      { handle = "b.thrift"; operation = FileOperation.Update };
+    ]
+    ~expected:[Event.create_new_explicit "a.py"];
 
   (* Removing and adding the same module *)
   assert_incremental
