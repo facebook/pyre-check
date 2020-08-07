@@ -4,8 +4,6 @@ Pyre is a performant type checker for Python compliant with [PEP 484](https://ww
 
 Pyre ships with **Pysa**, a security focused static analysis tool we've built on top of Pyre that reasons about data flows in Python applications. Please refer to our [documentation](https://pyre-check.org/docs/pysa-basics.html) to get started with our security analysis.
 
-*Read this in other languages: [Español](README.es.md)*
-
 ## Requirements
 To get started, you need [Python 3.6 or later](https://www.python.org/getit/) and [watchman](https://facebook.github.io/watchman/) working on your system. On *MacOS* you can get everything with [homebrew](https://brew.sh/):
 ```bash
