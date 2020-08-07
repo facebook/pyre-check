@@ -26,6 +26,10 @@
   width: 100%;
 }
 
+.navbar__link--active {
+  color: var(--ifm-navbar-link-color);
+}
+
 .navbar__logo {
   padding-bottom: 0.75rem;
 }
