@@ -301,8 +301,6 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
         ]
         sorted_directories = sorted(
             (directory.split("/") for directory in configuration_directories),
-            # pyre-fixme[6]: Expected `(_T) -> _SupportsLessThan` for 2nd param but
-            #  got `(directory: Any) -> Tuple[int, typing.Any]`.
             key=lambda directory: (len(directory), directory),
         )
         if len(configuration_directories) == 0:

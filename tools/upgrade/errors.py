@@ -64,8 +64,6 @@ class Errors:
         self.errors: List[Dict[str, Any]] = errors
         self.error_iterator: Iterator[
             Tuple[str, Iterator[Dict[str, Any]]]
-            # pyre-fixme[6]: Expected `(_T) -> _SupportsLessThan` for 2nd param but got
-            #  `(error: Dict[str, typing.Any]) -> str`.
         ] = itertools.groupby(sorted(errors, key=error_path), error_path)
         self.length: int = len(errors)
 

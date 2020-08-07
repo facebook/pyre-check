@@ -66,11 +66,7 @@ class FilesystemTest(unittest.TestCase):
         create_symlink("mypy/my.py", "mypy/another.pyi")
         create_symlink("scipyi/sci.pyi", "scipyi/another.py")
         actual_paths = sorted(
-            # pyre-fixme[6]: Expected `Iterable[Variable[_LT (bound to
-            #  _SupportsLessThan)]]` for 1st param but got `Generator[str, None,
-            #  None]`.
-            os.path.relpath(path, root)
-            for path in find_python_paths(root)
+            os.path.relpath(path, root) for path in find_python_paths(root)
         )
         self.assertEqual(
             actual_paths,

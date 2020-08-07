@@ -206,8 +206,6 @@ class TableStatistics:
                 return float(number[:-1]) * (10 ** 3)
             return float(number)
 
-        # pyre-fixme[6]: Expected `(Tuple[str, str]) -> _SupportsLessThan` for 1st
-        #  param but got `(x: Any) -> float`.
         items.sort(key=lambda x: parse(x[1]), reverse=True)
 
     def add(self, line: str) -> None:

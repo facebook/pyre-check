@@ -35,6 +35,7 @@ class Repository:
         pass
 
     def format(self) -> bool:
+        # pyre-fixme[7]: Expected `bool` but got implicit return value of `None`.
         pass
 
     def force_format(self, paths: List[str]) -> None:

@@ -19,6 +19,7 @@ class TestModel(Model):
         return self.index == other.index
 
     def __hash__(self) -> int:
+        # pyre-fixme[7]: Expected `int` but got implicit return value of `None`.
         pass
 
 

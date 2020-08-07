@@ -81,10 +81,6 @@ class ModuleLoaderTest(unittest.TestCase):
             pyi_file.touch()
 
             self.assertListEqual(
-                # pyre-fixme[6]: Expected `Iterable[Variable[_LT (bound to
-                #  _SupportsLessThan)]]` for 1st param but got `List[str]`.
                 sorted([str(no_nest), str(one_nest), str(many_nest), str(pyi_file)]),
-                # pyre-fixme[6]: Expected `Iterable[Variable[_LT (bound to
-                #  _SupportsLessThan)]]` for 1st param but got `Iterator[str]`.
                 sorted(module_loader.find_all_paths(directory_name)),
             )

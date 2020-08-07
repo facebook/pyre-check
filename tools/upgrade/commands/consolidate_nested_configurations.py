@@ -110,8 +110,6 @@ class ConsolidateNestedConfigurations(ErrorSuppressingCommand):
         subdirectory = Path(subdirectory) if subdirectory else Path.cwd()
 
         # Find configurations
-        # pyre-fixme[6]: Expected `Iterable[Variable[_LT (bound to
-        #  _SupportsLessThan)]]` for 1st param but got `List[str]`.
         configurations = sorted(find_files(subdirectory, ".pyre_configuration.local"))
         if not configurations:
             LOG.warning(

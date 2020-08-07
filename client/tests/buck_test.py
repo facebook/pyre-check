@@ -139,8 +139,6 @@ class BuckTest(unittest.TestCase):
     def test_map_normalized_targets_to_original(self) -> None:
         self.assertEqual(
             sorted(
-                # pyre-fixme[6]: Expected `Iterable[Variable[_LT (bound to
-                #  _SupportsLessThan)]]` for 1st param but got `List[str]`.
                 buck._map_normalized_targets_to_original(
                     ["//t/target1", "//t/target2", "//s:exact_target", "//unknown"],
                     ["//t/...", "//s:exact_target"],

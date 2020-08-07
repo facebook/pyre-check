@@ -123,8 +123,6 @@ class Repository:
         assert_readable_directory(repository_path)
         self._base_repository_path = os.path.realpath(repository_path)
         commits_list = os.listdir(self._base_repository_path)
-        # pyre-fixme[6]: Expected `List[Variable[_LT (bound to _SupportsLessThan)]]`
-        #  for 1st param but got `List[str]`.
         list.sort(commits_list)
         for commit in commits_list:
             assert_readable_directory(os.path.join(self._base_repository_path, commit))
