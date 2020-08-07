@@ -7,20 +7,18 @@ Pyre ships with **Pysa**, a security focused static analysis tool we've built on
 *Read this in other languages: [Español](README.es.md)*
 
 ## Requirements
-You need a working [Python 3.6 or later](https://www.python.org/getit/) environment to run Pyre. We highly recommend that you install [watchman](https://facebook.github.io/watchman/) to get the most out of Pyre but it's not strictly necessary.
-
-On *MacOS* you can get everything with [homebrew](https://brew.sh/):
+To get started, you need [Python 3.6 or later](https://www.python.org/getit/) and [watchman](https://facebook.github.io/watchman/) working on your system. On *MacOS* you can get everything with [homebrew](https://brew.sh/):
 ```bash
 $ brew install python3 watchman
 ```
-In *Ubuntu*, *Mint* and *Debian* use `apt-get`:
+On *Ubuntu*, *Mint*, or *Debian*; use `apt-get`:
 ```bash
 $ sudo apt-get install python3 python3-pip watchman
 ```
 We tested Pyre on *Ubuntu 16.04 LTS*, *CentOS 7*, as well as *OSX 10.11* and later.
 
-## Gertting Started
-We're starting by creating an empty project directory, setting up a virtual environment.
+## Setting up a Project
+We start by creating an empty project directory and setting up a virtual environment:
 
 ```bash
 $ mkdir my_project && cd my_project
@@ -29,12 +27,13 @@ $ source ~/.venvs/venv/bin/activate
 (venv) $ pip install pyre-check
 ```
 
-We now need to tell Pyre what to check by running
+Next, we teach Pyre about our new project:
 ```bash
 (venv) $ pyre init
 ```
-This command will set up a configuration for Pyre (`.pyre_configuration`) as well as watchman (`.watchmanconfig`) in your project's directory.
+This command will set up a configuration for Pyre (`.pyre_configuration`) as well as watchman (`.watchmanconfig`) in your project's directory. Accept the defaults for now – you can change them later if necessary.
 
+## Running Pyre
 We are now ready to run Pyre:
 ```bash
 (venv) $ echo "i: int = 'string'" > test.py
@@ -42,7 +41,7 @@ We are now ready to run Pyre:
  ƛ Found 1 type error!
 test.py:1:0 Incompatible variable type [9]: i is declared to have type `int` but is used as type `str`.
 ```
-Note that the first invocation initializes Pyre's server that handles incremental updates and will be slower than subsequent invocations – you can easily see this by invoking `pyre` again and observe the same result instantaneously.
+This first invocation will start a daemon listening for filesystem changes – type checking your project incrementally as you make edits to the code. You will notice that subsequent invocations of `pyre` will be faster than the first one.
 
 For more detailed documentation, see https://pyre-check.org.
 
