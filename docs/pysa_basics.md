@@ -4,11 +4,10 @@ title: Overview
 sidebar_label: Overview
 ---
 
-Pyre has applications beyond type checking python code; it can also run static
-analysis to identify potential security issues. These security issues are
-identified with what is called a **Taint Analysis**. The Python Static Analyzer
-feature of Pyre is usually abbreviated to Pysa (pronounced like the Leaning tower
-of Pisa).
+Pyre has applications beyond type checking python code: it can also run static
+analysis, more specifically called **Taint Analysis**, to identify potential security issues.
+The Python Static Analyzer feature of Pyre is usually abbreviated to Pysa
+(pronounced like the Leaning Tower of Pisa).
 
 ## Taint Analysis
 
@@ -17,7 +16,7 @@ flows of data from where they originate (sources) to where they terminate in a
 dangerous location (sinks). For example, we might use it to track flows where
 user-controllable request data flows into an `eval` call, leading to a remote
 code execution vulnerability. This analysis is made possible by user-created
-stubs which provide annotations on source code, as well as Rules that define
+stubs which provide annotations on source code, as well as rules that define
 which sources are dangerous for which sinks. Pysa comes with many pre-written
 stubs and rules for builtin and common python libraries.
 
@@ -35,17 +34,17 @@ f = f"Value = {s}" # 'f' is marked with the same taint 'x' had
 Pysa will only analyze the code in the repo that it runs on, as well as code in
 directories listed in the `search_path` of your
 [`.pyre_configuration`](configuration.md) file. It does not see the source of
-your dependencies. **Just because** ***you*** **can see code in your editor, it
+your dependencies. **Just because** ***you*** **can see code in your editor
 does not mean Pysa has access to that code during analysis.** Because of this
-limitation, Pysa makes some simplifying assumptions during static analysis. If
-taint flows into a function Pysa doesn't have the source for, it will assume
-that the return type of that function has the same taint. This helps prevents
-false negatives, but can also lead to false positives.
+limitation, Pysa makes some simplifying assumptions. If taint flows into a
+function Pysa doesn't have the source for, it will assume that the return type
+of that function has the same taint. This helps prevents false negatives, but can
+also lead to false positives.
 
 When an object is tainted, that means that all attributes of that object are
-also tainted. Note that this can lead to false positives, such as taint flows
-that include `some_obj.__class__`. This means that Pysa will detect all the
-following flows:
+also tainted. Note that this is another source of potential false positives,
+such as taint flows that include `some_obj.__class__`. This means that Pysa
+will detect all of the following flows:
 
 ```python
 x = some_source() # 'x' is marked as tainted
@@ -59,10 +58,10 @@ some_sink(x.__class__) # This is (unfortunately) also detected
 
 Pysa uses two types of files for configuration: a single `taint.config` file,
 and an unlimited number of files with a `.pysa` extension. The `taint.config`
-file is a JSON document which stores definitions for Sources, Sinks, Features,
-and Rules (discussed below). The `.pysa` files are stub files (elaborated on
-below) which annotate your code with the Sources, Sinks, and Features defined in
-your `taint.config` file. Examples of these files can be found in the [pyre
+file is a JSON document which stores definitions for *sources*, *sinks*, *features*,
+and *rules* (discussed below). The `.pysa` files are stub files (also discussed
+below) which annotate your code with the *sources*, *sinks*, and *features* defined in
+your `taint.config` file. Examples of these files can be found in the [Pyre
 repository](https://github.com/facebook/pyre-check/tree/master/stubs/taint).
 
 These files live in the directory configured by `taint_models_path` in your
@@ -84,8 +83,8 @@ sources: [
 ]
 ```
 
-Stubs that indicate what is a source are then defined in `.pysa` files. Sources
-are declared in the same places that [types are declared in Python
+Stubs that indicate what is a source are then defined in `.pysa`
+files. Sources are declared with the same syntax as [type annotations in Python
 3](https://docs.python.org/3/library/typing.html). Function return types,
 class/model attributes, and even entire classes can be declared as sources by
 adding `TaintSource[SOURCE_NAME]` wherever you would add a python type:
@@ -137,8 +136,8 @@ sinks: [
 ```
 
 Stubs that indicate what is a sink are then defined in `.pysa` files. Sinks can
-be added to the same files as sources. Sinks are declared in the same places
-that [types are declared in Python
+be added to the same files as sources. Like sources, sinks are declared with
+the same syntax as [type annotations in Python
 3](https://docs.python.org/3/library/typing.html). Function parameters and even
 whole classes can be declared as sinks by adding `TaintSink[SINK_NAME]` where
 you would add a python type:
@@ -212,7 +211,7 @@ which helps prevent cross site scripting (XSS) by escaping HTML characters. The
 annotation is also useful, however, in cases where a function is not intended to
 sanitize inputs, but is known to always return safe data despite touching
 tainted data. One such example could be `hmac.digest(key, msg, digest)`, which
-returns sufficiently unpredictable data that the data should no longer be
+returns sufficiently unpredictable data that the output should no longer be
 considered attacker-controlled after passing through.
 
 Class attributes can also be marked as sanitizers with the `Sanitize`
@@ -230,7 +229,7 @@ This means you need to ensure you aren't potentially affecting other flows when
 you add a sanitizer for a flow you care about. For this reason, the above
 sanitizer examples might not be a good idea to use. If you are trying to track
 flows where SQL injection occurs, the `escape` sanitizer would prevent you
-from seeing any flows where data going into your SQL query happened to be html
+from seeing any flows where data going into your SQL query happened to be HTML
 escaped.
 
 ## Taint Propagation
@@ -259,7 +258,7 @@ def dict.get(self: TaintInTaintOut[LocalReturn], key, default = ...): ...
 
 ## Features
 
-Features annotations are also placed in your `taint.config` and `.pysa` files.
+Feature annotations are also placed in your `taint.config` and `.pysa` files.
 This is a larger topic and will be covered in detail on [its own page](pysa_features.md).
 
 ## Stub files
@@ -281,7 +280,7 @@ There are other stub files with the `.pyi` extension which can also exist in
 your codebase. These `.pyi` stubs are similar and use [the same
 syntax](https://www.python.org/dev/peps/pep-0484/#stub-files) as the `.pysa`
 stubs, but are not the stubs that are referred to in this document (though they
-are relevant to static analysis). See the "Stubs" section of the [Gradual Typing
+are relevant to static analysis). See the [Gradual Typing
 page](gradual_typing.md) for more info.
 
 ### Requirements and Features
@@ -301,7 +300,7 @@ you would need to use the module in which it was defined:
 django.http.request.HttpRequest.GET: TaintSource[UserControlled] = ...
 ```
 
-#### Exact Signatures
+#### Exact signatures
 
 The signatures of any stub functions need to exactly match the the signature of
 the function definition. This means that all parameters, including optional
@@ -327,7 +326,7 @@ def urllib.request.urlopen(url: TaintSink[RequestSend], data = ...,
 
 Pysa will complain if the signature of your stub doesn't exactly match the
 implementation. When working with functions defined outside your project, where
-you don't directly see the source. You can use [`pyre query`](querying_pyre.md)
+you don't directly see the source, you can use [`pyre query`](querying_pyre.md)
 with the `signature` argument to have Pysa dump it's internal model of a
 function, so you know exactly how to write your model.
 
