@@ -19,7 +19,7 @@ $ sudo apt-get install python3 python3-pip watchman
 ```
 We tested Pyre on *Ubuntu 16.04 LTS*, *CentOS 7*, as well as *OSX 10.11* and later.
 
-## Gertting Started
+## Getting Started
 We're starting by creating an empty project directory, setting up a virtual environment.
 
 ```bash
