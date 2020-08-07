@@ -7,11 +7,11 @@ sidebar_label: Querying Pyre
 Pyre has a subcommand called `query` allows you to hook into a Pyre server and get type-related
 information without having to run a full type check.
 
-This allows you, for instance, to get the type of an expression at a certain line and column, check whether a type is a subtype or the other or get the list of methods for a class.
+This allows you, for instance, to get the type of an expression at a certain line and column, check whether a type is a subtype of the other, or get the list of methods for a class.
 
 To get started, set up a server with `pyre` or `pyre start`. The rest of this page goes through the various query options with examples. You can also run `pyre query help` to see a full list of available queries to the Pyre server.
 
-Note: The responses in the examples are prettified using the `pyre query <query> | python -m json.tool` pattern.
+**Note:** The responses in the examples are prettified using the `pyre query <query> | python -m json.tool` pattern.
 
 ## Supported Queries
 ### Attributes

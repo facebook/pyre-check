@@ -337,9 +337,9 @@ def foo(x: str) -> int:
 It is not always possible to address all errors immediately – some code is too dynamic and should be refactored, other times it's *just not the right time* to deal with a type error. We do encourage people to keep their type check results clean at all times and provide mechanisms to suppress errors that cannot be immediately fixed.
 
 ### Suppressing Individual Errors
-Pyre supports error suppression of individual errors with comments that can be placed on the line of the error or the preceeding one.
+Pyre supports error suppression of individual errors with comments that can be placed on the line of the error or on the line preceeding the error.
 
-- `# pyre-fixme` indicates there is an issue in the code that will be revisited later
+- `# pyre-fixme` indicates there is an issue in the code that will be revisited later.
 - `# pyre-ignore` indicates there's an issue with the type checker or the code is too dynamic and we have decided to not fix this. If this is a Pyre bug, make sure you [open an issue](https://github.com/facebook/pyre/issues) on our tracker.
 
 Both comment styles allow you to suppress individual error codes as well as adding additional context.
@@ -355,4 +355,4 @@ Pyre also supports `# type: ignore` comments for backwards-compatibility with *m
 ### Suppressing Errors Across Files
 You can suppress errors in entire sections of your code by adding the path to the [ignore section of your configuration](configuration#global).
 
-Furthermore Pyre supports suppressing all errors in a file if you add a `# pyre-ignore-all-errors` to your file. Similar to other suppression comments you can chose to only ignore a particular error type.
+Furthermore Pyre supports suppressing all errors in a file if you add a `# pyre-ignore-all-errors` to your file. Like the other suppression comments, you can use square brackets to chose to only ignore a particular error type.

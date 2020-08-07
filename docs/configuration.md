@@ -5,7 +5,9 @@ sidebar_label: Configuration
 ---
 
 ## Configuration Files
-We recommend that you always run Pyre with a configuration that you commit to your version control system. This ensures everyone working on your project is working with the same settings. Pyre has two types of configurations: a global configuration covering the full project, and local configurations that apply to subdirectories of the project. In most cases you will only need a global configuration but local configurations can be useful if you are dealing with a big repository containing heterogenous projects.
+We recommend that you always run Pyre with a configuration that you commit to your version control system. This ensures everyone working on your project is using the same settings.
+
+Pyre has two types of configurations: a global configuration covering the full project, and local configurations that apply to subdirectories of the project. In most cases you will only need a global configuration but local configurations can be useful if you are dealing with a big repository containing heterogenous projects.
 
 ### Global
 You can generate an initial configuration in the root of your project with
@@ -27,7 +29,7 @@ for example:
 You can extend this configuration to configure Pyre for your project's specific
 setup and needs. The following configuration options are supported:
 
-- `source_directories`: List of paths to type check. Defaults to current directory.
+- `source_directories`: List of paths to type check.
 
 - `search_path`: List of paths to Python modules to include in the typing
 environment. For example, typeshed third-party modules. Pyre will use those
@@ -52,7 +54,7 @@ configuration item if you have files that are intended to be hidden from Pyre.
 - `binary`: Location of pyre binary. This can be specified to gradually upgrade a Pyre
 binary in a CI setting.
 
-- `logger`: If set, Pyre will invoke the binary passing it statistics in JSON format.
+- `logger`: If set, Pyre will pass it statistics in JSON format.
 The statistics contain information about Pyre's performance as well as information about
 the project's type coverage.
 
@@ -89,7 +91,7 @@ project unit and inclusion/exclusion of files from type checking can be done by 
 
 If in rare cases the nested configuration cannot be combined upward and the parent cannot be split apart, the
 parent configuration must list the directory containing the nested configuration in its `ignore_all_errors` field.
-Pyre will warn if this is not the case, which prevents the possibility of introducing conflicting type errors.
+Pyre will warn if this is not the case, which prevents the possibility of conflicting type errors.
 
 
 ## Command Line Arguments
@@ -111,6 +113,7 @@ When Pyre is run incrementally, you can control the Pyre's *server* working in t
 - `start`: Start the Pyre server.
 - `stop`: Stop the Pyre server.
 - `restart`: Restart the Pyre server.
+- `servers`: List all currently running Pyre servers.
 - `kill`: In case somethign goes wrong and the server becomes unresponsivbe `kill` will attempt to terminate any processes.
 - `rage`: Print server logs for debugging or for context when reporting server errors.
 
@@ -122,7 +125,7 @@ $ pyre --source-directory "." restart
 ```
 
 - `--local-configuration LOCAL_CONFIGURATION`: Call Pyre specifying the path to a local
-configuration outside of the current working directory.
+configuration.
 
 - `--noninteractive`: Disable interactive logging, which by default overwrites intermediate
 logging output and adds colors for a more streamlined user experience.
@@ -130,15 +133,10 @@ Non-interactive mode ensures all terminal output remains visible.
 
 - `--output {text, json}`: Formatting for error return values. Defaults to text.
 
-- `--preserve-pythonpath`: Use the `$PYTHONPATH` environment variable to search for external
-sources, along with the current environment's search path. This environment variable is
-ignored otherwise.
-
 - `--search-path SEARCH_PATH`: Provide additional stubs or modules external to the project
-being type-checked. Can also be set in `.pyre_configuration` or often lives in the
-`$PYTHONPATH` environment variable (see `--preserve-pythonpath`).
+being type-checked. Can also be set in `.pyre_configuration`.
 
-- `--source-directory SOURCE_DIRECTORY`: Provide a path to the source root to check. Can also
+- `--source-directory SOURCE_DIRECTORY`: Provide a path to the source root to check. This can also
 be specified in `.pyre_configuration`.
 
 - `--typeshed TYPESHED`: Path to the [Typeshed](https://github.com/python/typeshed) standard library,
