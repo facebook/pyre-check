@@ -1,7 +1,10 @@
 @generated
 Call dependencies
 model_query.C::foo (method) -> []
+model_query.C::positional_method (method) -> []
 model_query.barfoo (fun) -> []
 model_query.foo (fun) -> []
+model_query.positional_a (fun) -> []
+model_query.positional_b (fun) -> []
 model_query.three_parameters (fun) -> []
 model_query.two_parameters (fun) -> []

@@ -43,6 +43,18 @@ let apply_productions ~resolution ~productions ~callable =
             | Some parameter ->
                 List.map taint ~f:(fun taint -> ParameterAnnotation parameter, taint)
             | None -> [] )
+        | ModelQuery.PositionalParameterTaint { index; taint } -> (
+            let parameter =
+              List.find_map normalized_parameters ~f:(fun (root, _, _) ->
+                  match root with
+                  | AccessPath.Root.PositionalParameter { position; _ } when position = index ->
+                      Some root
+                  | _ -> None)
+            in
+            match parameter with
+            | Some parameter ->
+                List.map taint ~f:(fun taint -> ParameterAnnotation parameter, taint)
+            | None -> [] )
         | ModelQuery.AllParametersTaint taint ->
             let roots =
               List.map normalized_parameters ~f:(fun (root, _, _) -> ParameterAnnotation root)

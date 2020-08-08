@@ -70,6 +70,10 @@ module T = struct
           name: string;
           taint: taint_annotation list;
         }
+      | PositionalParameterTaint of {
+          index: int;
+          taint: taint_annotation list;
+        }
       | ReturnTaint of taint_annotation list
     [@@deriving show, compare]
 
@@ -732,6 +736,19 @@ let parse_model_clause ~configuration ({ Node.value; _ } as expression) =
             ];
         } ->
         parse_taint taint >>| fun taint -> ModelQuery.ParameterTaint { name; taint }
+    | Expression.Call
+        {
+          Call.callee = { Node.value = Name (Name.Identifier "PositionalParameter"); _ };
+          arguments =
+            [
+              {
+                Call.Argument.value = { Node.value = Integer index; _ };
+                name = Some { Node.value = "index"; _ };
+              };
+              { Call.Argument.value = taint; name = Some { Node.value = "taint"; _ } };
+            ];
+        } ->
+        parse_taint taint >>| fun taint -> ModelQuery.PositionalParameterTaint { index; taint }
     | _ ->
         Error
           (Format.sprintf "Unexpected model expression: `%s`" (Expression.show model_expression))

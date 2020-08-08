@@ -61,6 +61,10 @@ module T : sig
           name: string;
           taint: taint_annotation list;
         }
+      | PositionalParameterTaint of {
+          index: int;
+          taint: taint_annotation list;
+        }
       | ReturnTaint of taint_annotation list
     [@@deriving show, compare]
 

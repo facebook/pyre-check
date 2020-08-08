@@ -22,6 +22,30 @@
 {
   "kind": "model",
   "data": {
+    "callable": "model_query.C.positional_method",
+    "sources": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "Test" } ],
+            "features": [ { "always-via": "string_concat_lhs" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(self)",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "model_query.barfoo",
     "sources": [
       {
@@ -53,6 +77,34 @@
             "features": [ { "always-via": "string_concat_lhs" } ]
           }
         ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "model_query.positional_a",
+    "sources": [
+      {
+        "port": "formal(x)",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "model_query.positional_b",
+    "sources": [
+      {
+        "port": "formal(y)",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
       }
     ],
     "sinks": [],

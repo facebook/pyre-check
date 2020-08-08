@@ -22,3 +22,22 @@ ModelQuery(
     NamedParameter(name="y", taint = TaintSource[Test, Via[string_concat_lhs]]),
   ]
 )
+
+# Test positional parameters.
+ModelQuery(
+  find = "functions",
+  where = [name.matches("positional")],
+  model = [
+    PositionalParameter(index=0, taint = TaintSource[Test]),
+  ]
+)
+
+# For methods, self is index 0.
+ModelQuery(
+  find = "methods",
+  where = [name.matches("positional")],
+  model = [
+    PositionalParameter(index=0, taint = TaintSource[Test]),
+    PositionalParameter(index=1, taint = TaintSource[Test, Via[string_concat_lhs]]),
+  ]
+)
