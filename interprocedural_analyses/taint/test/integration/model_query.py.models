@@ -59,3 +59,51 @@
     "tito": []
   }
 }
+{
+  "kind": "model",
+  "data": {
+    "callable": "model_query.three_parameters",
+    "sources": [
+      {
+        "port": "formal(y)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "Test" } ],
+            "features": [ { "always-via": "string_concat_lhs" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(x)",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "model_query.two_parameters",
+    "sources": [
+      {
+        "port": "formal(y)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "Test" } ],
+            "features": [ { "always-via": "string_concat_lhs" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(x)",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}

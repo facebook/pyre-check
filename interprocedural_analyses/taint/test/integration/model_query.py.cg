@@ -3,3 +3,5 @@ Call dependencies
 model_query.C::foo (method) -> []
 model_query.barfoo (fun) -> []
 model_query.foo (fun) -> []
+model_query.three_parameters (fun) -> []
+model_query.two_parameters (fun) -> []

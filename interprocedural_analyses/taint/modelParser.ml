@@ -701,25 +701,37 @@ let parse_where_clause ({ Node.value; _ } as expression) =
 let parse_model_clause ~configuration ({ Node.value; _ } as expression) =
   let open Core.Result in
   let parse_model ({ Node.value; _ } as model_expression) =
+    let parse_taint taint_expression =
+      try
+        match Node.value taint_expression with
+        | Expression.List taint_annotations ->
+            List.concat_map taint_annotations ~f:(fun annotation ->
+                parse_annotations ~configuration ~parameters:[] (Some annotation))
+            |> return
+        | _ -> Ok (parse_annotations ~configuration ~parameters:[] (Some taint_expression))
+      with
+      | Failure failure -> Core.Result.Error failure
+    in
     match value with
     | Expression.Call
         {
           Call.callee = { Node.value = Name (Name.Identifier "Returns"); _ };
           arguments = [{ Call.Argument.value = taint; _ }];
-        } -> (
-        try
-          match Node.value taint with
-          | Expression.List taint_annotations ->
-              List.concat_map taint_annotations ~f:(fun annotation ->
-                  parse_annotations ~configuration ~parameters:[] (Some annotation))
-              |> (fun annotations -> ModelQuery.ReturnTaint annotations)
-              |> return
-          | _ ->
-              Ok
-                (ModelQuery.ReturnTaint
-                   (parse_annotations ~configuration ~parameters:[] (Some taint)))
-        with
-        | Failure failure -> Core.Result.Error failure )
+        } ->
+        parse_taint taint >>| fun taint -> ModelQuery.ReturnTaint taint
+    | Expression.Call
+        {
+          Call.callee = { Node.value = Name (Name.Identifier "NamedParameter"); _ };
+          arguments =
+            [
+              {
+                Call.Argument.value = { Node.value = String { StringLiteral.value = name; _ }; _ };
+                name = Some { Node.value = "name"; _ };
+              };
+              { Call.Argument.value = taint; name = Some { Node.value = "taint"; _ } };
+            ];
+        } ->
+        parse_taint taint >>| fun taint -> ModelQuery.ParameterTaint { name; taint }
     | _ ->
         Error
           (Format.sprintf "Unexpected model expression: `%s`" (Expression.show model_expression))

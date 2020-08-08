@@ -13,3 +13,12 @@ ModelQuery(
     Returns(TaintSource[Test, Via[string_concat_rhs]]),
   ]
 )
+
+ModelQuery(
+  find = "functions",
+  where = [name.matches("parameters")],
+  model = [
+    NamedParameter(name="x", taint = TaintSource[Test]),
+    NamedParameter(name="y", taint = TaintSource[Test, Via[string_concat_lhs]]),
+  ]
+)
