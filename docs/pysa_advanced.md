@@ -8,7 +8,7 @@ This page documents less straightforward bits of Pysa.
 
 ## Annotating `dataclass` Models
 
-In Pysa, [`dataclass`](https://docs.python.org/3/library/dataclasses.html?)es
+In Pysa, [`dataclasses`](https://docs.python.org/3/library/dataclasses.html?)
 are defined via attributes, which are converted to properties under the hood. If
 you want to taint the attributes of a `dataclass`, you might try to do the
 following:
