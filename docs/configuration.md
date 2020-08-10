@@ -4,40 +4,37 @@ title: Configuration
 sidebar_label: Configuration
 ---
 
+Pyre can be run without a configuration (see [Command Line Arguments](configuration#command-line-arguments)) but we do recommend that you create a configuration (see [Getting Started](getting_started)) and commit that to your version control system to make sure everyone working on your project is using the same settings.
+
 ## Configuration Files
-We recommend that you always run Pyre with a configuration that you commit to your version control system. This ensures everyone working on your project is using the same settings.
+Pyre has two types of configurations: a *global* configuration covering the full project, and *local* configurations that apply to subdirectories of the project. In most cases you will only need a global configuration but local configurations can be useful if you are dealing with a big repository containing heterogenous projects.
 
-Pyre has two types of configurations: a global configuration covering the full project, and local configurations that apply to subdirectories of the project. In most cases you will only need a global configuration but local configurations can be useful if you are dealing with a big repository containing heterogenous projects.
-
-### Global
-You can generate an initial configuration in the root of your project with
+### The Global Configuration
+The global configuration is a `.pyre_configuration` file sitting at the root of your project. Running Pyre anywhere inside your project directory will use the settings in this global configuration. You can generate an initial configuration in your project directory with
 ```bash
 $ pyre init
 ```
 
-This will create a basic configuration file at `.pyre_configuration` containing,
-for example:
+The configuration is a `JSON` file. For example,
 ```json
 {
-  "binary": "/Library/Frameworks/Python.framework/Versions/3.6/bin/pyre.bin",
   "source_directories": [
     "."
+  ],
+  "search_path": [
+    "/external/library"
   ]
 }
 ```
+specifies that the code Pyre checks is in the directory of the configuration and that Pyre should look in an additional directory for library code.
 
-You can extend this configuration to configure Pyre for your project's specific
-setup and needs. The following configuration options are supported:
+
+You can extend this configuration to configure Pyre. The following configuration options are supported:
 
 - `source_directories`: List of paths to type check.
 
 - `search_path`: List of paths to Python modules to include in the typing
-environment. For example, typeshed third-party modules. Pyre will use those
-paths to build up the typing environment. Note that if the same Python module is
-found both in `source_directories` and `search_path`, the `search_path` version
-takes precendence. If the same Python module is found in two different
-`search_path`s, the version that belongs to the path that comes earlier takes
-precedence.
+environment. **Note**: `search_path` takes precendence over `source_directories` and the order within the search path indicates precedence.
 
 - `exclude`: List of regular expressions for files and directories that should be
 completely ignored by Pyre. The regular expression will be matched against the
@@ -46,17 +43,13 @@ completely ignored by Pyre. The regular expression will be matched against the
 - `ignore_all_errors`: A list of paths to omit from type-checking. This may be
 useful for generated files, virtualenv directories, etc.  These should be paths
 relative to the location of the configuration file (or the local configuration
-if applicable).  These can also include basic globs using `*`.
-**Note**: Files
+if applicable) and support globs. **Note**: Files
 matching these paths will still be processed (i.e. type and module names in those files are still visible to Pyre). Please refer to the `exclude`
 configuration item if you have files that are intended to be hidden from Pyre.
 
-- `binary`: Location of pyre binary. This can be specified to gradually upgrade a Pyre
-binary in a CI setting.
+- `binary`: Location of Pyre's native binary.
 
-- `logger`: If set, Pyre will pass it statistics in JSON format.
-The statistics contain information about Pyre's performance as well as information about
-the project's type coverage.
+- `logger`: Pyre will invoke this exectuable on every run, passing it statistics in JSON format.
 
 - `typeshed`: Path to the [Typeshed](https://github.com/python/typeshed) standard library, which
 provides typed stubs for library functions.
@@ -69,12 +62,12 @@ Empty string indicates extensionless files.
 - `strict`: Setting this to `true` will make [strict mode](types-in-python#strict-mode) the default in your project.
 
 
-### Local
+### Local Configurations
 If you have sub-projects within your project root that you would like to run Pyre on, you
 can create a `.pyre_configuration.local` at the root of your subproject and override any
 of the fields set in `.pyre_configuration` above.
 
-When calling Pyre, the nearest local configuration at or above the current directory will be used.
+When calling Pyre, the nearest local configuration at- or above the current directory will be used.
 You can use the `--local-configuration` (or `-l`) flag to invoke Pyre on a project that includes a
 local configuration, while outside its source directory. It works like `make -C`:
 ```bash
@@ -85,14 +78,9 @@ $ pyre -l project
 ```
 
 #### Nested Local Configurations
-Nesting local configurations is not recommended. The configuration should live at the root of your
+Nesting local configurations is not supported. The configuration should live at the root of your
 project unit and inclusion/exclusion of files from type checking can be done by specifying sources, using
 `ignore_all_errors`, or by adding [local suppression](errors#suppressing-individual-errors).
-
-If in rare cases the nested configuration cannot be combined upward and the parent cannot be split apart, the
-parent configuration must list the directory containing the nested configuration in its `ignore_all_errors` field.
-Pyre will warn if this is not the case, which prevents the possibility of conflicting type errors.
-
 
 ## Command Line Arguments
 You can get a full and current list of options to run Pyre by running `pyre --help`. The following is a list of commonly used commands and options.
