@@ -3,6 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import enum
 import functools
 import logging
 import os
@@ -14,7 +15,7 @@ from pathlib import Path
 from time import time
 from typing import ContextManager, Dict, List, NamedTuple, Optional, Set, Tuple
 
-from . import buck, json_rpc, log
+from . import buck, json_rpc, log, statistics
 from .buck import BuckBuilder, find_buck_root
 from .configuration import Configuration
 from .exceptions import EnvironmentException
@@ -62,6 +63,10 @@ READER_WRITER_LOCK = "analysis_directory_reader_writer.lock"
 
 class NotWithinLocalConfigurationException(Exception):
     pass
+
+
+class BuckEvent(enum.Enum):
+    REBUILD = "rebuild"
 
 
 def _resolve_filter_paths(
@@ -290,10 +295,7 @@ class SharedAnalysisDirectory(AnalysisDirectory):
         self._symbolic_links.update(self.compute_symbolic_links())
 
     def rebuild(self) -> None:
-        start = time()
-
         root = self.get_root()
-        LOG.info("Updating shared directory `%s`", root)
 
         self._resolve_source_directories()
 
@@ -310,7 +312,6 @@ class SharedAnalysisDirectory(AnalysisDirectory):
             for scratch_path in self._symbolic_links.values():
                 if not os.path.exists(scratch_path):
                     os.remove(scratch_path)
-            LOG.log(log.PERFORMANCE, "Updated shared directory in %fs", time() - start)
         self._symbolic_links = self.compute_symbolic_links()
 
     def compute_symbolic_links(self) -> Dict[str, str]:
@@ -423,20 +424,49 @@ class SharedAnalysisDirectory(AnalysisDirectory):
         else:
             return None
 
+    def _log_rebuild(
+        self,
+        runtime: float,
+        number_of_user_changed_files: int,
+        number_of_updated_files: int,
+    ) -> None:
+        configuration = self._configuration
+        if not configuration or not configuration.logger:
+            return
+
+        statistics.log(
+            configuration=self._configuration,
+            category=statistics.LoggerCategory.BUCK_EVENTS,
+            integers={
+                "runtime": int(runtime * 1000),
+                "number_of_user_changed_files": number_of_user_changed_files,
+                "number_of_updated_files": number_of_updated_files,
+            },
+            normals={
+                "event_type": BuckEvent.REBUILD.value,
+                "local_root": self._local_configuration_root,
+                "buck_builder_type": str(self._buck_builder),
+            },
+        )
+
     def _process_rebuilt_files(
-        self, tracked_paths: List[str], deleted_paths: List[str]
+        self, tracked_paths: List[str], new_paths: List[str], deleted_paths: List[str]
     ) -> Tuple[List[str], List[str]]:
         self._notify_about_rebuild(is_start_message=True)
 
         old_symbolic_links = self._symbolic_links
         old_paths = set(self._symbolic_links.keys())
+        number_of_user_changed_files = (
+            len(tracked_paths) + len(new_paths) + len(deleted_paths)
+        )
 
         # We need to inform the server of any files updated in place by the
         # rebuild, such as .pyi files from thrift.
         rebuild_start_time = time()
+        LOG.info("Updating shared directory `%s`", self.get_root())
 
         self.rebuild()
-        new_paths = set(self._symbolic_links.keys())
+        new_paths: Set[str] = set(self._symbolic_links.keys())
 
         buck.clear_buck_query_cache()
         self._notify_about_rebuild(is_start_message=False)
@@ -459,6 +489,16 @@ class SharedAnalysisDirectory(AnalysisDirectory):
         deleted_scratch_paths = [
             old_symbolic_links.get(path, path) for path in old_paths - new_paths
         ]
+
+        runtime = time() - rebuild_start_time
+        LOG.log(log.PERFORMANCE, "Updated shared directory in %fs", runtime)
+        number_of_updated_files = (
+            len(updated_paths) + len(newly_created_paths) + len(deleted_scratch_paths)
+        )
+        self._log_rebuild(
+            runtime, number_of_user_changed_files, number_of_updated_files
+        )
+
         return tracked_paths, deleted_scratch_paths
 
     def _process_new_paths(
@@ -545,7 +585,7 @@ class SharedAnalysisDirectory(AnalysisDirectory):
             tracked_paths, new_paths, deleted_paths
         ):
             tracked_paths, deleted_scratch_paths = self._process_rebuilt_files(
-                tracked_paths, deleted_paths
+                tracked_paths, new_paths, deleted_paths
             )
         elif new_paths or deleted_paths:
             if new_paths:

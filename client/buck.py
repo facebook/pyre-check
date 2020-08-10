@@ -9,7 +9,6 @@ import subprocess
 import sys
 import tempfile
 import threading
-from collections import namedtuple
 from json.decoder import JSONDecodeError
 from logging import Logger
 from typing import Dict, Iterable, List, NamedTuple, Optional, Set, Tuple
@@ -36,6 +35,9 @@ class BuckBuilder:
             containing the target output.
         """
         raise NotImplementedError
+
+    def __str__(self) -> str:
+        return type(self).__name__
 
 
 class FastBuckBuilder(BuckBuilder):

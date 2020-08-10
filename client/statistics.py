@@ -29,6 +29,7 @@ class LoggerCategory(Enum):
     FIXME_COUNTS = "perfpipe_pyre_fixme_counts"
     QUALITY_ANALYZER = "perfpipe_pyre_quality_analyzer"
     QUALITY_ANALYZER_ISSUES = "perfpipe_pyre_quality_analyser_issues"
+    BUCK_EVENTS = "perfpipe_pyre_buck_events"
 
 
 def log(

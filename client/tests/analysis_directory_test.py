@@ -715,6 +715,7 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
                 "baz/hello/new_file_tracked_because_of_search_path.py",
             ],
             [],
+            [],
         )
         expected = (
             [
