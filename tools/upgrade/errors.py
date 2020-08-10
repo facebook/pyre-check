@@ -106,7 +106,7 @@ class Errors:
                 path.write_text(output)
             except SkippingGeneratedFileException:
                 LOG.warning(f"Skipping generated file at {path_to_suppress}")
-            except ast.UnstableAST:
+            except (ast.UnstableAST, SyntaxError):
                 unsuppressed_paths.append(path_to_suppress)
 
         if unsuppressed_paths:
