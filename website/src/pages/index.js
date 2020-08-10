@@ -57,7 +57,7 @@ const features = [
     description: (
       <>
         Pyre ships with <Link to="docs/pysa-basics">Pysa</Link>, a security
-        focused static analysis tool we've built to reasons about data flows in
+        focused static analysis tool we've built to reason about data flows in
         Python applications at scale.
       </>
     ),
