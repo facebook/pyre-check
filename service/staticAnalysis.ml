@@ -19,6 +19,12 @@ let record_and_merge_call_graph ~environment ~call_graph ~source =
 
 let record_overrides overrides =
   let record_override_edge ~key:member ~data:subtypes =
+    let number_of_overrides = List.length subtypes in
+    if number_of_overrides > 50 then
+      Log.warning
+        "`%s` has %d overrides, this might slow down the analysis considerably."
+        (Reference.show member)
+        number_of_overrides;
     DependencyGraphSharedMemory.add_overriding_types ~member ~subtypes
   in
   Reference.Map.iteri overrides ~f:record_override_edge
@@ -239,7 +245,6 @@ let analyze
               |> Reference.Map.filter_keys ~f:(fun override ->
                      not (Reference.Set.mem skip_overrides override))
             in
-
             Map.merge_skewed overrides new_overrides ~combine
       with
       | ClassHierarchy.Untracked untracked_type ->
