@@ -19,7 +19,7 @@ configured for Django, meaning it has to import (and implicitly run) the file
 you use to configure routing. The recommended way to run model generators is to set
 up a small script within your repository that can run within the virtual
 environment for your project. **[This tutorial
-exercise](https://github.com/facebook/pyre-check/tree/master/pysa_tutorial/exercise4)
+exercise](https://github.com/facebook/pyre-check/tree/master/pysa_tutorial/exercise5)
 provides an example of how to setup and use model generators.**
 
 ## Example Model Generators
