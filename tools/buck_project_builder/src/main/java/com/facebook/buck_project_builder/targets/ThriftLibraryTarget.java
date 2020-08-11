@@ -17,7 +17,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.StreamSupport;
 
-public final class ThriftLibraryTarget {
+public final class ThriftLibraryTarget implements Comparable<ThriftLibraryTarget> {
 
   private static final Pattern BASE_MODULE_PATH_PATTERN =
       Pattern.compile("(?<=/gen-py(.?)/).*(?=/(t?)types\\.py(.?) ];)");
@@ -128,5 +128,18 @@ public final class ThriftLibraryTarget {
   @Override
   public int hashCode() {
     return Objects.hash(command, baseModulePath, sources);
+  }
+
+  @Override
+  public int compareTo(ThriftLibraryTarget target) {
+      int commandComparison = command.compareTo(target.getCommand());
+      if (commandComparison != 0) {
+        return commandComparison;
+      }
+      int baseModulePathComparison = baseModulePath.compareTo(target.getBaseModulePath());
+      if (baseModulePathComparison != 0) {
+        return baseModulePathComparison;
+      }
+      return String.join(",", sources).compareTo(String.join(", ", target.getSources()));
   }
 }

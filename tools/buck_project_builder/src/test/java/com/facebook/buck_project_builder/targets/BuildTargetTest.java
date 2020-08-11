@@ -5,6 +5,7 @@ import com.facebook.buck_project_builder.FileSystemTest;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSortedSet;
 import org.junit.Test;
 
 import java.io.File;
@@ -49,7 +50,7 @@ public class BuildTargetTest {
             sources,
             ImmutableSet.of(),
             ImmutableSet.of(),
-            ImmutableSet.of(),
+            ImmutableSortedSet.of(),
             ImmutableSet.of(),
             ImmutableSet.of());
     builder.buildTargets(buckRoot.toString(), null);
@@ -70,7 +71,7 @@ public class BuildTargetTest {
             sources,
             ImmutableSet.of(),
             ImmutableSet.of(),
-            ImmutableSet.of(),
+            ImmutableSortedSet.of(),
             ImmutableSet.of(),
             ImmutableSet.of());
     builder.buildTargets(buckRoot.toString(), null);

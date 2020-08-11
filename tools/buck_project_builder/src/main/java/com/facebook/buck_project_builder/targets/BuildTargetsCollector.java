@@ -8,6 +8,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSortedSet;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -126,7 +127,7 @@ public final class BuildTargetsCollector {
         ImmutableMap.copyOf(this.sources),
         ImmutableSet.copyOf(this.unsupportedGeneratedSources),
         ImmutableSet.copyOf(this.pythonWheelUrls),
-        ImmutableSet.copyOf(this.thriftLibraryTargets),
+        ImmutableSortedSet.copyOf(this.thriftLibraryTargets),
         ImmutableSet.copyOf(this.swigLibraryBuildCommands),
         ImmutableSet.copyOf(this.antlr4LibraryBuildCommands));
   }
