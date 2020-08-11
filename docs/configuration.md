@@ -4,7 +4,7 @@ title: Configuration
 sidebar_label: Configuration
 ---
 
-Pyre can be run without a configuration (see [Command Line Arguments](configuration#command-line-arguments)) but we do recommend that you create a configuration (see [Getting Started](getting_started)) and commit that to your version control system to make sure everyone working on your project is using the same settings.
+Pyre can be run without a configuration (see [Command Line Arguments](configuration#command-line-arguments)) but we do recommend that you create a configuration (see [Getting Started](getting-started)) and commit that to your version control system to make sure everyone working on your project is using the same settings.
 
 ## Configuration Files
 Pyre has two types of configurations: a *global* configuration covering the full project, and *local* configurations that apply to subdirectories of the project. In most cases you will only need a global configuration but local configurations can be useful if you are dealing with a big repository containing heterogenous projects.
