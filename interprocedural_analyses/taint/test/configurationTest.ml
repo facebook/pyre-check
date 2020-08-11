@@ -34,7 +34,10 @@ let test_simple _ =
            code: 2001,
            message_format: "whatever"
         }
-      ]
+      ],
+      options: {
+        maximum_overrides_to_analyze: 50
+      }
     }
   |}
   in
@@ -42,7 +45,11 @@ let test_simple _ =
   assert_equal configuration.sinks ["D"; "C"];
   assert_equal configuration.features ["E"; "F"];
   assert_equal (List.length configuration.rules) 1;
-  assert_equal (List.hd_exn configuration.rules).code 2001
+  assert_equal (List.hd_exn configuration.rules).code 2001;
+  assert_equal
+    ~cmp:(Option.equal Int.equal)
+    configuration.analysis_model_constraints.maximum_overrides_to_analyze
+    (Some 50)
 
 
 let test_invalid_source _ =
@@ -339,7 +346,10 @@ let test_multiple_configurations _ =
               { name: "E" },
               { name: "F" }
             ],
-            rules: []
+            rules: [],
+            options: {
+              maximum_overrides_to_analyze: 42
+            }
            }
            |};
         Yojson.Safe.from_string
@@ -365,14 +375,21 @@ let test_multiple_configurations _ =
   assert_equal configuration.sinks ["D"; "C"];
   assert_equal configuration.features ["E"; "F"];
   assert_equal (List.length configuration.rules) 1;
-  assert_equal (List.hd_exn configuration.rules).code 2001
+  assert_equal (List.hd_exn configuration.rules).code 2001;
+  assert_equal
+    ~cmp:(Option.equal Int.equal)
+    configuration.analysis_model_constraints.maximum_overrides_to_analyze
+    (Some 42)
 
 
 let test_validate _ =
-  let assert_validation_error ~error configuration =
+  let assert_validation_error_with_multiple_configurations ~error configurations =
     assert_raises (Failure error) (fun () ->
-        Taint.TaintConfiguration.parse [Yojson.Safe.from_string configuration]
+        Taint.TaintConfiguration.parse (List.map configurations ~f:Yojson.Safe.from_string)
         |> Taint.TaintConfiguration.validate)
+  in
+  let assert_validation_error ~error configuration =
+    assert_validation_error_with_multiple_configurations ~error [configuration]
   in
   assert_validation_error
     ~error:"Duplicate entry for source: `UserControlled`"
@@ -522,7 +539,33 @@ let test_validate _ =
         }
       ]
     }
-    |}
+    |};
+  assert_validation_error_with_multiple_configurations
+    ~error:"Multiple values were passed in for overrides to analyze."
+    [
+      {|
+      {
+        sources: [],
+        sinks: [],
+        features: [],
+        rules: [],
+        options: {
+          maximum_overrides_to_analyze: 50
+        }
+      }
+      |};
+      {|
+      {
+        sources: [],
+        sinks: [],
+        features: [],
+        rules: [],
+        options: {
+          maximum_overrides_to_analyze: 60
+        }
+      }
+      |};
+    ]
 
 
 let () =

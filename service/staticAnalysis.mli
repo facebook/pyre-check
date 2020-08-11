@@ -14,7 +14,7 @@ val record_and_merge_call_graph
   source:Source.t ->
   DependencyGraph.callgraph
 
-val record_overrides : DependencyGraph.overrides -> unit
+val record_overrides : ?maximum_overrides_to_analyze:int -> DependencyGraph.overrides -> unit
 
 val regular_and_filtered_callables
   :  resolution:GlobalResolution.t ->

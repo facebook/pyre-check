@@ -1388,15 +1388,23 @@ let extract_source_model ~define ~resolution ~features_to_attach exit_taint =
   let return_annotation =
     Option.map ~f:(GlobalResolution.parse_annotation resolution) return_annotation
   in
+  let {
+    Configuration.analysis_model_constraints =
+      { maximum_model_width; maximum_complex_access_path_length; _ };
+    _;
+  }
+    =
+    Configuration.get ()
+  in
+
   let simplify tree =
     let essential = ForwardState.Tree.essential tree in
     ForwardState.Tree.shape tree ~mold:essential
     |> ForwardState.Tree.transform
          ForwardTaint.simple_feature_set
          Abstract.Domain.(Map (Features.add_type_breadcrumb ~resolution return_annotation))
-    |> ForwardState.Tree.limit_to
-         ~width:Configuration.analysis_model_constraints.maximum_model_width
-    |> ForwardState.Tree.approximate_complex_access_paths
+    |> ForwardState.Tree.limit_to ~width:maximum_model_width
+    |> ForwardState.Tree.approximate_complex_access_paths ~maximum_complex_access_path_length
   in
   let attach_features taint =
     if not (Features.SimpleSet.is_bottom features_to_attach) then

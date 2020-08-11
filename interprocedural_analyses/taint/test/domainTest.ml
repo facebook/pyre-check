@@ -66,7 +66,9 @@ let test_approximate_complex_access_paths _ =
       ~cmp:compare
       ~printer:ForwardState.Tree.show
       expected
-      (ForwardState.Tree.approximate_complex_access_paths ~cutoff_at tree)
+      (ForwardState.Tree.approximate_complex_access_paths
+         ~maximum_complex_access_path_length:cutoff_at
+         tree)
   in
   let create ~features =
     ForwardState.Tree.create_leaf (ForwardTaint.singleton (Sources.NamedSource "Demo"))

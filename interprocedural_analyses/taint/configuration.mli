@@ -22,11 +22,10 @@ type implicit_sinks = { conditional_test: Sinks.t list }
 type analysis_model_constraints = {
   maximum_model_width: int;
   maximum_complex_access_path_length: int;
+  maximum_overrides_to_analyze: int option;
 }
 
 type partial_sink_converter = (Sources.t * Sinks.t) list String.Map.Tree.t
-
-val analysis_model_constraints : analysis_model_constraints
 
 type t = {
   sources: string list;
@@ -37,6 +36,7 @@ type t = {
   partial_sink_converter: partial_sink_converter;
   acceptable_sink_labels: string list Core.String.Map.Tree.t;
   find_obscure_flows: bool;
+  analysis_model_constraints: analysis_model_constraints;
 }
 
 val empty : t
@@ -62,3 +62,5 @@ val validate : t -> unit
 val conditional_test_sinks : unit -> Sinks.t list
 
 val get_triggered_sink : partial_sink:Sinks.partial_sink -> source:Sources.t -> Sinks.t option
+
+val get_maximum_model_width : unit -> int

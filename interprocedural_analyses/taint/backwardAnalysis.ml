@@ -1118,6 +1118,14 @@ end
 (* Split the inferred entry state into externally visible taint_in_taint_out parts and sink_taint. *)
 let extract_tito_and_sink_models define ~is_constructor ~resolution ~existing_backward entry_taint =
   let { Define.signature = { parameters; _ }; _ } = define in
+  let {
+    Configuration.analysis_model_constraints =
+      { maximum_model_width; maximum_complex_access_path_length; _ };
+    _;
+  }
+    =
+    Configuration.get ()
+  in
   let normalized_parameters = AccessPath.Root.normalize_parameters parameters in
   (* Simplify trees by keeping only essential structure and merging details back into that. *)
   let simplify annotation tree =
@@ -1133,9 +1141,8 @@ let extract_tito_and_sink_models define ~is_constructor ~resolution ~existing_ba
     |> BackwardState.Tree.transform
          BackwardTaint.simple_feature_set
          Abstract.Domain.(Map (Features.add_type_breadcrumb ~resolution annotation))
-    |> BackwardState.Tree.limit_to
-         ~width:Configuration.analysis_model_constraints.maximum_model_width
-    |> BackwardState.Tree.approximate_complex_access_paths
+    |> BackwardState.Tree.limit_to ~width:maximum_model_width
+    |> BackwardState.Tree.approximate_complex_access_paths ~maximum_complex_access_path_length
   in
 
   let split_and_simplify model (parameter, name, original) =

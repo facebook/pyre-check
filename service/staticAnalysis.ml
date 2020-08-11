@@ -17,15 +17,25 @@ let record_and_merge_call_graph ~environment ~call_graph ~source =
   DependencyGraph.create_callgraph ~environment ~source |> record_and_merge_call_graph call_graph
 
 
-let record_overrides overrides =
+let record_overrides ?maximum_overrides_to_analyze overrides =
   let record_override_edge ~key:member ~data:subtypes =
     let number_of_overrides = List.length subtypes in
-    if number_of_overrides > 50 then
-      Log.warning
-        "`%s` has %d overrides, this might slow down the analysis considerably."
-        (Reference.show member)
-        number_of_overrides;
-    DependencyGraphSharedMemory.add_overriding_types ~member ~subtypes
+    match maximum_overrides_to_analyze with
+    | Some cap ->
+        if number_of_overrides < cap then
+          DependencyGraphSharedMemory.add_overriding_types ~member ~subtypes
+        else
+          Log.info
+            "Omitting overrides for `%s`, as it has %d overrides."
+            (Reference.show member)
+            number_of_overrides
+    | None ->
+        if number_of_overrides > 50 then
+          Log.warning
+            "`%s` has %d overrides, this might slow down the analysis considerably."
+            (Reference.show member)
+            number_of_overrides;
+        DependencyGraphSharedMemory.add_overriding_types ~member ~subtypes
   in
   Reference.Map.iteri overrides ~f:record_override_edge
 
@@ -266,7 +276,14 @@ let analyze
       ~inputs:qualifiers
       ()
   in
-  record_overrides overrides;
+  let {
+    Taint.TaintConfiguration.analysis_model_constraints = { maximum_overrides_to_analyze; _ };
+    _;
+  }
+    =
+    Taint.TaintConfiguration.get ()
+  in
+  record_overrides ?maximum_overrides_to_analyze overrides;
   Statistics.performance ~name:"Overrides recorded" ~timer ();
 
   let timer = Timer.start () in

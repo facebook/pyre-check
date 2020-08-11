@@ -26,10 +26,15 @@ let empty_implicit_sinks = { conditional_test = [] }
 type analysis_model_constraints = {
   maximum_model_width: int;
   maximum_complex_access_path_length: int;
+  maximum_overrides_to_analyze: int option;
 }
 
-let analysis_model_constraints =
-  { maximum_model_width = 25; maximum_complex_access_path_length = 10 }
+let default_analysis_model_constraints =
+  {
+    maximum_model_width = 25;
+    maximum_complex_access_path_length = 10;
+    maximum_overrides_to_analyze = None;
+  }
 
 
 type partial_sink_converter = (Sources.t * Sinks.t) list String.Map.Tree.t
@@ -43,6 +48,7 @@ type t = {
   partial_sink_converter: partial_sink_converter;
   acceptable_sink_labels: string list String.Map.Tree.t;
   find_obscure_flows: bool;
+  analysis_model_constraints: analysis_model_constraints;
 }
 
 let empty =
@@ -55,6 +61,7 @@ let empty =
     implicit_sinks = empty_implicit_sinks;
     acceptable_sink_labels = String.Map.Tree.empty;
     find_obscure_flows = false;
+    analysis_model_constraints = default_analysis_model_constraints;
   }
 
 
@@ -303,6 +310,21 @@ let parse source_jsons =
     List.map source_jsons ~f:(parse_implicit_sinks ~allowed_sinks:sinks)
     |> List.fold ~init:{ conditional_test = [] } ~f:merge_implicit_sinks
   in
+  let maximum_overrides_to_analyze =
+    let parse_overrides_to_analyze json =
+      match member "options" json with
+      | `Null -> None
+      | options -> (
+          match member "maximum_overrides_to_analyze" options with
+          | `Null -> None
+          | overrides_to_analyze -> Some (Json.Util.to_int overrides_to_analyze) )
+    in
+    List.filter_map source_jsons ~f:parse_overrides_to_analyze
+    |> function
+    | [] -> None
+    | [maximum_overrides_to_analyze] -> Some maximum_overrides_to_analyze
+    | _ -> failwith "Multiple values were passed in for overrides to analyze."
+  in
   {
     sources;
     sinks;
@@ -312,6 +334,8 @@ let parse source_jsons =
     implicit_sinks;
     acceptable_sink_labels;
     find_obscure_flows = false;
+    analysis_model_constraints =
+      { default_analysis_model_constraints with maximum_overrides_to_analyze };
   }
 
 
@@ -438,6 +462,7 @@ let default =
     implicit_sinks = empty_implicit_sinks;
     acceptable_sink_labels = String.Map.Tree.empty;
     find_obscure_flows = false;
+    analysis_model_constraints = default_analysis_model_constraints;
   }
 
 
@@ -511,3 +536,8 @@ let conditional_test_sinks () =
 let get_triggered_sink ~partial_sink ~source =
   let { partial_sink_converter; _ } = get () in
   PartialSinkConverter.get_triggered_sink partial_sink_converter ~partial_sink ~source
+
+
+let get_maximum_model_width () =
+  match get () with
+  | { analysis_model_constraints = { maximum_model_width; _ }; _ } -> maximum_model_width

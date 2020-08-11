@@ -548,12 +548,9 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
     compute_essential_features ~essential_complex_features tree
 
 
-  let approximate_complex_access_paths
-      ?(cutoff_at = Configuration.analysis_model_constraints.maximum_complex_access_path_length)
-      tree
-    =
+  let approximate_complex_access_paths ~maximum_complex_access_path_length tree =
     let cut_off features =
-      if List.length features > cutoff_at then
+      if List.length features > maximum_complex_access_path_length then
         [Features.Complex.ReturnAccessPath []]
       else
         features
