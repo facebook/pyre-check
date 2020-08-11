@@ -52,7 +52,11 @@ class SourceDatabaseBuckBuilderTest(TestCase):
     def test_query_targets(self) -> None:
         query_output = {
             "//foo/bar/...": ["//foo/bar:baz", "//foo/bar:tests-library"],
-            "//bar:baz": ["//bar:baz"],
+            "//bar:baz": [
+                "//bar:baz",
+                "//bar:tests-mypy_ini",
+                "//bar:tests-library-testmodules-lib",
+            ],
         }
         self.mock_callable(
             source_database_buck_builder, "_buck", allow_private=True

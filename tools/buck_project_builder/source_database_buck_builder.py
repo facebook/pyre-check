@@ -50,6 +50,11 @@ def _normalize_specification(specification: str) -> str:
     return specification if specification.startswith("//") else "//" + specification
 
 
+def _ignore_target(target: str) -> bool:
+    suffixes_for_ignored_targets = ("-mypy_ini", "-testmodules-lib")
+    return target.endswith(suffixes_for_ignored_targets)
+
+
 def _query_targets(target_specifications: List[str], mode: Optional[str]) -> List[str]:
     normalized_target_specifications = [
         _normalize_specification(specification)
@@ -57,7 +62,8 @@ def _query_targets(target_specifications: List[str], mode: Optional[str]) -> Lis
     ]
     query_arguments = _get_buck_query_arguments(normalized_target_specifications, mode)
     specification_targets_dictionary = json.loads(_buck(query_arguments))
-    return list(chain(*specification_targets_dictionary.values()))
+    targets = list(chain(*specification_targets_dictionary.values()))
+    return [target for target in targets if not _ignore_target(target)]
 
 
 def _get_buck_build_arguments(targets: List[str]) -> List[str]:
