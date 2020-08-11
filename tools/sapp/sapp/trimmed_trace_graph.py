@@ -75,20 +75,12 @@ class TrimmedTraceGraph(TraceGraph):
 
                 if len(fwd_trace_ids) == 0:
                     self._populate_issue_trace(
-                        graph,
-                        instance_id,
-                        # pyre-fixme[6]: Expected `Optional[TraceKind]` for 3rd
-                        #  param but got `(cls: TraceKind) -> Any`.
-                        TraceKind.POSTCONDITION,
+                        graph, instance_id, TraceKind.POSTCONDITION
                     )
 
                 if len(bwd_trace_ids) == 0:
                     self._populate_issue_trace(
-                        graph,
-                        instance_id,
-                        # pyre-fixme[6]: Expected `Optional[TraceKind]` for 3rd
-                        #  param but got `(cls: TraceKind) -> Any`.
-                        TraceKind.PRECONDITION,
+                        graph, instance_id, TraceKind.PRECONDITION
                     )
 
         self._recompute_instance_properties()
@@ -120,8 +112,6 @@ class TrimmedTraceGraph(TraceGraph):
         source_ids = {
             source.id.local_id
             for source in (
-                # pyre-fixme[6]: Expected `SharedTextKind` for 2nd param but got
-                #  `(cls: SharedTextKind) -> Any`.
                 self.get_issue_instance_shared_texts(instance_id, SharedTextKind.SOURCE)
             )
         }
@@ -137,8 +127,6 @@ class TrimmedTraceGraph(TraceGraph):
         sink_ids = {
             sink.id.local_id
             for sink in (
-                # pyre-fixme[6]: Expected `SharedTextKind` for 2nd param but got
-                #  `(cls: SharedTextKind) -> Any`.
                 self.get_issue_instance_shared_texts(instance_id, SharedTextKind.SINK)
             )
         }
@@ -179,15 +167,11 @@ class TrimmedTraceGraph(TraceGraph):
             self._populate_issue_and_traces(graph, instance_id)
 
     def _get_sink_names(self, graph: TraceGraph, instance_id: int) -> Set[str]:
-        # pyre-fixme[9]: kind has type `SharedTextKind`; used as `(cls:
-        #  SharedTextKind) -> Any`.
         kind: SharedTextKind = SharedTextKind.SINK
         sinks = graph.get_issue_instance_shared_texts(instance_id, kind)
         return {sink.contents for sink in sinks}
 
     def _get_source_names(self, graph: TraceGraph, instance_id: int) -> Set[str]:
-        # pyre-fixme[9]: kind has type `SharedTextKind`; used as `(cls:
-        #  SharedTextKind) -> Any`.
         kind: SharedTextKind = SharedTextKind.SOURCE
         sources = graph.get_issue_instance_shared_texts(instance_id, kind)
         return {source.contents for source in sources}

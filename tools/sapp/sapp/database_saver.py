@@ -106,7 +106,6 @@ class DatabaseSaver(PipelineStep[TraceGraph, RunSummary]):
             meta_run_identifier = self.summary.get("meta_run_identifier")
             if meta_run_identifier is not None:
                 session.add(
-                    # pyre-ignore[28]: SQLAlchemy and Pysa don't get along.
                     MetaRunToRunAssoc(
                         meta_run_id=meta_run_identifier, run_id=self.summary["run"].id
                     )

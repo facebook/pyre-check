@@ -66,18 +66,9 @@ class TraceOperatorTest(TestCase):
             session.add(run)
             session.commit()
             leaf_dicts = (
-                self._all_leaves_by_kind(
-                    session,
-                    SharedTextKind.SOURCE,  # pyre-fixme[6] Expected `SharedTextKind` but got `typing.Callable(SharedTextKind.SOURCE)[[Named(cls, SharedTextKind)], typing.Any]`.
-                ),
-                self._all_leaves_by_kind(
-                    session,
-                    SharedTextKind.SINK,  # pyre-fixme[6] Expected `SharedTextKind` but got `typing.Callable(SharedTextKind.SINK)[[Named(cls, SharedTextKind)], typing.Any]`.Pyre
-                ),
-                self._all_leaves_by_kind(
-                    session,
-                    SharedTextKind.FEATURE,  # pyre-fixme[6] Expected `SharedTextKind` but got `typing.Callable(SharedTextKind.FEATURE)[[Named(cls, SharedTextKind)], typing.Any]`.
-                ),
+                self._all_leaves_by_kind(session, SharedTextKind.SOURCE),
+                self._all_leaves_by_kind(session, SharedTextKind.SINK),
+                self._all_leaves_by_kind(session, SharedTextKind.FEATURE),
             )
 
             latest_run_id = (
@@ -119,18 +110,9 @@ class TraceOperatorTest(TestCase):
             session.commit()
 
             leaf_dicts = (
-                self._all_leaves_by_kind(
-                    session,
-                    SharedTextKind.SOURCE,  # pyre-fixme[6] Expected `SharedTextKind` but got `typing.Callable(SharedTextKind.SOURCE)[[Named(cls, SharedTextKind)], typing.Any]`.
-                ),
-                self._all_leaves_by_kind(
-                    session,
-                    SharedTextKind.SINK,  # pyre-fixme[6] Expected `SharedTextKind` but got `typing.Callable(SharedTextKind.SINK)[[Named(cls, SharedTextKind)], typing.Any]`.Pyre
-                ),
-                self._all_leaves_by_kind(
-                    session,
-                    SharedTextKind.FEATURE,  # pyre-fixme[6] Expected `SharedTextKind` but got `typing.Callable(SharedTextKind.FEATURE)[[Named(cls, SharedTextKind)], typing.Any]`.
-                ),
+                self._all_leaves_by_kind(session, SharedTextKind.SOURCE),
+                self._all_leaves_by_kind(session, SharedTextKind.SINK),
+                self._all_leaves_by_kind(session, SharedTextKind.FEATURE),
             )
 
             latest_run_id = (
@@ -160,18 +142,9 @@ class TraceOperatorTest(TestCase):
             session.commit()
 
             leaf_dicts = (
-                self._all_leaves_by_kind(
-                    session,
-                    SharedTextKind.SOURCE,  # pyre-fixme[6] Expected `SharedTextKind` but got `typing.Callable(SharedTextKind.SOURCE)[[Named(cls, SharedTextKind)], typing.Any]`.
-                ),
-                self._all_leaves_by_kind(
-                    session,
-                    SharedTextKind.SINK,  # pyre-fixme[6] Expected `SharedTextKind` but got `typing.Callable(SharedTextKind.SINK)[[Named(cls, SharedTextKind)], typing.Any]`.Pyre
-                ),
-                self._all_leaves_by_kind(
-                    session,
-                    SharedTextKind.FEATURE,  # pyre-fixme[6] Expected `SharedTextKind` but got `typing.Callable(SharedTextKind.FEATURE)[[Named(cls, SharedTextKind)], typing.Any]`.
-                ),
+                self._all_leaves_by_kind(session, SharedTextKind.SOURCE),
+                self._all_leaves_by_kind(session, SharedTextKind.SINK),
+                self._all_leaves_by_kind(session, SharedTextKind.FEATURE),
             )
 
             latest_run_id = (
@@ -243,18 +216,9 @@ class TraceOperatorTest(TestCase):
             session.commit()
 
             leaf_dicts = (
-                self._all_leaves_by_kind(
-                    session,
-                    SharedTextKind.SOURCE,  # pyre-fixme[6] Expected `SharedTextKind` but got `typing.Callable(SharedTextKind.SOURCE)[[Named(cls, SharedTextKind)], typing.Any]`.
-                ),
-                self._all_leaves_by_kind(
-                    session,
-                    SharedTextKind.SINK,  # pyre-fixme[6] Expected `SharedTextKind` but got `typing.Callable(SharedTextKind.SINK)[[Named(cls, SharedTextKind)], typing.Any]`.Pyre
-                ),
-                self._all_leaves_by_kind(
-                    session,
-                    SharedTextKind.FEATURE,  # pyre-fixme[6] Expected `SharedTextKind` but got `typing.Callable(SharedTextKind.FEATURE)[[Named(cls, SharedTextKind)], typing.Any]`.
-                ),
+                self._all_leaves_by_kind(session, SharedTextKind.SOURCE),
+                self._all_leaves_by_kind(session, SharedTextKind.SINK),
+                self._all_leaves_by_kind(session, SharedTextKind.FEATURE),
             )
 
             latest_run_id = (

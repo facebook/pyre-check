@@ -322,12 +322,12 @@ class QueryBuilderTest(TestCase):
 
         with self.db.make_session() as session:
             session.add(
-                IssueInstanceSharedTextAssoc(  # pyre-ignore
+                IssueInstanceSharedTextAssoc(
                     shared_text_id=feature1.id, issue_instance_id=1
                 )
             )
             session.add(
-                IssueInstanceSharedTextAssoc(  # pyre-ignore
+                IssueInstanceSharedTextAssoc(
                     shared_text_id=feature2.id, issue_instance_id=1
                 )
             )
@@ -382,12 +382,12 @@ class QueryBuilderTest(TestCase):
 
         with self.db.make_session() as session:
             session.add(
-                IssueInstanceSharedTextAssoc(  # pyre-ignore
+                IssueInstanceSharedTextAssoc(
                     shared_text_id=feature1.id, issue_instance_id=1
                 )
             )
             session.add(
-                IssueInstanceSharedTextAssoc(  # pyre-ignore
+                IssueInstanceSharedTextAssoc(
                     shared_text_id=feature2.id, issue_instance_id=1
                 )
             )
@@ -443,22 +443,22 @@ class QueryBuilderTest(TestCase):
 
         with self.db.make_session() as session:
             session.add(
-                IssueInstanceSharedTextAssoc(  # pyre-ignore
+                IssueInstanceSharedTextAssoc(
                     shared_text_id=feature1.id, issue_instance_id=1
                 )
             )
             session.add(
-                IssueInstanceSharedTextAssoc(  # pyre-ignore
+                IssueInstanceSharedTextAssoc(
                     shared_text_id=feature2.id, issue_instance_id=1
                 )
             )
             session.add(
-                IssueInstanceSharedTextAssoc(  # pyre-ignore
+                IssueInstanceSharedTextAssoc(
                     shared_text_id=feature1.id, issue_instance_id=2
                 )
             )
             session.add(
-                IssueInstanceSharedTextAssoc(  # pyre-ignore
+                IssueInstanceSharedTextAssoc(
                     shared_text_id=feature4.id, issue_instance_id=2
                 )
             )

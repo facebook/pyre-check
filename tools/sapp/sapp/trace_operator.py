@@ -294,12 +294,8 @@ class TraceOperator:
         trace_kind: Optional[TraceKind],
     ) -> SharedTextKind:
         if trace_kind == TraceKind.POSTCONDITION:
-            # pyre-fixme[7]: Expected `SharedTextKind` but got `(cls:
-            #  SharedTextKind) -> Any`.
             return SharedTextKind.SOURCE
         if trace_kind == TraceKind.PRECONDITION:
-            # pyre-fixme[7]: Expected `SharedTextKind` but got `(cls:
-            #  SharedTextKind) -> Any`.
             return SharedTextKind.SINK
 
         raise AssertionError(f"{trace_kind} is invalid")

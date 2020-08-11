@@ -110,16 +110,10 @@ class Query(graphene.ObjectType):
         leaf_kinds = Query.all_leaf_kinds(session)
 
         sources = Query._get_leaves_issue_instance(
-            session,
-            run_id,
-            SharedTextKind.SOURCE,  # pyre-fixme[6] sqlalchemy enum (SharedTextKind) causing error
-            leaf_kinds,
+            session, run_id, SharedTextKind.SOURCE, leaf_kinds
         )
         sinks = Query._get_leaves_issue_instance(
-            session,
-            run_id,
-            SharedTextKind.SINK,  # pyre-fixme[6] sqlalchemy enum (SharedTextKind) causing error
-            leaf_kinds,
+            session, run_id, SharedTextKind.SINK, leaf_kinds
         )
 
         postcondition_navigation = TraceOperator.navigate_trace_frames(

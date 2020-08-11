@@ -1320,7 +1320,7 @@ class PrimaryKeyGenerator(PrimaryKeyGeneratorBase):
 
 def create(db: DB):
     try:
-        Base.metadata.create_all(db.engine)  # pyre-ignore [16]
+        Base.metadata.create_all(db.engine)
     except NoSuchTableError:
         pass
 

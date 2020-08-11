@@ -218,17 +218,10 @@ details              show additional information about the current trace frame
                 .scalar()
             )
 
-            # pyre-fixme[6]: Expected `SharedTextKind` for 2nd param but got `(cls:
-            #  SharedTextKind) -> Any`.
             self.sources_dict = self._all_leaves_by_kind(session, SharedTextKind.SOURCE)
-            # pyre-fixme[6]: Expected `SharedTextKind` for 2nd param but got `(cls:
-            #  SharedTextKind) -> Any`.
             self.sinks_dict = self._all_leaves_by_kind(session, SharedTextKind.SINK)
             self.features_dict = self._all_leaves_by_kind(
-                session,
-                # pyre-fixme[6]: Expected `SharedTextKind` for 2nd param but got
-                #  `(cls: SharedTextKind) -> Any`.
-                SharedTextKind.FEATURE,
+                session, SharedTextKind.FEATURE
             )
             self.leaf_dicts = (self.sources_dict, self.sinks_dict, self.features_dict)
 
@@ -1091,14 +1084,10 @@ details              show additional information about the current trace frame
 
         if kind is None or kind == TraceKind.POSTCONDITION:
             print(f"\nPostconditions with caller ({callable}):")
-            # pyre-fixme[6]: Expected `Optional[TraceKind]` for 2nd param but got
-            #  `(cls: TraceKind) -> Any`.
             self.frames(callers=callable, kind=TraceKind.POSTCONDITION, limit=limit)
 
         if kind is None or kind == TraceKind.PRECONDITION:
             print(f"\nPreconditions with caller ({callable}):")
-            # pyre-fixme[6]: Expected `Optional[TraceKind]` for 2nd param but got
-            #  `(cls: TraceKind) -> Any`.
             self.frames(callers=callable, kind=TraceKind.PRECONDITION, limit=limit)
 
     def warning(self, message: str) -> None:
