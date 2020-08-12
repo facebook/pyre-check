@@ -94,6 +94,14 @@ class Notifications:
     def show_server_crashed(cls) -> None:
         cls.show_message(method="window/showStatus", message="Pyre server crashed.")
 
+    @classmethod
+    def show_pyre_initialize_error(cls, project_root: str) -> None:
+        cls.show_message(
+            method="window/showMessageRequest",
+            message=f"Unable to start Pyre server. Pyre errors will \
+            not be shown for files in `{project_root}`",
+        )
+
 
 class NullServerAdapterProtocol(asyncio.Protocol):
     def data_received(self, data: bytes) -> None:
@@ -137,7 +145,6 @@ class SocketProtocol(asyncio.Protocol):
 def run_null_server(loop: AbstractEventLoop) -> None:
     stdin_pipe_reader = loop.connect_read_pipe(NullServerAdapterProtocol, sys.stdin)
     loop.run_until_complete(stdin_pipe_reader)
-    loop.run_forever()
 
 
 def add_socket_connection(loop: AbstractEventLoop, root: str) -> SocketConnection:
@@ -184,14 +191,25 @@ def run_server(loop: AbstractEventLoop, root: str) -> None:
     loop.run_forever()
 
 
-def main(arguments: argparse.Namespace) -> None:
-    root = arguments.root
-    loop: AbstractEventLoop = asyncio.get_event_loop()
+def start_and_run_server(loop: AbstractEventLoop, root: str) -> None:
     try:
-        if _should_run_null_server(arguments.null_server):
-            return run_null_server(loop)
         _start_server(root)
         run_server(loop, root)
+    except Exception:
+        # Run null server with warning to user that pyre server cannot be started.
+        run_null_server(loop)
+        Notifications.show_pyre_initialize_error(root)
+        loop.run_forever()
+
+
+def main(root: str, null_server: bool) -> None:
+    loop: AbstractEventLoop = asyncio.get_event_loop()
+    try:
+        if _should_run_null_server(null_server):
+            run_null_server(loop)
+            loop.run_forever()
+        else:
+            start_and_run_server(loop, root)
     finally:
         loop.close()
 
@@ -201,4 +219,4 @@ if __name__ == "__main__":
     parser.add_argument("--null-server", default=False, action="store_true")
     parser.add_argument("--root", type=str, required=True)
     arguments: argparse.Namespace = parser.parse_args()
-    main(arguments)
+    main(arguments.root, arguments.null_server)
