@@ -66,6 +66,7 @@ class NotWithinLocalConfigurationException(Exception):
 
 
 class BuckEvent(enum.Enum):
+    BUILD = "build"
     REBUILD = "rebuild"
 
 
@@ -249,6 +250,32 @@ class SharedAnalysisDirectory(AnalysisDirectory):
                 for filter_root in current_project_directories
             }
 
+    def _log_build_event(
+        self,
+        event_type: BuckEvent,
+        runtime: float,
+        number_of_user_changed_files: int,
+        number_of_updated_files: int,
+    ) -> None:
+        configuration = self._configuration
+        if not configuration or not configuration.logger:
+            return
+
+        statistics.log(
+            configuration=self._configuration,
+            category=statistics.LoggerCategory.BUCK_EVENTS,
+            integers={
+                "runtime": int(runtime * 1000),
+                "number_of_user_changed_files": number_of_user_changed_files,
+                "number_of_updated_files": number_of_updated_files,
+            },
+            normals={
+                "event_type": event_type.value,
+                "local_root": self._local_configuration_root,
+                "buck_builder_type": str(self._buck_builder),
+            },
+        )
+
     # Exposed for testing.
     def _resolve_source_directories(self) -> None:
         if self._targets:
@@ -289,10 +316,16 @@ class SharedAnalysisDirectory(AnalysisDirectory):
         with acquire_lock_if_needed(lock, blocking=True, needed=not self._isolate):
             self._clear()
             self._merge()
-            LOG.log(
-                log.PERFORMANCE, "Merged analysis directories in %fs", time() - start
-            )
         self._symbolic_links.update(self.compute_symbolic_links())
+
+        runtime = time() - start
+        LOG.log(log.PERFORMANCE, "Merged analysis directories in %fs", runtime)
+        self._log_build_event(
+            BuckEvent.BUILD,
+            runtime,
+            number_of_user_changed_files=0,
+            number_of_updated_files=len(self._symbolic_links),
+        )
 
     def rebuild(self) -> None:
         root = self.get_root()
@@ -424,31 +457,6 @@ class SharedAnalysisDirectory(AnalysisDirectory):
         else:
             return None
 
-    def _log_rebuild(
-        self,
-        runtime: float,
-        number_of_user_changed_files: int,
-        number_of_updated_files: int,
-    ) -> None:
-        configuration = self._configuration
-        if not configuration or not configuration.logger:
-            return
-
-        statistics.log(
-            configuration=self._configuration,
-            category=statistics.LoggerCategory.BUCK_EVENTS,
-            integers={
-                "runtime": int(runtime * 1000),
-                "number_of_user_changed_files": number_of_user_changed_files,
-                "number_of_updated_files": number_of_updated_files,
-            },
-            normals={
-                "event_type": BuckEvent.REBUILD.value,
-                "local_root": self._local_configuration_root,
-                "buck_builder_type": str(self._buck_builder),
-            },
-        )
-
     def _process_rebuilt_files(
         self, tracked_paths: List[str], new_paths: List[str], deleted_paths: List[str]
     ) -> Tuple[List[str], List[str]]:
@@ -495,8 +503,11 @@ class SharedAnalysisDirectory(AnalysisDirectory):
         number_of_updated_files = (
             len(updated_paths) + len(newly_created_paths) + len(deleted_scratch_paths)
         )
-        self._log_rebuild(
-            runtime, number_of_user_changed_files, number_of_updated_files
+        self._log_build_event(
+            BuckEvent.REBUILD,
+            runtime,
+            number_of_user_changed_files,
+            number_of_updated_files,
         )
 
         return tracked_paths, deleted_scratch_paths
