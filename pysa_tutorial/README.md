@@ -2,10 +2,14 @@
 
 This tutorial will walk you through practical exercises highlighting essential
 features of the Python Static Analyzer (Pysa) that comes with Pyre. The tutorial
-is meant to be consumed along with an accompanying presentation. It is possible
-to go through this tutorial without the presentation, but you will want to read
-the [public Pysa docs](https://pyre-check.org/docs/pysa-basics.html), and refer
-to them throughout the exercises.
+is meant to be consumed along with an accompanying presentation. You can see a
+recording of the acoompanying presentation from DEF CON 28
+[here](https://www.youtube.com/watch?v=8I3zlvtpOww).
+
+It is possible to go through this tutorial without the presentation, but you
+will want to read the [public Pysa
+docs](https://pyre-check.org/docs/pysa-basics.html), and refer to them
+throughout the exercises.
 
 The tutorial contains 5 exercises that cover the following topics: running and
 observing results, adding _sinks_ and _rules_, using _sanitizers_ to filter
