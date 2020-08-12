@@ -104,7 +104,7 @@ class IssueQueryBuilder:
                 raise Exception(f"Invalid filter type provided: {filter_type}")
 
             features_list = [
-                self._get_leaves_issue_instance(
+                self.get_leaves_issue_instance(
                     self._session, int(issue.id), SharedTextKind.FEATURE
                 )
                 for issue in issues
@@ -158,7 +158,7 @@ class IssueQueryBuilder:
 
     def sources(self, issues) -> List[Set[str]]:
         return [
-            self._get_leaves_issue_instance(
+            self.get_leaves_issue_instance(
                 self._session, int(issue.id), SharedTextKind.SINK
             )
             for issue in issues
@@ -166,7 +166,7 @@ class IssueQueryBuilder:
 
     def sinks(self, issues) -> List[Set[str]]:
         return [
-            self._get_leaves_issue_instance(
+            self.get_leaves_issue_instance(
                 self._session, int(issue.id), SharedTextKind.SOURCE
             )
             for issue in issues
@@ -174,7 +174,7 @@ class IssueQueryBuilder:
 
     def features(self, issues) -> List[Set[str]]:
         return [
-            self._get_leaves_issue_instance(
+            self.get_leaves_issue_instance(
                 self._session, int(issue.id), SharedTextKind.FEATURE
             )
             for issue in issues
@@ -197,7 +197,7 @@ class IssueQueryBuilder:
             .join(CallableText, CallableText.id == IssueInstance.callable_id)
         )
 
-    def _get_leaves_issue_instance(
+    def get_leaves_issue_instance(
         self, session: Session, issue_instance_id: int, kind: SharedTextKind
     ) -> Set[str]:
         message_ids = [

@@ -109,11 +109,12 @@ class Query(graphene.ObjectType):
 
         leaf_kinds = Query.all_leaf_kinds(session)
 
-        sources = Query._get_leaves_issue_instance(
-            session, run_id, SharedTextKind.SOURCE, leaf_kinds
+        builder = IssueQueryBuilder(run_id)
+        sources = builder.get_leaves_issue_instance(
+            session, issue.id, SharedTextKind.SOURCE
         )
-        sinks = Query._get_leaves_issue_instance(
-            session, run_id, SharedTextKind.SINK, leaf_kinds
+        sinks = builder.get_leaves_issue_instance(
+            session, issue.id, SharedTextKind.SINK
         )
 
         postcondition_navigation = TraceOperator.navigate_trace_frames(
@@ -158,29 +159,6 @@ class Query(graphene.ObjectType):
             for frame in trace_frames
             if frame.filename
         ]
-
-    @staticmethod
-    def _get_leaves_issue_instance(
-        session: Session,
-        issue_instance_id: DBID,
-        kind: SharedTextKind,
-        leaf_kinds: Tuple[Dict[int, str], Dict[int, str], Dict[int, str]],
-    ) -> Set[str]:
-        message_ids = [
-            int(id)
-            for id, in session.query(SharedText.id)
-            .distinct(SharedText.id)
-            .join(
-                IssueInstanceSharedTextAssoc,
-                SharedText.id == IssueInstanceSharedTextAssoc.shared_text_id,
-            )
-            .filter(IssueInstanceSharedTextAssoc.issue_instance_id == issue_instance_id)
-            .filter(SharedText.kind == kind)
-        ]
-        sources_dict, sinks_dict, features_dict = leaf_kinds
-        return TraceOperator.leaf_dict_lookups(
-            sources_dict, sinks_dict, features_dict, message_ids, kind
-        )
 
     @staticmethod
     def all_leaf_kinds(
