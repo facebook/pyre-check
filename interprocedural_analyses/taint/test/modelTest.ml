@@ -1079,6 +1079,12 @@ let test_invalid_models context =
     ~expect:
       "Invalid model for `test.foo`: Model signature parameters do not match implementation `def \
        foo(parameter: int) -> int: ...`. Reason(s): missing named parameters: `parameter`."
+    ();
+  assert_valid_model
+    ~source:{|
+      def foo(__: int, kwonly: str) -> None: ...
+    |}
+    ~model_source:"def test.foo(__: TaintSource[A], kwonly): ..."
     ()
 
 

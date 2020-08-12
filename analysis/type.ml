@@ -1732,8 +1732,9 @@ module Callable = struct
             | _ ->
                 let sanitized = Identifier.sanitized name in
                 if
-                  String.is_prefix sanitized ~prefix:"__"
-                  && not (String.is_suffix sanitized ~suffix:"__")
+                  String.equal sanitized "__"
+                  || String.is_prefix sanitized ~prefix:"__"
+                     && not (String.is_suffix sanitized ~suffix:"__")
                 then
                   CallableParameter.PositionalOnly { index; annotation; default }
                 else

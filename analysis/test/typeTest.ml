@@ -2459,6 +2459,16 @@ let test_multiply_polynomial _ =
   ()
 
 
+let test_parameter_create _ =
+  assert_equal
+    (Type.Callable.Parameter.create
+       [{ Type.Callable.Parameter.name = "__"; annotation = Type.integer; default = false }])
+    [
+      Type.Callable.Parameter.PositionalOnly
+        { index = 0; annotation = Type.integer; default = false };
+    ]
+
+
 let () =
   "type"
   >::: [
@@ -2523,5 +2533,6 @@ let () =
          "from_overloads" >:: test_from_overloads;
          "with_return_annotation" >:: test_with_return_annotation;
          "overload_parameters" >:: test_overload_parameters;
+         "parameter_create" >:: test_parameter_create;
        ]
   |> Test.run
