@@ -68,6 +68,7 @@ class NotWithinLocalConfigurationException(Exception):
 class BuckEvent(enum.Enum):
     BUILD = "build"
     REBUILD = "rebuild"
+    PROCESS_NEW_PATHS = "process_new_paths"
 
 
 def _resolve_filter_paths(
@@ -515,6 +516,7 @@ class SharedAnalysisDirectory(AnalysisDirectory):
     def _process_new_paths(
         self, new_paths: List[str], tracked_paths: List[str], deleted_paths: List[str]
     ) -> List[str]:
+        start_time = time()
         absolute_link_map = self._fetch_cached_absolute_link_map(
             new_paths, deleted_paths
         )
@@ -539,6 +541,14 @@ class SharedAnalysisDirectory(AnalysisDirectory):
                 self._symbolic_links[path] = absolute_link
             except OSError:
                 LOG.warning("Failed to add link at %s.", absolute_link)
+
+        runtime = time() - start_time
+        self._log_build_event(
+            BuckEvent.PROCESS_NEW_PATHS,
+            runtime,
+            number_of_user_changed_files=len(new_paths),
+            number_of_updated_files=len(absolute_link_map),
+        )
         return tracked_paths
 
     def _process_deleted_paths(
