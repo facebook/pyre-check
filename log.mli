@@ -59,6 +59,8 @@ val print : ('a, Stdio.Out_channel.t, Base.unit) Base.format -> 'a
 
 val log_unix_error : ?section:section -> Unix.error * string * string -> unit
 
+val log_exception : exn -> unit
+
 module Color : sig
   val cyan : string -> string
 

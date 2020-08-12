@@ -90,80 +90,85 @@ let run_command
     local_root
     ()
   =
-  let local_root = Path.create_absolute local_root in
-  Statistics.GlobalState.initialize ~log_identifier ~project_name:(Path.last local_root) ();
-  let configuration =
-    Configuration.Analysis.create
-      ~local_root
-      ~source_path:[local_root]
-      ?log_directory
-      ~perform_autocompletion
-      ~features:(Configuration.Features.create features)
-      ?expected_version
-      ()
-  in
-  (fun () ->
-    (* Log stderr to file *)
-    let log_path =
-      let persistent_client_directory =
-        Configuration.Analysis.log_directory configuration
-        |> Path.append ~element:"persistent"
-        |> Path.absolute
-      in
-      persistent_client_directory ^/ "client.log"
+  try
+    let local_root = Path.create_absolute local_root in
+    Statistics.GlobalState.initialize ~log_identifier ~project_name:(Path.last local_root) ();
+    let configuration =
+      Configuration.Analysis.create
+        ~local_root
+        ~source_path:[local_root]
+        ?log_directory
+        ~perform_autocompletion
+        ~features:(Configuration.Features.create features)
+        ?expected_version
+        ()
     in
-    Unix.handle_unix_error (fun () -> Unix.mkdir_p (Filename.dirname log_path));
-    let log_path = Log.rotate log_path in
-    Format.pp_set_formatter_out_channel Format.err_formatter (Out_channel.create log_path);
-    Version.log_version_banner ();
-    let clear_diagnostics all_uris =
-      let clear_diagnostics uri =
-        PublishDiagnostics.clear_diagnostics_for_uri ~uri
-        |> PublishDiagnostics.to_yojson
-        |> LanguageServer.Protocol.write_message Out_channel.stdout
-      in
-      Hash_set.iter all_uris ~f:clear_diagnostics
-    in
-    let all_uris = String.Hash_set.create () in
-    try
-      let server_socket =
-        let server_socket =
-          try Server.Operations.connect ~retries:3 ~configuration with
-          | Server.Operations.ConnectionFailure -> raise (ClientExit ("connection failure", 1))
-          | Server.Operations.VersionMismatch { Server.Operations.server_version; expected_version }
-            ->
-              Log.error
-                "Exiting due to version mismatch. The server version is %s, but the client was \
-                 called with %s"
-                server_version
-                expected_version;
-              raise (ClientExit ("version mismatch", 1))
+    (fun () ->
+      (* Log stderr to file *)
+      let log_path =
+        let persistent_client_directory =
+          Configuration.Analysis.log_directory configuration
+          |> Path.append ~element:"persistent"
+          |> Path.absolute
         in
-        Socket.write server_socket (Protocol.Request.ClientConnectionRequest Protocol.Persistent);
-        ( match Socket.read server_socket with
-        | Protocol.ClientConnectionResponse Protocol.Persistent -> ()
-        | _ ->
-            let message = "Unexpected json response when attempting persistent connection" in
-            Log.info "%s" message;
-            raise (ClientExit ("unexpected json response", 1)) );
-        server_socket
+        persistent_client_directory ^/ "client.log"
       in
-      communicate ~server_socket ~all_uris
-    with
-    | ClientExit (reason, exit_code) ->
-        Statistics.event
-          ~flush:true
-          ~name:"client exit"
-          ~integers:["exit code", exit_code]
-          ~normals:["reason", reason]
-          ();
-        clear_diagnostics all_uris;
-        exit exit_code
-    | uncaught_exception ->
-        Statistics.log_exception uncaught_exception ~fatal:true ~origin:"persistent";
-        clear_diagnostics all_uris;
-        raise uncaught_exception)
-  |> Scheduler.run_process ~configuration
+      Unix.handle_unix_error (fun () -> Unix.mkdir_p (Filename.dirname log_path));
+      let log_path = Log.rotate log_path in
+      Format.pp_set_formatter_out_channel Format.err_formatter (Out_channel.create log_path);
+      Version.log_version_banner ();
+      let clear_diagnostics all_uris =
+        let clear_diagnostics uri =
+          PublishDiagnostics.clear_diagnostics_for_uri ~uri
+          |> PublishDiagnostics.to_yojson
+          |> LanguageServer.Protocol.write_message Out_channel.stdout
+        in
+        Hash_set.iter all_uris ~f:clear_diagnostics
+      in
+      let all_uris = String.Hash_set.create () in
+      try
+        let server_socket =
+          let server_socket =
+            try Server.Operations.connect ~retries:3 ~configuration with
+            | Server.Operations.ConnectionFailure -> raise (ClientExit ("connection failure", 1))
+            | Server.Operations.VersionMismatch
+                { Server.Operations.server_version; expected_version } ->
+                Log.error
+                  "Exiting due to version mismatch. The server version is %s, but the client was \
+                   called with %s"
+                  server_version
+                  expected_version;
+                raise (ClientExit ("version mismatch", 1))
+          in
+          Socket.write server_socket (Protocol.Request.ClientConnectionRequest Protocol.Persistent);
+          ( match Socket.read server_socket with
+          | Protocol.ClientConnectionResponse Protocol.Persistent -> ()
+          | _ ->
+              let message = "Unexpected json response when attempting persistent connection" in
+              Log.info "%s" message;
+              raise (ClientExit ("unexpected json response", 1)) );
+          server_socket
+        in
+        communicate ~server_socket ~all_uris
+      with
+      | ClientExit (reason, exit_code) ->
+          Statistics.event
+            ~flush:true
+            ~name:"client exit"
+            ~integers:["exit code", exit_code]
+            ~normals:["reason", reason]
+            ();
+          clear_diagnostics all_uris;
+          exit exit_code
+      | uncaught_exception ->
+          Statistics.log_exception uncaught_exception ~fatal:true ~origin:"persistent";
+          clear_diagnostics all_uris;
+          raise uncaught_exception)
+    |> Scheduler.run_process ~configuration
+  with
+  | error ->
+      Log.log_exception error;
+      raise error
 
 
 let command =

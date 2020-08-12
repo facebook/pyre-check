@@ -34,84 +34,96 @@ let run_check
     local_root
     ()
   =
-  let source_path = Option.value source_path ~default:[local_root] in
-  let local_root = Path.create_absolute local_root in
-  Log.GlobalState.initialize ~debug ~sections;
-  Statistics.GlobalState.initialize ~log_identifier ?logger ~project_name:(Path.last local_root) ();
-  Profiling.GlobalState.initialize ~profiling_output ~memory_profiling_output ();
-  let argument_to_paths argument =
-    argument
-    >>| String.split_on_chars ~on:[';']
-    >>| List.map ~f:String.strip
-    >>| List.map ~f:Path.create_absolute
-  in
-  let filter_directories = argument_to_paths filter_directories in
-  let ignore_all_errors = argument_to_paths ignore_all_errors in
-  let configuration =
-    Configuration.Analysis.create
-      ?expected_version
-      ~debug
-      ~strict
-      ~show_error_traces
-      ~infer:false
-      ~project_root:(Path.create_absolute project_root)
-      ~parallel:(not sequential)
-      ?filter_directories
-      ?ignore_all_errors
-      ~number_of_workers
-      ~search_path:(List.map search_path ~f:SearchPath.create_normalized)
-      ~excludes
-      ~extensions
-      ?log_directory
-      ~local_root
-      ~source_path:(List.map source_path ~f:Path.create_absolute)
-      ()
-  in
-  (fun () ->
-    let errors, ast_environment =
-      Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->
-          let timer = Timer.start () in
-          let { Check.errors; environment } =
-            Check.check
-              ~scheduler
-              ~configuration
-              ~call_graph_builder:(module Analysis.Callgraph.DefaultBuilder)
-          in
-          let { Caml.Gc.minor_collections; major_collections; compactions; _ } = Caml.Gc.stat () in
-          Statistics.performance
-            ~name:"check"
-            ~timer
-            ~integers:
-              [
-                "gc_minor_collections", minor_collections;
-                "gc_major_collections", major_collections;
-                "gc_compactions", compactions;
-              ]
-            ~normals:["request kind", "FullCheck"]
-            ();
-          errors, TypeEnvironment.ast_environment environment)
+  try
+    let source_path = Option.value source_path ~default:[local_root] in
+    let local_root = Path.create_absolute local_root in
+    Log.GlobalState.initialize ~debug ~sections;
+    Statistics.GlobalState.initialize
+      ~log_identifier
+      ?logger
+      ~project_name:(Path.last local_root)
+      ();
+    Profiling.GlobalState.initialize ~profiling_output ~memory_profiling_output ();
+    let argument_to_paths argument =
+      argument
+      >>| String.split_on_chars ~on:[';']
+      >>| List.map ~f:String.strip
+      >>| List.map ~f:Path.create_absolute
     in
-    if debug then
-      Memory.report_statistics ();
+    let filter_directories = argument_to_paths filter_directories in
+    let ignore_all_errors = argument_to_paths ignore_all_errors in
+    let configuration =
+      Configuration.Analysis.create
+        ?expected_version
+        ~debug
+        ~strict
+        ~show_error_traces
+        ~infer:false
+        ~project_root:(Path.create_absolute project_root)
+        ~parallel:(not sequential)
+        ?filter_directories
+        ?ignore_all_errors
+        ~number_of_workers
+        ~search_path:(List.map search_path ~f:SearchPath.create_normalized)
+        ~excludes
+        ~extensions
+        ?log_directory
+        ~local_root
+        ~source_path:(List.map source_path ~f:Path.create_absolute)
+        ()
+    in
+    (fun () ->
+      let errors, ast_environment =
+        Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->
+            let timer = Timer.start () in
+            let { Check.errors; environment } =
+              Check.check
+                ~scheduler
+                ~configuration
+                ~call_graph_builder:(module Analysis.Callgraph.DefaultBuilder)
+            in
+            let { Caml.Gc.minor_collections; major_collections; compactions; _ } =
+              Caml.Gc.stat ()
+            in
+            Statistics.performance
+              ~name:"check"
+              ~timer
+              ~integers:
+                [
+                  "gc_minor_collections", minor_collections;
+                  "gc_major_collections", major_collections;
+                  "gc_compactions", compactions;
+                ]
+              ~normals:["request kind", "FullCheck"]
+              ();
+            errors, TypeEnvironment.ast_environment environment)
+      in
+      if debug then
+        Memory.report_statistics ();
 
-    (* Print results. *)
-    let errors =
-      let ast_environment = AstEnvironment.read_only ast_environment in
-      List.map
-        errors
-        ~f:
-          (AnalysisError.instantiate
-             ~show_error_traces
-             ~lookup:(AstEnvironment.ReadOnly.get_real_path_relative ~configuration ast_environment))
-    in
-    Yojson.Safe.to_string
-      (`Assoc
-        [
-          ( "errors",
-            `List (List.map ~f:(fun error -> AnalysisError.Instantiated.to_yojson error) errors) );
-        ])
-    |> Log.print "%s")
-  |> Scheduler.run_process
+      (* Print results. *)
+      let errors =
+        let ast_environment = AstEnvironment.read_only ast_environment in
+        List.map
+          errors
+          ~f:
+            (AnalysisError.instantiate
+               ~show_error_traces
+               ~lookup:
+                 (AstEnvironment.ReadOnly.get_real_path_relative ~configuration ast_environment))
+      in
+      Yojson.Safe.to_string
+        (`Assoc
+          [
+            ( "errors",
+              `List (List.map ~f:(fun error -> AnalysisError.Instantiated.to_yojson error) errors) );
+          ])
+      |> Log.print "%s")
+    |> Scheduler.run_process
+  with
+  | error ->
+      Log.log_exception error;
+      raise error
 
 
 let check_command =

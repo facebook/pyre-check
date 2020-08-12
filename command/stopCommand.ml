@@ -81,8 +81,13 @@ let stop ~log_directory ~local_root =
 
 
 let run log_directory local_root () =
-  let code = stop ~log_directory ~local_root in
-  exit code
+  try
+    let code = stop ~log_directory ~local_root in
+    exit code
+  with
+  | error ->
+      Log.log_exception error;
+      raise error
 
 
 let command =
