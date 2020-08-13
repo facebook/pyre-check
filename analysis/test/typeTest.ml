@@ -395,6 +395,7 @@ let test_create _ =
          overloads = [];
        });
   assert_create "typing.Callable[int]" (Type.Callable.create ~annotation:Type.Top ());
+  assert_create "typing.Callable[int, str]" (Type.Callable.create ~annotation:Type.Top ());
   assert_create "function" (Type.Callable.create ~annotation:Type.Any ());
   assert_create
     "typing.Callable[..., function]"

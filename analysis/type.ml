@@ -2195,90 +2195,93 @@ let rec create_logic ~aliases ~variable_aliases { Node.value = expression; _ } =
       in
       let undefined = { annotation = Top; parameters = Undefined } in
       let get_signature = function
-        | Expression.Tuple [parameters; annotation] ->
-            let parameters =
-              let parse_as_variadic parsed_parameter =
-                create_concatenation_operator_from_annotation parsed_parameter ~variable_aliases
-                >>| fun concatenation -> CallableParameter.Concatenation concatenation
-              in
-              let extract_parameter index parameter =
-                match Node.value parameter with
-                | Expression.Call
-                    { callee = { Node.value = Name (Name.Identifier name); _ }; arguments } -> (
-                    let arguments =
-                      List.map arguments ~f:(fun { Call.Argument.value; _ } -> Node.value value)
-                    in
-                    match name, arguments with
-                    | "PositionalOnly", annotation :: tail ->
-                        let default =
-                          match tail with
-                          | [Name (Name.Identifier "default")] -> true
-                          | _ -> false
-                        in
-                        CallableParameter.PositionalOnly
-                          {
-                            index;
-                            annotation = create_logic (Node.create_with_default_location annotation);
-                            default;
-                          }
-                    | "Named", Name (Name.Identifier name) :: annotation :: tail ->
-                        let default =
-                          match tail with
-                          | [Name (Name.Identifier "default")] -> true
-                          | _ -> false
-                        in
-                        Named
-                          {
-                            name;
-                            annotation = create_logic (Node.create_with_default_location annotation);
-                            default;
-                          }
-                    | "KeywordOnly", Name (Name.Identifier name) :: annotation :: tail ->
-                        let default =
-                          match tail with
-                          | [Name (Name.Identifier "default")] -> true
-                          | _ -> false
-                        in
-                        KeywordOnly
-                          {
-                            name;
-                            annotation = create_logic (Node.create_with_default_location annotation);
-                            default;
-                          }
-                    | "Variable", tail ->
-                        let annotation =
-                          match tail with
-                          | annotation :: _ ->
-                              create_logic (Node.create_with_default_location annotation)
-                          | _ -> Top
-                        in
-                        parse_as_variadic annotation
-                        |> Option.value ~default:(CallableParameter.Concrete annotation)
-                        |> fun variable -> CallableParameter.Variable variable
-                    | "Keywords", tail ->
-                        let annotation =
-                          match tail with
-                          | annotation :: _ ->
-                              create_logic (Node.create_with_default_location annotation)
-                          | _ -> Top
-                        in
-                        Keywords annotation
-                    | _ -> PositionalOnly { index; annotation = Top; default = false } )
-                | _ ->
-                    PositionalOnly { index; annotation = create_logic parameter; default = false }
-              in
-              match Node.value parameters with
-              | List parameters -> Defined (List.mapi ~f:extract_parameter parameters)
-              | _ -> (
-                  let parsed = create_logic parameters in
-                  match substitute_parameter_variadic parsed with
-                  | Some variable -> ParameterVariadicTypeVariable variable
-                  | _ -> (
-                      match parse_as_variadic parsed with
-                      | Some variadic -> Defined [CallableParameter.Variable variadic]
-                      | None -> Undefined ) )
+        | Expression.Tuple [parameters; annotation] -> (
+            let parse_as_variadic parsed_parameter =
+              create_concatenation_operator_from_annotation parsed_parameter ~variable_aliases
+              >>| fun concatenation -> CallableParameter.Concatenation concatenation
             in
-            { annotation = create_logic annotation; parameters }
+            let extract_parameter index parameter =
+              match Node.value parameter with
+              | Expression.Call
+                  { callee = { Node.value = Name (Name.Identifier name); _ }; arguments } -> (
+                  let arguments =
+                    List.map arguments ~f:(fun { Call.Argument.value; _ } -> Node.value value)
+                  in
+                  match name, arguments with
+                  | "PositionalOnly", annotation :: tail ->
+                      let default =
+                        match tail with
+                        | [Name (Name.Identifier "default")] -> true
+                        | _ -> false
+                      in
+                      CallableParameter.PositionalOnly
+                        {
+                          index;
+                          annotation = create_logic (Node.create_with_default_location annotation);
+                          default;
+                        }
+                  | "Named", Name (Name.Identifier name) :: annotation :: tail ->
+                      let default =
+                        match tail with
+                        | [Name (Name.Identifier "default")] -> true
+                        | _ -> false
+                      in
+                      Named
+                        {
+                          name;
+                          annotation = create_logic (Node.create_with_default_location annotation);
+                          default;
+                        }
+                  | "KeywordOnly", Name (Name.Identifier name) :: annotation :: tail ->
+                      let default =
+                        match tail with
+                        | [Name (Name.Identifier "default")] -> true
+                        | _ -> false
+                      in
+                      KeywordOnly
+                        {
+                          name;
+                          annotation = create_logic (Node.create_with_default_location annotation);
+                          default;
+                        }
+                  | "Variable", tail ->
+                      let annotation =
+                        match tail with
+                        | annotation :: _ ->
+                            create_logic (Node.create_with_default_location annotation)
+                        | _ -> Top
+                      in
+                      parse_as_variadic annotation
+                      |> Option.value ~default:(CallableParameter.Concrete annotation)
+                      |> fun variable -> CallableParameter.Variable variable
+                  | "Keywords", tail ->
+                      let annotation =
+                        match tail with
+                        | annotation :: _ ->
+                            create_logic (Node.create_with_default_location annotation)
+                        | _ -> Top
+                      in
+                      Keywords annotation
+                  | _ -> PositionalOnly { index; annotation = Top; default = false } )
+              | _ -> PositionalOnly { index; annotation = create_logic parameter; default = false }
+            in
+            let make_signature ~parameters = { annotation = create_logic annotation; parameters } in
+            match Node.value parameters with
+            | List parameters ->
+                make_signature ~parameters:(Defined (List.mapi ~f:extract_parameter parameters))
+            | _ -> (
+                let parsed = create_logic parameters in
+                match substitute_parameter_variadic parsed with
+                | Some variable ->
+                    make_signature ~parameters:(ParameterVariadicTypeVariable variable)
+                | _ -> (
+                    match parse_as_variadic parsed with
+                    | Some variadic ->
+                        make_signature ~parameters:(Defined [CallableParameter.Variable variadic])
+                    | None -> (
+                        match parsed with
+                        | Primitive "..." -> make_signature ~parameters:Undefined
+                        | _ -> undefined ) ) ) )
         | _ -> undefined
       in
       let implementation =

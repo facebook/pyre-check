@@ -1033,8 +1033,8 @@ let test_check_incomplete_annotations context =
 
 
 let test_check_incomplete_callable context =
-  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
+    ~context
     {|
       import typing
       def foo(x: int) -> str:
@@ -1046,6 +1046,7 @@ let test_check_incomplete_callable context =
        but is used as type `typing.Callable(foo)[[Named(x, int)], str]`.";
     ];
   assert_type_errors
+    ~context
     {|
       import typing
       def foo(x: int) -> str:
@@ -1058,6 +1059,20 @@ let test_check_incomplete_callable context =
       "Invalid type [31]: Expression `typing.Callable[[int]]` is not a valid type.";
       "Invalid type [31]: Expression `typing.Callable[[int]]` is not a valid type.";
       "Invalid type [31]: Expression `typing.Callable[[int]]` is not a valid type.";
+    ];
+  assert_type_errors
+    ~context
+    ~show_error_traces:true
+    {|
+      from typing import Callable
+      x: Callable[int]
+      y: Callable[int, str]
+    |}
+    [
+      "Invalid type [31]: Expression `typing.Callable[int]` is not a valid type. Expected \
+       `Callable[[<parameters>], <return type>]`.";
+      "Invalid type [31]: Expression `typing.Callable[(int, str)]` is not a valid type. Expected \
+       `Callable[[<parameters>], <return type>]`.";
     ];
   ()
 
