@@ -1078,6 +1078,10 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           global_model ~location global, state
       | Name (Name.Identifier identifier) ->
           ForwardState.read ~root:(AccessPath.Root.Variable identifier) ~path:[] state.taint, state
+      (* __dict__ reveals an object's underlying data structure, so we should analyze the base under
+         the existing taint instead of adding the index to the taint. *)
+      | Name (Name.Attribute { base; attribute = "__dict__"; _ }) ->
+          analyze_expression ~resolution ~state ~expression:base
       | Name (Name.Attribute { base; attribute; _ }) -> (
           match
             Interprocedural.CallResolution.resolve_property_targets

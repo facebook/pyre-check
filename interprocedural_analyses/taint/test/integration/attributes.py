@@ -49,3 +49,17 @@ def test_getattr_backwards(t):
 
 def test_getattr_backwards_default(t):
     __test_sink(getattr(None, "", t.token))
+
+
+class UseViaDict:
+    def __init__(self, a, b):
+        self.a = a
+        self.b = b
+
+
+def test_attribute_via_dunder_dict():
+    obj = UseViaDict(a=__test_source(), b=None)
+    # First two should be flows, and the third shouldn't.
+    __test_sink(obj.__dict__)
+    __test_sink(obj.__dict__["a"])
+    __test_sink(obj.__dict__["b"])

@@ -858,6 +858,8 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       | Name _ when AccessPath.is_global ~resolution { Node.location; value = expression } -> state
       | Name (Name.Identifier identifier) ->
           store_weak_taint ~root:(Root.Variable identifier) ~path:[] taint state
+      | Name (Name.Attribute { base; attribute = "__dict__"; _ }) ->
+          analyze_expression ~resolution ~taint ~state ~expression:base
       | Name (Name.Attribute { base; attribute; _ }) -> (
           match
             Interprocedural.CallResolution.resolve_property_targets
