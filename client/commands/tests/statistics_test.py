@@ -11,6 +11,7 @@ from typing import Dict
 from unittest.mock import MagicMock, patch
 
 from libcst import Module, parse_module
+from libcst.metadata import MetadataWrapper
 
 from ...analysis_directory import AnalysisDirectory
 from ...statistics_collectors import (
@@ -107,6 +108,7 @@ class AnnotationCountCollectorTest(unittest.TestCase):
 
     def assert_counts(self, source: str, expected: Dict[str, int]) -> None:
         source_module = self.format_files(source)
+        source_module = MetadataWrapper(source_module)
         collector = AnnotationCountCollector()
         source_module.visit(collector)
         self.assertEqual(collector.build_json(), expected)
@@ -128,6 +130,7 @@ class AnnotationCountCollectorTest(unittest.TestCase):
                 "annotated_attribute_count": 0,
                 "partially_annotated_function_count": 1,
                 "fully_annotated_function_count": 0,
+                "line_count": 4,
             },
         )
 
@@ -147,6 +150,7 @@ class AnnotationCountCollectorTest(unittest.TestCase):
                 "annotated_attribute_count": 0,
                 "partially_annotated_function_count": 1,
                 "fully_annotated_function_count": 0,
+                "line_count": 4,
             },
         )
 
@@ -166,6 +170,7 @@ class AnnotationCountCollectorTest(unittest.TestCase):
                 "annotated_attribute_count": 0,
                 "partially_annotated_function_count": 0,
                 "fully_annotated_function_count": 0,
+                "line_count": 4,
             },
         )
 
@@ -186,6 +191,7 @@ class AnnotationCountCollectorTest(unittest.TestCase):
                 "annotated_attribute_count": 1,
                 "partially_annotated_function_count": 0,
                 "fully_annotated_function_count": 0,
+                "line_count": 5,
             },
         )
 
@@ -206,6 +212,7 @@ class AnnotationCountCollectorTest(unittest.TestCase):
                 "annotated_attribute_count": 0,
                 "partially_annotated_function_count": 0,
                 "fully_annotated_function_count": 0,
+                "line_count": 4,
             },
         )
 
@@ -226,6 +233,7 @@ class AnnotationCountCollectorTest(unittest.TestCase):
                 "annotated_attribute_count": 0,
                 "partially_annotated_function_count": 0,
                 "fully_annotated_function_count": 1,
+                "line_count": 5,
             },
         )
 
@@ -246,6 +254,7 @@ class AnnotationCountCollectorTest(unittest.TestCase):
                 "annotated_attribute_count": 0,
                 "partially_annotated_function_count": 1,
                 "fully_annotated_function_count": 0,
+                "line_count": 5,
             },
         )
 
@@ -266,6 +275,7 @@ class AnnotationCountCollectorTest(unittest.TestCase):
                 "annotated_attribute_count": 0,
                 "partially_annotated_function_count": 0,
                 "fully_annotated_function_count": 1,
+                "line_count": 5,
             },
         )
 
@@ -287,6 +297,7 @@ class AnnotationCountCollectorTest(unittest.TestCase):
                 "annotated_attribute_count": 0,
                 "partially_annotated_function_count": 1,
                 "fully_annotated_function_count": 0,
+                "line_count": 6,
             },
         )
 
@@ -306,6 +317,7 @@ class AnnotationCountCollectorTest(unittest.TestCase):
                 "annotated_attribute_count": 0,
                 "partially_annotated_function_count": 1,
                 "fully_annotated_function_count": 0,
+                "line_count": 4,
             },
         )
 
@@ -327,6 +339,7 @@ class AnnotationCountCollectorTest(unittest.TestCase):
                 "annotated_attribute_count": 0,
                 "partially_annotated_function_count": 1,
                 "fully_annotated_function_count": 0,
+                "line_count": 6,
             },
         )
 
@@ -352,6 +365,7 @@ class AnnotationCountCollectorTest(unittest.TestCase):
                 "annotated_attribute_count": 0,
                 "partially_annotated_function_count": 1,
                 "fully_annotated_function_count": 0,
+                "line_count": 10,
             },
         )
 

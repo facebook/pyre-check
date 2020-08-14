@@ -18,6 +18,8 @@ class StatisticsCollector(cst.CSTVisitor):
 
 
 class AnnotationCountCollector(StatisticsCollector):
+    METADATA_DEPENDENCIES = (PositionProvider,)
+
     def __init__(
         self,
         return_count: int = 0,
@@ -44,6 +46,7 @@ class AnnotationCountCollector(StatisticsCollector):
         self.in_class_definition = False
         self.in_function_definition = False
         self.is_static_function = False
+        self.line_count = 0
 
     def build_json(self) -> Dict[str, int]:
         return {
@@ -59,6 +62,7 @@ class AnnotationCountCollector(StatisticsCollector):
                 self.partially_annotated_function_count
             ),
             "fully_annotated_function_count": self.fully_annotated_function_count,
+            "line_count": self.line_count,
         }
 
     def _is_self_or_cls(self, index: int) -> bool:
@@ -121,6 +125,10 @@ class AnnotationCountCollector(StatisticsCollector):
 
     def leave_ClassDef(self, original_node: cst.ClassDef) -> None:
         self.in_class_definition = False
+
+    def leave_Module(self, original_node: cst.Module) -> None:
+        file_range = self.get_metadata(PositionProvider, original_node)
+        self.line_count = file_range.end.line
 
 
 class CountCollector(StatisticsCollector):

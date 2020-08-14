@@ -8,7 +8,7 @@ import argparse
 import json
 import os
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Type
+from typing import Any, Dict, List, Optional, Set, Type, Union
 
 import libcst as cst
 from libcst._exceptions import ParserSyntaxError
@@ -61,7 +61,7 @@ def _parse_paths(paths: List[Path]) -> List[Path]:
 
 
 def _path_wise_counts(
-    paths: Dict[str, cst.Module],
+    paths: Dict[str, Union[cst.Module, cst.MetadataWrapper]],
     collector_class: Type[StatisticsCollector],
     strict: bool = False,
 ) -> Dict[str, StatisticsCollector]:
@@ -157,9 +157,24 @@ class Statistics(Command):
         )
 
     def _collect_statistics(self, modules: Dict[str, cst.Module]) -> Dict[str, Any]:
-        annotations = _path_wise_counts(modules, AnnotationCountCollector)
+        modules_with_metadata = {
+            path: MetadataWrapper(module) for path, module in modules.items()
+        }
+        # pyre-fixme[6]: Expected `Dict[str, Union[cst._nodes.module.Module,
+        #  cst.metadata.wrapper.MetadataWrapper]]` for 1st param but got `Dict[str,
+        #  cst.metadata.wrapper.MetadataWrapper]`.
+        annotations = _path_wise_counts(modules_with_metadata, AnnotationCountCollector)
+        # pyre-fixme[6]: Expected `Dict[str, Union[cst._nodes.module.Module,
+        #  cst.metadata.wrapper.MetadataWrapper]]` for 1st param but got `Dict[str,
+        #  cst._nodes.module.Module]`.
         fixmes = _path_wise_counts(modules, FixmeCountCollector)
+        # pyre-fixme[6]: Expected `Dict[str, Union[cst._nodes.module.Module,
+        #  cst.metadata.wrapper.MetadataWrapper]]` for 1st param but got `Dict[str,
+        #  cst._nodes.module.Module]`.
         ignores = _path_wise_counts(modules, IgnoreCountCollector)
+        # pyre-fixme[6]: Expected `Dict[str, Union[cst._nodes.module.Module,
+        #  cst.metadata.wrapper.MetadataWrapper]]` for 1st param but got `Dict[str,
+        #  cst._nodes.module.Module]`.
         strict_files = _path_wise_counts(modules, StrictCountCollector, self._strict)
         return {
             "annotations": {
