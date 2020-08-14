@@ -47,3 +47,13 @@ def issue_with_triggered_context():
 def no_issue_with_wrong_label():
     vc = permissive_context()
     demonstrate_triggered_input(vc)
+
+
+def wrapper(id, vc):
+    Node.get(id).send(vc)
+
+
+def no_issue_with_wrapper_call():
+    id = user_controlled_input()
+    vc = permissive_context()
+    combine_tainted_user_and_dangerous_vc_as_params(id, vc)
