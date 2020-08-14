@@ -35,6 +35,11 @@ module Server = struct
 end
 
 module Watchman = struct
-  let log_path configuration =
+  let file_monitor_log_path configuration =
     Configuration.Analysis.log_directory configuration ^| "file_monitor/file_monitor.log"
+
+
+  let configuration_monitor_log_path configuration =
+    Configuration.Analysis.log_directory configuration
+    ^| "configuration_monitor/configuration_monitor.log"
 end

@@ -22,5 +22,7 @@ module Server : sig
 end
 
 module Watchman : sig
-  val log_path : Configuration.Analysis.t -> Path.t
+  val file_monitor_log_path : Configuration.Analysis.t -> Path.t
+
+  val configuration_monitor_log_path : Configuration.Analysis.t -> Path.t
 end
