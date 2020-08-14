@@ -15,8 +15,8 @@ additional details and motivation for the project:
   @Scale](https://www.facebook.com/atscaleevents/videos/494471881397184) -
   Basics of how Pysa works
 - [F8 (at
-  16:00)](https://developers.facebook.com/videos/2019/facebook-loves-python-and-python-loves-facebook/)
-  - How Pyre works on Instagram
+  16:00)](https://developers.facebook.com/videos/2019/facebook-loves-python-and-python-loves-facebook/) -
+  How Pyre works on Instagram
 - [DEF CON 28](https://www.youtube.com/watch?v=8I3zlvtpOww) - Tutorial on how to
   get started with Pysa
 
