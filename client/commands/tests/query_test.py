@@ -15,10 +15,14 @@ from .command_test import mock_arguments, mock_configuration
 
 
 class QueryTest(unittest.TestCase):
+    @patch.object(commands.Query, "_state")
     @patch.object(SocketConnection, "connect")
     @patch.object(AnalysisDirectory, "acquire_shared_reader_lock")
     def test_query(
-        self, acquire_shared_reader_lock: MagicMock, connect: MagicMock
+        self,
+        acquire_shared_reader_lock: MagicMock,
+        connect: MagicMock,
+        state: MagicMock,
     ) -> None:
         original_directory = "/original/directory"
         arguments = mock_arguments(dot_pyre_directory=Path("/tmp/foo"))
@@ -28,6 +32,7 @@ class QueryTest(unittest.TestCase):
         result.output = "{}"
         # pyre-fixme[16]: Callable `read_response` has no attribute `return_value`.
         read_response.return_value = result
+        state.return_value = commands.command.State.RUNNING
 
         commands.Query(
             arguments,
@@ -49,6 +54,19 @@ class QueryTest(unittest.TestCase):
             )._flags(),
             ["query", "-log-directory", "/tmp/foo"],
         )
+
+        connect.reset_mock()
+        acquire_shared_reader_lock.reset_mock()
+        state.return_value = commands.command.State.DEAD
+        commands.Query(
+            arguments,
+            original_directory,
+            configuration=configuration,
+            analysis_directory=AnalysisDirectory("."),
+            query="",
+        ).run()
+        connect.assert_not_called()
+        acquire_shared_reader_lock.assert_not_called()
 
     def test_rewrite_paths(self) -> None:
         original_directory = "/original/directory"

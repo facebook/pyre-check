@@ -15,7 +15,7 @@ from typing import Dict, List, Optional
 from .. import json_rpc, log
 from ..analysis_directory import AnalysisDirectory
 from ..configuration import Configuration
-from .command import Command, CommandArguments, Result
+from .command import Command, CommandArguments, ExitCode, Result, State
 
 
 LOG: Logger = logging.getLogger(__name__)
@@ -100,6 +100,10 @@ class Query(Command):
         return flags
 
     def _run(self) -> None:
+        if self._state() == State.DEAD:
+            LOG.error("No server running to query.")
+            self._exit_code = ExitCode.FAILURE
+            return
         LOG.info("Waiting for server...")
         with self._analysis_directory.acquire_shared_reader_lock():
             request = json_rpc.Request(
