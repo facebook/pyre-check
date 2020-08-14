@@ -102,7 +102,7 @@ class Query(Command):
     def _run(self) -> None:
         if self._state() == State.DEAD:
             LOG.error("No server running to query.")
-            self._exit_code = ExitCode.FAILURE
+            self._exit_code = ExitCode.SERVER_NOT_FOUND
             return
         LOG.info("Waiting for server...")
         with self._analysis_directory.acquire_shared_reader_lock():

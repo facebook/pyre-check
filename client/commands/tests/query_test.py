@@ -34,16 +34,16 @@ class QueryTest(unittest.TestCase):
         read_response.return_value = result
         state.return_value = commands.command.State.RUNNING
 
-        commands.Query(
+        query_command = commands.Query(
             arguments,
             original_directory,
             configuration=configuration,
             analysis_directory=AnalysisDirectory("."),
             query="",
-        ).run()
+        )
+        query_command.run()
         connect.assert_called_once()
         acquire_shared_reader_lock.assert_called_once()
-
         self.assertEqual(
             commands.Query(
                 arguments,
@@ -54,19 +54,22 @@ class QueryTest(unittest.TestCase):
             )._flags(),
             ["query", "-log-directory", "/tmp/foo"],
         )
+        self.assertEqual(query_command._exit_code, 2)
 
         connect.reset_mock()
         acquire_shared_reader_lock.reset_mock()
         state.return_value = commands.command.State.DEAD
-        commands.Query(
+        query_command = commands.Query(
             arguments,
             original_directory,
             configuration=configuration,
             analysis_directory=AnalysisDirectory("."),
             query="",
-        ).run()
+        )
+        query_command.run()
         connect.assert_not_called()
         acquire_shared_reader_lock.assert_not_called()
+        self.assertEqual(query_command._exit_code, 4)
 
     def test_rewrite_paths(self) -> None:
         original_directory = "/original/directory"
