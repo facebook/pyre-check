@@ -99,7 +99,7 @@ class MissingGlobalAnnotations(Command):
     @classmethod
     def add_arguments(cls, parser: argparse.ArgumentParser) -> None:
         super(MissingGlobalAnnotations, cls).add_arguments(parser)
-        parser.set_defaults(command=cls.add_arguments)
+        parser.set_defaults(command=cls.from_arguments)
         parser.add_argument(
             "--only-fix-error-code",
             type=int,
