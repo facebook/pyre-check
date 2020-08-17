@@ -26,6 +26,7 @@ module.exports = {
   projectName: 'pyre-check',
   favicon: 'img/favicon.ico',
   scripts: ['https://buttons.github.io/buttons.js'],
+  plugins: [require.resolve('docusaurus-plugin-internaldocs-fb')],
   presets: [
     [
       '@docusaurus/preset-classic',
