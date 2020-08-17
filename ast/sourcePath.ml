@@ -49,9 +49,9 @@ let qualifier_of_relative relative =
           | _ -> last
         in
         let strip = function
-          | "future" :: "builtins" :: tail
-          | "builtins" :: tail ->
-              tail
+          | ["builtins"]
+          | ["builtins"; "future"] ->
+              []
           | "__init__" :: tail -> tail
           | elements -> elements
         in

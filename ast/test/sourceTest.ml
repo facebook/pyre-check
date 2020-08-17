@@ -210,7 +210,10 @@ let test_qualifier _ =
     (SourcePath.qualifier_of_relative "module/submodule.py")
     (qualifier ["module"; "submodule"]);
   assert_equal (SourcePath.qualifier_of_relative "builtins.pyi") (qualifier []);
-  assert_equal (SourcePath.qualifier_of_relative "module/builtins.pyi") (qualifier ["module"]);
+  assert_equal (SourcePath.qualifier_of_relative "future/builtins.pyi") (qualifier []);
+  assert_equal
+    (SourcePath.qualifier_of_relative "module/builtins.py")
+    (qualifier ["module"; "builtins"]);
   assert_equal (SourcePath.qualifier_of_relative "module/__init__.pyi") (qualifier ["module"])
 
 
