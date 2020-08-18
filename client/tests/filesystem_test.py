@@ -405,10 +405,8 @@ class FilesystemTest(unittest.TestCase):
     #  `"{}.find_local_root".format(tools.pyre.client.commands.command.__name__)` to
     #  decorator factory `unittest.mock.patch` could not be resolved in a global scope.
     @patch("{}.find_local_root".format(command_name), return_value=None)
-    @patch("os.chdir")
     def test_resolve_source_directories(
         self,
-        chdir,
         find_local_root,
         find_project_root,
         exists,

@@ -28,9 +28,8 @@ class ReportingTest(unittest.TestCase):
     #  `"{}.find_local_root".format(tools.pyre.client.commands.command.__name__)` to
     #  decorator factory `unittest.mock.patch` could not be resolved in a global scope.
     @patch("{}.find_local_root".format(client_name), return_value=None)
-    @patch("os.chdir")
     def test_get_errors(
-        self, chdir, find_local_root, find_project_root, exists, isdir, realpath
+        self, find_local_root, find_project_root, exists, isdir, realpath
     ) -> None:
         original_directory = "/test"
         arguments = mock_arguments()
@@ -178,14 +177,13 @@ class ReportingTest(unittest.TestCase):
             commands.Reporting._load_errors_from_json("<some json string>")
 
     @patch.object(subprocess, "run")
-    @patch("os.chdir")
     @patch("{}.find_project_root".format(client_name), return_value="/")
     # pyre-fixme[56]: Argument
     #  `"{}.find_local_root".format(tools.pyre.client.commands.command.__name__)` to
     #  decorator factory `unittest.mock.patch` could not be resolved in a global scope.
     @patch("{}.find_local_root".format(client_name), return_value=None)
     def test_get_directories_to_analyze(
-        self, find_local_root, find_project_root, chdir, run
+        self, find_local_root, find_project_root, run
     ) -> None:
         original_directory = "/"
         find_project_root.return_value = "base"
