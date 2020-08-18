@@ -11,12 +11,17 @@ import tempfile
 import threading
 from json.decoder import JSONDecodeError
 from logging import Logger
+from pathlib import Path
 from typing import Dict, Iterable, List, NamedTuple, Optional, Set, Tuple
 
+from . import source_database_buck_builder
 from .filesystem import find_root
 
 
 LOG: Logger = logging.getLogger(__name__)
+
+
+OUTPUT_DIRECTORY_PREFIX = "pyre_tmp_"
 
 
 class BuckOut(NamedTuple):
@@ -40,6 +45,29 @@ class BuckBuilder:
         return type(self).__name__
 
 
+class SourceDatabaseBuckBuilder(BuckBuilder):
+    def __init__(
+        self,
+        buck_root: str,
+        output_directory: Optional[str] = None,
+        buck_mode: Optional[str] = None,
+    ) -> None:
+        self._buck_root = buck_root
+        self._output_directory: str = output_directory or tempfile.mkdtemp(
+            prefix=OUTPUT_DIRECTORY_PREFIX
+        )
+        self._buck_mode = buck_mode
+
+    def build(self, targets: Iterable[str]) -> List[str]:
+        source_database_buck_builder.build(
+            list(targets),
+            Path(self._output_directory),
+            Path(self._buck_root),
+            self._buck_mode,
+        )
+        return [self._output_directory]
+
+
 class FastBuckBuilder(BuckBuilder):
     def __init__(
         self,
@@ -52,7 +80,7 @@ class FastBuckBuilder(BuckBuilder):
     ) -> None:
         self._buck_root = buck_root
         self._output_directory: str = output_directory or tempfile.mkdtemp(
-            prefix="pyre_tmp_"
+            prefix=OUTPUT_DIRECTORY_PREFIX
         )
         self._buck_builder_binary = buck_builder_binary
         self._debug_mode = debug_mode

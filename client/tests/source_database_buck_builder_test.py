@@ -2,17 +2,15 @@
 
 import json
 import shutil
+import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, call, patch
-
-from testslide import TestCase
 
 from .. import source_database_buck_builder
 
 
-class SourceDatabaseBuckBuilderTest(TestCase):
+class SourceDatabaseBuckBuilderTest(unittest.TestCase):
     def setUp(self) -> None:
-        super().setUp()
         self._query_arguments = [
             "query",
             "--json",
@@ -49,7 +47,11 @@ class SourceDatabaseBuckBuilderTest(TestCase):
             ],
         )
 
-    def test_query_targets(self) -> None:
+    # pyre-fixme[56]: Pyre was not able to infer the type of argument
+    #  `tools.pyre.client.source_database_buck_builder` to decorator factory
+    #  `unittest.mock.patch.object`.
+    @patch.object(source_database_buck_builder, "_buck")
+    def test_query_targets(self, buck: MagicMock) -> None:
         query_output = {
             "//foo/bar/...": ["//foo/bar:baz", "//foo/bar:tests-library"],
             "//bar:baz": [
@@ -58,9 +60,7 @@ class SourceDatabaseBuckBuilderTest(TestCase):
                 "//bar:tests-library-testmodules-lib",
             ],
         }
-        self.mock_callable(
-            source_database_buck_builder, "_buck", allow_private=True
-        ).for_call(self._query_arguments).to_return_value(json.dumps(query_output))
+        buck.return_value = json.dumps(query_output)
 
         self.assertEqual(
             source_database_buck_builder._query_targets(
@@ -185,7 +185,7 @@ class SourceDatabaseBuckBuilderTest(TestCase):
             "hello": {"sources": {"foo.py": "foo.py"}, "dependencies": {}},
             "foo": {"sources": {}, "dependencies": {"bar.pyi": "buck-out/bar.pyi"}},
         }
-        source_database_buck_builder._build(
+        source_database_buck_builder.build(
             ["//foo/bar/..."],
             output_directory=Path("output_directory"),
             buck_root=Path("buck_root"),

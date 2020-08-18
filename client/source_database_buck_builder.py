@@ -1,3 +1,5 @@
+# Copyright (c) Facebook, Inc. and its affiliates.
+
 import argparse
 import itertools
 import json
@@ -20,8 +22,8 @@ class SourceDatabase(TypedDict):
     dependencies: Dict[str, str]
 
 
-def _buck(args: List[str]) -> str:
-    return subprocess.check_output(["buck"] + args).decode("utf-8")
+def _buck(arguments: List[str]) -> str:
+    return subprocess.check_output(["buck"] + arguments).decode("utf-8")
 
 
 def _get_buck_query_arguments(
@@ -134,7 +136,7 @@ def _build_link_tree(
         destination_path.symlink_to(source_path)
 
 
-def _build(
+def build(
     target_specifications: List[str],
     output_directory: Path,
     buck_root: Path,
@@ -158,7 +160,7 @@ def main(argv: List[str]) -> None:
     parser.add_argument("target_specifications", nargs="*")
     arguments = parser.parse_args(argv[1:])
 
-    _build(
+    build(
         arguments.target_specifications,
         arguments.output_directory,
         arguments.buck_root,
