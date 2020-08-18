@@ -190,6 +190,7 @@ class Configuration:
         self._buck_builder_binary: Optional[str] = None
         self.strict: bool = False
         self._use_buck_builder: Optional[bool] = use_buck_builder
+        self._use_buck_source_database: Optional[bool] = None
         self.ignore_infer: List[str] = []
 
         self._search_path: List[SearchPathElement] = []
@@ -388,6 +389,10 @@ class Configuration:
     @property
     def use_buck_builder(self) -> bool:
         return self._use_buck_builder or False
+
+    @property
+    def use_buck_source_database(self) -> bool:
+        return self._use_buck_source_database or False
 
     @property
     def search_path(self) -> List[str]:
@@ -592,6 +597,12 @@ class Configuration:
                 use_buck_builder = configuration.consume("use_buck_builder")
                 if self._use_buck_builder is None:
                     self._use_buck_builder = use_buck_builder
+
+                use_buck_source_database = configuration.consume(
+                    "use_buck_source_database"
+                )
+                if self._use_buck_source_database is None:
+                    self._use_buck_source_database = use_buck_source_database
 
                 self.autocomplete = configuration.consume("autocomplete", default=False)
 

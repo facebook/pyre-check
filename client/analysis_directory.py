@@ -741,6 +741,9 @@ def _get_buck_builder(
             f"No Buck configuration at `{project_root}` or any of its ancestors."
         )
 
+    if configuration.use_buck_source_database:
+        return buck.SourceDatabaseBuckBuilder(buck_root=buck_root, buck_mode=buck_mode)
+
     project_name = _get_project_name(
         isolate_per_process=isolate, relative_local_root=relative_local_root
     )

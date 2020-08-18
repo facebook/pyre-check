@@ -67,6 +67,15 @@ class SourceDatabaseBuckBuilder(BuckBuilder):
         )
         return [self._output_directory]
 
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, SourceDatabaseBuckBuilder):
+            return False
+        return (
+            self._buck_root == other._buck_root
+            and self._output_directory == other._output_directory
+            and self._buck_mode == other._buck_mode
+        )
+
 
 class FastBuckBuilder(BuckBuilder):
     def __init__(

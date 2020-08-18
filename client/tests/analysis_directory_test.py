@@ -852,6 +852,28 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
             ),
         )
 
+    @patch.object(tempfile, "mkdtemp")
+    # pyre-fixme[56]: Pyre was not able to infer the type of argument
+    #  `tools.pyre.client.analysis_directory` to decorator factory
+    #  `unittest.mock.patch.object`.
+    @patch.object(analysis_directory, "find_buck_root")
+    def test_get_buck_builder__source_database_buck_builder(
+        self, find_buck_root: MagicMock, make_temporary_directory: MagicMock
+    ) -> None:
+        configuration = MagicMock(use_buck_source_database=True)
+        actual = _get_buck_builder(
+            project_root="root",
+            configuration=configuration,
+            buck_mode=None,
+            relative_local_root=None,
+            isolate=False,
+            debug=False,
+        )
+        self.assertEqual(
+            actual,
+            buck.SourceDatabaseBuckBuilder(buck_root=find_buck_root(), buck_mode=None),
+        )
+
     @patch.object(
         buck,
         "generate_source_directories",
