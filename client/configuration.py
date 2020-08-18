@@ -170,6 +170,7 @@ class Configuration:
         formatter: Optional[str] = None,
         logger: Optional[str] = None,
         log_directory: Optional[str] = None,
+        use_buck_source_database: Optional[bool] = None,
     ) -> None:
         self.source_directories = []
         self.targets = []
@@ -190,7 +191,7 @@ class Configuration:
         self._buck_builder_binary: Optional[str] = None
         self.strict: bool = False
         self._use_buck_builder: Optional[bool] = use_buck_builder
-        self._use_buck_source_database: Optional[bool] = None
+        self._use_buck_source_database: Optional[bool] = use_buck_source_database
         self.ignore_infer: List[str] = []
 
         self._search_path: List[SearchPathElement] = []

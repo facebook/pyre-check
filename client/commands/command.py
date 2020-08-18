@@ -164,6 +164,7 @@ class CommandArguments:
     formatter: List[str]
     targets: List[str]
     use_buck_builder: Optional[bool]
+    use_buck_source_database: Optional[bool]
     source_directories: List[str]
     filter_directory: Optional[str]
     buck_mode: Optional[str]
@@ -201,6 +202,7 @@ class CommandArguments:
             formatter=arguments.formatter,
             targets=arguments.targets,
             use_buck_builder=arguments.use_buck_builder,
+            use_buck_source_database=arguments.use_buck_source_database,
             source_directories=arguments.source_directories,
             filter_directory=arguments.filter_directory,
             buck_mode=arguments.buck_mode,
@@ -249,6 +251,9 @@ class CommandParser(ABC):
         self._use_buck_builder: Optional[
             bool
         ] = self._command_arguments.use_buck_builder
+        self._use_buck_source_database: Optional[
+            bool
+        ] = self._command_arguments.use_buck_source_database
 
         self._source_directories: List[str] = self._command_arguments.source_directories
         self._filter_directory: Optional[str] = self._command_arguments.filter_directory
@@ -389,6 +394,12 @@ class CommandParser(ABC):
 
         buck_arguments.add_argument(
             "--buck-mode", type=str, help="Mode to pass to `buck query`"
+        )
+        buck_arguments.add_argument(
+            "--use-buck-source-database",
+            action="store_const",
+            const=True,
+            help=argparse.SUPPRESS,
         )
 
         source_directories = parser.add_argument_group("source-directories")
@@ -576,6 +587,7 @@ class Command(CommandParser, ABC):
             logger=logger,
             formatter=self._formatter,
             log_directory=self._log_directory,
+            use_buck_source_database=self._use_buck_source_database,
         )
 
     def generate_analysis_directory(self) -> AnalysisDirectory:

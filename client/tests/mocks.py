@@ -52,6 +52,7 @@ def mock_arguments(
         formatter=[],
         targets=targets or [],
         use_buck_builder=False,
+        use_buck_source_database=False,
         source_directories=source_directories or [],
         filter_directory=".",
         buck_mode=None,
