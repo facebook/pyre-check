@@ -9,7 +9,7 @@ import unittest
 from collections import namedtuple
 from unittest.mock import MagicMock, call, mock_open, patch
 
-from .. import buck
+from .. import buck, source_database_buck_builder
 
 
 BuckOut = namedtuple("BuckOut", "source_directories targets_not_found")
@@ -268,3 +268,16 @@ class BuckTest(unittest.TestCase):
                 buck.query_buck_relative_paths(paths, targets=["targetA"]),
                 {"/BUCK_ROOT/src/python/package.py": "package.py"},
             )
+
+    # pyre-fixme[56]: Pyre was not able to infer the type of argument
+    #  `tools.pyre.client.source_database_buck_builder` to decorator factory
+    #  `unittest.mock.patch.object`.
+    @patch.object(
+        source_database_buck_builder, "build", side_effect=Exception("some exception")
+    )
+    def test_build_exception(self, build: MagicMock) -> None:
+        buck_builder = buck.SourceDatabaseBuckBuilder(
+            buck_root="/root", output_directory="/output", buck_mode=None
+        )
+        with self.assertRaises(buck.BuckException):
+            buck_builder.build(["some_broken_target"])

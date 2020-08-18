@@ -59,13 +59,18 @@ class SourceDatabaseBuckBuilder(BuckBuilder):
         self._buck_mode = buck_mode
 
     def build(self, targets: Iterable[str]) -> List[str]:
-        source_database_buck_builder.build(
-            list(targets),
-            Path(self._output_directory),
-            Path(self._buck_root),
-            self._buck_mode,
-        )
-        return [self._output_directory]
+        try:
+            source_database_buck_builder.build(
+                list(targets),
+                Path(self._output_directory),
+                Path(self._buck_root),
+                self._buck_mode,
+            )
+            return [self._output_directory]
+        except Exception as exception:
+            raise BuckException(
+                f"Failed to build targets because of exception: {exception}"
+            )
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, SourceDatabaseBuckBuilder):
