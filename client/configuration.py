@@ -164,6 +164,7 @@ class Configuration:
         search_path: Optional[List[str]] = None,
         binary: Optional[str] = None,
         typeshed: Optional[str] = None,
+        use_buck_builder: Optional[bool] = None,
         buck_builder_binary: Optional[str] = None,
         excludes: Optional[List[str]] = None,
         formatter: Optional[str] = None,
@@ -188,7 +189,7 @@ class Configuration:
         self._typeshed: Optional[str] = None
         self._buck_builder_binary: Optional[str] = None
         self.strict: bool = False
-        self._use_buck_builder: Optional[bool] = None
+        self._use_buck_builder: Optional[bool] = use_buck_builder
         self.ignore_infer: List[str] = []
 
         self._search_path: List[SearchPathElement] = []

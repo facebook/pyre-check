@@ -84,7 +84,6 @@ class AnalysisDirectoryTest(unittest.TestCase):
             original_directory=original_directory,
             project_root=project_root,
             filter_directory=None,
-            use_buck_builder=False,
             buck_mode=None,
             debug=False,
         )
@@ -102,7 +101,6 @@ class AnalysisDirectoryTest(unittest.TestCase):
             original_directory=original_directory,
             project_root=project_root,
             filter_directory="/real/directory",
-            use_buck_builder=False,
             buck_mode=None,
             debug=False,
         )
@@ -146,6 +144,7 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
         configuration = MagicMock()
         configuration.targets = ["cell//pyre_root/local:target"]
         configuration.local_root = "/buck_root/pyre_root/local"
+        configuration.use_buck_builder = True
         analysis_directory = resolve_analysis_directory(
             source_directories=[],
             targets=[],
@@ -153,7 +152,6 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
             original_directory="/buck_root/pyre_root/local",
             project_root="/buck_root/pyre_root",
             filter_directory=None,
-            use_buck_builder=True,
             debug=False,
             buck_mode=None,
             isolate=False,
@@ -168,6 +166,7 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
         configuration.targets = []
         configuration.source_directories = ["/foo/bar", "/foo/baz"]
         configuration.local_root = "/foo"
+        configuration.use_buck_builder = False
         analysis_directory = resolve_analysis_directory(
             source_directories=[],
             targets=[],
@@ -175,7 +174,6 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
             original_directory="/foo",
             project_root="/foo",
             filter_directory=None,
-            use_buck_builder=False,
             debug=False,
             buck_mode=None,
             isolate=False,
@@ -844,7 +842,6 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
             original_directory=original_directory,
             project_root=project_root,
             filter_directory="/real/directory",
-            use_buck_builder=False,
             buck_mode=None,
             debug=False,
         )
@@ -866,7 +863,6 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
             original_directory=original_directory,
             project_root=project_root,
             filter_directory="/filter",
-            use_buck_builder=False,
             buck_mode=None,
             debug=False,
         )
@@ -890,7 +886,6 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
             original_directory=original_directory,
             project_root=project_root,
             filter_directory="/filter",
-            use_buck_builder=False,
             buck_mode=None,
             debug=False,
         )
@@ -916,7 +911,6 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
             original_directory=original_directory,
             project_root=project_root,
             filter_directory=None,
-            use_buck_builder=False,
             buck_mode=None,
             debug=False,
         )
