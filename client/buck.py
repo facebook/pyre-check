@@ -89,6 +89,20 @@ class FastBuckBuilder(BuckBuilder):
         self.conflicting_files: List[str] = []
         self.unsupported_files: List[str] = []
 
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, FastBuckBuilder):
+            return False
+        return (
+            self._buck_root == other._buck_root
+            and self._output_directory == other._output_directory
+            and self._buck_builder_binary == other._buck_builder_binary
+            and self._debug_mode == other._debug_mode
+            and self._buck_mode == other._buck_mode
+            and self._project_name == other._project_name
+            and self.conflicting_files == other.conflicting_files
+            and self.unsupported_files == other.unsupported_files
+        )
+
     def _get_builder_executable(self) -> str:
         builder_binary = self._buck_builder_binary
         if builder_binary is None:
@@ -174,6 +188,11 @@ class SimpleBuckBuilder(BuckBuilder):
             link trees.
         """
         return generate_source_directories(targets)
+
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, SimpleBuckBuilder):
+            return True
+        return False
 
 
 def presumed_target_root(target: str) -> str:

@@ -20,6 +20,7 @@ from ..analysis_directory import (
     SharedAnalysisDirectory,
     UpdatedPaths,
     __name__ as analysis_directory_name,
+    _get_buck_builder,
     _get_project_name,
     _resolve_filter_paths,
     resolve_analysis_directory,
@@ -806,6 +807,49 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
             shared_analysis_directory._fetch_cached_absolute_link_map(
                 ["foo.py", "bar.py"], []
             )
+        )
+
+    def test_get_buck_builder__simple_buck_builder(self) -> None:
+        actual = _get_buck_builder(
+            project_root="root",
+            configuration=MagicMock(use_buck_builder=False),
+            buck_mode=None,
+            relative_local_root=None,
+            isolate=False,
+            debug=False,
+        )
+        self.assertEqual(actual, buck.SimpleBuckBuilder())
+
+    @patch.object(tempfile, "mkdtemp")
+    @patch.object(analysis_directory, "find_buck_root")
+    # pyre-fixme[56]: Pyre was not able to infer the type of argument
+    #  `tools.pyre.client.analysis_directory` to decorator factory
+    #  `unittest.mock.patch.object`.
+    @patch.object(analysis_directory, "_get_project_name")
+    def test_get_buck_builder__fast_buck_builder(
+        self,
+        get_project_name: MagicMock,
+        find_buck_root: MagicMock,
+        make_temporary_directory: MagicMock,
+    ) -> None:
+        configuration = MagicMock(use_buck_builder=True, use_buck_source_database=False)
+        actual = _get_buck_builder(
+            project_root="root",
+            configuration=configuration,
+            buck_mode=None,
+            relative_local_root=None,
+            isolate=False,
+            debug=False,
+        )
+        self.assertEqual(
+            actual,
+            buck.FastBuckBuilder(
+                buck_root=find_buck_root(),
+                buck_builder_binary=configuration.buck_builder_binary,
+                debug_mode=False,
+                buck_mode=None,
+                project_name=get_project_name(),
+            ),
         )
 
     @patch.object(

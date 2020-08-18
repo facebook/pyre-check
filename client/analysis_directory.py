@@ -724,6 +724,35 @@ def _get_project_name(
     return None
 
 
+def _get_buck_builder(
+    project_root: str,
+    configuration: Configuration,
+    buck_mode: Optional[str],
+    relative_local_root: Optional[str],
+    isolate: bool,
+    debug: bool,
+) -> BuckBuilder:
+    if not configuration.use_buck_builder:
+        return buck.SimpleBuckBuilder()
+
+    buck_root = find_buck_root(project_root)
+    if not buck_root:
+        raise EnvironmentException(
+            f"No Buck configuration at `{project_root}` or any of its ancestors."
+        )
+
+    project_name = _get_project_name(
+        isolate_per_process=isolate, relative_local_root=relative_local_root
+    )
+    return buck.FastBuckBuilder(
+        buck_root=buck_root,
+        buck_builder_binary=configuration.buck_builder_binary,
+        debug_mode=debug,
+        buck_mode=buck_mode,
+        project_name=project_name,
+    )
+
+
 def resolve_analysis_directory(
     source_directories: List[str],
     targets: List[str],
@@ -776,24 +805,9 @@ def resolve_analysis_directory(
             search_path=configuration.search_path,
         )
     else:
-        if configuration.use_buck_builder:
-            buck_root = find_buck_root(project_root)
-            if not buck_root:
-                raise EnvironmentException(
-                    f"No Buck configuration at `{project_root}` or any of its ancestors."
-                )
-            project_name = _get_project_name(
-                isolate_per_process=isolate, relative_local_root=relative_local_root
-            )
-            buck_builder = buck.FastBuckBuilder(
-                buck_root=buck_root,
-                buck_builder_binary=configuration.buck_builder_binary,
-                debug_mode=debug,
-                buck_mode=buck_mode,
-                project_name=project_name,
-            )
-        else:
-            buck_builder = buck.SimpleBuckBuilder()
+        buck_builder = _get_buck_builder(
+            project_root, configuration, buck_mode, relative_local_root, isolate, debug
+        )
 
         analysis_directory = SharedAnalysisDirectory(
             source_directories=source_directories,
