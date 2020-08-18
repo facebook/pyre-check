@@ -8,9 +8,12 @@ import logging
 import pathlib
 import re
 from logging import Logger
+from pathlib import Path
 
 from ..commands.command import Command
+from ..configuration import Configuration
 from ..errors import Errors
+from ..filesystem import path_exists
 from ..repository import Repository
 
 
@@ -141,3 +144,32 @@ class MissingGlobalAnnotations(Command):
                     LOG.info("%d: %s", line, lines[line])
 
             path.write_text("\n".join(lines))
+
+
+class EnableSourceDatabaseBuckBuilder(Command):
+    def __init__(self, *, local_root: Path, repository: Repository) -> None:
+        super().__init__(repository)
+        self._local_root = local_root
+
+    @staticmethod
+    def from_arguments(
+        arguments: argparse.Namespace, repository: Repository
+    ) -> "EnableSourceDatabaseBuckBuilder":
+        return EnableSourceDatabaseBuckBuilder(
+            local_root=arguments.local_root, repository=repository
+        )
+
+    @classmethod
+    def add_arguments(cls, parser: argparse.ArgumentParser) -> None:
+        super(EnableSourceDatabaseBuckBuilder, cls).add_arguments(parser)
+        parser.set_defaults(command=cls.from_arguments)
+        parser.add_argument(
+            "local_root",
+            help="Path to directory with local configuration",
+            type=path_exists,
+        )
+
+    def run(self) -> None:
+        configuration = Configuration(self._local_root / ".pyre_configuration.local")
+        configuration.enable_source_database_buck_builder()
+        configuration.write()

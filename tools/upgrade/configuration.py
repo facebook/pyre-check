@@ -41,8 +41,14 @@ class Configuration:
         )
         self.version: Optional[str] = json_contents.get("version")
         self.differential: bool = json_contents.get("differential", False)
+        self.use_buck_builder: Optional[bool] = json_contents.get("use_buck_builder")
+        self.use_buck_source_database: Optional[bool] = (
+            json_contents.get("use_buck_source_database")
+        )
 
     def get_contents(self) -> Dict[str, Any]:
+        """Assumption: The field names in this class match the key names in
+        the configuration."""
         contents: Dict[str, Any] = self.original_contents
 
         def update_contents(key: str) -> None:
@@ -56,6 +62,8 @@ class Configuration:
         update_contents("source_directories")
         update_contents("version")
         update_contents("strict")
+        update_contents("use_buck_builder")
+        update_contents("use_buck_source_database")
         return contents
 
     @staticmethod
@@ -140,6 +148,10 @@ class Configuration:
 
     def set_version(self, version: str) -> None:
         self.version = version
+
+    def enable_source_database_buck_builder(self) -> None:
+        self.use_buck_builder = True
+        self.use_buck_source_database = True
 
     def add_strict(self) -> None:
         if self.strict:

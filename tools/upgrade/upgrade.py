@@ -13,6 +13,7 @@ from ...client.commands import ExitCode
 from . import UserError
 from .ast import UnstableAST
 from .commands.codemods import (
+    EnableSourceDatabaseBuckBuilder,
     MissingGlobalAnnotations,
     MissingOverrideReturnAnnotations,
 )
@@ -88,6 +89,11 @@ def run(repository: Repository) -> None:
     # Subcommand: Consolidate nested local configurations
     consolidate_nested_configurations = commands.add_parser("consolidate-nested")
     ConsolidateNestedConfigurations.add_arguments(consolidate_nested_configurations)
+
+    enable_source_database_buck_builder = commands.add_parser(
+        "enable-source-database-buck-builder"
+    )
+    EnableSourceDatabaseBuckBuilder.add_arguments(enable_source_database_buck_builder)
 
     # Initialize default values.
     arguments = parser.parse_args()
