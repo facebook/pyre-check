@@ -223,6 +223,17 @@ module In = struct
         reduce payload sofar
       in
       Scheduler.map_reduce scheduler ~policy ~initial ~map ~reduce ~inputs ()
+
+
+    let collected_iter scheduler ~policy ~f ~inputs =
+      collected_map_reduce
+        scheduler
+        ~policy
+        ~initial:()
+        ~map:(fun _ inputs -> f inputs)
+        ~reduce:(fun _ _ -> ())
+        ~inputs
+        ()
   end
 end
 

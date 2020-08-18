@@ -87,6 +87,13 @@ module DependencyKey : sig
       inputs:'input list ->
       unit ->
       'state
+
+    val collected_iter
+      :  Scheduler.t ->
+      policy:Scheduler.Policy.t ->
+      f:('input list -> unit) ->
+      inputs:'input list ->
+      unit
   end
 end
 

@@ -1011,7 +1011,7 @@ let update_this_and_all_preceding_environments { ast_environment } ~scheduler ~c
   in
   let modified_qualifiers = AstEnvironment.UpdateResult.invalidated_modules upstream in
   let update () =
-    Scheduler.iter
+    SharedMemoryKeys.DependencyKey.Registry.collected_iter
       scheduler
       ~policy:
         (Scheduler.Policy.fixed_chunk_count
