@@ -176,7 +176,12 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
                     for target in targets
                 ]
 
-        apply_strict = self._strict and any(target.strict for target in targets)
+        apply_strict = self._strict and any(
+            target.strict
+            for target in [
+                target for target_list in all_targets.values() for target in target_list
+            ]
+        )
         configuration_path = directory / ".pyre_configuration.local"
         if configuration_path.exists():
             LOG.warning(

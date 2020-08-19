@@ -317,6 +317,51 @@ class TargetsToConfigurationTest(unittest.TestCase):
             remove_target_typing_fields.assert_called_once()
             run_strict_default.assert_called_once()
 
+        # Strict option is on, but no strict targets found.
+        suppress_errors.reset_mock()
+        open_mock.reset_mock()
+        dump_mock.reset_mock()
+        add_paths.reset_mock()
+        remove_target_typing_fields.reset_mock()
+        run_strict_default.reset_mock()
+        get_errors.side_effect = [
+            errors.Errors(pyre_errors),
+            errors.Errors(pyre_errors),
+        ]
+        find_targets.return_value = {
+            "subdirectory/a/TARGETS": [Target("target_one", strict=False, pyre=True)],
+            "subdirectory/b/c/TARGETS": [
+                Target("target_three", strict=False, pyre=True),
+                Target("target_two", strict=False, pyre=True),
+            ],
+        }
+        with patch("json.dump") as dump_mock:
+            mocks = [mock_open(read_data="{}").return_value]
+            open_mock.side_effect = mocks
+            TargetsToConfiguration.from_arguments(
+                arguments, repository
+            ).convert_directory(Path("subdirectory"))
+            expected_configuration_contents = {
+                "targets": [
+                    "//subdirectory/a:target_one",
+                    "//subdirectory/b/c:target_three",
+                    "//subdirectory/b/c:target_two",
+                ]
+            }
+            open_mock.assert_has_calls(
+                [call(Path("subdirectory/.pyre_configuration.local"), "w")]
+            )
+            dump_mock.assert_called_once_with(
+                expected_configuration_contents, mocks[0], indent=2, sort_keys=True
+            )
+            suppress_errors.assert_has_calls([call(errors.Errors(pyre_errors))])
+            add_local_mode.assert_not_called()
+            add_paths.assert_called_once_with(
+                [Path("subdirectory/.pyre_configuration.local")]
+            )
+            remove_target_typing_fields.assert_called_once()
+            run_strict_default.assert_not_called()
+
     @patch(f"{targets_to_configuration.__name__}.find_files")
     @patch(f"{targets_to_configuration.__name__}.find_directories")
     def test_gather_directories(self, find_directories, find_files) -> None:
