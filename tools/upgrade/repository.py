@@ -9,7 +9,11 @@ from typing import List, Optional
 
 
 class Repository:
-    MIGRATION_SUMMARY: str = "Migrating buck integration to use configurations"
+    MIGRATION_SUMMARY: str = (
+        "Migrating buck integration to use configurations.\n "
+        "For more information about this migration, please see: "
+        "https://fb.workplace.com/groups/295311271085134/permalink/552700215346237/"
+    )
 
     def commit_message(self, title: str, summary_override: Optional[str] = None) -> str:
         return ""
