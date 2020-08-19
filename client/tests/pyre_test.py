@@ -20,7 +20,6 @@ from .. import (
     pyre,
     recently_used_configurations,
     statistics,
-    terminal,
 )
 from ..commands import ExitCode
 from ..exceptions import EnvironmentException

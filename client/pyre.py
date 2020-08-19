@@ -24,7 +24,6 @@ from . import (
 )
 from .commands import CommandParser, ExitCode, IncrementalStyle
 from .exceptions import EnvironmentException
-from .find_directories import find_project_root
 from .version import __version__
 
 

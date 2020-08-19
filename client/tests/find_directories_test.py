@@ -6,10 +6,8 @@
 # pyre-unsafe
 
 import unittest
-from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
-from .. import __name__ as client_name
 from ..filesystem import __name__ as filesystem_name
 from ..find_directories import find_local_root, find_project_root
 

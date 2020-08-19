@@ -19,7 +19,6 @@ from pathlib import Path
 from typing import IO, Any, List, Optional, Sequence, Set, Union
 
 import libcst
-from libcst._version import LIBCST_VERSION
 from libcst.codemod import CodemodContext
 from libcst.codemod.visitors._apply_type_annotations import ApplyTypeAnnotationsVisitor
 from typing_extensions import Final
@@ -273,7 +272,7 @@ class StubFile:
 
         for stub in stubs_in_file:
             typing_imports.update(stub.get_typing_imports())
-            alphabetical_imports = sorted(list(typing_imports))
+            alphabetical_imports = sorted(typing_imports)
 
         if alphabetical_imports and contents != "":
             contents = (
