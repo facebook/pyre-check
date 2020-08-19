@@ -100,6 +100,15 @@ class SearchPathElement:
             return self.root == other.root and self.subdirectory == other.subdirectory
 
 
+def assert_readable_directory_in_configuration(
+    directory: str, field_name: str = ""
+) -> None:
+    try:
+        assert_readable_directory(directory, error_message_prefix=f"{field_name} ")
+    except EnvironmentException as error:
+        raise InvalidConfiguration(str(error))
+
+
 class _ConfigurationFile:
     def __init__(self, file) -> None:
         self._deprecated = {"do_not_check": "ignore_all_errors"}
@@ -285,7 +294,9 @@ class Configuration:
                 raise InvalidConfiguration("Number of workers must be greater than 0.")
 
             # Validate typeshed path and sub-elements.
-            assert_readable_directory(self.typeshed)
+            assert_readable_directory_in_configuration(
+                self.typeshed, field_name="typeshed"
+            )
 
             # A courtesy warning since we have changed default behaviour.
             if self._typeshed_has_obsolete_value():
@@ -338,7 +349,7 @@ class Configuration:
                 typeshed_subdirectory = os.path.join(
                     self.typeshed, typeshed_subdirectory_name
                 )
-                assert_readable_directory(typeshed_subdirectory)
+                assert_readable_directory_in_configuration(typeshed_subdirectory)
                 for typeshed_version_directory_name in os.listdir(
                     typeshed_subdirectory
                 ):
@@ -351,13 +362,14 @@ class Configuration:
                     typeshed_version_directory = os.path.join(
                         typeshed_subdirectory, typeshed_version_directory_name
                     )
-                    assert_readable_directory(typeshed_version_directory)
+                    assert_readable_directory_in_configuration(
+                        typeshed_version_directory
+                    )
 
             # Validate elements of the search path.
             for element in self._search_path:
-                assert_readable_directory(
-                    element.path(),
-                    error_message_prefix="Invalid search_path in configuration: ",
+                assert_readable_directory_in_configuration(
+                    element.path(), field_name="search_path"
                 )
 
             if not is_list_of_strings(self.other_critical_files):
