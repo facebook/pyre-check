@@ -33,7 +33,9 @@ LOG: Logger = logging.getLogger(__name__)
 
 
 class InvalidConfiguration(Exception):
-    pass
+    def __init__(self, message: str) -> None:
+        self.message = f"Invalid configuration: {message}"
+        super().__init__(self.message)
 
 
 class SearchPathElement:
@@ -363,7 +365,7 @@ class Configuration:
                     "`critical_files` field must be a list of strings."
                 )
         except InvalidConfiguration as error:
-            raise EnvironmentException("Invalid configuration: {}".format(str(error)))
+            raise EnvironmentException(str(error))
 
     @property
     def version_hash(self) -> str:
@@ -373,14 +375,14 @@ class Configuration:
     def binary(self) -> str:
         binary = self._binary
         if not binary:
-            raise InvalidConfiguration("Configuration was not validated")
+            raise InvalidConfiguration("No binary specified.")
         return binary
 
     @property
     def typeshed(self) -> str:
         typeshed = self._typeshed
         if not typeshed:
-            raise InvalidConfiguration("Configuration invalid: no typeshed specified")
+            raise InvalidConfiguration("No typeshed specified.")
         return typeshed
 
     @property
@@ -409,7 +411,7 @@ class Configuration:
     def log_directory(self) -> str:
         log_directory = self._log_directory
         if not log_directory:
-            raise InvalidConfiguration("Configuration was not validated")
+            raise InvalidConfiguration("No log directory found.")
         return log_directory
 
     def get_binary_version(self) -> Optional[str]:
