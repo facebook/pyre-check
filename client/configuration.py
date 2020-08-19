@@ -20,11 +20,12 @@ from pathlib import Path
 from typing import Dict, List, Optional, Union
 
 from .exceptions import EnvironmentException
-from .filesystem import assert_readable_directory, expand_relative_path, find_root
+from .filesystem import assert_readable_directory, expand_relative_path
 from .find_directories import (
     BINARY_NAME,
     CONFIGURATION_FILE,
     LOCAL_CONFIGURATION_FILE,
+    find_root,
     find_typeshed,
 )
 

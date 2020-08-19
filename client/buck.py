@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Dict, Iterable, List, NamedTuple, Optional, Set, Tuple
 
 from . import source_database_buck_builder
-from .filesystem import find_root
+from .find_directories import find_root
 
 
 LOG: Logger = logging.getLogger(__name__)

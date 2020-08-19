@@ -8,11 +8,20 @@
 import unittest
 from unittest.mock import patch
 
-from ..filesystem import __name__ as filesystem_name
-from ..find_directories import find_local_root, find_project_root
+from .. import find_directories
+from ..find_directories import find_local_root, find_project_root, find_root
 
 
 class InitTest(unittest.TestCase):
+    @patch("os.path.isfile")
+    def test_find_configuration(self, os_mock_isfile) -> None:
+        os_mock_isfile.side_effect = [False, False, False, True]
+        self.assertEqual(find_root("/a/b/c/d", "configuration"), "/a")
+        os_mock_isfile.side_effect = [True]
+        self.assertEqual(find_root("/a", "configuration"), "/a")
+        os_mock_isfile.side_effect = [False, False, False]
+        self.assertEqual(find_root("/a/b", "configuration"), None)
+
     def test_find_project_root(self) -> None:
         original_directory = "/a/b/c"
         with patch("os.path.realpath", return_value="realpath"), patch(
@@ -24,11 +33,11 @@ class InitTest(unittest.TestCase):
             directory = find_project_root(original_directory)
             self.assertEqual(directory, "/a/b")
 
-        with patch("{}.find_root".format(filesystem_name)) as mock_find_root:
+        with patch.object(find_directories, "find_root") as mock_find_root:
             original_directory = "/a/b"
             mock_find_root.side_effect = ["/a", "/a/b"]
             directory = find_project_root(original_directory)
-            self.assertEqual(directory, "/a/b")
+            self.assertEqual(directory, "/a")
 
     def test_find_local_root(self) -> None:
         original_directory = "/a/b/c"

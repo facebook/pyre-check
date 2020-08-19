@@ -8,8 +8,6 @@ import logging
 import os
 from typing import Optional
 
-from .filesystem import find_root
-
 
 CONFIGURATION_FILE: str = ".pyre_configuration"
 LOCAL_CONFIGURATION_FILE: str = ".pyre_configuration.local"
@@ -18,6 +16,20 @@ CLIENT_NAME: str = "pyre-client"
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
+
+
+def find_root(original_directory: str, target_file: str) -> Optional[str]:
+    current_directory = os.path.abspath(original_directory)
+    while True:
+        absolute = os.path.join(current_directory, target_file)
+        if os.path.isfile(absolute):
+            return current_directory
+
+        parent_directory = os.path.dirname(current_directory)
+        if current_directory == parent_directory:
+            break
+        current_directory = parent_directory
+    return None
 
 
 def find_project_root(original_directory: str) -> str:

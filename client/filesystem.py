@@ -82,20 +82,6 @@ def translate_paths(paths: Set[str], original_directory: str) -> Set[str]:
     return {translate_path(translation, path) for path in paths}
 
 
-def find_root(original_directory: str, target_file: str) -> Optional[str]:
-    current_directory = os.path.abspath(original_directory)
-    while True:
-        absolute = os.path.join(current_directory, target_file)
-        if os.path.isfile(absolute):
-            return current_directory
-
-        parent_directory = os.path.dirname(current_directory)
-        if current_directory == parent_directory:
-            break
-        current_directory = parent_directory
-    return None
-
-
 def exists(path: str) -> str:
     if not os.path.isfile(path):
         raise ValueError("%s is not a valid file" % path)

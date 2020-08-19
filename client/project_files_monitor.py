@@ -13,7 +13,7 @@ from . import json_rpc, watchman
 from .analysis_directory import AnalysisDirectory
 from .buck import BuckException
 from .configuration import Configuration
-from .filesystem import find_root
+from .find_directories import find_root
 from .process import Process
 from .socket_connection import SocketConnection
 

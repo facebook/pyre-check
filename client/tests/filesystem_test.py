@@ -31,7 +31,6 @@ from ..filesystem import (
     acquire_lock_if_needed,
     add_symbolic_link,
     find_python_paths,
-    find_root,
     remove_if_exists,
 )
 
@@ -375,7 +374,7 @@ class FilesystemTest(unittest.TestCase):
         self.assertEqual(root, "/scratch/path/to/local")
 
     @patch.object(tempfile, "mkdtemp", return_value="/tmp/pyre_tmp_xyz")
-    @patch.object(filesystem, "find_root", return_value="/buck_root")
+    @patch.object(buck, "find_buck_root", return_value="/buck_root")
     @patch("os.makedirs")
     @patch(filesystem_name + ".acquire_lock")
     @patch.object(SharedAnalysisDirectory, "get_root", return_value="/analysis_root")
@@ -589,15 +588,6 @@ class FilesystemTest(unittest.TestCase):
             self.assertEqual(
                 analysis_directory._source_directories, {"realpath(root/.)"}
             )
-
-    @patch("os.path.isfile")
-    def test_find_configuration(self, os_mock_isfile) -> None:
-        os_mock_isfile.side_effect = [False, False, False, True]
-        self.assertEqual(find_root("/a/b/c/d", "configuration"), "/a")
-        os_mock_isfile.side_effect = [True]
-        self.assertEqual(find_root("/a", "configuration"), "/a")
-        os_mock_isfile.side_effect = [False, False, False]
-        self.assertEqual(find_root("/a/b", "configuration"), None)
 
     @patch("os.unlink")
     def test_delete_symbolic_link(self, unlink):
