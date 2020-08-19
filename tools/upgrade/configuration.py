@@ -223,7 +223,12 @@ class Configuration:
                     stderr=subprocess.PIPE,
                 )
             json_string = process.stdout.decode().strip()
-            errors = Errors.from_json(json_string, only_fix_error_code)
+            try:
+                errors = Errors.from_json(json_string, only_fix_error_code)
+            except UserError as error:
+                error_output = process.stderr.decode().strip()
+                LOG.info(f"Pyre error output:\n{error_output}")
+                raise error
             LOG.info("Found %d error%s.", len(errors), "s" if len(errors) != 1 else "")
             return errors
         except subprocess.CalledProcessError as error:
