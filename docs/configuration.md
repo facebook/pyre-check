@@ -65,7 +65,8 @@ Empty string indicates extensionless files.
 ### Local Configurations
 If you have sub-projects within your project root that you would like to run Pyre on, you
 can create a `.pyre_configuration.local` at the root of your subproject and override any
-of the fields set in `.pyre_configuration` above.
+of the fields set in `.pyre_configuration` above. If you are using local configurations, your
+`.pyre_configuration` should not specify any sources itself.
 
 When calling Pyre, the nearest local configuration at- or above the current directory will be used.
 You can use the `--local-configuration` (or `-l`) flag to invoke Pyre on a project that includes a
