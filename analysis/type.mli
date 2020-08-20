@@ -164,9 +164,12 @@ end
 
 module Polynomial : sig
   module Monomial : sig
-    type 'a variable [@@deriving compare, eq, sexp, show, hash]
+    type variadic_operation =
+      | Length
+      | Product
+    [@@deriving compare, eq, sexp, show, hash]
 
-    type 'a variable_degree [@@deriving eq, sexp, compare, hash, show]
+    type 'a variable [@@deriving compare, eq, sexp, show, hash]
 
     type 'a t [@@deriving eq, sexp, compare, hash, show]
   end
@@ -181,15 +184,22 @@ module Polynomial : sig
 
   val create_from_int : int -> 'a t
 
-  val create_from_list : (int * ('a Record.Variable.RecordUnary.record * int) list) list -> 'a t
+  val create_from_variadic
+    :  ( 'a Record.OrderedTypes.RecordConcatenate.Middle.t,
+         'a )
+       Record.OrderedTypes.RecordConcatenate.t ->
+    operation:Monomial.variadic_operation ->
+    'a t
+
+  val create_from_variables_list
+    :  (int * ('a Record.Variable.RecordUnary.record * int) list) list ->
+    'a t
 
   val add : 'a t -> 'a t -> 'a t
 
   val subtract : 'a t -> 'a t -> 'a t
 
   val multiply : 'a t -> 'a t -> 'a t
-
-  val pow : 'a t -> int -> 'a t
 
   val replace : 'a t -> by:'a t -> variable:'a Monomial.variable -> 'a t
 end

@@ -93,6 +93,7 @@ def ListVariadic(name) -> object:
 
 _A = TypeVar("_A", bound=int)
 _B = TypeVar("_B", bound=int)
+_Ts = ListVariadic("_Ts")
 
 
 class Add(Generic[_A, _B], int):
@@ -100,4 +101,12 @@ class Add(Generic[_A, _B], int):
 
 
 class Multiply(Generic[_A, _B], int):
+    pass
+
+
+class Length(Generic[_Ts], int):
+    pass
+
+
+class Product(Generic[_Ts], int):
     pass

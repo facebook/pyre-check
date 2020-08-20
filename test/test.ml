@@ -1379,6 +1379,9 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         def classproperty(f: Any) -> Any: ...
         class Add(Generic[_A, _B], int): pass
         class Multiply(Generic[_A, _B], int): pass
+        _Ts = ListVariadic("_Ts")
+        class Length(Generic[_Ts], int): pass
+        class Product(Generic[_Ts], int): pass
         |}
     );
     ( "pyre_extensions/type_variable_operators.pyi",

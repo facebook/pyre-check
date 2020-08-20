@@ -1950,6 +1950,255 @@ let test_check_typevar_arithmetic context =
     ]
 
 
+let test_check_variadic_arithmetic context =
+  let assert_type_errors = assert_type_errors ~context in
+  let assert_default_type_errors = assert_default_type_errors ~context in
+  assert_type_errors
+    {|
+      from pyre_extensions import Length
+
+      x1 : Length[int,str]
+      x2 : Length[[int,str]]
+
+      reveal_type(x1)
+      reveal_type(x2)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x1` is `typing_extensions.Literal[2]`.";
+      "Revealed type [-1]: Revealed type for `x2` is `typing_extensions.Literal[2]`.";
+    ];
+  assert_default_type_errors
+    {|
+      from typing import TypeVar
+      from typing_extensions import Literal
+      from pyre_extensions import ListVariadic, Product, Add
+
+      A = TypeVar("A", bound=int)
+
+      def f(a : A) -> Product[Add[A,Literal[1]],Literal[3]]: ...
+      x1 : Product[Literal[3],Literal[2]]
+      x2 : Product[[Literal[3],Literal[2]]]
+      x3 = f(2+3) # 2+3 : int
+
+      reveal_type(x1)
+      reveal_type(x2)
+      reveal_type(x3)
+      reveal_type(f)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x1` is `typing_extensions.Literal[6]`.";
+      "Revealed type [-1]: Revealed type for `x2` is `typing_extensions.Literal[6]`.";
+      "Revealed type [-1]: Revealed type for `x3` is `int`.";
+      "Revealed type [-1]: Revealed type for `test.f` is `typing.Callable(f)[[Named(a, Variable[A \
+       (bound to int)])], pyre_extensions.IntExpression[3 + 3A]]`.";
+    ];
+  assert_default_type_errors
+    {|
+      from pyre_extensions import ListVariadic, Product, Length
+
+      Ts = ListVariadic("Ts")
+
+      def f1( *ts : Ts) -> Length[Ts]: ...
+      def f2( *ts : Ts) -> Product[Ts]: ...
+
+      x1 = f1(2,3)
+      x2 = f2(2,3)
+
+      reveal_type(x1)
+      reveal_type(x2)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x1` is `typing_extensions.Literal[2]`.";
+      "Revealed type [-1]: Revealed type for `x2` is `typing_extensions.Literal[6]`.";
+    ];
+  assert_default_type_errors
+    {|
+      from typing import TypeVar, Generic
+      from typing_extensions import Literal
+      from pyre_extensions import ListVariadic, Product, Length
+
+      Ts = ListVariadic("Ts")
+      A = TypeVar("A", bound=int)
+
+      class Vector(Generic[Ts]): pass
+
+      def f1(v : Vector[Ts]) -> Length[Ts]: ...
+      def f2(v : Vector[Ts]) -> Product[Ts]: ...
+
+      v1 : Vector[int,str,float]
+      v2 : Vector[Literal[2],Literal[3],Literal[4]]
+      x1 = f1(v1)
+      x2 = f2(v2)
+
+      reveal_type(x1)
+      reveal_type(x2)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x1` is `typing_extensions.Literal[3]`.";
+      "Revealed type [-1]: Revealed type for `x2` is `typing_extensions.Literal[24]`.";
+    ];
+  assert_default_type_errors
+    {|
+      from typing import TypeVar, Generic
+      from typing_extensions import Literal
+      from pyre_extensions import ListVariadic, Product, Length
+
+      Ts = ListVariadic("Ts")
+
+      def f1(v : Length[Ts]): ...
+      def f2(v : Product[Ts]) : ...
+
+      x1 = f1(2)
+      x2 = f2(3)
+    |}
+    [
+      "Incompatible parameter type [6]: Expected `pyre_extensions.IntExpression[Length[test.Ts]]` \
+       for 1st positional only parameter to call `f1` but got `int`.";
+      "Incompatible parameter type [6]: Expected `pyre_extensions.IntExpression[Product[test.Ts]]` \
+       for 1st positional only parameter to call `f2` but got `int`.";
+    ];
+  assert_default_type_errors
+    {|
+      from typing import TypeVar, Generic
+      from typing_extensions import Literal
+      from pyre_extensions import ListVariadic, Product, Length
+      from pyre_extensions.type_variable_operators import Concatenate as Cat
+
+      Ts = ListVariadic("Ts")
+      A = TypeVar("A", bound=int)
+
+      class Vector(Generic[Ts]): pass
+
+      def f1(v : Vector[Ts], a : A) -> Length[Cat[A,Ts]]: ...
+      def f2(v : Vector[Ts], a : A) -> Product[Cat[A,Ts]]: ...
+
+      v1 : Vector[int,str,float]
+      v2 : Vector[Literal[2],Literal[3],Literal[4]]
+      x1 = f1(v1,5)
+      x2 = f2(v2,2)
+
+      reveal_type(x1)
+      reveal_type(x2)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x1` is `typing_extensions.Literal[4]`.";
+      "Revealed type [-1]: Revealed type for `x2` is `typing_extensions.Literal[48]`.";
+    ];
+  assert_default_type_errors
+    {|
+      from typing import TypeVar, Generic
+      from typing_extensions import Literal
+      from pyre_extensions import ListVariadic, Product, Length
+      from pyre_extensions.type_variable_operators import Concatenate as Cat
+
+      Ts = ListVariadic("Ts")
+      A = TypeVar("A", bound=int)
+
+      class Vector(Generic[Ts]): pass
+
+      def f1(v : Vector[Ts]) -> Vector[Cat[Ts,Length[Ts]]]: ...
+      def f2(v : Vector[Ts]) -> Vector[Cat[Product[Ts],Ts]]: ...
+
+      v1 : Vector[int,str,float]
+      v2 : Vector[Literal[2],Literal[3]]
+      x1 = f1(v1)
+      x2 = f2(v2)
+
+      reveal_type(x1)
+      reveal_type(x2)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x1` is `Vector[int, str, float, \
+       typing_extensions.Literal[3]]`.";
+      "Revealed type [-1]: Revealed type for `x2` is `Vector[typing_extensions.Literal[6], \
+       typing_extensions.Literal[2], typing_extensions.Literal[3]]`.";
+    ];
+  assert_default_type_errors
+    {|
+      from typing import TypeVar, Generic
+      from typing_extensions import Literal
+      from pyre_extensions import ListVariadic, Product, Length
+      from pyre_extensions.type_variable_operators import Concatenate as Cat
+
+      Ts = ListVariadic("Ts")
+      A = TypeVar("A", bound=int)
+
+      class Vector(Generic[Ts]): pass
+
+      def f1(v : Vector[Cat[A,Ts]]) -> Length[Ts]: ...
+      def f2(v : Vector[Cat[A,Ts]]) -> Product[Ts]: ...
+
+      v1 : Vector[int,str,float]
+      v2 : Vector[Literal[2],Literal[3],Literal[4]]
+      x1 = f1(v1)
+      x2 = f2(v2)
+
+      reveal_type(x1)
+      reveal_type(x2)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x1` is `typing_extensions.Literal[2]`.";
+      "Revealed type [-1]: Revealed type for `x2` is `typing_extensions.Literal[12]`.";
+    ];
+  assert_default_type_errors
+    {|
+      from typing import TypeVar, Generic
+      from typing_extensions import Literal
+      from pyre_extensions import ListVariadic, Product, Length
+
+      Ts = ListVariadic("Ts")
+      A = TypeVar("A", bound=int)
+
+      class Vector(Generic[Ts]): pass
+
+      def f1(v : Vector[Ts]) -> Product[Length[Ts],Length[Ts]] : ...
+      def f2(v : Vector[Ts]) -> Length[Product[Ts],Product[Ts]] : ...
+
+      v : Vector[Literal[2],Literal[3],Literal[4]]
+      x1 = f1(v)
+      x2 = f2(v)
+
+      reveal_type(x1)
+      reveal_type(x2)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x1` is `typing_extensions.Literal[9]`.";
+      "Revealed type [-1]: Revealed type for `x2` is `typing_extensions.Literal[2]`.";
+    ];
+  assert_default_type_errors
+    {|
+      from typing import TypeVar, Generic
+      from typing_extensions import Literal
+      from pyre_extensions import ListVariadic, Add, Multiply, Product, Length
+      from pyre_extensions.type_variable_operators import Concatenate as Cat
+
+      Ts = ListVariadic("Ts")
+      A = TypeVar("A", bound=int)
+      B = TypeVar("B", bound=int)
+
+      class Vector(Generic[Ts]): pass
+
+      def f(v : Vector[Cat[A,B,Ts]]) -> Add[B,Multiply[Length[Ts],Product[Cat[A,Ts]]]] : ...
+
+      v : Vector[Literal[2],Literal[3],Literal[4],Literal[5]]
+      x = f(v) # 3 + (Length[4,5] * Prod[2,4,5]) -> 3 + (2*40) -> 83
+
+      reveal_type(x)
+    |}
+    ["Revealed type [-1]: Revealed type for `x` is `typing_extensions.Literal[83]`."];
+  assert_type_errors
+    (* Currently ListVariadic cannot be bounded, so when Product is given a non int type it returns
+       Any *)
+    {|
+      from pyre_extensions import Product
+
+      x : Product[str,int]
+
+      reveal_type(x)
+    |}
+    ["Revealed type [-1]: Revealed type for `x` is `typing.Any`."]
+
+
 let () =
   "annotation"
   >::: [
@@ -1971,5 +2220,6 @@ let () =
          "check_safe_cast" >:: test_check_safe_cast;
          "check_annotation_with_any" >:: test_check_annotation_with_any;
          "check_typevar_arithmetic" >:: test_check_typevar_arithmetic;
+         "check_variadic_arithmetic" >:: test_check_variadic_arithmetic;
        ]
   |> Test.run

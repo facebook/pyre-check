@@ -2366,7 +2366,7 @@ let test_is_unit_test _ =
 
 let test_polynomial_create_from_list _ =
   let assert_create given expected =
-    let given = Type.Polynomial.create_from_list given in
+    let given = Type.Polynomial.create_from_variables_list given in
     assert_equal ~printer:Fn.id expected (Type.Polynomial.show_normal given)
   in
   let x = Type.Variable.Unary.create "x" in
@@ -2393,8 +2393,8 @@ let test_polynomial_create_from_list _ =
 
 let test_add_polynomials _ =
   let assert_add given1 given2 expected =
-    let given1 = Type.Polynomial.create_from_list given1 in
-    let given2 = Type.Polynomial.create_from_list given2 in
+    let given1 = Type.Polynomial.create_from_variables_list given1 in
+    let given2 = Type.Polynomial.create_from_variables_list given2 in
     assert_equal
       ~printer:Fn.id
       expected
@@ -2408,14 +2408,15 @@ let test_add_polynomials _ =
   let y = Type.Variable.Unary.create "y" in
   let z = Type.Variable.Unary.create "z" in
   assert_add [3, []] [2, []] "5";
+  assert_add [3, []] [-3, []; 2, [x, 2]] "2x^2";
   assert_add [1, []; 3, [x, 1]; 2, [y, 1]] [2, []; 1, [x, 1]; 1, [z, 1]] "3 + 4x + 2y + z";
   ()
 
 
 let test_subtract_polynomials _ =
   let assert_subtract given1 given2 expected =
-    let given1 = Type.Polynomial.create_from_list given1 in
-    let given2 = Type.Polynomial.create_from_list given2 in
+    let given1 = Type.Polynomial.create_from_variables_list given1 in
+    let given2 = Type.Polynomial.create_from_variables_list given2 in
     assert_equal
       ~printer:Fn.id
       expected
@@ -2435,8 +2436,8 @@ let test_subtract_polynomials _ =
 
 let test_multiply_polynomial _ =
   let assert_multiply given1 given2 expected =
-    let given1 = Type.Polynomial.create_from_list given1 in
-    let given2 = Type.Polynomial.create_from_list given2 in
+    let given1 = Type.Polynomial.create_from_variables_list given1 in
+    let given2 = Type.Polynomial.create_from_variables_list given2 in
     assert_equal
       ~printer:Fn.id
       expected
@@ -2468,6 +2469,92 @@ let test_parameter_create _ =
       Type.Callable.Parameter.PositionalOnly
         { index = 0; annotation = Type.integer; default = false };
     ]
+
+
+let test_add_polynomials_with_variadics _ =
+  let add = Type.Polynomial.add in
+  let assert_add given1 given2 expected =
+    assert_equal ~printer:Fn.id expected (Type.Polynomial.show_normal (add given1 given2));
+    assert_equal ~printer:Fn.id expected (Type.Polynomial.show_normal (add given2 given1))
+  in
+  let x = Type.Variable.Unary.create "x" in
+  let ts =
+    Type.Variable.Variadic.List.create "Ts"
+    |> Type.OrderedTypes.Concatenation.Middle.create_bare
+    |> Type.OrderedTypes.Concatenation.create
+  in
+  let shape =
+    Type.Variable.Variadic.List.create "Shape"
+    |> Type.OrderedTypes.Concatenation.Middle.create_bare
+    |> Type.OrderedTypes.Concatenation.create
+  in
+  let polynomial_3_2x = Type.Polynomial.create_from_variables_list [3, []; 2, [x, 1]] in
+  let polynomial_ts =
+    Type.Polynomial.create_from_variadic ts ~operation:Type.Polynomial.Monomial.Length
+  in
+  let polynomial_shape =
+    Type.Polynomial.create_from_variadic shape ~operation:Type.Polynomial.Monomial.Product
+  in
+  assert_add
+    (add polynomial_3_2x polynomial_ts)
+    (add polynomial_ts polynomial_shape)
+    "3 + 2Length[Ts] + Product[Shape] + 2x";
+  ()
+
+
+let test_subtract_polynomials_with_variadics _ =
+  let add = Type.Polynomial.add in
+  let subtract = Type.Polynomial.subtract in
+  let assert_subtract given1 given2 expected =
+    assert_equal ~printer:Fn.id expected (Type.Polynomial.show_normal (subtract given1 given2))
+  in
+  let x = Type.Variable.Unary.create "x" in
+  let ts =
+    Type.Variable.Variadic.List.create "Ts"
+    |> Type.OrderedTypes.Concatenation.Middle.create_bare
+    |> Type.OrderedTypes.Concatenation.create
+  in
+  let shape =
+    Type.Variable.Variadic.List.create "Shape"
+    |> Type.OrderedTypes.Concatenation.Middle.create_bare
+    |> Type.OrderedTypes.Concatenation.create
+  in
+  let polynomial_3_2x = Type.Polynomial.create_from_variables_list [3, []; 2, [x, 1]] in
+  let polynomial_ts =
+    Type.Polynomial.create_from_variadic ts ~operation:Type.Polynomial.Monomial.Length
+  in
+  let polynomial_shape =
+    Type.Polynomial.create_from_variadic shape ~operation:Type.Polynomial.Monomial.Product
+  in
+  assert_subtract
+    (add polynomial_3_2x polynomial_ts)
+    (add polynomial_ts polynomial_shape)
+    "3 + -Product[Shape] + 2x";
+  ()
+
+
+let test_multiply_polynomials_with_variadics _ =
+  let add = Type.Polynomial.add in
+  let multiply = Type.Polynomial.multiply in
+  let assert_multiply given1 given2 expected =
+    assert_equal ~printer:Fn.id expected (Type.Polynomial.show_normal (multiply given1 given2));
+    assert_equal ~printer:Fn.id expected (Type.Polynomial.show_normal (multiply given2 given1))
+  in
+  let x = Type.Variable.Unary.create "x" in
+  let ts =
+    Type.Variable.Variadic.List.create "Ts"
+    |> Type.OrderedTypes.Concatenation.Middle.create_bare
+    |> Type.OrderedTypes.Concatenation.create
+  in
+  let polynomial_3_2x = Type.Polynomial.create_from_variables_list [3, []; 2, [x, 1]] in
+  let polynomial_ts =
+    Type.Polynomial.create_from_variadic ts ~operation:Type.Polynomial.Monomial.Length
+  in
+  assert_multiply
+    (add polynomial_3_2x polynomial_ts)
+    polynomial_ts
+    "3Length[Ts] + Length[Ts]^2 + 2Length[Ts]x";
+  ()
 
 
 let () =
@@ -2524,6 +2611,9 @@ let () =
          "type_parameters_for_bounded_tuple_union" >:: test_type_parameters_for_bounded_tuple_union;
          "polynomial_create_from_list" >:: test_polynomial_create_from_list;
          "add_polynomials" >:: test_add_polynomials;
+         "add_polynomials_with_variadics" >:: test_add_polynomials_with_variadics;
+         "subtract_polynomials_with_variadics" >:: test_subtract_polynomials_with_variadics;
+         "multiply_polynomials_with_variadics" >:: test_multiply_polynomials_with_variadics;
          "subtract_polynomials" >:: test_subtract_polynomials;
          "multiply_polynomial" >:: test_multiply_polynomial;
        ]
