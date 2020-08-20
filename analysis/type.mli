@@ -178,7 +178,15 @@ module Polynomial : sig
 
   val is_base_case : 'a t -> bool
 
-  val show_normal : ?concise:bool -> 'a t -> string
+  val show_normal
+    :  show_variable:('a Record.Variable.RecordUnary.record -> string) ->
+    show_variadic:
+      (( 'a Record.OrderedTypes.RecordConcatenate.Middle.t,
+         'a )
+       Record.OrderedTypes.RecordConcatenate.t ->
+      string) ->
+    'a t ->
+    string
 
   val create_from_variable : 'a Record.Variable.RecordUnary.record -> 'a t
 
@@ -192,16 +200,22 @@ module Polynomial : sig
     'a t
 
   val create_from_variables_list
-    :  (int * ('a Record.Variable.RecordUnary.record * int) list) list ->
+    :  compare_t:('a -> 'a -> int) ->
+    (int * ('a Record.Variable.RecordUnary.record * int) list) list ->
     'a t
 
-  val add : 'a t -> 'a t -> 'a t
+  val add : compare_t:('a -> 'a -> int) -> 'a t -> 'a t -> 'a t
 
-  val subtract : 'a t -> 'a t -> 'a t
+  val subtract : compare_t:('a -> 'a -> int) -> 'a t -> 'a t -> 'a t
 
-  val multiply : 'a t -> 'a t -> 'a t
+  val multiply : compare_t:('a -> 'a -> int) -> 'a t -> 'a t -> 'a t
 
-  val replace : 'a t -> by:'a t -> variable:'a Monomial.variable -> 'a t
+  val replace
+    :  compare_t:('a -> 'a -> int) ->
+    'a t ->
+    by:'a t ->
+    variable:'a Monomial.variable ->
+    'a t
 end
 
 module Primitive : sig
@@ -278,6 +292,14 @@ val pp_typed_dictionary_field
   Format.formatter ->
   t Record.TypedDictionary.typed_dictionary_field ->
   unit
+
+val polynomial_show_variable : type_t Record.Variable.RecordUnary.record -> string
+
+val polynomial_show_variadic
+  :  ( type_t Record.OrderedTypes.RecordConcatenate.Middle.t,
+       type_t )
+     Record.OrderedTypes.RecordConcatenate.t ->
+  string
 
 val pp_concise : Format.formatter -> t -> unit
 

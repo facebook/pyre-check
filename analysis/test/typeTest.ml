@@ -2364,10 +2364,26 @@ let test_is_unit_test _ =
   ()
 
 
+let polynomial_show_normal =
+  Type.Polynomial.show_normal
+    ~show_variable:Type.polynomial_show_variable
+    ~show_variadic:Type.polynomial_show_variadic
+
+
+let polynomial_add = Type.Polynomial.add ~compare_t:Type.compare
+
+let polynomial_subtract = Type.Polynomial.subtract ~compare_t:Type.compare
+
+let polynomial_multiply = Type.Polynomial.multiply ~compare_t:Type.compare
+
+let polynomial_create_from_variables_list =
+  Type.Polynomial.create_from_variables_list ~compare_t:Type.compare
+
+
 let test_polynomial_create_from_list _ =
   let assert_create given expected =
-    let given = Type.Polynomial.create_from_variables_list given in
-    assert_equal ~printer:Fn.id expected (Type.Polynomial.show_normal given)
+    let given = polynomial_create_from_variables_list given in
+    assert_equal ~printer:Fn.id expected (polynomial_show_normal given)
   in
   let x = Type.Variable.Unary.create "x" in
   let y = Type.Variable.Unary.create "y" in
@@ -2393,16 +2409,10 @@ let test_polynomial_create_from_list _ =
 
 let test_add_polynomials _ =
   let assert_add given1 given2 expected =
-    let given1 = Type.Polynomial.create_from_variables_list given1 in
-    let given2 = Type.Polynomial.create_from_variables_list given2 in
-    assert_equal
-      ~printer:Fn.id
-      expected
-      (Type.Polynomial.show_normal (Type.Polynomial.add given1 given2));
-    assert_equal
-      ~printer:Fn.id
-      expected
-      (Type.Polynomial.show_normal (Type.Polynomial.add given2 given1))
+    let given1 = polynomial_create_from_variables_list given1 in
+    let given2 = polynomial_create_from_variables_list given2 in
+    assert_equal ~printer:Fn.id expected (polynomial_show_normal (polynomial_add given1 given2));
+    assert_equal ~printer:Fn.id expected (polynomial_show_normal (polynomial_add given2 given1))
   in
   let x = Type.Variable.Unary.create "x" in
   let y = Type.Variable.Unary.create "y" in
@@ -2415,12 +2425,12 @@ let test_add_polynomials _ =
 
 let test_subtract_polynomials _ =
   let assert_subtract given1 given2 expected =
-    let given1 = Type.Polynomial.create_from_variables_list given1 in
-    let given2 = Type.Polynomial.create_from_variables_list given2 in
+    let given1 = polynomial_create_from_variables_list given1 in
+    let given2 = polynomial_create_from_variables_list given2 in
     assert_equal
       ~printer:Fn.id
       expected
-      (Type.Polynomial.show_normal (Type.Polynomial.subtract given1 given2))
+      (polynomial_show_normal (polynomial_subtract given1 given2))
   in
   let x = Type.Variable.Unary.create "x" in
   let y = Type.Variable.Unary.create "y" in
@@ -2436,16 +2446,16 @@ let test_subtract_polynomials _ =
 
 let test_multiply_polynomial _ =
   let assert_multiply given1 given2 expected =
-    let given1 = Type.Polynomial.create_from_variables_list given1 in
-    let given2 = Type.Polynomial.create_from_variables_list given2 in
+    let given1 = polynomial_create_from_variables_list given1 in
+    let given2 = polynomial_create_from_variables_list given2 in
     assert_equal
       ~printer:Fn.id
       expected
-      (Type.Polynomial.show_normal (Type.Polynomial.multiply given1 given2));
+      (polynomial_show_normal (polynomial_multiply given1 given2));
     assert_equal
       ~printer:Fn.id
       expected
-      (Type.Polynomial.show_normal (Type.Polynomial.multiply given2 given1))
+      (polynomial_show_normal (polynomial_multiply given2 given1))
   in
   let x = Type.Variable.Unary.create "x" in
   let y = Type.Variable.Unary.create "y" in
@@ -2472,10 +2482,9 @@ let test_parameter_create _ =
 
 
 let test_add_polynomials_with_variadics _ =
-  let add = Type.Polynomial.add in
   let assert_add given1 given2 expected =
-    assert_equal ~printer:Fn.id expected (Type.Polynomial.show_normal (add given1 given2));
-    assert_equal ~printer:Fn.id expected (Type.Polynomial.show_normal (add given2 given1))
+    assert_equal ~printer:Fn.id expected (polynomial_show_normal (polynomial_add given1 given2));
+    assert_equal ~printer:Fn.id expected (polynomial_show_normal (polynomial_add given2 given1))
   in
   let x = Type.Variable.Unary.create "x" in
   let ts =
@@ -2488,7 +2497,7 @@ let test_add_polynomials_with_variadics _ =
     |> Type.OrderedTypes.Concatenation.Middle.create_bare
     |> Type.OrderedTypes.Concatenation.create
   in
-  let polynomial_3_2x = Type.Polynomial.create_from_variables_list [3, []; 2, [x, 1]] in
+  let polynomial_3_2x = polynomial_create_from_variables_list [3, []; 2, [x, 1]] in
   let polynomial_ts =
     Type.Polynomial.create_from_variadic ts ~operation:Type.Polynomial.Monomial.Length
   in
@@ -2496,17 +2505,18 @@ let test_add_polynomials_with_variadics _ =
     Type.Polynomial.create_from_variadic shape ~operation:Type.Polynomial.Monomial.Product
   in
   assert_add
-    (add polynomial_3_2x polynomial_ts)
-    (add polynomial_ts polynomial_shape)
-    "3 + 2Length[Ts] + Product[Shape] + 2x";
+    (polynomial_add polynomial_3_2x polynomial_ts)
+    (polynomial_add polynomial_ts polynomial_shape)
+    "3 + 2x + 2Length[Ts] + Product[Shape]";
   ()
 
 
 let test_subtract_polynomials_with_variadics _ =
-  let add = Type.Polynomial.add in
-  let subtract = Type.Polynomial.subtract in
   let assert_subtract given1 given2 expected =
-    assert_equal ~printer:Fn.id expected (Type.Polynomial.show_normal (subtract given1 given2))
+    assert_equal
+      ~printer:Fn.id
+      expected
+      (polynomial_show_normal (polynomial_subtract given1 given2))
   in
   let x = Type.Variable.Unary.create "x" in
   let ts =
@@ -2519,7 +2529,7 @@ let test_subtract_polynomials_with_variadics _ =
     |> Type.OrderedTypes.Concatenation.Middle.create_bare
     |> Type.OrderedTypes.Concatenation.create
   in
-  let polynomial_3_2x = Type.Polynomial.create_from_variables_list [3, []; 2, [x, 1]] in
+  let polynomial_3_2x = polynomial_create_from_variables_list [3, []; 2, [x, 1]] in
   let polynomial_ts =
     Type.Polynomial.create_from_variadic ts ~operation:Type.Polynomial.Monomial.Length
   in
@@ -2527,18 +2537,22 @@ let test_subtract_polynomials_with_variadics _ =
     Type.Polynomial.create_from_variadic shape ~operation:Type.Polynomial.Monomial.Product
   in
   assert_subtract
-    (add polynomial_3_2x polynomial_ts)
-    (add polynomial_ts polynomial_shape)
-    "3 + -Product[Shape] + 2x";
+    (polynomial_add polynomial_3_2x polynomial_ts)
+    (polynomial_add polynomial_ts polynomial_shape)
+    "3 + 2x + -Product[Shape]";
   ()
 
 
 let test_multiply_polynomials_with_variadics _ =
-  let add = Type.Polynomial.add in
-  let multiply = Type.Polynomial.multiply in
   let assert_multiply given1 given2 expected =
-    assert_equal ~printer:Fn.id expected (Type.Polynomial.show_normal (multiply given1 given2));
-    assert_equal ~printer:Fn.id expected (Type.Polynomial.show_normal (multiply given2 given1))
+    assert_equal
+      ~printer:Fn.id
+      expected
+      (polynomial_show_normal (polynomial_multiply given1 given2));
+    assert_equal
+      ~printer:Fn.id
+      expected
+      (polynomial_show_normal (polynomial_multiply given2 given1))
   in
   let x = Type.Variable.Unary.create "x" in
   let ts =
@@ -2546,14 +2560,14 @@ let test_multiply_polynomials_with_variadics _ =
     |> Type.OrderedTypes.Concatenation.Middle.create_bare
     |> Type.OrderedTypes.Concatenation.create
   in
-  let polynomial_3_2x = Type.Polynomial.create_from_variables_list [3, []; 2, [x, 1]] in
+  let polynomial_3_2x = polynomial_create_from_variables_list [3, []; 2, [x, 1]] in
   let polynomial_ts =
     Type.Polynomial.create_from_variadic ts ~operation:Type.Polynomial.Monomial.Length
   in
   assert_multiply
-    (add polynomial_3_2x polynomial_ts)
+    (polynomial_add polynomial_3_2x polynomial_ts)
     polynomial_ts
-    "3Length[Ts] + Length[Ts]^2 + 2Length[Ts]x";
+    "3Length[Ts] + 2xLength[Ts] + Length[Ts]^2";
   ()
 
 
