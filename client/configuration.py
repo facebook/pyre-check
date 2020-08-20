@@ -86,7 +86,7 @@ class SearchPathElement:
                         found_element = site_package_element
                 if found_element is None:
                     raise InvalidConfiguration(
-                        "Cannot find site package '{}'".format(subdirectory)
+                        f"Cannot find site package '{subdirectory}'"
                     )
                 return found_element
             else:
@@ -153,7 +153,7 @@ class _ConfigurationFile:
         value = self._configuration.pop(key, default)
         if raise_on_override and current and value:
             raise EnvironmentException(
-                "Configuration file may not override `{}` field.".format(key)
+                f"Configuration file may not override `{key}` field."
             )
         if current:
             return current
@@ -304,9 +304,7 @@ class Configuration:
                 )
 
             if not os.path.exists(self.binary):
-                raise InvalidConfiguration(
-                    "Binary at `{}` does not exist.".format(self.binary)
-                )
+                raise InvalidConfiguration(f"Binary at `{self.binary}` does not exist.")
 
             if self.number_of_workers < 1:
                 raise InvalidConfiguration("Number of workers must be greater than 0.")
@@ -319,9 +317,9 @@ class Configuration:
             # A courtesy warning since we have changed default behaviour.
             if self._typeshed_has_obsolete_value():
                 LOG.warning(
-                    "It appears that `{}` points at a `stdlib` directory. "
-                    "Please note that the `typeshed` configuration must point at "
-                    "the root of the `typeshed` directory.".format(self.typeshed)
+                    f"It appears that `{self.typeshed}` points at a `stdlib` "
+                    "directory. Please note that the `typeshed` configuration must "
+                    "point to the root of the `typeshed` directory."
                 )
 
             expanded_ignore_paths = []
@@ -338,9 +336,8 @@ class Configuration:
             ]
             if non_existent_ignore_paths:
                 LOG.warning(
-                    "Nonexistent paths passed in to `ignore_all_errors`: `{}`".format(
-                        non_existent_ignore_paths
-                    )
+                    "Nonexistent paths passed in to `ignore_all_errors`: "
+                    f"`{non_existent_ignore_paths}`"
                 )
                 self.ignore_all_errors = [
                     path
@@ -353,9 +350,8 @@ class Configuration:
             ]
             if non_existent_infer_paths:
                 LOG.warning(
-                    "Nonexistent paths passed in to `ignore_infer`: `{}`".format(
-                        non_existent_infer_paths
-                    )
+                    "Nonexistent paths passed in to `ignore_infer`: "
+                    f"`{non_existent_infer_paths}`"
                 )
                 self.ignore_infer = [
                     path
@@ -500,23 +496,22 @@ class Configuration:
     def _check_read_local_configuration(self, path: str) -> None:
         if not os.path.exists(path):
             raise EnvironmentException(
-                "Local configuration path `{}` does not exist.".format(path)
+                f"Local configuration path `{path}` does not exist."
             )
 
         local_configuration = os.path.join(path, LOCAL_CONFIGURATION_FILE)
         if not os.path.exists(local_configuration):
             raise EnvironmentException(
-                "Local configuration directory `{}` does not contain "
-                "a `{}` file.".format(path, LOCAL_CONFIGURATION_FILE)
+                f"Local configuration directory `{path}` does not contain "
+                f"a `{LOCAL_CONFIGURATION_FILE}` file."
             )
 
         self._check_nested_configurations(path)
         self._read(local_configuration)
         if not self.source_directories and not self.targets:
             raise EnvironmentException(
-                "Local configuration `{}` does not specify any sources to type check.".format(
-                    local_configuration
-                )
+                f"Local configuration `{local_configuration}` does not specify "
+                " any sources to type check."
             )
 
     def _read(self, path: str) -> None:
@@ -732,9 +727,7 @@ class Configuration:
             self._binary = overriding_binary
             LOG.warning("Binary overridden with `%s`", self._binary)
         if not self._binary:
-            LOG.info(
-                "No binary specified, looking for `{}` in PATH".format(BINARY_NAME)
-            )
+            LOG.info(f"No binary specified, looking for `{BINARY_NAME}` in PATH")
             self._binary = shutil.which(BINARY_NAME)
             if not self._binary:
                 binary_candidate = os.path.join(
@@ -742,7 +735,7 @@ class Configuration:
                 )
                 self._binary = shutil.which(binary_candidate)
             if not self._binary:
-                LOG.warning("Could not find `{}` in PATH".format(BINARY_NAME))
+                LOG.warning(f"Could not find `{BINARY_NAME}` in PATH")
             else:
                 LOG.info("Found: `%s`", self._binary)
 
