@@ -541,3 +541,8 @@ let get_triggered_sink ~partial_sink ~source =
 let get_maximum_model_width () =
   match get () with
   | { analysis_model_constraints = { maximum_model_width; _ }; _ } -> maximum_model_width
+
+
+let maximum_return_access_path_width = 5
+
+let maximum_return_access_path_depth = 3

@@ -152,7 +152,18 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "leaves": [
+              {
+                "kind": "LocalReturn",
+                "name": "[related][related][related]"
+              },
+              {
+                "kind": "LocalReturn",
+                "name": "[related][related][init_list]"
+              },
+              { "kind": "LocalReturn", "name": "[related][init_list]" },
+              { "kind": "LocalReturn", "name": "[init_list]" }
+            ],
             "features": [ { "via": "tito" } ]
           }
         ]
@@ -228,7 +239,18 @@
           {
             "decl": null,
             "tito": [ { "line": 62, "start": 35, "end": 41 } ],
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "leaves": [
+              {
+                "kind": "LocalReturn",
+                "name": "[related][related][related]"
+              },
+              {
+                "kind": "LocalReturn",
+                "name": "[related][related][init_list]"
+              },
+              { "kind": "LocalReturn", "name": "[related][init_list]" },
+              { "kind": "LocalReturn", "name": "[init_list]" }
+            ],
             "features": [ { "via": "tito" } ]
           }
         ]
@@ -461,7 +483,18 @@
           {
             "decl": null,
             "tito": [ { "line": 66, "start": 21, "end": 27 } ],
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "leaves": [
+              {
+                "kind": "LocalReturn",
+                "name": "[related][related][related]"
+              },
+              {
+                "kind": "LocalReturn",
+                "name": "[related][related][init_list]"
+              },
+              { "kind": "LocalReturn", "name": "[related][init_list]" },
+              { "kind": "LocalReturn", "name": "[init_list]" }
+            ],
             "features": [ { "always-via": "tito" } ]
           }
         ]

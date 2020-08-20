@@ -103,10 +103,11 @@ module Complex = struct
 
   let widen set =
     let truncate = function
-      | ReturnAccessPath p when List.length p > 3 -> ReturnAccessPath (List.take p 3)
+      | ReturnAccessPath p when List.length p > Configuration.maximum_return_access_path_depth ->
+          ReturnAccessPath (List.take p Configuration.maximum_return_access_path_depth)
       | x -> x
     in
-    if List.length set > 3 then
+    if List.length set > Configuration.maximum_return_access_path_width then
       [ReturnAccessPath []]
     else
       List.map ~f:truncate set

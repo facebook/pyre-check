@@ -64,3 +64,7 @@ val conditional_test_sinks : unit -> Sinks.t list
 val get_triggered_sink : partial_sink:Sinks.partial_sink -> source:Sources.t -> Sinks.t option
 
 val get_maximum_model_width : unit -> int
+
+val maximum_return_access_path_width : int
+
+val maximum_return_access_path_depth : int
