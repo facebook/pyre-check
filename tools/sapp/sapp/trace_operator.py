@@ -139,14 +139,17 @@ class TraceOperator:
         visited_ids: Set[int] = {int(initial_trace_frames[index].id)}
         while not TraceOperator.is_leaf(trace_frames[-1][0]):
             trace_frame, branches = trace_frames[-1]
-            next_nodes = TraceOperator.next_forward_trace_frames(
-                leaf_dicts,
-                session,
-                current_run_id,
-                sources,
-                sinks,
-                trace_frame,
-                visited_ids,
+            if trace_frame.kind == TraceKind.POSTCONDITION:
+                leaf_kind = sources
+            elif trace_frame.kind == TraceKind.PRECONDITION:
+                leaf_kind = sinks
+            else:
+                assert (
+                    trace_frame.kind == TraceKind.POSTCONDITION
+                    or trace_frame.kind == TraceKind.PRECONDITION
+                )
+            next_nodes = TraceOperator.next_trace_frames(
+                leaf_dicts, session, current_run_id, leaf_kind, trace_frame, visited_ids
             )
 
             if len(next_nodes) == 0:
@@ -174,33 +177,11 @@ class TraceOperator:
         return trace_frame.callee_port in TraceOperator.LEAF_NAMES
 
     @staticmethod
-    def next_forward_trace_frames(
-        leaf_dicts: Tuple[Dict[int, str], Dict[int, str], Dict[int, str]],
-        session: Session,
-        current_run_id: DBID,
-        sources: Set[str],
-        sinks: Set[str],
-        trace_frame: TraceFrameQueryResult,
-        visited_ids: Set[int],
-    ) -> List[TraceFrameQueryResult]:
-        return TraceOperator.next_trace_frames(
-            leaf_dicts,
-            session,
-            current_run_id,
-            sources,
-            sinks,
-            trace_frame,
-            visited_ids,
-            backwards=False,
-        )
-
-    @staticmethod
     def next_trace_frames(
         leaf_dicts: Tuple[Dict[int, str], Dict[int, str], Dict[int, str]],
         session: Session,
         current_run_id: DBID,
-        sources: Set[str],
-        sinks: Set[str],
+        leaf_kind: Set[str],
         trace_frame: TraceFrameQueryResult,
         visited_ids: Set[int],
         backwards: bool = False,
@@ -249,13 +230,10 @@ class TraceOperator:
             .group_by(TraceFrame.id)
             .order_by(TraceFrameLeafAssoc.trace_length, TraceFrame.callee_location)
         )
-        filter_leaves = (
-            sources if trace_frame.kind == TraceKind.POSTCONDITION else sinks
-        )
 
         filtered_results = []
         for frame in results:
-            if int(frame.id) not in visited_ids and filter_leaves.intersection(
+            if int(frame.id) not in visited_ids and leaf_kind.intersection(
                 set(
                     TraceOperator.get_leaves_trace_frame(
                         leaf_dicts,

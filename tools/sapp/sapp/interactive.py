@@ -773,10 +773,25 @@ details              show additional information about the current trace frame
             ]
 
         with self.db.make_session() as session:
-            parent_trace_frames = self._next_backward_trace_frames(
-                session, current_trace_tuple.trace_frame, set()
-            )
+            if current_trace_tuple.trace_frame.kind == TraceKind.POSTCONDITION:
+                leaf_kind = self.sources
+            elif current_trace_tuple.trace_frame.kind == TraceKind.PRECONDITION:
+                leaf_kind = self.sinks
+            else:
+                assert (
+                    current_trace_tuple.trace_frame.kind == TraceKind.POSTCONDITION
+                    or current_trace_tuple.trace_frame.kind == TraceKind.PRECONDITION
+                )
 
+            parent_trace_frames = TraceOperator.next_trace_frames(
+                self.leaf_dicts,
+                session,
+                self.current_run_id,
+                leaf_kind,
+                current_trace_tuple.trace_frame,
+                set(),
+                backwards=True,
+            )
         if len(parent_trace_frames) == 0:
             print(
                 f"No parents calling [{current_trace_tuple.trace_frame.caller} "
@@ -1111,12 +1126,22 @@ details              show additional information about the current trace frame
             )
 
         parent_trace_frame = self.trace_tuples[parent_index].trace_frame
-        return TraceOperator.next_forward_trace_frames(
+
+        if parent_trace_frame.kind == TraceKind.POSTCONDITION:
+            leaf_kind = self.sources
+        elif parent_trace_frame.kind == TraceKind.PRECONDITION:
+            leaf_kind = self.sinks
+        else:
+            assert (
+                parent_trace_frame.kind == TraceKind.POSTCONDITION
+                or parent_trace_frame.kind == TraceKind.PRECONDITION
+            )
+
+        return TraceOperator.next_trace_frames(
             self.leaf_dicts,
             session,
             self.current_run_id,
-            self.sources,
-            self.sinks,
+            leaf_kind,
             parent_trace_frame,
             set(),
         )
@@ -1364,23 +1389,6 @@ details              show additional information about the current trace frame
             )
             for trace_frame, branches in navigation
         ]
-
-    def _next_backward_trace_frames(
-        self,
-        session: Session,
-        trace_frame: TraceFrameQueryResult,
-        visited_ids: Set[int],
-    ) -> List[TraceFrameQueryResult]:
-        return TraceOperator.next_trace_frames(
-            self.leaf_dicts,
-            session,
-            self.current_run_id,
-            self.sources,
-            self.sinks,
-            trace_frame,
-            visited_ids,
-            backwards=True,
-        )
 
     def _create_issue_output_string(
         self,

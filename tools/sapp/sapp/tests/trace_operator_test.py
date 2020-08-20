@@ -77,11 +77,71 @@ class TraceOperatorTest(TestCase):
                 .scalar()
             )
 
-            next_frames = TraceOperator.next_forward_trace_frames(
-                leaf_dicts, session, latest_run_id, set(), {"sink1"}, frames[0], set()
+            next_frames = TraceOperator.next_trace_frames(
+                leaf_dicts, session, latest_run_id, {"sink1"}, frames[0], set()
             )
             self.assertEqual(len(next_frames), 1)
             self.assertEqual(int(next_frames[0].id), int(frames[1].id))
+
+    def testNextTraceFramesBackwards(self):
+        run = self.fakes.run()
+        frames = [
+            self.fakes.precondition(
+                caller="call1",
+                caller_port="root",
+                callee="call3",
+                callee_port="param1",
+                location=(1, 1, 1),
+            ),
+            self.fakes.precondition(
+                caller="call3",
+                caller_port="param1",
+                callee="leaf",
+                callee_port="sink",
+                location=(1, 2, 1),
+            ),
+        ]
+        sink = self.fakes.sink("sink1")
+        self.fakes.saver.add_all(
+            [
+                TraceFrameLeafAssoc.Record(
+                    trace_frame_id=frames[0].id, leaf_id=sink.id, trace_length=1
+                ),
+                TraceFrameLeafAssoc.Record(
+                    trace_frame_id=frames[1].id, leaf_id=sink.id, trace_length=1
+                ),
+            ]
+        )
+        self.fakes.save_all(self.db)
+
+        with self.db.make_session() as session:
+            session.add(run)
+            session.commit()
+
+            latest_run_id = (
+                session.query(func.max(Run.id))
+                .filter(Run.status == RunStatus.FINISHED)
+                .scalar()
+            )
+
+            leaf_dicts = (
+                self._all_leaves_by_kind(session, SharedTextKind.SOURCE),
+                self._all_leaves_by_kind(session, SharedTextKind.SINK),
+                self._all_leaves_by_kind(session, SharedTextKind.FEATURE),
+            )
+
+            next_frames = TraceOperator.next_trace_frames(
+                leaf_dicts,
+                session,
+                latest_run_id,
+                {"sink1"},
+                frames[1],
+                set(),
+                backwards=True,
+            )
+
+            self.assertEqual(len(next_frames), 1)
+            self.assertEqual(int(next_frames[0].id), int(frames[0].id))
 
     def testNextTraceFramesMultipleRuns(self) -> None:
         run1 = self.fakes.run()
@@ -121,8 +181,8 @@ class TraceOperatorTest(TestCase):
                 .scalar()
             )
 
-            next_frames = TraceOperator.next_forward_trace_frames(
-                leaf_dicts, session, latest_run_id, set(), {"sink1"}, frames[2], set()
+            next_frames = TraceOperator.next_trace_frames(
+                leaf_dicts, session, latest_run_id, {"sink1"}, frames[2], set()
             )
             self.assertEqual(len(next_frames), 1)
             self.assertEqual(int(next_frames[0].id), int(frames[3].id))

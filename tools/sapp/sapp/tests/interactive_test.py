@@ -778,49 +778,6 @@ class InteractiveTest(TestCase):
             ),
         ]
 
-    def testNextTraceFramesBackwards(self):
-        run = self.fakes.run()
-        frames = [
-            self.fakes.precondition(
-                caller="call1",
-                caller_port="root",
-                callee="call3",
-                callee_port="param1",
-                location=(1, 1, 1),
-            ),
-            self.fakes.precondition(
-                caller="call3",
-                caller_port="param1",
-                callee="leaf",
-                callee_port="sink",
-                location=(1, 2, 1),
-            ),
-        ]
-        sink = self.fakes.sink("sink1")
-        self.fakes.saver.add_all(
-            [
-                TraceFrameLeafAssoc.Record(
-                    trace_frame_id=frames[0].id, leaf_id=sink.id, trace_length=1
-                ),
-                TraceFrameLeafAssoc.Record(
-                    trace_frame_id=frames[1].id, leaf_id=sink.id, trace_length=1
-                ),
-            ]
-        )
-        self.fakes.save_all(self.db)
-
-        with self.db.make_session() as session:
-            session.add(run)
-            session.commit()
-
-            self.interactive.setup()
-            self.interactive.sinks = {"sink1"}
-            next_frames = self.interactive._next_backward_trace_frames(
-                session, frames[1], set()
-            )
-            self.assertEqual(len(next_frames), 1)
-            self.assertEqual(int(next_frames[0].id), int(frames[0].id))
-
     def testCreateTraceTuples(self):
         # reverse order
         postcondition_traces = [
