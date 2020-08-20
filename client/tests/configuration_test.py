@@ -24,7 +24,7 @@ class MockCompletedProcess(NamedTuple):
     stdout: str
 
 
-class ConfigurationTest(unittest.TestCase):
+class ConfigurationIntegrationTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         # The Pyre environment variables change the outcome of tests.
@@ -147,7 +147,10 @@ class ConfigurationTest(unittest.TestCase):
         ]
         configuration = Configuration("")
         self.assertEqual(configuration.typeshed, "TYPE/VERSION/SHED/")
-        self.assertEqual(configuration.search_path, [SearchPathElement("additional/")])
+        self.assertEqual(
+            configuration.search_path,
+            [SearchPathElement("additional/", subdirectory=None, project_root="")],
+        )
         self.assertEqual(configuration.number_of_workers, 20)
         self.assertEqual(configuration.taint_models_path, [])
         self.assertEqual(configuration.file_hash, None)
@@ -165,7 +168,10 @@ class ConfigurationTest(unittest.TestCase):
         ]
         configuration = Configuration("")
         self.assertEqual(configuration.typeshed, "TYPE/VERSION/SHED/")
-        self.assertEqual(configuration.search_path, [SearchPathElement("additional/")])
+        self.assertEqual(
+            configuration.search_path,
+            [SearchPathElement("additional/", subdirectory=None, project_root="")],
+        )
         self.assertEqual(configuration.number_of_workers, 20)
         self.assertEqual(configuration.taint_models_path, [])
         self.assertEqual(configuration.file_hash, None)
@@ -187,6 +193,28 @@ class ConfigurationTest(unittest.TestCase):
         self.assertEqual(configuration.typeshed, "TYPE/VERSION/SHED/")
         self.assertEqual(
             configuration.search_path, ["additional/", "root/$subdirectory"]
+        )
+        self.assertEqual(configuration.number_of_workers, 20)
+        self.assertEqual(configuration.file_hash, None)
+        self.assertEqual(configuration.taint_models_path, [])
+
+        json_load.side_effect = [
+            {
+                "search_path": [
+                    "//additional/",
+                    {"root": "//root/", "subdirectory": "subdirectory"},
+                ],
+                "version": "VERSION",
+                "typeshed": "TYPE/%V/SHED/",
+                "workers": 20,
+            },
+            {},
+        ]
+        configuration = Configuration("project_root")
+        self.assertEqual(configuration.typeshed, "project_root/TYPE/VERSION/SHED/")
+        self.assertEqual(
+            configuration.search_path,
+            ["project_root/additional/", "project_root/root/$subdirectory"],
         )
         self.assertEqual(configuration.number_of_workers, 20)
         self.assertEqual(configuration.file_hash, None)
@@ -880,3 +908,73 @@ class ConfigurationTest(unittest.TestCase):
             returncode=0, stdout=" facefacefaceb00\n", expected="facefacefaceb00"
         )
         assert_version(returncode=1, stdout="facefacefaceb00", expected=None)
+
+
+class SearchPathElementTest(unittest.TestCase):
+    @patch("os.path.isdir", return_value=True)
+    def test_expand(self, isdir) -> None:
+        element = SearchPathElement.expand(path="simple/path", project_root="root")
+        self.assertEqual(element.path(), "simple/path")
+        self.assertEqual(element.subdirectory, None)
+
+        element = SearchPathElement.expand(
+            path="simple/path",
+            project_root="root",
+            path_relative_to="root/local_project",
+        )
+        self.assertEqual(element.path(), "root/local_project/simple/path")
+        self.assertEqual(element.subdirectory, None)
+
+        element = SearchPathElement.expand(path="//simple/path", project_root="root")
+        self.assertEqual(element.path(), "root/simple/path")
+        self.assertEqual(element.subdirectory, None)
+
+        element = SearchPathElement.expand(
+            path="//simple/path",
+            project_root="root",
+            path_relative_to="root/local_project",
+        )
+        self.assertEqual(element.path(), "root/simple/path")
+        self.assertEqual(element.subdirectory, None)
+
+        # Test search paths with subdirectories
+        element = SearchPathElement.expand(
+            path={"root": "path", "subdirectory": "sub"}, project_root="root"
+        )
+        self.assertEqual(element.path(), "path/sub")
+        self.assertEqual(element.subdirectory, "sub")
+
+        element = SearchPathElement.expand(
+            path={"root": "path", "subdirectory": "sub"},
+            project_root="root",
+            path_relative_to="root/local_project",
+        )
+        self.assertEqual(element.path(), "root/local_project/path/sub")
+        self.assertEqual(element.subdirectory, "sub")
+
+        element = SearchPathElement.expand(
+            path={"root": "//path", "subdirectory": "sub"}, project_root="root"
+        )
+        self.assertEqual(element.path(), "root/path/sub")
+        self.assertEqual(element.subdirectory, "sub")
+
+        element = SearchPathElement.expand(
+            path={"root": "//path", "subdirectory": "sub"},
+            project_root="root",
+            path_relative_to="root/local_project",
+        )
+        self.assertEqual(element.path(), "root/path/sub")
+        self.assertEqual(element.subdirectory, "sub")
+
+    @patch("os.path.isdir", return_value=True)
+    def test_site_packages(self, isdir) -> None:
+        with patch.object(
+            site, "getsitepackages", return_value=["/mock/site0", "/mock/site1"]
+        ):
+            element = SearchPathElement.expand(
+                path={"site-package": "abc"},
+                project_root="root",
+                path_relative_to="root/local_project",
+            )
+            self.assertEqual(element.path(), "/mock/site1/abc")
+            self.assertEqual(element.subdirectory, "abc")
