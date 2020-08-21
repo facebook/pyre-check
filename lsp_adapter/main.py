@@ -33,14 +33,26 @@ def _should_run_null_server(null_server_flag: bool) -> bool:
 
 
 def _get_log_file(current_directory: str) -> str:
-    local_root = find_local_root(original_directory=current_directory)
-    return str(log_directory(current_directory, local_root, "server") / "adapter.log")
+    local_root = find_local_root(Path(current_directory))
+    return str(
+        log_directory(
+            current_directory,
+            str(local_root) if local_root is not None else None,
+            "server",
+        )
+        / "adapter.log"
+    )
 
 
 def _socket_exists(current_directory: str) -> bool:
-    local_root = find_local_root(original_directory=current_directory)
+    local_root = find_local_root(Path(current_directory))
     return Path.exists(
-        log_directory(current_directory, local_root, "server") / "adapter.sock"
+        log_directory(
+            current_directory,
+            str(local_root) if local_root is not None else None,
+            "server",
+        )
+        / "adapter.sock"
     )
 
 
@@ -148,9 +160,10 @@ def run_null_server(loop: AbstractEventLoop) -> None:
 
 
 def add_socket_connection(loop: AbstractEventLoop, root: str) -> SocketConnection:
-    local_root = find_local_root(original_directory=root)
+    local_root = find_local_root(Path(root))
     socket_connection = SocketConnection(
-        str(log_directory(root, local_root)), "adapter.sock"
+        str(log_directory(root, str(local_root) if local_root is not None else None)),
+        "adapter.sock",
     )
     socket_connection.connect()
     socket_connection.perform_handshake(_get_version(root))

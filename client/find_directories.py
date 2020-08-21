@@ -46,27 +46,24 @@ def find_global_root(base: Path) -> Optional[Path]:
     return find_parent_directory_containing_file(base, CONFIGURATION_FILE)
 
 
-def find_local_root(
-    original_directory: str, local_root: Optional[str] = None
-) -> Optional[str]:
-    if local_root:
-        return local_root
-
+def find_local_root(base: Path) -> Optional[Path]:
     found_global_root = find_parent_directory_containing_file(
-        Path(original_directory), CONFIGURATION_FILE
+        Path(base), CONFIGURATION_FILE
     )
     found_local_root = find_parent_directory_containing_file(
-        Path(original_directory), LOCAL_CONFIGURATION_FILE
+        Path(base), LOCAL_CONFIGURATION_FILE
     )
 
     # If the global configuration root is deeper than local configuration, ignore local.
     if (
-        found_global_root
-        and found_local_root
-        and str(found_global_root).startswith(str(found_local_root))
+        found_global_root is not None
+        and found_local_root is not None
+        # This would work because both `find_root` always return resolved path
+        and found_local_root in found_global_root.parents
     ):
-        found_local_root = None
-    return str(found_local_root) if found_local_root is not None else None
+        return None
+    else:
+        return found_local_root
 
 
 def _find_directory_upwards(base: str, target: str) -> Optional[str]:

@@ -289,11 +289,13 @@ class CommandParser(ABC):
         ) if project_root_path is not None else self._original_directory
 
         local_root = self._command_arguments.local_configuration
-        if local_root and local_root.endswith(LOCAL_CONFIGURATION_FILE):
+        if local_root is not None and local_root.endswith(LOCAL_CONFIGURATION_FILE):
             local_root = local_root[: -len(LOCAL_CONFIGURATION_FILE)]
-        self._local_root: Final[Optional[str]] = find_local_root(
-            self._original_directory, local_root
-        )
+        if local_root is None:
+            local_root_path = find_local_root(Path(self._original_directory))
+            if local_root_path is not None:
+                local_root = str(local_root_path)
+        self._local_root: Final[Optional[str]] = local_root
         self._dot_pyre_directory: Path = (
             self._command_arguments.dot_pyre_directory
             or Path(self._project_root, LOG_DIRECTORY)

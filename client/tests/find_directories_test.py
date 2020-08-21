@@ -145,8 +145,8 @@ class FindLocalRootTest(unittest.TestCase):
             root_path = Path(root)
             _ensure_files_exist(root_path, files)
             self.assertEqual(
-                find_local_root(str(root_path / base)),
-                str(root_path / expected) if expected is not None else None,
+                find_local_root(root_path / base),
+                root_path / expected if expected is not None else None,
             )
 
     def test_find_local_root(self) -> None:

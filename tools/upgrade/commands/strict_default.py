@@ -5,7 +5,6 @@
 
 import argparse
 import logging
-import os
 from pathlib import Path
 from typing import Optional
 
@@ -27,10 +26,9 @@ def _get_configuration_path(
     if local_configuration:
         configuration_path = local_configuration / ".pyre_configuration.local"
         return configuration_path
-    original_directory = os.getcwd()
-    configuration_path = find_local_root(original_directory)
+    configuration_path = find_local_root(Path("."))
     if configuration_path:
-        return Path(configuration_path) / ".pyre_configuration.local"
+        return configuration_path / ".pyre_configuration.local"
     return project_configuration
 
 
