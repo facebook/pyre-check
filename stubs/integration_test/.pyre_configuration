@@ -3,5 +3,6 @@
   "binary": ".overridden",
   "typeshed": "../typeshed",
   "search_path": [".."],
-  "taint_models_path": "../taint"
+  "taint_models_path": "../taint",
+  "stable_client": "../../../../../tools/pyre/stable/pyre_client"
 }
