@@ -23,13 +23,13 @@ class ReportingTest(unittest.TestCase):
     @patch.object(os.path, "realpath", side_effect=lambda path: path)
     @patch.object(os.path, "isdir", side_effect=lambda path: True)
     @patch.object(os.path, "exists", side_effect=lambda path: True)
-    @patch("{}.find_project_root".format(client_name), return_value="/")
+    @patch("{}.find_global_root".format(client_name), return_value="/")
     # pyre-fixme[56]: Argument
     #  `"{}.find_local_root".format(tools.pyre.client.commands.command.__name__)` to
     #  decorator factory `unittest.mock.patch` could not be resolved in a global scope.
     @patch("{}.find_local_root".format(client_name), return_value=None)
     def test_get_errors(
-        self, find_local_root, find_project_root, exists, isdir, realpath
+        self, find_local_root, find_global_root, exists, isdir, realpath
     ) -> None:
         original_directory = "/test"
         arguments = mock_arguments()
@@ -87,7 +87,7 @@ class ReportingTest(unittest.TestCase):
 
         # Called from root with local configuration command line argument
         original_directory = "/project"  # called from
-        find_project_root.return_value = "/project"  # project root
+        find_global_root.return_value = "/project"  # project root
         find_local_root.return_value = "/project/test"  # local configuration
         handler = commands.Reporting(
             arguments, original_directory, configuration, AnalysisDirectory("/project")
@@ -101,7 +101,7 @@ class ReportingTest(unittest.TestCase):
 
         # Test overlapping analysis directory and error path
         original_directory = "/project"  # called from
-        find_project_root.return_value = "/project"  # project root
+        find_global_root.return_value = "/project"  # project root
         find_local_root.return_value = "/project/test"  # local configuration
         handler = commands.Reporting(
             arguments,
@@ -123,7 +123,7 @@ class ReportingTest(unittest.TestCase):
 
         # Test wildcard in do not check
         original_directory = "/"  # called from
-        find_project_root.return_value = "/"  # project root
+        find_global_root.return_value = "/"  # project root
         find_local_root.return_value = None
         configuration.ignore_all_errors = ["*/b"]
         handler = commands.Reporting(
@@ -177,16 +177,16 @@ class ReportingTest(unittest.TestCase):
             commands.Reporting._load_errors_from_json("<some json string>")
 
     @patch.object(subprocess, "run")
-    @patch("{}.find_project_root".format(client_name), return_value="/")
+    @patch("{}.find_global_root".format(client_name), return_value="/")
     # pyre-fixme[56]: Argument
     #  `"{}.find_local_root".format(tools.pyre.client.commands.command.__name__)` to
     #  decorator factory `unittest.mock.patch` could not be resolved in a global scope.
     @patch("{}.find_local_root".format(client_name), return_value=None)
     def test_get_directories_to_analyze(
-        self, find_local_root, find_project_root, run
+        self, find_local_root, find_global_root, run
     ) -> None:
         original_directory = "/"
-        find_project_root.return_value = "base"
+        find_global_root.return_value = "base"
         arguments = mock_arguments(source_directories=["base"])
         configuration = mock_configuration()
         handler = commands.Reporting(

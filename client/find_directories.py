@@ -40,16 +40,10 @@ def find_parent_directory_containing_file(base: Path, target: str) -> Optional[P
     return None
 
 
-def find_project_root(original_directory: str) -> str:
+def find_global_root(base: Path) -> Optional[Path]:
     """Pyre always runs from the directory containing the nearest .pyre_configuration,
     if one exists."""
-    global_root = find_parent_directory_containing_file(
-        Path(original_directory), CONFIGURATION_FILE
-    )
-    if global_root is not None:
-        return str(global_root)
-    else:
-        return original_directory
+    return find_parent_directory_containing_file(base, CONFIGURATION_FILE)
 
 
 def find_local_root(

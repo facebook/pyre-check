@@ -19,7 +19,7 @@ _typeshed_search_path: str = "{}.typeshed_search_path".format(check.__name__)
 
 
 class AnalyzeTest(unittest.TestCase):
-    @patch("{}.find_project_root".format(client_name), return_value=".")
+    @patch("{}.find_global_root".format(client_name), return_value=".")
     @patch("{}.find_local_root".format(client_name), return_value=None)
     @patch("subprocess.check_output")
     @patch("os.path.realpath")
@@ -33,7 +33,7 @@ class AnalyzeTest(unittest.TestCase):
         realpath,
         check_output,
         find_local_root,
-        find_project_root,
+        find_global_root,
     ) -> None:
         realpath.side_effect = lambda x: x
         arguments = mock_arguments()

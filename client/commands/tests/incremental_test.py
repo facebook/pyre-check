@@ -35,7 +35,7 @@ class IncrementalTest(unittest.TestCase):
     @patch.object(json_rpc, "read_response")
     @patch.object(SocketConnection, "connect")
     @patch.object(SocketConnection, "perform_handshake")
-    @patch("{}.find_project_root".format(client_name), return_value=".")
+    @patch("{}.find_global_root".format(client_name), return_value=".")
     @patch("{}.find_local_root".format(client_name), return_value=None)
     @patch.object(os.path, "exists", side_effect=lambda path: True)
     @patch(_typeshed_search_path, Mock(return_value=["path3"]))
@@ -53,7 +53,7 @@ class IncrementalTest(unittest.TestCase):
         restart_file_monitor_if_needed,
         exists,
         find_local_root,
-        find_project_root,
+        find_global_root,
         perform_handshake,
         connect,
         read_response,
@@ -284,7 +284,7 @@ class IncrementalTest(unittest.TestCase):
 
         arguments = mock_arguments()
         original_directory = "/test"  # called from
-        find_project_root.return_value = "/"  # project root
+        find_global_root.return_value = "/"  # project root
         configuration = mock_configuration()
         configuration.version_hash = "hash"
         analysis_directory = AnalysisDirectory(".")

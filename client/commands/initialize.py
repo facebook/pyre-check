@@ -11,6 +11,7 @@ import shutil
 import subprocess
 import sys
 from logging import Logger
+from pathlib import Path
 from typing import Any, Dict
 
 from .. import log
@@ -18,7 +19,7 @@ from ..exceptions import EnvironmentException
 from ..find_directories import (
     BINARY_NAME,
     CONFIGURATION_FILE,
-    find_project_root,
+    find_global_root,
     find_taint_models_directory,
     find_typeshed,
 )
@@ -136,8 +137,7 @@ class Initialize(CommandParser):
         return configuration
 
     def _is_local(self) -> bool:
-        project_root = find_project_root(self._original_directory)
-        return project_root != self._original_directory
+        return find_global_root(Path(self._original_directory)) is not None
 
     def _run(self) -> None:
         self._local = self._is_local()

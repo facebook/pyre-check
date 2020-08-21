@@ -11,9 +11,9 @@ from pathlib import Path
 from typing import Iterable, Optional
 
 from ..find_directories import (
+    find_global_root,
     find_local_root,
     find_parent_directory_containing_file,
-    find_project_root,
 )
 
 
@@ -116,24 +116,24 @@ class FindParentDirectoryContainingFileTest(unittest.TestCase):
         )
 
 
-class FindProjectRootTest(unittest.TestCase):
-    def assert_find_project_root(
+class FindGlobalRootTest(unittest.TestCase):
+    def assert_find_global_root(
         self, files: Iterable[str], base: str, expected: Optional[str]
     ) -> None:
         with tempfile.TemporaryDirectory() as root:
             root_path = Path(root)
             _ensure_files_exist(root_path, files)
             self.assertEqual(
-                find_project_root(str(root_path / base)),
-                str(root_path / expected) if expected is not None else None,
+                find_global_root(root_path / base),
+                (root_path / expected) if expected is not None else None,
             )
 
-    def test_find_project_root(self) -> None:
-        self.assert_find_project_root(
+    def test_find_global_root(self) -> None:
+        self.assert_find_global_root(
             files=["a/b/.pyre_configuration", "a/b/c/d"], base="a/b/c", expected="a/b"
         )
-        self.assert_find_project_root(
-            files=["a/b/c", "a/b/d/e"], base="a/b/d", expected="a/b/d"
+        self.assert_find_global_root(
+            files=["a/b/c", "a/b/d/e"], base="a/b/d", expected=None
         )
 
 

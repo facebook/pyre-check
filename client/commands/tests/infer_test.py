@@ -602,7 +602,7 @@ def mock_configuration() -> MagicMock:
 
 
 class InferTest(unittest.TestCase):
-    @patch("{}.find_project_root".format(client_name), return_value=".")
+    @patch("{}.find_global_root".format(client_name), return_value=".")
     @patch("{}.find_local_root".format(client_name), return_value=None)
     @patch.object(json, "loads", return_value={"errors": []})
     @patch(_typeshed_search_path, Mock(return_value=["path3"]))
@@ -610,7 +610,7 @@ class InferTest(unittest.TestCase):
     #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(commands.Reporting, "_get_directories_to_analyze", return_value=set())
     def test_infer(
-        self, directories_to_analyze, json_loads, find_local_root, find_project_root
+        self, directories_to_analyze, json_loads, find_local_root, find_global_root
     ) -> None:
         original_directory = "/original/directory"
         arguments = mock_arguments()

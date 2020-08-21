@@ -22,7 +22,7 @@ _typeshed_search_path: str = "{}.typeshed_search_path".format(commands.start.__n
 
 
 class StartTest(unittest.TestCase):
-    @patch("{}.find_project_root".format(client_name), return_value=".")
+    @patch("{}.find_global_root".format(client_name), return_value=".")
     @patch("{}.find_local_root".format(client_name), return_value=None)
     @patch("fcntl.lockf")
     @patch(_typeshed_search_path, Mock(return_value=["path3"]))
@@ -36,7 +36,7 @@ class StartTest(unittest.TestCase):
         get_directories_to_analyze,
         lock_file,
         find_local_root,
-        find_project_root,
+        find_global_root,
     ) -> None:
         original_directory = "/original/directory"
         arguments = mock_arguments()
@@ -201,14 +201,14 @@ class StartTest(unittest.TestCase):
             command.run()
             self.assertEqual(command._exit_code, ExitCode.SUCCESS)
 
-    @patch("{}.find_project_root".format(client_name), return_value=".")
+    @patch("{}.find_global_root".format(client_name), return_value=".")
     @patch("{}.find_local_root".format(client_name), return_value=None)
     @patch(_typeshed_search_path, Mock(return_value=["path3"]))
     # pyre-fixme[56]: Argument `set()` to decorator factory
     #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(commands.Reporting, "_get_directories_to_analyze", return_value=set())
     def test_start_flags(
-        self, get_directories_to_analyze, find_local_root, find_project_root
+        self, get_directories_to_analyze, find_local_root, find_global_root
     ) -> None:
         flags = [
             "-logging-sections",

@@ -27,8 +27,8 @@ from ..exceptions import EnvironmentException
 from ..filesystem import readable_directory, remove_if_exists, translate_path
 from ..find_directories import (
     LOCAL_CONFIGURATION_FILE,
+    find_global_root,
     find_local_root,
-    find_project_root,
 )
 from ..log import StreamLogger
 from ..process import Process
@@ -283,7 +283,10 @@ class CommandParser(ABC):
         # Derived arguments
         self._capable_terminal: bool = terminal.is_capable()
         self._original_directory: str = original_directory
-        self._project_root: str = find_project_root(self._original_directory)
+        project_root_path = find_global_root(Path(self._original_directory))
+        self._project_root: str = str(
+            project_root_path
+        ) if project_root_path is not None else self._original_directory
 
         local_root = self._command_arguments.local_configuration
         if local_root and local_root.endswith(LOCAL_CONFIGURATION_FILE):

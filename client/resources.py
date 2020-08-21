@@ -15,7 +15,7 @@ from typing import Optional
 from .find_directories import (
     CONFIGURATION_FILE,
     LOCAL_CONFIGURATION_FILE,
-    find_project_root,
+    find_global_root,
 )
 
 
@@ -82,11 +82,11 @@ def log_directory(
     dot_pyre = get_dot_pyre_directory(root_directory=project_root)
     if local_root is None:
         return Path(dot_pyre)
-    project_root = find_project_root(original_directory=project_root)
+    project_root_path = find_global_root(Path(project_root)) or Path(project_root)
     log_directory = Path(
         find_log_directory(
             dot_pyre_directory=dot_pyre,
-            project_root=project_root,
+            project_root=str(project_root_path),
             local_configuration=local_root,
         )
     )
@@ -97,15 +97,14 @@ def log_directory(
 
 def get_configuration_value(directory: str, key: str) -> str:
     local_configuration = Path(directory) / LOCAL_CONFIGURATION_FILE
-    project_root = Path(find_project_root(original_directory=directory))
-    project_configuration = project_root / CONFIGURATION_FILE
-
     with open(local_configuration) as file:
         local_configuration = json.load(file)
 
     if local_configuration.get(key):
         return local_configuration.get(key)
     else:
+        project_root = find_global_root(Path(directory)) or Path(directory)
+        project_configuration = project_root / CONFIGURATION_FILE
         with open(project_configuration) as file:
             project_configuration = json.load(file)
         return project_configuration.get(key)
