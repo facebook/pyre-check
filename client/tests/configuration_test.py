@@ -763,45 +763,6 @@ class ConfigurationIntegrationTest(unittest.TestCase):
         with self.assertRaises(EnvironmentException):
             Configuration(project_root="/", local_root="localdir")
 
-    @patch("os.path.isdir")
-    @patch.object(Configuration, "_validate")
-    def test_empty_configuration(self, configuration_validate, os_path_isdir) -> None:
-        os_path_isdir.return_value = False
-        # If typeshed is importable, find_typeshed() will behave
-        # differently because its 'import typeshed' will
-        # succeed. Hence, poison the module cache as described here:
-        # https://docs.python.org/3.6/reference/import.html#the-module-cache
-        sys.modules["typeshed"] = cast(Any, None)
-
-        with patch.object(Configuration, "_read"):
-            # __init__.py is in the parent directory.
-            directory = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-            bundled_typeshed_calls = []
-            environment_typeshed_calls = []
-            while True:
-                bundled_typeshed_calls.append(
-                    call(os.path.join(directory, "pyre_check/typeshed/"))
-                )
-                environment_typeshed_calls.append(
-                    call(os.path.join(directory, "typeshed/"))
-                )
-                parent_directory = os.path.dirname(directory)
-                if parent_directory == directory:
-                    break
-                directory = parent_directory
-            calls = bundled_typeshed_calls + environment_typeshed_calls
-
-            configuration = Configuration("")
-            os_path_isdir.assert_has_calls(calls)
-            self.assertEqual(configuration.source_directories, [])
-            self.assertEqual(configuration.targets, [])
-            self.assertEqual(configuration.version_hash, "unversioned")
-            self.assertEqual(configuration.logger, None)
-            self.assertFalse(configuration.disabled)
-            self.assertEqual(configuration._typeshed, None)
-            self.assertEqual(configuration.excludes, [])
-            self.assertEqual(configuration.extensions, [])
-
     @patch("os.path.abspath", side_effect=lambda path: path)
     @patch("os.path.isdir", return_value=True)
     @patch("os.path.exists")

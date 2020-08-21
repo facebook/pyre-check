@@ -8,7 +8,7 @@ import itertools
 import logging
 import os
 from pathlib import Path
-from typing import Optional
+from typing import Callable, Optional
 
 
 CONFIGURATION_FILE: str = ".pyre_configuration"
@@ -20,24 +20,34 @@ CLIENT_NAME: str = "pyre-client"
 LOG: logging.Logger = logging.getLogger(__name__)
 
 
-def find_parent_directory_containing_file(base: Path, target: str) -> Optional[Path]:
-    """
-    Walk directories upwards from `base`, until the root directory is
-    reached. At each step, check if the `target` file exist, and return
-    it if found. Return None if the search is unsuccessful.
-    """
+def _find_parent_directory_containing(
+    base: Path, target: str, predicate: Callable[[Path], bool]
+) -> Optional[Path]:
     resolved_base = base.resolve(strict=False)
     # Using `itertools.chain` to avoid expanding `resolve_base.parents` eagerly
     for candidate_directory in itertools.chain([resolved_base], resolved_base.parents):
         candidate_path = candidate_directory / target
         try:
-            if candidate_path.is_file():
+            if predicate(candidate_path):
                 return candidate_directory
         except PermissionError:
             # We might not have sufficient permission to read the file/directory.
             # In that case, pretend the file doesn't exist.
             pass
     return None
+
+
+def find_parent_directory_containing_file(base: Path, target: str) -> Optional[Path]:
+    """
+    Walk directories upwards from `base`, until the root directory is
+    reached. At each step, check if the `target` file exist, and return
+    it if found. Return None if the search is unsuccessful.
+    """
+
+    def is_file(path: Path) -> bool:
+        return path.is_file()
+
+    return _find_parent_directory_containing(base, target, predicate=is_file)
 
 
 def find_global_root(base: Path) -> Optional[Path]:
@@ -66,35 +76,31 @@ def find_local_root(base: Path) -> Optional[Path]:
         return found_local_root
 
 
-def _find_directory_upwards(base: str, target: str) -> Optional[str]:
+def find_parent_directory_containing_directory(
+    base: Path, target: str
+) -> Optional[Path]:
     """
     Walk directories upwards from base, until the root directory is
     reached. At each step, check if the target directory exist, and return
     it if found. Return None if the search is unsuccessful.
     """
-    while True:
-        step = os.path.join(base, target)
-        LOG.debug("Trying with: `%s`", step)
-        if os.path.isdir(step):
-            return step
-        parent_directory = os.path.dirname(base)
-        if parent_directory == base:
-            # We have reached the root.
-            break
-        base = parent_directory
-    return None
+
+    def is_directory(path: Path) -> bool:
+        return path.is_dir()
+
+    return _find_parent_directory_containing(base, target, predicate=is_directory)
 
 
-def find_typeshed() -> Optional[str]:
+def find_typeshed() -> Optional[Path]:
     override = os.getenv("PYRE_TYPESHED")
     if override:
-        return override
+        return Path(override)
 
-    current_directory = os.path.dirname(os.path.realpath(__file__))
+    current_directory = Path(__file__).parent
 
     # Prefer the typeshed we bundled ourselves (if any) to the one
     # from the environment.
-    bundled_typeshed = _find_directory_upwards(
+    bundled_typeshed = find_parent_directory_containing_directory(
         current_directory, "pyre_check/typeshed/"
     )
     if bundled_typeshed:
@@ -103,15 +109,15 @@ def find_typeshed() -> Optional[str]:
     try:
         import typeshed  # pyre-fixme: Can't find module import typeshed
 
-        return typeshed.typeshed
+        return Path(typeshed.typeshed)
     except ImportError:
         LOG.debug("`import typeshed` failed, attempting a manual lookup")
 
     # This is a terrible, terrible hack.
-    return _find_directory_upwards(current_directory, "typeshed/")
+    return find_parent_directory_containing_directory(current_directory, "typeshed/")
 
 
-def find_taint_models_directory() -> Optional[str]:
-    return _find_directory_upwards(
-        os.path.dirname(os.path.realpath(__file__)), "pyre_check/taint/"
+def find_taint_models_directory() -> Optional[Path]:
+    return find_parent_directory_containing_directory(
+        Path(__file__).parent, "pyre_check/taint/"
     )

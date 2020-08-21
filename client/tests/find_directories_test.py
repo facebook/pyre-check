@@ -13,6 +13,7 @@ from typing import Iterable, Optional
 from ..find_directories import (
     find_global_root,
     find_local_root,
+    find_parent_directory_containing_directory,
     find_parent_directory_containing_file,
 )
 
@@ -113,6 +114,128 @@ class FindParentDirectoryContainingFileTest(unittest.TestCase):
         )
         self.assert_find_parent_directory_containing_file(
             files=["a/d", "a/b/e", "a/b/c/f"], base="a/b/c/f", target="d", expected="a"
+        )
+
+
+class FindParentDirectoryContainingDirectoryTest(unittest.TestCase):
+    def assert_find_parent_directory_containing_directory(
+        self, files: Iterable[str], base: str, target: str, expected: Optional[str]
+    ) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root)
+            _ensure_files_exist(root_path, files)
+            self.assertEqual(
+                find_parent_directory_containing_directory(root_path / base, target),
+                (root_path / expected) if expected is not None else None,
+            )
+
+    def test_find_parent_directory_containing_directory(self) -> None:
+        self.assert_find_parent_directory_containing_directory(
+            files=[], base=".", target="a", expected=None
+        )
+
+        self.assert_find_parent_directory_containing_directory(
+            files=["a", "b/c"], base="b", target="a", expected=None
+        )
+        self.assert_find_parent_directory_containing_directory(
+            files=["a", "b/c"], base="b", target="b", expected="."
+        )
+        self.assert_find_parent_directory_containing_directory(
+            files=["a", "b/c"], base="b", target="c", expected=None
+        )
+        self.assert_find_parent_directory_containing_directory(
+            files=["a", "b/c"], base="b", target="d", expected=None
+        )
+
+        self.assert_find_parent_directory_containing_directory(
+            files=["a/b", "a/c/d"], base="a", target="b", expected=None
+        )
+        self.assert_find_parent_directory_containing_directory(
+            files=["a/b", "a/c/d"], base="a", target="c", expected="a"
+        )
+        self.assert_find_parent_directory_containing_directory(
+            files=["a/b", "a/c/d"], base="a/c", target="b", expected=None
+        )
+        self.assert_find_parent_directory_containing_directory(
+            files=["a/b", "a/c/d"], base="a/c", target="c", expected="a"
+        )
+
+        self.assert_find_parent_directory_containing_directory(
+            files=["a/b/c", "a/d/b/c", "a/d/e/b/c"], base=".", target="b", expected=None
+        )
+        self.assert_find_parent_directory_containing_directory(
+            files=["a/b/c", "a/d/b/c", "a/d/e/b/c"], base="a", target="b", expected="a"
+        )
+        self.assert_find_parent_directory_containing_directory(
+            files=["a/b/c", "a/d/b/c", "a/d/e/b/c"],
+            base="a/d",
+            target="b",
+            expected="a/d",
+        )
+        self.assert_find_parent_directory_containing_directory(
+            files=["a/b/c", "a/d/b/c", "a/d/e/b/c"],
+            base="a/d/e",
+            target="b",
+            expected="a/d/e",
+        )
+
+        self.assert_find_parent_directory_containing_directory(
+            files=["a/b/c", "a/d/a/b/c"], base="a/d/a/b/c", target="a/b", expected="a/d"
+        )
+        self.assert_find_parent_directory_containing_directory(
+            files=["a/b/c", "a/d/a/b/c"], base="a/d/a/b", target="a/b", expected="a/d"
+        )
+        self.assert_find_parent_directory_containing_directory(
+            files=["a/b/c", "a/d/a/b/c"], base="a/d/a", target="a/b", expected="a/d"
+        )
+        self.assert_find_parent_directory_containing_directory(
+            files=["a/b/c", "a/d/a/b/c"], base="a/d", target="a/b", expected="a/d"
+        )
+        self.assert_find_parent_directory_containing_directory(
+            files=["a/b/c", "a/d/a/b/c"], base="a", target="a/b", expected="."
+        )
+
+        self.assert_find_parent_directory_containing_directory(
+            files=["a/b", "a/c/d/e", "a/f/d/e", "a/g/e"],
+            base="a",
+            target="d",
+            expected=None,
+        )
+        self.assert_find_parent_directory_containing_directory(
+            files=["a/b", "a/c/d/e", "a/f/d/e", "a/g/e"],
+            base="a/c",
+            target="d",
+            expected="a/c",
+        )
+        self.assert_find_parent_directory_containing_directory(
+            files=["a/b", "a/c/d/e", "a/f/d/e", "a/g/e"],
+            base="a/f",
+            target="d",
+            expected="a/f",
+        )
+        self.assert_find_parent_directory_containing_directory(
+            files=["a/b", "a/c/d/e", "a/f/d/e", "a/g/e"],
+            base="a/g",
+            target="d",
+            expected=None,
+        )
+        self.assert_find_parent_directory_containing_directory(
+            files=["a/b", "a/c/d/e", "a/f/d/e", "a/g/e"],
+            base="a/c/d",
+            target="c/d",
+            expected="a",
+        )
+        self.assert_find_parent_directory_containing_directory(
+            files=["a/b", "a/c/d/e", "a/f/d/e", "a/g/e"],
+            base="a/f/d",
+            target="c/d",
+            expected="a",
+        )
+        self.assert_find_parent_directory_containing_directory(
+            files=["a/b", "a/c/d/e", "a/f/d/e", "a/g/e"],
+            base="a/g",
+            target="d/e",
+            expected=None,
         )
 
 

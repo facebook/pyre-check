@@ -747,11 +747,12 @@ class Configuration:
 
         if not self._typeshed:
             LOG.info("No typeshed specified, looking for it")
-            self._typeshed = find_typeshed()
-            if not self._typeshed:
+            typeshed_path = find_typeshed()
+            if not typeshed_path:
                 LOG.warning("Could not find a suitable typeshed")
             else:
-                LOG.info("Found: `%s`", self._typeshed)
+                LOG.info(f"Found: `{typeshed_path}`")
+            self._typeshed = str(typeshed_path) if typeshed_path is not None else None
 
         if not self._log_directory:
             # TODO(T56191177): We should not start up a server at all if no configurations

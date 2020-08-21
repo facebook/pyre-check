@@ -109,7 +109,7 @@ class Initialize(CommandParser):
 
         taint_models_path = find_taint_models_directory()
         if taint_models_path is not None:
-            configuration["taint_models_path"] = taint_models_path
+            configuration["taint_models_path"] = str(taint_models_path)
 
         analysis_directory = log.get_optional_input(
             "Which directory should pyre be initialized in?", "."
