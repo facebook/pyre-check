@@ -25,7 +25,7 @@ from .find_directories import (
     BINARY_NAME,
     CONFIGURATION_FILE,
     LOCAL_CONFIGURATION_FILE,
-    find_root,
+    find_parent_directory_containing_file,
     find_typeshed,
 )
 
@@ -451,8 +451,8 @@ class Configuration:
 
     def _check_nested_configurations(self, local_root: str) -> None:
         # TODO(T67874463): Handle sanity checks against project configurations
-        parent_local_root = find_root(
-            os.path.dirname(local_root.rstrip("/")), LOCAL_CONFIGURATION_FILE
+        parent_local_root = find_parent_directory_containing_file(
+            Path(local_root.rstrip("/")).parent, LOCAL_CONFIGURATION_FILE
         )
         if not parent_local_root:
             return
@@ -463,7 +463,7 @@ class Configuration:
         try:
             parent_local_configuration = Configuration(
                 project_root=self.project_root,
-                local_root=parent_local_root,
+                local_root=str(parent_local_root),
                 search_path=[search_path.root for search_path in self._search_path],
                 binary=self._binary,
                 typeshed=self._typeshed,

@@ -378,7 +378,14 @@ class FilesystemTest(unittest.TestCase):
     @patch("os.makedirs")
     @patch(filesystem_name + ".acquire_lock")
     @patch.object(SharedAnalysisDirectory, "get_root", return_value="/analysis_root")
-    def test_prepare(self, get_root, acquire_lock, makedirs, find_root, mkdtemp):
+    def test_prepare(
+        self,
+        get_root,
+        acquire_lock,
+        makedirs,
+        find_parent_directory_containing_file,
+        mkdtemp,
+    ):
         @contextmanager
         def acquire(*args, **kwargs):
             yield

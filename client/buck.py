@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Dict, Iterable, List, NamedTuple, Optional, Set, Tuple
 
 from . import source_database_buck_builder
-from .find_directories import find_root
+from .find_directories import find_parent_directory_containing_file
 
 
 LOG: Logger = logging.getLogger(__name__)
@@ -351,7 +351,7 @@ def _map_normalized_targets_to_original(
 
 @functools.lru_cache()
 def find_buck_root(path: str) -> Optional[str]:
-    return find_root(path, ".buckconfig")
+    return str(find_parent_directory_containing_file(Path(path), ".buckconfig"))
 
 
 @functools.lru_cache()

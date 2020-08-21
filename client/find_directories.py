@@ -4,8 +4,10 @@
 # LICENSE file in the root directory of this source tree.
 
 
+import itertools
 import logging
 import os
+from pathlib import Path
 from typing import Optional
 
 
@@ -18,25 +20,36 @@ CLIENT_NAME: str = "pyre-client"
 LOG: logging.Logger = logging.getLogger(__name__)
 
 
-def find_root(original_directory: str, target_file: str) -> Optional[str]:
-    current_directory = os.path.abspath(original_directory)
-    while True:
-        absolute = os.path.join(current_directory, target_file)
-        if os.path.isfile(absolute):
-            return current_directory
-
-        parent_directory = os.path.dirname(current_directory)
-        if current_directory == parent_directory:
-            break
-        current_directory = parent_directory
+def find_parent_directory_containing_file(base: Path, target: str) -> Optional[Path]:
+    """
+    Walk directories upwards from `base`, until the root directory is
+    reached. At each step, check if the `target` file exist, and return
+    it if found. Return None if the search is unsuccessful.
+    """
+    resolved_base = base.resolve(strict=False)
+    # Using `itertools.chain` to avoid expanding `resolve_base.parents` eagerly
+    for candidate_directory in itertools.chain([resolved_base], resolved_base.parents):
+        candidate_path = candidate_directory / target
+        try:
+            if candidate_path.is_file():
+                return candidate_directory
+        except PermissionError:
+            # We might not have sufficient permission to read the file/directory.
+            # In that case, pretend the file doesn't exist.
+            pass
     return None
 
 
 def find_project_root(original_directory: str) -> str:
     """Pyre always runs from the directory containing the nearest .pyre_configuration,
     if one exists."""
-    global_root = find_root(original_directory, CONFIGURATION_FILE)
-    return global_root or original_directory
+    global_root = find_parent_directory_containing_file(
+        Path(original_directory), CONFIGURATION_FILE
+    )
+    if global_root is not None:
+        return str(global_root)
+    else:
+        return original_directory
 
 
 def find_local_root(
@@ -45,14 +58,21 @@ def find_local_root(
     if local_root:
         return local_root
 
-    global_root = find_root(original_directory, CONFIGURATION_FILE)
-    local_root = find_root(original_directory, LOCAL_CONFIGURATION_FILE)
+    found_global_root = find_parent_directory_containing_file(
+        Path(original_directory), CONFIGURATION_FILE
+    )
+    found_local_root = find_parent_directory_containing_file(
+        Path(original_directory), LOCAL_CONFIGURATION_FILE
+    )
 
     # If the global configuration root is deeper than local configuration, ignore local.
-    if global_root and local_root and global_root.startswith(local_root):
-        local_root = None
-    if local_root:
-        return local_root
+    if (
+        found_global_root
+        and found_local_root
+        and str(found_global_root).startswith(str(found_local_root))
+    ):
+        found_local_root = None
+    return str(found_local_root) if found_local_root is not None else None
 
 
 def _find_directory_upwards(base: str, target: str) -> Optional[str]:

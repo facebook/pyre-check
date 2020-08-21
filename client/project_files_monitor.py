@@ -13,7 +13,7 @@ from . import json_rpc, watchman
 from .analysis_directory import AnalysisDirectory
 from .buck import BuckException
 from .configuration import Configuration
-from .find_directories import find_root
+from .find_directories import find_parent_directory_containing_file
 from .process import Process
 from .socket_connection import SocketConnection
 
@@ -140,13 +140,15 @@ class ProjectFilesMonitor(Subscriber):
 
     @staticmethod
     def _find_watchman_path(directory: str) -> str:
-        watchman_path = find_root(directory, ".watchmanconfig")
-        if not watchman_path:
+        watchman_path = find_parent_directory_containing_file(
+            Path(directory), ".watchmanconfig"
+        )
+        if watchman_path is None:
             raise MonitorException(
                 "Could not find a watchman directory from "
                 "the current directory `{}`".format(directory)
             )
-        return watchman_path
+        return str(watchman_path)
 
     @staticmethod
     def restart_if_dead(

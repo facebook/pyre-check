@@ -27,11 +27,14 @@ class MonitorTest(unittest.TestCase):
     # pyre-fixme[56]: Argument `tools.pyre.client.project_files_monitor` to
     #  decorator factory `unittest.mock.patch.object` could not be resolved in a global
     #  scope.
-    @patch.object(project_files_monitor, "find_root")
+    @patch.object(project_files_monitor, "find_parent_directory_containing_file")
     def test_subscriptions(
-        self, find_root, perform_handshake, _socket_connection
+        self,
+        find_parent_directory_containing_file,
+        perform_handshake,
+        _socket_connection,
     ) -> None:
-        find_root.return_value = "/ROOT"
+        find_parent_directory_containing_file.return_value = "/ROOT"
         configuration = mock_configuration()
         analysis_directory = MagicMock()
         analysis_directory.get_root.return_value = "/ROOT"
@@ -82,7 +85,7 @@ class MonitorTest(unittest.TestCase):
         )
 
         # no watchman root -> terminate
-        find_root.return_value = None
+        find_parent_directory_containing_file.return_value = None
         self.assertRaises(
             MonitorException,
             ProjectFilesMonitor,

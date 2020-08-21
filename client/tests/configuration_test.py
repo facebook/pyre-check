@@ -532,14 +532,14 @@ class ConfigurationIntegrationTest(unittest.TestCase):
     @patch.object(Configuration, "_validate")
     @patch.object(Configuration, "_read")
     @patch(f"{configuration.__name__}.expand_relative_path")
-    @patch(f"{configuration.__name__}.find_root")
+    @patch(f"{configuration.__name__}.find_parent_directory_containing_file")
     @patch(f"{configuration.__name__}.Path.resolve")
     @patch("json.loads")
     def test_configurations(
         self,
         json_loads,
         path_resolve,
-        find_root,
+        find_parent_directory_containing_file,
         expand_relative_path,
         configuration_read,
         configuration_validate,
@@ -553,7 +553,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
         expand_relative_path.side_effect = lambda root, path: path
 
         # Assume no nested configurations.
-        find_root.return_value = None
+        find_parent_directory_containing_file.return_value = None
 
         # Assume all paths are valid.
         os_access.return_value = True
@@ -622,14 +622,14 @@ class ConfigurationIntegrationTest(unittest.TestCase):
     @patch.object(Configuration, "_apply_defaults")
     @patch.object(Configuration, "_validate")
     @patch(f"{configuration.__name__}.expand_relative_path")
-    @patch(f"{configuration.__name__}.find_root")
+    @patch(f"{configuration.__name__}.find_parent_directory_containing_file")
     @patch(f"{configuration.__name__}.Path.resolve")
     @patch("json.loads")
     def test_nested_configurations(
         self,
         json_loads,
         path_resolve,
-        find_root,
+        find_parent_directory_containing_file,
         expand_relative_path,
         configuration_validate,
         configuration_defaults,
@@ -646,7 +646,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
         os_path_exists.return_value = True
 
         # Properly ignored nested local configurations.
-        find_root.side_effect = ["root", None]
+        find_parent_directory_containing_file.side_effect = [Path("root"), None]
         path_resolve.side_effect = [Path("root/local"), Path("root/local")]
         os_path_isdir.return_value = True
         os_path_isfile.return_value = False
@@ -679,7 +679,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
             self.fail("Configuration should not raise.")
 
         # Improperly ignored nested local configurations.
-        find_root.side_effect = ["root", None]
+        find_parent_directory_containing_file.side_effect = [Path("root"), None]
         path_resolve.side_effect = [Path("root/local"), Path("not_local")]
         json_loads.side_effect = [
             {
@@ -709,7 +709,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
 
         # Project and local configurations both specifying sources.
         path_resolve.reset_mock()
-        find_root.side_effect = [None, None]
+        find_parent_directory_containing_file.side_effect = [None, None]
         json_loads.side_effect = [
             {
                 "source_directories": ["local_sources"],

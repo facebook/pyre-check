@@ -34,7 +34,9 @@ class BuckTest(unittest.TestCase):
     #  `"{}.find_buck_root".format(tools.pyre.client.buck.__name__)` to decorator
     #  factory `unittest.mock.patch` could not be resolved in a global scope.
     @patch("{}.find_buck_root".format(buck.__name__), return_value="/root")
-    def test_find_built_source_directories(self, find_root) -> None:
+    def test_find_built_source_directories(
+        self, find_parent_directory_containing_file
+    ) -> None:
         trees = [
             "blah-vs_debugger#link-tree",
             "blah-blah#link-tree",
