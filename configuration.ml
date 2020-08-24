@@ -14,7 +14,7 @@ module Features = struct
   }
   [@@deriving yojson, show]
 
-  let default = { click_to_fix = true; go_to_definition = false; hover = false }
+  let default = { click_to_fix = false; go_to_definition = false; hover = false }
 
   let create feature_string =
     feature_string
