@@ -40,17 +40,8 @@ class InvalidConfiguration(Exception):
 
 
 class SearchPathElement:
-    def __init__(
-        self,
-        root: str,
-        subdirectory: Optional[str],
-        project_root: str,
-        relative: Optional[str] = None,
-    ) -> None:
-        if root.startswith("//"):
-            self.root = expand_relative_path(project_root, root[2:])
-        else:
-            self.root = expand_relative_path(relative or "", root)
+    def __init__(self, root: str, subdirectory: Optional[str]) -> None:
+        self.root = root
         self.subdirectory = subdirectory
 
     @staticmethod
@@ -61,17 +52,20 @@ class SearchPathElement:
     ) -> "SearchPathElement":
         if isinstance(path, str):
             return SearchPathElement(
-                root=path,
+                root=SearchPathElement.relativize_root(
+                    path, project_root, path_relative_to
+                ),
                 subdirectory=None,
-                project_root=project_root,
-                relative=path_relative_to,
             )
         else:
             if "root" in path and "subdirectory" in path:
                 root = path["root"]
                 subdirectory = path["subdirectory"]
                 return SearchPathElement(
-                    root, subdirectory, project_root, path_relative_to
+                    root=SearchPathElement.relativize_root(
+                        root, project_root, path_relative_to
+                    ),
+                    subdirectory=subdirectory,
                 )
             elif "site-package" in path:
                 site_root = site.getsitepackages()
@@ -80,7 +74,10 @@ class SearchPathElement:
                 found_element = None
                 for root in site_root:
                     site_package_element = SearchPathElement(
-                        root, subdirectory, project_root, relative=None
+                        root=SearchPathElement.relativize_root(
+                            root, project_root, None
+                        ),
+                        subdirectory=subdirectory,
                     )
                     if os.path.isdir(site_package_element.path()):
                         found_element = site_package_element
@@ -94,6 +91,15 @@ class SearchPathElement:
                     "Search path elements must have `root` and `subdirectory` "
                     "specified."
                 )
+
+    @staticmethod
+    def relativize_root(
+        root: str, project_root: str, relative_root: Optional[str]
+    ) -> str:
+        if root.startswith("//"):
+            return expand_relative_path(project_root, root[2:])
+        else:
+            return expand_relative_path(relative_root or "", root)
 
     def path(self) -> str:
         subdirectory = self.subdirectory

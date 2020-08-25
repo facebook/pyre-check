@@ -149,7 +149,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
         self.assertEqual(configuration.typeshed, "TYPE/VERSION/SHED/")
         self.assertEqual(
             configuration.search_path,
-            [SearchPathElement("additional/", subdirectory=None, project_root="")],
+            [SearchPathElement("additional/", subdirectory=None)],
         )
         self.assertEqual(configuration.number_of_workers, 20)
         self.assertEqual(configuration.taint_models_path, [])
@@ -170,7 +170,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
         self.assertEqual(configuration.typeshed, "TYPE/VERSION/SHED/")
         self.assertEqual(
             configuration.search_path,
-            [SearchPathElement("additional/", subdirectory=None, project_root="")],
+            [SearchPathElement("additional/", subdirectory=None)],
         )
         self.assertEqual(configuration.number_of_workers, 20)
         self.assertEqual(configuration.taint_models_path, [])
