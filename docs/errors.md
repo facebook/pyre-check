@@ -68,6 +68,48 @@ def zeroes(number_of_elements: int) -> List[float]:
   return a # Type checks!
 ```
 
+### Optional Attributes
+A common pattern in Python is to check whether an attribute is `None` before accessing its value. E.g.
+
+```python
+from typing import Optional
+
+class Data:
+  field: Optional[int]
+
+def process_field(input: int) -> None:
+  ...
+
+def process_data(data: Data) -> None:
+  if data.field:
+    # ...
+    process_field(data.field)  # Error: expected `int` but got `Optional[int]`
+```
+
+The above fails to type-check because Pyre cannot guarantee that `data.field` is not `None` even after checking explicitly in the line before: `field` could be set to `None` by another thread or it could be a property that returns something different the next time we access it.
+
+The preferred way to make this code type-check is to mark the attribute `Final`, i.e. to specify that it can't be reassigned.
+
+```python
+from typing import Final, Optional
+
+class Data:
+  # Needs to be assigned in the constructor and cannot be changed afterwards.
+  field: Final[Optional[int]] = 1
+```
+
+It is always safe to refine attributes when their types are `Final`.
+
+Alternatively, it is also safe to assign the attribute to a local variable before accessing its value.
+
+```python
+def process_data(data: Data) -> None:
+  field = data.field
+  if field:
+    process_field(field)
+```
+
+
 ## Error Codes
 Different errors raised by Pyre have different error codes. E.g. in
 
