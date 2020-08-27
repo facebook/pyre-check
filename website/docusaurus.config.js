@@ -41,7 +41,7 @@ module.exports = {
       {
         docs: {
           // Docs folder path relative to website dir.
-          path: '../docs',
+          path: 'docs',
           // Sidebars file relative to website dir.
           sidebarPath: FBInternalWithOssFallback(require.resolve('./fb/sidebars.json'), require.resolve('./sidebars.json')),
         },

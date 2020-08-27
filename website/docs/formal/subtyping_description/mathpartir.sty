@@ -1,21 +1,21 @@
 %  Mathpartir --- Math Paragraph for Typesetting Inference Rules
 %
-%  Copyright (C) 2001, 2002, 2003, 2004, 2005, 2015 Didier Rémy
+%  Copyright (C) 2001, 2002, 2003, 2004, 2005, 2015 Didier Remy
 %
-%  Author         : Didier Remy 
+%  Author         : Didier Remy
 %  Version        : 1.3.1
 %  Bug Reports    : to author
 %  Web Site       : http://pauillac.inria.fr/~remy/latex/
-% 
+%
 %  Mathpartir is free software; you can redistribute it and/or modify
 %  it under the terms of the GNU General Public License as published by
 %  the Free Software Foundation; either version 2, or (at your option)
 %  any later version.
-%  
+%
 %  Mathpartir is distributed in the hope that it will be useful,
 %  but WITHOUT ANY WARRANTY; without even the implied warranty of
 %  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-%  GNU General Public License for more details 
+%  GNU General Public License for more details
 %  (http://pauillac.inria.fr/~remy/license/GPL).
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -42,7 +42,7 @@
 %% Dimens are a precious ressource. Uses seems to be local.
 \let \mpr@tmpdim \@tempdima
 
-% To ensure hevea \hva compatibility, \hva should expands to nothing 
+% To ensure hevea \hva compatibility, \hva should expands to nothing
 % in mathpar or in inferrule
 \let \mpr@hva \empty
 
@@ -76,7 +76,7 @@
   \let \\\mpr@cr
   \let \eqno \mpr@eqno
   \let \hva \mpr@hva
-  } 
+  }
 \let \MathparBindings \mpr@bindings
 
 % \@ifundefined {ignorespacesafterend}
@@ -90,7 +90,7 @@
   {\unskip \ifmmode $\fi\egroup $$\ignorespacesafterend}
 
 \newenvironment{mathparpagebreakable}[1][]
-  {\begingroup 
+  {\begingroup
    \par
    \mpr@savepar \parskip 0em \hsize \linewidth \centering
       \mpr@prebindings \mpr@paroptions #1%
@@ -109,7 +109,7 @@
 
 %%% HOV BOXES
 
-\def \mathvbox@ #1{\hbox \bgroup \mpr@normallineskip 
+\def \mathvbox@ #1{\hbox \bgroup \mpr@normallineskip
   \vbox \bgroup \tabskip 0em \let \\ \cr
   \halign \bgroup \hfil $##$\hfil\cr #1\crcr \egroup \egroup
   \egroup}
@@ -140,11 +140,11 @@
 
 \def \mpr@makelist #1\mpr@to #2{\def \mpr@all {#1}%
    \mpr@lista {\\}\mpr@listb \expandafter {\mpr@all}\edef \mpr@all {\the
-   \mpr@lista \the \mpr@listb \the \mpr@lista}\let #2\empty 
+   \mpr@lista \the \mpr@listb \the \mpr@lista}\let #2\empty
    \def \mpr@stripof ##1##2\mpr@stripend{\def \mpr@stripped{##2}}\loop
      \mpr@flatten \mpr@all \mpr@to \mpr@one
      \expandafter \mpr@snoc \mpr@one \mpr@to #2\expandafter \mpr@stripof
-     \mpr@all \mpr@stripend  
+     \mpr@all \mpr@stripend
      \ifx \mpr@stripped \empty \let \mpr@isempty 0\else \let \mpr@isempty 1\fi
      \ifx 1\mpr@isempty
    \repeat
@@ -173,7 +173,7 @@
                 \fi
                 \unvbox \mpr@vlist
              \else
-                \unvbox \mpr@vlist 
+                \unvbox \mpr@vlist
                 \ifx \mpr@vskip \empty \else
                   \hrule height 0em depth \mpr@vskip width 0em
                 \fi
@@ -221,18 +221,18 @@
       \ifnum \mpr@tmpdim < \hsize
          \ifnum \wd\mpr@hlist > 0
            \if@premisse
-             \setbox \mpr@hlist 
+             \setbox \mpr@hlist
                 \hbox {\unhbox0 \hskip \mpr@sep \unhbox \mpr@hlist}%
            \else
              \setbox \mpr@hlist
                 \hbox {\unhbox \mpr@hlist  \hskip \mpr@sep \unhbox0}%
            \fi
-         \else 
+         \else
          \setbox \mpr@hlist \hbox {\unhbox0}%
          \fi
       \else
          \ifnum \wd \mpr@hlist > 0
-            \mpr@htovlist 
+            \mpr@htovlist
             \mpr@tmpdim \wd0
          \fi
          \setbox \mpr@hlist \hbox {\unhbox0}%
@@ -312,17 +312,17 @@
      \let \mpr@over \@@over
      \mpr@inferrule@}
 \newcommand {\mpr@inferrule@}[3][]
-  {\everymath={\displaystyle}%       
+  {\everymath={\displaystyle}%
    \def \@test {#2}\ifx \empty \@test
       \setbox0 \hbox {$\vcenter {\mpr@hovbox{B}{#3}}$}%
-   \else 
+   \else
    \def \@test {#3}\ifx \empty \@test
       \setbox0 \hbox {$\vcenter {\mpr@hovbox{T}{#2}}$}%
    \else
    \setbox0 \mpr@fraction {\mpr@hovbox{T}{#2}}{\mpr@hovbox{B}{#3}}%
    \fi \fi
    \def \@test {#1}\ifx \@test\empty \box0
-   \else \vbox 
+   \else \vbox
 %%% Suggestion de Francois pour les etiquettes longues
 %%%   {\hbox to \wd0 {\RefTirName {#1}\hfil}\box0}\fi
       {\hbox {\DefTirName {#1}}\box0}\fi
@@ -336,38 +336,38 @@
 % \inferrule* [options]{[premisses}{conclusions}
 %
 % Premisses and conclusions are lists of elements separated by \\
-% Each \\ produces a break, attempting horizontal breaks if possible, 
-% and  vertical breaks if needed. 
-% 
-% An empty element obtained by \\\\ produces a vertical break in all cases. 
+% Each \\ produces a break, attempting horizontal breaks if possible,
+% and  vertical breaks if needed.
 %
-% The former rule is aligned on the fraction bar. 
+% An empty element obtained by \\\\ produces a vertical break in all cases.
+%
+% The former rule is aligned on the fraction bar.
 % The optional label appears on top of the rule
 % The second form to be used in a derivation tree is aligned on the last
 % line of its conclusion
-% 
+%
 % The second form can be parameterized, using the key=val interface. The
 % folloiwng keys are recognized:
-%       
+%
 %  width                set the width of the rule to val
 %  narrower             set the width of the rule to val\hsize
 %  before               execute val at the beginning/left
 %  lab                  put a label [Val] on top of the rule
 %  lskip                add negative skip on the right
 %  left                 put a left label [Val]
-%  Left                 put a left label [Val],  ignoring its width 
+%  Left                 put a left label [Val],  ignoring its width
 %  right                put a right label [Val]
 %  Right                put a right label [Val], ignoring its width
 %  leftskip             skip negative space on the left-hand side
 %  rightskip            skip negative space on the right-hand side
 %  vdots                lift the rule by val and fill vertical space with dots
 %  after                execute val at the end/right
-%  
+%
 %  Note that most options must come in this order to avoid strange
 %  typesetting (in particular  leftskip must preceed left and Left and
-%  rightskip must follow Right or right; vdots must come last 
-%  or be only followed by rightskip. 
-%  
+%  rightskip must follow Right or right; vdots must come last
+%  or be only followed by rightskip.
+%
 
 %% Keys that make sence in all kinds of rules
 \def \mprset #1{\setkeys{mprset}{#1}}
@@ -440,8 +440,8 @@
           \ifmpr@vcenter \aftergroup \mpr@vcentertrue \fi}
   \ifmpr@vcenter
      \box0
-  \else 
-     \setbox1 \hbox {\strut}  
+  \else
+     \setbox1 \hbox {\strut}
      \@tempdima \dp0 \advance \@tempdima by -\dp1
      \raise \@tempdima \box0
   \fi
@@ -449,9 +449,9 @@
 
 \def \mpr@infer {\@ifnextchar *{\mpr@inferstar}{\mpr@inferrule}}
 \newcommand \mpr@err@skipargs[3][]{}
-\def \mpr@inferstar*{\ifmmode 
+\def \mpr@inferstar*{\ifmmode
     \let \@do \mpr@inferstar@
-  \else 
+  \else
     \let \@do \mpr@err@skipargs
     \PackageError {mathpartir}
       {\string\inferrule* can only be used in math mode}{}%
