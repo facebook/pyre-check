@@ -8,8 +8,9 @@ import logging
 from pathlib import Path
 from typing import Optional
 
-from tools.pyre.client.find_directories import find_local_root
+from tools.pyre.client.find_directories import find_global_and_local_root
 
+from .. import UserError
 from ..configuration import Configuration
 from ..errors import Errors, PartialErrorSuppression
 from ..filesystem import LocalMode, add_local_mode, path_exists
@@ -20,16 +21,15 @@ from .command import CommandArguments, ErrorSuppressingCommand
 LOG: logging.Logger = logging.getLogger(__name__)
 
 
-def _get_configuration_path(
-    local_configuration: Optional[Path], project_configuration: Path
-) -> Path:
-    if local_configuration:
-        configuration_path = local_configuration / ".pyre_configuration.local"
-        return configuration_path
-    configuration_path = find_local_root(Path("."))
-    if configuration_path:
-        return configuration_path / ".pyre_configuration.local"
-    return project_configuration
+def _get_configuration_path(local_configuration: Optional[Path]) -> Optional[Path]:
+    found_root = find_global_and_local_root(
+        Path(".") if local_configuration is None else local_configuration
+    )
+    if found_root is None:
+        return None
+    else:
+        local_root = found_root.local_root
+        return local_root if local_root is not None else found_root.global_root
 
 
 class StrictDefault(ErrorSuppressingCommand):
@@ -84,11 +84,9 @@ class StrictDefault(ErrorSuppressingCommand):
         )
 
     def run(self) -> None:
-        project_configuration = Configuration.find_project_configuration()
-        local_configuration = self._local_configuration
-        configuration_path = _get_configuration_path(
-            local_configuration, project_configuration
-        )
+        configuration_path = _get_configuration_path(self._local_configuration)
+        if configuration_path is None:
+            raise UserError("Cannot find a path to configuration")
         configuration = Configuration(configuration_path)
         LOG.info("Processing %s", configuration.get_directory())
         configuration.add_strict()

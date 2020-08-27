@@ -5,8 +5,10 @@
 
 # pyre-unsafe
 
+import tempfile
 import unittest
 from pathlib import Path
+from typing import Iterable, Optional
 from unittest.mock import MagicMock, mock_open, patch
 
 from ... import errors
@@ -143,28 +145,46 @@ class StrictDefaultTest(unittest.TestCase):
             add_local_mode.assert_called_once()
             suppress_errors.assert_not_called()
 
+
+def _ensure_files_exist(root: Path, relatives: Iterable[str]) -> None:
+    for relative in relatives:
+        full_path = root / relative
+        full_path.parent.mkdir(parents=True, exist_ok=True)
+        full_path.touch(exist_ok=True)
+
+
+class GetConfigurationPathTest(unittest.TestCase):
+    def assert_configuration_path(
+        self, files: Iterable[str], local_root: Optional[str], expected: Optional[str]
+    ) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root)
+            _ensure_files_exist(root_path, files)
+            self.assertEqual(
+                _get_configuration_path(
+                    root_path / local_root if local_root is not None else root_path
+                ),
+                root_path / expected if expected is not None else None,
+            )
+
     def test_get_configuration_path(self):
-        project_path = Path("project/path")
-        configuration = _get_configuration_path(
-            local_configuration=Path("local/config/example"),
-            project_configuration=Path("project/example"),
+        self.assert_configuration_path(files=[], local_root=None, expected=None)
+        self.assert_configuration_path(
+            files=[".pyre_configuration"], local_root=None, expected="."
         )
-        self.assertEqual(
-            configuration, Path("local/config/example/.pyre_configuration.local")
+        self.assert_configuration_path(
+            files=["a/.pyre_configuration"], local_root="a", expected="a"
         )
-
-        with patch("os.getcwd", returns="fake/path"), patch(
-            f"{strict_default.__name__}.find_local_root", return_value=Path("cwd/path")
-        ):
-            configuration = _get_configuration_path(
-                local_configuration=None, project_configuration=project_path
-            )
-            self.assertEqual(configuration, Path("cwd/path/.pyre_configuration.local"))
-
-        with patch("os.getcwd", returns="fake/path"), patch(
-            f"{strict_default.__name__}.find_local_root", return_value=None
-        ):
-            configuration = _get_configuration_path(
-                local_configuration=None, project_configuration=project_path
-            )
-            self.assertEqual(configuration, project_path)
+        self.assert_configuration_path(
+            files=["a/.pyre_configuration", "b/c"], local_root="b", expected=None
+        )
+        self.assert_configuration_path(
+            files=["a/.pyre_configuration", "a/b/.pyre_configuration.local"],
+            local_root="a/b",
+            expected="a/b",
+        )
+        self.assert_configuration_path(
+            files=["a/.pyre_configuration", "a/b/.pyre_configuration.local"],
+            local_root="a/b/.pyre_configuration.local",
+            expected="a/b",
+        )
