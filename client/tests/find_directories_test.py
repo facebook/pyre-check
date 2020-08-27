@@ -8,9 +8,11 @@
 import tempfile
 import unittest
 from pathlib import Path
-from typing import Iterable, Optional
+from typing import Iterable, Optional, Tuple, Union
 
 from ..find_directories import (
+    FoundRoot,
+    find_global_and_local_root,
     find_global_root,
     find_local_root,
     find_parent_directory_containing_directory,
@@ -287,5 +289,86 @@ class FindLocalRootTest(unittest.TestCase):
         self.assert_find_local_root(
             files=["a/b/.pyre_configuration", "a/.pyre_configuration.local", "a/b/c/d"],
             base="a/b/c",
+            expected=None,
+        )
+
+
+class FindGlobalAndLocalRootTest(unittest.TestCase):
+    @staticmethod
+    def to_found_root(
+        root_path: Path, expected: Union[None, str, Tuple[str, str]]
+    ) -> Optional[FoundRoot]:
+        if expected is None:
+            return None
+        elif isinstance(expected, str):
+            return FoundRoot(root_path / expected)
+        elif isinstance(expected, tuple):
+            return FoundRoot(root_path / expected[0], root_path / expected[1])
+        else:
+            raise RuntimeError("Malformed argument passed to `expected`")
+
+    def assert_find_roots(
+        self,
+        files: Iterable[str],
+        base: str,
+        expected: Union[None, str, Tuple[str, str]],
+    ) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root)
+            _ensure_files_exist(root_path, files)
+
+            self.assertEqual(
+                find_global_and_local_root(root_path / base),
+                self.to_found_root(root_path, expected),
+            )
+
+    def test_find_global_and_local_root(self) -> None:
+        self.assert_find_roots(files=["a/b/c"], base="a/b", expected=None)
+        self.assert_find_roots(
+            files=["a/.pyre_configuration", "a/b/c"], base="a/b", expected="a"
+        )
+        self.assert_find_roots(
+            files=["a/.pyre_configuration.local", "a/b/c"], base="a/b", expected=None
+        )
+
+        self.assert_find_roots(
+            files=[".pyre_configuration", "a/.pyre_configuration.local", "a/b/c"],
+            base="a/b",
+            expected=(".", "a"),
+        )
+        self.assert_find_roots(
+            files=[".pyre_configuration", "a/.pyre_configuration", "a/b/c"],
+            base="a/b",
+            expected="a",
+        )
+        self.assert_find_roots(
+            files=[".pyre_configuration.local", "a/.pyre_configuration", "a/b/c"],
+            base="a/b",
+            expected="a",
+        )
+        self.assert_find_roots(
+            files=[".pyre_configuration.local", "a/.pyre_configuration.local", "a/b/c"],
+            base="a/b",
+            expected=None,
+        )
+
+        self.assert_find_roots(
+            files=["a/.pyre_configuration", "a/b/.pyre_configuration.local", "a/c/d"],
+            base="a/c",
+            expected="a",
+        )
+        self.assert_find_roots(
+            files=["a/.pyre_configuration", "a/b/.pyre_configuration.local", "a/c/d"],
+            base="a/b",
+            expected=("a", "a/b"),
+        )
+        self.assert_find_roots(
+            files=["a/.pyre_configuration", "a/b/.pyre_configuration.local", "a/c/d"],
+            base="a",
+            expected="a",
+        )
+        self.assert_find_roots(
+            files=["a/.pyre_configuration", "a/b/.pyre_configuration.local", "a/c/d"],
+            base=".",
             expected=None,
         )

@@ -8,7 +8,7 @@ import itertools
 import logging
 import os
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Callable, NamedTuple, Optional
 
 
 CONFIGURATION_FILE: str = ".pyre_configuration"
@@ -74,6 +74,37 @@ def find_local_root(base: Path) -> Optional[Path]:
         return None
     else:
         return found_local_root
+
+
+class FoundRoot(NamedTuple):
+    global_root: Path
+    local_root: Optional[Path] = None
+
+
+def find_global_and_local_root(base: Path) -> Optional[FoundRoot]:
+    """
+    Walk directories upwards from `base` and try to find both the global and local
+    pyre configurations.
+    Return `None` if no global configuration is found.
+    If a global configuration exists but no local configuration is found below it,
+    return the path to the global configuration.
+    If both global and local exist, return them as a pair.
+    """
+    found_global_root = find_parent_directory_containing_file(base, CONFIGURATION_FILE)
+    if found_global_root is None:
+        return None
+
+    found_local_root = find_parent_directory_containing_file(
+        base, LOCAL_CONFIGURATION_FILE
+    )
+    if found_local_root is None:
+        return FoundRoot(found_global_root)
+
+    # If the global configuration root is deeper than local configuration, ignore local.
+    if found_local_root in found_global_root.parents:
+        return FoundRoot(found_global_root)
+    else:
+        return FoundRoot(found_global_root, found_local_root)
 
 
 def find_parent_directory_containing_directory(
