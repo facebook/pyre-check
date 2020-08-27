@@ -14,7 +14,6 @@ from ..find_directories import (
     FoundRoot,
     find_global_and_local_root,
     find_global_root,
-    find_local_root,
     find_parent_directory_containing_directory,
     find_parent_directory_containing_file,
 )
@@ -259,37 +258,6 @@ class FindGlobalRootTest(unittest.TestCase):
         )
         self.assert_find_global_root(
             files=["a/b/c", "a/b/d/e"], base="a/b/d", expected=None
-        )
-
-
-class FindLocalRootTest(unittest.TestCase):
-    def assert_find_local_root(
-        self, files: Iterable[str], base: str, expected: Optional[str]
-    ) -> None:
-        with tempfile.TemporaryDirectory() as root:
-            root_path = Path(root)
-            _ensure_files_exist(root_path, files)
-            self.assertEqual(
-                find_local_root(root_path / base),
-                root_path / expected if expected is not None else None,
-            )
-
-    def test_find_local_root(self) -> None:
-        self.assert_find_local_root(
-            files=["a/b/.pyre_configuration.local", "a/b/c/d"],
-            base="a/b/c",
-            expected="a/b",
-        )
-        self.assert_find_local_root(
-            files=["a/b/c", "a/b/d/e"], base="a/b/d", expected=None
-        )
-        self.assert_find_local_root(
-            files=["a/b/.pyre_configuration", "a/b/c/d"], base="a/b/c", expected=None
-        )
-        self.assert_find_local_root(
-            files=["a/b/.pyre_configuration", "a/.pyre_configuration.local", "a/b/c/d"],
-            base="a/b/c",
-            expected=None,
         )
 
 
