@@ -16,7 +16,7 @@ from asyncio.events import AbstractEventLoop
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
-from ..client.find_directories import find_local_root
+from ..client.find_directories import find_global_and_local_root
 from ..client.json_rpc import JSON, JSONRPC, Request, Response
 from ..client.resources import get_configuration_value, log_directory
 from ..client.socket_connection import SocketConnection
@@ -26,6 +26,11 @@ class AdapterException(Exception):
     pass
 
 
+def _find_local_root(base: Path) -> Optional[Path]:
+    found_root = find_global_and_local_root(base)
+    return None if found_root is None else found_root.local_root
+
+
 def _should_run_null_server(null_server_flag: bool) -> bool:
     # TODO[T58989824]: We also need to check if the project can be run here.
     # Needs updating to mimic the current implementation (i.e. catch the buck errors)
@@ -33,7 +38,7 @@ def _should_run_null_server(null_server_flag: bool) -> bool:
 
 
 def _get_log_file(current_directory: str) -> str:
-    local_root = find_local_root(Path(current_directory))
+    local_root = _find_local_root(Path(current_directory))
     return str(
         log_directory(
             current_directory,
@@ -45,7 +50,7 @@ def _get_log_file(current_directory: str) -> str:
 
 
 def _socket_exists(current_directory: str) -> bool:
-    local_root = find_local_root(Path(current_directory))
+    local_root = _find_local_root(Path(current_directory))
     return Path.exists(
         log_directory(
             current_directory,
@@ -160,7 +165,7 @@ def run_null_server(loop: AbstractEventLoop) -> None:
 
 
 def add_socket_connection(loop: AbstractEventLoop, root: str) -> SocketConnection:
-    local_root = find_local_root(Path(root))
+    local_root = _find_local_root(Path(root))
     socket_connection = SocketConnection(
         str(log_directory(root, str(local_root) if local_root is not None else None)),
         "adapter.sock",
