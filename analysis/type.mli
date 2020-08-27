@@ -162,18 +162,18 @@ module Record : sig
   end
 end
 
+module Monomial : sig
+  type variadic_operation =
+    | Length
+    | Product
+  [@@deriving compare, eq, sexp, show, hash]
+
+  type 'a variable [@@deriving compare, eq, sexp, show, hash]
+
+  type 'a t [@@deriving eq, sexp, compare, hash, show]
+end
+
 module Polynomial : sig
-  module Monomial : sig
-    type variadic_operation =
-      | Length
-      | Product
-    [@@deriving compare, eq, sexp, show, hash]
-
-    type 'a variable [@@deriving compare, eq, sexp, show, hash]
-
-    type 'a t [@@deriving eq, sexp, compare, hash, show]
-  end
-
   type 'a t [@@deriving compare, eq, sexp, hash, show]
 
   val is_base_case : 'a t -> bool
@@ -209,6 +209,8 @@ module Polynomial : sig
   val subtract : compare_t:('a -> 'a -> int) -> 'a t -> 'a t -> 'a t
 
   val multiply : compare_t:('a -> 'a -> int) -> 'a t -> 'a t -> 'a t
+
+  val divide : compare_t:('a -> 'a -> int) -> 'a t -> 'a t -> 'a t
 
   val replace
     :  compare_t:('a -> 'a -> int) ->

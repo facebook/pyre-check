@@ -2376,6 +2376,8 @@ let polynomial_subtract = Type.Polynomial.subtract ~compare_t:Type.compare
 
 let polynomial_multiply = Type.Polynomial.multiply ~compare_t:Type.compare
 
+let polynomial_divide = Type.Polynomial.divide ~compare_t:Type.compare
+
 let polynomial_create_from_variables_list =
   Type.Polynomial.create_from_variables_list ~compare_t:Type.compare
 
@@ -2471,6 +2473,30 @@ let test_multiply_polynomial _ =
   ()
 
 
+let test_divide_polynomial _ =
+  let assert_divide given1 given2 expected =
+    let given1 = polynomial_create_from_variables_list given1 in
+    let given2 = polynomial_create_from_variables_list given2 in
+    assert_equal ~printer:Fn.id expected (polynomial_show_normal (polynomial_divide given1 given2))
+  in
+  let x = Type.Variable.Unary.create "x" in
+  let y = Type.Variable.Unary.create "y" in
+  let z = Type.Variable.Unary.create "z" in
+  (*Division by zero is checked before calling this function*)
+  assert_divide [1, [x, 1]] [] "0";
+  assert_divide [2, []] [2, []] "1";
+  assert_divide [4, []] [2, []] "2";
+  assert_divide [-3, []] [2, []] "-2";
+  assert_divide [2, [y, 1]] [1, [z, 1]] "(2y//z)";
+  assert_divide [2, [x, 1]; 1, [y, 1]] [1, [y, 1]; 1, [z, 1]] "((2x + y)//(y + z))";
+  assert_divide [2, [y, 1]] [2, [x, 1]] "(y//x)";
+  assert_divide [2, [y, 1; z, 1]] [1, [x, 1; z, 1]] "(2y//x)";
+  assert_divide [2, [y, 1; z, 2]] [1, [z, 1]] "2yz";
+  (*2x^3y + 3x^2z // 4x^2y*)
+  assert_divide [2, [x, 3; y, 1]; 2, [x, 2; z, 1]] [4, [x, 2; y, 1]] "((z + xy)//2y)";
+  ()
+
+
 let test_parameter_create _ =
   assert_equal
     (Type.Callable.Parameter.create
@@ -2498,11 +2524,9 @@ let test_add_polynomials_with_variadics _ =
     |> Type.OrderedTypes.Concatenation.create
   in
   let polynomial_3_2x = polynomial_create_from_variables_list [3, []; 2, [x, 1]] in
-  let polynomial_ts =
-    Type.Polynomial.create_from_variadic ts ~operation:Type.Polynomial.Monomial.Length
-  in
+  let polynomial_ts = Type.Polynomial.create_from_variadic ts ~operation:Type.Monomial.Length in
   let polynomial_shape =
-    Type.Polynomial.create_from_variadic shape ~operation:Type.Polynomial.Monomial.Product
+    Type.Polynomial.create_from_variadic shape ~operation:Type.Monomial.Product
   in
   assert_add
     (polynomial_add polynomial_3_2x polynomial_ts)
@@ -2530,11 +2554,9 @@ let test_subtract_polynomials_with_variadics _ =
     |> Type.OrderedTypes.Concatenation.create
   in
   let polynomial_3_2x = polynomial_create_from_variables_list [3, []; 2, [x, 1]] in
-  let polynomial_ts =
-    Type.Polynomial.create_from_variadic ts ~operation:Type.Polynomial.Monomial.Length
-  in
+  let polynomial_ts = Type.Polynomial.create_from_variadic ts ~operation:Type.Monomial.Length in
   let polynomial_shape =
-    Type.Polynomial.create_from_variadic shape ~operation:Type.Polynomial.Monomial.Product
+    Type.Polynomial.create_from_variadic shape ~operation:Type.Monomial.Product
   in
   assert_subtract
     (polynomial_add polynomial_3_2x polynomial_ts)
@@ -2561,9 +2583,7 @@ let test_multiply_polynomials_with_variadics _ =
     |> Type.OrderedTypes.Concatenation.create
   in
   let polynomial_3_2x = polynomial_create_from_variables_list [3, []; 2, [x, 1]] in
-  let polynomial_ts =
-    Type.Polynomial.create_from_variadic ts ~operation:Type.Polynomial.Monomial.Length
-  in
+  let polynomial_ts = Type.Polynomial.create_from_variadic ts ~operation:Type.Monomial.Length in
   assert_multiply
     (polynomial_add polynomial_3_2x polynomial_ts)
     polynomial_ts
@@ -2625,11 +2645,12 @@ let () =
          "type_parameters_for_bounded_tuple_union" >:: test_type_parameters_for_bounded_tuple_union;
          "polynomial_create_from_list" >:: test_polynomial_create_from_list;
          "add_polynomials" >:: test_add_polynomials;
+         "subtract_polynomials" >:: test_subtract_polynomials;
+         "multiply_polynomial" >:: test_multiply_polynomial;
+         "divide_polynomial" >:: test_divide_polynomial;
          "add_polynomials_with_variadics" >:: test_add_polynomials_with_variadics;
          "subtract_polynomials_with_variadics" >:: test_subtract_polynomials_with_variadics;
          "multiply_polynomials_with_variadics" >:: test_multiply_polynomials_with_variadics;
-         "subtract_polynomials" >:: test_subtract_polynomials;
-         "multiply_polynomial" >:: test_multiply_polynomial;
        ]
   |> Test.run;
   "primitive" >::: ["is unit test" >:: test_is_unit_test] |> Test.run;

@@ -104,6 +104,10 @@ class Multiply(Generic[_A, _B], int):
     pass
 
 
+class Divide(Generic[_A, _B], int):
+    pass
+
+
 class Length(Generic[_Ts], int):
     pass
 

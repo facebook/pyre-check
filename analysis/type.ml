@@ -394,147 +394,251 @@ module Record = struct
   end
 end
 
-module Polynomial = struct
-  module Monomial = struct
-    type variadic_operation =
-      | Length
-      | Product
-    [@@deriving compare, eq, sexp, show, hash]
+module rec Monomial : sig
+  type variadic_operation =
+    | Length
+    | Product
+  [@@deriving compare, eq, sexp, show, hash]
 
-    type 'a variable =
-      | Variable of 'a Record.Variable.RecordUnary.record
-      | Variadic of
-          variadic_operation
-          * ( 'a Record.OrderedTypes.RecordConcatenate.Middle.t,
-              'a )
-            Record.OrderedTypes.RecordConcatenate.t
-    [@@deriving compare, eq, sexp, show, hash]
+  type 'a variable =
+    | Variable of 'a Record.Variable.RecordUnary.record
+    | Divide of 'a Polynomial.t * 'a Polynomial.t
+    | Variadic of
+        variadic_operation
+        * ( 'a Record.OrderedTypes.RecordConcatenate.Middle.t,
+            'a )
+          Record.OrderedTypes.RecordConcatenate.t
+  [@@deriving compare, eq, sexp, show, hash]
 
-    type 'a variable_degree = {
-      variable: 'a variable;
-      degree: int;
-    }
-    [@@deriving eq, sexp, compare, hash, show]
+  type 'a variable_degree = {
+    variable: 'a variable;
+    degree: int;
+  }
+  [@@deriving sexp, compare]
 
-    type 'a t = {
-      constant_factor: int;
-      variables: 'a variable_degree list;
-    }
-    [@@deriving eq, sexp, compare, hash, show]
+  type 'a t = {
+    constant_factor: int;
+    variables: 'a variable_degree list;
+  }
+  [@@deriving eq, sexp, compare, hash, show]
 
-    let equal_variable_id ~compare_t left right =
-      let compare = compare_variable compare_t in
-      compare left right = 0
+  val equal_variable_id : compare_t:('a -> 'a -> int) -> 'a variable -> 'a variable -> bool
+
+  val has_variable : compare_t:('a -> 'a -> int) -> 'a t -> variable:'a variable -> bool
+
+  val show_normal
+    :  show_variable:('a Record.Variable.RecordUnary.record -> string) ->
+    show_variadic:
+      (( 'a Record.OrderedTypes.RecordConcatenate.Middle.t,
+         'a )
+       Record.OrderedTypes.RecordConcatenate.t ->
+      string) ->
+    'a t ->
+    string
+
+  val normalize : compare_t:('a -> 'a -> int) -> 'a t -> 'a t
+
+  val compare_normal : compare_t:('a -> 'a -> int) -> 'a t -> 'a t -> int
+
+  val multiply : compare_t:('a -> 'a -> int) -> 'a t -> 'a t -> 'a t
+
+  val create_from_list : compare_t:('a -> 'a -> int) -> int * ('a variable * int) list -> 'a t
+end = struct
+  type variadic_operation =
+    | Length
+    | Product
+  [@@deriving compare, eq, sexp, show, hash]
+
+  type 'a variable =
+    | Variable of 'a Record.Variable.RecordUnary.record
+    | Divide of 'a Polynomial.t * 'a Polynomial.t
+    | Variadic of
+        variadic_operation
+        * ( 'a Record.OrderedTypes.RecordConcatenate.Middle.t,
+            'a )
+          Record.OrderedTypes.RecordConcatenate.t
+  [@@deriving compare, eq, sexp, show, hash]
+
+  type 'a variable_degree = {
+    variable: 'a variable;
+    degree: int;
+  }
+  [@@deriving eq, sexp, compare, show, hash]
+
+  type 'a t = {
+    constant_factor: int;
+    variables: 'a variable_degree list;
+  }
+  [@@deriving eq, sexp, compare, hash, show]
+
+  let equal_variable_id ~compare_t left right =
+    let compare = compare_variable compare_t in
+    compare left right = 0
 
 
-    let has_variable ~compare_t { variables; _ } ~variable =
-      List.exists variables ~f:(fun { variable = variable'; _ } ->
-          equal_variable_id ~compare_t variable variable')
+  let has_variable ~compare_t { variables; _ } ~variable =
+    List.exists variables ~f:(fun { variable = variable'; _ } ->
+        equal_variable_id ~compare_t variable variable')
 
 
-    let compare_normal
-        ~compare_t
-        { variables = left_variables; _ }
-        { variables = right_variables; _ }
-      =
-      let sum_degrees variables =
-        List.fold variables ~init:0 ~f:(fun sum { degree; _ } -> sum + degree)
+  let compare_normal ~compare_t { variables = left_variables; _ } { variables = right_variables; _ }
+    =
+    let sum_degrees variables =
+      List.fold variables ~init:0 ~f:(fun sum { degree; _ } -> sum + degree)
+    in
+    let total_degree_compare =
+      Int.compare (sum_degrees left_variables) (sum_degrees right_variables)
+    in
+    if total_degree_compare <> 0 then
+      total_degree_compare
+    else
+      let variable_list variables = List.map variables ~f:(fun { variable; _ } -> variable) in
+      List.compare
+        (compare_variable compare_t)
+        (variable_list left_variables)
+        (variable_list right_variables)
+
+
+  let normalize ~compare_t { constant_factor; variables } =
+    let variables =
+      List.sort variables ~compare:(fun { variable = variable1; _ } { variable = variable2; _ } ->
+          (compare_variable compare_t) variable1 variable2)
+    in
+    { constant_factor; variables }
+
+
+  let create_from_list ~compare_t (constant_factor, variables) =
+    let variables = List.map variables ~f:(fun (variable, degree) -> { variable; degree }) in
+    { constant_factor; variables } |> normalize ~compare_t
+
+
+  let show_normal ~show_variable ~show_variadic { constant_factor; variables } =
+    let string_of_variable ~variable ~degree =
+      let name =
+        match variable with
+        | Variable variable -> show_variable variable
+        | Variadic (Length, variadic) -> "Length[" ^ show_variadic variadic ^ "]"
+        | Variadic (Product, variadic) -> "Product[" ^ show_variadic variadic ^ "]"
+        | Divide (dividend, quotient) ->
+            let show_polynomial polynomial =
+              let polynomial_string =
+                Polynomial.show_normal polynomial ~show_variable ~show_variadic
+              in
+              if List.length polynomial > 1 then
+                "(" ^ polynomial_string ^ ")"
+              else
+                polynomial_string
+            in
+            "(" ^ show_polynomial dividend ^ "//" ^ show_polynomial quotient ^ ")"
       in
-      let total_degree_compare =
-        Int.compare (sum_degrees left_variables) (sum_degrees right_variables)
-      in
-      if total_degree_compare <> 0 then
-        total_degree_compare
+
+      name ^ if degree > 1 then "^" ^ string_of_int degree else ""
+    in
+    let list_variables =
+      List.map variables ~f:(fun { variable; degree } -> string_of_variable ~variable ~degree)
+    in
+    let sep = "" in
+    let concat_list = String.concat ~sep list_variables in
+    let prefix =
+      if constant_factor = 1 && List.length list_variables > 0 then
+        ""
+      else if constant_factor = -1 && List.length list_variables > 0 then
+        "-"
       else
-        let variable_list variables = List.map variables ~f:(fun { variable; _ } -> variable) in
-        List.compare
-          (compare_variable compare_t)
-          (variable_list left_variables)
-          (variable_list right_variables)
+        string_of_int constant_factor ^ sep
+    in
+    prefix ^ concat_list
 
 
-    let normalize ~compare_t { constant_factor; variables } =
-      let variables =
-        List.sort variables ~compare:(fun { variable = variable1; _ } { variable = variable2; _ } ->
-            (compare_variable compare_t) variable1 variable2)
-      in
-      { constant_factor; variables }
-
-
-    let create_from_list ~compare_t (constant_factor, variables) =
-      let variables = List.map variables ~f:(fun (variable, degree) -> { variable; degree }) in
-      { constant_factor; variables } |> normalize ~compare_t
-
-
-    let show_normal ~show_variable ~show_variadic { constant_factor; variables } =
-      let string_of_variable ~variable ~degree =
-        let name =
-          match variable with
-          | Variable variable -> show_variable variable
-          | Variadic (Length, variadic) -> "Length[" ^ show_variadic variadic ^ "]"
-          | Variadic (Product, variadic) -> "Product[" ^ show_variadic variadic ^ "]"
+  let multiply
+      ~compare_t
+      { constant_factor = left_factor; variables = left_variables }
+      { constant_factor = right_factor; variables = right_variables }
+    =
+    let multiply_variables left_variables right_variables =
+      if List.length left_variables = 0 then
+        right_variables
+      else if List.length right_variables = 0 then
+        left_variables
+      else
+        let merge_common left_variables right_variables =
+          List.filter_map
+            left_variables
+            ~f:(fun { variable = left_variable; degree = left_degree } ->
+              match
+                List.find right_variables ~f:(fun { variable = right_variable; _ } ->
+                    equal_variable_id left_variable right_variable ~compare_t)
+              with
+              | Some { variable = right_variable; degree = right_degree } ->
+                  Some { variable = right_variable; degree = left_degree + right_degree }
+              | None -> None)
         in
-        name ^ if degree > 1 then "^" ^ string_of_int degree else ""
-      in
-      let list_variables =
-        List.map variables ~f:(fun { variable; degree } -> string_of_variable ~variable ~degree)
-      in
-      let sep = "" in
-      let concat_list = String.concat ~sep list_variables in
-      let prefix =
-        if constant_factor = 1 && List.length list_variables > 0 then
-          ""
-        else if constant_factor = -1 && List.length list_variables > 0 then
-          "-"
-        else
-          string_of_int constant_factor ^ sep
-      in
-      prefix ^ concat_list
+        let merge_difference left_variables right_variables =
+          List.filter left_variables ~f:(fun left_variable_degree ->
+              not
+                (List.mem
+                   right_variables
+                   left_variable_degree
+                   ~equal:(fun { variable = right_variable; _ } { variable = left_variable; _ } ->
+                     equal_variable_id left_variable right_variable ~compare_t)))
+        in
+        merge_common left_variables right_variables
+        @ merge_difference left_variables right_variables
+        @ merge_difference right_variables left_variables
+    in
 
+    {
+      constant_factor = left_factor * right_factor;
+      variables = multiply_variables left_variables right_variables;
+    }
+end
 
-    let multiply
-        ~compare_t
-        { constant_factor = left_factor; variables = left_variables }
-        { constant_factor = right_factor; variables = right_variables }
-      =
-      let multiply_variables left_variables right_variables =
-        if List.length left_variables = 0 then
-          right_variables
-        else if List.length right_variables = 0 then
-          left_variables
-        else
-          let merge_common left_variables right_variables =
-            List.filter_map
-              left_variables
-              ~f:(fun { variable = left_variable; degree = left_degree } ->
-                match
-                  List.find right_variables ~f:(fun { variable = right_variable; _ } ->
-                      equal_variable_id left_variable right_variable ~compare_t)
-                with
-                | Some { variable = right_variable; degree = right_degree } ->
-                    Some { variable = right_variable; degree = left_degree + right_degree }
-                | None -> None)
-          in
-          let merge_difference left_variables right_variables =
-            List.filter left_variables ~f:(fun left_variable_degree ->
-                not
-                  (List.mem
-                     right_variables
-                     left_variable_degree
-                     ~equal:(fun { variable = right_variable; _ } { variable = left_variable; _ } ->
-                       equal_variable_id left_variable right_variable ~compare_t)))
-          in
-          merge_common left_variables right_variables
-          @ merge_difference left_variables right_variables
-          @ merge_difference right_variables left_variables
-      in
+and Polynomial : sig
+  type 'a t = 'a Monomial.t list [@@deriving compare, eq, sexp, hash, show]
 
-      {
-        constant_factor = left_factor * right_factor;
-        variables = multiply_variables left_variables right_variables;
-      }
-  end
+  val show_normal
+    :  show_variable:('a Record.Variable.RecordUnary.record -> string) ->
+    show_variadic:
+      (( 'a Record.OrderedTypes.RecordConcatenate.Middle.t,
+         'a )
+       Record.OrderedTypes.RecordConcatenate.t ->
+      string) ->
+    'a t ->
+    string
 
+  val is_base_case : 'a t -> bool
+
+  val create_from_variable : 'a Record.Variable.RecordUnary.record -> 'a t
+
+  val create_from_int : int -> 'a t
+
+  val create_from_variadic
+    :  ( 'a Record.OrderedTypes.RecordConcatenate.Middle.t,
+         'a )
+       Record.OrderedTypes.RecordConcatenate.t ->
+    operation:Monomial.variadic_operation ->
+    'a t
+
+  val create_from_variables_list
+    :  compare_t:('a -> 'a -> int) ->
+    (int * ('a Record.Variable.RecordUnary.record * int) list) list ->
+    'a t
+
+  val add : compare_t:('a -> 'a -> int) -> 'a t -> 'a t -> 'a t
+
+  val subtract : compare_t:('a -> 'a -> int) -> 'a t -> 'a t -> 'a t
+
+  val multiply : compare_t:('a -> 'a -> int) -> 'a t -> 'a t -> 'a t
+
+  val divide : compare_t:('a -> 'a -> int) -> 'a t -> 'a t -> 'a t
+
+  val replace
+    :  compare_t:('a -> 'a -> int) ->
+    'a t ->
+    by:'a t ->
+    variable:'a Monomial.variable ->
+    'a t
+end = struct
   type 'a t = 'a Monomial.t list [@@deriving compare, eq, sexp, hash, show]
 
   let rec show_normal ~show_variable ~show_variadic polynomial =
@@ -553,7 +657,9 @@ module Polynomial = struct
     | hd :: tl -> List.fold tl ~init:hd ~f
 
 
-  let create_from_int value = [{ Monomial.constant_factor = value; variables = [] }]
+  let create_from_int value =
+    if value = 0 then [] else [{ Monomial.constant_factor = value; variables = [] }]
+
 
   let create_from_variable variable =
     [{ Monomial.constant_factor = 1; variables = [{ variable = Variable variable; degree = 1 }] }]
@@ -690,6 +796,90 @@ module Polynomial = struct
     let merged_polynomial = fold1 replaced_polynomial ~f:(add ~compare_t) in
     (* (y + 3) + (3 * (4z+3) + 2y * (4z+3)^2) *)
     add base_polynomial merged_polynomial ~compare_t
+
+
+  let divide ~compare_t left right =
+    let floor_division dividend quotient =
+      let dividend = float_of_int dividend in
+      let quotient = float_of_int quotient in
+      dividend /. quotient |> floor |> int_of_float
+    in
+    let simplify left right =
+      let rec gcd x y = if y = 0 then x else gcd y (x mod y) in
+      let quotient =
+        match left @ right with
+        | [] -> 1
+        | { Monomial.constant_factor; _ } :: tl ->
+            List.fold
+              tl
+              ~init:constant_factor
+              ~f:(fun denominator { Monomial.constant_factor; _ } ->
+                gcd denominator constant_factor)
+      in
+      let intersect_variables left right =
+        List.filter_map left ~f:(fun { Monomial.variable = variable_left; degree = degree_left } ->
+            let other_variable_degree =
+              List.find right ~f:(fun { Monomial.variable = variable_right; _ } ->
+                  Monomial.equal_variable_id variable_left variable_right ~compare_t)
+            in
+            other_variable_degree
+            >>| fun { Monomial.variable; degree = degree_right } ->
+            { Monomial.variable; degree = min degree_left degree_right })
+      in
+      let common_variables =
+        match left @ right with
+        | [] -> []
+        | { Monomial.variables; _ } :: tl ->
+            let tail_monomial_variables =
+              List.map tl ~f:(fun { Monomial.variables; _ } -> variables)
+            in
+            List.fold tail_monomial_variables ~init:variables ~f:intersect_variables
+      in
+      let factorise_quotients =
+        List.map ~f:(fun ({ Monomial.constant_factor; _ } as polynomial) ->
+            { polynomial with constant_factor = floor_division constant_factor quotient })
+      in
+      let divide_by_variable
+          ({ Monomial.variable = variable_left; degree = degree_left } as variable_degree_left)
+        =
+        let common_variable =
+          List.find common_variables ~f:(fun { Monomial.variable = variable_right; _ } ->
+              Monomial.equal_variable_id variable_left variable_right ~compare_t)
+        in
+        match common_variable with
+        | Some { Monomial.degree = degree_right; _ } when degree_right = degree_left -> None
+        | Some { Monomial.degree = degree_right; _ } ->
+            Some { Monomial.degree = degree_left - degree_right; variable = variable_left }
+        | None -> Some variable_degree_left
+      in
+      let factorise_variables =
+        List.map ~f:(fun ({ Monomial.variables; _ } as polynomial) ->
+            { polynomial with variables = List.filter_map variables ~f:divide_by_variable })
+      in
+      let left = factorise_quotients left |> factorise_variables in
+      let right = factorise_quotients right |> factorise_variables in
+      left, right
+    in
+    let left, right = simplify left right in
+    let get_literal polynomial =
+      match polynomial with
+      | [{ Monomial.variables = []; constant_factor }] -> Some constant_factor
+      | [] -> Some 0
+      | _ -> None
+    in
+    match get_literal left, get_literal right with
+    | _, Some 0
+    | Some 0, _ ->
+        create_from_int 0
+    | Some left, Some right -> create_from_int (floor_division left right)
+    | _, Some 1 -> left
+    | _ ->
+        [
+          {
+            Monomial.constant_factor = 1;
+            variables = [{ variable = Monomial.Divide (left, right); degree = 1 }];
+          };
+        ]
 end
 
 open Record.Callable
@@ -762,13 +952,9 @@ type type_t = t [@@deriving compare, eq, sexp, show, hash]
 let polynomial_to_type polynomial =
   match polynomial with
   | [] -> Literal (Integer 0)
-  | [{ Polynomial.Monomial.variables = []; constant_factor }] -> Literal (Integer constant_factor)
-  | [
-   {
-     Polynomial.Monomial.variables = [{ degree = 1; variable = Variable variable }];
-     constant_factor = 1;
-   };
-  ] ->
+  | [{ Monomial.variables = []; constant_factor }] -> Literal (Integer constant_factor)
+  | [{ Monomial.variables = [{ degree = 1; variable = Variable variable }]; constant_factor = 1 }]
+    ->
       Variable variable
   | _ -> IntExpression polynomial
 
@@ -779,13 +965,13 @@ let solve_less_or_equal_polynomial ~left ~right ~solve ~impossible =
       solve ~left:(polynomial_to_type polynomial) ~right
   | _, IntExpression polynomial when Polynomial.is_base_case polynomial ->
       solve ~left ~right:(polynomial_to_type polynomial)
-  | ( IntExpression ({ Polynomial.Monomial.constant_factor; variables = [] } :: polynomial),
+  | ( IntExpression ({ Monomial.constant_factor; variables = [] } :: polynomial),
       Literal (Integer literal) ) ->
       solve ~left:(IntExpression polynomial) ~right:(Literal (Integer (literal - constant_factor)))
   | ( Literal (Integer literal),
-      IntExpression ({ Polynomial.Monomial.constant_factor; variables = [] } :: polynomial) ) ->
+      IntExpression ({ Monomial.constant_factor; variables = [] } :: polynomial) ) ->
       solve ~left:(Literal (Integer (literal - constant_factor))) ~right:(IntExpression polynomial)
-  | IntExpression [{ Polynomial.Monomial.constant_factor; variables }], Literal (Integer literal)
+  | IntExpression [{ Monomial.constant_factor; variables }], Literal (Integer literal)
     when constant_factor <> 1 ->
       if literal mod constant_factor <> 0 then
         impossible
@@ -793,14 +979,14 @@ let solve_less_or_equal_polynomial ~left ~right ~solve ~impossible =
         solve
           ~left:(IntExpression [{ constant_factor = 1; variables }])
           ~right:(Literal (Integer (literal / constant_factor)))
-  | Literal (Integer literal), IntExpression [{ Polynomial.Monomial.constant_factor; variables }]
+  | Literal (Integer literal), IntExpression [{ Monomial.constant_factor; variables }]
     when constant_factor <> 1 ->
       if literal mod constant_factor <> 0 then
         impossible
       else
         solve
           ~left:(Literal (Integer (literal / constant_factor)))
-          ~right:(IntExpression [{ Polynomial.Monomial.constant_factor = 1; variables }])
+          ~right:(IntExpression [{ Monomial.constant_factor = 1; variables }])
   | ( IntExpression (({ variables = []; _ } as left_monomial) :: left_polynomial_tail),
       IntExpression ({ variables = []; _ } :: _ as right_polynomial) ) ->
       let right_polynomial =
@@ -820,16 +1006,71 @@ let type_to_int_expression = function
   | _ -> None
 
 
-let merge_int_expressions left right ~operation =
-  match left, type_to_int_expression right with
-  | _, Some Any
+let checked_division left right =
+  if List.length right = 0 then
+    Bottom
+  else
+    IntExpression (Polynomial.divide left right ~compare_t:T.compare)
+
+
+let merge_int_expressions ?(divide = false) left right ~operation =
+  match left, type_to_int_expression right |> Option.value ~default:Bottom with
+  | Bottom, _
+  | _, Bottom ->
+      Bottom
+  | _, Any
   | Any, _ ->
       Any
   | Primitive "int", _
-  | _, Some (Primitive "int") ->
+  | _, Primitive "int" ->
       Primitive "int"
-  | IntExpression left, Some (IntExpression right) -> IntExpression (operation left right)
-  | _ -> Any
+  | IntExpression left, IntExpression right ->
+      if divide then
+        checked_division left right
+      else
+        IntExpression (operation left right)
+  | _ -> Bottom
+
+
+let local_replace_polynomial polynomial ~replace_variable ~replace_concatenation ~replace_recursive =
+  let collect polynomial =
+    List.concat_map polynomial ~f:(fun { Monomial.variables; _ } ->
+        List.map variables ~f:(fun { variable; _ } -> variable))
+    |> List.dedup_and_sort ~compare:(Monomial.compare_variable T.compare)
+  in
+  let replacement_pair monomial_variable =
+    match monomial_variable with
+    | Monomial.Variable variable ->
+        replace_variable variable >>| fun result -> monomial_variable, result
+    | Monomial.Variadic (operation, variadic) ->
+        replace_concatenation variadic ~operation >>| fun result -> monomial_variable, result
+    | Monomial.Divide (dividend, quotient) ->
+        let replace_polynomial polynomial =
+          match replace_recursive (IntExpression polynomial) with
+          | Some replaced -> replaced
+          | None -> IntExpression polynomial
+        in
+        let replaced_division =
+          merge_int_expressions
+            (replace_polynomial dividend)
+            (replace_polynomial quotient)
+            ~divide:true
+            ~operation:(fun x _ -> x)
+        in
+        Some (monomial_variable, replaced_division)
+  in
+  let replacements = collect polynomial |> List.filter_map ~f:replacement_pair in
+  if List.length replacements = 0 then
+    None
+  else
+    let merge_replace left (variable, right) =
+      merge_int_expressions left right ~operation:(fun left right ->
+          Polynomial.replace left ~by:right ~variable ~compare_t:T.compare)
+    in
+    let replaced_expression =
+      List.fold replacements ~init:(IntExpression polynomial) ~f:merge_replace
+    in
+    Some replaced_expression
 
 
 module Map = Map.Make (T)
@@ -1571,28 +1812,37 @@ let rec expression annotation =
                 ];
             }
         in
-        let convert_monomial { Polynomial.Monomial.constant_factor; variables } =
+        let convert_monomial { Monomial.constant_factor; variables } =
           let constant_factor = convert_annotation (Literal (Integer constant_factor)) in
           let variables =
             List.map variables ~f:(fun { variable; degree } ->
                 let variable =
                   match variable with
-                  | Polynomial.Monomial.Variable variable -> convert_annotation (Variable variable)
-                  | Polynomial.Monomial.Variadic (Length, variadic) ->
+                  | Monomial.Variable variable -> convert_annotation (Variable variable)
+                  | Monomial.Variadic (Length, variadic) ->
                       convert_annotation
                         (Parametric
                            {
                              name = "pyre_extensions.Length";
                              parameters = [Group (Concatenation variadic)];
                            })
-                  | Polynomial.Monomial.Variadic (Product, variadic) ->
+                  | Monomial.Variadic (Product, variadic) ->
                       convert_annotation
                         (Parametric
                            {
                              name = "pyre_extensions.Product";
                              parameters = [Group (Concatenation variadic)];
                            })
+                  | Monomial.Divide (dividend, quotient) ->
+                      convert_annotation
+                        (Parametric
+                           {
+                             name = "pyre_extensions.Divide";
+                             parameters =
+                               [Group (Concrete [IntExpression dividend; IntExpression quotient])];
+                           })
                 in
+
                 if degree = 1 then
                   variable
                 else
@@ -2443,21 +2693,24 @@ let rec create_logic ~aliases ~variable_aliases { Node.value = expression; _ } =
     in
     let create_int_expression_from_arguments arguments ~operation =
       let arguments = List.map arguments ~f:create_logic |> List.map ~f:type_to_int_expression in
-      if List.exists arguments ~f:Option.is_none || List.length arguments < 2 then
+      if List.exists arguments ~f:Option.is_none then
         Top
       else
-        let arguments = List.filter_map arguments ~f:Fn.id in
-        let operation, identity_polynomial =
-          match operation with
-          | `Add ->
-              Polynomial.add ~compare_t:T.compare, IntExpression (Polynomial.create_from_int 0)
-          | `Multiply ->
-              Polynomial.multiply ~compare_t:T.compare, IntExpression (Polynomial.create_from_int 1)
-        in
-        let int_expression =
-          List.fold arguments ~init:identity_polynomial ~f:(merge_int_expressions ~operation)
-        in
-        int_expression
+        match List.filter_map arguments ~f:Fn.id with
+        | []
+        | [_] ->
+            Top
+        | hd :: tl ->
+            let operation, divide =
+              match operation with
+              | `Add -> Polynomial.add, false
+              | `Multiply -> Polynomial.multiply, false
+              | `Divide -> Polynomial.divide, true
+            in
+            List.fold
+              tl
+              ~init:hd
+              ~f:(merge_int_expressions ~operation:(operation ~compare_t:T.compare) ~divide)
     in
     match expression with
     | Call
@@ -2560,6 +2813,26 @@ let rec create_logic ~aliases ~variable_aliases { Node.value = expression; _ } =
         | Top -> create_parametric ~base ~argument
         | _ -> created_type )
         |> resolve_aliases
+    | Call
+        {
+          callee =
+            { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ } as
+            callee;
+          arguments =
+            [
+              {
+                Call.Argument.name = None;
+                value = { Node.value = Expression.Tuple arguments; _ } as argument;
+                _;
+              };
+            ];
+        }
+      when name_is ~name:"pyre_extensions.Divide.__getitem__" callee ->
+        let created_type = create_int_expression_from_arguments arguments ~operation:`Divide in
+        ( match created_type with
+        | Top -> create_parametric ~base ~argument
+        | _ -> created_type )
+        |> resolve_aliases
     | Call { callee; arguments } when name_is ~name:"typing_extensions.Literal.__getitem__" callee
       ->
         let arguments =
@@ -2589,7 +2862,7 @@ let rec create_logic ~aliases ~variable_aliases { Node.value = expression; _ } =
             let length elements =
               IntExpression (Polynomial.create_from_int (List.length elements))
             in
-            Some (Polynomial.Monomial.Length, length)
+            Some (Monomial.Length, length)
           else if name_is ~name:"pyre_extensions.Product.__getitem__" callee then
             let identity_polynomial = Polynomial.create_from_int 1 in
             let multiply elements =
@@ -2598,7 +2871,7 @@ let rec create_logic ~aliases ~variable_aliases { Node.value = expression; _ } =
                 ~init:(IntExpression identity_polynomial)
                 ~f:(merge_int_expressions ~operation:(Polynomial.multiply ~compare_t:T.compare))
             in
-            Some (Polynomial.Monomial.Product, multiply)
+            Some (Monomial.Product, multiply)
           else
             None
         in
@@ -3424,64 +3697,43 @@ end = struct
                   match variable with
                   | Variable x -> [x]
                   | Variadic (_, { wrapping = { head; tail }; _ }) ->
-                      List.concat_map (head @ tail) ~f:local_collect))
+                      List.concat_map (head @ tail) ~f:local_collect
+                  | Divide (dividend, quotient) ->
+                      local_collect (IntExpression dividend)
+                      @ local_collect (IntExpression quotient)))
           |> List.dedup_and_sort ~compare
       | _ -> []
 
 
     let rec local_replace replacement = function
       | Variable variable -> replacement variable
-      | IntExpression polynomial as int_expression ->
-          let collect polynomial =
-            List.concat_map polynomial ~f:(fun { Polynomial.Monomial.variables; _ } ->
-                List.map variables ~f:(fun { variable; _ } -> variable))
-            |> List.dedup_and_sort ~compare:(Polynomial.Monomial.compare_variable T.compare)
+      | IntExpression polynomial ->
+          let replace_variable variable =
+            match replacement variable with
+            | Some replaced_variable ->
+                Some (type_to_int_expression replaced_variable |> Option.value ~default:Bottom)
+            | _ -> None
           in
-          let replacement_pair monomial_variable =
-            match monomial_variable with
-            | Polynomial.Monomial.Variable variable -> (
-                match replacement variable with
-                | Some replaced_variable ->
-                    Some
-                      ( monomial_variable,
-                        type_to_int_expression replaced_variable |> Option.value ~default:Any )
-                | _ -> None )
-            | Polynomial.Monomial.Variadic
-                (operation, ({ wrapping = { head; tail }; _ } as variadic)) ->
-                let replace_list =
-                  List.map ~f:(fun variable ->
-                      local_replace replacement variable |> Option.value ~default:variable)
-                in
-                let replaced =
-                  Polynomial.create_from_variadic
-                    ~operation
-                    {
-                      variadic with
-                      wrapping = { head = replace_list head; tail = replace_list tail };
-                    }
-                in
-                Some (monomial_variable, IntExpression replaced)
+          let replace_concatenation
+              ({ OrderedTypes.RecordConcatenate.wrapping = { head; tail }; _ } as variadic)
+              ~operation
+            =
+            let replace_list =
+              List.map ~f:(fun variable ->
+                  local_replace replacement variable |> Option.value ~default:variable)
+            in
+            let replaced =
+              Polynomial.create_from_variadic
+                ~operation
+                { variadic with wrapping = { head = replace_list head; tail = replace_list tail } }
+            in
+            Some (IntExpression replaced)
           in
-          let replacements = collect polynomial |> List.filter_map ~f:replacement_pair in
-          if List.length replacements = 0 then
-            None
-          else
-            let merge_replace left right =
-              match left, right with
-              | _, (_, Any)
-              | Any, _ ->
-                  Any
-              | _, (_, Primitive "int")
-              | Primitive "int", _ ->
-                  integer
-              | IntExpression left, (variable, IntExpression right) ->
-                  IntExpression (Polynomial.replace left ~by:right ~variable ~compare_t:T.compare)
-              | left, _ -> left
-            in
-            let replaced_expression =
-              List.fold replacements ~init:int_expression ~f:merge_replace
-            in
-            Some replaced_expression
+          local_replace_polynomial
+            polynomial
+            ~replace_variable
+            ~replace_concatenation
+            ~replace_recursive:(local_replace replacement)
       | _ -> None
 
 
@@ -3721,7 +3973,7 @@ end = struct
       let namespace variable ~namespace = { variable with namespace }
 
       (* TODO(T45087986): Add more entries here as we add hosts for these variables *)
-      let local_collect = function
+      let rec local_collect = function
         | Tuple (Bounded bounded) -> OrderedTypes.variable bounded |> Option.to_list
         | Callable { implementation; overloads; _ } ->
             let map = function
@@ -3744,18 +3996,19 @@ end = struct
             in
             List.concat_map parameters ~f:collect
         | IntExpression polynomial ->
-            List.map polynomial ~f:(fun { variables; _ } ->
-                List.filter_map variables ~f:(fun { variable; _ } ->
+            List.concat_map polynomial ~f:(fun { variables; _ } ->
+                List.concat_map variables ~f:(fun { variable; _ } ->
                     match variable with
-                    | Variadic (_, variadic) -> Some (OrderedTypes.Concatenation.variable variadic)
-                    | _ -> None))
-            |> List.concat
+                    | Variadic (_, variadic) -> [OrderedTypes.Concatenation.variable variadic]
+                    | Divide (dividend, quotient) ->
+                        local_collect (IntExpression dividend)
+                        @ local_collect (IntExpression quotient)
+                    | _ -> []))
             |> List.dedup_and_sort ~compare
         | _ -> []
 
 
-      (* TODO(T45087986): Add more entries here as we add hosts for these variables *)
-      let local_replace replacement = function
+      let rec local_replace replacement = function
         | Tuple (Bounded bounded) ->
             OrderedTypes.local_replace_variable bounded ~replacement
             >>| fun ordered_types -> Tuple (Bounded ordered_types)
@@ -3809,28 +4062,14 @@ end = struct
             Callable.map_parameters callable ~f:map
             |> (fun callable -> Callable callable)
             |> Option.some
-        | IntExpression polynomial as int_expression ->
-            let collect_variadics polynomial =
-              let compare (left_operation, left_variadic) (right_operation, right_variadic) =
-                Polynomial.Monomial.compare_variable
-                  T.compare
-                  (Polynomial.Monomial.Variadic (left_operation, left_variadic))
-                  (Polynomial.Monomial.Variadic (right_operation, right_variadic))
-              in
-              List.concat_map polynomial ~f:(fun { Polynomial.Monomial.variables; _ } ->
-                  List.filter_map variables ~f:(fun { Polynomial.Monomial.variable; _ } ->
-                      match variable with
-                      | Variadic (operation, variadic) -> Some (operation, variadic)
-                      | _ -> None))
-              |> List.dedup_and_sort ~compare
-            in
-            let replacement_pair (operation, variable) =
+        | IntExpression polynomial ->
+            let replace_concatenation variadic ~operation =
               let replace_variadic group ~operation =
                 match operation, group with
                 | _, OrderedTypes.Any -> Any
-                | Polynomial.Monomial.Length, Concrete list_types ->
+                | Monomial.Length, Concrete list_types ->
                     IntExpression (Polynomial.create_from_int (List.length list_types))
-                | Polynomial.Monomial.Product, Concrete list_types ->
+                | Monomial.Product, Concrete list_types ->
                     let identity_polynomial = Polynomial.create_from_int 1 in
                     List.fold
                       list_types
@@ -3841,21 +4080,14 @@ end = struct
                 | _, Concatenation variadic ->
                     IntExpression (Polynomial.create_from_variadic variadic ~operation)
               in
-              OrderedTypes.Concatenation.replace_variable variable ~replacement
-              >>| fun result ->
-              Polynomial.Monomial.Variadic (operation, variable), replace_variadic result ~operation
+              OrderedTypes.Concatenation.replace_variable variadic ~replacement
+              >>| replace_variadic ~operation
             in
-            let replacements =
-              collect_variadics polynomial |> List.filter_map ~f:replacement_pair
-            in
-            let replace int_expression (variable, replacement) =
-              let operation polynomial by =
-                Polynomial.replace polynomial ~by ~variable ~compare_t:T.compare
-              in
-              merge_int_expressions int_expression replacement ~operation
-            in
-            let replaced_expression = List.fold replacements ~init:int_expression ~f:replace in
-            Some replaced_expression
+            local_replace_polynomial
+              polynomial
+              ~replace_variable:(fun _ -> None)
+              ~replace_concatenation
+              ~replace_recursive:(local_replace replacement)
         | _ -> None
 
 

@@ -1795,36 +1795,43 @@ let test_check_typevar_arithmetic context =
     {|
       from typing import TypeVar
       from typing_extensions import Literal
-      from pyre_extensions import Add, Multiply
+      from pyre_extensions import Add, Multiply, Divide
 
       N = TypeVar("N", bound=int)
       A = TypeVar("A")
       def f1(a : A, n : N) -> Add[A,N]: ...
       def f2(a : A) -> Multiply[A,Literal[3]]: ...
+      def f3(a : A) -> Divide[A,Literal[3]]: ...
     |}
     [
       "Invalid type parameters [24]: Type parameter `Variable[A]` violates constraints on \
-       `pyre_extensions.Add`/`pyre_extensions.Multiply`. Add & Multiply only accept type variables \
-       with a bound that's a subtype of int.";
+       `pyre_extensions.Add`/`pyre_extensions.Multiply`/`pyre_extensions.Divide`. Add & Multiply & \
+       Divide only accept type variables with a bound that's a subtype of int.";
       "Invalid type parameters [24]: Type parameter `Variable[A]` violates constraints on \
-       `pyre_extensions.Add`/`pyre_extensions.Multiply`. Add & Multiply only accept type variables \
-       with a bound that's a subtype of int.";
+       `pyre_extensions.Add`/`pyre_extensions.Multiply`/`pyre_extensions.Divide`. Add & Multiply & \
+       Divide only accept type variables with a bound that's a subtype of int.";
+      "Invalid type parameters [24]: Type parameter `Variable[A]` violates constraints on \
+       `pyre_extensions.Add`/`pyre_extensions.Multiply`/`pyre_extensions.Divide`. Add & Multiply & \
+       Divide only accept type variables with a bound that's a subtype of int.";
     ];
   assert_type_errors
     {|
       from typing import TypeVar
       from typing_extensions import Literal
-      from pyre_extensions import Add, Multiply
+      from pyre_extensions import Add, Multiply, Divide
 
       N = TypeVar("N", bound=int)
       def f1(n : N) -> Add[N,Literal["foo"]]: ...
       def f2(n : N) -> Multiply[N,Literal["foo"]]: ...
+      def f3(n : N) -> Divide[N,Literal["foo"]]: ...
     |}
     [
       "Invalid type parameters [24]: Type parameter `typing_extensions.Literal['foo']` violates \
        constraints on `Variable[pyre_extensions._B (bound to int)]` in generic type `Add`.";
       "Invalid type parameters [24]: Type parameter `typing_extensions.Literal['foo']` violates \
        constraints on `Variable[pyre_extensions._B (bound to int)]` in generic type `Multiply`.";
+      "Invalid type parameters [24]: Type parameter `typing_extensions.Literal['foo']` violates \
+       constraints on `Variable[pyre_extensions._B (bound to int)]` in generic type `Divide`.";
     ];
   assert_type_errors
     {|
@@ -1892,6 +1899,25 @@ let test_check_typevar_arithmetic context =
     ];
   assert_default_type_errors
     {|
+      from typing import Any
+      from pyre_extensions import Divide
+      from typing_extensions import Literal
+
+      a : Divide[Literal[3],int]
+      b : Divide[Literal[4],Any]
+      c : Divide[int,Any]
+
+      reveal_type(a)
+      reveal_type(b)
+      reveal_type(c)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `a` is `int`.";
+      "Revealed type [-1]: Revealed type for `b` is `typing.Any`.";
+      "Revealed type [-1]: Revealed type for `c` is `typing.Any`.";
+    ];
+  assert_default_type_errors
+    {|
       from typing import Any, TypeVar, Generic
       from pyre_extensions import Add
       from typing_extensions import Literal
@@ -1938,6 +1964,35 @@ let test_check_typevar_arithmetic context =
       c1 = multiply(a,b)
       c2 = multiply(a,c)
       c3 = multiply(b,c)
+
+      reveal_type(c1)
+      reveal_type(c2)
+      reveal_type(c3)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `c1` is `Vec[int]`.";
+      "Revealed type [-1]: Revealed type for `c2` is `Vec[typing.Any]`.";
+      "Revealed type [-1]: Revealed type for `c3` is `Vec[typing.Any]`.";
+    ];
+  assert_default_type_errors
+    {|
+      from typing import Any, TypeVar, Generic
+      from pyre_extensions import Divide
+      from typing_extensions import Literal
+
+      A = TypeVar("A", bound=int)
+      B = TypeVar("B", bound=int)
+
+      class Vec(Generic[A]): ...
+
+      def divide(a : Vec[A], b : Vec[B]) -> Vec[Divide[A,B]]: ...
+
+      a : Vec[Literal[5]]
+      b : Vec[int]
+      c : Vec[Any]
+      c1 = divide(a,b)
+      c2 = divide(a,c)
+      c3 = divide(b,c)
 
       reveal_type(c1)
       reveal_type(c2)
@@ -2188,7 +2243,7 @@ let test_check_variadic_arithmetic context =
     ["Revealed type [-1]: Revealed type for `x` is `typing_extensions.Literal[83]`."];
   assert_type_errors
     (* Currently ListVariadic cannot be bounded, so when Product is given a non int type it returns
-       Any *)
+       Bottom *)
     {|
       from pyre_extensions import Product
 
@@ -2196,7 +2251,310 @@ let test_check_variadic_arithmetic context =
 
       reveal_type(x)
     |}
-    ["Revealed type [-1]: Revealed type for `x` is `typing.Any`."]
+    ["Revealed type [-1]: Revealed type for `x` is `undefined`."]
+
+
+let test_check_typevar_division context =
+  let assert_type_errors = assert_type_errors ~context in
+  assert_type_errors
+    {|
+      from typing import TypeVar
+      from pyre_extensions import Divide
+
+      A = TypeVar("A",bound=int)
+      B = TypeVar("B",bound=int)
+      # A + A/2
+      def div(a: A, b: B) -> Divide[A,B]: ...
+
+      def foo() -> None:
+        x1 = div(2,2) # 2//2 = 1
+        x2 = div(3,2) # 3//2 = 1
+        x3 = div(-3,2) # -3//2 = -2
+        reveal_type(x1)
+        reveal_type(x2)
+        reveal_type(x3)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x1` is `typing_extensions.Literal[1]`.";
+      "Revealed type [-1]: Revealed type for `x2` is `typing_extensions.Literal[1]`.";
+      "Revealed type [-1]: Revealed type for `x3` is `typing_extensions.Literal[-2]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import TypeVar
+      from typing_extensions import Literal
+      from pyre_extensions import Divide, Add
+
+      A = TypeVar("A",bound=int)
+      # A + A/2
+      def f(a : A) -> Add[A, Divide[A,Literal[2]]]: ...
+
+      def foo() -> None:
+        x = f(3)
+        reveal_type(x)
+        reveal_type(f)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `typing_extensions.Literal[4]`.";
+      "Revealed type [-1]: Revealed type for `test.f` is `typing.Callable(f)[[Named(a, Variable[A \
+       (bound to int)])], pyre_extensions.IntExpression[A + (A//2)]]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import TypeVar
+      from typing_extensions import Literal
+      from pyre_extensions import Divide, Add
+
+      A = TypeVar("A",bound=int)
+      # A//2 + A//2
+      def f(a : A) -> Add[Divide[A,Literal[2]], Divide[A,Literal[2]]]: ...
+
+      def foo() -> None:
+        x = f(3)
+        reveal_type(x)
+        reveal_type(f)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `typing_extensions.Literal[2]`.";
+      "Revealed type [-1]: Revealed type for `test.f` is `typing.Callable(f)[[Named(a, Variable[A \
+       (bound to int)])], pyre_extensions.IntExpression[2(A//2)]]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import TypeVar
+      from typing_extensions import Literal
+      from pyre_extensions import Divide, Add, Multiply
+
+      A = TypeVar("A",bound=int)
+      # A//2 - A//2
+      def f(a : A) -> Add[Divide[A,Literal[2]], Multiply[Literal[-1],Divide[A,Literal[2]]]]: ...
+
+      def foo() -> None:
+        x = f(3)
+        reveal_type(x)
+        reveal_type(f)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `typing_extensions.Literal[0]`.";
+      "Revealed type [-1]: Revealed type for `test.f` is `typing.Callable(f)[[Named(a, Variable[A \
+       (bound to int)])], typing_extensions.Literal[0]]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import TypeVar
+      from typing_extensions import Literal
+      from pyre_extensions import Divide, Add
+
+      A = TypeVar("A",bound=int)
+      # 1 + 2//A + A//3
+      def f(a : A) -> Add[Add[Literal[1], Divide[Literal[2],A]], Divide[A,Literal[3]]]: ...
+
+      def foo() -> None:
+        x = f(3)
+        reveal_type(x)
+        reveal_type(f)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `typing_extensions.Literal[2]`.";
+      "Revealed type [-1]: Revealed type for `test.f` is `typing.Callable(f)[[Named(a, Variable[A \
+       (bound to int)])], pyre_extensions.IntExpression[1 + (A//3) + (2//A)]]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import TypeVar
+      from typing_extensions import Literal
+      from pyre_extensions import Divide, Add, Multiply
+
+      A = TypeVar("A",bound=int)
+      B = TypeVar("B",bound=int)
+      # (3 + (A+B)//A + AB//A) * (A+2)//B
+      def f(a: A, b: B) -> Multiply[
+                              Add[
+                                  Add[
+                                  Divide[Add[A, B],A],
+                                  Divide[Multiply[A,B],A]
+                                  ],
+                                  Literal[3]
+                              ],
+                              Divide[Add[A,Literal[2]],B]
+                          ]: ...
+
+      def foo() -> None:
+        x = f(2,3)
+        reveal_type(x)
+        reveal_type(f)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `typing_extensions.Literal[8]`.";
+      "Revealed type [-1]: Revealed type for `test.f` is `typing.Callable(f)[[Named(a, Variable[A \
+       (bound to int)]), Named(b, Variable[B (bound to int)])], pyre_extensions.IntExpression[3((2 \
+       + A)//B) + B((2 + A)//B) + ((A + B)//A)((2 + A)//B)]]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import TypeVar
+      from typing_extensions import Literal as L
+      from pyre_extensions import Divide, Add
+
+      A = TypeVar("A",bound=int)
+      B = TypeVar("B",bound=int)
+      # A//8 + A//8 + A//4 + A//2 + A
+      def f(a: A) -> Add[Divide[A,L[8]],Add[Divide[A,L[8]], Add[Divide[A,L[4]],Add[Divide[A,L[2]],A]]]]: ...
+
+      def foo() -> None:
+        x = f(2)
+        reveal_type(x)
+        reveal_type(f)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `typing_extensions.Literal[3]`.";
+      "Revealed type [-1]: Revealed type for `test.f` is `typing.Callable(f)[[Named(a, Variable[A \
+       (bound to int)])], pyre_extensions.IntExpression[A + (A//2) + (A//4) + 2(A//8)]]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import TypeVar, Generic
+      from typing_extensions import Literal as L
+      from pyre_extensions import Divide, Multiply, Product as Prod, ListVariadic
+      from pyre_extensions.type_variable_operators import Concatenate as Cat
+
+      A = TypeVar("A",bound=int)
+      Shape = ListVariadic("Shape")
+      Ts = ListVariadic("Ts")
+
+      class Tensor(Generic[Ts]): ...
+
+      # Tensor[A,Prod(Shape)//(A*Prod(Ts)) ,Ts]
+      def view(
+          t : Tensor[Shape],
+          a : A,
+          b : L[-1],
+          *ts : Ts) -> Tensor[Cat[A,Divide[Prod[Shape],Multiply[A,Prod[Ts]]],Ts]] : ...
+
+      def foo() -> None:
+        x : Tensor[L[5],L[3],L[12]]
+        y1 = view(x,5,-1,3,6,1) # Tensor[5,2,3,6,1]
+        y2 = view(x,3,-1,10) # Tensor[3,6,10]
+        reveal_type(y1)
+        reveal_type(y2)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `y1` is `Tensor[typing_extensions.Literal[5], \
+       typing_extensions.Literal[2], typing_extensions.Literal[3], typing_extensions.Literal[6], \
+       typing_extensions.Literal[1]]`.";
+      "Revealed type [-1]: Revealed type for `y2` is `Tensor[typing_extensions.Literal[3], \
+       typing_extensions.Literal[6], typing_extensions.Literal[10]]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import TypeVar
+      from typing_extensions import Literal
+      from pyre_extensions import Divide
+
+      A = TypeVar("A",bound=int)
+      def f1() -> Divide[Literal[3],Literal[0]] : ...
+      def f2(a : A) -> Divide[Literal[3],A] : ...
+
+      def foo() -> None:
+        x1 = f1()
+        x2 = f2(0)
+        reveal_type(x1)
+        reveal_type(x2)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x1` is `undefined`.";
+      "Revealed type [-1]: Revealed type for `x2` is `undefined`.";
+    ]
+
+
+let test_check_typevar_division_simplify context =
+  let assert_type_errors = assert_type_errors ~context in
+  assert_type_errors
+    {|
+      from typing import TypeVar
+      from typing_extensions import Literal
+      from pyre_extensions import Divide, Add
+
+      A = TypeVar("A",bound=int)
+      # A + A//1
+      def f(a : A) -> Add[A,Divide[A,Literal[1]]]: ...
+
+      def foo() -> None:
+        x = f(3)
+        reveal_type(x)
+        reveal_type(f)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `typing_extensions.Literal[6]`.";
+      "Revealed type [-1]: Revealed type for `test.f` is `typing.Callable(f)[[Named(a, Variable[A \
+       (bound to int)])], pyre_extensions.IntExpression[2A]]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import TypeVar
+      from typing_extensions import Literal
+      from pyre_extensions import Divide, Add, Multiply
+
+      A = TypeVar("A",bound=int)
+      # A/2 + 2A/4
+      def f(a : A) -> Add[Divide[A,Literal[2]],Divide[Multiply[A,Literal[2]],Literal[4]]]: ...
+
+      def foo() -> None:
+        x = f(3)
+        reveal_type(x)
+        reveal_type(f)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `typing_extensions.Literal[2]`.";
+      "Revealed type [-1]: Revealed type for `test.f` is `typing.Callable(f)[[Named(a, Variable[A \
+       (bound to int)])], pyre_extensions.IntExpression[2(A//2)]]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import TypeVar
+      from typing_extensions import Literal as L
+      from pyre_extensions import Divide, Add, Multiply
+
+      A = TypeVar("A",bound=int)
+      B = TypeVar("B",bound=int)
+      # (9B + 12A)/(6A + 15B)
+      def f(a : A, b : B) -> Divide[Add[Multiply[L[9],B],Multiply[L[12],A]],Add[Multiply[L[6],A],Multiply[L[15],B]]]: ...
+
+      def foo() -> None:
+        # 26/20
+        x = f(5,2)
+        reveal_type(x)
+        reveal_type(f)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `typing_extensions.Literal[1]`.";
+      "Revealed type [-1]: Revealed type for `test.f` is `typing.Callable(f)[[Named(a, Variable[A \
+       (bound to int)]), Named(b, Variable[B (bound to int)])], pyre_extensions.IntExpression[((4A \
+       + 3B)//(2A + 5B))]]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import TypeVar
+      from typing_extensions import Literal
+      from pyre_extensions import Divide, Add, Multiply
+
+      A = TypeVar("A",bound=int)
+      B = TypeVar("B",bound=int)
+      # (A+B)//A + AB//A
+      def f(a : A, b : B) -> Add[Divide[Add[A,B],A], Divide[Multiply[A,B],A]]: ...
+
+      def foo() -> None:
+        # (2+3)//2 + 2*3//2 -> 5//2 + 6//2 -> 11//2 -> 5
+        x = f(2,3)
+        reveal_type(x)
+        reveal_type(f)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `typing_extensions.Literal[5]`.";
+      "Revealed type [-1]: Revealed type for `test.f` is `typing.Callable(f)[[Named(a, Variable[A \
+       (bound to int)]), Named(b, Variable[B (bound to int)])], pyre_extensions.IntExpression[B + \
+       ((A + B)//A)]]`.";
+    ]
 
 
 let () =
@@ -2221,5 +2579,7 @@ let () =
          "check_annotation_with_any" >:: test_check_annotation_with_any;
          "check_typevar_arithmetic" >:: test_check_typevar_arithmetic;
          "check_variadic_arithmetic" >:: test_check_variadic_arithmetic;
+         "check_typevar_division" >:: test_check_typevar_division;
+         "check_typevar_division_simplify" >:: test_check_typevar_division_simplify;
        ]
   |> Test.run
