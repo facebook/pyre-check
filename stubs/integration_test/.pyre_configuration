@@ -4,5 +4,6 @@
   "typeshed": "../typeshed",
   "search_path": [".."],
   "taint_models_path": "../taint",
-  "stable_client": "../../../../../tools/pyre/stable/pyre_client"
+  "stable_client": "../../../../../tools/pyre/stable/pyre_client",
+  "unstable_client": "../../../../../tools/pyre/stable/pyre_client"
 }
