@@ -9,10 +9,12 @@ import errno
 import fcntl
 import os
 import unittest
+from pathlib import Path
 from unittest.mock import MagicMock, Mock, mock_open, patch
 
 from ... import commands, configuration_monitor, filesystem, project_files_monitor
 from ...analysis_directory import AnalysisDirectory
+from ...find_directories import FoundRoot
 from ..command import ExitCode, __name__ as client_name
 from ..start import Start
 from .command_test import mock_arguments, mock_configuration
@@ -22,8 +24,9 @@ _typeshed_search_path: str = "{}.typeshed_search_path".format(commands.start.__n
 
 
 class StartTest(unittest.TestCase):
-    @patch("{}.find_global_root".format(client_name), return_value=".")
-    @patch("{}.find_local_root".format(client_name), return_value=None)
+    @patch(
+        f"{client_name}.find_global_and_local_root", return_value=FoundRoot(Path("."))
+    )
     @patch("fcntl.lockf")
     @patch(_typeshed_search_path, Mock(return_value=["path3"]))
     # pyre-fixme[56]: Argument `set()` to decorator factory
@@ -35,8 +38,7 @@ class StartTest(unittest.TestCase):
         _daemonize,
         get_directories_to_analyze,
         lock_file,
-        find_local_root,
-        find_global_root,
+        find_global_and_local_root,
     ) -> None:
         original_directory = "/original/directory"
         arguments = mock_arguments()
@@ -201,14 +203,15 @@ class StartTest(unittest.TestCase):
             command.run()
             self.assertEqual(command._exit_code, ExitCode.SUCCESS)
 
-    @patch("{}.find_global_root".format(client_name), return_value=".")
-    @patch("{}.find_local_root".format(client_name), return_value=None)
+    @patch(
+        f"{client_name}.find_global_and_local_root", return_value=FoundRoot(Path("."))
+    )
     @patch(_typeshed_search_path, Mock(return_value=["path3"]))
     # pyre-fixme[56]: Argument `set()` to decorator factory
     #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(commands.Reporting, "_get_directories_to_analyze", return_value=set())
     def test_start_flags(
-        self, get_directories_to_analyze, find_local_root, find_global_root
+        self, get_directories_to_analyze, find_global_and_local_root
     ) -> None:
         flags = [
             "-logging-sections",

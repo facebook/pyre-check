@@ -9,11 +9,13 @@ import json
 import os
 import subprocess
 import unittest
+from pathlib import Path
 from unittest.mock import MagicMock, Mock, patch
 
 from ... import commands, json_rpc
 from ...analysis_directory import AnalysisDirectory, SharedAnalysisDirectory
 from ...commands import command, incremental, stop  # noqa
+from ...find_directories import FoundRoot
 from ...socket_connection import SocketConnection
 from ..command import IncrementalStyle, __name__ as client_name
 from .command_test import mock_arguments, mock_configuration
@@ -35,8 +37,9 @@ class IncrementalTest(unittest.TestCase):
     @patch.object(json_rpc, "read_response")
     @patch.object(SocketConnection, "connect")
     @patch.object(SocketConnection, "perform_handshake")
-    @patch("{}.find_global_root".format(client_name), return_value=".")
-    @patch("{}.find_local_root".format(client_name), return_value=None)
+    @patch(
+        f"{client_name}.find_global_and_local_root", return_value=FoundRoot(Path("."))
+    )
     @patch.object(os.path, "exists", side_effect=lambda path: True)
     @patch(_typeshed_search_path, Mock(return_value=["path3"]))
     @patch.object(incremental.Incremental, "_restart_file_monitor_if_needed")
@@ -52,8 +55,7 @@ class IncrementalTest(unittest.TestCase):
         commands_Command_state,
         restart_file_monitor_if_needed,
         exists,
-        find_local_root,
-        find_global_root,
+        find_global_and_local_root,
         perform_handshake,
         connect,
         read_response,
@@ -284,7 +286,7 @@ class IncrementalTest(unittest.TestCase):
 
         arguments = mock_arguments()
         original_directory = "/test"  # called from
-        find_global_root.return_value = "/"  # project root
+        find_global_and_local_root.return_value = FoundRoot(Path("/"))  # project root
         configuration = mock_configuration()
         configuration.version_hash = "hash"
         analysis_directory = AnalysisDirectory(".")

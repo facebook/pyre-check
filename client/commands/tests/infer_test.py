@@ -24,6 +24,7 @@ from ...commands.infer import (
     dequalify,
 )
 from ...error import Error
+from ...find_directories import FoundRoot
 from ..command import CommandArguments, __name__ as client_name
 from .command_test import (
     mock_arguments as general_mock_arguments,
@@ -602,15 +603,16 @@ def mock_configuration() -> MagicMock:
 
 
 class InferTest(unittest.TestCase):
-    @patch("{}.find_global_root".format(client_name), return_value=".")
-    @patch("{}.find_local_root".format(client_name), return_value=None)
+    @patch(
+        f"{client_name}.find_global_and_local_root", return_value=FoundRoot(Path("."))
+    )
     @patch.object(json, "loads", return_value={"errors": []})
     @patch(_typeshed_search_path, Mock(return_value=["path3"]))
     # pyre-fixme[56]: Argument `set()` to decorator factory
     #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(commands.Reporting, "_get_directories_to_analyze", return_value=set())
     def test_infer(
-        self, directories_to_analyze, json_loads, find_local_root, find_global_root
+        self, directories_to_analyze, json_loads, find_global_and_local_root
     ) -> None:
         original_directory = "/original/directory"
         arguments = mock_arguments()

@@ -25,11 +25,7 @@ from ..analysis_directory import AnalysisDirectory, resolve_analysis_directory
 from ..configuration import Configuration
 from ..exceptions import EnvironmentException
 from ..filesystem import readable_directory, remove_if_exists, translate_path
-from ..find_directories import (
-    LOCAL_CONFIGURATION_FILE,
-    find_global_root,
-    find_local_root,
-)
+from ..find_directories import find_global_and_local_root
 from ..log import StreamLogger
 from ..process import Process
 from ..resources import LOG_DIRECTORY, find_log_directory
@@ -283,19 +279,25 @@ class CommandParser(ABC):
         # Derived arguments
         self._capable_terminal: bool = terminal.is_capable()
         self._original_directory: str = original_directory
-        project_root_path = find_global_root(Path(self._original_directory))
-        self._project_root: str = str(
-            project_root_path
-        ) if project_root_path is not None else self._original_directory
 
-        local_root = self._command_arguments.local_configuration
-        if local_root is not None and local_root.endswith(LOCAL_CONFIGURATION_FILE):
-            local_root = local_root[: -len(LOCAL_CONFIGURATION_FILE)]
-        if local_root is None:
-            local_root_path = find_local_root(Path(self._original_directory))
-            if local_root_path is not None:
-                local_root = str(local_root_path)
-        self._local_root: Final[Optional[str]] = local_root
+        local_root_argument = self._command_arguments.local_configuration
+        base_directory = (
+            Path(original_directory)
+            if local_root_argument is None
+            else Path(original_directory) / local_root_argument
+        )
+        found_root = find_global_and_local_root(base_directory)
+        if found_root is None:
+            # FIXME: We should fail here.
+            global_root = original_directory
+            local_root = None
+        else:
+            global_root = found_root.global_root
+            local_root = found_root.local_root
+        self._project_root: str = str(global_root)
+        self._local_root: Final[Optional[str]] = str(
+            local_root
+        ) if local_root is not None else None
         self._dot_pyre_directory: Path = (
             self._command_arguments.dot_pyre_directory
             or Path(self._project_root, LOG_DIRECTORY)

@@ -7,23 +7,23 @@
 
 import argparse
 import unittest
+from pathlib import Path
 from typing import List
 from unittest.mock import MagicMock, Mock, patch
 
 from ... import commands
 from ...analysis_directory import AnalysisDirectory
+from ...find_directories import FoundRoot
 from ...process import Process
 from ...tests.mocks import mock_arguments, mock_configuration
 from ..command import __name__ as client_name
 
 
 class CommandTest(unittest.TestCase):
-    @patch("{}.find_global_root".format(client_name), return_value=".")
-    # pyre-fixme[56]: Argument
-    #  `"{}.find_local_root".format(tools.pyre.client.commands.command.__name__)` to
-    #  decorator factory `unittest.mock.patch` could not be resolved in a global scope.
-    @patch("{}.find_local_root".format(client_name), return_value=None)
-    def test_relative_path(self, find_local_root, find_global_root) -> None:
+    @patch(
+        f"{client_name}.find_global_and_local_root", return_value=FoundRoot(Path("."))
+    )
+    def test_relative_path(self, find_global_and_local_root) -> None:
         arguments = mock_arguments()
         configuration = mock_configuration()
         analysis_directory = AnalysisDirectory(".")
@@ -67,12 +67,10 @@ class CommandTest(unittest.TestCase):
             commands.command.State.DEAD,
         )
 
-    @patch("{}.find_global_root".format(client_name), return_value=".")
-    # pyre-fixme[56]: Argument
-    #  `"{}.find_local_root".format(tools.pyre.client.commands.command.__name__)` to
-    #  decorator factory `unittest.mock.patch` could not be resolved in a global scope.
-    @patch("{}.find_local_root".format(client_name), return_value=None)
-    def test_logger(self, find_local_root, find_global_root) -> None:
+    @patch(
+        f"{client_name}.find_global_and_local_root", return_value=FoundRoot(Path("."))
+    )
+    def test_logger(self, find_global_and_local_root) -> None:
         arguments = mock_arguments()
         configuration = mock_configuration()
         analysis_directory = AnalysisDirectory(".")

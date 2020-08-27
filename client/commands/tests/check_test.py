@@ -7,11 +7,13 @@
 
 import json
 import unittest
+from pathlib import Path
 from unittest.mock import MagicMock, Mock, patch
 
 from ... import commands
 from ...analysis_directory import AnalysisDirectory
 from ...commands import check
+from ...find_directories import FoundRoot
 from ..command import __name__ as client_name
 from .command_test import mock_arguments, mock_configuration
 
@@ -23,8 +25,9 @@ NO_ERROR_JSON_OUTPUT = {"errors": []}
 
 
 class CheckTest(unittest.TestCase):
-    @patch("{}.find_global_root".format(client_name), return_value=".")
-    @patch("{}.find_local_root".format(client_name), return_value=None)
+    @patch(
+        f"{client_name}.find_global_and_local_root", return_value=FoundRoot(Path("."))
+    )
     @patch("subprocess.check_output")
     @patch("os.path.realpath")
     @patch(_typeshed_search_path, Mock(return_value=["path3"]))
@@ -36,8 +39,7 @@ class CheckTest(unittest.TestCase):
         get_directories_to_analyze,
         realpath,
         check_output,
-        find_local_root,
-        find_global_root,
+        find_global_and_local_root,
     ) -> None:
         realpath.side_effect = lambda x: x
 
@@ -93,8 +95,9 @@ class CheckTest(unittest.TestCase):
             call_client.assert_called_once_with(command=commands.Check.NAME)
             prepare.assert_called_once_with()
 
-    @patch("{}.find_global_root".format(client_name), return_value=".")
-    @patch("{}.find_local_root".format(client_name), return_value=None)
+    @patch(
+        f"{client_name}.find_global_and_local_root", return_value=FoundRoot(Path("."))
+    )
     @patch("subprocess.check_output")
     @patch("os.path.realpath")
     @patch(_typeshed_search_path, Mock(return_value=["path3"]))
@@ -102,12 +105,7 @@ class CheckTest(unittest.TestCase):
     #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(commands.Reporting, "_get_directories_to_analyze", return_value=set())
     def test_sequential_check(
-        self,
-        directories_to_analyze,
-        realpath,
-        check_output,
-        find_local_root,
-        find_global_root,
+        self, directories_to_analyze, realpath, check_output, find_global_and_local_root
     ) -> None:
         realpath.side_effect = lambda x: x
 
@@ -151,18 +149,11 @@ class CheckTest(unittest.TestCase):
     @patch.object(
         commands.Reporting, "_get_directories_to_analyze", return_value={"a", "b"}
     )
-    @patch("{}.find_global_root".format(client_name), return_value=".")
-    # pyre-fixme[56]: Argument
-    #  `"{}.find_local_root".format(tools.pyre.client.commands.command.__name__)` to
-    #  decorator factory `unittest.mock.patch` could not be resolved in a global scope.
-    @patch("{}.find_local_root".format(client_name), return_value=None)
+    @patch(
+        f"{client_name}.find_global_and_local_root", return_value=FoundRoot(Path("."))
+    )
     def test_filter_directories(
-        self,
-        find_local_root,
-        find_global_root,
-        directories_to_analyze,
-        realpath,
-        check_output,
+        self, find_global_and_local_root, directories_to_analyze, realpath, check_output
     ) -> None:
         realpath.side_effect = lambda x: x
 
@@ -202,8 +193,9 @@ class CheckTest(unittest.TestCase):
             command.run()
             call_client.assert_called_once_with(command=commands.Check.NAME)
 
-    @patch("{}.find_global_root".format(client_name), return_value=".")
-    @patch("{}.find_local_root".format(client_name), return_value=None)
+    @patch(
+        f"{client_name}.find_global_and_local_root", return_value=FoundRoot(Path("."))
+    )
     @patch("subprocess.check_output")
     @patch("os.path.realpath")
     @patch(_typeshed_search_path, Mock(return_value=["path3"]))
@@ -211,12 +203,7 @@ class CheckTest(unittest.TestCase):
     #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(commands.Reporting, "_get_directories_to_analyze", return_value=set())
     def test_check_dumb_terminal(
-        self,
-        directories_to_analyze,
-        realpath,
-        check_output,
-        find_local_root,
-        find_global_root,
+        self, directories_to_analyze, realpath, check_output, find_global_and_local_root
     ) -> None:
         realpath.side_effect = lambda x: x
 
@@ -254,8 +241,9 @@ class CheckTest(unittest.TestCase):
             self.assertEqual(exit_code, 0)
             call_client.assert_called_once_with(command=commands.Check.NAME)
 
-    @patch("{}.find_global_root".format(client_name), return_value=".")
-    @patch("{}.find_local_root".format(client_name), return_value=None)
+    @patch(
+        f"{client_name}.find_global_and_local_root", return_value=FoundRoot(Path("."))
+    )
     @patch("subprocess.check_output")
     @patch("os.path.realpath")
     @patch(_typeshed_search_path, Mock(return_value=["path3"]))
@@ -263,12 +251,7 @@ class CheckTest(unittest.TestCase):
     #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(commands.Reporting, "_get_directories_to_analyze", return_value=set())
     def test_check_hide_parse_errors(
-        self,
-        directories_to_analyze,
-        realpath,
-        check_output,
-        find_local_root,
-        find_global_root,
+        self, directories_to_analyze, realpath, check_output, find_global_and_local_root
     ) -> None:
         realpath.side_effect = lambda x: x
 
@@ -305,8 +288,9 @@ class CheckTest(unittest.TestCase):
             command.run()
             call_client.assert_called_once_with(command=commands.Check.NAME)
 
-    @patch("{}.find_global_root".format(client_name), return_value=".")
-    @patch("{}.find_local_root".format(client_name), return_value=None)
+    @patch(
+        f"{client_name}.find_global_and_local_root", return_value=FoundRoot(Path("."))
+    )
     @patch("subprocess.check_output")
     @patch("os.path.realpath")
     @patch(_typeshed_search_path, Mock(return_value=["path3"]))
@@ -314,12 +298,7 @@ class CheckTest(unittest.TestCase):
     #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(commands.Reporting, "_get_directories_to_analyze", return_value=set())
     def test_check_strict(
-        self,
-        directories_to_analyze,
-        realpath,
-        check_output,
-        find_local_root,
-        find_global_root,
+        self, directories_to_analyze, realpath, check_output, find_global_and_local_root
     ) -> None:
         realpath.side_effect = lambda x: x
 

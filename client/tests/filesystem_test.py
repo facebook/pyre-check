@@ -33,6 +33,7 @@ from ..filesystem import (
     find_python_paths,
     remove_if_exists,
 )
+from ..find_directories import FoundRoot
 
 
 class FilesystemTest(unittest.TestCase):
@@ -401,18 +402,19 @@ class FilesystemTest(unittest.TestCase):
             merge.assert_has_calls([call()])
             clear.assert_has_calls([call()])
 
-    @patch("{}.Path".format(command_name))
-    @patch("{}.Path.mkdir".format(command_name))
-    @patch("os.path.realpath", side_effect=lambda path: "realpath({})".format(path))
+    @patch(f"{command_name}.Path.mkdir")
+    # pyre-fixme[56]: Pyre was not able to infer the type of argument `lambda
+    #  ($parameter$path) ("realpath({path})"($parameter$path))` to decorator factory
+    #  `unittest.mock.patch`.
+    @patch("os.path.realpath", side_effect=lambda path: f"realpath({path})")
     @patch("os.getcwd", return_value="/root")
     @patch("os.path.exists", return_value=True)
-    @patch("{}.find_global_root".format(command_name), return_value="/root/local")
-    # pyre-fixme[56]: Argument
-    #  `"{}.find_local_root".format(tools.pyre.client.commands.command.__name__)` to
-    #  decorator factory `unittest.mock.patch` could not be resolved in a global scope.
-    @patch("{}.find_local_root".format(command_name), return_value=None)
+    @patch(
+        f"{command_name}.find_global_and_local_root",
+        return_value=FoundRoot(pathlib.Path("/root/local")),
+    )
     def test_resolve_source_directories(
-        self, find_local_root, find_global_root, exists, cwd, realpath, path_mkdir, path
+        self, find_global_and_local_root, exists, cwd, realpath, path_mkdir
     ) -> None:
         arguments = MagicMock()
         arguments.source_directories = []
