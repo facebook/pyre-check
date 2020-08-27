@@ -16,6 +16,14 @@ const users = [
   },
 ];
 
+function FBInternal(elements) {
+  return process.env.FB_INTERNAL ? elements : [];
+}
+
+function FBInternalWithOssFallback(elements, fallback) {
+   return process.env.FB_INTERNAL ? elements : fallback;
+}
+
 module.exports = {
   // ...
   title: 'Pyre',
@@ -35,7 +43,7 @@ module.exports = {
           // Docs folder path relative to website dir.
           path: '../docs',
           // Sidebars file relative to website dir.
-          sidebarPath: require.resolve('./sidebars.json'),
+          sidebarPath: FBInternalWithOssFallback(require.resolve('./fb/sidebars.json'), require.resolve('./sidebars.json')),
         },
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
@@ -57,6 +65,7 @@ module.exports = {
       },
       items: [
         {to: 'docs/getting-started', label: 'Documentation', position: 'left'},
+        FBInternalWithOssFallback({to: 'docs/fb/development-getting-started', label: 'Development', position: 'left'}, {}),
         {
           href: 'https://github.com/facebook/pyre-check',
           label: 'GitHub',
