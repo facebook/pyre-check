@@ -230,14 +230,26 @@ let from_callgraph callgraph =
 
 
 let from_overrides overrides =
-  let add ~key:method_name ~data:subtypes result =
+  let add ~key:method_name ~data:subtypes (override_map, all_overrides) =
     let key = Callable.create_override method_name in
     let data =
       List.map subtypes ~f:(fun at_type -> Callable.create_derived_override key ~at_type)
     in
-    Callable.Map.set result ~key ~data
+    ( Callable.Map.set override_map ~key ~data,
+      Callable.Set.union all_overrides (Callable.Set.of_list data) )
   in
-  Reference.Map.fold overrides ~f:add ~init:Callable.Map.empty
+  let override_map, all_overrides =
+    Reference.Map.fold overrides ~f:add ~init:(Callable.Map.empty, Callable.Set.empty)
+  in
+  (* Create empty entries for leaves. *)
+  Callable.Set.fold
+    (fun override override_map ->
+      if not (Callable.Map.mem override_map override) then
+        Callable.Map.set override_map ~key:override ~data:[]
+      else
+        override_map)
+    all_overrides
+    override_map
 
 
 let create_overrides ~environment ~source =

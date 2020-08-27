@@ -203,6 +203,25 @@
 {
   "kind": "model",
   "data": {
+    "callable": "Ovr{builder_pattern.Builder::__init__}",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "Ovr{object::__init__}",
     "sources": [],
     "sinks": [],

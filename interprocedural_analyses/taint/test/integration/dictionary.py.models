@@ -839,6 +839,33 @@
 {
   "kind": "model",
   "data": {
+    "callable": "Ovr{dictionary.SpecialSetitemDict::__setitem__}",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(key)",
+        "taint": [
+          {
+            "root": {
+              "filename": "builtins.pyi",
+              "line": -1,
+              "start": -1,
+              "end": -1
+            },
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "dictionary.Service.async_get_dict",
     "sources": [],
     "sinks": [],

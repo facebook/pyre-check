@@ -190,6 +190,109 @@
 {
   "kind": "model",
   "data": {
+    "callable": "Ovr{multi_sink_ports.Query::send}",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(self)[_params]",
+        "taint": [
+          {
+            "call": {
+              "position": {
+                "filename": "builtins.pyi",
+                "line": -1,
+                "start": -1,
+                "end": -1
+              },
+              "resolves_to": [ "multi_sink_ports.splitwrapper" ],
+              "port": "formal(x)[_params]",
+              "length": 2
+            },
+            "leaves": [
+              {
+                "kind": "Demo",
+                "name": "multi_sink_ports.sinkC",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-via": "c_feature" } ]
+          },
+          {
+            "call": {
+              "position": {
+                "filename": "builtins.pyi",
+                "line": -1,
+                "start": -1,
+                "end": -1
+              },
+              "resolves_to": [ "multi_sink_ports.splitwrapper" ],
+              "port": "formal(x)[_params]",
+              "length": 2
+            },
+            "leaves": [
+              {
+                "kind": "GetAttr",
+                "name": "multi_sink_ports.sinkB",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-via": "b_feature" } ]
+          },
+          {
+            "call": {
+              "position": {
+                "filename": "builtins.pyi",
+                "line": -1,
+                "start": -1,
+                "end": -1
+              },
+              "resolves_to": [ "multi_sink_ports.splitwrapper" ],
+              "port": "formal(x)[_params]",
+              "length": 2
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "multi_sink_ports.sinkD",
+                "on_all_flows": false
+              },
+              {
+                "kind": "Test",
+                "name": "multi_sink_ports.sinkC",
+                "on_all_flows": false
+              },
+              {
+                "kind": "Test",
+                "name": "multi_sink_ports.sinkB",
+                "on_all_flows": false
+              }
+            ],
+            "features": [
+              { "via": "d_feature" },
+              { "via": "c_feature" },
+              { "via": "b_feature" }
+            ]
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "features": [ { "always-via": "tito" }, { "via": "split" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "Ovr{multi_sink_ports.QueryBase::send}",
     "sources": [],
     "sinks": [

@@ -277,6 +277,74 @@
 {
   "kind": "model",
   "data": {
+    "callable": "Ovr{string_conversion.ReprIsTainted::__repr__}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "builtins.pyi",
+              "line": -1,
+              "start": -1,
+              "end": -1
+            },
+            "leaves": [
+              {
+                "kind": "UserControlled",
+                "name": "Obj{django.http.Request.GET}",
+                "on_all_flows": true
+              }
+            ],
+            "features": [
+              { "always-has": "first-index" },
+              { "always-first-index": "tainted" }
+            ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Ovr{string_conversion.StrIsTainted::__str__}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "builtins.pyi",
+              "line": -1,
+              "start": -1,
+              "end": -1
+            },
+            "leaves": [
+              {
+                "kind": "UserControlled",
+                "name": "Obj{django.http.Request.GET}",
+                "on_all_flows": true
+              }
+            ],
+            "features": [
+              { "always-has": "first-index" },
+              { "always-first-index": "tainted" }
+            ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "string_conversion.ReprIsTainted.__repr__",
     "sources": [
       {

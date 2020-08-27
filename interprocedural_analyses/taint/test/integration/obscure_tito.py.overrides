@@ -2,3 +2,5 @@
 Overrides
 obscure_tito.C::taint_parameter (override) -> [obscure_tito.D::taint_parameter (override)]
 obscure_tito.C::update (override) -> [obscure_tito.D::update (override)]
+obscure_tito.D::taint_parameter (override) -> []
+obscure_tito.D::update (override) -> []

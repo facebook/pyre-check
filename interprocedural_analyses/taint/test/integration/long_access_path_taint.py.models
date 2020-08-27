@@ -2,6 +2,66 @@
 {
   "kind": "model",
   "data": {
+    "callable": "Ovr{long_access_path_taint.C::__init__}",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(request)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "[request]" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(kind)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "[kind]" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(params)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [
+              { "kind": "LocalReturn", "name": "[timestamp]" },
+              { "kind": "LocalReturn", "name": "[app_id]" }
+            ],
+            "features": [ { "always-via": "tito" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(id)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "[id]" } ],
+            "features": [ { "always-type": "scalar" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "Ovr{object::__init__}",
     "sources": [],
     "sinks": [],
