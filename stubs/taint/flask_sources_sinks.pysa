@@ -24,3 +24,17 @@ werkzeug.wrappers.BaseRequest.query_string: TaintSource[UserControlled] = ...
 
 # Sessions
 flask.globals.session: TaintSource[UserControlled] = ...
+
+# Sinks
+def werkzeug.utils.redirect(location: TaintSink[Redirect], code=..., Response=...): ...
+def flask.helpers.send_file(
+    filename_or_fp: TaintSink[FileSystem],
+    mimetype=...,
+    as_attachment=...,
+    attachment_filename=...,
+    add_etags=...,
+    cache_timeout=...,
+    conditional=...,
+    last_modified=...,
+): ...
+def flask.helpers.make_response(*args: TaintSink[ReturnedToUser, XSS]): ...
