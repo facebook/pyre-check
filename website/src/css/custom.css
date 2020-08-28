@@ -42,3 +42,7 @@
 .table-of-contents__link--active {
   color:#c25725;
 }
+
+.navbar__toggle svg path {
+  stroke: #fff !important;
+}
