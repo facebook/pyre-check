@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import List, Tuple
 
 # just validate that it's available, but we don't invoke it directly
+# pyre-fixme[21]: Could not find module `wheel`.
 import wheel  # noqa
 from twine.commands.check import check as twine_check
 
