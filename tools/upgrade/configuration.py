@@ -34,7 +34,7 @@ class Configuration:
         self.original_contents: Dict[str, Any] = json_contents
 
         # Configuration fields
-        self.strict: bool = bool(json_contents.get("strict"))
+        self.strict: Optional[bool] = json_contents.get("strict")
         self.targets: Optional[List[str]] = json_contents.get("targets")
         self.source_directories: Optional[List[str]] = json_contents.get(
             "source_directories"
@@ -53,7 +53,7 @@ class Configuration:
 
         def update_contents(key: str) -> None:
             attribute = getattr(self, key)
-            if attribute:
+            if attribute is not None:
                 contents[key] = attribute
             elif key in contents:
                 del contents[key]

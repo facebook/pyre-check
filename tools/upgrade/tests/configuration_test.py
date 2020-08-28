@@ -33,3 +33,27 @@ class ConfigurationTest(unittest.TestCase):
         configuration.get_errors()
         assert call.call_count == 1
         assert run.call_count == 1
+
+    def test_get_contents__preserve_explicit_false_options(self) -> None:
+        configuration = Configuration(
+            Path("path"), json_contents={"strict": False, "use_buck_builder": False}
+        )
+        self.assertEqual(
+            configuration.get_contents(), {"strict": False, "use_buck_builder": False}
+        )
+
+    def test_get_contents__preserve_untracked_option(self) -> None:
+        configuration = Configuration(Path("path"), json_contents={"foo": True})
+        self.assertEqual(configuration.get_contents(), {"foo": True})
+
+    def test_get_contents__include_new_attribute(self) -> None:
+        configuration = Configuration(Path("path"), json_contents={"strict": False})
+        configuration.version = "1234"
+        self.assertEqual(
+            configuration.get_contents(), {"strict": False, "version": "1234"}
+        )
+
+    def test_get_contents__update_existing_attribute(self) -> None:
+        configuration = Configuration(Path("path"), json_contents={"strict": False})
+        configuration.strict = True
+        self.assertEqual(configuration.get_contents(), {"strict": True})
