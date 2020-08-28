@@ -21,6 +21,9 @@ from ..errors import (
 )
 
 
+unittest.util._MAX_LENGTH = 200
+
+
 class ErrorsTest(unittest.TestCase):
     def test_from_json(self) -> None:
         self.assertEqual(
@@ -385,4 +388,26 @@ class ErrorsTest(unittest.TestCase):
             def foo() -> None: pass
             """,
             max_line_length=25,
+        )
+
+        # Line breaks.
+        self.assertSuppressErrors(
+            {
+                3: [{"code": "1", "description": "description"}],
+                4: [{"code": "2", "description": "description"}],
+            },
+            """
+            def foo() -> None:
+                x = something + \\
+                        error() + \\
+                        error()  # unrelated comment
+            """,
+            """
+            def foo() -> None:
+                x = (something +
+                        # FIXME[1]: description
+                        error() +
+                        # FIXME[2]: description
+                        error())  # unrelated comment
+            """,
         )

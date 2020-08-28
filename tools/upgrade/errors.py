@@ -11,13 +11,48 @@ import subprocess
 import sys
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, Optional, Tuple
+from typing import Any, Dict, Iterator, List, Optional, Tuple, Union, cast
+
+import libcst
 
 from . import UserError, ast
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
 MAX_LINES_PER_FIXME: int = 4
+
+
+class LineBreakTransformer(libcst.CSTTransformer):
+    def leave_SimpleWhitespace(
+        self,
+        original_node: libcst.SimpleWhitespace,
+        updated_node: libcst.SimpleWhitespace,
+    ) -> Union[libcst.SimpleWhitespace, libcst.ParenthesizedWhitespace]:
+        whitespace = original_node.value.replace("\\", "")
+        if "\n" in whitespace:
+            first_line = libcst.TrailingWhitespace(
+                whitespace=libcst.SimpleWhitespace(
+                    value=whitespace.split("\n")[0].rstrip()
+                ),
+                comment=None,
+                newline=libcst.Newline(),
+            )
+            last_line = libcst.SimpleWhitespace(value=whitespace.split("\n")[1])
+            return libcst.ParenthesizedWhitespace(
+                first_line=first_line, empty_lines=[], indent=True, last_line=last_line
+            )
+        return updated_node
+
+    def leave_Assign(
+        self, original_node: libcst.Assign, updated_node: libcst.Assign
+    ) -> libcst.Assign:
+        assign_value = updated_node.value
+        if hasattr(assign_value, "lpar"):
+            parenthesized_value = assign_value.with_changes(
+                lpar=[libcst.LeftParen()], rpar=[libcst.RightParen()]
+            )
+            return updated_node.with_changes(value=parenthesized_value)
+        return updated_node
 
 
 class PartialErrorSuppression(Exception):
@@ -211,6 +246,30 @@ def _remove_comment_preamble(lines: List[str]) -> None:
             return
 
 
+def _add_error_to_line_break_block(lines: List[str], errors: List[List[str]]) -> None:
+    # Gather unbroken lines.
+    line_break_block = [lines.pop() for _ in range(0, len(errors))]
+    line_break_block.reverse()
+
+    # Transform line break block to use parenthesis.
+    indent = len(line_break_block[0]) - len(line_break_block[0].lstrip())
+    line_break_block = [line[indent:] for line in line_break_block]
+    statement = "\n".join(line_break_block)
+    transformed_statement = libcst.Module([]).code_for_node(
+        cast(
+            libcst.CSTNode,
+            libcst.parse_statement(statement).visit(LineBreakTransformer()),
+        )
+    )
+    transformed_lines = transformed_statement.split("\n")
+    transformed_lines = [" " * indent + line for line in transformed_lines]
+
+    # Add to lines.
+    for line, comment in zip(transformed_lines, errors):
+        lines.extend(comment)
+        lines.append(line)
+
+
 def _split_across_lines(
     comment: str, indent: int, max_line_length: Optional[int]
 ) -> List[str]:
@@ -261,6 +320,7 @@ def _suppress_errors(
     # Replace lines in file.
     new_lines = []
     removing_pyre_comments = False
+    line_break_block_errors: List[List[str]] = []
     for index, line in enumerate(lines):
         if removing_pyre_comments:
             stripped = line.lstrip()
@@ -271,11 +331,8 @@ def _suppress_errors(
             else:
                 removing_pyre_comments = False
         number = index + 1
-        if number not in errors:
-            new_lines.append(line)
-            continue
-
-        if any(error["code"] == "0" for error in errors[number]):
+        relevant_errors = errors[number] if number in errors else []
+        if any(error["code"] == "0" for error in relevant_errors):
             # Handle unused ignores.
             replacement = re.sub(r"# pyre-(ignore|fixme).*$", "", line).rstrip()
             if replacement == "":
@@ -286,7 +343,7 @@ def _suppress_errors(
                 line = replacement
 
         comments = []
-        for error in errors[number]:
+        for error in relevant_errors:
             if error["code"] == "0":
                 continue
             indent = len(line) - len(line.lstrip(" "))
@@ -294,7 +351,6 @@ def _suppress_errors(
             comment = "{}# pyre-fixme[{}]: {}".format(
                 " " * indent, error["code"], description
             )
-
             if not max_line_length or len(comment) <= max_line_length:
                 comments.append(comment)
             else:
@@ -306,6 +362,18 @@ def _suppress_errors(
                     comments.append(truncated_comment)
                 else:
                     comments.extend(split_comment_lines)
+
+        if len(line_break_block_errors) > 0 and not line.endswith("\\"):
+            # Handle error suppressions in line break block
+            line_break_block_errors.append(comments)
+            new_lines.append(line)
+            _add_error_to_line_break_block(new_lines, line_break_block_errors)
+            line_break_block_errors = []
+            continue
+
+        if line.endswith("\\"):
+            line_break_block_errors.append(comments)
+            comments = []
 
         LOG.info(
             "Adding comment%s on line %d: %s",
