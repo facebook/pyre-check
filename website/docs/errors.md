@@ -279,6 +279,30 @@ takes_int_list(float_list)  # this call is OK because MyList is contravariant: M
 # problem with return above is clear
 ```
 
+### 53: Missing annotation for captured variables
+Pyre makes no attempt at trying to infer the types across function boundaries. The statement holds for nested funtions as well.
+From a nested function's perspective, a variable defined in an nesting function behaves not too differently from a global variable. Therefore, Pyre treats such variables in the same way as it treats global variable: an explicit annotation is required if strict mode is turned on.
+
+```python
+def outer_function0() -> int:
+    x = foo()
+    def inner_function() -> int:
+        return x  # Due to the lack of explicit annotation, Pyre will treat this variable as having type `Any`.
+    return inner_function()
+
+def outer_function1() -> int:
+    x: int = foo()
+    def inner_function() -> int:
+        return x  # This is ok: the type of `x` is known to be `int`.
+    return inner_function()
+
+def outer_function2() -> int:
+    x = foo()
+    def inner_function(x: int) -> int:
+        return x  # This is also ok: even though the outer `x` is not annotated, the `x` parameter of the inner function is.
+    return inner_function(x)
+```
+
 ### 56: Invalid decoration
 
 This error code is a catch-all for a variety of problems that can arise in the course of resolving the type of a decorated function.
