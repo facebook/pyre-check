@@ -246,7 +246,7 @@ let get_heap_handle { Configuration.Analysis.debug; _ } =
     8192 * 1024 * 1024
   in
   let dep_table_pow = 27 in
-  let hash_table_pow = 24 in
+  let hash_table_pow = 26 in
   let { heap_handle; _ } = initialize ~heap_size ~dep_table_pow ~hash_table_pow ~log_level () in
   heap_handle
 
