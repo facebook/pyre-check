@@ -2661,6 +2661,15 @@ let populate_captures ({ Source.statements; _ } as source) =
                                           special = false;
                                         });
                                })
+                      | Some
+                          ( {
+                              Node.value =
+                                Expression.Name (Name.Attribute { attribute = "kwargs"; _ });
+                              _;
+                            } as annotation ) ->
+                          (* Heuristic: If the annotation is of the form `XXX.kwargs`, treat it as
+                             ParamSpec annotation. *)
+                          Some annotation
                       | Some value_annotation -> Some (dictionary_annotation value_annotation)
                     in
                     Some { Define.Capture.name; kind = Annotation annotation }
@@ -2737,6 +2746,14 @@ let populate_captures ({ Source.statements; _ } as source) =
                                           special = false;
                                         });
                                })
+                      | Some
+                          ( {
+                              Node.value = Expression.Name (Name.Attribute { attribute = "args"; _ });
+                              _;
+                            } as annotation ) ->
+                          (* Heuristic: If the annotation is of the form `XXX.args`, treat it as
+                             ParamSpec annotation. *)
+                          Some annotation
                       | Some value_annotation -> Some (tuple_annotation value_annotation)
                     in
                     Some { Define.Capture.name; kind = Annotation annotation }

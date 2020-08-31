@@ -3454,6 +3454,22 @@ let test_populate_captures _ =
     dict_annotation (int_annotation int_start int_stop) start stop
   in
   let dict_any_annotation (start, stop) = dict_annotation (any_annotation start stop) start stop in
+  let parameter_specification_annotation attribute (start, stop) =
+    Node.create
+      ~location:(location start stop)
+      (Expression.Name
+         (Name.Attribute
+            {
+              base =
+                (let stop =
+                   let line, column = start in
+                   line, column + 1
+                 in
+                 Node.create ~location:(location start stop) (Expression.Name (Name.Identifier "P")));
+              attribute;
+              special = false;
+            }))
+  in
   assert_captures
     {|
      def foo():
@@ -3864,6 +3880,23 @@ let test_populate_captures _ =
          return kwargs["derp"]
   |}
     ~expected:[!&"bar", []];
+
+  (* ParamSpecs should be treated specially. *)
+  assert_captures
+    {|
+     def foo( *args: P.args, **kwargs: P.kwargs):
+       def bar():
+         return f( *args, **kwargs)
+  |}
+    ~expected:
+      [
+        ( !&"bar",
+          [
+            "args", Annotation (Some (parameter_specification_annotation "args" ((2, 16), (2, 22))));
+            ( "kwargs",
+              Annotation (Some (parameter_specification_annotation "kwargs" ((2, 34), (2, 42)))) );
+          ] );
+      ];
 
   (* Capture self *)
   assert_captures
