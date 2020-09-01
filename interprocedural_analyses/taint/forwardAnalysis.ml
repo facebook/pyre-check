@@ -169,7 +169,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
          sinks at the end. *)
       let triggered_sinks = String.Hash_set.create () in
       let apply_call_target state argument_taint (call_target, _implicit) =
-        let taint_model = Model.get_callsite_model ~call_target ~arguments in
+        let taint_model = Model.get_callsite_model ~resolution ~call_target ~arguments in
         let { TaintResult.forward; backward; _ } = taint_model.model in
         let sink_argument_matches =
           BackwardState.roots backward.sink_taint |> AccessPath.match_actuals_to_formals arguments
@@ -1371,9 +1371,11 @@ let extract_features_to_attach existing_taint =
         let open Features in
         match feature.Abstract.OverUnderSetDomain.element with
         | Simple.Breadcrumb _ -> feature :: features
-        (* The ViaValueOf models will be converted to breadcrumbs at the call site via
+        (* The ViaValueOf/ViaTypeOf models will be converted to breadcrumbs at the call site via
            `get_callsite_model`. *)
-        | Simple.ViaValueOf _ -> feature :: features
+        | Simple.ViaValueOf _
+        | Simple.ViaTypeOf _ ->
+            feature :: features
         | _ -> features
       in
       ForwardTaint.fold ForwardTaint.simple_feature_element ~f:gather_features ~init:[] taint

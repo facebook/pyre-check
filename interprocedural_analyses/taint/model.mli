@@ -18,7 +18,8 @@ type t = {
 exception InvalidModel of string
 
 val get_callsite_model
-  :  call_target:[< Callable.t ] ->
+  :  resolution:Resolution.t ->
+  call_target:[< Callable.t ] ->
   arguments:Expression.Call.Argument.t list ->
   t
 

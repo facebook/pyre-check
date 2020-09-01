@@ -182,14 +182,13 @@ let rec parse_annotations ~configuration ~parameters annotation =
           (show_expression expression.Node.value)
         |> failwith
   in
-  let rec extract_via_value_of expression =
+  let rec extract_via_positions expression =
     match expression.Node.value with
-    | Expression.Name (Name.Identifier name) ->
-        [Features.Simple.ViaValueOf { position = get_parameter_position name }]
-    | Tuple expressions -> List.concat_map ~f:extract_via_value_of expressions
+    | Expression.Name (Name.Identifier name) -> [get_parameter_position name]
+    | Tuple expressions -> List.concat_map ~f:extract_via_positions expressions
     | _ ->
         Format.sprintf
-          "Invalid expression for ViaValueOf: %s"
+          "Invalid expression for ViaValueOf or ViaTypeOf: %s"
           (show_expression expression.Node.value)
         |> failwith
   in
@@ -218,7 +217,18 @@ let rec parse_annotations ~configuration ~parameters annotation =
     | Call { callee; arguments = { Call.Argument.value = expression; _ } :: _ } -> (
         match base_name callee with
         | Some "Via" -> [Breadcrumbs (extract_breadcrumbs expression)]
-        | Some "ViaValueOf" -> [Breadcrumbs (extract_via_value_of expression)]
+        | Some "ViaValueOf" ->
+            [
+              Breadcrumbs
+                ( extract_via_positions expression
+                |> List.map ~f:(fun position -> Features.Simple.ViaValueOf { position }) );
+            ]
+        | Some "ViaTypeOf" ->
+            [
+              Breadcrumbs
+                ( extract_via_positions expression
+                |> List.map ~f:(fun position -> Features.Simple.ViaTypeOf { position }) );
+            ]
         | Some "Updates" ->
             extract_names expression
             |> List.map ~f:(fun name ->

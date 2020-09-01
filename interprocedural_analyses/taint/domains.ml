@@ -377,8 +377,10 @@ end = struct
           | TitoPosition location ->
               let tito_location_json = location_to_json location in
               breadcrumbs, tito_location_json :: tito, leaves
-          | ViaValueOf _ ->
-              (* The taint analysis creates breadcrumbs for ViaValueOf features dynamically.*)
+          | ViaValueOf _
+          | ViaTypeOf _ ->
+              (* The taint analysis creates breadcrumbs for ViaValueOf and ViaTypeOf features
+                 dynamically.*)
               breadcrumbs, tito, leaves
           | CrossRepositoryTaintInformation _ ->
               (* TODO(T67571285): Also emit this as a leaf annotation. *)
@@ -571,9 +573,11 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
       let open Features in
       match feature.Abstract.OverUnderSetDomain.element with
       | Simple.Breadcrumb _ -> feature :: features
-      (* The ViaValueOf models will be converted to breadcrumbs at the call site via
+      (* The ViaValueOf/ViaTypeOf models will be converted to breadcrumbs at the call site via
          `get_callsite_model`. *)
-      | Simple.ViaValueOf _ -> feature :: features
+      | Simple.ViaValueOf _
+      | Simple.ViaTypeOf _ ->
+          feature :: features
       | _ -> features
     in
     fold FlowDetails.simple_feature_element ~f:gather_features ~init:[] taint_tree

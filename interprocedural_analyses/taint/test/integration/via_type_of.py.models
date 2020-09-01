@@ -1,0 +1,299 @@
+@generated
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_type_of.meta",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "via_type_of.py",
+              "line": 22,
+              "start": 11,
+              "end": 47
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "via_type_of.return_via_parameter_type",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-via-type": "typing.Any" } ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_type_of.return_via_parameter_type",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_type_of.sink_via_type_of",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(x)",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_type_of.test_backwards_tito",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(parameter)",
+        "taint": [
+          {
+            "decl": null,
+            "tito": [ { "line": 47, "start": 16, "end": 25 } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "features": [
+              { "always-via": "tito" },
+              { "always-via-type": "str" }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_type_of.test_lists",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "via_type_of.py",
+              "line": 18,
+              "start": 11,
+              "end": 48
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "via_type_of.return_via_parameter_type",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-via-type": "typing.List[str]" } ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_type_of.test_numerals",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "via_type_of.py",
+              "line": 14,
+              "start": 11,
+              "end": 39
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "via_type_of.return_via_parameter_type",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-via-type": "int" } ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_type_of.test_sink",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(element)",
+        "taint": [
+          {
+            "root": {
+              "filename": "via_type_of.py",
+              "line": 43,
+              "start": 28,
+              "end": 35
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "via_type_of.sink_via_type_of",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-via-type": "int" } ]
+          }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_type_of.test_strings",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "via_type_of.py",
+              "line": 10,
+              "start": 11,
+              "end": 41
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "via_type_of.return_via_parameter_type",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-via-type": "str" } ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_type_of.test_tito",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "via_type_of.py",
+              "line": 34,
+              "start": 13,
+              "end": 28
+            },
+            "tito": [ { "line": 34, "start": 13, "end": 28 } ],
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [
+              { "always-via": "tito" },
+              { "always-via-type": "typing.List[int]" },
+              { "always-via": "special_source" }
+            ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_type_of.test_via_type_of_does_not_propagate",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "call": {
+              "position": {
+                "filename": "via_type_of.py",
+                "line": 26,
+                "start": 11,
+                "end": 23
+              },
+              "resolves_to": [ "via_type_of.meta" ],
+              "port": "result",
+              "length": 1
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "via_type_of.return_via_parameter_type",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-via-type": "typing.Any" } ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_type_of.tito",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(parameter)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
+        ]
+      }
+    ]
+  }
+}

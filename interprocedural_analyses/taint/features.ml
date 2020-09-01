@@ -26,6 +26,7 @@ module Breadcrumb = struct
     | Lambda
     | SimpleVia of string (* Declared breadcrumbs *)
     | ViaValue of string (* Via inferred from ViaValueOf. *)
+    | ViaType of string (* Via inferred from ViaTypeOf. *)
     | Tito
     | Type of string (* Type constraint *)
   [@@deriving show, compare]
@@ -42,6 +43,7 @@ module Breadcrumb = struct
     | Lambda -> `Assoc [prefix ^ "via", `String "lambda"]
     | SimpleVia name -> `Assoc [prefix ^ "via", `String name]
     | ViaValue name -> `Assoc [prefix ^ "via-value", `String name]
+    | ViaType name -> `Assoc [prefix ^ "via-type", `String name]
     | Tito -> `Assoc [prefix ^ "via", `String "tito"]
     | Type name -> `Assoc [prefix ^ "type", `String name]
 
@@ -70,6 +72,7 @@ module Simple = struct
     | TitoPosition of Location.WithModule.t
     | Breadcrumb of Breadcrumb.t
     | ViaValueOf of { position: int }
+    | ViaTypeOf of { position: int }
   [@@deriving show, compare]
 
   let via_value_of_breadcrumb ~argument:{ Expression.Call.Argument.value; _ } =
@@ -78,6 +81,13 @@ module Simple = struct
       |> Option.value ~default:"<unknown>"
     in
     Breadcrumb (Breadcrumb.ViaValue feature)
+
+
+  let via_type_of_breadcrumb ~resolution ~argument:{ Expression.Call.Argument.value; _ } =
+    let feature =
+      Resolution.resolve_expression resolution value |> snd |> Type.weaken_literals |> Type.show
+    in
+    Breadcrumb (Breadcrumb.ViaType feature)
 end
 
 module SimpleSet = Abstract.OverUnderSetDomain.Make (Simple)

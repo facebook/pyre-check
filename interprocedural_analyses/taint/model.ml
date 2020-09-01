@@ -48,7 +48,7 @@ let add_obscure_sink ~resolution ~call_target model =
           { model with backward = { model.backward with sink_taint } } )
 
 
-let get_callsite_model ~call_target ~arguments =
+let get_callsite_model ~resolution ~call_target ~arguments =
   let call_target = (call_target :> Callable.t) in
   match Interprocedural.Fixpoint.get_model call_target with
   | None -> { is_obscure = true; call_target; model = TaintResult.empty_model }
@@ -64,6 +64,12 @@ let get_callsite_model ~call_target ~arguments =
                 List.nth arguments position
                 >>= fun argument ->
                 Simple.via_value_of_breadcrumb ~argument |> SimpleSet.inject |> Option.return
+            | Simple.ViaTypeOf { position } ->
+                List.nth arguments position
+                >>= fun argument ->
+                Simple.via_type_of_breadcrumb ~resolution ~argument
+                |> SimpleSet.inject
+                |> Option.return
             | _ -> Some feature
           in
           List.filter_map features ~f:transform
@@ -144,7 +150,7 @@ let get_global_model ~resolution ~expression =
   | Some target ->
       let model =
         Callable.create_object target
-        |> fun call_target -> get_callsite_model ~call_target ~arguments:[]
+        |> fun call_target -> get_callsite_model ~resolution ~call_target ~arguments:[]
       in
       Some (target, model)
   | None -> None

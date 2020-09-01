@@ -146,7 +146,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                 ~init:BackwardState.bottom
           | None -> BackwardState.bottom
         in
-        let taint_model = Model.get_callsite_model ~call_target ~arguments in
+        let taint_model = Model.get_callsite_model ~resolution ~call_target ~arguments in
         let { TaintResult.backward; _ } = taint_model.model in
         let sink_taint = BackwardState.join backward.sink_taint triggered_taint in
         let sink_argument_matches =
