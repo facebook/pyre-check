@@ -223,6 +223,7 @@ def cleanup() -> None:
 
 class StreamLogger:
     _should_stop_reading_stream = False
+    _current_section: Optional[str]
 
     _server_log_pattern: Pattern[str] = re.compile(
         r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} (\w+) (.*)"
@@ -231,6 +232,7 @@ class StreamLogger:
     def __init__(self, stream: Iterable[str]) -> None:
         self._reader = threading.Thread(target=self._read_stream, args=(stream,))
         self._reader.daemon = True
+        self._current_section = None
 
     def join(self) -> None:
         self._reader.join()
@@ -241,20 +243,25 @@ class StreamLogger:
         if match:
             section = match.groups()[0]
             message = match.groups()[1]
-            if section == "ERROR":
-                LOG.error(message)
-            elif section == "INFO":
-                LOG.info(message)
-            elif section == "DUMP":
-                LOG.warning(message)
-            elif section == "WARNING":
-                LOG.warning(message)
-            elif section == "PROGRESS":
-                LOG.info(message)
-            elif section == "PARSER":
-                LOG.error(message)
-            else:
-                LOG.debug("[%s] %s", section, message)
+            self._current_section = section
+        else:
+            section = self._current_section
+            message = line
+
+        if section == "ERROR":
+            LOG.error(message)
+        elif section == "INFO":
+            LOG.info(message)
+        elif section == "DUMP":
+            LOG.warning(message)
+        elif section == "WARNING":
+            LOG.warning(message)
+        elif section == "PROGRESS":
+            LOG.info(message)
+        elif section == "PARSER":
+            LOG.error(message)
+        elif section is not None:
+            LOG.debug("[%s] %s", section, message)
         else:
             LOG.debug(line)
 
