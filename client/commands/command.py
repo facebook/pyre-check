@@ -507,14 +507,12 @@ class Command(CommandParser, ABC):
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> None:
         super(Command, self).__init__(command_arguments, original_directory)
-        logger = self._command_arguments.logger
         self._configuration: Configuration = (
-            configuration or self.generate_configuration(logger)
+            configuration or self.generate_configuration()
         )
         self._strict: bool = (
             self._command_arguments.strict or self._configuration.strict
         )
-        self._logger: Final[Optional[str]] = logger or (self._configuration.logger)
         self._version_hash: str = self._configuration.version_hash
         self._formatter: Final[Optional[str]] = self._configuration.formatter
         self._taint_models_path: List[str] = self._configuration.taint_models_path
@@ -527,7 +525,7 @@ class Command(CommandParser, ABC):
     def add_subparser(cls, parser: argparse._SubParsersAction) -> None:
         pass
 
-    def generate_configuration(self, logger: Optional[str]) -> Configuration:
+    def generate_configuration(self) -> Configuration:
         return Configuration(
             project_root=self._project_root,
             local_root=self._local_root,
@@ -537,7 +535,7 @@ class Command(CommandParser, ABC):
             use_buck_builder=self._command_arguments.use_buck_builder,
             buck_builder_binary=self._command_arguments.buck_builder_binary,
             excludes=self._command_arguments.exclude,
-            logger=logger,
+            logger=self._command_arguments.logger,
             formatter=self._formatter,
             log_directory=self._log_directory,
             use_buck_source_database=self._command_arguments.use_buck_source_database,
@@ -620,8 +618,9 @@ class Command(CommandParser, ABC):
         log_identifier = self._command_arguments.log_identifier
         if log_identifier:
             flags.extend(["-log-identifier", log_identifier])
-        if self._logger:
-            flags.extend(["-logger", self._logger])
+        logger = self._configuration.logger
+        if logger:
+            flags.extend(["-logger", logger])
         if self._log_directory:
             flags.extend(["-log-directory", self._log_directory])
         return flags
