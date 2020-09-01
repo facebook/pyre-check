@@ -229,39 +229,16 @@ class CommandParser(ABC):
 
         self._version: bool = self._command_arguments.version
         self._debug: bool = self._command_arguments.debug
-        self._sequential: bool = self._command_arguments.sequential
         self._strict: bool = self._command_arguments.strict
-        self._additional_checks: List[str] = self._command_arguments.additional_checks
         self._show_error_traces: bool = self._command_arguments.show_error_traces
         self._output: str = self._command_arguments.output
-        self._enable_profiling: bool = self._command_arguments.enable_profiling
-        self._enable_memory_profiling: bool = (
-            self._command_arguments.enable_memory_profiling
-        )
-        self._noninteractive: bool = self._command_arguments.noninteractive
-        self._hide_parse_errors: bool = self._command_arguments.hide_parse_errors
-        self._log_identifier: str = self._command_arguments.log_identifier
         self._formatter: List[str] = self._command_arguments.formatter
 
         self._targets: List[str] = self._command_arguments.targets
-        self._use_buck_builder: Optional[
-            bool
-        ] = self._command_arguments.use_buck_builder
-        self._use_buck_source_database: Optional[
-            bool
-        ] = self._command_arguments.use_buck_source_database
-
         self._source_directories: List[str] = self._command_arguments.source_directories
         self._filter_directory: Optional[str] = self._command_arguments.filter_directory
         self._buck_mode: Optional[str] = self._command_arguments.buck_mode
-
         self._search_path: List[str] = self._command_arguments.search_path
-        self._binary: str = self._command_arguments.binary
-        self._buck_builder_binary: Final[
-            Optional[str]
-        ] = self._command_arguments.buck_builder_binary
-        self._exclude: List[str] = self._command_arguments.exclude
-        self._typeshed: str = self._command_arguments.typeshed
 
         # Derived arguments
         self._capable_terminal: bool = terminal.is_capable()
@@ -573,15 +550,15 @@ class Command(CommandParser, ABC):
             project_root=self._project_root,
             local_root=self._local_root,
             search_path=self._search_path,
-            binary=self._binary,
-            typeshed=self._typeshed,
-            use_buck_builder=self._use_buck_builder,
-            buck_builder_binary=self._buck_builder_binary,
-            excludes=self._exclude,
+            binary=self._command_arguments.binary,
+            typeshed=self._command_arguments.typeshed,
+            use_buck_builder=self._command_arguments.use_buck_builder,
+            buck_builder_binary=self._command_arguments.buck_builder_binary,
+            excludes=self._command_arguments.exclude,
             logger=logger,
             formatter=self._formatter,
             log_directory=self._log_directory,
-            use_buck_source_database=self._use_buck_source_database,
+            use_buck_source_database=self._command_arguments.use_buck_source_database,
         )
 
     def generate_analysis_directory(self) -> AnalysisDirectory:
@@ -624,16 +601,17 @@ class Command(CommandParser, ABC):
         flags = []
         if self._debug:
             flags.extend(["-debug"])
-        if self._sequential:
+        if self._command_arguments.sequential:
             flags.extend(["-sequential"])
         if self._strict:
             flags.extend(["-strict"])
-        if self._additional_checks:
+        additional_checks = self._command_arguments.additional_checks
+        if additional_checks:
             flags.append("-additional-checks")
-            flags.append(",".join(self._additional_checks))
+            flags.append(",".join(additional_checks))
         if self._show_error_traces:
             flags.append("-show-error-traces")
-        if not self._hide_parse_errors:
+        if not self._command_arguments.hide_parse_errors:
             self._enable_logging_section("parser")
         logging_sections = self._logging_sections
         if not self._capable_terminal:
@@ -645,17 +623,21 @@ class Command(CommandParser, ABC):
                 logging_sections = "-progress"
         if logging_sections:
             flags.extend(["-logging-sections", logging_sections])
-        if self._enable_profiling:
+        if self._command_arguments.enable_profiling:
             flags.extend(["-profiling-output", self.profiling_log_path()])
-        if self._enable_memory_profiling:
+        if self._command_arguments.enable_memory_profiling:
             flags.extend(["-memory-profiling-output", self.profiling_log_path()])
-        if self._enable_profiling or self._enable_memory_profiling:
+        if (
+            self._command_arguments.enable_profiling
+            or self._command_arguments.enable_memory_profiling
+        ):
             # Clear the profiling log first since in pyre binary it's append-only
             remove_if_exists(self.profiling_log_path())
         if self._project_root:
             flags.extend(["-project-root", self._project_root])
-        if self._log_identifier:
-            flags.extend(["-log-identifier", self._log_identifier])
+        log_identifier = self._command_arguments.log_identifier
+        if log_identifier:
+            flags.extend(["-log-identifier", log_identifier])
         if self._logger:
             flags.extend(["-logger", self._logger])
         if self._log_directory:
