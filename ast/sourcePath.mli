@@ -30,4 +30,6 @@ val same_module_compare : configuration:Configuration.Analysis.t -> t -> t -> in
 
 val is_stub : t -> bool
 
+val is_internal_path : configuration:Configuration.Analysis.t -> Path.t -> bool
+
 val expand_relative_import : from:Reference.t Node.t -> t -> Reference.t Node.t

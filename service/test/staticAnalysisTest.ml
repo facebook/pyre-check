@@ -8,9 +8,12 @@ open Core
 
 let test_callables context =
   let assert_callables ?(additional_sources = []) ?(source_filename = "test.py") source ~expected =
-    let resolution =
-      Test.ScratchProject.setup ~context ((source_filename, source) :: additional_sources)
-      |> Test.ScratchProject.build_global_resolution
+    let configuration, resolution =
+      let scratch_project =
+        Test.ScratchProject.setup ~context ((source_filename, source) :: additional_sources)
+      in
+      ( Test.ScratchProject.configuration_of scratch_project,
+        Test.ScratchProject.build_global_resolution scratch_project )
     in
     let source =
       Option.value_exn
@@ -20,9 +23,9 @@ let test_callables context =
           environment
           (Ast.Reference.create "test") )
     in
-    Service.StaticAnalysis.regular_and_filtered_callables ~resolution ~source
+    Service.StaticAnalysis.regular_and_filtered_callables ~configuration ~resolution ~source
     |> fst
-    |> List.map ~f:fst
+    |> List.map ~f:(fun { Service.StaticAnalysis.callable; _ } -> callable)
     |> assert_equal
          ~printer:(List.to_string ~f:Interprocedural.Callable.show_real_target)
          ~cmp:(List.equal Interprocedural.Callable.equal_real_target)

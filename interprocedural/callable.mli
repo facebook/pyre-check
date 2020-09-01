@@ -139,4 +139,6 @@ module Hashable : Core.Hashable.S with type t := t
 
 module RealMap : Core.Map.S with type Key.t = real_target
 
+module RealSet : Caml.Set.S with type elt = real_target
+
 module OverrideSet : Caml.Set.S with type elt = override_target

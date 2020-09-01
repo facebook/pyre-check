@@ -329,3 +329,57 @@ let expand_callees callees =
         :: List.fold overrides ~f:expand_and_gather ~init:expanded
   in
   List.fold callees ~init:[] ~f:expand_and_gather |> List.dedup_and_sort ~compare:Callable.compare
+
+
+type prune_result = {
+  dependencies: t;
+  pruned_callables: Callable.t list;
+}
+
+let prune dependency_graph ~callables_with_dependency_information ~override_targets =
+  let initial_callables =
+    List.filter_map callables_with_dependency_information ~f:(fun (callable, is_internal) ->
+        Option.some_if is_internal callable)
+  in
+  (* In order to have the DFS properly follow overrides -> implementations, we need to make the
+     implicit edge between overrides and methods explicit here. To save space, we only compute those
+     edges for the computation and discard them afterwards. *)
+  let dependency_graph_with_overrides =
+    let overrides_to_methods =
+      let override_to_method_edge override =
+        match override with
+        | `OverrideTarget _ as override ->
+            let corresponding_method = Callable.get_corresponding_method override in
+            if Callable.Map.mem dependency_graph corresponding_method then
+              Some (override, [corresponding_method])
+            else
+              None
+        | _ -> None
+      in
+      override_targets |> List.filter_map ~f:override_to_method_edge |> Callable.Map.of_alist_exn
+    in
+    union overrides_to_methods dependency_graph
+  in
+  (* We have an implicit edge from a method to the override it corresponds to during the analysis.
+     During the pruning, we make the edges from the method to the override explicit to make sure the
+     DFS captures the interesting overrides. *)
+  let callables_to_keep =
+    depth_first_search dependency_graph_with_overrides initial_callables
+    |> List.concat
+    |> List.dedup_and_sort ~compare:Callable.compare
+  in
+  let dependency_graph =
+    (* We only keep the keys which were in the original dependency graph to avoid introducing
+       spurious override leaves. *)
+    let to_edge callable =
+      Callable.Map.find dependency_graph callable >>| fun values -> callable, values
+    in
+    Callable.Map.of_alist_exn (List.filter_map callables_to_keep ~f:to_edge)
+  in
+  let callables_to_keep = Callable.Set.of_list callables_to_keep in
+  {
+    dependencies = dependency_graph;
+    pruned_callables =
+      List.filter_map callables_with_dependency_information ~f:(fun (callable, _) ->
+          Option.some_if (Callable.Set.mem callable callables_to_keep) callable);
+  }

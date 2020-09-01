@@ -76,16 +76,32 @@ let unfiltered_callables ~resolution ~source:{ Source.source_path = { SourcePath
   List.filter_map ~f:record_toplevel_definition defines
 
 
-let regular_and_filtered_callables ~resolution ~source =
+type found_callable = {
+  callable: Callable.real_target;
+  define: Define.t Node.t;
+  is_internal: bool;
+}
+
+let regular_and_filtered_callables ~configuration ~resolution ~source =
   let callables = unfiltered_callables ~resolution ~source in
-  if GlobalResolution.source_is_unit_test resolution ~source then
-    [], List.map callables ~f:fst
-  else if Ast.SourcePath.is_stub source.source_path then
-    ( List.filter callables ~f:(fun (_, { Node.value = define; _ }) ->
-          not (Define.is_toplevel define || Define.is_class_toplevel define)),
-      [] )
-  else
-    callables, []
+  let included, filtered =
+    if GlobalResolution.source_is_unit_test resolution ~source then
+      [], List.map callables ~f:fst
+    else if Ast.SourcePath.is_stub source.source_path then
+      ( List.filter callables ~f:(fun (_, { Node.value = define; _ }) ->
+            not (Define.is_toplevel define || Define.is_class_toplevel define)),
+        [] )
+    else
+      callables, []
+  in
+  let is_internal_source =
+    Ast.SourcePath.is_internal_path
+      ~configuration
+      (Ast.SourcePath.full_path ~configuration source.source_path)
+  in
+  ( List.map included ~f:(fun (callable, define) ->
+        { callable; define; is_internal = is_internal_source }),
+    filtered )
 
 
 let analyze
@@ -113,12 +129,15 @@ let analyze
 
   let timer = Timer.start () in
   Log.info "Fetching initial callables to analyze...";
-  let callables, stubs, filtered_callables =
-    let classify_source (callables, stubs) (callable, { Node.value = define; _ }) =
+  let callables_with_dependency_information, stubs, filtered_callables =
+    let classify_source
+        (callables, stubs)
+        { callable; define = { Node.value = define; _ }; is_internal }
+      =
       if Define.is_stub define then
         callables, callable :: stubs
       else
-        callable :: callables, stubs
+        (callable, is_internal) :: callables, stubs
     in
     let map result qualifiers =
       let make_callables
@@ -128,7 +147,7 @@ let analyze
         get_source qualifier
         >>| (fun source ->
               let callables, new_filtered_callables =
-                regular_and_filtered_callables ~resolution:global_resolution ~source
+                regular_and_filtered_callables ~configuration ~resolution:global_resolution ~source
               in
               let callables, stubs =
                 List.fold callables ~f:classify_source ~init:(existing_callables, existing_stubs)
@@ -165,7 +184,7 @@ let analyze
       ~inputs:qualifiers
       ()
   in
-  let callables = List.sort callables ~compare:Interprocedural.Callable.compare in
+  let stubs = (stubs :> Callable.t list) in
   Statistics.performance ~name:"Fetched initial callables to analyze" ~timer ();
   let analyses = [analysis_kind] in
   let timer = Timer.start () in
@@ -196,16 +215,17 @@ let analyze
               @ rule_settings ) );
         ]
     in
+    let functions = (List.map callables_with_dependency_information ~f:fst :> Callable.t list) in
     let { Interprocedural.Analysis.initial_models = models; skip_overrides } =
       Analysis.initialize
         analyses
         ~configuration:configuration_json
         ~scheduler
         ~environment
-        ~functions:callables
+        ~functions
         ~stubs
     in
-    Analysis.record_initial_models ~functions:callables ~stubs models;
+    Analysis.record_initial_models ~functions ~stubs models;
     skip_overrides
   in
   Statistics.performance ~name:"Computed initial analysis state" ~timer ();
@@ -252,6 +272,7 @@ let analyze
     Taint.TaintConfiguration.get ()
   in
   record_overrides ?maximum_overrides_to_analyze overrides;
+  let override_dependencies = DependencyGraph.from_overrides overrides in
   Statistics.performance ~name:"Overrides recorded" ~timer ();
 
   (* It's imperative that the call graph is built after the overrides are, due to a hidden global
@@ -293,13 +314,20 @@ let analyze
 
   let timer = Timer.start () in
   Log.info "Computing overrides...";
-  let override_dependencies = DependencyGraph.from_overrides overrides in
-  let dependencies =
-    DependencyGraph.from_callgraph callgraph
-    |> DependencyGraph.union override_dependencies
-    |> DependencyGraph.reverse
-  in
   let override_targets = (Callable.Map.keys override_dependencies :> Callable.t list) in
+  let dependencies, callables =
+    let dependencies =
+      DependencyGraph.from_callgraph callgraph |> DependencyGraph.union override_dependencies
+    in
+    let { DependencyGraph.dependencies; pruned_callables } =
+      DependencyGraph.prune
+        dependencies
+        ~callables_with_dependency_information:
+          (callables_with_dependency_information :> (Callable.t * bool) list)
+        ~override_targets
+    in
+    DependencyGraph.reverse dependencies, pruned_callables
+  in
   let () =
     let add_predefined callable =
       Fixpoint.add_predefined Fixpoint.Epoch.initial callable Result.empty_model

@@ -156,6 +156,7 @@ module OverrideKey = struct
 end
 
 module Set = Caml.Set.Make (Key)
+module RealSet = Caml.Set.Make (RealKey)
 module OverrideSet = Caml.Set.Make (OverrideKey)
 
 let get_module_and_definition ~resolution callable =

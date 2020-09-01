@@ -576,6 +576,214 @@ let test_strongly_connected_components context =
       ]
 
 
+let test_prune_callables _ =
+  let open Ast in
+  let open Interprocedural in
+  let assert_pruned
+      ~callgraph
+      ~overrides
+      ~project_callables
+      ~external_callables
+      ~expected_callables
+      ~expected_dependencies
+    =
+    let create name =
+      if String.is_prefix ~prefix:"O|" (Reference.show name) then
+        Callable.create_override (String.drop_prefix (Reference.show name) 2 |> Reference.create)
+      else
+        Callable.create_method name
+    in
+    let callgraph =
+      List.map callgraph ~f:(fun (key, values) ->
+          ( Callable.create_method (Reference.create key),
+            List.map values ~f:(fun value -> (create (Reference.create value) :> Callable.t)) ))
+      |> Callable.RealMap.of_alist_exn
+    in
+    let overrides =
+      List.map overrides ~f:(fun (key, values) ->
+          Reference.create key, List.map values ~f:(fun value -> Reference.create value))
+      |> Reference.Map.of_alist_exn
+    in
+    let callables_with_dependency_information =
+      List.map project_callables ~f:(fun callable ->
+          Callable.create_method (Reference.create callable), true)
+      @ List.map external_callables ~f:(fun callable ->
+            Callable.create_method (Reference.create callable), false)
+    in
+    let overrides = DependencyGraph.from_overrides overrides in
+    let dependencies =
+      DependencyGraph.from_callgraph callgraph |> DependencyGraph.union overrides
+    in
+    let { DependencyGraph.dependencies = actual_dependencies; pruned_callables = actual_callables } =
+      DependencyGraph.prune
+        dependencies
+        ~callables_with_dependency_information
+        ~override_targets:(Callable.Map.keys overrides)
+    in
+    assert_equal
+      ~cmp:(List.equal Callable.equal)
+      ~printer:(List.to_string ~f:Callable.show)
+      (List.map expected_callables ~f:(fun callable ->
+           Callable.create_method (Reference.create callable)))
+      actual_callables;
+    assert_equal
+      ~cmp:
+        (List.equal (fun (left_key, left_values) (right_key, right_values) ->
+             Callable.equal left_key right_key && List.equal Callable.equal left_values right_values))
+      ~printer:
+        (List.to_string ~f:(fun (key, values) ->
+             Format.sprintf "%s: %s" (Callable.show key) (List.to_string values ~f:Callable.show)))
+      (List.map expected_dependencies ~f:(fun (key, values) ->
+           ( create (Reference.create key),
+             List.map values ~f:(fun value -> create (Reference.create value)) )))
+      (Callable.Map.to_alist actual_dependencies)
+  in
+  (* Basic case. *)
+  assert_pruned
+    ~callgraph:
+      ["a.foo", ["external.bar"]; "external.bar", []; "external.test.test_bar", ["external.bar"]]
+    ~overrides:[]
+    ~project_callables:["a.foo"]
+    ~external_callables:["external.bar"; "external.test.test_bar"]
+    ~expected_callables:["a.foo"; "external.bar"]
+    ~expected_dependencies:["a.foo", ["external.bar"]; "external.bar", []];
+
+  (* Transitive case. *)
+  assert_pruned
+    ~callgraph:
+      [
+        "a.foo", ["external.bar"];
+        "external.bar", ["external.baz"];
+        "external.baz", [];
+        "external.test.test_baz", ["external.baz"];
+        "external.test.test_bar", ["external.bar"];
+      ]
+    ~overrides:[]
+    ~project_callables:["a.foo"]
+    ~external_callables:
+      ["external.bar"; "external.baz"; "external.test.test_bar"; "external.test.test_baz"]
+    ~expected_callables:["a.foo"; "external.bar"; "external.baz"]
+    ~expected_dependencies:
+      ["a.foo", ["external.bar"]; "external.bar", ["external.baz"]; "external.baz", []];
+  (* Basic override. *)
+  assert_pruned
+    ~callgraph:
+      [
+        "a.foo", ["external.bar"];
+        "external.bar", ["O|external.C.m"];
+        "external.C.m", [];
+        "external.D.m", ["external.called_by_override"];
+        "external.called_by_override", [];
+        "external.unrelated", [];
+      ]
+    ~overrides:["external.C.m", ["external.D"]; "external.D.m", []]
+    ~project_callables:["a.foo"]
+    ~external_callables:
+      [
+        "external.bar";
+        "external.C.m";
+        "external.D.m";
+        "external.called_by_override";
+        "external.unrelated";
+      ]
+    ~expected_callables:
+      ["a.foo"; "external.bar"; "external.C.m"; "external.D.m"; "external.called_by_override"]
+    ~expected_dependencies:
+      [
+        "a.foo", ["external.bar"];
+        "external.bar", ["O|external.C.m"];
+        "external.called_by_override", [];
+        "external.C.m", [];
+        "external.D.m", ["external.called_by_override"];
+        "O|external.C.m", ["O|external.D.m"];
+        "O|external.D.m", [];
+      ];
+  (* The calls go away if we don't have the override between C and D. *)
+  assert_pruned
+    ~callgraph:
+      [
+        "a.foo", ["external.bar"];
+        "external.bar", ["external.C.m"];
+        "external.C.m", [];
+        "external.D.m", ["external.called_by_override"];
+        "external.called_by_override", [];
+        "external.unrelated", [];
+      ]
+    ~overrides:[]
+    ~project_callables:["a.foo"]
+    ~external_callables:
+      [
+        "external.bar";
+        "external.C.m";
+        "external.D.m";
+        "external.called_by_override";
+        "external.unrelated";
+      ]
+    ~expected_callables:["a.foo"; "external.bar"; "external.C.m"]
+    ~expected_dependencies:
+      ["a.foo", ["external.bar"]; "external.bar", ["external.C.m"]; "external.C.m", []];
+
+  (* Transitive overrides. *)
+  assert_pruned
+    ~callgraph:
+      [
+        "a.foo", ["O|external.C.m"];
+        "external.C.m", [];
+        "external.D.m", [];
+        "external.E.m", ["external.called_by_override"];
+        "external.called_by_override", [];
+        "external.unrelated", [];
+      ]
+    ~overrides:["external.C.m", ["external.D"]; "external.D.m", ["external.E"]]
+    ~project_callables:["a.foo"]
+    ~external_callables:
+      [
+        "external.C.m";
+        "external.D.m";
+        "external.E.m";
+        "external.called_by_override";
+        "external.unrelated";
+      ]
+    ~expected_callables:
+      ["a.foo"; "external.C.m"; "external.D.m"; "external.E.m"; "external.called_by_override"]
+    ~expected_dependencies:
+      [
+        "a.foo", ["O|external.C.m"];
+        "external.called_by_override", [];
+        "external.C.m", [];
+        "external.D.m", [];
+        "external.E.m", ["external.called_by_override"];
+        "O|external.C.m", ["O|external.D.m"];
+        "O|external.D.m", ["O|external.E.m"];
+        "O|external.E.m", [];
+      ];
+  (* Strongly connected components are handled fine. *)
+  assert_pruned
+    ~callgraph:
+      [
+        "a.foo", ["external.a"];
+        "external.a", ["external.b"];
+        "external.b", ["external.c"];
+        "external.c", ["external.a"];
+        "external.d", ["external.e"];
+        "external.e", ["external.f"];
+        "external.f", ["external.d"];
+      ]
+    ~overrides:[]
+    ~project_callables:["a.foo"]
+    ~external_callables:
+      ["external.a"; "external.b"; "external.c"; "external.d"; "external.e"; "external.f"]
+    ~expected_callables:["a.foo"; "external.a"; "external.b"; "external.c"]
+    ~expected_dependencies:
+      [
+        "a.foo", ["external.a"];
+        "external.a", ["external.b"];
+        "external.b", ["external.c"];
+        "external.c", ["external.a"];
+      ];
+  ()
+
+
 let () =
   Scheduler.Daemon.check_entry_point ();
   "callGraph"
@@ -585,5 +793,6 @@ let () =
          "build_reverse" >:: test_construction_reverse;
          "overrides" >:: test_method_overrides;
          "strongly_connected_components" >:: test_strongly_connected_components;
+         "prune_callables" >:: test_prune_callables;
        ]
   |> Test.run

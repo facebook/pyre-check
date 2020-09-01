@@ -433,9 +433,13 @@ let initialize
       (module TypeCheck.DummyContext)
   in
   let callables, stubs =
-    Service.StaticAnalysis.regular_and_filtered_callables ~resolution:global_resolution ~source
+    Service.StaticAnalysis.regular_and_filtered_callables
+      ~configuration
+      ~resolution:global_resolution
+      ~source
     |> fst
-    |> List.map ~f:(fun (callable, define) -> (callable :> Callable.t), define.Node.value)
+    |> List.map ~f:(fun { Service.StaticAnalysis.callable; define; _ } ->
+           (callable :> Callable.t), define.Node.value)
     |> List.partition_tf ~f:(fun (_callable, define) -> not (Statement.Define.is_stub define))
   in
   let initial_models, skip_overrides =

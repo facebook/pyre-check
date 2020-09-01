@@ -16,10 +16,17 @@ val record_and_merge_call_graph
 
 val record_overrides : ?maximum_overrides_to_analyze:int -> DependencyGraph.overrides -> unit
 
+type found_callable = {
+  callable: Callable.real_target;
+  define: Define.t Node.t;
+  is_internal: bool;
+}
+
 val regular_and_filtered_callables
-  :  resolution:GlobalResolution.t ->
+  :  configuration:Configuration.Analysis.t ->
+  resolution:GlobalResolution.t ->
   source:Source.t ->
-  (Callable.real_target * Define.t Node.t) list * Callable.real_target list
+  found_callable list * Callable.real_target list
 
 val analyze
   :  scheduler:Scheduler.t ->
