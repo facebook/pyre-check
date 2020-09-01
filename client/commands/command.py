@@ -254,7 +254,6 @@ class CommandParser(ABC):
         self._source_directories: List[str] = self._command_arguments.source_directories
         self._filter_directory: Optional[str] = self._command_arguments.filter_directory
         self._buck_mode: Optional[str] = self._command_arguments.buck_mode
-        self._no_saved_state: bool = self._command_arguments.no_saved_state
 
         self._search_path: List[str] = self._command_arguments.search_path
         self._binary: str = self._command_arguments.binary
@@ -263,18 +262,6 @@ class CommandParser(ABC):
         ] = self._command_arguments.buck_builder_binary
         self._exclude: List[str] = self._command_arguments.exclude
         self._typeshed: str = self._command_arguments.typeshed
-        self._save_initial_state_to: Final[
-            Optional[str]
-        ] = self._command_arguments.save_initial_state_to
-        self._load_initial_state_from: Final[
-            Optional[str]
-        ] = self._command_arguments.load_initial_state_from
-        self._changed_files_path: Final[
-            Optional[str]
-        ] = self._command_arguments.changed_files_path
-        self._saved_state_project: Final[
-            Optional[str]
-        ] = self._command_arguments.saved_state_project
 
         # Derived arguments
         self._capable_terminal: bool = terminal.is_capable()

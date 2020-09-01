@@ -44,11 +44,6 @@ class Start(Reporting):
         self._store_type_check_resolution = store_type_check_resolution
         self._use_watchman = use_watchman
         self._incremental_style = incremental_style
-        if self._no_saved_state:
-            self._save_initial_state_to: Final[Optional[str]] = None
-            self._changed_files_path: Final[Optional[str]] = None
-            self._load_initial_state_from: Final[Optional[str]] = None
-            self._saved_state_project: Final[Optional[str]] = None
 
         self._enable_logging_section("environment")
 
@@ -175,31 +170,32 @@ class Start(Reporting):
             flags.append("-terminal")
         if self._store_type_check_resolution:
             flags.append("-store-type-check-resolution")
-        save_initial_state_to = self._save_initial_state_to
-        if save_initial_state_to and os.path.isdir(
-            os.path.dirname(save_initial_state_to)
-        ):
-            flags.extend(["-save-initial-state-to", save_initial_state_to])
-        saved_state_project = self._saved_state_project
-        if saved_state_project:
-            flags.extend(["-saved-state-project", saved_state_project])
-            local_root = self._configuration.local_root
-            if local_root is not None:
-                relative = os.path.relpath(local_root, self._project_root)
-                flags.extend(["-saved-state-metadata", relative.replace("/", "$")])
-        configuration_file_hash = self._configuration.file_hash
-        if configuration_file_hash:
-            flags.extend(["-configuration-file-hash", configuration_file_hash])
-        load_initial_state_from = self._load_initial_state_from
-        if load_initial_state_from is not None:
-            flags.extend(["-load-state-from", load_initial_state_from])
-            changed_files_path = self._changed_files_path
-            if changed_files_path is not None:
-                flags.extend(["-changed-files-path", changed_files_path])
-        elif self._changed_files_path is not None:
-            LOG.error(
-                "--load-initial-state-from must be set if --changed-files-path is set."
-            )
+        if not self._command_arguments.no_saved_state:
+            save_initial_state_to = self._command_arguments.save_initial_state_to
+            if save_initial_state_to and os.path.isdir(
+                os.path.dirname(save_initial_state_to)
+            ):
+                flags.extend(["-save-initial-state-to", save_initial_state_to])
+            saved_state_project = self._command_arguments.saved_state_project
+            if saved_state_project:
+                flags.extend(["-saved-state-project", saved_state_project])
+                local_root = self._configuration.local_root
+                if local_root is not None:
+                    relative = os.path.relpath(local_root, self._project_root)
+                    flags.extend(["-saved-state-metadata", relative.replace("/", "$")])
+            configuration_file_hash = self._configuration.file_hash
+            if configuration_file_hash:
+                flags.extend(["-configuration-file-hash", configuration_file_hash])
+            load_initial_state_from = self._command_arguments.load_initial_state_from
+            changed_files_path = self._command_arguments.changed_files_path
+            if load_initial_state_from is not None:
+                flags.extend(["-load-state-from", load_initial_state_from])
+                if changed_files_path is not None:
+                    flags.extend(["-changed-files-path", changed_files_path])
+            elif changed_files_path is not None:
+                LOG.error(
+                    "--load-initial-state-from must be set if --changed-files-path is set."
+                )
         flags.extend(
             [
                 "-workers",
