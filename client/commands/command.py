@@ -24,7 +24,7 @@ from .. import json_rpc, log, recently_used_configurations, terminal
 from ..analysis_directory import AnalysisDirectory, resolve_analysis_directory
 from ..configuration import Configuration
 from ..exceptions import EnvironmentException
-from ..filesystem import readable_directory, remove_if_exists, translate_path
+from ..filesystem import readable_directory, remove_if_exists
 from ..find_directories import find_global_and_local_root
 from ..log import StreamLogger
 from ..process import Process
@@ -508,8 +508,6 @@ class Command(CommandParser, ABC):
     ) -> None:
         super(Command, self).__init__(command_arguments, original_directory)
         logger = self._command_arguments.logger
-        if logger:
-            logger = translate_path(self._original_directory, logger)
         self._configuration: Configuration = (
             configuration or self.generate_configuration(logger)
         )
@@ -519,10 +517,7 @@ class Command(CommandParser, ABC):
         self._logger: Final[Optional[str]] = logger or (self._configuration.logger)
         self._version_hash: str = self._configuration.version_hash
         self._formatter: Final[Optional[str]] = self._configuration.formatter
-        self._taint_models_path: List[str] = [
-            translate_path(self._original_directory, path)
-            for path in self._configuration.taint_models_path
-        ]
+        self._taint_models_path: List[str] = self._configuration.taint_models_path
 
         self._analysis_directory: AnalysisDirectory = (
             analysis_directory or self.generate_analysis_directory()
