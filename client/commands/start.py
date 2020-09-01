@@ -199,7 +199,7 @@ class Start(Reporting):
         flags.extend(
             [
                 "-workers",
-                str(self._number_of_workers),
+                str(self._configuration.number_of_workers),
                 "-expected-binary-version",
                 self._configuration.version_hash,
             ]

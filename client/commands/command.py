@@ -520,7 +520,6 @@ class Command(CommandParser, ABC):
         self._ignore_all_errors_paths: Iterable[str] = (
             self._configuration.ignore_all_errors
         )
-        self._number_of_workers: int = self._configuration.number_of_workers
         self._version_hash: str = self._configuration.version_hash
         self._formatter: Final[Optional[str]] = self._configuration.formatter
         self._taint_models_path: List[str] = [
@@ -531,7 +530,6 @@ class Command(CommandParser, ABC):
         self._analysis_directory: AnalysisDirectory = (
             analysis_directory or self.generate_analysis_directory()
         )
-        self._features: Final[Optional[str]] = self._command_arguments.features
 
     @classmethod
     def add_subparser(cls, parser: argparse._SubParsersAction) -> None:
@@ -638,7 +636,7 @@ class Command(CommandParser, ABC):
 
     # temporarily always return empty list to unblock client release
     def _feature_flags(self) -> List[str]:
-        features = self._features
+        features = self._command_arguments.features
         if features:
             lsp_features = ["click_to_fix", "hover", "go_to_definition"]
             filtered = {

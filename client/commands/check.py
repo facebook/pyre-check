@@ -74,7 +74,7 @@ class Check(Reporting):
         filter_directories = self._get_directories_to_analyze()
         if len(filter_directories):
             flags.extend(["-filter-directories", ";".join(sorted(filter_directories))])
-        flags.extend(["-workers", str(self._number_of_workers)])
+        flags.extend(["-workers", str(self._configuration.number_of_workers)])
         search_path = self._configuration.search_path + typeshed_search_path(
             self._configuration.typeshed
         )
