@@ -1009,25 +1009,22 @@ let test_query context =
             {
               Protocol.TypeQuery.name = "foo";
               annotation =
-                Type.Parametric
-                  {
-                    name = "BoundMethod";
-                    parameters =
-                      [
-                        Single
-                          (Type.Callable
+                Type.parametric
+                  "BoundMethod"
+                  [
+                    Single
+                      (Type.Callable
+                         {
+                           Type.Callable.kind = Type.Callable.Named !&"test.C.foo";
+                           implementation =
                              {
-                               Type.Callable.kind = Type.Callable.Named !&"test.C.foo";
-                               implementation =
-                                 {
-                                   Type.Callable.annotation = Type.integer;
-                                   parameters = Type.Callable.Defined [];
-                                 };
-                               overloads = [];
-                             });
-                        Single (Primitive "test.C");
-                      ];
-                  };
+                               Type.Callable.annotation = Type.integer;
+                               parameters = Type.Callable.Defined [];
+                             };
+                           overloads = [];
+                         });
+                    Single (Primitive "test.C");
+                  ];
               kind = Protocol.TypeQuery.Regular;
               final = false;
             };

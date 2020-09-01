@@ -716,15 +716,12 @@ let missing_builtin_classes, missing_typing_classes, missing_typing_extensions_c
         ~host:Type.object_primitive
         ~host_type:(Variable (Type.Variable.Unary.create "typing._S"))
         ~return:
-          (Type.Parametric
-             {
-               name = "BoundMethod";
-               parameters =
-                 [
-                   Single (Variable (Type.Variable.Unary.create "typing._T"));
-                   Single (Variable (Type.Variable.Unary.create "typing._S"));
-                 ];
-             });
+          (Type.parametric
+             "BoundMethod"
+             [
+               Single (Variable (Type.Variable.Unary.create "typing._T"));
+               Single (Variable (Type.Variable.Unary.create "typing._S"));
+             ]);
     ]
     |> List.map ~f:Node.create_with_default_location
   in

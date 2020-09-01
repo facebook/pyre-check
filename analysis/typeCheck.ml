@@ -533,7 +533,7 @@ module State (Context : Context) = struct
               | ParameterVariadic parameters ->
                   CallableParameters (Type.Variable.Variadic.Parameters.self_reference parameters))
         in
-        Type.Parametric { name = parent_name; parameters = variables }
+        Type.parametric parent_name variables
     | exception _ -> parent_type
 
 
@@ -745,8 +745,7 @@ module State (Context : Context) = struct
       let add_async_generator_error ~errors annotation =
         if async && generator then
           let async_generator_type =
-            Type.Parametric
-              { name = "typing.AsyncGenerator"; parameters = [Single Type.Any; Single Type.Any] }
+            Type.parametric "typing.AsyncGenerator" [Single Type.Any; Single Type.Any]
           in
           if
             GlobalResolution.less_or_equal
@@ -4704,11 +4703,7 @@ module State (Context : Context) = struct
                       ~name
                       ~annotation:
                         (Annotation.create
-                           (Type.Parametric
-                              {
-                                name = parametric_name;
-                                parameters = [Single (Type.union parameters)];
-                              }))
+                           (Type.parametric parametric_name [Single (Type.union parameters)]))
                 | _ -> resolution
               in
               Some resolution, errors

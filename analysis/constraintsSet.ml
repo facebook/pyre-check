@@ -405,11 +405,9 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
         let left =
           match Type.Variable.Variadic.Parameters.Components.component component with
           | KeywordArguments ->
-              Type.Parametric
-                {
-                  name = Type.mapping_primitive;
-                  parameters = [Single Type.string; Single Type.object_primitive];
-                }
+              Type.parametric
+                Type.mapping_primitive
+                [Single Type.string; Single Type.object_primitive]
           | PositionalArguments -> Type.Tuple (Unbounded Type.object_primitive)
         in
         solve_less_or_equal order ~constraints ~left ~right

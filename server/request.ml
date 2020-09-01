@@ -207,11 +207,9 @@ let rec process_type_query_request
                    && List.for_all generics ~f:(function
                           | Type.Variable.Unary _ -> true
                           | _ -> false) ->
-                Type.Parametric
-                  {
-                    name = annotation;
-                    parameters = List.map generics ~f:(fun _ -> Type.Parameter.Single Type.Any);
-                  }
+                Type.parametric
+                  annotation
+                  (List.map generics ~f:(fun _ -> Type.Parameter.Single Type.Any))
             | _ -> Type.Primitive annotation )
         | _ -> annotation
       in

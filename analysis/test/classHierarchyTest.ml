@@ -661,15 +661,12 @@ let test_instantiate_successors_parameters _ =
     (instantiate_successors_parameters
        variadic_order
        ~source:
-         (Type.Parametric
-            {
-              name = "ChildClassParametricOnParamSpec";
-              parameters =
-                [
-                  CallableParameters
-                    (Defined [Named { name = "p"; annotation = Type.integer; default = false }]);
-                ];
-            })
+         (Type.parametric
+            "ChildClassParametricOnParamSpec"
+            [
+              CallableParameters
+                (Defined [Named { name = "p"; annotation = Type.integer; default = false }]);
+            ])
        ~target:"ClassParametricOnParamSpec")
     (Some
        [

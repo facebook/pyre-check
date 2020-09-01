@@ -1671,8 +1671,7 @@ class base class_metadata_environment dependency =
                     let overload parameter =
                       let generics = List.map generics ~f:Type.Variable.to_parameter in
                       {
-                        Type.Callable.annotation =
-                          Type.meta (Type.Parametric { name; parameters = generics });
+                        Type.Callable.annotation = Type.meta (Type.parametric name generics);
                         parameters = Defined [self_parameter; parameter];
                       }
                     in
@@ -1715,7 +1714,7 @@ class base class_metadata_environment dependency =
                         in
                         ( {
                             Type.Callable.annotation =
-                              Type.meta (Type.Parametric { name; parameters = return_parameters });
+                              Type.meta (Type.parametric name return_parameters);
                             parameters =
                               Defined
                                 [self_parameter; create_parameter (Type.tuple parameter_parameters)];
@@ -1860,11 +1859,7 @@ class base class_metadata_environment dependency =
                     partial_apply_self callable ~order ~self_type:instantiated
                     |> fun callable -> Type.Callable { callable with kind = Anonymous }
                   else
-                    Type.Parametric
-                      {
-                        name = "BoundMethod";
-                        parameters = [Single (Callable callable); Single instantiated];
-                      }
+                    Type.parametric "BoundMethod" [Single (Callable callable); Single instantiated]
                 in
 
                 let get_descriptor_method
@@ -2109,12 +2104,10 @@ class base class_metadata_environment dependency =
                        they're "plain functions". We can't capture that in the type system, so we
                        approximate with Callable *)
                     | "__new__", Callable _ ->
-                        Type.Parametric
-                          { name = "typing.StaticMethod"; parameters = [Single resolved] }
+                        Type.parametric "typing.StaticMethod" [Single resolved]
                     | "__init_subclass__", Callable _
                     | "__class_getitem__", Callable _ ->
-                        Type.Parametric
-                          { name = "typing.ClassMethod"; parameters = [Single resolved] }
+                        Type.parametric "typing.ClassMethod" [Single resolved]
                     | _ -> resolved )
                 | Error _ -> Any
               in
@@ -2576,11 +2569,9 @@ class base class_metadata_environment dependency =
             Decorators.apply ~argument ~name |> Result.return
         | name, _ when Set.mem Recognized.classmethod_decorators name ->
             (* TODO (T67024249): convert these to just normal stubs *)
-            Type.Parametric { name = "typing.ClassMethod"; parameters = [Single argument] }
-            |> Result.return
+            Type.parametric "typing.ClassMethod" [Single argument] |> Result.return
         | "staticmethod", _ ->
-            Type.Parametric { name = "typing.StaticMethod"; parameters = [Single argument] }
-            |> Result.return
+            Type.parametric "typing.StaticMethod" [Single argument] |> Result.return
         | _ -> (
             let make_error reason =
               Result.Error (AnnotatedAttribute.InvalidDecorator { index; reason })
@@ -3766,7 +3757,7 @@ class base class_metadata_environment dependency =
           | [Single tuple_variable] -> Type.Tuple (Type.Unbounded tuple_variable)
           | _ -> Type.Tuple (Type.Unbounded Type.Any)
         else
-          let backup = Type.Parametric { name = class_name; parameters = generics } in
+          let backup = Type.parametric class_name generics in
           match instantiated, generics with
           | _, [] -> instantiated
           | Type.Primitive instantiated_name, _ when String.equal instantiated_name class_name ->
@@ -3819,11 +3810,7 @@ class base class_metadata_environment dependency =
         let new_signature, new_index, new_parent_name =
           signature_index_and_parent ~name:"__new__"
         in
-        ( Type.Parametric
-            {
-              name = "BoundMethod";
-              parameters = [Single new_signature; Single (Type.meta instantiated)];
-            },
+        ( Type.parametric "BoundMethod" [Single new_signature; Single (Type.meta instantiated)],
           new_index,
           new_parent_name )
       in

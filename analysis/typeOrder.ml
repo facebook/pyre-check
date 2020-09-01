@@ -252,7 +252,7 @@ module OrderImplementation = struct
                     >>= Option.all
                     >>| List.map ~f:replace_free_unary_variables_with_top
                     >>| List.map ~f:(fun single -> Type.Parameter.Single single)
-                    >>| fun parameters -> Type.Parametric { name = target; parameters }
+                    >>| fun parameters -> Type.parametric target parameters
                 | _ -> None
               in
               target >>= handle_target |> Option.value ~default:union

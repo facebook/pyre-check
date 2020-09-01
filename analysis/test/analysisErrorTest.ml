@@ -746,12 +746,9 @@ let test_filter context =
          attribute = "something";
          origin =
            Class
-             (Type.Parametric
-                {
-                  name = "BoundMethod";
-                  parameters =
-                    [Single (Type.Callable.create ~annotation:Type.integer ()); Single Type.integer];
-                });
+             (Type.parametric
+                "BoundMethod"
+                [Single (Type.Callable.create ~annotation:Type.integer ()); Single Type.integer]);
        });
   assert_filtered
     (UndefinedAttribute
@@ -759,12 +756,9 @@ let test_filter context =
          attribute = "assert_not_called";
          origin =
            Class
-             (Type.Parametric
-                {
-                  name = "BoundMethod";
-                  parameters =
-                    [Single (Type.Callable.create ~annotation:Type.integer ()); Single Type.integer];
-                });
+             (Type.parametric
+                "BoundMethod"
+                [Single (Type.Callable.create ~annotation:Type.integer ()); Single Type.integer]);
        });
 
   ()
@@ -929,12 +923,9 @@ let test_description _ =
          attribute = "at";
          origin =
            Class
-             (Type.Parametric
-                {
-                  name = "BoundMethod";
-                  parameters =
-                    [Single (Type.Callable.create ~annotation:Type.integer ()); Single Type.integer];
-                });
+             (Type.parametric
+                "BoundMethod"
+                [Single (Type.Callable.create ~annotation:Type.integer ()); Single Type.integer]);
        })
     "Undefined attribute [16]: Anonymous callable has no attribute `at`.";
   assert_messages
@@ -943,19 +934,16 @@ let test_description _ =
          attribute = "at";
          origin =
            Class
-             (Type.Parametric
-                {
-                  name = "BoundMethod";
-                  parameters =
-                    [
-                      Single
-                        (Type.Callable.create
-                           ~name:(Reference.create "named")
-                           ~annotation:Type.integer
-                           ());
-                      Single Type.integer;
-                    ];
-                });
+             (Type.parametric
+                "BoundMethod"
+                [
+                  Single
+                    (Type.Callable.create
+                       ~name:(Reference.create "named")
+                       ~annotation:Type.integer
+                       ());
+                  Single Type.integer;
+                ]);
        })
     "Undefined attribute [16]: Callable `named` has no attribute `at`.";
   ()

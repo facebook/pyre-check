@@ -935,11 +935,7 @@ let test_resolved_select context =
         implementation =
           {
             annotation =
-              Type.Parametric
-                {
-                  name = "P";
-                  parameters = [Single (Type.variable "T"); Single (Type.variable "X")];
-                };
+              Type.parametric "P" [Single (Type.variable "T"); Single (Type.variable "X")];
             parameters =
               Defined
                 [
@@ -952,26 +948,23 @@ let test_resolved_select context =
     (Found
        {
          selected_return_annotation =
-           Type.Parametric
-             {
-               name = "P";
-               parameters =
-                 [
-                   Single
-                     (Type.Callable.create
-                        ~annotation:(Type.variable "S")
-                        ~parameters:
-                          (Defined
-                             [Named { name = "X"; annotation = Type.variable "S"; default = false }])
-                        ());
-                   (* Only "local" variables should be marked as escaped *)
-                   Single
-                     (Variable
-                        ( Type.Variable.Unary.create "X"
-                        |> Type.Variable.Unary.mark_as_escaped
-                        |> Type.Variable.Unary.namespace ~namespace ));
-                 ];
-             };
+           Type.parametric
+             "P"
+             [
+               Single
+                 (Type.Callable.create
+                    ~annotation:(Type.variable "S")
+                    ~parameters:
+                      (Defined
+                         [Named { name = "X"; annotation = Type.variable "S"; default = false }])
+                    ());
+               (* Only "local" variables should be marked as escaped *)
+               Single
+                 (Variable
+                    ( Type.Variable.Unary.create "X"
+                    |> Type.Variable.Unary.mark_as_escaped
+                    |> Type.Variable.Unary.namespace ~namespace ));
+             ];
        });
   ()
 

@@ -129,46 +129,40 @@ let test_backward context =
   assert_backward
     [
       ( "cb",
-        Type.Parametric
-          {
-            name = "BoundMethod";
-            parameters =
-              [
-                Single
-                  (Type.Callable.create
-                     ~parameters:
-                       (Defined
-                          [
-                            Named { name = "self"; annotation = Type.string; default = false };
-                            Named { name = "arg"; annotation = Type.integer; default = false };
-                          ])
-                     ~annotation:Type.none
-                     ());
-                Single Type.string;
-              ];
-          } );
+        Type.parametric
+          "BoundMethod"
+          [
+            Single
+              (Type.Callable.create
+                 ~parameters:
+                   (Defined
+                      [
+                        Named { name = "self"; annotation = Type.string; default = false };
+                        Named { name = "arg"; annotation = Type.integer; default = false };
+                      ])
+                 ~annotation:Type.none
+                 ());
+            Single Type.string;
+          ] );
     ]
     "cb(x)"
     [
       ( "cb",
-        Type.Parametric
-          {
-            name = "BoundMethod";
-            parameters =
-              [
-                Single
-                  (Type.Callable.create
-                     ~parameters:
-                       (Defined
-                          [
-                            Named { name = "self"; annotation = Type.string; default = false };
-                            Named { name = "arg"; annotation = Type.integer; default = false };
-                          ])
-                     ~annotation:Type.none
-                     ());
-                Single Type.string;
-              ];
-          } );
+        Type.parametric
+          "BoundMethod"
+          [
+            Single
+              (Type.Callable.create
+                 ~parameters:
+                   (Defined
+                      [
+                        Named { name = "self"; annotation = Type.string; default = false };
+                        Named { name = "arg"; annotation = Type.integer; default = false };
+                      ])
+                 ~annotation:Type.none
+                 ());
+            Single Type.string;
+          ] );
       "x", Type.integer;
     ];
 
