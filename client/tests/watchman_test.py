@@ -28,7 +28,7 @@ class SubscriberTest(unittest.TestCase):
     @patch.object(Process, "register_unique_process")
     @patch.object(watchman, "remove_if_exists")
     @patch.object(watchman, "acquire_lock")
-    @patch.object(sys, "exit")
+    @patch.object(os, "_exit")
     @patch.object(os, "close")
     @patch.object(os, "fork", return_value=0)
     # pyre-fixme[56]: Argument `os` to decorator factory

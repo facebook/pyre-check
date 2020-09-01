@@ -18,7 +18,7 @@ from ..tests.mocks import mock_arguments, mock_configuration
 class MonitorTest(unittest.TestCase):
     @patch("os.fork")
     @patch("os.close")
-    @patch("sys.exit")
+    @patch("os._exit")
     @patch.object(configuration_monitor.ConfigurationMonitor, "_run")
     def test_daemonize(
         self, run: MagicMock, _exit: MagicMock, _close: MagicMock, fork: MagicMock

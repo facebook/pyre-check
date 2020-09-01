@@ -147,12 +147,12 @@ class Subscriber(object):
                     os.close(sys.stdout.fileno())
                     os.close(sys.stderr.fileno())
                     self._run()
-                    sys.exit(0)
+                    os._exit(0)
                 except Exception as exception:
                     LOG.info(f"Not running {self._name} due to {exception}")
-                    sys.exit(1)
+                    os._exit(1)
             else:
-                sys.exit(0)
+                os._exit(0)
 
 
 def stop_subscriptions(base_path: str, subscriber_name: str) -> None:
