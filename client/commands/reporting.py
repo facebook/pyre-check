@@ -4,7 +4,6 @@
 # LICENSE file in the root directory of this source tree.
 
 
-import fnmatch
 import json
 import logging
 import os
@@ -90,10 +89,6 @@ class Reporting(Command):
             if not os.path.exists(path):
                 # Nonexistent paths can be created when search path stubs are renamed.
                 external_to_global_root = True
-            for absolute_ignore_path in self._ignore_all_errors_paths:
-                if fnmatch.fnmatch(path, (absolute_ignore_path + "*")):
-                    ignore_error = True
-                    break
             errors.append(Error(error, ignore_error, external_to_global_root))
 
         if bypass_filtering:

@@ -517,9 +517,6 @@ class Command(CommandParser, ABC):
             self._command_arguments.strict or self._configuration.strict
         )
         self._logger: Final[Optional[str]] = logger or (self._configuration.logger)
-        self._ignore_all_errors_paths: Iterable[str] = (
-            self._configuration.ignore_all_errors
-        )
         self._version_hash: str = self._configuration.version_hash
         self._formatter: Final[Optional[str]] = self._configuration.formatter
         self._taint_models_path: List[str] = [
