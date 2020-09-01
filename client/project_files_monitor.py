@@ -130,9 +130,8 @@ class ProjectFilesMonitor(Subscriber):
         except KeyError:
             pass
 
-        except BuckException:
-            LOG.info("Unable to build project.")
-            pass
+        except BuckException as exception:
+            LOG.info(f"Unable to build project because of exception: `{exception}`.")
 
         except Exception as exception:
             LOG.info(f"Exception during handling of file update: {exception}")
