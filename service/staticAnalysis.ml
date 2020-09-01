@@ -111,38 +111,6 @@ let analyze
     AstEnvironment.ReadOnly.get_processed_source ast_environment qualifier
   in
 
-  Log.info "Building call graph...";
-  let timer = Timer.start () in
-  let callgraph =
-    let build_call_graph call_graph qualifier =
-      try
-        get_source qualifier
-        >>| (fun source -> record_and_merge_call_graph ~environment ~call_graph ~source)
-        |> Option.value ~default:call_graph
-      with
-      | ClassHierarchy.Untracked untracked_type ->
-          Log.info
-            "Error building call graph in path %a for untracked type %a"
-            Reference.pp
-            qualifier
-            Type.pp
-            untracked_type;
-          call_graph
-    in
-    Scheduler.map_reduce
-      scheduler
-      ~policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
-      ~initial:Callable.RealMap.empty
-      ~map:(fun _ qualifiers ->
-        List.fold qualifiers ~init:Callable.RealMap.empty ~f:build_call_graph)
-      ~reduce:(Map.merge_skewed ~combine:(fun ~key:_ left _ -> left))
-      ~inputs:qualifiers
-      ()
-  in
-  Statistics.performance ~name:"Call graph built" ~timer ();
-  Log.info "Call graph edges: %d" (Callable.RealMap.length callgraph);
-  if dump_call_graph then
-    DependencyGraph.from_callgraph callgraph |> DependencyGraph.dump ~configuration;
   let timer = Timer.start () in
   Log.info "Fetching initial callables to analyze...";
   let callables, stubs, filtered_callables =
@@ -285,6 +253,43 @@ let analyze
   in
   record_overrides ?maximum_overrides_to_analyze overrides;
   Statistics.performance ~name:"Overrides recorded" ~timer ();
+
+  (* It's imperative that the call graph is built after the overrides are, due to a hidden global
+     state dependency. We rely on shared memory to tell us which methods are overridden to
+     accurately model the call graph's overrides. Without it, we'll underanalyze and have an
+     inconsistent fixpoint. *)
+  Log.info "Building call graph...";
+  let timer = Timer.start () in
+  let callgraph =
+    let build_call_graph call_graph qualifier =
+      try
+        get_source qualifier
+        >>| (fun source -> record_and_merge_call_graph ~environment ~call_graph ~source)
+        |> Option.value ~default:call_graph
+      with
+      | ClassHierarchy.Untracked untracked_type ->
+          Log.info
+            "Error building call graph in path %a for untracked type %a"
+            Reference.pp
+            qualifier
+            Type.pp
+            untracked_type;
+          call_graph
+    in
+    Scheduler.map_reduce
+      scheduler
+      ~policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
+      ~initial:Callable.RealMap.empty
+      ~map:(fun _ qualifiers ->
+        List.fold qualifiers ~init:Callable.RealMap.empty ~f:build_call_graph)
+      ~reduce:(Map.merge_skewed ~combine:(fun ~key:_ left _ -> left))
+      ~inputs:qualifiers
+      ()
+  in
+  Statistics.performance ~name:"Call graph built" ~timer ();
+  Log.info "Call graph edges: %d" (Callable.RealMap.length callgraph);
+  if dump_call_graph then
+    DependencyGraph.from_callgraph callgraph |> DependencyGraph.dump ~configuration;
 
   let timer = Timer.start () in
   Log.info "Computing overrides...";
