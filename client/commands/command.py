@@ -227,18 +227,10 @@ class CommandParser(ABC):
     ) -> None:
         self._command_arguments = command_arguments
 
-        self._version: bool = self._command_arguments.version
-        self._debug: bool = self._command_arguments.debug
         self._strict: bool = self._command_arguments.strict
         self._show_error_traces: bool = self._command_arguments.show_error_traces
         self._output: str = self._command_arguments.output
         self._formatter: List[str] = self._command_arguments.formatter
-
-        self._targets: List[str] = self._command_arguments.targets
-        self._source_directories: List[str] = self._command_arguments.source_directories
-        self._filter_directory: Optional[str] = self._command_arguments.filter_directory
-        self._buck_mode: Optional[str] = self._command_arguments.buck_mode
-        self._search_path: List[str] = self._command_arguments.search_path
 
         # Derived arguments
         self._capable_terminal: bool = terminal.is_capable()
@@ -273,7 +265,7 @@ class CommandParser(ABC):
 
         self._logging_sections: Optional[str] = self._command_arguments.logging_sections
         self._noninteractive: bool = self._command_arguments.noninteractive
-        if self._debug or not self._capable_terminal:
+        if self._command_arguments.debug or not self._capable_terminal:
             self._noninteractive = True
 
     @classmethod
@@ -549,7 +541,7 @@ class Command(CommandParser, ABC):
         return Configuration(
             project_root=self._project_root,
             local_root=self._local_root,
-            search_path=self._search_path,
+            search_path=self._command_arguments.search_path,
             binary=self._command_arguments.binary,
             typeshed=self._command_arguments.typeshed,
             use_buck_builder=self._command_arguments.use_buck_builder,
@@ -567,14 +559,14 @@ class Command(CommandParser, ABC):
             return AnalysisDirectory(".")
         else:
             return resolve_analysis_directory(
-                self._source_directories,
-                self._targets,
+                self._command_arguments.source_directories,
+                self._command_arguments.targets,
                 configuration,
                 self._original_directory,
                 self._project_root,
-                filter_directory=self._filter_directory,
-                debug=self._debug,
-                buck_mode=self._buck_mode,
+                filter_directory=self._command_arguments.filter_directory,
+                debug=self._command_arguments.debug,
+                buck_mode=self._command_arguments.buck_mode,
                 relative_local_root=self.relative_local_root,
             )
 
@@ -599,7 +591,7 @@ class Command(CommandParser, ABC):
 
     def _flags(self) -> List[str]:
         flags = []
-        if self._debug:
+        if self._command_arguments.debug:
             flags.extend(["-debug"])
         if self._command_arguments.sequential:
             flags.extend(["-sequential"])

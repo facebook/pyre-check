@@ -58,14 +58,14 @@ class Check(Reporting):
 
     def generate_analysis_directory(self) -> AnalysisDirectory:
         return resolve_analysis_directory(
-            self._source_directories,
-            self._targets,
+            self._command_arguments.source_directories,
+            self._command_arguments.targets,
             self._configuration,
             self._original_directory,
             self._project_root,
-            filter_directory=self._filter_directory,
-            debug=self._debug,
-            buck_mode=self._buck_mode,
+            filter_directory=self._command_arguments.filter_directory,
+            debug=self._command_arguments.debug,
+            buck_mode=self._command_arguments.buck_mode,
             isolate=True,
         )
 
