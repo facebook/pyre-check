@@ -80,7 +80,8 @@
                 "name": "via_value_of.return_via_parameter_name",
                 "on_all_flows": true
               }
-            ]
+            ],
+            "features": [ { "always-via-value": "<unknown>" } ]
           }
         ]
       }
@@ -111,7 +112,8 @@
                 "name": "via_value_of.sink_via_value_of",
                 "on_all_flows": true
               }
-            ]
+            ],
+            "features": [ { "always-via-value": "<unknown>" } ]
           }
         ]
       }
@@ -365,7 +367,8 @@
                 "name": "via_value_of.sink_via_value_of",
                 "on_all_flows": true
               }
-            ]
+            ],
+            "features": [ { "always-via-value": "<unknown>" } ]
           }
         ]
       }
@@ -466,7 +469,8 @@
                 "name": "via_value_of.return_via_parameter_name",
                 "on_all_flows": true
               }
-            ]
+            ],
+            "features": [ { "always-via-value": "<unknown>" } ]
           }
         ]
       }

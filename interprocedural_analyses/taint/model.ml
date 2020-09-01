@@ -62,7 +62,8 @@ let get_callsite_model ~call_target ~arguments =
             match feature.Abstract.OverUnderSetDomain.element with
             | Simple.ViaValueOf { position } ->
                 List.nth arguments position
-                >>= fun argument -> Simple.via_value_of_breadcrumb ~argument >>| SimpleSet.inject
+                >>= fun argument ->
+                Simple.via_value_of_breadcrumb ~argument |> SimpleSet.inject |> Option.return
             | _ -> Some feature
           in
           List.filter_map features ~f:transform

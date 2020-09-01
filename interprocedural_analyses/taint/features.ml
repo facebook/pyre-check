@@ -73,8 +73,11 @@ module Simple = struct
   [@@deriving show, compare]
 
   let via_value_of_breadcrumb ~argument:{ Expression.Call.Argument.value; _ } =
-    Interprocedural.CallResolution.extract_constant_name value
-    >>| fun feature -> Breadcrumb (Breadcrumb.ViaValue feature)
+    let feature =
+      Interprocedural.CallResolution.extract_constant_name value
+      |> Option.value ~default:"<unknown>"
+    in
+    Breadcrumb (Breadcrumb.ViaValue feature)
 end
 
 module SimpleSet = Abstract.OverUnderSetDomain.Make (Simple)
