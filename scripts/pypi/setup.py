@@ -10,6 +10,7 @@ import sys
 from pathlib import Path
 from typing import List, Mapping, Tuple
 
+# pyre-fixme[21]: Could not find module `setuptools`.
 from setuptools import find_packages, setup
 
 
