@@ -97,12 +97,6 @@ def file_exists(path: str) -> str:
     return path
 
 
-def is_strict(configuration: Path) -> bool:
-    path = Path(configuration, ".pyre_configuration.local")
-    json_configuration = json.loads(path.read_text())
-    return json_configuration.get("strict", False)
-
-
 class Statistics(Command):
     NAME = "statistics"
 
