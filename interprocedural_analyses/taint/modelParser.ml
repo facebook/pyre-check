@@ -974,8 +974,18 @@ let compute_sources_and_sinks_to_keep ~configuration ~rule_filter =
       let sources_to_keep, sinks_to_keep =
         let { Configuration.rules; _ } = configuration in
         let rules =
+          (* The user annotations for partial sinks will be the untriggered ones, even though the
+             rule expects triggered sinks. *)
+          let untrigger_partial_sinks sink =
+            match sink with
+            | Sinks.TriggeredPartialSink { kind; label } -> Sinks.PartialSink { kind; label }
+            | _ -> sink
+          in
           List.filter_map rules ~f:(fun { Configuration.Rule.code; sources; sinks; _ } ->
-              if Core.Set.mem rule_filter code then Some (sources, sinks) else None)
+              if Core.Set.mem rule_filter code then
+                Some (sources, List.map sinks ~f:untrigger_partial_sinks)
+              else
+                None)
         in
         List.fold
           rules

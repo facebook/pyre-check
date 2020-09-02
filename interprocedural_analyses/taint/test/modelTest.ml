@@ -1165,6 +1165,37 @@ let test_filter_by_rules context =
       ]
     ~model_source:"def test.taint(x: TaintSink[TestSink]): ..."
     ~expect:[outcome ~kind:`Function ~sink_parameters:[] "test.taint"]
+    ();
+  assert_model
+    ~rules:
+      [
+        {
+          Taint.TaintConfiguration.Rule.sources = [Sources.NamedSource "TestTest"];
+          sinks = [Sinks.TriggeredPartialSink { kind = "Test"; label = "a" }];
+          code = 4321;
+          message_format = "";
+          name = "test multiple sources rule";
+        };
+        {
+          Taint.TaintConfiguration.Rule.sources = [Sources.NamedSource "TestTest"];
+          sinks = [Sinks.TriggeredPartialSink { kind = "Test"; label = "b" }];
+          code = 4321;
+          message_format = "";
+          name = "test multiple sources rule";
+        };
+      ]
+    ~model_source:"def test.partial_sink(x: PartialSink[Test[a]], y: PartialSink[Test[b]]): ..."
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~sink_parameters:
+            [
+              { name = "x"; sinks = [Sinks.PartialSink { kind = "Test"; label = "a" }] };
+              { name = "y"; sinks = [Sinks.PartialSink { kind = "Test"; label = "b" }] };
+            ]
+          "test.partial_sink";
+      ]
     ()
 
 
