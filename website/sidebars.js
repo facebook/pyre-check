@@ -1,5 +1,5 @@
-{
-  "documentation": {
+module.exports = {
+  documentation: {
     "Pyre": [
       "getting-started",
       "installation",
