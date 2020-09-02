@@ -52,12 +52,22 @@ module Make (Element : ELEMENT) = struct
 
   let join a b =
     if a = b then
-      b
+      a
     else
       match a, b with
       | Bottom, _ -> b
       | _, Bottom -> a
       | _ -> Top
+
+
+  let meet a b =
+    if a = b then
+      a
+    else
+      match a, b with
+      | Top, _ -> b
+      | _, Top -> a
+      | _ -> Bottom
 
 
   let widen ~iteration:_ ~prev ~next = join prev next
@@ -68,6 +78,8 @@ module Make (Element : ELEMENT) = struct
     let bottom = bottom
 
     let join = join
+
+    let less_or_equal = less_or_equal
   end
 
   module C = Common (CommonArg)

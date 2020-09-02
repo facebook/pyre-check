@@ -82,6 +82,8 @@ module Make (Element : BUCKETED_ELEMENT) = struct
     let bottom = bottom
 
     let join = join
+
+    let less_or_equal = less_or_equal
   end
 
   module C = Common (CommonArg)
@@ -157,4 +159,7 @@ module Make (Element : BUCKETED_ELEMENT) = struct
         | Set -> Format.sprintf "BucketedSet(%s).Set" Element.name
         | Self -> Format.sprintf "BucketedSet(%s).Self" Element.name
         | _ -> C.introspect op )
+
+
+  let meet = C.meet
 end

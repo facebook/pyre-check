@@ -195,6 +195,8 @@ module TraceLength = Abstract.SimpleDomain.Make (struct
 
   let join = min
 
+  let meet = max
+
   let less_or_equal ~left ~right = left >= right
 
   let bottom = max_int

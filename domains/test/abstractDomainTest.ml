@@ -1718,7 +1718,7 @@ module PathDomain = struct
       for i = 0 to size - 1 do
         if not (Char.equal a.[i] b.[i]) then raise (Length i)
       done;
-      a
+      String.prefix a size
     with
     | Length n -> String.prefix a n
 
@@ -1754,6 +1754,20 @@ module PathDomain = struct
             right
           else
             Path p
+
+
+    let meet left right =
+      match left, right with
+      | Bottom, _ -> left
+      | _, Bottom -> right
+      | Path p1, Path p2 ->
+          let p = common_prefix p1 p2 in
+          if String.equal p p1 then
+            right
+          else if String.equal p p2 then
+            left
+          else
+            Bottom
 
 
     let bottom = Bottom
@@ -1823,11 +1837,21 @@ module PathDomain = struct
       let result = Element.show product in
       assert_equal expected result ~printer:Fn.id
     in
+    let test_meet a b ~expected =
+      let meet = Element.meet a b in
+      assert_equal expected meet ~printer:Element.show
+    in
     let a = build "abcdefg" in
     let b = build "abxyz" in
     let c = join a b in
     assert_equal (build "ab") c ~printer:show ~cmp:equal;
-    test ~initial:"abc" ~expected:"abc"
+    test ~initial:"abc" ~expected:"abc";
+    test_meet a bottom ~expected:bottom;
+    test_meet bottom a ~expected:bottom;
+    test_meet a c ~expected:a;
+    test_meet c a ~expected:a;
+    test_meet b c ~expected:b;
+    test_meet c b ~expected:b
 end
 
 module TestSimpleDomain = TestAbstractDomain (PathDomain)

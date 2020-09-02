@@ -16,6 +16,8 @@ module type ELEMENT = sig
 
   val join : t -> t -> t
 
+  val meet : t -> t -> t
+
   val less_or_equal : left:t -> right:t -> bool
 
   val show : t -> string
@@ -36,6 +38,8 @@ module Make (Element : ELEMENT) = struct
     let bottom = bottom
 
     let join = join
+
+    let less_or_equal = less_or_equal
   end
 
   module C = Common (CommonArg)

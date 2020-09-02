@@ -51,6 +51,13 @@ module Make (Element : ELEMENT) = struct
       Set.union left right
 
 
+  let meet left right =
+    if left == right then
+      left
+    else
+      Set.inter left right
+
+
   let widen ~iteration:_ ~prev ~next = join prev next
 
   let less_or_equal ~left ~right =
@@ -86,6 +93,8 @@ module Make (Element : ELEMENT) = struct
     let bottom = bottom
 
     let join = join
+
+    let less_or_equal = less_or_equal
   end
 
   module C = Common (CommonArg)

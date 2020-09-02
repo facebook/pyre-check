@@ -977,6 +977,8 @@ module Make (Config : CONFIG) (Element : AbstractDomainCore.S) () = struct
     let bottom = bottom
 
     let join = join
+
+    let less_or_equal = less_or_equal
   end
 
   module C = AbstractDomainCore.Common (CommonArg)
@@ -1117,4 +1119,7 @@ module Make (Config : CONFIG) (Element : AbstractDomainCore.S) () = struct
         | RawPath -> Format.sprintf "Tree.PathRaw"
         | Self -> Format.sprintf "Tree.Self"
         | _ -> C.introspect op )
+
+
+  let meet = C.meet
 end

@@ -181,6 +181,8 @@ module Make (Key : KEY) (Element : AbstractDomainCore.S) = struct
     let bottom = bottom
 
     let join = join
+
+    let less_or_equal = less_or_equal
   end
 
   module C = Common (CommonArg)
@@ -328,4 +330,7 @@ module Make (Key : KEY) (Element : AbstractDomainCore.S) = struct
         | KeyValue -> Format.sprintf "Map(%s).KeyValue" Key.name
         | Self -> Format.sprintf "Map(%s).Self" Key.name
         | _ -> Element.introspect op )
+
+
+  let meet = C.meet
 end

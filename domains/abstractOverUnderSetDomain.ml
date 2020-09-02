@@ -163,6 +163,8 @@ module Make (Element : AbstractSetDomain.ELEMENT) = struct
     let bottom = bottom
 
     let join = join
+
+    let less_or_equal = less_or_equal
   end
 
   module C = Common (CommonArg)
@@ -364,4 +366,7 @@ module Make (Element : AbstractSetDomain.ELEMENT) = struct
           let over = Set.union left_over right_over in
           let under = Set.union left_under right_under in
           make ~old:left ~over ~under
+
+
+  let meet = C.meet
 end

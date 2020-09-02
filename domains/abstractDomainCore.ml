@@ -43,6 +43,8 @@ module type S = sig
 
   val join : t -> t -> t
 
+  val meet : t -> t -> t
+
   val less_or_equal : left:t -> right:t -> bool
 
   val widen : iteration:int -> prev:t -> next:t -> t
@@ -89,6 +91,8 @@ module Common (D : sig
   val bottom : t
 
   val join : t -> t -> t
+
+  val less_or_equal : left:t -> right:t -> bool
 end) =
 struct
   type _ part += Self : D.t part
@@ -159,4 +163,7 @@ struct
 
 
   let introspect (type a) (op : a introspect) : a = unhandled_introspect op
+
+  (* default meet, returns the smaller argument if determinable, otherwise the first argument *)
+  let meet a b = if D.less_or_equal ~left:b ~right:a then b else a
 end

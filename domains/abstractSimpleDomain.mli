@@ -14,6 +14,8 @@ module type ELEMENT = sig
 
   val join : t -> t -> t
 
+  val meet : t -> t -> t
+
   val less_or_equal : left:t -> right:t -> bool
 
   val show : t -> string
