@@ -65,7 +65,7 @@ module.exports = {
       },
       items: [
         {to: 'docs/getting-started', label: 'Documentation', position: 'left'},
-        FBInternalWithOssFallback({to: 'docs/fb/development-getting-started', label: 'Development', position: 'left'}, {}),
+        FBInternalWithOssFallback({to: 'docs/fb/development-getting-started', label: 'Development @ FB', position: 'left'}, {}),
         {
           href: 'https://github.com/facebook/pyre-check',
           label: 'GitHub',
