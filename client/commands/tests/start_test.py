@@ -215,7 +215,7 @@ class StartTest(unittest.TestCase):
     ) -> None:
         flags = [
             "-logging-sections",
-            "environment,parser,-progress",
+            "environment,-progress",
             "-project-root",
             ".",
             "-log-directory",

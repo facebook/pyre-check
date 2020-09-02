@@ -33,7 +33,6 @@ type section =
   | `Info
   | `Interprocedural
   | `Memory
-  | `Parser
   | `Performance
   | `Progress
   | `Protocols

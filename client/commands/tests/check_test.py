@@ -62,7 +62,7 @@ class CheckTest(unittest.TestCase):
                 command._flags(),
                 [
                     "-logging-sections",
-                    "parser,-progress",
+                    "-progress",
                     "-project-root",
                     ".",
                     "-log-directory",
@@ -129,7 +129,7 @@ class CheckTest(unittest.TestCase):
                 [
                     "-sequential",
                     "-logging-sections",
-                    "parser,-progress",
+                    "-progress",
                     "-project-root",
                     ".",
                     "-log-directory",
@@ -177,7 +177,7 @@ class CheckTest(unittest.TestCase):
                 [
                     "-sequential",
                     "-logging-sections",
-                    "parser,-progress",
+                    "-progress",
                     "-project-root",
                     ".",
                     "-log-directory",
@@ -226,7 +226,7 @@ class CheckTest(unittest.TestCase):
                 command._flags(),
                 [
                     "-logging-sections",
-                    "parser,-progress",
+                    "-progress",
                     "-project-root",
                     ".",
                     "-log-directory",
@@ -239,53 +239,6 @@ class CheckTest(unittest.TestCase):
             )
             exit_code = command.run().exit_code()
             self.assertEqual(exit_code, 0)
-            call_client.assert_called_once_with(command=commands.Check.NAME)
-
-    @patch(
-        f"{client_name}.find_global_and_local_root", return_value=FoundRoot(Path("."))
-    )
-    @patch("subprocess.check_output")
-    @patch("os.path.realpath")
-    @patch(_typeshed_search_path, Mock(return_value=["path3"]))
-    # pyre-fixme[56]: Argument `set()` to decorator factory
-    #  `unittest.mock.patch.object` could not be resolved in a global scope.
-    @patch.object(commands.Reporting, "_get_directories_to_analyze", return_value=set())
-    def test_check_hide_parse_errors(
-        self, directories_to_analyze, realpath, check_output, find_global_and_local_root
-    ) -> None:
-        realpath.side_effect = lambda x: x
-
-        original_directory = "/original/directory"
-        arguments = mock_arguments(hide_parse_errors=True)
-        configuration = mock_configuration()
-
-        with patch.object(
-            commands.Command, "_call_client"
-        ) as call_client, patch.object(
-            json, "loads", return_value=NO_ERROR_JSON_OUTPUT
-        ):
-            command = commands.Check(
-                arguments,
-                original_directory,
-                configuration=configuration,
-                analysis_directory=AnalysisDirectory("."),
-            )
-            self.assertEqual(
-                command._flags(),
-                [
-                    "-logging-sections",
-                    "-progress",
-                    "-project-root",
-                    ".",
-                    "-log-directory",
-                    ".pyre",
-                    "-workers",
-                    "5",
-                    "-search-path",
-                    "path1,path2,path3",
-                ],
-            )
-            command.run()
             call_client.assert_called_once_with(command=commands.Check.NAME)
 
     @patch(
@@ -323,7 +276,7 @@ class CheckTest(unittest.TestCase):
                 [
                     "-strict",
                     "-logging-sections",
-                    "parser,-progress",
+                    "-progress",
                     "-project-root",
                     ".",
                     "-log-directory",

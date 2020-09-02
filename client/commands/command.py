@@ -153,7 +153,6 @@ class CommandArguments:
     enable_profiling: bool
     enable_memory_profiling: bool
     noninteractive: bool
-    hide_parse_errors: bool
     logging_sections: Optional[str]
     log_identifier: str
     logger: Optional[str]
@@ -191,7 +190,6 @@ class CommandArguments:
             enable_profiling=arguments.enable_profiling,
             enable_memory_profiling=arguments.enable_memory_profiling,
             noninteractive=arguments.noninteractive,
-            hide_parse_errors=arguments.hide_parse_errors,
             logging_sections=arguments.logging_sections,
             log_identifier=arguments.log_identifier,
             logger=arguments.logger,
@@ -586,8 +584,6 @@ class Command(CommandParser, ABC):
             flags.append(",".join(additional_checks))
         if self._show_error_traces:
             flags.append("-show-error-traces")
-        if not self._command_arguments.hide_parse_errors:
-            self._enable_logging_section("parser")
         logging_sections = self._logging_sections
         if not self._capable_terminal:
             # Disable progress reporting for non-capable terminals.

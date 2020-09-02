@@ -25,9 +25,9 @@ from ...commands.infer import (
 )
 from ...error import Error
 from ...find_directories import FoundRoot
-from ..command import CommandArguments, __name__ as client_name
+from ..command import __name__ as client_name
 from .command_test import (
-    mock_arguments as general_mock_arguments,
+    mock_arguments,
     mock_configuration as general_mock_configuration,
 )
 
@@ -585,10 +585,6 @@ class PyreTest(unittest.TestCase):
             global: Union[List[int], Any] = ...
             """,
         )
-
-
-def mock_arguments() -> CommandArguments:
-    return general_mock_arguments(hide_parse_errors=True)
 
 
 def mock_configuration() -> MagicMock:

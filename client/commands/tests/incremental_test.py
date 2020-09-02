@@ -97,7 +97,7 @@ class IncrementalTest(unittest.TestCase):
                 test_command._flags(),
                 [
                     "-logging-sections",
-                    "parser,-progress",
+                    "-progress",
                     "-project-root",
                     ".",
                     "-log-directory",
@@ -138,7 +138,7 @@ class IncrementalTest(unittest.TestCase):
                 test_command._flags(),
                 [
                     "-logging-sections",
-                    "parser,-progress",
+                    "-progress",
                     "-project-root",
                     ".",
                     "-log-directory",
@@ -174,7 +174,7 @@ class IncrementalTest(unittest.TestCase):
                 test_command._flags(),
                 [
                     "-logging-sections",
-                    "parser,-progress",
+                    "-progress",
                     "-project-root",
                     ".",
                     "-log-directory",
@@ -218,7 +218,7 @@ class IncrementalTest(unittest.TestCase):
                 test_command._flags(),
                 [
                     "-logging-sections",
-                    "parser,-progress",
+                    "-progress",
                     "-project-root",
                     ".",
                     "-log-directory",
@@ -258,7 +258,7 @@ class IncrementalTest(unittest.TestCase):
                 test_command._flags(),
                 [
                     "-logging-sections",
-                    "parser,-progress",
+                    "-progress",
                     "-project-root",
                     ".",
                     "-log-directory",
@@ -324,7 +324,7 @@ class IncrementalTest(unittest.TestCase):
                 test_command._flags(),
                 [
                     "-logging-sections",
-                    "parser,-progress",
+                    "-progress",
                     "-project-root",
                     "/",
                     "-log-directory",
