@@ -10,6 +10,7 @@
 include Abstract.Domain
 module AbstractBucketedElementSetDomain = Abstract.BucketedElementSetDomain
 module AbstractElementSetDomain = Abstract.ElementSetDomain
+module AbstractFlatDomain = Abstract.FlatDomain
 module AbstractInvertedSetDomain = Abstract.InvertedSetDomain
 module AbstractOverUnderSetDomain = Abstract.OverUnderSetDomain
 module AbstractMapDomain = Abstract.MapDomain

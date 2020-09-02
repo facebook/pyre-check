@@ -8,6 +8,7 @@
 module Domain = AbstractDomainCore
 module BucketedElementSetDomain = AbstractBucketedElementSetDomain
 module ElementSetDomain = AbstractElementSetDomain
+module FlatDomain = AbstractFlatDomain
 module InvertedSetDomain = AbstractInvertedSetDomain
 module OverUnderSetDomain = AbstractOverUnderSetDomain
 module MapDomain = AbstractMapDomain
