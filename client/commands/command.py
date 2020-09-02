@@ -157,7 +157,7 @@ class CommandArguments:
     logging_sections: Optional[str]
     log_identifier: str
     logger: Optional[str]
-    formatter: List[str]
+    formatter: Optional[str]
     targets: List[str]
     use_buck_builder: Optional[bool]
     use_buck_source_database: Optional[bool]
@@ -230,7 +230,6 @@ class CommandParser(ABC):
         self._strict: bool = self._command_arguments.strict
         self._show_error_traces: bool = self._command_arguments.show_error_traces
         self._output: str = self._command_arguments.output
-        self._formatter: List[str] = self._command_arguments.formatter
 
         # Derived arguments
         self._capable_terminal: bool = terminal.is_capable()
@@ -514,7 +513,6 @@ class Command(CommandParser, ABC):
             self._command_arguments.strict or self._configuration.strict
         )
         self._version_hash: str = self._configuration.version_hash
-        self._formatter: Final[Optional[str]] = self._configuration.formatter
         self._taint_models_path: List[str] = self._configuration.taint_models_path
 
         self._analysis_directory: AnalysisDirectory = (
@@ -536,7 +534,7 @@ class Command(CommandParser, ABC):
             buck_builder_binary=self._command_arguments.buck_builder_binary,
             excludes=self._command_arguments.exclude,
             logger=self._command_arguments.logger,
-            formatter=self._formatter,
+            formatter=self._command_arguments.formatter,
             log_directory=self._log_directory,
             use_buck_source_database=self._command_arguments.use_buck_source_database,
         )

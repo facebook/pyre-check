@@ -542,7 +542,7 @@ class Infer(Reporting):
             type_directory = Path(os.path.join(self._log_directory, "types"))
             annotate_from_existing_stubs(
                 Path(self._original_directory),
-                self._formatter,
+                self._configuration.formatter,
                 type_directory,
                 self._in_place,
                 self._debug_infer,
@@ -563,7 +563,7 @@ class Infer(Reporting):
                 LOG.info("Annotating files")
                 annotate_paths(
                     self._configuration.local_root,
-                    self._formatter,
+                    self._configuration.formatter,
                     stubs,
                     type_directory,
                     self._in_place,
