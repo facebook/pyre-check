@@ -3,9 +3,9 @@
   "kind": "issue",
   "data": {
     "callable": "rule.alarm",
-    "callable_line": 9,
+    "callable_line": 15,
     "code": 5999,
-    "line": 11,
+    "line": 17,
     "start": 9,
     "end": 10,
     "filename": "rule.py",
@@ -17,7 +17,7 @@
           {
             "root": {
               "filename": "rule.py",
-              "line": 10,
+              "line": 16,
               "start": 8,
               "end": 16
             },
@@ -37,7 +37,7 @@
           {
             "root": {
               "filename": "rule.py",
-              "line": 11,
+              "line": 17,
               "start": 9,
               "end": 10
             },

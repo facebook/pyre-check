@@ -3,9 +3,9 @@
   "kind": "issue",
   "data": {
     "callable": "multiple_sources.combine_tainted_user_and_dangerous_vc",
-    "callable_line": 21,
+    "callable_line": 27,
     "code": 4321,
-    "line": 24,
+    "line": 30,
     "start": 22,
     "end": 24,
     "filename": "multiple_sources.py",
@@ -17,7 +17,7 @@
           {
             "root": {
               "filename": "multiple_sources.py",
-              "line": 23,
+              "line": 29,
               "start": 9,
               "end": 29
             },
@@ -37,7 +37,7 @@
           {
             "root": {
               "filename": "multiple_sources.py",
-              "line": 24,
+              "line": 30,
               "start": 22,
               "end": 24
             },
@@ -55,9 +55,9 @@
   "kind": "issue",
   "data": {
     "callable": "multiple_sources.issue_with_triggered_context",
-    "callable_line": 42,
+    "callable_line": 48,
     "code": 4321,
-    "line": 44,
+    "line": 50,
     "start": 34,
     "end": 36,
     "filename": "multiple_sources.py",
@@ -69,7 +69,7 @@
           {
             "root": {
               "filename": "multiple_sources.py",
-              "line": 43,
+              "line": 49,
               "start": 9,
               "end": 29
             },
@@ -90,7 +90,7 @@
             "call": {
               "position": {
                 "filename": "multiple_sources.py",
-                "line": 44,
+                "line": 50,
                 "start": 34,
                 "end": 36
               },
@@ -118,9 +118,9 @@
   "kind": "issue",
   "data": {
     "callable": "multiple_sources.issue_with_triggered_input",
-    "callable_line": 37,
+    "callable_line": 43,
     "code": 4321,
-    "line": 39,
+    "line": 45,
     "start": 32,
     "end": 34,
     "filename": "multiple_sources.py",
@@ -132,7 +132,7 @@
           {
             "root": {
               "filename": "multiple_sources.py",
-              "line": 38,
+              "line": 44,
               "start": 9,
               "end": 32
             },
@@ -153,7 +153,7 @@
             "call": {
               "position": {
                 "filename": "multiple_sources.py",
-                "line": 39,
+                "line": 45,
                 "start": 32,
                 "end": 34
               },
@@ -274,7 +274,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 10, "start": 19, "end": 21 } ],
+            "tito": [ { "line": 16, "start": 19, "end": 21 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "[id]" } ],
             "features": [ { "always-via": "tito" } ]
           }
@@ -285,7 +285,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 10, "start": 15, "end": 18 } ],
+            "tito": [ { "line": 16, "start": 15, "end": 18 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
             "features": [ { "always-via": "tito" } ]
           }
@@ -334,7 +334,7 @@
           {
             "root": {
               "filename": "multiple_sources.py",
-              "line": 29,
+              "line": 35,
               "start": 22,
               "end": 24
             },
@@ -364,11 +364,11 @@
           {
             "root": {
               "filename": "multiple_sources.py",
-              "line": 34,
+              "line": 40,
               "start": 4,
               "end": 16
             },
-            "tito": [ { "line": 34, "start": 13, "end": 15 } ],
+            "tito": [ { "line": 40, "start": 13, "end": 15 } ],
             "leaves": [
               {
                 "kind": "TriggeredPartialSink[UserControlledAndVC[id]]",

@@ -3,9 +3,9 @@
   "kind": "issue",
   "data": {
     "callable": "partial.multiprocessing_tainted",
-    "callable_line": 31,
+    "callable_line": 36,
     "code": 5002,
-    "line": 32,
+    "line": 37,
     "start": 58,
     "end": 73,
     "filename": "partial.py",
@@ -17,7 +17,7 @@
           {
             "root": {
               "filename": "partial.py",
-              "line": 32,
+              "line": 37,
               "start": 58,
               "end": 73
             },
@@ -39,7 +39,7 @@
             "call": {
               "position": {
                 "filename": "partial.py",
-                "line": 32,
+                "line": 37,
                 "start": 58,
                 "end": 73
               },
@@ -65,9 +65,9 @@
   "kind": "issue",
   "data": {
     "callable": "partial.partial_application_with_named_a",
-    "callable_line": 21,
+    "callable_line": 26,
     "code": 5002,
-    "line": 23,
+    "line": 28,
     "start": 31,
     "end": 32,
     "filename": "partial.py",
@@ -79,7 +79,7 @@
           {
             "root": {
               "filename": "partial.py",
-              "line": 22,
+              "line": 27,
               "start": 8,
               "end": 23
             },
@@ -101,7 +101,7 @@
             "call": {
               "position": {
                 "filename": "partial.py",
-                "line": 23,
+                "line": 28,
                 "start": 31,
                 "end": 32
               },
@@ -127,9 +127,9 @@
   "kind": "issue",
   "data": {
     "callable": "partial.partial_application_with_tainted",
-    "callable_line": 11,
+    "callable_line": 16,
     "code": 5002,
-    "line": 13,
+    "line": 18,
     "start": 29,
     "end": 30,
     "filename": "partial.py",
@@ -141,7 +141,7 @@
           {
             "root": {
               "filename": "partial.py",
-              "line": 12,
+              "line": 17,
               "start": 8,
               "end": 23
             },
@@ -163,7 +163,7 @@
             "call": {
               "position": {
                 "filename": "partial.py",
-                "line": 13,
+                "line": 18,
                 "start": 29,
                 "end": 30
               },
@@ -197,7 +197,7 @@
           {
             "root": {
               "filename": "partial.py",
-              "line": 8,
+              "line": 13,
               "start": 16,
               "end": 17
             },

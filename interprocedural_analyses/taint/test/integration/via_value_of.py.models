@@ -12,7 +12,7 @@
           {
             "root": {
               "filename": "via_value_of.py",
-              "line": 71,
+              "line": 76,
               "start": 16,
               "end": 25
             },
@@ -39,7 +39,7 @@
           {
             "root": {
               "filename": "via_value_of.py",
-              "line": 63,
+              "line": 68,
               "start": 11,
               "end": 26
             },
@@ -70,7 +70,7 @@
           {
             "root": {
               "filename": "via_value_of.py",
-              "line": 26,
+              "line": 31,
               "start": 11,
               "end": 47
             },
@@ -102,7 +102,7 @@
           {
             "root": {
               "filename": "via_value_of.py",
-              "line": 55,
+              "line": 60,
               "start": 22,
               "end": 31
             },
@@ -162,7 +162,7 @@
             "call": {
               "position": {
                 "filename": "via_value_of.py",
-                "line": 75,
+                "line": 80,
                 "start": 19,
                 "end": 28
               },
@@ -196,7 +196,7 @@
             "call": {
               "position": {
                 "filename": "via_value_of.py",
-                "line": 67,
+                "line": 72,
                 "start": 11,
                 "end": 49
               },
@@ -235,7 +235,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 51, "start": 16, "end": 25 } ],
+            "tito": [ { "line": 56, "start": 16, "end": 25 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
             "features": [
               { "always-via": "tito" },
@@ -258,7 +258,7 @@
           {
             "root": {
               "filename": "via_value_of.py",
-              "line": 22,
+              "line": 27,
               "start": 11,
               "end": 48
             },
@@ -289,7 +289,7 @@
           {
             "root": {
               "filename": "via_value_of.py",
-              "line": 18,
+              "line": 23,
               "start": 11,
               "end": 39
             },
@@ -321,7 +321,7 @@
           {
             "root": {
               "filename": "via_value_of.py",
-              "line": 47,
+              "line": 52,
               "start": 29,
               "end": 36
             },
@@ -353,7 +353,7 @@
             "call": {
               "position": {
                 "filename": "via_value_of.py",
-                "line": 59,
+                "line": 64,
                 "start": 14,
                 "end": 23
               },
@@ -387,7 +387,7 @@
           {
             "root": {
               "filename": "via_value_of.py",
-              "line": 14,
+              "line": 19,
               "start": 11,
               "end": 41
             },
@@ -418,11 +418,11 @@
           {
             "root": {
               "filename": "via_value_of.py",
-              "line": 38,
+              "line": 43,
               "start": 13,
               "end": 28
             },
-            "tito": [ { "line": 38, "start": 13, "end": 28 } ],
+            "tito": [ { "line": 43, "start": 13, "end": 28 } ],
             "leaves": [
               {
                 "kind": "Test",
@@ -455,7 +455,7 @@
             "call": {
               "position": {
                 "filename": "via_value_of.py",
-                "line": 30,
+                "line": 35,
                 "start": 11,
                 "end": 23
               },

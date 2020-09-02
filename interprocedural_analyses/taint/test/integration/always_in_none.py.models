@@ -36,13 +36,13 @@
           {
             "root": {
               "filename": "always_in_none.py",
-              "line": 28,
+              "line": 33,
               "start": 16,
               "end": 22
             },
             "tito": [
-              { "line": 24, "start": 21, "end": 40 },
-              { "line": 16, "start": 17, "end": 36 }
+              { "line": 29, "start": 21, "end": 40 },
+              { "line": 21, "start": 17, "end": 36 }
             ],
             "leaves": [
               { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
@@ -63,9 +63,9 @@
   "kind": "issue",
   "data": {
     "callable": "always_in_none.test",
-    "callable_line": 12,
+    "callable_line": 17,
     "code": 5002,
-    "line": 28,
+    "line": 33,
     "start": 16,
     "end": 22,
     "filename": "always_in_none.py",
@@ -77,7 +77,7 @@
           {
             "root": {
               "filename": "always_in_none.py",
-              "line": 16,
+              "line": 21,
               "start": 17,
               "end": 60
             },
@@ -93,7 +93,7 @@
           {
             "root": {
               "filename": "always_in_none.py",
-              "line": 24,
+              "line": 29,
               "start": 21,
               "end": 64
             },
@@ -114,7 +114,7 @@
           {
             "root": {
               "filename": "always_in_none.py",
-              "line": 28,
+              "line": 33,
               "start": 16,
               "end": 22
             },

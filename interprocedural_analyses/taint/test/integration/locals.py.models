@@ -3,71 +3,9 @@
   "kind": "issue",
   "data": {
     "callable": "locals.locals_to_sink",
-    "callable_line": 10,
+    "callable_line": 15,
     "code": 5002,
-    "line": 19,
-    "start": 15,
-    "end": 25,
-    "filename": "locals.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "root": {
-              "filename": "locals.py",
-              "line": 13,
-              "start": 8,
-              "end": 23
-            },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "__test_source",
-                "on_all_flows": true
-              }
-            ],
-            "features": [ { "always-via": "special_source" } ]
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "call": {
-              "position": {
-                "filename": "locals.py",
-                "line": 19,
-                "start": 15,
-                "end": 25
-              },
-              "resolves_to": [ "locals.named_sink" ],
-              "port": "formal(x)",
-              "length": 1
-            },
-            "leaves": [
-              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
-            ],
-            "features": [ { "always-via": "special_sink" } ]
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" }
-    ]
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "locals.locals_to_sink",
-    "callable_line": 10,
-    "code": 5002,
-    "line": 15,
+    "line": 20,
     "start": 16,
     "end": 29,
     "filename": "locals.py",
@@ -79,7 +17,7 @@
           {
             "root": {
               "filename": "locals.py",
-              "line": 13,
+              "line": 18,
               "start": 8,
               "end": 23
             },
@@ -104,7 +42,7 @@
           {
             "root": {
               "filename": "locals.py",
-              "line": 15,
+              "line": 20,
               "start": 16,
               "end": 29
             },
@@ -125,6 +63,68 @@
   }
 }
 {
+  "kind": "issue",
+  "data": {
+    "callable": "locals.locals_to_sink",
+    "callable_line": 15,
+    "code": 5002,
+    "line": 24,
+    "start": 15,
+    "end": 25,
+    "filename": "locals.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "locals.py",
+              "line": 18,
+              "start": 8,
+              "end": 23
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-via": "special_source" } ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "call": {
+              "position": {
+                "filename": "locals.py",
+                "line": 24,
+                "start": 15,
+                "end": 25
+              },
+              "resolves_to": [ "locals.named_sink" ],
+              "port": "formal(x)",
+              "length": 1
+            },
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
+    ]
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "locals.named_sink",
@@ -136,7 +136,7 @@
           {
             "root": {
               "filename": "locals.py",
-              "line": 7,
+              "line": 12,
               "start": 16,
               "end": 17
             },
@@ -169,9 +169,9 @@
   "kind": "issue",
   "data": {
     "callable": "locals.source_parameter_to_sink",
-    "callable_line": 23,
+    "callable_line": 28,
     "code": 5002,
-    "line": 24,
+    "line": 29,
     "start": 16,
     "end": 29,
     "filename": "locals.py",
@@ -183,7 +183,7 @@
           {
             "root": {
               "filename": "locals.py",
-              "line": 23,
+              "line": 28,
               "start": 29,
               "end": 30
             },
@@ -207,7 +207,7 @@
           {
             "root": {
               "filename": "locals.py",
-              "line": 24,
+              "line": 29,
               "start": 16,
               "end": 29
             },

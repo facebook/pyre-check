@@ -4,9 +4,9 @@
   "data": {
     "callable":
       "class_flows.tainted_class_attribute_through_double_underscore_class_issue",
-    "callable_line": 40,
+    "callable_line": 45,
     "code": 5002,
-    "line": 41,
+    "line": 46,
     "start": 4,
     "end": 39,
     "filename": "class_flows.py",
@@ -18,7 +18,7 @@
           {
             "root": {
               "filename": "class_flows.py",
-              "line": 41,
+              "line": 46,
               "start": 42,
               "end": 57
             },
@@ -39,7 +39,7 @@
           {
             "root": {
               "filename": "class_flows.py",
-              "line": 41,
+              "line": 46,
               "start": 4,
               "end": 39
             },
@@ -62,9 +62,9 @@
   "data": {
     "callable":
       "class_flows.tainted_class_attribute_through_optional_class_issue",
-    "callable_line": 44,
+    "callable_line": 49,
     "code": 5002,
-    "line": 48,
+    "line": 53,
     "start": 8,
     "end": 44,
     "filename": "class_flows.py",
@@ -76,7 +76,7 @@
           {
             "root": {
               "filename": "class_flows.py",
-              "line": 48,
+              "line": 53,
               "start": 47,
               "end": 62
             },
@@ -97,7 +97,7 @@
           {
             "root": {
               "filename": "class_flows.py",
-              "line": 48,
+              "line": 53,
               "start": 8,
               "end": 44
             },
@@ -119,9 +119,9 @@
   "kind": "issue",
   "data": {
     "callable": "class_flows.global_class_attribute_issue",
-    "callable_line": 51,
+    "callable_line": 56,
     "code": 5002,
-    "line": 52,
+    "line": 57,
     "start": 4,
     "end": 29,
     "filename": "class_flows.py",
@@ -133,7 +133,7 @@
           {
             "root": {
               "filename": "class_flows.py",
-              "line": 52,
+              "line": 57,
               "start": 32,
               "end": 47
             },
@@ -154,7 +154,7 @@
           {
             "root": {
               "filename": "class_flows.py",
-              "line": 52,
+              "line": 57,
               "start": 4,
               "end": 29
             },
@@ -176,9 +176,9 @@
   "kind": "issue",
   "data": {
     "callable": "class_flows.tainted_attribute_flow_issue",
-    "callable_line": 16,
+    "callable_line": 21,
     "code": 5002,
-    "line": 17,
+    "line": 22,
     "start": 4,
     "end": 23,
     "filename": "class_flows.py",
@@ -190,7 +190,7 @@
           {
             "root": {
               "filename": "class_flows.py",
-              "line": 17,
+              "line": 22,
               "start": 26,
               "end": 41
             },
@@ -211,7 +211,7 @@
           {
             "root": {
               "filename": "class_flows.py",
-              "line": 17,
+              "line": 22,
               "start": 4,
               "end": 23
             },
@@ -233,9 +233,9 @@
   "kind": "issue",
   "data": {
     "callable": "class_flows.tainted_attribute_through_inheritance_issue",
-    "callable_line": 28,
+    "callable_line": 33,
     "code": 5002,
-    "line": 29,
+    "line": 34,
     "start": 4,
     "end": 23,
     "filename": "class_flows.py",
@@ -247,7 +247,7 @@
           {
             "root": {
               "filename": "class_flows.py",
-              "line": 29,
+              "line": 34,
               "start": 26,
               "end": 41
             },
@@ -268,7 +268,7 @@
           {
             "root": {
               "filename": "class_flows.py",
-              "line": 29,
+              "line": 34,
               "start": 4,
               "end": 23
             },
@@ -290,9 +290,9 @@
   "kind": "issue",
   "data": {
     "callable": "class_flows.tainted_class_attribute_through_class_issue",
-    "callable_line": 36,
+    "callable_line": 41,
     "code": 5002,
-    "line": 37,
+    "line": 42,
     "start": 4,
     "end": 40,
     "filename": "class_flows.py",
@@ -304,7 +304,7 @@
           {
             "root": {
               "filename": "class_flows.py",
-              "line": 37,
+              "line": 42,
               "start": 43,
               "end": 58
             },
@@ -325,7 +325,7 @@
           {
             "root": {
               "filename": "class_flows.py",
-              "line": 37,
+              "line": 42,
               "start": 4,
               "end": 40
             },
@@ -347,9 +347,9 @@
   "kind": "issue",
   "data": {
     "callable": "class_flows.test",
-    "callable_line": 73,
+    "callable_line": 78,
     "code": 5002,
-    "line": 74,
+    "line": 79,
     "start": 63,
     "end": 78,
     "filename": "class_flows.py",
@@ -361,7 +361,7 @@
           {
             "root": {
               "filename": "class_flows.py",
-              "line": 74,
+              "line": 79,
               "start": 63,
               "end": 78
             },
@@ -383,7 +383,7 @@
             "call": {
               "position": {
                 "filename": "class_flows.py",
-                "line": 74,
+                "line": 79,
                 "start": 63,
                 "end": 78
               },
@@ -411,9 +411,9 @@
   "kind": "issue",
   "data": {
     "callable": "class_flows.test_decorated_classmethod",
-    "callable_line": 84,
+    "callable_line": 89,
     "code": 5002,
-    "line": 85,
+    "line": 90,
     "start": 36,
     "end": 51,
     "filename": "class_flows.py",
@@ -425,7 +425,7 @@
           {
             "root": {
               "filename": "class_flows.py",
-              "line": 85,
+              "line": 90,
               "start": 36,
               "end": 51
             },
@@ -447,7 +447,7 @@
             "call": {
               "position": {
                 "filename": "class_flows.py",
-                "line": 85,
+                "line": 90,
                 "start": 36,
                 "end": 51
               },
@@ -485,7 +485,7 @@
             "call": {
               "position": {
                 "filename": "class_flows.py",
-                "line": 61,
+                "line": 66,
                 "start": 49,
                 "end": 55
               },
@@ -518,7 +518,7 @@
           {
             "root": {
               "filename": "class_flows.py",
-              "line": 65,
+              "line": 70,
               "start": 20,
               "end": 26
             },
@@ -545,7 +545,7 @@
           {
             "root": {
               "filename": "class_flows.py",
-              "line": 81,
+              "line": 86,
               "start": 20,
               "end": 21
             },

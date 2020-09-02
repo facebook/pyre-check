@@ -3,9 +3,9 @@
   "kind": "issue",
   "data": {
     "callable": "nested_callables.foo.inner",
-    "callable_line": 6,
+    "callable_line": 11,
     "code": 5002,
-    "line": 8,
+    "line": 13,
     "start": 20,
     "end": 21,
     "filename": "nested_callables.py",
@@ -17,7 +17,7 @@
           {
             "root": {
               "filename": "nested_callables.py",
-              "line": 7,
+              "line": 12,
               "start": 12,
               "end": 27
             },
@@ -38,7 +38,7 @@
           {
             "root": {
               "filename": "nested_callables.py",
-              "line": 8,
+              "line": 13,
               "start": 20,
               "end": 21
             },
@@ -67,7 +67,7 @@
           {
             "root": {
               "filename": "nested_callables.py",
-              "line": 11,
+              "line": 16,
               "start": 15,
               "end": 30
             },

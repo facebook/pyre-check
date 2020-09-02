@@ -3,9 +3,9 @@
   "kind": "issue",
   "data": {
     "callable": "multi_sink_ports.issue",
-    "callable_line": 34,
+    "callable_line": 40,
     "code": 1111,
-    "line": 36,
+    "line": 42,
     "start": 12,
     "end": 13,
     "filename": "multi_sink_ports.py",
@@ -17,7 +17,7 @@
           {
             "root": {
               "filename": "multi_sink_ports.py",
-              "line": 35,
+              "line": 41,
               "start": 8,
               "end": 16
             },
@@ -39,7 +39,7 @@
             "call": {
               "position": {
                 "filename": "multi_sink_ports.py",
-                "line": 36,
+                "line": 42,
                 "start": 12,
                 "end": 13
               },
@@ -95,9 +95,9 @@
   "kind": "issue",
   "data": {
     "callable": "multi_sink_ports.issue2",
-    "callable_line": 74,
+    "callable_line": 80,
     "code": 1111,
-    "line": 77,
+    "line": 83,
     "start": 13,
     "end": 18,
     "filename": "multi_sink_ports.py",
@@ -109,11 +109,11 @@
           {
             "root": {
               "filename": "multi_sink_ports.py",
-              "line": 75,
+              "line": 81,
               "start": 12,
               "end": 20
             },
-            "tito": [ { "line": 76, "start": 27, "end": 32 } ],
+            "tito": [ { "line": 82, "start": 27, "end": 32 } ],
             "leaves": [
               {
                 "kind": "Test",
@@ -135,7 +135,7 @@
             "call": {
               "position": {
                 "filename": "multi_sink_ports.py",
-                "line": 77,
+                "line": 83,
                 "start": 13,
                 "end": 18
               },
@@ -434,7 +434,7 @@
             "call": {
               "position": {
                 "filename": "multi_sink_ports.py",
-                "line": 52,
+                "line": 58,
                 "start": 28,
                 "end": 32
               },
@@ -455,7 +455,7 @@
             "call": {
               "position": {
                 "filename": "multi_sink_ports.py",
-                "line": 52,
+                "line": 58,
                 "start": 28,
                 "end": 32
               },
@@ -476,7 +476,7 @@
             "call": {
               "position": {
                 "filename": "multi_sink_ports.py",
-                "line": 52,
+                "line": 58,
                 "start": 28,
                 "end": 32
               },
@@ -516,7 +516,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 52, "start": 28, "end": 32 } ],
+            "tito": [ { "line": 58, "start": 28, "end": 32 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
             "features": [ { "always-via": "tito" }, { "via": "split" } ]
           }
@@ -537,7 +537,7 @@
           {
             "root": {
               "filename": "multi_sink_ports.py",
-              "line": 61,
+              "line": 67,
               "start": 10,
               "end": 18
             },
@@ -553,7 +553,7 @@
           {
             "root": {
               "filename": "multi_sink_ports.py",
-              "line": 61,
+              "line": 67,
               "start": 10,
               "end": 18
             },
@@ -574,7 +574,7 @@
           {
             "root": {
               "filename": "multi_sink_ports.py",
-              "line": 60,
+              "line": 66,
               "start": 10,
               "end": 16
             },
@@ -590,7 +590,7 @@
           {
             "root": {
               "filename": "multi_sink_ports.py",
-              "line": 60,
+              "line": 66,
               "start": 10,
               "end": 16
             },
@@ -736,7 +736,7 @@
           {
             "root": {
               "filename": "multi_sink_ports.py",
-              "line": 23,
+              "line": 29,
               "start": 10,
               "end": 11
             },
@@ -752,7 +752,7 @@
           {
             "root": {
               "filename": "multi_sink_ports.py",
-              "line": 23,
+              "line": 29,
               "start": 10,
               "end": 11
             },
@@ -768,7 +768,7 @@
           {
             "root": {
               "filename": "multi_sink_ports.py",
-              "line": 24,
+              "line": 30,
               "start": 10,
               "end": 11
             },
@@ -784,7 +784,7 @@
           {
             "root": {
               "filename": "multi_sink_ports.py",
-              "line": 24,
+              "line": 30,
               "start": 10,
               "end": 11
             },
@@ -800,7 +800,7 @@
           {
             "root": {
               "filename": "multi_sink_ports.py",
-              "line": 25,
+              "line": 31,
               "start": 10,
               "end": 11
             },
@@ -843,7 +843,7 @@
             "call": {
               "position": {
                 "filename": "multi_sink_ports.py",
-                "line": 40,
+                "line": 46,
                 "start": 17,
                 "end": 18
               },
@@ -864,7 +864,7 @@
             "call": {
               "position": {
                 "filename": "multi_sink_ports.py",
-                "line": 40,
+                "line": 46,
                 "start": 17,
                 "end": 18
               },
@@ -885,7 +885,7 @@
             "call": {
               "position": {
                 "filename": "multi_sink_ports.py",
-                "line": 40,
+                "line": 46,
                 "start": 17,
                 "end": 18
               },
@@ -925,7 +925,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 40, "start": 17, "end": 18 } ],
+            "tito": [ { "line": 46, "start": 17, "end": 18 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
             "features": [ { "always-via": "tito" }, { "via": "split" } ]
           }
@@ -946,11 +946,11 @@
           {
             "root": {
               "filename": "multi_sink_ports.py",
-              "line": 31,
+              "line": 37,
               "start": 10,
               "end": 11
             },
-            "tito": [ { "line": 30, "start": 14, "end": 15 } ],
+            "tito": [ { "line": 36, "start": 14, "end": 15 } ],
             "leaves": [
               {
                 "kind": "Demo",
@@ -967,11 +967,11 @@
           {
             "root": {
               "filename": "multi_sink_ports.py",
-              "line": 31,
+              "line": 37,
               "start": 10,
               "end": 11
             },
-            "tito": [ { "line": 30, "start": 14, "end": 15 } ],
+            "tito": [ { "line": 36, "start": 14, "end": 15 } ],
             "leaves": [
               {
                 "kind": "Test",
@@ -989,7 +989,7 @@
             "call": {
               "position": {
                 "filename": "multi_sink_ports.py",
-                "line": 30,
+                "line": 36,
                 "start": 14,
                 "end": 15
               },
@@ -1010,7 +1010,7 @@
             "call": {
               "position": {
                 "filename": "multi_sink_ports.py",
-                "line": 30,
+                "line": 36,
                 "start": 14,
                 "end": 15
               },
@@ -1050,7 +1050,7 @@
             "call": {
               "position": {
                 "filename": "multi_sink_ports.py",
-                "line": 30,
+                "line": 36,
                 "start": 14,
                 "end": 15
               },
@@ -1086,7 +1086,7 @@
             "call": {
               "position": {
                 "filename": "multi_sink_ports.py",
-                "line": 71,
+                "line": 77,
                 "start": 13,
                 "end": 19
               },
@@ -1107,7 +1107,7 @@
             "call": {
               "position": {
                 "filename": "multi_sink_ports.py",
-                "line": 71,
+                "line": 77,
                 "start": 13,
                 "end": 19
               },
@@ -1128,7 +1128,7 @@
             "call": {
               "position": {
                 "filename": "multi_sink_ports.py",
-                "line": 68,
+                "line": 74,
                 "start": 19,
                 "end": 20
               },
@@ -1149,7 +1149,7 @@
             "call": {
               "position": {
                 "filename": "multi_sink_ports.py",
-                "line": 68,
+                "line": 74,
                 "start": 19,
                 "end": 20
               },
@@ -1184,7 +1184,7 @@
             "call": {
               "position": {
                 "filename": "multi_sink_ports.py",
-                "line": 71,
+                "line": 77,
                 "start": 21,
                 "end": 29
               },
@@ -1192,7 +1192,7 @@
               "port": "formal(response)",
               "length": 1
             },
-            "tito": [ { "line": 68, "start": 19, "end": 20 } ],
+            "tito": [ { "line": 74, "start": 19, "end": 20 } ],
             "leaves": [
               {
                 "kind": "Demo",
@@ -1210,7 +1210,7 @@
             "call": {
               "position": {
                 "filename": "multi_sink_ports.py",
-                "line": 71,
+                "line": 77,
                 "start": 21,
                 "end": 29
               },
@@ -1218,7 +1218,7 @@
               "port": "formal(response)",
               "length": 1
             },
-            "tito": [ { "line": 68, "start": 19, "end": 20 } ],
+            "tito": [ { "line": 74, "start": 19, "end": 20 } ],
             "leaves": [
               {
                 "kind": "Test",
@@ -1241,7 +1241,7 @@
             "call": {
               "position": {
                 "filename": "multi_sink_ports.py",
-                "line": 68,
+                "line": 74,
                 "start": 19,
                 "end": 20
               },

@@ -3,9 +3,9 @@
   "kind": "issue",
   "data": {
     "callable": "attributes.test_attribute_via_dunder_dict",
-    "callable_line": 60,
+    "callable_line": 65,
     "code": 5002,
-    "line": 64,
+    "line": 69,
     "start": 16,
     "end": 33,
     "filename": "attributes.py",
@@ -17,11 +17,11 @@
           {
             "root": {
               "filename": "attributes.py",
-              "line": 61,
+              "line": 66,
               "start": 23,
               "end": 38
             },
-            "tito": [ { "line": 61, "start": 23, "end": 38 } ],
+            "tito": [ { "line": 66, "start": 23, "end": 38 } ],
             "leaves": [
               {
                 "kind": "Test",
@@ -44,7 +44,7 @@
           {
             "root": {
               "filename": "attributes.py",
-              "line": 64,
+              "line": 69,
               "start": 16,
               "end": 33
             },
@@ -69,9 +69,9 @@
   "kind": "issue",
   "data": {
     "callable": "attributes.test_attribute_via_dunder_dict",
-    "callable_line": 60,
+    "callable_line": 65,
     "code": 5002,
-    "line": 63,
+    "line": 68,
     "start": 16,
     "end": 28,
     "filename": "attributes.py",
@@ -83,11 +83,11 @@
           {
             "root": {
               "filename": "attributes.py",
-              "line": 61,
+              "line": 66,
               "start": 23,
               "end": 38
             },
-            "tito": [ { "line": 61, "start": 23, "end": 38 } ],
+            "tito": [ { "line": 66, "start": 23, "end": 38 } ],
             "leaves": [
               {
                 "kind": "Test",
@@ -108,7 +108,7 @@
           {
             "root": {
               "filename": "attributes.py",
-              "line": 63,
+              "line": 68,
               "start": 16,
               "end": 28
             },
@@ -249,7 +249,7 @@
           {
             "root": {
               "filename": "attributes.py",
-              "line": 35,
+              "line": 40,
               "start": 11,
               "end": 18
             },
@@ -290,7 +290,7 @@
           {
             "root": {
               "filename": "attributes.py",
-              "line": 47,
+              "line": 52,
               "start": 16,
               "end": 41
             },
@@ -317,7 +317,7 @@
           {
             "root": {
               "filename": "attributes.py",
-              "line": 51,
+              "line": 56,
               "start": 16,
               "end": 42
             },
@@ -343,7 +343,7 @@
           {
             "root": {
               "filename": "attributes.py",
-              "line": 43,
+              "line": 48,
               "start": 35,
               "end": 50
             },
@@ -384,7 +384,7 @@
           {
             "root": {
               "filename": "attributes.py",
-              "line": 39,
+              "line": 44,
               "start": 11,
               "end": 18
             },
@@ -424,7 +424,7 @@
           {
             "root": {
               "filename": "attributes.py",
-              "line": 30,
+              "line": 35,
               "start": 15,
               "end": 33
             },
@@ -464,7 +464,7 @@
           {
             "root": {
               "filename": "attributes.py",
-              "line": 23,
+              "line": 28,
               "start": 19,
               "end": 37
             },

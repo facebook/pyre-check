@@ -3,9 +3,9 @@
   "kind": "issue",
   "data": {
     "callable": "higher_order_functions.test_higher_order_function",
-    "callable_line": 16,
+    "callable_line": 21,
     "code": 5002,
-    "line": 17,
+    "line": 22,
     "start": 26,
     "end": 38,
     "filename": "higher_order_functions.py",
@@ -17,7 +17,7 @@
           {
             "root": {
               "filename": "higher_order_functions.py",
-              "line": 17,
+              "line": 22,
               "start": 40,
               "end": 55
             },
@@ -39,7 +39,7 @@
             "call": {
               "position": {
                 "filename": "higher_order_functions.py",
-                "line": 17,
+                "line": 22,
                 "start": 26,
                 "end": 38
               },
@@ -65,9 +65,9 @@
   "kind": "issue",
   "data": {
     "callable": "higher_order_functions.test_higher_order_function_and_sink",
-    "callable_line": 46,
+    "callable_line": 51,
     "code": 5002,
-    "line": 47,
+    "line": 52,
     "start": 49,
     "end": 64,
     "filename": "higher_order_functions.py",
@@ -79,7 +79,7 @@
           {
             "root": {
               "filename": "higher_order_functions.py",
-              "line": 47,
+              "line": 52,
               "start": 49,
               "end": 64
             },
@@ -101,7 +101,7 @@
             "call": {
               "position": {
                 "filename": "higher_order_functions.py",
-                "line": 47,
+                "line": 52,
                 "start": 49,
                 "end": 64
               },
@@ -129,9 +129,9 @@
   "kind": "issue",
   "data": {
     "callable": "higher_order_functions.test_higher_order_function_and_sink",
-    "callable_line": 46,
+    "callable_line": 51,
     "code": 5002,
-    "line": 47,
+    "line": 52,
     "start": 35,
     "end": 47,
     "filename": "higher_order_functions.py",
@@ -143,7 +143,7 @@
           {
             "root": {
               "filename": "higher_order_functions.py",
-              "line": 47,
+              "line": 52,
               "start": 49,
               "end": 64
             },
@@ -165,7 +165,7 @@
             "call": {
               "position": {
                 "filename": "higher_order_functions.py",
-                "line": 47,
+                "line": 52,
                 "start": 35,
                 "end": 47
               },
@@ -191,9 +191,9 @@
   "kind": "issue",
   "data": {
     "callable": "higher_order_functions.test_higher_order_method",
-    "callable_line": 32,
+    "callable_line": 37,
     "code": 5002,
-    "line": 33,
+    "line": 38,
     "start": 29,
     "end": 44,
     "filename": "higher_order_functions.py",
@@ -205,7 +205,7 @@
           {
             "root": {
               "filename": "higher_order_functions.py",
-              "line": 33,
+              "line": 38,
               "start": 29,
               "end": 44
             },
@@ -227,7 +227,7 @@
             "call": {
               "position": {
                 "filename": "higher_order_functions.py",
-                "line": 33,
+                "line": 38,
                 "start": 29,
                 "end": 44
               },
@@ -257,9 +257,9 @@
   "kind": "issue",
   "data": {
     "callable": "higher_order_functions.test_higher_order_method_self",
-    "callable_line": 36,
+    "callable_line": 41,
     "code": 5002,
-    "line": 38,
+    "line": 43,
     "start": 26,
     "end": 27,
     "filename": "higher_order_functions.py",
@@ -271,7 +271,7 @@
           {
             "root": {
               "filename": "higher_order_functions.py",
-              "line": 37,
+              "line": 42,
               "start": 11,
               "end": 26
             },
@@ -293,7 +293,7 @@
             "call": {
               "position": {
                 "filename": "higher_order_functions.py",
-                "line": 38,
+                "line": 43,
                 "start": 26,
                 "end": 27
               },
@@ -327,7 +327,7 @@
           {
             "root": {
               "filename": "higher_order_functions.py",
-              "line": 22,
+              "line": 27,
               "start": 20,
               "end": 23
             },
@@ -354,7 +354,7 @@
           {
             "root": {
               "filename": "higher_order_functions.py",
-              "line": 25,
+              "line": 30,
               "start": 20,
               "end": 24
             },
@@ -411,7 +411,7 @@
           {
             "root": {
               "filename": "higher_order_functions.py",
-              "line": 5,
+              "line": 10,
               "start": 16,
               "end": 19
             },
@@ -457,7 +457,7 @@
           {
             "root": {
               "filename": "higher_order_functions.py",
-              "line": 43,
+              "line": 48,
               "start": 16,
               "end": 19
             },
@@ -485,7 +485,7 @@
             "call": {
               "position": {
                 "filename": "higher_order_functions.py",
-                "line": 29,
+                "line": 34,
                 "start": 4,
                 "end": 48
               },
@@ -518,13 +518,13 @@
           {
             "root": {
               "filename": "higher_order_functions.py",
-              "line": 59,
+              "line": 64,
               "start": 8,
               "end": 23
             },
             "tito": [
-              { "line": 60, "start": 24, "end": 25 },
-              { "line": 60, "start": 14, "end": 22 }
+              { "line": 65, "start": 24, "end": 25 },
+              { "line": 65, "start": 14, "end": 22 }
             ],
             "leaves": [
               {
@@ -559,7 +559,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 51, "start": 11, "end": 45 } ],
+            "tito": [ { "line": 56, "start": 11, "end": 45 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
             "features": [ { "via": "tito" }, { "always-via": "lambda" } ]
           }

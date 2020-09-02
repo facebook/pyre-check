@@ -1,7 +1,9 @@
-(* Copyright (c) 2016-present, Facebook, Inc.
+(*
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree. *)
+ * LICENSE file in the root directory of this source tree.
+ *)
 
 (* If a server has been set up and waiting with `Start.start_server_and_wait`, This function will
    stop the waiting and terminate the process. *)

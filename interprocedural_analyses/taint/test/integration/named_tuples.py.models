@@ -3,9 +3,9 @@
   "kind": "issue",
   "data": {
     "callable": "named_tuples.issue_with_bad",
-    "callable_line": 15,
+    "callable_line": 20,
     "code": 5002,
-    "line": 17,
+    "line": 22,
     "start": 16,
     "end": 21,
     "filename": "named_tuples.py",
@@ -18,7 +18,7 @@
             "call": {
               "position": {
                 "filename": "named_tuples.py",
-                "line": 16,
+                "line": 21,
                 "start": 8,
                 "end": 23
               },
@@ -48,7 +48,7 @@
           {
             "root": {
               "filename": "named_tuples.py",
-              "line": 17,
+              "line": 22,
               "start": 16,
               "end": 21
             },
@@ -73,9 +73,9 @@
   "kind": "issue",
   "data": {
     "callable": "named_tuples.issue_with_inherited_named_tuple",
-    "callable_line": 50,
+    "callable_line": 55,
     "code": 5002,
-    "line": 52,
+    "line": 57,
     "start": 16,
     "end": 21,
     "filename": "named_tuples.py",
@@ -88,7 +88,7 @@
             "call": {
               "position": {
                 "filename": "named_tuples.py",
-                "line": 51,
+                "line": 56,
                 "start": 8,
                 "end": 25
               },
@@ -118,7 +118,7 @@
           {
             "root": {
               "filename": "named_tuples.py",
-              "line": 52,
+              "line": 57,
               "start": 16,
               "end": 21
             },
@@ -143,9 +143,9 @@
   "kind": "issue",
   "data": {
     "callable": "named_tuples.issue_with_old_school_named_tuples",
-    "callable_line": 32,
+    "callable_line": 37,
     "code": 5002,
-    "line": 34,
+    "line": 39,
     "start": 16,
     "end": 21,
     "filename": "named_tuples.py",
@@ -158,7 +158,7 @@
             "call": {
               "position": {
                 "filename": "named_tuples.py",
-                "line": 33,
+                "line": 38,
                 "start": 8,
                 "end": 27
               },
@@ -188,7 +188,7 @@
           {
             "root": {
               "filename": "named_tuples.py",
-              "line": 34,
+              "line": 39,
               "start": 16,
               "end": 21
             },
@@ -498,11 +498,11 @@
           {
             "root": {
               "filename": "named_tuples.py",
-              "line": 47,
+              "line": 52,
               "start": 35,
               "end": 50
             },
-            "tito": [ { "line": 47, "start": 35, "end": 50 } ],
+            "tito": [ { "line": 52, "start": 35, "end": 50 } ],
             "leaves": [
               {
                 "kind": "Test",
@@ -533,11 +533,11 @@
           {
             "root": {
               "filename": "named_tuples.py",
-              "line": 29,
+              "line": 34,
               "start": 35,
               "end": 50
             },
-            "tito": [ { "line": 29, "start": 35, "end": 50 } ],
+            "tito": [ { "line": 34, "start": 35, "end": 50 } ],
             "leaves": [
               {
                 "kind": "Test",
@@ -568,11 +568,11 @@
           {
             "root": {
               "filename": "named_tuples.py",
-              "line": 12,
+              "line": 17,
               "start": 28,
               "end": 43
             },
-            "tito": [ { "line": 12, "start": 28, "end": 43 } ],
+            "tito": [ { "line": 17, "start": 28, "end": 43 } ],
             "leaves": [
               {
                 "kind": "Test",

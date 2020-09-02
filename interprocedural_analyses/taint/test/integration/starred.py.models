@@ -3,9 +3,9 @@
   "kind": "issue",
   "data": {
     "callable": "starred.test",
-    "callable_line": 9,
+    "callable_line": 14,
     "code": 5002,
-    "line": 11,
+    "line": 16,
     "start": 9,
     "end": 14,
     "filename": "starred.py",
@@ -17,7 +17,7 @@
           {
             "root": {
               "filename": "starred.py",
-              "line": 10,
+              "line": 15,
               "start": 21,
               "end": 36
             },
@@ -39,7 +39,7 @@
             "call": {
               "position": {
                 "filename": "starred.py",
-                "line": 11,
+                "line": 16,
                 "start": 9,
                 "end": 14
               },
@@ -73,7 +73,7 @@
           {
             "root": {
               "filename": "starred.py",
-              "line": 6,
+              "line": 11,
               "start": 16,
               "end": 20
             },

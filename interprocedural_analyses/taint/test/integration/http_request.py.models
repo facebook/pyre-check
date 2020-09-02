@@ -11,7 +11,7 @@
           {
             "root": {
               "filename": "http_request.py",
-              "line": 19,
+              "line": 24,
               "start": 16,
               "end": 27
             },
@@ -30,9 +30,9 @@
   "kind": "issue",
   "data": {
     "callable": "http_request.request_get_flows_to_sink",
-    "callable_line": 18,
+    "callable_line": 23,
     "code": 5002,
-    "line": 19,
+    "line": 24,
     "start": 16,
     "end": 27,
     "filename": "http_request.py",
@@ -44,7 +44,7 @@
           {
             "root": {
               "filename": "http_request.py",
-              "line": 19,
+              "line": 24,
               "start": 16,
               "end": 27
             },
@@ -64,7 +64,7 @@
           {
             "root": {
               "filename": "http_request.py",
-              "line": 19,
+              "line": 24,
               "start": 16,
               "end": 27
             },
@@ -92,7 +92,7 @@
             "call": {
               "position": {
                 "filename": "http_request.py",
-                "line": 24,
+                "line": 29,
                 "start": 30,
                 "end": 37
               },
@@ -123,7 +123,7 @@
           {
             "root": {
               "filename": "http_request.py",
-              "line": 15,
+              "line": 20,
               "start": 16,
               "end": 27
             },
@@ -142,6 +142,86 @@
   "kind": "issue",
   "data": {
     "callable": "http_request.test_trace_has_no_tito",
+    "callable_line": 18,
+    "code": 5002,
+    "line": 20,
+    "start": 16,
+    "end": 27,
+    "filename": "http_request.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "http_request.py",
+              "line": 20,
+              "start": 16,
+              "end": 27
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "Obj{django.http.request.HttpRequest.GET}",
+                "on_all_flows": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "http_request.py",
+              "line": 20,
+              "start": 16,
+              "end": 27
+            },
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_sink" } ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "http_request.test_untainted_assign",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(request)[GET]",
+        "taint": [
+          {
+            "root": {
+              "filename": "http_request.py",
+              "line": 15,
+              "start": 16,
+              "end": 27
+            },
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "http_request.test_untainted_assign",
     "callable_line": 13,
     "code": 5002,
     "line": 15,
@@ -177,86 +257,6 @@
             "root": {
               "filename": "http_request.py",
               "line": 15,
-              "start": 16,
-              "end": 27
-            },
-            "leaves": [
-              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
-            ],
-            "features": [ { "always-via": "special_sink" } ]
-          }
-        ]
-      }
-    ],
-    "features": [ { "always-via": "special_sink" } ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "http_request.test_untainted_assign",
-    "sources": [],
-    "sinks": [
-      {
-        "port": "formal(request)[GET]",
-        "taint": [
-          {
-            "root": {
-              "filename": "http_request.py",
-              "line": 10,
-              "start": 16,
-              "end": 27
-            },
-            "leaves": [
-              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
-            ],
-            "features": [ { "always-via": "special_sink" } ]
-          }
-        ]
-      }
-    ],
-    "tito": []
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "http_request.test_untainted_assign",
-    "callable_line": 8,
-    "code": 5002,
-    "line": 10,
-    "start": 16,
-    "end": 27,
-    "filename": "http_request.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "root": {
-              "filename": "http_request.py",
-              "line": 10,
-              "start": 16,
-              "end": 27
-            },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "Obj{django.http.request.HttpRequest.GET}",
-                "on_all_flows": true
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "root": {
-              "filename": "http_request.py",
-              "line": 10,
               "start": 16,
               "end": 27
             },

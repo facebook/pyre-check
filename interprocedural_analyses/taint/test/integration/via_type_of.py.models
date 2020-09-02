@@ -10,7 +10,7 @@
           {
             "root": {
               "filename": "via_type_of.py",
-              "line": 22,
+              "line": 27,
               "start": 11,
               "end": 47
             },
@@ -70,7 +70,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 47, "start": 16, "end": 25 } ],
+            "tito": [ { "line": 52, "start": 16, "end": 25 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
             "features": [
               { "always-via": "tito" },
@@ -93,7 +93,7 @@
           {
             "root": {
               "filename": "via_type_of.py",
-              "line": 18,
+              "line": 23,
               "start": 11,
               "end": 48
             },
@@ -124,7 +124,7 @@
           {
             "root": {
               "filename": "via_type_of.py",
-              "line": 14,
+              "line": 19,
               "start": 11,
               "end": 39
             },
@@ -156,7 +156,7 @@
           {
             "root": {
               "filename": "via_type_of.py",
-              "line": 43,
+              "line": 48,
               "start": 28,
               "end": 35
             },
@@ -186,7 +186,7 @@
           {
             "root": {
               "filename": "via_type_of.py",
-              "line": 10,
+              "line": 15,
               "start": 11,
               "end": 41
             },
@@ -217,11 +217,11 @@
           {
             "root": {
               "filename": "via_type_of.py",
-              "line": 34,
+              "line": 39,
               "start": 13,
               "end": 28
             },
-            "tito": [ { "line": 34, "start": 13, "end": 28 } ],
+            "tito": [ { "line": 39, "start": 13, "end": 28 } ],
             "leaves": [
               {
                 "kind": "Test",
@@ -254,7 +254,7 @@
             "call": {
               "position": {
                 "filename": "via_type_of.py",
-                "line": 26,
+                "line": 31,
                 "start": 11,
                 "end": 23
               },

@@ -3,70 +3,6 @@
   "kind": "issue",
   "data": {
     "callable": "strings.bad_1",
-    "callable_line": 12,
-    "code": 5002,
-    "line": 14,
-    "start": 16,
-    "end": 17,
-    "filename": "strings.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "root": {
-              "filename": "strings.py",
-              "line": 13,
-              "start": 24,
-              "end": 39
-            },
-            "tito": [ { "line": 13, "start": 24, "end": 39 } ],
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "__test_source",
-                "on_all_flows": true
-              }
-            ],
-            "features": [
-              { "always-via": "tito" },
-              { "always-via": "string_concat_lhs" },
-              { "always-via": "special_source" }
-            ]
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "root": {
-              "filename": "strings.py",
-              "line": 14,
-              "start": 16,
-              "end": 17
-            },
-            "leaves": [
-              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
-            ],
-            "features": [ { "always-via": "special_sink" } ]
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-via": "tito" },
-      { "always-via": "string_concat_lhs" },
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" }
-    ]
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "strings.bad_2",
     "callable_line": 17,
     "code": 5002,
     "line": 19,
@@ -95,7 +31,7 @@
             ],
             "features": [
               { "always-via": "tito" },
-              { "always-via": "string_concat_rhs" },
+              { "always-via": "string_concat_lhs" },
               { "always-via": "special_source" }
             ]
           }
@@ -121,7 +57,7 @@
     ],
     "features": [
       { "always-via": "tito" },
-      { "always-via": "string_concat_rhs" },
+      { "always-via": "string_concat_lhs" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ]
@@ -130,10 +66,10 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "strings.either",
+    "callable": "strings.bad_2",
     "callable_line": 22,
     "code": 5002,
-    "line": 27,
+    "line": 24,
     "start": 16,
     "end": 17,
     "filename": "strings.py",
@@ -145,32 +81,11 @@
           {
             "root": {
               "filename": "strings.py",
-              "line": 24,
-              "start": 28,
-              "end": 43
+              "line": 23,
+              "start": 24,
+              "end": 39
             },
-            "tito": [ { "line": 24, "start": 28, "end": 43 } ],
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "__test_source",
-                "on_all_flows": true
-              }
-            ],
-            "features": [
-              { "always-via": "tito" },
-              { "always-via": "string_concat_lhs" },
-              { "always-via": "special_source" }
-            ]
-          },
-          {
-            "root": {
-              "filename": "strings.py",
-              "line": 26,
-              "start": 28,
-              "end": 43
-            },
-            "tito": [ { "line": 26, "start": 28, "end": 43 } ],
+            "tito": [ { "line": 23, "start": 24, "end": 39 } ],
             "leaves": [
               {
                 "kind": "Test",
@@ -192,7 +107,92 @@
           {
             "root": {
               "filename": "strings.py",
-              "line": 27,
+              "line": 24,
+              "start": 16,
+              "end": 17
+            },
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "tito" },
+      { "always-via": "string_concat_rhs" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "strings.either",
+    "callable_line": 27,
+    "code": 5002,
+    "line": 32,
+    "start": 16,
+    "end": 17,
+    "filename": "strings.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "strings.py",
+              "line": 29,
+              "start": 28,
+              "end": 43
+            },
+            "tito": [ { "line": 29, "start": 28, "end": 43 } ],
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [
+              { "always-via": "tito" },
+              { "always-via": "string_concat_lhs" },
+              { "always-via": "special_source" }
+            ]
+          },
+          {
+            "root": {
+              "filename": "strings.py",
+              "line": 31,
+              "start": 28,
+              "end": 43
+            },
+            "tito": [ { "line": 31, "start": 28, "end": 43 } ],
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [
+              { "always-via": "tito" },
+              { "always-via": "string_concat_rhs" },
+              { "always-via": "special_source" }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "strings.py",
+              "line": 32,
               "start": 16,
               "end": 17
             },
@@ -217,9 +217,9 @@
   "kind": "issue",
   "data": {
     "callable": "strings.maybe_lhs",
-    "callable_line": 30,
+    "callable_line": 35,
     "code": 5002,
-    "line": 35,
+    "line": 40,
     "start": 16,
     "end": 17,
     "filename": "strings.py",
@@ -231,11 +231,11 @@
           {
             "root": {
               "filename": "strings.py",
-              "line": 32,
+              "line": 37,
               "start": 28,
               "end": 43
             },
-            "tito": [ { "line": 32, "start": 28, "end": 43 } ],
+            "tito": [ { "line": 37, "start": 28, "end": 43 } ],
             "leaves": [
               {
                 "kind": "Test",
@@ -252,7 +252,7 @@
           {
             "root": {
               "filename": "strings.py",
-              "line": 34,
+              "line": 39,
               "start": 12,
               "end": 27
             },
@@ -273,7 +273,7 @@
           {
             "root": {
               "filename": "strings.py",
-              "line": 35,
+              "line": 40,
               "start": 16,
               "end": 17
             },
@@ -297,9 +297,9 @@
   "kind": "issue",
   "data": {
     "callable": "strings.maybe_rhs",
-    "callable_line": 38,
+    "callable_line": 43,
     "code": 5002,
-    "line": 43,
+    "line": 48,
     "start": 16,
     "end": 17,
     "filename": "strings.py",
@@ -311,7 +311,7 @@
           {
             "root": {
               "filename": "strings.py",
-              "line": 40,
+              "line": 45,
               "start": 12,
               "end": 27
             },
@@ -327,11 +327,11 @@
           {
             "root": {
               "filename": "strings.py",
-              "line": 42,
+              "line": 47,
               "start": 28,
               "end": 43
             },
-            "tito": [ { "line": 42, "start": 28, "end": 43 } ],
+            "tito": [ { "line": 47, "start": 28, "end": 43 } ],
             "leaves": [
               {
                 "kind": "Test",
@@ -353,7 +353,7 @@
           {
             "root": {
               "filename": "strings.py",
-              "line": 43,
+              "line": 48,
               "start": 16,
               "end": 17
             },
@@ -377,9 +377,9 @@
   "kind": "issue",
   "data": {
     "callable": "strings.through_iadd",
-    "callable_line": 46,
+    "callable_line": 51,
     "code": 5002,
-    "line": 50,
+    "line": 55,
     "start": 16,
     "end": 17,
     "filename": "strings.py",
@@ -391,11 +391,11 @@
           {
             "root": {
               "filename": "strings.py",
-              "line": 47,
+              "line": 52,
               "start": 8,
               "end": 23
             },
-            "tito": [ { "line": 49, "start": 9, "end": 10 } ],
+            "tito": [ { "line": 54, "start": 9, "end": 10 } ],
             "leaves": [
               {
                 "kind": "Test",
@@ -417,7 +417,7 @@
           {
             "root": {
               "filename": "strings.py",
-              "line": 50,
+              "line": 55,
               "start": 16,
               "end": 17
             },
@@ -449,7 +449,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 5, "start": 11, "end": 17 } ],
+            "tito": [ { "line": 10, "start": 11, "end": 17 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
             "features": [
               { "always-via": "tito" },
@@ -473,7 +473,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 9, "start": 17, "end": 23 } ],
+            "tito": [ { "line": 14, "start": 17, "end": 23 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
             "features": [
               { "always-via": "tito" },

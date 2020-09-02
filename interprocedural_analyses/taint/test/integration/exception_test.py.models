@@ -10,7 +10,7 @@
           {
             "root": {
               "filename": "exception_test.py",
-              "line": 14,
+              "line": 20,
               "start": 15,
               "end": 22
             },
@@ -40,7 +40,7 @@
           {
             "root": {
               "filename": "exception_test.py",
-              "line": 7,
+              "line": 13,
               "start": 11,
               "end": 18
             },
@@ -70,7 +70,7 @@
           {
             "root": {
               "filename": "exception_test.py",
-              "line": 2,
+              "line": 8,
               "start": 11,
               "end": 18
             },

@@ -1,7 +1,9 @@
-(** Copyright (c) 2016-present, Facebook, Inc.
-
-    This source code is licensed under the MIT license found in the LICENSE file in the root
-    directory of this source tree. *)
+(*
+ * Copyright (c) Facebook, Inc. and its affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *)
 
 (* Constructors of this type are used to select parts of composed abstract domains. E.g., a Set
    domain will add an Element: element constructor for the element type of the set, thereby allowing

@@ -1,7 +1,9 @@
-(* Copyright (c) 2016-present, Facebook, Inc.
+(*
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree. *)
+ * LICENSE file in the root directory of this source tree.
+ *)
 
 (* `edges` mapping from type index to a set of targets. `indices` mapping from annotation to its
    vertex index. `annotations` inverse of `indices`. *)

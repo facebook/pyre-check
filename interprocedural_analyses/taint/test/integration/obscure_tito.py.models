@@ -70,7 +70,7 @@
           {
             "root": {
               "filename": "obscure_tito.py",
-              "line": 28,
+              "line": 33,
               "start": 20,
               "end": 35
             },
@@ -105,7 +105,7 @@
           {
             "root": {
               "filename": "obscure_tito.py",
-              "line": 33,
+              "line": 38,
               "start": 22,
               "end": 31
             },
@@ -134,11 +134,11 @@
           {
             "root": {
               "filename": "obscure_tito.py",
-              "line": 22,
+              "line": 27,
               "start": 13,
               "end": 28
             },
-            "tito": [ { "line": 22, "start": 13, "end": 28 } ],
+            "tito": [ { "line": 27, "start": 13, "end": 28 } ],
             "leaves": [
               {
                 "kind": "Test",

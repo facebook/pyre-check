@@ -3,9 +3,9 @@
   "kind": "issue",
   "data": {
     "callable": "properties.setters_are_simulated",
-    "callable_line": 109,
+    "callable_line": 114,
     "code": 5002,
-    "line": 115,
+    "line": 120,
     "start": 16,
     "end": 19,
     "filename": "properties.py",
@@ -17,13 +17,13 @@
           {
             "root": {
               "filename": "properties.py",
-              "line": 113,
+              "line": 118,
               "start": 10,
               "end": 25
             },
             "tito": [
-              { "line": 115, "start": 16, "end": 17 },
-              { "line": 113, "start": 10, "end": 25 }
+              { "line": 120, "start": 16, "end": 17 },
+              { "line": 118, "start": 10, "end": 25 }
             ],
             "leaves": [
               {
@@ -45,7 +45,7 @@
           {
             "root": {
               "filename": "properties.py",
-              "line": 115,
+              "line": 120,
               "start": 16,
               "end": 19
             },
@@ -68,9 +68,9 @@
   "kind": "issue",
   "data": {
     "callable": "properties.test_issue_in_class_property",
-    "callable_line": 124,
+    "callable_line": 129,
     "code": 5002,
-    "line": 125,
+    "line": 130,
     "start": 16,
     "end": 47,
     "filename": "properties.py",
@@ -82,7 +82,7 @@
           {
             "root": {
               "filename": "properties.py",
-              "line": 125,
+              "line": 130,
               "start": 16,
               "end": 47
             },
@@ -103,7 +103,7 @@
           {
             "root": {
               "filename": "properties.py",
-              "line": 125,
+              "line": 130,
               "start": 16,
               "end": 47
             },
@@ -654,7 +654,7 @@
             "call": {
               "position": {
                 "filename": "properties.py",
-                "line": 26,
+                "line": 31,
                 "start": 19,
                 "end": 36
               },
@@ -681,7 +681,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 26, "start": 19, "end": 24 } ],
+            "tito": [ { "line": 31, "start": 19, "end": 24 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
             "features": [ { "always-via": "tito" } ]
           }
@@ -701,11 +701,11 @@
           {
             "root": {
               "filename": "properties.py",
-              "line": 17,
+              "line": 22,
               "start": 23,
               "end": 38
             },
-            "tito": [ { "line": 18, "start": 15, "end": 19 } ],
+            "tito": [ { "line": 23, "start": 15, "end": 19 } ],
             "leaves": [
               {
                 "kind": "Test",
@@ -722,7 +722,7 @@
             "call": {
               "position": {
                 "filename": "properties.py",
-                "line": 18,
+                "line": 23,
                 "start": 15,
                 "end": 31
               },
@@ -758,7 +758,7 @@
             "call": {
               "position": {
                 "filename": "properties.py",
-                "line": 22,
+                "line": 27,
                 "start": 15,
                 "end": 31
               },
@@ -785,7 +785,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 22, "start": 15, "end": 19 } ],
+            "tito": [ { "line": 27, "start": 15, "end": 19 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
             "features": [ { "always-via": "tito" } ]
           }
@@ -825,11 +825,11 @@
           {
             "root": {
               "filename": "properties.py",
-              "line": 33,
+              "line": 38,
               "start": 23,
               "end": 38
             },
-            "tito": [ { "line": 34, "start": 15, "end": 19 } ],
+            "tito": [ { "line": 39, "start": 15, "end": 19 } ],
             "leaves": [
               {
                 "kind": "Test",
@@ -861,7 +861,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 38, "start": 15, "end": 19 } ],
+            "tito": [ { "line": 43, "start": 15, "end": 19 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
             "features": [ { "always-via": "tito" } ]
           }
@@ -882,7 +882,7 @@
           {
             "root": {
               "filename": "properties.py",
-              "line": 79,
+              "line": 84,
               "start": 20,
               "end": 25
             },
@@ -937,7 +937,7 @@
           {
             "root": {
               "filename": "properties.py",
-              "line": 44,
+              "line": 49,
               "start": 15,
               "end": 30
             },
@@ -969,7 +969,7 @@
             "call": {
               "position": {
                 "filename": "properties.py",
-                "line": 48,
+                "line": 53,
                 "start": 15,
                 "end": 31
               },
@@ -1076,7 +1076,7 @@
           {
             "root": {
               "filename": "properties.py",
-              "line": 57,
+              "line": 62,
               "start": 20,
               "end": 24
             },
@@ -1106,7 +1106,7 @@
           {
             "root": {
               "filename": "properties.py",
-              "line": 61,
+              "line": 66,
               "start": 20,
               "end": 24
             },
@@ -1157,7 +1157,7 @@
           {
             "root": {
               "filename": "properties.py",
-              "line": 65,
+              "line": 70,
               "start": 15,
               "end": 31
             },
@@ -1180,7 +1180,7 @@
             "call": {
               "position": {
                 "filename": "properties.py",
-                "line": 65,
+                "line": 70,
                 "start": 15,
                 "end": 19
               },

@@ -11,7 +11,7 @@
           {
             "root": {
               "filename": "colliding_class_names.py",
-              "line": 11,
+              "line": 16,
               "start": 15,
               "end": 30
             },
@@ -42,7 +42,7 @@
           {
             "root": {
               "filename": "colliding_class_names.py",
-              "line": 6,
+              "line": 11,
               "start": 15,
               "end": 30
             },

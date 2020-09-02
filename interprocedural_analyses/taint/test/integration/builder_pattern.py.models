@@ -3,9 +3,9 @@
   "kind": "issue",
   "data": {
     "callable": "builder_pattern.test_issue",
-    "callable_line": 38,
+    "callable_line": 43,
     "code": 5002,
-    "line": 40,
+    "line": 45,
     "start": 4,
     "end": 62,
     "filename": "builder_pattern.py",
@@ -17,11 +17,11 @@
           {
             "root": {
               "filename": "builder_pattern.py",
-              "line": 40,
+              "line": 45,
               "start": 46,
               "end": 61
             },
-            "tito": [ { "line": 40, "start": 46, "end": 61 } ],
+            "tito": [ { "line": 45, "start": 46, "end": 61 } ],
             "leaves": [
               {
                 "kind": "Test",
@@ -43,7 +43,7 @@
             "call": {
               "position": {
                 "filename": "builder_pattern.py",
-                "line": 40,
+                "line": 45,
                 "start": 4,
                 "end": 62
               },
@@ -70,9 +70,9 @@
   "kind": "issue",
   "data": {
     "callable": "builder_pattern.test_issue_with_sub_builder",
-    "callable_line": 68,
+    "callable_line": 73,
     "code": 5002,
-    "line": 70,
+    "line": 75,
     "start": 4,
     "end": 5,
     "filename": "builder_pattern.py",
@@ -84,11 +84,11 @@
           {
             "root": {
               "filename": "builder_pattern.py",
-              "line": 71,
+              "line": 76,
               "start": 8,
               "end": 23
             },
-            "tito": [ { "line": 71, "start": 8, "end": 23 } ],
+            "tito": [ { "line": 76, "start": 8, "end": 23 } ],
             "leaves": [
               {
                 "kind": "Test",
@@ -110,7 +110,7 @@
             "call": {
               "position": {
                 "filename": "builder_pattern.py",
-                "line": 70,
+                "line": 75,
                 "start": 4,
                 "end": 5
               },
@@ -137,9 +137,9 @@
   "kind": "issue",
   "data": {
     "callable": "builder_pattern.test_issue_with_type_var",
-    "callable_line": 50,
+    "callable_line": 55,
     "code": 5002,
-    "line": 52,
+    "line": 57,
     "start": 4,
     "end": 5,
     "filename": "builder_pattern.py",
@@ -151,11 +151,11 @@
           {
             "root": {
               "filename": "builder_pattern.py",
-              "line": 53,
+              "line": 58,
               "start": 8,
               "end": 23
             },
-            "tito": [ { "line": 53, "start": 8, "end": 23 } ],
+            "tito": [ { "line": 58, "start": 8, "end": 23 } ],
             "leaves": [
               {
                 "kind": "Test",
@@ -177,7 +177,7 @@
             "call": {
               "position": {
                 "filename": "builder_pattern.py",
-                "line": 52,
+                "line": 57,
                 "start": 4,
                 "end": 5
               },
@@ -269,7 +269,7 @@
           {
             "root": {
               "filename": "builder_pattern.py",
-              "line": 22,
+              "line": 27,
               "start": 20,
               "end": 31
             },

@@ -1,7 +1,9 @@
-(* Copyright (c) 2016-present, Facebook, Inc.
+(*
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree. *)
+ * LICENSE file in the root directory of this source tree.
+ *)
 
 (* APIs provided in this module is to facilitate showing a customizable notification message when
    the server stops silently in the background. The message is intended to be displayed on the next
