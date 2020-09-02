@@ -56,26 +56,6 @@ def find_global_root(base: Path) -> Optional[Path]:
     return find_parent_directory_containing_file(base, CONFIGURATION_FILE)
 
 
-def find_local_root(base: Path) -> Optional[Path]:
-    found_global_root = find_parent_directory_containing_file(
-        Path(base), CONFIGURATION_FILE
-    )
-    found_local_root = find_parent_directory_containing_file(
-        Path(base), LOCAL_CONFIGURATION_FILE
-    )
-
-    # If the global configuration root is deeper than local configuration, ignore local.
-    if (
-        found_global_root is not None
-        and found_local_root is not None
-        # This would work because both `find_root` always return resolved path
-        and found_local_root in found_global_root.parents
-    ):
-        return None
-    else:
-        return found_local_root
-
-
 class FoundRoot(NamedTuple):
     global_root: Path
     local_root: Optional[Path] = None
