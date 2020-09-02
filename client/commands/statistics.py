@@ -120,7 +120,6 @@ class Statistics(Command):
             command_arguments, original_directory, configuration, analysis_directory
         )
         self._filter_paths: Set[str] = set(filter_paths)
-        self._strict: bool = self._configuration.strict
         self._log_results: bool = log_results
 
     @staticmethod
@@ -172,10 +171,14 @@ class Statistics(Command):
         #  cst.metadata.wrapper.MetadataWrapper]]` for 1st param but got `Dict[str,
         #  cst._nodes.module.Module]`.
         ignores = _path_wise_counts(modules, IgnoreCountCollector)
-        # pyre-fixme[6]: Expected `Dict[str, Union[cst._nodes.module.Module,
-        #  cst.metadata.wrapper.MetadataWrapper]]` for 1st param but got `Dict[str,
-        #  cst._nodes.module.Module]`.
-        strict_files = _path_wise_counts(modules, StrictCountCollector, self._strict)
+        strict_files = _path_wise_counts(
+            # pyre-fixme[6]: Expected `Dict[str, Union[cst._nodes.module.Module,
+            #  cst.metadata.wrapper.MetadataWrapper]]` for 1st param but got `Dict[str,
+            #  cst._nodes.module.Module]`.
+            modules,
+            StrictCountCollector,
+            self._configuration.strict,
+        )
         return {
             "annotations": {
                 path: counts.build_json() for path, counts in annotations.items()

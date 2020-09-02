@@ -201,6 +201,7 @@ class Configuration:
         use_buck_builder: Optional[bool] = None,
         buck_builder_binary: Optional[str] = None,
         excludes: Optional[List[str]] = None,
+        strict: bool = False,
         formatter: Optional[str] = None,
         logger: Optional[str] = None,
         log_directory: Optional[str] = None,
@@ -223,7 +224,7 @@ class Configuration:
         self._binary: Optional[str] = None
         self._typeshed: Optional[str] = None
         self._buck_builder_binary: Optional[str] = None
-        self.strict: bool = False
+        self.strict: bool = strict
         self._use_buck_builder: Optional[bool] = use_buck_builder
         self._use_buck_source_database: Optional[bool] = use_buck_source_database
         self.ignore_infer: List[str] = []

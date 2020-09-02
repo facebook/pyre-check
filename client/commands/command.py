@@ -227,7 +227,6 @@ class CommandParser(ABC):
     ) -> None:
         self._command_arguments = command_arguments
 
-        self._strict: bool = self._command_arguments.strict
         self._show_error_traces: bool = self._command_arguments.show_error_traces
         self._output: str = self._command_arguments.output
 
@@ -509,9 +508,6 @@ class Command(CommandParser, ABC):
         self._configuration: Configuration = (
             configuration or self.generate_configuration()
         )
-        self._strict: bool = (
-            self._command_arguments.strict or self._configuration.strict
-        )
         self._version_hash: str = self._configuration.version_hash
         self._taint_models_path: List[str] = self._configuration.taint_models_path
 
@@ -533,6 +529,7 @@ class Command(CommandParser, ABC):
             use_buck_builder=self._command_arguments.use_buck_builder,
             buck_builder_binary=self._command_arguments.buck_builder_binary,
             excludes=self._command_arguments.exclude,
+            strict=self._command_arguments.strict,
             logger=self._command_arguments.logger,
             formatter=self._command_arguments.formatter,
             log_directory=self._log_directory,
@@ -581,7 +578,7 @@ class Command(CommandParser, ABC):
             flags.extend(["-debug"])
         if self._command_arguments.sequential:
             flags.extend(["-sequential"])
-        if self._strict:
+        if self._configuration.strict:
             flags.extend(["-strict"])
         additional_checks = self._command_arguments.additional_checks
         if additional_checks:
