@@ -80,14 +80,11 @@ def common_options(func):
 
 
 def default_database(ctx: click.Context, _param: Parameter, value: Optional[str]):
-    """Try to guess a reasonable database name by looking at the repository path"""
+    """By default, use a database at the current dir"""
     if value:
         return value
 
-    if ctx.params["repository"]:
-        return os.path.join(ctx.params["repository"], DB.DEFAULT_DB_FILE)
-
-    raise click.BadParameter("Could not guess a database location")
+    return os.path.join(os.path.curdir, DB.DEFAULT_DB_FILE)
 
 
 @click.command(
