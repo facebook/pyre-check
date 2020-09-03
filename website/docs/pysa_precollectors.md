@@ -11,6 +11,10 @@ started. The current set of model generators is stored in
 [`tools/generate_taint_models`](https://github.com/facebook/pyre-check/tree/master/tools/generate_taint_models)
 within the pyre-check repository.
 
+Pysa now has the concept of a [Model DSL](pysa_model_dsl.md), which supports
+some model generation usecases which could previously only be done with model
+generators. You should prefer the Model DSL if it supports your usecase.
+
 ## Running Model Generators
 
 The majority of model generators require access to a running environment. For

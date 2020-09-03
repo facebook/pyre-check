@@ -14,6 +14,7 @@ module.exports = {
       "pysa-features",
       "pysa-advanced",
       "pysa-model-generators",
+      "pysa-model-dsl",
       "pysa-tips",
       "pysa-coverage",
       "static-analysis-post-processor",
