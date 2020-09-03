@@ -13,6 +13,7 @@ from flask_cors import CORS
 from flask_graphql import GraphQLView
 from sqlalchemy.orm import Session, scoped_session, sessionmaker
 
+from .db import DB
 from .models import Base
 from .schema import schema
 
@@ -43,7 +44,7 @@ def serve(path):
         return send_from_directory(application.static_folder, "index.html")
 
 
-def start_server(database, debug: bool):
+def start_server(database: DB, debug: bool) -> None:
     engine = sqlalchemy.create_engine(
         sqlalchemy.engine.url.URL("sqlite", database=database.dbname),
         echo=False,
