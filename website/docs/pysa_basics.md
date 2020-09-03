@@ -300,38 +300,45 @@ you would need to use the module in which it was defined:
 django.http.request.HttpRequest.GET: TaintSource[UserControlled] = ...
 ```
 
-#### Exact signatures
+#### Matching signatures
 
-The signatures of any modeled functions need to exactly match the the signature
-of the function, as seen by Pyre. Note that Pyre doesn't always see the
-definition of the of the functions directly. If [`.pyi` stub
+The signature of any modeled function needs to match the signature of the
+function, as seen by Pyre. Note that Pyre doesn't always see the definition of
+the of the functions directly. If [`.pyi` stub
 files](https://www.python.org/dev/peps/pep-0484/#stub-files) are present, Pyre
 will use the signatures from those files, rather than the actual signature from
-the function definition in your or your dependencies code. See the [Gradual
+the function definition in your or your dependencies' code. See the [Gradual
 Typing page](gradual_typing.md) for more info about these `.pyi` stubs.
 
-This exact signature requirement means that all parameters, including optional
-parameters, `*args`, and `**kwargs` must be present. The default value of
-optional parameters, however, can be elided (see below). Additionally, if a
-function includes an asterisk that indicates [keyword only
-arguments](https://www.python.org/dev/peps/pep-3102/), then that should be
-present too. So for example, `urllib.request.urlopen` has the following
-signature:
+This matching signature requirement means that all required parameters
+(parameters without a default arugment), must be present in your model and named
+identically to the parameters in the corresponding code or `.pyi` file.
+Parameters with default arguments, `*args`, and `**kwargs` may be included, but
+are not required. When copying parameters to your model, all type information
+must be removed, and all default values must be elided (see below).
+
+If a function includes an `*` that indicates [keyword only
+parameters](https://www.python.org/dev/peps/pep-3102/), or a `/` that indicates
+[positional-only parameters](https://www.python.org/dev/peps/pep-0570/), then
+that may be included in your model.
+
+For example, `urllib.request.urlopen` has the following signature:
 
 ```python
 def urlopen(url, data=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT, *, cafile=None,
             capath=None, cadefault=False, context=None):
 ```
 
-That function would be annotated like this:
+Given that signature, either of the following models are acceptable:
 
 ```python
 def urllib.request.urlopen(url: TaintSink[RequestSend], data = ...,
                            timeout = ..., *, cafile = ..., capath = ...,
                            cadefault = ..., context = ...): ...
+def urllib.request.urlopen(url: TaintSink[RequestSend]): ...
 ```
 
-Pysa will complain if the signature of your model doesn't exactly match the
+Pysa will complain if the signature of your model doesn't match the
 implementation. When working with functions defined outside your project, where
 you don't directly see the source, you can use [`pyre query`](querying_pyre.md)
 with the `signature` argument to have Pysa dump it's internal model of a
