@@ -87,3 +87,54 @@ from infering models for all functions in a class:
 ```python
 class skip_analysis.SkipMe(SkipAnalysis): ...
 ```
+
+## Ignoring overrides
+
+When a method is called on a base class, Pysa has to assume that that call could
+actually invoke any subclass methods that override the base class's method. For
+heavily overriden methods, this can lead to both performance impacts and false
+positives. When running Pysa, you may see messages such as this in the output:
+
+```
+2020-09-02 09:25:50,677 WARNING `object.__init__` has 106 overrides, this might slow down the analysis considerably.
+```
+
+The above message indicates that 106 subclasses of `object` have overridden
+`__init__`. If Pysa sees taint flowing into `object.__init__`, then it will
+treat all 106 overrides of `object.__init__` as also receiving that taint.
+
+The `SkipOverrides` annotation can be applied to deal with false positives or
+performance issues from having too many overrides on a given function:
+
+```python
+def object.__init__(self) -> SkipOverrides: ...
+```
+
+This annotation will cause Pysa not to propagate taint into to and from
+overridden methods on subclasses, when analyzing functions that call the
+overriden method on the base class.
+
+`maximum_overrides_to_analyze` can be added the the `options` block of
+`taint.config` to limit the number of overrides that Pysa will analyze:
+
+```json
+{
+  "sources": [],
+  "sinks": [],
+  "features": [],
+  "rules": [],
+  "options": {
+    "maximum_overrides_to_analyze": 60
+  }
+}
+```
+
+This can speed up the analysis, but it will lead to false positives, because
+Pysa will only propagate taint to or from 60 (in the case of the above example)
+overriden methods on subclasses. The remaining overriding methods will be
+ignored and treated as if they weren't actually overriding the base class
+method.
+
+By default, Pysa skips overrides on some functions that are typically
+problematic. You can find the full list of default-skipped functions in
+[`stubs/taint/skipped_overrides.pysa`](https://github.com/facebook/pyre-check/blob/master/stubs/taint/skipped_overrides.pysa)
