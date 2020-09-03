@@ -617,10 +617,7 @@ let test_prune_callables _ =
       DependencyGraph.from_callgraph callgraph |> DependencyGraph.union overrides
     in
     let { DependencyGraph.dependencies = actual_dependencies; pruned_callables = actual_callables } =
-      DependencyGraph.prune
-        dependencies
-        ~callables_with_dependency_information
-        ~override_targets:(Callable.Map.keys overrides)
+      DependencyGraph.prune dependencies ~callables_with_dependency_information
     in
     assert_equal
       ~cmp:(List.equal Callable.equal)
@@ -697,8 +694,8 @@ let test_prune_callables _ =
         "external.called_by_override", [];
         "external.C.m", [];
         "external.D.m", ["external.called_by_override"];
-        "O|external.C.m", ["O|external.D.m"];
-        "O|external.D.m", [];
+        "O|external.C.m", ["external.C.m"; "O|external.D.m"];
+        "O|external.D.m", ["external.D.m"];
       ];
   (* The calls go away if we don't have the override between C and D. *)
   assert_pruned
@@ -755,9 +752,9 @@ let test_prune_callables _ =
         "external.C.m", [];
         "external.D.m", [];
         "external.E.m", ["external.called_by_override"];
-        "O|external.C.m", ["O|external.D.m"];
-        "O|external.D.m", ["O|external.E.m"];
-        "O|external.E.m", [];
+        "O|external.C.m", ["external.C.m"; "O|external.D.m"];
+        "O|external.D.m", ["external.D.m"; "O|external.E.m"];
+        "O|external.E.m", ["external.E.m"];
       ];
   (* Strongly connected components are handled fine. *)
   assert_pruned

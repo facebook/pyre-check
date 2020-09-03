@@ -326,7 +326,6 @@ let analyze
         dependencies
         ~callables_with_dependency_information:
           (callables_with_dependency_information :> (Callable.t * bool) list)
-        ~override_targets
     in
     DependencyGraph.reverse dependencies, pruned_callables
   in

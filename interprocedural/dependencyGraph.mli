@@ -54,8 +54,4 @@ type prune_result = {
    belonging to dependencies. The prune operation restricts our callgraph to the subgraph reachable
    from the project callables. During this operation, we also return a list of pruned callables to
    analyze, i.e. we remove irrelevant dependencies from consideration. *)
-val prune
-  :  t ->
-  callables_with_dependency_information:(Callable.t * bool) list ->
-  override_targets:Callable.t list ->
-  prune_result
+val prune : t -> callables_with_dependency_information:(Callable.t * bool) list -> prune_result

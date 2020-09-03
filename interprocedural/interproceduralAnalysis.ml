@@ -336,15 +336,8 @@ let analyze_overrides ({ Fixpoint.iteration; _ } as step) callable =
     |> List.map ~f:(fun at_type -> Callable.create_derived_override callable ~at_type)
   in
   let model =
-    let get_override_model override =
-      match Fixpoint.get_model override with
-      | None ->
-          (* indicates this is the leaf and not explicitly represented *)
-          Fixpoint.get_model (Callable.get_corresponding_method override)
-      | model -> model
-    in
     let lookup_and_join ({ Result.is_obscure; models } as result) override =
-      match get_override_model override with
+      match Fixpoint.get_model override with
       | None ->
           Log.log
             ~section:`Interprocedural
@@ -511,21 +504,7 @@ let one_analysis_pass ~analyses ~step ~environment ~callables =
 
 
 let get_callable_dependents ~dependencies callable =
-  let explicit = Callable.Map.find dependencies callable |> Option.value ~default:[] in
-  (* Add implicit dependencies *)
-  let implicit =
-    match callable with
-    | #Callable.method_target as method_target ->
-        (* Leafs have no explicit override target. So for these we need to expand to their explicit
-           parents. *)
-        let override_target = Callable.get_corresponding_override method_target in
-        if Fixpoint.has_model override_target then
-          [override_target]
-        else
-          Callable.Map.find dependencies override_target |> Option.value ~default:[]
-    | _ -> []
-  in
-  implicit @ explicit
+  Callable.Map.find dependencies callable |> Option.value ~default:[]
 
 
 let compute_callables_to_reanalyze

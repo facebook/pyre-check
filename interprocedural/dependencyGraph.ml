@@ -231,7 +231,27 @@ let from_callgraph callgraph =
   Callable.RealMap.fold callgraph ~f:add ~init:Callable.Map.empty
 
 
+let union left right =
+  let combine ~key:_ left right = List.rev_append left right in
+  Map.merge_skewed ~combine left right
+
+
 let from_overrides overrides =
+  let connect_overrides_to_methods override_graph =
+    let overrides_to_methods =
+      let override_to_method_edge override =
+        match override with
+        | `OverrideTarget _ as override ->
+            let corresponding_method = Callable.get_corresponding_method override in
+            Some (override, [corresponding_method])
+        | _ -> None
+      in
+      Callable.Map.keys override_graph
+      |> List.filter_map ~f:override_to_method_edge
+      |> Callable.Map.of_alist_exn
+    in
+    union overrides_to_methods override_graph
+  in
   let add ~key:method_name ~data:subtypes (override_map, all_overrides) =
     let key = Callable.create_override method_name in
     let data =
@@ -252,6 +272,7 @@ let from_overrides overrides =
         override_map)
     all_overrides
     override_map
+  |> connect_overrides_to_methods
 
 
 let create_overrides ~environment ~source =
@@ -311,11 +332,6 @@ let create_overrides ~environment ~source =
     |> Map.map ~f:(List.dedup_and_sort ~compare:Reference.compare)
 
 
-let union left right =
-  let combine ~key:_ left right = List.rev_append left right in
-  Map.merge_skewed ~combine left right
-
-
 let expand_callees callees =
   let rec expand_and_gather expanded = function
     | (#Callable.real_target | #Callable.object_target) as real -> real :: expanded
@@ -338,35 +354,16 @@ type prune_result = {
   pruned_callables: Callable.t list;
 }
 
-let prune dependency_graph ~callables_with_dependency_information ~override_targets =
+let prune dependency_graph ~callables_with_dependency_information =
   let initial_callables =
     List.filter_map callables_with_dependency_information ~f:(fun (callable, is_internal) ->
         Option.some_if is_internal callable)
-  in
-  (* In order to have the DFS properly follow overrides -> implementations, we need to make the
-     implicit edge between overrides and methods explicit here. To save space, we only compute those
-     edges for the computation and discard them afterwards. *)
-  let dependency_graph_with_overrides =
-    let overrides_to_methods =
-      let override_to_method_edge override =
-        match override with
-        | `OverrideTarget _ as override ->
-            let corresponding_method = Callable.get_corresponding_method override in
-            if Callable.Map.mem dependency_graph corresponding_method then
-              Some (override, [corresponding_method])
-            else
-              None
-        | _ -> None
-      in
-      override_targets |> List.filter_map ~f:override_to_method_edge |> Callable.Map.of_alist_exn
-    in
-    union overrides_to_methods dependency_graph
   in
   (* We have an implicit edge from a method to the override it corresponds to during the analysis.
      During the pruning, we make the edges from the method to the override explicit to make sure the
      DFS captures the interesting overrides. *)
   let callables_to_keep =
-    depth_first_search dependency_graph_with_overrides initial_callables
+    depth_first_search dependency_graph initial_callables
     |> List.concat
     |> List.dedup_and_sort ~compare:Callable.compare
   in
