@@ -43,7 +43,7 @@ module.exports = {
           // Docs folder path relative to website dir.
           path: 'docs',
           // Sidebars file relative to website dir.
-          sidebarPath: FBInternalWithOssFallback(require.resolve('./fb/sidebars.js'), require.resolve('./sidebars.js')),
+          sidebarPath: FBInternalWithOssFallback('./fb/sidebars.js', require.resolve('./sidebars.js')),
         },
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
