@@ -43,7 +43,7 @@ def serve(path):
         return send_from_directory(application.static_folder, "index.html")
 
 
-def start_app(database, debug: bool):
+def start_server(database, debug: bool):
     engine = sqlalchemy.create_engine(
         sqlalchemy.engine.url.URL("sqlite", database=database.dbname),
         echo=False,

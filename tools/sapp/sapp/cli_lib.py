@@ -15,7 +15,7 @@ from click import Parameter, Path, argument, option
 from traitlets.config import Config
 
 from .analysis_output import AnalysisOutput
-from .application import start_app
+from .application import start_server
 from .context import Context, pass_context
 from .create_database import CreateDatabase
 from .database_saver import DatabaseSaver
@@ -209,7 +209,7 @@ def analyze(
 @option("--debug/--no-debug", default=False, help="Start Flask server in debug mode")
 @pass_context
 def server(ctx: Context, debug: bool):
-    start_app(ctx.database, debug)
+    start_server(ctx.database, debug)
 
 
 commands = [analyze, explore, server]
