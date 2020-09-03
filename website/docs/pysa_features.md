@@ -87,7 +87,7 @@ See the Automatic Features section for details.
 
 The `via-value` feature is similar to the `via` feature, however, it captures
 *the value of the specified argument, rather than a feature name*. Note that
-this only works for string literals and enums. For example,
+this only works for string literals, numeric literals, and enums. For example,
 `via-value:Access-Control-Allow-Origin` might indicate that the string literal
 `Access-Control-Allow-Origin` was used to set a header in a Django response.
 
@@ -102,6 +102,32 @@ def django.http.response.HttpResponse.__setitem__(
     self,
     header: TaintSink[ResponseHeaderName],
     value: TaintSink[ResponseHeaderValue, ViaValueOf[header]]
+): ...
+```
+
+### `via-type` Feature Using `ViaTypeOf[]`
+
+The `via-type` feature is nearly identical to the `via-value` feature, however,
+it captures *the type of the specified argument, rather than it's value*. Pysa
+will retrieve the type information for the argument from Pyre, and add a feature
+such as `"via-type": "str"`, `"via-type": "typing.List[str]"`, or `"via-type":
+"typing.Any"` (in the case Pyre doesn't have type information).
+
+`ViaTypeOf` is useful for sinks such as `subprocess.run`, which accepts
+`Union[bytes, str, Sequence]` for it's `arg` parameter. The `via-type` feature
+can help identify which type the argument to `arg` actaully had. Knowning the
+type of the arugument can help asses the severity of a given issue (user
+controlled input in a `str` passed to `arg` is much easier to exploit for RCE
+than user controlled input in one element of a `Sequence` passed to `arg`).
+
+The `via-value` feature can be added anywhere that the `via` feature can be
+added. It is added by specifying `ViaTypeOf[PARAMETER_NAME]`, where
+`PARAMETER_NAME` is the name of the function parameter for which you would like
+to capture the argument value:
+
+```python
+def subprocess.run(
+    args: TaintSink[RemoteCodeExecution, ViaTypeOf[args]],
 ): ...
 ```
 
