@@ -70,6 +70,58 @@ def eval_and_log(*, eval: TaintSink[RemoteCodeExecution], **kwargs): ...
 
 This allows us to catch flows only into the `eval` keyword argument.
 
+## Combined Source Rules
+
+Some security vulnerabilities are better modeled as *multiple* sources reaching
+a sink. For example, leaking credentials via `requests.get` could be modeled as
+user controlled data flowing into the `url` parameter and credentials flowing
+into the `params` parameter. These flows can be modeled by *combined source
+rules*.
+
+Sources for combined source rules are declared as normal in `taint.config`.
+Sinks, however, have to include a `multi_sink_labels` entry which declares
+labels that will correspond to each source. The rule itself is declared in the
+`combined_source_rules` top level entry. The rule lists all the same things as a
+reglular rule, but also ties the labels from `multi_sink_labels` to each source:
+
+```json
+{
+  "sources": [
+    { "name": "UserControlled" },
+    { "name": "Credentials" }
+  ],
+  "sinks": [
+    { "name": "UserControlledRequestWithCreds", "multi_sink_labels": ["url", "creds"] }
+  ],
+  "combined_source_rules": [
+    {
+       "name": "Credentials leaked through requests",
+       "sources": { "url": "UserControlled", "creds": "Credentials" },
+       "sinks": ["UserControlledRequestWithCreds"],
+       "code": 1,
+       "message_format": "Credentials leaked through requests"
+    }
+  ]
+}
+```
+
+Sources are declared as normal in `.pysa` files. Instead of specifying sinks
+with a `TaintSink` annotation, however, `PartialSink` annotations are used to
+specify where each source needs to flow for the combined source rule. These
+`PartialSink` must reference the labels that were declared in
+`multi_sink_labels`:
+
+```python
+def requests.api.get(
+  url: PartialSink[UserControlledRequestWithCreds[url]],
+  params: PartialSink[UserControlledRequestWithCreds[creds]] = ...,
+  **kwargs
+): ...
+```
+
+With the above configuration, Pysa can detect cases where `UserControlled` flows
+into `url` and `Credentials` flow into `params` *at the same time*.
+
 ## Prevent Inferring Models with `SkipAnalysis`
 
 In addition to the models defined in `.pysa` files, Pysa will infer models for
