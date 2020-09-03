@@ -74,11 +74,11 @@ by Pysa and the models will be used during the analysis.
 Sources are where tainted data originates. They are declared in your
 `taint.config` file like this:
 
-```python
-sources: [
+```json
+"sources": [
     {
-        name: "Cookies",
-        comment: "used to annotate cookie sources"
+        "name": "Cookies",
+        "comment": "used to annotate cookie sources"
     },
 ]
 ```
@@ -126,11 +126,11 @@ def applies_to_index.only_applies_to_a_key() -> AppliesTo["a", TaintSource[Test]
 Sinks are where tainted data terminates. They are declared in your
 `taint.config` file like this:
 
-```python
-sinks: [
+```json
+"sinks": [
   {
-    name: "SQL",
-    comment: "use to annotate places of SQL injection risk"
+    "name": "SQL",
+    "comment": "use to annotate places of SQL injection risk"
   }
 ]
 ```
@@ -164,9 +164,9 @@ conditional tests are supported as implicit sinks. This allows writing rules
 that track whether a particular source is used in a conditional test
 expression.
 
-```python
-implicit_sinks: {
-  conditional_test: [ <your kind> ]
+```json
+"implicit_sinks": {
+  "conditional_test": [ <your kind> ]
 }
 ```
 
@@ -175,14 +175,14 @@ implicit_sinks: {
 Rules declare which flows from source to sink we are concerned about. They are
 declared in your `taint.config` file like this:
 
-```python
-rules: [
+```json
+"rules": [
   {
-    name: "SQL injection.",
-    code: 1,
-    sources: [ "UserControlled" ],
-    sinks: [ "SQL" ],
-    message_format: "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)"
+    "name": "SQL injection.",
+    "code": 1,
+    "sources": [ "UserControlled" ],
+    "sinks": [ "SQL" ],
+    "message_format": "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)"
   }
 ]
 ```
