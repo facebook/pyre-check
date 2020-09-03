@@ -16,9 +16,9 @@ flows of data from where they originate (sources) to where they terminate in a
 dangerous location (sinks). For example, we might use it to track flows where
 user-controllable request data flows into an `eval` call, leading to a remote
 code execution vulnerability. This analysis is made possible by user-created
-stubs which provide annotations on source code, as well as rules that define
+models which provide annotations on source code, as well as rules that define
 which sources are dangerous for which sinks. Pysa comes with many pre-written
-stubs and rules for builtin and common python libraries.
+models and rules for builtin and common python libraries.
 
 Pysa propagates taint as operations are performed on tainted data. For example,
 if we start with a tainted integer and perform a number of operations on it, the
@@ -59,14 +59,14 @@ some_sink(x.__class__) # This is (unfortunately) also detected
 Pysa uses two types of files for configuration: a single `taint.config` file,
 and an unlimited number of files with a `.pysa` extension. The `taint.config`
 file is a JSON document which stores definitions for *sources*, *sinks*, *features*,
-and *rules* (discussed below). The `.pysa` files are stub files (also discussed
+and *rules* (discussed below). The `.pysa` files are model files (also discussed
 below) which annotate your code with the *sources*, *sinks*, and *features* defined in
 your `taint.config` file. Examples of these files can be found in the [Pyre
 repository](https://github.com/facebook/pyre-check/tree/master/stubs/taint).
 
 These files live in the directory configured by `taint_models_path` in your
 `.pyre_configuration` file. Any `.pysa` file found in this folder will be parsed
-by Pysa and the stubs will be used during the analysis.
+by Pysa and the models will be used during the analysis.
 
 
 ## Sources
@@ -83,7 +83,7 @@ sources: [
 ]
 ```
 
-Stubs that indicate what is a source are then defined in `.pysa`
+Models that indicate what is a source are then defined in `.pysa`
 files. Sources are declared with the same syntax as [type annotations in Python
 3](https://docs.python.org/3/library/typing.html). Function return types,
 class/model attributes, and even entire classes can be declared as sources by
@@ -105,7 +105,7 @@ django.http.request.HttpRequest.COOKIES: TaintSource[Cookies] = ...
 
 When tainting an entire class, any return from a method or access of an
 attribute of the class will count as a returning tainted data. The specifics of
-these stub files are discussed further in the Stubs section.
+these model files are discussed further in the Models section.
 
 ```python
 # Class source:
@@ -135,7 +135,7 @@ sinks: [
 ]
 ```
 
-Stubs that indicate what is a sink are then defined in `.pysa` files. Sinks can
+Models that indicate what is a sink are then defined in `.pysa` files. Sinks can
 be added to the same files as sources. Like sources, sinks are declared with
 the same syntax as [type annotations in Python
 3](https://docs.python.org/3/library/typing.html). Function parameters and even
@@ -148,8 +148,8 @@ def sqlite3.dbapi2.Cursor.execute(self, sql: TaintSink[SQL], parameters): ...
 ```
 
 When tainting an entire class, any flow into a method or attribute of the class
-will count as a flow to a taint sink. The specifics of these stub files are
-discussed further in the Stubs section.
+will count as a flow to a taint sink. The specifics of these model files are
+discussed further in the Models section.
 
 ```python
 # Entire class sink
@@ -196,7 +196,7 @@ in the detected flow.
 
 ## Sanitizers
 
-Sanitizers break a taint flow by removing taint from data. Stubs that indicate
+Sanitizers break a taint flow by removing taint from data. Models that indicate
 sanitizing functions are defined in `.pysa` files. Sanitizers can be added to
 the same files as sources and sinks. Functions are declared as sanitizers by
 marking their return type as `Sanitize`:
@@ -238,7 +238,7 @@ Sometimes the features discussed in the Taint Analysis section are not enough to
 detect all taint flows. In particular, Pysa relies on additional annotations to
 help it understand when an object is tainted via a function call or when a
 function call on a tainted object returns tainted data. Taint propagation is
-defined by adding `TaintInTaintOut` annotations to stubs in `.pysa` files.
+defined by adding `TaintInTaintOut` annotations to models in `.pysa` files.
 
 When a function call taints an object, such as when you update a dictionary with
 a tainted value, Pysa needs a `TaintInTaintOut` annotation that indicates
@@ -261,7 +261,7 @@ def dict.get(self: TaintInTaintOut[LocalReturn], key, default = ...): ...
 Feature annotations are also placed in your `taint.config` and `.pysa` files.
 This is a larger topic and will be covered in detail on [its own page](pysa_features.md).
 
-## Stub files
+## Model files
 
 ### Usage
 
@@ -275,13 +275,6 @@ allows us apply two different annotations to them:
 django.http.request.HttpRequest.COOKIES: TaintSource[UserControlled] = ...
 django.http.request.HttpRequest.COOKIES: TaintSource[Cookies] = ...
 ```
-
-There are other stub files with the `.pyi` extension which can also exist in
-your codebase. These `.pyi` stubs are similar and use [the same
-syntax](https://www.python.org/dev/peps/pep-0484/#stub-files) as the `.pysa`
-stubs, but are not the stubs that are referred to in this document (though they
-are relevant to static analysis). See the [Gradual Typing
-page](gradual_typing.md) for more info.
 
 ### Requirements and Features
 
@@ -302,8 +295,15 @@ django.http.request.HttpRequest.GET: TaintSource[UserControlled] = ...
 
 #### Exact signatures
 
-The signatures of any stub functions need to exactly match the the signature of
-the function definition. This means that all parameters, including optional
+The signatures of any modeled functions need to exactly match the the signature
+of the function, as seen by Pyre. Note that Pyre doesn't always see the
+definition of the of the functions directly. If [`.pyi` stub
+files](https://www.python.org/dev/peps/pep-0484/#stub-files) are present, Pyre
+will use the signatures from those files, rather than the actual signature from
+the function definition in your or your dependencies code. See the [Gradual
+Typing page](gradual_typing.md) for more info about these `.pyi` stubs.
+
+This exact signature requirement means that all parameters, including optional
 parameters, `*args`, and `**kwargs` must be present. The default value of
 optional parameters, however, can be elided (see below). Additionally, if a
 function includes an asterisk that indicates [keyword only
@@ -324,7 +324,7 @@ def urllib.request.urlopen(url: TaintSink[RequestSend], data = ...,
                            cadefault = ..., context = ...): ...
 ```
 
-Pysa will complain if the signature of your stub doesn't exactly match the
+Pysa will complain if the signature of your model doesn't exactly match the
 implementation. When working with functions defined outside your project, where
 you don't directly see the source, you can use [`pyre query`](querying_pyre.md)
 with the `signature` argument to have Pysa dump it's internal model of a

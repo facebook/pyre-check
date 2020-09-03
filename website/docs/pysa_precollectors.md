@@ -6,7 +6,7 @@ sidebar_label: Dynamically Generating Models
 
 Some sources and sinks may be too numerous or too rapidly changing for defining
 them statically to be practical. For these scenarios, Pysa has the concept of
-model generators, which can generate taint stubs by reading the project's source code before static analysis is
+model generators, which can generate taint models by reading the project's source code before static analysis is
 started. The current set of model generators is stored in
 [`tools/generate_taint_models`](https://github.com/facebook/pyre-check/tree/master/tools/generate_taint_models)
 within the pyre-check repository.
@@ -48,7 +48,7 @@ objects, because they are already annotated as `ReturnedToUser` sinks.
 ### [`GraphQLSourceGenerator`](https://github.com/facebook/pyre-check/blob/master/tools/generate_taint_models/get_graphql_sources.py)
 
 This model generator is similar to the `RESTApiSourceGenerator` and
-`ExitNodeGenerator` discussed above, but it is intended to generate stubs with
+`ExitNodeGenerator` discussed above, but it is intended to generate models with
 `UserControlled` and `ReturnedToUser` annotations for graphene-style GraphQL
 `resolver` functions.
 

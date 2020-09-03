@@ -54,8 +54,8 @@ more details.
 ### Stubs
 
 The concept of stubs is covered in general _[here](pysa_basics.md)_, but this
-section in particular will cover specific issues you may encounter with the
-`.pyi` kind of stubs. These stubs can be used to prevent pyre errors for types
+section in particular will cover specific issues you may encounter with
+`.pyi` stubs. These stubs can be used to prevent pyre errors for types
 that live outside the codebase you are running Pysa on. The simplest stubs are
 just empty files in the root of the `stubs` directory (assuming you have a
 `stubs` directory specified in the `search_path` list in your
@@ -72,9 +72,9 @@ variable = ZXCV()
 variable.hjkl()
 ```
 
-If you want to be able to create `.pysa` stubs (i.e. annotate sources, sinks,
+If you want to be able to create `.pysa` models (i.e. annotate sources, sinks,
 etc.) for something that is outside your codebase, such as Django's
-`django.http.request.HttpRequest` object, you need more than just an empty stubs
+`django.http.request.HttpRequest` object, you need more than just an empty stub
 file. You need a directory structure and `.pyi` file that matches your import,
 such as `stubs/django/http/request.pyi`. Within that `.pyi` file, you
 then need a stub of the class:

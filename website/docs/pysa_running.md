@@ -15,13 +15,13 @@ The setup requires the following 4 types of files.
 1. **Source Code** (`*.py`): This is your application's code.
 2. **Taint Config** (`taint.config`): This file declares sources, sinks,
    features, and rules.
-3. **Taint Stubs** (`.pysa`): These files link together the information in your
+3. **Taint Models** (`.pysa`): These files link together the information in your
    source code and `taint.config`. They tell Pysa where in our code there
    exist sources and sinks.
 4. **Pysa Configuration** (`.pyre_configuration`): Parts of this file are
    critical to using Pysa. `source_directories` tells Pysa
    the directory containing the source code you want to analyze.
-   `taint_models_path` tells Pysa where to find the config and stub files.
+   `taint_models_path` tells Pysa where to find the config and model files.
 
 ## Example
 
@@ -93,7 +93,7 @@ This declares the valid sources and sinks that Pysa should recognize. We
 also tell Pysa that data flowing from a `UserControlled` source to a
 `RemoteCodeExecution` sink is a possible shell injection.
 
-### 3. Taint Stubs
+### 3. Taint Models
 
 ```python
 # static_analysis_example/stubs/taint/general.pysa
@@ -120,7 +120,7 @@ use it to tell Pysa where in our code there exist sources and sinks.
 ```
 
 Pysa needs to know what directory to analyze, as well as where to find the config
-and stub files.
+and model files.
 
 ### Analysis
 

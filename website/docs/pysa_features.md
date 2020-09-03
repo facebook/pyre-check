@@ -39,7 +39,7 @@ The `via` feature can be appended to `TaintSource`, `TaintSink` and
 `TaintInTaintOut` annotations, to add extra metadata to any flow that goes
 through that annotated function/parameter/attribute. This is done by adding
 `Via[FEATURE_NAME]` within square brackets after the `TaintXXXX` annotation in a
-stubs file:
+model file:
 
 ```python
 # Augmenting TaintSource
@@ -57,7 +57,7 @@ Pysa also supports attaching features to inferred flows, which allows you to
 filter flows passing through a function without having to annotate the taint
 yourself explicitly, and having the feature attached to all taint flowing
 through the function. This is done by adding the `AttachToSource`,
-`AttachToSink`, and `AttachToTito` annotations in a stubs file:
+`AttachToSink`, and `AttachToTito` annotations in a model file:
 
 ```python
 # Attaching taint to sources.
