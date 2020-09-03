@@ -6,6 +6,7 @@
 
 import functools
 import logging
+import logging.handlers
 import multiprocessing
 import os
 import signal
@@ -93,8 +94,13 @@ class Subscriber(object):
                 )
             ):
                 LOG.debug(f"Acquired lock on {lock_path}")
-                file_handler = logging.FileHandler(
-                    os.path.join(self._base_path, f"{self._name}.log"), mode="w"
+                file_handler = logging.handlers.RotatingFileHandler(
+                    os.path.join(self._base_path, f"{self._name}.log"),
+                    mode="a",
+                    # Keep at most 5 log files on disk
+                    backupCount=4,
+                    # Limit the size of each log file to 10MB
+                    maxBytes=10 * 1000 * 1000,
                 )
                 file_handler.setFormatter(
                     logging.Formatter("%(asctime)s %(levelname)s %(message)s")
