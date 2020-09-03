@@ -23,7 +23,6 @@ application = Flask(
 )
 # TODO(T58070180): we should remove the cross origin policy.
 CORS(application)
-application.debug = True
 
 session: Optional[Session] = None
 
@@ -44,13 +43,14 @@ def serve(path):
         return send_from_directory(application.static_folder, "index.html")
 
 
-def start_app(database):
+def start_app(database, debug: bool):
     engine = sqlalchemy.create_engine(
         sqlalchemy.engine.url.URL("sqlite", database=database.dbname),
         echo=False,
         poolclass=None,
     )
     session = scoped_session(sessionmaker(bind=engine))
+    # pyre-ignore
     Base.query = session.query_property()
 
     application.add_url_rule(
@@ -63,4 +63,4 @@ def start_app(database):
         ),
     )
 
-    application.run()
+    application.run(debug=debug)

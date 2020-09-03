@@ -206,9 +206,10 @@ def analyze(
     help="backend flask server for exploration of issues",
     context_settings={"ignore_unknown_options": True},
 )
+@option("--debug/--no-debug", default=False, help="Start Flask server in debug mode")
 @pass_context
-def server(ctx: Context):
-    start_app(ctx.database)
+def server(ctx: Context, debug: bool):
+    start_app(ctx.database, debug)
 
 
 commands = [analyze, explore, server]
