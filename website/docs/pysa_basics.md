@@ -206,6 +206,13 @@ marking their return type as `Sanitize`:
 def django.utils.html.escape(text) -> Sanitize: ...
 ```
 
+Attributes can also be marked as sanitizers to remove all taint passing through
+them:
+
+```python
+django.http.request.HttpRequest.GET: Sanitize = ...
+```
+
 This annotation is useful in the case of explicit sanitizers such as `escape`,
 which helps prevent cross site scripting (XSS) by escaping HTML characters. The
 annotation is also useful, however, in cases where a function is not intended to
