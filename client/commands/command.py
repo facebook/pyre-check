@@ -25,10 +25,10 @@ from ..analysis_directory import AnalysisDirectory, resolve_analysis_directory
 from ..configuration import Configuration
 from ..exceptions import EnvironmentException
 from ..filesystem import readable_directory, remove_if_exists
-from ..find_directories import find_global_and_local_root
+from ..find_directories import find_global_and_local_root, get_relative_local_root
 from ..log import StreamLogger
 from ..process import Process
-from ..resources import LOG_DIRECTORY, find_log_directory
+from ..resources import LOG_DIRECTORY
 from ..socket_connection import SocketConnection, SocketException
 
 
@@ -241,7 +241,7 @@ class CommandParser(ABC):
         found_root = find_global_and_local_root(base_directory)
         if found_root is None:
             # FIXME: We should fail here.
-            global_root = original_directory
+            global_root = Path(original_directory)
             local_root = None
         else:
             global_root = found_root.global_root
@@ -254,8 +254,12 @@ class CommandParser(ABC):
             self._command_arguments.dot_pyre_directory
             or Path(self._project_root, LOG_DIRECTORY)
         )
-        self._log_directory: str = find_log_directory(
-            self._project_root, self._local_root, str(self._dot_pyre_directory)
+        relative_local_root = get_relative_local_root(global_root, local_root)
+        self.relative_local_root: Optional[str] = relative_local_root
+        self._log_directory: str = str(
+            self._dot_pyre_directory
+            if relative_local_root is None
+            else self._dot_pyre_directory / relative_local_root
         )
         Path(self._log_directory).mkdir(parents=True, exist_ok=True)
 
@@ -484,12 +488,6 @@ class CommandParser(ABC):
     @property
     def noninteractive(self) -> bool:
         return self._noninteractive
-
-    @property
-    def relative_local_root(self) -> Optional[str]:
-        if not self.local_root:
-            return None
-        return str(Path(self.log_directory).relative_to(self._dot_pyre_directory))
 
 
 class Command(CommandParser, ABC):

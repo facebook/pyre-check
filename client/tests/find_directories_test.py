@@ -16,6 +16,7 @@ from ..find_directories import (
     find_global_root,
     find_parent_directory_containing_directory,
     find_parent_directory_containing_file,
+    get_relative_local_root,
 )
 
 
@@ -24,6 +25,42 @@ def _ensure_files_exist(root: Path, relatives: Iterable[str]) -> None:
         full_path = root / relative
         full_path.parent.mkdir(parents=True, exist_ok=True)
         full_path.touch(exist_ok=True)
+
+
+class RelativeLocalRootTest(unittest.TestCase):
+    def assert_relative_local_root(
+        self, global_root: str, local_root: Optional[str], expected: Optional[str]
+    ) -> None:
+        self.assertEqual(
+            get_relative_local_root(
+                global_root=Path(global_root),
+                local_root=Path(local_root) if local_root is not None else None,
+            ),
+            expected,
+        )
+
+    def test_relative_local_root(self) -> None:
+        self.assert_relative_local_root(
+            global_root="foo", local_root=None, expected=None
+        )
+        self.assert_relative_local_root(
+            global_root="foo", local_root="foo", expected="."
+        )
+        self.assert_relative_local_root(
+            global_root="foo", local_root="foo/bar", expected="bar"
+        )
+        self.assert_relative_local_root(
+            global_root="foo/bar", local_root="foo/bar/baz", expected="baz"
+        )
+        self.assert_relative_local_root(
+            global_root="foo/bar", local_root="foo/bar/baz/qux", expected="baz/qux"
+        )
+        self.assert_relative_local_root(
+            global_root="/foo/bar", local_root="/foo/bar/baz", expected="baz"
+        )
+        self.assert_relative_local_root(
+            global_root="foo", local_root="bar", expected=None
+        )
 
 
 class FindParentDirectoryContainingFileTest(unittest.TestCase):

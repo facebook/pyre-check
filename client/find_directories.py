@@ -56,6 +56,19 @@ def find_global_root(base: Path) -> Optional[Path]:
     return find_parent_directory_containing_file(base, CONFIGURATION_FILE)
 
 
+def get_relative_local_root(
+    global_root: Path, local_root: Optional[Path]
+) -> Optional[str]:
+    if local_root is None:
+        return None
+    else:
+        try:
+            return str(local_root.relative_to(global_root))
+        except ValueError:
+            # This happens when `local_root` is not prefixed by `global_root`
+            return None
+
+
 class FoundRoot(NamedTuple):
     global_root: Path
     local_root: Optional[Path] = None
