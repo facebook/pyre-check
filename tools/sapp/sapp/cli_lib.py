@@ -32,7 +32,6 @@ from .trim_trace_graph import TrimTraceGraph
 MARKER_DIRECTORIES = [".pyre", ".hg", ".git", ".svn"]
 
 logger = logging.getLogger("sapp")
-logging.basicConfig(format="%(asctime)s [%(levelname)s] %(message)s")
 
 
 def require_option(current_ctx: click.Context, param_name: str) -> None:
