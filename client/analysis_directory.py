@@ -257,6 +257,7 @@ class SharedAnalysisDirectory(AnalysisDirectory):
         runtime: float,
         number_of_user_changed_files: int,
         number_of_updated_files: int,
+        number_of_unsupported_files: int = 0,
     ) -> None:
         configuration = self._configuration
         if not configuration or not configuration.logger:
@@ -269,6 +270,7 @@ class SharedAnalysisDirectory(AnalysisDirectory):
                 "runtime": int(runtime * 1000),
                 "number_of_user_changed_files": number_of_user_changed_files,
                 "number_of_updated_files": number_of_updated_files,
+                "number_of_unsupported_files": number_of_unsupported_files,
             },
             normals={
                 "event_type": event_type.value,
@@ -278,9 +280,11 @@ class SharedAnalysisDirectory(AnalysisDirectory):
         )
 
     # Exposed for testing.
-    def _resolve_source_directories(self) -> None:
+    def _resolve_source_directories(self) -> Optional[buck.BuckBuildOutput]:
+        buck_build_output = None
         if self._targets:
-            new_source_directories = self._buck_builder.build(self._targets)
+            buck_build_output = self._buck_builder.build(self._targets)
+            new_source_directories = buck_build_output.output_directories
             original_directory = self._original_directory
             if original_directory is not None:
                 new_source_directories = translate_paths(
@@ -300,13 +304,14 @@ class SharedAnalysisDirectory(AnalysisDirectory):
             See `pyre --help` for more details.
             """
             raise NotWithinLocalConfigurationException(textwrap.dedent(message).strip())
+        return buck_build_output
 
     def prepare(self) -> None:
         start = time()
         root = self.get_root()
         LOG.info("Constructing shared directory `%s`", root)
 
-        self._resolve_source_directories()
+        buck_build_output = self._resolve_source_directories()
 
         try:
             os.makedirs(root)
@@ -326,6 +331,9 @@ class SharedAnalysisDirectory(AnalysisDirectory):
             runtime,
             number_of_user_changed_files=0,
             number_of_updated_files=len(self._symbolic_links),
+            number_of_unsupported_files=len(buck_build_output.unsupported_files)
+            if buck_build_output is not None
+            else 0,
         )
 
     def rebuild(self) -> None:
@@ -730,7 +738,6 @@ def _get_buck_builder(
     buck_mode: Optional[str],
     relative_local_root: Optional[str],
     isolate: bool,
-    debug: bool,
 ) -> BuckBuilder:
     if not configuration.use_buck_builder:
         return buck.SimpleBuckBuilder()
@@ -750,7 +757,6 @@ def _get_buck_builder(
     return buck.FastBuckBuilder(
         buck_root=buck_root,
         buck_builder_binary=configuration.buck_builder_binary,
-        debug_mode=debug,
         buck_mode=buck_mode,
         project_name=project_name,
     )
@@ -763,7 +769,6 @@ def resolve_analysis_directory(
     original_directory: str,
     project_root: str,
     filter_directory: Optional[str],
-    debug: bool,
     buck_mode: Optional[str],
     isolate: bool = False,
     relative_local_root: Optional[str] = None,
@@ -809,7 +814,7 @@ def resolve_analysis_directory(
         )
     else:
         buck_builder = _get_buck_builder(
-            project_root, configuration, buck_mode, relative_local_root, isolate, debug
+            project_root, configuration, buck_mode, relative_local_root, isolate
         )
 
         analysis_directory = SharedAnalysisDirectory(

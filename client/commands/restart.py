@@ -90,7 +90,6 @@ class Restart(Command):
             self._original_directory,
             self._project_root,
             filter_directory=self._command_arguments.filter_directory,
-            debug=self._command_arguments.debug,
             buck_mode=self._command_arguments.buck_mode,
             relative_local_root=self.relative_local_root,
         )

@@ -32,16 +32,17 @@ class BuckOut(NamedTuple):
     targets_not_found: Set[str]
 
 
+class BuckBuildOutput(NamedTuple):
+    output_directories: List[str]
+    unsupported_files: List[str]
+
+
 class BuckException(Exception):
     pass
 
 
 class BuckBuilder:
-    def build(self, targets: Iterable[str]) -> Iterable[str]:
-        """
-            Build the given targets, and return a list of output directories
-            containing the target output.
-        """
+    def build(self, targets: Iterable[str]) -> BuckBuildOutput:
         raise NotImplementedError
 
     def __str__(self) -> str:
@@ -61,7 +62,7 @@ class SourceDatabaseBuckBuilder(BuckBuilder):
         )
         self._buck_mode = buck_mode
 
-    def build(self, targets: Iterable[str]) -> List[str]:
+    def build(self, targets: Iterable[str]) -> BuckBuildOutput:
         try:
             source_database_buck_builder.build(
                 list(targets),
@@ -69,7 +70,9 @@ class SourceDatabaseBuckBuilder(BuckBuilder):
                 Path(self._buck_root),
                 self._buck_mode,
             )
-            return [self._output_directory]
+            return BuckBuildOutput(
+                output_directories=[self._output_directory], unsupported_files=[]
+            )
         except Exception as exception:
             raise BuckException(
                 f"Failed to build targets because of exception: {exception}"
@@ -91,7 +94,6 @@ class FastBuckBuilder(BuckBuilder):
         buck_root: str,
         output_directory: Optional[str] = None,
         buck_builder_binary: Optional[str] = None,
-        debug_mode: bool = False,
         buck_mode: Optional[str] = None,
         project_name: Optional[str] = None,
     ) -> None:
@@ -100,7 +102,6 @@ class FastBuckBuilder(BuckBuilder):
             prefix=OUTPUT_DIRECTORY_PREFIX
         )
         self._buck_builder_binary = buck_builder_binary
-        self._debug_mode = debug_mode
         self._buck_mode = buck_mode
         self._project_name = project_name
         self.conflicting_files: List[str] = []
@@ -113,7 +114,6 @@ class FastBuckBuilder(BuckBuilder):
             self._buck_root == other._buck_root
             and self._output_directory == other._output_directory
             and self._buck_builder_binary == other._buck_builder_binary
-            and self._debug_mode == other._debug_mode
             and self._buck_mode == other._buck_mode
             and self._project_name == other._project_name
             and self.conflicting_files == other.conflicting_files
@@ -129,7 +129,7 @@ class FastBuckBuilder(BuckBuilder):
             )
         return builder_binary
 
-    def build(self, targets: Iterable[str]) -> List[str]:
+    def build(self, targets: Iterable[str]) -> BuckBuildOutput:
         command = [
             self._get_builder_executable(),
             "-J-Djava.net.preferIPv6Addresses=true",
@@ -139,8 +139,7 @@ class FastBuckBuilder(BuckBuilder):
             "--output_directory",
             self._output_directory,
         ] + list(targets)
-        if self._debug_mode:
-            command.append("--debug")
+        command.append("--debug")
         buck_mode = self._buck_mode
         if buck_mode:
             command.extend(["--mode", buck_mode])
@@ -168,13 +167,15 @@ class FastBuckBuilder(BuckBuilder):
             log_processor.join()
             if return_code == 0:
                 LOG.info("Finished building targets.")
-                if self._debug_mode:
-                    # pyre-fixme[6]: Expected `_Reader` for 1st param but got
-                    #  `Optional[typing.IO[typing.Any]]`.
-                    debug_output = json.load(buck_builder_process.stdout)
-                    self.conflicting_files += debug_output["conflictingFiles"]
-                    self.unsupported_files += debug_output["unsupportedFiles"]
-                return [self._output_directory]
+                # pyre-fixme[6]: Expected `_Reader` for 1st param but got
+                #  `Optional[typing.IO[typing.Any]]`.
+                debug_output = json.load(buck_builder_process.stdout)
+                self.conflicting_files += debug_output["conflictingFiles"]
+                self.unsupported_files += debug_output["unsupportedFiles"]
+                return BuckBuildOutput(
+                    output_directories=[self._output_directory],
+                    unsupported_files=self.unsupported_files,
+                )
             else:
                 raise BuckException(
                     f"Failed to build targets with:\n`{' '.join(command)}`"
@@ -199,12 +200,15 @@ class FastBuckBuilder(BuckBuilder):
 
 
 class SimpleBuckBuilder(BuckBuilder):
-    def build(self, targets: Iterable[str]) -> Iterable[str]:
+    def build(self, targets: Iterable[str]) -> BuckBuildOutput:
         """
             Shell out to buck to build the targets, then yield the paths to the
             link trees.
         """
-        return generate_source_directories(targets)
+        return BuckBuildOutput(
+            output_directories=list(generate_source_directories(targets)),
+            unsupported_files=[],
+        )
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, SimpleBuckBuilder):

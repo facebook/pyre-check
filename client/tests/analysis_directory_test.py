@@ -86,7 +86,6 @@ class AnalysisDirectoryTest(unittest.TestCase):
             project_root=project_root,
             filter_directory=None,
             buck_mode=None,
-            debug=False,
         )
         self.assertEqualRootAndFilterRoot(
             analysis_directory, expected_analysis_directory
@@ -103,7 +102,6 @@ class AnalysisDirectoryTest(unittest.TestCase):
             project_root=project_root,
             filter_directory="/real/directory",
             buck_mode=None,
-            debug=False,
         )
         self.assertEqualRootAndFilterRoot(
             analysis_directory, expected_analysis_directory
@@ -153,7 +151,6 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
             original_directory="/buck_root/pyre_root/local",
             project_root="/buck_root/pyre_root",
             filter_directory=None,
-            debug=False,
             buck_mode=None,
             isolate=False,
             relative_local_root=None,
@@ -175,7 +172,6 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
             original_directory="/foo",
             project_root="/foo",
             filter_directory=None,
-            debug=False,
             buck_mode=None,
             isolate=False,
             relative_local_root=None,
@@ -816,7 +812,6 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
             buck_mode=None,
             relative_local_root=None,
             isolate=False,
-            debug=False,
         )
         self.assertEqual(actual, buck.SimpleBuckBuilder())
 
@@ -839,14 +834,12 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
             buck_mode=None,
             relative_local_root=None,
             isolate=False,
-            debug=False,
         )
         self.assertEqual(
             actual,
             buck.FastBuckBuilder(
                 buck_root=find_buck_root(),
                 buck_builder_binary=configuration.buck_builder_binary,
-                debug_mode=False,
                 buck_mode=None,
                 project_name=get_project_name(),
             ),
@@ -867,7 +860,6 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
             buck_mode=None,
             relative_local_root=None,
             isolate=False,
-            debug=False,
         )
         self.assertEqual(
             actual,
@@ -909,7 +901,6 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
             project_root=project_root,
             filter_directory="/real/directory",
             buck_mode=None,
-            debug=False,
         )
         self.assertEqualRootAndFilterRoot(
             analysis_directory, expected_analysis_directory
@@ -930,7 +921,6 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
             project_root=project_root,
             filter_directory="/filter",
             buck_mode=None,
-            debug=False,
         )
         self.assertEqualRootAndFilterRoot(
             analysis_directory, expected_analysis_directory
@@ -953,7 +943,6 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
             project_root=project_root,
             filter_directory="/filter",
             buck_mode=None,
-            debug=False,
         )
         self.assertEqualRootAndFilterRoot(
             analysis_directory, expected_analysis_directory
@@ -978,7 +967,6 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
             project_root=project_root,
             filter_directory=None,
             buck_mode=None,
-            debug=False,
         )
         self.assertEqualRootAndFilterRoot(
             analysis_directory, expected_analysis_directory
@@ -1103,11 +1091,13 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
 
             Path(project_directory, "existing.py").touch()
 
-            def build_buck_directory(argument: buck.BuckBuilder) -> List[str]:
+            def build_buck_directory(
+                argument: buck.BuckBuilder,
+            ) -> buck.BuckBuildOutput:
                 Path(buck_output_directory, "existing.py").symlink_to(
                     Path(Path(project_directory, "existing.py"))
                 )
-                return [buck_output_directory]
+                return buck.BuckBuildOutput([buck_output_directory], [])
 
             build.side_effect = build_buck_directory
 
@@ -1145,14 +1135,16 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
             Path(project_directory, "existing.py").touch()
             Path(project_directory, "to_be_deleted.py").touch()
 
-            def build_buck_directory(argument: buck.BuckBuilder) -> List[str]:
+            def build_buck_directory(
+                argument: buck.BuckBuilder,
+            ) -> buck.BuckBuildOutput:
                 Path(buck_output_directory, "existing.py").symlink_to(
                     Path(project_directory, "existing.py")
                 )
                 Path(buck_output_directory, "to_be_deleted.py").symlink_to(
                     Path(project_directory, "to_be_deleted.py")
                 )
-                return [buck_output_directory]
+                return buck.BuckBuildOutput([buck_output_directory], [])
 
             build.side_effect = build_buck_directory
 
