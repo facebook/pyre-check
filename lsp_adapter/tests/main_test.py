@@ -9,22 +9,14 @@ import unittest
 from unittest import mock
 from unittest.mock import MagicMock, patch
 
+from ...client.commands.persistent import Persistent
 from .. import main as lsp_main
-from ..main import NullServerAdapterProtocol, _parse_json_rpc, main
+from ..main import _parse_json_rpc, main
 
 
 class AdapterProtocolTest(unittest.TestCase):
     @patch.object(sys.stdout.buffer, "write")
-    def test_run_null_server(self, stdout_write: MagicMock) -> None:
-        example_request = b'Content-Length: 2756\r\n\r\n{"jsonrpc":"2.0","id":0,"method":"initialize","params":{"processId":null}}'  # noqa
-        adapter = NullServerAdapterProtocol()
-        adapter.data_received(example_request)
-        stdout_write.assert_called_once_with(
-            b'Content-Length: 59\r\n\r\n{"jsonrpc": "2.0", "id": 0, "result": {"capabilities": {}}}'  # noqa
-        )
-
-    @patch.object(sys.stdout.buffer, "write")
-    @patch.object(lsp_main, "run_null_server")
+    @patch.object(Persistent, "run_null_server")
     # pyre-fixme[56]: Pyre was not able to infer the type of argument `asyncio` to
     #  decorator factory `unittest.mock.patch.object`.
     @patch.object(asyncio, "get_event_loop")
@@ -35,8 +27,7 @@ class AdapterProtocolTest(unittest.TestCase):
         with mock.patch("subprocess.run") as subprocess_mock:
             subprocess_mock.side_effect = Exception
             main(root="test/project_root", null_server=False)
-            run_null_server.assert_called_once
-            event_loop.run_forever.assert_called_once
+            run_null_server.assert_called_once()
 
     def test_parse_json(self) -> None:
         """

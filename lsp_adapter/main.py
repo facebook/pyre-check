@@ -16,6 +16,7 @@ from asyncio.events import AbstractEventLoop
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
+from ..client.commands.persistent import Persistent
 from ..client.find_directories import find_global_and_local_root
 from ..client.json_rpc import JSON, JSONRPC, Request, Response
 from ..client.resources import get_configuration_value, log_directory
@@ -29,12 +30,6 @@ class AdapterException(Exception):
 def _find_local_root(base: Path) -> Optional[Path]:
     found_root = find_global_and_local_root(base)
     return None if found_root is None else found_root.local_root
-
-
-def _should_run_null_server(null_server_flag: bool) -> bool:
-    # TODO[T58989824]: We also need to check if the project can be run here.
-    # Needs updating to mimic the current implementation (i.e. catch the buck errors)
-    return null_server_flag
 
 
 def _get_log_file(current_directory: str) -> str:
@@ -67,11 +62,6 @@ def _start_server(current_directory: str) -> None:
 
 def _get_version(root: str) -> str:
     return get_configuration_value(root, "version")
-
-
-def _null_initialize_response(request_id: Optional[Union[str, int]]) -> None:
-    response = Response(id=request_id, result={"capabilities": {}})
-    response.write(sys.stdout.buffer)
 
 
 def _parse_json_rpc(data: bytes) -> List[JSON]:
@@ -120,13 +110,12 @@ class Notifications:
         )
 
 
-class NullServerAdapterProtocol(asyncio.Protocol):
-    def data_received(self, data: bytes) -> None:
-        json_body = _parse_json_rpc(data)
-        _null_initialize_response(json_body[0]["id"])
-
-
 class AdapterProtocol(asyncio.Protocol):
+    """
+    Listens to requests from VSCode, and writes them to the
+    Pyre server via the open socket connection.
+    """
+
     def __init__(self, socket: SocketConnection, root: str) -> None:
         self.socket = socket
         self.root = root
@@ -150,6 +139,11 @@ class AdapterProtocol(asyncio.Protocol):
 
 
 class SocketProtocol(asyncio.Protocol):
+    """
+    Listens for messages from the Pyre Server and writes
+    them to stdout (or to VSCode)
+    """
+
     def data_received(self, data: bytes) -> None:
         sys.stdout.buffer.write(data)
         sys.stdout.buffer.flush()
@@ -157,11 +151,6 @@ class SocketProtocol(asyncio.Protocol):
     def connection_lost(self, exc: Optional[Exception]) -> None:
         Notifications.show_server_crashed()
         Notifications.prompt_restart()
-
-
-def run_null_server(loop: AbstractEventLoop) -> None:
-    stdin_pipe_reader = loop.connect_read_pipe(NullServerAdapterProtocol, sys.stdin)
-    loop.run_until_complete(stdin_pipe_reader)
 
 
 def add_socket_connection(loop: AbstractEventLoop, root: str) -> SocketConnection:
@@ -214,20 +203,13 @@ def start_and_run_server(loop: AbstractEventLoop, root: str) -> None:
         _start_server(root)
         run_server(loop, root)
     except Exception:
-        # Run null server with warning to user that pyre server cannot be started.
-        run_null_server(loop)
-        Notifications.show_pyre_initialize_error(root)
-        loop.run_forever()
+        Persistent.run_null_server()
 
 
 def main(root: str, null_server: bool) -> None:
-    loop: AbstractEventLoop = asyncio.get_event_loop()
     try:
-        if _should_run_null_server(null_server):
-            run_null_server(loop)
-            loop.run_forever()
-        else:
-            start_and_run_server(loop, root)
+        loop: AbstractEventLoop = asyncio.get_event_loop()
+        start_and_run_server(loop, root)
     finally:
         loop.close()
 
