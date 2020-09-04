@@ -9,7 +9,6 @@ from typing import Optional
 
 import sqlalchemy
 from flask import Flask, send_from_directory
-from flask_cors import CORS
 from flask_graphql import GraphQLView
 from sqlalchemy.orm import Session, scoped_session, sessionmaker
 
@@ -27,14 +26,13 @@ LOG = logging.getLogger(__name__)
 application = Flask(
     __name__, static_folder=os.path.join(os.path.dirname(__file__), "frontend", "build")
 )
-# TODO(T58070180): we should remove the cross origin policy.
-CORS(application)
 
 session: Optional[Session] = None
 
 
 @application.teardown_appcontext
 def shutdown_session(exception=None):
+
     if session is not None:
         session.remove()
 
