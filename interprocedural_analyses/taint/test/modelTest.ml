@@ -187,6 +187,93 @@ let test_source_models context =
   ()
 
 
+let test_sanitize context =
+  let assert_model = assert_model ~context in
+  assert_model
+    ~model_source:{|
+      @Sanitize
+      def test.taint(x): ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~analysis_mode:(Taint.Result.Sanitize [Taint.Result.SanitizeAll])
+          "test.taint";
+      ]
+    ();
+  assert_model
+    ~model_source:{|
+      @Sanitize(TaintSource)
+      def test.taint(x): ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~analysis_mode:(Taint.Result.Sanitize [Taint.Result.SanitizeSources])
+          "test.taint";
+      ]
+    ();
+  assert_model
+    ~model_source:{|
+      @Sanitize(TaintSink)
+      def test.taint(x): ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~analysis_mode:(Taint.Result.Sanitize [Taint.Result.SanitizeSinks])
+          "test.taint";
+      ]
+    ();
+  assert_model
+    ~model_source:{|
+      @Sanitize(TaintInTaintOut)
+      def test.taint(x): ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~analysis_mode:(Taint.Result.Sanitize [Taint.Result.SanitizeTITO])
+          "test.taint";
+      ]
+    ();
+  assert_model
+    ~model_source:
+      {|
+      @Sanitize(TaintSource)
+      @Sanitize(TaintInTaintOut)
+      def test.taint(x): ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~analysis_mode:
+            (Taint.Result.Sanitize [Taint.Result.SanitizeSources; Taint.Result.SanitizeTITO])
+          "test.taint";
+      ]
+    ();
+  assert_model
+    ~model_source:
+      {|
+      @Sanitize(TaintSource, TaintInTaintOut)
+      def test.taint(x): ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~analysis_mode:
+            (Taint.Result.Sanitize [Taint.Result.SanitizeSources; Taint.Result.SanitizeTITO])
+          "test.taint";
+      ]
+    ()
+
+
 let test_sink_models context =
   let assert_model = assert_model ~context in
   assert_model
@@ -1348,6 +1435,7 @@ let () =
          "invalid_models" >:: test_invalid_models;
          "partial_sinks" >:: test_partial_sinks;
          "query_parsing" >:: test_query_parsing;
+         "sanitize" >:: test_sanitize;
          "sink_breadcrumbs" >:: test_sink_breadcrumbs;
          "sink_models" >:: test_sink_models;
          "source_breadcrumbs" >:: test_source_breadcrumbs;

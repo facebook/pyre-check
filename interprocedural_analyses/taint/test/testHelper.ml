@@ -130,7 +130,7 @@ let check_expectation
     | _ -> sink_map
   in
   let { backward; forward; mode }, is_obscure = get_model callable in
-  assert_equal mode expected_analysis_mode;
+  assert_equal ~printer:Taint.Result.show_mode mode expected_analysis_mode;
   let sink_taint_map =
     Domains.BackwardState.fold
       Domains.BackwardState.KeyValue

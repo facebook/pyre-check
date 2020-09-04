@@ -846,7 +846,7 @@ let add_taint_annotation_to_model
             raise_invalid_model "Invalid return annotation: AddFeatureToArgument"
         | SkipAnalysis -> { model with mode = TaintResult.SkipAnalysis }
         | SkipOverrides -> model
-        | Sanitize -> { model with mode = TaintResult.Sanitize }
+        | Sanitize -> { model with mode = TaintResult.Sanitize [SanitizeAll] }
       in
       let skipped_override =
         match annotation with
@@ -1277,6 +1277,16 @@ let create ~resolution ?path ~configuration ~rule_filter source =
         location,
         call_target )
     =
+    (* Strip off the decorators only used for taint annotations. *)
+    let top_level_decorators, define =
+      let is_taint_decorator decorator =
+        match Reference.show (Node.value decorator.Decorator.name) with
+        | "Sanitize" -> true
+        | _ -> false
+      in
+      let sanitizers, nonsanitizers = List.partition_tf define.decorators ~f:is_taint_decorator in
+      sanitizers, { define with decorators = nonsanitizers }
+    in
     (* Make sure we know about what we model. *)
     try
       let callable_annotation = callable_annotation ~resolution define in
@@ -1372,6 +1382,37 @@ let create ~resolution ?path ~configuration ~rule_filter source =
               ~name
               accumulator
               annotation)
+      in
+      (* Adjust analysis mode by applying top-level decorators. *)
+      let model =
+        let mode =
+          let adjust_mode mode { Decorator.name = { Node.value = name; _ }; arguments } =
+            match Reference.show name with
+            | "Sanitize" -> (
+                let new_sanitize_kinds =
+                  match arguments with
+                  | None -> [SanitizeAll]
+                  | Some arguments ->
+                      let to_sanitize_kind { Call.Argument.value; _ } =
+                        match Node.value value with
+                        | Expression.Name (Name.Identifier name) -> (
+                            match name with
+                            | "TaintSource" -> Some SanitizeSources
+                            | "TaintSink" -> Some SanitizeSinks
+                            | "TaintInTaintOut" -> Some SanitizeTITO
+                            | _ -> None )
+                        | _ -> None
+                      in
+                      List.filter_map arguments ~f:to_sanitize_kind
+                in
+                match mode with
+                | TaintResult.Sanitize kinds -> TaintResult.Sanitize (kinds @ new_sanitize_kinds)
+                | _ -> TaintResult.Sanitize new_sanitize_kinds )
+            | _ -> mode
+          in
+          List.fold top_level_decorators ~f:adjust_mode ~init:model.mode
+        in
+        { model with mode }
       in
       Core.Result.Ok (Model ({ model; call_target; is_obscure = false }, skipped_override))
     with

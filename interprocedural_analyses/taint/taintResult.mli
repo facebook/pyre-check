@@ -23,9 +23,16 @@ module Forward : sig
   val empty : model
 end
 
+type sanitize_kind =
+  | SanitizeSources
+  | SanitizeSinks
+  | SanitizeTITO
+  | SanitizeAll
+[@@deriving show, compare]
+
 type mode =
   | SkipAnalysis (* Don't analyze at all *)
-  | Sanitize (* Analyze, but throw away inferred model *)
+  | Sanitize of sanitize_kind list (* Analyze, but throw away inferred model *)
   | Normal
 [@@deriving show]
 

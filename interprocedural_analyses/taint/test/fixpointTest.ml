@@ -363,7 +363,7 @@ let test_sanitized_analysis context =
               ~sink_parameters:[{ name = "y"; sinks = [Sinks.NamedSink "Demo"] }]
               ~tito_parameters:["z"]
               ~errors:[{ code = 5001; pattern = ".*" }]
-              ~analysis_mode:Taint.Result.Sanitize
+              ~analysis_mode:(Taint.Result.Sanitize [Taint.Result.SanitizeAll])
               "qualifier.sanitized_model";
           ];
         iterations = 1;
