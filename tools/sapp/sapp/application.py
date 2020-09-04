@@ -18,9 +18,14 @@ from .models import Base
 from .schema import schema
 
 
+logging.basicConfig(
+    format="%(asctime)s [%(levelname)s] %(message)s", level=logging.DEBUG
+)
+LOG = logging.getLogger(__name__)
+
+
 application = Flask(
-    __name__,
-    static_folder=os.path.join(os.path.dirname(__file__), "..", "frontend", "build"),
+    __name__, static_folder=os.path.join(os.path.dirname(__file__), "frontend", "build")
 )
 # TODO(T58070180): we should remove the cross origin policy.
 CORS(application)
@@ -37,10 +42,12 @@ def shutdown_session(exception=None):
 @application.route("/", defaults={"path": ""})
 @application.route("/<path:path>")
 def serve(path):
+    LOG.info(f"Serving `{path}`...")
     if path != "" and os.path.exists(application.static_folder + "/" + path):
+        LOG.info("Found static resource.")
         return send_from_directory(application.static_folder, path)
     else:
-        logging.error(application.static_folder)
+        LOG.info("Resource not found. Falling back to `index.html`")
         return send_from_directory(application.static_folder, "index.html")
 
 
