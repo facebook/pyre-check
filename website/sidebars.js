@@ -24,6 +24,7 @@ function FBInternalWithOssFallback(elements, fallback) {
 module.exports = {
   documentation: {
     "Pyre": [
+      ...FBInternal(["fb/getting-started"]),
       "getting-started",
       "installation",
       "configuration",
