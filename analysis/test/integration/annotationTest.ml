@@ -408,15 +408,6 @@ let test_check_invalid_type context =
   assert_type_errors
     {|
       import typing
-      def f(my_type: typing.Type[int]) -> None:
-       y = "string"
-       assert isinstance(y, my_type)
-       reveal_type(y)
-    |}
-    ["Revealed type [-1]: Revealed type for `y` is `int`."];
-  assert_type_errors
-    {|
-      import typing
       def takes_exception(x: Exception) -> None: ...
       def f(e: typing.Type[Exception]) -> None:
        try:

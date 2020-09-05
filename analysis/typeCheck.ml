@@ -4542,24 +4542,36 @@ module State (Context : Context) = struct
                 match refinable_annotation name with
                 (* Allow Anys [especially from placeholder stubs] to clobber *)
                 | Some _ when Type.is_any annotation ->
-                    Annotation.create annotation |> set_local name
+                    Some (Annotation.create annotation |> set_local name)
                 | Some existing_annotation when refinement_unnecessary existing_annotation ->
-                    set_local name existing_annotation
+                    Some (set_local name existing_annotation)
                 (* Clarify Anys if possible *)
                 | Some existing_annotation
                   when Type.equal (Annotation.annotation existing_annotation) Type.Any ->
-                    Annotation.create annotation |> set_local name
-                | None -> resolution
+                    Some (Annotation.create annotation |> set_local name)
+                | None -> Some resolution
                 | Some existing_annotation ->
+                    let existing_type = Annotation.annotation existing_annotation in
                     let { consistent_with_boundary; _ } =
-                      partition (Annotation.annotation existing_annotation) ~boundary:annotation
+                      partition existing_type ~boundary:annotation
                     in
-                    if Type.equal consistent_with_boundary Type.Bottom then
-                      Annotation.create annotation |> set_local name
+                    if not (Type.is_unbound consistent_with_boundary) then
+                      Some (Annotation.create consistent_with_boundary |> set_local name)
+                    else if
+                      GlobalResolution.less_or_equal
+                        global_resolution
+                        ~left:existing_type
+                        ~right:annotation
+                      || GlobalResolution.less_or_equal
+                           global_resolution
+                           ~left:annotation
+                           ~right:existing_type
+                    then
+                      Some (Annotation.create annotation |> set_local name)
                     else
-                      Annotation.create consistent_with_boundary |> set_local name
+                      None
               in
-              Some resolution, errors
+              resolution, errors
           | Call
               {
                 callee = { Node.value = Name (Name.Identifier "callable"); _ };
