@@ -29,6 +29,7 @@ module.exports = {
       "installation",
       "configuration",
       "types-in-python",
+      ...FBInternal(["fb/increasing-type-coverage"]),
       "errors",
       "querying-pyre"
     ],
