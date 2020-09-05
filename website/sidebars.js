@@ -5,6 +5,22 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+function FBInternalSidebarSections(path) {
+   if (process.env.FB_INTERNAL) {
+     return require(path);
+   } else {
+     return {};
+   }
+}
+
+function FBInternal(elements) {
+  return process.env.FB_INTERNAL ? elements : [];
+}
+
+function FBInternalWithOssFallback(elements, fallback) {
+   return process.env.FB_INTERNAL ? elements : fallback;
+}
+
 module.exports = {
   documentation: {
     "Pyre": [
@@ -16,16 +32,20 @@ module.exports = {
       "querying-pyre"
     ],
     "Pysa": [
+      ...FBInternal(["fb/pysa-basics-internal"]),
       "pysa-basics",
       "pysa-running",
       "pysa-features",
       "pysa-advanced",
+      ...FBInternal(["fb/pysa-model-generators-internal"]),
       "pysa-model-generators",
       "pysa-model-dsl",
       "pysa-tips",
       "pysa-coverage",
       "static-analysis-post-processor",
+      ...FBInternal(["fb/pysa-additional-resources-internal"]),
       "pysa-additional-resources"
     ]
-  }
+  },
+  ...FBInternalSidebarSections('./fb/sidebars.js')
 }
