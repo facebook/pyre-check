@@ -33,23 +33,16 @@ class Initialize(CommandParser):
     NAME = "initialize"
 
     def __init__(
-        self,
-        command_arguments: CommandArguments,
-        original_directory: str,
-        *,
-        local: bool = False
+        self, command_arguments: CommandArguments, original_directory: str
     ) -> None:
         super(Initialize, self).__init__(command_arguments, original_directory)
-        self._local = local
 
     @staticmethod
     def from_arguments(
         arguments: argparse.Namespace, original_directory: str
     ) -> "Initialize":
         return Initialize(
-            CommandArguments.from_arguments(arguments),
-            original_directory,
-            local=arguments.local,
+            CommandArguments.from_arguments(arguments), original_directory
         )
 
     @classmethod
@@ -140,10 +133,10 @@ class Initialize(CommandParser):
         return find_global_root(Path(self._original_directory)) is not None
 
     def _run(self) -> None:
-        self._local = self._is_local()
+        is_local = self._is_local()
         configuration_path = os.path.join(self._original_directory, CONFIGURATION_FILE)
         if os.path.isfile(configuration_path):
-            if self._local:
+            if is_local:
                 error = (
                     "Local configurations must be created in subdirectories of `{}`"
                     "as it already contains a `.pyre_configuration`.".format(
@@ -161,7 +154,7 @@ class Initialize(CommandParser):
                     configuration_path + ".local"
                 )
             )
-        if self._local:
+        if is_local:
             configuration_path = configuration_path + ".local"
             configuration = self._get_local_configuration()
         else:
