@@ -40,7 +40,7 @@ def yaml.load(
 def yaml.load_all(stream: TaintSink[RemoteCodeExecution], Loader=...): ...
 # Subprocess
 def subprocess.run(
-    args: TaintSink[RemoteCodeExecution, Via[command_line_args]],
+    args: TaintSink[RemoteCodeExecution, Via[command_line_args], ViaTypeOf[args]],
     bufsize: TaintSink[RemoteCodeExecution],
     executable: TaintSink[RemoteCodeExecution],
     stdin,
@@ -68,7 +68,7 @@ def subprocess.run(
 ): ...
 
 def subprocess.call(
-  args: TaintSink[RemoteCodeExecution, Via[command_line_args]],
+  args: TaintSink[RemoteCodeExecution, Via[command_line_args], ViaTypeOf[args]],
   bufsize: TaintSink[RemoteCodeExecution],
   executable: TaintSink[RemoteCodeExecution],
   stdin,
@@ -89,7 +89,7 @@ def subprocess.call(
 ): ...
 
 def subprocess.check_call(
-  args: TaintSink[RemoteCodeExecution, Via[command_line_args]],
+  args: TaintSink[RemoteCodeExecution, Via[command_line_args], ViaTypeOf[args]],
   bufsize: TaintSink[RemoteCodeExecution],
   executable: TaintSink[RemoteCodeExecution],
   stdin: TaintSink[RemoteCodeExecution],
@@ -110,7 +110,7 @@ def subprocess.check_call(
 ): ...
 
 def subprocess.check_output(
-  args: TaintSink[RemoteCodeExecution, Via[command_line_args]],
+  args: TaintSink[RemoteCodeExecution, Via[command_line_args], ViaTypeOf[args]],
   bufsize: TaintSink[RemoteCodeExecution],
   executable: TaintSink[RemoteCodeExecution],
   stdin,
@@ -134,11 +134,11 @@ def subprocess.check_output(
   text,
  ): ...
 
-def subprocess.getstatusoutput(cmd: TaintSink[RemoteCodeExecution]): ...
+def subprocess.getstatusoutput(cmd: TaintSink[RemoteCodeExecution, ViaTypeOf[cmd]]): ...
 
-def subprocess.getoutput(cmd: TaintSink[RemoteCodeExecution]): ...
+def subprocess.getoutput(cmd: TaintSink[RemoteCodeExecution, ViaTypeOf[cmd]]): ...
 
-def subprocess.Popen.__new__(self, args: TaintSink[RemoteCodeExecution, Via[command_line_args]], bufsize, executable: TaintSink[RemoteCodeExecution],
+def subprocess.Popen.__new__(self, args: TaintSink[RemoteCodeExecution, Via[command_line_args], ViaTypeOf[args]], bufsize, executable: TaintSink[RemoteCodeExecution],
                  stdin, stdout, stderr,
                  preexec_fn: TaintSink[RemoteCodeExecution], close_fds,
                  shell: TaintSink[RemoteCodeExecution], cwd: TaintSink[RemoteCodeExecution], env: TaintSink[RemoteCodeExecution], universal_newlines,
@@ -147,7 +147,7 @@ def subprocess.Popen.__new__(self, args: TaintSink[RemoteCodeExecution, Via[comm
                  pass_fds, *, encoding, errors): ...
 
 async def asyncio.subprocess.create_subprocess_exec(
-    program: TaintSink[RemoteCodeExecution],
+    program: TaintSink[RemoteCodeExecution, ViaTypeOf[program]],
     *args: TaintSink[RemoteCodeExecution, Via[command_line_args]],
     stdin = ...,
     stdout = ...,
