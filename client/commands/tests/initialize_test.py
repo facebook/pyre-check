@@ -41,8 +41,6 @@ class InitializeTest(unittest.TestCase):
         getcwd,
     ) -> None:
         get_yes_no_input.return_value = True
-        original_directory = "/original/directory"
-        arguments = mock_arguments()
 
         def exists(path):
             if path.endswith(".watchmanconfig"):
@@ -60,7 +58,7 @@ class InitializeTest(unittest.TestCase):
         with patch.object(commands.Command, "_call_client"), patch.object(
             initialize, "find_typeshed", return_value="/tmp"
         ):
-            initialize.Initialize(arguments, original_directory).run()
+            initialize.Initialize().run()
             subprocess_call.assert_has_calls([call(["watchman", "watch-project", "."])])
             open.assert_any_call(os.path.abspath(".watchmanconfig"), "w+")
 
@@ -76,7 +74,7 @@ class InitializeTest(unittest.TestCase):
         ), patch.object(
             initialize.Initialize, "_is_local", return_value=True
         ):
-            initialize.Initialize(arguments, original_directory).run()
+            initialize.Initialize().run()
             file().write.assert_has_calls([call("{}"), call("\n")])
 
         def exists(path):
@@ -87,22 +85,20 @@ class InitializeTest(unittest.TestCase):
         isfile.side_effect = exists
         with patch.object(commands.Command, "_call_client"):
             with self.assertRaises(EnvironmentException):
-                initialize.Initialize(arguments, original_directory).run()
+                initialize.Initialize().run()
 
         with patch.object(commands.Command, "_call_client"), patch.object(
             sys, "argv", ["/tmp/pyre/bin/pyre"]
         ), patch.object(initialize, "find_typeshed", return_value="/tmp"):
             which.reset_mock()
             which.side_effect = [True, None, "/tmp/pyre/bin/pyre.bin"]
-            initialize.Initialize(arguments, original_directory)._get_configuration()
+            initialize.Initialize()._get_configuration()
             which.assert_has_calls(
                 [call("watchman"), call("pyre.bin"), call("/tmp/pyre/bin/pyre.bin")]
             )
 
     def test_get_local_configuration(self) -> None:
-        original_directory = "/original/directory"
-        arguments = mock_arguments()
-        command = initialize.Initialize(arguments, original_directory)
+        command = initialize.Initialize()
 
         with patch.object(log, "get_yes_no_input") as yes_no_input, patch.object(
             log, "get_input", return_value="//target/..."

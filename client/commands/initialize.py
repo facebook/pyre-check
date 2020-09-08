@@ -23,7 +23,7 @@ from ..find_directories import (
     find_taint_models_directory,
     find_typeshed,
 )
-from .command import CommandArguments, CommandParser
+from .command import CommandParser
 
 
 LOG: Logger = logging.getLogger(__name__)
@@ -32,18 +32,12 @@ LOG: Logger = logging.getLogger(__name__)
 class Initialize(CommandParser):
     NAME = "initialize"
 
-    def __init__(
-        self, command_arguments: CommandArguments, original_directory: str
-    ) -> None:
-        super(Initialize, self).__init__(command_arguments, original_directory)
+    def __init__(self) -> None:
+        super().__init__()
 
     @staticmethod
-    def from_arguments(
-        arguments: argparse.Namespace, original_directory: str
-    ) -> "Initialize":
-        return Initialize(
-            CommandArguments.from_arguments(arguments), original_directory
-        )
+    def from_arguments() -> "Initialize":
+        return Initialize()
 
     @classmethod
     def add_subparser(cls, parser: argparse._SubParsersAction) -> None:

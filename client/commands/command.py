@@ -220,9 +220,7 @@ class CommandParser(ABC):
     HIDDEN = False
     _exit_code: ExitCode = ExitCode.SUCCESS
 
-    def __init__(
-        self, command_arguments: CommandArguments, original_directory: str
-    ) -> None:
+    def __init__(self) -> None:
         pass
 
     @classmethod
@@ -435,7 +433,7 @@ class Command(CommandParser, ABC):
         configuration: Optional[Configuration] = None,
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> None:
-        super(Command, self).__init__(command_arguments, original_directory)
+        super().__init__()
         self._command_arguments = command_arguments
 
         self._show_error_traces: bool = self._command_arguments.show_error_traces
