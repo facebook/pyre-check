@@ -22,7 +22,7 @@ from . import (
     recently_used_configurations,
     statistics,
 )
-from .commands import CommandParser, ExitCode, IncrementalStyle
+from .commands import Command, CommandParser, ExitCode, IncrementalStyle
 from .exceptions import EnvironmentException
 from .version import __version__
 
@@ -33,7 +33,7 @@ LOG: logging.Logger = logging.getLogger(__name__)
 @dataclass
 class FailedOutsideLocalConfigurationException(Exception):
     exit_code: ExitCode
-    command: CommandParser
+    command: Command
     exception_message: str
 
 
@@ -132,6 +132,7 @@ def run_pyre(arguments: argparse.Namespace) -> ExitCode:
             exit_code = ExitCode.FAILURE
         else:
             should_log_statistics = False
+            assert isinstance(command, Command)
             raise FailedOutsideLocalConfigurationException(
                 exit_code, command, str(error)
             )
