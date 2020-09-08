@@ -86,10 +86,31 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
 
   let read_tree = BackwardState.Tree.read ~transform_non_leaves
 
-  let is_super expression =
+  let is_super ~resolution expression =
     match expression.Node.value with
     | Expression.Call { callee = { Node.value = Name (Name.Identifier "super"); _ }; _ } -> true
-    | _ -> false
+    | _ ->
+        (* We also support explicit calls to superclass constructors. *)
+        let annotation = Resolution.resolve_expression_to_type resolution expression in
+        if Type.is_meta annotation then
+          let type_parameter = Type.single_parameter annotation in
+          match type_parameter with
+          | Type.Parametric { name = parent_name; _ }
+          | Type.Primitive parent_name ->
+              let class_name =
+                Reference.prefix FunctionContext.definition.Node.value.signature.name.Node.value
+                >>| Reference.show
+              in
+              class_name
+              >>| (fun class_name ->
+                    GlobalResolution.is_transitive_successor
+                      (Resolution.global_resolution resolution)
+                      ~predecessor:class_name
+                      ~successor:parent_name)
+              |> Option.value ~default:false
+          | _ -> false
+        else
+          false
 
 
   module rec FixpointState : FixpointState = struct
@@ -496,11 +517,12 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                   ~constructor_targets )
         | None, Name (Name.Attribute { base = receiver; attribute; _ }) ->
             let taint =
-              (* Specially handle super.__init__ calls in constructors for tito *)
+              (* Specially handle super.__init__ calls and explicit calls to superclass' `__init__`
+                 in constructors for tito. *)
               if
                 FunctionContext.is_constructor ()
                 && String.equal attribute "__init__"
-                && is_super receiver
+                && is_super ~resolution receiver
               then
                 BackwardState.Tree.create_leaf Domains.local_return_taint
                 |> BackwardState.Tree.join taint

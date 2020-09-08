@@ -132,6 +132,72 @@
   }
 }
 {
+  "kind": "issue",
+  "data": {
+    "callable": "taint_in_taint_out.test_explicit_call_to_superclass",
+    "callable_line": 160,
+    "code": 5002,
+    "line": 162,
+    "start": 16,
+    "end": 24,
+    "filename": "taint_in_taint_out.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "taint_in_taint_out.py",
+              "line": 161,
+              "start": 19,
+              "end": 34
+            },
+            "tito": [ { "line": 161, "start": 19, "end": 34 } ],
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [
+              { "always-via": "tito" },
+              { "always-via": "special_source" },
+              { "always-has": "first-field" },
+              { "always-first-field": "arg" }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "taint_in_taint_out.py",
+              "line": 162,
+              "start": 16,
+              "end": 24
+            },
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "tito" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-has": "first-field" },
+      { "always-first-field": "arg" }
+    ]
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "Ovr{object::__init__}",
@@ -169,6 +235,16 @@
         ]
       },
       {
+        "port": "formal(arg)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "[arg]" } ],
+            "features": [ { "via": "tito" } ]
+          }
+        ]
+      },
+      {
         "port": "formal(a)",
         "taint": [
           {
@@ -182,7 +258,8 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "features": [ { "via": "tito" } ]
           }
         ]
       }
@@ -220,6 +297,66 @@
           {
             "decl": null,
             "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Ovr{taint_in_taint_out.GetQuery::__init__}",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(arg)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "[arg]" } ],
+            "features": [ { "via": "tito" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "features": [ { "via": "tito" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Ovr{taint_in_taint_out.GetUser::__init__}",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(arg)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "[arg]" } ],
+            "features": [ { "always-via": "tito" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "features": [ { "via": "tito" } ]
           }
         ]
       }
@@ -297,6 +434,66 @@
           {
             "decl": null,
             "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_in_taint_out.GetQuery.__init__",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(arg)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "[arg]" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_in_taint_out.GetUser.__init__",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(arg)",
+        "taint": [
+          {
+            "decl": null,
+            "tito": [ { "line": 157, "start": 32, "end": 35 } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "[arg]" } ],
+            "features": [ { "always-via": "tito" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "decl": null,
+            "tito": [ { "line": 157, "start": 26, "end": 30 } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "features": [ { "via": "tito" } ]
           }
         ]
       }

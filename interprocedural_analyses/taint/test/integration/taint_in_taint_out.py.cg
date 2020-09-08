@@ -1,6 +1,8 @@
 @generated
 Call dependencies
 taint_in_taint_out.Data::__init__ (method) -> []
+taint_in_taint_out.GetQuery::__init__ (method) -> []
+taint_in_taint_out.GetUser::__init__ (method) -> [taint_in_taint_out.GetQuery::__init__ (method)]
 taint_in_taint_out.Recursive::__init__ (method) -> [object::__new__ (method) slice::__init__ (method) taint_in_taint_out.get_related (fun)]
 taint_in_taint_out.add_feature (fun) -> []
 taint_in_taint_out.adds_tito (fun) -> []
@@ -16,6 +18,7 @@ taint_in_taint_out.product_data_wrapper (fun) -> [taint_in_taint_out.product_dat
 taint_in_taint_out.return_taint (fun) -> []
 taint_in_taint_out.return_taint_in_list (fun) -> []
 taint_in_taint_out.test_always_via_feature (fun) -> [__test_sink (fun) __test_source (fun) taint_in_taint_out.tito_with_feature (fun)]
+taint_in_taint_out.test_explicit_call_to_superclass (fun) -> [__test_sink (fun) __test_source (fun) object::__new__ (method) taint_in_taint_out.GetUser::__init__ (method)]
 taint_in_taint_out.test_tuple_tito_indices (fun) -> [__test_sink (fun) __test_source (fun) taint_in_taint_out.return_taint (fun)]
 taint_in_taint_out.tito (fun) -> [__test_source (fun) taint_in_taint_out.product_data_wrapper (fun)]
 taint_in_taint_out.tito_with_feature (fun) -> [taint_in_taint_out.add_feature (fun)]
