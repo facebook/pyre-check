@@ -516,7 +516,13 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                   ~taint
                   ~constructor_targets )
         | None, Name (Name.Attribute { base = receiver; attribute; _ }) ->
-            let taint =
+            let indirect_targets, receiver_option =
+              Interprocedural.CallResolution.get_indirect_targets
+                ~resolution
+                ~receiver
+                ~method_name:attribute
+            in
+            let indirect_targets, taint =
               (* Specially handle super.__init__ calls and explicit calls to superclass' `__init__`
                  in constructors for tito. *)
               if
@@ -524,22 +530,25 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                 && String.equal attribute "__init__"
                 && is_super ~resolution receiver
               then
-                BackwardState.Tree.create_leaf Domains.local_return_taint
-                |> BackwardState.Tree.join taint
+                (* If the super call is `object.__init__`, this is likely due to a lack of type
+                   information for that constructor - we treat that case as obscure to not lose
+                   argument taint for these calls. *)
+                let indirect_targets =
+                  match indirect_targets with
+                  | [(`Method { class_name = "object"; method_name = "__init__" }, _)] -> []
+                  | _ -> indirect_targets
+                in
+                ( indirect_targets,
+                  BackwardState.Tree.create_leaf Domains.local_return_taint
+                  |> BackwardState.Tree.join taint )
               else
-                taint
-            in
-            let indirect_targets, receiver =
-              Interprocedural.CallResolution.get_indirect_targets
-                ~resolution
-                ~receiver
-                ~method_name:attribute
+                indirect_targets, taint
             in
             apply_call_targets
               ~resolution
               ~call_expression:(Expression.Call call_expression)
               location
-              (Option.to_list receiver @ arguments)
+              (Option.to_list receiver_option @ arguments)
               state
               taint
               indirect_targets
