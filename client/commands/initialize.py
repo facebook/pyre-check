@@ -130,17 +130,18 @@ class Initialize(CommandParser):
         return configuration
 
     def _is_local(self) -> bool:
-        return find_global_root(Path(self._original_directory)) is not None
+        return find_global_root(Path(".")) is not None
 
     def _run(self) -> None:
         is_local = self._is_local()
-        configuration_path = os.path.join(self._original_directory, CONFIGURATION_FILE)
+        current_directory = os.getcwd()
+        configuration_path = os.path.join(current_directory, CONFIGURATION_FILE)
         if os.path.isfile(configuration_path):
             if is_local:
                 error = (
                     "Local configurations must be created in subdirectories of `{}`"
                     "as it already contains a `.pyre_configuration`.".format(
-                        self._original_directory
+                        current_directory
                     )
                 )
             else:

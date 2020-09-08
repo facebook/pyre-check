@@ -18,6 +18,7 @@ from .command_test import mock_arguments
 
 
 class InitializeTest(unittest.TestCase):
+    @patch.object(os, "getcwd", return_value="/original/directory")
     @patch.object(log, "get_yes_no_input", return_value=True)
     @patch.object(log, "get_optional_input", return_value="")
     # pyre-fixme[56]: Argument `tools.pyre.client.commands.initialize.log` to
@@ -37,6 +38,7 @@ class InitializeTest(unittest.TestCase):
         _get_input,
         _get_optional_input,
         get_yes_no_input,
+        getcwd,
     ) -> None:
         get_yes_no_input.return_value = True
         original_directory = "/original/directory"
@@ -55,7 +57,9 @@ class InitializeTest(unittest.TestCase):
         isfile.side_effect = exists
         # One for shutil.which("watchman"), another for shutil.which(BINARY_NAME).
         which.side_effect = [True, True]
-        with patch.object(commands.Command, "_call_client"):
+        with patch.object(commands.Command, "_call_client"), patch.object(
+            initialize, "find_typeshed", return_value="/tmp"
+        ):
             initialize.Initialize(arguments, original_directory).run()
             subprocess_call.assert_has_calls([call(["watchman", "watch-project", "."])])
             open.assert_any_call(os.path.abspath(".watchmanconfig"), "w+")
@@ -87,7 +91,7 @@ class InitializeTest(unittest.TestCase):
 
         with patch.object(commands.Command, "_call_client"), patch.object(
             sys, "argv", ["/tmp/pyre/bin/pyre"]
-        ):
+        ), patch.object(initialize, "find_typeshed", return_value="/tmp"):
             which.reset_mock()
             which.side_effect = [True, None, "/tmp/pyre/bin/pyre.bin"]
             initialize.Initialize(arguments, original_directory)._get_configuration()
