@@ -10,8 +10,9 @@ from unittest import mock
 from unittest.mock import MagicMock, patch
 
 from ...client.commands.persistent import Persistent
+from ...client.socket_connection import SocketConnection
 from .. import main as lsp_main
-from ..main import _parse_json_rpc, main
+from ..main import AdapterException, AdapterProtocol, _parse_json_rpc, main
 
 
 class AdapterProtocolTest(unittest.TestCase):
@@ -55,3 +56,12 @@ class AdapterProtocolTest(unittest.TestCase):
         self.assertEqual(
             {"jsonrpc": "2.0", "method": "initialized", "params": {}}, parsed_data[0]
         )
+
+    # pyre-fixme[56]: Pyre was not able to infer the type of argument
+    #  `tools.pyre.lsp_adapter.main` to decorator factory `unittest.mock.patch.object`.
+    @patch.object(lsp_main, "_should_restart")
+    def test_should_restart(self, should_restart: MagicMock) -> None:
+        sample_data = b'Content-Length: 7273\r\n\r\n{"jsonrpc":"2.0","method":"restart","params":{"message": "Pyre server has crashed. Restart to reconnect.","type": 1,"actions": [{"title": "restart"}]}}'  # noqa
+        protocol = AdapterProtocol(SocketConnection(".", "test.sock"), "example/root")
+        with self.assertRaises(AdapterException):
+            protocol.data_received(sample_data)
