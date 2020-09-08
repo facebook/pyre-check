@@ -121,42 +121,54 @@ const Application = () => {
               value={codes}
               onChange={e => setCodes(e.target.value)}
             />
-            <br />
+          </label>
+          <br />
+          <label>
             File Names
             <input
               type="text"
               value={file_names}
               onChange={e => setFileNames(e.target.value)}
             />
-            <br />
+          </label>
+          <br />
+          <label>
             Callables
             <input
               type="text"
               value={callables}
               onChange={e => setCallables(e.target.value)}
             />
-            <br />
+          </label>
+          <br />
+          <label>
             Min Trace Length To Sinks
             <input
               type="text"
               value={min_trace_length_to_sinks}
               onChange={e => setMinLengthToSink(e.target.value)}
             />
-            <br />
+          </label>
+          <br />
+          <label>
             Max Trace Length to Sinks
             <input
               type="text"
               value={max_trace_length_to_sinks}
               onChange={e => setMaxLengthToSink(e.target.value)}
             />
-            <br />
+          </label>
+          <br />
+          <label>
             Min Trace Length To Sources
             <input
               type="text"
               value={min_trace_length_to_sources}
               onChange={e => setMinLengthToSource(e.target.value)}
             />
-            <br />
+          </label>
+          <br />
+          <label>
             Max Trace Length to Sources
             <input
               type="text"
@@ -164,6 +176,7 @@ const Application = () => {
               onChange={e => setMaxLengthToSource(e.target.value)}
             />
           </label>
+          <br />
           <input type="submit" value="Submit" />
         </form>
       </div>
