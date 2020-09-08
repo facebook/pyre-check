@@ -7,11 +7,13 @@ import os
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from . import watchman
 from .analysis_directory import AnalysisDirectory
 from .commands import stop
 from .commands.command import CommandArguments
 from .configuration import Configuration
 from .find_directories import CONFIGURATION_FILE, LOCAL_CONFIGURATION_FILE
+from .process import Process
 
 # We use the `LOG` from watchman due to its better formatting in log files
 from .watchman import LOG, Subscriber, Subscription
@@ -132,3 +134,10 @@ class ConfigurationMonitor(Subscriber):
                 "None of the changed paths correspond to the root "
                 "configuration, a local pyre configuration, or any other critical file."
             )
+
+    @staticmethod
+    def is_alive(configuration: Configuration) -> bool:
+        pid_path = watchman.compute_pid_path(
+            ConfigurationMonitor.base_path(configuration), ConfigurationMonitor.NAME
+        )
+        return Process.is_alive(Path(pid_path))

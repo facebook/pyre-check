@@ -150,15 +150,19 @@ class ProjectFilesMonitor(Subscriber):
         return str(watchman_path)
 
     @staticmethod
+    def is_alive(configuration: Configuration) -> bool:
+        pid_path = watchman.compute_pid_path(
+            ProjectFilesMonitor.base_path(configuration), ProjectFilesMonitor.NAME
+        )
+        return Process.is_alive(Path(pid_path))
+
+    @staticmethod
     def restart_if_dead(
         configuration: Configuration,
         project_root: str,
         analysis_directory: AnalysisDirectory,
     ) -> None:
-        pid_path = watchman.compute_pid_path(
-            ProjectFilesMonitor.base_path(configuration), ProjectFilesMonitor.NAME
-        )
-        if Process.is_alive(Path(pid_path)):
+        if ProjectFilesMonitor.is_alive(configuration):
             return
         LOG.debug("File monitor is not running.")
         try:
