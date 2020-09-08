@@ -6,6 +6,7 @@
 # pyre-unsafe
 
 import json
+import sys
 import textwrap
 import unittest
 from pathlib import Path
@@ -679,68 +680,70 @@ class InferTest(unittest.TestCase):
             call_client.assert_called_once_with(command=commands.Infer.NAME)
 
         with patch.object(commands.Command, "_call_client") as call_client:
-            command = Infer(
-                arguments,
-                original_directory,
-                configuration=configuration,
-                analysis_directory=AnalysisDirectory("."),
-                print_errors=True,
-                full_only=True,
-                recursive=False,
-                in_place=None,
-                errors_from_stdin=True,
-                annotate_from_existing_stubs=False,
-                debug_infer=False,
-            )
-            self.assertEqual(
-                command._flags(),
-                [
-                    "-show-error-traces",
-                    "-logging-sections",
-                    "-progress",
-                    "-project-root",
-                    ".",
-                    "-log-directory",
-                    ".pyre",
-                    "-search-path",
-                    "path1,path2,path3",
-                ],
-            )
-            command.run()
-            call_client.assert_not_called()
+            with patch.object(sys.stdin, "read", return_value=""):
+                command = Infer(
+                    arguments,
+                    original_directory,
+                    configuration=configuration,
+                    analysis_directory=AnalysisDirectory("."),
+                    print_errors=True,
+                    full_only=True,
+                    recursive=False,
+                    in_place=None,
+                    errors_from_stdin=True,
+                    annotate_from_existing_stubs=False,
+                    debug_infer=False,
+                )
+                self.assertEqual(
+                    command._flags(),
+                    [
+                        "-show-error-traces",
+                        "-logging-sections",
+                        "-progress",
+                        "-project-root",
+                        ".",
+                        "-log-directory",
+                        ".pyre",
+                        "-search-path",
+                        "path1,path2,path3",
+                    ],
+                )
+                command.run()
+                call_client.assert_not_called()
         configuration.ignore_infer = ["path1.py", "path2.py"]
         with patch.object(commands.Command, "_call_client") as call_client:
-            command = Infer(
-                arguments,
-                original_directory,
-                configuration=configuration,
-                analysis_directory=AnalysisDirectory("."),
-                print_errors=True,
-                full_only=True,
-                recursive=False,
-                in_place=None,
-                errors_from_stdin=True,
-                annotate_from_existing_stubs=False,
-                debug_infer=False,
-            )
-            self.assertEqual(
-                command._flags(),
-                [
-                    "-show-error-traces",
-                    "-logging-sections",
-                    "-progress",
-                    "-project-root",
-                    ".",
-                    "-log-directory",
-                    ".pyre",
-                    "-search-path",
-                    "path1,path2,path3",
-                    "-ignore-infer",
-                    "path1.py;path2.py",
-                ],
-            )
-            command.run()
-            call_client.assert_not_called()
+            with patch.object(sys.stdin, "read", return_value=""):
+                command = Infer(
+                    arguments,
+                    original_directory,
+                    configuration=configuration,
+                    analysis_directory=AnalysisDirectory("."),
+                    print_errors=True,
+                    full_only=True,
+                    recursive=False,
+                    in_place=None,
+                    errors_from_stdin=True,
+                    annotate_from_existing_stubs=False,
+                    debug_infer=False,
+                )
+                self.assertEqual(
+                    command._flags(),
+                    [
+                        "-show-error-traces",
+                        "-logging-sections",
+                        "-progress",
+                        "-project-root",
+                        ".",
+                        "-log-directory",
+                        ".pyre",
+                        "-search-path",
+                        "path1,path2,path3",
+                        "-ignore-infer",
+                        "path1.py;path2.py",
+                    ],
+                )
+                command.run()
+                call_client.assert_not_called()
 
     @patch.object(Path, "rglob")
     # pyre-fixme[56]: Argument `tools.pyre.client.commands.infer` to decorator
