@@ -10,7 +10,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
-import App from './App';
+import Application from './Application';
 import Trace from './Trace';
 import * as serviceWorker from './serviceWorker';
 import {Route, BrowserRouter as Router} from 'react-router-dom';
@@ -25,7 +25,7 @@ const routing = (
   <ApolloProvider client={client}>
     <Router>
       <div>
-        <Route exact path="/" component={App} />
+        <Route exact path="/" component={Application} />
         <Route path="/trace/:issue_id" component={Trace} />
       </div>
     </Router>

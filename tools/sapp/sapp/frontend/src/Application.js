@@ -53,7 +53,7 @@ const IssueQuery = gql`
   }
 `;
 
-const IssuesPage = () => {
+const Application = () => {
   const [codes, setCodes] = useState('');
   const [file_names, setFileNames] = useState('');
   const [callables, setCallables] = useState('');
@@ -171,8 +171,4 @@ const IssuesPage = () => {
   );
 };
 
-function App() {
-  return <IssuesPage />;
-}
-
-export default App;
+export default Application;
