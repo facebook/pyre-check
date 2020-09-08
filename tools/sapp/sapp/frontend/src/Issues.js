@@ -33,6 +33,7 @@ class Issues extends React.Component {
   render() {
     return (
       <div>
+        <h2>Issues</h2>
         <ul>
           {this.props.data.issues.edges.map(({node}) => (
             <Issue
