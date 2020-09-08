@@ -223,50 +223,7 @@ class CommandParser(ABC):
     def __init__(
         self, command_arguments: CommandArguments, original_directory: str
     ) -> None:
-        self._command_arguments = command_arguments
-
-        self._show_error_traces: bool = self._command_arguments.show_error_traces
-        self._output: str = self._command_arguments.output
-
-        # Derived arguments
-        self._capable_terminal: bool = terminal.is_capable()
-        self._original_directory: str = original_directory
-
-        local_root_argument = self._command_arguments.local_configuration
-        base_directory = (
-            Path(original_directory)
-            if local_root_argument is None
-            else Path(original_directory) / local_root_argument
-        )
-        found_root = find_global_and_local_root(base_directory)
-        if found_root is None:
-            # FIXME: We should fail here.
-            global_root = Path(original_directory)
-            local_root = None
-        else:
-            global_root = found_root.global_root
-            local_root = found_root.local_root
-        self._project_root: str = str(global_root)
-        self._local_root: Final[Optional[str]] = str(
-            local_root
-        ) if local_root is not None else None
-        self._dot_pyre_directory: Path = (
-            self._command_arguments.dot_pyre_directory
-            or Path(self._project_root, LOG_DIRECTORY)
-        )
-        relative_local_root = get_relative_local_root(global_root, local_root)
-        self.relative_local_root: Optional[str] = relative_local_root
-        self._log_directory: str = str(
-            self._dot_pyre_directory
-            if relative_local_root is None
-            else self._dot_pyre_directory / relative_local_root
-        )
-        Path(self._log_directory).mkdir(parents=True, exist_ok=True)
-
-        self._logging_sections: Optional[str] = self._command_arguments.logging_sections
-        self._noninteractive: bool = self._command_arguments.noninteractive
-        if self._command_arguments.debug or not self._capable_terminal:
-            self._noninteractive = True
+        pass
 
     @classmethod
     def add_arguments(cls, parser: argparse.ArgumentParser) -> None:
@@ -460,34 +417,12 @@ class CommandParser(ABC):
         self._run()
         return self
 
-    def cleanup(self) -> None:
-        pass
-
     def exit_code(self) -> ExitCode:
         return self._exit_code
-
-    def result(self) -> Optional[Result]:
-        return None
 
     @property
     def configuration(self) -> Optional[Configuration]:
         return None
-
-    @property
-    def project_root(self) -> Optional[str]:
-        return self._project_root
-
-    @property
-    def local_root(self) -> Optional[str]:
-        return self._local_root
-
-    @property
-    def log_directory(self) -> str:
-        return self._log_directory
-
-    @property
-    def noninteractive(self) -> bool:
-        return self._noninteractive
 
 
 class Command(CommandParser, ABC):
@@ -501,6 +436,51 @@ class Command(CommandParser, ABC):
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> None:
         super(Command, self).__init__(command_arguments, original_directory)
+        self._command_arguments = command_arguments
+
+        self._show_error_traces: bool = self._command_arguments.show_error_traces
+        self._output: str = self._command_arguments.output
+
+        # Derived arguments
+        self._capable_terminal: bool = terminal.is_capable()
+        self._original_directory: str = original_directory
+
+        local_root_argument = self._command_arguments.local_configuration
+        base_directory = (
+            Path(original_directory)
+            if local_root_argument is None
+            else Path(original_directory) / local_root_argument
+        )
+        found_root = find_global_and_local_root(base_directory)
+        if found_root is None:
+            # FIXME: We should fail here.
+            global_root = Path(original_directory)
+            local_root = None
+        else:
+            global_root = found_root.global_root
+            local_root = found_root.local_root
+        self._project_root: str = str(global_root)
+        self._local_root: Final[Optional[str]] = str(
+            local_root
+        ) if local_root is not None else None
+        self._dot_pyre_directory: Path = (
+            self._command_arguments.dot_pyre_directory
+            or Path(self._project_root, LOG_DIRECTORY)
+        )
+        relative_local_root = get_relative_local_root(global_root, local_root)
+        self.relative_local_root: Optional[str] = relative_local_root
+        self._log_directory: str = str(
+            self._dot_pyre_directory
+            if relative_local_root is None
+            else self._dot_pyre_directory / relative_local_root
+        )
+        Path(self._log_directory).mkdir(parents=True, exist_ok=True)
+
+        self._logging_sections: Optional[str] = self._command_arguments.logging_sections
+        self._noninteractive: bool = self._command_arguments.noninteractive
+        if self._command_arguments.debug or not self._capable_terminal:
+            self._noninteractive = True
+
         self._configuration: Configuration = (
             configuration or self.generate_configuration()
         )
@@ -763,3 +743,22 @@ class Command(CommandParser, ABC):
             self._logging_sections = logging_sections + "," + section
         else:
             self._logging_sections = section
+
+    def result(self) -> Optional[Result]:
+        return None
+
+    @property
+    def project_root(self) -> Optional[str]:
+        return self._project_root
+
+    @property
+    def local_root(self) -> Optional[str]:
+        return self._local_root
+
+    @property
+    def log_directory(self) -> str:
+        return self._log_directory
+
+    @property
+    def noninteractive(self) -> bool:
+        return self._noninteractive
