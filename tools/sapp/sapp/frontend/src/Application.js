@@ -10,7 +10,7 @@
 import React, {useState} from 'react';
 import {useQuery, gql} from '@apollo/client';
 
-import IssueInstances from './IssueInstances';
+import Issues from './Issues';
 
 const IssueQuery = gql`
   query Issue(
@@ -111,8 +111,7 @@ const Application = () => {
   return (
     <>
       <div>
-        <h2>IssueInstances</h2>
-        <IssueInstances data={data} fetchMore={fetchMore} />
+        <Issues data={data} fetchMore={fetchMore} />
         <form onSubmit={handleSubmit}>
           <label>
             Codes

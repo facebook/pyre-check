@@ -10,7 +10,7 @@
 import React from 'react';
 import {Link} from 'react-router-dom';
 
-class IssueInstances extends React.Component {
+class Issues extends React.Component {
   constructor(props) {
     super(props);
     this.fetchIssues = this.fetchIssues.bind(this);
@@ -76,4 +76,4 @@ function Issue(props) {
   );
 }
 
-export default IssueInstances;
+export default Issues;
