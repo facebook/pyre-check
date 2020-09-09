@@ -465,14 +465,9 @@ class Command(CommandParser, ABC):
             self._command_arguments.dot_pyre_directory
             or Path(self._project_root, LOG_DIRECTORY)
         )
-        relative_local_root = get_relative_local_root(global_root, local_root)
-        self.relative_local_root: Optional[str] = relative_local_root
-        self._log_directory: str = str(
-            self._dot_pyre_directory
-            if relative_local_root is None
-            else self._dot_pyre_directory / relative_local_root
+        self.relative_local_root: Optional[str] = get_relative_local_root(
+            global_root, local_root
         )
-        Path(self._log_directory).mkdir(parents=True, exist_ok=True)
 
         self._logging_sections: Optional[str] = self._command_arguments.logging_sections
         self._noninteractive: bool = self._command_arguments.noninteractive
@@ -494,6 +489,13 @@ class Command(CommandParser, ABC):
         pass
 
     def generate_configuration(self) -> Configuration:
+        relative_local_root = self.relative_local_root
+        log_directory: str = str(
+            self._dot_pyre_directory
+            if relative_local_root is None
+            else self._dot_pyre_directory / relative_local_root
+        )
+        Path(log_directory).mkdir(parents=True, exist_ok=True)
         return Configuration(
             project_root=self._project_root,
             local_root=self._local_root,
@@ -506,7 +508,7 @@ class Command(CommandParser, ABC):
             strict=self._command_arguments.strict,
             logger=self._command_arguments.logger,
             formatter=self._command_arguments.formatter,
-            log_directory=self._log_directory,
+            log_directory=log_directory,
             use_buck_source_database=self._command_arguments.use_buck_source_database,
         )
 
@@ -587,8 +589,7 @@ class Command(CommandParser, ABC):
         logger = self._configuration.logger
         if logger:
             flags.extend(["-logger", logger])
-        if self._log_directory:
-            flags.extend(["-log-directory", self._log_directory])
+        flags.extend(["-log-directory", self._configuration.log_directory])
         return flags
 
     # temporarily always return empty list to unblock client release
@@ -658,7 +659,7 @@ class Command(CommandParser, ABC):
             #  `Optional[IO[typing.Any]]`.
             with StreamLogger(process.stderr) as stream_logger:
                 with Process.register_non_unique_process(
-                    process.pid, self.NAME, self.log_directory
+                    process.pid, self.NAME, self._configuration.log_directory
                 ):
                     # Wait for the process to finish and clean up.
                     process.wait()
@@ -681,7 +682,7 @@ class Command(CommandParser, ABC):
         return os.path.relpath(path, self._original_directory)
 
     def _state(self) -> State:
-        pid_path = Path(self._log_directory, "server/server.pid")
+        pid_path = Path(self._configuration.log_directory, "server/server.pid")
         return State.RUNNING if Process.is_alive(pid_path) else State.DEAD
 
     # will open a socket, send a request, read the response and close the socket.
@@ -689,7 +690,9 @@ class Command(CommandParser, ABC):
         self, request: json_rpc.Request, version_hash: str
     ) -> None:
         try:
-            stderr_file = os.path.join(self._log_directory, "server/server.stdout")
+            stderr_file = os.path.join(
+                self._configuration.log_directory, "server/server.stdout"
+            )
             with subprocess.Popen(
                 ["tail", "--follow", "--lines=0", stderr_file],
                 stdout=subprocess.PIPE,
@@ -697,7 +700,9 @@ class Command(CommandParser, ABC):
                 universal_newlines=True,
             ) as stderr_tail:
                 try:
-                    with SocketConnection(self._log_directory) as socket_connection:
+                    with SocketConnection(
+                        self._configuration.log_directory
+                    ) as socket_connection:
                         socket_connection.perform_handshake(version_hash)
                         # pyre-fixme[6]: Expected `Iterable[str]` for 1st param but
                         #  got `Optional[IO[typing.Any]]`.
@@ -725,7 +730,7 @@ class Command(CommandParser, ABC):
         log.stdout.write(result.output)
 
     def profiling_log_path(self) -> str:
-        return os.path.join(self._log_directory, "profiling.log")
+        return os.path.join(self._configuration.log_directory, "profiling.log")
 
     @property
     def analysis_directory(self) -> AnalysisDirectory:
@@ -752,10 +757,6 @@ class Command(CommandParser, ABC):
     @property
     def local_root(self) -> Optional[str]:
         return self._local_root
-
-    @property
-    def log_directory(self) -> str:
-        return self._log_directory
 
     @property
     def noninteractive(self) -> bool:

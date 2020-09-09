@@ -113,7 +113,7 @@ def run_pyre(arguments: argparse.Namespace) -> ExitCode:
         else:
             command = arguments.command(arguments, original_directory)
             log.start_logging_to_directory(
-                arguments.noninteractive, command.log_directory
+                arguments.noninteractive, command.configuration.log_directory
             )
             exit_code = command.run().exit_code()
     except analysis_directory.NotWithinLocalConfigurationException as error:

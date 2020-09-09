@@ -104,7 +104,7 @@ class Start(Reporting):
 
     def _run(self) -> None:
         blocking = False
-        lock = os.path.join(self._log_directory, "client.lock")
+        lock = os.path.join(self._configuration.log_directory, "client.lock")
         while True:
             # Be optimistic in grabbing the lock in order to provide users with
             # a message when the lock is being waited on.
@@ -116,7 +116,11 @@ class Start(Reporting):
                     # spawn in the interim which would cause a race.
                     try:
                         with filesystem.acquire_lock(
-                            os.path.join(self._log_directory, "server", "server.lock"),
+                            os.path.join(
+                                self._configuration.log_directory,
+                                "server",
+                                "server.lock",
+                            ),
                             blocking=False,
                         ):
                             pass

@@ -36,7 +36,7 @@ class Rage(Command):
         super(Rage, self).__init__(
             command_arguments, original_directory, configuration, analysis_directory
         )
-        self._log_directory_for_binary: str = self.log_directory
+        self._log_directory_for_binary: str = self._configuration.log_directory
         self._output_path: Final[Optional[str]] = output_path
 
     @staticmethod

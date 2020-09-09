@@ -94,9 +94,7 @@ class Query(Command):
 
     def _flags(self) -> List[str]:
         flags = [self.query]
-        log_directory = self._log_directory
-        if log_directory:
-            flags.extend(["-log-directory", log_directory])
+        flags.extend(["-log-directory", self._configuration.log_directory])
         return flags
 
     def _run(self) -> None:

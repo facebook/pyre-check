@@ -52,7 +52,7 @@ class QueryTest(unittest.TestCase):
                 analysis_directory=AnalysisDirectory("."),
                 query="query",
             )._flags(),
-            ["query", "-log-directory", "/tmp/foo"],
+            ["query", "-log-directory", ".pyre"],
         )
         self.assertEqual(query_command._exit_code, 2)
 

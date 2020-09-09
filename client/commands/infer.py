@@ -539,7 +539,9 @@ class Infer(Reporting):
                     --in-place argument"
                 )
 
-            type_directory = Path(os.path.join(self._log_directory, "types"))
+            type_directory = Path(
+                os.path.join(self._configuration.log_directory, "types")
+            )
             annotate_from_existing_stubs(
                 Path(self._original_directory),
                 self._configuration.formatter,
@@ -556,7 +558,9 @@ class Infer(Reporting):
         if self._print_errors:
             self._print(errors)
         else:
-            type_directory = Path(os.path.join(self._log_directory, "types"))
+            type_directory = Path(
+                os.path.join(self._configuration.log_directory, "types")
+            )
             stubs = generate_stub_files(self._full_only, errors)
             write_stubs_to_disk(stubs, type_directory)
             if self._in_place is not None:

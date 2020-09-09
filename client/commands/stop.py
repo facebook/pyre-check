@@ -57,16 +57,14 @@ class Stop(Command):
         stop.set_defaults(command=cls.from_arguments)
 
     def _flags(self) -> List[str]:
-        log_directory = self._log_directory
         flags = []
-        if log_directory:
-            flags.extend(["-log-directory", log_directory])
+        flags.extend(["-log-directory", self._configuration.log_directory])
         return flags
 
     def _pid_file(self) -> Optional[int]:
         try:
             with open(
-                os.path.join(self._log_directory, "server", "server.pid")
+                os.path.join(self._configuration.log_directory, "server", "server.pid")
             ) as pid_file:
                 return int(pid_file.read())
         except (OSError, ValueError):

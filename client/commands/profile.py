@@ -323,7 +323,9 @@ class Profile(Command):
         )
 
     def get_stdout(self) -> Path:
-        server_stdout_path = os.path.join(self._log_directory, "server/server.stdout")
+        server_stdout_path = os.path.join(
+            self._configuration.log_directory, "server/server.stdout"
+        )
         server_stdout = Path(server_stdout_path)
         if not server_stdout.is_file():
             raise RuntimeError(

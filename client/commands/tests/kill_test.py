@@ -172,7 +172,6 @@ class KillTest(unittest.TestCase):
         )
         kill_command._project_root = "/root"
         kill_command._dot_pyre_directory = Path("/some/log/directory/.pyre")
-        kill_command._log_directory = "/some/log/directory/.pyre/foo"
         path_glob.return_value = [
             "/some/scratch/directory/pyre/.buck_builder_cache",
             "/some/scratch/directory/pyre/.buck_builder_cache_isolated_1234",
@@ -204,7 +203,6 @@ class KillTest(unittest.TestCase):
         )
         kill_command._project_root = "/root"
         kill_command._dot_pyre_directory = Path("/some/log/directory/.pyre")
-        kill_command._log_directory = "/some/log/directory/.pyre/foo"
         check_output.side_effect = Exception
         kill_command._delete_caches()
         remove_tree.assert_has_calls([call("/some/log/directory/.pyre/resource_cache")])
