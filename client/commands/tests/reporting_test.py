@@ -28,7 +28,8 @@ class ReportingTest(unittest.TestCase):
     #  decorator factory `unittest.mock.patch.object`.
     @patch.object(os.path, "exists", side_effect=lambda path: True)
     @patch(
-        f"{client_name}.find_global_and_local_root", return_value=FoundRoot(Path("/"))
+        f"{client_name}.find_global_and_local_root",
+        return_value=FoundRoot(Path("/root")),
     )
     def test_get_errors(
         self, find_global_and_local_root, exists, isdir, realpath
@@ -53,7 +54,7 @@ class ReportingTest(unittest.TestCase):
         }
 
         handler = commands.Reporting(
-            arguments, original_directory, configuration, AnalysisDirectory("/test/f/g")
+            arguments, original_directory, configuration, AnalysisDirectory("/root/f/g")
         )
         with patch.object(json, "loads", return_value=copy.deepcopy(json_errors)):
             errors = handler._get_errors(result)
@@ -65,7 +66,7 @@ class ReportingTest(unittest.TestCase):
         arguments = mock_arguments(targets=["//f/g:target"])
         configuration.targets = []
         handler = commands.Reporting(
-            arguments, original_directory, configuration, AnalysisDirectory("/test/f/g")
+            arguments, original_directory, configuration, AnalysisDirectory("/root/f/g")
         )
         with patch.object(json, "loads", return_value=copy.deepcopy(json_errors)):
             errors = handler._get_errors(result)
@@ -78,7 +79,7 @@ class ReportingTest(unittest.TestCase):
         arguments = mock_arguments(targets=["//f/g:target"])
         configuration.targets = []
         handler = commands.Reporting(
-            arguments, original_directory, configuration, AnalysisDirectory("/test/h/i")
+            arguments, original_directory, configuration, AnalysisDirectory("/root/h/i")
         )
         with patch.object(json, "loads", return_value=copy.deepcopy(json_errors)):
             errors = handler._get_errors(result)
@@ -88,12 +89,12 @@ class ReportingTest(unittest.TestCase):
             self.assertFalse(error.external_to_global_root)
 
         # Called from root with local configuration command line argument
-        original_directory = "/project"  # called from
+        original_directory = "/root"  # called from
         find_global_and_local_root.return_value = FoundRoot(
-            Path("/project"), Path("/project/test")
+            Path("/root"), Path("/root/test")
         )  # project root
         handler = commands.Reporting(
-            arguments, original_directory, configuration, AnalysisDirectory("/project")
+            arguments, original_directory, configuration, AnalysisDirectory("/root")
         )
         with patch.object(json, "loads", return_value=copy.deepcopy(json_errors)):
             errors = handler._get_errors(result)
@@ -103,18 +104,18 @@ class ReportingTest(unittest.TestCase):
             self.assertFalse(error.external_to_global_root)
 
         # Test overlapping analysis directory and error path
-        original_directory = "/project"  # called from
+        original_directory = "/root"  # called from
         find_global_and_local_root.return_value = FoundRoot(
-            Path("/project"), Path("/project/test")
+            Path("/root"), Path("/root/test")
         )  # project root
         handler = commands.Reporting(
             arguments,
             original_directory,
             configuration,
-            AnalysisDirectory("/project/test"),
+            AnalysisDirectory("/root/test"),
         )
         json_errors = copy.deepcopy(json_errors)
-        json_errors["errors"][0]["path"] = "/project/test/path.py"
+        json_errors["errors"][0]["path"] = "/root/test/path.py"
         with patch.object(json, "loads", return_value=copy.deepcopy(json_errors)):
             errors = handler._get_errors(result)
             self.assertEqual(len(errors), 1)

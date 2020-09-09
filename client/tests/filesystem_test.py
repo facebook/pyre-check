@@ -425,6 +425,7 @@ class FilesystemTest(unittest.TestCase):
         arguments.logger = None
         configuration = MagicMock()
         configuration.source_directories = []
+        configuration.project_root = "/root"
         configuration.local_root = "/root/local"
         configuration.use_buck_builder = False
         configuration.ignore_unbuilt_dependencies = False

@@ -84,7 +84,7 @@ class Reporting(Command):
             error["path"] = relative_path
             ignore_error = False
             external_to_global_root = True
-            if path.startswith(self._project_root):
+            if path.startswith(self._configuration.project_root):
                 external_to_global_root = False
             if not os.path.exists(path):
                 # Nonexistent paths can be created when search path stubs are renamed.

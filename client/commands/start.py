@@ -96,9 +96,9 @@ class Start(Reporting):
                 self._command_arguments,
                 self._configuration,
                 self._analysis_directory,
-                self._project_root,
+                self._configuration.project_root,
                 self._original_directory,
-                self.local_root,
+                self._configuration.local_root,
                 self._configuration.other_critical_files,
             ).daemonize()
 
@@ -139,7 +139,7 @@ class Start(Reporting):
                         try:
                             file_monitor = project_files_monitor.ProjectFilesMonitor(
                                 self._configuration,
-                                self._project_root,
+                                self._configuration.project_root,
                                 self._analysis_directory,
                             )
                             file_monitor.daemonize()
@@ -183,10 +183,11 @@ class Start(Reporting):
             saved_state_project = self._command_arguments.saved_state_project
             if saved_state_project:
                 flags.extend(["-saved-state-project", saved_state_project])
-                local_root = self._configuration.local_root
-                if local_root is not None:
-                    relative = os.path.relpath(local_root, self._project_root)
-                    flags.extend(["-saved-state-metadata", relative.replace("/", "$")])
+                relative_local_root = self._configuration.relative_local_root
+                if relative_local_root is not None:
+                    flags.extend(
+                        ["-saved-state-metadata", relative_local_root.replace("/", "$")]
+                    )
             configuration_file_hash = self._configuration.file_hash
             if configuration_file_hash:
                 flags.extend(["-configuration-file-hash", configuration_file_hash])

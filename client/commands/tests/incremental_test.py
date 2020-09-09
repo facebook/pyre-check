@@ -38,7 +38,8 @@ class IncrementalTest(unittest.TestCase):
     @patch.object(SocketConnection, "connect")
     @patch.object(SocketConnection, "perform_handshake")
     @patch(
-        f"{client_name}.find_global_and_local_root", return_value=FoundRoot(Path("."))
+        f"{client_name}.find_global_and_local_root",
+        return_value=FoundRoot(Path("/root")),
     )
     @patch.object(os.path, "exists", side_effect=lambda path: True)
     @patch(_typeshed_search_path, Mock(return_value=["path3"]))
@@ -99,7 +100,7 @@ class IncrementalTest(unittest.TestCase):
                     "-logging-sections",
                     "-progress",
                     "-project-root",
-                    ".",
+                    "/root",
                     "-log-directory",
                     ".pyre",
                     "-expected-binary-version",
@@ -140,7 +141,7 @@ class IncrementalTest(unittest.TestCase):
                     "-logging-sections",
                     "-progress",
                     "-project-root",
-                    ".",
+                    "/root",
                     "-log-directory",
                     ".pyre",
                     "-expected-binary-version",
@@ -176,7 +177,7 @@ class IncrementalTest(unittest.TestCase):
                     "-logging-sections",
                     "-progress",
                     "-project-root",
-                    ".",
+                    "/root",
                     "-log-directory",
                     ".pyre",
                     "-expected-binary-version",
@@ -220,7 +221,7 @@ class IncrementalTest(unittest.TestCase):
                     "-logging-sections",
                     "-progress",
                     "-project-root",
-                    ".",
+                    "/root",
                     "-log-directory",
                     ".pyre",
                     "-expected-binary-version",
@@ -260,7 +261,7 @@ class IncrementalTest(unittest.TestCase):
                     "-logging-sections",
                     "-progress",
                     "-project-root",
-                    ".",
+                    "/root",
                     "-log-directory",
                     ".pyre",
                     "-expected-binary-version",
@@ -286,10 +287,12 @@ class IncrementalTest(unittest.TestCase):
 
         arguments = mock_arguments()
         original_directory = "/test"  # called from
-        find_global_and_local_root.return_value = FoundRoot(Path("/"))  # project root
+        find_global_and_local_root.return_value = FoundRoot(
+            Path("/root")
+        )  # project root
         configuration = mock_configuration()
         configuration.version_hash = "hash"
-        analysis_directory = AnalysisDirectory(".")
+        analysis_directory = AnalysisDirectory("/root")
 
         restart_file_monitor_if_needed.reset_mock()
         with patch.object(SocketConnection, "connect") as connect, patch.object(
@@ -326,7 +329,7 @@ class IncrementalTest(unittest.TestCase):
                     "-logging-sections",
                     "-progress",
                     "-project-root",
-                    "/",
+                    "/root",
                     "-log-directory",
                     ".pyre",
                     "-expected-binary-version",

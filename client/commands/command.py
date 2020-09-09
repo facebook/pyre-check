@@ -18,8 +18,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import IO, Iterable, List, Optional
 
-from typing_extensions import Final
-
 from .. import json_rpc, log, recently_used_configurations, terminal
 from ..analysis_directory import AnalysisDirectory, resolve_analysis_directory
 from ..configuration import Configuration
@@ -443,32 +441,13 @@ class Command(CommandParser, ABC):
         self._capable_terminal: bool = terminal.is_capable()
         self._original_directory: str = original_directory
 
-        local_root_argument = self._command_arguments.local_configuration
-        base_directory = (
-            Path(original_directory)
-            if local_root_argument is None
-            else Path(original_directory) / local_root_argument
-        )
-        found_root = find_global_and_local_root(base_directory)
-        if found_root is None:
-            # FIXME: We should fail here.
-            global_root = Path(original_directory)
-            local_root = None
-        else:
-            global_root = found_root.global_root
-            local_root = found_root.local_root
-        self._project_root: str = str(global_root)
-        self._local_root: Final[Optional[str]] = str(
-            local_root
-        ) if local_root is not None else None
-
         self._logging_sections: Optional[str] = self._command_arguments.logging_sections
         self._noninteractive: bool = self._command_arguments.noninteractive
         if self._command_arguments.debug or not self._capable_terminal:
             self._noninteractive = True
 
         self._configuration: Configuration = (
-            configuration or self.generate_configuration()
+            configuration or self.generate_configuration(Path(original_directory))
         )
         self._version_hash: str = self._configuration.version_hash
         self._taint_models_path: List[str] = self._configuration.taint_models_path
@@ -481,10 +460,23 @@ class Command(CommandParser, ABC):
     def add_subparser(cls, parser: argparse._SubParsersAction) -> None:
         pass
 
-    def generate_configuration(self) -> Configuration:
+    def generate_configuration(self, base_directory: Path) -> Configuration:
+        local_root_argument = self._command_arguments.local_configuration
+        found_root = find_global_and_local_root(
+            base_directory
+            if local_root_argument is None
+            else base_directory / local_root_argument
+        )
+        if found_root is None:
+            # FIXME: We should fail here.
+            global_root = base_directory
+            local_root = None
+        else:
+            global_root = found_root.global_root
+            local_root = found_root.local_root
         return Configuration(
-            project_root=self._project_root,
-            local_root=self._local_root,
+            project_root=str(global_root),
+            local_root=str(local_root) if local_root is not None else None,
             search_path=self._command_arguments.search_path,
             binary=self._command_arguments.binary,
             typeshed=self._command_arguments.typeshed,
@@ -496,7 +488,7 @@ class Command(CommandParser, ABC):
             formatter=self._command_arguments.formatter,
             dot_pyre_directory=(
                 self._command_arguments.dot_pyre_directory
-                or Path(self._project_root, LOG_DIRECTORY)
+                or global_root / LOG_DIRECTORY
             ),
             use_buck_source_database=self._command_arguments.use_buck_source_database,
         )
@@ -511,7 +503,7 @@ class Command(CommandParser, ABC):
                 self._command_arguments.targets,
                 configuration,
                 self._original_directory,
-                self._project_root,
+                configuration.project_root,
                 filter_directory=self._command_arguments.filter_directory,
                 buck_mode=self._command_arguments.buck_mode,
                 relative_local_root=self._configuration.relative_local_root,
@@ -571,8 +563,7 @@ class Command(CommandParser, ABC):
         ):
             # Clear the profiling log first since in pyre binary it's append-only
             remove_if_exists(self.profiling_log_path())
-        if self._project_root:
-            flags.extend(["-project-root", self._project_root])
+        flags.extend(["-project-root", self._configuration.project_root])
         log_identifier = self._command_arguments.log_identifier
         if log_identifier:
             flags.extend(["-log-identifier", log_identifier])
@@ -739,14 +730,6 @@ class Command(CommandParser, ABC):
 
     def result(self) -> Optional[Result]:
         return None
-
-    @property
-    def project_root(self) -> Optional[str]:
-        return self._project_root
-
-    @property
-    def local_root(self) -> Optional[str]:
-        return self._local_root
 
     @property
     def noninteractive(self) -> bool:

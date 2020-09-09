@@ -62,7 +62,7 @@ class Check(Reporting):
             self._command_arguments.targets,
             self._configuration,
             self._original_directory,
-            self._project_root,
+            self._configuration.project_root,
             filter_directory=self._command_arguments.filter_directory,
             buck_mode=self._command_arguments.buck_mode,
             isolate=True,

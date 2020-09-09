@@ -171,7 +171,7 @@ class KillTest(unittest.TestCase):
             with_fire=MagicMock(),
         )
         kill_command._configuration = MagicMock()
-        kill_command._project_root = "/root"
+        kill_command._configuration.project_root = "/root"
         kill_command._configuration.dot_pyre_directory = Path(
             "/some/log/directory/.pyre"
         )
@@ -205,7 +205,7 @@ class KillTest(unittest.TestCase):
             with_fire=MagicMock(),
         )
         kill_command._configuration = MagicMock()
-        kill_command._project_root = "/root"
+        kill_command._configuration.project_root = "/root"
         kill_command._configuration.dot_pyre_directory = Path(
             "/some/log/directory/.pyre"
         )

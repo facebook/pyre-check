@@ -138,7 +138,7 @@ class Kill(Command):
         try:
             scratch_path = (
                 subprocess.check_output(
-                    f"mkscratch path --subdir pyre {self._project_root}".split()
+                    f"mkscratch path --subdir pyre {self._configuration.project_root}".split()
                 )
                 .decode()
                 .strip()
@@ -230,7 +230,7 @@ class Kill(Command):
             ).run()
 
     def _run(self) -> None:
-        explicit_local = self.local_root
+        explicit_local = self._configuration.local_root
         if explicit_local:
             LOG.warning(
                 "Pyre kill will terminate all running servers. "

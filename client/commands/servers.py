@@ -134,7 +134,9 @@ class Servers(Command):
             LOG.warning("Stopping server for `%s` with pid %d", server.name, server.pid)
             Stop(
                 command_arguments=self._command_arguments,
-                original_directory=str(Path(self._project_root, server.local_root)),
+                original_directory=str(
+                    Path(self._configuration.project_root, server.local_root)
+                ),
             ).run()
 
     def _run(self) -> None:

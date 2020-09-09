@@ -85,7 +85,7 @@ class StartTest(unittest.TestCase):
                 analysis_directory=analysis_directory,
             ).run()
             call_client.assert_called_once_with(command=Start.NAME)
-            Monitor.assert_called_once_with(configuration, ".", analysis_directory)
+            Monitor.assert_called_once_with(configuration, "/root", analysis_directory)
             Monitor.return_value.daemonize.assert_called_once_with()
 
         # This magic is necessary to test, because the inner call to ping a server is
@@ -217,7 +217,7 @@ class StartTest(unittest.TestCase):
             "-logging-sections",
             "environment,-progress",
             "-project-root",
-            ".",
+            "/root",
             "-log-directory",
             ".pyre",
             "-workers",
@@ -398,7 +398,7 @@ class StartTest(unittest.TestCase):
 
         arguments = mock_arguments(saved_state_project="pyre/saved_state")
         configuration = mock_configuration()
-        configuration.local_root = os.path.join(os.getcwd(), "first/second")
+        configuration.relative_local_root = "first/second"
         configuration.version_hash = "hash"
         command = Start(
             arguments,

@@ -71,6 +71,8 @@ def mock_arguments(
 
 def mock_configuration(version_hash=None, file_hash=None) -> MagicMock:
     configuration = MagicMock()
+    configuration.project_root = "/root"
+    configuration.local_root = None
     configuration.strict = False
     configuration.source_directories = ["."]
     configuration.logger = None
