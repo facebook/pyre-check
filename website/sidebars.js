@@ -5,49 +5,35 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-function FBInternalSidebarSections(path) {
-   if (process.env.FB_INTERNAL) {
-     return require(path);
-   } else {
-     return {};
-   }
-}
-
-function FBInternal(elements) {
-  return process.env.FB_INTERNAL ? elements : [];
-}
-
-function FBInternalWithOssFallback(elements, fallback) {
-   return process.env.FB_INTERNAL ? elements : fallback;
-}
+const {fbInternalOnly} = require("internaldocs-fb-helpers");
 
 module.exports = {
   documentation: {
     "Pyre": [
-      ...FBInternal(["fb/getting-started"]),
+      ...fbInternalOnly(["fb/getting-started"]),
       "getting-started",
       "installation",
       "configuration",
       "types-in-python",
-      ...FBInternal(["fb/increasing-type-coverage"]),
+      ...fbInternalOnly(["fb/increasing-type-coverage"]),
       "errors",
       "querying-pyre"
     ],
     "Pysa": [
-      ...FBInternal(["fb/pysa-basics-internal"]),
+      ...fbInternalOnly(["fb/pysa-basics-internal"]),
       "pysa-basics",
       "pysa-running",
       "pysa-features",
       "pysa-advanced",
-      ...FBInternal(["fb/pysa-model-generators-internal"]),
+      ...fbInternalOnly(["fb/pysa-model-generators-internal"]),
       "pysa-model-generators",
       "pysa-model-dsl",
       "pysa-tips",
       "pysa-coverage",
       "static-analysis-post-processor",
-      ...FBInternal(["fb/pysa-additional-resources-internal"]),
+      ...fbInternalOnly(["fb/pysa-additional-resources-internal"]),
       "pysa-additional-resources"
     ]
   },
-  ...FBInternalSidebarSections('./fb/sidebars.js')
+  ...fbInternalOnly(() => require('./fb/sidebars.js'))
 }
