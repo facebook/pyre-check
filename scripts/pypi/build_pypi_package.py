@@ -3,7 +3,6 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-import argparse
 import json
 import os
 import platform
@@ -15,8 +14,7 @@ from pathlib import Path
 from typing import List, Tuple
 
 # just validate that it's available, but we don't invoke it directly
-# pyre-fixme[21]: Could not find module `wheel`.
-import wheel  # noqa
+import wheel as _wheel  # noqa
 from twine.commands.check import check as twine_check
 
 from .setup import run as run_setup
