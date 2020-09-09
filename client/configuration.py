@@ -194,6 +194,7 @@ class Configuration:
     def __init__(
         self,
         project_root: str,
+        log_directory: str,
         local_root: Optional[str] = None,
         search_path: Optional[List[str]] = None,
         binary: Optional[str] = None,
@@ -204,7 +205,6 @@ class Configuration:
         strict: bool = False,
         formatter: Optional[str] = None,
         logger: Optional[str] = None,
-        log_directory: Optional[str] = None,
         use_buck_source_database: Optional[bool] = None,
     ) -> None:
         self.source_directories = []
@@ -218,7 +218,7 @@ class Configuration:
         self.taint_models_path: List[str] = []
         self.file_hash: Optional[str] = None
         self.extensions: List[str] = []
-        self._log_directory: Optional[str] = log_directory
+        self.log_directory: str = log_directory
 
         self._version_hash: Optional[str] = None
         self._binary: Optional[str] = None
@@ -254,8 +254,7 @@ class Configuration:
 
         if local_root:
             self._check_read_local_configuration(local_root)
-        if log_directory:
-            self.ignore_all_errors.append(os.path.abspath(log_directory))
+        self.ignore_all_errors.append(os.path.abspath(log_directory))
 
         self.autocomplete = False
 
@@ -440,13 +439,6 @@ class Configuration:
     def local_root(self) -> Optional[str]:
         return self._local_root
 
-    @property
-    def log_directory(self) -> str:
-        log_directory = self._log_directory
-        if not log_directory:
-            raise InvalidConfiguration("No log directory found.")
-        return log_directory
-
     def get_binary_version(self) -> Optional[str]:
         status = subprocess.run(
             [self.binary, "-version"], stdout=subprocess.PIPE, universal_newlines=True
@@ -478,7 +470,7 @@ class Configuration:
                 excludes=self.excludes,
                 logger=self.logger,
                 formatter=self.formatter,
-                log_directory=self._log_directory,
+                log_directory=self.log_directory,
             )
             paths_to_ignore = list(local_root.parents) + [local_root]
             for ignore_element in parent_local_configuration.ignore_all_errors:
@@ -760,13 +752,6 @@ class Configuration:
             else:
                 LOG.info(f"Found: `{typeshed_path}`")
             self._typeshed = str(typeshed_path) if typeshed_path is not None else None
-
-        if not self._log_directory:
-            # TODO(T56191177): We should not start up a server at all if no configurations
-            # exist. Currently, we treat the cwd as the project root if no configurations
-            # exist. Instead, we should default logging to `tmp/.pyre` in the initial
-            # find_log_directory as well.
-            self._log_directory = "/tmp/.pyre"
 
     def _typeshed_has_obsolete_value(self) -> bool:
         (head, tail) = os.path.split(self.typeshed)
