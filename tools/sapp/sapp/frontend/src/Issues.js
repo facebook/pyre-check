@@ -34,20 +34,18 @@ class Issues extends React.Component {
     return (
       <div>
         <h2>Issues</h2>
-        <ul>
-          {this.props.data.issues.edges.map(({node}) => (
-            <Issue
-              issue_id={node.issue_id}
-              filename={node.filename}
-              location={node.location}
-              code={node.code}
-              callable={node.callable}
-              message={node.message}
-              min_trace_length_to_sources={node.min_trace_length_to_sources}
-              min_trace_length_to_sinks={node.min_trace_length_to_sinks}
-            />
-          ))}
-        </ul>
+        {this.props.data.issues.edges.map(({node}) => (
+          <Issue
+            issue_id={node.issue_id}
+            filename={node.filename}
+            location={node.location}
+            code={node.code}
+            callable={node.callable}
+            message={node.message}
+            min_trace_length_to_sources={node.min_trace_length_to_sources}
+            min_trace_length_to_sinks={node.min_trace_length_to_sinks}
+          />
+        ))}
         <button onClick={this.fetchIssues}>More</button>
       </div>
     );
