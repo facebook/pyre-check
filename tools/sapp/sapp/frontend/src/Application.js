@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  * @format
+ * @flow
  */
 
 import React, {useState} from 'react';
@@ -66,39 +67,37 @@ const Filter = props => {
     if (filter !== '' && filter != null) {
       return filter.trim().split(';');
     }
-    return undefined;
+    return null;
   }
 
   const handleSubmit = event => {
     event.preventDefault();
 
     let variables = {};
-    variables.codes =
-      parse_filter(codes) !== undefined
-        ? parse_filter(codes).map(Number)
-        : undefined;
+    let parsed = parse_filter(codes);
+    variables.codes = parsed !== null ? parsed.map(Number) : null;
     variables.names = parse_filter(file_names);
     variables.callables = parse_filter(callables);
 
     variables.min_trace_length_to_sinks =
-      parse_filter(min_trace_length_to_sinks) !== undefined
+      parse_filter(min_trace_length_to_sinks) !== null
         ? parseInt(parse_filter(min_trace_length_to_sinks))
-        : undefined;
+        : null;
 
     variables.max_trace_length_to_sinks =
-      parse_filter(max_trace_length_to_sinks) !== undefined
+      parse_filter(max_trace_length_to_sinks) !== null
         ? parseInt(parse_filter(max_trace_length_to_sinks))
-        : undefined;
+        : null;
 
     variables.min_trace_length_to_sources =
-      parse_filter(min_trace_length_to_sources) !== undefined
+      parse_filter(min_trace_length_to_sources) !== null
         ? parseInt(parse_filter(min_trace_length_to_sources))
-        : undefined;
+        : null;
 
     variables.max_trace_length_to_sources =
-      parse_filter(max_trace_length_to_sources) !== undefined
+      parse_filter(max_trace_length_to_sources) !== null
         ? parseInt(parse_filter(max_trace_length_to_sources))
-        : undefined;
+        : null;
 
     props.refetch(variables);
   };
