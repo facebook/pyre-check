@@ -82,6 +82,8 @@ def mock_configuration(version_hash=None, file_hash=None) -> MagicMock:
     configuration.file_hash = file_hash
     configuration.local_root = None
     configuration.autocomplete = False
+    configuration.dot_pyre_directory = Path(".pyre")
+    configuration.relative_local_root = None
     configuration.log_directory = ".pyre"
     configuration.disabled = False
     return configuration

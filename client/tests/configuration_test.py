@@ -74,12 +74,12 @@ class ConfigurationIntegrationTest(unittest.TestCase):
             },
             {},
         ]
-        configuration = Configuration("", log_directory="/.pyre/local/path")
+        configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
         self.assertEqual(configuration.source_directories, ["a"])
         self.assertEqual(configuration.targets, [])
         self.assertEqual(configuration.logger, "/usr/logger")
         self.assertEqual(
-            configuration.ignore_all_errors, ["/.pyre/local/path", "buck-out/dev/gen"]
+            configuration.ignore_all_errors, ["/.pyre", "buck-out/dev/gen"]
         )
         self.assertEqual(configuration.file_hash, None)
 
@@ -91,18 +91,18 @@ class ConfigurationIntegrationTest(unittest.TestCase):
         ]
         with self.assertRaises(EnvironmentException):
             configuration = Configuration(
-                "", local_root="local/path", log_directory="/.pyre/local/path"
+                "", local_root="local/path", dot_pyre_directory=Path("/.pyre")
             )
             self.assertEqual(configuration.source_directories, ["local/path/a"])
 
         json_load.side_effect = [{"source_directories": ["a"]}, {"version": "abc"}, {}]
-        configuration = Configuration("local/path", log_directory="/.pyre/local/path")
+        configuration = Configuration("local/path", dot_pyre_directory=Path("/.pyre"))
         self.assertEqual(configuration.source_directories, ["local/path/a"])
-        self.assertEqual(configuration.ignore_all_errors, ["/.pyre/local/path"])
+        self.assertEqual(configuration.ignore_all_errors, ["/.pyre"])
 
         # Configuration fields
         json_load.side_effect = [{"targets": ["//a/b/c"], "disabled": 1}, {}]
-        configuration = Configuration("", log_directory="/.pyre/local/path")
+        configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
         self.assertEqual(configuration.targets, ["//a/b/c"])
         self.assertEqual(configuration.source_directories, [])
         self.assertEqual(configuration.version_hash, "unversioned")
@@ -111,14 +111,14 @@ class ConfigurationIntegrationTest(unittest.TestCase):
         self.assertTrue(configuration.disabled)
 
         json_load.side_effect = [{"typeshed": "TYPESHED/"}, {}]
-        configuration = Configuration("", log_directory="/.pyre/local/path")
+        configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
         self.assertEqual(configuration.typeshed, "TYPESHED/")
         self.assertEqual(configuration.file_hash, None)
 
         with patch.object(os.path, "isdir", return_value=False):
             json_load.side_effect = [{"search_path": [{"site-package": "abc"}]}]
             with self.assertRaises(InvalidConfiguration):
-                configuration = Configuration("", log_directory="/.pyre/local/path")
+                configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
 
         with patch.object(
             site, "getsitepackages", return_value=["/mock/site0", "/mock/site1"]
@@ -129,7 +129,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
                 side_effect=lambda path: path.startswith("/mock/site0"),
             ):
                 json_load.side_effect = [{"search_path": [{"site-package": "abc"}]}]
-                configuration = Configuration("", log_directory="/.pyre/local/path")
+                configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
                 self.assertIn("/mock/site0$abc", configuration.search_path)
             with patch.object(
                 os.path,
@@ -137,7 +137,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
                 side_effect=lambda path: path.startswith("/mock/site1"),
             ):
                 json_load.side_effect = [{"search_path": [{"site-package": "abc"}]}]
-                configuration = Configuration("", log_directory="/.pyre/local/path")
+                configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
                 self.assertIn("/mock/site1$abc", configuration.search_path)
 
         json_load.side_effect = [
@@ -149,7 +149,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
             },
             {},
         ]
-        configuration = Configuration("", log_directory="/.pyre/local/path")
+        configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
         self.assertEqual(configuration.typeshed, "TYPE/VERSION/SHED/")
         self.assertEqual(
             configuration.search_path,
@@ -170,7 +170,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
             },
             {},
         ]
-        configuration = Configuration("", log_directory="/.pyre/local/path")
+        configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
         self.assertEqual(configuration.typeshed, "TYPE/VERSION/SHED/")
         self.assertEqual(
             configuration.search_path,
@@ -193,7 +193,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
             },
             {},
         ]
-        configuration = Configuration("", log_directory="/.pyre/local/path")
+        configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
         self.assertEqual(configuration.typeshed, "TYPE/VERSION/SHED/")
         self.assertEqual(
             configuration.search_path, ["additional/", "root/$subdirectory"]
@@ -214,7 +214,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
             },
             {},
         ]
-        configuration = Configuration("project_root", log_directory="/.pyre/local/path")
+        configuration = Configuration("project_root", dot_pyre_directory=Path("/.pyre"))
         self.assertEqual(configuration.typeshed, "project_root/TYPE/VERSION/SHED/")
         self.assertEqual(
             configuration.search_path,
@@ -234,7 +234,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
             {},
         ]
         with self.assertRaises(InvalidConfiguration):
-            Configuration("", log_directory="/.pyre/local/path")
+            Configuration("", dot_pyre_directory=Path("/.pyre"))
 
         json_load.side_effect = [
             {
@@ -245,7 +245,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
             },
             {},
         ]
-        configuration = Configuration("", log_directory="/.pyre/local/path")
+        configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
         self.assertEqual(configuration.typeshed, "TYPE/VERSION/SHED/")
         self.assertEqual(configuration.search_path, ["simple_string/"])
         self.assertEqual(configuration.taint_models_path, [".pyre/taint_models"])
@@ -259,7 +259,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
             },
             {},
         ]
-        configuration = Configuration("", log_directory="/.pyre/local/path")
+        configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
         self.assertEqual(configuration.typeshed, "TYPE/VERSION/SHED/")
         self.assertEqual(configuration.search_path, ["simple_string/"])
         self.assertEqual(
@@ -280,7 +280,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
                 {"binary": "some/dir/pyre.bin", "typeshed": "some/typeshed"},
                 {},
             ]
-            configuration = Configuration("", log_directory="/.pyre/local/path")
+            configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
             self.assertEqual(configuration.binary, "/root/some/dir/pyre.bin")
             self.assertEqual(configuration.typeshed, "/root/some/typeshed")
             self.assertIsNone(configuration.buck_builder_binary)
@@ -289,7 +289,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
                 {"binary": "~/some/dir/pyre.bin", "typeshed": "~/some/typeshed"},
                 {},
             ]
-            configuration = Configuration("", log_directory="/.pyre/local/path")
+            configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
             self.assertEqual(configuration.binary, "/home/user/some/dir/pyre.bin")
             self.assertEqual(configuration.typeshed, "/home/user/some/typeshed")
 
@@ -301,7 +301,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
                 },
                 {},
             ]
-            configuration = Configuration("", log_directory="/.pyre/local/path")
+            configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
             self.assertEqual(configuration.binary, "/root/some/VERSION/pyre.bin")
             self.assertEqual(configuration.typeshed, "/root/some/VERSION/typeshed")
 
@@ -313,7 +313,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
                 },
                 {},
             ]
-            configuration = Configuration("", log_directory="/.pyre/local/path")
+            configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
             self.assertEqual(configuration.binary, "/home/user/some/VERSION/pyre.bin")
             self.assertEqual(configuration.typeshed, "/home/user/some/VERSION/typeshed")
 
@@ -321,7 +321,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
                 {"buck_builder_binary": "/some/dir/buck_builder"},
                 {},
             ]
-            configuration = Configuration("", log_directory="/.pyre/local/path")
+            configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
             self.assertEqual(
                 configuration.buck_builder_binary, "/some/dir/buck_builder"
             )
@@ -330,7 +330,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
                 {"buck_builder_binary": "some/dir/buck_builder"},
                 {},
             ]
-            configuration = Configuration("", log_directory="/.pyre/local/path")
+            configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
             self.assertEqual(
                 configuration.buck_builder_binary, "/root/some/dir/buck_builder"
             )
@@ -339,15 +339,10 @@ class ConfigurationIntegrationTest(unittest.TestCase):
                 {"ignore_all_errors": ["abc/def", "/abc/def", "~/abc/def"]},
                 {},
             ]
-            configuration = Configuration("", log_directory="/.pyre/local/path")
+            configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
             self.assertEqual(
                 configuration.ignore_all_errors,
-                [
-                    "/.pyre/local/path",
-                    "/root/abc/def",
-                    "/abc/def",
-                    "/home/user/abc/def",
-                ],
+                ["/.pyre", "/root/abc/def", "/abc/def", "/home/user/abc/def"],
             )
 
             json_load.side_effect = [
@@ -359,7 +354,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
                 },
                 {},
             ]
-            configuration = Configuration("", log_directory="/.pyre/local/path")
+            configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
             self.assertEqual(configuration.typeshed, "/TYPE/VERSION/SHED/")
             self.assertEqual(configuration.search_path, ["/root/simple_string/"])
             self.assertEqual(
@@ -379,7 +374,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
             configuration = Configuration(
                 project_root="/root",
                 local_root="/root/local",
-                log_directory="/.pyre/local/path",
+                dot_pyre_directory=Path("/.pyre"),
             )
             self.assertEqual(configuration.typeshed, "/TYPE/VERSION/SHED/")
             self.assertEqual(configuration.search_path, ["/root/simple_string/"])
@@ -401,7 +396,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
             configuration = Configuration(
                 project_root="/root",
                 local_root="/root/local",
-                log_directory="/.pyre/local/path",
+                dot_pyre_directory=Path("/.pyre"),
             )
             self.assertEqual(configuration.typeshed, "/TYPE/VERSION/SHED/")
             self.assertEqual(configuration.search_path, ["/root/simple_string/"])
@@ -419,7 +414,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
             },
             {},
         ]
-        configuration = Configuration("", log_directory="/.pyre/local/path")
+        configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
         self.assertEqual(configuration.typeshed, "/TYPE/VERSION/SHED/")
         self.assertEqual(configuration.search_path, ["simple_string/"])
         self.assertEqual(configuration.file_hash, "HASH")
@@ -436,7 +431,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
             },
             {},
         ]
-        configuration = Configuration("", log_directory="/.pyre/local/path")
+        configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
         self.assertEqual(
             configuration.search_path, ["/home/user/simple", "/home/user/simple$subdir"]
         )
@@ -447,7 +442,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
         # Test manual loading of the binary
         json_load.side_effect = [{}, {}]
         configuration = Configuration(
-            project_root="", binary="some/file/path/", log_directory="/.pyre/local/path"
+            project_root="", binary="some/file/path/", dot_pyre_directory=Path("/.pyre")
         )
         self.assertEqual(configuration.binary, "some/file/path/")
 
@@ -456,22 +451,22 @@ class ConfigurationIntegrationTest(unittest.TestCase):
         configuration = Configuration(
             project_root="",
             typeshed="some/directory/path/",
-            log_directory="/.pyre/local/path",
+            dot_pyre_directory=Path("/.pyre"),
         )
         self.assertEqual(configuration.typeshed, "some/directory/path/")
 
         json_load.side_effect = [{"binary": "/binary"}, {}]
-        configuration = Configuration("", log_directory="/.pyre/local/path")
+        configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
         self.assertEqual(configuration.binary, "/binary")
 
         json_load.side_effect = [{"version": "VERSION", "binary": "/%V/binary"}, {}]
-        configuration = Configuration("", log_directory="/.pyre/local/path")
+        configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
         self.assertEqual(configuration.binary, "/VERSION/binary")
 
         # Test version override
         with patch.object(os, "getenv", return_value="VERSION_HASH"):
             json_load.side_effect = [{}, {}]
-            configuration = Configuration("", log_directory="/.pyre/local/path")
+            configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
             self.assertEqual(configuration.version_hash, "VERSION_HASH")
 
         with patch.object(os, "getenv", return_value="VERSION_HASH"):
@@ -479,18 +474,18 @@ class ConfigurationIntegrationTest(unittest.TestCase):
                 {"version": "NOT_THIS_VERSION", "typeshed": "/TYPE/%V/SHED/"},
                 {},
             ]
-            configuration = Configuration("", log_directory="/.pyre/local/path")
+            configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
             self.assertEqual(configuration.typeshed, "/TYPE/VERSION_HASH/SHED/")
 
         # Test buck builder fields
         json_load.side_effect = [{"use_buck_builder": True}, {}]
-        configuration = Configuration("", log_directory="/.pyre/local/path")
+        configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
         self.assertTrue(configuration.use_buck_builder)
         json_load.side_effect = [{"use_buck_builder": False}, {}]
-        configuration = Configuration("", log_directory="/.pyre/local/path")
+        configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
         self.assertFalse(configuration.use_buck_builder)
         json_load.side_effect = [{}, {}]
-        configuration = Configuration("", log_directory="/.pyre/local/path")
+        configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
         self.assertFalse(configuration.use_buck_builder)
 
         # Test multiple definitions of the ignore_all_errors files.
@@ -498,29 +493,29 @@ class ConfigurationIntegrationTest(unittest.TestCase):
             {"ignore_all_errors": ["buck-out/dev/gen"]},
             {"ignore_all_errors": ["buck-out/dev/gen2"]},
         ]
-        configuration = Configuration("", log_directory="/.pyre/local/path")
+        configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
         self.assertEqual(
-            configuration.ignore_all_errors, ["/.pyre/local/path", "buck-out/dev/gen"]
+            configuration.ignore_all_errors, ["/.pyre", "buck-out/dev/gen"]
         )
         # Normalize number of workers if zero.
         json_load.side_effect = [{"typeshed": "/TYPESHED/", "workers": 0}, {}]
-        configuration = Configuration("", log_directory="/.pyre/local/path")
+        configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
         self.assertEqual(configuration.typeshed, "/TYPESHED/")
 
         # Test excludes
         json_load.side_effect = [{"exclude": "regexp"}, {}]
-        configuration = Configuration("", log_directory="/.pyre/local/path")
+        configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
         self.assertEqual(configuration.excludes, ["regexp"])
 
         json_load.side_effect = [{"exclude": ["regexp1", "regexp2"]}, {}]
-        configuration = Configuration("", log_directory="/.pyre/local/path")
+        configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
         self.assertEqual(configuration.excludes, ["regexp1", "regexp2"])
 
         json_load.side_effect = [{"exclude": ["regexp1", "regexp2"]}, {}]
         configuration = Configuration(
             project_root="",
             excludes=["regexp3", "regexp4"],
-            log_directory="/.pyre/local/path",
+            dot_pyre_directory=Path("/.pyre"),
         )
         self.assertEqual(
             configuration.excludes, ["regexp3", "regexp4", "regexp1", "regexp2"]
@@ -528,21 +523,21 @@ class ConfigurationIntegrationTest(unittest.TestCase):
 
         # Test extensions
         json_load.side_effect = [{"extensions": [".a", ".b"]}, {}]
-        configuration = Configuration("", log_directory="/.pyre/local/path")
+        configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
         self.assertEqual(configuration.extensions, [".a", ".b"])
 
         json_load.side_effect = [{}, {}]
-        configuration = Configuration("", log_directory="/.pyre/local/path")
+        configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
         self.assertEqual(configuration.autocomplete, False)
         json_load.side_effect = [{"autocomplete": True}, {}]
-        configuration = Configuration("", log_directory="/.pyre/local/path")
+        configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
         self.assertEqual(configuration.autocomplete, True)
 
         json_load.side_effect = [{}, {}]
-        configuration = Configuration("", log_directory="/.pyre/local/path")
+        configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
         self.assertEqual(configuration.other_critical_files, [])
         json_load.side_effect = [{"critical_files": ["critical", "files"]}, {}]
-        configuration = Configuration("", log_directory="/.pyre/local/path")
+        configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
         self.assertEqual(configuration.other_critical_files, ["critical", "files"])
 
     @patch("os.path.isfile")
@@ -592,7 +587,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
             Configuration, "source_directories", new_callable=PropertyMock, create=True
         ) as attribute_mock:
             attribute_mock.return_value = ["."]
-            configuration = Configuration("", log_directory="/.pyre/local/path")
+            configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
             configuration_read.assert_has_calls([call(CONFIGURATION_FILE)])
             self.assertEqual(configuration.local_root, None)
 
@@ -600,7 +595,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
             configuration = Configuration(
                 project_root="/",
                 local_root="original",
-                log_directory="/.pyre/local/path",
+                dot_pyre_directory=Path("/.pyre"),
             )
             configuration_read.assert_has_calls(
                 [
@@ -612,7 +607,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
 
             configuration_read.reset_mock()
             configuration = Configuration(
-                project_root="/", local_root="local", log_directory="/.pyre/local/path"
+                project_root="/", local_root="local", dot_pyre_directory=Path("/.pyre")
             )
             configuration_read.assert_has_calls(
                 [
@@ -624,7 +619,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
 
             configuration_read.reset_mock()
             configuration = Configuration(
-                project_root="/", local_root="local", log_directory="/.pyre/local/path"
+                project_root="/", local_root="local", dot_pyre_directory=Path("/.pyre")
             )
             configuration_read.assert_has_calls(
                 [
@@ -639,7 +634,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
             os_path_isfile.return_value = True
             configuration_read.reset_mock()
             configuration = Configuration(
-                project_root="/", local_root="local", log_directory="/.pyre/local/path"
+                project_root="/", local_root="local", dot_pyre_directory=Path("/.pyre")
             )
             configuration_read.assert_has_calls(
                 [
@@ -684,7 +679,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
         find_parent_directory_containing_file.side_effect = [Path("root"), None]
         path_resolve.side_effect = [
             Path("root/local"),
-            Path("/.pyre/local/path"),
+            Path("/.pyre"),
             Path("root/local"),
         ]
         os_path_isdir.return_value = True
@@ -716,7 +711,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
             Configuration(
                 project_root="root",
                 local_root="root/local",
-                log_directory="/.pyre/local/path",
+                dot_pyre_directory=Path("/.pyre"),
             )
         except BaseException:
             self.fail("Configuration should not raise.")
@@ -725,7 +720,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
         find_parent_directory_containing_file.side_effect = [Path("root"), None]
         path_resolve.side_effect = [
             Path("root/local"),
-            Path("/.pyre/local/path"),
+            Path("/.pyre"),
             Path("not_local"),
         ]
         json_loads.side_effect = [
@@ -755,7 +750,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
             Configuration(
                 project_root="root",
                 local_root="root/local",
-                log_directory="/.pyre/local/path",
+                dot_pyre_directory=Path("/.pyre"),
             )
 
         # Project and local configurations both specifying sources.
@@ -781,7 +776,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
             Configuration(
                 project_root="root",
                 local_root="root/local",
-                log_directory="/.pyre/local/path",
+                dot_pyre_directory=Path("/.pyre"),
             )
 
     @patch("os.path.isfile")
@@ -797,7 +792,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
         os_path_isfile.return_value = False
         with self.assertRaises(EnvironmentException):
             Configuration(
-                project_root="/", local_root="local", log_directory="/.pyre/local/path"
+                project_root="/", local_root="local", dot_pyre_directory=Path("/.pyre")
             )
 
         # Test that a non-existing local configuration file was provided.
@@ -808,14 +803,14 @@ class ConfigurationIntegrationTest(unittest.TestCase):
             Configuration(
                 project_root="/",
                 local_root="local/.some_configuration",
-                log_directory="/.pyre/local/path",
+                dot_pyre_directory=Path("/.pyre"),
             )
 
         with self.assertRaises(EnvironmentException):
             Configuration(
                 project_root="/",
                 local_root="local/.some_configuration",
-                log_directory="/.pyre/local/path",
+                dot_pyre_directory=Path("/.pyre"),
             )
 
         # Test an existing local directory, without a configuration file.
@@ -826,14 +821,14 @@ class ConfigurationIntegrationTest(unittest.TestCase):
             Configuration(
                 project_root="/",
                 local_root="localdir",
-                log_directory="/.pyre/local/path",
+                dot_pyre_directory=Path("/.pyre"),
             )
 
         with self.assertRaises(EnvironmentException):
             Configuration(
                 project_root="/",
                 local_root="localdir",
-                log_directory="/.pyre/local/path",
+                dot_pyre_directory=Path("/.pyre"),
             )
 
     @patch("os.path.abspath", side_effect=lambda path: path)
@@ -874,7 +869,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
                 },
                 {},
             ]
-            Configuration("", log_directory="/.pyre/local/path")
+            Configuration("", dot_pyre_directory=Path("/.pyre"))
         except BaseException:
             self.fail("Configuration should not raise.")
 
@@ -891,7 +886,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
                 },
                 {},
             ]
-            Configuration("", log_directory="/.pyre/local/path")
+            Configuration("", dot_pyre_directory=Path("/.pyre"))
 
     @patch.object(Configuration, "_read")
     @patch.object(Configuration, "_override_version_hash")
@@ -913,17 +908,17 @@ class ConfigurationIntegrationTest(unittest.TestCase):
         with patch.object(sys, "argv", ["/tmp/pyre/bin/pyre"]), patch(
             "shutil.which", side_effect=accept_tmp
         ):
-            configuration = Configuration("", log_directory="/.pyre/local/path")
+            configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
             self.assertEqual(configuration._binary, "/tmp/pyre/bin/pyre.bin")
         with patch.object(sys, "argv", ["/tmp/unknown/bin/pyre"]), patch(
             "shutil.which", side_effect=accept_tmp
         ):
-            configuration = Configuration("", log_directory="/.pyre/local/path")
+            configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
             self.assertEqual(configuration._binary, None)
 
     @patch.object(Configuration, "_validate")
     def test_get_binary_version(self, _validate) -> None:
-        configuration = Configuration("", log_directory="/.pyre/local/path")
+        configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
         configuration._binary = "<binary>"
 
         def assert_version(

@@ -489,13 +489,6 @@ class Command(CommandParser, ABC):
         pass
 
     def generate_configuration(self) -> Configuration:
-        relative_local_root = self.relative_local_root
-        log_directory: str = str(
-            self._dot_pyre_directory
-            if relative_local_root is None
-            else self._dot_pyre_directory / relative_local_root
-        )
-        Path(log_directory).mkdir(parents=True, exist_ok=True)
         return Configuration(
             project_root=self._project_root,
             local_root=self._local_root,
@@ -508,7 +501,7 @@ class Command(CommandParser, ABC):
             strict=self._command_arguments.strict,
             logger=self._command_arguments.logger,
             formatter=self._command_arguments.formatter,
-            log_directory=log_directory,
+            dot_pyre_directory=self._dot_pyre_directory,
             use_buck_source_database=self._command_arguments.use_buck_source_database,
         )
 
@@ -538,6 +531,7 @@ class Command(CommandParser, ABC):
                 recently_used_configurations.Cache(self._dot_pyre_directory).put(
                     relative_local_root
                 )
+            Path(self.configuration.log_directory).mkdir(parents=True, exist_ok=True)
             self._run()
         return self
 

@@ -27,6 +27,7 @@ from .find_directories import (
     LOCAL_CONFIGURATION_FILE,
     find_parent_directory_containing_file,
     find_typeshed,
+    get_relative_local_root,
 )
 
 
@@ -194,7 +195,7 @@ class Configuration:
     def __init__(
         self,
         project_root: str,
-        log_directory: str,
+        dot_pyre_directory: Path,
         local_root: Optional[str] = None,
         search_path: Optional[List[str]] = None,
         binary: Optional[str] = None,
@@ -218,7 +219,17 @@ class Configuration:
         self.taint_models_path: List[str] = []
         self.file_hash: Optional[str] = None
         self.extensions: List[str] = []
-        self.log_directory: str = log_directory
+        self.dot_pyre_directory: Path = dot_pyre_directory
+
+        relative_local_root = get_relative_local_root(
+            Path(project_root), Path(local_root) if local_root is not None else None
+        )
+        self.relative_local_root: Optional[str] = relative_local_root
+        self.log_directory: str = str(
+            self.dot_pyre_directory
+            if relative_local_root is None
+            else self.dot_pyre_directory / relative_local_root
+        )
 
         self._version_hash: Optional[str] = None
         self._binary: Optional[str] = None
@@ -254,7 +265,7 @@ class Configuration:
 
         if local_root:
             self._check_read_local_configuration(local_root)
-        self.ignore_all_errors.append(os.path.abspath(log_directory))
+        self.ignore_all_errors.append(os.path.abspath(self.log_directory))
 
         self.autocomplete = False
 
@@ -470,7 +481,7 @@ class Configuration:
                 excludes=self.excludes,
                 logger=self.logger,
                 formatter=self.formatter,
-                log_directory=self.log_directory,
+                dot_pyre_directory=self.dot_pyre_directory,
             )
             paths_to_ignore = list(local_root.parents) + [local_root]
             for ignore_element in parent_local_configuration.ignore_all_errors:
