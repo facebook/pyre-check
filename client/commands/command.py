@@ -25,7 +25,7 @@ from ..analysis_directory import AnalysisDirectory, resolve_analysis_directory
 from ..configuration import Configuration
 from ..exceptions import EnvironmentException
 from ..filesystem import readable_directory, remove_if_exists
-from ..find_directories import find_global_and_local_root, get_relative_local_root
+from ..find_directories import find_global_and_local_root
 from ..log import StreamLogger
 from ..process import Process
 from ..resources import LOG_DIRECTORY
@@ -465,9 +465,6 @@ class Command(CommandParser, ABC):
             self._command_arguments.dot_pyre_directory
             or Path(self._project_root, LOG_DIRECTORY)
         )
-        self.relative_local_root: Optional[str] = get_relative_local_root(
-            global_root, local_root
-        )
 
         self._logging_sections: Optional[str] = self._command_arguments.logging_sections
         self._noninteractive: bool = self._command_arguments.noninteractive
@@ -518,7 +515,7 @@ class Command(CommandParser, ABC):
                 self._project_root,
                 filter_directory=self._command_arguments.filter_directory,
                 buck_mode=self._command_arguments.buck_mode,
-                relative_local_root=self.relative_local_root,
+                relative_local_root=self._configuration.relative_local_root,
             )
 
     def run(self) -> "Command":
@@ -526,7 +523,7 @@ class Command(CommandParser, ABC):
         if configuration and configuration.disabled:
             LOG.log(log.SUCCESS, "Pyre will not run due to being explicitly disabled")
         else:
-            relative_local_root = self.relative_local_root
+            relative_local_root = self._configuration.relative_local_root
             if relative_local_root:
                 recently_used_configurations.Cache(self._dot_pyre_directory).put(
                     relative_local_root

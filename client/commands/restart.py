@@ -91,7 +91,7 @@ class Restart(Command):
             self._project_root,
             filter_directory=self._command_arguments.filter_directory,
             buck_mode=self._command_arguments.buck_mode,
-            relative_local_root=self.relative_local_root,
+            relative_local_root=self._configuration.relative_local_root,
         )
 
     def _run(self) -> None:
