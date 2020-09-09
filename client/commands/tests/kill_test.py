@@ -170,8 +170,11 @@ class KillTest(unittest.TestCase):
             analysis_directory=MagicMock(),
             with_fire=MagicMock(),
         )
+        kill_command._configuration = MagicMock()
         kill_command._project_root = "/root"
-        kill_command._dot_pyre_directory = Path("/some/log/directory/.pyre")
+        kill_command._configuration.dot_pyre_directory = Path(
+            "/some/log/directory/.pyre"
+        )
         path_glob.return_value = [
             "/some/scratch/directory/pyre/.buck_builder_cache",
             "/some/scratch/directory/pyre/.buck_builder_cache_isolated_1234",
@@ -201,8 +204,11 @@ class KillTest(unittest.TestCase):
             analysis_directory=MagicMock(),
             with_fire=MagicMock(),
         )
+        kill_command._configuration = MagicMock()
         kill_command._project_root = "/root"
-        kill_command._dot_pyre_directory = Path("/some/log/directory/.pyre")
+        kill_command._configuration.dot_pyre_directory = Path(
+            "/some/log/directory/.pyre"
+        )
         check_output.side_effect = Exception
         kill_command._delete_caches()
         remove_tree.assert_has_calls([call("/some/log/directory/.pyre/resource_cache")])
@@ -254,7 +260,8 @@ class KillTest(unittest.TestCase):
             analysis_directory=MagicMock(),
             with_fire=MagicMock(),
         )
-        kill_command._dot_pyre_directory = Path("/root/.pyre")
+        kill_command._configuration = MagicMock()
+        kill_command._configuration.dot_pyre_directory = Path("/root/.pyre")
         kill_command._delete_server_files()
         self.assertEqual(delete_linked_path.call_count, 6)
 

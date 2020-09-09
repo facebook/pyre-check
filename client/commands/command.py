@@ -461,10 +461,6 @@ class Command(CommandParser, ABC):
         self._local_root: Final[Optional[str]] = str(
             local_root
         ) if local_root is not None else None
-        self._dot_pyre_directory: Path = (
-            self._command_arguments.dot_pyre_directory
-            or Path(self._project_root, LOG_DIRECTORY)
-        )
 
         self._logging_sections: Optional[str] = self._command_arguments.logging_sections
         self._noninteractive: bool = self._command_arguments.noninteractive
@@ -498,7 +494,10 @@ class Command(CommandParser, ABC):
             strict=self._command_arguments.strict,
             logger=self._command_arguments.logger,
             formatter=self._command_arguments.formatter,
-            dot_pyre_directory=self._dot_pyre_directory,
+            dot_pyre_directory=(
+                self._command_arguments.dot_pyre_directory
+                or Path(self._project_root, LOG_DIRECTORY)
+            ),
             use_buck_source_database=self._command_arguments.use_buck_source_database,
         )
 
@@ -525,9 +524,9 @@ class Command(CommandParser, ABC):
         else:
             relative_local_root = self._configuration.relative_local_root
             if relative_local_root:
-                recently_used_configurations.Cache(self._dot_pyre_directory).put(
-                    relative_local_root
-                )
+                recently_used_configurations.Cache(
+                    self._configuration.dot_pyre_directory
+                ).put(relative_local_root)
             Path(self.configuration.log_directory).mkdir(parents=True, exist_ok=True)
             self._run()
         return self

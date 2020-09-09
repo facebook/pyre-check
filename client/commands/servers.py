@@ -116,12 +116,14 @@ class Servers(Command):
                 log.stdout.write("No servers running")
 
     def _find_servers(self) -> List[Path]:
-        return list(self._dot_pyre_directory.glob("**/server.pid"))
+        return list(self._configuration.dot_pyre_directory.glob("**/server.pid"))
 
     def _all_server_details(self) -> List[ServerDetails]:
         return sorted(
             (
-                ServerDetails._from_server_path(server_path, self._dot_pyre_directory)
+                ServerDetails._from_server_path(
+                    server_path, self._configuration.dot_pyre_directory
+                )
                 for server_path in self._find_servers()
             ),
             key=lambda details: details.local_root,

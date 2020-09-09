@@ -93,7 +93,7 @@ class Rage(Command):
             subcommand="list",
         )
         recent_local_roots = recently_used_configurations.Cache(
-            self._dot_pyre_directory
+            self._configuration.dot_pyre_directory
         ).get_all_items()
         if servers.is_root_server_running() or recent_local_roots == []:
             self._call_client(
@@ -118,7 +118,7 @@ class Rage(Command):
                     flush=True,
                 )
                 self._log_directory_for_binary = str(
-                    self._dot_pyre_directory / local_root
+                    self._configuration.dot_pyre_directory / local_root
                 )
                 self._call_client(
                     command=self.NAME, capture_output=False, stdout=output_file

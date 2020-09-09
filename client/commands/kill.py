@@ -127,7 +127,9 @@ class Kill(Command):
     def _delete_caches(self) -> None:
         # If a resource cache exists, delete it to remove corrupted artifacts.
         try:
-            shutil.rmtree(str(self._dot_pyre_directory / "resource_cache"))
+            shutil.rmtree(
+                str(self._configuration.dot_pyre_directory / "resource_cache")
+            )
         except OSError:
             pass
 
@@ -158,7 +160,9 @@ class Kill(Command):
                         "Failed to delete buck builder cache due to exception: %s.",
                         exception,
                     )
-        recently_used_configurations.Cache(self._dot_pyre_directory).delete()
+        recently_used_configurations.Cache(
+            self._configuration.dot_pyre_directory
+        ).delete()
 
     def _kill_processes_by_name(self, name: str) -> None:
         for process in psutil.process_iter(attrs=["name"]):
@@ -204,10 +208,11 @@ class Kill(Command):
         self._kill_processes_by_name(binary_name)
 
     def _delete_server_files(self) -> None:
-        LOG.info("Deleting server files under %s", self._dot_pyre_directory)
-        socket_paths = self._dot_pyre_directory.glob("**/server.sock")
-        json_server_paths = self._dot_pyre_directory.glob("**/json_server.sock")
-        pid_paths = self._dot_pyre_directory.glob("**/server.pid")
+        dot_pyre_directory = self._configuration.dot_pyre_directory
+        LOG.info("Deleting server files under %s", dot_pyre_directory)
+        socket_paths = dot_pyre_directory.glob("**/server.sock")
+        json_server_paths = dot_pyre_directory.glob("**/json_server.sock")
+        pid_paths = dot_pyre_directory.glob("**/server.pid")
         for path in chain(socket_paths, json_server_paths, pid_paths):
             self._delete_linked_path(path)
 
