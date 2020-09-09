@@ -212,6 +212,10 @@ def _run_pyre_with_retry(arguments: argparse.Namespace) -> ExitCode:
     LOG.warning(
         f"Rerunning the command in recent local configuration `{local_root_for_rerun}`."
     )
+    LOG.warning(
+        f"Hint: To avoid this prompt, run `pyre -l {local_root_for_rerun}` "
+        f"or `cd {local_root_for_rerun} && pyre`."
+    )
     try:
         return run_pyre(arguments)
     except FailedOutsideLocalConfigurationException:
