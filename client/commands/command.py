@@ -494,24 +494,19 @@ class Command(CommandParser, ABC):
         )
 
     def generate_analysis_directory(self) -> AnalysisDirectory:
-        configuration = self._configuration
-        if not configuration:
-            return AnalysisDirectory(".")
-        else:
-            return resolve_analysis_directory(
-                self._command_arguments.source_directories,
-                self._command_arguments.targets,
-                configuration,
-                self._original_directory,
-                configuration.project_root,
-                filter_directory=self._command_arguments.filter_directory,
-                buck_mode=self._command_arguments.buck_mode,
-                relative_local_root=self._configuration.relative_local_root,
-            )
+        return resolve_analysis_directory(
+            self._command_arguments.source_directories,
+            self._command_arguments.targets,
+            self._configuration,
+            self._original_directory,
+            self._configuration.project_root,
+            filter_directory=self._command_arguments.filter_directory,
+            buck_mode=self._command_arguments.buck_mode,
+            relative_local_root=self._configuration.relative_local_root,
+        )
 
     def run(self) -> "Command":
-        configuration = self._configuration
-        if configuration and configuration.disabled:
+        if self._configuration.disabled:
             LOG.log(log.SUCCESS, "Pyre will not run due to being explicitly disabled")
         else:
             relative_local_root = self._configuration.relative_local_root
@@ -519,7 +514,7 @@ class Command(CommandParser, ABC):
                 recently_used_configurations.Cache(
                     self._configuration.dot_pyre_directory
                 ).put(relative_local_root)
-            Path(self.configuration.log_directory).mkdir(parents=True, exist_ok=True)
+            Path(self._configuration.log_directory).mkdir(parents=True, exist_ok=True)
             self._run()
         return self
 
