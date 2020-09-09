@@ -35,44 +35,29 @@ class Issues extends React.Component {
       <div>
         <h2>Issues</h2>
         {this.props.data.issues.edges.map(({node}) => (
-          <Issue
-            issue_id={node.issue_id}
-            filename={node.filename}
-            location={node.location}
-            code={node.code}
-            callable={node.callable}
-            message={node.message}
-            min_trace_length_to_sources={node.min_trace_length_to_sources}
-            min_trace_length_to_sinks={node.min_trace_length_to_sinks}
-          />
+          <div className="issue_instance">
+            <h3>Issue {node.issue_id}</h3>
+            <p>Code: {node.code}</p>
+            <p>Message: {node.message}</p>
+            <p>Callable: {node.callable}</p>
+            <p>
+              Location: {node.filename}:{node.location}
+            </p>
+            <div id="trace_lengths">
+              <strong>Min Trace Lengths</strong>
+              <p>Sources: {node.min_trace_length_to_sources}</p>
+              <p>Sinks: {node.min_trace_length_to_sinks}</p>
+            </div>
+            <br />
+            <Link to={`/trace/${node.issue_id}`}>
+              <button>See Trace >></button>
+            </Link>
+          </div>
         ))}
         <button onClick={this.fetchIssues}>More</button>
       </div>
     );
   }
-}
-
-function Issue(props) {
-  return (
-    <div className="issue_instance">
-      <h3>Issue {props.issue_id}</h3>
-      <p>Code: {props.code}</p>
-      <p>Message: {props.message}</p>
-      <p>Callable: {props.callable}</p>
-      <p>
-        Location: {props.filename}:{props.location}
-      </p>
-      <div id="trace_lengths">
-        <strong>Min Trace Lengths</strong>
-        <p>Sources: {props.min_trace_length_to_sources}</p>
-        <p>Sinks: {props.min_trace_length_to_sinks}</p>
-      </div>
-      <br />
-      <Link to={`/trace/${props.issue_id}`}>
-        <button>See Trace >></button>
-      </Link>
-    </div>
-  );
 }
 
 export default Issues;
