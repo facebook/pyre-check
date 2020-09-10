@@ -8,10 +8,9 @@ import logging
 from logging import Logger
 from typing import List, Optional
 
-from .. import json_rpc
+from .. import configuration_monitor, json_rpc, project_files_monitor
 from ..analysis_directory import AnalysisDirectory
 from ..configuration import Configuration
-from ..project_files_monitor import ProjectFilesMonitor
 from .command import (
     CommandArguments,
     ExitCode,
@@ -105,27 +104,44 @@ class Incremental(Reporting):
         )
 
     def _run(self) -> None:
-        if (not self._no_start_server) and self._state() == State.DEAD:
-            LOG.info("Starting server at `%s`.", self._analysis_directory.get_root())
-            exit_code = (
-                Start(
-                    self._command_arguments,
-                    self._original_directory,
-                    configuration=self._configuration,
-                    analysis_directory=self._analysis_directory,
-                    terminal=False,
-                    store_type_check_resolution=False,
-                    use_watchman=not self._no_watchman,
-                    incremental_style=self._incremental_style,
+        if self._state() == State.DEAD:
+            if not self._no_start_server:
+                LOG.info(
+                    "Starting server at `%s`.", self._analysis_directory.get_root()
                 )
-                .run()
-                .exit_code()
-            )
-            if exit_code != ExitCode.SUCCESS:
-                self._exit_code = ExitCode.FAILURE
-                return
+                exit_code = (
+                    Start(
+                        self._command_arguments,
+                        self._original_directory,
+                        configuration=self._configuration,
+                        analysis_directory=self._analysis_directory,
+                        terminal=False,
+                        store_type_check_resolution=False,
+                        use_watchman=not self._no_watchman,
+                        incremental_style=self._incremental_style,
+                    )
+                    .run()
+                    .exit_code()
+                )
+                if exit_code != ExitCode.SUCCESS:
+                    self._exit_code = ExitCode.FAILURE
+                    return
         else:
-            self._restart_file_monitor_if_needed()
+            if not self._no_watchman and (
+                not project_files_monitor.ProjectFilesMonitor.is_alive(
+                    self._configuration
+                )
+                or not configuration_monitor.ConfigurationMonitor.is_alive(
+                    self._configuration
+                )
+            ):
+                LOG.warning(
+                    "File watching service is down. Results may be inconsistent with "
+                    "full checks. Please run `pyre restart` to bring Pyre server to a "
+                    "consistent state again."
+                )
+                self._exit_code = ExitCode.INCONSISTENT_SERVER
+                return
 
         if self._state() != State.DEAD:
             LOG.info("Waiting for server...")
@@ -164,12 +180,3 @@ class Incremental(Reporting):
             flags.append("-nonblocking")
 
         return flags
-
-    def _restart_file_monitor_if_needed(self) -> None:
-        if self._no_watchman:
-            return
-        ProjectFilesMonitor.restart_if_dead(
-            self._configuration,
-            self._configuration.project_root,
-            self._analysis_directory,
-        )

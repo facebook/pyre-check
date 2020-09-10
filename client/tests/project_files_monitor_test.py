@@ -236,30 +236,3 @@ class MonitorTest(unittest.TestCase):
             with socket_created_lock:
                 SocketConnection(socket_link).connect()
             server_thread.join()
-
-    @patch.object(ProjectFilesMonitor, "daemonize")
-    @patch.object(ProjectFilesMonitor, "__init__", return_value=False)
-    @patch.object(Process, "is_alive", return_value=True)
-    def test_restart_if_dead_when_alive(
-        self, is_alive: MagicMock, constructor: MagicMock, daemonize: MagicMock
-    ) -> None:
-        ProjectFilesMonitor.restart_if_dead(
-            mock_configuration(version_hash="hash"),
-            "/original/directory",
-            AnalysisDirectory("/root"),
-        )
-        constructor.assert_not_called()
-
-    @patch.object(ProjectFilesMonitor, "daemonize")
-    @patch.object(ProjectFilesMonitor, "__init__", return_value=None)
-    @patch.object(Process, "is_alive", return_value=False)
-    def test_restart_if_dead_when_dead(
-        self, is_alive: MagicMock, constructor: MagicMock, daemonize: MagicMock
-    ) -> None:
-        ProjectFilesMonitor.restart_if_dead(
-            mock_configuration(version_hash="hash"),
-            "/original/directory",
-            AnalysisDirectory("/root"),
-        )
-        constructor.assert_called_once()
-        daemonize.assert_called_once()

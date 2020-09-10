@@ -155,20 +155,3 @@ class ProjectFilesMonitor(Subscriber):
             ProjectFilesMonitor.base_path(configuration), ProjectFilesMonitor.NAME
         )
         return Process.is_alive(Path(pid_path))
-
-    @staticmethod
-    def restart_if_dead(
-        configuration: Configuration,
-        project_root: str,
-        analysis_directory: AnalysisDirectory,
-    ) -> None:
-        if ProjectFilesMonitor.is_alive(configuration):
-            return
-        LOG.debug("File monitor is not running.")
-        try:
-            ProjectFilesMonitor(
-                configuration, project_root, analysis_directory
-            ).daemonize()
-            LOG.debug("Restarted file monitor.")
-        except MonitorException as exception:
-            LOG.warning(f"Failed to restart file monitor: {exception}")
