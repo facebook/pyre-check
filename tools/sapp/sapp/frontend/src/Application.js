@@ -10,7 +10,7 @@
 
 import React, {useState} from 'react';
 import {useQuery, gql} from '@apollo/client';
-import {Layout} from 'antd';
+import {Layout, Skeleton, Modal, Card} from 'antd';
 import Issues from './Issues';
 
 import 'antd/dist/antd.css';
@@ -183,8 +183,33 @@ const Filter = props => {
 const Application = () => {
   const {loading, error, data, fetchMore, refetch} = useQuery(IssueQuery);
 
-  if (loading) return <p>Loading...</p>;
-  if (error) return <p>Error:(</p>;
+  var content = <Issues data={data} fetchMore={fetchMore} />;
+
+  const skeleton = (
+    <>
+      <Card>
+        <Skeleton active />
+      </Card>
+      <Card>
+        <Skeleton active />
+      </Card>
+    </>
+  );
+
+  if (loading) {
+    content = skeleton;
+  }
+
+  if (error) {
+    content = (
+      <>
+        <Modal title="Error" visible={true} footer={null}>
+          <p>{error.toString()}</p>
+        </Modal>
+        {skeleton}
+      </>
+    );
+  }
 
   return (
     <Layout>
@@ -192,7 +217,7 @@ const Application = () => {
       <Content>
         <div class="main">
           <Filter refetch={refetch} />
-          <Issues data={data} fetchMore={fetchMore} />
+          {content}
         </div>
       </Content>
       <Footer />
