@@ -432,7 +432,7 @@ class Infer(Reporting):
         command_arguments: command_arguments.CommandArguments,
         original_directory: str,
         *,
-        configuration: Optional[Configuration] = None,
+        configuration: Configuration,
         analysis_directory: Optional[AnalysisDirectory] = None,
         print_errors: bool,
         full_only: bool,
@@ -461,7 +461,7 @@ class Infer(Reporting):
     def from_arguments(
         arguments: argparse.Namespace,
         original_directory: str,
-        configuration: Optional[Configuration] = None,
+        configuration: Configuration,
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> "Infer":
         return Infer(

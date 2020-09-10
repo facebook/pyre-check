@@ -351,7 +351,7 @@ class Command(CommandParser, ABC):
         self,
         command_arguments: command_arguments.CommandArguments,
         original_directory: str,
-        configuration: Optional[Configuration] = None,
+        configuration: Configuration,
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> None:
         super().__init__()
@@ -369,10 +369,7 @@ class Command(CommandParser, ABC):
         if self._command_arguments.debug or not self._capable_terminal:
             self._noninteractive = True
 
-        self._configuration: Configuration = (
-            configuration
-            or Configuration.from_arguments(command_arguments, Path(original_directory))
-        )
+        self._configuration: Configuration = configuration
         self._version_hash: str = self._configuration.version_hash
         self._taint_models_path: List[str] = self._configuration.taint_models_path
 

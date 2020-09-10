@@ -26,7 +26,7 @@ class Check(Reporting):
         command_arguments: command_arguments.CommandArguments,
         original_directory: str,
         *,
-        configuration: Optional[Configuration] = None,
+        configuration: Configuration,
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> None:
         super(Check, self).__init__(
@@ -37,7 +37,7 @@ class Check(Reporting):
     def from_arguments(
         arguments: argparse.Namespace,
         original_directory: str,
-        configuration: Optional[Configuration] = None,
+        configuration: Configuration,
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> "Check":
         return Check(

@@ -50,7 +50,7 @@ class Query(Command):
         command_arguments: command_arguments.CommandArguments,
         original_directory: str,
         *,
-        configuration: Optional[Configuration] = None,
+        configuration: Configuration,
         analysis_directory: Optional[AnalysisDirectory] = None,
         query: str,
     ) -> None:
@@ -63,7 +63,7 @@ class Query(Command):
     def from_arguments(
         arguments: argparse.Namespace,
         original_directory: str,
-        configuration: Optional[Configuration] = None,
+        configuration: Configuration,
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> "Query":
         return Query(

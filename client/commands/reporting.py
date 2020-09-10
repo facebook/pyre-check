@@ -26,7 +26,7 @@ class Reporting(Command):
         self,
         command_arguments: command_arguments.CommandArguments,
         original_directory: str,
-        configuration: Optional[Configuration] = None,
+        configuration: Configuration,
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> None:
         super().__init__(

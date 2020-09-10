@@ -113,7 +113,7 @@ class CommandTest(unittest.TestCase):
             test_command = commands.Command(
                 arguments,
                 original_directory=original_directory,
-                configuration=None,
+                configuration=configuration,
                 analysis_directory=analysis_directory,
             )
             self.assertEqual(

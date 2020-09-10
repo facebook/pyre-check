@@ -105,7 +105,7 @@ class Statistics(Command):
         command_arguments: command_arguments.CommandArguments,
         original_directory: str,
         *,
-        configuration: Optional[Configuration] = None,
+        configuration: Configuration,
         analysis_directory: Optional[AnalysisDirectory] = None,
         filter_paths: List[str],
         log_results: bool,
@@ -120,7 +120,7 @@ class Statistics(Command):
     def from_arguments(
         arguments: argparse.Namespace,
         original_directory: str,
-        configuration: Optional[Configuration] = None,
+        configuration: Configuration,
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> "Statistics":
         return Statistics(

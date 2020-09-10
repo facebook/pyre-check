@@ -12,12 +12,15 @@ import sys
 import time
 import traceback
 from dataclasses import dataclass
+from pathlib import Path
 from typing import List, Optional
 
 from . import (
     analysis_directory,
     buck,
+    command_arguments,
     commands,
+    configuration as configuration_module,
     log,
     recently_used_configurations,
     statistics,
@@ -96,22 +99,20 @@ def run_pyre(arguments: argparse.Namespace) -> ExitCode:
     try:
         original_directory = os.getcwd()
 
+        configuration = configuration_module.Configuration.from_arguments(
+            command_arguments.CommandArguments.from_arguments(arguments), Path(".")
+        )
         if arguments.version:
             try:
-                # TODO(T64512953): Decouple configuration creation with command creation
-                configuration = arguments.command(
-                    arguments, original_directory
-                ).configuration
-                if configuration:
-                    binary_version = configuration.get_binary_version()
-                    if binary_version:
-                        log.stdout.write(f"Binary version: {binary_version}\n")
+                binary_version = configuration.get_binary_version()
+                if binary_version:
+                    log.stdout.write(f"Binary version: {binary_version}\n")
             except Exception:
                 pass
             log.stdout.write(f"Client version: {__version__}\n")
             exit_code = ExitCode.SUCCESS
         else:
-            command = arguments.command(arguments, original_directory)
+            command = arguments.command(arguments, original_directory, configuration)
             log.start_logging_to_directory(
                 arguments.noninteractive, command.configuration.log_directory
             )

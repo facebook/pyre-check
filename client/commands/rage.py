@@ -29,7 +29,7 @@ class Rage(Command):
         command_arguments: command_arguments.CommandArguments,
         *,
         original_directory: str,
-        configuration: Optional[Configuration] = None,
+        configuration: Configuration,
         analysis_directory: Optional[AnalysisDirectory] = None,
         output_path: Optional[str],
     ) -> None:
@@ -43,7 +43,7 @@ class Rage(Command):
     def from_arguments(
         arguments: argparse.Namespace,
         original_directory: str,
-        configuration: Optional[Configuration] = None,
+        configuration: Configuration,
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> "Rage":
         return Rage(

@@ -27,7 +27,7 @@ class Incremental(Reporting):
         command_arguments: command_arguments.CommandArguments,
         original_directory: str,
         *,
-        configuration: Optional[Configuration] = None,
+        configuration: Configuration,
         analysis_directory: Optional[AnalysisDirectory] = None,
         nonblocking: bool,
         incremental_style: IncrementalStyle,
@@ -46,7 +46,7 @@ class Incremental(Reporting):
     def from_arguments(
         arguments: argparse.Namespace,
         original_directory: str,
-        configuration: Optional[Configuration] = None,
+        configuration: Configuration,
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> "Incremental":
         return Incremental(

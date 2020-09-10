@@ -3,6 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import dataclasses
 import json
 import unittest
 from pathlib import Path
@@ -79,12 +80,18 @@ class ServersCommandTest(unittest.TestCase):
             )
         )
 
+    @patch.object(
+        servers.Configuration, "from_arguments", return_value=mock_configuration
+    )
     @patch.object(Path, "mkdir")
     # pyre-fixme[56]: Argument `tools.pyre.client.commands.servers` to decorator
     #  factory `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(servers, "Stop")
     def test_stop_servers(
-        self, stop_class: MagicMock, make_directory: MagicMock
+        self,
+        stop_class: MagicMock,
+        make_directory: MagicMock,
+        configuration_from_arguments: MagicMock,
     ) -> None:
         servers = Servers(
             command_arguments=mock_arguments(
@@ -119,19 +126,27 @@ class ServersCommandTest(unittest.TestCase):
             ]
         )
         self.assertEqual(servers._configuration.project_root, "/root")
-        stop_class.assert_has_calls(
+        stop_class.assert_called()
+        print(configuration_from_arguments.call_args_list)
+        configuration_from_arguments.assert_has_calls(
             [
                 call(
-                    command_arguments=servers._command_arguments,
-                    original_directory="/root",
+                    dataclasses.replace(
+                        servers._command_arguments, local_configuration="."
+                    ),
+                    Path("/root"),
                 ),
                 call(
-                    command_arguments=servers._command_arguments,
-                    original_directory="/root/bar/baz",
+                    dataclasses.replace(
+                        servers._command_arguments, local_configuration="bar/baz"
+                    ),
+                    Path("/root"),
                 ),
                 call(
-                    command_arguments=servers._command_arguments,
-                    original_directory="/root/foo",
+                    dataclasses.replace(
+                        servers._command_arguments, local_configuration="foo"
+                    ),
+                    Path("/root"),
                 ),
             ],
             any_order=True,
