@@ -1050,6 +1050,17 @@ let test_decorator_factories context =
        `decorator_factory` but got `int`.";
       "Revealed type [-1]: Revealed type for `test.foo` is `typing.Any`.";
     ];
+
+  assert_type_errors
+    {|
+     from typing import Callable, Tuple, Optional
+
+     def factory(x: Tuple[int, Optional[str]]) -> Callable[[Callable[[], None]], int]: ...
+
+     @factory((1, None))
+     def bar() -> None: ...
+    |}
+    [];
   ()
 
 

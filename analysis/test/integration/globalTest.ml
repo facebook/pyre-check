@@ -305,11 +305,11 @@ let test_check_globals context =
         return y
     |}
     [
-      "Missing global annotation [5]: Globally accessible variable `x` has type \
-       `typing.Optional[str]` but no type is specified.";
       "Incomplete type [37]: Type `typing.List[Variable[_T]]` inferred for `y` is incomplete, add \
        an explicit annotation.";
       "Missing global annotation [5]: Globally accessible variable `y` has no type specified.";
+      "Incompatible variable type [9]: x is declared to have type `None` but is used as type `str`.";
+      "Incompatible return type [7]: Expected `str` but got `None`.";
     ];
   assert_type_errors {|
       import typing

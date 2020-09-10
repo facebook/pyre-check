@@ -2397,7 +2397,7 @@ class base class_metadata_environment dependency =
               (* Constructor on concrete class or fully specified generic,
                * e.g. global = GenericClass[int](x, y) or global = ConcreteClass(x) *)
               Option.value (fully_specified_type callee) ~default:Type.Any )
-      | Name (Identifier "None") -> Type.Any
+      | Name (Identifier "None") -> Type.NoneType
       | Name name when is_simple_name name -> (
           let reference = name_to_reference_exn name in
           let unannotated_global_environment =

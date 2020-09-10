@@ -217,8 +217,8 @@ let test_resolve_literal context =
   assert_resolve_literal "G" Type.Any;
 
   (* None *)
-  assert_resolve_literal "None" Type.Any;
-  assert_resolve_literal "[None]" Type.Any;
+  assert_resolve_literal "None" Type.none;
+  assert_resolve_literal "[None]" (Type.list Type.none);
 
   (* Dictionary *)
   assert_resolve_literal "{'a': 1}" (Type.dictionary ~key:Type.string ~value:Type.integer);
