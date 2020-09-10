@@ -7,11 +7,9 @@
 import functools
 import logging
 import logging.handlers
-import multiprocessing
 import os
 import signal
 import sys
-from multiprocessing import Event
 from pathlib import Path
 from typing import Any, Dict, List, NamedTuple
 
@@ -27,6 +25,10 @@ Subscription = NamedTuple(
 )
 
 
+class WatchmanRestartedException(Exception):
+    pass
+
+
 def compute_pid_path(base_path: str, name: str) -> str:
     return str(Path(base_path, f"{name}.pid"))
 
@@ -35,7 +37,7 @@ class Subscriber(object):
     def __init__(self, base_path: str) -> None:
         self._base_path: str = base_path
         self._alive: bool = True
-        self._ready: multiprocessing.synchronize.Event = Event()
+        self._ready: bool = False
 
     @property
     def _name(self) -> str:
@@ -125,15 +127,16 @@ class Subscriber(object):
                     # This call is blocking, which prevents this loop from burning CPU.
                     response = connection.receive()
                     if response.get("is_fresh_instance", False):
-                        # TODO: is_fresh_instance can occur at any time, not just the
-                        # first response. Ignoring the initial response is fine,
-                        # but if we receive a fresh instance response later we
-                        # should assume that all files may have been changed.
-                        root = response.get("root", "<no-root-found>")
-                        LOG.info(f"Ignoring is_fresh_instance message for {root}")
+                        if not self._ready:
+                            root = response.get("root", "<no-root-found>")
+                            self._ready = True
+                            LOG.info(
+                                f"Ignoring initial is_fresh_instance message for {root}"
+                            )
+                        else:
+                            raise WatchmanRestartedException()
                     else:
                         self._handle_response(response)
-                    self._ready.set()  # At least one message has been received.
         finally:
             LOG.info("Cleaning up lock and pid files before exiting.")
             remove_if_exists(lock_path)
