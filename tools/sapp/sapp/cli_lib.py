@@ -203,9 +203,12 @@ def analyze(
     context_settings={"ignore_unknown_options": True},
 )
 @option("--debug/--no-debug", default=False, help="Start Flask server in debug mode")
+@option(
+    "--static-resources", default=None, help="Directory to serve static resources from"
+)
 @pass_context
-def server(ctx: Context, debug: bool):
-    start_server(ctx.database, debug)
+def server(ctx: Context, debug: bool, static_resources: str):
+    start_server(ctx.database, debug, static_resources)
 
 
 commands = [analyze, explore, server]

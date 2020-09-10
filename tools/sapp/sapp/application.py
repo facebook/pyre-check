@@ -49,7 +49,7 @@ def serve(path):
         return send_from_directory(application.static_folder, "index.html")
 
 
-def start_server(database: DB, debug: bool) -> None:
+def start_server(database: DB, debug: bool, static_resources: Optional[str]) -> None:
     engine = sqlalchemy.create_engine(
         sqlalchemy.engine.url.URL("sqlite", database=database.dbname),
         echo=False,
@@ -68,5 +68,6 @@ def start_server(database: DB, debug: bool) -> None:
             get_context=lambda: {"session": session},
         ),
     )
-
+    if static_resources:
+        application.static_folder = static_resources
     application.run(debug=debug)
