@@ -13,6 +13,9 @@ import {useQuery, gql} from '@apollo/client';
 
 import Issues from './Issues';
 
+import 'antd/dist/antd.css';
+import './Application.css';
+
 const IssueQuery = gql`
   query Issue(
     $after: String
@@ -182,10 +185,10 @@ const Application = () => {
   if (error) return <p>Error:(</p>;
 
   return (
-    <>
+    <div class="main">
       <Filter refetch={refetch} />
       <Issues data={data} fetchMore={fetchMore} />
-    </>
+    </div>
   );
 };
 

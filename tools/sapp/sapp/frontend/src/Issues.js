@@ -9,6 +9,7 @@
 
 import React from 'react';
 import {Link} from 'react-router-dom';
+import {Card} from 'antd';
 
 class Issues extends React.Component {
   constructor(props) {
@@ -32,30 +33,32 @@ class Issues extends React.Component {
 
   render() {
     return (
-      <div>
+      <>
         <h2>Issues</h2>
         {this.props.data.issues.edges.map(({node}) => (
-          <div className="issue_instance">
-            <h3>Issue {node.issue_id}</h3>
-            <p>Code: {node.code}</p>
-            <p>Message: {node.message}</p>
-            <p>Callable: {node.callable}</p>
-            <p>
-              Location: {node.filename}:{node.location}
-            </p>
-            <div id="trace_lengths">
-              <strong>Min Trace Lengths</strong>
-              <p>Sources: {node.min_trace_length_to_sources}</p>
-              <p>Sinks: {node.min_trace_length_to_sinks}</p>
-            </div>
+          <>
+            <Card extra={<>Issue {node.issue_id}</>}>
+              <p>Code: {node.code}</p>
+              <p>Message: {node.message}</p>
+              <p>Callable: {node.callable}</p>
+              <p>
+                Location: {node.filename}:{node.location}
+              </p>
+              <div id="trace_lengths">
+                <strong>Min Trace Lengths</strong>
+                <p>Sources: {node.min_trace_length_to_sources}</p>
+                <p>Sinks: {node.min_trace_length_to_sinks}</p>
+              </div>
+              <br />
+              <Link to={`/trace/${node.issue_id}`}>
+                <button>See Trace >></button>
+              </Link>
+            </Card>
             <br />
-            <Link to={`/trace/${node.issue_id}`}>
-              <button>See Trace >></button>
-            </Link>
-          </div>
+          </>
         ))}
         <button onClick={this.fetchIssues}>More</button>
-      </div>
+      </>
     );
   }
 }
