@@ -213,7 +213,11 @@ const Application = () => {
 
   return (
     <Layout>
-      <Header />
+      <Header>
+        <div>
+          <h1 class="logo">SAPP</h1>
+        </div>
+      </Header>
       <Content>
         <div class="main">
           <Filter refetch={refetch} />
