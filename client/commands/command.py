@@ -22,10 +22,8 @@ from ..analysis_directory import AnalysisDirectory, resolve_analysis_directory
 from ..configuration import Configuration
 from ..exceptions import EnvironmentException
 from ..filesystem import readable_directory, remove_if_exists
-from ..find_directories import find_global_and_local_root
 from ..log import StreamLogger
 from ..process import Process
-from ..resources import LOG_DIRECTORY
 from ..socket_connection import SocketConnection, SocketException
 
 
@@ -372,7 +370,8 @@ class Command(CommandParser, ABC):
             self._noninteractive = True
 
         self._configuration: Configuration = (
-            configuration or self.generate_configuration(Path(original_directory))
+            configuration
+            or Configuration.from_arguments(command_arguments, Path(original_directory))
         )
         self._version_hash: str = self._configuration.version_hash
         self._taint_models_path: List[str] = self._configuration.taint_models_path
@@ -384,39 +383,6 @@ class Command(CommandParser, ABC):
     @classmethod
     def add_subparser(cls, parser: argparse._SubParsersAction) -> None:
         pass
-
-    def generate_configuration(self, base_directory: Path) -> Configuration:
-        local_root_argument = self._command_arguments.local_configuration
-        found_root = find_global_and_local_root(
-            base_directory
-            if local_root_argument is None
-            else base_directory / local_root_argument
-        )
-        if found_root is None:
-            # FIXME: We should fail here.
-            global_root = base_directory
-            local_root = None
-        else:
-            global_root = found_root.global_root
-            local_root = found_root.local_root
-        return Configuration(
-            project_root=str(global_root),
-            local_root=str(local_root) if local_root is not None else None,
-            search_path=self._command_arguments.search_path,
-            binary=self._command_arguments.binary,
-            typeshed=self._command_arguments.typeshed,
-            use_buck_builder=self._command_arguments.use_buck_builder,
-            buck_builder_binary=self._command_arguments.buck_builder_binary,
-            excludes=self._command_arguments.exclude,
-            strict=self._command_arguments.strict,
-            logger=self._command_arguments.logger,
-            formatter=self._command_arguments.formatter,
-            dot_pyre_directory=(
-                self._command_arguments.dot_pyre_directory
-                or global_root / LOG_DIRECTORY
-            ),
-            use_buck_source_database=self._command_arguments.use_buck_source_database,
-        )
 
     def generate_analysis_directory(self) -> AnalysisDirectory:
         return resolve_analysis_directory(

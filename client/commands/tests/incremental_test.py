@@ -12,12 +12,11 @@ import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, Mock, patch
 
-from ... import commands, json_rpc
+from ... import commands, find_directories, json_rpc
 from ...analysis_directory import AnalysisDirectory, SharedAnalysisDirectory
 from ...commands import command, incremental, stop  # noqa
-from ...find_directories import FoundRoot
 from ...socket_connection import SocketConnection
-from ..command import IncrementalStyle, __name__ as client_name
+from ..command import IncrementalStyle
 from .command_test import mock_arguments, mock_configuration
 
 
@@ -38,8 +37,8 @@ class IncrementalTest(unittest.TestCase):
     @patch.object(SocketConnection, "connect")
     @patch.object(SocketConnection, "perform_handshake")
     @patch(
-        f"{client_name}.find_global_and_local_root",
-        return_value=FoundRoot(Path("/root")),
+        f"{find_directories.__name__}.find_global_and_local_root",
+        return_value=find_directories.FoundRoot(Path("/root")),
     )
     @patch.object(os.path, "exists", side_effect=lambda path: True)
     @patch(_typeshed_search_path, Mock(return_value=["path3"]))
@@ -276,7 +275,7 @@ class IncrementalTest(unittest.TestCase):
 
         arguments = mock_arguments()
         original_directory = "/test"  # called from
-        find_global_and_local_root.return_value = FoundRoot(
+        find_global_and_local_root.return_value = find_directories.FoundRoot(
             Path("/root")
         )  # project root
         configuration = mock_configuration()

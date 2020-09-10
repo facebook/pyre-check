@@ -7,15 +7,19 @@
 
 import errno
 import fcntl
-import os
 import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, Mock, mock_open, patch
 
-from ... import commands, configuration_monitor, filesystem, project_files_monitor
+from ... import (
+    commands,
+    configuration_monitor,
+    filesystem,
+    find_directories,
+    project_files_monitor,
+)
 from ...analysis_directory import AnalysisDirectory
-from ...find_directories import FoundRoot
-from ..command import ExitCode, __name__ as client_name
+from ..command import ExitCode
 from ..start import Start
 from .command_test import mock_arguments, mock_configuration
 
@@ -25,7 +29,8 @@ _typeshed_search_path: str = "{}.typeshed_search_path".format(commands.start.__n
 
 class StartTest(unittest.TestCase):
     @patch(
-        f"{client_name}.find_global_and_local_root", return_value=FoundRoot(Path("."))
+        f"{find_directories.__name__}.find_global_and_local_root",
+        return_value=find_directories.FoundRoot(Path(".")),
     )
     @patch("fcntl.lockf")
     @patch(_typeshed_search_path, Mock(return_value=["path3"]))
@@ -204,7 +209,8 @@ class StartTest(unittest.TestCase):
             self.assertEqual(command._exit_code, ExitCode.SUCCESS)
 
     @patch(
-        f"{client_name}.find_global_and_local_root", return_value=FoundRoot(Path("."))
+        f"{find_directories.__name__}.find_global_and_local_root",
+        return_value=find_directories.FoundRoot(Path(".")),
     )
     @patch(_typeshed_search_path, Mock(return_value=["path3"]))
     # pyre-fixme[56]: Argument `set()` to decorator factory

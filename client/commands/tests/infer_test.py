@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Dict, Union
 from unittest.mock import MagicMock, Mock, patch
 
-from ... import commands
+from ... import commands, find_directories
 from ...analysis_directory import AnalysisDirectory
 from ...commands import infer
 from ...commands.infer import (
@@ -25,8 +25,6 @@ from ...commands.infer import (
     dequalify,
 )
 from ...error import Error
-from ...find_directories import FoundRoot
-from ..command import __name__ as client_name
 from .command_test import (
     mock_arguments,
     mock_configuration as general_mock_configuration,
@@ -601,7 +599,8 @@ def mock_configuration() -> MagicMock:
 
 class InferTest(unittest.TestCase):
     @patch(
-        f"{client_name}.find_global_and_local_root", return_value=FoundRoot(Path("."))
+        f"{find_directories.__name__}.find_global_and_local_root",
+        return_value=find_directories.FoundRoot(Path(".")),
     )
     @patch.object(json, "loads", return_value={"errors": []})
     @patch(_typeshed_search_path, Mock(return_value=["path3"]))

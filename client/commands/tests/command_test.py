@@ -11,17 +11,17 @@ from pathlib import Path
 from typing import List
 from unittest.mock import MagicMock, Mock, patch
 
-from ... import commands
+from ... import commands, find_directories
 from ...analysis_directory import AnalysisDirectory
-from ...find_directories import FoundRoot
+from ...configuration import Configuration
 from ...process import Process
 from ...tests.mocks import mock_arguments, mock_configuration
-from ..command import __name__ as client_name
 
 
 class CommandTest(unittest.TestCase):
     @patch(
-        f"{client_name}.find_global_and_local_root", return_value=FoundRoot(Path("."))
+        f"{find_directories.__name__}.find_global_and_local_root",
+        return_value=find_directories.FoundRoot(Path(".")),
     )
     def test_relative_path(self, find_global_and_local_root) -> None:
         arguments = mock_arguments()
@@ -68,7 +68,8 @@ class CommandTest(unittest.TestCase):
         )
 
     @patch(
-        f"{client_name}.find_global_and_local_root", return_value=FoundRoot(Path("."))
+        f"{find_directories.__name__}.find_global_and_local_root",
+        return_value=find_directories.FoundRoot(Path(".")),
     )
     def test_logger(self, find_global_and_local_root) -> None:
         arguments = mock_arguments()
@@ -108,9 +109,7 @@ class CommandTest(unittest.TestCase):
                 ".pyre",
             ],
         )
-        with patch.object(
-            commands.Command, "generate_configuration", return_value=configuration
-        ):
+        with patch.object(Configuration, "from_arguments", return_value=configuration):
             test_command = commands.Command(
                 arguments,
                 original_directory=original_directory,

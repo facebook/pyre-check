@@ -10,11 +10,9 @@ import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, Mock, patch
 
-from ... import commands
+from ... import commands, find_directories
 from ...analysis_directory import AnalysisDirectory
 from ...commands import check
-from ...find_directories import FoundRoot
-from ..command import __name__ as client_name
 from .command_test import mock_arguments, mock_configuration
 
 
@@ -26,7 +24,8 @@ NO_ERROR_JSON_OUTPUT = {"errors": []}
 
 class CheckTest(unittest.TestCase):
     @patch(
-        f"{client_name}.find_global_and_local_root", return_value=FoundRoot(Path("."))
+        f"{find_directories.__name__}.find_global_and_local_root",
+        return_value=find_directories.FoundRoot(Path(".")),
     )
     @patch("subprocess.check_output")
     @patch("os.path.realpath")
@@ -96,7 +95,8 @@ class CheckTest(unittest.TestCase):
             prepare.assert_called_once_with()
 
     @patch(
-        f"{client_name}.find_global_and_local_root", return_value=FoundRoot(Path("."))
+        f"{find_directories.__name__}.find_global_and_local_root",
+        return_value=find_directories.FoundRoot(Path(".")),
     )
     @patch("subprocess.check_output")
     @patch("os.path.realpath")
@@ -150,7 +150,8 @@ class CheckTest(unittest.TestCase):
         commands.Reporting, "_get_directories_to_analyze", return_value={"a", "b"}
     )
     @patch(
-        f"{client_name}.find_global_and_local_root", return_value=FoundRoot(Path("."))
+        f"{find_directories.__name__}.find_global_and_local_root",
+        return_value=find_directories.FoundRoot(Path(".")),
     )
     def test_filter_directories(
         self, find_global_and_local_root, directories_to_analyze, realpath, check_output
@@ -194,7 +195,8 @@ class CheckTest(unittest.TestCase):
             call_client.assert_called_once_with(command=commands.Check.NAME)
 
     @patch(
-        f"{client_name}.find_global_and_local_root", return_value=FoundRoot(Path("."))
+        f"{find_directories.__name__}.find_global_and_local_root",
+        return_value=find_directories.FoundRoot(Path(".")),
     )
     @patch("subprocess.check_output")
     @patch("os.path.realpath")
@@ -242,7 +244,8 @@ class CheckTest(unittest.TestCase):
             call_client.assert_called_once_with(command=commands.Check.NAME)
 
     @patch(
-        f"{client_name}.find_global_and_local_root", return_value=FoundRoot(Path("."))
+        f"{find_directories.__name__}.find_global_and_local_root",
+        return_value=find_directories.FoundRoot(Path(".")),
     )
     @patch("subprocess.check_output")
     @patch("os.path.realpath")

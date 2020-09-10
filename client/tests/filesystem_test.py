@@ -16,7 +16,7 @@ import unittest
 from contextlib import contextmanager
 from unittest.mock import MagicMock, Mock, call, patch
 
-from .. import buck, commands, filesystem
+from .. import buck, commands, filesystem, find_directories
 from ..analysis_directory import (
     NotWithinLocalConfigurationException,
     SharedAnalysisDirectory,
@@ -410,8 +410,8 @@ class FilesystemTest(unittest.TestCase):
     @patch("os.getcwd", return_value="/root")
     @patch("os.path.exists", return_value=True)
     @patch(
-        f"{command_name}.find_global_and_local_root",
-        return_value=FoundRoot(pathlib.Path("/root/local")),
+        f"{find_directories.__name__}.find_global_and_local_root",
+        return_value=find_directories.FoundRoot(pathlib.Path("/root/local")),
     )
     def test_resolve_source_directories(
         self, find_global_and_local_root, exists, cwd, realpath, path_mkdir

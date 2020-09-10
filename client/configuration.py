@@ -19,6 +19,7 @@ from logging import Logger
 from pathlib import Path
 from typing import Dict, List, Optional, Union
 
+from . import command_arguments, find_directories
 from .exceptions import EnvironmentException
 from .filesystem import assert_readable_directory, expand_relative_path
 from .find_directories import (
@@ -29,6 +30,7 @@ from .find_directories import (
     find_typeshed,
     get_relative_local_root,
 )
+from .resources import LOG_DIRECTORY
 
 
 LOG: Logger = logging.getLogger(__name__)
@@ -279,6 +281,41 @@ class Configuration:
         self._resolve_versioned_paths()
         self._apply_defaults()
         self._validate()
+
+    @staticmethod
+    def from_arguments(
+        arguments: command_arguments.CommandArguments, base_directory: Path
+    ) -> "Configuration":
+        local_root_argument = arguments.local_configuration
+        found_root = find_directories.find_global_and_local_root(
+            base_directory
+            if local_root_argument is None
+            else base_directory / local_root_argument
+        )
+        if found_root is None:
+            # FIXME: We should fail here.
+            global_root = base_directory
+            local_root = None
+        else:
+            global_root = found_root.global_root
+            local_root = found_root.local_root
+        return Configuration(
+            project_root=str(global_root),
+            local_root=str(local_root) if local_root is not None else None,
+            search_path=arguments.search_path,
+            binary=arguments.binary,
+            typeshed=arguments.typeshed,
+            use_buck_builder=arguments.use_buck_builder,
+            buck_builder_binary=arguments.buck_builder_binary,
+            excludes=arguments.exclude,
+            strict=arguments.strict,
+            logger=arguments.logger,
+            formatter=arguments.formatter,
+            dot_pyre_directory=(
+                arguments.dot_pyre_directory or global_root / LOG_DIRECTORY
+            ),
+            use_buck_source_database=arguments.use_buck_source_database,
+        )
 
     def _validate(self) -> None:
         try:

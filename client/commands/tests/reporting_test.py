@@ -14,10 +14,9 @@ from pathlib import Path
 from typing import Any, Dict
 from unittest.mock import MagicMock, mock_open, patch
 
-from ... import commands
+from ... import commands, find_directories
 from ...analysis_directory import AnalysisDirectory, SharedAnalysisDirectory
-from ...find_directories import FoundRoot
-from ..command import ClientException, __name__ as client_name
+from ..command import ClientException
 from .command_test import mock_arguments, mock_configuration
 
 
@@ -28,8 +27,8 @@ class ReportingTest(unittest.TestCase):
     #  decorator factory `unittest.mock.patch.object`.
     @patch.object(os.path, "exists", side_effect=lambda path: True)
     @patch(
-        f"{client_name}.find_global_and_local_root",
-        return_value=FoundRoot(Path("/root")),
+        f"{find_directories.__name__}.find_global_and_local_root",
+        return_value=find_directories.FoundRoot(Path("/root")),
     )
     def test_get_errors(
         self, find_global_and_local_root, exists, isdir, realpath
@@ -90,7 +89,7 @@ class ReportingTest(unittest.TestCase):
 
         # Called from root with local configuration command line argument
         original_directory = "/root"  # called from
-        find_global_and_local_root.return_value = FoundRoot(
+        find_global_and_local_root.return_value = find_directories.FoundRoot(
             Path("/root"), Path("/root/test")
         )  # project root
         handler = commands.Reporting(
@@ -105,7 +104,7 @@ class ReportingTest(unittest.TestCase):
 
         # Test overlapping analysis directory and error path
         original_directory = "/root"  # called from
-        find_global_and_local_root.return_value = FoundRoot(
+        find_global_and_local_root.return_value = find_directories.FoundRoot(
             Path("/root"), Path("/root/test")
         )  # project root
         handler = commands.Reporting(
@@ -128,7 +127,7 @@ class ReportingTest(unittest.TestCase):
 
         # Test wildcard in do not check
         original_directory = "/"  # called from
-        find_global_and_local_root.return_value = FoundRoot(Path("/"))
+        find_global_and_local_root.return_value = find_directories.FoundRoot(Path("/"))
         configuration.ignore_all_errors = ["*/b"]
         handler = commands.Reporting(
             arguments, original_directory, configuration, AnalysisDirectory("/a")
@@ -184,10 +183,12 @@ class ReportingTest(unittest.TestCase):
     # pyre-fixme[56]: Pyre was not able to infer the type of argument
     #  `"{}.find_global_and_local_root".format(tools.pyre.client.commands.command.__name__)`
     #  to decorator factory `unittest.mock.patch`.
-    @patch("{}.find_global_and_local_root".format(client_name))
+    @patch("{}.find_global_and_local_root".format(find_directories.__name__))
     def test_get_directories_to_analyze(self, find_global_and_local_root, run) -> None:
         original_directory = "/"
-        find_global_and_local_root.return_value = FoundRoot(Path("base"))
+        find_global_and_local_root.return_value = find_directories.FoundRoot(
+            Path("base")
+        )
         arguments = mock_arguments(source_directories=["base"])
         configuration = mock_configuration()
         handler = commands.Reporting(
