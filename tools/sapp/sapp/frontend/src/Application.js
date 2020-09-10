@@ -10,11 +10,13 @@
 
 import React, {useState} from 'react';
 import {useQuery, gql} from '@apollo/client';
-
+import {Layout} from 'antd';
 import Issues from './Issues';
 
 import 'antd/dist/antd.css';
 import './Application.css';
+
+const {Header, Content, Footer} = Layout;
 
 const IssueQuery = gql`
   query Issue(
@@ -185,10 +187,16 @@ const Application = () => {
   if (error) return <p>Error:(</p>;
 
   return (
-    <div class="main">
-      <Filter refetch={refetch} />
-      <Issues data={data} fetchMore={fetchMore} />
-    </div>
+    <Layout>
+      <Header />
+      <Content>
+        <div class="main">
+          <Filter refetch={refetch} />
+          <Issues data={data} fetchMore={fetchMore} />
+        </div>
+      </Content>
+      <Footer />
+    </Layout>
   );
 };
 
