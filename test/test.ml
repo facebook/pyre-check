@@ -834,7 +834,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
             __call__: NotImplemented  # type: ignore
 
         NotImplemented: _NotImplementedType
- 
+
       |}
     in
     if include_helper_builtins then
@@ -1147,7 +1147,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
     );
     ( "functools.pyi",
       {|
-        from typing import TypeVar, Generic, Callable, Tuple, Any, Dict
+        from typing import TypeVar, Generic, Callable, Tuple, Any, Dict, Optional
         _T = TypeVar("_T")
         _S = TypeVar("_S")
 
@@ -1165,6 +1165,19 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
             keywords: Dict[str, Any]
             def __init__(self, func: Callable[..., _T], *args: Any, **kwargs: Any) -> None: ...
             def __call__(self, *args: Any, **kwargs: Any) -> _T: ...
+
+        class _lru_cache_wrapper(Generic[_T]):
+            __wrapped__: Callable[..., _T]
+            def __call__(self, *args, **kwargs) -> _T: ...
+            def cache_info(self) -> str: ...
+            def cache_clear(self) -> None: ...
+
+        def lru_cache(
+          maxsize: Optional[int] = ...,
+          typed: bool = ...,
+        ) -> Callable[[Callable[..., _T]], _lru_cache_wrapper[_T]]:
+            ...
+
        |}
     );
     ( "subprocess.pyi",

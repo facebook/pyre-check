@@ -179,10 +179,85 @@ let resolve_target ~resolution ?receiver_type callee =
     | Expression.Name (Name.Identifier name) -> is_local name
     | _ -> false
   in
+  let resolve_lru_cache ~implementing_class =
+    match implementing_class, Node.value callee with
+    | Type.Top, Name name when is_all_names ->
+        (* If implementing_class is unknown, this must be a function rather than a method. We can
+           use global resolution on the callee. *)
+        GlobalResolution.global
+          (Resolution.global_resolution resolution)
+          (Ast.Expression.name_to_reference_exn name)
+        >>= (fun { AttributeResolution.Global.undecorated_signature; _ } ->
+              Some (undecorated_signature, None))
+        |> Option.value ~default:(None, None)
+    | _ -> (
+        let implementing_class_name =
+          if Type.is_meta implementing_class then
+            Type.parameters implementing_class
+            >>= fun parameters ->
+            List.nth parameters 0
+            >>= function
+            | Single implementing_class -> Some implementing_class
+            | _ -> None
+          else
+            Some implementing_class
+        in
+        match implementing_class_name with
+        | Some implementing_class_name ->
+            let class_primitive =
+              match implementing_class_name with
+              | Parametric { name; _ } -> Some name
+              | Primitive name -> Some name
+              | _ -> None
+            in
+            let method_name =
+              match Node.value callee with
+              | Expression.Name (Name.Attribute { attribute; _ }) -> Some attribute
+              | _ -> None
+            in
+            method_name
+            >>= (fun method_name ->
+                  class_primitive
+                  >>| fun class_name -> Format.sprintf "%s.%s" class_name method_name)
+            >>| Reference.create
+            (* Here, we blindly reconstruct the callable instead of going through the global
+               resolution, as Pyre doesn't have an API to get the undecorated signature of methods. *)
+            >>| (fun name ->
+                  ( Some
+                      {
+                        Type.Callable.kind = Named name;
+                        implementation =
+                          { annotation = Type.Any; parameters = Type.Callable.Defined [] };
+                        overloads = [];
+                      },
+                    Some implementing_class ))
+            |> Option.value ~default:(None, None)
+        | _ -> None, None )
+  in
   let rec resolve_type callable_type =
     let underlying_callable, self_argument =
       match callable_type with
       | Type.Callable underlying_callable -> Some underlying_callable, None
+      (* For the case of the LRU cache decorator, the type system loses the callable information as
+         it creates a wrapper class. We reconstruct the underlying callable using the implicit. *)
+      | Parametric
+          {
+            name = "BoundMethod";
+            parameters =
+              [
+                Single (Parametric { name = "functools._lru_cache_wrapper"; _ });
+                Single implementing_class;
+              ];
+          } ->
+          resolve_lru_cache ~implementing_class
+      | Parametric { name = "functools._lru_cache_wrapper"; _ } -> (
+          (* Because of the special class, we don't get a bound method & lose the self argument for
+             non-classmethod LRU cache wrappers. Reconstruct self in this case. *)
+          match Node.value callee with
+          | Expression.Name (Name.Attribute { base; _ }) ->
+              resolve_ignoring_optional ~resolution base
+              |> fun implementing_class -> resolve_lru_cache ~implementing_class
+          | _ -> None, None )
       | Parametric
           {
             name = "BoundMethod";
@@ -288,7 +363,7 @@ let resolve_call_targets ~resolution call =
   | _ -> resolve_target ~resolution callee
 
 
-type target = Callable.t * Type.t option
+type target = Callable.t * Type.t option [@@deriving show, eq]
 
 type constructor_targets = {
   new_targets: target list;

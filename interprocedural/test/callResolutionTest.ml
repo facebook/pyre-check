@@ -148,10 +148,82 @@ let test_resolve_ignoring_optional context =
     ~expected:(Type.Primitive "x.Data")
 
 
+let test_resolve_target context =
+  let assert_resolved ~source ~expression ~expected =
+    let resolution =
+      ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_resolution
+    in
+    CallResolution.resolve_target ~resolution (Test.parse_single_expression expression)
+    |> assert_equal
+         ~cmp:(List.equal CallResolution.equal_target)
+         ~printer:(List.to_string ~f:CallResolution.show_target)
+         expected
+  in
+  assert_resolved
+    ~source:
+      {|
+      from functools import lru_cache
+      @lru_cache()
+      def f() -> int:
+        return 0
+    |}
+    ~expression:"test.f"
+    ~expected:[`Function "test.f", None];
+
+  assert_resolved
+    ~source:
+      {|
+      from functools import lru_cache
+      class C:
+        @lru_cache()
+        def m(self, x: int) -> int:
+          return x
+      c: C = C()
+    |}
+    ~expression:"test.c.m"
+    ~expected:
+      [
+        `Method { Callable.class_name = "test.C"; method_name = "m" }, Some (Type.Primitive "test.C");
+      ];
+  assert_resolved
+    ~source:
+      {|
+      from functools import lru_cache
+      class C:
+        @lru_cache()
+        def m(self, x: int) -> int:
+          return x
+      c: C = C()
+    |}
+    ~expression:"test.C.m"
+    ~expected:
+      [
+        ( `Method { Callable.class_name = "test.C"; method_name = "m" },
+          Some (Type.meta (Type.Primitive "test.C")) );
+      ];
+  assert_resolved
+    ~source:
+      {|
+      from functools import lru_cache
+      class C:
+        @classmethod
+        @lru_cache()
+        def m(cls, x: int) -> int:
+          return x
+    |}
+    ~expression:"test.C.m"
+    ~expected:
+      [
+        ( `Method { Callable.class_name = "test.C"; method_name = "m" },
+          Some (Type.meta (Type.Primitive "test.C")) );
+      ]
+
+
 let () =
   "callResolution"
   >::: [
          "get_property_callable" >:: test_get_property_callable;
+         "resolve_target" >:: test_resolve_target;
          "resolve_ignoring_optional" >:: test_resolve_ignoring_optional;
        ]
   |> Test.run

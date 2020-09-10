@@ -9,7 +9,7 @@ open Ast
 open Analysis
 open Expression
 
-type target = Callable.t * Type.t option
+type target = Callable.t * Type.t option [@@deriving eq, show]
 
 val is_local : Identifier.t -> bool
 
