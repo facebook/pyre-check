@@ -10,12 +10,11 @@ from typing import List, Optional
 
 from typing_extensions import Final
 
-from .. import log
+from .. import command_arguments, log
 from ..analysis_directory import AnalysisDirectory, resolve_analysis_directory
 from ..configuration import Configuration
 from ..filesystem import readable_directory, writable_directory
 from .check import Check
-from .command import CommandArguments
 
 
 class Analyze(Check):
@@ -23,7 +22,7 @@ class Analyze(Check):
 
     def __init__(
         self,
-        command_arguments: CommandArguments,
+        command_arguments: command_arguments.CommandArguments,
         original_directory: str,
         *,
         configuration: Optional[Configuration] = None,
@@ -62,7 +61,7 @@ class Analyze(Check):
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> "Analyze":
         return Analyze(
-            CommandArguments.from_arguments(arguments),
+            command_arguments.CommandArguments.from_arguments(arguments),
             original_directory,
             configuration=configuration,
             analysis_directory=analysis_directory,

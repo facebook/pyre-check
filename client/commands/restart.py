@@ -6,9 +6,10 @@
 import argparse
 from typing import Optional
 
+from .. import command_arguments
 from ..analysis_directory import AnalysisDirectory, resolve_analysis_directory
 from ..configuration import Configuration
-from .command import Command, CommandArguments, ExitCode, IncrementalStyle
+from .command import Command, ExitCode, IncrementalStyle
 from .incremental import Incremental
 from .start import Start  # noqa
 from .stop import Stop
@@ -19,7 +20,7 @@ class Restart(Command):
 
     def __init__(
         self,
-        command_arguments: CommandArguments,
+        command_arguments: command_arguments.CommandArguments,
         original_directory: str,
         *,
         configuration: Optional[Configuration] = None,
@@ -45,7 +46,7 @@ class Restart(Command):
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> "Restart":
         return Restart(
-            CommandArguments.from_arguments(arguments),
+            command_arguments.CommandArguments.from_arguments(arguments),
             original_directory,
             configuration=configuration,
             analysis_directory=analysis_directory,

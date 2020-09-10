@@ -16,12 +16,17 @@ from typing import Optional
 
 import psutil
 
-from .. import configuration_monitor, recently_used_configurations, watchman
+from .. import (
+    command_arguments,
+    configuration_monitor,
+    recently_used_configurations,
+    watchman,
+)
 from ..analysis_directory import BUCK_BUILDER_CACHE_PREFIX, AnalysisDirectory
 from ..configuration import Configuration
 from ..find_directories import BINARY_NAME, CLIENT_NAME
 from ..project_files_monitor import ProjectFilesMonitor
-from .command import Command, CommandArguments
+from .command import Command
 from .rage import Rage
 
 
@@ -74,7 +79,7 @@ class Kill(Command):
 
     def __init__(
         self,
-        command_arguments: CommandArguments,
+        command_arguments: command_arguments.CommandArguments,
         *,
         original_directory: str,
         configuration: Optional[Configuration] = None,
@@ -94,7 +99,7 @@ class Kill(Command):
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> "Kill":
         return Kill(
-            CommandArguments.from_arguments(arguments),
+            command_arguments.CommandArguments.from_arguments(arguments),
             original_directory=original_directory,
             configuration=configuration,
             analysis_directory=analysis_directory,

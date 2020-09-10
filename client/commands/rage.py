@@ -10,11 +10,11 @@ from typing import IO, List, Optional
 
 from typing_extensions import Final
 
-from .. import recently_used_configurations
+from .. import command_arguments, recently_used_configurations
 from ..analysis_directory import AnalysisDirectory
 from ..configuration import Configuration
 from ..version import __version__
-from .command import Command, CommandArguments
+from .command import Command
 from .servers import Servers
 
 
@@ -26,7 +26,7 @@ class Rage(Command):
 
     def __init__(
         self,
-        command_arguments: CommandArguments,
+        command_arguments: command_arguments.CommandArguments,
         *,
         original_directory: str,
         configuration: Optional[Configuration] = None,
@@ -47,7 +47,7 @@ class Rage(Command):
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> "Rage":
         return Rage(
-            CommandArguments.from_arguments(arguments),
+            command_arguments.CommandArguments.from_arguments(arguments),
             original_directory=original_directory,
             configuration=configuration,
             analysis_directory=analysis_directory,

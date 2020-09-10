@@ -10,12 +10,15 @@ import os
 from logging import Logger
 from typing import List, Optional
 
-from typing_extensions import Final
-
-from .. import configuration_monitor, filesystem, project_files_monitor
+from .. import (
+    command_arguments,
+    configuration_monitor,
+    filesystem,
+    project_files_monitor,
+)
 from ..analysis_directory import AnalysisDirectory
 from ..configuration import Configuration
-from .command import CommandArguments, IncrementalStyle, typeshed_search_path
+from .command import IncrementalStyle, typeshed_search_path
 from .reporting import Reporting
 
 
@@ -27,7 +30,7 @@ class Start(Reporting):
 
     def __init__(
         self,
-        command_arguments: CommandArguments,
+        command_arguments: command_arguments.CommandArguments,
         original_directory: str,
         *,
         configuration: Optional[Configuration] = None,
@@ -55,7 +58,7 @@ class Start(Reporting):
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> "Start":
         return Start(
-            CommandArguments.from_arguments(arguments),
+            command_arguments.CommandArguments.from_arguments(arguments),
             original_directory,
             configuration=configuration,
             analysis_directory=analysis_directory,

@@ -11,9 +11,10 @@ import sys
 import time
 from typing import List, Optional
 
+from .. import command_arguments
 from ..analysis_directory import AnalysisDirectory
 from ..configuration import Configuration
-from .command import Command, CommandArguments, IncrementalStyle
+from .command import Command, IncrementalStyle
 from .start import Start
 
 
@@ -22,7 +23,7 @@ class Persistent(Command):
 
     def __init__(
         self,
-        command_arguments: CommandArguments,
+        command_arguments: command_arguments.CommandArguments,
         original_directory: str,
         *,
         configuration: Optional[Configuration] = None,
@@ -42,7 +43,7 @@ class Persistent(Command):
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> "Persistent":
         return Persistent(
-            CommandArguments.from_arguments(arguments),
+            command_arguments.CommandArguments.from_arguments(arguments),
             original_directory,
             configuration=configuration,
             analysis_directory=analysis_directory,

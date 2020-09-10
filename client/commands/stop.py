@@ -10,11 +10,11 @@ import time
 from logging import Logger
 from typing import List, Optional
 
-from .. import configuration_monitor, watchman
+from .. import command_arguments, configuration_monitor, watchman
 from ..analysis_directory import AnalysisDirectory
 from ..configuration import Configuration
 from ..project_files_monitor import ProjectFilesMonitor
-from .command import ClientException, Command, CommandArguments, State
+from .command import ClientException, Command, State
 
 
 LOG: Logger = logging.getLogger(__name__)
@@ -25,7 +25,7 @@ class Stop(Command):
 
     def __init__(
         self,
-        command_arguments: CommandArguments,
+        command_arguments: command_arguments.CommandArguments,
         original_directory: str,
         *,
         configuration: Optional[Configuration] = None,
@@ -45,7 +45,7 @@ class Stop(Command):
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> "Stop":
         return Stop(
-            CommandArguments.from_arguments(arguments),
+            command_arguments.CommandArguments.from_arguments(arguments),
             original_directory,
             configuration=configuration,
             analysis_directory=analysis_directory,

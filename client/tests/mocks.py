@@ -9,8 +9,9 @@ from pathlib import Path
 from typing import Optional
 from unittest.mock import MagicMock
 
+from .. import command_arguments
 from ..analysis_directory import AnalysisDirectory
-from ..commands.command import TEXT, CommandArguments, IncrementalStyle
+from ..commands.command import TEXT, IncrementalStyle
 from ..commands.incremental import Incremental
 
 
@@ -31,8 +32,8 @@ def mock_arguments(
     source_directories=None,
     targets=None,
     dot_pyre_directory: Optional[Path] = None,
-) -> CommandArguments:
-    return CommandArguments(
+) -> command_arguments.CommandArguments:
+    return command_arguments.CommandArguments(
         local_configuration=local_configuration,
         version=False,
         debug=debug,

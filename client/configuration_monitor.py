@@ -7,10 +7,9 @@ import os
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from . import watchman
+from . import command_arguments, watchman
 from .analysis_directory import AnalysisDirectory
 from .commands import stop
-from .commands.command import CommandArguments
 from .configuration import Configuration
 from .find_directories import CONFIGURATION_FILE, LOCAL_CONFIGURATION_FILE
 from .process import Process
@@ -32,7 +31,7 @@ class ConfigurationMonitor(Subscriber):
 
     def __init__(
         self,
-        command_arguments: CommandArguments,
+        command_arguments: command_arguments.CommandArguments,
         configuration: Configuration,
         analysis_directory: AnalysisDirectory,
         project_root: str,

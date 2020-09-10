@@ -9,10 +9,10 @@ import logging
 from pathlib import Path
 from typing import List, NamedTuple, Optional
 
-from .. import log
+from .. import command_arguments, log
 from ..analysis_directory import AnalysisDirectory
 from ..configuration import Configuration
-from .command import JSON, Command, CommandArguments
+from .command import JSON, Command
 from .stop import Stop
 
 
@@ -53,7 +53,7 @@ class Servers(Command):
 
     def __init__(
         self,
-        command_arguments: CommandArguments,
+        command_arguments: command_arguments.CommandArguments,
         original_directory: str,
         *,
         configuration: Optional[Configuration] = None,
@@ -73,7 +73,7 @@ class Servers(Command):
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> "Servers":
         return Servers(
-            CommandArguments.from_arguments(arguments),
+            command_arguments.CommandArguments.from_arguments(arguments),
             original_directory,
             configuration=configuration,
             analysis_directory=analysis_directory,

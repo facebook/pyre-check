@@ -8,9 +8,10 @@ import logging
 from logging import Logger
 from typing import List, Optional
 
+from .. import command_arguments
 from ..analysis_directory import AnalysisDirectory, resolve_analysis_directory
 from ..configuration import Configuration
-from .command import CommandArguments, ExitCode, typeshed_search_path
+from .command import ExitCode, typeshed_search_path
 from .reporting import Reporting
 
 
@@ -22,7 +23,7 @@ class Check(Reporting):
 
     def __init__(
         self,
-        command_arguments: CommandArguments,
+        command_arguments: command_arguments.CommandArguments,
         original_directory: str,
         *,
         configuration: Optional[Configuration] = None,
@@ -40,7 +41,7 @@ class Check(Reporting):
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> "Check":
         return Check(
-            CommandArguments.from_arguments(arguments),
+            command_arguments.CommandArguments.from_arguments(arguments),
             original_directory,
             configuration=configuration,
             analysis_directory=analysis_directory,

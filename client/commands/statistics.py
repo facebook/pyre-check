@@ -14,7 +14,7 @@ import libcst as cst
 from libcst._exceptions import ParserSyntaxError
 from libcst.metadata import MetadataWrapper
 
-from .. import log, statistics
+from .. import command_arguments, log, statistics
 from ..analysis_directory import AnalysisDirectory
 from ..configuration import Configuration
 from ..statistics_collectors import (
@@ -24,7 +24,7 @@ from ..statistics_collectors import (
     StatisticsCollector,
     StrictCountCollector,
 )
-from .command import Command, CommandArguments
+from .command import Command
 
 
 def _get_paths(target_directory: Path) -> List[Path]:
@@ -102,7 +102,7 @@ class Statistics(Command):
 
     def __init__(
         self,
-        command_arguments: CommandArguments,
+        command_arguments: command_arguments.CommandArguments,
         original_directory: str,
         *,
         configuration: Optional[Configuration] = None,
@@ -124,7 +124,7 @@ class Statistics(Command):
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> "Statistics":
         return Statistics(
-            CommandArguments.from_arguments(arguments),
+            command_arguments.CommandArguments.from_arguments(arguments),
             original_directory,
             configuration=configuration,
             analysis_directory=analysis_directory,

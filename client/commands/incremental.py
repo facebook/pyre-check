@@ -8,17 +8,10 @@ import logging
 from logging import Logger
 from typing import List, Optional
 
-from .. import configuration_monitor, json_rpc, project_files_monitor
+from .. import command_arguments, configuration_monitor, json_rpc, project_files_monitor
 from ..analysis_directory import AnalysisDirectory
 from ..configuration import Configuration
-from .command import (
-    CommandArguments,
-    ExitCode,
-    IncrementalStyle,
-    Result,
-    State,
-    typeshed_search_path,
-)
+from .command import ExitCode, IncrementalStyle, Result, State, typeshed_search_path
 from .reporting import Reporting
 from .start import Start
 
@@ -31,7 +24,7 @@ class Incremental(Reporting):
 
     def __init__(
         self,
-        command_arguments: CommandArguments,
+        command_arguments: command_arguments.CommandArguments,
         original_directory: str,
         *,
         configuration: Optional[Configuration] = None,
@@ -57,7 +50,7 @@ class Incremental(Reporting):
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> "Incremental":
         return Incremental(
-            CommandArguments.from_arguments(arguments),
+            command_arguments.CommandArguments.from_arguments(arguments),
             original_directory,
             configuration=configuration,
             analysis_directory=analysis_directory,

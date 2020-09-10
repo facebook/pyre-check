@@ -15,9 +15,10 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from typing_extensions import Final
 
+from .. import command_arguments
 from ..analysis_directory import AnalysisDirectory
 from ..configuration import Configuration
-from .command import Command, CommandArguments, ProfileOutput
+from .command import Command, ProfileOutput
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -283,7 +284,7 @@ class Profile(Command):
 
     def __init__(
         self,
-        command_arguments: CommandArguments,
+        command_arguments: command_arguments.CommandArguments,
         original_directory: str,
         *,
         configuration: Optional[Configuration] = None,
@@ -303,7 +304,7 @@ class Profile(Command):
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> "Profile":
         return Profile(
-            CommandArguments.from_arguments(arguments),
+            command_arguments.CommandArguments.from_arguments(arguments),
             original_directory,
             configuration=configuration,
             analysis_directory=analysis_directory,

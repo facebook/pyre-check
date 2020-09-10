@@ -9,11 +9,11 @@ import logging
 import os
 from typing import Any, Dict, List, Optional, Sequence, Set
 
-from .. import log
+from .. import command_arguments, log
 from ..analysis_directory import AnalysisDirectory
 from ..configuration import Configuration
 from ..error import Error
-from .command import TEXT, ClientException, Command, CommandArguments, Result
+from .command import TEXT, ClientException, Command, Result
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -24,7 +24,7 @@ class Reporting(Command):
 
     def __init__(
         self,
-        command_arguments: CommandArguments,
+        command_arguments: command_arguments.CommandArguments,
         original_directory: str,
         configuration: Optional[Configuration] = None,
         analysis_directory: Optional[AnalysisDirectory] = None,

@@ -23,11 +23,11 @@ from libcst.codemod import CodemodContext
 from libcst.codemod.visitors._apply_type_annotations import ApplyTypeAnnotationsVisitor
 from typing_extensions import Final
 
-from .. import log
+from .. import command_arguments, log
 from ..analysis_directory import AnalysisDirectory
 from ..configuration import Configuration
 from ..error import Error
-from .command import JSON, Command, CommandArguments, Result, typeshed_search_path
+from .command import JSON, Command, Result, typeshed_search_path
 from .reporting import Reporting
 
 
@@ -429,7 +429,7 @@ class Infer(Reporting):
 
     def __init__(
         self,
-        command_arguments: CommandArguments,
+        command_arguments: command_arguments.CommandArguments,
         original_directory: str,
         *,
         configuration: Optional[Configuration] = None,
@@ -465,7 +465,7 @@ class Infer(Reporting):
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> "Infer":
         return Infer(
-            CommandArguments.from_arguments(arguments),
+            command_arguments.CommandArguments.from_arguments(arguments),
             original_directory,
             configuration=configuration,
             analysis_directory=analysis_directory,

@@ -12,10 +12,10 @@ import re
 from logging import Logger
 from typing import Dict, List, Optional
 
-from .. import json_rpc, log
+from .. import command_arguments, json_rpc, log
 from ..analysis_directory import AnalysisDirectory
 from ..configuration import Configuration
-from .command import Command, CommandArguments, ExitCode, Result, State
+from .command import Command, ExitCode, Result, State
 
 
 LOG: Logger = logging.getLogger(__name__)
@@ -47,7 +47,7 @@ class Query(Command):
 
     def __init__(
         self,
-        command_arguments: CommandArguments,
+        command_arguments: command_arguments.CommandArguments,
         original_directory: str,
         *,
         configuration: Optional[Configuration] = None,
@@ -67,7 +67,7 @@ class Query(Command):
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> "Query":
         return Query(
-            CommandArguments.from_arguments(arguments),
+            command_arguments.CommandArguments.from_arguments(arguments),
             original_directory,
             configuration=configuration,
             analysis_directory=analysis_directory,
