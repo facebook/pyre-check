@@ -285,7 +285,7 @@ class Configuration:
     @staticmethod
     def from_arguments(
         arguments: command_arguments.CommandArguments, base_directory: Path
-    ) -> "Configuration":
+    ) -> "Optional[Configuration]":
         local_root_argument = arguments.local_configuration
         found_root = find_directories.find_global_and_local_root(
             base_directory
@@ -293,12 +293,10 @@ class Configuration:
             else base_directory / local_root_argument
         )
         if found_root is None:
-            # FIXME: We should fail here.
-            global_root = base_directory
-            local_root = None
-        else:
-            global_root = found_root.global_root
-            local_root = found_root.local_root
+            return None
+
+        global_root = found_root.global_root
+        local_root = found_root.local_root
         return Configuration(
             project_root=str(global_root),
             local_root=str(local_root) if local_root is not None else None,

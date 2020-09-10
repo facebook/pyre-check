@@ -102,6 +102,11 @@ def run_pyre(arguments: argparse.Namespace) -> ExitCode:
         configuration = configuration_module.Configuration.from_arguments(
             command_arguments.CommandArguments.from_arguments(arguments), Path(".")
         )
+        if configuration is None:
+            raise commands.ClientException(
+                "Cannot locate a `.pyre_configuration` file in the current directory "
+                "or any parent directories."
+            )
         if arguments.version:
             try:
                 binary_version = configuration.get_binary_version()

@@ -133,18 +133,20 @@ class Servers(Command):
     def _stop_servers(self, servers: List[ServerDetails]) -> None:
         for server in servers:
             LOG.warning("Stopping server for `%s` with pid %d", server.name, server.pid)
-            Stop(
-                command_arguments=self._command_arguments,
-                original_directory=str(
-                    Path(self._configuration.project_root, server.local_root)
+            local_configuration = Configuration.from_arguments(
+                dataclasses.replace(
+                    self._command_arguments, local_configuration=server.local_root
                 ),
-                configuration=Configuration.from_arguments(
-                    dataclasses.replace(
-                        self._command_arguments, local_configuration=server.local_root
+                Path(self._configuration.project_root),
+            )
+            if local_configuration is not None:
+                Stop(
+                    command_arguments=self._command_arguments,
+                    original_directory=str(
+                        Path(self._configuration.project_root, server.local_root)
                     ),
-                    Path(self._configuration.project_root),
-                ),
-            ).run()
+                    configuration=local_configuration,
+                ).run()
 
     def _run(self) -> None:
         all_server_details = self._all_server_details()
