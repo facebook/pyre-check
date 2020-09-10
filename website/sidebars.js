@@ -22,6 +22,9 @@ module.exports = {
     "Pysa": [
       ...fbInternalOnly(["fb/pysa-basics-internal"]),
       "pysa-basics",
+      ...fbInternalOnly(["fb/pysa-running-internal"]),
+      ...fbInternalOnly(["fb/pysa-running-opensource-internal"]),
+      ...fbInternalOnly(["fb/pysa-shipping-rules-models-internal"]),
       "pysa-running",
       "pysa-features",
       "pysa-advanced",
@@ -29,7 +32,10 @@ module.exports = {
       "pysa-model-generators",
       "pysa-model-dsl",
       "pysa-tips",
+      ...fbInternalOnly(["fb/pysa-on-fbcode-internal"]),
       "pysa-coverage",
+      ...fbInternalOnly(["fb/sapp-cli-internal"]),
+      ...fbInternalOnly(["fb/sapp-ui-internal"]),
       "static-analysis-post-processor",
       ...fbInternalOnly(["fb/pysa-additional-resources-internal"]),
       "pysa-additional-resources"
