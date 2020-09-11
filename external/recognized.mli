@@ -19,3 +19,5 @@ val enumeration_classes : String.Set.t
 
 (* Names of functions that implement an 'assert'. *)
 val assert_functions : String.Set.t
+
+val lazy_import_functions : String.Set.t

@@ -19,3 +19,6 @@ let enumeration_classes = String.Set.of_list ["enum.Enum"; "enum.IntEnum"]
 
 let assert_functions =
   String.Set.of_list [(* We need a way to test this feature, right? *) "foo.pyretestassert"]
+
+
+let lazy_import_functions = String.Set.of_list ["lazy_import.lazy_import"]

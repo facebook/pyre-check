@@ -1526,6 +1526,143 @@ let dequalify_map ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as so
   ImportDequalifier.transform map source |> fun { ImportDequalifier.state; _ } -> state
 
 
+let is_lazy_import { Node.value; _ } =
+  match value with
+  | Expression.Name name -> (
+      match name_to_reference name with
+      | Some reference
+        when String.Set.mem Recognized.lazy_import_functions (Reference.show reference) ->
+          true
+      | _ -> false )
+  | _ -> false
+
+
+let replace_lazy_import ?(is_lazy_import = is_lazy_import) source =
+  let module LazyImportTransformer = Transform.MakeStatementTransformer (struct
+    type t = unit
+
+    let statement _ ({ Node.value; location } as statement) =
+      match value with
+      | Statement.Assign
+          {
+            Assign.target =
+              {
+                Node.value = Expression.Name (Name.Identifier identifier);
+                location = identifier_location;
+              };
+            value =
+              {
+                Node.value =
+                  Expression.Call
+                    {
+                      callee;
+                      arguments =
+                        [
+                          {
+                            Call.Argument.value =
+                              {
+                                Node.value =
+                                  Expression.String { StringLiteral.kind = String; value = literal };
+                                location = literal_location;
+                              };
+                            _;
+                          };
+                        ];
+                    };
+                _;
+              };
+            _;
+          }
+        when is_lazy_import callee ->
+          ( (),
+            [
+              Statement.Import
+                {
+                  from = None;
+                  imports =
+                    [
+                      {
+                        Import.name =
+                          Reference.create literal |> Node.create ~location:literal_location;
+                        alias =
+                          Some
+                            ( Identifier.sanitized identifier
+                            |> Node.create ~location:identifier_location );
+                      };
+                    ];
+                }
+              |> Node.create ~location;
+            ] )
+      | Statement.Assign
+          {
+            Assign.target =
+              {
+                Node.value = Expression.Name (Name.Identifier identifier);
+                location = identifier_location;
+              };
+            value =
+              {
+                Node.value =
+                  Expression.Call
+                    {
+                      callee;
+                      arguments =
+                        [
+                          {
+                            Call.Argument.value =
+                              {
+                                Node.value =
+                                  Expression.String
+                                    { StringLiteral.kind = String; value = from_literal };
+                                location = from_literal_location;
+                              };
+                            _;
+                          };
+                          {
+                            Call.Argument.value =
+                              {
+                                Node.value =
+                                  Expression.String
+                                    { StringLiteral.kind = String; value = import_literal };
+                                location = import_literal_location;
+                              };
+                            _;
+                          };
+                        ];
+                    };
+                _;
+              };
+            _;
+          }
+        when is_lazy_import callee ->
+          ( (),
+            [
+              Statement.Import
+                {
+                  from =
+                    Some
+                      (Reference.create from_literal |> Node.create ~location:from_literal_location);
+                  imports =
+                    [
+                      {
+                        Import.name =
+                          Reference.create import_literal
+                          |> Node.create ~location:import_literal_location;
+                        alias =
+                          Some
+                            ( Identifier.sanitized identifier
+                            |> Node.create ~location:identifier_location );
+                      };
+                    ];
+                }
+              |> Node.create ~location;
+            ] )
+      | _ -> (), [statement]
+  end)
+  in
+  LazyImportTransformer.transform () source |> LazyImportTransformer.source
+
+
 let replace_mypy_extensions_stub
     ({ Source.source_path = { SourcePath.relative; _ }; statements; _ } as source)
   =
@@ -2944,6 +3081,7 @@ let preprocess_phase1 source =
   source
   |> populate_unbound_names
   |> qualify
+  |> replace_lazy_import
   |> replace_mypy_extensions_stub
   |> expand_typed_dictionary_declarations
   |> expand_sqlalchemy_declarative_base

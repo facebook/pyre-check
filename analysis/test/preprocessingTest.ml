@@ -2188,6 +2188,108 @@ let test_classes _ =
   assert_classes [+Statement.Class class_define] [class_define; inner]
 
 
+let test_replace_lazy_import _ =
+  let is_lazy_import { Node.value; _ } =
+    match value with
+    | Expression.Name name -> (
+        match name_to_reference name with
+        | Some reference when Reference.equal reference (Reference.create "lazy_import") -> true
+        | _ -> false )
+    | _ -> false
+  in
+  let assert_replaced source expected =
+    let parse = parse ~handle:"test.py" in
+    assert_source_equal
+      ~location_insensitive:true
+      (parse expected)
+      (Preprocessing.replace_lazy_import ~is_lazy_import (parse source))
+  in
+
+  assert_replaced {|
+       x = lazy_import("a.b.c")
+    |} {|
+       import a.b.c as x
+    |};
+  assert_replaced {|
+       x: Any = lazy_import("a.b.c")
+    |} {|
+       import a.b.c as x
+    |};
+  assert_replaced
+    {|
+       x = lazy_import("a.b", "c")
+    |}
+    {|
+       from a.b import c as x
+    |};
+  assert_replaced
+    {|
+       if derp:
+         x = lazy_import("a.b.c")
+       else:
+         y = lazy_import("a.b", "c")
+    |}
+    {|
+       if derp:
+         import a.b.c as x
+       else:
+         from a.b import c as y
+    |};
+  assert_replaced
+    {|
+       while derp:
+         x = lazy_import("a.b.c")
+       else:
+         y = lazy_import("a.b", "c")
+    |}
+    {|
+       while derp:
+         import a.b.c as x
+       else:
+         from a.b import c as y
+    |};
+  assert_replaced
+    {|
+       with derp as d:
+         x = lazy_import("a.b.c")
+    |}
+    {|
+       with derp as d:
+         import a.b.c as x
+    |};
+  assert_replaced
+    {|
+       try:
+         x = lazy_import("a.b.c")
+       except:
+         y = lazy_import("a.b", "c")
+       finally:
+         z: Any = lazy_import("a", "b")
+    |}
+    {|
+       try:
+         import a.b.c as x
+       except:
+         from a.b import c as y
+       finally:
+         from a import b as z
+    |};
+  assert_replaced
+    {|
+       def foo():
+         x = lazy_import("a.b.c")
+       class Foo:
+         y = lazy_import("a.b", "c")
+    |}
+    {|
+       def foo():
+         import a.b.c as x
+       class Foo:
+         from a.b import c as y
+    |};
+  ()
+
+
 let test_replace_mypy_extensions_stub _ =
   let given =
     parse
@@ -4408,6 +4510,7 @@ let () =
          "defines" >:: test_defines;
          "classes" >:: test_classes;
          "transform_ast" >:: test_transform_ast;
+         "replace_lazy_import" >:: test_replace_lazy_import;
          "typed_dictionary_stub_fix" >:: test_replace_mypy_extensions_stub;
          "typed_dictionaries" >:: test_expand_typed_dictionaries;
          "sqlalchemy_declarative_base" >:: test_sqlalchemy_declarative_base;
