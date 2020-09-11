@@ -158,6 +158,8 @@ let test_is_constructor _ =
   assert_is_constructor ~in_test:false ~name:"Foo.asyncSetUp" ~parent:(Some "Foo") false;
   assert_is_constructor ~in_test:false ~name:"Foo.async_setUp" ~parent:(Some "Foo") false;
   assert_is_constructor ~in_test:true ~name:"Foo.with_context" ~parent:(Some "Foo") true;
+  assert_is_constructor ~in_test:true ~name:"Foo.async_with_context" ~parent:(Some "Foo") true;
+  assert_is_constructor ~in_test:false ~name:"Foo.async_with_context" ~parent:(Some "Foo") false;
   assert_is_constructor ~name:"__init__" false;
   assert_is_constructor ~name:"Foo.bar" ~parent:(Some "Foo") false
 

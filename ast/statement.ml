@@ -1450,6 +1450,7 @@ end = struct
           "setUp";
           "_setup";
           "_async_setup";
+          "async_with_context";
           "with_context";
           "setUpClass";
         ]
