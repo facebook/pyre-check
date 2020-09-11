@@ -73,6 +73,12 @@ class SourceDatabaseBuckBuilder(BuckBuilder):
             return BuckBuildOutput(
                 output_directories=[self._output_directory], unsupported_files=[]
             )
+        except subprocess.CalledProcessError as exception:
+            stderr = exception.stderr
+            reason = stderr.decode().strip() if stderr else exception
+            raise BuckException(
+                f"Failed to build targets because of buck error: {reason}"
+            )
         except Exception as exception:
             raise BuckException(
                 f"Failed to build targets because of exception: {exception}"
