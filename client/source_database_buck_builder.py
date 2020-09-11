@@ -26,7 +26,9 @@ class SourceDatabase(TypedDict):
 
 
 def _buck(arguments: List[str]) -> str:
-    return subprocess.check_output(["buck"] + arguments).decode("utf-8")
+    return subprocess.check_output(["buck"] + arguments, stderr=subprocess.PIPE).decode(
+        "utf-8"
+    )
 
 
 def _get_buck_query_arguments(
@@ -66,6 +68,7 @@ def _query_targets(target_specifications: List[str], mode: Optional[str]) -> Lis
         for specification in target_specifications
     ]
     query_arguments = _get_buck_query_arguments(normalized_target_specifications, mode)
+    LOG.info("Running `buck query`...")
     specification_targets_dictionary = json.loads(_buck(query_arguments))
     targets = list(chain(*specification_targets_dictionary.values()))
     return [target for target in targets if not _ignore_target(target)]
@@ -85,6 +88,7 @@ def _get_buck_build_arguments(targets: List[str]) -> List[str]:
 
 def _build_targets(targets: List[str]) -> Dict[str, str]:
     build_arguments = _get_buck_build_arguments(targets)
+    LOG.info("Running `buck build`...")
     return json.loads(_buck(build_arguments))
 
 
