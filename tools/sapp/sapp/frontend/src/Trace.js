@@ -9,6 +9,7 @@
 
 import React from 'react';
 import {withRouter} from 'react-router';
+import {Breadcrumb, Card, Modal, Skeleton} from 'antd';
 import {Controlled as CodeMirror} from 'react-codemirror2';
 
 import {useQuery, gql} from '@apollo/client';
@@ -39,33 +40,49 @@ function Trace(props) {
     },
   });
 
-  if (loading) return <p>Loading...</p>;
-  if (error) return <p>Error:(</p>;
+  if (loading) {
+    return (
+      <Card>
+        <Skeleton active />
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Modal title="Error" visible={true} footer={null}>
+        <p>{error.toString()}</p>
+      </Modal>
+    );
+  }
 
   return (
     <>
-      <h3>Trace: {props.match.params.issue_id}</h3>
-      <ul>
-        {data.trace.edges.map(({node}, index) => (
-          <>
-            <h4>{index + 1}</h4>
-            <p>Callable: {node.callee}</p>
-            <p>Port: {node.callee}</p>
-            <p>
-              Location: {node.filename}:{node.callee_location}
-            </p>
-            <br />
-            <CodeMirror
-              value={node.file_content}
-              onBeforeChange={(editor, data, value) => {}}
-              options={{
-                lineNumbers: true,
-              }}
-              onChange={(editor, data, value) => {}}
-            />
-          </>
-        ))}
-      </ul>
+      <Breadcrumb style={{margin: '16px 0'}}>
+        <Breadcrumb.Item>Issues</Breadcrumb.Item>
+        <Breadcrumb.Item>
+          Trace for Issue {props.match.params.issue_id}
+        </Breadcrumb.Item>
+      </Breadcrumb>
+      {data.trace.edges.map(({node}, index) => (
+        <Card>
+          <h4>{index + 1}</h4>
+          <p>Callable: {node.callee}</p>
+          <p>Port: {node.callee}</p>
+          <p>
+            Location: {node.filename}:{node.callee_location}
+          </p>
+          <br />
+          <CodeMirror
+            value={node.file_content}
+            onBeforeChange={(editor, data, value) => {}}
+            options={{
+              lineNumbers: true,
+            }}
+            onChange={(editor, data, value) => {}}
+          />
+        </Card>
+      ))}
     </>
   );
 }
