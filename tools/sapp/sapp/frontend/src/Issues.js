@@ -5,16 +5,42 @@
  * LICENSE file in the root directory of this source tree.
  *
  * @format
+ * @flow
  */
 
 import React from 'react';
 import {Link} from 'react-router-dom';
 import {Card} from 'antd';
 
-class Issues extends React.Component {
-  constructor(props) {
+type Props = $ReadOnly<{|
+  data: any,
+  fetchMore: any,
+  loading: boolean,
+|}>;
+
+type State = $ReadOnly<{|
+  recently_started_loading: boolean,
+|}>;
+
+class Issues extends React.Component<Props, State> {
+  state: State = {
+    recently_started_loading: false,
+  };
+
+  constructor(props: Props) {
     super(props);
+    // $FlowFixMe
     this.fetchIssues = this.fetchIssues.bind(this);
+    // $FlowFixMe
+    this._handleScroll = this._handleScroll.bind(this);
+  }
+
+  componentDidMount(): void {
+    window.addEventListener('scroll', this._handleScroll);
+  }
+
+  componentWillUnount(): void {
+    window.removeEventListener('scroll', this._handleScroll);
   }
 
   fetchIssues() {
@@ -56,9 +82,28 @@ class Issues extends React.Component {
             <br />
           </>
         ))}
-        <button onClick={this.fetchIssues}>More</button>
       </>
     );
+  }
+
+  _handleScroll(event: any): void {
+    let body = document.body;
+    if (body === null) {
+      return;
+    }
+    if (
+      !this.props.loading &&
+      !this.state.recently_started_loading &&
+      window.pageYOffset + body.clientHeight >= body.scrollHeight - 100
+    ) {
+      this.setState({recently_started_loading: true});
+      const captured = this;
+      setTimeout(function() {
+        // Avoid clobbering the server with too many requests.
+        captured.setState({recently_started_loading: false});
+      }, 1000);
+      this.fetchIssues();
+    }
   }
 }
 

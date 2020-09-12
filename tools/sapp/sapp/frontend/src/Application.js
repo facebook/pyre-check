@@ -31,7 +31,7 @@ const IssueQuery = gql`
     $max_trace_length_to_sources: Int
   ) {
     issues(
-      first: 5
+      first: 20
       after: $after
       codes: $codes
       file_names: $file_names
@@ -63,7 +63,7 @@ const IssueQuery = gql`
 const Application = () => {
   const {loading, error, data, fetchMore, refetch} = useQuery(IssueQuery);
 
-  var content = <Issues data={data} fetchMore={fetchMore} />;
+  var content = <Issues data={data} fetchMore={fetchMore} loading={loading} />;
 
   const skeleton = (
     <>
