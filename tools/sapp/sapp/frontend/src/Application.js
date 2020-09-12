@@ -31,7 +31,7 @@ const IssueQuery = gql`
     $max_trace_length_to_sources: Int
   ) {
     issues(
-      first: 2
+      first: 5
       after: $after
       codes: $codes
       file_names: $file_names
