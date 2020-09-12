@@ -9,12 +9,17 @@
 
 import React from 'react';
 import ReactDOM from 'react-dom';
+import {Layout} from 'antd';
 import './index.css';
 import Issues from './Issues';
 import Trace from './Trace';
 import * as serviceWorker from './serviceWorker';
 import {Route, BrowserRouter as Router} from 'react-router-dom';
 import {ApolloClient, InMemoryCache, ApolloProvider} from '@apollo/client';
+
+import 'antd/dist/antd.css';
+
+const {Header, Content, Footer} = Layout;
 
 const client = new ApolloClient({
   uri: 'http://localhost:5000/graphql',
@@ -24,12 +29,20 @@ const client = new ApolloClient({
 const routing = (
   <ApolloProvider client={client}>
     <Router>
-      <div>
-        derp
-        <br />
-        <Route exact path="/" component={Issues} />
-        <Route path="/trace/:issue_id" component={Trace} />
-      </div>
+      <Layout>
+        <Header>
+          <div>
+            <h1 class="logo">SAPP</h1>
+          </div>
+        </Header>
+        <Content>
+          <div class="main">
+            <Route exact path="/" component={Issues} />
+            <Route path="/trace/:issue_id" component={Trace} />
+          </div>
+        </Content>
+        <Footer />
+      </Layout>
     </Router>
   </ApolloProvider>
 );

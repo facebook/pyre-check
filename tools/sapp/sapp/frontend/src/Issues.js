@@ -10,14 +10,11 @@
 
 import React from 'react';
 import {useQuery, gql} from '@apollo/client';
-import {Layout, Modal, Breadcrumb} from 'antd';
+import {Modal, Breadcrumb} from 'antd';
 import IssuesList from './IssuesList';
 import Filter from './Filter';
 
-import 'antd/dist/antd.css';
 import './Issues.css';
-
-const {Header, Content, Footer} = Layout;
 
 const IssueQuery = gql`
   query Issue(
@@ -78,23 +75,13 @@ const Issues = () => {
   }
 
   return (
-    <Layout>
-      <Header>
-        <div>
-          <h1 class="logo">SAPP</h1>
-        </div>
-      </Header>
-      <Content>
-        <div class="main">
-          <Filter refetch={refetch} />
-          <Breadcrumb style={{margin: '16px 0'}}>
-            <Breadcrumb.Item>Issues</Breadcrumb.Item>
-          </Breadcrumb>
-          {content}
-        </div>
-      </Content>
-      <Footer />
-    </Layout>
+    <>
+      <Filter refetch={refetch} />
+      <Breadcrumb style={{margin: '16px 0'}}>
+        <Breadcrumb.Item>Issues</Breadcrumb.Item>
+      </Breadcrumb>
+      {content}
+    </>
   );
 };
 
