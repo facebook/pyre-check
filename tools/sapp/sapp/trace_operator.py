@@ -250,7 +250,21 @@ class TraceOperator:
             ):
                 filtered_results.append(frame)
 
-        return filtered_results
+        return [
+            TraceFrameQueryResult(
+                id=frame.id,
+                caller=frame.caller,
+                caller_port=frame.caller_port,
+                callee=frame.callee,
+                callee_port=frame.callee_port,
+                caller_id=frame.caller_id,
+                callee_location=frame.callee_location,
+                kind=frame.kind,
+                filename=frame.filename,
+                trace_length=frame.trace_length,
+            )
+            for frame in filtered_results
+        ]
 
     @staticmethod
     def get_leaves_trace_frame(
