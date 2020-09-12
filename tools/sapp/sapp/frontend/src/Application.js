@@ -10,7 +10,7 @@
 
 import React from 'react';
 import {useQuery, gql} from '@apollo/client';
-import {Layout, Skeleton, Modal, Card, Breadcrumb} from 'antd';
+import {Layout, Modal, Breadcrumb} from 'antd';
 import Issues from './Issues';
 import Filter from './Filter';
 
@@ -65,38 +65,12 @@ const Application = () => {
 
   var content = <Issues data={data} fetchMore={fetchMore} loading={loading} />;
 
-  const skeleton = (
-    <>
-      <Card>
-        <Skeleton active />
-      </Card>
-      <br />
-      <Card>
-        <Skeleton active />
-      </Card>
-      <br />
-      <Card>
-        <Skeleton active />
-      </Card>
-      <br />
-      <Card>
-        <Skeleton active />
-      </Card>
-      <br />
-    </>
-  );
-
-  if (loading) {
-    content = skeleton;
-  }
-
   if (error) {
     content = (
       <>
         <Modal title="Error" visible={true} footer={null}>
           <p>{error.toString()}</p>
         </Modal>
-        {skeleton}
       </>
     );
   }

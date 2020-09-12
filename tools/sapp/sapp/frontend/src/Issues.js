@@ -10,7 +10,7 @@
 
 import React from 'react';
 import {Link} from 'react-router-dom';
-import {Card} from 'antd';
+import {Card, Skeleton} from 'antd';
 
 type Props = $ReadOnly<{|
   data: any,
@@ -60,6 +60,38 @@ class Issues extends React.Component<Props, State> {
   render() {
     return (
       <>
+        {this._renderIssues()}
+        {this._renderLoadingSkeleton()}
+      </>
+    );
+  }
+
+  _handleScroll(event: any): void {
+    let body = document.body;
+    if (body === null) {
+      return;
+    }
+    if (
+      !this.props.loading &&
+      !this.state.recently_started_loading &&
+      window.pageYOffset + body.clientHeight >= body.scrollHeight - 100
+    ) {
+      this.setState({recently_started_loading: true});
+      const captured = this;
+      setTimeout(function() {
+        // Avoid clobbering the server with too many requests.
+        captured.setState({recently_started_loading: false});
+      }, 1000);
+      this.fetchIssues();
+    }
+  }
+
+  _renderIssues() {
+    if (this.props.loading) {
+      return null;
+    }
+    return (
+      <>
         {this.props.data.issues.edges.map(({node}) => (
           <>
             <Card extra={<>Issue {node.issue_id}</>}>
@@ -86,24 +118,46 @@ class Issues extends React.Component<Props, State> {
     );
   }
 
-  _handleScroll(event: any): void {
-    let body = document.body;
-    if (body === null) {
-      return;
+  _renderLoadingSkeleton() {
+    if (!this.props.loading && !this.state.recently_started_loading) {
+      return null;
     }
-    if (
-      !this.props.loading &&
-      !this.state.recently_started_loading &&
-      window.pageYOffset + body.clientHeight >= body.scrollHeight - 100
-    ) {
-      this.setState({recently_started_loading: true});
-      const captured = this;
-      setTimeout(function() {
-        // Avoid clobbering the server with too many requests.
-        captured.setState({recently_started_loading: false});
-      }, 1000);
-      this.fetchIssues();
-    }
+    return (
+      <>
+        <Card>
+          <Skeleton active />
+        </Card>
+        <br />
+        <Card>
+          <Skeleton active />
+        </Card>
+        <br />
+        <Card>
+          <Skeleton active />
+        </Card>
+        <br />
+        <Card>
+          <Skeleton active />
+        </Card>
+        <br />
+        <Card>
+          <Skeleton active />
+        </Card>
+        <br />
+        <Card>
+          <Skeleton active />
+        </Card>
+        <br />
+        <Card>
+          <Skeleton active />
+        </Card>
+        <br />
+        <Card>
+          <Skeleton active />
+        </Card>
+        <br />
+      </>
+    );
   }
 }
 
