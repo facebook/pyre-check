@@ -30,7 +30,7 @@ class Issues extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
     // $FlowFixMe
-    this.fetchIssues = this.fetchIssues.bind(this);
+    this._fetchIssues = this._fetchIssues.bind(this);
     // $FlowFixMe
     this._handleScroll = this._handleScroll.bind(this);
   }
@@ -43,7 +43,16 @@ class Issues extends React.Component<Props, State> {
     window.removeEventListener('scroll', this._handleScroll);
   }
 
-  fetchIssues() {
+  render() {
+    return (
+      <>
+        {this._renderIssues()}
+        {this._renderLoadingSkeleton()}
+      </>
+    );
+  }
+
+  _fetchIssues() {
     const endCursor = this.props.data.issues.pageInfo.endCursor;
     this.props.fetchMore({
       variables: {after: endCursor},
@@ -55,15 +64,6 @@ class Issues extends React.Component<Props, State> {
         return fetchMoreResult;
       },
     });
-  }
-
-  render() {
-    return (
-      <>
-        {this._renderIssues()}
-        {this._renderLoadingSkeleton()}
-      </>
-    );
   }
 
   _handleScroll(event: any): void {
@@ -82,7 +82,7 @@ class Issues extends React.Component<Props, State> {
         // Avoid clobbering the server with too many requests.
         captured.setState({recently_started_loading: false});
       }, 1000);
-      this.fetchIssues();
+      this._fetchIssues();
     }
   }
 
