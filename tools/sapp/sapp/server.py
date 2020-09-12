@@ -3,13 +3,17 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 import logging
 import os
 from typing import Optional
 
 import sqlalchemy
 from flask import Flask, send_from_directory
+from flask.wrappers import Response
 from flask_graphql import GraphQLView
+from pyre_extensions import none_throws
 from sqlalchemy.orm import Session, scoped_session, sessionmaker
 
 from .db import DB
@@ -20,7 +24,7 @@ from .schema import schema
 logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(message)s", level=logging.DEBUG
 )
-LOG = logging.getLogger(__name__)
+LOG: logging.Logger = logging.getLogger(__name__)
 
 
 application = Flask(
@@ -31,22 +35,24 @@ session: Optional[Session] = None
 
 
 @application.teardown_appcontext
-def shutdown_session(exception=None):
-
-    if session is not None:
-        session.remove()
+def shutdown_session(exception: Optional[Exception] = None) -> None:
+    local_session = session
+    if local_session is not None:
+        # pyre-fixme[16]: `Session` has no attribute `remove`.
+        local_session.remove()
 
 
 @application.route("/", defaults={"path": ""})
 @application.route("/<path:path>")
-def serve(path):
+def serve(path: str) -> Response:
     LOG.info(f"Serving `{path}`...")
-    if path != "" and os.path.exists(application.static_folder + "/" + path):
+    static_folder = none_throws(application.static_folder)
+    if path != "" and os.path.exists(static_folder + "/" + path):
         LOG.info("Found static resource.")
-        return send_from_directory(application.static_folder, path)
+        return send_from_directory(static_folder, path)
     else:
         LOG.info("Resource not found. Falling back to `index.html`")
-        return send_from_directory(application.static_folder, "index.html")
+        return send_from_directory(static_folder, "index.html")
 
 
 def start_server(database: DB, debug: bool, static_resources: Optional[str]) -> None:
@@ -56,7 +62,7 @@ def start_server(database: DB, debug: bool, static_resources: Optional[str]) -> 
         poolclass=None,
     )
     session = scoped_session(sessionmaker(bind=engine))
-    # pyre-ignore
+    # pyre-fixme[16]: `Type` has no attribute `query`.
     Base.query = session.query_property()
 
     application.add_url_rule(
