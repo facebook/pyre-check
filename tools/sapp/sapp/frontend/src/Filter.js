@@ -55,7 +55,7 @@ const Filter = (props: {refetch: any}) => {
   };
 
   const form = (
-    <div style={{width: '600px'}}>
+    <div style={{width: '450px'}}>
       <Form
         labelCol={{span: 10}}
         wrapperCol={{span: 30}}
@@ -119,14 +119,8 @@ const Filter = (props: {refetch: any}) => {
   return (
     <>
       <div style={{textAlign: 'right', margin: '10px 0 -40px 0'}}>
-        <Popover
-          content={form}
-          placement="bottomRight"
-          title="Filter"
-          trigger="click">
-          <Button type="primary" icon={<SearchOutlined />}>
-            Filter
-          </Button>
+        <Popover content={form} placement="bottomRight" trigger="click">
+          <Button icon={<SearchOutlined />}>Filter...</Button>
         </Popover>
       </div>
     </>
