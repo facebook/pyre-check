@@ -9,7 +9,7 @@
  */
 
 import React from 'react';
-import {Popover, Button, Form, Input} from 'antd';
+import {Popover, Button, Form, Input, InputNumber, Row, Col} from 'antd';
 import {SearchOutlined} from '@ant-design/icons';
 
 const Filter = (props: {refetch: any}) => {
@@ -71,25 +71,41 @@ const Filter = (props: {refetch: any}) => {
         <Form.Item label="Callables" name="callables">
           <Input />
         </Form.Item>
-        <Form.Item
-          label="Minimum Trace Length to Sinks"
-          name="min_trace_length_to_sinks">
-          <Input />
+        <Form.Item label="Trace Length to Sinks">
+          <Row>
+            <Col span={8}>
+              <Form.Item
+                name="min_trace_length_to_sinks"
+                style={{marginBottom: 0}}>
+                <InputNumber placeholder="min" />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item
+                name="max_trace_length_to_sinks"
+                style={{marginBottom: 0}}>
+                <InputNumber placeholder="max" />
+              </Form.Item>
+            </Col>
+          </Row>
         </Form.Item>
-        <Form.Item
-          label="Maximum Trace Length to Sinks"
-          name="max_trace_length_to_sinks">
-          <Input />
-        </Form.Item>
-        <Form.Item
-          label="Minimum Trace Length to Sources"
-          name="min_trace_length_to_sources">
-          <Input />
-        </Form.Item>
-        <Form.Item
-          label="Maximum Trace Length to Sources"
-          name="max_trace_length_to_sources">
-          <Input />
+        <Form.Item label="Trace Length to Sources">
+          <Row>
+            <Col span={8}>
+              <Form.Item
+                name="min_trace_length_to_sources"
+                style={{marginBottom: 0}}>
+                <InputNumber placeholder="min" />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item
+                name="max_trace_length_to_sources"
+                style={{marginBottom: 0}}>
+                <InputNumber placeholder="max" />
+              </Form.Item>
+            </Col>
+          </Row>
         </Form.Item>
         <Form.Item wrapperCol={{offset: 10, span: 20}}>
           <Button type="primary" htmlType="submit">
