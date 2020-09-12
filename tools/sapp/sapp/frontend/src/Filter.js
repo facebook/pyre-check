@@ -9,7 +9,16 @@
  */
 
 import React from 'react';
-import {Popover, Button, Form, Input, InputNumber, Row, Col} from 'antd';
+import {
+  Popover,
+  Button,
+  Form,
+  Input,
+  InputNumber,
+  Row,
+  Col,
+  Divider,
+} from 'antd';
 import {SearchOutlined} from '@ant-design/icons';
 
 const Filter = (props: {refetch: any}) => {
@@ -55,7 +64,7 @@ const Filter = (props: {refetch: any}) => {
   };
 
   const form = (
-    <div style={{width: '450px'}}>
+    <div style={{width: '300px'}}>
       <Form
         labelCol={{span: 10}}
         wrapperCol={{span: 30}}
@@ -71,7 +80,10 @@ const Filter = (props: {refetch: any}) => {
         <Form.Item label="Callables" name="callables">
           <Input />
         </Form.Item>
-        <Form.Item label="Trace Length to Sinks">
+        <Divider orientation="left" plain>
+          Trace Lengths
+        </Divider>
+        <Form.Item label="to Sinks">
           <Row>
             <Col span={8}>
               <Form.Item
@@ -89,7 +101,7 @@ const Filter = (props: {refetch: any}) => {
             </Col>
           </Row>
         </Form.Item>
-        <Form.Item label="Trace Length to Sources">
+        <Form.Item label="to Sources">
           <Row>
             <Col span={8}>
               <Form.Item
