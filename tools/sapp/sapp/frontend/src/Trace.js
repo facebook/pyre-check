@@ -60,7 +60,7 @@ function Trace(props) {
   return (
     <>
       <Breadcrumb style={{margin: '16px 0'}}>
-        <Breadcrumb.Item>Issues</Breadcrumb.Item>
+        <Breadcrumb.Item href="/">Issues</Breadcrumb.Item>
         <Breadcrumb.Item>
           Trace for Issue {props.match.params.issue_id}
         </Breadcrumb.Item>
