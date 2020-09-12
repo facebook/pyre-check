@@ -8,125 +8,96 @@
  * @flow
  */
 
-import React, {useState} from 'react';
-import {Popover, Button} from 'antd';
+import React from 'react';
+import {Popover, Button, Form, Input} from 'antd';
 import {SearchOutlined} from '@ant-design/icons';
 
 const Filter = (props: {refetch: any}) => {
-  const [codes, setCodes] = useState('');
-  const [file_names, setFileNames] = useState('');
-  const [callables, setCallables] = useState('');
-  const [min_trace_length_to_sinks, setMinLengthToSink] = useState('');
-  const [max_trace_length_to_sinks, setMaxLengthToSink] = useState('');
-  const [min_trace_length_to_sources, setMinLengthToSource] = useState('');
-  const [max_trace_length_to_sources, setMaxLengthToSource] = useState('');
+  const onFinish = values => {
+    const split = input => {
+      if (input !== '' && input !== undefined) {
+        return input.trim().split(';');
+      }
+      return undefined;
+    };
 
-  function parse_filter(filter) {
-    if (filter !== '' && filter != null) {
-      return filter.trim().split(';');
+    let codes = split(values.codes);
+    if (codes !== undefined) {
+      values.codes = codes.map(parseInt);
+    } else {
+      values.codes = undefined;
     }
-    return null;
-  }
 
-  const handleSubmit = event => {
-    event.preventDefault();
+    values.file_names = split(values.file_names);
+    values.callables = split(values.callables);
 
-    let variables = {};
-    let parsed = parse_filter(codes);
-    variables.codes = parsed !== null ? parsed.map(Number) : null;
-    variables.names = parse_filter(file_names);
-    variables.callables = parse_filter(callables);
+    const parse_bound = input => {
+      if (input !== '' && input !== undefined) {
+        return parseInt(input.trim());
+      }
+      return undefined;
+    };
 
-    variables.min_trace_length_to_sinks =
-      parse_filter(min_trace_length_to_sinks) !== null
-        ? parseInt(parse_filter(min_trace_length_to_sinks))
-        : null;
+    values.min_trace_length_to_sinks = parse_bound(
+      values.min_trace_length_to_sinks,
+    );
+    values.max_trace_length_to_sinks = parse_bound(
+      values.max_trace_length_to_sinks,
+    );
+    values.min_trace_length_to_sources = parse_bound(
+      values.min_trace_length_to_sources,
+    );
+    values.max_trace_length_to_sources = parse_bound(
+      values.max_trace_length_to_sources,
+    );
 
-    variables.max_trace_length_to_sinks =
-      parse_filter(max_trace_length_to_sinks) !== null
-        ? parseInt(parse_filter(max_trace_length_to_sinks))
-        : null;
-
-    variables.min_trace_length_to_sources =
-      parse_filter(min_trace_length_to_sources) !== null
-        ? parseInt(parse_filter(min_trace_length_to_sources))
-        : null;
-
-    variables.max_trace_length_to_sources =
-      parse_filter(max_trace_length_to_sources) !== null
-        ? parseInt(parse_filter(max_trace_length_to_sources))
-        : null;
-
-    props.refetch(variables);
+    props.refetch(values);
   };
 
   const form = (
-    <form onSubmit={handleSubmit}>
-      <label>
-        Codes
-        <input
-          type="text"
-          value={codes}
-          onChange={e => setCodes(e.target.value)}
-        />
-      </label>
-      <br />
-      <label>
-        File Names
-        <input
-          type="text"
-          value={file_names}
-          onChange={e => setFileNames(e.target.value)}
-        />
-      </label>
-      <br />
-      <label>
-        Callables
-        <input
-          type="text"
-          value={callables}
-          onChange={e => setCallables(e.target.value)}
-        />
-      </label>
-      <br />
-      <label>
-        Min Trace Length To Sinks
-        <input
-          type="text"
-          value={min_trace_length_to_sinks}
-          onChange={e => setMinLengthToSink(e.target.value)}
-        />
-      </label>
-      <br />
-      <label>
-        Max Trace Length to Sinks
-        <input
-          type="text"
-          value={max_trace_length_to_sinks}
-          onChange={e => setMaxLengthToSink(e.target.value)}
-        />
-      </label>
-      <br />
-      <label>
-        Min Trace Length To Sources
-        <input
-          type="text"
-          value={min_trace_length_to_sources}
-          onChange={e => setMinLengthToSource(e.target.value)}
-        />
-      </label>
-      <br />
-      <label>
-        Max Trace Length to Sources
-        <input
-          type="text"
-          value={max_trace_length_to_sources}
-          onChange={e => setMaxLengthToSource(e.target.value)}
-        />
-      </label>
-      <br />
-      <input type="submit" value="Submit" />
-    </form>
+    <div style={{width: '600px'}}>
+      <Form
+        labelCol={{span: 10}}
+        wrapperCol={{span: 30}}
+        name="basic"
+        initialValues={{remember: true}}
+        onFinish={onFinish}>
+        <Form.Item label="Codes" name="codes">
+          <Input />
+        </Form.Item>
+        <Form.Item label="File Names" name="file_names">
+          <Input />
+        </Form.Item>
+        <Form.Item label="Callables" name="callables">
+          <Input />
+        </Form.Item>
+        <Form.Item
+          label="Minimum Trace Length to Sinks"
+          name="min_trace_length_to_sinks">
+          <Input />
+        </Form.Item>
+        <Form.Item
+          label="Maximum Trace Length to Sinks"
+          name="max_trace_length_to_sinks">
+          <Input />
+        </Form.Item>
+        <Form.Item
+          label="Minimum Trace Length to Sources"
+          name="min_trace_length_to_sources">
+          <Input />
+        </Form.Item>
+        <Form.Item
+          label="Maximum Trace Length to Sources"
+          name="max_trace_length_to_sources">
+          <Input />
+        </Form.Item>
+        <Form.Item wrapperCol={{offset: 10, span: 20}}>
+          <Button type="primary" htmlType="submit">
+            Apply
+          </Button>
+        </Form.Item>
+      </Form>
+    </div>
   );
 
   return (
