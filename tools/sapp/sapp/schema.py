@@ -4,7 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import os
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import graphene
 from graphene import relay
@@ -18,7 +18,6 @@ from .models import (
     DBID,
     Issue,
     IssueInstance,
-    IssueInstanceSharedTextAssoc,
     Run,
     RunStatus,
     SharedText,
