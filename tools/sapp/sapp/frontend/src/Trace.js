@@ -41,19 +41,48 @@ function Trace(props) {
     },
   });
 
-  if (loading) {
-    return (
-      <Card>
-        <Skeleton active />
-      </Card>
-    );
-  }
-
   if (error) {
     return (
       <Modal title="Error" visible={true} footer={null}>
         <p>{error.toString()}</p>
       </Modal>
+    );
+  }
+
+  var content = <></>;
+
+  if (loading) {
+    content = (
+      <Card>
+        <Skeleton active />
+      </Card>
+    );
+  } else {
+    content = (
+      <>
+        {data.trace.edges.map(({node}, index) => (
+          <>
+            <Card>
+              <h4>{index + 1}</h4>
+              <p>Callable: {node.callee}</p>
+              <p>Port: {node.callee}</p>
+              <p>
+                Location: {node.filename}:{node.callee_location}
+              </p>
+              <br />
+              <CodeMirror
+                value={node.file_content}
+                onBeforeChange={(editor, data, value) => {}}
+                options={{
+                  lineNumbers: true,
+                }}
+                onChange={(editor, data, value) => {}}
+              />
+            </Card>
+            <br />
+          </>
+        ))}
+      </>
     );
   }
 
@@ -65,25 +94,7 @@ function Trace(props) {
           Trace for Issue {props.match.params.issue_id}
         </Breadcrumb.Item>
       </Breadcrumb>
-      {data.trace.edges.map(({node}, index) => (
-        <Card>
-          <h4>{index + 1}</h4>
-          <p>Callable: {node.callee}</p>
-          <p>Port: {node.callee}</p>
-          <p>
-            Location: {node.filename}:{node.callee_location}
-          </p>
-          <br />
-          <CodeMirror
-            value={node.file_content}
-            onBeforeChange={(editor, data, value) => {}}
-            options={{
-              lineNumbers: true,
-            }}
-            onChange={(editor, data, value) => {}}
-          />
-        </Card>
-      ))}
+      {content}
     </>
   );
 }
