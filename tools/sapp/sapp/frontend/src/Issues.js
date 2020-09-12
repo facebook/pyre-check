@@ -66,11 +66,9 @@ const Issues = () => {
 
   if (error) {
     content = (
-      <>
-        <Modal title="Error" visible={true} footer={null}>
-          <p>{error.toString()}</p>
-        </Modal>
-      </>
+      <Modal title="Error" visible={true} footer={null}>
+        <p>{error.toString()}</p>
+      </Modal>
     );
   }
 
