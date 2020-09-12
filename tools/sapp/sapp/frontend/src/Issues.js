@@ -9,7 +9,7 @@
 
 import React from 'react';
 import {Link} from 'react-router-dom';
-import {Card, Breadcrumb} from 'antd';
+import {Card} from 'antd';
 
 class Issues extends React.Component {
   constructor(props) {
@@ -34,9 +34,6 @@ class Issues extends React.Component {
   render() {
     return (
       <>
-        <Breadcrumb style={{margin: '16px 0'}}>
-          <Breadcrumb.Item>Issues</Breadcrumb.Item>
-        </Breadcrumb>
         {this.props.data.issues.edges.map(({node}) => (
           <>
             <Card extra={<>Issue {node.issue_id}</>}>

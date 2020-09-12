@@ -10,7 +10,7 @@
 
 import React from 'react';
 import {useQuery, gql} from '@apollo/client';
-import {Layout, Skeleton, Modal, Card} from 'antd';
+import {Layout, Skeleton, Modal, Card, Breadcrumb} from 'antd';
 import Issues from './Issues';
 import Filter from './Filter';
 
@@ -70,9 +70,19 @@ const Application = () => {
       <Card>
         <Skeleton active />
       </Card>
+      <br />
       <Card>
         <Skeleton active />
       </Card>
+      <br />
+      <Card>
+        <Skeleton active />
+      </Card>
+      <br />
+      <Card>
+        <Skeleton active />
+      </Card>
+      <br />
     </>
   );
 
@@ -101,6 +111,9 @@ const Application = () => {
       <Content>
         <div class="main">
           <Filter refetch={refetch} />
+          <Breadcrumb style={{margin: '16px 0'}}>
+            <Breadcrumb.Item>Issues</Breadcrumb.Item>
+          </Breadcrumb>
           {content}
         </div>
       </Content>
