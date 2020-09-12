@@ -9,8 +9,9 @@
  */
 
 import React from 'react';
-import {Link} from 'react-router-dom';
-import {Card, Skeleton} from 'antd';
+import {Card, Skeleton, Row, Col, Typography, Divider} from 'antd';
+
+const {Text, Link} = Typography;
 
 type Props = $ReadOnly<{|
   data: any,
@@ -90,26 +91,62 @@ class Issues extends React.Component<Props, State> {
     if (this.props.loading) {
       return null;
     }
+
+    const gutter = [8, 8];
+    const leftSpan = 4;
+    const rightSpan = 20;
+
     return (
       <>
         {this.props.data.issues.edges.map(({node}) => (
           <>
-            <Card extra={<>Issue {node.issue_id}</>}>
-              <p>Code: {node.code}</p>
-              <p>Message: {node.message}</p>
-              <p>Callable: {node.callable}</p>
-              <p>
-                Location: {node.filename}:{node.location}
-              </p>
-              <div id="trace_lengths">
-                <strong>Min Trace Lengths</strong>
-                <p>Sources: {node.min_trace_length_to_sources}</p>
-                <p>Sinks: {node.min_trace_length_to_sinks}</p>
-              </div>
-              <br />
-              <Link to={`/trace/${node.issue_id}`}>
-                <button>See Trace >></button>
-              </Link>
+            <Card
+              size="small"
+              title={<>Issue {node.issue_id}</>}
+              extra={<Link href={`/trace/${node.issue_id}`}>Trace</Link>}>
+              <Row gutter={gutter}>
+                <Col span={leftSpan} style={{textAlign: 'right'}}>
+                  <Text type="secondary">Code</Text>
+                </Col>
+                <Col span={rightSpan}>{node.code}</Col>
+              </Row>
+              <Row gutter={gutter}>
+                <Col span={leftSpan} style={{textAlign: 'right'}}>
+                  <Text type="secondary">Message</Text>
+                </Col>
+                <Col span={rightSpan}>{node.message}</Col>
+              </Row>
+              <Row gutter={gutter}>
+                <Col span={leftSpan} style={{textAlign: 'right'}}>
+                  <Text type="secondary">Callable</Text>
+                </Col>
+                <Col span={rightSpan}>
+                  <Text code>{node.callable}</Text>
+                </Col>
+              </Row>
+              <Row gutter={gutter}>
+                <Col span={leftSpan} style={{textAlign: 'right'}}>
+                  <Text type="secondary">Location</Text>
+                </Col>
+                <Col span={rightSpan}>
+                  {node.filename}:{node.location}
+                </Col>
+              </Row>
+              <Divider orientation="left" plain>
+                Minimum Trace Lengths
+              </Divider>
+              <Row gutter={gutter}>
+                <Col span={leftSpan} style={{textAlign: 'right'}}>
+                  <Text type="secondary">To Sources</Text>
+                </Col>
+                <Col span={1}>{node.min_trace_length_to_sources}</Col>
+                <Col span={2}>
+                  <Text type="secondary" style={{textAlign: 'right'}}>
+                    To Sinks
+                  </Text>
+                </Col>
+                <Col span={rightSpan - 3}>{node.min_trace_length_to_sinks}</Col>
+              </Row>
             </Card>
             <br />
           </>
