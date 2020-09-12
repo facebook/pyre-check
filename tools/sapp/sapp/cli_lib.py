@@ -15,7 +15,6 @@ from click import Parameter, Path, argument, option
 from traitlets.config import Config
 
 from .analysis_output import AnalysisOutput
-from .application import start_server
 from .context import Context, pass_context
 from .create_database import CreateDatabase
 from .database_saver import DatabaseSaver
@@ -26,6 +25,7 @@ from .interactive import Interactive
 from .model_generator import ModelGenerator
 from .models import PrimaryKeyGenerator
 from .pipeline import Pipeline
+from .server import start_server
 from .trim_trace_graph import TrimTraceGraph
 
 
