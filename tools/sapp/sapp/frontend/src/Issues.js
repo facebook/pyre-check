@@ -9,193 +9,93 @@
  */
 
 import React from 'react';
-import {Card, Skeleton, Row, Col, Typography, Divider} from 'antd';
+import {useQuery, gql} from '@apollo/client';
+import {Layout, Modal, Breadcrumb} from 'antd';
+import IssuesList from './IssuesList';
+import Filter from './Filter';
 
-const {Text, Link} = Typography;
+import 'antd/dist/antd.css';
+import './Issues.css';
 
-type Props = $ReadOnly<{|
-  data: any,
-  fetchMore: any,
-  loading: boolean,
-|}>;
+const {Header, Content, Footer} = Layout;
 
-type State = $ReadOnly<{|
-  recently_started_loading: boolean,
-|}>;
-
-class Issues extends React.Component<Props, State> {
-  state: State = {
-    recently_started_loading: false,
-  };
-
-  constructor(props: Props) {
-    super(props);
-    // $FlowFixMe
-    this._fetchIssues = this._fetchIssues.bind(this);
-    // $FlowFixMe
-    this._handleScroll = this._handleScroll.bind(this);
-  }
-
-  componentDidMount(): void {
-    window.addEventListener('scroll', this._handleScroll);
-  }
-
-  componentWillUnount(): void {
-    window.removeEventListener('scroll', this._handleScroll);
-  }
-
-  render() {
-    return (
-      <>
-        {this._renderIssues()}
-        {this._renderLoadingSkeleton()}
-      </>
-    );
-  }
-
-  _fetchIssues() {
-    const endCursor = this.props.data.issues.pageInfo.endCursor;
-    this.props.fetchMore({
-      variables: {after: endCursor},
-      updateQuery: (prevResult, {fetchMoreResult}) => {
-        fetchMoreResult.issues.edges = [
-          ...prevResult.issues.edges,
-          ...fetchMoreResult.issues.edges,
-        ];
-        return fetchMoreResult;
-      },
-    });
-  }
-
-  _handleScroll(event: any): void {
-    let body = document.body;
-    if (body === null) {
-      return;
-    }
-    if (
-      !this.props.loading &&
-      !this.state.recently_started_loading &&
-      window.pageYOffset + body.clientHeight >= body.scrollHeight - 100
+const IssueQuery = gql`
+  query Issue(
+    $after: String
+    $codes: [Int]
+    $file_names: [String]
+    $callables: [String]
+    $min_trace_length_to_sinks: Int
+    $max_trace_length_to_sinks: Int
+    $min_trace_length_to_sources: Int
+    $max_trace_length_to_sources: Int
+  ) {
+    issues(
+      first: 20
+      after: $after
+      codes: $codes
+      file_names: $file_names
+      callables: $callables
+      min_trace_length_to_sinks: $min_trace_length_to_sinks
+      max_trace_length_to_sinks: $max_trace_length_to_sinks
+      min_trace_length_to_sources: $min_trace_length_to_sources
+      max_trace_length_to_sources: $max_trace_length_to_sources
     ) {
-      this.setState({recently_started_loading: true});
-      const captured = this;
-      setTimeout(function() {
-        // Avoid clobbering the server with too many requests.
-        captured.setState({recently_started_loading: false});
-      }, 1000);
-      this._fetchIssues();
+      edges {
+        node {
+          issue_id
+          filename
+          location
+          code
+          callable
+          message
+          min_trace_length_to_sources
+          min_trace_length_to_sinks
+        }
+      }
+      pageInfo {
+        endCursor
+      }
     }
   }
+`;
 
-  _renderIssues() {
-    if (this.props.loading) {
-      return null;
-    }
+const Issues = () => {
+  const {loading, error, data, fetchMore, refetch} = useQuery(IssueQuery);
 
-    const gutter = [8, 8];
-    const leftSpan = 4;
-    const rightSpan = 20;
+  var content = (
+    <IssuesList data={data} fetchMore={fetchMore} loading={loading} />
+  );
 
-    return (
+  if (error) {
+    content = (
       <>
-        {this.props.data.issues.edges.map(({node}) => (
-          <>
-            <Card
-              size="small"
-              title={<>Issue {node.issue_id}</>}
-              extra={<Link href={`/trace/${node.issue_id}`}>Trace</Link>}>
-              <Row gutter={gutter}>
-                <Col span={leftSpan} style={{textAlign: 'right'}}>
-                  <Text type="secondary">Code</Text>
-                </Col>
-                <Col span={rightSpan}>{node.code}</Col>
-              </Row>
-              <Row gutter={gutter}>
-                <Col span={leftSpan} style={{textAlign: 'right'}}>
-                  <Text type="secondary">Message</Text>
-                </Col>
-                <Col span={rightSpan}>{node.message}</Col>
-              </Row>
-              <Row gutter={gutter}>
-                <Col span={leftSpan} style={{textAlign: 'right'}}>
-                  <Text type="secondary">Callable</Text>
-                </Col>
-                <Col span={rightSpan}>
-                  <Text code>{node.callable}</Text>
-                </Col>
-              </Row>
-              <Row gutter={gutter}>
-                <Col span={leftSpan} style={{textAlign: 'right'}}>
-                  <Text type="secondary">Location</Text>
-                </Col>
-                <Col span={rightSpan}>
-                  {node.filename}:{node.location}
-                </Col>
-              </Row>
-              <Divider orientation="left" plain>
-                Minimum Trace Lengths
-              </Divider>
-              <Row gutter={gutter}>
-                <Col span={leftSpan} style={{textAlign: 'right'}}>
-                  <Text type="secondary">To Sources</Text>
-                </Col>
-                <Col span={1}>{node.min_trace_length_to_sources}</Col>
-                <Col span={2}>
-                  <Text type="secondary" style={{textAlign: 'right'}}>
-                    To Sinks
-                  </Text>
-                </Col>
-                <Col span={rightSpan - 3}>{node.min_trace_length_to_sinks}</Col>
-              </Row>
-            </Card>
-            <br />
-          </>
-        ))}
+        <Modal title="Error" visible={true} footer={null}>
+          <p>{error.toString()}</p>
+        </Modal>
       </>
     );
   }
 
-  _renderLoadingSkeleton() {
-    if (!this.props.loading && !this.state.recently_started_loading) {
-      return null;
-    }
-    return (
-      <>
-        <Card>
-          <Skeleton active />
-        </Card>
-        <br />
-        <Card>
-          <Skeleton active />
-        </Card>
-        <br />
-        <Card>
-          <Skeleton active />
-        </Card>
-        <br />
-        <Card>
-          <Skeleton active />
-        </Card>
-        <br />
-        <Card>
-          <Skeleton active />
-        </Card>
-        <br />
-        <Card>
-          <Skeleton active />
-        </Card>
-        <br />
-        <Card>
-          <Skeleton active />
-        </Card>
-        <br />
-        <Card>
-          <Skeleton active />
-        </Card>
-        <br />
-      </>
-    );
-  }
-}
+  return (
+    <Layout>
+      <Header>
+        <div>
+          <h1 class="logo">SAPP</h1>
+        </div>
+      </Header>
+      <Content>
+        <div class="main">
+          <Filter refetch={refetch} />
+          <Breadcrumb style={{margin: '16px 0'}}>
+            <Breadcrumb.Item>Issues</Breadcrumb.Item>
+          </Breadcrumb>
+          {content}
+        </div>
+      </Content>
+      <Footer />
+    </Layout>
+  );
+};
 
 export default Issues;
