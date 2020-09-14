@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterator, List, Optional, Tuple, Union, cast
 
 import libcst
+import libcst.matchers as libcst_matchers
 
 from . import UserError, ast
 
@@ -46,13 +47,34 @@ class LineBreakTransformer(libcst.CSTTransformer):
     def leave_Assign(
         self, original_node: libcst.Assign, updated_node: libcst.Assign
     ) -> libcst.Assign:
+        last_target = updated_node.targets[-1]
+        assign_whitespace = last_target.whitespace_after_equal
         assign_value = updated_node.value
-        if hasattr(assign_value, "lpar"):
+        if not hasattr(assign_value, "lpar"):
+            return updated_node
+
+        # Handle line breaks before value
+        if libcst_matchers.matches(
+            assign_whitespace, libcst_matchers.ParenthesizedWhitespace()
+        ):
             parenthesized_value = assign_value.with_changes(
-                lpar=[libcst.LeftParen()], rpar=[libcst.RightParen()]
+                lpar=[libcst.LeftParen(whitespace_after=assign_whitespace)],
+                rpar=[libcst.RightParen()],
             )
-            return updated_node.with_changes(value=parenthesized_value)
-        return updated_node
+            adjusted_target = last_target.with_changes(
+                whitespace_after_equal=libcst.SimpleWhitespace(value=" ")
+            )
+            updated_targets = list(updated_node.targets[:-1])
+            updated_targets.append(adjusted_target)
+            return updated_node.with_changes(
+                targets=tuple(updated_targets), value=parenthesized_value
+            )
+
+        # Return with parenthesized value
+        parenthesized_value = assign_value.with_changes(
+            lpar=[libcst.LeftParen()], rpar=[libcst.RightParen()]
+        )
+        return updated_node.with_changes(value=parenthesized_value)
 
 
 class PartialErrorSuppression(Exception):

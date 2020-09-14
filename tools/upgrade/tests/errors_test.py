@@ -411,3 +411,18 @@ class ErrorsTest(unittest.TestCase):
                         error())  # unrelated comment
             """,
         )
+
+        self.assertSuppressErrors(
+            {3: [{"code": "1", "description": "description"}]},
+            """
+            def foo() -> None:
+                x, y, z = \\
+                    error()
+            """,
+            """
+            def foo() -> None:
+                x, y, z = (
+                    # FIXME[1]: description
+                    error())
+            """,
+        )
