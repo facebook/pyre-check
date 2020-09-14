@@ -15,8 +15,8 @@ public class BuckQueryTest {
 
   @Test
   public void normalizeTargetTest() {
-    assertEquals("//pyre/...", BuckQuery.normalizeTarget("//pyre/..."));
-    assertEquals("//pyre/...", BuckQuery.normalizeTarget("pyre/..."));
-    assertEquals("c//pyre/...", BuckQuery.normalizeTarget("c//pyre/..."));
+    assertEquals("'//pyre/...'", BuckQuery.normalizeTarget("//pyre/..."));
+    assertEquals("'//pyre/...'", BuckQuery.normalizeTarget("pyre/..."));
+    assertEquals("'c//pyre/...'", BuckQuery.normalizeTarget("c//pyre/..."));
   }
 }
