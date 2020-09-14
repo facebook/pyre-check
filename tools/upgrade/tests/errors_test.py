@@ -441,3 +441,78 @@ class ErrorsTest(unittest.TestCase):
                     error)
             """,
         )
+
+        self.assertSuppressErrors(
+            {3: [{"code": "1", "description": "description"}]},
+            """
+            def foo() -> None:
+                assert \\
+                    test
+            """,
+            """
+            def foo() -> None:
+                assert (
+                    # FIXME[1]: description
+                    test)
+            """,
+        )
+
+        self.assertSuppressErrors(
+            {3: [{"code": "1", "description": "description"}]},
+            """
+            def foo() -> None:
+                assert test + \\
+                    test2
+            """,
+            """
+            def foo() -> None:
+                assert (test +
+                    # FIXME[1]: description
+                    test2)
+            """,
+        )
+
+        self.assertSuppressErrors(
+            {3: [{"code": "1", "description": "description"}]},
+            """
+            def foo() -> None:
+                raise \\
+                    Exception()
+            """,
+            """
+            def foo() -> None:
+                raise (
+                    # FIXME[1]: description
+                    Exception())
+            """,
+        )
+
+        self.assertSuppressErrors(
+            {3: [{"code": "1", "description": "description"}]},
+            """
+            def foo() -> None:
+                return a + \\
+                    error
+            """,
+            """
+            def foo() -> None:
+                return (a +
+                    # FIXME[1]: description
+                    error)
+            """,
+        )
+
+        self.assertSuppressErrors(
+            {3: [{"code": "1", "description": "description"}]},
+            """
+            def foo() -> None:
+                return \\
+                    error
+            """,
+            """
+            def foo() -> None:
+                return (
+                    # FIXME[1]: description
+                    error)
+            """,
+        )

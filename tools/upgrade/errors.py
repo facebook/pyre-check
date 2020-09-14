@@ -58,6 +58,22 @@ class LineBreakTransformer(libcst.CSTTransformer):
             )
         return node.with_changes(lpar=[libcst.LeftParen()], rpar=[libcst.RightParen()])
 
+    def leave_Assert(
+        self, original_node: libcst.Assert, updated_node: libcst.Assert
+    ) -> libcst.Assert:
+        test = updated_node.test
+        if not test:
+            return updated_node
+        assert_whitespace = updated_node.whitespace_after_assert
+        if isinstance(assert_whitespace, libcst.ParenthesizedWhitespace):
+            return updated_node.with_changes(
+                test=LineBreakTransformer.basic_parenthesize(test, assert_whitespace),
+                whitespace_after_assert=libcst.SimpleWhitespace(value=" "),
+            )
+        return updated_node.with_changes(
+            test=LineBreakTransformer.basic_parenthesize(test)
+        )
+
     def leave_Assign(
         self, original_node: libcst.Assign, updated_node: libcst.Assign
     ) -> libcst.Assign:
@@ -95,6 +111,42 @@ class LineBreakTransformer(libcst.CSTTransformer):
             )
         return updated_node.with_changes(
             target=LineBreakTransformer.basic_parenthesize(delete_target)
+        )
+
+    def leave_Raise(
+        self, original_node: libcst.Raise, updated_node: libcst.Raise
+    ) -> libcst.Raise:
+        exception = updated_node.exc
+        if not exception:
+            return updated_node
+        raise_whitespace = updated_node.whitespace_after_raise
+        if isinstance(raise_whitespace, libcst.ParenthesizedWhitespace):
+            return updated_node.with_changes(
+                exc=LineBreakTransformer.basic_parenthesize(
+                    exception, raise_whitespace
+                ),
+                whitespace_after_raise=libcst.SimpleWhitespace(value=" "),
+            )
+        return updated_node.with_changes(
+            exc=LineBreakTransformer.basic_parenthesize(exception)
+        )
+
+    def leave_Return(
+        self, original_node: libcst.Return, updated_node: libcst.Return
+    ) -> libcst.Return:
+        return_value = updated_node.value
+        if not return_value:
+            return updated_node
+        return_whitespace = updated_node.whitespace_after_return
+        if isinstance(return_whitespace, libcst.ParenthesizedWhitespace):
+            return updated_node.with_changes(
+                value=LineBreakTransformer.basic_parenthesize(
+                    return_value, return_whitespace
+                ),
+                whitespace_after_return=libcst.SimpleWhitespace(value=" "),
+            )
+        return updated_node.with_changes(
+            value=LineBreakTransformer.basic_parenthesize(return_value)
         )
 
 
