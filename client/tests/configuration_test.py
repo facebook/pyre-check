@@ -78,9 +78,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
         self.assertEqual(configuration.source_directories, ["a"])
         self.assertEqual(configuration.targets, [])
         self.assertEqual(configuration.logger, "/usr/logger")
-        self.assertEqual(
-            configuration.ignore_all_errors, ["/.pyre", "buck-out/dev/gen"]
-        )
+        self.assertEqual(configuration.ignore_all_errors, ["buck-out/dev/gen"])
         self.assertEqual(configuration.file_hash, None)
 
         # Local configurations
@@ -98,7 +96,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
         json_load.side_effect = [{"source_directories": ["a"]}, {"version": "abc"}, {}]
         configuration = Configuration("local/path", dot_pyre_directory=Path("/.pyre"))
         self.assertEqual(configuration.source_directories, ["local/path/a"])
-        self.assertEqual(configuration.ignore_all_errors, ["/.pyre"])
+        self.assertEqual(configuration.ignore_all_errors, [])
 
         # Configuration fields
         json_load.side_effect = [{"targets": ["//a/b/c"], "disabled": 1}, {}]
@@ -342,7 +340,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
             configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
             self.assertEqual(
                 configuration.ignore_all_errors,
-                ["/.pyre", "/root/abc/def", "/abc/def", "/home/user/abc/def"],
+                ["/root/abc/def", "/abc/def", "/home/user/abc/def"],
             )
 
             json_load.side_effect = [
@@ -494,9 +492,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
             {"ignore_all_errors": ["buck-out/dev/gen2"]},
         ]
         configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
-        self.assertEqual(
-            configuration.ignore_all_errors, ["/.pyre", "buck-out/dev/gen"]
-        )
+        self.assertEqual(configuration.ignore_all_errors, ["buck-out/dev/gen"])
         # Normalize number of workers if zero.
         json_load.side_effect = [{"typeshed": "/TYPESHED/", "workers": 0}, {}]
         configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
@@ -689,11 +685,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
 
         # Properly ignored nested local configurations.
         find_parent_directory_containing_file.side_effect = [Path("root"), None]
-        path_resolve.side_effect = [
-            Path("root/local"),
-            Path("/.pyre"),
-            Path("root/local"),
-        ]
+        path_resolve.side_effect = [Path("root/local"), Path("root/local")]
         os_path_isdir.return_value = True
         os_path_isfile.return_value = False
         json_loads.side_effect = [

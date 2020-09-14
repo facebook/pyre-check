@@ -268,7 +268,6 @@ class Configuration:
 
         if local_root:
             self._check_read_local_configuration(local_root)
-        self.ignore_all_errors.append(os.path.abspath(self.log_directory))
 
         self.autocomplete = False
 
