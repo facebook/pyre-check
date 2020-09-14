@@ -59,6 +59,7 @@ class IssueQueryBuilder:
         return self
 
     def get(self) -> List:
+        # pyre-fixme[6]: Expected `Session` for 1st param but got `None`.
         query = self.get_session_query(self._session)
         for filter_type, filter_conditions in self.issue_filters.items():
             if filter_type == Filter.codes:
@@ -110,7 +111,10 @@ class IssueQueryBuilder:
 
             features_list = [
                 self.get_leaves_issue_instance(
-                    self._session, int(issue.id), SharedTextKind.FEATURE
+                    # pyre-fixme[6]: Expected `Session` for 1st param but got `None`.
+                    self._session,
+                    int(issue.id),
+                    SharedTextKind.FEATURE,
                 )
                 for issue in issues
             ]
@@ -164,7 +168,10 @@ class IssueQueryBuilder:
     def sources(self, issues) -> List[Set[str]]:
         return [
             self.get_leaves_issue_instance(
-                self._session, int(issue.id), SharedTextKind.SINK
+                # pyre-fixme[6]: Expected `Session` for 1st param but got `None`.
+                self._session,
+                int(issue.id),
+                SharedTextKind.SINK,
             )
             for issue in issues
         ]
@@ -172,7 +179,10 @@ class IssueQueryBuilder:
     def sinks(self, issues) -> List[Set[str]]:
         return [
             self.get_leaves_issue_instance(
-                self._session, int(issue.id), SharedTextKind.SOURCE
+                # pyre-fixme[6]: Expected `Session` for 1st param but got `None`.
+                self._session,
+                int(issue.id),
+                SharedTextKind.SOURCE,
             )
             for issue in issues
         ]
@@ -180,7 +190,10 @@ class IssueQueryBuilder:
     def features(self, issues) -> List[Set[str]]:
         return [
             self.get_leaves_issue_instance(
-                self._session, int(issue.id), SharedTextKind.FEATURE
+                # pyre-fixme[6]: Expected `Session` for 1st param but got `None`.
+                self._session,
+                int(issue.id),
+                SharedTextKind.FEATURE,
             )
             for issue in issues
         ]
