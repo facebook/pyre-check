@@ -241,6 +241,7 @@ class Configuration:
         self._use_buck_builder: Optional[bool] = use_buck_builder
         self._use_buck_source_database: Optional[bool] = use_buck_source_database
         self.ignore_infer: List[str] = []
+        self.do_not_ignore_errors_in: List[str] = []
 
         self._search_path: List[SearchPathElement] = []
         if search_path:
@@ -442,6 +443,13 @@ class Configuration:
                 raise InvalidConfiguration(
                     "`critical_files` field must be a list of strings."
                 )
+
+            if not is_list_of_strings(self.do_not_ignore_errors_in):
+                raise InvalidConfiguration(
+                    "`do_not_ignore_errors_in` field must be a list of strings."
+                )
+            for directory_name in self.do_not_ignore_errors_in:
+                assert_readable_directory_in_configuration(directory_name)
         except InvalidConfiguration as error:
             raise EnvironmentException(str(error))
 
@@ -689,6 +697,12 @@ class Configuration:
                     "critical_files", default=[]
                 )
 
+                do_not_ignore_errors_in = configuration.consume(
+                    "do_not_ignore_errors_in", default=[]
+                )
+                assert isinstance(do_not_ignore_errors_in, list)
+                self.do_not_ignore_errors_in.extend(do_not_ignore_errors_in)
+
                 # Warn on deprecated fields.
                 for deprecated_field in configuration._deprecated.keys():
                     configuration.consume(deprecated_field)
@@ -746,6 +760,10 @@ class Configuration:
 
         self.other_critical_files = [
             expand_relative_path(root, path) for path in self.other_critical_files
+        ]
+
+        self.do_not_ignore_errors_in = [
+            expand_relative_path(root, path) for path in self.do_not_ignore_errors_in
         ]
 
     def _resolve_versioned_paths(self) -> None:

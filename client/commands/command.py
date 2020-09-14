@@ -377,6 +377,11 @@ class Command(CommandParser, ABC):
             analysis_directory or self.generate_analysis_directory()
         )
 
+        if self._command_arguments.filter_directory is not None:
+            LOG.warning(
+                "Warning: `--filter-directory` is deprecated and will be removed soon."
+            )
+
     @classmethod
     def add_subparser(cls, parser: argparse._SubParsersAction) -> None:
         pass

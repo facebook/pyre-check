@@ -46,7 +46,9 @@ class Reporting(Command):
             log.stdout.write(json.dumps([error.__dict__ for error in errors]))
 
     def _get_directories_to_analyze(self) -> Set[str]:
-        return self._analysis_directory.get_filter_roots()
+        return self._analysis_directory.get_filter_roots() | set(
+            self._configuration.do_not_ignore_errors_in
+        )
 
     @staticmethod
     def _load_errors_from_json(json_output: str) -> List[Dict[str, Any]]:
