@@ -44,37 +44,58 @@ class LineBreakTransformer(libcst.CSTTransformer):
             )
         return updated_node
 
+    @staticmethod
+    def basic_parenthesize(
+        node: libcst.CSTNode,
+        whitespace: Optional[libcst.BaseParenthesizableWhitespace] = None,
+    ) -> libcst.CSTNode:
+        if not hasattr(node, "lpar"):
+            return node
+        if whitespace:
+            return node.with_changes(
+                lpar=[libcst.LeftParen(whitespace_after=whitespace)],
+                rpar=[libcst.RightParen()],
+            )
+        return node.with_changes(lpar=[libcst.LeftParen()], rpar=[libcst.RightParen()])
+
     def leave_Assign(
         self, original_node: libcst.Assign, updated_node: libcst.Assign
     ) -> libcst.Assign:
-        last_target = updated_node.targets[-1]
-        assign_whitespace = last_target.whitespace_after_equal
         assign_value = updated_node.value
-        if not hasattr(assign_value, "lpar"):
-            return updated_node
-
-        # Handle line breaks before value
+        assign_whitespace = updated_node.targets[-1].whitespace_after_equal
         if libcst_matchers.matches(
             assign_whitespace, libcst_matchers.ParenthesizedWhitespace()
         ):
-            parenthesized_value = assign_value.with_changes(
-                lpar=[libcst.LeftParen(whitespace_after=assign_whitespace)],
-                rpar=[libcst.RightParen()],
-            )
-            adjusted_target = last_target.with_changes(
+            adjusted_target = updated_node.targets[-1].with_changes(
                 whitespace_after_equal=libcst.SimpleWhitespace(value=" ")
             )
             updated_targets = list(updated_node.targets[:-1])
             updated_targets.append(adjusted_target)
             return updated_node.with_changes(
-                targets=tuple(updated_targets), value=parenthesized_value
+                targets=tuple(updated_targets),
+                value=LineBreakTransformer.basic_parenthesize(
+                    assign_value, assign_whitespace
+                ),
             )
-
-        # Return with parenthesized value
-        parenthesized_value = assign_value.with_changes(
-            lpar=[libcst.LeftParen()], rpar=[libcst.RightParen()]
+        return updated_node.with_changes(
+            value=LineBreakTransformer.basic_parenthesize(assign_value)
         )
-        return updated_node.with_changes(value=parenthesized_value)
+
+    def leave_Del(
+        self, original_node: libcst.Del, updated_node: libcst.Del
+    ) -> libcst.Del:
+        delete_target = updated_node.target
+        delete_whitespace = updated_node.whitespace_after_del
+        if isinstance(delete_whitespace, libcst.ParenthesizedWhitespace):
+            return updated_node.with_changes(
+                target=LineBreakTransformer.basic_parenthesize(
+                    delete_target, delete_whitespace
+                ),
+                whitespace_after_del=libcst.SimpleWhitespace(value=" "),
+            )
+        return updated_node.with_changes(
+            target=LineBreakTransformer.basic_parenthesize(delete_target)
+        )
 
 
 class PartialErrorSuppression(Exception):
