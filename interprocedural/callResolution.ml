@@ -343,26 +343,6 @@ let resolve_property_targets ~resolution ~base ~attribute ~setter =
         Some targets
 
 
-let resolve_call_targets ~resolution call =
-  let { Call.callee; _ } = Analysis.Annotated.Call.redirect_special_calls ~resolution call in
-  match Node.value callee with
-  | Name (Name.Attribute { base; _ }) ->
-      let receiver_type = resolve_ignoring_optional ~resolution base in
-      resolve_target ~resolution ~receiver_type callee
-  | Name (Name.Identifier name) when not (String.equal name "super") ->
-      let receiver_type = resolve_ignoring_optional ~resolution callee in
-      if Type.is_meta receiver_type then
-        let callee =
-          Expression.Name
-            (Name.Attribute { base = callee; attribute = "__init__"; special = false })
-          |> Node.create_with_default_location
-        in
-        resolve_target ~resolution ~receiver_type callee
-      else
-        resolve_target ~resolution callee
-  | _ -> resolve_target ~resolution callee
-
-
 type target = Callable.t * Type.t option [@@deriving show, eq]
 
 type constructor_targets = {
