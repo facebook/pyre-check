@@ -263,6 +263,9 @@ def main(argv: List[str] = sys.argv[1:]) -> int:
     if not hasattr(arguments, "command"):
         _set_default_command(arguments)
 
+    # Special-case `pyre init` because it is not a `Command` like the others.
+    if arguments.command == commands.Initialize.from_arguments:
+        return arguments.command().run().exit_code()
     return _run_pyre_with_retry(arguments)
 
 
