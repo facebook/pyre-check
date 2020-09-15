@@ -27,7 +27,7 @@ type analysis_model_constraints = {
   maximum_overrides_to_analyze: int option;
 }
 
-type partial_sink_converter = (Sources.t * Sinks.t) list String.Map.Tree.t
+type partial_sink_converter = (Sources.t list * Sinks.t) list String.Map.Tree.t
 
 type t = {
   sources: string list;

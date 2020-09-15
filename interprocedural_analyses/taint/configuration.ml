@@ -39,7 +39,7 @@ let default_analysis_model_constraints =
   }
 
 
-type partial_sink_converter = (Sources.t * Sinks.t) list String.Map.Tree.t
+type partial_sink_converter = (Sources.t list * Sinks.t) list String.Map.Tree.t
 
 type t = {
   sources: string list;
@@ -98,16 +98,16 @@ exception
 module PartialSinkConverter = struct
   let mangle { Sinks.kind; label } = Format.sprintf "%s$%s" kind label
 
-  let add map ~first_source ~first_sinks ~second_source ~second_sinks =
+  let add map ~first_sources ~first_sinks ~second_sources ~second_sinks =
     let add map (first_sink, second_sink) =
       (* Trigger second sink when the first sink matches a source, and vice versa. *)
       String.Map.Tree.add_multi
         map
         ~key:(mangle first_sink)
-        ~data:(first_source, Sinks.TriggeredPartialSink second_sink)
+        ~data:(first_sources, Sinks.TriggeredPartialSink second_sink)
       |> String.Map.Tree.add_multi
            ~key:(mangle second_sink)
-           ~data:(second_source, Sinks.TriggeredPartialSink first_sink)
+           ~data:(second_sources, Sinks.TriggeredPartialSink first_sink)
     in
     List.cartesian_product first_sinks second_sinks |> List.fold ~f:add ~init:map
 
@@ -126,8 +126,8 @@ module PartialSinkConverter = struct
   let get_triggered_sink sink_to_sources ~partial_sink ~source =
     match mangle partial_sink |> String.Map.Tree.find sink_to_sources with
     | Some source_and_sink_list ->
-        List.find source_and_sink_list ~f:(fun (supported_source, _) ->
-            Sources.equal source supported_source)
+        List.find source_and_sink_list ~f:(fun (supported_sources, _) ->
+            List.exists supported_sources ~f:(Sources.equal source))
         >>| snd
     | _ -> None
 end
@@ -210,16 +210,16 @@ let parse source_jsons =
       let keys = Json.Util.keys sources in
       match keys with
       | [first; second] ->
-          let first_source =
-            Json.Util.member first sources
-            |> Json.Util.to_string
-            |> Sources.parse ~allowed:allowed_sources
+          let parse_sources sources =
+            match sources with
+            | `String source -> [Sources.parse ~allowed:allowed_sources source]
+            | `List sources ->
+                List.map sources ~f:Json.Util.to_string
+                |> List.map ~f:(Sources.parse ~allowed:allowed_sources)
+            | _ -> failwith "Expected a string or list of strings for combined rule sources."
           in
-          let second_source =
-            Json.Util.member second sources
-            |> Json.Util.to_string
-            |> Sources.parse ~allowed:allowed_sources
-          in
+          let first_sources = Json.Util.member first sources |> parse_sources in
+          let second_sources = Json.Util.member second sources |> parse_sources in
 
           let sinks = Json.Util.member "sinks" json |> parse_string_list in
           let create_partial_sink label sink =
@@ -245,14 +245,14 @@ let parse source_jsons =
           let first_sinks = List.map sinks ~f:(create_partial_sink first) in
           let second_sinks = List.map sinks ~f:(create_partial_sink second) in
           ( {
-              Rule.sources = [first_source];
+              Rule.sources = first_sources;
               sinks = List.map first_sinks ~f:(fun sink -> Sinks.TriggeredPartialSink sink);
               name;
               code;
               message_format;
             }
             :: {
-                 Rule.sources = [second_source];
+                 Rule.sources = second_sources;
                  sinks = List.map second_sinks ~f:(fun sink -> Sinks.TriggeredPartialSink sink);
                  name;
                  code;
@@ -261,9 +261,9 @@ let parse source_jsons =
             :: rules,
             PartialSinkConverter.add
               partial_sink_converter
-              ~first_source
+              ~first_sources
               ~first_sinks
-              ~second_source
+              ~second_sources
               ~second_sinks )
       | _ -> failwith "Combined source rules must be of the form {\"a\": SourceA, \"b\": SourceB}"
     in

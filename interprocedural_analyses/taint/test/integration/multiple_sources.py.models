@@ -54,6 +54,110 @@
 {
   "kind": "issue",
   "data": {
+    "callable": "multiple_sources.issue_with_test_a_and_b",
+    "callable_line": 84,
+    "code": 4322,
+    "line": 86,
+    "start": 43,
+    "end": 63,
+    "filename": "multiple_sources.py",
+    "message": "TestA or TestB and permissive context combine",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "multiple_sources.py",
+              "line": 86,
+              "start": 43,
+              "end": 63
+            },
+            "leaves": [
+              {
+                "kind": "PermissiveContext",
+                "name": "multiple_sources.permissive_context",
+                "on_all_flows": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "multiple_sources.py",
+              "line": 86,
+              "start": 43,
+              "end": 63
+            },
+            "leaves": [
+              { "kind": "TriggeredPartialSink[ExpectsEitherTest[b]]" }
+            ]
+          }
+        ]
+      }
+    ],
+    "features": []
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "multiple_sources.issue_with_test_a_and_b",
+    "callable_line": 84,
+    "code": 4322,
+    "line": 85,
+    "start": 43,
+    "end": 63,
+    "filename": "multiple_sources.py",
+    "message": "TestA or TestB and permissive context combine",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "multiple_sources.py",
+              "line": 85,
+              "start": 43,
+              "end": 63
+            },
+            "leaves": [
+              {
+                "kind": "PermissiveContext",
+                "name": "multiple_sources.permissive_context",
+                "on_all_flows": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "multiple_sources.py",
+              "line": 85,
+              "start": 43,
+              "end": 63
+            },
+            "leaves": [
+              { "kind": "TriggeredPartialSink[ExpectsEitherTest[b]]" }
+            ]
+          }
+        ]
+      }
+    ],
+    "features": []
+  }
+}
+{
+  "kind": "issue",
+  "data": {
     "callable": "multiple_sources.issue_with_triggered_context",
     "callable_line": 48,
     "code": 4321,
@@ -315,6 +419,62 @@
           {
             "decl": null,
             "leaves": [ { "kind": "PartialSink[UserControlledAndVC[id]]" } ]
+          }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multiple_sources.a_source",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "TestA" } ] } ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multiple_sources.b_source",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "TestB" } ] } ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multiple_sources.combines_tests_and_context",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(vc)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "PartialSink[ExpectsEitherTest[b]]" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(test)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "PartialSink[ExpectsEitherTest[a]]" } ]
           }
         ]
       }

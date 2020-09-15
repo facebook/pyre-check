@@ -63,3 +63,24 @@ def no_issue_with_wrapper_call():
     id = user_controlled_input()
     vc = permissive_context()
     combine_tainted_user_and_dangerous_vc_as_params(id, vc)
+
+
+def test_other_input():
+    return "other"
+
+
+def combines_tests_and_context(test, vc):
+    return None
+
+
+def a_source():
+    return None
+
+
+def b_source():
+    return None
+
+
+def issue_with_test_a_and_b():
+    combines_tests_and_context(a_source(), permissive_context())
+    combines_tests_and_context(b_source(), permissive_context())

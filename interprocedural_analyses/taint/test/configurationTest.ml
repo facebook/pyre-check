@@ -152,6 +152,52 @@ let test_combined_source_rules _ =
         name = "test combined rule";
       };
     ];
+  assert_equal (List.hd_exn configuration.rules).code 2001;
+  let configuration =
+    parse
+      {|
+    { sources: [
+        { name: "A" },
+        { name: "B" },
+        { name: "C" }
+      ],
+      sinks: [
+        { name: "CombinedSink", multi_sink_labels: ["a", "b"] }
+      ],
+      combined_source_rules: [
+        {
+           name: "test combined rule",
+           sources: {"a": "A", "b": ["B", "C"]},
+           sinks: ["CombinedSink"],
+           code: 2001,
+           message_format: "some form"
+        }
+      ]
+    }
+  |}
+  in
+  assert_equal configuration.sources ["A"; "B"; "C"];
+  assert_equal configuration.sinks ["CombinedSink"];
+  assert_equal
+    ~printer:(List.to_string ~f:Taint.TaintConfiguration.Rule.show)
+    ~cmp:(List.equal Taint.TaintConfiguration.Rule.equal)
+    configuration.rules
+    [
+      {
+        Taint.TaintConfiguration.Rule.sources = [Sources.NamedSource "A"];
+        sinks = [Sinks.TriggeredPartialSink { kind = "CombinedSink"; label = "a" }];
+        code = 2001;
+        message_format = "some form";
+        name = "test combined rule";
+      };
+      {
+        Taint.TaintConfiguration.Rule.sources = [Sources.NamedSource "B"; Sources.NamedSource "C"];
+        sinks = [Sinks.TriggeredPartialSink { kind = "CombinedSink"; label = "b" }];
+        code = 2001;
+        message_format = "some form";
+        name = "test combined rule";
+      };
+    ];
   assert_equal (List.hd_exn configuration.rules).code 2001
 
 
