@@ -345,6 +345,13 @@ let analyze
     (List.length override_targets)
     (List.length callables);
   let timer = Timer.start () in
+  let save_results () =
+    Interprocedural.Analysis.save_results
+      ~configuration:analysis_configuration
+      ~filename_lookup
+      ~analyses
+      all_callables
+  in
   let () =
     try
       let iterations =
@@ -360,20 +367,10 @@ let analyze
       Log.info "Fixpoint iterations: %d" iterations
     with
     | exn ->
-        Interprocedural.Analysis.save_results
-          ~configuration:analysis_configuration
-          ~filename_lookup
-          ~analyses
-          all_callables;
+        save_results ();
         raise exn
   in
-  let () =
-    Interprocedural.Analysis.save_results
-      ~configuration:analysis_configuration
-      ~filename_lookup
-      ~analyses
-      all_callables
-  in
+  save_results ();
   let errors = Interprocedural.Analysis.extract_errors scheduler all_callables in
   Statistics.performance ~name:"Analysis fixpoint complete" ~timer ();
 
