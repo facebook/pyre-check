@@ -2621,7 +2621,16 @@ module State (Context : Context) = struct
                              resolved_annotation = None;
                              base = None;
                            }
-                | None ->
+                | None -> (
+                    let getitem_attribute =
+                      {
+                        Node.location;
+                        value =
+                          Expression.Name
+                            (Name.Attribute
+                               { base = right; attribute = "__getitem__"; special = true });
+                      }
+                    in
                     let call =
                       let getitem =
                         {
@@ -2629,18 +2638,7 @@ module State (Context : Context) = struct
                           value =
                             Expression.Call
                               {
-                                callee =
-                                  {
-                                    Node.location;
-                                    value =
-                                      Name
-                                        (Name.Attribute
-                                           {
-                                             base = right;
-                                             attribute = "__getitem__";
-                                             special = true;
-                                           });
-                                  };
+                                callee = getitem_attribute;
                                 arguments =
                                   [
                                     {
@@ -2668,7 +2666,39 @@ module State (Context : Context) = struct
                             };
                       }
                     in
-                    forward_expression ~resolution ~expression:call )
+                    let ({ Resolved.resolved; _ } as getitem_resolution) =
+                      forward_expression ~resolution ~expression:getitem_attribute
+                    in
+                    match resolved with
+                    | Type.Parametric
+                        {
+                          name = "BoundMethod";
+                          parameters =
+                            [
+                              Single
+                                (Type.Callable
+                                  {
+                                    implementation =
+                                      { parameters = Defined (_ :: index_parameter :: _); _ };
+                                    _;
+                                  });
+                              _;
+                            ];
+                        }
+                    | Type.Callable
+                        {
+                          implementation = { parameters = Defined (_ :: index_parameter :: _); _ };
+                          _;
+                        }
+                      when GlobalResolution.less_or_equal
+                             global_resolution
+                             ~left:Type.integer
+                             ~right:
+                               ( Type.Callable.Parameter.annotation index_parameter
+                               |> Option.value ~default:Type.Bottom ) ->
+                        (* TODO: Throw new error type here warning on invalid membership check. *)
+                        forward_expression ~resolution ~expression:call
+                    | _ -> { getitem_resolution with Resolved.resolved = Type.Any } ) )
           in
           resolution, errors, GlobalResolution.join global_resolution joined_annotation resolved
         in

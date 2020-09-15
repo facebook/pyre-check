@@ -12,8 +12,8 @@
    attributeTest callableTest constructorTest controlFlowTest coverageTest
    dataClassTest decoratorTest descriptorTest deleteTest enumerationTest
    errorMessageTest finalTest formatStringTest generatorTest globalTest
-   importTest inferTest isinstanceTest lambdaTest literalTest methodTest
-   modeTest overloadTest parseErrorTest protocolTest redundantCastTest
+   importTest inferTest isinstanceTest iterableTest lambdaTest literalTest
+   methodTest modeTest overloadTest parseErrorTest protocolTest redundantCastTest
    refinementTest returnTest revealTypeTest scopeTest signatureSelectionTest
    sqlAlchemyTest tupleTest typeVariableTest typedDictionaryTest unionTest
    varianceTest walrusOperatorTest)
