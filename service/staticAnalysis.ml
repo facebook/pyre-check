@@ -165,6 +165,51 @@ let fetch_callables_to_analyze ~scheduler ~environment ~configuration ~qualifier
     ()
 
 
+let record_overrides_for_qualifiers ~scheduler ~environment ~skip_overrides ~qualifiers =
+  let overrides =
+    let combine ~key:_ left right = List.rev_append left right in
+    let build_overrides overrides qualifier =
+      try
+        match get_source ~environment qualifier with
+        | None -> overrides
+        | Some source ->
+            let new_overrides =
+              DependencyGraph.create_overrides ~environment ~source
+              |> Reference.Map.filter_keys ~f:(fun override ->
+                     not (Reference.Set.mem skip_overrides override))
+            in
+            Map.merge_skewed overrides new_overrides ~combine
+      with
+      | ClassHierarchy.Untracked untracked_type ->
+          Log.warning
+            "Error building overrides in path %a for untracked type %a"
+            Reference.pp
+            qualifier
+            Type.pp
+            untracked_type;
+          overrides
+    in
+    Scheduler.map_reduce
+      scheduler
+      ~policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
+      ~initial:DependencyGraph.empty_overrides
+      ~map:(fun _ qualifiers ->
+        List.fold qualifiers ~init:DependencyGraph.empty_overrides ~f:build_overrides)
+      ~reduce:(Map.merge_skewed ~combine)
+      ~inputs:qualifiers
+      ()
+  in
+  let {
+    Taint.TaintConfiguration.analysis_model_constraints = { maximum_overrides_to_analyze; _ };
+    _;
+  }
+    =
+    Taint.TaintConfiguration.get ()
+  in
+  record_overrides ?maximum_overrides_to_analyze overrides;
+  overrides
+
+
 let analyze
     ~scheduler
     ~analysis_kind
@@ -237,46 +282,8 @@ let analyze
   Log.info "Recording overrides...";
   let timer = Timer.start () in
   let overrides =
-    let combine ~key:_ left right = List.rev_append left right in
-    let build_overrides overrides qualifier =
-      try
-        match get_source qualifier with
-        | None -> overrides
-        | Some source ->
-            let new_overrides =
-              DependencyGraph.create_overrides ~environment ~source
-              |> Reference.Map.filter_keys ~f:(fun override ->
-                     not (Reference.Set.mem skip_overrides override))
-            in
-            Map.merge_skewed overrides new_overrides ~combine
-      with
-      | ClassHierarchy.Untracked untracked_type ->
-          Log.warning
-            "Error building overrides in path %a for untracked type %a"
-            Reference.pp
-            qualifier
-            Type.pp
-            untracked_type;
-          overrides
-    in
-    Scheduler.map_reduce
-      scheduler
-      ~policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
-      ~initial:DependencyGraph.empty_overrides
-      ~map:(fun _ qualifiers ->
-        List.fold qualifiers ~init:DependencyGraph.empty_overrides ~f:build_overrides)
-      ~reduce:(Map.merge_skewed ~combine)
-      ~inputs:qualifiers
-      ()
+    record_overrides_for_qualifiers ~scheduler ~environment ~skip_overrides ~qualifiers
   in
-  let {
-    Taint.TaintConfiguration.analysis_model_constraints = { maximum_overrides_to_analyze; _ };
-    _;
-  }
-    =
-    Taint.TaintConfiguration.get ()
-  in
-  record_overrides ?maximum_overrides_to_analyze overrides;
   let override_dependencies = DependencyGraph.from_overrides overrides in
   Statistics.performance ~name:"Overrides recorded" ~timer ();
 
