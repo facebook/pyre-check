@@ -106,6 +106,65 @@ let regular_and_filtered_callables ~configuration ~resolution ~source =
     filtered )
 
 
+let get_source ~environment qualifier =
+  let ast_environment = TypeEnvironment.ReadOnly.ast_environment environment in
+  AstEnvironment.ReadOnly.get_processed_source ast_environment qualifier
+
+
+let fetch_callables_to_analyze ~scheduler ~environment ~configuration ~qualifiers =
+  let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
+  let classify_source
+      (callables, stubs)
+      { callable; define = { Node.value = define; _ }; is_internal }
+    =
+    if Define.is_stub define then
+      callables, callable :: stubs
+    else
+      (callable, is_internal) :: callables, stubs
+  in
+  let map result qualifiers =
+    let make_callables
+        ((existing_callables, existing_stubs, filtered_callables) as result)
+        qualifier
+      =
+      get_source ~environment qualifier
+      >>| (fun source ->
+            let callables, new_filtered_callables =
+              regular_and_filtered_callables ~configuration ~resolution:global_resolution ~source
+            in
+            let callables, stubs =
+              List.fold callables ~f:classify_source ~init:(existing_callables, existing_stubs)
+            in
+            let updated_filtered_callables =
+              List.fold
+                new_filtered_callables
+                ~init:filtered_callables
+                ~f:(Fn.flip Callable.Set.add)
+            in
+            callables, stubs, updated_filtered_callables)
+      |> Option.value ~default:result
+    in
+    List.fold qualifiers ~f:make_callables ~init:result
+  in
+  let reduce
+      (new_callables, new_stubs, new_filtered_callables)
+      (callables, stubs, filtered_callables)
+    =
+    ( List.rev_append new_callables callables,
+      List.rev_append new_stubs stubs,
+      Callable.Set.union new_filtered_callables filtered_callables )
+  in
+  Scheduler.map_reduce
+    scheduler
+    ~policy:
+      (Scheduler.Policy.fixed_chunk_count ~minimum_chunk_size:50 ~preferred_chunks_per_worker:1 ())
+    ~map
+    ~reduce
+    ~initial:([], [], Callable.Set.empty)
+    ~inputs:qualifiers
+    ()
+
+
 let analyze
     ~scheduler
     ~analysis_kind
@@ -123,68 +182,12 @@ let analyze
     ~qualifiers
     ()
   =
-  let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
-  let get_source qualifier =
-    let ast_environment = TypeEnvironment.ReadOnly.ast_environment environment in
-    AstEnvironment.ReadOnly.get_processed_source ast_environment qualifier
-  in
+  let get_source = get_source ~environment in
 
   let timer = Timer.start () in
   Log.info "Fetching initial callables to analyze...";
   let callables_with_dependency_information, stubs, filtered_callables =
-    let classify_source
-        (callables, stubs)
-        { callable; define = { Node.value = define; _ }; is_internal }
-      =
-      if Define.is_stub define then
-        callables, callable :: stubs
-      else
-        (callable, is_internal) :: callables, stubs
-    in
-    let map result qualifiers =
-      let make_callables
-          ((existing_callables, existing_stubs, filtered_callables) as result)
-          qualifier
-        =
-        get_source qualifier
-        >>| (fun source ->
-              let callables, new_filtered_callables =
-                regular_and_filtered_callables ~configuration ~resolution:global_resolution ~source
-              in
-              let callables, stubs =
-                List.fold callables ~f:classify_source ~init:(existing_callables, existing_stubs)
-              in
-              let updated_filtered_callables =
-                List.fold
-                  new_filtered_callables
-                  ~init:filtered_callables
-                  ~f:(Fn.flip Callable.Set.add)
-              in
-              callables, stubs, updated_filtered_callables)
-        |> Option.value ~default:result
-      in
-      List.fold qualifiers ~f:make_callables ~init:result
-    in
-    let reduce
-        (new_callables, new_stubs, new_filtered_callables)
-        (callables, stubs, filtered_callables)
-      =
-      ( List.rev_append new_callables callables,
-        List.rev_append new_stubs stubs,
-        Callable.Set.union new_filtered_callables filtered_callables )
-    in
-    Scheduler.map_reduce
-      scheduler
-      ~policy:
-        (Scheduler.Policy.fixed_chunk_count
-           ~minimum_chunk_size:50
-           ~preferred_chunks_per_worker:1
-           ())
-      ~map
-      ~reduce
-      ~initial:([], [], Callable.Set.empty)
-      ~inputs:qualifiers
-      ()
+    fetch_callables_to_analyze ~scheduler ~environment ~configuration ~qualifiers
   in
   let stubs = (stubs :> Callable.t list) in
   Statistics.performance ~name:"Fetched initial callables to analyze" ~timer ();
