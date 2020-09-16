@@ -2508,8 +2508,10 @@ module State (Context : Context) = struct
           resolved_annotation = None;
           base = None;
         }
-    | ComparisonOperator { ComparisonOperator.left; right; operator = ComparisonOperator.In }
-    | ComparisonOperator { ComparisonOperator.left; right; operator = ComparisonOperator.NotIn } ->
+    | ComparisonOperator
+        { ComparisonOperator.left; right; operator = ComparisonOperator.In as operator }
+    | ComparisonOperator
+        { ComparisonOperator.left; right; operator = ComparisonOperator.NotIn as operator } ->
         let resolve_in_call
             (resolution, errors, joined_annotation)
             { Type.instantiated; class_name; accessed_through_class }
@@ -2669,36 +2671,62 @@ module State (Context : Context) = struct
                     let ({ Resolved.resolved; _ } as getitem_resolution) =
                       forward_expression ~resolution ~expression:getitem_attribute
                     in
+                    let is_valid_getitem = function
+                      | Type.Parametric
+                          {
+                            name = "BoundMethod";
+                            parameters =
+                              [
+                                Single
+                                  (Type.Callable
+                                    {
+                                      implementation =
+                                        { parameters = Defined (_ :: index_parameter :: _); _ };
+                                      _;
+                                    });
+                                _;
+                              ];
+                          }
+                      | Type.Callable
+                          {
+                            implementation = { parameters = Defined (_ :: index_parameter :: _); _ };
+                            _;
+                          }
+                        when GlobalResolution.less_or_equal
+                               global_resolution
+                               ~left:Type.integer
+                               ~right:
+                                 ( Type.Callable.Parameter.annotation index_parameter
+                                 |> Option.value ~default:Type.Bottom ) ->
+                          true
+                      | _ -> false
+                    in
                     match resolved with
-                    | Type.Parametric
-                        {
-                          name = "BoundMethod";
-                          parameters =
-                            [
-                              Single
-                                (Type.Callable
-                                  {
-                                    implementation =
-                                      { parameters = Defined (_ :: index_parameter :: _); _ };
-                                    _;
-                                  });
-                              _;
-                            ];
-                        }
-                    | Type.Callable
-                        {
-                          implementation = { parameters = Defined (_ :: index_parameter :: _); _ };
-                          _;
-                        }
-                      when GlobalResolution.less_or_equal
-                             global_resolution
-                             ~left:Type.integer
-                             ~right:
-                               ( Type.Callable.Parameter.annotation index_parameter
-                               |> Option.value ~default:Type.Bottom ) ->
-                        (* TODO: Throw new error type here warning on invalid membership check. *)
+                    | Type.Union elements when List.for_all ~f:is_valid_getitem elements ->
                         forward_expression ~resolution ~expression:call
-                    | _ -> { getitem_resolution with Resolved.resolved = Type.Any } ) )
+                    | _ when is_valid_getitem resolved ->
+                        forward_expression ~resolution ~expression:call
+                    | _ ->
+                        let errors =
+                          let { Resolved.resolved; _ } =
+                            forward_expression ~resolution ~expression:right
+                          in
+                          emit_error
+                            ~errors
+                            ~location
+                            ~kind:
+                              (Error.IncompatibleParameterType
+                                 (RightOperand
+                                    {
+                                      operator_name =
+                                        Format.asprintf
+                                          "%a"
+                                          ComparisonOperator.pp_comparison_operator
+                                          operator;
+                                      operand = resolved;
+                                    }))
+                        in
+                        { getitem_resolution with Resolved.resolved = Type.Any; errors } ) )
           in
           resolution, errors, GlobalResolution.join global_resolution joined_annotation resolved
         in

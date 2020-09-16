@@ -195,6 +195,10 @@ and incompatible_parameter_kind =
       left_operand: Type.t;
       right_operand: Type.t;
     }
+  | RightOperand of {
+      operator_name: Identifier.t;
+      operand: Type.t;
+    }
   | Argument of {
       name: Identifier.t option;
       position: int;

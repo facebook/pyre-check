@@ -145,7 +145,10 @@ let test_check_union context =
       def foo(a: typing.Union[GetItem, Contains]) -> None:
         5 in a
     |}
-    ["Undefined attribute [16]: `Contains` has no attribute `__getitem__`."];
+    [
+      "Incompatible parameter type [6]: `in` is not supported for right operand type \
+       `typing.Union[Contains, GetItem]`.";
+    ];
   assert_type_errors
     {|
       import typing

@@ -204,6 +204,10 @@ and incompatible_parameter_kind =
       left_operand: Type.t;
       right_operand: Type.t;
     }
+  | RightOperand of {
+      operator_name: Identifier.t;
+      operand: Type.t;
+    }
   | Argument of {
       name: Identifier.t option;
       position: int;
@@ -554,6 +558,9 @@ let weaken_literals kind =
              left_operand = Type.weaken_literals left_operand;
              right_operand = Type.weaken_literals right_operand;
            })
+  | IncompatibleParameterType (RightOperand { operator_name; operand }) ->
+      IncompatibleParameterType
+        (RightOperand { operator_name; operand = Type.weaken_literals operand })
   | IncompatibleParameterType (Argument ({ mismatch; _ } as incompatible)) ->
       IncompatibleParameterType (Argument { incompatible with mismatch = weaken_mismatch mismatch })
   | IncompatibleReturnType ({ mismatch; _ } as incompatible) ->
@@ -753,6 +760,14 @@ let rec messages ~concise ~signature location kind =
           left_operand
           pp_type
           right_operand;
+      ]
+  | IncompatibleParameterType (RightOperand { operator_name; operand }) ->
+      [
+        Format.asprintf
+          "`%s` is not supported for right operand type `%a`."
+          operator_name
+          pp_type
+          operand;
       ]
   | IncompatibleParameterType
       (Argument { name; position; callee; mismatch = { actual; expected; due_to_invariance; _ } })
@@ -2300,6 +2315,8 @@ let due_to_analysis_limitations { kind; _ } =
       is_due_to_analysis_limitations actual
   | IncompatibleParameterType (Operand { left_operand; right_operand; _ }) ->
       is_due_to_analysis_limitations left_operand || is_due_to_analysis_limitations right_operand
+  | IncompatibleParameterType (RightOperand { operand; _ }) ->
+      is_due_to_analysis_limitations operand
   | Top -> true
   | UndefinedAttribute { origin = Class annotation; _ } -> Type.contains_unknown annotation
   | AnalysisFailure _
@@ -2396,6 +2413,12 @@ let less_or_equal ~resolution left right =
            resolution
            ~left:right_operand_for_left
            ~right:right_operand_for_right
+  | ( IncompatibleParameterType
+        (RightOperand { operator_name = left_operator_name; operand = left_operand }),
+      IncompatibleParameterType
+        (RightOperand { operator_name = right_operator_name; operand = right_operand }) )
+    when Identifier.equal_sanitized left_operator_name right_operator_name ->
+      GlobalResolution.less_or_equal resolution ~left:left_operand ~right:right_operand
   | IncompatibleParameterType (Argument left), IncompatibleParameterType (Argument right)
     when Option.equal Identifier.equal_sanitized left.name right.name ->
       less_or_equal_mismatch left.mismatch right.mismatch
@@ -2802,6 +2825,14 @@ let join ~resolution left right =
                right_operand =
                  GlobalResolution.join resolution right_operand_for_left right_operand_for_right;
              })
+    | ( IncompatibleParameterType
+          (RightOperand ({ operator_name = left_operator_name; operand = left_operand } as left)),
+        IncompatibleParameterType
+          (RightOperand { operator_name = right_operator_name; operand = right_operand }) )
+      when Identifier.equal_sanitized left_operator_name right_operator_name ->
+        IncompatibleParameterType
+          (RightOperand
+             { left with operand = GlobalResolution.join resolution left_operand right_operand })
     | IncompatibleParameterType (Argument left), IncompatibleParameterType (Argument right)
       when Option.equal Identifier.equal_sanitized left.name right.name
            && left.position = right.position
@@ -3547,6 +3578,8 @@ let dequalify
                left_operand = dequalify left_operand;
                right_operand = dequalify right_operand;
              })
+    | IncompatibleParameterType (RightOperand { operator_name; operand }) ->
+        IncompatibleParameterType (RightOperand { operator_name; operand = dequalify operand })
     | IncompatibleParameterType (Argument ({ mismatch; callee; _ } as parameter)) ->
         IncompatibleParameterType
           (Argument

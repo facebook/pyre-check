@@ -547,7 +547,7 @@ let test_assert_contains_none context =
       def foo(x: None) -> None:
         assert None not in x
     |}
-    ["Undefined attribute [16]: `None` has no attribute `__getitem__`."];
+    ["Incompatible parameter type [6]: `not in` is not supported for right operand type `None`."];
   assert_type_errors
     {|
       def foo(x: Derp) -> None:
