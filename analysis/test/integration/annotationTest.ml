@@ -169,6 +169,15 @@ let test_check_undefined_type context =
       "Unbound name [10]: Name `Herp` is used but not defined in the current scope.";
     ];
 
+  assert_strict_type_errors
+    {|
+      import typing as t
+
+      def foo() -> t.Set:
+        return set()
+    |}
+    ["Invalid type parameters [24]: Generic type `set` expects 1 type parameter."];
+
   (* Attributes *)
   assert_type_errors
     {|

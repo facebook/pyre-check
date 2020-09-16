@@ -127,6 +127,7 @@ let test_create _ =
   (* Check renaming. *)
   assert_create "typing.List[int]" (Type.list Type.integer);
   assert_create "typing.List" (Primitive "list");
+  assert_create "typing.Set" (Primitive "set");
   assert_create
     "typing.DefaultDict[int, str]"
     (Type.parametric "collections.defaultdict" ![Type.integer; Type.string]);

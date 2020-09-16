@@ -2276,6 +2276,7 @@ let primitive_substitution_map =
     "typing.Dict", Primitive "dict";
     "typing.List", Primitive "list";
     "typing.OrderedDict", Primitive "collections.OrderedDict";
+    "typing.Set", Primitive "set";
     "typing.Tuple", Primitive "tuple";
     "typing.Type", Primitive "type";
     "typing_extensions.Protocol", Primitive "typing.Protocol";
