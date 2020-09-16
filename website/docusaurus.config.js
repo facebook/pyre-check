@@ -3,6 +3,8 @@
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
+ *
+ * @format
  */
 
 /* List of projects/orgs using Pyre for the users page */
@@ -21,7 +23,7 @@ function FBInternal(elements) {
 }
 
 function FBInternalWithOssFallback(elements, fallback) {
-   return process.env.FB_INTERNAL ? elements : fallback;
+  return process.env.FB_INTERNAL ? elements : fallback;
 }
 
 module.exports = {
@@ -34,7 +36,15 @@ module.exports = {
   projectName: 'pyre-check',
   favicon: 'img/favicon.ico',
   scripts: ['https://buttons.github.io/buttons.js'],
-  plugins: [require.resolve('docusaurus-plugin-internaldocs-fb')],
+  plugins: [
+    require.resolve('docusaurus-plugin-internaldocs-fb'),
+    [
+      '@docusaurus/plugin-client-redirects',
+      {
+        fromExtensions: ['html'],
+      },
+    ],
+  ],
   presets: [
     [
       '@docusaurus/preset-classic',
@@ -65,7 +75,14 @@ module.exports = {
       },
       items: [
         {to: 'docs/getting-started', label: 'Documentation', position: 'left'},
-        FBInternalWithOssFallback({to: 'docs/fb/development-getting-started', label: 'Development @ FB', position: 'left'}, {}),
+        FBInternalWithOssFallback(
+          {
+            to: 'docs/fb/development-getting-started',
+            label: 'Development @ FB',
+            position: 'left',
+          },
+          {},
+        ),
         {
           href: 'https://github.com/facebook/pyre-check',
           label: 'GitHub',
@@ -73,7 +90,7 @@ module.exports = {
         },
       ],
     },
-      footer: {
+    footer: {
       logo: {
         alt: 'Facebook Open Source Logo',
         src: 'https://docusaurus.io/img/oss_logo.png',
