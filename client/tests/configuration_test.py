@@ -10,12 +10,11 @@ import site
 import sys
 import unittest
 from pathlib import Path
-from typing import Any, NamedTuple, Optional, cast
+from typing import NamedTuple, Optional
 from unittest.mock import MagicMock, PropertyMock, call, mock_open, patch
 
 from .. import configuration
 from ..configuration import Configuration, InvalidConfiguration, SearchPathElement
-from ..exceptions import EnvironmentException
 from ..find_directories import CONFIGURATION_FILE, LOCAL_CONFIGURATION_FILE
 
 
@@ -87,7 +86,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
             {"source_directories": ["a"]},
             {},
         ]
-        with self.assertRaises(EnvironmentException):
+        with self.assertRaises(InvalidConfiguration):
             configuration = Configuration(
                 "", local_root="local/path", dot_pyre_directory=Path("/.pyre")
             )
@@ -750,7 +749,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
             },
             {},
         ]
-        with self.assertRaises(EnvironmentException):
+        with self.assertRaises(InvalidConfiguration):
             Configuration(
                 project_root="root",
                 local_root="root/local",
@@ -776,7 +775,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
                 "extensions": [".a", ".b", ""],
             },
         ]
-        with self.assertRaises(EnvironmentException):
+        with self.assertRaises(InvalidConfiguration):
             Configuration(
                 project_root="root",
                 local_root="root/local",
@@ -794,7 +793,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
         os_path_exists.return_value = False
         os_path_isdir.return_value = True
         os_path_isfile.return_value = False
-        with self.assertRaises(EnvironmentException):
+        with self.assertRaises(InvalidConfiguration):
             Configuration(
                 project_root="/", local_root="local", dot_pyre_directory=Path("/.pyre")
             )
@@ -803,14 +802,14 @@ class ConfigurationIntegrationTest(unittest.TestCase):
         os_path_exists.return_value = False
         os_path_isdir.return_value = False
         os_path_isfile.return_value = True
-        with self.assertRaises(EnvironmentException):
+        with self.assertRaises(InvalidConfiguration):
             Configuration(
                 project_root="/",
                 local_root="local/.some_configuration",
                 dot_pyre_directory=Path("/.pyre"),
             )
 
-        with self.assertRaises(EnvironmentException):
+        with self.assertRaises(InvalidConfiguration):
             Configuration(
                 project_root="/",
                 local_root="local/.some_configuration",
@@ -821,14 +820,14 @@ class ConfigurationIntegrationTest(unittest.TestCase):
         os_path_exists.side_effect = lambda path: not path.endswith(".local")
         os_path_isdir.return_value = lambda path: not path.endswith(".local")
         os_path_isfile.return_value = lambda path: path.endswith(".local")
-        with self.assertRaises(EnvironmentException):
+        with self.assertRaises(InvalidConfiguration):
             Configuration(
                 project_root="/",
                 local_root="localdir",
                 dot_pyre_directory=Path("/.pyre"),
             )
 
-        with self.assertRaises(EnvironmentException):
+        with self.assertRaises(InvalidConfiguration):
             Configuration(
                 project_root="/",
                 local_root="localdir",
@@ -877,7 +876,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
         except BaseException:
             self.fail("Configuration should not raise.")
 
-        with self.assertRaises(EnvironmentException):
+        with self.assertRaises(InvalidConfiguration):
             json_loads.side_effect = [
                 {
                     "source_directories": ["a"],

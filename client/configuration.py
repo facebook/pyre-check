@@ -161,7 +161,7 @@ class _ConfigurationFile:
 
         value = self._configuration.pop(key, default)
         if raise_on_override and current and value:
-            raise EnvironmentException(
+            raise InvalidConfiguration(
                 f"Configuration file may not override `{key}` field."
             )
         if current:
@@ -316,141 +316,127 @@ class Configuration:
         )
 
     def _validate(self) -> None:
-        try:
-
-            def is_list_of_strings(list):
-                if len(list) == 0:
-                    return True
-                return not isinstance(list, str) and all(
-                    isinstance(element, str) for element in list
-                )
-
-            if not is_list_of_strings(
-                self.source_directories
-            ) or not is_list_of_strings(self.targets):
-                raise InvalidConfiguration(
-                    "`target` and `source_directories` fields must be lists of "
-                    "strings."
-                )
-
-            if not is_list_of_strings(self.ignore_all_errors):
-                raise InvalidConfiguration(
-                    "`ignore_all_errors` field must be a list of strings."
-                )
-
-            if not is_list_of_strings(self.ignore_infer):
-                raise InvalidConfiguration(
-                    "`ignore_infer` field must be a list of strings."
-                )
-
-            if not is_list_of_strings(self.extensions):
-                raise InvalidConfiguration(
-                    "`extensions` field must be a list of strings."
-                )
-            if not all(
-                extension.startswith(".") or not extension
-                for extension in self.extensions
-            ):
-                raise InvalidConfiguration(
-                    "`extensions` must only contain strings formatted as `.EXT`"
-                )
-
-            if not os.path.exists(self.binary):
-                raise InvalidConfiguration(f"Binary at `{self.binary}` does not exist.")
-
-            if self.number_of_workers < 1:
-                raise InvalidConfiguration("Number of workers must be greater than 0.")
-
-            # Validate typeshed path and sub-elements.
-            assert_readable_directory_in_configuration(
-                self.typeshed, field_name="typeshed"
+        def is_list_of_strings(list):
+            if len(list) == 0:
+                return True
+            return not isinstance(list, str) and all(
+                isinstance(element, str) for element in list
             )
 
-            # A courtesy warning since we have changed default behaviour.
-            if self._typeshed_has_obsolete_value():
-                LOG.warning(
-                    f"It appears that `{self.typeshed}` points at a `stdlib` "
-                    "directory. Please note that the `typeshed` configuration must "
-                    "point to the root of the `typeshed` directory."
-                )
+        if not is_list_of_strings(self.source_directories) or not is_list_of_strings(
+            self.targets
+        ):
+            raise InvalidConfiguration(
+                "`target` and `source_directories` fields must be lists of " "strings."
+            )
 
-            expanded_ignore_paths = []
-            for path in self.ignore_all_errors:
-                expanded = glob.glob(path)
-                if not expanded:
-                    expanded_ignore_paths.append(path)
-                else:
-                    expanded_ignore_paths += expanded
-            self.ignore_all_errors = expanded_ignore_paths
+        if not is_list_of_strings(self.ignore_all_errors):
+            raise InvalidConfiguration(
+                "`ignore_all_errors` field must be a list of strings."
+            )
 
-            non_existent_ignore_paths = [
-                path for path in self.ignore_all_errors if not os.path.exists(path)
+        if not is_list_of_strings(self.ignore_infer):
+            raise InvalidConfiguration(
+                "`ignore_infer` field must be a list of strings."
+            )
+
+        if not is_list_of_strings(self.extensions):
+            raise InvalidConfiguration("`extensions` field must be a list of strings.")
+        if not all(
+            extension.startswith(".") or not extension for extension in self.extensions
+        ):
+            raise InvalidConfiguration(
+                "`extensions` must only contain strings formatted as `.EXT`"
+            )
+
+        if not os.path.exists(self.binary):
+            raise InvalidConfiguration(f"Binary at `{self.binary}` does not exist.")
+
+        if self.number_of_workers < 1:
+            raise InvalidConfiguration("Number of workers must be greater than 0.")
+
+        # Validate typeshed path and sub-elements.
+        assert_readable_directory_in_configuration(self.typeshed, field_name="typeshed")
+
+        # A courtesy warning since we have changed default behaviour.
+        if self._typeshed_has_obsolete_value():
+            LOG.warning(
+                f"It appears that `{self.typeshed}` points at a `stdlib` "
+                "directory. Please note that the `typeshed` configuration must "
+                "point to the root of the `typeshed` directory."
+            )
+
+        expanded_ignore_paths = []
+        for path in self.ignore_all_errors:
+            expanded = glob.glob(path)
+            if not expanded:
+                expanded_ignore_paths.append(path)
+            else:
+                expanded_ignore_paths += expanded
+        self.ignore_all_errors = expanded_ignore_paths
+
+        non_existent_ignore_paths = [
+            path for path in self.ignore_all_errors if not os.path.exists(path)
+        ]
+        if non_existent_ignore_paths:
+            LOG.warning(
+                "Nonexistent paths passed in to `ignore_all_errors`: "
+                f"`{non_existent_ignore_paths}`"
+            )
+            self.ignore_all_errors = [
+                path
+                for path in self.ignore_all_errors
+                if path not in non_existent_ignore_paths
             ]
-            if non_existent_ignore_paths:
-                LOG.warning(
-                    "Nonexistent paths passed in to `ignore_all_errors`: "
-                    f"`{non_existent_ignore_paths}`"
-                )
-                self.ignore_all_errors = [
-                    path
-                    for path in self.ignore_all_errors
-                    if path not in non_existent_ignore_paths
-                ]
 
-            non_existent_infer_paths = [
-                path for path in self.ignore_infer if not os.path.exists(path)
+        non_existent_infer_paths = [
+            path for path in self.ignore_infer if not os.path.exists(path)
+        ]
+        if non_existent_infer_paths:
+            LOG.warning(
+                "Nonexistent paths passed in to `ignore_infer`: "
+                f"`{non_existent_infer_paths}`"
+            )
+            self.ignore_infer = [
+                path
+                for path in self.ignore_infer
+                if path not in non_existent_infer_paths
             ]
-            if non_existent_infer_paths:
-                LOG.warning(
-                    "Nonexistent paths passed in to `ignore_infer`: "
-                    f"`{non_existent_infer_paths}`"
-                )
-                self.ignore_infer = [
-                    path
-                    for path in self.ignore_infer
-                    if path not in non_existent_infer_paths
-                ]
 
-            for typeshed_subdirectory_name in ["stdlib", "third_party"]:
-                typeshed_subdirectory = os.path.join(
-                    self.typeshed, typeshed_subdirectory_name
-                )
-                assert_readable_directory_in_configuration(typeshed_subdirectory)
-                for typeshed_version_directory_name in os.listdir(
-                    typeshed_subdirectory
-                ):
-                    if not typeshed_version_directory_name[0].isdigit():
-                        raise InvalidConfiguration(
-                            "Directories inside `typeshed` must only contain "
-                            "second-level subdirectories starting with "
-                            "a version number."
-                        )
-                    typeshed_version_directory = os.path.join(
-                        typeshed_subdirectory, typeshed_version_directory_name
+        for typeshed_subdirectory_name in ["stdlib", "third_party"]:
+            typeshed_subdirectory = os.path.join(
+                self.typeshed, typeshed_subdirectory_name
+            )
+            assert_readable_directory_in_configuration(typeshed_subdirectory)
+            for typeshed_version_directory_name in os.listdir(typeshed_subdirectory):
+                if not typeshed_version_directory_name[0].isdigit():
+                    raise InvalidConfiguration(
+                        "Directories inside `typeshed` must only contain "
+                        "second-level subdirectories starting with "
+                        "a version number."
                     )
-                    assert_readable_directory_in_configuration(
-                        typeshed_version_directory
-                    )
-
-            # Validate elements of the search path.
-            for element in self._search_path:
-                assert_readable_directory_in_configuration(
-                    element.path(), field_name="search_path"
+                typeshed_version_directory = os.path.join(
+                    typeshed_subdirectory, typeshed_version_directory_name
                 )
+                assert_readable_directory_in_configuration(typeshed_version_directory)
 
-            if not is_list_of_strings(self.other_critical_files):
-                raise InvalidConfiguration(
-                    "`critical_files` field must be a list of strings."
-                )
+        # Validate elements of the search path.
+        for element in self._search_path:
+            assert_readable_directory_in_configuration(
+                element.path(), field_name="search_path"
+            )
 
-            if not is_list_of_strings(self.do_not_ignore_errors_in):
-                raise InvalidConfiguration(
-                    "`do_not_ignore_errors_in` field must be a list of strings."
-                )
-            for directory_name in self.do_not_ignore_errors_in:
-                assert_readable_directory_in_configuration(directory_name)
-        except InvalidConfiguration as error:
-            raise EnvironmentException(str(error))
+        if not is_list_of_strings(self.other_critical_files):
+            raise InvalidConfiguration(
+                "`critical_files` field must be a list of strings."
+            )
+
+        if not is_list_of_strings(self.do_not_ignore_errors_in):
+            raise InvalidConfiguration(
+                "`do_not_ignore_errors_in` field must be a list of strings."
+            )
+        for directory_name in self.do_not_ignore_errors_in:
+            assert_readable_directory_in_configuration(directory_name)
 
     @property
     def version_hash(self) -> str:
@@ -529,7 +515,7 @@ class Configuration:
             for ignore_element in parent_local_configuration.ignore_all_errors:
                 if Path(ignore_element).resolve() in paths_to_ignore:
                     excluded_from_parent = True
-        except EnvironmentException as error:
+        except InvalidConfiguration as error:
             parent_error = error
 
         if not excluded_from_parent:
@@ -541,19 +527,19 @@ class Configuration:
                 "into a single configuration, or split the parent configuration to "
                 "avoid inconsistent errors."
             )
-            raise EnvironmentException(error_message)
+            raise InvalidConfiguration(error_message)
         elif parent_error:
-            raise EnvironmentException(parent_error)
+            raise InvalidConfiguration(str(parent_error))
 
     def _check_read_local_configuration(self, path: str) -> None:
         if not os.path.exists(path):
-            raise EnvironmentException(
+            raise InvalidConfiguration(
                 f"Local configuration path `{path}` does not exist."
             )
 
         local_configuration = os.path.join(path, LOCAL_CONFIGURATION_FILE)
         if not os.path.exists(local_configuration):
-            raise EnvironmentException(
+            raise InvalidConfiguration(
                 f"Local configuration directory `{path}` does not contain "
                 f"a `{LOCAL_CONFIGURATION_FILE}` file."
             )
@@ -561,7 +547,7 @@ class Configuration:
         self._check_nested_configurations(path)
         self._read(local_configuration)
         if not self.source_directories and not self.targets:
-            raise EnvironmentException(
+            raise InvalidConfiguration(
                 f"Local configuration `{local_configuration}` does not specify "
                 " any sources to type check."
             )
@@ -719,7 +705,7 @@ class Configuration:
             # We error elsewhere if there weren't enough parameters passed into pyre.
             self._expand_relative_paths(configuration_directory)
         except json.JSONDecodeError as error:
-            raise EnvironmentException(
+            raise InvalidConfiguration(
                 "Configuration file at `{}` is invalid: {}.".format(path, str(error))
             )
 

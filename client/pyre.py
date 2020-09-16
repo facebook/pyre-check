@@ -143,7 +143,11 @@ def run_pyre(arguments: argparse.Namespace) -> ExitCode:
             raise FailedOutsideLocalConfigurationException(
                 exit_code, command, str(error)
             )
-    except (buck.BuckException, EnvironmentException) as error:
+    except (
+        buck.BuckException,
+        configuration_module.InvalidConfiguration,
+        EnvironmentException,
+    ) as error:
         if arguments.command == commands.Persistent.from_arguments:
             try:
                 commands.Persistent.run_null_server(timeout=3600 * 12)
@@ -156,11 +160,11 @@ def run_pyre(arguments: argparse.Namespace) -> ExitCode:
                 exit_code = ExitCode.SUCCESS
         else:
             client_exception_message = str(error)
-            exit_code = (
-                ExitCode.BUCK_ERROR
-                if isinstance(error, buck.BuckException)
-                else ExitCode.FAILURE
-            )
+            exit_code = ExitCode.FAILURE
+            if isinstance(error, buck.BuckException):
+                exit_code = ExitCode.BUCK_ERROR
+            elif isinstance(error, configuration_module.InvalidConfiguration):
+                exit_code = ExitCode.CONFIGURATION_ERROR
     except commands.ClientException as error:
         client_exception_message = str(error)
         exit_code = ExitCode.FAILURE

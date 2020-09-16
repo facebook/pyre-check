@@ -50,6 +50,7 @@ class ExitCode(enum.IntEnum):
     BUCK_ERROR = 3
     SERVER_NOT_FOUND = 4
     INCONSISTENT_SERVER = 5
+    CONFIGURATION_ERROR = 6
     # If the process exited due to a signal, this will be the negative signal number.
     SIGSEGV = -signal.SIGSEGV
 
