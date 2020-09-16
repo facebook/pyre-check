@@ -62,14 +62,14 @@ let get_callsite_model ~resolution ~call_target ~arguments =
           let transform feature =
             let open Features in
             match feature.Abstract.OverUnderSetDomain.element with
-            | Simple.ViaValueOf { position } ->
+            | Simple.ViaValueOf { position; tag } ->
                 List.nth arguments position
                 >>= fun argument ->
-                Simple.via_value_of_breadcrumb ~argument |> SimpleSet.inject |> Option.return
-            | Simple.ViaTypeOf { position } ->
+                Simple.via_value_of_breadcrumb ?tag ~argument |> SimpleSet.inject |> Option.return
+            | Simple.ViaTypeOf { position; tag } ->
                 List.nth arguments position
                 >>= fun argument ->
-                Simple.via_type_of_breadcrumb ~resolution ~argument
+                Simple.via_type_of_breadcrumb ?tag ~resolution ~argument
                 |> SimpleSet.inject
                 |> Option.return
             | _ -> Some feature

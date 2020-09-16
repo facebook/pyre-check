@@ -27,14 +27,27 @@ module Breadcrumb = struct
     | Obscure
     | Lambda
     | SimpleVia of string (* Declared breadcrumbs *)
-    | ViaValue of string (* Via inferred from ViaValueOf. *)
-    | ViaType of string (* Via inferred from ViaTypeOf. *)
+    | ViaValue of {
+        tag: string option;
+        value: string;
+      }
+    (* Via inferred from ViaValueOf. *)
+    | ViaType of {
+        tag: string option;
+        value: string;
+      }
+    (* Via inferred from ViaTypeOf. *)
     | Tito
     | Type of string (* Type constraint *)
   [@@deriving show, compare]
 
   let to_json ~on_all_paths breadcrumb =
     let prefix = if on_all_paths then "always-" else "" in
+    let via_value_tag tag =
+      match tag with
+      | Some tag -> "-of-" ^ tag
+      | _ -> ""
+    in
     match breadcrumb with
     | First { name; kind = FirstField } -> `Assoc [prefix ^ "first-field", `String name]
     | First { name; kind = FirstIndex } -> `Assoc [prefix ^ "first-index", `String name]
@@ -44,8 +57,8 @@ module Breadcrumb = struct
     | Obscure -> `Assoc [prefix ^ "via", `String "obscure"]
     | Lambda -> `Assoc [prefix ^ "via", `String "lambda"]
     | SimpleVia name -> `Assoc [prefix ^ "via", `String name]
-    | ViaValue name -> `Assoc [prefix ^ "via-value", `String name]
-    | ViaType name -> `Assoc [prefix ^ "via-type", `String name]
+    | ViaValue { tag; value } -> `Assoc [prefix ^ "via-value" ^ via_value_tag tag, `String value]
+    | ViaType { tag; value } -> `Assoc [prefix ^ "via-type" ^ via_value_tag tag, `String value]
     | Tito -> `Assoc [prefix ^ "via", `String "tito"]
     | Type name -> `Assoc [prefix ^ "type", `String name]
 
@@ -73,23 +86,29 @@ module Simple = struct
       }
     | TitoPosition of Location.WithModule.t
     | Breadcrumb of Breadcrumb.t
-    | ViaValueOf of { position: int }
-    | ViaTypeOf of { position: int }
+    | ViaValueOf of {
+        position: int;
+        tag: string option;
+      }
+    | ViaTypeOf of {
+        position: int;
+        tag: string option;
+      }
   [@@deriving show, compare]
 
-  let via_value_of_breadcrumb ~argument:{ Expression.Call.Argument.value; _ } =
+  let via_value_of_breadcrumb ?tag ~argument:{ Expression.Call.Argument.value; _ } =
     let feature =
       Interprocedural.CallResolution.extract_constant_name value
       |> Option.value ~default:"<unknown>"
     in
-    Breadcrumb (Breadcrumb.ViaValue feature)
+    Breadcrumb (Breadcrumb.ViaValue { value = feature; tag })
 
 
-  let via_type_of_breadcrumb ~resolution ~argument:{ Expression.Call.Argument.value; _ } =
+  let via_type_of_breadcrumb ?tag ~resolution ~argument:{ Expression.Call.Argument.value; _ } =
     let feature =
       Resolution.resolve_expression resolution value |> snd |> Type.weaken_literals |> Type.show
     in
-    Breadcrumb (Breadcrumb.ViaType feature)
+    Breadcrumb (Breadcrumb.ViaType { value = feature; tag })
 end
 
 module SimpleSet = Abstract.OverUnderSetDomain.Make (Simple)

@@ -124,6 +124,20 @@
 {
   "kind": "model",
   "data": {
+    "callable": "via_value_of.return_including_name",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "via_value_of.return_via_parameter_name",
     "sources": [
       {
@@ -301,6 +315,39 @@
               }
             ],
             "features": [ { "always-via-value": "1" } ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_value_of.test_return_including_name",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "via_value_of.py",
+              "line": 88,
+              "start": 11,
+              "end": 51
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "via_value_of.return_including_name",
+                "on_all_flows": true
+              }
+            ],
+            "features": [
+              { "always-via-value-of-parameter": "parameter_value" }
+            ]
           }
         ]
       }

@@ -105,6 +105,20 @@ def django.http.response.HttpResponse.__setitem__(
 ): ...
 ```
 
+You can also associate a tag with a `via-value` feature to ensure that different
+`via-value` annotations don't interfere with each other. Here's how you can retain
+the information that the name of the header was being set:
+
+```python
+def django.http.response.HttpResponse.__setitem__(
+    self,
+    header: TaintSink[ResponseHeaderName],
+    value: TaintSink[ResponseHeaderValue, ViaValueOf[header, WithTag["set-header"]]
+): ...
+```
+
+The feature would now appear as `via-value-of-set-header:Access-Control-Allow-Origin`.
+
 ### `via-type` Feature Using `ViaTypeOf[]`
 
 The `via-type` feature is nearly identical to the `via-value` feature, however,
@@ -128,6 +142,15 @@ to capture the argument value:
 ```python
 def subprocess.run(
     args: TaintSink[RemoteCodeExecution, ViaTypeOf[args]],
+): ...
+```
+
+The `via-type` feature also supports adding tags, using the same syntax as the `via-value`
+feature:
+
+```python
+def subprocess.run(
+    args: TaintSink[RemoteCodeExecution, ViaTypeOf[args, WithTag["subprocess-arg"]]]
 ): ...
 ```
 

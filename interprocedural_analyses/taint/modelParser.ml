@@ -184,24 +184,6 @@ let rec parse_annotations ~configuration ~parameters annotation =
           (show_expression expression.Node.value)
         |> failwith
   in
-  let rec extract_via_positions expression =
-    match expression.Node.value with
-    | Expression.Name (Name.Identifier name) -> [get_parameter_position name]
-    | Tuple expressions -> List.concat_map ~f:extract_via_positions expressions
-    | _ ->
-        Format.sprintf
-          "Invalid expression for ViaValueOf or ViaTypeOf: %s"
-          (show_expression expression.Node.value)
-        |> failwith
-  in
-  let rec extract_names expression =
-    match expression.Node.value with
-    | Expression.Name (Name.Identifier name) -> [name]
-    | Tuple expressions -> List.concat_map ~f:extract_names expressions
-    | _ ->
-        Format.sprintf "Invalid expression name: %s" (show_expression expression.Node.value)
-        |> failwith
-  in
   let base_name = function
     | {
         Node.value =
@@ -212,6 +194,50 @@ let rec parse_annotations ~configuration ~parameters annotation =
         Some identifier
     | _ -> None
   in
+
+  let rec extract_via_positions expression =
+    match expression.Node.value with
+    | Expression.Name (Name.Identifier name) -> [get_parameter_position name]
+    | Tuple expressions -> List.concat_map ~f:extract_via_positions expressions
+    | Call { callee; _ } when Option.equal String.equal (base_name callee) (Some "WithTag") -> []
+    | _ ->
+        Format.sprintf
+          "Invalid expression for ViaValueOf or ViaTypeOf: %s"
+          (show_expression expression.Node.value)
+        |> failwith
+  in
+  let rec extract_via_tag expression =
+    match expression.Node.value with
+    | Expression.Call
+        {
+          callee;
+          arguments =
+            [
+              {
+                Call.Argument.value =
+                  { Node.value = Expression.String { StringLiteral.value; _ }; _ };
+                _;
+              };
+            ];
+        }
+      when Option.equal String.equal (base_name callee) (Some "WithTag") ->
+        Some value
+    | Expression.Call _ ->
+        Format.sprintf
+          "Invalid expression in ViaValueOf or ViaTypeOf declaration: %s"
+          (Expression.show expression)
+        |> failwith
+    | Tuple expressions -> List.find_map expressions ~f:extract_via_tag
+    | _ -> None
+  in
+  let rec extract_names expression =
+    match expression.Node.value with
+    | Expression.Name (Name.Identifier name) -> [name]
+    | Tuple expressions -> List.concat_map ~f:extract_names expressions
+    | _ ->
+        Format.sprintf "Invalid expression name: %s" (show_expression expression.Node.value)
+        |> failwith
+  in
   let rec extract_kinds expression =
     match expression.Node.value with
     | Expression.Name (Name.Identifier taint_kind) -> [Leaf taint_kind]
@@ -220,16 +246,18 @@ let rec parse_annotations ~configuration ~parameters annotation =
         match base_name callee with
         | Some "Via" -> [Breadcrumbs (extract_breadcrumbs expression)]
         | Some "ViaValueOf" ->
+            let tag = extract_via_tag expression in
             [
               Breadcrumbs
                 ( extract_via_positions expression
-                |> List.map ~f:(fun position -> Features.Simple.ViaValueOf { position }) );
+                |> List.map ~f:(fun position -> Features.Simple.ViaValueOf { position; tag }) );
             ]
         | Some "ViaTypeOf" ->
+            let tag = extract_via_tag expression in
             [
               Breadcrumbs
                 ( extract_via_positions expression
-                |> List.map ~f:(fun position -> Features.Simple.ViaTypeOf { position }) );
+                |> List.map ~f:(fun position -> Features.Simple.ViaTypeOf { position; tag }) );
             ]
         | Some "Updates" ->
             extract_names expression

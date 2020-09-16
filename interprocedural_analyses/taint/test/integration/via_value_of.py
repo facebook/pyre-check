@@ -78,3 +78,11 @@ def attach_to_sink(parameter, feature):
 
 def test_attach_to_sink(parameter):
     attach_to_sink(parameter, "attached to sink")
+
+
+def return_including_name(parameter):
+    return 0
+
+
+def test_return_including_name():
+    return return_including_name("parameter_value")
