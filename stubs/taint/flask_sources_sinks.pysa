@@ -28,7 +28,7 @@ flask.globals.session: TaintSource[UserControlled] = ...
 # Sinks
 def werkzeug.utils.redirect(location: TaintSink[Redirect], code=..., Response=...): ...
 def flask.helpers.send_file(
-    filename_or_fp: TaintSink[FileSystem],
+    filename_or_fp: TaintSink[FileSystem_ReadWrite],
     mimetype=...,
     as_attachment=...,
     attachment_filename=...,
