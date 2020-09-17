@@ -43,19 +43,25 @@ class RageTest(unittest.TestCase):
 
     def assert_output(self, output: io.StringIO) -> None:
         lines = output.getvalue().split("\n")
-        self.assertEqual(len(lines), 4)
         self.assertTrue(lines[0].startswith("Client version:"))
         self.assertTrue(lines[1].startswith("Binary path:"))
         self.assertTrue(lines[2].startswith("Configured binary version:"))
         self.assertEqual(lines[3], "<SERVER RAGE>")
 
+    # pyre-fixme[56]: Pyre was not able to infer the type of argument `[]` to decorator
+    # factory `unittest.mock.patch.object`.
+    @patch.object(recently_used_configurations.Cache, "get_all_items", return_value=[])
     @patch("sys.stdout", new_callable=io.StringIO)
     @patch("subprocess.run")
     @patch.object(
         commands.Command, "_call_client", side_effect=_call_client_side_effect
     )
     def test_terminal_output(
-        self, call_client: MagicMock, run: MagicMock, stdout: MagicMock
+        self,
+        call_client: MagicMock,
+        run: MagicMock,
+        stdout: MagicMock,
+        get_recently_used_configurations: MagicMock,
     ) -> None:
         arguments = mock_arguments(local_configuration="foo/bar")
         configuration = mock_configuration()
@@ -74,6 +80,7 @@ class RageTest(unittest.TestCase):
         )
         self.assert_output(stdout)
 
+    @patch.object(recently_used_configurations.Cache, "get_all_items", return_value=[])
     # pyre-fixme[56]: Argument `tools.pyre.client.filesystem` to decorator factory
     #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(filesystem, "acquire_lock")
@@ -82,7 +89,11 @@ class RageTest(unittest.TestCase):
         commands.Command, "_call_client", side_effect=_call_client_side_effect
     )
     def test_file_output(
-        self, call_client: MagicMock, run: MagicMock, acquire_lock: MagicMock
+        self,
+        call_client: MagicMock,
+        run: MagicMock,
+        acquire_lock: MagicMock,
+        get_recently_used_configurations: MagicMock,
     ) -> None:
         arguments = mock_arguments(local_configuration="foo/bar")
         configuration = mock_configuration()
