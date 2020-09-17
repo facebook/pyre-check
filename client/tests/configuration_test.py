@@ -537,14 +537,14 @@ class ConfigurationIntegrationTest(unittest.TestCase):
 
         json_load.side_effect = [{}, {}]
         configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
-        self.assertEqual(configuration.do_not_ignore_errors_in, [])
+        self.assertEqual(configuration._do_not_ignore_errors_in, [])
         json_load.side_effect = [
             {"do_not_ignore_errors_in": ["directory1", "directory2"]},
             {},
         ]
         configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
         self.assertEqual(
-            configuration.do_not_ignore_errors_in, ["directory1", "directory2"]
+            configuration._do_not_ignore_errors_in, ["directory1", "directory2"]
         )
 
     @patch("os.path.isfile")

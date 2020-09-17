@@ -241,7 +241,7 @@ class Configuration:
         self._use_buck_builder: Optional[bool] = use_buck_builder
         self._use_buck_source_database: Optional[bool] = use_buck_source_database
         self.ignore_infer: List[str] = []
-        self.do_not_ignore_errors_in: List[str] = []
+        self._do_not_ignore_errors_in: List[str] = []
 
         self._search_path: List[SearchPathElement] = []
         if search_path:
@@ -431,12 +431,10 @@ class Configuration:
                 "`critical_files` field must be a list of strings."
             )
 
-        if not is_list_of_strings(self.do_not_ignore_errors_in):
+        if not is_list_of_strings(self._do_not_ignore_errors_in):
             raise InvalidConfiguration(
                 "`do_not_ignore_errors_in` field must be a list of strings."
             )
-        for directory_name in self.do_not_ignore_errors_in:
-            assert_readable_directory_in_configuration(directory_name)
 
     @property
     def version_hash(self) -> str:
@@ -477,6 +475,21 @@ class Configuration:
     @property
     def local_root(self) -> Optional[str]:
         return self._local_root
+
+    def get_existent_do_not_ignore_errors_in_paths(self) -> List[str]:
+        """
+        This is a separate method because we want to check for existing files
+        at the time this is called, not when the configuration is
+        constructed.
+        """
+        paths = [path for path in self._do_not_ignore_errors_in if os.path.exists(path)]
+        non_existent_paths = set(self._do_not_ignore_errors_in) - set(paths)
+        if non_existent_paths:
+            LOG.debug(
+                "Filtering out nonexistent paths in `do_not_ignore_errors_in`: "
+                f"{non_existent_paths}"
+            )
+        return paths
 
     def get_binary_version(self) -> Optional[str]:
         status = subprocess.run(
@@ -686,7 +699,7 @@ class Configuration:
                     "do_not_ignore_errors_in", default=[]
                 )
                 assert isinstance(do_not_ignore_errors_in, list)
-                self.do_not_ignore_errors_in.extend(do_not_ignore_errors_in)
+                self._do_not_ignore_errors_in.extend(do_not_ignore_errors_in)
 
                 # Warn on deprecated fields.
                 for deprecated_field in configuration._deprecated.keys():
@@ -747,8 +760,8 @@ class Configuration:
             expand_relative_path(root, path) for path in self.other_critical_files
         ]
 
-        self.do_not_ignore_errors_in = [
-            expand_relative_path(root, path) for path in self.do_not_ignore_errors_in
+        self._do_not_ignore_errors_in = [
+            expand_relative_path(root, path) for path in self._do_not_ignore_errors_in
         ]
 
     def _resolve_versioned_paths(self) -> None:

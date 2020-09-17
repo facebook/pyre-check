@@ -72,6 +72,9 @@ class Check(Reporting):
     def _flags(self) -> List[str]:
         flags = super()._flags()
         filter_directories = self._get_directories_to_analyze()
+        filter_directories.update(
+            set(self._configuration.get_existent_do_not_ignore_errors_in_paths())
+        )
         if len(filter_directories):
             flags.extend(["-filter-directories", ";".join(sorted(filter_directories))])
         flags.extend(["-workers", str(self._configuration.number_of_workers)])

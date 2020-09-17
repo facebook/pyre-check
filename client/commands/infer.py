@@ -579,6 +579,9 @@ class Infer(Reporting):
     def _flags(self) -> List[str]:
         flags = super()._flags()
         filter_directories = self._get_directories_to_analyze()
+        filter_directories.update(
+            set(self._configuration.get_existent_do_not_ignore_errors_in_paths())
+        )
         if len(filter_directories):
             flags.extend(["-filter-directories", ";".join(sorted(filter_directories))])
         search_path = self._configuration.search_path + typeshed_search_path(
