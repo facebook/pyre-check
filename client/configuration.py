@@ -214,7 +214,7 @@ class Configuration:
         self.targets = []
         self.logger = logger
         self.formatter = formatter
-        self.ignore_all_errors = []
+        self._ignore_all_errors = []
         self.number_of_workers: int = 0
         self.project_root: str = project_root
         self._local_root: Optional[str] = local_root
@@ -330,7 +330,7 @@ class Configuration:
                 "`target` and `source_directories` fields must be lists of " "strings."
             )
 
-        if not is_list_of_strings(self.ignore_all_errors):
+        if not is_list_of_strings(self._ignore_all_errors):
             raise InvalidConfiguration(
                 "`ignore_all_errors` field must be a list of strings."
             )
@@ -365,29 +365,6 @@ class Configuration:
                 "directory. Please note that the `typeshed` configuration must "
                 "point to the root of the `typeshed` directory."
             )
-
-        expanded_ignore_paths = []
-        for path in self.ignore_all_errors:
-            expanded = glob.glob(path)
-            if not expanded:
-                expanded_ignore_paths.append(path)
-            else:
-                expanded_ignore_paths += expanded
-        self.ignore_all_errors = expanded_ignore_paths
-
-        non_existent_ignore_paths = [
-            path for path in self.ignore_all_errors if not os.path.exists(path)
-        ]
-        if non_existent_ignore_paths:
-            LOG.warning(
-                "Nonexistent paths passed in to `ignore_all_errors`: "
-                f"`{non_existent_ignore_paths}`"
-            )
-            self.ignore_all_errors = [
-                path
-                for path in self.ignore_all_errors
-                if path not in non_existent_ignore_paths
-            ]
 
         non_existent_infer_paths = [
             path for path in self.ignore_infer if not os.path.exists(path)
@@ -491,6 +468,35 @@ class Configuration:
             )
         return paths
 
+    def get_existent_ignore_all_errors_paths(self) -> List[str]:
+        """
+        This is a separate method because we want to check for existing files
+        at the time this is called, not when the configuration is
+        constructed.
+        """
+        expanded_ignore_paths = []
+        for path in self._ignore_all_errors:
+            expanded = glob.glob(path)
+            if not expanded:
+                expanded_ignore_paths.append(path)
+            else:
+                expanded_ignore_paths += expanded
+
+        non_existent_ignore_paths = [
+            path for path in expanded_ignore_paths if not os.path.exists(path)
+        ]
+        if non_existent_ignore_paths:
+            LOG.warning(
+                "Nonexistent paths passed in to `ignore_all_errors`: "
+                f"`{non_existent_ignore_paths}`"
+            )
+        expanded_ignore_paths = [
+            path
+            for path in expanded_ignore_paths
+            if path not in non_existent_ignore_paths
+        ]
+        return expanded_ignore_paths
+
     def get_binary_version(self) -> Optional[str]:
         status = subprocess.run(
             [self.binary, "-version"], stdout=subprocess.PIPE, universal_newlines=True
@@ -525,7 +531,7 @@ class Configuration:
                 dot_pyre_directory=self.dot_pyre_directory,
             )
             paths_to_ignore = list(local_root.parents) + [local_root]
-            for ignore_element in parent_local_configuration.ignore_all_errors:
+            for ignore_element in parent_local_configuration._ignore_all_errors:
                 if Path(ignore_element).resolve() in paths_to_ignore:
                     excluded_from_parent = True
         except InvalidConfiguration as error:
@@ -602,7 +608,7 @@ class Configuration:
                 ignore_all_errors = configuration.consume(
                     "ignore_all_errors", default=[]
                 )
-                self.ignore_all_errors.extend(ignore_all_errors)
+                self._ignore_all_errors.extend(ignore_all_errors)
 
                 ignore_infer = configuration.consume("ignore_infer", default=[])
                 self.ignore_infer.extend(ignore_infer)
@@ -732,8 +738,8 @@ class Configuration:
         if logger:
             self.logger = expand_relative_path(root, logger)
 
-        self.ignore_all_errors = [
-            expand_relative_path(root, path) for path in self.ignore_all_errors
+        self._ignore_all_errors = [
+            expand_relative_path(root, path) for path in self._ignore_all_errors
         ]
 
         self.ignore_infer = [

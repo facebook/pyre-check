@@ -443,24 +443,6 @@ class StartTest(unittest.TestCase):
             set(command._flags()), {*flags, "-store-type-check-resolution"}
         )
 
-        # Test ignore all errors.
-        arguments = mock_arguments()
-        configuration = mock_configuration(version_hash="hash")
-        configuration.ignore_all_errors = ["/absolute/a", "/root/b"]
-        command = Start(
-            arguments,
-            original_directory,
-            terminal=False,
-            store_type_check_resolution=False,
-            use_watchman=True,
-            incremental_style=commands.IncrementalStyle.FINE_GRAINED,
-            configuration=configuration,
-            analysis_directory=AnalysisDirectory("."),
-        )
-        self.assertEqual(
-            set(command._flags()), {*flags, "-ignore-all-errors", "/absolute/a;/root/b"}
-        )
-
         # Test autocomplete.
         arguments = mock_arguments()
         configuration = mock_configuration(version_hash="hash")
@@ -509,6 +491,55 @@ class StartTest(unittest.TestCase):
         self.assertEqual(
             set(command._flags()),
             {*flags, "-memory-profiling-output", ".pyre/profiling.log"},
+        )
+
+    @patch(
+        f"{find_directories.__name__}.find_global_and_local_root",
+        return_value=find_directories.FoundRoot(Path(".")),
+    )
+    @patch(_typeshed_search_path, Mock(return_value=["path3"]))
+    # pyre-fixme[56]: Argument `set()` to decorator factory
+    #  `unittest.mock.patch.object` could not be resolved in a global scope.
+    @patch.object(commands.Reporting, "_get_directories_to_analyze", return_value=set())
+    def test_start_flags__ignore_all_errors(
+        self,
+        get_directories_to_analyze: MagicMock,
+        find_global_and_local_root: MagicMock,
+    ) -> None:
+        original_directory = "/original/directory"
+        arguments = mock_arguments()
+        configuration = mock_configuration(version_hash="hash")
+        configuration.get_existent_ignore_all_errors_paths.return_value = [
+            "/absolute/a",
+            "/root/b",
+        ]
+        flags = [
+            "-logging-sections",
+            "environment,-progress",
+            "-project-root",
+            "/root",
+            "-log-directory",
+            ".pyre",
+            "-workers",
+            "5",
+            "-expected-binary-version",
+            "hash",
+            "-search-path",
+            "path1,path2,path3",
+            "-new-incremental-check",
+        ]
+        command = Start(
+            arguments,
+            original_directory,
+            terminal=False,
+            store_type_check_resolution=False,
+            use_watchman=True,
+            incremental_style=commands.IncrementalStyle.FINE_GRAINED,
+            configuration=configuration,
+            analysis_directory=AnalysisDirectory("."),
+        )
+        self.assertEqual(
+            set(command._flags()), {*flags, "-ignore-all-errors", "/absolute/a;/root/b"}
         )
 
     @patch.object(configuration_monitor.ConfigurationMonitor, "daemonize")

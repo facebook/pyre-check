@@ -169,12 +169,14 @@ class Start(Reporting):
         )
         if len(filter_directories):
             flags.extend(["-filter-directories", ";".join(sorted(filter_directories))])
-        if len(self._configuration.ignore_all_errors):
+
+        ignore_all_errors_paths = (
+            self._configuration.get_existent_ignore_all_errors_paths()
+        )
+        print("ignore_all", ignore_all_errors_paths, "config", self._configuration)
+        if len(ignore_all_errors_paths):
             flags.extend(
-                [
-                    "-ignore-all-errors",
-                    ";".join(sorted(self._configuration.ignore_all_errors)),
-                ]
+                ["-ignore-all-errors", ";".join(sorted(ignore_all_errors_paths))]
             )
         if self._terminal:
             flags.append("-terminal")

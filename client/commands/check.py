@@ -81,12 +81,13 @@ class Check(Reporting):
         search_path = self._configuration.search_path + typeshed_search_path(
             self._configuration.typeshed
         )
-        if len(self._configuration.ignore_all_errors):
+
+        ignore_all_errors_paths = (
+            self._configuration.get_existent_ignore_all_errors_paths()
+        )
+        if len(ignore_all_errors_paths):
             flags.extend(
-                [
-                    "-ignore-all-errors",
-                    ";".join(sorted(self._configuration.ignore_all_errors)),
-                ]
+                ["-ignore-all-errors", ";".join(sorted(ignore_all_errors_paths))]
             )
         if search_path:
             flags.extend(["-search-path", ",".join(search_path)])
