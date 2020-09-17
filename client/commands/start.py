@@ -173,7 +173,6 @@ class Start(Reporting):
         ignore_all_errors_paths = (
             self._configuration.get_existent_ignore_all_errors_paths()
         )
-        print("ignore_all", ignore_all_errors_paths, "config", self._configuration)
         if len(ignore_all_errors_paths):
             flags.extend(
                 ["-ignore-all-errors", ";".join(sorted(ignore_all_errors_paths))]

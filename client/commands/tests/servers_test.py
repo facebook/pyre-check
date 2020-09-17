@@ -127,7 +127,6 @@ class ServersCommandTest(unittest.TestCase):
         )
         self.assertEqual(servers._configuration.project_root, "/root")
         stop_class.assert_called()
-        print(configuration_from_arguments.call_args_list)
         configuration_from_arguments.assert_has_calls(
             [
                 call(
