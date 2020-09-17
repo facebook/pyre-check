@@ -14,7 +14,12 @@ from typing import NamedTuple, Optional
 from unittest.mock import MagicMock, PropertyMock, call, mock_open, patch
 
 from .. import configuration
-from ..configuration import Configuration, InvalidConfiguration, SearchPathElement
+from ..configuration import (
+    Configuration,
+    InvalidConfiguration,
+    SearchPathElement,
+    _relativize_root,
+)
 from ..find_directories import CONFIGURATION_FILE, LOCAL_CONFIGURATION_FILE
 
 
@@ -940,6 +945,30 @@ class ConfigurationIntegrationTest(unittest.TestCase):
             returncode=0, stdout=" facefacefaceb00\n", expected="facefacefaceb00"
         )
         assert_version(returncode=1, stdout="facefacefaceb00", expected=None)
+
+    def test_relativize_root__project_relative_path(self) -> None:
+        self.assertEqual(
+            _relativize_root("//foo/bar.py", project_root="hello", relative_root=None),
+            "hello/foo/bar.py",
+        )
+        # Globs should be untouched.
+        self.assertEqual(
+            _relativize_root(
+                "//foo/*/bar.py", project_root="hello", relative_root=None
+            ),
+            "hello/foo/*/bar.py",
+        )
+
+    def test_relativize_root__not_project_relative(self) -> None:
+        self.assertEqual(
+            _relativize_root("foo/bar.py", project_root="hello", relative_root=None),
+            "foo/bar.py",
+        )
+        # Globs should be untouched.
+        self.assertEqual(
+            _relativize_root("foo/*/bar.py", project_root="hello", relative_root=None),
+            "foo/*/bar.py",
+        )
 
 
 class SearchPathElementTest(unittest.TestCase):

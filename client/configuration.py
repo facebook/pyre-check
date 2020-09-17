@@ -36,6 +36,13 @@ from .resources import LOG_DIRECTORY
 LOG: Logger = logging.getLogger(__name__)
 
 
+def _relativize_root(root: str, project_root: str, relative_root: Optional[str]) -> str:
+    if root.startswith("//"):
+        return expand_relative_path(project_root, root[2:])
+    else:
+        return expand_relative_path(relative_root or "", root)
+
+
 class InvalidConfiguration(Exception):
     def __init__(self, message: str) -> None:
         self.message = f"Invalid configuration: {message}"
@@ -55,9 +62,7 @@ class SearchPathElement:
     ) -> "SearchPathElement":
         if isinstance(path, str):
             return SearchPathElement(
-                root=SearchPathElement.relativize_root(
-                    path, project_root, path_relative_to
-                ),
+                _relativize_root(path, project_root, path_relative_to),
                 subdirectory=None,
             )
         else:
@@ -65,9 +70,7 @@ class SearchPathElement:
                 root = path["root"]
                 subdirectory = path["subdirectory"]
                 return SearchPathElement(
-                    root=SearchPathElement.relativize_root(
-                        root, project_root, path_relative_to
-                    ),
+                    _relativize_root(root, project_root, path_relative_to),
                     subdirectory=subdirectory,
                 )
             elif "site-package" in path:
@@ -77,9 +80,7 @@ class SearchPathElement:
                 found_element = None
                 for root in site_root:
                     site_package_element = SearchPathElement(
-                        root=SearchPathElement.relativize_root(
-                            root, project_root, None
-                        ),
+                        _relativize_root(root, project_root, None),
                         subdirectory=subdirectory,
                     )
                     if os.path.isdir(site_package_element.path()):
@@ -94,15 +95,6 @@ class SearchPathElement:
                     "Search path elements must have `root` and `subdirectory` "
                     "specified."
                 )
-
-    @staticmethod
-    def relativize_root(
-        root: str, project_root: str, relative_root: Optional[str]
-    ) -> str:
-        if root.startswith("//"):
-            return expand_relative_path(project_root, root[2:])
-        else:
-            return expand_relative_path(relative_root or "", root)
 
     def path(self) -> str:
         subdirectory = self.subdirectory
@@ -459,8 +451,12 @@ class Configuration:
         at the time this is called, not when the configuration is
         constructed.
         """
-        paths = [path for path in self._do_not_ignore_errors_in if os.path.exists(path)]
-        non_existent_paths = set(self._do_not_ignore_errors_in) - set(paths)
+        ignore_paths = [
+            _relativize_root(path, project_root=self.project_root, relative_root=None)
+            for path in self._do_not_ignore_errors_in
+        ]
+        paths = [path for path in ignore_paths if os.path.exists(path)]
+        non_existent_paths = set(ignore_paths) - set(paths)
         if non_existent_paths:
             LOG.debug(
                 "Filtering out nonexistent paths in `do_not_ignore_errors_in`: "
@@ -476,7 +472,10 @@ class Configuration:
         """
         expanded_ignore_paths = []
         for path in self._ignore_all_errors:
-            expanded = glob.glob(path)
+            rooted_path = _relativize_root(
+                path, project_root=self.project_root, relative_root=None
+            )
+            expanded = glob.glob(rooted_path)
             if not expanded:
                 expanded_ignore_paths.append(path)
             else:

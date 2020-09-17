@@ -30,6 +30,7 @@ from ..filesystem import (
     acquire_lock,
     acquire_lock_if_needed,
     add_symbolic_link,
+    expand_relative_path,
     find_python_paths,
     remove_if_exists,
 )
@@ -667,4 +668,11 @@ class FilesystemTest(unittest.TestCase):
                 "LOCAL_ROOT/subX/e.py": "ANALYSIS_ROOT/subX/e.py",
                 "LOCAL_ROOT/subY/subZ/g.pyi": "ANALYSIS_ROOT/subY/subZ/g.pyi",
             },
+        )
+
+    def test_expand_relative_path__globs_are_unchanged(self) -> None:
+        self.assertEqual(expand_relative_path("foo", "bar/*/baz"), "foo/bar/*/baz")
+        self.assertEqual(
+            expand_relative_path("dontcare", "/absolute/path/*/foo"),
+            "/absolute/path/*/foo",
         )
