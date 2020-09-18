@@ -64,6 +64,7 @@ module type Builder = sig
     arguments:Expression.Call.Argument.t list ->
     dynamic:bool ->
     qualifier:Reference.t ->
+    callee_type:Type.t ->
     callee:Ast.Expression.t ->
     unit
 

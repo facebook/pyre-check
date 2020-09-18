@@ -2,6 +2,20 @@
 {
   "kind": "model",
   "data": {
+    "callable": "Ovr{callable_classes.CallableProtocol::__call__}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "Ovr{callable_classes.P::__call__}",
     "sources": [
       {
@@ -30,11 +44,56 @@
 {
   "kind": "model",
   "data": {
+    "callable": "callable_classes.CallableProtocol.__call__",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "callable_classes.P.__call__",
     "sources": [
       {
         "port": "result",
         "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "callable_classes.bar",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "callable_classes.py",
+              "line": 36,
+              "start": 11,
+              "end": 17
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "callable_classes.CallableProtocol.__call__",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-via-value": "b" } ]
+          }
+        ]
       }
     ],
     "sinks": [],

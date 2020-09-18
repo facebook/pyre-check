@@ -1966,6 +1966,7 @@ module State (Context : Context) = struct
           ~arguments:original_arguments
           ~dynamic
           ~qualifier:Context.qualifier
+          ~callee_type:resolved
           ~callee;
         let signature_with_unpacked_callable_and_self_argument
             ({ callable; self_argument } as unpacked_callable_and_self_argument)
@@ -2313,8 +2314,8 @@ module State (Context : Context) = struct
             [{ Call.Argument.value = expression; _ }; { Call.Argument.value = annotations; _ }] as
             arguments;
         } ->
+        let { Resolved.resolved; _ } = forward_expression ~resolution ~expression:callee in
         let callables =
-          let { Resolved.resolved; _ } = forward_expression ~resolution ~expression:callee in
           match resolved with
           | Type.Callable callable -> Some [callable]
           | _ -> None
@@ -2326,6 +2327,7 @@ module State (Context : Context) = struct
           ~arguments
           ~dynamic:false
           ~qualifier:Context.qualifier
+          ~callee_type:resolved
           ~callee;
 
         (* Be angelic and compute errors using the typeshed annotation for isinstance. *)

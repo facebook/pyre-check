@@ -18,7 +18,16 @@ let initialize () =
   Hashtbl.clear property_setter_table
 
 
-let add_callee ~global_resolution ~target ~callables ~arguments ~dynamic ~qualifier ~callee =
+let add_callee
+    ~global_resolution
+    ~target
+    ~callables
+    ~arguments
+    ~dynamic
+    ~qualifier
+    ~callee_type
+    ~callee
+  =
   let resolution =
     Analysis.TypeCheck.resolution
       global_resolution
@@ -49,6 +58,7 @@ let add_callee ~global_resolution ~target ~callables ~arguments ~dynamic ~qualif
             ~arguments
             ~dynamic:false
             ~qualifier
+            ~callee_type
             ~callee:argument.Expression.Call.Argument.value
       | _ -> ()
     in
@@ -71,6 +81,7 @@ let add_callee ~global_resolution ~target ~callables ~arguments ~dynamic ~qualif
                 ~arguments:transformed_arguments
                 ~dynamic:false
                 ~qualifier
+                ~callee_type
                 ~callee:transformed_call
           (* Some callables are decorated with a decorator that transforms them to a class that
              stores & calls the callable opaquely. From Pysa's perspective, the type of the callable
@@ -111,6 +122,7 @@ let add_callee ~global_resolution ~target ~callables ~arguments ~dynamic ~qualif
                     ~arguments:transformed_arguments
                     ~dynamic:false
                     ~qualifier
+                    ~callee_type
                     ~callee:transformed_call
               | _ -> () )
           | _ -> ()
@@ -137,6 +149,28 @@ let add_callee ~global_resolution ~target ~callables ~arguments ~dynamic ~qualif
             |> function
             | Type.Callable callable -> Some (callable :: callables)
             | _ -> Some callables )
+        | _, Some [({ Type.Callable.kind = Anonymous; _ } as callable)] ->
+            (* TODO(T66895305): The names of callable protocol callables aren't propagated
+               currently, reconstruct them. *)
+            if
+              Option.is_some
+                (GlobalResolution.attribute_from_annotation
+                   ~special_method:true
+                   global_resolution
+                   ~parent:callee_type
+                   ~name:"__call__")
+            then
+              Type.primitive_name callee_type
+              >>| fun parent ->
+              [
+                {
+                  callable with
+                  Type.Callable.kind =
+                    Named (Reference.create ~prefix:(Reference.create parent) "__call__");
+                };
+              ]
+            else
+              Some [callable]
         | _ -> callables )
   in
   DefaultBuilder.add_callee
@@ -146,6 +180,7 @@ let add_callee ~global_resolution ~target ~callables ~arguments ~dynamic ~qualif
     ~arguments
     ~dynamic
     ~qualifier
+    ~callee_type
     ~callee
 
 

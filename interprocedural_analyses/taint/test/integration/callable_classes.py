@@ -20,3 +20,17 @@ p: P = returns_p()
 
 def foo() -> str:
     return p("a")
+
+
+class CallableProtocol(Protocol):
+    def __call__(self, arg: str) -> str:
+        ...
+
+
+def returns_callable_protocol() -> CallableProtocol:
+    ...
+
+
+def bar() -> str:
+    p = returns_callable_protocol()
+    return p("b")

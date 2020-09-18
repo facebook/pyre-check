@@ -269,6 +269,13 @@ let resolve_target ~resolution ?receiver_type callee =
     match underlying_callable, self_argument, callable_type, receiver_type, global with
     | Some { kind = Named name; _ }, _, _, _, _ when Option.is_some callable_class_type ->
         [Callable.create_method name, callable_class_type]
+    | Some { kind = Anonymous; _ }, _, _, _, _ when Option.is_some callable_class_type -> (
+        (* TODO(T66895305): Callable protocols don't retain the name of the callable, so we special
+           case them here. *)
+        match callable_class_type >>= Type.primitive_name with
+        | Some class_name ->
+            [`Method { Callable.class_name; method_name = "__call__" }, callable_class_type]
+        | None -> [] )
     | Some { kind = Named name; _ }, self_argument, _, _, Some _ ->
         [Callable.create_function name, self_argument]
     | Some { kind = Named name; _ }, self_argument, _, _, _ when is_super_call ->

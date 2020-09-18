@@ -25,6 +25,7 @@ let test_default_builder context =
       ~arguments:[]
       ~dynamic:false
       ~qualifier:(Reference.create "test")
+      ~callee_type:Type.Any
       ~callee:(parse_single_expression callee);
     let printer = List.to_string ~f:Callgraph.show_callee in
     assert_equal

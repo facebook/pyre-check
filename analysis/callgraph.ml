@@ -114,6 +114,7 @@ module type Builder = sig
     arguments:Call.Argument.t list ->
     dynamic:bool ->
     qualifier:Reference.t ->
+    callee_type:Type.t ->
     callee:Expression.t ->
     unit
 
@@ -141,7 +142,16 @@ module DefaultBuilder : Builder = struct
 
   let initialize () = Hashtbl.clear table
 
-  let add_callee ~global_resolution ~target ~callables ~arguments:_ ~dynamic ~qualifier ~callee =
+  let add_callee
+      ~global_resolution
+      ~target
+      ~callables
+      ~arguments:_
+      ~dynamic
+      ~qualifier
+      ~callee_type:_
+      ~callee
+    =
     (* Store callees. *)
     let callees =
       let method_callee ?(is_optional_class_attribute = false) annotation callable_kind =
@@ -295,6 +305,7 @@ module NullBuilder : Builder = struct
       ~arguments:_
       ~dynamic:_
       ~qualifier:_
+      ~callee_type:_
       ~callee:_
     =
     ()
