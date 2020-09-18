@@ -530,7 +530,9 @@ class Configuration:
                 dot_pyre_directory=self.dot_pyre_directory,
             )
             paths_to_ignore = list(local_root.parents) + [local_root]
-            for ignore_element in parent_local_configuration._ignore_all_errors:
+            for (
+                ignore_element
+            ) in parent_local_configuration.get_existent_ignore_all_errors_paths():
                 if Path(ignore_element).resolve() in paths_to_ignore:
                     excluded_from_parent = True
         except InvalidConfiguration as error:
