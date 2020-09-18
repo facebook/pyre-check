@@ -158,7 +158,8 @@ class Initialize(CommandParser):
         with open(configuration_path, "w+") as configuration_file:
             json.dump(configuration, configuration_file, sort_keys=True, indent=2)
             configuration_file.write("\n")
-        LOG.info(
+        LOG.log(
+            log.SUCCESS,
             "Successfully initialized pyre! "
-            + "You can view the configuration at `{}`.".format(configuration_path)
+            + "You can view the configuration at `{}`.".format(configuration_path),
         )
