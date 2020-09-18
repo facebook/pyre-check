@@ -18,5 +18,8 @@ public class BuckQueryTest {
     assertEquals("'//pyre/...'", BuckQuery.normalizeTarget("//pyre/..."));
     assertEquals("'//pyre/...'", BuckQuery.normalizeTarget("pyre/..."));
     assertEquals("'c//pyre/...'", BuckQuery.normalizeTarget("c//pyre/..."));
+    assertEquals(
+        "'//pyre/...' - set('//pyre:badtarget')",
+        BuckQuery.normalizeTarget("'//pyre/...' - set('//pyre:badtarget')"));
   }
 }

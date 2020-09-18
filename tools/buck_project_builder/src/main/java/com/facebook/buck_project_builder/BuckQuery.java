@@ -96,9 +96,12 @@ public final class BuckQuery {
   }
 
   static String normalizeTarget(String target) {
-    if (target.contains("//")) {
+    if (!target.contains("//")) {
+      target = String.format("//%s", target);
+    }
+    if (!target.contains("'")) {
       return String.format("'%s'", target);
     }
-    return String.format("'//%s'", target);
+    return target;
   }
 }
