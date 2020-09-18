@@ -178,7 +178,6 @@ def run_pyre(arguments: argparse.Namespace) -> ExitCode:
     finally:
         if len(client_exception_message) > 0:
             LOG.error(client_exception_message)
-        log.cleanup()
         if command:
             result = command.result()
             error_message = result.error if result else None
@@ -263,15 +262,15 @@ def main(argv: List[str] = sys.argv[1:]) -> int:
 
     arguments = parser.parse_args(argv)
 
-    log.initialize(arguments.noninteractive)
+    with log.configured_logger(arguments.noninteractive):
+        if not hasattr(arguments, "command"):
+            _set_default_command(arguments)
 
-    if not hasattr(arguments, "command"):
-        _set_default_command(arguments)
-
-    # Special-case `pyre init` because it is not a `Command` like the others.
-    if arguments.command == commands.Initialize.from_arguments:
-        return arguments.command().run().exit_code()
-    return _run_pyre_with_retry(arguments)
+        # Special-case `pyre init` because it is not a `Command` like the others.
+        if arguments.command == commands.Initialize.from_arguments:
+            exit_code = arguments.command().run().exit_code()
+            return exit_code
+        return _run_pyre_with_retry(arguments)
 
 
 if __name__ == "__main__":
