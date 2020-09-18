@@ -18,7 +18,7 @@ import java.util.List;
 public final class DebugOutput {
   private final Set<String> conflictingFiles;
   private final Set<String> unsupportedFiles;
-  private final int MAXIMUM_FILES = 100;
+  private final int MAXIMUM_FILES = 0;
 
   /** Used for gson serialization. */
   private DebugOutput() {
