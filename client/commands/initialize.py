@@ -15,7 +15,6 @@ from pathlib import Path
 from typing import Any, Dict, Optional
 
 from .. import log
-from ..exceptions import EnvironmentException
 from ..find_directories import (
     BINARY_NAME,
     CONFIGURATION_FILE,
@@ -27,6 +26,10 @@ from .command import CommandParser
 
 
 LOG: Logger = logging.getLogger(__name__)
+
+
+class InitializationException(Exception):
+    pass
 
 
 class Initialize(CommandParser):
@@ -90,7 +93,7 @@ class Initialize(CommandParser):
                 )
             )
             if not os.path.isfile(binary_path):
-                raise EnvironmentException(
+                raise InitializationException(
                     "Unable to locate binary at `{}`.".format(binary_path)
                 )
         else:
@@ -103,7 +106,7 @@ class Initialize(CommandParser):
                 log.get_input("Unable to locate typeshed, please enter its root: ")
             ).resolve()
             if not typeshed.is_dir():
-                raise EnvironmentException(
+                raise InitializationException(
                     "No typeshed directory found at `{}`.".format(typeshed)
                 )
         configuration["typeshed"] = str(typeshed)
@@ -141,39 +144,42 @@ class Initialize(CommandParser):
         return find_global_root(Path(".")) is not None
 
     def _run(self) -> None:
-        is_local = self._is_local()
-        current_directory = os.getcwd()
-        configuration_path = os.path.join(current_directory, CONFIGURATION_FILE)
-        if os.path.isfile(configuration_path):
-            if is_local:
-                error = (
-                    "Local configurations must be created in subdirectories of `{}`"
-                    "as it already contains a `.pyre_configuration`.".format(
-                        current_directory
+        try:
+            is_local = self._is_local()
+            current_directory = os.getcwd()
+            configuration_path = os.path.join(current_directory, CONFIGURATION_FILE)
+            if os.path.isfile(configuration_path):
+                if is_local:
+                    error = (
+                        "Local configurations must be created in subdirectories of `{}`"
+                        "as it already contains a `.pyre_configuration`.".format(
+                            current_directory
+                        )
+                    )
+                else:
+                    error = "A pyre configuration already exists at `{}`.".format(
+                        configuration_path
+                    )
+                raise InitializationException(error)
+            if os.path.isfile(configuration_path + ".local"):
+                raise InitializationException(
+                    "A local pyre configuration already exists at `{}`.".format(
+                        configuration_path + ".local"
                     )
                 )
+            if is_local:
+                configuration_path = configuration_path + ".local"
+                configuration = self._get_local_configuration()
             else:
-                error = "A pyre configuration already exists at `{}`.".format(
-                    configuration_path
-                )
-            raise EnvironmentException(error)
-        if os.path.isfile(configuration_path + ".local"):
-            raise EnvironmentException(
-                "A local pyre configuration already exists at `{}`.".format(
-                    configuration_path + ".local"
-                )
-            )
-        if is_local:
-            configuration_path = configuration_path + ".local"
-            configuration = self._get_local_configuration()
-        else:
-            configuration = self._get_configuration()
+                configuration = self._get_configuration()
 
-        with open(configuration_path, "w+") as configuration_file:
-            json.dump(configuration, configuration_file, sort_keys=True, indent=2)
-            configuration_file.write("\n")
-        LOG.log(
-            log.SUCCESS,
-            "Successfully initialized pyre! "
-            + "You can view the configuration at `{}`.".format(configuration_path),
-        )
+            with open(configuration_path, "w+") as configuration_file:
+                json.dump(configuration, configuration_file, sort_keys=True, indent=2)
+                configuration_file.write("\n")
+            LOG.log(
+                log.SUCCESS,
+                "Successfully initialized pyre! "
+                + "You can view the configuration at `{}`.".format(configuration_path),
+            )
+        except InitializationException as error:
+            LOG.error(f"{error}")

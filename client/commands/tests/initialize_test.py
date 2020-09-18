@@ -15,8 +15,6 @@ from unittest.mock import call, mock_open, patch
 from ... import commands
 from ...commands import initialize
 from ...commands.initialize import log
-from ...exceptions import EnvironmentException
-from .command_test import mock_arguments
 
 
 class InitializeTest(unittest.TestCase):
@@ -88,16 +86,6 @@ class InitializeTest(unittest.TestCase):
         ):
             initialize.Initialize().run()
             file().write.assert_has_calls([call("{}"), call("\n")])
-
-        def exists(path):
-            if path.endswith(".pyre_configuration"):
-                return True
-            return False
-
-        isfile.side_effect = exists
-        with patch.object(commands.Command, "_call_client"):
-            with self.assertRaises(EnvironmentException):
-                initialize.Initialize().run()
 
         with patch.object(commands.Command, "_call_client"), patch.object(
             sys, "argv", ["/tmp/pyre/bin/pyre"]
