@@ -4,6 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 
+import contextlib
 import copy
 import io
 import logging
@@ -13,7 +14,7 @@ import sys
 import threading
 import time
 from types import TracebackType
-from typing import Iterable, Optional, Pattern, Sequence
+from typing import Generator, Iterable, Optional, Pattern, Sequence
 
 
 PERFORMANCE: int = 15
@@ -219,6 +220,15 @@ def cleanup() -> None:
         sys.stdout.write(output)
         if not output.endswith("\n"):
             sys.stdout.write("\n")
+
+
+@contextlib.contextmanager
+def configured_logger(noninteractive: bool) -> Generator[None, None, None]:
+    try:
+        initialize(noninteractive)
+        yield
+    finally:
+        cleanup()
 
 
 class StreamLogger:

@@ -11,6 +11,7 @@ from .log import (  # noqa: F401
     Format,
     StreamLogger,
     cleanup,
+    configured_logger,
     get_input,
     get_optional_input,
     get_yes_no_input,
