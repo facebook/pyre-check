@@ -1309,7 +1309,9 @@ let create ~resolution ?path ~configuration ~rule_filter source =
     let top_level_decorators, define =
       let is_taint_decorator decorator =
         match Reference.show (Node.value decorator.Decorator.name) with
-        | "Sanitize" -> true
+        | "Sanitize"
+        | "SkipAnalysis" ->
+            true
         | _ -> false
       in
       let sanitizers, nonsanitizers = List.partition_tf define.decorators ~f:is_taint_decorator in
@@ -1436,6 +1438,7 @@ let create ~resolution ?path ~configuration ~rule_filter source =
                 match mode with
                 | TaintResult.Sanitize kinds -> TaintResult.Sanitize (kinds @ new_sanitize_kinds)
                 | _ -> TaintResult.Sanitize new_sanitize_kinds )
+            | "SkipAnalysis" -> TaintResult.SkipAnalysis
             | _ -> mode
           in
           List.fold top_level_decorators ~f:adjust_mode ~init:model.mode

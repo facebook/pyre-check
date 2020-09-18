@@ -317,7 +317,8 @@ let test_skipped_analysis context =
     ~context
     ~models:
       {|
-      def qualifier.skipped_model(x, y: TaintSink[Demo], z: TaintInTaintOut) -> SkipAnalysis: ...
+      @SkipAnalysis
+      def qualifier.skipped_model(x, y: TaintSink[Demo], z: TaintInTaintOut): ...
     |}
     {|
       from builtins import __test_sink, __user_controlled

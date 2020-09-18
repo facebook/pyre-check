@@ -130,7 +130,8 @@ functions based what sources, sinks, etc. they call in their body. The
 instead force it to use only the user defined models for determining taint flow:
 
 ```python
-def qualifier.dont_generate_models(argument) -> SkipAnalysis: ...
+@SkipAnalysis
+def qualifier.dont_generate_models(argument): ...
 ```
 
 `SkipAnalysis` can be applied at the class level as a shorthand to prevent pysa
