@@ -608,6 +608,12 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             let targets = Interprocedural.CallResolution.get_global_targets ~resolution global in
             match targets with
             | Interprocedural.CallResolution.GlobalTargets targets ->
+                (* If we get a callable class as a global target, the callee is the implicit. *)
+                let arguments =
+                  match targets with
+                  | (_, Some _) :: _ -> { Call.Argument.name = None; value = callee } :: arguments
+                  | _ -> arguments
+                in
                 apply_call_targets ~resolution ~callee location arguments state targets
             | Interprocedural.CallResolution.ConstructorTargets { constructor_targets; callee } ->
                 analyze_constructor_call

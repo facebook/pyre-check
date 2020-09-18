@@ -234,7 +234,7 @@ let resolve_target ~resolution ?receiver_type callee =
             |> Option.value ~default:(None, None)
         | _ -> None, None )
   in
-  let rec resolve_type callable_type =
+  let rec resolve_type ?(callable_class_type = None) callable_type =
     let underlying_callable, self_argument =
       match callable_type with
       | Type.Callable underlying_callable -> Some underlying_callable, None
@@ -267,6 +267,8 @@ let resolve_target ~resolution ?receiver_type callee =
       | _ -> None, None
     in
     match underlying_callable, self_argument, callable_type, receiver_type, global with
+    | Some { kind = Named name; _ }, _, _, _, _ when Option.is_some callable_class_type ->
+        [Callable.create_method name, callable_class_type]
     | Some { kind = Named name; _ }, self_argument, _, _, Some _ ->
         [Callable.create_function name, self_argument]
     | Some { kind = Named name; _ }, self_argument, _, _, _ when is_super_call ->
@@ -296,6 +298,21 @@ let resolve_target ~resolution ?receiver_type callee =
         match name with
         | Some name -> [Callable.create_function name, None]
         | _ -> [] )
+    (* Handle callable classes. `typing.Type` interacts specially with __call__, so we choose to
+       ignore it for now to make sure our constructor logic via `cls()` still works. *)
+    | _, _, (Type.Primitive _ | Type.Parametric _), _, _ when not (Type.is_meta callable_type) -> (
+        let callable_class_type = callable_type in
+        match
+          Resolution.resolve_attribute_access
+            resolution
+            ~base_type:callable_type
+            ~attribute:"__call__"
+        with
+        | Type.Any
+        | Type.Top ->
+            []
+        | callable_type ->
+            resolve_type ~callable_class_type:(Some callable_class_type) callable_type )
     | _ -> []
   in
   resolve_type callable_type

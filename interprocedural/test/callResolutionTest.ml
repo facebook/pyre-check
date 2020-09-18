@@ -216,6 +216,20 @@ let test_resolve_target context =
       [
         ( `Method { Callable.class_name = "test.C"; method_name = "m" },
           Some (Type.meta (Type.Primitive "test.C")) );
+      ];
+  assert_resolved
+    ~source:
+      {|
+        class C:
+          def __call__(self, arg):
+            return arg
+        c: C = C()
+      |}
+    ~expression:"test.c"
+    ~expected:
+      [
+        ( `Method { Callable.class_name = "test.C"; method_name = "__call__" },
+          Some (Type.Primitive "test.C") );
       ]
 
 

@@ -1,0 +1,3 @@
+@generated
+Call dependencies
+callable_classes.foo (fun) -> [callable_classes.P.__call__ (fun)]

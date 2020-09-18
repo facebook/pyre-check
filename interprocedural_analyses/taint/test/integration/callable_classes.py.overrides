@@ -1,0 +1,4 @@
+@generated
+Overrides
+callable_classes.P::__call__ (override) -> [callable_classes.P::__call__ (method)]
+type::__call__ (override) -> [callable_classes.P::__call__ (override) type::__call__ (method)]
