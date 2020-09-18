@@ -12,7 +12,6 @@ import unittest
 from pathlib import Path
 from unittest.mock import call, mock_open, patch
 
-from ... import commands
 from ...commands import initialize
 from ...commands.initialize import log
 
@@ -55,9 +54,7 @@ class InitializeTest(unittest.TestCase):
         isfile.side_effect = exists
         # One for shutil.which("watchman"), another for shutil.which(BINARY_NAME).
         which.side_effect = ["watchman", "binary"]
-        with patch.object(commands.Command, "_call_client"), patch.object(
-            initialize, "find_typeshed", return_value=Path("/tmp")
-        ):
+        with patch.object(initialize, "find_typeshed", return_value=Path("/tmp")):
             initialize.Initialize().run()
             subprocess_run.assert_has_calls(
                 [
@@ -78,18 +75,14 @@ class InitializeTest(unittest.TestCase):
         isfile.side_effect = exists
         file = mock_open()
         with patch("builtins.open", file), patch.object(
-            commands.Command, "_call_client"
-        ), patch.object(
             initialize.Initialize, "_get_local_configuration", return_value={}
-        ), patch.object(
-            initialize.Initialize, "_is_local", return_value=True
-        ):
+        ), patch.object(initialize.Initialize, "_is_local", return_value=True):
             initialize.Initialize().run()
             file().write.assert_has_calls([call("{}"), call("\n")])
 
-        with patch.object(commands.Command, "_call_client"), patch.object(
-            sys, "argv", ["/tmp/pyre/bin/pyre"]
-        ), patch.object(initialize, "find_typeshed", return_value=Path("/tmp")):
+        with patch.object(sys, "argv", ["/tmp/pyre/bin/pyre"]), patch.object(
+            initialize, "find_typeshed", return_value=Path("/tmp")
+        ):
             which.reset_mock()
             which.side_effect = [True, None, "/tmp/pyre/bin/pyre.bin"]
             initialize.Initialize()._get_configuration()
