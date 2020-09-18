@@ -8,6 +8,7 @@
 import os
 import sys
 import unittest
+from pathlib import Path
 from unittest.mock import call, mock_open, patch
 
 from ... import commands
@@ -56,7 +57,7 @@ class InitializeTest(unittest.TestCase):
         # One for shutil.which("watchman"), another for shutil.which(BINARY_NAME).
         which.side_effect = [True, True]
         with patch.object(commands.Command, "_call_client"), patch.object(
-            initialize, "find_typeshed", return_value="/tmp"
+            initialize, "find_typeshed", return_value=Path("/tmp")
         ):
             initialize.Initialize().run()
             subprocess_call.assert_has_calls([call(["watchman", "watch-project", "."])])
@@ -89,7 +90,7 @@ class InitializeTest(unittest.TestCase):
 
         with patch.object(commands.Command, "_call_client"), patch.object(
             sys, "argv", ["/tmp/pyre/bin/pyre"]
-        ), patch.object(initialize, "find_typeshed", return_value="/tmp"):
+        ), patch.object(initialize, "find_typeshed", return_value=Path("/tmp")):
             which.reset_mock()
             which.side_effect = [True, None, "/tmp/pyre/bin/pyre.bin"]
             initialize.Initialize()._get_configuration()

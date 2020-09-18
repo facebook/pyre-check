@@ -12,7 +12,7 @@ import subprocess
 import sys
 from logging import Logger
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from .. import log
 from ..exceptions import EnvironmentException
@@ -83,16 +83,16 @@ class Initialize(CommandParser):
             LOG.info("Binary found at `{}`".format(binary_path))
         configuration["binary"] = binary_path
 
-        typeshed = find_typeshed()
+        typeshed: Optional[Path] = find_typeshed()
         if typeshed is None:
-            typeshed = os.path.abspath(
+            typeshed = Path(
                 log.get_input("Unable to locate typeshed, please enter its root: ")
-            )
-            if not os.path.isdir(typeshed):
+            ).resolve()
+            if not typeshed.is_dir():
                 raise EnvironmentException(
                     "No typeshed directory found at `{}`.".format(typeshed)
                 )
-        configuration["typeshed"] = typeshed
+        configuration["typeshed"] = str(typeshed)
 
         taint_models_path = find_taint_models_directory()
         if taint_models_path is not None:
