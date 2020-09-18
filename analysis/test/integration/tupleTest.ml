@@ -459,6 +459,50 @@ let test_tuple_literal_access context =
       "Incompatible return type [7]: Expected `typing.Tuple[int, int]` but got "
       ^ "`typing.Tuple[typing.Union[int, str], ...]`.";
     ];
+  assert_type_errors
+    {|
+      def func(a: int, b: str, c: bool) -> None:
+        pass
+      x = (42, "bla", False)
+      func( *x)
+    |}
+    [];
+  assert_type_errors
+    {|
+      def func(a: int, b: str, c: bool) -> None:
+        pass
+      c = ("bla", False)
+      func(1, *c)
+    |}
+    [];
+  assert_type_errors
+    {|
+      def func(a: int, b: str, c: bool) -> None:
+        pass
+      c = ("bla", )
+      func(1, *c)
+    |}
+    ["Missing argument [20]: Call `func` expects argument `c`."];
+  assert_type_errors
+    {|
+      def func(a: int, b: bool, c: str) -> None:
+        pass
+      c = ("bla", False)
+      func(1, *c)
+    |}
+    [
+      "Incompatible parameter type [6]: Expected `bool` for 2nd positional only parameter to call \
+       `func` but got `str`.";
+    ];
+  assert_type_errors
+    {|
+      def func(a: int, b: bool, c: str, d:int, e:str) -> None:
+        pass
+      c = (False, "ble")
+      d = (1, "abc")
+      func(1, *c, *d)
+    |}
+    [];
   ()
 
 

@@ -3687,6 +3687,32 @@ class base class_metadata_environment dependency =
                 in
                 List.mapi unresolved ~f:create_argument
           in
+          let unpack sofar argument =
+            match argument with
+            | {
+             Argument.WithPosition.resolved = Tuple (Bounded (Concrete tuple_parameters));
+             kind = SingleStar;
+             position;
+             _;
+            } ->
+                let unpacked_arguments =
+                  List.map tuple_parameters ~f:(fun resolved ->
+                      {
+                        Argument.WithPosition.expression = None;
+                        kind = Positional;
+                        resolved;
+                        position;
+                      })
+                in
+                List.concat [List.rev unpacked_arguments; sofar]
+            | _ -> argument :: sofar
+          in
+          let update_position index argument =
+            Argument.WithPosition.{ argument with position = index + 1 }
+          in
+          let arguments =
+            List.fold ~f:unpack ~init:[] arguments |> List.rev |> List.mapi ~f:update_position
+          in
           let is_labeled = function
             | { Argument.WithPosition.kind = Named _; _ } -> true
             | _ -> false
