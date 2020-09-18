@@ -54,15 +54,29 @@ class Initialize(CommandParser):
         configuration: Dict[str, Any] = {}
 
         watchman_configuration_path = os.path.abspath(".watchmanconfig")
-        if shutil.which("watchman") is not None and log.get_yes_no_input(
-            "Also initialize a watchman configuration?"
+        watchman_path = shutil.which("watchman")
+        if watchman_path is not None and log.get_yes_no_input(
+            "Also initialize watchman in the current directory?"
         ):
             try:
-                with open(watchman_configuration_path, "w+") as configuration_file:
-                    configuration_file.write("{}\n")
-                subprocess.check_call(["watchman", "watch-project", "."])
-            except (IsADirectoryError, subprocess.CalledProcessError):
-                LOG.warning("Unable to initialize watchman for the current directory.")
+                if not os.path.isfile(watchman_configuration_path):
+                    with open(watchman_configuration_path, "w+") as configuration_file:
+                        configuration_file.write("{}\n")
+                    LOG.warning(
+                        f"Created basic `.watchmanconfig` at {watchman_configuration_path}"
+                    )
+                subprocess.run(
+                    [watchman_path, "watch-project", "."],
+                    check=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    universal_newlines=True,
+                )
+                LOG.warning("Current directory is being watched by `watchman`.")
+            except IsADirectoryError:
+                LOG.warning(f"Unable to write to {watchman_configuration_path}.")
+            except subprocess.CalledProcessError:
+                LOG.warning("Failed to run `watchman watch-project .`.")
 
         binary_path = shutil.which(BINARY_NAME)
         if binary_path is None:

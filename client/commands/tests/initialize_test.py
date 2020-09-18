@@ -6,6 +6,7 @@
 # pyre-unsafe
 
 import os
+import subprocess
 import sys
 import unittest
 from pathlib import Path
@@ -28,12 +29,12 @@ class InitializeTest(unittest.TestCase):
     @patch.object(log, "get_input", return_value="")
     @patch("shutil.which")
     @patch("os.path.isfile")
-    @patch("subprocess.call")
+    @patch("subprocess.run")
     @patch("builtins.open")
     def test_initialize(
         self,
         open,
-        subprocess_call,
+        subprocess_run,
         isfile,
         which,
         _get_input,
@@ -55,12 +56,22 @@ class InitializeTest(unittest.TestCase):
 
         isfile.side_effect = exists
         # One for shutil.which("watchman"), another for shutil.which(BINARY_NAME).
-        which.side_effect = [True, True]
+        which.side_effect = ["watchman", "binary"]
         with patch.object(commands.Command, "_call_client"), patch.object(
             initialize, "find_typeshed", return_value=Path("/tmp")
         ):
             initialize.Initialize().run()
-            subprocess_call.assert_has_calls([call(["watchman", "watch-project", "."])])
+            subprocess_run.assert_has_calls(
+                [
+                    call(
+                        ["watchman", "watch-project", "."],
+                        check=True,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                        universal_newlines=True,
+                    )
+                ]
+            )
             open.assert_any_call(os.path.abspath(".watchmanconfig"), "w+")
 
         def exists(path):
