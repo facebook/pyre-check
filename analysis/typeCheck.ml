@@ -119,9 +119,7 @@ let errors_from_not_found
           Node.location mismatch )
       in
       let kind =
-        let normal =
-          Error.IncompatibleParameterType (Argument { name; position; callee; mismatch })
-        in
+        let normal = Error.IncompatibleParameterType { name; position; callee; mismatch } in
         let typed_dictionary_error
             ~method_name
             ~position
@@ -184,8 +182,7 @@ let errors_from_not_found
                   else
                     actual, self_annotation
                 in
-                Error.IncompatibleParameterType
-                  (Operand { operator_name; left_operand; right_operand })
+                Error.UnsupportedOperand (Binary { operator_name; left_operand; right_operand })
             | _ -> normal )
         | Some (Type.Primitive _ as annotation), Some [_; method_name] ->
             GlobalResolution.get_typed_dictionary ~resolution:global_resolution annotation
@@ -1916,8 +1913,8 @@ module State (Context : Context) = struct
             match arguments, operator_name_to_symbol attribute with
             | [{ AttributeResolution.Argument.resolved; _ }], Some operator_name ->
                 Some
-                  (Error.IncompatibleParameterType
-                     (Operand { operator_name; left_operand = target; right_operand = resolved }))
+                  (Error.UnsupportedOperand
+                     (Binary { operator_name; left_operand = target; right_operand = resolved }))
             | _ -> Some (Error.UndefinedAttribute { attribute; origin = Error.Class target }) )
         | _ -> None
       in
@@ -2364,23 +2361,19 @@ module State (Context : Context) = struct
               ~location
               ~kind:
                 (Error.IncompatibleParameterType
-                   (Argument
-                      {
-                        name = None;
-                        position = 2;
-                        callee = Some (Reference.create "isinstance");
-                        mismatch =
-                          {
-                            Error.actual = non_meta;
-                            expected =
-                              Type.union
-                                [
-                                  Type.meta Type.Any;
-                                  Type.Tuple (Type.Unbounded (Type.meta Type.Any));
-                                ];
-                            due_to_invariance = false;
-                          };
-                      }))
+                   {
+                     name = None;
+                     position = 2;
+                     callee = Some (Reference.create "isinstance");
+                     mismatch =
+                       {
+                         Error.actual = non_meta;
+                         expected =
+                           Type.union
+                             [Type.meta Type.Any; Type.Tuple (Type.Unbounded (Type.meta Type.Any))];
+                         due_to_invariance = false;
+                       };
+                   })
           in
           let rec is_compatible annotation =
             match annotation with
@@ -2715,8 +2708,8 @@ module State (Context : Context) = struct
                             ~errors
                             ~location
                             ~kind:
-                              (Error.IncompatibleParameterType
-                                 (RightOperand
+                              (Error.UnsupportedOperand
+                                 (Unary
                                     {
                                       operator_name =
                                         Format.asprintf

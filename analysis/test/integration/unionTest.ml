@@ -146,7 +146,7 @@ let test_check_union context =
         5 in a
     |}
     [
-      "Incompatible parameter type [6]: `in` is not supported for right operand type \
+      "Unsupported operand [58]: `in` is not supported for right operand type \
        `typing.Union[Contains, GetItem]`.";
     ];
   assert_type_errors

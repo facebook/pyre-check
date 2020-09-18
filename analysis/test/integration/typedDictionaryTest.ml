@@ -735,7 +735,7 @@ let test_check_typed_dictionaries context =
         movie['name'] += 7
     |}
     [
-      "Incompatible parameter type [6]: `+` is not supported for operand types `str` and `int`.";
+      "Unsupported operand [58]: `+` is not supported for operand types `str` and `int`.";
       "Invalid TypedDict operation [54]: Expected `str` to be assigned to `Movie` field `name` but \
        got `int`.";
     ];

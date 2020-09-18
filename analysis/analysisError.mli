@@ -189,21 +189,15 @@ and incompatible_overload_kind =
   | DifferingDecorators
   | MisplacedOverloadDecorator
 
-and incompatible_parameter_kind =
-  | Operand of {
+and unsupported_operand_kind =
+  | Binary of {
       operator_name: Identifier.t;
       left_operand: Type.t;
       right_operand: Type.t;
     }
-  | RightOperand of {
+  | Unary of {
       operator_name: Identifier.t;
       operand: Type.t;
-    }
-  | Argument of {
-      name: Identifier.t option;
-      position: int;
-      callee: Reference.t option;
-      mismatch: mismatch;
     }
 [@@deriving compare, eq, sexp, show, hash]
 
@@ -236,7 +230,12 @@ and kind =
     }
   | IncompatibleAwaitableType of Type.t
   | IncompatibleConstructorAnnotation of Type.t
-  | IncompatibleParameterType of incompatible_parameter_kind
+  | IncompatibleParameterType of {
+      name: Identifier.t option;
+      position: int;
+      callee: Reference.t option;
+      mismatch: mismatch;
+    }
   | IncompatibleReturnType of {
       mismatch: mismatch;
       is_implicit: bool;
@@ -356,6 +355,7 @@ and kind =
       expected_count: int;
       unpack_problem: unpack_problem;
     }
+  | UnsupportedOperand of unsupported_operand_kind
   | UnusedIgnore of int list
   | UnusedLocalMode of {
       unused_mode: Source.local_mode Node.t;

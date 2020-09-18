@@ -267,47 +267,41 @@ let test_due_to_analysis_limitations _ =
   (* Parameter. *)
   assert_due_to_analysis_limitations
     (Error.IncompatibleParameterType
-       (Argument
-          {
-            name = Some "";
-            position = 1;
-            callee = Some !&"callee";
-            mismatch = { Error.actual = Type.Top; expected = Type.Top; due_to_invariance = false };
-          }));
+       {
+         name = Some "";
+         position = 1;
+         callee = Some !&"callee";
+         mismatch = { Error.actual = Type.Top; expected = Type.Top; due_to_invariance = false };
+       });
   assert_due_to_analysis_limitations
     (Error.IncompatibleParameterType
-       (Argument
-          {
-            name = Some "";
-            position = 1;
-            callee = Some !&"callee";
-            mismatch =
-              { Error.actual = Type.Top; expected = Type.string; due_to_invariance = false };
-          }));
+       {
+         name = Some "";
+         position = 1;
+         callee = Some !&"callee";
+         mismatch = { Error.actual = Type.Top; expected = Type.string; due_to_invariance = false };
+       });
   assert_not_due_to_analysis_limitations
     (Error.IncompatibleParameterType
-       (Argument
-          {
-            name = Some "";
-            position = 1;
-            callee = Some !&"callee";
-            mismatch =
-              { Error.actual = Type.string; expected = Type.Top; due_to_invariance = false };
-          }));
+       {
+         name = Some "";
+         position = 1;
+         callee = Some !&"callee";
+         mismatch = { Error.actual = Type.string; expected = Type.Top; due_to_invariance = false };
+       });
   assert_due_to_analysis_limitations
     (Error.IncompatibleParameterType
-       (Argument
-          {
-            name = Some "";
-            position = 1;
-            callee = Some !&"callee";
-            mismatch =
-              {
-                Error.actual = Type.Primitive "typing.TypeAlias";
-                expected = Type.Top;
-                due_to_invariance = false;
-              };
-          }));
+       {
+         name = Some "";
+         position = 1;
+         callee = Some !&"callee";
+         mismatch =
+           {
+             Error.actual = Type.Primitive "typing.TypeAlias";
+             expected = Type.Top;
+             due_to_invariance = false;
+           };
+       });
 
   (* Return. *)
   assert_due_to_analysis_limitations
@@ -381,34 +375,31 @@ let test_join context =
   assert_join
     (error
        (Error.IncompatibleParameterType
-          (Argument
-             {
-               name = Some "";
-               position = 1;
-               callee = Some !&"callee";
-               mismatch =
-                 { Error.actual = Type.integer; expected = Type.string; due_to_invariance = false };
-             })))
+          {
+            name = Some "";
+            position = 1;
+            callee = Some !&"callee";
+            mismatch =
+              { Error.actual = Type.integer; expected = Type.string; due_to_invariance = false };
+          }))
     (error
        (Error.IncompatibleParameterType
-          (Argument
-             {
-               name = Some "";
-               position = 1;
-               callee = Some !&"callee";
-               mismatch =
-                 { Error.actual = Type.float; expected = Type.string; due_to_invariance = false };
-             })))
+          {
+            name = Some "";
+            position = 1;
+            callee = Some !&"callee";
+            mismatch =
+              { Error.actual = Type.float; expected = Type.string; due_to_invariance = false };
+          }))
     (error
        (Error.IncompatibleParameterType
-          (Argument
-             {
-               name = Some "";
-               position = 1;
-               callee = Some !&"callee";
-               mismatch =
-                 { Error.actual = Type.float; expected = Type.string; due_to_invariance = false };
-             })));
+          {
+            name = Some "";
+            position = 1;
+            callee = Some !&"callee";
+            mismatch =
+              { Error.actual = Type.float; expected = Type.string; due_to_invariance = false };
+          }));
   let create_mock_location path =
     {
       Location.WithPath.path;

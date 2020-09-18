@@ -206,8 +206,8 @@ let test_check_missing_return context =
           return 1
     |}
     [
-      "Incompatible parameter type [6]: `>` is not supported for operand types `unknown` and `int`.";
       "Unbound name [10]: Name `a` is used but not defined in the current scope.";
+      "Unsupported operand [58]: `>` is not supported for operand types `unknown` and `int`.";
       "Incompatible return type [7]: Expected `None` but got `int`.";
     ];
   assert_type_errors
@@ -299,7 +299,7 @@ let test_check_missing_return context =
     {|
       1 + 'asdf'  # report in top-level function
     |}
-    ["Incompatible parameter type [6]: `+` is not supported for operand types `int` and `str`."];
+    ["Unsupported operand [58]: `+` is not supported for operand types `int` and `str`."];
   assert_type_errors
     {|
       from builtins import condition

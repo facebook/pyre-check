@@ -20,7 +20,7 @@ let test_check_contains context =
             if x in Container():
                 pass
     |}
-    ["Incompatible parameter type [6]: `in` is not supported for right operand type `Container`."];
+    ["Unsupported operand [58]: `in` is not supported for right operand type `Container`."];
 
   assert_type_errors
     {|
@@ -31,9 +31,7 @@ let test_check_contains context =
             if x in NonContainer():
                 pass
     |}
-    [
-      "Incompatible parameter type [6]: `in` is not supported for right operand type `NonContainer`.";
-    ];
+    ["Unsupported operand [58]: `in` is not supported for right operand type `NonContainer`."];
   ()
 
 
