@@ -1,80 +1,80 @@
 # SSRF [requests.api]
 def requests.api.request(
         method: TaintSink[RequestSend],
-        url: TaintSink[RequestSend],
+        url: TaintSink[RequestSend_URI],
         **kwargs: TaintSink[RequestSend, Via[requests_metadata,code_smell]]
 ): ...
-def requests.api.get(url: TaintSink[RequestSend],
+def requests.api.get(url: TaintSink[RequestSend_URI],
         params: TaintSink[RequestSend, Via[requests_metadata,code_smell]] = ...,
         **kwargs: TaintSink[RequestSend, Via[requests_metadata,code_smell]]
 ): ...
-def requests.api.options(url: TaintSink[RequestSend], **kwargs: TaintSink[RequestSend, Via[requests_metadata,code_smell]]): ...
-def requests.api.head(url: TaintSink[RequestSend], **kwargs: TaintSink[RequestSend, Via[requests_metadata,code_smell]]): ...
+def requests.api.options(url: TaintSink[RequestSend_URI], **kwargs: TaintSink[RequestSend, Via[requests_metadata,code_smell]]): ...
+def requests.api.head(url: TaintSink[RequestSend_URI], **kwargs: TaintSink[RequestSend, Via[requests_metadata,code_smell]]): ...
 def requests.api.post(
-        url: TaintSink[RequestSend],
+        url: TaintSink[RequestSend_URI],
         data: TaintSink[RequestSend, Via[requests_metadata,code_smell]] = ...,
         json: TaintSink[RequestSend, Via[requests_metadata,code_smell]] = ...,
         **kwargs: TaintSink[RequestSend, Via[requests_metadata,code_smell]]
 ): ...
 def requests.api.put(
-        url: TaintSink[RequestSend],
+        url: TaintSink[RequestSend_URI],
         data: TaintSink[RequestSend, Via[requests_metadata,code_smell]] = ...,
         json: TaintSink[RequestSend, Via[requests_metadata,code_smell]] = ...,
         **kwargs: TaintSink[RequestSend, Via[requests_metadata,code_smell]]
 ): ...
 def requests.api.patch(
-        url: TaintSink[RequestSend],
+        url: TaintSink[RequestSend_URI],
         data: TaintSink[RequestSend, Via[requests_metadata,code_smell]] = ...,
         json: TaintSink[RequestSend, Via[requests_metadata,code_smell]] = ...,
         **kwargs: TaintSink[RequestSend, Via[requests_metadata,code_smell]]
 ): ...
 def requests.api.delete(
-        url: TaintSink[RequestSend],
+        url: TaintSink[RequestSend_URI],
         **kwargs: TaintSink[RequestSend, Via[requests_metadata,code_smell]]
 ): ...
 
 # SSRF [requests.Session]
 def requests.sessions.Session.get(
-        self, url: TaintSink[RequestSend],
+        self, url: TaintSink[RequestSend_URI],
         **kwargs: TaintSink[RequestSend,
         Via[requests_metadata,code_smell]]
 ): ...
 def requests.sessions.Session.options(
         self,
-        url: TaintSink[RequestSend],
+        url: TaintSink[RequestSend_URI],
         **kwargs: TaintSink[RequestSend, Via[requests_metadata,code_smell]]
 ): ...
 def requests.sessions.Session.head(
-        self, url: TaintSink[RequestSend],
+        self, url: TaintSink[RequestSend_URI],
         **kwargs: TaintSink[RequestSend, Via[requests_metadata,code_smell]]
 ): ...
 def requests.sessions.Session.post(
         self,
-        url: TaintSink[RequestSend],
+        url: TaintSink[RequestSend_URI],
         data: TaintSink[RequestSend, Via[requests_metadata,code_smell]] = ...,
         json: TaintSink[RequestSend, Via[requests_metadata,code_smell]] = ...,
         **kwargs: TaintSink[RequestSend, Via[requests_metadata,code_smell]]
 ): ...
 def requests.sessions.Session.put(
         self,
-        url: TaintSink[RequestSend],
+        url: TaintSink[RequestSend_URI],
         data: TaintSink[RequestSend, Via[requests_metadata,code_smell]] = ...,
         **kwargs: TaintSink[RequestSend, Via[requests_metadata,code_smell]]
 ): ...
 def requests.sessions.Session.patch(
         self,
-        url: TaintSink[RequestSend],
+        url: TaintSink[RequestSend_URI],
         data: TaintSink[RequestSend, Via[requests_metadata,code_smell]] = ...,
         **kwargs: TaintSink[RequestSend, Via[requests_metadata,code_smell]]
 ): ...
 def requests.sessions.Session.delete(
         self,
-        url: TaintSink[RequestSend],
+        url: TaintSink[RequestSend_URI],
         **kwargs: TaintSink[RequestSend, Via[requests_metadata,code_smell]]
 ): ...
 def requests.sessions.Session.request(
         self, method: TaintSink[RequestSend],
-        url: TaintSink[RequestSend],
+        url: TaintSink[RequestSend_URI],
             params: TaintSink[RequestSend, Via[requests_metadata,code_smell]] = ...,
             data: TaintSink[RequestSend, Via[requests_metadata,code_smell]] = ...,
             headers: TaintSink[RequestSend, Via[requests_metadata,code_smell]] = ...,
@@ -92,24 +92,24 @@ def requests.sessions.Session.request(
 ): ...
 
 # SSRF [urllib.request]
-def urllib.request.urlopen(url: TaintSink[RequestSend], data = ...,
+def urllib.request.urlopen(url: TaintSink[RequestSend_URI], data = ...,
                            timeout = ..., *, cafile = ..., capath = ...,
                            cadefault = ..., context = ...): ...
-def urllib.request.urlretrieve(url: TaintSink[RequestSend], filename=..., reporthook=..., data=...): ...
-def urllib.request.URLopener.open(self, fullurl: TaintSink[RequestSend], data=...): ...
-def urllib.request.URLopener.open_unknown(self, fullurl: TaintSink[RequestSend], data: TaintSink[RequestSend, Via[requests_metadata,code_smell]]=...): ...
-def urllib.request.URLopener.retrieve(self, url: TaintSink[RequestSend], filename=..., reporthook=..., data=...): ...
+def urllib.request.urlretrieve(url: TaintSink[RequestSend_URI], filename=..., reporthook=..., data=...): ...
+def urllib.request.URLopener.open(self, fullurl: TaintSink[RequestSend_URI], data=...): ...
+def urllib.request.URLopener.open_unknown(self, fullurl: TaintSink[RequestSend_URI], data: TaintSink[RequestSend, Via[requests_metadata,code_smell]]=...): ...
+def urllib.request.URLopener.retrieve(self, url: TaintSink[RequestSend_URI], filename=..., reporthook=..., data=...): ...
 
 # SSRF [http.client]
 def http.client.HTTPConnection.__init__(self,
-                                        host: TaintSink[RequestSend],
+                                        host: TaintSink[RequestSend_URI],
                                         port: TaintSink[RequestSend] = ...,
                                         timeout: TaintSink[RequestSend] = ...,
                                         source_address = ...,
                                         blocksize = ...
                                        ): ...
 def http.client.HTTPSConnection.__init__(self,
-                                         host: TaintSink[RequestSend],
+                                         host: TaintSink[RequestSend_URI],
                                          port: TaintSink[RequestSend] = ...,
                                          key_file: TaintSink[RequestSend] = ...,
                                          cert_file: TaintSink[RequestSend] = ...,
@@ -121,20 +121,20 @@ def http.client.HTTPSConnection.__init__(self,
                                         ): ...
 def http.client.HTTPConnection.request(self,
                                        method: TaintSink[RequestSend],
-                                       url: TaintSink[RequestSend],
+                                       url: TaintSink[RequestSend_URI],
                                        body = ...,
                                        headers: TaintSink[RequestSend] = ...,
                                        *,
                                        encode_chunked = ...
                                       ): ...
 def http.client.HTTPConnection.set_tunnel(self,
-                                          host: TaintSink[RequestSend],
+                                          host: TaintSink[RequestSend_URI],
                                           port: TaintSink[RequestSend] = ...,
                                           headers: TaintSink[RequestSend] = ...
                                          ): ...
 def http.client.HTTPConnection.putrequest(self,
                                           method: TaintSink[RequestSend],
-                                          url: TaintSink[RequestSend],
+                                          url: TaintSink[RequestSend_URI],
                                           skip_host = ...,
                                           skip_accept_encoding = ...
                                          ): ...
@@ -144,9 +144,9 @@ def http.client.HTTPConnection.putheader(self,
                                         ): ...
 
 # socket
-def socket.create_connection(address: TaintSink[RequestSend], timeout=..., source_address=...): ...
-def socket.socket.connect(self, address: TaintSink[RequestSend]): ...
-def socket.socket.connect_ex(self, address: TaintSink[RequestSend]): ...
+def socket.create_connection(address: TaintSink[RequestSend_URI], timeout=..., source_address=...): ...
+def socket.socket.connect(self, address: TaintSink[RequestSend_URI]): ...
+def socket.socket.connect_ex(self, address: TaintSink[RequestSend_URI]): ...
 def socket.socket.send(self, data: TaintSink[RequestSend], flags=...): ...
 def socket.socket.sendall(self, data: TaintSink[RequestSend], flags=...): ...
 
