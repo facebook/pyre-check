@@ -932,7 +932,14 @@ let rec process
           open_documents
           ~key:qualifier
           ~data:(File.create path |> File.content |> Option.value ~default:"")
-    | _ ->
+    | ModuleTracker.PathLookup.ShadowedBy _ ->
+        Statistics.event
+          ~flush:true
+          ~name:"ModuleTracker failed lookup"
+          ~normals:
+            ["reason", "Module shadowed by another path in ModuleTracker"; "path", Path.show path]
+          ()
+    | ModuleTracker.PathLookup.NotFound ->
         Statistics.event
           ~flush:true
           ~name:"ModuleTracker failed lookup"
