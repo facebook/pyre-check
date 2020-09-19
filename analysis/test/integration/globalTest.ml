@@ -369,7 +369,25 @@ let test_check_builtin_globals context =
     {|
       reveal_type(__debug__)
     |}
-    ["Revealed type [-1]: Revealed type for `__debug__` is `bool`."]
+    ["Revealed type [-1]: Revealed type for `__debug__` is `bool`."];
+  assert_type_errors
+    ~update_environment_with:
+      [
+        { handle = "__init__.pyi"; source = {|
+              def bar() -> None: pass
+            |} };
+      ]
+    {|
+      # Builtin name
+      locals()
+
+      # Non-builtin name
+      foo()
+
+      # Defined in global with empty qualifier
+      bar()
+    |}
+    ["Unbound name [10]: Name `foo` is used but not defined in the current scope."]
 
 
 let () =

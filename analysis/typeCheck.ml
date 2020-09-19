@@ -690,7 +690,11 @@ module State (Context : Context) = struct
     in
     let check_unbound_names errors =
       let add_unbound_name_error errors { Define.NameAccess.name; location } =
-        emit_error ~errors ~location ~kind:(AnalysisError.UnboundName name)
+        match GlobalResolution.get_module_metadata global_resolution Reference.empty with
+        | Some module_metadata when Option.is_some (Module.get_export module_metadata name) ->
+            (* Do not error on names defined in empty qualifier space, e.g. custom builtins. *)
+            errors
+        | _ -> emit_error ~errors ~location ~kind:(AnalysisError.UnboundName name)
       in
       List.fold unbound_names ~init:errors ~f:add_unbound_name_error
     in
