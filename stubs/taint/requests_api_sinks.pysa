@@ -2,30 +2,30 @@
 def requests.api.request(
         method: TaintSink[RequestSend_METADATA],
         url: TaintSink[RequestSend_URI],
-        **kwargs: TaintSink[RequestSend, Via[requests_metadata,code_smell]]
+        **kwargs: TaintSink[RequestSend_DATA, Via[requests_metadata,code_smell]]
 ): ...
 def requests.api.get(url: TaintSink[RequestSend_URI],
-        params: TaintSink[RequestSend, Via[requests_metadata,code_smell]] = ...,
+        params: TaintSink[RequestSend_DATA, Via[requests_metadata,code_smell]] = ...,
         **kwargs: TaintSink[RequestSend_METADATA, Via[requests_metadata,code_smell]]
 ): ...
 def requests.api.options(url: TaintSink[RequestSend_URI], **kwargs: TaintSink[RequestSend_METADATA, Via[requests_metadata,code_smell]]): ...
 def requests.api.head(url: TaintSink[RequestSend_URI], **kwargs: TaintSink[RequestSend_METADATA, Via[requests_metadata,code_smell]]): ...
 def requests.api.post(
         url: TaintSink[RequestSend_URI],
-        data: TaintSink[RequestSend, Via[requests_metadata,code_smell]] = ...,
-        json: TaintSink[RequestSend, Via[requests_metadata,code_smell]] = ...,
+        data: TaintSink[RequestSend_DATA, Via[requests_metadata,code_smell]] = ...,
+        json: TaintSink[RequestSend_DATA, Via[requests_metadata,code_smell]] = ...,
         **kwargs: TaintSink[RequestSend_METADATA, Via[requests_metadata,code_smell]]
 ): ...
 def requests.api.put(
         url: TaintSink[RequestSend_URI],
-        data: TaintSink[RequestSend, Via[requests_metadata,code_smell]] = ...,
-        json: TaintSink[RequestSend, Via[requests_metadata,code_smell]] = ...,
+        data: TaintSink[RequestSend_DATA, Via[requests_metadata,code_smell]] = ...,
+        json: TaintSink[RequestSend_DATA, Via[requests_metadata,code_smell]] = ...,
         **kwargs: TaintSink[RequestSend_METADATA, Via[requests_metadata,code_smell]]
 ): ...
 def requests.api.patch(
         url: TaintSink[RequestSend_URI],
-        data: TaintSink[RequestSend, Via[requests_metadata,code_smell]] = ...,
-        json: TaintSink[RequestSend, Via[requests_metadata,code_smell]] = ...,
+        data: TaintSink[RequestSend_DATA, Via[requests_metadata,code_smell]] = ...,
+        json: TaintSink[RequestSend_DATA, Via[requests_metadata,code_smell]] = ...,
         **kwargs: TaintSink[RequestSend_METADATA, Via[requests_metadata,code_smell]]
 ): ...
 def requests.api.delete(
@@ -51,20 +51,20 @@ def requests.sessions.Session.head(
 def requests.sessions.Session.post(
         self,
         url: TaintSink[RequestSend_URI],
-        data: TaintSink[RequestSend, Via[requests_metadata,code_smell]] = ...,
-        json: TaintSink[RequestSend, Via[requests_metadata,code_smell]] = ...,
+        data: TaintSink[RequestSend_DATA, Via[requests_metadata,code_smell]] = ...,
+        json: TaintSink[RequestSend_DATA, Via[requests_metadata,code_smell]] = ...,
         **kwargs: TaintSink[RequestSend_METADATA, Via[requests_metadata,code_smell]]
 ): ...
 def requests.sessions.Session.put(
         self,
         url: TaintSink[RequestSend_URI],
-        data: TaintSink[RequestSend, Via[requests_metadata,code_smell]] = ...,
+        data: TaintSink[RequestSend_DATA, Via[requests_metadata,code_smell]] = ...,
         **kwargs: TaintSink[RequestSend_METADATA, Via[requests_metadata,code_smell]]
 ): ...
 def requests.sessions.Session.patch(
         self,
         url: TaintSink[RequestSend_URI],
-        data: TaintSink[RequestSend, Via[requests_metadata,code_smell]] = ...,
+        data: TaintSink[RequestSend_DATA, Via[requests_metadata,code_smell]] = ...,
         **kwargs: TaintSink[RequestSend_METADATA, Via[requests_metadata,code_smell]]
 ): ...
 def requests.sessions.Session.delete(
@@ -75,8 +75,8 @@ def requests.sessions.Session.delete(
 def requests.sessions.Session.request(
         self, method: TaintSink[RequestSend_METADATA],
         url: TaintSink[RequestSend_URI],
-            params: TaintSink[RequestSend, Via[requests_metadata,code_smell]] = ...,
-            data: TaintSink[RequestSend, Via[requests_metadata,code_smell]] = ...,
+            params: TaintSink[RequestSend_DATA, Via[requests_metadata,code_smell]] = ...,
+            data: TaintSink[RequestSend_DATA, Via[requests_metadata,code_smell]] = ...,
             headers: TaintSink[RequestSend_METADATA, Via[requests_metadata,code_smell]] = ...,
             cookies: TaintSink[RequestSend_METADATA] = ...,
             files = ...,
@@ -88,17 +88,17 @@ def requests.sessions.Session.request(
             stream: TaintSink[RequestSend_METADATA] = ...,
             verify: TaintSink[RequestSend_METADATA] = ...,
             cert = ...,
-            json: TaintSink[RequestSend, Via[requests_metadata,code_smell]] = ...,
+            json: TaintSink[RequestSend_DATA, Via[requests_metadata,code_smell]] = ...,
 ): ...
 
 # SSRF [urllib.request]
-def urllib.request.urlopen(url: TaintSink[RequestSend_URI], data = ...,
+def urllib.request.urlopen(url: TaintSink[RequestSend_URI], data: TaintSink[RequestSend_DATA] = ...,
                            timeout = ..., *, cafile = ..., capath = ...,
                            cadefault = ..., context = ...): ...
-def urllib.request.urlretrieve(url: TaintSink[RequestSend_URI], filename=..., reporthook=..., data=...): ...
-def urllib.request.URLopener.open(self, fullurl: TaintSink[RequestSend_URI], data=...): ...
-def urllib.request.URLopener.open_unknown(self, fullurl: TaintSink[RequestSend_URI], data: TaintSink[RequestSend, Via[requests_metadata,code_smell]]=...): ...
-def urllib.request.URLopener.retrieve(self, url: TaintSink[RequestSend_URI], filename=..., reporthook=..., data=...): ...
+def urllib.request.urlretrieve(url: TaintSink[RequestSend_URI], filename=..., reporthook=..., data: TaintSink[RequestSend_DATA] =...): ...
+def urllib.request.URLopener.open(self, fullurl: TaintSink[RequestSend_URI], data: TaintSink[RequestSend_DATA] =...): ...
+def urllib.request.URLopener.open_unknown(self, fullurl: TaintSink[RequestSend_URI], data: TaintSink[RequestSend_DATA, Via[requests_metadata,code_smell]]=...): ...
+def urllib.request.URLopener.retrieve(self, url: TaintSink[RequestSend_URI], filename=..., reporthook=..., data: TaintSink[RequestSend_DATA]=...): ...
 
 # SSRF [http.client]
 def http.client.HTTPConnection.__init__(self,
@@ -122,7 +122,7 @@ def http.client.HTTPSConnection.__init__(self,
 def http.client.HTTPConnection.request(self,
                                        method: TaintSink[RequestSend_METADATA],
                                        url: TaintSink[RequestSend_URI],
-                                       body = ...,
+                                       body: TaintSink[RequestSend_DATA] = ...,
                                        headers: TaintSink[RequestSend_METADATA] = ...,
                                        *,
                                        encode_chunked = ...
@@ -140,15 +140,15 @@ def http.client.HTTPConnection.putrequest(self,
                                          ): ...
 def http.client.HTTPConnection.putheader(self,
                                          header: TaintSink[RequestSend_METADATA],
-                                         argument: TaintSink[RequestSend]
+                                         argument: TaintSink[RequestSend_DATA]
                                         ): ...
 
 # socket
 def socket.create_connection(address: TaintSink[RequestSend_URI], timeout=..., source_address=...): ...
 def socket.socket.connect(self, address: TaintSink[RequestSend_URI]): ...
 def socket.socket.connect_ex(self, address: TaintSink[RequestSend_URI]): ...
-def socket.socket.send(self, data: TaintSink[RequestSend], flags=...): ...
-def socket.socket.sendall(self, data: TaintSink[RequestSend], flags=...): ...
+def socket.socket.send(self, data: TaintSink[RequestSend_DATA], flags=...): ...
+def socket.socket.sendall(self, data: TaintSink[RequestSend_DATA], flags=...): ...
 
 # pycurl
-def pycurl.Curl.setopt(self, option, value: TaintSink[RequestSend_URI, RequestSend_METADATA, ViaValueOf[option]]): ...
+def pycurl.Curl.setopt(self, option, value: TaintSink[RequestSend_URI, RequestSend_METADATA, RequestSend_DATA, ViaValueOf[option]]): ...
