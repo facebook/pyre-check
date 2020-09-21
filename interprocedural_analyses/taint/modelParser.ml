@@ -1310,7 +1310,8 @@ let create ~resolution ?path ~configuration ~rule_filter source =
       let is_taint_decorator decorator =
         match Reference.show (Node.value decorator.Decorator.name) with
         | "Sanitize"
-        | "SkipAnalysis" ->
+        | "SkipAnalysis"
+        | "SkipOverrides" ->
             true
         | _ -> false
       in
@@ -1413,10 +1414,14 @@ let create ~resolution ?path ~configuration ~rule_filter source =
               accumulator
               annotation)
       in
-      (* Adjust analysis mode by applying top-level decorators. *)
-      let model =
-        let mode =
-          let adjust_mode mode { Decorator.name = { Node.value = name; _ }; arguments } =
+      (* Adjust analysis mode and whether we skip overrides by applying top-level decorators. *)
+      let model, skipped_override =
+        let define_name = name in
+        let mode, skipped_override =
+          let adjust_mode
+              (mode, skipped_override)
+              { Decorator.name = { Node.value = name; _ }; arguments }
+            =
             match Reference.show name with
             | "Sanitize" -> (
                 let new_sanitize_kinds =
@@ -1436,14 +1441,16 @@ let create ~resolution ?path ~configuration ~rule_filter source =
                       List.filter_map arguments ~f:to_sanitize_kind
                 in
                 match mode with
-                | TaintResult.Sanitize kinds -> TaintResult.Sanitize (kinds @ new_sanitize_kinds)
-                | _ -> TaintResult.Sanitize new_sanitize_kinds )
-            | "SkipAnalysis" -> TaintResult.SkipAnalysis
-            | _ -> mode
+                | TaintResult.Sanitize kinds ->
+                    TaintResult.Sanitize (kinds @ new_sanitize_kinds), skipped_override
+                | _ -> TaintResult.Sanitize new_sanitize_kinds, skipped_override )
+            | "SkipAnalysis" -> TaintResult.SkipAnalysis, skipped_override
+            | "SkipOverrides" -> mode, Some define_name
+            | _ -> mode, skipped_override
           in
-          List.fold top_level_decorators ~f:adjust_mode ~init:model.mode
+          List.fold top_level_decorators ~f:adjust_mode ~init:(model.mode, skipped_override)
         in
-        { model with mode }
+        { model with mode }, skipped_override
       in
       Core.Result.Ok (Model ({ model; call_target; is_obscure = false }, skipped_override))
     with

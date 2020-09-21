@@ -156,11 +156,12 @@ The above message indicates that 106 subclasses of `object` have overridden
 `__init__`. If Pysa sees taint flowing into `object.__init__`, then it will
 treat all 106 overrides of `object.__init__` as also receiving that taint.
 
-The `SkipOverrides` annotation can be applied to deal with false positives or
+The `@SkipOverrides` decorator can be applied to deal with false positives or
 performance issues from having too many overrides on a given function:
 
 ```python
-def object.__init__(self) -> SkipOverrides: ...
+@SkipOverrides
+def object.__init__(self): ...
 ```
 
 This annotation will cause Pysa not to propagate taint into to and from
@@ -182,7 +183,7 @@ overriden method on the base class.
 }
 ```
 
-This can speed up the analysis, but it will lead to false positives, because
+This can speed up the analysis, but it will lead to false negatives, because
 Pysa will only propagate taint to or from 60 (in the case of the above example)
 overriden methods on subclasses. The remaining overriding methods will be
 ignored and treated as if they weren't actually overriding the base class
