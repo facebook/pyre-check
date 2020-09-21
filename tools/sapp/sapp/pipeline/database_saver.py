@@ -8,12 +8,11 @@
 import logging
 from typing import Optional, Tuple
 
-from .bulk_saver import BulkSaver
-from .db import DB
-from .decorators import log_time
-from .models import (
+from ..bulk_saver import BulkSaver
+from ..db import DB
+from ..decorators import log_time
+from ..models import (
     Issue,
-    IssueInstanceSharedTextAssoc,
     MetaRunToRunAssoc,
     PrimaryKeyGenerator,
     Run,
@@ -23,8 +22,8 @@ from .models import (
     TraceFrameAnnotation,
     TraceKind,
 )
-from .pipeline import PipelineStep, Summary
-from .trace_graph import TraceGraph
+from ..trace_graph import TraceGraph
+from . import PipelineStep, Summary
 
 
 log = logging.getLogger("sapp")

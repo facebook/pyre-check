@@ -3,9 +3,9 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from typing import Any, Dict, Iterable, Set, Tuple
+from typing import Any, Dict, Set, Tuple
 
-from .pipeline import DictEntries, PipelineStep, Summary
+from . import DictEntries, PipelineStep, Summary
 
 
 class WarningCodeFilter(PipelineStep[DictEntries, DictEntries]):

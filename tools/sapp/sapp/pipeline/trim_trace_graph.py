@@ -6,9 +6,9 @@
 import logging
 from typing import Tuple
 
-from .pipeline import PipelineStep, Summary
-from .trace_graph import TraceGraph
-from .trimmed_trace_graph import TrimmedTraceGraph
+from ..trace_graph import TraceGraph
+from ..trimmed_trace_graph import TrimmedTraceGraph
+from . import PipelineStep, Summary
 
 
 log = logging.getLogger("sapp")

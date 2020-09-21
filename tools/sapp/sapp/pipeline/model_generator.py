@@ -5,13 +5,12 @@
 
 import datetime
 import logging
-import os
 from collections import defaultdict
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 import ujson as json
 
-from .models import (
+from ..models import (
     DBID,
     SHARED_TEXT_LENGTH,
     Issue,
@@ -27,10 +26,9 @@ from .models import (
     TraceFrame,
     TraceFrameAnnotation,
     TraceKind,
-    create as create_models,
 )
-from .pipeline import DictEntries, PipelineStep, Summary
-from .trace_graph import TraceGraph
+from ..trace_graph import TraceGraph
+from . import DictEntries, PipelineStep, Summary
 
 
 log = logging.getLogger("sapp")

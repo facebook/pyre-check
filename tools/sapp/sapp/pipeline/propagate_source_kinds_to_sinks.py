@@ -7,9 +7,9 @@ import logging
 from collections import defaultdict, deque
 from typing import Dict, List, Set, Tuple
 
-from .models import IssueInstance, SharedTextKind, TraceFrame, TraceKind
-from .pipeline import PipelineStep, Summary
-from .trace_graph import TraceGraph
+from ..models import IssueInstance, SharedTextKind, TraceFrame, TraceKind
+from ..trace_graph import TraceGraph
+from . import PipelineStep, Summary
 
 
 log = logging.getLogger("sapp")

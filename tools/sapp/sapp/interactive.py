@@ -42,7 +42,6 @@ from sqlalchemy.sql import func
 from sqlalchemy.sql.expression import or_
 
 from .analysis_output import AnalysisOutput, AnalysisOutputError
-from .base_parser import BaseParser
 from .db import DB
 from .decorators import UserError, catch_keyboard_interrupt, catch_user_error
 from .models import (
@@ -61,6 +60,7 @@ from .models import (
     TraceKind,
     create as create_models,
 )
+from .pipeline.base_parser import BaseParser
 from .query_builder import IssueQueryBuilder
 from .trace_operator import TraceFrameQueryResult, TraceOperator, TraceTuple
 

@@ -9,8 +9,8 @@ from typing import List, NamedTuple, Optional, Type
 
 import click
 
-from .base_parser import BaseParser
 from .db import DB
+from .pipeline.base_parser import BaseParser
 
 
 class Context(NamedTuple):

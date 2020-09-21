@@ -14,8 +14,8 @@ from typing import Any, Dict, Iterable, List, NamedTuple, Set, TextIO, Tuple
 
 import xxhash
 
-from .analysis_output import AnalysisOutput, Metadata
-from .pipeline import DictEntries, InputFiles, Optional, PipelineStep, Summary
+from ..analysis_output import AnalysisOutput, Metadata
+from . import DictEntries, InputFiles, Optional, PipelineStep, Summary
 
 
 # if these imports have the same name we get a linter error

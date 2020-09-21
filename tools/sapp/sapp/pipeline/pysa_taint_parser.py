@@ -11,8 +11,8 @@ from typing import IO, Any, Dict, Iterable, List, Optional, Tuple
 
 import ujson as json
 
-from . import errors
-from .analysis_output import AnalysisOutput, Metadata
+from .. import errors
+from ..analysis_output import AnalysisOutput, Metadata
 from .base_parser import (
     BaseParser,
     EntryPosition,

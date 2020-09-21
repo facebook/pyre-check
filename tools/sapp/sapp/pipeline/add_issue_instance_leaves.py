@@ -7,9 +7,9 @@ import logging
 from collections import deque
 from typing import Tuple
 
-from .models import DBID, SharedText, SharedTextKind
-from .pipeline import PipelineStep, Summary
-from .trace_graph import TraceGraph
+from ..models import DBID, SharedText, SharedTextKind
+from ..trace_graph import TraceGraph
+from . import PipelineStep, Summary
 
 
 log = logging.getLogger("sapp")

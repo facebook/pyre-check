@@ -7,7 +7,7 @@ import logging
 from multiprocessing import Pool
 from typing import Any, Dict, Iterable
 
-from .analysis_output import AnalysisOutput
+from ..analysis_output import AnalysisOutput
 from .base_parser import BaseParser
 
 

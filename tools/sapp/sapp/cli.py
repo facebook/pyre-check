@@ -12,7 +12,7 @@ from .cli_lib import commands, common_options
 from .context import Context
 from .db import DB, DBType
 from .lint import lint
-from .pysa_taint_parser import Parser
+from .pipeline.pysa_taint_parser import Parser
 
 
 logger = logging.getLogger("sapp")

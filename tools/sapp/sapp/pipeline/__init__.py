@@ -8,7 +8,7 @@ from abc import ABCMeta, abstractmethod
 from datetime import datetime, timedelta
 from typing import Any, Dict, Generic, List, Optional, Tuple, TypeVar
 
-from .analysis_output import AnalysisOutput
+from ..analysis_output import AnalysisOutput
 
 
 log = logging.getLogger("sapp")

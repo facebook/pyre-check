@@ -38,7 +38,7 @@ from ..models import (
     TraceKind,
     create as create_models,
 )
-from ..pysa_taint_parser import Parser
+from ..pipeline.pysa_taint_parser import Parser
 from .fake_object_generator import FakeObjectGenerator
 
 

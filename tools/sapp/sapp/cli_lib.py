@@ -16,17 +16,17 @@ from traitlets.config import Config
 
 from .analysis_output import AnalysisOutput
 from .context import Context, pass_context
-from .create_database import CreateDatabase
-from .database_saver import DatabaseSaver
 from .db import DB
 from .extensions import prompt_extension
 from .filesystem import find_root
 from .interactive import Interactive
-from .model_generator import ModelGenerator
 from .models import PrimaryKeyGenerator
 from .pipeline import Pipeline
+from .pipeline.create_database import CreateDatabase
+from .pipeline.database_saver import DatabaseSaver
+from .pipeline.model_generator import ModelGenerator
+from .pipeline.trim_trace_graph import TrimTraceGraph
 from .server import start_server
-from .trim_trace_graph import TrimTraceGraph
 
 
 MARKER_DIRECTORIES = [".pyre", ".hg", ".git", ".svn"]
