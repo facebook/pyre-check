@@ -25,7 +25,9 @@ files, compare the `.pyre_configuration` files.
 
 ### Sanitizers
 
-_Sanitizers_ are defined in `.pysa` files, just like sources and sinks. An
+_Sanitizers_ are defined in `.pysa` files, just like sources and sinks. Since they
+mark a change in how Pysa treats the entire callable instead of just the returned value or
+the parameters, the annotation is represented using a decorator. An
 example is provided in `sanitizers.pysa` and you will have to add more of your
 own.
 
@@ -50,9 +52,14 @@ own.
 
 - `pyre analyze` erroring out? Try these strategies:
   -  Make sure type annotations didn't sneak into your `.pysa` model files. The
-     only annotations you should have should be taint annoations: `-> Sanitize`.
+     only annotations you should have are taint annotations such as `TaintSource[...]`
+     and `TaintInTaintOut[...]`.
      Make sure you remove all type annotations such as `request: HttpRequest`
      from your `.pysa` files.
   - Make sure you're using **fully qualified names**. All of your models for
-    functions in this file should look like `def
-    FILE_NAME.function_name(arguments) -> Sanitize: ...`
+    functions in this file should look like
+
+    ```python
+    @Sanitize
+    def FILE_NAME.function_name(arguments): ...
+    ```

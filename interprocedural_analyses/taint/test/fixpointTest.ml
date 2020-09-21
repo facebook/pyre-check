@@ -346,7 +346,8 @@ let test_sanitized_analysis context =
     ~context
     ~models:
       {|
-      def qualifier.sanitized_model(x, y: TaintSink[Demo], z: TaintInTaintOut) -> Sanitize: ...
+      @Sanitize
+      def qualifier.sanitized_model(x, y: TaintSink[Demo], z: TaintInTaintOut): ...
     |}
     {|
       from builtins import __test_sink, __user_controlled

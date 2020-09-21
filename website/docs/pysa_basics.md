@@ -199,11 +199,12 @@ in the detected flow.
 Sanitizers break a taint flow by removing taint from data. Models that indicate
 sanitizing functions are defined in `.pysa` files. Sanitizers can be added to
 the same files as sources and sinks. Functions are declared as sanitizers by
-marking their return type as `Sanitize`:
+adding a special decorator:
 
 ```python
 # Sanitizer function
-def django.utils.html.escape(text) -> Sanitize: ...
+@Sanitize
+def django.utils.html.escape(text): ...
 ```
 
 Attributes can also be marked as sanitizers to remove all taint passing through
