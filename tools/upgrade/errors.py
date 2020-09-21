@@ -470,13 +470,14 @@ def _suppress_errors(
             line_break_block_errors.append(comments)
             comments = []
 
-        LOG.info(
-            "Adding comment%s on line %d: %s",
-            "s" if len(comments) > 1 else "",
-            number,
-            " \n".join(comments),
-        )
-        new_lines.extend(comments)
+        if len(comments) > 0:
+            LOG.info(
+                "Adding comment%s on line %d: %s",
+                "s" if len(comments) > 1 else "",
+                number,
+                " \n".join(comments),
+            )
+            new_lines.extend(comments)
         new_lines.append(line)
     output = "\n".join(new_lines)
     if not unsafe:
