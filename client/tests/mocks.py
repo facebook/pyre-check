@@ -78,7 +78,7 @@ def mock_configuration(version_hash=None, file_hash=None) -> MagicMock:
     configuration.source_directories = ["."]
     configuration.logger = None
     configuration.number_of_workers = 5
-    configuration.search_path = ["path1", "path2"]
+    configuration.search_path = []
     configuration.taint_models_path = []
     configuration.typeshed = "stub"
     configuration.version_hash = version_hash

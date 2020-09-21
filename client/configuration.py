@@ -389,12 +389,6 @@ class Configuration:
                 )
                 assert_readable_directory_in_configuration(typeshed_version_directory)
 
-        # Validate elements of the search path.
-        for element in self._search_path:
-            assert_readable_directory_in_configuration(
-                element.path(), field_name="search_path"
-            )
-
         if not is_list_of_strings(self.other_critical_files):
             raise InvalidConfiguration(
                 "`critical_files` field must be a list of strings."
@@ -436,14 +430,20 @@ class Configuration:
         return self._use_buck_source_database or False
 
     @property
-    def search_path(self) -> List[str]:
-        if not self._search_path:
-            return []
-        return [element.command_line_argument() for element in self._search_path]
-
-    @property
     def local_root(self) -> Optional[str]:
         return self._local_root
+
+    def get_existent_search_paths(self) -> List[SearchPathElement]:
+        if not self._search_path:
+            return []
+        existent_paths = []
+        for search_path_element in self._search_path:
+            search_path = search_path_element.path()
+            if os.path.exists(search_path):
+                existent_paths.append(search_path_element)
+            else:
+                LOG.debug(f"Filtering out nonexistent search path: {search_path}")
+        return existent_paths
 
     def get_existent_do_not_ignore_errors_in_paths(self) -> List[str]:
         """

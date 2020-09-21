@@ -78,9 +78,10 @@ class Check(Reporting):
         if len(filter_directories):
             flags.extend(["-filter-directories", ";".join(sorted(filter_directories))])
         flags.extend(["-workers", str(self._configuration.number_of_workers)])
-        search_path = self._configuration.search_path + typeshed_search_path(
-            self._configuration.typeshed
-        )
+        search_path = [
+            search_path.command_line_argument()
+            for search_path in self._configuration.get_existent_search_paths()
+        ] + typeshed_search_path(self._configuration.typeshed)
 
         ignore_all_errors_paths = (
             self._configuration.get_existent_ignore_all_errors_paths()

@@ -103,7 +103,7 @@ class IncrementalTest(unittest.TestCase):
                     "-expected-binary-version",
                     "hash",
                     "-search-path",
-                    "path1,path2,path3",
+                    "path3",
                 ],
             )
 
@@ -142,7 +142,7 @@ class IncrementalTest(unittest.TestCase):
                     "-expected-binary-version",
                     "hash",
                     "-search-path",
-                    "path1,path2,path3",
+                    "path3",
                     "-nonblocking",
                 ],
             )
@@ -176,7 +176,7 @@ class IncrementalTest(unittest.TestCase):
                     "-expected-binary-version",
                     "hash",
                     "-search-path",
-                    "path1,path2,path3",
+                    "path3",
                 ],
             )
 
@@ -218,7 +218,7 @@ class IncrementalTest(unittest.TestCase):
                     "-expected-binary-version",
                     "hash",
                     "-search-path",
-                    "path1,path2,path3",
+                    "path3",
                 ],
             )
 
@@ -256,7 +256,7 @@ class IncrementalTest(unittest.TestCase):
                     "-expected-binary-version",
                     "hash",
                     "-search-path",
-                    "path1,path2,path3",
+                    "path3",
                 ],
             )
 
@@ -322,7 +322,7 @@ class IncrementalTest(unittest.TestCase):
                     "-expected-binary-version",
                     "hash",
                     "-search-path",
-                    "path1,path2,path3",
+                    "path3",
                 ],
             )
 

@@ -119,11 +119,17 @@ class ConfigurationIntegrationTest(unittest.TestCase):
 
         with patch.object(
             site, "getsitepackages", return_value=["/mock/site0", "/mock/site1"]
-        ):
+        ), patch("os.path.exists", return_value=True):
             json_load.side_effect = [{"search_path": [{"site-package": "abc"}]}]
             configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
-            self.assertIn("/mock/site0$abc", configuration.search_path)
-            self.assertIn("/mock/site1$abc", configuration.search_path)
+            self.assertIn(
+                SearchPathElement("/mock/site0", subdirectory="abc"),
+                configuration.get_existent_search_paths(),
+            )
+            self.assertIn(
+                SearchPathElement("/mock/site1", subdirectory="abc"),
+                configuration.get_existent_search_paths(),
+            )
 
         json_load.side_effect = [
             {
@@ -136,10 +142,11 @@ class ConfigurationIntegrationTest(unittest.TestCase):
         ]
         configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
         self.assertEqual(configuration.typeshed, "TYPE/VERSION/SHED/")
-        self.assertEqual(
-            configuration.search_path,
-            [SearchPathElement("additional/", subdirectory=None)],
-        )
+        with patch("os.path.exists", return_value=True):
+            self.assertEqual(
+                configuration.get_existent_search_paths(),
+                [SearchPathElement("additional/", subdirectory=None)],
+            )
         self.assertEqual(configuration.number_of_workers, 20)
         self.assertEqual(configuration.taint_models_path, [])
         self.assertEqual(configuration.file_hash, None)
@@ -157,10 +164,11 @@ class ConfigurationIntegrationTest(unittest.TestCase):
         ]
         configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
         self.assertEqual(configuration.typeshed, "TYPE/VERSION/SHED/")
-        self.assertEqual(
-            configuration.search_path,
-            [SearchPathElement("additional/", subdirectory=None)],
-        )
+        with patch("os.path.exists", return_value=True):
+            self.assertEqual(
+                configuration.get_existent_search_paths(),
+                [SearchPathElement("additional/", subdirectory=None)],
+            )
         self.assertEqual(configuration.number_of_workers, 20)
         self.assertEqual(configuration.taint_models_path, [])
         self.assertEqual(configuration.file_hash, None)
@@ -180,9 +188,14 @@ class ConfigurationIntegrationTest(unittest.TestCase):
         ]
         configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
         self.assertEqual(configuration.typeshed, "TYPE/VERSION/SHED/")
-        self.assertEqual(
-            configuration.search_path, ["additional/", "root/$subdirectory"]
-        )
+        with patch("os.path.exists", return_value=True):
+            self.assertListEqual(
+                [
+                    element.path()
+                    for element in configuration.get_existent_search_paths()
+                ],
+                ["additional/", "root/subdirectory"],
+            )
         self.assertEqual(configuration.number_of_workers, 20)
         self.assertEqual(configuration.file_hash, None)
         self.assertEqual(configuration.taint_models_path, [])
@@ -201,10 +214,14 @@ class ConfigurationIntegrationTest(unittest.TestCase):
         ]
         configuration = Configuration("project_root", dot_pyre_directory=Path("/.pyre"))
         self.assertEqual(configuration.typeshed, "project_root/TYPE/VERSION/SHED/")
-        self.assertEqual(
-            configuration.search_path,
-            ["project_root/additional/", "project_root/root/$subdirectory"],
-        )
+        with patch("os.path.exists", return_value=True):
+            self.assertListEqual(
+                [
+                    element.command_line_argument()
+                    for element in configuration.get_existent_search_paths()
+                ],
+                ["project_root/additional/", "project_root/root/$subdirectory"],
+            )
         self.assertEqual(configuration.number_of_workers, 20)
         self.assertEqual(configuration.file_hash, None)
         self.assertEqual(configuration.taint_models_path, [])
@@ -223,7 +240,6 @@ class ConfigurationIntegrationTest(unittest.TestCase):
 
         json_load.side_effect = [
             {
-                "search_path": "simple_string/",
                 "version": "VERSION",
                 "typeshed": "TYPE/%V/SHED/",
                 "taint_models_path": ".pyre/taint_models",
@@ -232,12 +248,10 @@ class ConfigurationIntegrationTest(unittest.TestCase):
         ]
         configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
         self.assertEqual(configuration.typeshed, "TYPE/VERSION/SHED/")
-        self.assertEqual(configuration.search_path, ["simple_string/"])
         self.assertEqual(configuration.taint_models_path, [".pyre/taint_models"])
 
         json_load.side_effect = [
             {
-                "search_path": "simple_string/",
                 "version": "VERSION",
                 "typeshed": "TYPE/%V/SHED/",
                 "taint_models_path": [".pyre/taint_models_1", ".pyre/taint_models_2"],
@@ -246,7 +260,6 @@ class ConfigurationIntegrationTest(unittest.TestCase):
         ]
         configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
         self.assertEqual(configuration.typeshed, "TYPE/VERSION/SHED/")
-        self.assertEqual(configuration.search_path, ["simple_string/"])
         self.assertEqual(
             configuration.taint_models_path,
             [".pyre/taint_models_1", ".pyre/taint_models_2"],
@@ -333,7 +346,6 @@ class ConfigurationIntegrationTest(unittest.TestCase):
             json_load.side_effect = [
                 {
                     "taint_models_path": ".pyre/taint_models",
-                    "search_path": "simple_string/",
                     "version": "VERSION",
                     "typeshed": "/TYPE/%V/SHED/",
                 },
@@ -341,7 +353,6 @@ class ConfigurationIntegrationTest(unittest.TestCase):
             ]
             configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
             self.assertEqual(configuration.typeshed, "/TYPE/VERSION/SHED/")
-            self.assertEqual(configuration.search_path, ["/root/simple_string/"])
             self.assertEqual(
                 configuration.taint_models_path, ["/root/.pyre/taint_models"]
             )
@@ -350,11 +361,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
                     "taint_models_path": ".pyre/taint_models",
                     "source_directories": ["."],
                 },
-                {
-                    "search_path": "simple_string/",
-                    "version": "VERSION",
-                    "typeshed": "/TYPE/%V/SHED/",
-                },
+                {"version": "VERSION", "typeshed": "/TYPE/%V/SHED/"},
             ]
             configuration = Configuration(
                 project_root="/root",
@@ -362,7 +369,6 @@ class ConfigurationIntegrationTest(unittest.TestCase):
                 dot_pyre_directory=Path("/.pyre"),
             )
             self.assertEqual(configuration.typeshed, "/TYPE/VERSION/SHED/")
-            self.assertEqual(configuration.search_path, ["/root/simple_string/"])
             self.assertEqual(
                 configuration.taint_models_path, ["/root/local/.pyre/taint_models"]
             )
@@ -372,7 +378,6 @@ class ConfigurationIntegrationTest(unittest.TestCase):
                     "source_directories": ["."],
                 },
                 {
-                    "search_path": "simple_string/",
                     "version": "VERSION",
                     "taint_models_path": "global/taint_models",
                     "typeshed": "/TYPE/%V/SHED/",
@@ -384,7 +389,6 @@ class ConfigurationIntegrationTest(unittest.TestCase):
                 dot_pyre_directory=Path("/.pyre"),
             )
             self.assertEqual(configuration.typeshed, "/TYPE/VERSION/SHED/")
-            self.assertEqual(configuration.search_path, ["/root/simple_string/"])
             self.assertEqual(
                 configuration.taint_models_path,
                 ["/root/local/.pyre/taint_models", "/root/global/taint_models"],
@@ -392,7 +396,6 @@ class ConfigurationIntegrationTest(unittest.TestCase):
 
         json_load.side_effect = [
             {
-                "search_path": "simple_string/",
                 "version": "VERSION",
                 "typeshed": "/TYPE/%V/SHED/",
                 "saved_state": "some_name",
@@ -401,7 +404,6 @@ class ConfigurationIntegrationTest(unittest.TestCase):
         ]
         configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
         self.assertEqual(configuration.typeshed, "/TYPE/VERSION/SHED/")
-        self.assertEqual(configuration.search_path, ["simple_string/"])
         self.assertEqual(configuration.file_hash, "HASH")
 
         json_load.side_effect = [
@@ -417,9 +419,14 @@ class ConfigurationIntegrationTest(unittest.TestCase):
             {},
         ]
         configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
-        self.assertEqual(
-            configuration.search_path, ["/home/user/simple", "/home/user/simple$subdir"]
-        )
+        with patch("os.path.exists", return_value=True):
+            self.assertListEqual(
+                [
+                    element.command_line_argument()
+                    for element in configuration.get_existent_search_paths()
+                ],
+                ["/home/user/simple", "/home/user/simple$subdir"],
+            )
         self.assertEqual(configuration.typeshed, "/home/user/typeshed")
         self.assertEqual(configuration.source_directories, ["a", "/home/user/b"])
         self.assertEqual(configuration.binary, "/home/user/bin")

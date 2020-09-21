@@ -584,9 +584,10 @@ class Infer(Reporting):
         )
         if len(filter_directories):
             flags.extend(["-filter-directories", ";".join(sorted(filter_directories))])
-        search_path = self._configuration.search_path + typeshed_search_path(
-            self._configuration.typeshed
-        )
+        search_path = [
+            search_path.command_line_argument()
+            for search_path in self._configuration.get_existent_search_paths()
+        ] + typeshed_search_path(self._configuration.typeshed)
         if search_path:
             flags.extend(["-search-path", ",".join(search_path)])
         if len(self._ignore_infer) > 0:

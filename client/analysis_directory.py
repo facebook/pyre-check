@@ -810,7 +810,10 @@ def resolve_analysis_directory(
         analysis_directory = AnalysisDirectory(
             source_directories.pop(),
             filter_paths=filter_paths,
-            search_path=configuration.search_path,
+            search_path=[
+                search_path.path()
+                for search_path in configuration.get_existent_search_paths()
+            ],
         )
     else:
         buck_builder = _get_buck_builder(
@@ -826,7 +829,10 @@ def resolve_analysis_directory(
             filter_paths=filter_paths,
             local_configuration_root=local_configuration_root,
             extensions=configuration.extensions,
-            search_path=configuration.search_path,
+            search_path=[
+                search_path.path()
+                for search_path in configuration.get_existent_search_paths()
+            ],
             isolate=isolate,
             configuration=configuration,
         )

@@ -69,7 +69,7 @@ class CheckTest(unittest.TestCase):
                     "-workers",
                     "5",
                     "-search-path",
-                    "path1,path2,path3",
+                    "path3",
                 ],
             )
             command.run()
@@ -137,7 +137,7 @@ class CheckTest(unittest.TestCase):
                     "-workers",
                     "5",
                     "-search-path",
-                    "path1,path2,path3",
+                    "path3",
                 ],
             )
             command.run()
@@ -188,7 +188,7 @@ class CheckTest(unittest.TestCase):
                     "-workers",
                     "5",
                     "-search-path",
-                    "path1,path2,path3",
+                    "path3",
                 ],
             )
             command.run()
@@ -236,7 +236,7 @@ class CheckTest(unittest.TestCase):
                     "-workers",
                     "5",
                     "-search-path",
-                    "path1,path2,path3",
+                    "path3",
                 ],
             )
             exit_code = command.run().exit_code()
@@ -287,7 +287,7 @@ class CheckTest(unittest.TestCase):
                     "-workers",
                     "5",
                     "-search-path",
-                    "path1,path2,path3",
+                    "path3",
                 ],
             )
             command.run()
