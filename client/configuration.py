@@ -59,37 +59,34 @@ class SearchPathElement:
         path: Union[Dict[str, str], str],
         project_root: str,
         path_relative_to: Optional[str] = None,
-    ) -> "SearchPathElement":
+    ) -> List["SearchPathElement"]:
         if isinstance(path, str):
-            return SearchPathElement(
-                _relativize_root(path, project_root, path_relative_to),
-                subdirectory=None,
-            )
+            return [
+                SearchPathElement(
+                    _relativize_root(path, project_root, path_relative_to),
+                    subdirectory=None,
+                )
+            ]
         else:
             if "root" in path and "subdirectory" in path:
                 root = path["root"]
                 subdirectory = path["subdirectory"]
-                return SearchPathElement(
-                    _relativize_root(root, project_root, path_relative_to),
-                    subdirectory=subdirectory,
-                )
+                return [
+                    SearchPathElement(
+                        _relativize_root(root, project_root, path_relative_to),
+                        subdirectory=subdirectory,
+                    )
+                ]
             elif "site-package" in path:
                 site_root = site.getsitepackages()
                 subdirectory = path["site-package"]
-
-                found_element = None
-                for root in site_root:
-                    site_package_element = SearchPathElement(
+                return [
+                    SearchPathElement(
                         _relativize_root(root, project_root, None),
                         subdirectory=subdirectory,
                     )
-                    if os.path.isdir(site_package_element.path()):
-                        found_element = site_package_element
-                if found_element is None:
-                    raise InvalidConfiguration(
-                        f"Cannot find site package '{subdirectory}'"
-                    )
-                return found_element
+                    for root in site_root
+                ]
             else:
                 raise InvalidConfiguration(
                     "Search path elements must have `root` and `subdirectory` "
@@ -238,8 +235,11 @@ class Configuration:
         self._search_path: List[SearchPathElement] = []
         if search_path:
             search_path_elements = [
-                SearchPathElement.expand(path, project_root=project_root)
+                search_path_element
                 for path in search_path
+                for search_path_element in SearchPathElement.expand(
+                    path, project_root=project_root
+                )
             ]
             self._search_path.extend(search_path_elements)
         # We will extend the search path further, with the config file
@@ -634,16 +634,17 @@ class Configuration:
                 if isinstance(additional_search_path, list):
                     self._search_path.extend(
                         [
-                            SearchPathElement.expand(
+                            search_path_element
+                            for path in additional_search_path
+                            for search_path_element in SearchPathElement.expand(
                                 path,
                                 project_root=self.project_root,
                                 path_relative_to=configuration_directory,
                             )
-                            for path in additional_search_path
                         ]
                     )
                 else:
-                    self._search_path.append(
+                    self._search_path.extend(
                         SearchPathElement.expand(
                             additional_search_path,
                             project_root=self.project_root,
