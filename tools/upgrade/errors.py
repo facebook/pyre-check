@@ -437,26 +437,14 @@ def _suppress_errors(
             else:
                 line = replacement
 
-        comments = []
-        for error in relevant_errors:
-            if error["code"] == "0":
-                continue
-            indent = len(line) - len(line.lstrip(" "))
-            description = custom_comment if custom_comment else error["description"]
-            comment = "{}# pyre-fixme[{}]: {}".format(
-                " " * indent, error["code"], description
+        indent = len(line) - len(line.lstrip(" "))
+        comments = [
+            line
+            for error in relevant_errors
+            for line in _error_to_fixme_comment_lines(
+                error, indent, truncate, max_line_length, custom_comment
             )
-            if not max_line_length or len(comment) <= max_line_length:
-                comments.append(comment)
-            else:
-                truncated_comment = comment[: (max_line_length - 3)] + "..."
-                split_comment_lines = _split_across_lines(
-                    comment, indent, max_line_length
-                )
-                if truncate or len(split_comment_lines) > MAX_LINES_PER_FIXME:
-                    comments.append(truncated_comment)
-                else:
-                    comments.extend(split_comment_lines)
+        ]
 
         if len(line_break_block_errors) > 0 and not line.endswith("\\"):
             # Handle error suppressions in line break block
@@ -483,6 +471,32 @@ def _suppress_errors(
     if not unsafe:
         ast.check_stable(input, output)
     return output
+
+
+def _error_to_fixme_comment_lines(
+    error: Dict[str, Any],
+    indent: int,
+    truncate: bool,
+    max_line_length: Optional[int],
+    custom_comment: Optional[str],
+) -> List[str]:
+    if error["code"] == "0":
+        return []
+
+    description = custom_comment if custom_comment else error["description"]
+    comment = "{}# pyre-fixme[{}]: {}".format(" " * indent, error["code"], description)
+
+    if not max_line_length:
+        return [comment]
+
+    truncated_comment = comment[: (max_line_length - 3)] + "..."
+    split_comment_lines = _split_across_lines(comment, indent, max_line_length)
+    should_truncate = (
+        truncate
+        or len(split_comment_lines) > MAX_LINES_PER_FIXME
+        or any(len(line) > max_line_length for line in split_comment_lines)
+    )
+    return [truncated_comment] if should_truncate else split_comment_lines
 
 
 def _build_error_map(

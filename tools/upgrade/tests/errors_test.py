@@ -516,3 +516,24 @@ class ErrorsTest(unittest.TestCase):
                     error)
             """,
         )
+
+    def test_suppress_errors__long_class_name(self) -> None:
+        self.assertSuppressErrors(
+            {
+                1: [
+                    {
+                        "code": "1",
+                        "description": "This is a \
+                        really.long.class.name.exceeding.twenty.five.Characters",
+                    }
+                ]
+            },
+            """
+            def foo() -> None: pass
+            """,
+            """
+            # FIXME[1]: This ...
+            def foo() -> None: pass
+            """,
+            max_line_length=25,
+        )
