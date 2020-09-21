@@ -82,7 +82,7 @@ class TraceOperator:
 
     @staticmethod
     def initial_trace_frames(
-        session: Session, issue_id: int, kind
+        session: Session, issue_id: int, kind: TraceKind
     ) -> List[TraceFrameQueryResult]:
         return [
             TraceFrameQueryResult(
