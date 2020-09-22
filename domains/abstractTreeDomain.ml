@@ -180,6 +180,21 @@ module Make (Config : CONFIG) (Element : AbstractDomainCore.S) () = struct
 
     let fold ~f map ~init = Map.fold (fun key data acc -> f ~key ~data acc) map init
 
+    let find_false_witness ~f map =
+      let witness = ref Checks.true_witness in
+      let find_and_set_false_witness key data =
+        let current_witness = f ~key ~data in
+        if Checks.is_true current_witness then
+          false
+        else begin
+          witness := current_witness;
+          true
+        end
+      in
+      Map.exists find_and_set_false_witness map |> ignore;
+      !witness
+
+
     let add ~key ~data map = Map.add key data map
 
     let fold2 ~f ~init left right =
@@ -310,14 +325,10 @@ module Make (Config : CONFIG) (Element : AbstractDomainCore.S) () = struct
       Checks.false_witness ~message:(fun () -> "tree.element redundant.")
     else
       let ancestors = Element.join ancestors element in
-      let all_minimal ~key ~data:subtree witness =
-        if not (Checks.is_true witness) then
-          witness
-        else
-          is_minimal ancestors subtree
-          |> Checks.option_construct ~message:(fun () -> Label.show key)
+      let all_minimal ~key ~data:subtree =
+        is_minimal ancestors subtree |> Checks.option_construct ~message:(fun () -> Label.show key)
       in
-      LabelMap.fold ~f:all_minimal children ~init:Checks.true_witness
+      LabelMap.find_false_witness ~f:all_minimal children
 
 
   let check_minimal_non_empty ~message tree =
@@ -694,13 +705,10 @@ module Make (Config : CONFIG) (Element : AbstractDomainCore.S) () = struct
 
 
   and less_or_equal_all left_label_map right_ancestors =
-    let check_less_or_equal ~key:_ ~data:left_subtree accumulator =
-      if Checks.is_true accumulator then
-        less_or_equal_tree left_subtree right_ancestors empty_tree
-      else
-        accumulator
+    let check_less_or_equal ~key:_ ~data:left_subtree =
+      less_or_equal_tree left_subtree right_ancestors empty_tree
     in
-    LabelMap.fold left_label_map ~f:check_less_or_equal ~init:Checks.true_witness
+    LabelMap.find_false_witness left_label_map ~f:check_less_or_equal
 
 
   and less_or_equal_children left_label_map right_ancestors right_label_map =
@@ -726,45 +734,42 @@ module Make (Config : CONFIG) (Element : AbstractDomainCore.S) () = struct
          left_label_map[<keys>] <= right_label_map[<keys>] *)
       let left_star = LabelMap.find_opt Label.Any left_label_map in
       let right_star = LabelMap.find_opt Label.Any right_label_map in
-      let check_less_or_equal ~key:label_element ~data:left_subtree accumulator =
-        if not (Checks.is_true accumulator) then
-          accumulator
-        else
-          match label_element with
-          | Label.Any ->
-              less_or_equal_option_tree left_star right_ancestors right_star
-              |> Checks.option_construct ~message:(fun () -> "[left *]")
-          | Label.Field _ -> (
-              match LabelMap.find_opt label_element right_label_map with
-              | None ->
-                  (* in L *)
-                  less_or_equal_option_tree (Some left_subtree) right_ancestors right_star
-                  |> Checks.option_construct ~message:(fun () -> "[right *]")
-              | Some right_subtree ->
-                  (* in common *)
-                  less_or_equal_tree left_subtree right_ancestors right_subtree
-                  |> Checks.option_construct ~message:(fun () -> Label.show label_element) )
-          | Label.DictionaryKeys -> (
-              match LabelMap.find_opt label_element right_label_map with
-              | Some right_subtree -> less_or_equal_tree left_subtree right_ancestors right_subtree
-              | None ->
-                  less_or_equal_option_tree (Some left_subtree) right_ancestors None
-                  |> Checks.option_construct ~message:(fun () -> "[right <keys>]") )
+      let check_less_or_equal ~key:label_element ~data:left_subtree =
+        match label_element with
+        | Label.Any ->
+            less_or_equal_option_tree left_star right_ancestors right_star
+            |> Checks.option_construct ~message:(fun () -> "[left *]")
+        | Label.Field _ -> (
+            match LabelMap.find_opt label_element right_label_map with
+            | None ->
+                (* in L *)
+                less_or_equal_option_tree (Some left_subtree) right_ancestors right_star
+                |> Checks.option_construct ~message:(fun () -> "[right *]")
+            | Some right_subtree ->
+                (* in common *)
+                less_or_equal_tree left_subtree right_ancestors right_subtree
+                |> Checks.option_construct ~message:(fun () -> Label.show label_element) )
+        | Label.DictionaryKeys -> (
+            match LabelMap.find_opt label_element right_label_map with
+            | Some right_subtree -> less_or_equal_tree left_subtree right_ancestors right_subtree
+            | None ->
+                less_or_equal_option_tree (Some left_subtree) right_ancestors None
+                |> Checks.option_construct ~message:(fun () -> "[right <keys>]") )
       in
       (* Check that all non-star index fields on right are larger than star1,
          unless they were matched directly. *)
-      let check_star_left ~key:label_element ~data:right_subtree accumulator =
-        if not (Checks.is_true accumulator) then
-          accumulator
-        else
-          match label_element with
-          | Label.Field _ when not (LabelMap.mem label_element left_label_map) ->
-              less_or_equal_option_tree left_star right_ancestors (Some right_subtree)
-              |> Checks.option_construct ~message:(fun () -> "[left *]")
-          | _ -> Checks.true_witness
+      let check_star_left ~key:label_element ~data:right_subtree =
+        match label_element with
+        | Label.Field _ when not (LabelMap.mem label_element left_label_map) ->
+            less_or_equal_option_tree left_star right_ancestors (Some right_subtree)
+            |> Checks.option_construct ~message:(fun () -> "[left *]")
+        | _ -> Checks.true_witness
       in
-      let result = LabelMap.fold ~f:check_less_or_equal left_label_map ~init:Checks.true_witness in
-      LabelMap.fold ~f:check_star_left right_label_map ~init:result
+      let result = LabelMap.find_false_witness ~f:check_less_or_equal left_label_map in
+      if Checks.is_true result then
+        LabelMap.find_false_witness ~f:check_star_left right_label_map
+      else
+        result
 
 
   let read ?(transform_non_leaves = fun _p element -> element) path tree =
