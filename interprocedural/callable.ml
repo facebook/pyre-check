@@ -69,7 +69,13 @@ let compare left right =
 (* pp forces type to be equal to t, but we want [<t] *)
 let pretty_print formatter callable =
   let callable = (callable :> t) in
-  pp formatter callable
+  match callable with
+  | `Function name -> String.pp formatter name
+  | `Method { class_name; method_name } ->
+      String.pp formatter (Format.sprintf "%s::%s" class_name method_name)
+  | `OverrideTarget { class_name; method_name } ->
+      String.pp formatter (Format.sprintf "Override{%s::%s}" class_name method_name)
+  | `Object name -> String.pp formatter (Format.sprintf "Object{%s}" name)
 
 
 type target_with_result = real_target
