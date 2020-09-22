@@ -17,8 +17,11 @@ from .. import configuration
 from ..configuration import (
     Configuration,
     InvalidConfiguration,
-    SearchPathElement,
+    SimpleSearchPathElement,
+    SitePackageSearchPathElement,
+    SubdirectorySearchPathElement,
     _relativize_root,
+    create_search_paths,
 )
 from ..find_directories import CONFIGURATION_FILE, LOCAL_CONFIGURATION_FILE
 
@@ -123,11 +126,11 @@ class ConfigurationIntegrationTest(unittest.TestCase):
             json_load.side_effect = [{"search_path": [{"site-package": "abc"}]}]
             configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
             self.assertIn(
-                SearchPathElement("/mock/site0", subdirectory="abc"),
+                SitePackageSearchPathElement("/mock/site0", "abc"),
                 configuration.get_existent_search_paths(),
             )
             self.assertIn(
-                SearchPathElement("/mock/site1", subdirectory="abc"),
+                SitePackageSearchPathElement("/mock/site1", "abc"),
                 configuration.get_existent_search_paths(),
             )
 
@@ -145,7 +148,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
         with patch("os.path.exists", return_value=True):
             self.assertEqual(
                 configuration.get_existent_search_paths(),
-                [SearchPathElement("additional/", subdirectory=None)],
+                [SimpleSearchPathElement("additional/")],
             )
         self.assertEqual(configuration.number_of_workers, 20)
         self.assertEqual(configuration.taint_models_path, [])
@@ -167,7 +170,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
         with patch("os.path.exists", return_value=True):
             self.assertEqual(
                 configuration.get_existent_search_paths(),
-                [SearchPathElement("additional/", subdirectory=None)],
+                [SimpleSearchPathElement("additional/")],
             )
         self.assertEqual(configuration.number_of_workers, 20)
         self.assertEqual(configuration.taint_models_path, [])
@@ -962,73 +965,103 @@ class ConfigurationIntegrationTest(unittest.TestCase):
 
 
 class SearchPathElementTest(unittest.TestCase):
-    def test_expand(self) -> None:
-        element = SearchPathElement.expand(path="simple/path", project_root="root")[0]
-        self.assertEqual(element.path(), "simple/path")
-        self.assertEqual(element.subdirectory, None)
+    def test_create(self) -> None:
+        self.assertListEqual(
+            create_search_paths("foo", site_roots=[]), [SimpleSearchPathElement("foo")]
+        )
+        self.assertListEqual(
+            create_search_paths({"root": "foo", "subdirectory": "bar"}, site_roots=[]),
+            [SubdirectorySearchPathElement("foo", "bar")],
+        )
+        self.assertListEqual(
+            create_search_paths({"site-package": "foo"}, site_roots=[]), []
+        )
+        self.assertListEqual(
+            create_search_paths({"site-package": "foo"}, site_roots=["site0"]),
+            [SitePackageSearchPathElement("site0", "foo")],
+        )
+        self.assertListEqual(
+            create_search_paths({"site-package": "foo"}, site_roots=["site1"]),
+            [SitePackageSearchPathElement("site1", "foo")],
+        )
 
-        element = SearchPathElement.expand(
-            path="simple/path",
-            project_root="root",
-            path_relative_to="root/local_project",
-        )[0]
-        self.assertEqual(element.path(), "root/local_project/simple/path")
-        self.assertEqual(element.subdirectory, None)
+        with self.assertRaises(InvalidConfiguration):
+            create_search_paths({}, site_roots=[])
+        with self.assertRaises(InvalidConfiguration):
+            create_search_paths({"foo": "bar"}, site_roots=[])
+        with self.assertRaises(InvalidConfiguration):
+            create_search_paths({"root": "foo"}, site_roots=[])
 
-        element = SearchPathElement.expand(path="//simple/path", project_root="root")[0]
-        self.assertEqual(element.path(), "root/simple/path")
-        self.assertEqual(element.subdirectory, None)
+    def test_path(self) -> None:
+        self.assertEqual(SimpleSearchPathElement("foo").path(), "foo")
+        self.assertEqual(SubdirectorySearchPathElement("foo", "bar").path(), "foo/bar")
+        self.assertEqual(SitePackageSearchPathElement("foo", "bar").path(), "foo/bar")
 
-        element = SearchPathElement.expand(
-            path="//simple/path",
-            project_root="root",
-            path_relative_to="root/local_project",
-        )[0]
-        self.assertEqual(element.path(), "root/simple/path")
-        self.assertEqual(element.subdirectory, None)
+    def test_command_line_argument(self) -> None:
+        self.assertEqual(SimpleSearchPathElement("foo").command_line_argument(), "foo")
+        self.assertEqual(
+            SubdirectorySearchPathElement("foo", "bar").command_line_argument(),
+            "foo$bar",
+        )
+        self.assertEqual(
+            SitePackageSearchPathElement("foo", "bar").command_line_argument(),
+            "foo$bar",
+        )
 
-        # Test search paths with subdirectories
-        element = SearchPathElement.expand(
-            path={"root": "path", "subdirectory": "sub"}, project_root="root"
-        )[0]
-        self.assertEqual(element.path(), "path/sub")
-        self.assertEqual(element.subdirectory, "sub")
+    def test_expand_root(self) -> None:
+        self.assertEqual(
+            SimpleSearchPathElement("simple/path").expand_root(
+                project_root="root", relative_root=None
+            ),
+            SimpleSearchPathElement("simple/path"),
+        )
+        self.assertEqual(
+            SimpleSearchPathElement("simple/path").expand_root(
+                project_root="root", relative_root="root/local_project"
+            ),
+            SimpleSearchPathElement("root/local_project/simple/path"),
+        )
+        self.assertEqual(
+            SimpleSearchPathElement("//simple/path").expand_root(
+                project_root="root", relative_root="root/local_project"
+            ),
+            SimpleSearchPathElement("root/simple/path"),
+        )
 
-        element = SearchPathElement.expand(
-            path={"root": "path", "subdirectory": "sub"},
-            project_root="root",
-            path_relative_to="root/local_project",
-        )[0]
-        self.assertEqual(element.path(), "root/local_project/path/sub")
-        self.assertEqual(element.subdirectory, "sub")
+        self.assertEqual(
+            SubdirectorySearchPathElement("path", "sub").expand_root(
+                project_root="root", relative_root=None
+            ),
+            SubdirectorySearchPathElement("path", "sub"),
+        )
+        self.assertEqual(
+            SubdirectorySearchPathElement("path", "sub").expand_root(
+                project_root="root", relative_root="root/local_project"
+            ),
+            SubdirectorySearchPathElement("root/local_project/path", "sub"),
+        )
+        self.assertEqual(
+            SubdirectorySearchPathElement("//path", "sub").expand_root(
+                project_root="root", relative_root="root/local_project"
+            ),
+            SubdirectorySearchPathElement("root/path", "sub"),
+        )
 
-        element = SearchPathElement.expand(
-            path={"root": "//path", "subdirectory": "sub"}, project_root="root"
-        )[0]
-        self.assertEqual(element.path(), "root/path/sub")
-        self.assertEqual(element.subdirectory, "sub")
-
-        element = SearchPathElement.expand(
-            path={"root": "//path", "subdirectory": "sub"},
-            project_root="root",
-            path_relative_to="root/local_project",
-        )[0]
-        self.assertEqual(element.path(), "root/path/sub")
-        self.assertEqual(element.subdirectory, "sub")
-
-    def test_site_packages(self) -> None:
-        with patch.object(
-            site, "getsitepackages", return_value=["/mock/site0", "/mock/site1"]
-        ):
-            elements = SearchPathElement.expand(
-                path={"site-package": "abc"},
-                project_root="root",
-                path_relative_to="root/local_project",
-            )
-            self.assertListEqual(
-                elements,
-                [
-                    SearchPathElement("/mock/site0", "abc"),
-                    SearchPathElement("/mock/site1", "abc"),
-                ],
-            )
+        self.assertEqual(
+            SitePackageSearchPathElement("site_root", "package").expand_root(
+                project_root="root", relative_root=None
+            ),
+            SitePackageSearchPathElement("site_root", "package"),
+        )
+        self.assertEqual(
+            SitePackageSearchPathElement("site_root", "package").expand_root(
+                project_root="root", relative_root="root/local_project"
+            ),
+            SitePackageSearchPathElement("site_root", "package"),
+        )
+        self.assertEqual(
+            SitePackageSearchPathElement("//site_root", "package").expand_root(
+                project_root="root", relative_root="root/local_project"
+            ),
+            SitePackageSearchPathElement("//site_root", "package"),
+        )

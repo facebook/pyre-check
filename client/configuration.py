@@ -5,6 +5,8 @@
 
 # pyre-unsafe
 
+import abc
+import dataclasses
 import glob
 import hashlib
 import json
@@ -17,7 +19,7 @@ import subprocess
 import sys
 from logging import Logger
 from pathlib import Path
-from typing import Dict, List, Optional, Union
+from typing import Dict, Iterable, List, Optional, Union
 
 from . import command_arguments, find_directories
 from .exceptions import EnvironmentException
@@ -49,70 +51,112 @@ class InvalidConfiguration(Exception):
         super().__init__(self.message)
 
 
-class SearchPathElement:
-    def __init__(self, root: str, subdirectory: Optional[str]) -> None:
-        self.root = root
-        self.subdirectory = subdirectory
+class SearchPathElement(abc.ABC):
+    @abc.abstractmethod
+    def get_root(self) -> str:
+        raise NotImplementedError
 
-    @staticmethod
-    def expand(
-        path: Union[Dict[str, str], str],
-        project_root: str,
-        path_relative_to: Optional[str] = None,
-    ) -> List["SearchPathElement"]:
-        if isinstance(path, str):
-            return [
-                SearchPathElement(
-                    _relativize_root(path, project_root, path_relative_to),
-                    subdirectory=None,
-                )
-            ]
-        else:
-            if "root" in path and "subdirectory" in path:
-                root = path["root"]
-                subdirectory = path["subdirectory"]
-                return [
-                    SearchPathElement(
-                        _relativize_root(root, project_root, path_relative_to),
-                        subdirectory=subdirectory,
-                    )
-                ]
-            elif "site-package" in path:
-                site_root = site.getsitepackages()
-                subdirectory = path["site-package"]
-                return [
-                    SearchPathElement(
-                        _relativize_root(root, project_root, None),
-                        subdirectory=subdirectory,
-                    )
-                    for root in site_root
-                ]
-            else:
-                raise InvalidConfiguration(
-                    "Search path elements must have `root` and `subdirectory` "
-                    "specified."
-                )
+    @abc.abstractmethod
+    def path(self) -> str:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def command_line_argument(self) -> str:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def expand_root(
+        self, project_root: str, relative_root: Optional[str]
+    ) -> "SearchPathElement":
+        raise NotImplementedError
+
+
+@dataclasses.dataclass
+class SimpleSearchPathElement(SearchPathElement):
+    root: str
+
+    def get_root(self) -> str:
+        return self.root
 
     def path(self) -> str:
-        subdirectory = self.subdirectory
-        if subdirectory is not None:
-            return os.path.join(self.root, subdirectory)
-        else:
-            return self.root
+        return self.root
 
     def command_line_argument(self) -> str:
-        subdirectory = self.subdirectory
-        if subdirectory is not None:
-            return self.root + "$" + subdirectory
-        else:
-            return self.root
+        return self.root
 
-    def __eq__(self, other: str) -> bool:
-        # We support this for testing.
-        if isinstance(other, str):
-            return self.path() == other
-        else:
-            return self.root == other.root and self.subdirectory == other.subdirectory
+    def expand_root(
+        self, project_root: str, relative_root: Optional[str]
+    ) -> SearchPathElement:
+        return SimpleSearchPathElement(
+            _relativize_root(self.root, project_root, relative_root)
+        )
+
+
+@dataclasses.dataclass
+class SubdirectorySearchPathElement(SearchPathElement):
+    root: str
+    subdirectory: str
+
+    def get_root(self) -> str:
+        return self.root
+
+    def path(self) -> str:
+        return os.path.join(self.root, self.subdirectory)
+
+    def command_line_argument(self) -> str:
+        return self.root + "$" + self.subdirectory
+
+    def expand_root(
+        self, project_root: str, relative_root: Optional[str]
+    ) -> SearchPathElement:
+        return SubdirectorySearchPathElement(
+            root=_relativize_root(self.root, project_root, relative_root),
+            subdirectory=self.subdirectory,
+        )
+
+
+@dataclasses.dataclass
+class SitePackageSearchPathElement(SearchPathElement):
+    site_root: str
+    package_name: str
+
+    def get_root(self) -> str:
+        return self.site_root
+
+    def path(self) -> str:
+        return os.path.join(self.site_root, self.package_name)
+
+    def command_line_argument(self) -> str:
+        return self.site_root + "$" + self.package_name
+
+    def expand_root(
+        self, project_root: str, relative_root: Optional[str]
+    ) -> SearchPathElement:
+        # Site package does not participate in root expansion.
+        return self
+
+
+def create_search_paths(
+    json: Union[str, Dict[str, str]], site_roots: Iterable[str]
+) -> List[SearchPathElement]:
+    if isinstance(json, str):
+        return [SimpleSearchPathElement(json)]
+    elif isinstance(json, dict):
+        if "root" in json and "subdirectory" in json:
+            return [
+                SubdirectorySearchPathElement(
+                    root=json["root"], subdirectory=json["subdirectory"]
+                )
+            ]
+        elif "site-package" in json:
+            return [
+                SitePackageSearchPathElement(
+                    site_root=root, package_name=json["site-package"]
+                )
+                for root in site_roots
+            ]
+
+    raise InvalidConfiguration(f"Invalid search path element: {json}")
 
 
 def assert_readable_directory_in_configuration(
@@ -235,11 +279,10 @@ class Configuration:
         self._search_path: List[SearchPathElement] = []
         if search_path:
             search_path_elements = [
-                search_path_element
-                for path in search_path
-                for search_path_element in SearchPathElement.expand(
-                    path, project_root=project_root
+                SimpleSearchPathElement(path).expand_root(
+                    project_root=project_root, relative_root=None
                 )
+                for path in search_path
             ]
             self._search_path.extend(search_path_elements)
         # We will extend the search path further, with the config file
@@ -520,7 +563,9 @@ class Configuration:
             parent_local_configuration = Configuration(
                 project_root=self.project_root,
                 local_root=str(parent_local_root),
-                search_path=[search_path.root for search_path in self._search_path],
+                search_path=[
+                    search_path.get_root() for search_path in self._search_path
+                ],
                 binary=self._binary,
                 typeshed=self._typeshed,
                 buck_builder_binary=self._buck_builder_binary,
@@ -631,25 +676,31 @@ class Configuration:
                 additional_search_path = configuration.consume(
                     "search_path", default=[]
                 )
+                site_roots = site.getsitepackages()
                 if isinstance(additional_search_path, list):
                     self._search_path.extend(
                         [
-                            search_path_element
-                            for path in additional_search_path
-                            for search_path_element in SearchPathElement.expand(
-                                path,
+                            search_path_element.expand_root(
                                 project_root=self.project_root,
-                                path_relative_to=configuration_directory,
+                                relative_root=configuration_directory,
+                            )
+                            for path in additional_search_path
+                            for search_path_element in create_search_paths(
+                                path, site_roots=site_roots
                             )
                         ]
                     )
                 else:
                     self._search_path.extend(
-                        SearchPathElement.expand(
-                            additional_search_path,
-                            project_root=self.project_root,
-                            path_relative_to=configuration_directory,
-                        )
+                        [
+                            search_path_element.expand_root(
+                                project_root=self.project_root,
+                                relative_root=configuration_directory,
+                            )
+                            for search_path_element in create_search_paths(
+                                additional_search_path, site_roots=site_roots
+                            )
+                        ]
                     )
 
                 version_hash = configuration.consume(
