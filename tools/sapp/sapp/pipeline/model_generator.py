@@ -282,7 +282,11 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
                 self.visited_frames[frame_id] = leaves
 
             next_frames = self._get_or_populate_trace_frames(
-                kind, run, frame.callee_id, caller_port=frame.callee_port
+                # pyre-fixme[6]: Expected `TraceKind` for 1st param but got `str`.
+                kind,
+                run,
+                frame.callee_id,
+                caller_port=frame.callee_port,
             )
             queue.extend(
                 [

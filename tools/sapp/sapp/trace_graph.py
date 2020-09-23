@@ -171,7 +171,9 @@ class TraceGraph(object):
     def add_trace_frame(self, trace_frame: TraceFrame) -> None:
         key = (trace_frame.caller_id.local_id, trace_frame.caller_port)
         rev_key = (trace_frame.callee_id.local_id, trace_frame.callee_port)
+        # pyre-fixme[6]: Expected `TraceKind` for 1st param but got `str`.
         self._trace_frames_map[trace_frame.kind][key].add(trace_frame.id.local_id)
+        # pyre-fixme[6]: Expected `TraceKind` for 1st param but got `str`.
         self._trace_frames_rev_map[trace_frame.kind][rev_key].add(
             trace_frame.id.local_id
         )
@@ -271,7 +273,10 @@ class TraceGraph(object):
 
     def get_next_trace_frames(self, trace_frame: TraceFrame) -> Iterable[TraceFrame]:
         return self.get_trace_frames_from_caller(
-            trace_frame.kind, trace_frame.callee_id, trace_frame.callee_port
+            # pyre-fixme[6]: Expected `TraceKind` for 1st param but got `str`.
+            trace_frame.kind,
+            trace_frame.callee_id,
+            trace_frame.callee_port,
         )
 
     def add_issue_instance_shared_text_assoc(

@@ -119,7 +119,10 @@ class PropagateSourceKindsToSinks(  # pyre-fixme[13]
             next_frames = [
                 (next_frame, graph.get_trace_frame_leaf_ids(frame))
                 for next_frame in self.graph.get_trace_frames_from_caller(
-                    frame.kind, frame.callee_id, frame.callee_port
+                    # pyre-fixme[6]: Expected `TraceKind` for 1st param but got `str`.
+                    frame.kind,
+                    frame.callee_id,
+                    frame.callee_port,
                 )
             ]
             queue.extend(

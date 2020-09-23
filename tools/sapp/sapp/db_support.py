@@ -3,6 +3,8 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+from __future__ import annotations
+
 import logging
 from collections import namedtuple
 from itertools import tee
@@ -17,7 +19,7 @@ from sqlalchemy.orm import Session
 from .iterutil import split_every
 
 
-log = logging.getLogger("sapp")
+log: logging.Logger = logging.getLogger("sapp")
 
 
 """Number of variables that can safely be set on a single DB call"""
@@ -42,7 +44,7 @@ class DBID(object):
     # each of them. next_id tracks the next available int to act as an id.
     next_id: int = 0
 
-    def __init__(self, id=None):
+    def __init__(self, id=None) -> None:
         self.resolve(id)
         self.local_id: int = DBID.next_id
         DBID.next_id += 1
@@ -62,7 +64,7 @@ class DBID(object):
 
         return id
 
-    def _check_type(self, id):
+    def _check_type(self, id) -> None:
         if not isinstance(id, (int, type(None), DBID)):
             raise TypeError(
                 "id expected to be type '{}' but was type '{}'".format(int, type(id))
@@ -75,22 +77,22 @@ class DBID(object):
     def __str__(self):
         return str(self.resolved())
 
-    def __add__(self, other):
+    def __add__(self, other) -> int:
         return int(self) + int(other)
 
-    def __lt__(self, other):
+    def __lt__(self, other) -> bool:
         return int(self) < int(other)
 
-    def __gt__(self, other):
+    def __gt__(self, other) -> bool:
         return int(self) > int(other)
 
-    def __ge__(self, other):
+    def __ge__(self, other) -> bool:
         return int(self) >= int(other)
 
-    def __le__(self, other):
+    def __le__(self, other) -> bool:
         return int(self) <= int(other)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "<{}(id={}) object at 0x{:x}>".format(
             self.__class__.__name__, self._id, id(self)
         )
@@ -107,7 +109,7 @@ class DBIDType(types.TypeDecorator):
         else:
             return value
 
-    def process_result_value(self, value, dialect):
+    def process_result_value(self, value, dialect) -> DBID:
         return DBID(value)
 
     def load_dialect_impl(self, dialect):
@@ -252,7 +254,7 @@ class RecordMixin(object):
 
 class MutableRecordMixin(object):
     @classmethod
-    def Record(cls, **kwargs):
+    def Record(cls, **kwargs) -> Munch:
         return Munch(model=cls, **kwargs)
 
     @classmethod

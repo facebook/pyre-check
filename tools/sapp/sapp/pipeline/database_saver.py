@@ -125,6 +125,7 @@ class DatabaseSaver(PipelineStep[TraceGraph, RunSummary]):
             session.commit()
             run_summary = run.get_summary()
 
+        # pyre-fixme[16]: `RunSummary` has no attribute `num_invisible_issues`.
         run_summary.num_invisible_issues = 0
         run_summary.num_missing_preconditions = len(
             self.summary["missing_traces"][TraceKind.precondition]
