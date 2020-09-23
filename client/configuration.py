@@ -200,7 +200,7 @@ class _ConfigurationFile:
         if current:
             return current
         if value and print_on_success:
-            LOG.debug("Found %s: `%s`", key, ", ".join(value))
+            LOG.debug("Found %s: `%s`", key, ", ".join(str(value)))
         if value and key in self._deprecated:
             LOG.warning(
                 "Configuration file uses deprecated item `%s`: "
