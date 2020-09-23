@@ -141,10 +141,10 @@
               }
             ],
             "features": [
+              { "has": "first-field" },
+              { "first-field": "foo" },
               { "always-via": "tito" },
-              { "always-via": "special_source" },
-              { "always-has": "first-field" },
-              { "always-first-field": "foo" }
+              { "always-via": "special_source" }
             ]
           }
         ]

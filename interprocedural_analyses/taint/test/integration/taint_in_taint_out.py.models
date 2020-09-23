@@ -162,10 +162,10 @@
               }
             ],
             "features": [
+              { "has": "first-field" },
+              { "first-field": "arg" },
               { "always-via": "tito" },
-              { "always-via": "special_source" },
-              { "always-has": "first-field" },
-              { "always-first-field": "arg" }
+              { "always-via": "special_source" }
             ]
           }
         ]
@@ -189,11 +189,11 @@
       }
     ],
     "features": [
+      { "has": "first-field" },
+      { "first-field": "arg" },
       { "always-via": "tito" },
       { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "always-has": "first-field" },
-      { "always-first-field": "arg" }
+      { "always-via": "special_sink" }
     ]
   }
 }
@@ -593,10 +593,10 @@
               }
             ],
             "features": [
+              { "has": "first-field" },
+              { "first-field": "add_tito" },
               { "always-type": "scalar" },
-              { "always-via": "string_concat_lhs" },
-              { "always-has": "first-field" },
-              { "always-first-field": "add_tito" }
+              { "always-via": "string_concat_lhs" }
             ]
           }
         ]
@@ -644,10 +644,10 @@
               }
             ],
             "features": [
+              { "has": "first-field" },
+              { "first-field": "add_tito" },
               { "always-type": "scalar" },
-              { "always-via": "string_concat_lhs" },
-              { "always-has": "first-field" },
-              { "always-first-field": "add_tito" }
+              { "always-via": "string_concat_lhs" }
             ]
           }
         ]

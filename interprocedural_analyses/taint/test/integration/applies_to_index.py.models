@@ -28,10 +28,7 @@
                 "on_all_flows": true
               }
             ],
-            "features": [
-              { "always-has": "first-index" },
-              { "always-first-index": "a" }
-            ]
+            "features": [ { "has": "first-index" }, { "first-index": "a" } ]
           }
         ]
       },
@@ -54,9 +51,9 @@
       }
     ],
     "features": [
-      { "always-via": "special_sink" },
-      { "always-has": "first-index" },
-      { "always-first-index": "a" }
+      { "has": "first-index" },
+      { "first-index": "a" },
+      { "always-via": "special_sink" }
     ]
   }
 }
@@ -195,10 +192,7 @@
                 "on_all_flows": true
               }
             ],
-            "features": [
-              { "always-has": "first-field" },
-              { "always-first-field": "a" }
-            ]
+            "features": [ { "has": "first-field" }, { "first-field": "a" } ]
           }
         ]
       },
@@ -221,9 +215,9 @@
       }
     ],
     "features": [
-      { "always-via": "special_sink" },
-      { "always-has": "first-field" },
-      { "always-first-field": "a" }
+      { "has": "first-field" },
+      { "first-field": "a" },
+      { "always-via": "special_sink" }
     ]
   }
 }

@@ -96,9 +96,9 @@
               }
             ],
             "features": [
-              { "always-via": "special_source" },
-              { "always-has": "first-field" },
-              { "always-first-field": "x" }
+              { "has": "first-field" },
+              { "first-field": "x" },
+              { "always-via": "special_source" }
             ]
           }
         ]
@@ -122,10 +122,10 @@
       }
     ],
     "features": [
+      { "has": "first-field" },
+      { "first-field": "x" },
       { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "always-has": "first-field" },
-      { "always-first-field": "x" }
+      { "always-via": "special_sink" }
     ]
   }
 }

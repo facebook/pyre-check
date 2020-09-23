@@ -35,8 +35,8 @@
               }
             ],
             "features": [
-              { "always-has": "first-index" },
-              { "always-first-index": "tainted" }
+              { "has": "first-index" },
+              { "first-index": "tainted" }
             ]
           }
         ]
@@ -62,10 +62,7 @@
         ]
       }
     ],
-    "features": [
-      { "always-has": "first-index" },
-      { "always-first-index": "tainted" }
-    ]
+    "features": [ { "has": "first-index" }, { "first-index": "tainted" } ]
   }
 }
 {
@@ -104,8 +101,8 @@
               }
             ],
             "features": [
-              { "always-has": "first-index" },
-              { "always-first-index": "tainted" }
+              { "has": "first-index" },
+              { "first-index": "tainted" }
             ]
           }
         ]
@@ -131,10 +128,7 @@
         ]
       }
     ],
-    "features": [
-      { "always-has": "first-index" },
-      { "always-first-index": "tainted" }
-    ]
+    "features": [ { "has": "first-index" }, { "first-index": "tainted" } ]
   }
 }
 {
@@ -173,8 +167,8 @@
               }
             ],
             "features": [
-              { "always-has": "first-index" },
-              { "always-first-index": "tainted" }
+              { "has": "first-index" },
+              { "first-index": "tainted" }
             ]
           }
         ]
@@ -200,10 +194,7 @@
         ]
       }
     ],
-    "features": [
-      { "always-has": "first-index" },
-      { "always-first-index": "tainted" }
-    ]
+    "features": [ { "has": "first-index" }, { "first-index": "tainted" } ]
   }
 }
 {
@@ -229,8 +220,8 @@
               }
             ],
             "features": [
-              { "always-has": "first-index" },
-              { "always-first-index": "tainted" }
+              { "has": "first-index" },
+              { "first-index": "tainted" }
             ]
           }
         ]
@@ -263,8 +254,8 @@
               }
             ],
             "features": [
-              { "always-has": "first-index" },
-              { "always-first-index": "tainted" }
+              { "has": "first-index" },
+              { "first-index": "tainted" }
             ]
           }
         ]
@@ -297,8 +288,8 @@
               }
             ],
             "features": [
-              { "always-has": "first-index" },
-              { "always-first-index": "tainted" }
+              { "has": "first-index" },
+              { "first-index": "tainted" }
             ]
           }
         ]
@@ -331,8 +322,8 @@
               }
             ],
             "features": [
-              { "always-has": "first-index" },
-              { "always-first-index": "tainted" }
+              { "has": "first-index" },
+              { "first-index": "tainted" }
             ]
           }
         ]
@@ -365,8 +356,8 @@
               }
             ],
             "features": [
-              { "always-has": "first-index" },
-              { "always-first-index": "tainted" }
+              { "has": "first-index" },
+              { "first-index": "tainted" }
             ]
           }
         ]
@@ -399,8 +390,8 @@
               }
             ],
             "features": [
-              { "always-has": "first-index" },
-              { "always-first-index": "tainted" }
+              { "has": "first-index" },
+              { "first-index": "tainted" }
             ]
           }
         ]

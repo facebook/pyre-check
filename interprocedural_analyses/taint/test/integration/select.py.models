@@ -22,9 +22,9 @@
               }
             ],
             "features": [
-              { "always-via": "special_source" },
-              { "always-has": "first-index" },
-              { "always-first-index": "access_token" }
+              { "has": "first-index" },
+              { "first-index": "access_token" },
+              { "always-via": "special_source" }
             ]
           }
         ]
@@ -57,9 +57,9 @@
               }
             ],
             "features": [
-              { "always-via": "special_source" },
-              { "always-has": "first-index" },
-              { "always-first-index": "<numeric>" }
+              { "has": "first-index" },
+              { "first-index": "<numeric>" },
+              { "always-via": "special_source" }
             ]
           }
         ]
@@ -92,9 +92,9 @@
               }
             ],
             "features": [
-              { "always-via": "special_source" },
-              { "always-has": "first-index" },
-              { "always-first-index": "<unknown>" }
+              { "has": "first-index" },
+              { "first-index": "<unknown>" },
+              { "always-via": "special_source" }
             ]
           }
         ]
@@ -128,9 +128,9 @@
               }
             ],
             "features": [
-              { "always-via": "tito" },
-              { "always-has": "first-index" },
-              { "always-first-index": "payload" }
+              { "has": "first-index" },
+              { "first-index": "payload" },
+              { "always-via": "tito" }
             ]
           }
         ]
@@ -191,9 +191,9 @@
               }
             ],
             "features": [
-              { "always-via": "tito" },
-              { "always-has": "first-index" },
-              { "always-first-index": "payload" }
+              { "has": "first-index" },
+              { "first-index": "payload" },
+              { "always-via": "tito" }
             ]
           }
         ]
@@ -214,9 +214,9 @@
       }
     ],
     "features": [
-      { "always-via": "tito" },
-      { "always-has": "first-index" },
-      { "always-first-index": "payload" }
+      { "has": "first-index" },
+      { "first-index": "payload" },
+      { "always-via": "tito" }
     ]
   }
 }
@@ -288,8 +288,8 @@
               }
             ],
             "features": [
-              { "always-has": "first-field" },
-              { "always-first-field": "payload" }
+              { "has": "first-field" },
+              { "first-field": "payload" }
             ]
           }
         ]
@@ -315,10 +315,7 @@
         ]
       }
     ],
-    "features": [
-      { "always-has": "first-field" },
-      { "always-first-field": "payload" }
-    ]
+    "features": [ { "has": "first-field" }, { "first-field": "payload" } ]
   }
 }
 {
@@ -385,9 +382,9 @@
               }
             ],
             "features": [
-              { "always-via": "tito" },
-              { "always-has": "first-index" },
-              { "always-first-index": "payload" }
+              { "has": "first-index" },
+              { "first-index": "payload" },
+              { "always-via": "tito" }
             ]
           }
         ]
@@ -414,9 +411,9 @@
       }
     ],
     "features": [
-      { "always-via": "tito" },
-      { "always-has": "first-index" },
-      { "always-first-index": "payload" }
+      { "has": "first-index" },
+      { "first-index": "payload" },
+      { "always-via": "tito" }
     ]
   }
 }
@@ -488,10 +485,10 @@
               }
             ],
             "features": [
-              { "always-has": "first-index" },
-              { "always-has": "first-field" },
-              { "always-first-index": "payload" },
-              { "always-first-field": "GET" }
+              { "has": "first-index" },
+              { "first-index": "payload" },
+              { "has": "first-field" },
+              { "first-field": "GET" }
             ]
           }
         ]
@@ -518,10 +515,10 @@
       }
     ],
     "features": [
-      { "always-has": "first-index" },
-      { "always-has": "first-field" },
-      { "always-first-index": "payload" },
-      { "always-first-field": "GET" }
+      { "has": "first-index" },
+      { "first-index": "payload" },
+      { "has": "first-field" },
+      { "first-field": "GET" }
     ]
   }
 }

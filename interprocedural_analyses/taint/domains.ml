@@ -210,15 +210,19 @@ module FlowDetails = struct
       | SimpleFeature : Features.SimpleSet.t slot
       | ComplexFeature : Features.ComplexSet.t slot
       | TraceLength : TraceLength.t slot
+      | FirstIndex : Features.FirstIndexSet.t slot
+      | FirstField : Features.FirstFieldSet.t slot
 
     (* Must be consistent with above variants *)
-    let slots = 3
+    let slots = 5
 
     let slot_name (type a) (slot : a slot) =
       match slot with
       | SimpleFeature -> "SimpleFeature"
       | ComplexFeature -> "ComplexFeature"
       | TraceLength -> "TraceLength"
+      | FirstIndex -> "FirstIndex"
+      | FirstField -> "FirstField"
 
 
     let slot_domain (type a) (slot : a slot) =
@@ -226,6 +230,8 @@ module FlowDetails = struct
       | SimpleFeature -> (module Features.SimpleSet : Abstract.Domain.S with type t = a)
       | ComplexFeature -> (module Features.ComplexSet : Abstract.Domain.S with type t = a)
       | TraceLength -> (module TraceLength : Abstract.Domain.S with type t = a)
+      | FirstIndex -> (module Features.FirstIndexSet : Abstract.Domain.S with type t = a)
+      | FirstField -> (module Features.FirstFieldSet : Abstract.Domain.S with type t = a)
 
 
     let strict _ = false
@@ -270,6 +276,10 @@ module type TAINT_DOMAIN = sig
   val complex_feature : Features.Complex.t Abstract.Domain.part
 
   val complex_feature_set : Features.Complex.t list Abstract.Domain.part
+
+  val first_indices : Features.FirstIndexSet.t Abstract.Domain.part
+
+  val first_fields : Features.FirstFieldSet.t Abstract.Domain.part
 
   (* Add trace info at call-site *)
   val apply_call
@@ -353,6 +363,10 @@ end = struct
 
   let complex_feature_set = FlowDetails.complex_feature_set
 
+  let first_fields = Features.FirstFieldSet.Self
+
+  let first_indices = Features.FirstIndexSet.Self
+
   let leaves map =
     Map.fold leaf ~init:[] ~f:List.cons map |> List.dedup_and_sort ~compare:Leaf.compare
 
@@ -402,7 +416,17 @@ end = struct
         let breadcrumbs, tito_positions, leaves =
           FlowDetails.(fold simple_feature_element ~f:gather_json ~init:([], [], []) features)
         in
-        ( breadcrumbs,
+        let first_index_breadcrumbs =
+          FlowDetails.get FlowDetails.Slots.FirstIndex features
+          |> Features.FirstIndexSet.elements
+          |> Features.FirstIndex.to_json
+        in
+        let first_field_breadcrumbs =
+          FlowDetails.get FlowDetails.Slots.FirstField features
+          |> Features.FirstFieldSet.elements
+          |> Features.FirstField.to_json
+        in
+        ( List.concat [first_index_breadcrumbs; first_field_breadcrumbs; breadcrumbs],
           tito_positions,
           FlowDetails.(fold complex_feature ~f:gather_return_access_path ~init:leaves features) )
       in

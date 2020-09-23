@@ -97,31 +97,23 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       | None -> state
 
 
-    let add_first kind name set =
-      let open Features in
-      let already_has_first feature =
-        match feature.Abstract.OverUnderSetDomain.element with
-        | Simple.Breadcrumb (Breadcrumb.First { kind = has_kind; _ }) ->
-            [%compare.equal: Breadcrumb.first_kind] has_kind kind
-        | _ -> false
-      in
-      if List.exists set ~f:already_has_first then
-        set
-      else
-        SimpleSet.inject (Simple.Breadcrumb (Breadcrumb.HasFirst kind))
-        :: SimpleSet.inject (Simple.Breadcrumb (Breadcrumb.First { kind; name }))
-        :: set
-
-
-    let add_first_index index =
-      let feature =
+    let add_first_index index indices =
+      if Features.FirstIndexSet.is_bottom indices then
         match index with
-        | Abstract.TreeDomain.Label.Field name when is_numeric name -> "<numeric>"
-        | Field name -> name
-        | DictionaryKeys -> "<keys>"
-        | Any -> "<unknown>"
-      in
-      add_first Features.Breadcrumb.FirstIndex feature
+        | Abstract.TreeDomain.Label.Field name when is_numeric name ->
+            Features.FirstIndexSet.singleton "<numeric>"
+        | Field name -> Features.FirstIndexSet.singleton name
+        | DictionaryKeys -> Features.FirstIndexSet.bottom
+        | Any -> Features.FirstIndexSet.singleton "<unknown>"
+      else
+        indices
+
+
+    let add_first_field field fields =
+      if Features.FirstFieldSet.is_bottom fields then
+        Features.FirstFieldSet.singleton field
+      else
+        fields
 
 
     let global_model ~location reference =
@@ -671,7 +663,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                 | _receiver :: index :: _ ->
                     let label = get_index index.value in
                     ForwardState.Tree.transform
-                      ForwardTaint.simple_feature_set
+                      ForwardTaint.first_indices
                       Abstract.Domain.(Map (add_first_index label))
                       taint
                 | _ -> taint
@@ -793,7 +785,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           analyze_expression ~resolution ~state ~expression:base
           |>> ForwardState.Tree.read [index]
           |>> ForwardState.Tree.transform
-                ForwardTaint.simple_feature_set
+                ForwardTaint.first_indices
                 Abstract.Domain.(Map (add_first_index index))
       (* Special case x.__next__() as being a random index access (this pattern is the desugaring of
          `for element in x`). *)
@@ -1030,8 +1022,8 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       |>> add_tito_features
       |>> ForwardState.Tree.read [field]
       |>> ForwardState.Tree.transform
-            ForwardTaint.simple_feature_set
-            Abstract.Domain.(Map (add_first Features.Breadcrumb.FirstField attribute))
+            ForwardTaint.first_fields
+            Abstract.Domain.(Map (add_first_field attribute))
       |>> ForwardState.Tree.join attribute_taint
 
 

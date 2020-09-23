@@ -22,9 +22,9 @@
               }
             ],
             "features": [
-              { "always-via": "special_source" },
-              { "always-has": "first-index" },
-              { "always-first-index": "<unknown>" }
+              { "has": "first-index" },
+              { "first-index": "<unknown>" },
+              { "always-via": "special_source" }
             ]
           }
         ]
@@ -57,9 +57,9 @@
               }
             ],
             "features": [
-              { "always-via": "special_source" },
-              { "always-has": "first-index" },
-              { "always-first-index": "CONSTANT_A" }
+              { "has": "first-index" },
+              { "first-index": "CONSTANT_A" },
+              { "always-via": "special_source" }
             ]
           }
         ]
@@ -92,9 +92,9 @@
               }
             ],
             "features": [
-              { "always-via": "special_source" },
-              { "always-has": "first-index" },
-              { "always-first-index": "CONSTANT_B" }
+              { "has": "first-index" },
+              { "first-index": "CONSTANT_B" },
+              { "always-via": "special_source" }
             ]
           }
         ]
@@ -127,9 +127,9 @@
               }
             ],
             "features": [
-              { "always-via": "special_source" },
-              { "always-has": "first-index" },
-              { "always-first-index": "TRACKED_FIELD" }
+              { "has": "first-index" },
+              { "first-index": "TRACKED_FIELD" },
+              { "always-via": "special_source" }
             ]
           }
         ]
@@ -162,9 +162,9 @@
               }
             ],
             "features": [
-              { "always-via": "special_source" },
-              { "always-has": "first-index" },
-              { "always-first-index": "<unknown>" }
+              { "has": "first-index" },
+              { "first-index": "<unknown>" },
+              { "always-via": "special_source" }
             ]
           }
         ]
@@ -197,9 +197,9 @@
               }
             ],
             "features": [
-              { "always-via": "special_source" },
-              { "always-has": "first-index" },
-              { "always-first-index": "<unknown>" }
+              { "has": "first-index" },
+              { "first-index": "<unknown>" },
+              { "always-via": "special_source" }
             ]
           }
         ]

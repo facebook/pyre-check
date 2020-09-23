@@ -23,6 +23,12 @@ type candidate = {
   location: Location.WithModule.t;
 }
 
+type features = {
+  simple: Features.SimpleSet.t;
+  first_indices: Features.FirstIndexSet.t;
+  first_fields: Features.FirstFieldSet.t;
+}
+
 type partitioned_flow = {
   source_partition: (Sources.t, ForwardTaint.t) Map.Poly.t;
   sink_partition: (Sinks.t, BackwardTaint.t) Map.Poly.t;
@@ -31,7 +37,7 @@ type partitioned_flow = {
 type issue = {
   code: int;
   flow: flow;
-  features: Features.SimpleSet.t;
+  features: features;
   issue_location: Location.WithModule.t;
   define: Statement.Define.t Node.t;
 }
@@ -73,21 +79,38 @@ type flow_state = {
 }
 
 let get_issue_features { source_taint; sink_taint } =
-  let source_features =
+  let simple =
+    let source_features =
+      ForwardTaint.fold
+        Features.SimpleSet.Self
+        ~f:Features.SimpleSet.join
+        ~init:Features.SimpleSet.bottom
+        source_taint
+    in
+    let sink_features =
+      BackwardTaint.fold
+        Features.SimpleSet.Self
+        ~f:Features.SimpleSet.join
+        ~init:Features.SimpleSet.bottom
+        sink_taint
+    in
+    Features.SimpleSet.sequence_join source_features sink_features
+  in
+  let first_indices =
     ForwardTaint.fold
-      Features.SimpleSet.Self
-      ~f:Features.SimpleSet.join
-      ~init:Features.SimpleSet.bottom
+      Features.FirstIndexSet.Self
+      ~f:Features.FirstIndexSet.join
+      ~init:Features.FirstIndexSet.bottom
       source_taint
   in
-  let sink_features =
-    BackwardTaint.fold
-      Features.SimpleSet.Self
-      ~f:Features.SimpleSet.join
-      ~init:Features.SimpleSet.bottom
-      sink_taint
+  let first_fields =
+    ForwardTaint.fold
+      Features.FirstFieldSet.Self
+      ~f:Features.FirstFieldSet.join
+      ~init:Features.FirstFieldSet.bottom
+      source_taint
   in
-  Features.SimpleSet.sequence_join source_features sink_features
+  { simple; first_indices; first_fields }
 
 
 let generate_issues ~define { location; flows } =
@@ -195,7 +218,15 @@ let to_json ~filename_lookup callable issue =
       Features.SimpleSet.ElementAndUnder
       ~f:get_feature_json
       ~init:[]
-      issue.features
+      issue.features.simple
+  in
+  let features =
+    List.concat
+      [
+        Features.FirstIndex.to_json (Features.FirstIndexSet.elements issue.features.first_indices);
+        Features.FirstField.to_json (Features.FirstFieldSet.elements issue.features.first_fields);
+        features;
+      ]
   in
   let traces =
     `List

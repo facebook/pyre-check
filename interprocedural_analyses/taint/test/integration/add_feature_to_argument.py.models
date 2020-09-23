@@ -29,10 +29,10 @@
               }
             ],
             "features": [
+              { "has": "first-index" },
+              { "first-index": "<numeric>" },
               { "always-via": "string_concat_lhs" },
-              { "always-via": "special_source" },
-              { "always-has": "first-index" },
-              { "always-first-index": "<numeric>" }
+              { "always-via": "special_source" }
             ]
           }
         ]
@@ -56,11 +56,11 @@
       }
     ],
     "features": [
+      { "has": "first-index" },
+      { "first-index": "<numeric>" },
       { "always-via": "string_concat_lhs" },
       { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "always-has": "first-index" },
-      { "always-first-index": "<numeric>" }
+      { "always-via": "special_sink" }
     ]
   }
 }

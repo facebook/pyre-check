@@ -34,10 +34,10 @@
               }
             ],
             "features": [
+              { "has": "first-field" },
+              { "first-field": "bad" },
               { "always-via": "tito" },
-              { "always-via": "special_source" },
-              { "always-has": "first-field" },
-              { "always-first-field": "bad" }
+              { "always-via": "special_source" }
             ]
           }
         ]
@@ -61,11 +61,11 @@
       }
     ],
     "features": [
+      { "has": "first-field" },
+      { "first-field": "bad" },
       { "always-via": "tito" },
       { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "always-has": "first-field" },
-      { "always-first-field": "bad" }
+      { "always-via": "special_sink" }
     ]
   }
 }
@@ -104,10 +104,10 @@
               }
             ],
             "features": [
+              { "has": "first-field" },
+              { "first-field": "bad" },
               { "always-via": "tito" },
-              { "always-via": "special_source" },
-              { "always-has": "first-field" },
-              { "always-first-field": "bad" }
+              { "always-via": "special_source" }
             ]
           }
         ]
@@ -131,11 +131,11 @@
       }
     ],
     "features": [
+      { "has": "first-field" },
+      { "first-field": "bad" },
       { "always-via": "tito" },
       { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "always-has": "first-field" },
-      { "always-first-field": "bad" }
+      { "always-via": "special_sink" }
     ]
   }
 }
@@ -174,10 +174,10 @@
               }
             ],
             "features": [
+              { "has": "first-field" },
+              { "first-field": "bad" },
               { "always-via": "tito" },
-              { "always-via": "special_source" },
-              { "always-has": "first-field" },
-              { "always-first-field": "bad" }
+              { "always-via": "special_source" }
             ]
           }
         ]
@@ -201,11 +201,11 @@
       }
     ],
     "features": [
+      { "has": "first-field" },
+      { "first-field": "bad" },
       { "always-via": "tito" },
       { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "always-has": "first-field" },
-      { "always-first-field": "bad" }
+      { "always-via": "special_sink" }
     ]
   }
 }

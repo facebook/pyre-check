@@ -10,20 +10,39 @@ open Ast
 open Analysis
 open Pyre
 
-module Breadcrumb = struct
-  type first_kind =
-    | FirstField
-    | FirstIndex
-  [@@deriving show, compare]
+module First (Kind : sig
+  val kind : string
+end) =
+struct
+  type t = string [@@deriving show]
 
+  let name = "first-" ^ Kind.kind
+
+  let compare = String.compare
+
+  let to_json firsts =
+    match firsts with
+    | [] -> []
+    | _ :: _ ->
+        let first_name = "first-" ^ Kind.kind in
+        let element_to_json element = `Assoc [first_name, `String element] in
+        `Assoc ["has", `String first_name] :: List.map firsts ~f:element_to_json
+end
+
+module FirstIndex = First (struct
+  let kind = "index"
+end)
+
+module FirstField = First (struct
+  let kind = "field"
+end)
+
+module FirstIndexSet = Abstract.SetDomain.Make (FirstIndex)
+module FirstFieldSet = Abstract.SetDomain.Make (FirstField)
+
+module Breadcrumb = struct
   type t =
-    (* Used to determine 'foo' from request.foo and request.GET['foo'] *)
-    | First of {
-        kind: first_kind;
-        name: string;
-      }
     | FormatString (* Via f"{something}" *)
-    | HasFirst of first_kind
     | Obscure
     | Lambda
     | SimpleVia of string (* Declared breadcrumbs *)
@@ -49,11 +68,7 @@ module Breadcrumb = struct
       | _ -> ""
     in
     match breadcrumb with
-    | First { name; kind = FirstField } -> `Assoc [prefix ^ "first-field", `String name]
-    | First { name; kind = FirstIndex } -> `Assoc [prefix ^ "first-index", `String name]
     | FormatString -> `Assoc [prefix ^ "via", `String "format-string"]
-    | HasFirst FirstField -> `Assoc [prefix ^ "has", `String "first-field"]
-    | HasFirst FirstIndex -> `Assoc [prefix ^ "has", `String "first-index"]
     | Obscure -> `Assoc [prefix ^ "via", `String "obscure"]
     | Lambda -> `Assoc [prefix ^ "via", `String "lambda"]
     | SimpleVia name -> `Assoc [prefix ^ "via", `String name]

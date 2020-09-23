@@ -29,9 +29,9 @@
               }
             ],
             "features": [
-              { "always-via": "special_source" },
-              { "always-has": "first-index" },
-              { "always-first-index": "x" }
+              { "has": "first-index" },
+              { "first-index": "x" },
+              { "always-via": "special_source" }
             ]
           }
         ]
@@ -55,10 +55,10 @@
       }
     ],
     "features": [
+      { "has": "first-index" },
+      { "first-index": "x" },
       { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "always-has": "first-index" },
-      { "always-first-index": "x" }
+      { "always-via": "special_sink" }
     ]
   }
 }
@@ -194,10 +194,7 @@
                 "on_all_flows": true
               }
             ],
-            "features": [
-              { "always-has": "first-index" },
-              { "always-first-index": "x" }
-            ]
+            "features": [ { "has": "first-index" }, { "first-index": "x" } ]
           }
         ]
       },
@@ -220,9 +217,9 @@
       }
     ],
     "features": [
-      { "always-via": "special_sink" },
-      { "always-has": "first-index" },
-      { "always-first-index": "x" }
+      { "has": "first-index" },
+      { "first-index": "x" },
+      { "always-via": "special_sink" }
     ]
   }
 }

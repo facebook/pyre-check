@@ -23,6 +23,12 @@ type candidate = {
   location: Location.WithModule.t;
 }
 
+type features = {
+  simple: Features.SimpleSet.t;
+  first_indices: Features.FirstIndexSet.t;
+  first_fields: Features.FirstFieldSet.t;
+}
+
 type flow_state = {
   matched: flows;
   rest: flows;
@@ -31,7 +37,7 @@ type flow_state = {
 type issue = {
   code: int;
   flow: flow;
-  features: Features.SimpleSet.t;
+  features: features;
   issue_location: Location.WithModule.t;
   (* Only used to create the Pyre errors. *)
   define: Ast.Statement.Define.t Ast.Node.t;

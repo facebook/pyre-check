@@ -152,9 +152,9 @@
               }
             ],
             "features": [
-              { "always-via": "special_source" },
-              { "always-has": "first-index" },
-              { "always-first-index": "a" }
+              { "has": "first-index" },
+              { "first-index": "a" },
+              { "always-via": "special_source" }
             ]
           }
         ]
@@ -178,10 +178,10 @@
       }
     ],
     "features": [
+      { "has": "first-index" },
+      { "first-index": "a" },
       { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "always-has": "first-index" },
-      { "always-first-index": "a" }
+      { "always-via": "special_sink" }
     ]
   }
 }
@@ -281,10 +281,10 @@
               }
             ],
             "features": [
+              { "has": "first-index" },
+              { "first-index": "without_feature" },
               { "always-via": "special_source" },
-              { "always-via": "obscure" },
-              { "always-has": "first-index" },
-              { "always-first-index": "without_feature" }
+              { "always-via": "obscure" }
             ]
           }
         ]
@@ -308,11 +308,11 @@
       }
     ],
     "features": [
+      { "has": "first-index" },
+      { "first-index": "without_feature" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" },
-      { "always-via": "obscure" },
-      { "always-has": "first-index" },
-      { "always-first-index": "without_feature" }
+      { "always-via": "obscure" }
     ]
   }
 }
@@ -346,10 +346,10 @@
               }
             ],
             "features": [
+              { "has": "first-index" },
+              { "first-index": "with_feature" },
               { "always-via": "special_source" },
-              { "always-via": "obscure" },
-              { "always-has": "first-index" },
-              { "always-first-index": "with_feature" }
+              { "always-via": "obscure" }
             ]
           }
         ]
@@ -373,11 +373,11 @@
       }
     ],
     "features": [
+      { "has": "first-index" },
+      { "first-index": "with_feature" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" },
-      { "always-via": "obscure" },
-      { "always-has": "first-index" },
-      { "always-first-index": "with_feature" }
+      { "always-via": "obscure" }
     ]
   }
 }
@@ -468,10 +468,10 @@
               }
             ],
             "features": [
+              { "has": "first-index" },
+              { "first-index": "<numeric>" },
               { "always-via": "special_source" },
-              { "always-via": "obscure" },
-              { "always-has": "first-index" },
-              { "always-first-index": "<numeric>" }
+              { "always-via": "obscure" }
             ]
           }
         ]
@@ -495,11 +495,11 @@
       }
     ],
     "features": [
+      { "has": "first-index" },
+      { "first-index": "<numeric>" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" },
-      { "always-via": "obscure" },
-      { "always-has": "first-index" },
-      { "always-first-index": "<numeric>" }
+      { "always-via": "obscure" }
     ]
   }
 }
@@ -1064,9 +1064,9 @@
               }
             ],
             "features": [
-              { "always-via": "special_source" },
-              { "always-has": "first-index" },
-              { "always-first-index": "a" }
+              { "has": "first-index" },
+              { "first-index": "a" },
+              { "always-via": "special_source" }
             ]
           }
         ]
@@ -1126,9 +1126,9 @@
               }
             ],
             "features": [
-              { "always-via": "special_source" },
-              { "always-has": "first-index" },
-              { "always-first-index": "a" }
+              { "has": "first-index" },
+              { "first-index": "a" },
+              { "always-via": "special_source" }
             ]
           }
         ]
@@ -1161,9 +1161,9 @@
               }
             ],
             "features": [
-              { "always-via": "special_source" },
-              { "always-has": "first-index" },
-              { "always-first-index": "a" }
+              { "has": "first-index" },
+              { "first-index": "a" },
+              { "always-via": "special_source" }
             ]
           }
         ]
