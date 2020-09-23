@@ -83,6 +83,7 @@ module T = struct
       query: model_constraint list;
       productions: production list;
       rule_kind: kind;
+      name: string option;
     }
     [@@deriving show, compare]
   end
@@ -1262,33 +1263,52 @@ let create ~resolution ?path ~configuration ~rule_filter source =
                     {
                       Call.callee =
                         { Node.value = Expression.Name (Name.Identifier "ModelQuery"); _ };
-                      arguments =
-                        [
-                          {
-                            Call.Argument.name = Some { Node.value = "find"; _ };
-                            value = find_clause;
-                          };
-                          {
-                            Call.Argument.name = Some { Node.value = "where"; _ };
-                            value = where_clause;
-                          };
-                          {
-                            Call.Argument.name = Some { Node.value = "model"; _ };
-                            value = model_clause;
-                          };
-                        ];
+                      arguments;
                     };
                 _;
               };
           _;
         } ->
+          let clauses =
+            match arguments with
+            | [
+             { Call.Argument.name = Some { Node.value = "find"; _ }; value = find_clause };
+             { Call.Argument.name = Some { Node.value = "where"; _ }; value = where_clause };
+             { Call.Argument.name = Some { Node.value = "model"; _ }; value = model_clause };
+            ] ->
+                Core.Result.Ok
+                  ( None,
+                    parse_find_clause find_clause,
+                    parse_where_clause where_clause,
+                    parse_model_clause ~configuration model_clause )
+            | [
+             {
+               Call.Argument.name = Some { Node.value = "name"; _ };
+               value = { Node.value = Expression.String { StringLiteral.value = name; _ }; _ };
+             };
+             { Call.Argument.name = Some { Node.value = "find"; _ }; value = find_clause };
+             { Call.Argument.name = Some { Node.value = "where"; _ }; value = where_clause };
+             { Call.Argument.name = Some { Node.value = "model"; _ }; value = model_clause };
+            ] ->
+                Core.Result.Ok
+                  ( Some name,
+                    parse_find_clause find_clause,
+                    parse_where_clause where_clause,
+                    parse_model_clause ~configuration model_clause )
+            | _ ->
+                Core.Result.Error
+                  "Malformed model query arguments: expected a find, where and model clause."
+          in
+
           let open Core.Result in
-          parse_find_clause find_clause
+          clauses
+          >>= fun (name, find_clause, where_clause, model_clause) ->
+          find_clause
           >>= fun rule_kind ->
-          parse_where_clause where_clause
+          where_clause
           >>= fun query ->
-          parse_model_clause ~configuration model_clause
-          >>| fun productions -> [ParsedQuery { ModelQuery.rule_kind; query; productions }]
+          model_clause
+          >>| fun productions -> [ParsedQuery { ModelQuery.rule_kind; query; productions; name }]
       | _ -> Core.Result.Ok []
     in
     String.split ~on:'\n' source

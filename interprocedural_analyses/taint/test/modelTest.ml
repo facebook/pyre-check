@@ -1311,7 +1311,8 @@ let test_query_parsing context =
     ~expect:
       [
         {
-          Model.ModelQuery.query = [Taint.Model.ModelQuery.NameConstraint "foo"];
+          Model.ModelQuery.name = None;
+          query = [Taint.Model.ModelQuery.NameConstraint "foo"];
           rule_kind = Model.ModelQuery.FunctionModel;
           productions =
             [
@@ -1342,7 +1343,8 @@ let test_query_parsing context =
     ~expect:
       [
         {
-          Model.ModelQuery.query = [Taint.Model.ModelQuery.NameConstraint "foo"];
+          Model.ModelQuery.name = None;
+          query = [Taint.Model.ModelQuery.NameConstraint "foo"];
           rule_kind = Model.ModelQuery.FunctionModel;
           productions =
             [
@@ -1373,7 +1375,8 @@ let test_query_parsing context =
     ~expect:
       [
         {
-          Model.ModelQuery.query =
+          Model.ModelQuery.name = None;
+          query =
             [
               Taint.Model.ModelQuery.NameConstraint "foo";
               Taint.Model.ModelQuery.NameConstraint "bar";
@@ -1408,7 +1411,48 @@ let test_query_parsing context =
     ~expect:
       [
         {
-          Model.ModelQuery.query = [Taint.Model.ModelQuery.NameConstraint "foo"];
+          Model.ModelQuery.name = None;
+          query = [Taint.Model.ModelQuery.NameConstraint "foo"];
+          rule_kind = Model.ModelQuery.FunctionModel;
+          productions =
+            [
+              Model.ModelQuery.ReturnTaint
+                [
+                  Model.Source
+                    {
+                      source = Sources.NamedSource "Test";
+                      breadcrumbs = [];
+                      path = [];
+                      leaf_name_provided = false;
+                    };
+                  Model.Sink
+                    {
+                      sink = Sinks.NamedSink "Test";
+                      breadcrumbs = [];
+                      path = [];
+                      leaf_name_provided = false;
+                    };
+                ];
+            ];
+        };
+      ]
+    ();
+  assert_queries
+    ~context
+    ~model_source:
+      {|
+    ModelQuery(
+     name = "foo_finders",
+     find = "functions",
+     where = name.matches("foo"),
+     model = [Returns([TaintSource[Test], TaintSink[Test]])]
+    )
+  |}
+    ~expect:
+      [
+        {
+          Model.ModelQuery.name = Some "foo_finders";
+          query = [Taint.Model.ModelQuery.NameConstraint "foo"];
           rule_kind = Model.ModelQuery.FunctionModel;
           productions =
             [

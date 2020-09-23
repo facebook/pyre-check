@@ -74,6 +74,7 @@ module T : sig
       query: model_constraint list;
       productions: production list;
       rule_kind: kind;
+      name: string option;
     }
     [@@deriving show, compare]
   end

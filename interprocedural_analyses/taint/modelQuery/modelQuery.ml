@@ -69,7 +69,7 @@ let apply_productions ~resolution ~productions ~callable =
 let apply_query_rule
     ~verbose
     ~resolution
-    ~rule:{ ModelQuery.rule_kind; query; productions }
+    ~rule:{ ModelQuery.rule_kind; query; productions; name }
     ~callable
   =
   let kind_matches =
@@ -83,9 +83,10 @@ let apply_query_rule
   if kind_matches && List.for_all ~f:(matches_constraint ~callable) query then begin
     if verbose then
       Log.info
-        "Callable `%a` matches all constraints for the model generator."
+        "Callable `%a` matches all constraints for the model query rule%s."
         Callable.pretty_print
-        (callable :> Callable.t);
+        (callable :> Callable.t)
+        (name |> Option.map ~f:(Format.sprintf " `%s`") |> Option.value ~default:"");
     apply_productions ~resolution ~productions ~callable
   end
   else

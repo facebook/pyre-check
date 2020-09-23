@@ -41,7 +41,8 @@ let test_apply_rule context =
       |}
     ~rule:
       {
-        Model.ModelQuery.query = [Model.ModelQuery.NameConstraint "foo"];
+        Model.ModelQuery.name = None;
+        query = [Model.ModelQuery.NameConstraint "foo"];
         productions = [Model.ModelQuery.ReturnTaint [source "Test"]];
         rule_kind = Model.ModelQuery.FunctionModel;
       }
@@ -56,8 +57,8 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        Model.ModelQuery.query =
-          [Model.ModelQuery.NameConstraint "foo"; Model.ModelQuery.NameConstraint "bar"];
+        Model.ModelQuery.name = None;
+        query = [Model.ModelQuery.NameConstraint "foo"; Model.ModelQuery.NameConstraint "bar"];
         productions = [Model.ModelQuery.ReturnTaint [source "Test"]];
         rule_kind = Model.ModelQuery.FunctionModel;
       }
@@ -70,8 +71,8 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        Model.ModelQuery.query =
-          [Model.ModelQuery.NameConstraint "foo"; Model.ModelQuery.NameConstraint "bar"];
+        Model.ModelQuery.name = None;
+        query = [Model.ModelQuery.NameConstraint "foo"; Model.ModelQuery.NameConstraint "bar"];
         productions = [Model.ModelQuery.ReturnTaint [source "Test"]];
         rule_kind = Model.ModelQuery.FunctionModel;
       }
@@ -86,7 +87,8 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        Model.ModelQuery.query = [Model.ModelQuery.NameConstraint "foo"];
+        Model.ModelQuery.name = None;
+        query = [Model.ModelQuery.NameConstraint "foo"];
         productions = [Model.ModelQuery.ReturnTaint [source "Test"]];
         rule_kind = Model.ModelQuery.FunctionModel;
       }
@@ -100,7 +102,8 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        Model.ModelQuery.query = [Model.ModelQuery.NameConstraint "foo"];
+        Model.ModelQuery.name = None;
+        query = [Model.ModelQuery.NameConstraint "foo"];
         productions = [Model.ModelQuery.ReturnTaint [source "Test"]];
         rule_kind = Model.ModelQuery.MethodModel;
       }
@@ -115,7 +118,8 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        Model.ModelQuery.query = [Model.ModelQuery.NameConstraint "foo"];
+        Model.ModelQuery.name = None;
+        query = [Model.ModelQuery.NameConstraint "foo"];
         productions =
           [
             Model.ModelQuery.ReturnTaint [source "Test"];
@@ -140,7 +144,8 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        Model.ModelQuery.query = [Model.ModelQuery.NameConstraint "foo"];
+        Model.ModelQuery.name = None;
+        query = [Model.ModelQuery.NameConstraint "foo"];
         productions = [Model.ModelQuery.AllParametersTaint [source "Test"]];
         rule_kind = Model.ModelQuery.MethodModel;
       }
