@@ -225,6 +225,39 @@ class PartialConfiguration:
         }
 
     @staticmethod
+    def from_command_arguments(
+        arguments: command_arguments.CommandArguments,
+    ) -> "PartialConfiguration":
+        return PartialConfiguration(
+            autocomplete=None,
+            binary=arguments.binary,
+            buck_builder_binary=arguments.buck_builder_binary,
+            disabled=None,
+            do_not_ignore_all_errors_in=[],
+            dot_pyre_directory=arguments.dot_pyre_directory,
+            excludes=arguments.exclude,
+            extensions=[],
+            file_hash=None,
+            formatter=arguments.formatter,
+            ignore_all_errors=[],
+            ignore_infer=[],
+            logger=arguments.logger,
+            number_of_workers=None,
+            other_critical_files=[],
+            search_path=[
+                SimpleSearchPathElement(element) for element in arguments.search_path
+            ],
+            source_directories=arguments.source_directories,
+            strict=arguments.strict,
+            taint_models_path=[],
+            targets=arguments.targets,
+            typeshed=arguments.typeshed,
+            use_buck_builder=arguments.use_buck_builder,
+            use_buck_source_database=arguments.use_buck_source_database,
+            version_hash=None,
+        )
+
+    @staticmethod
     def from_string(contents: str) -> "PartialConfiguration":
         def ensure_option_type(
             json: Dict[str, Any], name: str, expected_type: Type[T]

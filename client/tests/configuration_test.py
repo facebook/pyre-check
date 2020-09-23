@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import NamedTuple, Optional
 from unittest.mock import MagicMock, PropertyMock, call, mock_open, patch
 
-from .. import configuration
+from .. import command_arguments, configuration
 from ..configuration import (
     Configuration,
     InvalidConfiguration,
@@ -30,6 +30,64 @@ from ..find_directories import CONFIGURATION_FILE, LOCAL_CONFIGURATION_FILE
 
 
 class PartialConfigurationTest(unittest.TestCase):
+    def test_create_from_command_arguments(self) -> None:
+        configuration = PartialConfiguration.from_command_arguments(
+            command_arguments.CommandArguments(
+                local_configuration=None,
+                version=False,
+                debug=False,
+                sequential=False,
+                strict=True,
+                additional_checks=[],
+                show_error_traces=False,
+                output="output",
+                enable_profiling=False,
+                enable_memory_profiling=False,
+                noninteractive=False,
+                logging_sections=None,
+                log_identifier="",
+                logger="logger",
+                formatter="formatter",
+                targets=["//foo", "//bar"],
+                use_buck_builder=False,
+                use_buck_source_database=True,
+                source_directories=["a", "b"],
+                filter_directory=None,
+                buck_mode=None,
+                no_saved_state=False,
+                search_path=["x", "y"],
+                binary="binary",
+                buck_builder_binary="buck_builder_binary",
+                exclude=["excludes"],
+                typeshed="typeshed",
+                save_initial_state_to=None,
+                load_initial_state_from=None,
+                changed_files_path=None,
+                saved_state_project=None,
+                dot_pyre_directory=Path(".pyre"),
+                features=None,
+            )
+        )
+        self.assertEqual(configuration.binary, "binary")
+        self.assertEqual(configuration.buck_builder_binary, "buck_builder_binary")
+        self.assertEqual(configuration.dot_pyre_directory, Path(".pyre"))
+        self.assertListEqual(list(configuration.excludes), ["excludes"])
+        self.assertEqual(configuration.formatter, "formatter")
+        self.assertEqual(configuration.logger, "logger")
+        self.assertListEqual(
+            list(configuration.search_path),
+            [SimpleSearchPathElement("x"), SimpleSearchPathElement("y")],
+        )
+        source_directories = configuration.source_directories
+        self.assertIsNotNone(source_directories)
+        self.assertListEqual(list(source_directories), ["a", "b"])
+        targets = configuration.targets
+        self.assertIsNotNone(targets)
+        self.assertListEqual(list(targets), ["//foo", "//bar"])
+        self.assertEqual(configuration.typeshed, "typeshed")
+        self.assertEqual(configuration.use_buck_builder, False)
+        self.assertEqual(configuration.use_buck_source_database, True)
+
     def test_create_from_string_success(self) -> None:
         self.assertEqual(
             PartialConfiguration.from_string(
