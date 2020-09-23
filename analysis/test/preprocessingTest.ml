@@ -80,7 +80,7 @@ let test_expand_string_annotations _ =
       constant: Foo = ...
       def foo(f: Foo) -> Foo: ...
     |};
-  assert_expand "def foo(f: '1234'): ..." "def foo(f: $unparsed_annotation): ...";
+  assert_expand "def foo(f: '1234'): ..." "def foo(f: \"1234\"): ...";
   assert_expand
     {|
       class Foo: ...
@@ -115,7 +115,7 @@ let test_expand_string_annotations _ =
       class Foo:
         x: B = cast(float, 42)
     |};
-  assert_expand "x = typing.cast('1234', 42)" "x = typing.cast($unparsed_annotation, 42)";
+  assert_expand "x = typing.cast('1234', 42)" "x = typing.cast(\"1234\", 42)";
   assert_expand
     {|
         from pyre_extensions import safe_cast
@@ -143,7 +143,7 @@ let test_expand_string_annotations _ =
       |};
   assert_expand
     "x = pyre_extensions.safe_cast('1234', 42)"
-    "x = pyre_extensions.safe_cast($unparsed_annotation, 42)";
+    "x = pyre_extensions.safe_cast(\"1234\", 42)";
   assert_expand
     {|
       import typing
@@ -169,6 +169,28 @@ let test_expand_string_annotations _ =
   assert_expand "def foo(f: te.Literal['A', 'B']): ..." "def foo(f: te.Literal['A', 'B']): ...";
   assert_expand "class Foo(typing.List['str']): ..." "class Foo(typing.List[str]): ...";
   assert_expand "class Foo('str'): ..." "class Foo('str'): ...";
+  assert_expand
+    {|
+      def foo(
+        x,  # type: int
+      ):
+        return x
+    |}
+    {|
+      def foo(x: int):
+        return x
+    |};
+  assert_expand
+    {|
+      def foo(
+        x,  # type: int,
+      ):
+        return x
+    |}
+    {|
+      def foo(x: "int,"):
+        return x
+    |};
   ()
 
 

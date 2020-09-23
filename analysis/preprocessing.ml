@@ -86,12 +86,16 @@ let expand_string_annotations ({ Source.source_path = { SourcePath.relative; _ }
                   callee = transform_expression callee;
                   arguments = List.map ~f:transform_argument arguments;
                 }
-          | String { StringLiteral.value; _ } -> (
+          | String { StringLiteral.value = string_value; _ } -> (
               try
                 let parsed =
                   (* Start at column + 1 since parsing begins after the opening quote of the string
                      literal. *)
-                  Parser.parse ~start_line ~start_column:(start_column + 1) [value ^ "\n"] ~relative
+                  Parser.parse
+                    ~start_line
+                    ~start_column:(start_column + 1)
+                    [string_value ^ "\n"]
+                    ~relative
                 in
                 match parsed with
                 | [{ Node.value = Expression { Node.value = Name _ as expression; _ }; _ }]
@@ -101,8 +105,9 @@ let expand_string_annotations ({ Source.source_path = { SourcePath.relative; _ }
               with
               | Parser.Error _
               | Failure _ ->
-                  Log.debug "Invalid string annotation `%s` at %a" value Location.pp location;
-                  Name (Name.Identifier "$unparsed_annotation") )
+                  Log.debug "Invalid string annotation `%s` at %a" string_value Location.pp location;
+                  (* TODO(T76231928): replace this silent ignore with something typeCheck.ml can use *)
+                  value )
           | Tuple elements -> Tuple (List.map elements ~f:transform_expression)
           | _ -> value
         in
