@@ -390,6 +390,29 @@ class ErrorsTest(unittest.TestCase):
             max_line_length=25,
         )
 
+        # Line breaks without errors.
+        self.assertSuppressErrors(
+            {},
+            """
+            def foo() -> None:
+                \"\"\"
+                Random line break that won't parse.
+                /!\\
+                Text.
+                \"\"\"
+                pass
+            """,
+            """
+            def foo() -> None:
+                \"\"\"
+                Random line break that won't parse.
+                /!\\
+                Text.
+                \"\"\"
+                pass
+            """,
+        )
+
         # Line breaks.
         self.assertSuppressErrors(
             {

@@ -450,7 +450,8 @@ def _suppress_errors(
             # Handle error suppressions in line break block
             line_break_block_errors.append(comments)
             new_lines.append(line)
-            _add_error_to_line_break_block(new_lines, line_break_block_errors)
+            if sum(len(errors) for errors in line_break_block_errors) > 0:
+                _add_error_to_line_break_block(new_lines, line_break_block_errors)
             line_break_block_errors = []
             continue
 
