@@ -5,6 +5,8 @@
 
 # pyre-unsafe
 
+import hashlib
+import json
 import os
 import site
 import sys
@@ -17,6 +19,7 @@ from .. import configuration
 from ..configuration import (
     Configuration,
     InvalidConfiguration,
+    PartialConfiguration,
     SimpleSearchPathElement,
     SitePackageSearchPathElement,
     SubdirectorySearchPathElement,
@@ -24,6 +27,217 @@ from ..configuration import (
     create_search_paths,
 )
 from ..find_directories import CONFIGURATION_FILE, LOCAL_CONFIGURATION_FILE
+
+
+class PartialConfigurationTest(unittest.TestCase):
+    def test_create_from_string_success(self) -> None:
+        self.assertEqual(
+            PartialConfiguration.from_string(
+                json.dumps({"autocomplete": True})
+            ).autocomplete,
+            True,
+        )
+        self.assertEqual(
+            PartialConfiguration.from_string(json.dumps({"binary": "foo"})).binary,
+            "foo",
+        )
+        self.assertEqual(
+            PartialConfiguration.from_string(
+                json.dumps({"buck_builder_binary": "foo"})
+            ).buck_builder_binary,
+            "foo",
+        )
+        self.assertEqual(
+            PartialConfiguration.from_string(json.dumps({"disabled": True})).disabled,
+            True,
+        )
+        self.assertListEqual(
+            list(
+                PartialConfiguration.from_string(
+                    json.dumps({"do_not_ignore_all_errors_in": ["foo", "bar"]})
+                ).do_not_ignore_all_errors_in
+            ),
+            ["foo", "bar"],
+        )
+        self.assertEqual(
+            PartialConfiguration.from_string(
+                json.dumps({"dot_pyre_directory": "foo"})
+            ).dot_pyre_directory,
+            Path("foo"),
+        )
+        self.assertListEqual(
+            list(
+                PartialConfiguration.from_string(
+                    json.dumps({"excludes": "foo"})
+                ).excludes
+            ),
+            ["foo"],
+        )
+        self.assertListEqual(
+            list(
+                PartialConfiguration.from_string(
+                    json.dumps({"excludes": ["foo", "bar"]})
+                ).excludes
+            ),
+            ["foo", "bar"],
+        )
+        self.assertListEqual(
+            list(
+                PartialConfiguration.from_string(
+                    json.dumps({"extensions": [".foo", ".bar"]})
+                ).extensions
+            ),
+            [".foo", ".bar"],
+        )
+        self.assertEqual(
+            PartialConfiguration.from_string(
+                json.dumps({"formatter": "foo"})
+            ).formatter,
+            "foo",
+        )
+        self.assertListEqual(
+            list(
+                PartialConfiguration.from_string(
+                    json.dumps({"ignore_all_errors": ["foo", "bar"]})
+                ).ignore_all_errors
+            ),
+            ["foo", "bar"],
+        )
+        self.assertEqual(
+            PartialConfiguration.from_string(json.dumps({"logger": "foo"})).logger,
+            "foo",
+        )
+        self.assertEqual(
+            PartialConfiguration.from_string(
+                json.dumps({"number_of_workers": 42})
+            ).number_of_workers,
+            42,
+        )
+        self.assertListEqual(
+            list(
+                PartialConfiguration.from_string(
+                    json.dumps({"critical_files": ["foo", "bar"]})
+                ).other_critical_files
+            ),
+            ["foo", "bar"],
+        )
+        self.assertListEqual(
+            list(
+                PartialConfiguration.from_string(
+                    json.dumps({"search_path": "foo"})
+                ).search_path
+            ),
+            [SimpleSearchPathElement("foo")],
+        )
+        self.assertListEqual(
+            list(
+                PartialConfiguration.from_string(
+                    json.dumps(
+                        {"search_path": ["foo", {"root": "bar", "subdirectory": "baz"}]}
+                    )
+                ).search_path
+            ),
+            [
+                SimpleSearchPathElement("foo"),
+                SubdirectorySearchPathElement("bar", "baz"),
+            ],
+        )
+        self.assertEqual(
+            PartialConfiguration.from_string(json.dumps({"strict": True})).strict, True
+        )
+        self.assertListEqual(
+            list(
+                PartialConfiguration.from_string(
+                    json.dumps({"taint_models_path": "foo"})
+                ).taint_models_path
+            ),
+            ["foo"],
+        )
+        self.assertListEqual(
+            list(
+                PartialConfiguration.from_string(
+                    json.dumps({"taint_models_path": ["foo", "bar"]})
+                ).taint_models_path
+            ),
+            ["foo", "bar"],
+        )
+        self.assertEqual(
+            PartialConfiguration.from_string(json.dumps({"typeshed": "foo"})).typeshed,
+            "foo",
+        )
+        self.assertEqual(
+            PartialConfiguration.from_string(
+                json.dumps({"use_buck_builder": True})
+            ).use_buck_builder,
+            True,
+        )
+        self.assertEqual(
+            PartialConfiguration.from_string(
+                json.dumps({"use_buck_source_database": True})
+            ).use_buck_source_database,
+            True,
+        )
+        self.assertEqual(
+            PartialConfiguration.from_string(
+                json.dumps({"version": "abc"})
+            ).version_hash,
+            "abc",
+        )
+
+        self.assertIsNone(PartialConfiguration.from_string("{}").source_directories)
+        source_directories = PartialConfiguration.from_string(
+            json.dumps({"source_directories": ["foo", "bar"]})
+        ).source_directories
+        self.assertIsNotNone(source_directories)
+        self.assertListEqual(list(source_directories), ["foo", "bar"])
+
+        self.assertIsNone(PartialConfiguration.from_string("{}").targets)
+        targets = PartialConfiguration.from_string(
+            json.dumps({"targets": ["//foo", "//bar"]})
+        ).targets
+        self.assertIsNotNone(targets)
+        self.assertListEqual(list(targets), ["//foo", "//bar"])
+
+        self.assertEqual(
+            PartialConfiguration.from_string(json.dumps({"version": "abc"})).file_hash,
+            None,
+        )
+        file_content = json.dumps({"version": "abc", "saved_state": "xyz"})
+        self.assertEqual(
+            PartialConfiguration.from_string(file_content).file_hash,
+            hashlib.sha1(file_content.encode("utf-8")).hexdigest(),
+        )
+
+    def test_create_from_string_failure(self) -> None:
+        def assert_raises(content: str) -> None:
+            with self.assertRaises(InvalidConfiguration):
+                PartialConfiguration.from_string(content)
+
+        assert_raises("")
+        assert_raises("{")
+        assert_raises(json.dumps({"autocomplete": 42}))
+        assert_raises(json.dumps({"binary": True}))
+        assert_raises(json.dumps({"buck_builder_binary": ["."]}))
+        assert_raises(json.dumps({"disabled": "False"}))
+        assert_raises(json.dumps({"do_not_ignore_all_errors_in": "abc"}))
+        assert_raises(json.dumps({"dot_pyre_directory": {}}))
+        assert_raises(json.dumps({"excludes": 42}))
+        assert_raises(json.dumps({"extensions": {"derp": 42}}))
+        assert_raises(json.dumps({"formatter": 4.2}))
+        assert_raises(json.dumps({"ignore_all_errors": [1, 2, 3]}))
+        assert_raises(json.dumps({"ignore_infer": [False, "bc"]}))
+        assert_raises(json.dumps({"logger": []}))
+        assert_raises(json.dumps({"number_of_workers": "abc"}))
+        assert_raises(json.dumps({"critical_files": "abc"}))
+        assert_raises(json.dumps({"source_directories": "abc"}))
+        assert_raises(json.dumps({"strict": 42}))
+        assert_raises(json.dumps({"taint_models_path": True}))
+        assert_raises(json.dumps({"taint_models_path": ["foo", 42]}))
+        assert_raises(json.dumps({"targets": "abc"}))
+        assert_raises(json.dumps({"typeshed": ["abc"]}))
+        assert_raises(json.dumps({"use_buck_builder": "derp"}))
+        assert_raises(json.dumps({"use_buck_source_database": 4.2}))
+        assert_raises(json.dumps({"version": 123}))
 
 
 class MockCompletedProcess(NamedTuple):

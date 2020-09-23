@@ -17,9 +17,21 @@ import shutil
 import site
 import subprocess
 import sys
+from dataclasses import dataclass, field
 from logging import Logger
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Union
+from typing import (
+    Any,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Sequence,
+    Set,
+    Type,
+    TypeVar,
+    Union,
+)
 
 from . import command_arguments, find_directories
 from .exceptions import EnvironmentException
@@ -36,6 +48,8 @@ from .resources import LOG_DIRECTORY
 
 
 LOG: Logger = logging.getLogger(__name__)
+
+T = TypeVar("T")
 
 
 def _relativize_root(root: str, project_root: str, relative_root: Optional[str]) -> str:
@@ -166,6 +180,200 @@ def assert_readable_directory_in_configuration(
         assert_readable_directory(directory, error_message_prefix=f"{field_name} ")
     except EnvironmentException as error:
         raise InvalidConfiguration(str(error))
+
+
+@dataclass(frozen=True)
+class PartialConfiguration:
+    autocomplete: Optional[bool] = None
+    binary: Optional[str] = None
+    buck_builder_binary: Optional[str] = None
+    disabled: Optional[bool] = None
+    do_not_ignore_all_errors_in: Sequence[str] = field(default_factory=list)
+    dot_pyre_directory: Optional[Path] = None
+    excludes: Sequence[str] = field(default_factory=list)
+    extensions: Sequence[str] = field(default_factory=list)
+    file_hash: Optional[str] = None
+    formatter: Optional[str] = None
+    ignore_all_errors: Sequence[str] = field(default_factory=list)
+    ignore_infer: Sequence[str] = field(default_factory=list)
+    logger: Optional[str] = None
+    number_of_workers: Optional[int] = None
+    other_critical_files: Sequence[str] = field(default_factory=list)
+    search_path: Sequence[SearchPathElement] = field(default_factory=list)
+    source_directories: Optional[Sequence[str]] = None
+    strict: Optional[bool] = None
+    taint_models_path: Sequence[str] = field(default_factory=list)
+    targets: Optional[Sequence[str]] = None
+    typeshed: Optional[str] = None
+    use_buck_builder: Optional[bool] = None
+    use_buck_source_database: Optional[bool] = None
+    version_hash: Optional[str] = None
+
+    @staticmethod
+    def _get_depreacted_map() -> Dict[str, str]:
+        return {"do_not_check": "ignore_all_errors"}
+
+    @staticmethod
+    def _get_extra_keys() -> Set[str]:
+        return {
+            "buck_mode",
+            "differential",
+            "stable_client",
+            "unstable_client",
+            "saved_state",
+            "taint_models_path",
+        }
+
+    @staticmethod
+    def from_string(contents: str) -> "PartialConfiguration":
+        def ensure_option_type(
+            json: Dict[str, Any], name: str, expected_type: Type[T]
+        ) -> Optional[T]:
+            result = json.pop(name, None)
+            if result is None:
+                return None
+            elif isinstance(result, expected_type):
+                return result
+            raise InvalidConfiguration(
+                f"Configuration `{name}` is expected to have type "
+                f"{expected_type} but got: `{json}`."
+            )
+
+        def is_list_of_string(elements: object) -> bool:
+            return isinstance(elements, list) and all(
+                isinstance(element, str) for element in elements
+            )
+
+        def ensure_optional_string_list(
+            json: Dict[str, Any], name: str
+        ) -> Optional[List[str]]:
+            result = json.pop(name, None)
+            if result is None:
+                return None
+            elif is_list_of_string(result):
+                return result
+            raise InvalidConfiguration(
+                f"Configuration `{name}` is expected to be a list of "
+                f"strings but got `{json}`."
+            )
+
+        def ensure_string_list(
+            json: Dict[str, Any], name: str, allow_single_string: bool = False
+        ) -> List[str]:
+            result = json.pop(name, [])
+            if allow_single_string and isinstance(result, str):
+                result = [result]
+            if is_list_of_string(result):
+                return result
+            raise InvalidConfiguration(
+                f"Configuration `{name}` is expected to be a list of "
+                f"strings but got `{json}`."
+            )
+
+        try:
+            configuration_json = json.loads(contents)
+
+            if configuration_json.pop("saved_state", None) is not None:
+                file_hash = hashlib.sha1(contents.encode("utf-8")).hexdigest()
+            else:
+                file_hash = None
+
+            dot_pyre_directory = ensure_option_type(
+                configuration_json, "dot_pyre_directory", str
+            )
+
+            search_path_json = configuration_json.pop("search_path", [])
+            if isinstance(search_path_json, list):
+                search_path = [
+                    element
+                    for json in search_path_json
+                    for element in create_search_paths(
+                        json, site_roots=site.getsitepackages()
+                    )
+                ]
+            else:
+                search_path = create_search_paths(
+                    search_path_json, site_roots=site.getsitepackages()
+                )
+
+            partial_configuration = PartialConfiguration(
+                autocomplete=ensure_option_type(
+                    configuration_json, "autocomplete", bool
+                ),
+                binary=ensure_option_type(configuration_json, "binary", str),
+                buck_builder_binary=ensure_option_type(
+                    configuration_json, "buck_builder_binary", str
+                ),
+                disabled=ensure_option_type(configuration_json, "disabled", bool),
+                do_not_ignore_all_errors_in=ensure_string_list(
+                    configuration_json, "do_not_ignore_all_errors_in"
+                ),
+                dot_pyre_directory=Path(dot_pyre_directory)
+                if dot_pyre_directory is not None
+                else None,
+                excludes=ensure_string_list(
+                    configuration_json, "excludes", allow_single_string=True
+                ),
+                extensions=ensure_string_list(configuration_json, "extensions"),
+                file_hash=file_hash,
+                formatter=ensure_option_type(configuration_json, "formatter", str),
+                ignore_all_errors=ensure_string_list(
+                    configuration_json, "ignore_all_errors"
+                ),
+                ignore_infer=ensure_string_list(configuration_json, "ignore_infer"),
+                logger=ensure_option_type(configuration_json, "logger", str),
+                number_of_workers=ensure_option_type(
+                    configuration_json, "number_of_workers", int
+                ),
+                other_critical_files=ensure_string_list(
+                    configuration_json, "critical_files"
+                ),
+                search_path=search_path,
+                source_directories=ensure_optional_string_list(
+                    configuration_json, "source_directories"
+                ),
+                strict=ensure_option_type(configuration_json, "strict", bool),
+                taint_models_path=ensure_string_list(
+                    configuration_json, "taint_models_path", allow_single_string=True
+                ),
+                targets=ensure_optional_string_list(configuration_json, "targets"),
+                typeshed=ensure_option_type(configuration_json, "typeshed", str),
+                use_buck_builder=ensure_option_type(
+                    configuration_json, "use_buck_builder", bool
+                ),
+                use_buck_source_database=ensure_option_type(
+                    configuration_json, "use_buck_source_database", bool
+                ),
+                version_hash=ensure_option_type(configuration_json, "version", str),
+            )
+
+            # Check for deprecated and unused keys
+            for (
+                deprecated_key,
+                replacement_key,
+            ) in PartialConfiguration._get_depreacted_map().items():
+                if deprecated_key in configuration_json:
+                    configuration_json.pop(deprecated_key)
+                    LOG.warning(
+                        f"Configuration file uses deprecated item `{deprecated_key}`. "
+                        f"Please migrate to its replacement `{replacement_key}`"
+                    )
+            extra_keys = PartialConfiguration._get_extra_keys()
+            for unrecognized_key in configuration_json:
+                if unrecognized_key not in extra_keys:
+                    LOG.warning(f"Unrecognized configuration item: {unrecognized_key}")
+
+            return partial_configuration
+        except json.JSONDecodeError as error:
+            raise InvalidConfiguration(f"Invalid JSON file: {error}")
+
+    @staticmethod
+    def from_file(path: Path) -> "PartialConfiguration":
+        try:
+            contents = path.read_text(encoding="utf-8")
+            return PartialConfiguration.from_string(contents)
+        except OSError as error:
+            raise InvalidConfiguration(f"Error when reading {path}: {error}")
 
 
 class _ConfigurationFile:
