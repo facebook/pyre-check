@@ -5,6 +5,7 @@
 
 # pyre-unsafe
 
+import dataclasses
 import hashlib
 import json
 import os
@@ -25,6 +26,7 @@ from ..configuration import (
     SubdirectorySearchPathElement,
     _relativize_root,
     create_search_paths,
+    merge_partial_configurations,
 )
 from ..find_directories import CONFIGURATION_FILE, LOCAL_CONFIGURATION_FILE
 
@@ -296,6 +298,116 @@ class PartialConfigurationTest(unittest.TestCase):
         assert_raises(json.dumps({"use_buck_builder": "derp"}))
         assert_raises(json.dumps({"use_buck_source_database": 4.2}))
         assert_raises(json.dumps({"version": 123}))
+
+    def test_merge(self) -> None:
+        # Unsafe features like `getattr` has to be used in this test to reduce boilerplates.
+
+        def create_configuration(name: str, value: object) -> PartialConfiguration:
+            return dataclasses.replace(PartialConfiguration(), **{name: value})
+
+        # Overwriting behaves correctly when:
+        # - If both base config and overriding config are absent, result is None.
+        # - If one of the config is presented, result is the that config.
+        # - If both base config and overriding config are present, result is the
+        #   overriding config.
+        def assert_overwritten(attribute_name: str) -> None:
+            # The actual value doesn't really matter. We only care about equalities.
+            # This is obviously not type-safe but it does save a significant amount
+            # of keystrokes.
+            base_value = object()
+            override_value = object()
+            self.assertIsNone(
+                getattr(
+                    merge_partial_configurations(
+                        base=create_configuration(attribute_name, None),
+                        override=create_configuration(attribute_name, None),
+                    ),
+                    attribute_name,
+                )
+            )
+            self.assertEqual(
+                getattr(
+                    merge_partial_configurations(
+                        base=create_configuration(attribute_name, base_value),
+                        override=create_configuration(attribute_name, None),
+                    ),
+                    attribute_name,
+                ),
+                base_value,
+            )
+            self.assertEqual(
+                getattr(
+                    merge_partial_configurations(
+                        base=create_configuration(attribute_name, None),
+                        override=create_configuration(attribute_name, override_value),
+                    ),
+                    attribute_name,
+                ),
+                override_value,
+            )
+            self.assertEqual(
+                getattr(
+                    merge_partial_configurations(
+                        base=create_configuration(attribute_name, base_value),
+                        override=create_configuration(attribute_name, override_value),
+                    ),
+                    attribute_name,
+                ),
+                override_value,
+            )
+
+        def assert_appended(attribute_name: str) -> None:
+            # The actual value doesn't really matter. We only care about equalities.
+            # This is obviously not type-safe but it does save a significant amount
+            # of keystrokes.
+            base_value = object()
+            override_value = object()
+            self.assertListEqual(
+                getattr(
+                    merge_partial_configurations(
+                        base=create_configuration(attribute_name, [base_value]),
+                        override=create_configuration(attribute_name, [override_value]),
+                    ),
+                    attribute_name,
+                ),
+                [base_value, override_value],
+            )
+
+        def assert_raise_when_overridden(attribute_name: str) -> None:
+            # The actual value doesn't really matter. We only care about equalities.
+            # This is obviously not type-safe but it does save a significant amount
+            # of keystrokes.
+            base_value = object()
+            override_value = object()
+            with self.assertRaises(InvalidConfiguration):
+                merge_partial_configurations(
+                    base=create_configuration(attribute_name, base_value),
+                    override=create_configuration(attribute_name, override_value),
+                )
+
+        assert_overwritten("autocomplete")
+        assert_overwritten("buck_builder_binary")
+        assert_overwritten("disabled")
+        assert_appended("do_not_ignore_all_errors_in")
+        assert_overwritten("dot_pyre_directory")
+        assert_appended("excludes")
+        assert_appended("extensions")
+        assert_overwritten("file_hash")
+        assert_overwritten("formatter")
+        assert_appended("ignore_all_errors")
+        assert_appended("ignore_infer")
+        assert_overwritten("logger")
+        assert_overwritten("number_of_workers")
+        assert_appended("other_critical_files")
+        assert_appended("search_path")
+        assert_raise_when_overridden("source_directories")
+        assert_overwritten("strict")
+        assert_appended("taint_models_path")
+        assert_raise_when_overridden("targets")
+        assert_overwritten("typeshed")
+        assert_overwritten("use_buck_builder")
+        assert_overwritten("use_buck_source_database")
+        assert_overwritten("version_hash")
 
 
 class MockCompletedProcess(NamedTuple):

@@ -409,6 +409,77 @@ class PartialConfiguration:
             raise InvalidConfiguration(f"Error when reading {path}: {error}")
 
 
+def merge_partial_configurations(
+    base: PartialConfiguration, override: PartialConfiguration
+) -> PartialConfiguration:
+    def overwrite_base(base: Optional[T], override: Optional[T]) -> Optional[T]:
+        return base if override is None else override
+
+    def append_base(base: Sequence[T], override: Sequence[T]) -> Sequence[T]:
+        return list(base) + list(override)
+
+    def raise_when_overridden(
+        base: Optional[T], override: Optional[T], name: str
+    ) -> Optional[T]:
+        if base is None:
+            return override
+        elif override is None:
+            return base
+        else:
+            raise InvalidConfiguration(
+                f"Configuration option `{name}` cannot be overridden."
+            )
+
+    return PartialConfiguration(
+        autocomplete=overwrite_base(base.autocomplete, override.autocomplete),
+        binary=overwrite_base(base.binary, override.binary),
+        buck_builder_binary=overwrite_base(
+            base.buck_builder_binary, override.buck_builder_binary
+        ),
+        disabled=overwrite_base(base.disabled, override.disabled),
+        do_not_ignore_all_errors_in=append_base(
+            base.do_not_ignore_all_errors_in, override.do_not_ignore_all_errors_in
+        ),
+        dot_pyre_directory=overwrite_base(
+            base.dot_pyre_directory, override.dot_pyre_directory
+        ),
+        excludes=append_base(base.excludes, override.excludes),
+        extensions=append_base(base.extensions, override.extensions),
+        file_hash=overwrite_base(base.file_hash, override.file_hash),
+        formatter=overwrite_base(base.formatter, override.formatter),
+        ignore_all_errors=append_base(
+            base.ignore_all_errors, override.ignore_all_errors
+        ),
+        ignore_infer=append_base(base.ignore_infer, override=override.ignore_infer),
+        logger=overwrite_base(base.logger, override.logger),
+        number_of_workers=overwrite_base(
+            base.number_of_workers, override.number_of_workers
+        ),
+        other_critical_files=append_base(
+            base.other_critical_files, override.other_critical_files
+        ),
+        search_path=append_base(base.search_path, override.search_path),
+        source_directories=raise_when_overridden(
+            base.source_directories,
+            override.source_directories,
+            name="source_directories",
+        ),
+        strict=overwrite_base(base.strict, override.strict),
+        taint_models_path=append_base(
+            base.taint_models_path, override.taint_models_path
+        ),
+        targets=raise_when_overridden(base.targets, override.targets, name="targets"),
+        typeshed=overwrite_base(base.typeshed, override.typeshed),
+        use_buck_builder=overwrite_base(
+            base.use_buck_builder, override.use_buck_builder
+        ),
+        use_buck_source_database=overwrite_base(
+            base.use_buck_source_database, override.use_buck_source_database
+        ),
+        version_hash=overwrite_base(base.version_hash, override.version_hash),
+    )
+
+
 class _ConfigurationFile:
     def __init__(self, file) -> None:
         self._deprecated = {"do_not_check": "ignore_all_errors"}
