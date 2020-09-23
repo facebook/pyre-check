@@ -29,6 +29,9 @@ include Taint.Result.Register (struct
     in
     let verify = json_bool_member "verify_models" taint ~default:true in
     let find_obscure_flows = json_bool_member "find_obscure_flows" taint ~default:false in
+    let dump_model_query_results =
+      json_bool_member "dump_model_query_results" taint ~default:false
+    in
     let rule_filter =
       if List.mem ~equal:String.equal (Yojson.Safe.Util.keys taint) "rule_filter" then
         Some
@@ -81,7 +84,13 @@ include Taint.Result.Register (struct
       | _ -> (
           try
             let paths = List.map model_paths ~f:Path.create_absolute in
-            let configuration = TaintConfiguration.create ~rule_filter ~find_obscure_flows ~paths in
+            let configuration =
+              TaintConfiguration.create
+                ~rule_filter
+                ~find_obscure_flows
+                ~dump_model_query_results
+                ~paths
+            in
             TaintConfiguration.register configuration;
             let models, errors, skip_overrides, queries =
               Model.get_model_sources ~paths |> create_models ~configuration

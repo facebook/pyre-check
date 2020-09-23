@@ -213,5 +213,6 @@ module StaticAnalysis = struct
     configuration: Analysis.t;
     rule_filter: int list option;
     find_obscure_flows: bool;
+    dump_model_query_results: bool;
   }
 end

@@ -24,6 +24,7 @@ let run_analysis
     repository_root
     rule_filter
     find_obscure_flows
+    dump_model_query_results
     _verbose
     expected_version
     sections
@@ -159,6 +160,7 @@ let run_analysis
                   verify_models = not no_verify;
                   rule_filter;
                   find_obscure_flows;
+                  dump_model_query_results;
                 }
               ~filename_lookup
               ~environment:(Analysis.TypeEnvironment.read_only environment)
@@ -217,5 +219,6 @@ let command =
            "-find-obscure-flows"
            no_arg
            ~doc:"Perform a taint analysis to find flows through obscure models."
+      +> flag "-dump-model-query-results" no_arg ~doc:"Provide debugging output for model queries."
       ++ Specification.base_command_line_arguments)
     run_analysis

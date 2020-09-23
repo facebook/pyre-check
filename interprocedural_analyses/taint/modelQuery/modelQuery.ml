@@ -66,7 +66,12 @@ let apply_productions ~resolution ~productions ~callable =
       List.concat_map productions ~f:apply_production
 
 
-let apply_query_rule ~resolution ~rule:{ ModelQuery.rule_kind; query; productions } ~callable =
+let apply_query_rule
+    ~verbose
+    ~resolution
+    ~rule:{ ModelQuery.rule_kind; query; productions }
+    ~callable
+  =
   let kind_matches =
     match callable, rule_kind with
     | `Function _, ModelQuery.FunctionModel
@@ -75,8 +80,14 @@ let apply_query_rule ~resolution ~rule:{ ModelQuery.rule_kind; query; production
     | _ -> false
   in
 
-  if kind_matches && List.for_all ~f:(matches_constraint ~callable) query then
+  if kind_matches && List.for_all ~f:(matches_constraint ~callable) query then begin
+    if verbose then
+      Log.info
+        "Callable `%a` matches all constraints for the model generator."
+        Callable.pretty_print
+        (callable :> Callable.t);
     apply_productions ~resolution ~productions ~callable
+  end
   else
     []
 
@@ -99,7 +110,11 @@ let apply_all_rules
     let apply_rules (models, skip_overrides) callable =
       let taint_to_model =
         List.concat_map rules ~f:(fun rule ->
-            apply_query_rule ~resolution:global_resolution ~rule ~callable)
+            apply_query_rule
+              ~verbose:configuration.dump_model_query_results
+              ~resolution:global_resolution
+              ~rule
+              ~callable)
       in
       if not (List.is_empty taint_to_model) then
         match

@@ -220,6 +220,7 @@ let analyze
           verify_models;
           rule_filter;
           find_obscure_flows;
+          dump_model_query_results;
           _;
         } as analysis_configuration )
     ~filename_lookup
@@ -261,6 +262,7 @@ let analyze
                   "model_paths", `List taint_model_paths;
                   "verify_models", `Bool verify_models;
                   "find_obscure_flows", `Bool find_obscure_flows;
+                  "dump_model_query_results", `Bool dump_model_query_results;
                 ]
               @ rule_settings ) );
         ]

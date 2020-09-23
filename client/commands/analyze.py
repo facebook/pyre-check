@@ -35,6 +35,7 @@ class Analyze(Check):
         repository_root: Optional[str],
         rules: Optional[List[int]],
         find_obscure_flows: bool = False,
+        dump_model_query_results: bool = False,
     ) -> None:
         super(Analyze, self).__init__(
             command_arguments,
@@ -52,6 +53,7 @@ class Analyze(Check):
         self._repository_root: Final[Optional[str]] = repository_root
         self._rules: Final[Optional[List[int]]] = rules
         self._find_obscure_flows: bool = find_obscure_flows
+        self._dump_model_query_results = dump_model_query_results
 
     @staticmethod
     def from_arguments(
@@ -73,6 +75,7 @@ class Analyze(Check):
             repository_root=arguments.repository_root,
             rules=arguments.rule,
             find_obscure_flows=arguments.find_obscure_flows,
+            dump_model_query_results=arguments.dump_model_query_results,
         )
 
     @classmethod
@@ -111,6 +114,11 @@ class Analyze(Check):
             action="store_true",
             help="Perform a taint analysis to find flows through obscure models.",
         )
+        analyze.add_argument(
+            "--dump-model-query-results",
+            action="store_true",
+            help="Provide model query debugging output.",
+        )
 
     def generate_analysis_directory(self) -> AnalysisDirectory:
         return resolve_analysis_directory(
@@ -145,6 +153,8 @@ class Analyze(Check):
             flags.extend(["-rules", ",".join(str(rule) for rule in rules)])
         if self._find_obscure_flows:
             flags.append("-find-obscure-flows")
+        if self._dump_model_query_results:
+            flags.append("-dump-model-query-results")
         return flags
 
     def _run(self, retries: int = 1) -> None:

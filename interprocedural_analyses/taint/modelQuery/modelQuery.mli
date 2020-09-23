@@ -6,7 +6,8 @@
  *)
 
 val apply_query_rule
-  :  resolution:Analysis.GlobalResolution.t ->
+  :  verbose:bool ->
+  resolution:Analysis.GlobalResolution.t ->
   rule:Taint.Model.ModelQuery.rule ->
   callable:Interprocedural.Callable.real_target ->
   (Taint.Model.annotation_kind * Taint.Model.taint_annotation) list

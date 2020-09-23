@@ -26,7 +26,9 @@ let test_apply_rule context =
       Analysis.AnnotatedGlobalEnvironment.read_only global_environment
       |> Analysis.GlobalResolution.create
     in
-    let actual = TaintModelQuery.ModelQuery.apply_query_rule ~resolution ~rule ~callable in
+    let actual =
+      TaintModelQuery.ModelQuery.apply_query_rule ~verbose:false ~resolution ~rule ~callable
+    in
     assert_equal
       ~cmp:(List.equal (fun left right -> compare_query_rule_element left right = 0))
       ~printer:(List.to_string ~f:show_query_rule_element)
