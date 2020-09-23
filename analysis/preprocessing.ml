@@ -3071,6 +3071,160 @@ let populate_unbound_names source =
   { source with Source.top_level_unbound_names; statements }
 
 
+let replace_union_shorthand source =
+  let module Transform = Transform.Make (struct
+    type t = unit
+
+    let transform_expression_children _ _ = true
+
+    let transform_children _ _ = true
+
+    let transform_shorthand_union_expression =
+      let rec transform_expression ({ Node.value; location } as expression) =
+        let union_value arguments =
+          Expression.Call
+            {
+              callee =
+                {
+                  Node.location;
+                  value =
+                    Name
+                      (Name.Attribute
+                         {
+                           base =
+                             {
+                               Node.location;
+                               value =
+                                 Name
+                                   (Name.Attribute
+                                      {
+                                        base =
+                                          { Node.location; value = Name (Name.Identifier "typing") };
+                                        attribute = "Union";
+                                        special = false;
+                                      });
+                             };
+                           attribute = "__getitem__";
+                           special = true;
+                         });
+                };
+              arguments;
+            }
+        in
+        let value =
+          match value with
+          | Expression.Call
+              {
+                callee = { Node.value = Name (Name.Attribute { base; attribute = "__or__"; _ }); _ };
+                arguments;
+              } ->
+              let base_argument = { Call.Argument.value = base; name = None } in
+              let transform_argument ({ Call.Argument.value; _ } as argument) =
+                { argument with Call.Argument.value = transform_expression value }
+              in
+              let to_expression_list sofar { Call.Argument.value; _ } =
+                match Node.value value with
+                | Expression.Call
+                    {
+                      callee =
+                        {
+                          Node.value =
+                            Name
+                              (Name.Attribute
+                                {
+                                  base =
+                                    {
+                                      value =
+                                        Name
+                                          (Name.Attribute
+                                            {
+                                              base =
+                                                { Node.value = Name (Name.Identifier "typing"); _ };
+                                              attribute = "Union";
+                                              special = false;
+                                            });
+                                      _;
+                                    };
+                                  _;
+                                });
+                          _;
+                        };
+                      arguments =
+                        [
+                          {
+                            Call.Argument.name = None;
+                            value = { Node.value = Tuple argument_list; _ };
+                          };
+                        ];
+                    } ->
+                    List.concat [sofar; argument_list] |> List.rev
+                | _ -> value :: sofar
+              in
+              let arguments =
+                List.concat [[base_argument]; arguments]
+                |> List.map ~f:transform_argument
+                |> List.fold ~init:[] ~f:to_expression_list
+                |> List.rev
+                |> fun argument_list ->
+                [
+                  {
+                    Call.Argument.value = { Node.value = Expression.Tuple argument_list; location };
+                    name = None;
+                  };
+                ]
+              in
+              union_value arguments
+          | _ -> value
+        in
+        { expression with Node.value }
+      in
+      transform_expression
+
+
+    let statement _ ({ Node.value; _ } as statement) =
+      let transform_assign ~assign:({ Assign.annotation; _ } as assign) =
+        { assign with Assign.annotation = annotation >>| transform_shorthand_union_expression }
+      in
+      let transform_define
+          ~define:({ Define.signature = { parameters; return_annotation; _ }; _ } as define)
+        =
+        let parameter ({ Node.value = { Parameter.annotation; _ } as parameter; _ } as node) =
+          {
+            node with
+            Node.value =
+              {
+                parameter with
+                Parameter.annotation = annotation >>| transform_shorthand_union_expression;
+              };
+          }
+        in
+        let signature =
+          {
+            define.signature with
+            parameters = List.map parameters ~f:parameter;
+            return_annotation = return_annotation >>| transform_shorthand_union_expression;
+          }
+        in
+        { define with signature }
+      in
+      let statement =
+        let value =
+          match value with
+          | Statement.Assign assign -> Statement.Assign (transform_assign ~assign)
+          | Define define -> Define (transform_define ~define)
+          | _ -> value
+        in
+        { statement with Node.value }
+      in
+      (), [statement]
+
+
+    let expression _ expression = expression
+  end)
+  in
+  Transform.transform () source |> Transform.source
+
+
 let preprocess_phase0 source =
   source
   |> expand_relative_imports
@@ -3092,6 +3246,7 @@ let preprocess_phase1 source =
   |> expand_sqlalchemy_declarative_base
   |> expand_named_tuples
   |> expand_new_types
+  |> replace_union_shorthand
   |> populate_nesting_defines
   |> populate_captures
 

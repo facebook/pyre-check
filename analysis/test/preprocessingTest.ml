@@ -4517,6 +4517,59 @@ let test_populate_unbound_names _ =
   ()
 
 
+let test_union_shorthand _ =
+  let assert_replace ?(handle = "test.py") source expected =
+    let expected = parse ~handle ~coerce_special_methods:true expected |> Preprocessing.qualify in
+    let actual =
+      parse ~handle source |> Preprocessing.qualify |> Preprocessing.replace_union_shorthand
+    in
+    assert_source_equal ~location_insensitive:true expected actual
+  in
+  assert_replace {|
+    x: int | str = 1
+  |} {|
+    x: typing.Union[int, str] = 1
+  |};
+  assert_replace
+    {|
+    x: int | str | bool = True
+  |}
+    {|
+    x: typing.Union[int, str, bool] = True
+  |};
+  assert_replace
+    {|
+      def foo() -> int | str:
+        pass
+    |}
+    {|
+      def foo() -> typing.Union[int, str]:
+        pass
+    |};
+  assert_replace
+    {|
+      class A:
+        x: bool | typing.List[int] = False
+    |}
+    {|
+      class A:
+        x: typing.Union[bool, typing.List[int]] = False
+    |};
+  assert_replace
+    {|
+      def bar(x: int | str) -> None:
+        pass
+    |}
+    {|
+      def bar(x: typing.Union[int, str]) -> None:
+        pass
+    |};
+  assert_replace {| 1 | 2 |} {|
+     1 | 2
+    |};
+  ()
+
+
 let () =
   "preprocessing"
   >::: [
@@ -4539,5 +4592,6 @@ let () =
          "nesting_define" >:: test_populate_nesting_define;
          "captures" >:: test_populate_captures;
          "unbound_names" >:: test_populate_unbound_names;
+         "union_shorthand" >:: test_union_shorthand;
        ]
   |> Test.run
