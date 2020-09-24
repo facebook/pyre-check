@@ -15,9 +15,13 @@ from .cli_lib import require_option
 from .models import Issue, IssueInstance, SharedText, TraceFrame
 
 
+# pyre-fixme[5]: Global expression must be annotated.
 MessageText = aliased(SharedText)
+# pyre-fixme[5]: Global expression must be annotated.
 FilenameText = aliased(SharedText)
+# pyre-fixme[5]: Global expression must be annotated.
 CallerText = aliased(SharedText)
+# pyre-fixme[5]: Global expression must be annotated.
 CalleeText = aliased(SharedText)
 
 
@@ -74,6 +78,12 @@ def lint(click_ctx: click.Context, run_id: int, filenames: List[str]) -> None:
             .all()
         )
 
+    # pyre-fixme[53]: Captured variable `root` is not annotated.
+    # pyre-fixme[3]: Return type must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
     def entry(filename, code, message, location):
         return {
             "filename": str(root / filename),

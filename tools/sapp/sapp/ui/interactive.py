@@ -68,10 +68,15 @@ from .trace import TraceFrameQueryResult, TraceTuple
 
 T = TypeVar("T")
 
+# pyre-fixme[5]: Global expression must be annotated.
 FilenameText = aliased(SharedText)
+# pyre-fixme[5]: Global expression must be annotated.
 CallableText = aliased(SharedText)
+# pyre-fixme[5]: Global expression must be annotated.
 CallerText = aliased(SharedText)
+# pyre-fixme[5]: Global expression must be annotated.
 CalleeText = aliased(SharedText)
+# pyre-fixme[5]: Global expression must be annotated.
 MessageText = aliased(SharedText)
 
 
@@ -99,7 +104,10 @@ class IssueQueryResultType(graphene.ObjectType):
     min_trace_length_to_sources = graphene.Int()
     min_trace_length_to_sinks = graphene.Int()
 
+    # pyre-fixme[3]: Return type must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
     def resolve_issue_id(self, info):
+        # pyre-fixme[16]: `IssueQueryResultType` has no attribute `id`.
         return self.id
 
 
@@ -148,6 +156,7 @@ details              show additional information about the current trace frame
     SELF_SCOPE_KEY = "_interactive"
     PARSER_CLASS_SCOPE_KEY = "_parser_class"
 
+    # pyre-fixme[3]: Return type must be annotated.
     def __init__(
         self,
         *,
@@ -156,6 +165,7 @@ details              show additional information about the current trace frame
         parser_class: Type[BaseParser],
     ):
         self.db = database
+        # pyre-fixme[24]: Generic type `Callable` expects 2 type parameters.
         self.scope_vars: Dict[str, Union[Callable, TraceKind]] = {
             "precondition": TraceKind.PRECONDITION,
             "postcondition": TraceKind.POSTCONDITION,
@@ -184,6 +194,7 @@ details              show additional information about the current trace frame
             self.SELF_SCOPE_KEY: self,
             self.PARSER_CLASS_SCOPE_KEY: parser_class,
         }
+        # pyre-fixme[4]: Attribute must be annotated.
         self.repository_directory = repository_directory or os.getcwd()
         self.current_analysis_output: Optional[AnalysisOutput] = None
 
@@ -199,6 +210,7 @@ details              show additional information about the current trace frame
         self.sources_dict: Dict[int, str] = {}
         self.sinks_dict: Dict[int, str] = {}
         self.features_dict: Dict[int, str] = {}
+        # pyre-fixme[4]: Attribute must be annotated.
         self.leaf_dicts = {}
 
         # Tuples representing the trace of the current issue
@@ -210,6 +222,7 @@ details              show additional information about the current trace frame
         # history_key on self.prompt().
         self.prompt_history: Dict[str, History] = {}
 
+    # pyre-fixme[24]: Generic type `Callable` expects 2 type parameters.
     def setup(self) -> Dict[str, Callable]:
         create_models(self.db)
         with self.db.make_session() as session:
@@ -242,13 +255,17 @@ details              show additional information about the current trace frame
         #  Union[Callable[..., Any], TraceKind]]`.
         return self.scope_vars
 
+    # pyre-fixme[3]: Return type must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
     def help(self, object=None):
         if object is None:
             print(self.help_message)
             return
 
+        # pyre-fixme[16]: Module `builtins` has no attribute `help`.
         builtins.help(object)
 
+    # pyre-fixme[3]: Return type must be annotated.
     def state(self):
         print(f"              Database: {self.db.dbtype}:{self.db.dbname}")
         print(f"       Analysis Output: {self.current_analysis_output}")
@@ -260,6 +277,8 @@ details              show additional information about the current trace frame
         print(f"          Sinks filter: {self.sinks}")
 
     @catch_keyboard_interrupt()
+    # pyre-fixme[3]: Return type must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
     def runs(self, use_pager=None):
         pager = self._resolve_pager(use_pager)
 
@@ -276,6 +295,8 @@ details              show additional information about the current trace frame
         print(f"Found {len(run_strings)} runs.")
 
     @catch_keyboard_interrupt()
+    # pyre-fixme[3]: Return type must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
     def run(self, run_id):
         with self.db.make_session() as session:
             selected_run = (
@@ -315,7 +336,9 @@ details              show additional information about the current trace frame
         self,
         message: Optional[str] = "",
         history_key: Optional[str] = None,
+        # pyre-fixme[2]: Parameter must be annotated.
         *args,
+        # pyre-fixme[2]: Parameter must be annotated.
         **kwargs,
     ) -> str:
         try:
@@ -380,6 +403,8 @@ details              show additional information about the current trace frame
         print(f"Set run to {self.current_run_id}.")
 
     @catch_keyboard_interrupt()
+    # pyre-fixme[3]: Return type must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
     def issue(self, issue_instance_id):
         """Select an issue.
 
@@ -430,6 +455,7 @@ details              show additional information about the current trace frame
 
     @catch_keyboard_interrupt()
     @catch_user_error()
+    # pyre-fixme[3]: Return type must be annotated.
     def show(self):
         """ More details about the selected issue or trace frame.
         """
@@ -443,6 +469,7 @@ details              show additional information about the current trace frame
 
     @catch_keyboard_interrupt()
     @catch_user_error()
+    # pyre-fixme[3]: Return type must be annotated.
     def issues(
         self,
         # pyre-fixme[9]: use_pager has type `bool`; used as `None`.
@@ -610,6 +637,7 @@ details              show additional information about the current trace frame
         print(f"Found {len(issue_strings)} issues with run_id {self.current_run_id}.")
 
     @catch_user_error()
+    # pyre-fixme[3]: Return type must be annotated.
     def trace(self):
         """Show a trace for the selected issue or trace frame.
 
@@ -638,6 +666,7 @@ details              show additional information about the current trace frame
 
     @catch_keyboard_interrupt()
     @catch_user_error()
+    # pyre-fixme[3]: Return type must be annotated.
     def frames(
         self,
         *,
@@ -803,14 +832,19 @@ details              show additional information about the current trace frame
         self._update_trace_tuples_new_parent(parent_trace_frame)
         self.trace()
 
+    # pyre-fixme[3]: Return type must be annotated.
     def _generate_trace_from_issue(self):
         with self.db.make_session() as session:
             issue = self._get_current_issue(session)
             postcondition_initial_frames = trace.Query(session).initial_trace_frames(
-                issue.id, TraceKind.POSTCONDITION
+                # pyre-fixme[6]: Expected `int` for 1st param but got `DBID`.
+                issue.id,
+                TraceKind.POSTCONDITION,
             )
             precondition_initial_frames = trace.Query(session).initial_trace_frames(
-                issue.id, TraceKind.PRECONDITION
+                # pyre-fixme[6]: Expected `int` for 1st param but got `DBID`.
+                issue.id,
+                TraceKind.PRECONDITION,
             )
 
             postcondition_navigation = trace.Query(session).navigate_trace_frames(
@@ -845,6 +879,7 @@ details              show additional information about the current trace frame
             ]
             + trace.Query.create_trace_tuples(precondition_navigation)
         )
+        # pyre-fixme[16]: `Interactive` has no attribute `trace_tuples_id`.
         self.trace_tuples_id = self.current_issue_instance_id
         self.current_trace_frame_index = len(postcondition_navigation)
 
@@ -893,6 +928,7 @@ details              show additional information about the current trace frame
         self.current_trace_frame_index = 0
 
     @catch_user_error()
+    # pyre-fixme[3]: Return type must be annotated.
     def next_cursor_location(self):
         """Move cursor to the next trace frame.
         """
@@ -903,6 +939,7 @@ details              show additional information about the current trace frame
         self.trace()
 
     @catch_user_error()
+    # pyre-fixme[3]: Return type must be annotated.
     def prev_cursor_location(self):
         """Move cursor to the previous trace frame.
         """
@@ -1165,9 +1202,11 @@ details              show additional information about the current trace frame
             )
         return caller_buckets
 
+    # pyre-fixme[3]: Return type must be annotated.
     def _add_list_or_string_filter_to_query(
         self,
         filter: Union[str, List[str]],
+        # pyre-fixme[24]: Generic type `RawQuery` expects 1 type parameter.
         query: RawQuery,
         column: InstrumentedAttribute,
         argument_name: str,
@@ -1176,9 +1215,11 @@ details              show additional information about the current trace frame
             filter, query, column, argument_name, str
         )
 
+    # pyre-fixme[3]: Return type must be annotated.
     def _add_list_or_int_filter_to_query(
         self,
         filter: Union[int, List[int]],
+        # pyre-fixme[24]: Generic type `RawQuery` expects 1 type parameter.
         query: RawQuery,
         column: InstrumentedAttribute,
         argument_name: str,
@@ -1190,10 +1231,14 @@ details              show additional information about the current trace frame
     def _add_list_or_element_filter_to_query(
         self,
         filter: Union[T, List[T]],
+        # pyre-fixme[24]: Generic type `RawQuery` expects 1 type parameter.
         query: RawQuery,
         column: InstrumentedAttribute,
         argument_name: str,
+        # pyre-fixme[24]: Generic type `type` expects 1 type parameter, use
+        #  `typing.Type` to avoid runtime subscripting errors.
         element_type: Type,
+        # pyre-fixme[24]: Generic type `RawQuery` expects 1 type parameter.
     ) -> RawQuery:
         if isinstance(filter, element_type):
             return query.filter(column.like(filter))
@@ -1206,9 +1251,11 @@ details              show additional information about the current trace frame
             f"'{argument_name}' should be {element_type} or " f"list of {element_type}."
         )
 
+    # pyre-fixme[3]: Return type must be annotated.
     def _add_max_int_filter_to_query(
         self,
         filter: int,
+        # pyre-fixme[24]: Generic type `RawQuery` expects 1 type parameter.
         query: RawQuery,
         column: InstrumentedAttribute,
         argument_name: str,
@@ -1303,6 +1350,8 @@ details              show additional information about the current trace frame
                 "To see more, call 'frames' with the 'limit' argument."
             )
 
+    # pyre-fixme[3]: Return type must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
     def _output_trace_tuples(self, trace_tuples):
         expand = "+"
         max_length_index = len(str(len(trace_tuples) - 1)) + 1
@@ -1497,6 +1546,8 @@ details              show additional information about the current trace frame
         )
         self.current_trace_frame_index = 0
 
+    # pyre-fixme[3]: Return type must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
     def _resolve_pager(self, use_pager):
         use_pager = sys.stdin.isatty() if use_pager is None else use_pager
         return page.page if use_pager else page.display_page
@@ -1539,6 +1590,7 @@ details              show additional information about the current trace frame
             self.sources_dict, self.sinks_dict, self.features_dict, message_ids, kind
         )
 
+    # pyre-fixme[3]: Return type must be annotated.
     def _show_current_issue_instance(self):
         with self.db.make_session() as session:
             issue = self._get_current_issue(session)
@@ -1549,6 +1601,7 @@ details              show additional information about the current trace frame
             )
         )
 
+    # pyre-fixme[3]: Return type must be annotated.
     def _show_current_trace_frame(self):
         with self.db.make_session() as session:
             trace_frame = (

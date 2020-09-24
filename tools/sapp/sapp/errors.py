@@ -15,8 +15,12 @@ class AIRecoverableException(AIException):
 
 
 class AIProcessException(AIRecoverableException):
+    # pyre-fixme[3]: Return type must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
     def __init__(self, message, error_code):
         super().__init__(message)
+        # pyre-fixme[4]: Attribute must be annotated.
         self.error_code = error_code
 
 

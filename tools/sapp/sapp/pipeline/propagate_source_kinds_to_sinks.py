@@ -12,6 +12,7 @@ from ..trace_graph import TraceGraph
 from . import PipelineStep, Summary
 
 
+# pyre-fixme[5]: Global expression must be annotated.
 log = logging.getLogger("sapp")
 
 FrameID = int
@@ -61,6 +62,7 @@ class PropagateSourceKindsToSinks(  # pyre-fixme[13]
             for source_kind in source_kinds:
                 visited_frame[sink_kind][source_kind] = depth
 
+    # pyre-fixme[3]: Return type must be annotated.
     def _propagate_source_kinds(self, instance: IssueInstance):
         """Propagate the source kinds of this issue instance to all reachable sink
         traces."""

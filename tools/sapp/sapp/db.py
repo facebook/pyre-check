@@ -20,6 +20,7 @@ from . import errors
 from .decorators import retryable
 
 
+# pyre-fixme[5]: Global expression must be annotated.
 log = logging.getLogger("sapp")
 
 
@@ -35,18 +36,36 @@ class DB(object):
     """File-based DB when using SQLITE"""
     DEFAULT_DB_FILE = "sapp.db"
 
+    # pyre-fixme[3]: Return type must be annotated.
     def __init__(
-        self, dbtype, dbname=None, debug=False, read_only=False, assertions=False
+        self,
+        # pyre-fixme[2]: Parameter must be annotated.
+        dbtype,
+        # pyre-fixme[2]: Parameter must be annotated.
+        dbname=None,
+        # pyre-fixme[2]: Parameter must be annotated.
+        debug=False,
+        # pyre-fixme[2]: Parameter must be annotated.
+        read_only=False,
+        # pyre-fixme[2]: Parameter must be annotated.
+        assertions=False,
     ):
+        # pyre-fixme[4]: Attribute must be annotated.
         self.dbtype = dbtype
+        # pyre-fixme[4]: Attribute must be annotated.
         self.dbname = dbname or self.DEFAULT_DB_FILE
+        # pyre-fixme[4]: Attribute must be annotated.
         self.debug = debug
+        # pyre-fixme[4]: Attribute must be annotated.
         self.read_only = read_only
+        # pyre-fixme[4]: Attribute must be annotated.
         self.assertions = assertions
 
+        # pyre-fixme[4]: Attribute must be annotated.
         self.poolclass = assertions and AssertionPool or None
 
         if dbtype == DBType.MEMORY:
+            # pyre-fixme[4]: Attribute must be annotated.
             self.engine = sqlalchemy.create_engine(
                 sqlalchemy.engine.url.URL("sqlite", database=":memory:"),
                 echo=debug,
@@ -63,10 +82,13 @@ class DB(object):
         else:
             raise errors.AIException("Invalid db type: " + dbtype)
 
+    # pyre-fixme[3]: Return type must be annotated.
     def _create_xdb_engine(self):
         raise NotImplementedError
 
     @contextmanager
+    # pyre-fixme[2]: Parameter must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
     def make_session(self, *args, **kwargs) -> Iterator[Session]:
         session = self.make_session_object(*args, **kwargs)
         try:
@@ -75,6 +97,9 @@ class DB(object):
             self.close_session(session)
 
     @retryable(num_tries=2, retryable_exs=[OperationalError])
+    # pyre-fixme[3]: Return type must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
     def make_session_object(self, *args, **kwargs):
         # use scoped_session so sessionmaker generates the same session in
         # different threads. This is useful for UTs.
@@ -88,9 +113,13 @@ class DB(object):
         return session
 
     @retryable(num_tries=2, retryable_exs=[OperationalError])
+    # pyre-fixme[3]: Return type must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
     def close_session(self, session):
         session.close()
 
 
+# pyre-fixme[3]: Return type must be annotated.
+# pyre-fixme[2]: Parameter must be annotated.
 def ping_db(session):
     session.execute("SELECT 1")

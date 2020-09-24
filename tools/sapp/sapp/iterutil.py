@@ -6,6 +6,9 @@
 import itertools
 
 
+# pyre-fixme[3]: Return type must be annotated.
+# pyre-fixme[2]: Parameter must be annotated.
+# pyre-fixme[2]: Parameter must be annotated.
 def split_every(n, iterable):
     """Yields batches of size 'n' from an iterable:
 

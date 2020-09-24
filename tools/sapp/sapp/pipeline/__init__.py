@@ -11,6 +11,7 @@ from typing import Any, Dict, Generic, List, Optional, Tuple, TypeVar
 from ..analysis_output import AnalysisOutput
 
 
+# pyre-fixme[5]: Global expression must be annotated.
 log = logging.getLogger("sapp")
 
 T = TypeVar("T")
@@ -22,6 +23,7 @@ InputFiles = Tuple[AnalysisOutput, Optional[AnalysisOutput]]
 DictEntries = Dict[str, Any]
 
 
+# pyre-fixme[3]: Return type must be annotated.
 def time_str(delta: timedelta):
     minutes, seconds = divmod(delta.total_seconds(), 60)
     seconds_string = f"{int(seconds)}s"
@@ -35,6 +37,7 @@ class PipelineStep(Generic[T_in, T_out], metaclass=ABCMeta):
     T_in and T_out should both be child classes of PipelineData.
     """
 
+    # pyre-fixme[3]: Return type must be annotated.
     def __init__(self):
         pass
 
@@ -45,11 +48,18 @@ class PipelineStep(Generic[T_in, T_out], metaclass=ABCMeta):
 
 
 class Pipeline(object):
+    # pyre-fixme[3]: Return type must be annotated.
+    # pyre-fixme[2]: Parameter annotation cannot contain `Any`.
     def __init__(self, steps: List[PipelineStep[Any, Any]]):
+        # pyre-fixme[4]: Attribute annotation cannot contain `Any`.
         self.steps: List[PipelineStep[Any, Any]] = steps
 
+    # pyre-fixme[3]: Return annotation cannot contain `Any`.
     def run(
-        self, first_input, summary: Optional[Summary] = None
+        self,
+        # pyre-fixme[2]: Parameter must be annotated.
+        first_input,
+        summary: Optional[Summary] = None,
     ) -> Tuple[Any, Summary]:
         if summary is None:
             summary = {}

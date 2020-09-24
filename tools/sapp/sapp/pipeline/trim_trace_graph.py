@@ -11,6 +11,7 @@ from ..trimmed_trace_graph import TrimmedTraceGraph
 from . import PipelineStep, Summary
 
 
+# pyre-fixme[5]: Global expression must be annotated.
 log = logging.getLogger("sapp")
 
 

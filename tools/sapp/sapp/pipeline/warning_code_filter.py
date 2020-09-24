@@ -9,6 +9,7 @@ from . import DictEntries, PipelineStep, Summary
 
 
 class WarningCodeFilter(PipelineStep[DictEntries, DictEntries]):
+    # pyre-fixme[3]: Return type must be annotated.
     def __init__(self, codes_to_keep: Set[int]):
         self.codes_to_keep: Set[int] = codes_to_keep
 

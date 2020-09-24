@@ -21,10 +21,15 @@ from ..models import (
 )
 
 
+# pyre-fixme[5]: Global expression must be annotated.
 FilenameText = aliased(SharedText)
+# pyre-fixme[5]: Global expression must be annotated.
 CallableText = aliased(SharedText)
+# pyre-fixme[5]: Global expression must be annotated.
 CallerText = aliased(SharedText)
+# pyre-fixme[5]: Global expression must be annotated.
 CalleeText = aliased(SharedText)
+# pyre-fixme[5]: Global expression must be annotated.
 MessageText = aliased(SharedText)
 
 
@@ -40,6 +45,7 @@ class Filter(Enum):
 
 
 class Query:
+    # pyre-fixme[3]: Return type must be annotated.
     def __init__(self, session: Session, current_run_id: Union[DBID, int]):
         self._session: Session = session
         self.current_run_id = current_run_id
@@ -49,11 +55,14 @@ class Query:
         self.breadcrumb_filters: Dict[Filter, List[str]] = defaultdict(list)
 
     @property
+    # pyre-fixme[3]: Return type must be annotated.
     def session(self):
         if self._session is None:
             raise Exception("No current session found for query!")
         return self._session
 
+    # pyre-fixme[24]: Generic type `list` expects 1 type parameter, use
+    #  `typing.List` to avoid runtime subscripting errors.
     def get(self) -> List:
         query = self.get_raw_query()
         for filter_type, filter_conditions in self.issue_filters.items():
@@ -157,6 +166,7 @@ class Query:
         self.breadcrumb_filters[Filter.exclude_features] += features
         return self
 
+    # pyre-fixme[2]: Parameter must be annotated.
     def sources(self, issues) -> List[Set[str]]:
         return [
             self.get_leaves_issue_instance(
@@ -165,6 +175,7 @@ class Query:
             for issue in issues
         ]
 
+    # pyre-fixme[2]: Parameter must be annotated.
     def sinks(self, issues) -> List[Set[str]]:
         return [
             self.get_leaves_issue_instance(
@@ -173,6 +184,7 @@ class Query:
             for issue in issues
         ]
 
+    # pyre-fixme[2]: Parameter must be annotated.
     def features(self, issues) -> List[Set[str]]:
         return [
             self.get_leaves_issue_instance(
@@ -181,6 +193,7 @@ class Query:
             for issue in issues
         ]
 
+    # pyre-fixme[24]: Generic type `RawQuery` expects 1 type parameter.
     def get_raw_query(self) -> RawQuery:
         return (
             self._session.query(

@@ -20,10 +20,15 @@ from ..models import (
 )
 
 
+# pyre-fixme[5]: Global expression must be annotated.
 FilenameText = aliased(SharedText)
+# pyre-fixme[5]: Global expression must be annotated.
 CallableText = aliased(SharedText)
+# pyre-fixme[5]: Global expression must be annotated.
 CallerText = aliased(SharedText)
+# pyre-fixme[5]: Global expression must be annotated.
 CalleeText = aliased(SharedText)
+# pyre-fixme[5]: Global expression must be annotated.
 MessageText = aliased(SharedText)
 
 
@@ -44,7 +49,10 @@ class TraceFrameQueryResultType(graphene.ObjectType):
     trace_length = graphene.Int()
     file_content = graphene.String()
 
+    # pyre-fixme[3]: Return type must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
     def resolve_trace_id(self, info):
+        # pyre-fixme[16]: `TraceFrameQueryResultType` has no attribute `id`.
         return self.id
 
 

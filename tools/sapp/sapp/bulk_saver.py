@@ -27,6 +27,7 @@ from .models import (
 )
 
 
+# pyre-fixme[5]: Global expression must be annotated.
 log = logging.getLogger("sapp")
 
 
@@ -49,18 +50,24 @@ class BulkSaver:
 
     BATCH_SIZE = 30000
 
+    # pyre-fixme[3]: Return type must be annotated.
     def __init__(self, primary_key_generator: Optional[PrimaryKeyGenerator] = None):
+        # pyre-fixme[4]: Attribute must be annotated.
         self.primary_key_generator = primary_key_generator or PrimaryKeyGenerator()
         self.saving: Dict[str, Any] = {}
         for cls in self.SAVING_CLASSES_ORDER:
             self.saving[cls.__name__] = []
 
+    # pyre-fixme[3]: Return type must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
     def add(self, item):
         assert item.model in self.SAVING_CLASSES_ORDER, (
             "%s should be added with session.add()" % item.model.__name__
         )
         self.saving[item.model.__name__].append(item)
 
+    # pyre-fixme[3]: Return type must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
     def add_all(self, items):
         if items:
             assert items[0].model in self.SAVING_CLASSES_ORDER, (
@@ -68,9 +75,14 @@ class BulkSaver:
             )
             self.saving[items[0].model.__name__].extend(items)
 
+    # pyre-fixme[3]: Return type must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
     def get_items_to_add(self, cls):
         return self.saving[cls.__name__]
 
+    # pyre-fixme[3]: Return type must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
     def save_all(self, database: DB, use_lock=False, dbname=""):
         saving_classes = [
             cls
@@ -92,6 +104,8 @@ class BulkSaver:
             self._save(database, cls, pk_gen)
 
     @log_time
+    # pyre-fixme[3]: Return type must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
     def _save(self, database: DB, cls, pk_gen: PrimaryKeyGenerator):
         # We sort keys because bulk insert uses executemany, but it can only
         # group together sequential items with the same keys. If we are scattered
@@ -110,6 +124,10 @@ class BulkSaver:
                 session.bulk_insert_mappings(cls, group, render_nulls=True)
                 session.commit()
 
+    # pyre-fixme[3]: Return type must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
     def add_trace_frame_leaf_assoc(self, message, trace_frame, depth):
         self.add(
             TraceFrameLeafAssoc.Record(
@@ -117,6 +135,9 @@ class BulkSaver:
             )
         )
 
+    # pyre-fixme[3]: Return type must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
     def add_issue_instance_trace_frame_assoc(self, issue_instance, trace_frame):
         self.add(
             IssueInstanceTraceFrameAssoc.Record(
@@ -124,6 +145,9 @@ class BulkSaver:
             )
         )
 
+    # pyre-fixme[3]: Return type must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
     def add_issue_instance_shared_text_assoc(self, issue_instance, shared_text):
         self.add(
             IssueInstanceSharedTextAssoc.Record(
@@ -131,8 +155,13 @@ class BulkSaver:
             )
         )
 
+    # pyre-fixme[3]: Return type must be annotated.
     def add_trace_frame_annotation_trace_frame_assoc(
-        self, trace_frame_annotation, trace_frame
+        self,
+        # pyre-fixme[2]: Parameter must be annotated.
+        trace_frame_annotation,
+        # pyre-fixme[2]: Parameter must be annotated.
+        trace_frame,
     ):
         self.add(
             TraceFrameAnnotationTraceFrameAssoc.Record(
@@ -141,6 +170,7 @@ class BulkSaver:
             )
         )
 
+    # pyre-fixme[3]: Return type must be annotated.
     def dump_stats(self):
         stat_str = ""
         for cls in self.SAVING_CLASSES_ORDER:
@@ -148,6 +178,8 @@ class BulkSaver:
         return stat_str
 
 
+# pyre-fixme[3]: Return type must be annotated.
+# pyre-fixme[2]: Parameter must be annotated.
 def consume(lst):
     while len(lst) > 0:
         yield lst.pop()

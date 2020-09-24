@@ -21,6 +21,7 @@ from .base_parser import (
 )
 
 
+# pyre-fixme[5]: Global expression must be annotated.
 log = logging.getLogger("sapp")
 
 
@@ -34,6 +35,7 @@ class Parser(BaseParser):
             for entry in self.parse_handle(handle):
                 yield entry
 
+    # pyre-fixme[2]: Parameter must be annotated.
     def parse_handle(self, handle) -> Iterable[Dict[str, Any]]:
         for entry in self._parse_basic(handle):
             yield from self._parse_by_type(entry)
@@ -112,6 +114,8 @@ class Parser(BaseParser):
         handle.seek(0)
         return version
 
+    # pyre-fixme[3]: Return type must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
     def _parse_by_type(self, entry):
         if entry["kind"] == "model":
             yield from self._parse_model(entry["data"])
@@ -119,15 +123,22 @@ class Parser(BaseParser):
             yield from self._parse_issue(entry["data"])
 
     @staticmethod
+    # pyre-fixme[3]: Return type must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
     def _get_callable(callable):
         return callable
 
     @log_trace_keyerror_in_generator
+    # pyre-fixme[3]: Return type must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
     def _parse_model(self, json):
         callable = json["callable"]
         yield from self._parse_model_sources(callable, json["sources"])
         yield from self._parse_model_sinks(callable, json["sinks"])
 
+    # pyre-fixme[3]: Return type must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
     def _parse_model_sources(self, callable, source_traces):
         for source_trace in source_traces:
             port = source_trace["port"]
@@ -149,6 +160,9 @@ class Parser(BaseParser):
                     "features": [],
                 }
 
+    # pyre-fixme[3]: Return type must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
     def _parse_model_sinks(self, callable, sink_traces):
         for sink_trace in sink_traces:
             port = sink_trace["port"]
@@ -170,6 +184,8 @@ class Parser(BaseParser):
                 }
 
     @log_trace_keyerror_in_generator
+    # pyre-fixme[3]: Return type must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
     def _parse_issue(self, json):
         issue = {}
 
@@ -200,6 +216,8 @@ class Parser(BaseParser):
             issue["features"] = bw_features + fw_features  # legacy
         yield issue
 
+    # pyre-fixme[3]: Return type must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
     def _generate_issue_master_handle(self, issue):
         line = issue["line"] - issue["callable_line"]
         return self.compute_master_handle(
@@ -210,6 +228,8 @@ class Parser(BaseParser):
             code=issue["code"],
         )
 
+    # pyre-fixme[3]: Return type must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
     def _extract_filename(self, complete_filename):
         repo_dir = self.repo_dir
         if repo_dir is None:
@@ -227,15 +247,24 @@ class Parser(BaseParser):
             return complete_filename
         return complete_filename[len(repo_dir) + 1 :]
 
+    # pyre-fixme[3]: Return type must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
     def _parse_issue_traces(self, traces, name, leaf_port):
         for trace in traces:
             if trace["name"] == name:
                 return self._parse_issue_trace_fragments(leaf_port, trace["roots"])
         return ([], set(), set())
 
+    # pyre-fixme[3]: Return type must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
     def _get_position_or_default(self, json):
         return json.get("position", {"line": 0, "start": 0, "end": 0})
 
+    # pyre-fixme[3]: Return type must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
     def _parse_issue_trace_fragments(self, leaf_port, traces):
         fragments = []
         leaf_distances = set()
@@ -258,10 +287,16 @@ class Parser(BaseParser):
 
         return (fragments, leaf_distances, all_features)
 
+    # pyre-fixme[3]: Return type must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
     def _parse_trace_fragments(self, leaf_port, traces):
         for trace in traces:
             yield from self._parse_trace_fragment(leaf_port, trace)
 
+    # pyre-fixme[3]: Return type must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
     def _parse_trace_fragment(self, leaf_port, trace):
         # For now we don't have leaf distances.
         leaves = self._parse_leaves(trace.get("leaves", []))
@@ -305,12 +340,15 @@ class Parser(BaseParser):
                     "type_interval": {},
                 }
 
+    # pyre-fixme[2]: Parameter must be annotated.
     def _leaf_name(self, leaf) -> str:
         return leaf.get("name", None)
 
+    # pyre-fixme[2]: Parameter must be annotated.
     def _leaf_port(self, leaf) -> str:
         return leaf.get("port", None)
 
+    # pyre-fixme[2]: Parameter must be annotated.
     def _parse_leaves(self, leaves) -> List[Tuple[str, str, int, Optional[str]]]:
         """
         Returns a list of tuples ((leaf_name, leaf_kind, distance, port)).
@@ -323,5 +361,6 @@ class Parser(BaseParser):
         ]
 
     @staticmethod
+    # pyre-fixme[3]: Return type must be annotated.
     def is_supported(metadata: Metadata):
         return metadata.tool == "pysa"

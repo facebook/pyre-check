@@ -15,6 +15,7 @@ from .lint import lint
 from .pipeline.pysa_taint_parser import Parser
 
 
+# pyre-fixme[5]: Global expression must be annotated.
 logger = logging.getLogger("sapp")
 
 
@@ -27,6 +28,7 @@ logger = logging.getLogger("sapp")
     help="database engine to use",
 )
 @click.pass_context
+# pyre-fixme[3]: Return type must be annotated.
 def cli(
     ctx: click.Context, repository: str, database_name: str, database_engine: DBType
 ):

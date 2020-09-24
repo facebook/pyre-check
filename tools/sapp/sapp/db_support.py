@@ -44,17 +44,22 @@ class DBID(object):
     # each of them. next_id tracks the next available int to act as an id.
     next_id: int = 0
 
+    # pyre-fixme[2]: Parameter must be annotated.
     def __init__(self, id=None) -> None:
         self.resolve(id)
         self.local_id: int = DBID.next_id
         DBID.next_id += 1
 
+    # pyre-fixme[3]: Return type must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
     def resolve(self, id, is_new=True):
         self._check_type(id)
         self._id = id
         self.is_new = is_new
         return self
 
+    # pyre-fixme[3]: Return type must be annotated.
     def resolved(self):
         id = self._id
 
@@ -64,6 +69,7 @@ class DBID(object):
 
         return id
 
+    # pyre-fixme[2]: Parameter must be annotated.
     def _check_type(self, id) -> None:
         if not isinstance(id, (int, type(None), DBID)):
             raise TypeError(
@@ -71,24 +77,31 @@ class DBID(object):
             )
 
     # Allow DBIDs to be added and compared as ints
+    # pyre-fixme[3]: Return type must be annotated.
     def __int__(self):
         return self.resolved()
 
+    # pyre-fixme[3]: Return type must be annotated.
     def __str__(self):
         return str(self.resolved())
 
+    # pyre-fixme[2]: Parameter must be annotated.
     def __add__(self, other) -> int:
         return int(self) + int(other)
 
+    # pyre-fixme[2]: Parameter must be annotated.
     def __lt__(self, other) -> bool:
         return int(self) < int(other)
 
+    # pyre-fixme[2]: Parameter must be annotated.
     def __gt__(self, other) -> bool:
         return int(self) > int(other)
 
+    # pyre-fixme[2]: Parameter must be annotated.
     def __ge__(self, other) -> bool:
         return int(self) >= int(other)
 
+    # pyre-fixme[2]: Parameter must be annotated.
     def __le__(self, other) -> bool:
         return int(self) <= int(other)
 
@@ -101,6 +114,9 @@ class DBID(object):
 class DBIDType(types.TypeDecorator):
     impl = types.Integer
 
+    # pyre-fixme[3]: Return type must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
     def process_bind_param(self, value, dialect):
         # If it is a DBID wrapper, then write the contained value. Otherwise it
         # may be resolved already, or None.
@@ -109,9 +125,13 @@ class DBIDType(types.TypeDecorator):
         else:
             return value
 
+    # pyre-fixme[2]: parameter must be annotated.
+    # pyre-fixme[2]: parameter must be annotated.
     def process_result_value(self, value, dialect) -> DBID:
         return DBID(value)
 
+    # pyre-fixme[3]: Return type must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
     def load_dialect_impl(self, dialect):
         if dialect.name == "mysql":
             return dialect.type_descriptor(mysql.INTEGER(unsigned=True))
@@ -121,6 +141,8 @@ class DBIDType(types.TypeDecorator):
 class BIGDBIDType(DBIDType):
     impl = types.BigInteger
 
+    # pyre-fixme[3]: Return type must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
     def load_dialect_impl(self, dialect):
         if dialect.name == "mysql":
             return dialect.type_descriptor(mysql.BIGINT(unsigned=True))
@@ -129,6 +151,10 @@ class BIGDBIDType(DBIDType):
 
 class PrepareMixin(object):
     @classmethod
+    # pyre-fixme[3]: Return type must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
     def prepare(cls, session, pkgen, items):
         """This is called immediately before the items are written to the
         database. pkgen is passed in to allow last-minute resolving of ids.
@@ -136,20 +162,33 @@ class PrepareMixin(object):
         for item in cls.merge(session, items):
             if hasattr(item, "id"):
                 item.id.resolve(id=pkgen.get(cls), is_new=True)
+            # pyre-fixme[16]: `PrepareMixin` has no attribute `to_dict`.
             yield cls.to_dict(item)
 
     @classmethod
+    # pyre-fixme[3]: Return type must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
     def merge(cls, session, items):
         """Models should override this to perform a merge"""
         return items
 
     @classmethod
+    # pyre-fixme[3]: Return type must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
     def _merge_by_key(cls, session, items, attr):
         return cls._merge_by_keys(
             session, items, lambda item: getattr(item, attr.key), attr
         )
 
     @classmethod
+    # pyre-fixme[3]: Return type must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
     def _merge_by_keys(cls, session, items, hash_item, *attrs):
         """An object can have multiple attributes as its key. This merges the
         items to be added with existing items in the database based on their
@@ -194,7 +233,10 @@ class PrepareMixin(object):
                 ]
                 filters.append(and_(*subfilter))
             existing_items = (
-                session.query(cls.id, *cls_attrs).filter(or_(*(filters))).all()
+                # pyre-fixme[16]: `PrepareMixin` has no attribute `id`.
+                session.query(cls.id, *cls_attrs)
+                .filter(or_(*(filters)))
+                .all()
             )
             for existing_item in existing_items:
                 item_hash = hash_item(existing_item)
@@ -216,6 +258,11 @@ class PrepareMixin(object):
                 yield i
 
     @classmethod
+    # pyre-fixme[3]: Return type must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
     def _merge_assocs(cls, session, items, id1, id2):
         new_items = {}
         for i in items:
@@ -237,27 +284,38 @@ class RecordMixin(object):
     _record = None
 
     @classmethod
+    # pyre-fixme[3]: Return type must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
     def Record(cls, extra_fields=None, **kwargs):
         if not cls._record:
             if not extra_fields:
                 extra_fields = []
             mapper = inspect(cls)
             keys = [c.key for c in mapper.column_attrs] + ["model"] + extra_fields
+            # pyre-fixme[8]: Attribute has type `None`; used as
+            #  `Type[typing.Tuple[typing.Any, ...]]`.
             cls._record = namedtuple(cls.__name__ + "Record", keys)
 
+        # pyre-fixme[29]: `None` is not a function.
         return cls._record(model=cls, **kwargs)
 
     @classmethod
+    # pyre-fixme[3]: Return type must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
     def to_dict(cls, obj):
         return obj._asdict()
 
 
 class MutableRecordMixin(object):
     @classmethod
+    # pyre-fixme[2]: Parameter must be annotated.
     def Record(cls, **kwargs) -> Munch:
         return Munch(model=cls, **kwargs)
 
     @classmethod
+    # pyre-fixme[3]: Return type must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
     def to_dict(cls, obj):
         return obj.toDict()
 
@@ -290,7 +348,11 @@ class PrimaryKeyGeneratorBase:  # pyre-ignore[13]
     on SQLAlchemy, so we can supply them as arguments when creating association
     objects. Subclass to define PRIMARY_KEY class and QUERY_CLASSES."""
 
+    # pyre-fixme[24]: Generic type `type` expects 1 type parameter, use
+    #  `typing.Type` to avoid runtime subscripting errors.
     PRIMARY_KEY: Type
+    # pyre-fixme[24]: Generic type `type` expects 1 type parameter, use
+    #  `typing.Type` to avoid runtime subscripting errors.
     QUERY_CLASSES: Set[Type]
 
     # Map from class name to an ID range (next_id, max_reserved_id)
@@ -299,6 +361,8 @@ class PrimaryKeyGeneratorBase:  # pyre-ignore[13]
     def reserve(
         self,
         session: Session,
+        # pyre-fixme[24]: Generic type `type` expects 1 type parameter, use
+        #  `typing.Type` to avoid runtime subscripting errors.
         saving_classes: List[Type],
         item_counts: Optional[Dict[str, int]] = None,
         use_lock: bool = False,
@@ -319,7 +383,13 @@ class PrimaryKeyGeneratorBase:  # pyre-ignore[13]
 
         return self
 
+    # pyre-fixme[24]: Generic type `type` expects 1 type parameter, use
+    #  `typing.Type` to avoid runtime subscripting errors.
+    # pyre-fixme[24]: Generic type `type` expects 1 type parameter, use
+    #  `typing.Type` to avoid runtime subscripting errors.
     def _lock_pk_with_retries(self, session: Session, cls: Type) -> Optional[Type]:
+        # pyre-fixme[24]: Generic type `type` expects 1 type parameter, use
+        #  `typing.Type` to avoid runtime subscripting errors.
         cls_pk: Optional[Type] = None
         retries: int = 3
         while retries > 0:
@@ -341,7 +411,13 @@ class PrimaryKeyGeneratorBase:  # pyre-ignore[13]
         return cls_pk
 
     def _reserve_id_range(
-        self, session: Session, cls: Type, count: int, use_lock: bool
+        self,
+        session: Session,
+        # pyre-fixme[24]: Generic type `type` expects 1 type parameter, use
+        #  `typing.Type` to avoid runtime subscripting errors.
+        cls: Type,
+        count: int,
+        use_lock: bool,
     ) -> None:
         cls_pk = self._lock_pk_with_retries(session, cls)
         if use_lock or not cls_pk:
@@ -375,6 +451,8 @@ class PrimaryKeyGeneratorBase:  # pyre-ignore[13]
             session.commit()
             self.pks[cls.__name__] = pk_entry
 
+    # pyre-fixme[3]: Return type must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
     def get(self, cls):
         assert cls in self.QUERY_CLASSES, (
             "%s primary key should be generated by SQLAlchemy" % cls.__name__

@@ -28,6 +28,7 @@ class QueryTest(TestCase):
         create_models(self.db)
         self.fakes = FakeObjectGenerator()
 
+    # pyre-fixme[3]: Return annotation cannot contain `Any`.
     def _basic_trace_frames(self) -> List[Any]:
         return [
             self.fakes.precondition(
@@ -88,6 +89,7 @@ class QueryTest(TestCase):
             self.assertEqual(len(next_frames), 1)
             self.assertEqual(int(next_frames[0].id), int(frames[1].id))
 
+    # pyre-fixme[3]: Return type must be annotated.
     def testNextTraceFramesBackwards(self):
         run = self.fakes.run()
         frames = [

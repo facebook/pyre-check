@@ -31,6 +31,7 @@ from .ui.server import start_server
 
 MARKER_DIRECTORIES = [".pyre", ".hg", ".git", ".svn"]
 
+# pyre-fixme[5]: Global expression must be annotated.
 logger = logging.getLogger("sapp")
 
 
@@ -56,6 +57,8 @@ def require_option(current_ctx: click.Context, param_name: str) -> None:
     raise click.MissingParameter(ctx=current_ctx, param=param_definition)
 
 
+# pyre-fixme[3]: Return type must be annotated.
+# pyre-fixme[2]: Parameter must be annotated.
 def common_options(func):
     @click.group(context_settings={"help_option_names": ["--help", "-h"]})
     @click_log.simple_verbosity_option(logger)
@@ -73,12 +76,17 @@ def common_options(func):
         type=Path(dir_okay=False),
     )
     @wraps(func)
+    # pyre-fixme[53]: Captured variable `func` is not annotated.
+    # pyre-fixme[3]: Return type must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
     def wrapper(*args, **kwargs):
         return func(*args, **kwargs)
 
     return wrapper
 
 
+# pyre-fixme[3]: Return type must be annotated.
 def default_database(ctx: click.Context, _param: Parameter, value: Optional[str]):
     """By default, use a database at the current dir"""
     if value:
@@ -93,6 +101,8 @@ def default_database(ctx: click.Context, _param: Parameter, value: Optional[str]
 )
 @pass_context
 @click.argument("ipython_args", nargs=-1, type=click.UNPROCESSED)
+# pyre-fixme[3]: Return type must be annotated.
+# pyre-fixme[2]: Parameter must be annotated.
 def explore(ctx: Context, ipython_args):
     scope_vars = Interactive(
         database=ctx.database,
@@ -146,17 +156,28 @@ def explore(ctx: Context, ipython_args):
     help="store pre/post conditions unrelated to an issue",
 )
 @argument("input_file", type=Path(exists=True))
+# pyre-fixme[3]: Return type must be annotated.
 def analyze(
     ctx: Context,
+    # pyre-fixme[2]: Parameter must be annotated.
     run_kind,
+    # pyre-fixme[2]: Parameter must be annotated.
     branch,
+    # pyre-fixme[2]: Parameter must be annotated.
     commit_hash,
+    # pyre-fixme[2]: Parameter must be annotated.
     job_id,
+    # pyre-fixme[2]: Parameter must be annotated.
     differential_id,
+    # pyre-fixme[2]: Parameter must be annotated.
     previous_issue_handles,
+    # pyre-fixme[2]: Parameter must be annotated.
     previous_input,
+    # pyre-fixme[2]: Parameter must be annotated.
     linemap,
+    # pyre-fixme[2]: Parameter must be annotated.
     store_unused_models,
+    # pyre-fixme[2]: Parameter must be annotated.
     input_file,
 ):
     # Store all options in the right places
@@ -207,6 +228,7 @@ def analyze(
     "--static-resources", default=None, help="Directory to serve static resources from"
 )
 @pass_context
+# pyre-fixme[3]: Return type must be annotated.
 def server(ctx: Context, debug: bool, static_resources: str):
     start_server(ctx.database, debug, static_resources)
 

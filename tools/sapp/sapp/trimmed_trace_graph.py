@@ -85,6 +85,7 @@ class TrimmedTraceGraph(TraceGraph):
 
         self._recompute_instance_properties()
 
+    # pyre-fixme[3]: Return type must be annotated.
     def _recompute_instance_properties(self):
         """Some properties of issue instances will be affected after trimming
         such as min trace length to leaves. This should be called after the
@@ -182,7 +183,10 @@ class TrimmedTraceGraph(TraceGraph):
         )
 
     def _get_leaf_names_from_pairs(
-        self, graph: TraceGraph, leaf_pairs: Set[Tuple[int, Any]]
+        self,
+        graph: TraceGraph,
+        # pyre-fixme[2]: Parameter annotation cannot contain `Any`.
+        leaf_pairs: Set[Tuple[int, Any]],
     ) -> Set[str]:
         return {
             leaf.contents
@@ -236,14 +240,22 @@ class TrimmedTraceGraph(TraceGraph):
 
     def _populate_issues_from_affected_conditions(
         self,
+        # pyre-fixme[2]: Parameter must be annotated.
         initial_conditions,
         graph: TraceGraph,
+        # pyre-fixme[2]: Parameter must be annotated.
         get_issue_instances_from_condition_id,
+        # pyre-fixme[2]: Parameter must be annotated.
         get_condition_parent,
+        # pyre-fixme[2]: Parameter must be annotated.
         get_instance_leaves,
+        # pyre-fixme[2]: Parameter must be annotated.
         get_condition_leaves,
+        # pyre-fixme[2]: Parameter must be annotated.
         add_instance_condition_assoc,
+        # pyre-fixme[2]: Parameter must be annotated.
         add_condition,
+        # pyre-fixme[2]: Parameter must be annotated.
         add_traces,
     ) -> None:
         """Helper for populating reachable issue instances from the initial
@@ -429,6 +441,8 @@ class TrimmedTraceGraph(TraceGraph):
     def _is_filename_prefixed_with(filename: str, prefixes: Iterable[str]) -> bool:
         return any([filename.startswith(p) for p in prefixes])
 
+    # pyre-fixme[2]: Parameter must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
     def _populate_shared_text(self, graph, id) -> None:
         text = graph._shared_texts[id.local_id]
         if text.id.local_id not in self._shared_texts:

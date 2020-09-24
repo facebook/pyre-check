@@ -28,10 +28,15 @@ from .interactive import IssueQueryResult, IssueQueryResultType
 from .trace import TraceFrameQueryResult, TraceFrameQueryResultType
 
 
+# pyre-fixme[5]: Global expression must be annotated.
 FilenameText = aliased(SharedText)
+# pyre-fixme[5]: Global expression must be annotated.
 CallableText = aliased(SharedText)
+# pyre-fixme[5]: Global expression must be annotated.
 CallerText = aliased(SharedText)
+# pyre-fixme[5]: Global expression must be annotated.
 CalleeText = aliased(SharedText)
+# pyre-fixme[5]: Global expression must be annotated.
 MessageText = aliased(SharedText)
 
 
@@ -46,6 +51,7 @@ class TraceFrameConnection(relay.Connection):
 
 
 class Query(graphene.ObjectType):
+    # pyre-fixme[4]: Attribute must be annotated.
     node = relay.Node.Field()
     issues = relay.ConnectionField(
         IssueConnection,
@@ -69,6 +75,7 @@ class Query(graphene.ObjectType):
         max_trace_length_to_sinks: Optional[int] = None,
         min_trace_length_to_sources: Optional[int] = None,
         max_trace_length_to_sources: Optional[int] = None,
+        # pyre-fixme[2]: Parameter must be annotated.
         **args
     ) -> List[IssueQueryResult]:
         session = get_session(info.context)
@@ -90,7 +97,11 @@ class Query(graphene.ObjectType):
         return builder.get()
 
     def resolve_trace(
-        self, info: ResolveInfo, issue_id: DBID, **args
+        self,
+        info: ResolveInfo,
+        issue_id: DBID,
+        # pyre-fixme[2]: Parameter must be annotated.
+        **args
     ) -> List[TraceFrameQueryResult]:
         session = info.context.get("session")
 

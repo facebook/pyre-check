@@ -14,11 +14,13 @@ test_path = "tools/sapp/sapp//tests/sharded_files"
 
 
 class TestShardedFiles(unittest.TestCase):
+    # pyre-fixme[3]: Return type must be annotated.
     def test_fails_for_no_sharding(self):
         pattern = os.path.join(test_path, "foo.bar")
         with self.assertRaisesRegex(ValueError, "Not a sharded file"):
             ShardedFile(pattern)
 
+    # pyre-fixme[3]: Return type must be annotated.
     def test_returns_two_shards_for_star(self):
         pattern = os.path.join(test_path, "foo@*.bar")
         sf = ShardedFile(pattern)
@@ -30,6 +32,7 @@ class TestShardedFiles(unittest.TestCase):
             ],
         )
 
+    # pyre-fixme[3]: Return type must be annotated.
     def test_returns_two_shards_for_two(self):
         pattern = os.path.join(test_path, "foo@2.bar")
         sf = ShardedFile(pattern)
@@ -41,6 +44,7 @@ class TestShardedFiles(unittest.TestCase):
             ],
         )
 
+    # pyre-fixme[3]: Return type must be annotated.
     def test_returns_two_shards_for_two_ambiguous(self):
         pattern = os.path.join(test_path, "ambiguous@2.ext")
         sf = ShardedFile(pattern)
@@ -52,6 +56,7 @@ class TestShardedFiles(unittest.TestCase):
             ],
         )
 
+    # pyre-fixme[3]: Return type must be annotated.
     def test_returns_two_shards_for_one_ambiguous(self):
         pattern = os.path.join(test_path, "ambiguous@1.ext")
         sf = ShardedFile(pattern)
@@ -60,11 +65,13 @@ class TestShardedFiles(unittest.TestCase):
             [os.path.join(test_path, "ambiguous@00000-of-00001.ext")],
         )
 
+    # pyre-fixme[3]: Return type must be annotated.
     def test_fails_for_bad_sharding_pattern(self):
         pattern = os.path.join(test_path, "foo@baz.bar")
         with self.assertRaisesRegex(ValueError, "Invalid shard specification: baz"):
             ShardedFile(pattern)
 
+    # pyre-fixme[3]: Return type must be annotated.
     def test_fails_for_ambiguous_star_pattern(self):
         pattern = os.path.join(test_path, "ambiguous@*.ext")
         with self.assertRaisesRegex(
@@ -72,6 +79,7 @@ class TestShardedFiles(unittest.TestCase):
         ):
             ShardedFile(pattern)
 
+    # pyre-fixme[3]: Return type must be annotated.
     def test_fails_for_inconsistent_set(self):
         pattern = os.path.join(test_path, "inconsistent@2.baz")
         with self.assertRaisesRegex(
@@ -80,6 +88,7 @@ class TestShardedFiles(unittest.TestCase):
         ):
             ShardedFile(pattern)
 
+    # pyre-fixme[3]: Return type must be annotated.
     def test_fails_for_inconsistent_set_star(self):
         pattern = os.path.join(test_path, "inconsistent@*.baz")
         with self.assertRaisesRegex(

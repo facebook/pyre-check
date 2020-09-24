@@ -18,6 +18,8 @@ logging.basicConfig(format="%(asctime)s [%(levelname)s] %(message)s")
 # We are going to call this per process, so we need to pass in and return
 # serializable data. And as a single arg, as far as I can tell. Which is why the
 # args type looks so silly.
+# pyre-fixme[3]: Return type must be annotated.
+# pyre-fixme[2]: Parameter must be annotated.
 def parse(args):
     (base_parser, repo_dir, metadata), path = args
 
@@ -29,8 +31,11 @@ def parse(args):
 
 
 class ParallelParser(BaseParser):
+    # pyre-fixme[2]: Parameter must be annotated.
+    # pyre-fixme[2]: Parameter must be annotated.
     def __init__(self, parser_class, repo_dir=None) -> None:
         super().__init__(repo_dir)
+        # pyre-fixme[4]: Attribute must be annotated.
         self.parser = parser_class
 
     def parse(self, input: AnalysisOutput) -> Iterable[Dict[str, Any]]:
