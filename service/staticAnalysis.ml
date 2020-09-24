@@ -228,6 +228,7 @@ let analyze
     ~qualifiers
     ()
   =
+  let pre_fixpoint_timer = Timer.start () in
   let get_source = get_source ~environment in
 
   let timer = Timer.start () in
@@ -348,6 +349,11 @@ let analyze
     List.iter override_targets ~f:add_predefined
   in
   Statistics.performance ~name:"Computed overrides" ~timer ();
+  Statistics.performance
+    ~name:"Pre-fixpoint computation for static analysis"
+    ~phase_name:"Pre-fixpoint computation for static analysis"
+    ~timer:pre_fixpoint_timer
+    ();
   let all_callables = List.rev_append override_targets callables in
   Log.info
     "Analysis fixpoint started for %d overrides %d functions..."
@@ -381,7 +387,11 @@ let analyze
   in
   save_results ();
   let errors = Interprocedural.Analysis.extract_errors scheduler all_callables in
-  Statistics.performance ~name:"Analysis fixpoint complete" ~timer ();
+  Statistics.performance
+    ~name:"Analysis fixpoint complete"
+    ~phase_name:"Static analysis fixpoint"
+    ~timer
+    ();
 
   (* If saving to a file, don't return errors. Thousands of errors on output is inconvenient *)
   if Option.is_some analysis_configuration.result_json_path then
