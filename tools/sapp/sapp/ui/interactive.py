@@ -37,7 +37,7 @@ from pygments.formatters import TerminalFormatter
 from pygments.lexers import get_lexer_for_filename
 from sqlalchemy.orm import Session, aliased
 from sqlalchemy.orm.attributes import InstrumentedAttribute
-from sqlalchemy.orm.query import Query
+from sqlalchemy.orm.query import Query as RawQuery
 from sqlalchemy.sql import func
 from sqlalchemy.sql.expression import or_
 
@@ -61,7 +61,7 @@ from ..models import (
     create as create_models,
 )
 from ..pipeline.base_parser import BaseParser
-from .issues import QueryBuilder
+from .issues import Query
 from .trace import TraceFrameQueryResult, TraceOperator, TraceTuple
 
 
@@ -493,7 +493,7 @@ details              show additional information about the current trace frame
         pager = self._resolve_pager(use_pager)
 
         with self.db.make_session() as session:
-            builder = QueryBuilder(session, self.current_run_id)
+            builder = Query(session, self.current_run_id)
 
             if codes is not None:
                 if not isinstance(codes, int) and not isinstance(codes, list):
@@ -1184,7 +1184,7 @@ details              show additional information about the current trace frame
     def _add_list_or_string_filter_to_query(
         self,
         filter: Union[str, List[str]],
-        query: Query,
+        query: RawQuery,
         column: InstrumentedAttribute,
         argument_name: str,
     ):
@@ -1195,7 +1195,7 @@ details              show additional information about the current trace frame
     def _add_list_or_int_filter_to_query(
         self,
         filter: Union[int, List[int]],
-        query: Query,
+        query: RawQuery,
         column: InstrumentedAttribute,
         argument_name: str,
     ):
@@ -1206,11 +1206,11 @@ details              show additional information about the current trace frame
     def _add_list_or_element_filter_to_query(
         self,
         filter: Union[T, List[T]],
-        query: Query,
+        query: RawQuery,
         column: InstrumentedAttribute,
         argument_name: str,
         element_type: Type,
-    ) -> Query:
+    ) -> RawQuery:
         if isinstance(filter, element_type):
             return query.filter(column.like(filter))
         if isinstance(filter, list):
@@ -1225,7 +1225,7 @@ details              show additional information about the current trace frame
     def _add_max_int_filter_to_query(
         self,
         filter: int,
-        query: Query,
+        query: RawQuery,
         column: InstrumentedAttribute,
         argument_name: str,
     ):

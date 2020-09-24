@@ -8,7 +8,7 @@ from enum import Enum
 from typing import Dict, List, Optional, Set, Tuple, Union
 
 from sqlalchemy.orm import Session, aliased
-from sqlalchemy.orm.query import Query
+from sqlalchemy.orm.query import Query as RawQuery
 from sqlalchemy.sql.expression import or_
 
 from ..models import (
@@ -39,7 +39,7 @@ class Filter(Enum):
     exclude_features = "exclude_features"
 
 
-class QueryBuilder:
+class Query:
     def __init__(self, session: Session, current_run_id: Union[DBID, int]):
         self._session: Session = session
         self.current_run_id = current_run_id
@@ -121,39 +121,39 @@ class QueryBuilder:
                     issues.remove(issue)
         return issues
 
-    def where_codes_is_any_of(self, codes: List[int]) -> "QueryBuilder":
+    def where_codes_is_any_of(self, codes: List[int]) -> "Query":
         self.issue_filters[Filter.codes].add(tuple(codes))
         return self
 
-    def where_callables_is_any_of(self, callables: List[str]) -> "QueryBuilder":
+    def where_callables_is_any_of(self, callables: List[str]) -> "Query":
         self.issue_filters[Filter.callables].add(tuple(callables))
         return self
 
-    def where_file_names_is_any_of(self, file_names: List[str]) -> "QueryBuilder":
+    def where_file_names_is_any_of(self, file_names: List[str]) -> "Query":
         self.issue_filters[Filter.file_names].add(tuple(file_names))
         return self
 
     def where_trace_length_to_sinks(
         self, minimum: Optional[int] = None, maximum: Optional[int] = None
-    ) -> "QueryBuilder":
+    ) -> "Query":
         self.issue_filters[Filter.trace_length_to_sinks].add((minimum, maximum))
         return self
 
     def where_trace_length_to_sources(
         self, minimum: Optional[int] = None, maximum: Optional[int] = None
-    ) -> "QueryBuilder":
+    ) -> "Query":
         self.issue_filters[Filter.trace_length_to_sources].add((minimum, maximum))
         return self
 
-    def where_any_features(self, features: List[str]) -> "QueryBuilder":
+    def where_any_features(self, features: List[str]) -> "Query":
         self.breadcrumb_filters[Filter.any_features] += features
         return self
 
-    def where_all_features(self, features: List[str]) -> "QueryBuilder":
+    def where_all_features(self, features: List[str]) -> "Query":
         self.breadcrumb_filters[Filter.all_features] += features
         return self
 
-    def where_exclude_features(self, features: List[str]) -> "QueryBuilder":
+    def where_exclude_features(self, features: List[str]) -> "Query":
         self.breadcrumb_filters[Filter.exclude_features] += features
         return self
 
@@ -181,7 +181,7 @@ class QueryBuilder:
             for issue in issues
         ]
 
-    def get_raw_query(self) -> Query:
+    def get_raw_query(self) -> RawQuery:
         return (
             self._session.query(
                 IssueInstance.id,
