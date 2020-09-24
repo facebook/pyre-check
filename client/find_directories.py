@@ -124,11 +124,12 @@ def find_typeshed() -> Optional[Path]:
 
     # Prefer the typeshed we bundled ourselves (if any) to the one
     # from the environment.
+    bundled_typeshed_relative_path = "pyre_check/typeshed/"
     bundled_typeshed = find_parent_directory_containing_directory(
-        current_directory, "pyre_check/typeshed/"
+        current_directory, bundled_typeshed_relative_path
     )
     if bundled_typeshed:
-        return bundled_typeshed
+        return bundled_typeshed / bundled_typeshed_relative_path
 
     try:
         import typeshed  # pyre-fixme: Can't find module import typeshed
