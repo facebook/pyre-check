@@ -2082,7 +2082,16 @@ let test_parse_type_variable_declarations _ =
   assert_parses_declaration
     "pyre_extensions.ListVariadic('Ts')"
     (Type.Variable.ListVariadic (Type.Variable.Variadic.List.create "target"));
-  assert_declaration_does_not_parse "pyre_extensions.ListVariadic('Ts', int, str)";
+  assert_parses_declaration
+    "pyre_extensions.ListVariadic('Ts', int, str)"
+    (Type.Variable.ListVariadic
+       (Type.Variable.Variadic.List.create
+          "target"
+          ~constraints:(Explicit [Type.Primitive "int"; Type.Primitive "str"])));
+  assert_parses_declaration
+    "pyre_extensions.ListVariadic('Ts', bound=int)"
+    (Type.Variable.ListVariadic
+       (Type.Variable.Variadic.List.create "target" ~constraints:(Bound (Type.Primitive "int"))));
   ()
 
 

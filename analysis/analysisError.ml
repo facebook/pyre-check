@@ -1173,6 +1173,16 @@ let rec messages ~concise ~signature location kind =
           (Type.Variable expected)
           name;
       ]
+  | InvalidTypeParameters
+      { name; kind = AttributeResolution.ViolateConstraintsVariadic { expected; actual } } ->
+      [
+        Format.asprintf
+          "Type parameter list `%a` violates constraints on `%s` in generic type `%s`."
+          (Type.Record.OrderedTypes.pp_concise ~pp_type)
+          actual
+          (Type.Record.Variable.RecordVariadic.RecordList.name expected)
+          name;
+      ]
   | InvalidTypeParameters { name; kind = AttributeResolution.UnexpectedKind { expected; actual } }
     ->
       let details =
@@ -3453,6 +3463,9 @@ let dequalify
               actual = dequalify actual;
               expected = Type.Variable.Unary.dequalify ~dequalify_map expected;
             }
+      | AttributeResolution.ViolateConstraintsVariadic { actual; expected } ->
+          AttributeResolution.ViolateConstraintsVariadic
+            { actual; expected = Type.Variable.Variadic.List.dequalify ~dequalify_map expected }
       | AttributeResolution.UnexpectedKind { actual; expected } ->
           AttributeResolution.UnexpectedKind
             { actual; expected = Type.Variable.dequalify dequalify_map expected }

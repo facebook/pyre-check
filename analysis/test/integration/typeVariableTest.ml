@@ -1834,6 +1834,53 @@ let test_list_variadics context =
   ()
 
 
+let test_list_variadics_constraints context =
+  let assert_type_errors = assert_type_errors ~context in
+  assert_type_errors
+    {|
+    from typing import Generic, TypeVar
+    from typing_extensions import Literal
+    from pyre_extensions import ListVariadic
+    from pyre_extensions.type_variable_operators import Concatenate as Cat
+
+    Ts = ListVariadic("Ts", bound=int)
+    A = TypeVar("A")
+    class Vec(Generic[Ts]): ...
+
+    def f1(x : Vec[Cat[Ts,A]]) -> None: ...
+    def f2( *ts: Ts) -> Vec[Cat[Ts,float]]: ...
+    def f3( *ts: Ts) -> Vec[[int,float]]: ...
+    |}
+    [
+      "Invalid type parameters [24]: Type parameter list `Concatenate[test.Ts, Variable[test.A]]` \
+       violates constraints on `Ts` in generic type `Vec`.";
+      "Invalid type parameters [24]: Type parameter list `Concatenate[test.Ts, float]` violates \
+       constraints on `Ts` in generic type `Vec`.";
+      "Invalid type parameters [24]: Type parameter list `int, float` violates constraints on `Ts` \
+       in generic type `Vec`.";
+    ];
+  assert_type_errors
+    {|
+    from typing import Generic, TypeVar
+    from pyre_extensions import ListVariadic
+
+    Ts1 = ListVariadic("Ts1", bound=int)
+    Ts2 = ListVariadic("Ts2", bound=float)
+
+    class Vec1(Generic[Ts1]): ...
+    class Vec2(Generic[Ts2]): ...
+
+    def f1(x: Vec1[Ts1]) -> None: ...
+    def f2(x: Vec2[Ts2]) -> None: ...
+    def g1(x: Vec1[Ts2]) -> None: ...
+    def g2(x: Vec2[Ts1]) -> None: ...
+    |}
+    [
+      "Invalid type parameters [24]: Type parameter list `test.Ts2` violates constraints on `Ts1` \
+       in generic type `Vec1`.";
+    ]
+
+
 let test_map context =
   let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
@@ -2424,6 +2471,7 @@ let () =
          "single_explicit_error" >:: test_single_explicit_error;
          "callable_parameter_variadics" >:: test_callable_parameter_variadics;
          "list_variadics" >:: test_list_variadics;
+         "list_variadics_constraints" >:: test_list_variadics_constraints;
          "map" >:: test_map;
          "user_defined_variadics" >:: test_user_defined_variadics;
          "concatenation" >:: test_concatenation_operator;
