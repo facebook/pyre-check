@@ -384,6 +384,68 @@
 {
   "kind": "issue",
   "data": {
+    "callable": "dictionary.test_index_from_tito",
+    "callable_line": 228,
+    "code": 5002,
+    "line": 230,
+    "start": 16,
+    "end": 34,
+    "filename": "dictionary.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "dictionary.py",
+              "line": 229,
+              "start": 14,
+              "end": 29
+            },
+            "tito": [ { "line": 230, "start": 32, "end": 33 } ],
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [
+              { "always-via": "tito" },
+              { "always-via": "special_source" }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "dictionary.py",
+              "line": 230,
+              "start": 16,
+              "end": 34
+            },
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "tito" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
     "callable": "dictionary.test_keys_and_values",
     "callable_line": 163,
     "code": 5002,
@@ -880,7 +942,12 @@
               { "line": 207, "start": 16, "end": 58 }
             ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
-            "features": [ { "always-via": "tito" }, { "via": "obscure" } ]
+            "features": [
+              { "has": "first-index" },
+              { "first-index": "<unknown>" },
+              { "always-via": "tito" },
+              { "via": "obscure" }
+            ]
           }
         ]
       }
@@ -925,7 +992,12 @@
               { "line": 210, "start": 15, "end": 65 }
             ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
-            "features": [ { "always-via": "tito" }, { "via": "obscure" } ]
+            "features": [
+              { "has": "first-index" },
+              { "first-index": "<unknown>" },
+              { "always-via": "tito" },
+              { "via": "obscure" }
+            ]
           }
         ]
       }
@@ -1513,6 +1585,26 @@
     "features": [
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "dictionary.tito_with_index",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(d)[a]",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "features": [ { "has": "first-index" }, { "first-index": "a" } ]
+          }
+        ]
+      }
     ]
   }
 }

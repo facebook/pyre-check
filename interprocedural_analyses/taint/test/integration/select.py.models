@@ -10,7 +10,7 @@
           {
             "root": {
               "filename": "select.py",
-              "line": 20,
+              "line": 21,
               "start": 8,
               "end": 23
             },
@@ -45,7 +45,7 @@
           {
             "root": {
               "filename": "select.py",
-              "line": 25,
+              "line": 26,
               "start": 8,
               "end": 23
             },
@@ -80,7 +80,7 @@
           {
             "root": {
               "filename": "select.py",
-              "line": 30,
+              "line": 31,
               "start": 8,
               "end": 23
             },
@@ -115,11 +115,11 @@
           {
             "root": {
               "filename": "select.py",
-              "line": 40,
+              "line": 41,
               "start": 11,
               "end": 22
             },
-            "tito": [ { "line": 40, "start": 11, "end": 22 } ],
+            "tito": [ { "line": 41, "start": 11, "end": 22 } ],
             "leaves": [
               {
                 "kind": "UserControlled",
@@ -150,9 +150,13 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 40, "start": 11, "end": 22 } ],
+            "tito": [ { "line": 41, "start": 11, "end": 22 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
-            "features": [ { "always-via": "tito" } ]
+            "features": [
+              { "has": "first-index" },
+              { "first-index": "payload" },
+              { "always-via": "tito" }
+            ]
           }
         ]
       }
@@ -163,9 +167,9 @@
   "kind": "issue",
   "data": {
     "callable": "select.return_is_RCE",
-    "callable_line": 39,
+    "callable_line": 40,
     "code": 5001,
-    "line": 40,
+    "line": 41,
     "start": 4,
     "end": 48,
     "filename": "select.py",
@@ -178,11 +182,11 @@
           {
             "root": {
               "filename": "select.py",
-              "line": 40,
+              "line": 41,
               "start": 11,
               "end": 22
             },
-            "tito": [ { "line": 40, "start": 11, "end": 22 } ],
+            "tito": [ { "line": 41, "start": 11, "end": 22 } ],
             "leaves": [
               {
                 "kind": "UserControlled",
@@ -204,7 +208,7 @@
           {
             "root": {
               "filename": "select.py",
-              "line": 39,
+              "line": 40,
               "start": 51,
               "end": 55
             },
@@ -239,7 +243,7 @@
           {
             "root": {
               "filename": "select.py",
-              "line": 12,
+              "line": 13,
               "start": 9,
               "end": 24
             },
@@ -261,9 +265,9 @@
   "kind": "issue",
   "data": {
     "callable": "select.view_entry_field",
-    "callable_line": 11,
+    "callable_line": 12,
     "code": 5001,
-    "line": 12,
+    "line": 13,
     "start": 9,
     "end": 24,
     "filename": "select.py",
@@ -276,7 +280,7 @@
           {
             "root": {
               "filename": "select.py",
-              "line": 11,
+              "line": 12,
               "start": 21,
               "end": 28
             },
@@ -300,7 +304,7 @@
           {
             "root": {
               "filename": "select.py",
-              "line": 12,
+              "line": 13,
               "start": 9,
               "end": 24
             },
@@ -330,11 +334,11 @@
           {
             "root": {
               "filename": "select.py",
-              "line": 36,
+              "line": 37,
               "start": 9,
               "end": 46
             },
-            "tito": [ { "line": 36, "start": 9, "end": 20 } ],
+            "tito": [ { "line": 37, "start": 9, "end": 20 } ],
             "leaves": [
               {
                 "kind": "RemoteCodeExecution",
@@ -342,7 +346,11 @@
                 "on_all_flows": true
               }
             ],
-            "features": [ { "always-via": "tito" } ]
+            "features": [
+              { "has": "first-index" },
+              { "first-index": "payload" },
+              { "always-via": "tito" }
+            ]
           }
         ]
       }
@@ -354,9 +362,9 @@
   "kind": "issue",
   "data": {
     "callable": "select.view_entry_get",
-    "callable_line": 35,
+    "callable_line": 36,
     "code": 5001,
-    "line": 36,
+    "line": 37,
     "start": 9,
     "end": 46,
     "filename": "select.py",
@@ -369,11 +377,11 @@
           {
             "root": {
               "filename": "select.py",
-              "line": 36,
+              "line": 37,
               "start": 9,
               "end": 20
             },
-            "tito": [ { "line": 36, "start": 9, "end": 20 } ],
+            "tito": [ { "line": 37, "start": 9, "end": 20 } ],
             "leaves": [
               {
                 "kind": "UserControlled",
@@ -395,7 +403,7 @@
           {
             "root": {
               "filename": "select.py",
-              "line": 36,
+              "line": 37,
               "start": 9,
               "end": 46
             },
@@ -436,7 +444,7 @@
           {
             "root": {
               "filename": "select.py",
-              "line": 16,
+              "line": 17,
               "start": 9,
               "end": 31
             },
@@ -446,6 +454,10 @@
                 "name": "eval",
                 "on_all_flows": true
               }
+            ],
+            "features": [
+              { "has": "first-index" },
+              { "first-index": "payload" }
             ]
           }
         ]
@@ -458,9 +470,9 @@
   "kind": "issue",
   "data": {
     "callable": "select.view_entry_index",
-    "callable_line": 15,
+    "callable_line": 16,
     "code": 5001,
-    "line": 16,
+    "line": 17,
     "start": 9,
     "end": 31,
     "filename": "select.py",
@@ -473,7 +485,7 @@
           {
             "root": {
               "filename": "select.py",
-              "line": 15,
+              "line": 16,
               "start": 21,
               "end": 28
             },
@@ -499,7 +511,7 @@
           {
             "root": {
               "filename": "select.py",
-              "line": 16,
+              "line": 17,
               "start": 9,
               "end": 31
             },

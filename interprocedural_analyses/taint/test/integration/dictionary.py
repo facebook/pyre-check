@@ -218,3 +218,13 @@ def test_service_with_dict():
 def test_service_with_mapping():
     service = Service()
     __test_sink(service.async_get_mapping(__test_source()))
+
+
+def tito_with_index(d: Dict[str, str]) -> str:
+    result = d["a"]
+    return result
+
+
+def test_index_from_tito():
+    d = {"a": __test_source(), "b": __test_source()}
+    __test_sink(tito_with_index(d))

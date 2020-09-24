@@ -4,6 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 from builtins import __test_source
+from typing import Any, Dict
 
 import django
 

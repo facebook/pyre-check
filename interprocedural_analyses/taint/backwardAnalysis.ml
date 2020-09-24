@@ -50,6 +50,15 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       Log.log ~section:`Taint format
 
 
+  let add_first_index index indices =
+    if Features.FirstIndexSet.is_bottom indices then
+      Features.to_first_name index
+      >>| Features.FirstIndexSet.singleton
+      |> Option.value ~default:Features.FirstIndexSet.bottom
+    else
+      indices
+
+
   (* This is where we can observe access paths reaching into LocalReturn and record the extraneous
      paths for more precise tito. *)
   let initial_taint =
@@ -544,11 +553,26 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
               else
                 indirect_targets, taint
             in
+            let arguments = Option.to_list receiver_option @ arguments in
+            (* Add index breadcrumb if appropriate. *)
+            let taint =
+              if not (String.equal attribute "get") then
+                taint
+              else
+                match arguments with
+                | _ :: index :: _ ->
+                    let label = get_index index.value in
+                    BackwardState.Tree.transform
+                      BackwardTaint.first_indices
+                      Abstract.Domain.(Map (add_first_index label))
+                      taint
+                | _ -> taint
+            in
             apply_call_targets
               ~resolution
               ~call_expression:(Expression.Call call_expression)
               location
-              (Option.to_list receiver_option @ arguments)
+              arguments
               state
               taint
               indirect_targets
@@ -692,7 +716,13 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
        arguments = [{ Call.Argument.value = argument_value; _ }];
       } ->
           let index = AccessPath.get_index argument_value in
-          let taint = BackwardState.Tree.prepend [index] taint in
+          let taint =
+            BackwardState.Tree.prepend [index] taint
+            |> BackwardState.Tree.transform
+                 BackwardTaint.first_indices
+                 Abstract.Domain.(Map (add_first_index index))
+          in
+
           analyze_expression ~resolution ~taint ~state ~expression:base
       (* Special case x.__next__() as being a random index access (this pattern is the desugaring of
          `for element in x`). *)

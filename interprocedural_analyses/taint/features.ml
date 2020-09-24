@@ -220,3 +220,15 @@ let gather_breadcrumbs feature breadcrumbs =
 let is_breadcrumb = function
   | { Abstract.OverUnderSetDomain.element = Simple.Breadcrumb _; _ } -> true
   | _ -> false
+
+
+let number_regexp = Str.regexp "[0-9]+"
+
+let is_numeric name = Str.string_match number_regexp name 0
+
+let to_first_name label =
+  match label with
+  | Abstract.TreeDomain.Label.Field name when is_numeric name -> Some "<numeric>"
+  | Field name -> Some name
+  | DictionaryKeys -> None
+  | Any -> Some "<unknown>"

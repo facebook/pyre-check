@@ -274,12 +274,20 @@
                 "on_all_flows": true
               }
             ],
-            "features": [ { "always-via": "tito" } ]
+            "features": [
+              { "has": "first-index" },
+              { "first-index": "<unknown>" },
+              { "always-via": "tito" }
+            ]
           }
         ]
       }
     ],
-    "features": [ { "always-via": "tito" } ]
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "<unknown>" },
+      { "always-via": "tito" }
+    ]
   }
 }
 {
@@ -536,7 +544,11 @@
                 "on_all_flows": true
               }
             ],
-            "features": [ { "always-via": "tito" } ]
+            "features": [
+              { "has": "first-index" },
+              { "first-index": "<unknown>" },
+              { "always-via": "tito" }
+            ]
           }
         ]
       }

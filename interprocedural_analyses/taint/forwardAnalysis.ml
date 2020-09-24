@@ -56,10 +56,6 @@ module type FUNCTION_CONTEXT = sig
   val add_triggered_sinks : location:Location.t -> triggered_sinks:(Root.t * Sinks.t) list -> unit
 end
 
-let number_regexp = Str.regexp "[0-9]+"
-
-let is_numeric name = Str.string_match number_regexp name 0
-
 let ( |>> ) (taint, state) f = f taint, state
 
 module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
@@ -99,12 +95,9 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
 
     let add_first_index index indices =
       if Features.FirstIndexSet.is_bottom indices then
-        match index with
-        | Abstract.TreeDomain.Label.Field name when is_numeric name ->
-            Features.FirstIndexSet.singleton "<numeric>"
-        | Field name -> Features.FirstIndexSet.singleton name
-        | DictionaryKeys -> Features.FirstIndexSet.bottom
-        | Any -> Features.FirstIndexSet.singleton "<unknown>"
+        Features.to_first_name index
+        >>| Features.FirstIndexSet.singleton
+        |> Option.value ~default:Features.FirstIndexSet.bottom
       else
         indices
 
@@ -1491,7 +1484,6 @@ let run ~environment ~qualifier ~define ~existing_model =
       let triggered, candidates =
         Flow.compute_triggered_sinks ~triggered_sinks ~location ~source_tree ~sink_tree
       in
-
       List.iter triggered ~f:(fun sink ->
           Hash_set.add triggered_sinks (Sinks.show_partial_sink sink));
       List.iter candidates ~f:add_flow_candidate

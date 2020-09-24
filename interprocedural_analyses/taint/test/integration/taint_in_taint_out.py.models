@@ -230,7 +230,11 @@
               { "kind": "LocalReturn", "name": "[related][init_list]" },
               { "kind": "LocalReturn", "name": "[init_list]" }
             ],
-            "features": [ { "via": "tito" } ]
+            "features": [
+              { "has": "first-index" },
+              { "first-index": "<numeric>" },
+              { "via": "tito" }
+            ]
           }
         ]
       },
@@ -387,7 +391,11 @@
               { "kind": "LocalReturn", "name": "[related][init_list]" },
               { "kind": "LocalReturn", "name": "[init_list]" }
             ],
-            "features": [ { "via": "tito" } ]
+            "features": [
+              { "has": "first-index" },
+              { "first-index": "<numeric>" },
+              { "via": "tito" }
+            ]
           }
         ]
       },
@@ -525,7 +533,11 @@
               { "kind": "LocalReturn", "name": "[related][init_list]" },
               { "kind": "LocalReturn", "name": "[init_list]" }
             ],
-            "features": [ { "via": "tito" } ]
+            "features": [
+              { "has": "first-index" },
+              { "first-index": "<numeric>" },
+              { "via": "tito" }
+            ]
           }
         ]
       },

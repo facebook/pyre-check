@@ -629,7 +629,11 @@
             "decl": null,
             "tito": [ { "line": 32, "start": 41, "end": 50 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "[oauth_token]" } ],
-            "features": [ { "always-via": "tito" } ]
+            "features": [
+              { "has": "first-index" },
+              { "first-index": "<numeric>" },
+              { "always-via": "tito" }
+            ]
           }
         ]
       },
@@ -642,7 +646,11 @@
             "leaves": [
               { "kind": "LocalReturn", "name": "[oauth_token_secret]" }
             ],
-            "features": [ { "always-via": "tito" } ]
+            "features": [
+              { "has": "first-index" },
+              { "first-index": "<numeric>" },
+              { "always-via": "tito" }
+            ]
           }
         ]
       }
