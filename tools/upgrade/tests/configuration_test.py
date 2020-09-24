@@ -3,9 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-unsafe
-
-import subprocess  # noqa
+import subprocess
 import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -15,24 +13,30 @@ from ..configuration import Configuration
 
 class ConfigurationTest(unittest.TestCase):
 
-    mock_completed_process = MagicMock()
-    mock_completed_process.stdout.decode = MagicMock(return_value="[]")
+    mock_completed_process = MagicMock(stdout="[]")
 
-    @patch("subprocess.call")
-    @patch("subprocess.run", return_value=mock_completed_process)
-    def test_get_errors(self, run, call) -> None:
+    @patch.object(subprocess, "call")
+    # pyre-fixme[56]: Pyre was not able to infer the type of argument `subprocess`
+    #  to decorator factory `unittest.mock.patch.object`.
+    @patch.object(subprocess, "run", return_value=mock_completed_process)
+    def test_get_errors__no_targets(
+        self, run: MagicMock, buck_clean: MagicMock
+    ) -> None:
         configuration = Configuration(Path("path"), {})
         configuration.get_errors()
-        call.assert_not_called()
-        assert run.call_count == 1
+        buck_clean.assert_not_called()
+        run.assert_called_once()
 
-        call.reset_mock()
-        run.reset_mock()
-
+    @patch.object(subprocess, "call")
+    # pyre-fixme[56]: Pyre was not able to infer the type of argument `subprocess`
+    #  to decorator factory `unittest.mock.patch.object`.
+    @patch.object(subprocess, "run", return_value=mock_completed_process)
+    def test_get_errors__targets(self, run: MagicMock, buck_clean: MagicMock) -> None:
+        configuration = Configuration(Path("path"), {})
         configuration.targets = ["//target/..."]
         configuration.get_errors()
-        assert call.call_count == 1
-        assert run.call_count == 1
+        buck_clean.assert_called_once()
+        run.assert_called_once()
 
     def test_get_contents__preserve_explicit_false_options(self) -> None:
         configuration = Configuration(

@@ -3,6 +3,8 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+from __future__ import annotations
+
 import json
 import logging
 import subprocess
@@ -194,43 +196,64 @@ class Configuration:
                     deduplicated_targets.append(target)
             self.targets = deduplicated_targets
 
-    def get_errors(
-        self, only_fix_error_code: Optional[int] = None, should_clean: bool = True
-    ) -> Errors:
-        if self.targets and should_clean:
+    def run_pyre(
+        self,
+        arguments: List[str],
+        description: str,
+        should_clean: bool,
+        stderr_flag: subprocess._FILE = subprocess.PIPE,
+    ) -> Optional[subprocess.CompletedProcess[str]]:
+        if should_clean:
             try:
                 # If building targets, run clean or space may run out on device!
                 LOG.info("Running `buck clean`...")
                 subprocess.call(["buck", "clean"], timeout=200)
             except subprocess.TimeoutExpired:
                 LOG.warning("Buck timed out. Try running `buck kill` before retrying.")
-                return Errors.empty()
+                return None
             except subprocess.CalledProcessError as error:
                 LOG.warning("Error calling `buck clean`: %s", str(error))
-                return Errors.empty()
+                return None
         try:
-            LOG.info("Checking `%s`...", self.root)
-            if self.is_local:
-                process = subprocess.run(
-                    ["pyre", "-l", self.root, "--output=json", "check"],
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                )
-            else:
-                process = subprocess.run(
-                    ["pyre", "--output=json", "check"],
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                )
-            json_string = process.stdout.decode().strip()
-            try:
-                errors = Errors.from_json(json_string, only_fix_error_code)
-            except UserError as error:
-                error_output = process.stderr.decode().strip()
-                LOG.info(f"Pyre error output:\n{error_output}")
-                raise error
-            LOG.info("Found %d error%s.", len(errors), "s" if len(errors) != 1 else "")
-            return errors
+            LOG.info("%s", description)
+            return subprocess.run(
+                ["pyre", *arguments],
+                stdout=subprocess.PIPE,
+                stderr=stderr_flag,
+                text=True,
+            )
         except subprocess.CalledProcessError as error:
             LOG.warning("Error calling pyre: %s", str(error))
+            return None
+
+    def get_errors(
+        self, only_fix_error_code: Optional[int] = None, should_clean: bool = True
+    ) -> Errors:
+        arguments = (
+            ["-l", self.root, "--output=json", "check"]
+            if self.is_local
+            else ["--output=json", "check"]
+        )
+        pyre_output = self.run_pyre(
+            arguments=arguments,
+            description=f"Checking `{self.root}`...",
+            should_clean=self.targets is not None and should_clean,
+        )
+        if not pyre_output:
             return Errors.empty()
+
+        stdout = pyre_output.stdout
+        if stdout is None:
+            return Errors.empty()
+
+        stdout = stdout.strip()
+
+        try:
+            errors = Errors.from_json(stdout, only_fix_error_code)
+        except UserError as error:
+            LOG.info("Error when parsing Pyre error output.")
+            LOG.info(f"Pyre stdout: {stdout}\nPyre stderr: {pyre_output.stderr}")
+            raise error
+
+        LOG.info("Found %d error%s.", len(errors), "s" if len(errors) != 1 else "")
+        return errors
