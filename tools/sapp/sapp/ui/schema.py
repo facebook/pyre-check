@@ -98,7 +98,7 @@ class Query(graphene.ObjectType):
 
         issue = (
             issues.QueryBuilder(session, run_id)
-            .get_session_query(session)
+            .get_raw_query()
             .filter(IssueInstance.id == issue_id)
             .join(Issue, IssueInstance.issue_id == Issue.id)
             .first()

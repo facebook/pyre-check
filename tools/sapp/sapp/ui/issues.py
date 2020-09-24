@@ -55,7 +55,7 @@ class QueryBuilder:
         return self._session
 
     def get(self) -> List:
-        query = self.get_session_query(self._session)
+        query = self.get_raw_query()
         for filter_type, filter_conditions in self.issue_filters.items():
             if filter_type == Filter.codes:
                 column = Issue.code
@@ -181,9 +181,9 @@ class QueryBuilder:
             for issue in issues
         ]
 
-    def get_session_query(self, session: Session) -> Query:
+    def get_raw_query(self) -> Query:
         return (
-            session.query(
+            self._session.query(
                 IssueInstance.id,
                 FilenameText.contents.label("filename"),
                 IssueInstance.location,
