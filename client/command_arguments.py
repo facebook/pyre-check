@@ -23,7 +23,7 @@ class CommandArguments:
     enable_memory_profiling: bool
     noninteractive: bool
     logging_sections: Optional[str]
-    log_identifier: str
+    log_identifier: Optional[str]
     logger: Optional[str]
     formatter: Optional[str]
     targets: List[str]
@@ -34,10 +34,10 @@ class CommandArguments:
     buck_mode: Optional[str]
     no_saved_state: bool
     search_path: List[str]
-    binary: str
+    binary: Optional[str]
     buck_builder_binary: Optional[str]
     exclude: List[str]
-    typeshed: str
+    typeshed: Optional[str]
     save_initial_state_to: Optional[str]
     load_initial_state_from: Optional[str]
     changed_files_path: Optional[str]
