@@ -61,8 +61,8 @@ from ..models import (
     create as create_models,
 )
 from ..pipeline.base_parser import BaseParser
-from .query_builder import IssueQueryBuilder
-from .trace_operator import TraceFrameQueryResult, TraceOperator, TraceTuple
+from .issues import QueryBuilder
+from .trace import TraceFrameQueryResult, TraceOperator, TraceTuple
 
 
 T = TypeVar("T")
@@ -492,7 +492,7 @@ details              show additional information about the current trace frame
         """
         pager = self._resolve_pager(use_pager)
 
-        builder = IssueQueryBuilder(self.current_run_id)
+        builder = QueryBuilder(self.current_run_id)
 
         if codes is not None:
             if not isinstance(codes, int) and not isinstance(codes, list):

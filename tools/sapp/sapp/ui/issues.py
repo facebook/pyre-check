@@ -39,7 +39,7 @@ class Filter(Enum):
     exclude_features = "exclude_features"
 
 
-class IssueQueryBuilder:
+class QueryBuilder:
     def __init__(self, current_run_id: Union[DBID, int]):
         self._session = None
         self.current_run_id = current_run_id
@@ -129,39 +129,39 @@ class IssueQueryBuilder:
                     issues.remove(issue)
         return issues
 
-    def where_codes_is_any_of(self, codes: List[int]) -> "IssueQueryBuilder":
+    def where_codes_is_any_of(self, codes: List[int]) -> "QueryBuilder":
         self.issue_filters[Filter.codes].add(tuple(codes))
         return self
 
-    def where_callables_is_any_of(self, callables: List[str]) -> "IssueQueryBuilder":
+    def where_callables_is_any_of(self, callables: List[str]) -> "QueryBuilder":
         self.issue_filters[Filter.callables].add(tuple(callables))
         return self
 
-    def where_file_names_is_any_of(self, file_names: List[str]) -> "IssueQueryBuilder":
+    def where_file_names_is_any_of(self, file_names: List[str]) -> "QueryBuilder":
         self.issue_filters[Filter.file_names].add(tuple(file_names))
         return self
 
     def where_trace_length_to_sinks(
         self, minimum: Optional[int] = None, maximum: Optional[int] = None
-    ) -> "IssueQueryBuilder":
+    ) -> "QueryBuilder":
         self.issue_filters[Filter.trace_length_to_sinks].add((minimum, maximum))
         return self
 
     def where_trace_length_to_sources(
         self, minimum: Optional[int] = None, maximum: Optional[int] = None
-    ) -> "IssueQueryBuilder":
+    ) -> "QueryBuilder":
         self.issue_filters[Filter.trace_length_to_sources].add((minimum, maximum))
         return self
 
-    def where_any_features(self, features: List[str]) -> "IssueQueryBuilder":
+    def where_any_features(self, features: List[str]) -> "QueryBuilder":
         self.breadcrumb_filters[Filter.any_features] += features
         return self
 
-    def where_all_features(self, features: List[str]) -> "IssueQueryBuilder":
+    def where_all_features(self, features: List[str]) -> "QueryBuilder":
         self.breadcrumb_filters[Filter.all_features] += features
         return self
 
-    def where_exclude_features(self, features: List[str]) -> "IssueQueryBuilder":
+    def where_exclude_features(self, features: List[str]) -> "QueryBuilder":
         self.breadcrumb_filters[Filter.exclude_features] += features
         return self
 

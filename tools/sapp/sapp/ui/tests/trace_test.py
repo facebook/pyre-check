@@ -19,7 +19,7 @@ from ...models import (
     create as create_models,
 )
 from ...tests.fake_object_generator import FakeObjectGenerator
-from ..trace_operator import TraceOperator
+from ..trace import TraceOperator
 
 
 class TraceOperatorTest(TestCase):

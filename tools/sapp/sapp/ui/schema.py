@@ -23,13 +23,9 @@ from ..models import (
     SharedTextKind,
     TraceKind,
 )
+from . import issues
 from .interactive import IssueQueryResult, IssueQueryResultType
-from .query_builder import IssueQueryBuilder
-from .trace_operator import (
-    TraceFrameQueryResult,
-    TraceFrameQueryResultType,
-    TraceOperator,
-)
+from .trace import TraceFrameQueryResult, TraceFrameQueryResultType, TraceOperator
 
 
 FilenameText = aliased(SharedText)
@@ -79,7 +75,7 @@ class Query(graphene.ObjectType):
         run_id = Query.latest_run_id(session)
 
         builder = (
-            IssueQueryBuilder(run_id)
+            issues.QueryBuilder(run_id)
             .with_session(session)
             .where_codes_is_any_of(codes)
             .where_callables_is_any_of(callables)
@@ -102,7 +98,7 @@ class Query(graphene.ObjectType):
         run_id = DBID(Query.latest_run_id(session))
 
         issue = (
-            IssueQueryBuilder(run_id)
+            issues.QueryBuilder(run_id)
             .get_session_query(session)
             .filter(IssueInstance.id == issue_id)
             .join(Issue, IssueInstance.issue_id == Issue.id)
@@ -111,7 +107,7 @@ class Query(graphene.ObjectType):
 
         leaf_kinds = Query.all_leaf_kinds(session)
 
-        builder = IssueQueryBuilder(run_id)
+        builder = issues.QueryBuilder(run_id)
         sources = builder.get_leaves_issue_instance(
             session, issue.id, SharedTextKind.SOURCE
         )
