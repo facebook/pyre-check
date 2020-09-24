@@ -187,11 +187,6 @@ class CommandParser(ABC):
             help="Disable interactive logging",
         )
         parser.add_argument(
-            "--hide-parse-errors",
-            action="store_true",
-            help="Hide detailed information about parse errors",
-        )
-        parser.add_argument(
             "--logging-sections", help=argparse.SUPPRESS  # Enable sectional logging.
         )
         parser.add_argument(
