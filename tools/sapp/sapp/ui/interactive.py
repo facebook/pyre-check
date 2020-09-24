@@ -984,7 +984,7 @@ details              show additional information about the current trace frame
                         for leaf in trace.Query(session).get_leaves_trace_frame(
                             self.leaf_dicts,
                             int(frame.id),
-                            trace.Query.trace_kind_to_shared_text_kind(frame.kind),
+                            trace.trace_kind_to_shared_text_kind(frame.kind),
                         )
                         if leaf in filter_leaves
                     ]
@@ -1467,7 +1467,7 @@ details              show additional information about the current trace frame
     def _create_trace_frame_output_string(
         self, trace_frame: TraceFrameQueryResult
     ) -> str:
-        leaf_kind = trace.Query.trace_kind_to_shared_text_kind(trace_frame.kind)
+        leaf_kind = trace.trace_kind_to_shared_text_kind(trace_frame.kind)
         leaves_label = "Sources" if leaf_kind == SharedTextKind.SOURCE else "Sinks"
 
         with self.db.make_session() as session:
@@ -1585,7 +1585,7 @@ details              show additional information about the current trace frame
             .filter(IssueInstanceSharedTextAssoc.issue_instance_id == issue_instance_id)
             .filter(SharedText.kind == kind)
         ]
-        return trace.Query.leaf_dict_lookups(
+        return trace.leaf_dict_lookups(
             self.sources_dict, self.sinks_dict, self.features_dict, message_ids, kind
         )
 

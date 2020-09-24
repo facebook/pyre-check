@@ -257,7 +257,7 @@ class Query:
                     self.get_leaves_trace_frame(
                         leaf_dicts,
                         int(frame.id),
-                        Query.trace_kind_to_shared_text_kind(frame.kind),
+                        trace_kind_to_shared_text_kind(frame.kind),
                     )
                 )
             ):
@@ -280,33 +280,31 @@ class Query:
             .filter(SharedText.kind == kind)
         ]
         leaf_sources, leaf_sinks, features_dict = leaf_dicts
-        return Query.leaf_dict_lookups(
+        return leaf_dict_lookups(
             leaf_sources, leaf_sinks, features_dict, message_ids, kind
         )
 
-    @staticmethod
-    def trace_kind_to_shared_text_kind(
-        trace_kind: Optional[TraceKind],
-    ) -> SharedTextKind:
-        if trace_kind == TraceKind.POSTCONDITION:
-            return SharedTextKind.SOURCE
-        if trace_kind == TraceKind.PRECONDITION:
-            return SharedTextKind.SINK
 
-        raise AssertionError(f"{trace_kind} is invalid")
+def trace_kind_to_shared_text_kind(trace_kind: Optional[TraceKind]) -> SharedTextKind:
+    if trace_kind == TraceKind.POSTCONDITION:
+        return SharedTextKind.SOURCE
+    if trace_kind == TraceKind.PRECONDITION:
+        return SharedTextKind.SINK
 
-    @staticmethod
-    def leaf_dict_lookups(
-        sources_dict: Dict[int, str],
-        sinks_dict: Dict[int, str],
-        features_dict: Dict[int, str],
-        message_ids: List[int],
-        kind: SharedTextKind,
-    ) -> Set[str]:
-        if kind == SharedTextKind.SOURCE:
-            leaf_dict = sources_dict
-        elif kind == SharedTextKind.SINK:
-            leaf_dict = sinks_dict
-        else:
-            leaf_dict = features_dict
-        return {leaf_dict[id] for id in message_ids if id in leaf_dict}
+    raise AssertionError(f"{trace_kind} is invalid")
+
+
+def leaf_dict_lookups(
+    sources_dict: Dict[int, str],
+    sinks_dict: Dict[int, str],
+    features_dict: Dict[int, str],
+    message_ids: List[int],
+    kind: SharedTextKind,
+) -> Set[str]:
+    if kind == SharedTextKind.SOURCE:
+        leaf_dict = sources_dict
+    elif kind == SharedTextKind.SINK:
+        leaf_dict = sinks_dict
+    else:
+        leaf_dict = features_dict
+    return {leaf_dict[id] for id in message_ids if id in leaf_dict}
