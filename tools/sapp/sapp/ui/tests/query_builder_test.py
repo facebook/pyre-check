@@ -7,16 +7,16 @@ from unittest import TestCase
 
 from sqlalchemy.sql import func
 
-from ..db import DB, DBType
-from ..models import (
+from ...db import DB, DBType
+from ...models import (
     DBID,
     IssueInstanceSharedTextAssoc,
     Run,
     RunStatus,
     create as create_models,
 )
-from ..ui.query_builder import IssueQueryBuilder
-from .fake_object_generator import FakeObjectGenerator
+from ...tests.fake_object_generator import FakeObjectGenerator
+from ..query_builder import IssueQueryBuilder
 
 
 class QueryBuilderTest(TestCase):

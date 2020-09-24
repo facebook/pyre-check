@@ -9,8 +9,8 @@ from unittest import TestCase
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import func
 
-from ..db import DB, DBType
-from ..models import (
+from ...db import DB, DBType
+from ...models import (
     Run,
     RunStatus,
     SharedText,
@@ -18,8 +18,8 @@ from ..models import (
     TraceFrameLeafAssoc,
     create as create_models,
 )
-from ..ui.trace_operator import TraceOperator
-from .fake_object_generator import FakeObjectGenerator
+from ...tests.fake_object_generator import FakeObjectGenerator
+from ..trace_operator import TraceOperator
 
 
 class TraceOperatorTest(TestCase):

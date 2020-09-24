@@ -14,9 +14,9 @@ from unittest.mock import mock_open, patch
 
 from sqlalchemy.orm import Session
 
-from ..db import DB, DBType
-from ..decorators import UserError
-from ..models import (
+from ...db import DB, DBType
+from ...decorators import UserError
+from ...models import (
     DBID,
     Issue,
     IssueInstance,
@@ -32,14 +32,14 @@ from ..models import (
     TraceKind,
     create as create_models,
 )
-from ..pipeline.pysa_taint_parser import Parser
-from ..ui.interactive import (
+from ...pipeline.pysa_taint_parser import Parser
+from ...tests.fake_object_generator import FakeObjectGenerator
+from ..interactive import (
     Interactive,
     IssueQueryResult,
     TraceFrameQueryResult,
     TraceTuple,
 )
-from .fake_object_generator import FakeObjectGenerator
 
 
 class InteractiveTest(TestCase):

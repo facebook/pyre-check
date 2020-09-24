@@ -5,8 +5,8 @@
 
 from unittest import TestCase
 
-from ..pipeline import Pipeline
-from ..pipeline.warning_code_filter import WarningCodeFilter
+from .. import Pipeline
+from ..warning_code_filter import WarningCodeFilter
 
 
 class TestWarningCodeFilter(TestCase):
