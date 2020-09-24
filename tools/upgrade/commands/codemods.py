@@ -4,12 +4,13 @@
 # LICENSE file in the root directory of this source tree.
 
 import argparse
+import functools
 import logging
 import pathlib
 import re
 from logging import Logger
 from pathlib import Path
-from typing import Sequence
+from typing import List, Sequence
 
 import libcst
 from libcst.codemod import CodemodContext
@@ -23,7 +24,7 @@ from ..commands.command import (
 )
 from ..configuration import Configuration
 from ..errors import Errors, UserError
-from ..filesystem import path_exists
+from ..filesystem import find_files, path_exists
 from ..repository import Repository
 
 
@@ -193,7 +194,7 @@ class SupportSqlalchemy(ProjectErrorSuppressingCommand):
         command_arguments: CommandArguments,
         *,
         local_root: Path,
-        path: Path,
+        paths: List[Path],
         repository: Repository
     ) -> None:
         super().__init__(
@@ -206,7 +207,7 @@ class SupportSqlalchemy(ProjectErrorSuppressingCommand):
             submit=False,
         )
         self._local_root = local_root
-        self._path = path
+        self._paths = paths
 
     @staticmethod
     def from_arguments(
@@ -216,7 +217,7 @@ class SupportSqlalchemy(ProjectErrorSuppressingCommand):
         return SupportSqlalchemy(
             command_arguments=command_arguments,
             local_root=arguments.local_root,
-            path=arguments.path,
+            paths=arguments.paths,
             repository=repository,
         )
 
@@ -232,8 +233,21 @@ class SupportSqlalchemy(ProjectErrorSuppressingCommand):
             required=True,
         )
         parser.add_argument(
-            "path", help="Path to file using sqlalchemy", type=path_exists
+            "paths", help="Paths using sqlalchemy", type=path_exists, nargs="*"
         )
+
+    @property
+    @functools.lru_cache(1)
+    def paths(self) -> List[Path]:
+        if len(self._paths) > 0:
+            return self._paths
+
+        return [
+            Path(filename)
+            for filename in find_files(
+                directory=self._local_root, name="*.py", grep_pattern="declarative_base"
+            )
+        ]
 
     def _annotate_sqlalchemy_files(self, configuration: Configuration) -> None:
         pyre_output = configuration.run_pyre(
@@ -244,7 +258,7 @@ class SupportSqlalchemy(ProjectErrorSuppressingCommand):
                 "--noninteractive",
                 "infer",
                 "--in-place",
-                str(self._path),
+                *[str(path) for path in self.paths],
             ],
             description="Running `pyre infer`",
             should_clean=True,
@@ -259,13 +273,19 @@ class SupportSqlalchemy(ProjectErrorSuppressingCommand):
         LOG.info("Importing necessary annotations...")
         context = CodemodContext()
         AddImportsVisitor.add_needed_import(context, "__future__", "annotations")
-        source = libcst.parse_module(self._path.read_text())
-        modified_tree = AddImportsVisitor(context).transform_module(source)
-        self._path.write_text(modified_tree.code)
+        for path in self.paths:
+            source = libcst.parse_module(path.read_text())
+            modified_tree = AddImportsVisitor(context).transform_module(source)
+            path.write_text(modified_tree.code)
 
     def run(self) -> None:
         local_configuration_path = self._local_root / ".pyre_configuration.local"
         local_configuration = Configuration(local_configuration_path)
+
+        LOG.info(
+            "Annotating the following sqlalchemy files: `%s`",
+            [str(path) for path in self.paths],
+        )
         self._annotate_sqlalchemy_files(local_configuration)
         self._import_annotations_from_future()
 

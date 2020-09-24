@@ -9,7 +9,7 @@ import re
 import subprocess
 from enum import Enum
 from pathlib import Path
-from typing import Dict, List, NamedTuple
+from typing import Dict, List, NamedTuple, Optional
 
 from ...client.filesystem import get_filesystem
 from . import ast
@@ -159,10 +159,19 @@ def remove_non_pyre_ignores(subdirectory: Path) -> None:
         subprocess.check_output(remove_type_ignore_command)
 
 
-def find_files(directory: Path, name: str) -> List[str]:
+def find_files(
+    directory: Path, name: str, grep_pattern: Optional[str] = None
+) -> List[str]:
+    grep_arguments = (
+        ["-exec", "grep", "--files-with-matches", grep_pattern, "{}", "+"]
+        if grep_pattern is not None
+        else []
+    )
+
     output = (
         subprocess.check_output(
-            ["find", str(directory), "-name", name], stderr=subprocess.DEVNULL
+            ["find", str(directory), "-name", name, *grep_arguments],
+            stderr=subprocess.DEVNULL,
         )
         .decode("utf-8")
         .strip()
