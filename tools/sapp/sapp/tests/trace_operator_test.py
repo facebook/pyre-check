@@ -18,7 +18,7 @@ from ..models import (
     TraceFrameLeafAssoc,
     create as create_models,
 )
-from ..trace_operator import TraceOperator
+from ..ui.trace_operator import TraceOperator
 from .fake_object_generator import FakeObjectGenerator
 
 

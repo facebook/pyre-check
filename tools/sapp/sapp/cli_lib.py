@@ -19,14 +19,14 @@ from .context import Context, pass_context
 from .db import DB
 from .extensions import prompt_extension
 from .filesystem import find_root
-from .interactive import Interactive
 from .models import PrimaryKeyGenerator
 from .pipeline import Pipeline
 from .pipeline.create_database import CreateDatabase
 from .pipeline.database_saver import DatabaseSaver
 from .pipeline.model_generator import ModelGenerator
 from .pipeline.trim_trace_graph import TrimTraceGraph
-from .server import start_server
+from .ui.interactive import Interactive
+from .ui.server import start_server
 
 
 MARKER_DIRECTORIES = [".pyre", ".hg", ".git", ".svn"]

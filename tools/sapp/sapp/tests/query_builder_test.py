@@ -15,7 +15,7 @@ from ..models import (
     RunStatus,
     create as create_models,
 )
-from ..query_builder import IssueQueryBuilder
+from ..ui.query_builder import IssueQueryBuilder
 from .fake_object_generator import FakeObjectGenerator
 
 

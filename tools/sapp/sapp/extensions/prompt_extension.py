@@ -15,7 +15,7 @@ from IPython.terminal.prompts import Prompts, Token
 from prompt_toolkit import Application as CommandLineInterface
 from pygments.token import _TokenType
 
-from ..interactive import Interactive
+from ..ui.interactive import Interactive
 
 
 class CustomPrompt(Prompts, Magics):

@@ -13,8 +13,7 @@ from graphql.execution.base import ResolveInfo
 from sqlalchemy.orm import Session, aliased
 from sqlalchemy.sql import func
 
-from .interactive import IssueQueryResult, IssueQueryResultType
-from .models import (
+from ..models import (
     DBID,
     Issue,
     IssueInstance,
@@ -24,6 +23,7 @@ from .models import (
     SharedTextKind,
     TraceKind,
 )
+from .interactive import IssueQueryResult, IssueQueryResultType
 from .query_builder import IssueQueryBuilder
 from .trace_operator import (
     TraceFrameQueryResult,

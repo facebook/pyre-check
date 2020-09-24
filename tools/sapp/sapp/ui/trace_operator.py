@@ -8,7 +8,7 @@ from typing import Dict, Iterable, List, NamedTuple, Optional, Set, Tuple, Union
 import graphene
 from sqlalchemy.orm import Session, aliased
 
-from .models import (
+from ..models import (
     DBID,
     IssueInstanceTraceFrameAssoc,
     SharedText,

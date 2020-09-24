@@ -16,12 +16,6 @@ from sqlalchemy.orm import Session
 
 from ..db import DB, DBType
 from ..decorators import UserError
-from ..interactive import (
-    Interactive,
-    IssueQueryResult,
-    TraceFrameQueryResult,
-    TraceTuple,
-)
 from ..models import (
     DBID,
     Issue,
@@ -39,6 +33,12 @@ from ..models import (
     create as create_models,
 )
 from ..pipeline.pysa_taint_parser import Parser
+from ..ui.interactive import (
+    Interactive,
+    IssueQueryResult,
+    TraceFrameQueryResult,
+    TraceTuple,
+)
 from .fake_object_generator import FakeObjectGenerator
 
 

@@ -16,8 +16,8 @@ from flask_graphql import GraphQLView
 from pyre_extensions import none_throws
 from sqlalchemy.orm import Session, scoped_session, sessionmaker
 
-from .db import DB
-from .models import Base
+from ..db import DB
+from ..models import Base
 from .schema import schema
 
 

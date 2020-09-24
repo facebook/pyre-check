@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session, aliased
 from sqlalchemy.orm.query import Query
 from sqlalchemy.sql.expression import or_
 
-from .models import (
+from ..models import (
     DBID,
     Issue,
     IssueInstance,
