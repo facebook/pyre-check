@@ -318,16 +318,3 @@ class Query:
         else:
             leaf_dict = features_dict
         return {leaf_dict[id] for id in message_ids if id in leaf_dict}
-
-    @staticmethod
-    def create_trace_tuples(
-        navigation: Iterable[Tuple[TraceFrameQueryResult, int]]
-    ) -> List[TraceTuple]:
-        return [
-            TraceTuple(
-                trace_frame=trace_frame,
-                branches=branches,
-                missing=trace_frame.caller == "",
-            )
-            for trace_frame, branches in navigation
-        ]

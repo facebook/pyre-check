@@ -832,8 +832,7 @@ details              show additional information about the current trace frame
         self._update_trace_tuples_new_parent(parent_trace_frame)
         self.trace()
 
-    # pyre-fixme[3]: Return type must be annotated.
-    def _generate_trace_from_issue(self):
+    def _generate_trace_from_issue(self) -> None:
         with self.db.make_session() as session:
             issue = self._get_current_issue(session)
             postcondition_initial_frames = trace.Query(session).initial_trace_frames(
@@ -863,7 +862,7 @@ details              show additional information about the current trace frame
             )
 
         self.trace_tuples = (
-            trace.Query.create_trace_tuples(reversed(postcondition_navigation))
+            self._create_trace_tuples(reversed(postcondition_navigation))
             + [
                 TraceTuple(
                     trace_frame=TraceFrameQueryResult(
@@ -877,7 +876,7 @@ details              show additional information about the current trace frame
                     )
                 )
             ]
-            + trace.Query.create_trace_tuples(precondition_navigation)
+            + self._create_trace_tuples(precondition_navigation)
         )
         # pyre-fixme[16]: `Interactive` has no attribute `trace_tuples_id`.
         self.trace_tuples_id = self.current_issue_instance_id
