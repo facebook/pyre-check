@@ -11,9 +11,18 @@ from logging import Logger
 from pathlib import Path
 from typing import Sequence
 
-from ..commands.command import Command
+import libcst
+from libcst.codemod import CodemodContext
+from libcst.codemod.visitors import AddImportsVisitor
+
+from ..commands.command import (
+    Command,
+    CommandArguments,
+    ErrorSource,
+    ProjectErrorSuppressingCommand,
+)
 from ..configuration import Configuration
-from ..errors import Errors
+from ..errors import Errors, UserError
 from ..filesystem import path_exists
 from ..repository import Repository
 
@@ -176,3 +185,91 @@ class EnableSourceDatabaseBuckBuilder(Command):
             configuration = Configuration(local_root / ".pyre_configuration.local")
             configuration.enable_source_database_buck_builder()
             configuration.write()
+
+
+class SupportSqlalchemy(ProjectErrorSuppressingCommand):
+    def __init__(
+        self,
+        command_arguments: CommandArguments,
+        *,
+        local_root: Path,
+        path: Path,
+        repository: Repository
+    ) -> None:
+        super().__init__(
+            command_arguments,
+            repository=repository,
+            only_fix_error_code=None,
+            upgrade_version=False,
+            error_source=ErrorSource.GENERATE.value,
+            no_commit=True,
+            submit=False,
+        )
+        self._local_root = local_root
+        self._path = path
+
+    @staticmethod
+    def from_arguments(
+        arguments: argparse.Namespace, repository: Repository
+    ) -> "SupportSqlalchemy":
+        command_arguments = CommandArguments.from_arguments(arguments)
+        return SupportSqlalchemy(
+            command_arguments=command_arguments,
+            local_root=arguments.local_root,
+            path=arguments.path,
+            repository=repository,
+        )
+
+    @classmethod
+    def add_arguments(cls, parser: argparse.ArgumentParser) -> None:
+        super(SupportSqlalchemy, cls).add_arguments(parser)
+        parser.set_defaults(command=cls.from_arguments)
+        parser.add_argument(
+            "-l",
+            "--local-root",
+            help="Path to directory with local configuration",
+            type=path_exists,
+            required=True,
+        )
+        parser.add_argument(
+            "path", help="Path to file using sqlalchemy", type=path_exists
+        )
+
+    def _annotate_sqlalchemy_files(self, configuration: Configuration) -> None:
+        pyre_output = configuration.run_pyre(
+            arguments=[
+                "--strict",
+                "-l",
+                str(self._local_root),
+                "--noninteractive",
+                "infer",
+                "--in-place",
+                str(self._path),
+            ],
+            description="Running `pyre infer`",
+            should_clean=True,
+            stderr_flag=None,
+        )
+        if pyre_output is None:
+            raise UserError("Couldn't annotate sqlalchemy files.")
+
+    def _import_annotations_from_future(self) -> None:
+        """We need this because the original sqlalchemy types aren't generic
+        and will fail at runtime."""
+        LOG.info("Importing necessary annotations...")
+        context = CodemodContext()
+        AddImportsVisitor.add_needed_import(context, "__future__", "annotations")
+        source = libcst.parse_module(self._path.read_text())
+        modified_tree = AddImportsVisitor(context).transform_module(source)
+        self._path.write_text(modified_tree.code)
+
+    def run(self) -> None:
+        local_configuration_path = self._local_root / ".pyre_configuration.local"
+        local_configuration = Configuration(local_configuration_path)
+        self._annotate_sqlalchemy_files(local_configuration)
+        self._import_annotations_from_future()
+
+        project_configuration = Configuration.find_project_configuration()
+        self._suppress_errors_in_project(
+            local_configuration, project_configuration.parent
+        )

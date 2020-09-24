@@ -16,6 +16,7 @@ from .commands.codemods import (
     EnableSourceDatabaseBuckBuilder,
     MissingGlobalAnnotations,
     MissingOverrideReturnAnnotations,
+    SupportSqlalchemy,
 )
 from .commands.consolidate_nested_configurations import ConsolidateNestedConfigurations
 from .commands.expand_target_coverage import ExpandTargetCoverage
@@ -94,6 +95,9 @@ def run(repository: Repository) -> None:
         "enable-source-database-buck-builder"
     )
     EnableSourceDatabaseBuckBuilder.add_arguments(enable_source_database_buck_builder)
+
+    support_sqlalchemy = commands.add_parser("support-sqlalchemy")
+    SupportSqlalchemy.add_arguments(support_sqlalchemy)
 
     # Initialize default values.
     arguments = parser.parse_args()
