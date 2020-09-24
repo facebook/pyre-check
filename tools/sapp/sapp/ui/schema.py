@@ -75,8 +75,7 @@ class Query(graphene.ObjectType):
         run_id = Query.latest_run_id(session)
 
         builder = (
-            issues.QueryBuilder(run_id)
-            .with_session(session)
+            issues.QueryBuilder(session, run_id)
             .where_codes_is_any_of(codes)
             .where_callables_is_any_of(callables)
             .where_file_names_is_any_of(file_names)
@@ -98,7 +97,7 @@ class Query(graphene.ObjectType):
         run_id = DBID(Query.latest_run_id(session))
 
         issue = (
-            issues.QueryBuilder(run_id)
+            issues.QueryBuilder(session, run_id)
             .get_session_query(session)
             .filter(IssueInstance.id == issue_id)
             .join(Issue, IssueInstance.issue_id == Issue.id)
@@ -107,7 +106,7 @@ class Query(graphene.ObjectType):
 
         leaf_kinds = Query.all_leaf_kinds(session)
 
-        builder = issues.QueryBuilder(run_id)
+        builder = issues.QueryBuilder(session, run_id)
         sources = builder.get_leaves_issue_instance(
             session, issue.id, SharedTextKind.SOURCE
         )

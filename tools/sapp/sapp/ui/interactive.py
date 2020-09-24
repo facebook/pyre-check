@@ -492,100 +492,105 @@ details              show additional information about the current trace frame
         """
         pager = self._resolve_pager(use_pager)
 
-        builder = QueryBuilder(self.current_run_id)
-
-        if codes is not None:
-            if not isinstance(codes, int) and not isinstance(codes, list):
-                raise UserError("'codes' should be int or list of int.")
-            if isinstance(codes, int):
-                codes = [codes]
-            builder = builder.where_codes_is_any_of(codes)
-
-        if callables is not None:
-            if not isinstance(callables, str) and not isinstance(callables, list):
-                raise UserError("'callables' should be str or list of str.")
-            if isinstance(callables, str):
-                callables = [callables]
-            builder = builder.where_callables_is_any_of(callables)
-
-        if filenames is not None:
-            if not isinstance(filenames, str) and not isinstance(filenames, list):
-                raise UserError("'filenames' should be str or list of str.")
-            if isinstance(filenames, str):
-                filenames = [filenames]
-            builder = builder.where_file_names_is_any_of(filenames)
-
-        if (exact_trace_length_to_sources is not None) and (
-            max_trace_length_to_sources is not None
-        ):
-            raise UserError(
-                (
-                    "'exact_trace_length_to_sources' and "
-                    "'max_trace_length_to_sources' can't be set together"
-                )
-            )
-
-        if (exact_trace_length_to_sinks is not None) and (
-            max_trace_length_to_sinks is not None
-        ):
-            raise UserError(
-                (
-                    "'exact_trace_length_to_sinks' and "
-                    "'max_trace_length_to_sinks' can't be set together"
-                )
-            )
-
-        if exact_trace_length_to_sources is not None:
-            if not isinstance(exact_trace_length_to_sources, int):
-                raise UserError("'exact_trace_length_to_sources' should be int.")
-            builder = builder.where_trace_length_to_sources(
-                exact_trace_length_to_sources, exact_trace_length_to_sources
-            )
-
-        if exact_trace_length_to_sinks is not None:
-            if not isinstance(exact_trace_length_to_sinks, int):
-                raise UserError("'exact_trace_length_to_sinks' should be int.")
-            builder = builder.where_trace_length_to_sinks(
-                exact_trace_length_to_sinks, exact_trace_length_to_sinks
-            )
-
-        if max_trace_length_to_sources is not None:
-            if not isinstance(max_trace_length_to_sources, int):
-                raise UserError("'max_trace_length_to_sources' should be int.")
-            builder = builder.where_trace_length_to_sources(
-                0, max_trace_length_to_sources
-            )
-
-        if max_trace_length_to_sinks is not None:
-            if not isinstance(max_trace_length_to_sinks, int):
-                raise UserError("'max_trace_length_to_sinks' should be int.")
-            builder = builder.where_trace_length_to_sinks(0, max_trace_length_to_sinks)
-
-        if all_features is not None:
-            if not isinstance(all_features, str) and not isinstance(all_features, list):
-                raise UserError("'all_features' should be str or list of str.")
-            if isinstance(all_features, str):
-                all_features = [all_features]
-            builder = builder.where_all_features(all_features)
-
-        if any_features is not None:
-            if not isinstance(any_features, str) and not isinstance(any_features, list):
-                raise UserError("'any_features' should be str or list of str.")
-            if isinstance(any_features, str):
-                any_features = [any_features]
-            builder = builder.where_any_features(any_features)
-
-        if exclude_features is not None:
-            if not isinstance(exclude_features, str) and not isinstance(
-                exclude_features, list
-            ):
-                raise UserError("'any_features' should be str or list of str.")
-            if isinstance(exclude_features, str):
-                exclude_features = [exclude_features]
-            builder = builder.where_exclude_features(exclude_features)
-
         with self.db.make_session() as session:
-            builder = builder.with_session(session)
+            builder = QueryBuilder(session, self.current_run_id)
+
+            if codes is not None:
+                if not isinstance(codes, int) and not isinstance(codes, list):
+                    raise UserError("'codes' should be int or list of int.")
+                if isinstance(codes, int):
+                    codes = [codes]
+                builder = builder.where_codes_is_any_of(codes)
+
+            if callables is not None:
+                if not isinstance(callables, str) and not isinstance(callables, list):
+                    raise UserError("'callables' should be str or list of str.")
+                if isinstance(callables, str):
+                    callables = [callables]
+                builder = builder.where_callables_is_any_of(callables)
+
+            if filenames is not None:
+                if not isinstance(filenames, str) and not isinstance(filenames, list):
+                    raise UserError("'filenames' should be str or list of str.")
+                if isinstance(filenames, str):
+                    filenames = [filenames]
+                builder = builder.where_file_names_is_any_of(filenames)
+
+            if (exact_trace_length_to_sources is not None) and (
+                max_trace_length_to_sources is not None
+            ):
+                raise UserError(
+                    (
+                        "'exact_trace_length_to_sources' and "
+                        "'max_trace_length_to_sources' can't be set together"
+                    )
+                )
+
+            if (exact_trace_length_to_sinks is not None) and (
+                max_trace_length_to_sinks is not None
+            ):
+                raise UserError(
+                    (
+                        "'exact_trace_length_to_sinks' and "
+                        "'max_trace_length_to_sinks' can't be set together"
+                    )
+                )
+
+            if exact_trace_length_to_sources is not None:
+                if not isinstance(exact_trace_length_to_sources, int):
+                    raise UserError("'exact_trace_length_to_sources' should be int.")
+                builder = builder.where_trace_length_to_sources(
+                    exact_trace_length_to_sources, exact_trace_length_to_sources
+                )
+
+            if exact_trace_length_to_sinks is not None:
+                if not isinstance(exact_trace_length_to_sinks, int):
+                    raise UserError("'exact_trace_length_to_sinks' should be int.")
+                builder = builder.where_trace_length_to_sinks(
+                    exact_trace_length_to_sinks, exact_trace_length_to_sinks
+                )
+
+            if max_trace_length_to_sources is not None:
+                if not isinstance(max_trace_length_to_sources, int):
+                    raise UserError("'max_trace_length_to_sources' should be int.")
+                builder = builder.where_trace_length_to_sources(
+                    0, max_trace_length_to_sources
+                )
+
+            if max_trace_length_to_sinks is not None:
+                if not isinstance(max_trace_length_to_sinks, int):
+                    raise UserError("'max_trace_length_to_sinks' should be int.")
+                builder = builder.where_trace_length_to_sinks(
+                    0, max_trace_length_to_sinks
+                )
+
+            if all_features is not None:
+                if not isinstance(all_features, str) and not isinstance(
+                    all_features, list
+                ):
+                    raise UserError("'all_features' should be str or list of str.")
+                if isinstance(all_features, str):
+                    all_features = [all_features]
+                builder = builder.where_all_features(all_features)
+
+            if any_features is not None:
+                if not isinstance(any_features, str) and not isinstance(
+                    any_features, list
+                ):
+                    raise UserError("'any_features' should be str or list of str.")
+                if isinstance(any_features, str):
+                    any_features = [any_features]
+                builder = builder.where_any_features(any_features)
+
+            if exclude_features is not None:
+                if not isinstance(exclude_features, str) and not isinstance(
+                    exclude_features, list
+                ):
+                    raise UserError("'any_features' should be str or list of str.")
+                if isinstance(exclude_features, str):
+                    exclude_features = [exclude_features]
+                builder = builder.where_exclude_features(exclude_features)
+
             issues = builder.get()
             sources_list = builder.sources(issues)
             sinks_list = builder.sinks(issues)

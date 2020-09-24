@@ -40,8 +40,8 @@ class Filter(Enum):
 
 
 class QueryBuilder:
-    def __init__(self, current_run_id: Union[DBID, int]):
-        self._session = None
+    def __init__(self, session: Session, current_run_id: Union[DBID, int]):
+        self._session: Session = session
         self.current_run_id = current_run_id
         self.issue_filters: Dict[
             Filter, Set[Tuple[Union[int, str, Tuple[int, int, ...]], ...]]
@@ -54,12 +54,7 @@ class QueryBuilder:
             raise Exception("No current session found for query!")
         return self._session
 
-    def with_session(self, session):
-        self._session = session
-        return self
-
     def get(self) -> List:
-        # pyre-fixme[6]: Expected `Session` for 1st param but got `None`.
         query = self.get_session_query(self._session)
         for filter_type, filter_conditions in self.issue_filters.items():
             if filter_type == Filter.codes:
@@ -111,10 +106,7 @@ class QueryBuilder:
 
             features_list = [
                 self.get_leaves_issue_instance(
-                    # pyre-fixme[6]: Expected `Session` for 1st param but got `None`.
-                    self._session,
-                    int(issue.id),
-                    SharedTextKind.FEATURE,
+                    self._session, int(issue.id), SharedTextKind.FEATURE
                 )
                 for issue in issues
             ]
@@ -168,10 +160,7 @@ class QueryBuilder:
     def sources(self, issues) -> List[Set[str]]:
         return [
             self.get_leaves_issue_instance(
-                # pyre-fixme[6]: Expected `Session` for 1st param but got `None`.
-                self._session,
-                int(issue.id),
-                SharedTextKind.SINK,
+                self._session, int(issue.id), SharedTextKind.SINK
             )
             for issue in issues
         ]
@@ -179,10 +168,7 @@ class QueryBuilder:
     def sinks(self, issues) -> List[Set[str]]:
         return [
             self.get_leaves_issue_instance(
-                # pyre-fixme[6]: Expected `Session` for 1st param but got `None`.
-                self._session,
-                int(issue.id),
-                SharedTextKind.SOURCE,
+                self._session, int(issue.id), SharedTextKind.SOURCE
             )
             for issue in issues
         ]
@@ -190,10 +176,7 @@ class QueryBuilder:
     def features(self, issues) -> List[Set[str]]:
         return [
             self.get_leaves_issue_instance(
-                # pyre-fixme[6]: Expected `Session` for 1st param but got `None`.
-                self._session,
-                int(issue.id),
-                SharedTextKind.FEATURE,
+                self._session, int(issue.id), SharedTextKind.FEATURE
             )
             for issue in issues
         ]
