@@ -786,7 +786,7 @@ details              show additional information about the current trace frame
 
         # Don't allow calling from the leaf node in a trace. Instead, call
         # parents() from the placeholder of the caller of the leaf node.
-        if trace.Query.is_leaf(current_trace_tuple.trace_frame):
+        if current_trace_tuple.trace_frame.is_leaf():
             raise UserError("Try running from a non-leaf node.")
 
         # Backwards trace checks against the given frame's _caller_.
@@ -908,7 +908,7 @@ details              show additional information about the current trace frame
                 self.current_run_id,
                 self.sources,
                 self.sinks,
-                [trace_frame],
+                [TraceFrameQueryResult.from_record(trace_frame)],
             )
 
         first_trace_frame = navigation[0][0]

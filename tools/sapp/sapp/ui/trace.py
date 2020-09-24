@@ -3,7 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from typing import Dict, Iterable, List, NamedTuple, Optional, Set, Tuple, Union
+from typing import Any, Dict, List, NamedTuple, Optional, Set, Tuple, Union
 
 import graphene
 from sqlalchemy.orm import Session, aliased
@@ -56,6 +56,9 @@ class TraceFrameQueryResultType(graphene.ObjectType):
         return self.id
 
 
+LEAF_NAMES: Set[str] = {"source", "sink", "leaf"}
+
+
 class TraceFrameQueryResult(NamedTuple):
     id: DBID
     caller: str
@@ -69,6 +72,27 @@ class TraceFrameQueryResult(NamedTuple):
     filename: Optional[str] = None
     trace_length: Optional[int] = None
     file_content: Optional[str] = None
+
+    @staticmethod
+    # pyre-fixme[2]: Parameter annotation cannot be `Any`.
+    def from_record(record: Any) -> "TraceFrameQueryResult":
+        return TraceFrameQueryResult(
+            id=record.id,
+            caller=record.caller,
+            caller_port=record.caller_port,
+            callee=record.callee,
+            callee_port=record.callee_port,
+            caller_id=record.caller_id,
+            callee_id=record.callee_id,
+            callee_location=record.callee_location,
+            kind=record.kind,
+            filename=record.filename,
+            trace_length=getattr(record, "trace_length", None),
+            file_content=getattr(record, "file_content", None),
+        )
+
+    def is_leaf(self) -> bool:
+        return self.callee_port in LEAF_NAMES
 
 
 class TraceTuple(NamedTuple):
@@ -86,8 +110,6 @@ class TraceTuple(NamedTuple):
 
 
 class Query:
-    LEAF_NAMES = {"source", "sink", "leaf"}
-
     def __init__(self, session: Session) -> None:
         self._session: Session = session
 
@@ -95,19 +117,7 @@ class Query:
         self, issue_id: int, kind: TraceKind
     ) -> List[TraceFrameQueryResult]:
         return [
-            TraceFrameQueryResult(
-                id=result.id,
-                caller=result.caller,
-                caller_port=result.caller_port,
-                callee=result.callee,
-                callee_port=result.callee_port,
-                caller_id=result.caller_id,
-                callee_id=result.callee_id,
-                callee_location=result.callee_location,
-                kind=result.kind,
-                filename=result.filename,
-                trace_length=result.trace_length,
-            )
+            TraceFrameQueryResult.from_record(result)
             for result in self._session.query(
                 TraceFrame.id,
                 TraceFrame.caller_id,
@@ -151,7 +161,7 @@ class Query:
             return []
         trace_frames = [(initial_trace_frames[index], len(initial_trace_frames))]
         visited_ids: Set[int] = {int(initial_trace_frames[index].id)}
-        while not Query.is_leaf(trace_frames[-1][0]):
+        while not trace_frames[-1][0].is_leaf():
             trace_frame, branches = trace_frames[-1]
             if trace_frame.kind == TraceKind.POSTCONDITION:
                 leaf_kind = sources
@@ -185,10 +195,6 @@ class Query:
             visited_ids.add(int(next_nodes[0].id))
             trace_frames.append((next_nodes[0], len(next_nodes)))
         return trace_frames
-
-    @staticmethod
-    def is_leaf(trace_frame: TraceFrameQueryResult) -> bool:
-        return trace_frame.callee_port in Query.LEAF_NAMES
 
     def next_trace_frames(
         self,
@@ -257,21 +263,7 @@ class Query:
             ):
                 filtered_results.append(frame)
 
-        return [
-            TraceFrameQueryResult(
-                id=frame.id,
-                caller=frame.caller,
-                caller_port=frame.caller_port,
-                callee=frame.callee,
-                callee_port=frame.callee_port,
-                caller_id=frame.caller_id,
-                callee_location=frame.callee_location,
-                kind=frame.kind,
-                filename=frame.filename,
-                trace_length=frame.trace_length,
-            )
-            for frame in filtered_results
-        ]
+        return [TraceFrameQueryResult.from_record(frame) for frame in filtered_results]
 
     def get_leaves_trace_frame(
         self,
