@@ -80,9 +80,11 @@ class TraceTuple(NamedTuple):
 class Query:
     LEAF_NAMES = {"source", "sink", "leaf"}
 
-    @staticmethod
+    def __init__(self, session: Session) -> None:
+        self._session: Session = session
+
     def initial_trace_frames(
-        session: Session, issue_id: int, kind: TraceKind
+        self, issue_id: int, kind: TraceKind
     ) -> List[TraceFrameQueryResult]:
         return [
             TraceFrameQueryResult(
@@ -98,7 +100,7 @@ class Query:
                 filename=result.filename,
                 trace_length=result.trace_length,
             )
-            for result in session.query(
+            for result in self._session.query(
                 TraceFrame.id,
                 TraceFrame.caller_id,
                 CallerText.contents.label("caller"),
@@ -128,10 +130,9 @@ class Query:
             .all()
         ]
 
-    @staticmethod
     def navigate_trace_frames(
+        self,
         leaf_dicts: Tuple[Dict[int, str], Dict[int, str], Dict[int, str]],
-        session: Session,
         current_run_id: DBID,
         sources: Set[str],
         sinks: Set[str],
@@ -153,8 +154,8 @@ class Query:
                     trace_frame.kind == TraceKind.POSTCONDITION
                     or trace_frame.kind == TraceKind.PRECONDITION
                 )
-            next_nodes = Query.next_trace_frames(
-                leaf_dicts, session, current_run_id, leaf_kind, trace_frame, visited_ids
+            next_nodes = self.next_trace_frames(
+                leaf_dicts, current_run_id, leaf_kind, trace_frame, visited_ids
             )
 
             if len(next_nodes) == 0:
@@ -181,10 +182,9 @@ class Query:
     def is_leaf(trace_frame: TraceFrameQueryResult) -> bool:
         return trace_frame.callee_port in Query.LEAF_NAMES
 
-    @staticmethod
     def next_trace_frames(
+        self,
         leaf_dicts: Tuple[Dict[int, str], Dict[int, str], Dict[int, str]],
-        session: Session,
         current_run_id: DBID,
         leaf_kind: Set[str],
         trace_frame: TraceFrameQueryResult,
@@ -197,7 +197,7 @@ class Query:
         since we are filtering on the parameter's callee.
         """
         query = (
-            session.query(
+            self._session.query(
                 TraceFrame.id,
                 TraceFrame.caller_id,
                 CallerText.contents.label("caller"),
@@ -240,9 +240,8 @@ class Query:
         for frame in results:
             if int(frame.id) not in visited_ids and leaf_kind.intersection(
                 set(
-                    Query.get_leaves_trace_frame(
+                    self.get_leaves_trace_frame(
                         leaf_dicts,
-                        session,
                         int(frame.id),
                         Query.trace_kind_to_shared_text_kind(frame.kind),
                     )
@@ -266,16 +265,15 @@ class Query:
             for frame in filtered_results
         ]
 
-    @staticmethod
     def get_leaves_trace_frame(
+        self,
         leaf_dicts: Tuple[Dict[int, str], Dict[int, str], Dict[int, str]],
-        session: Session,
         trace_frame_id: Union[int, DBID],
         kind: SharedTextKind,
     ) -> Set[str]:
         message_ids = [
             int(id)
-            for id, in session.query(SharedText.id)
+            for id, in self._session.query(SharedText.id)
             .distinct(SharedText.id)
             .join(TraceFrameLeafAssoc, SharedText.id == TraceFrameLeafAssoc.leaf_id)
             .filter(TraceFrameLeafAssoc.trace_frame_id == trace_frame_id)

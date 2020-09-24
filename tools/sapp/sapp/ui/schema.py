@@ -114,23 +114,21 @@ class Query(graphene.ObjectType):
             session, issue.id, SharedTextKind.SINK
         )
 
-        postcondition_navigation = trace.Query.navigate_trace_frames(
+        postcondition_navigation = trace.Query(session).navigate_trace_frames(
             leaf_kinds,
-            session,
             run_id,
             sources,
             sinks,
-            trace.Query.initial_trace_frames(
-                session, issue.id, TraceKind.POSTCONDITION
+            trace.Query(session).initial_trace_frames(
+                issue.id, TraceKind.POSTCONDITION
             ),
         )
-        precondition_navigation = trace.Query.navigate_trace_frames(
+        precondition_navigation = trace.Query(session).navigate_trace_frames(
             leaf_kinds,
-            session,
             run_id,
             sources,
             sinks,
-            trace.Query.initial_trace_frames(session, issue.id, TraceKind.PRECONDITION),
+            trace.Query(session).initial_trace_frames(issue.id, TraceKind.PRECONDITION),
         )
 
         trace_frames = (

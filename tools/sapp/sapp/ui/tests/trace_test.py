@@ -82,8 +82,8 @@ class QueryTest(TestCase):
                 .scalar()
             )
 
-            next_frames = Query.next_trace_frames(
-                leaf_dicts, session, latest_run_id, {"sink1"}, frames[0], set()
+            next_frames = Query(session).next_trace_frames(
+                leaf_dicts, latest_run_id, {"sink1"}, frames[0], set()
             )
             self.assertEqual(len(next_frames), 1)
             self.assertEqual(int(next_frames[0].id), int(frames[1].id))
@@ -135,14 +135,8 @@ class QueryTest(TestCase):
                 self._all_leaves_by_kind(session, SharedTextKind.FEATURE),
             )
 
-            next_frames = Query.next_trace_frames(
-                leaf_dicts,
-                session,
-                latest_run_id,
-                {"sink1"},
-                frames[1],
-                set(),
-                backwards=True,
+            next_frames = Query(session).next_trace_frames(
+                leaf_dicts, latest_run_id, {"sink1"}, frames[1], set(), backwards=True
             )
 
             self.assertEqual(len(next_frames), 1)
@@ -186,8 +180,8 @@ class QueryTest(TestCase):
                 .scalar()
             )
 
-            next_frames = Query.next_trace_frames(
-                leaf_dicts, session, latest_run_id, {"sink1"}, frames[2], set()
+            next_frames = Query(session).next_trace_frames(
+                leaf_dicts, latest_run_id, {"sink1"}, frames[2], set()
             )
             self.assertEqual(len(next_frames), 1)
             self.assertEqual(int(next_frames[0].id), int(frames[3].id))
@@ -218,8 +212,8 @@ class QueryTest(TestCase):
                 .scalar()
             )
 
-            result = Query.navigate_trace_frames(
-                leaf_dicts, session, latest_run_id, set(), {"sink1"}, [frames[0]]
+            result = Query(session).navigate_trace_frames(
+                leaf_dicts, latest_run_id, set(), {"sink1"}, [frames[0]]
             )
             self.assertEqual(len(result), 2)
             self.assertEqual(int(result[0][0].id), int(frames[0].id))
@@ -292,8 +286,8 @@ class QueryTest(TestCase):
                 .scalar()
             )
 
-            result = Query.navigate_trace_frames(
-                leaf_dicts, session, latest_run_id, set(), {"sink"}, [frames[0]]
+            result = Query(session).navigate_trace_frames(
+                leaf_dicts, latest_run_id, set(), {"sink"}, [frames[0]]
             )
             self.assertEqual(len(frames), 4)
             # TODO(T71492980): unbreak this test or migrate to step-wise trace exploration.
