@@ -377,14 +377,6 @@ module State (Context : Context) = struct
     in
     let errors =
       match annotation with
-      | Type.Top ->
-          emit_error
-            ~errors:[]
-            ~location
-            ~kind:
-              (Error.InvalidType
-                 (InvalidType
-                    { annotation = Type.Primitive (Expression.show expression); expected = "" }))
       | Type.Callable { implementation = { annotation = Type.Top; _ }; _ } ->
           emit_error
             ~errors:[]
@@ -396,6 +388,14 @@ module State (Context : Context) = struct
                       annotation = Type.Primitive (Expression.show expression);
                       expected = "`Callable[[<parameters>], <return type>]`";
                     }))
+      | _ when Type.contains_unknown annotation ->
+          emit_error
+            ~errors:[]
+            ~location
+            ~kind:
+              (Error.InvalidType
+                 (InvalidType
+                    { annotation = Type.Primitive (Expression.show expression); expected = "" }))
       | _ -> []
     in
     let errors, annotation =
