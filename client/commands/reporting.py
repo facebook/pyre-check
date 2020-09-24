@@ -68,43 +68,46 @@ class Reporting(Command):
             LOG.debug("Invalid JSON output: %s", json_output)
         return error_list
 
-    def _get_errors(
-        self, result: Result, bypass_filtering: bool = False
-    ) -> Sequence[Error]:
+    def _parse_raw_errors(self, result: Result) -> Sequence[Error]:
         result.check()
         errors: List[Error] = []
         results: List[Dict[str, Any]] = self._load_errors_from_json(result.output)
-
         for error in results:
-            analysis_root = os.path.realpath(self._analysis_directory.get_root())
-            path = os.path.realpath(os.path.join(analysis_root, error["path"]))
+            errors.append(
+                Error(error, ignore_error=False, external_to_global_root=False)
+            )
+        return errors
+
+    def _relativize_errors(
+        self, relative_root: str, errors: Sequence[Error]
+    ) -> Sequence[Error]:
+        for error in errors:
+            path = os.path.realpath(os.path.join(relative_root, error.path))
 
             # Relativize path to user's cwd.
             relative_path = self._relative_path(path)
-            error["path"] = relative_path
-            ignore_error = False
-            external_to_global_root = True
-            if path.startswith(self._configuration.project_root):
-                external_to_global_root = False
-            if not os.path.exists(path):
-                # Nonexistent paths can be created when search path stubs are renamed.
-                external_to_global_root = True
-            errors.append(Error(error, ignore_error, external_to_global_root))
+            error.path = relative_path
 
-        if bypass_filtering:
-            return errors
-        else:
-            filtered_errors = [
-                error
-                for error in errors
-                if (
-                    not error.is_ignored()
-                    and (not (error.is_external_to_global_root()))
-                )
-            ]
-            sorted_errors = sorted(
-                filtered_errors,
-                key=lambda error: (error.path, error.line, error.column),
-            )
+            # Nonexistent paths can be created when search path stubs are renamed.
+            if not path.startswith(
+                self._configuration.project_root
+            ) or not os.path.exists(path):
+                error.external_to_global_root = True
+        return errors
 
-            return sorted_errors
+    def _filter_errors(self, errors: Sequence[Error]) -> Sequence[Error]:
+        filtered_errors = [
+            error
+            for error in errors
+            if (not error.is_ignored() and (not (error.is_external_to_global_root())))
+        ]
+        sorted_errors = sorted(
+            filtered_errors, key=lambda error: (error.path, error.line, error.column)
+        )
+        return sorted_errors
+
+    def _get_errors(self, result: Result) -> Sequence[Error]:
+        analysis_root = os.path.realpath(self._analysis_directory.get_root())
+        errors = self._relativize_errors(analysis_root, self._parse_raw_errors(result))
+
+        return self._filter_errors(errors)

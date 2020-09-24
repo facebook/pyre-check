@@ -552,9 +552,11 @@ class Infer(Reporting):
             return self
         if self._errors_from_stdin:
             result = self._get_errors_from_stdin()
+            from_stdin = True
         else:
             result = self._call_client(command=Infer.NAME)
-        errors = self._get_errors(result, bypass_filtering=True)
+            from_stdin = False
+        errors = self._get_errors(result, bypass_filtering=True, from_stdin=from_stdin)
         if self._print_errors:
             self._print(errors)
         else:
@@ -593,6 +595,18 @@ class Infer(Reporting):
         if len(self._ignore_infer) > 0:
             flags.extend(["-ignore-infer", ";".join(self._ignore_infer)])
         return flags
+
+    def _get_errors(
+        self, result: Result, bypass_filtering: bool = False, from_stdin: bool = False
+    ) -> Sequence[Error]:
+        analysis_root = os.path.realpath(self._analysis_directory.get_root())
+        relative_root = self._original_directory if from_stdin else analysis_root
+        errors = self._relativize_errors(relative_root, self._parse_raw_errors(result))
+
+        if bypass_filtering:
+            return errors
+        else:
+            return self._filter_errors(errors)
 
     def _get_errors_from_stdin(self) -> Result:
         input = sys.stdin.read()
