@@ -635,12 +635,12 @@ let test_infer context =
 
   assert_infer ~fields:["inference"] {|
       foo = None
-    |} [];
+    |} [{|{}|}];
 
   assert_infer ~fields:["inference"] {|
     class A:
       foo = None
-  |} [];
+  |} [{|{}|}];
 
   assert_infer
     ~fields:["inference"]

@@ -82,8 +82,8 @@ let test_check_attributes context =
           self.a = 1
     |}
     [
-      "Incompatible attribute type [8]: Attribute `a` declared in class `Foo` has type `None` but \
-       is used as type `int`.";
+      "Missing attribute annotation [4]: Attribute `a` of class `Foo` has type \
+       `typing.Optional[int]` but no type is specified.";
     ];
   assert_type_errors
     ~show_error_traces:true
@@ -624,9 +624,11 @@ let test_check_attributes context =
         reveal_type(f.l)
     |}
     [
+      "Missing attribute annotation [4]: Attribute `n` of class `Foo` has type `None` but no type \
+       is specified.";
       "Missing attribute annotation [4]: Attribute `l` of class `Foo` has type `typing.Type[list]` \
        but no type is specified.";
-      "Revealed type [-1]: Revealed type for `f.n` is `None`.";
+      "Revealed type [-1]: Revealed type for `f.n` is `unknown`.";
       "Revealed type [-1]: Revealed type for `f.l` is `unknown`.";
     ];
   ()
@@ -790,8 +792,8 @@ let test_attribute_strict context =
           self.a = 1
     |}
     [
-      "Incompatible attribute type [8]: Attribute `a` declared in class `Foo` has type `None` but \
-       is used as type `int`.";
+      "Missing attribute annotation [4]: Attribute `a` of class `Foo` has type \
+       `typing.Optional[int]` but no type is specified.";
     ];
   assert_strict_type_errors
     {|
