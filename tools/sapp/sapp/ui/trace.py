@@ -77,7 +77,7 @@ class TraceTuple(NamedTuple):
     placeholder: bool = False
 
 
-class TraceOperator:
+class Query:
     LEAF_NAMES = {"source", "sink", "leaf"}
 
     @staticmethod
@@ -142,7 +142,7 @@ class TraceOperator:
             return []
         trace_frames = [(initial_trace_frames[index], len(initial_trace_frames))]
         visited_ids: Set[int] = {int(initial_trace_frames[index].id)}
-        while not TraceOperator.is_leaf(trace_frames[-1][0]):
+        while not Query.is_leaf(trace_frames[-1][0]):
             trace_frame, branches = trace_frames[-1]
             if trace_frame.kind == TraceKind.POSTCONDITION:
                 leaf_kind = sources
@@ -153,7 +153,7 @@ class TraceOperator:
                     trace_frame.kind == TraceKind.POSTCONDITION
                     or trace_frame.kind == TraceKind.PRECONDITION
                 )
-            next_nodes = TraceOperator.next_trace_frames(
+            next_nodes = Query.next_trace_frames(
                 leaf_dicts, session, current_run_id, leaf_kind, trace_frame, visited_ids
             )
 
@@ -179,7 +179,7 @@ class TraceOperator:
 
     @staticmethod
     def is_leaf(trace_frame: TraceFrameQueryResult) -> bool:
-        return trace_frame.callee_port in TraceOperator.LEAF_NAMES
+        return trace_frame.callee_port in Query.LEAF_NAMES
 
     @staticmethod
     def next_trace_frames(
@@ -240,11 +240,11 @@ class TraceOperator:
         for frame in results:
             if int(frame.id) not in visited_ids and leaf_kind.intersection(
                 set(
-                    TraceOperator.get_leaves_trace_frame(
+                    Query.get_leaves_trace_frame(
                         leaf_dicts,
                         session,
                         int(frame.id),
-                        TraceOperator.trace_kind_to_shared_text_kind(frame.kind),
+                        Query.trace_kind_to_shared_text_kind(frame.kind),
                     )
                 )
             ):
@@ -282,7 +282,7 @@ class TraceOperator:
             .filter(SharedText.kind == kind)
         ]
         leaf_sources, leaf_sinks, features_dict = leaf_dicts
-        return TraceOperator.leaf_dict_lookups(
+        return Query.leaf_dict_lookups(
             leaf_sources, leaf_sinks, features_dict, message_ids, kind
         )
 

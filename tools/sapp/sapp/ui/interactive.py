@@ -61,8 +61,9 @@ from ..models import (
     create as create_models,
 )
 from ..pipeline.base_parser import BaseParser
+from . import trace
 from .issues import Query
-from .trace import TraceFrameQueryResult, TraceOperator, TraceTuple
+from .trace import TraceFrameQueryResult, TraceTuple
 
 
 T = TypeVar("T")
@@ -725,7 +726,7 @@ details              show additional information about the current trace frame
 
             if selected_frame.kind == TraceKind.POSTCONDITION:
                 self.sinks = set()
-                self.sources = TraceOperator.get_leaves_trace_frame(
+                self.sources = trace.Query.get_leaves_trace_frame(
                     self.leaf_dicts,
                     session,
                     int(selected_frame.id),
@@ -733,7 +734,7 @@ details              show additional information about the current trace frame
                 )
 
             else:
-                self.sinks = TraceOperator.get_leaves_trace_frame(
+                self.sinks = trace.Query.get_leaves_trace_frame(
                     self.leaf_dicts,
                     session,
                     int(selected_frame.id),
@@ -762,7 +763,7 @@ details              show additional information about the current trace frame
 
         # Don't allow calling from the leaf node in a trace. Instead, call
         # parents() from the placeholder of the caller of the leaf node.
-        if TraceOperator.is_leaf(current_trace_tuple.trace_frame):
+        if trace.Query.is_leaf(current_trace_tuple.trace_frame):
             raise UserError("Try running from a non-leaf node.")
 
         # Backwards trace checks against the given frame's _caller_.
@@ -788,7 +789,7 @@ details              show additional information about the current trace frame
                     or current_trace_tuple.trace_frame.kind == TraceKind.PRECONDITION
                 )
 
-            parent_trace_frames = TraceOperator.next_trace_frames(
+            parent_trace_frames = trace.Query.next_trace_frames(
                 self.leaf_dicts,
                 session,
                 self.current_run_id,
@@ -812,14 +813,14 @@ details              show additional information about the current trace frame
     def _generate_trace_from_issue(self):
         with self.db.make_session() as session:
             issue = self._get_current_issue(session)
-            postcondition_initial_frames = TraceOperator.initial_trace_frames(
+            postcondition_initial_frames = trace.Query.initial_trace_frames(
                 session, issue.id, TraceKind.POSTCONDITION
             )
-            precondition_initial_frames = TraceOperator.initial_trace_frames(
+            precondition_initial_frames = trace.Query.initial_trace_frames(
                 session, issue.id, TraceKind.PRECONDITION
             )
 
-            postcondition_navigation = TraceOperator.navigate_trace_frames(
+            postcondition_navigation = trace.Query.navigate_trace_frames(
                 self.leaf_dicts,
                 session,
                 self.current_run_id,
@@ -827,7 +828,7 @@ details              show additional information about the current trace frame
                 self.sinks,
                 postcondition_initial_frames,
             )
-            precondition_navigation = TraceOperator.navigate_trace_frames(
+            precondition_navigation = trace.Query.navigate_trace_frames(
                 self.leaf_dicts,
                 session,
                 self.current_run_id,
@@ -837,7 +838,7 @@ details              show additional information about the current trace frame
             )
 
         self.trace_tuples = (
-            TraceOperator.create_trace_tuples(reversed(postcondition_navigation))
+            trace.Query.create_trace_tuples(reversed(postcondition_navigation))
             + [
                 TraceTuple(
                     trace_frame=TraceFrameQueryResult(
@@ -851,7 +852,7 @@ details              show additional information about the current trace frame
                     )
                 )
             ]
-            + TraceOperator.create_trace_tuples(precondition_navigation)
+            + trace.Query.create_trace_tuples(precondition_navigation)
         )
         self.trace_tuples_id = self.current_issue_instance_id
         self.current_trace_frame_index = len(postcondition_navigation)
@@ -877,7 +878,7 @@ details              show additional information about the current trace frame
                 .join(FilenameText, FilenameText.id == TraceFrame.filename_id)
                 .one()
             )
-            navigation = TraceOperator.navigate_trace_frames(
+            navigation = trace.Query.navigate_trace_frames(
                 self.leaf_dicts,
                 session,
                 self.current_run_id,
@@ -954,11 +955,11 @@ details              show additional information about the current trace frame
                 ", ".join(
                     [
                         leaf
-                        for leaf in TraceOperator.get_leaves_trace_frame(
+                        for leaf in trace.Query.get_leaves_trace_frame(
                             self.leaf_dicts,
                             session,
                             int(frame.id),
-                            TraceOperator.trace_kind_to_shared_text_kind(frame.kind),
+                            trace.Query.trace_kind_to_shared_text_kind(frame.kind),
                         )
                         if leaf in filter_leaves
                     ]
@@ -1015,7 +1016,7 @@ details              show additional information about the current trace frame
                     "Branch number invalid "
                     f"(expected 1-{len(branches)} but got {selected_number})."
                 )
-            new_navigation = TraceOperator.navigate_trace_frames(
+            new_navigation = trace.Query.navigate_trace_frames(
                 self.leaf_dicts,
                 session,
                 self.current_run_id,
@@ -1126,7 +1127,7 @@ details              show additional information about the current trace frame
                 if self._is_before_root()
                 else TraceKind.PRECONDITION
             )
-            return TraceOperator.initial_trace_frames(
+            return trace.Query.initial_trace_frames(
                 session, self.current_issue_instance_id, kind
             )
 
@@ -1142,7 +1143,7 @@ details              show additional information about the current trace frame
                 or parent_trace_frame.kind == TraceKind.PRECONDITION
             )
 
-        return TraceOperator.next_trace_frames(
+        return trace.Query.next_trace_frames(
             self.leaf_dicts,
             session,
             self.current_run_id,
@@ -1435,12 +1436,12 @@ details              show additional information about the current trace frame
     def _create_trace_frame_output_string(
         self, trace_frame: TraceFrameQueryResult
     ) -> str:
-        leaf_kind = TraceOperator.trace_kind_to_shared_text_kind(trace_frame.kind)
+        leaf_kind = trace.Query.trace_kind_to_shared_text_kind(trace_frame.kind)
         leaves_label = "Sources" if leaf_kind == SharedTextKind.SOURCE else "Sinks"
 
         with self.db.make_session() as session:
             leaves_output = f"\n{' ' * 13}".join(
-                TraceOperator.get_leaves_trace_frame(
+                trace.Query.get_leaves_trace_frame(
                     self.leaf_dicts, session, trace_frame.id, leaf_kind
                 )
             )
@@ -1551,7 +1552,7 @@ details              show additional information about the current trace frame
             .filter(IssueInstanceSharedTextAssoc.issue_instance_id == issue_instance_id)
             .filter(SharedText.kind == kind)
         ]
-        return TraceOperator.leaf_dict_lookups(
+        return trace.Query.leaf_dict_lookups(
             self.sources_dict, self.sinks_dict, self.features_dict, message_ids, kind
         )
 

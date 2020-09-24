@@ -19,10 +19,10 @@ from ...models import (
     create as create_models,
 )
 from ...tests.fake_object_generator import FakeObjectGenerator
-from ..trace import TraceOperator
+from ..trace import Query
 
 
-class TraceOperatorTest(TestCase):
+class QueryTest(TestCase):
     def setUp(self) -> None:
         self.db = DB(DBType.MEMORY)
         create_models(self.db)
@@ -82,7 +82,7 @@ class TraceOperatorTest(TestCase):
                 .scalar()
             )
 
-            next_frames = TraceOperator.next_trace_frames(
+            next_frames = Query.next_trace_frames(
                 leaf_dicts, session, latest_run_id, {"sink1"}, frames[0], set()
             )
             self.assertEqual(len(next_frames), 1)
@@ -135,7 +135,7 @@ class TraceOperatorTest(TestCase):
                 self._all_leaves_by_kind(session, SharedTextKind.FEATURE),
             )
 
-            next_frames = TraceOperator.next_trace_frames(
+            next_frames = Query.next_trace_frames(
                 leaf_dicts,
                 session,
                 latest_run_id,
@@ -186,7 +186,7 @@ class TraceOperatorTest(TestCase):
                 .scalar()
             )
 
-            next_frames = TraceOperator.next_trace_frames(
+            next_frames = Query.next_trace_frames(
                 leaf_dicts, session, latest_run_id, {"sink1"}, frames[2], set()
             )
             self.assertEqual(len(next_frames), 1)
@@ -218,7 +218,7 @@ class TraceOperatorTest(TestCase):
                 .scalar()
             )
 
-            result = TraceOperator.navigate_trace_frames(
+            result = Query.navigate_trace_frames(
                 leaf_dicts, session, latest_run_id, set(), {"sink1"}, [frames[0]]
             )
             self.assertEqual(len(result), 2)
@@ -292,7 +292,7 @@ class TraceOperatorTest(TestCase):
                 .scalar()
             )
 
-            result = TraceOperator.navigate_trace_frames(
+            result = Query.navigate_trace_frames(
                 leaf_dicts, session, latest_run_id, set(), {"sink"}, [frames[0]]
             )
             self.assertEqual(len(frames), 4)

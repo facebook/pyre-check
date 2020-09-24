@@ -23,9 +23,9 @@ from ..models import (
     SharedTextKind,
     TraceKind,
 )
-from . import issues
+from . import issues, trace
 from .interactive import IssueQueryResult, IssueQueryResultType
-from .trace import TraceFrameQueryResult, TraceFrameQueryResultType, TraceOperator
+from .trace import TraceFrameQueryResult, TraceFrameQueryResultType
 
 
 FilenameText = aliased(SharedText)
@@ -114,25 +114,23 @@ class Query(graphene.ObjectType):
             session, issue.id, SharedTextKind.SINK
         )
 
-        postcondition_navigation = TraceOperator.navigate_trace_frames(
+        postcondition_navigation = trace.Query.navigate_trace_frames(
             leaf_kinds,
             session,
             run_id,
             sources,
             sinks,
-            TraceOperator.initial_trace_frames(
+            trace.Query.initial_trace_frames(
                 session, issue.id, TraceKind.POSTCONDITION
             ),
         )
-        precondition_navigation = TraceOperator.navigate_trace_frames(
+        precondition_navigation = trace.Query.navigate_trace_frames(
             leaf_kinds,
             session,
             run_id,
             sources,
             sinks,
-            TraceOperator.initial_trace_frames(
-                session, issue.id, TraceKind.PRECONDITION
-            ),
+            trace.Query.initial_trace_frames(session, issue.id, TraceKind.PRECONDITION),
         )
 
         trace_frames = (
