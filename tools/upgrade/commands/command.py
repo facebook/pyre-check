@@ -178,7 +178,7 @@ class ProjectErrorSuppressingCommand(ErrorSuppressingCommand):
         errors = (
             Errors.from_stdin(self._only_fix_error_code)
             if self._error_source == "stdin" and not self._upgrade_version
-            else configuration.get_errors()
+            else configuration.get_errors(only_fix_error_code=self._only_fix_error_code)
         )
         if len(errors) > 0:
             self._suppress_errors(errors)
@@ -186,7 +186,10 @@ class ProjectErrorSuppressingCommand(ErrorSuppressingCommand):
             # Lint and re-run pyre once to resolve most formatting issues
             if self._lint:
                 if self._repository.format():
-                    errors = configuration.get_errors(should_clean=False)
+                    errors = configuration.get_errors(
+                        only_fix_error_code=self._only_fix_error_code,
+                        should_clean=False,
+                    )
                     self._suppress_errors(errors)
 
         project_root = root.resolve()
