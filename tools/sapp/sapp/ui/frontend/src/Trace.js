@@ -14,6 +14,7 @@ import {Breadcrumb, Card, Modal, Skeleton, Typography} from 'antd';
 import {useQuery, gql} from '@apollo/client';
 import {Controlled as CodeMirror} from 'react-codemirror2';
 
+import './Trace.css';
 require('codemirror/lib/codemirror.css');
 require('codemirror/mode/python/python.js');
 
@@ -46,7 +47,14 @@ function Source(
     value = data.file.edges[0].node.contents;
   }
 
-  return <CodeMirror value={value} options={{lineNumbers: true}} />;
+  return (
+    <div style={{border: '1px solid lightgray'}}>
+      <CodeMirror
+        value={value}
+        options={{lineNumbers: true, readOnly: 'nocursor'}}
+      />
+    </div>
+  );
 }
 
 function SourceTraces(props: $ReadOnly<{|issue_id: number|}>): React$Node {
