@@ -39,7 +39,7 @@ class PartialConfigurationTest(unittest.TestCase):
                 version=False,
                 debug=False,
                 sequential=False,
-                strict=True,
+                strict=False,
                 additional_checks=[],
                 show_error_traces=False,
                 output="output",
@@ -50,10 +50,10 @@ class PartialConfigurationTest(unittest.TestCase):
                 log_identifier="",
                 logger="logger",
                 formatter="formatter",
-                targets=["//foo", "//bar"],
+                targets=[],
                 use_buck_builder=False,
                 use_buck_source_database=True,
-                source_directories=["a", "b"],
+                source_directories=[],
                 filter_directory=None,
                 buck_mode=None,
                 no_saved_state=False,
@@ -80,12 +80,9 @@ class PartialConfigurationTest(unittest.TestCase):
             list(configuration.search_path),
             [SimpleSearchPathElement("x"), SimpleSearchPathElement("y")],
         )
-        source_directories = configuration.source_directories
-        self.assertIsNotNone(source_directories)
-        self.assertListEqual(list(source_directories), ["a", "b"])
-        targets = configuration.targets
-        self.assertIsNotNone(targets)
-        self.assertListEqual(list(targets), ["//foo", "//bar"])
+        self.assertIsNone(configuration.source_directories)
+        self.assertEqual(configuration.strict, None)
+        self.assertIsNone(configuration.targets)
         self.assertEqual(configuration.typeshed, "typeshed")
         self.assertEqual(configuration.use_buck_builder, False)
         self.assertEqual(configuration.use_buck_source_database, True)

@@ -228,6 +228,13 @@ class PartialConfiguration:
     def from_command_arguments(
         arguments: command_arguments.CommandArguments,
     ) -> "PartialConfiguration":
+        strict: Optional[bool] = True if arguments.strict else None
+        source_directories: Optional[List[str]] = arguments.source_directories if len(
+            arguments.source_directories
+        ) > 0 else None
+        targets: Optional[List[str]] = arguments.targets if len(
+            arguments.targets
+        ) > 0 else None
         return PartialConfiguration(
             autocomplete=None,
             binary=arguments.binary,
@@ -247,10 +254,10 @@ class PartialConfiguration:
             search_path=[
                 SimpleSearchPathElement(element) for element in arguments.search_path
             ],
-            source_directories=arguments.source_directories,
-            strict=arguments.strict,
+            source_directories=source_directories,
+            strict=strict,
             taint_models_path=[],
-            targets=arguments.targets,
+            targets=targets,
             typeshed=arguments.typeshed,
             use_buck_builder=arguments.use_buck_builder,
             use_buck_source_database=arguments.use_buck_source_database,
