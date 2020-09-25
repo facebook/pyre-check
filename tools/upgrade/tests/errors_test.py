@@ -17,6 +17,8 @@ from ..errors import (
     Errors,
     PartialErrorSuppression,
     SkippingGeneratedFileException,
+    _get_unused_ignore_codes,
+    _remove_unused_ignores,
     _suppress_errors,
 )
 
@@ -109,6 +111,84 @@ class ErrorsTest(unittest.TestCase):
             self.assertEqual(
                 set(context.exception.unsuppressed_paths), {"path.py", "other.py"}
             )
+
+    def test_get_unused_ignore_codes(self) -> None:
+        self.assertEqual(
+            _get_unused_ignore_codes(
+                [
+                    {
+                        "code": "0",
+                        "description": "Unused ignore [0]: The `pyre-ignore[1, 9]` or "
+                        + "`pyre-fixme[1, 9]` comment is not suppressing type errors, "
+                        + "please remove it.",
+                    }
+                ]
+            ),
+            [1, 9],
+        )
+        self.assertEqual(
+            _get_unused_ignore_codes(
+                [
+                    {
+                        "code": "0",
+                        "description": "Unused ignore [0]: The `pyre-ignore[1, 9]` or "
+                        + "`pyre-fixme[1, 9]` comment is not suppressing type errors, "
+                        + "please remove it.",
+                    },
+                    {
+                        "code": "0",
+                        "description": "Unused ignore [0]: The `pyre-ignore[2]` or "
+                        + "`pyre-fixme[2]` comment is not suppressing type errors, "
+                        + "please remove it.",
+                    },
+                ]
+            ),
+            [1, 2, 9],
+        )
+        self.assertEqual(
+            _get_unused_ignore_codes(
+                [
+                    {
+                        "code": "1",
+                        "description": "Unused ignore [0]: The `pyre-ignore[1, 9]` or "
+                        + "`pyre-fixme[1, 9]` comment is not suppressing type errors, "
+                        + "please remove it.",
+                    }
+                ]
+            ),
+            [],
+        )
+
+    # pyre-fixme[56]: Pyre was not able to infer the type of argument `errors`.
+    @patch.object(errors, "_get_unused_ignore_codes")
+    def test_remove_unused_ignores(self, get_unused_ignore_codes) -> None:
+        get_unused_ignore_codes.return_value = [1, 3, 4]
+        self.assertEqual(
+            _remove_unused_ignores("# pyre-fixme[1, 2, 3, 4]: Comment", []),
+            "# pyre-fixme[2]: Comment",
+        )
+
+        get_unused_ignore_codes.return_value = [1, 2, 3, 4]
+        self.assertEqual(
+            _remove_unused_ignores("# pyre-fixme[1, 2, 3, 4]: Comment", []), ""
+        )
+
+        get_unused_ignore_codes.return_value = [1]
+        self.assertEqual(
+            _remove_unused_ignores("# pyre-fixme[2, 3, 4]: Comment", []),
+            "# pyre-fixme[2, 3, 4]: Comment",
+        )
+
+        get_unused_ignore_codes.return_value = [1, 2]
+        self.assertEqual(_remove_unused_ignores("# pyre-fixme: Comment", []), "")
+
+        get_unused_ignore_codes.return_value = [1, 2]
+        self.assertEqual(
+            _remove_unused_ignores(
+                "# Unrelated comment. # pyre-fixme[1, 2]: Comment", []
+            ),
+            "# Unrelated comment.",
+        )
 
     def assertSuppressErrors(
         self,
@@ -352,6 +432,70 @@ class ErrorsTest(unittest.TestCase):
             """,
             """
             # FIXME[2]: new error
+            def foo() -> None: pass
+            """,
+        )
+
+        # Remove unused ignores by error code.
+        self.assertSuppressErrors(
+            {
+                1: [
+                    {
+                        "code": "0",
+                        "description": "Unused ignore [0]: The `pyre-ignore[1]` or "
+                        + "`pyre-fixme[1]` comment is not suppressing type errors, "
+                        + "please remove it.",
+                    }
+                ]
+            },
+            """
+            def foo() -> None: pass  # FIXME[1, 2]
+            """,
+            """
+            def foo() -> None: pass  # FIXME[2]
+            """,
+        )
+
+        self.assertSuppressErrors(
+            {
+                1: [
+                    {
+                        "code": "0",
+                        "description": "Unused ignore [0]: The `pyre-ignore[1, 3]` or "
+                        + "`pyre-fixme[1, 3]` comment is not suppressing type errors, "
+                        + "please remove it.",
+                    }
+                ]
+            },
+            """
+            # FIXME[1, 2, 3]
+            # Continuation comment.
+            def foo() -> None: pass
+            """,
+            """
+            # FIXME[2]
+            # Continuation comment.
+            def foo() -> None: pass
+            """,
+        )
+
+        self.assertSuppressErrors(
+            {
+                1: [
+                    {
+                        "code": "0",
+                        "description": "Unused ignore [0]: The `pyre-ignore[1, 3]` or "
+                        + "`pyre-fixme[1, 3]` comment is not suppressing type errors, "
+                        + "please remove it.",
+                    }
+                ]
+            },
+            """
+            # FIXME[1, 3]
+            # Continuation comment.
+            def foo() -> None: pass
+            """,
+            """
             def foo() -> None: pass
             """,
         )

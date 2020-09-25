@@ -399,6 +399,43 @@ class SkippingGeneratedFileException(Exception):
     pass
 
 
+def _get_unused_ignore_codes(errors: List[Dict[str, str]]) -> List[int]:
+    unused_ignore_codes: List[int] = []
+    ignore_errors = [error for error in errors if error["code"] == "0"]
+    for error in ignore_errors:
+        match = re.search(
+            r"\[0\]: The `pyre-ignore\[(.*)\]` or `pyre-fixme\[.*\]`",
+            error["description"],
+        )
+        if match:
+            unused_ignore_codes.extend(
+                [int(code.strip()) for code in match.group(1).split(",")]
+            )
+    unused_ignore_codes.sort()
+    return unused_ignore_codes
+
+
+def _remove_unused_ignores(line: str, errors: List[Dict[str, str]]) -> str:
+    unused_ignore_codes = _get_unused_ignore_codes(errors)
+    match = re.search(r"pyre-(ignore|fixme)\[(.*)\]", line)
+    stripped_line = re.sub(r"# pyre-(ignore|fixme).*$", "", line).rstrip()
+    if not match:
+        return stripped_line
+
+    # One or more codes are specified in the ignore comment.
+    # Remove only the codes that are erroring as unused.
+    ignore_codes_string = match.group(2)
+    ignore_codes = [int(code.strip()) for code in ignore_codes_string.split(",")]
+    remaining_ignore_codes = set(ignore_codes) - set(unused_ignore_codes)
+    if len(remaining_ignore_codes) == 0 or len(unused_ignore_codes) == 0:
+        return stripped_line
+    else:
+        return line.replace(
+            ignore_codes_string,
+            ", ".join([str(code) for code in remaining_ignore_codes]),
+        )
+
+
 def _suppress_errors(
     input: str,
     errors: Dict[int, List[Dict[str, str]]],
@@ -428,8 +465,7 @@ def _suppress_errors(
         number = index + 1
         relevant_errors = errors[number] if number in errors else []
         if any(error["code"] == "0" for error in relevant_errors):
-            # Handle unused ignores.
-            replacement = re.sub(r"# pyre-(ignore|fixme).*$", "", line).rstrip()
+            replacement = _remove_unused_ignores(line, relevant_errors)
             if replacement == "":
                 removing_pyre_comments = True
                 _remove_comment_preamble(new_lines)
