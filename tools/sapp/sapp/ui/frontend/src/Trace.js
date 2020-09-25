@@ -10,7 +10,7 @@
 
 import React from 'react';
 import {withRouter} from 'react-router';
-import {Breadcrumb, Card, Modal, Skeleton, Typography} from 'antd';
+import {Alert, Spin, Breadcrumb, Card, Modal, Skeleton, Typography} from 'antd';
 import {useQuery, gql} from '@apollo/client';
 import {Controlled as CodeMirror} from 'react-codemirror2';
 
@@ -38,23 +38,30 @@ function Source(
     variables: {path: props.path},
   });
 
-  var value = '';
+  var content = <div />;
   if (error) {
-    value = `Unable to load ${props.path}`;
+    content = (
+      <Alert
+        message={`Unable to load ${props.path} (${error.toString()})`}
+        type="error"
+      />
+    );
   } else if (loading) {
-    value = `Loading ${props.path}`;
+    content = (
+      <div style={{height: '12em', textAlign: 'center', paddingTop: '5em'}}>
+        <Spin tip={`Loading ${props.path}...`} />
+      </div>
+    );
   } else {
-    value = data.file.edges[0].node.contents;
-  }
-
-  return (
-    <div style={{border: '1px solid lightgray'}}>
+    content = (
       <CodeMirror
-        value={value}
+        value={data.file.edges[0].node.contents}
         options={{lineNumbers: true, readOnly: 'nocursor'}}
       />
-    </div>
-  );
+    );
+  }
+
+  return <div style={{border: '1px solid lightgray'}}>{content}</div>;
 }
 
 function SourceTraces(props: $ReadOnly<{|issue_id: number|}>): React$Node {
