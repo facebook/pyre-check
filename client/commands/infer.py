@@ -7,6 +7,7 @@
 
 import argparse
 import functools
+import json
 import logging
 import os
 import re
@@ -610,4 +611,4 @@ class Infer(Reporting):
 
     def _get_errors_from_stdin(self) -> Result:
         input = sys.stdin.read()
-        return Result(0, input)
+        return Result(0, json.dumps({"errors": json.loads(input)}))
