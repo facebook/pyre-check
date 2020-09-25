@@ -4,7 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import os
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import graphene
 from graphene import relay
@@ -62,6 +62,7 @@ class Query(graphene.ObjectType):
         max_trace_length_to_sinks=graphene.Int(),
         min_trace_length_to_sources=graphene.Int(),
         max_trace_length_to_sources=graphene.Int(),
+        issue_id=graphene.Int(),
     )
     trace = relay.ConnectionField(TraceFrameConnection, issue_id=graphene.ID())
 
@@ -75,8 +76,8 @@ class Query(graphene.ObjectType):
         max_trace_length_to_sinks: Optional[int] = None,
         min_trace_length_to_sources: Optional[int] = None,
         max_trace_length_to_sources: Optional[int] = None,
-        # pyre-fixme[2]: Parameter must be annotated.
-        **args
+        issue_id: Optional[int] = None,
+        **args: Any
     ) -> List[IssueQueryResult]:
         session = get_session(info.context)
         run_id = Query.latest_run_id(session)
@@ -92,6 +93,7 @@ class Query(graphene.ObjectType):
             .where_trace_length_to_sources(
                 min_trace_length_to_sources, max_trace_length_to_sources
             )
+            .where_issue_id_is(issue_id)
         )
 
         return builder.get()

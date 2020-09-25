@@ -42,6 +42,7 @@ class Filter(Enum):
     any_features = "any_features"
     all_features = "all_features"
     exclude_features = "exclude_features"
+    issue_id = "issue_id"
 
 
 class Query:
@@ -76,6 +77,8 @@ class Query:
                 column = IssueInstance.min_trace_length_to_sources
             elif filter_type == Filter.trace_length_to_sinks:
                 column = IssueInstance.min_trace_length_to_sinks
+            elif filter_type == Filter.issue_id:
+                column = IssueInstance.issue_id
 
             for filter_condition in filter_conditions:
                 if (
@@ -129,6 +132,11 @@ class Query:
                 elif exclude_feature_set and features & exclude_feature_set:
                     issues.remove(issue)
         return issues
+
+    def where_issue_id_is(self, issue_id: Optional[int]) -> "Query":
+        if issue_id is not None:
+            self.issue_filters[Filter.issue_id].add((issue_id, issue_id))
+        return self
 
     def where_codes_is_any_of(self, codes: List[int]) -> "Query":
         self.issue_filters[Filter.codes].add(tuple(codes))
