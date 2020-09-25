@@ -10,6 +10,5 @@
   ],
   "exclude": [
     ".*/integration_test/.*"
-  ],
-  "typeshed": "../tutorial/lib/pyre_check/typeshed"
+  ]
 }
