@@ -491,6 +491,27 @@ class ErrorsTest(unittest.TestCase):
                 ]
             },
             """
+            # FIXME[1, 2, 3]: Comment[Comment]
+            def foo() -> None: pass
+            """,
+            """
+            # FIXME[2]: Comment[Comment]
+            def foo() -> None: pass
+            """,
+        )
+
+        self.assertSuppressErrors(
+            {
+                1: [
+                    {
+                        "code": "0",
+                        "description": "Unused ignore [0]: The `pyre-ignore[1, 3]` or "
+                        + "`pyre-fixme[1, 3]` comment is not suppressing type errors, "
+                        + "please remove it.",
+                    }
+                ]
+            },
+            """
             # FIXME[1, 3]
             # Continuation comment.
             def foo() -> None: pass
