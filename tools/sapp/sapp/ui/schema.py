@@ -4,7 +4,8 @@
 # LICENSE file in the root directory of this source tree.
 
 import os
-from typing import Any, Dict, List, Optional, Tuple
+from pathlib import Path
+from typing import Any, Dict, List, NamedTuple, Optional, Tuple
 
 import graphene
 from graphene import relay
@@ -50,6 +51,24 @@ class TraceFrameConnection(relay.Connection):
         node = TraceFrameQueryResultType
 
 
+class FileType(graphene.ObjectType):
+    class Meta:
+        interfaces = (relay.Node,)
+
+    path = graphene.String()
+    contents = graphene.String()
+
+
+class File(NamedTuple):
+    path: str
+    contents: str
+
+
+class FileConnection(relay.Connection):
+    class Meta:
+        node = FileType
+
+
 class Query(graphene.ObjectType):
     # pyre-fixme[4]: Attribute must be annotated.
     node = relay.Node.Field()
@@ -65,6 +84,7 @@ class Query(graphene.ObjectType):
         issue_id=graphene.Int(),
     )
     trace = relay.ConnectionField(TraceFrameConnection, issue_id=graphene.ID())
+    file = relay.ConnectionField(FileConnection, path=graphene.String())
 
     def resolve_issues(
         self,
@@ -165,6 +185,13 @@ class Query(graphene.ObjectType):
             for frame in trace_frames
             if frame.filename
         ]
+
+    def resolve_file(self, info: ResolveInfo, path: str, **kwargs: Any) -> List[File]:
+        if ".." in path:
+            raise FileNotFoundError("Attempted directory traversal")
+
+        contents = (Path(info.context["source_directory"]) / path).read_text()
+        return [File(path=path, contents=contents)]
 
     @staticmethod
     def all_leaf_kinds(

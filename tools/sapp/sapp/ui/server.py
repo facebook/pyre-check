@@ -55,7 +55,9 @@ def serve(path: str) -> Response:
         return send_from_directory(static_folder, "index.html")
 
 
-def start_server(database: DB, debug: bool, static_resources: Optional[str]) -> None:
+def start_server(
+    database: DB, debug: bool, static_resources: Optional[str], source_directory: str
+) -> None:
     engine = sqlalchemy.create_engine(
         sqlalchemy.engine.url.URL("sqlite", database=database.dbname),
         echo=False,
@@ -71,7 +73,10 @@ def start_server(database: DB, debug: bool, static_resources: Optional[str]) -> 
             "graphql",
             schema=schema,
             graphiql=True,
-            get_context=lambda: {"session": session},
+            get_context=lambda: {
+                "session": session,
+                "source_directory": source_directory,
+            },
         ),
     )
     if static_resources:

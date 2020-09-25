@@ -12,6 +12,7 @@ import React from 'react';
 import {withRouter} from 'react-router';
 import {Breadcrumb, Card, Modal, Skeleton, Typography} from 'antd';
 import {useQuery, gql} from '@apollo/client';
+import {Controlled as CodeMirror} from 'react-codemirror2';
 
 require('codemirror/lib/codemirror.css');
 require('codemirror/mode/python/python.js');
@@ -19,13 +20,33 @@ require('codemirror/mode/python/python.js');
 const {Text} = Typography;
 
 function Source(
-  props: $ReadOnly<{|filename: string, location: string|}>,
+  props: $ReadOnly<{|path: string, location: string|}>,
 ): React$Node {
-  return (
-    <Text secondary>
-      Loading {props.filename} at {props.location}...
-    </Text>
-  );
+  const SourceQuery = gql`
+    query Issue($path: String) {
+      file(path: $path) {
+        edges {
+          node {
+            contents
+          }
+        }
+      }
+    }
+  `;
+  const {loading, error, data} = useQuery(SourceQuery, {
+    variables: {path: props.path},
+  });
+
+  var value = '';
+  if (error) {
+    value = `Unable to load ${props.path}`;
+  } else if (loading) {
+    value = `Loading ${props.path}`;
+  } else {
+    value = data.file.edges[0].node.contents;
+  }
+
+  return <CodeMirror value={value} options={{lineNumbers: true}} />;
 }
 
 function SourceTraces(props: $ReadOnly<{|issue_id: number|}>): React$Node {
@@ -54,14 +75,13 @@ function TraceRoot(
   }
 
   const issue = props.data.issues.edges[0].node;
-  console.log(issue);
 
   return (
     <>
       <Card>
         <Text strong>{issue.code}</Text>: {issue.message}
         <br />
-        <Source filename={issue.filename} location={issue.location} />
+        <Source path={issue.filename} location={issue.location} />
       </Card>
       <br />
     </>

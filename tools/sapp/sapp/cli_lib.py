@@ -227,10 +227,15 @@ def analyze(
 @option(
     "--static-resources", default=None, help="Directory to serve static resources from"
 )
+@option(
+    "--source-directory", default=os.getcwd(), help="Directory to look for source code"
+)
 @pass_context
 # pyre-fixme[3]: Return type must be annotated.
-def server(ctx: Context, debug: bool, static_resources: str):
-    start_server(ctx.database, debug, static_resources)
+def server(
+    ctx: Context, debug: bool, static_resources: Optional[str], source_directory: str
+):
+    start_server(ctx.database, debug, static_resources, source_directory)
 
 
 commands = [analyze, explore, server]
