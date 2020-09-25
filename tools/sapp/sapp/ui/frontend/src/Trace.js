@@ -10,91 +10,49 @@
 
 import React from 'react';
 import {withRouter} from 'react-router';
-import {Breadcrumb, Card, Modal, Skeleton} from 'antd';
-import {Controlled as CodeMirror} from 'react-codemirror2';
-
-import {useQuery, gql} from '@apollo/client';
+import {Breadcrumb, Card} from 'antd';
 
 require('codemirror/lib/codemirror.css');
 require('codemirror/mode/python/python.js');
 
-const TraceQuery = gql`
-  query Trace($issue_id: ID) {
-    trace(issue_id: $issue_id) {
-      edges {
-        node {
-          callee
-          callee_port
-          filename
-          callee_location
-          file_content
-        }
-      }
-    }
-  }
-`;
+function SourceTraces(props: $ReadOnly<{|issue_id: number|}>): React$Node {
+  return (
+    <>
+      <Card title="Source Traces"></Card>
+      <br />
+    </>
+  );
+}
 
-function Trace(props) {
-  const {loading, error, data} = useQuery(TraceQuery, {
-    variables: {
-      issue_id: props.match.params.issue_id,
-    },
-  });
+function TraceRoot(props: $ReadOnly<{|issue_id: number|}>): React$Node {
+  return (
+    <>
+      <Card></Card>
+      <br />
+    </>
+  );
+}
 
-  if (error) {
-    return (
-      <Modal title="Error" visible={true} footer={null}>
-        <p>{error.toString()}</p>
-      </Modal>
-    );
-  }
+function SinkTraces(props: $ReadOnly<{|issue_id: number|}>): React$Node {
+  return (
+    <>
+      <Card title="Sink Traces"></Card>
+      <br />
+    </>
+  );
+}
 
-  var content = <></>;
-
-  if (loading) {
-    content = (
-      <Card>
-        <Skeleton active />
-      </Card>
-    );
-  } else {
-    content = (
-      <>
-        {data.trace.edges.map(({node}, index) => (
-          <>
-            <Card>
-              <h4>{index + 1}</h4>
-              <p>Callable: {node.callee}</p>
-              <p>Port: {node.callee}</p>
-              <p>
-                Location: {node.filename}:{node.callee_location}
-              </p>
-              <br />
-              <CodeMirror
-                value={node.file_content}
-                onBeforeChange={(editor, data, value) => {}}
-                options={{
-                  lineNumbers: true,
-                }}
-                onChange={(editor, data, value) => {}}
-              />
-            </Card>
-            <br />
-          </>
-        ))}
-      </>
-    );
-  }
-
+function Trace(props: $ReadOnly<{|match: any|}>): React$Node {
+  const issue_id = props.match.params.issue_id;
   return (
     <>
       <Breadcrumb style={{margin: '16px 0'}}>
         <Breadcrumb.Item href="/">Issues</Breadcrumb.Item>
-        <Breadcrumb.Item>
-          Trace for Issue {props.match.params.issue_id}
-        </Breadcrumb.Item>
+        <Breadcrumb.Item>Trace for Issue {issue_id}</Breadcrumb.Item>
       </Breadcrumb>
-      {content}
+      <SourceTraces issue_id={issue_id} />
+      <TraceRoot issue_id={issue_id} />
+      <SinkTraces issue_id={issue_id} />
     </>
   );
 }
