@@ -532,7 +532,6 @@ class Infer(Reporting):
         )
 
     def run(self) -> Command:
-        self._analysis_directory.prepare()
         if self._annotate_from_existing_stubs:
             if self._in_place is None:
                 raise argparse.ArgumentTypeError(
@@ -555,6 +554,7 @@ class Infer(Reporting):
             result = self._get_errors_from_stdin()
             from_stdin = True
         else:
+            self._analysis_directory.prepare()
             result = self._call_client(command=Infer.NAME)
             from_stdin = False
         errors = self._get_errors(result, bypass_filtering=True, from_stdin=from_stdin)
