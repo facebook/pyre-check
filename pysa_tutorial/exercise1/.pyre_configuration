@@ -1,11 +1,15 @@
 {
-    "source_directories": ["."],
-    "taint_models_path": ["."],
-    "search_path": [
-        "../../stubs/"
-    ],
-    "exclude": [
-        ".*/integration_test/.*"
-    ],
-    "typeshed": "../tutorial/lib/pyre_check/typeshed"
+  "source_directories": [
+    "."
+  ],
+  "taint_models_path": [
+    "."
+  ],
+  "search_path": [
+    "../../stubs/"
+  ],
+  "exclude": [
+    ".*/integration_test/.*"
+  ],
+  "typeshed": "../tutorial/lib/pyre_check/typeshed"
 }

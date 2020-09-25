@@ -1,4 +1,11 @@
 {
-  "source_directories": ["sources"],
-  "search_path": [{"site-package": "pyre_extensions"}, "stubs"]
+  "source_directories": [
+    "sources"
+  ],
+  "search_path": [
+    {
+      "site-package": "pyre_extensions"
+    },
+    "stubs"
+  ]
 }
