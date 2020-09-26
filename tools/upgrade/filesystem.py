@@ -168,14 +168,23 @@ def find_files(
         else []
     )
 
-    output = (
-        subprocess.check_output(
-            ["find", str(directory), "-name", name, *grep_arguments],
-            stderr=subprocess.DEVNULL,
+    try:
+        output = (
+            subprocess.check_output(
+                ["find", str(directory), "-name", name, *grep_arguments]
+            )
+            .decode("utf-8")
+            .strip()
         )
-        .decode("utf-8")
-        .strip()
-    )
+    except subprocess.CalledProcessError as error:
+        LOG.warning(
+            "Failed to find files with name `%s` in directory `%s`:\n%s",
+            name,
+            directory,
+            error.stderr,
+        )
+        return []
+
     if output == "":
         return []
     files = output.split("\n")
