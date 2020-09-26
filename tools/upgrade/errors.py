@@ -404,8 +404,7 @@ def _get_unused_ignore_codes(errors: List[Dict[str, str]]) -> List[int]:
     ignore_errors = [error for error in errors if error["code"] == "0"]
     for error in ignore_errors:
         match = re.search(
-            r"\[0\]: The `pyre-ignore\[(.*)\]` or `pyre-fixme\[.*\]`",
-            error["description"],
+            r"The `pyre-ignore\[(.*?)\]` or `pyre-fixme\[.*?\]`", error["description"]
         )
         if match:
             unused_ignore_codes.extend(

@@ -118,9 +118,8 @@ class ErrorsTest(unittest.TestCase):
                 [
                     {
                         "code": "0",
-                        "description": "Unused ignore [0]: The `pyre-ignore[1, 9]` or "
-                        + "`pyre-fixme[1, 9]` comment is not suppressing type errors, "
-                        + "please remove it.",
+                        "description": "The `pyre-ignore[1, 9]` or `pyre-fixme[1, 9]` "
+                        + "comment is not suppressing type errors, please remove it.",
                     }
                 ]
             ),
@@ -131,15 +130,13 @@ class ErrorsTest(unittest.TestCase):
                 [
                     {
                         "code": "0",
-                        "description": "Unused ignore [0]: The `pyre-ignore[1, 9]` or "
-                        + "`pyre-fixme[1, 9]` comment is not suppressing type errors, "
-                        + "please remove it.",
+                        "description": "The `pyre-ignore[1, 9]` or `pyre-fixme[1, 9]` "
+                        + "comment is not suppressing type errors, please remove it.",
                     },
                     {
                         "code": "0",
-                        "description": "Unused ignore [0]: The `pyre-ignore[2]` or "
-                        + "`pyre-fixme[2]` comment is not suppressing type errors, "
-                        + "please remove it.",
+                        "description": "The `pyre-ignore[2]` or `pyre-fixme[2]` "
+                        + "comment is not suppressing type errors, please remove it.",
                     },
                 ]
             ),
@@ -150,9 +147,8 @@ class ErrorsTest(unittest.TestCase):
                 [
                     {
                         "code": "1",
-                        "description": "Unused ignore [0]: The `pyre-ignore[1, 9]` or "
-                        + "`pyre-fixme[1, 9]` comment is not suppressing type errors, "
-                        + "please remove it.",
+                        "description": "The `pyre-ignore[1, 9]` or `pyre-fixme[1, 9]` "
+                        + "comment is not suppressing type errors, please remove it.",
                     }
                 ]
             ),
@@ -442,9 +438,8 @@ class ErrorsTest(unittest.TestCase):
                 1: [
                     {
                         "code": "0",
-                        "description": "Unused ignore [0]: The `pyre-ignore[1]` or "
-                        + "`pyre-fixme[1]` comment is not suppressing type errors, "
-                        + "please remove it.",
+                        "description": "The `pyre-ignore[1]` or `pyre-fixme[1]` "
+                        + "comment is not suppressing type errors, please remove it.",
                     }
                 ]
             },
@@ -461,9 +456,8 @@ class ErrorsTest(unittest.TestCase):
                 1: [
                     {
                         "code": "0",
-                        "description": "Unused ignore [0]: The `pyre-ignore[1, 3]` or "
-                        + "`pyre-fixme[1, 3]` comment is not suppressing type errors, "
-                        + "please remove it.",
+                        "description": "The `pyre-ignore[1, 3]` or `pyre-fixme[1, 3]` "
+                        + "comment is not suppressing type errors, please remove it.",
                     }
                 ]
             },
@@ -484,9 +478,8 @@ class ErrorsTest(unittest.TestCase):
                 1: [
                     {
                         "code": "0",
-                        "description": "Unused ignore [0]: The `pyre-ignore[1, 3]` or "
-                        + "`pyre-fixme[1, 3]` comment is not suppressing type errors, "
-                        + "please remove it.",
+                        "description": "The `pyre-ignore[1, 3]` or `pyre-fixme[1, 3]` "
+                        + "comment is not suppressing type errors, please remove it.",
                     }
                 ]
             },
@@ -505,9 +498,8 @@ class ErrorsTest(unittest.TestCase):
                 1: [
                     {
                         "code": "0",
-                        "description": "Unused ignore [0]: The `pyre-ignore[1, 3]` or "
-                        + "`pyre-fixme[1, 3]` comment is not suppressing type errors, "
-                        + "please remove it.",
+                        "description": "The `pyre-ignore[1, 3]` or `pyre-fixme[1, 3]` "
+                        + "comment is not suppressing type errors, please remove it.",
                     }
                 ]
             },
@@ -517,6 +509,28 @@ class ErrorsTest(unittest.TestCase):
             def foo() -> None: pass
             """,
             """
+            def foo() -> None: pass
+            """,
+        )
+
+        self.assertSuppressErrors(
+            {
+                1: [
+                    {
+                        "code": "0",
+                        "description": "The `pyre-ignore[1, 3]` or `pyre-fixme[1, 3]` "
+                        + "comment is not suppressing type errors, please remove it.",
+                    }
+                ],
+                2: [{"code": "4", "description": "Description."}],
+            },
+            """
+            # FIXME[1, 2, 3]
+            def foo() -> None: pass
+            """,
+            """
+            # FIXME[2]
+            # FIXME[4]: Description.
             def foo() -> None: pass
             """,
         )
