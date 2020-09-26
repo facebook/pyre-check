@@ -102,7 +102,7 @@ struct
 
 
   let unhandled_part (type a) (part : a part) what =
-    let part_name = Obj.extension_constructor part |> Obj.extension_name in
+    let part_name = part_name part in
     Format.sprintf "Unknown part %s in %s" part_name what |> failwith
 
 
@@ -110,7 +110,7 @@ struct
     match op with
     | GetParts _ -> Format.sprintf "Unhandled GetParts introspect" |> failwith
     | Name part ->
-        let part_name = Obj.extension_constructor part |> Obj.extension_name in
+        let part_name = part_name part in
         Format.sprintf "Unhandled Name(%s) introspect" part_name |> failwith
     | Structure -> Format.sprintf "Unhandled Structure introspect" |> failwith
 
