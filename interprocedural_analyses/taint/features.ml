@@ -62,18 +62,23 @@ module Breadcrumb = struct
 
   let to_json ~on_all_paths breadcrumb =
     let prefix = if on_all_paths then "always-" else "" in
-    let via_value_tag tag =
+    let via_value_or_type_annotation ~via_kind ~tag ~value =
       match tag with
-      | Some tag -> "-of-" ^ tag
-      | _ -> ""
+      | None -> `Assoc [Format.sprintf "%svia-%s" prefix via_kind, `String value]
+      | Some tag ->
+          `Assoc
+            [
+              Format.sprintf "%svia-%s-%s" prefix tag via_kind, `String value;
+              Format.sprintf "%svia-%s-of-%s" prefix via_kind tag, `String value;
+            ]
     in
     match breadcrumb with
     | FormatString -> `Assoc [prefix ^ "via", `String "format-string"]
     | Obscure -> `Assoc [prefix ^ "via", `String "obscure"]
     | Lambda -> `Assoc [prefix ^ "via", `String "lambda"]
     | SimpleVia name -> `Assoc [prefix ^ "via", `String name]
-    | ViaValue { tag; value } -> `Assoc [prefix ^ "via-value" ^ via_value_tag tag, `String value]
-    | ViaType { tag; value } -> `Assoc [prefix ^ "via-type" ^ via_value_tag tag, `String value]
+    | ViaValue { tag; value } -> via_value_or_type_annotation ~via_kind:"value" ~tag ~value
+    | ViaType { tag; value } -> via_value_or_type_annotation ~via_kind:"type" ~tag ~value
     | Tito -> `Assoc [prefix ^ "via", `String "tito"]
     | Type name -> `Assoc [prefix ^ "type", `String name]
 
