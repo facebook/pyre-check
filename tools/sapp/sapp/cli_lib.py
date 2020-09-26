@@ -227,6 +227,8 @@ def analyze(
 @option(
     "--static-resources", default=None, help="Directory to serve static resources from"
 )
+# pyre-fixme[56]: Pyre was not able to infer the type of argument `os.getcwd()` to
+#  decorator factory `click.option`.
 @option(
     "--source-directory", default=os.getcwd(), help="Directory to look for source code"
 )
@@ -238,4 +240,5 @@ def server(
     start_server(ctx.database, debug, static_resources, source_directory)
 
 
+# pyre-fixme[5]: Global expression must be annotated.
 commands = [analyze, explore, server]
