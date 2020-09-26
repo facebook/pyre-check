@@ -36,7 +36,7 @@ type t = {
   rules: Rule.t list;
   implicit_sinks: implicit_sinks;
   partial_sink_converter: partial_sink_converter;
-  acceptable_sink_labels: string list Core.String.Map.Tree.t;
+  partial_sink_labels: string list Core.String.Map.Tree.t;
   find_obscure_flows: bool;
   dump_model_query_results: bool;
   analysis_model_constraints: analysis_model_constraints;

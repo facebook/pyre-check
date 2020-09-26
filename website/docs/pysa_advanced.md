@@ -79,10 +79,10 @@ into the `params` parameter. These flows can be modeled by *combined source
 rules*.
 
 Sources for combined source rules are declared as normal in `taint.config`.
-Sinks, however, have to include a `multi_sink_labels` entry which declares
-labels that will correspond to each source. The rule itself is declared in the
-`combined_source_rules` top level entry. The rule lists all the same things as a
-reglular rule, but also ties the labels from `multi_sink_labels` to each source:
+Sinks, however, need to be unique to the combined source rule and are declared inside
+the rule definition. The rule itself is declared in the `combined_source_rules`
+top level entry. The rule lists all the same things as a reglular rule, but also ties
+labels to its sources:
 
 ```json
 {
@@ -90,14 +90,11 @@ reglular rule, but also ties the labels from `multi_sink_labels` to each source:
     { "name": "UserControlled" },
     { "name": "Credentials" }
   ],
-  "sinks": [
-    { "name": "UserControlledRequestWithCreds", "multi_sink_labels": ["url", "creds"] }
-  ],
   "combined_source_rules": [
     {
        "name": "Credentials leaked through requests",
        "sources": { "url": "UserControlled", "creds": "Credentials" },
-       "sinks": ["UserControlledRequestWithCreds"],
+       "partial_sink": "UserControlledRequestWithCreds",
        "code": 1,
        "message_format": "Credentials leaked through requests"
     }

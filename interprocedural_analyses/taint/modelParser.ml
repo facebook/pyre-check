@@ -513,13 +513,10 @@ let rec parse_annotations ~configuration ~parameters annotation =
                           }
                           :: _;
                       } ->
-                      if not (List.mem configuration.sinks kind ~equal:String.equal) then
-                        Format.asprintf "Unrecognized sink for partial sink: `%s`." kind
-                        |> raise_invalid_model;
-                      if not (String.Map.Tree.mem configuration.acceptable_sink_labels kind) then
-                        raise_invalid_model (Format.asprintf "No labels specified for `%s`" kind);
+                      if not (String.Map.Tree.mem configuration.partial_sink_labels kind) then
+                        raise_invalid_model (Format.asprintf "Unrecognized partial sink `%s`." kind);
                       let label_options =
-                        String.Map.Tree.find_exn configuration.acceptable_sink_labels kind
+                        String.Map.Tree.find_exn configuration.partial_sink_labels kind
                       in
                       if not (List.mem label_options label ~equal:String.equal) then
                         Format.asprintf

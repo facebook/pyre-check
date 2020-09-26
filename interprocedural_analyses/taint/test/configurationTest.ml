@@ -158,6 +158,49 @@ let test_combined_source_rules _ =
       {|
     { sources: [
         { name: "A" },
+        { name: "B" }
+      ],
+      combined_source_rules: [
+        {
+           name: "test combined rule",
+           sources: {"a": "A", "b": "B"},
+           partial_sink: "C",
+           code: 2001,
+           message_format: "some form"
+        }
+      ]
+    }
+  |}
+  in
+  assert_equal configuration.sources ["A"; "B"];
+  assert_equal configuration.sinks [];
+  assert_equal
+    ~printer:(List.to_string ~f:Taint.TaintConfiguration.Rule.show)
+    ~cmp:(List.equal Taint.TaintConfiguration.Rule.equal)
+    configuration.rules
+    [
+      {
+        Taint.TaintConfiguration.Rule.sources = [Sources.NamedSource "A"];
+        sinks = [Sinks.TriggeredPartialSink { kind = "C"; label = "a" }];
+        code = 2001;
+        message_format = "some form";
+        name = "test combined rule";
+      };
+      {
+        Taint.TaintConfiguration.Rule.sources = [Sources.NamedSource "B"];
+        sinks = [Sinks.TriggeredPartialSink { kind = "C"; label = "b" }];
+        code = 2001;
+        message_format = "some form";
+        name = "test combined rule";
+      };
+    ];
+  assert_equal (List.hd_exn configuration.rules).code 2001;
+  assert_equal (String.Map.Tree.to_alist configuration.partial_sink_labels) ["C", ["a"; "b"]];
+  let configuration =
+    parse
+      {|
+    { sources: [
+        { name: "A" },
         { name: "B" },
         { name: "C" }
       ],
@@ -198,7 +241,35 @@ let test_combined_source_rules _ =
         name = "test combined rule";
       };
     ];
-  assert_equal (List.hd_exn configuration.rules).code 2001
+  assert_equal (List.hd_exn configuration.rules).code 2001;
+  let assert_fails configuration ~expected =
+    assert_raises expected (fun () -> parse configuration |> ignore)
+  in
+  assert_fails
+    ~expected:(Failure "Partial sinks must be unique - an entry for `C` already exists.")
+    {|
+    { sources: [
+        { name: "A" },
+        { name: "B" }
+      ],
+      combined_source_rules: [
+        {
+           name: "test combined rule",
+           sources: {"a": "A", "b": "B"},
+           partial_sink: "C",
+           code: 2001,
+           message_format: "some form"
+        },
+        {
+           name: "test combined rule",
+           sources: {"a": "A", "b": "B"},
+           partial_sink: "C",
+           code: 2002,
+           message_format: "other form"
+        }
+      ]
+    }
+  |}
 
 
 let test_combined_source_parse_errors _ =

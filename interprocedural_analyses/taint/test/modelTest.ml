@@ -34,7 +34,7 @@ let set_up_environment ?source ?rules ~context ~model_source () =
         sources = ["TestTest"; "UserControlled"; "Test"; "Demo"];
         sinks = ["TestSink"; "OtherSink"; "Test"; "Demo"; "XSS"];
         features = ["special"];
-        acceptable_sink_labels = String.Map.Tree.of_alist_exn ["Test", ["a"; "b"]];
+        partial_sink_labels = String.Map.Tree.of_alist_exn ["Test", ["a"; "b"]];
         rules;
       }
   in
@@ -766,7 +766,7 @@ let test_invalid_models context =
           sinks = ["X"; "Y"; "Test"];
           features = ["featureA"; "featureB"];
           rules = [];
-          acceptable_sink_labels = String.Map.Tree.of_alist_exn ["Test", ["a"; "b"]];
+          partial_sink_labels = String.Map.Tree.of_alist_exn ["Test", ["a"; "b"]];
         }
     in
     let error_message =
@@ -832,7 +832,7 @@ let test_invalid_models context =
     ();
   assert_invalid_model
     ~model_source:"def test.partial_sink(x: PartialSink[X[a]], y: PartialSink[X[b]]): ..."
-    ~expect:"Invalid model for `test.partial_sink`: No labels specified for `X`"
+    ~expect:"Invalid model for `test.partial_sink`: Unrecognized partial sink `X`."
     ();
 
   assert_valid_model
@@ -1120,8 +1120,7 @@ let test_invalid_models context =
     ~source:"def partial_sink(x, y) -> None: ..."
     ~model_source:
       "def test.partial_sink(x: PartialSink[Nonexistent[a]], y: PartialSink[Nonexistent[b]]): ..."
-    ~expect:
-      "Invalid model for `test.partial_sink`: Unrecognized sink for partial sink: `Nonexistent`."
+    ~expect:"Invalid model for `test.partial_sink`: Unrecognized partial sink `Nonexistent`."
     ();
   assert_invalid_model
     ~source:"def f(parameter): ..."

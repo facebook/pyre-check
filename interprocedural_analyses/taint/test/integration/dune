@@ -4,6 +4,7 @@
   (glob_files "*.py")
   (glob_files "*.models")
   (glob_files "*.cg")
+  (glob_files "*.config")
   (glob_files "*.overrides")
   (glob_files "*.pysa"))
  (action
