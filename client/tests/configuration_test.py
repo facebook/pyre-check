@@ -681,6 +681,25 @@ class FullConfigurationTest(testslide.TestCase):
                 ],
             )
 
+    def test_existent_ignore_infer(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root)
+            _ensure_directory_exists(root_path, ["a", "b/c"])
+
+            self.assertListEqual(
+                FullConfiguration(
+                    project_root=str(root_path),
+                    dot_pyre_directory=Path(".pyre"),
+                    ignore_infer=[
+                        str(root_path / "a"),
+                        str(root_path / "x"),
+                        str(root_path / "b/c"),
+                        str(root_path / "y/z"),
+                    ],
+                ).get_existent_ignore_infer_paths(),
+                [str(root_path / "a"), str(root_path / "b/c")],
+            )
+
     def test_existent_do_not_ignore_errors(self) -> None:
         with tempfile.TemporaryDirectory() as root:
             root_path = Path(root)

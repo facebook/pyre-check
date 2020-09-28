@@ -453,7 +453,9 @@ class Infer(Reporting):
         self._errors_from_stdin = errors_from_stdin
         self._annotate_from_existing_stubs = annotate_from_existing_stubs
         self._debug_infer = debug_infer
-        self._ignore_infer: List[str] = self._configuration.ignore_infer
+        self._ignore_infer: List[
+            str
+        ] = self._configuration.get_existent_ignore_infer_paths()
 
         self._show_error_traces = True
         self._output = JSON

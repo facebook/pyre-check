@@ -701,6 +701,15 @@ class FullConfiguration:
                 LOG.debug(f"Filtering out nonexistent search path: {search_path}")
         return existent_paths
 
+    def get_existent_ignore_infer_paths(self) -> List[str]:
+        existent_paths = []
+        for path in self.ignore_infer:
+            if os.path.exists(path):
+                existent_paths.append(path)
+            else:
+                LOG.warn(f"Filtering out nonexistent path in `ignore_infer`: {path}")
+        return existent_paths
+
     def get_existent_do_not_ignore_errors_in_paths(self) -> List[str]:
         """
         This is a separate method because we want to check for existing files
@@ -999,7 +1008,7 @@ class Configuration:
         self.strict: bool = strict
         self._use_buck_builder: Optional[bool] = use_buck_builder
         self._use_buck_source_database: Optional[bool] = use_buck_source_database
-        self.ignore_infer: List[str] = []
+        self._ignore_infer: List[str] = []
         self._do_not_ignore_errors_in: List[str] = []
 
         self._search_path: List[SearchPathElement] = []
@@ -1094,7 +1103,7 @@ class Configuration:
                 "`ignore_all_errors` field must be a list of strings."
             )
 
-        if not is_list_of_strings(self.ignore_infer):
+        if not is_list_of_strings(self._ignore_infer):
             raise InvalidConfiguration(
                 "`ignore_infer` field must be a list of strings."
             )
@@ -1107,20 +1116,6 @@ class Configuration:
             raise InvalidConfiguration(
                 "`extensions` must only contain strings formatted as `.EXT`"
             )
-
-        non_existent_infer_paths = [
-            path for path in self.ignore_infer if not os.path.exists(path)
-        ]
-        if non_existent_infer_paths:
-            LOG.warning(
-                "Nonexistent paths passed in to `ignore_infer`: "
-                f"`{non_existent_infer_paths}`"
-            )
-            self.ignore_infer = [
-                path
-                for path in self.ignore_infer
-                if path not in non_existent_infer_paths
-            ]
 
         if not is_list_of_strings(self.other_critical_files):
             raise InvalidConfiguration(
@@ -1158,6 +1153,15 @@ class Configuration:
                 existent_paths.append(search_path_element)
             else:
                 LOG.debug(f"Filtering out nonexistent search path: {search_path}")
+        return existent_paths
+
+    def get_existent_ignore_infer_paths(self) -> List[str]:
+        existent_paths = []
+        for path in self._ignore_infer:
+            if os.path.exists(path):
+                existent_paths.append(path)
+            else:
+                LOG.warn(f"Filtering out nonexistent path in `ignore_infer`: {path}")
         return existent_paths
 
     def get_existent_do_not_ignore_errors_in_paths(self) -> List[str]:
@@ -1401,7 +1405,7 @@ class Configuration:
                 self._ignore_all_errors.extend(ignore_all_errors)
 
                 ignore_infer = configuration.consume("ignore_infer", default=[])
-                self.ignore_infer.extend(ignore_infer)
+                self._ignore_infer.extend(ignore_infer)
 
                 self._number_of_workers = int(
                     configuration.consume(
@@ -1539,8 +1543,8 @@ class Configuration:
             expand_relative_path(root, path) for path in self._ignore_all_errors
         ]
 
-        self.ignore_infer = [
-            expand_relative_path(root, path) for path in self.ignore_infer
+        self._ignore_infer = [
+            expand_relative_path(root, path) for path in self._ignore_infer
         ]
 
         binary = self._binary

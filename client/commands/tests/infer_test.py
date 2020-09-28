@@ -592,7 +592,7 @@ def mock_configuration() -> MagicMock:
     configuration.get_typeshed = lambda: "stub"
     configuration.logger = None
     configuration.strict = False
-    configuration.ignore_infer = []
+    configuration.get_existent_ignore_infer_paths = lambda: []
     return configuration
 
 
@@ -708,7 +708,7 @@ class InferTest(unittest.TestCase):
                 )
                 command.run()
                 call_client.assert_not_called()
-        configuration.ignore_infer = ["path1.py", "path2.py"]
+        configuration.get_existent_ignore_infer_paths = lambda: ["path1.py", "path2.py"]
         with patch.object(commands.Command, "_call_client") as call_client:
             with patch.object(sys.stdin, "read", return_value=""):
                 command = Infer(
