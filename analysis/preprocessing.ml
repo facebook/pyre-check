@@ -3237,7 +3237,8 @@ let replace_union_shorthand source =
       in
       let value =
         match Node.value expression with
-        | Expression.Call { callee; arguments } when name_is ~name:"isinstance" callee ->
+        | Expression.Call { callee; arguments }
+          when name_is ~name:"isinstance" callee || name_is ~name:"issubclass" callee ->
             let arguments = List.map ~f:transform_argument arguments in
             Expression.Call { callee; arguments }
         | value -> value

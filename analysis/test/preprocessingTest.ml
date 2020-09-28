@@ -4634,6 +4634,27 @@ let test_union_shorthand _ =
     {|
     isinstance(x, typing.Union[int, str]) and isinstance(x, typing.Union[bool, float])
   |};
+  assert_replace
+    {|
+      issubclass(int, int | float | int)
+    |}
+    {|
+      issubclass(int, typing.Union[int, float, int])
+    |};
+  assert_replace
+    {|
+      issubclass(int, int | (float | int))
+    |}
+    {|
+      issubclass(int, typing.Union[int, float, int])
+    |};
+  assert_replace
+    {|
+      issubclass(dict, float | str)
+    |}
+    {|
+      issubclass(dict, typing.Union[float, str])
+    |};
   ()
 
 
