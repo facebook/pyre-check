@@ -62,15 +62,6 @@ def _expand_relative_root(path: str, relative_root: str) -> str:
     return path
 
 
-def _expand_global_and_relative_root(
-    root: str, project_root: str, relative_root: Optional[str]
-) -> str:
-    return _expand_global_root(
-        _expand_relative_root(root, relative_root=(relative_root or "")),
-        global_root=project_root,
-    )
-
-
 def _get_optional_value(source: Optional[T], default: T) -> T:
     return source if source is not None else default
 
@@ -103,10 +94,6 @@ class InvalidConfiguration(Exception):
 
 class SearchPathElement(abc.ABC):
     @abc.abstractmethod
-    def get_root(self) -> str:
-        raise NotImplementedError
-
-    @abc.abstractmethod
     def path(self) -> str:
         raise NotImplementedError
 
@@ -122,20 +109,10 @@ class SearchPathElement(abc.ABC):
     def expand_relative_root(self, relative_root: str) -> "SearchPathElement":
         raise NotImplementedError
 
-    def expand_global_and_relative_root(
-        self, project_root: str, relative_root: Optional[str]
-    ) -> "SearchPathElement":
-        return self.expand_relative_root(
-            relative_root=relative_root or ""
-        ).expand_global_root(project_root)
-
 
 @dataclasses.dataclass
 class SimpleSearchPathElement(SearchPathElement):
     root: str
-
-    def get_root(self) -> str:
-        return self.root
 
     def path(self) -> str:
         return self.root
@@ -158,9 +135,6 @@ class SimpleSearchPathElement(SearchPathElement):
 class SubdirectorySearchPathElement(SearchPathElement):
     root: str
     subdirectory: str
-
-    def get_root(self) -> str:
-        return self.root
 
     def path(self) -> str:
         return os.path.join(self.root, self.subdirectory)
@@ -185,9 +159,6 @@ class SubdirectorySearchPathElement(SearchPathElement):
 class SitePackageSearchPathElement(SearchPathElement):
     site_root: str
     package_name: str
-
-    def get_root(self) -> str:
-        return self.site_root
 
     def path(self) -> str:
         return os.path.join(self.site_root, self.package_name)
