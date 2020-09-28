@@ -755,6 +755,25 @@ class FullConfigurationTest(testslide.TestCase):
             ).get_binary_version()
         )
 
+    def test_get_number_of_workers(self) -> None:
+        self.assertEquals(
+            FullConfiguration(
+                project_root="irrelevant",
+                dot_pyre_directory=Path(".pyre"),
+                number_of_workers=42,
+            ).get_number_of_workers(),
+            42,
+        )
+        # Whatever the default number is, it should be positive
+        self.assertGreater(
+            FullConfiguration(
+                project_root="irrelevant",
+                dot_pyre_directory=Path(".pyre"),
+                number_of_workers=None,
+            ).get_number_of_workers(),
+            0,
+        )
+
     def test_create_from_command_arguments_only(self) -> None:
         # We assume there does not exist a `.pyre_configuration` file that
         # covers this temporary directory.
@@ -1217,7 +1236,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
                 configuration.get_existent_search_paths(),
                 [SimpleSearchPathElement("additional/")],
             )
-        self.assertEqual(configuration.number_of_workers, 20)
+        self.assertEqual(configuration.get_number_of_workers(), 20)
         self.assertEqual(configuration.taint_models_path, [])
         self.assertEqual(configuration.file_hash, None)
         self.assertEqual(configuration.strict, False)
@@ -1239,7 +1258,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
                 configuration.get_existent_search_paths(),
                 [SimpleSearchPathElement("additional/")],
             )
-        self.assertEqual(configuration.number_of_workers, 20)
+        self.assertEqual(configuration.get_number_of_workers(), 20)
         self.assertEqual(configuration.taint_models_path, [])
         self.assertEqual(configuration.file_hash, None)
         self.assertEqual(configuration.strict, True)
@@ -1266,7 +1285,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
                 ],
                 ["additional/", "root/subdirectory"],
             )
-        self.assertEqual(configuration.number_of_workers, 20)
+        self.assertEqual(configuration.get_number_of_workers(), 20)
         self.assertEqual(configuration.file_hash, None)
         self.assertEqual(configuration.taint_models_path, [])
 
@@ -1292,7 +1311,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
                 ],
                 ["project_root/additional/", "project_root/root/$subdirectory"],
             )
-        self.assertEqual(configuration.number_of_workers, 20)
+        self.assertEqual(configuration.get_number_of_workers(), 20)
         self.assertEqual(configuration.file_hash, None)
         self.assertEqual(configuration.taint_models_path, [])
 

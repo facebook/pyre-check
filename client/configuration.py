@@ -742,6 +742,22 @@ class FullConfiguration:
         )
         return status.stdout.strip() if status.returncode == 0 else None
 
+    def get_number_of_workers(self) -> int:
+        number_of_workers = self.number_of_workers
+        if number_of_workers is not None and number_of_workers > 0:
+            return number_of_workers
+
+        try:
+            default_number_of_workers = max(multiprocessing.cpu_count() - 4, 1)
+        except NotImplementedError:
+            default_number_of_workers = 4
+
+        LOG.warning(
+            "Could not determine the number of workers from configuration. "
+            f"Auto-set the value to {default_number_of_workers}."
+        )
+        return default_number_of_workers
+
 
 def create_configuration(
     arguments: command_arguments.CommandArguments, base_directory: Path
@@ -909,7 +925,7 @@ class Configuration:
         self.logger = logger
         self.formatter = formatter
         self._ignore_all_errors = []
-        self.number_of_workers: int = 0
+        self._number_of_workers: int = 0
         self.project_root: str = project_root
         self._local_root: Optional[str] = local_root
         self.taint_models_path: List[str] = []
@@ -1047,9 +1063,6 @@ class Configuration:
 
         if not os.path.exists(self.binary):
             raise InvalidConfiguration(f"Binary at `{self.binary}` does not exist.")
-
-        if self.number_of_workers < 1:
-            raise InvalidConfiguration("Number of workers must be greater than 0.")
 
         # Validate typeshed path and sub-elements.
         assert_readable_directory_in_configuration(self.typeshed, field_name="typeshed")
@@ -1211,6 +1224,22 @@ class Configuration:
         else:
             return None
 
+    def get_number_of_workers(self) -> int:
+        number_of_workers = self._number_of_workers
+        if number_of_workers > 0:
+            return number_of_workers
+
+        try:
+            default_number_of_workers = max(multiprocessing.cpu_count() - 4, 1)
+        except NotImplementedError:
+            default_number_of_workers = 4
+
+        LOG.warning(
+            "Could not determine the number of workers from configuration. "
+            f"Auto-set the value to {default_number_of_workers}."
+        )
+        return default_number_of_workers
+
     def _check_nested_configurations(self, local_root: str) -> None:
         # TODO(T67874463): Handle sanity checks against project configurations
         parent_local_root = find_parent_directory_containing_file(
@@ -1322,9 +1351,9 @@ class Configuration:
                 ignore_infer = configuration.consume("ignore_infer", default=[])
                 self.ignore_infer.extend(ignore_infer)
 
-                self.number_of_workers = int(
+                self._number_of_workers = int(
                     configuration.consume(
-                        "workers", default=0, current=self.number_of_workers
+                        "workers", default=0, current=self._number_of_workers
                     )
                 )
 
@@ -1521,12 +1550,6 @@ class Configuration:
                 LOG.warning(f"Could not find `{BINARY_NAME}` in PATH")
             else:
                 LOG.info("Found: `%s`", self._binary)
-
-        if self.number_of_workers == 0:
-            try:
-                self.number_of_workers = max(multiprocessing.cpu_count() - 4, 1)
-            except NotImplementedError:
-                self.number_of_workers = 4
 
         if not self._typeshed:
             LOG.info("No typeshed specified, looking for it")

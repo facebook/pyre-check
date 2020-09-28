@@ -50,7 +50,6 @@ class StartTest(unittest.TestCase):
 
         configuration = mock_configuration()
         configuration.version_hash = "hash"
-        configuration.number_of_workers = 5
 
         # Check start without watchman.
         analysis_directory = AnalysisDirectory(".")
