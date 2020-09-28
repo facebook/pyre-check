@@ -24,7 +24,7 @@ from ..configuration import (
     SimpleSearchPathElement,
     SitePackageSearchPathElement,
     SubdirectorySearchPathElement,
-    _relativize_root,
+    _expand_global_and_relative_root,
     create_search_paths,
     merge_partial_configurations,
 )
@@ -1320,27 +1320,33 @@ class ConfigurationIntegrationTest(unittest.TestCase):
         )
         assert_version(returncode=1, stdout="facefacefaceb00", expected=None)
 
-    def test_relativize_root__project_relative_path(self) -> None:
+    def test_expand_global_and_relative_root__project_relative_path(self) -> None:
         self.assertEqual(
-            _relativize_root("//foo/bar.py", project_root="hello", relative_root=None),
+            _expand_global_and_relative_root(
+                "//foo/bar.py", project_root="hello", relative_root=None
+            ),
             "hello/foo/bar.py",
         )
         # Globs should be untouched.
         self.assertEqual(
-            _relativize_root(
+            _expand_global_and_relative_root(
                 "//foo/*/bar.py", project_root="hello", relative_root=None
             ),
             "hello/foo/*/bar.py",
         )
 
-    def test_relativize_root__not_project_relative(self) -> None:
+    def test_expand_global_and_relative_root__not_project_relative(self) -> None:
         self.assertEqual(
-            _relativize_root("foo/bar.py", project_root="hello", relative_root=None),
+            _expand_global_and_relative_root(
+                "foo/bar.py", project_root="hello", relative_root=None
+            ),
             "foo/bar.py",
         )
         # Globs should be untouched.
         self.assertEqual(
-            _relativize_root("foo/*/bar.py", project_root="hello", relative_root=None),
+            _expand_global_and_relative_root(
+                "foo/*/bar.py", project_root="hello", relative_root=None
+            ),
             "foo/*/bar.py",
         )
 
@@ -1389,59 +1395,103 @@ class SearchPathElementTest(unittest.TestCase):
             "foo$bar",
         )
 
-    def test_expand_root(self) -> None:
+    def test_expand_global_root(self) -> None:
         self.assertEqual(
-            SimpleSearchPathElement("simple/path").expand_root(
+            SimpleSearchPathElement("//simple/path").expand_global_root("root"),
+            SimpleSearchPathElement("root/simple/path"),
+        )
+        self.assertEqual(
+            SubdirectorySearchPathElement("//path", "sub").expand_global_root("root"),
+            SubdirectorySearchPathElement("root/path", "sub"),
+        )
+        self.assertEqual(
+            SitePackageSearchPathElement("//site_root", "package").expand_global_root(
+                "root"
+            ),
+            SitePackageSearchPathElement("//site_root", "package"),
+        )
+
+    def test_expand_relative_root(self) -> None:
+        self.assertEqual(
+            SimpleSearchPathElement("simple/path").expand_relative_root(
+                "root/local_project"
+            ),
+            SimpleSearchPathElement("root/local_project/simple/path"),
+        )
+        self.assertEqual(
+            SubdirectorySearchPathElement("path", "sub").expand_relative_root(
+                "root/local_project"
+            ),
+            SubdirectorySearchPathElement("root/local_project/path", "sub"),
+        )
+        self.assertEqual(
+            SitePackageSearchPathElement("site_root", "package").expand_relative_root(
+                "root/local_project"
+            ),
+            SitePackageSearchPathElement("site_root", "package"),
+        )
+
+    def test_expand_global_and_relative_root(self) -> None:
+        self.assertEqual(
+            SimpleSearchPathElement("simple/path").expand_global_and_relative_root(
                 project_root="root", relative_root=None
             ),
             SimpleSearchPathElement("simple/path"),
         )
         self.assertEqual(
-            SimpleSearchPathElement("simple/path").expand_root(
+            SimpleSearchPathElement("simple/path").expand_global_and_relative_root(
                 project_root="root", relative_root="root/local_project"
             ),
             SimpleSearchPathElement("root/local_project/simple/path"),
         )
         self.assertEqual(
-            SimpleSearchPathElement("//simple/path").expand_root(
+            SimpleSearchPathElement("//simple/path").expand_global_and_relative_root(
                 project_root="root", relative_root="root/local_project"
             ),
             SimpleSearchPathElement("root/simple/path"),
         )
 
         self.assertEqual(
-            SubdirectorySearchPathElement("path", "sub").expand_root(
-                project_root="root", relative_root=None
-            ),
+            SubdirectorySearchPathElement(
+                "path", "sub"
+            ).expand_global_and_relative_root(project_root="root", relative_root=None),
             SubdirectorySearchPathElement("path", "sub"),
         )
         self.assertEqual(
-            SubdirectorySearchPathElement("path", "sub").expand_root(
+            SubdirectorySearchPathElement(
+                "path", "sub"
+            ).expand_global_and_relative_root(
                 project_root="root", relative_root="root/local_project"
             ),
             SubdirectorySearchPathElement("root/local_project/path", "sub"),
         )
         self.assertEqual(
-            SubdirectorySearchPathElement("//path", "sub").expand_root(
+            SubdirectorySearchPathElement(
+                "//path", "sub"
+            ).expand_global_and_relative_root(
                 project_root="root", relative_root="root/local_project"
             ),
             SubdirectorySearchPathElement("root/path", "sub"),
         )
 
         self.assertEqual(
-            SitePackageSearchPathElement("site_root", "package").expand_root(
-                project_root="root", relative_root=None
-            ),
+            SitePackageSearchPathElement(
+                "site_root", "package"
+            ).expand_global_and_relative_root(project_root="root", relative_root=None),
             SitePackageSearchPathElement("site_root", "package"),
         )
         self.assertEqual(
-            SitePackageSearchPathElement("site_root", "package").expand_root(
+            SitePackageSearchPathElement(
+                "site_root", "package"
+            ).expand_global_and_relative_root(
                 project_root="root", relative_root="root/local_project"
             ),
             SitePackageSearchPathElement("site_root", "package"),
         )
         self.assertEqual(
-            SitePackageSearchPathElement("//site_root", "package").expand_root(
+            SitePackageSearchPathElement(
+                "//site_root", "package"
+            ).expand_global_and_relative_root(
                 project_root="root", relative_root="root/local_project"
             ),
             SitePackageSearchPathElement("//site_root", "package"),

@@ -52,11 +52,25 @@ LOG: Logger = logging.getLogger(__name__)
 T = TypeVar("T")
 
 
-def _relativize_root(root: str, project_root: str, relative_root: Optional[str]) -> str:
-    if root.startswith("//"):
-        return expand_relative_path(project_root, root[2:])
-    else:
-        return expand_relative_path(relative_root or "", root)
+def _expand_global_root(path: str, global_root: str) -> str:
+    if path.startswith("//"):
+        return expand_relative_path(global_root, path[2:])
+    return path
+
+
+def _expand_relative_root(path: str, relative_root: str) -> str:
+    if not path.startswith("//"):
+        return expand_relative_path(relative_root, path)
+    return path
+
+
+def _expand_global_and_relative_root(
+    root: str, project_root: str, relative_root: Optional[str]
+) -> str:
+    return _expand_global_root(
+        _expand_relative_root(root, relative_root=(relative_root or "")),
+        global_root=project_root,
+    )
 
 
 class InvalidConfiguration(Exception):
@@ -79,10 +93,19 @@ class SearchPathElement(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def expand_root(
+    def expand_global_root(self, global_root: str) -> "SearchPathElement":
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def expand_relative_root(self, relative_root: str) -> "SearchPathElement":
+        raise NotImplementedError
+
+    def expand_global_and_relative_root(
         self, project_root: str, relative_root: Optional[str]
     ) -> "SearchPathElement":
-        raise NotImplementedError
+        return self.expand_relative_root(
+            relative_root=relative_root or ""
+        ).expand_global_root(project_root)
 
 
 @dataclasses.dataclass
@@ -98,11 +121,14 @@ class SimpleSearchPathElement(SearchPathElement):
     def command_line_argument(self) -> str:
         return self.root
 
-    def expand_root(
-        self, project_root: str, relative_root: Optional[str]
-    ) -> SearchPathElement:
+    def expand_global_root(self, global_root: str) -> SearchPathElement:
         return SimpleSearchPathElement(
-            _relativize_root(self.root, project_root, relative_root)
+            _expand_global_root(self.root, global_root=global_root)
+        )
+
+    def expand_relative_root(self, relative_root: str) -> SearchPathElement:
+        return SimpleSearchPathElement(
+            _expand_relative_root(self.root, relative_root=relative_root)
         )
 
 
@@ -120,11 +146,15 @@ class SubdirectorySearchPathElement(SearchPathElement):
     def command_line_argument(self) -> str:
         return self.root + "$" + self.subdirectory
 
-    def expand_root(
-        self, project_root: str, relative_root: Optional[str]
-    ) -> SearchPathElement:
+    def expand_global_root(self, global_root: str) -> SearchPathElement:
         return SubdirectorySearchPathElement(
-            root=_relativize_root(self.root, project_root, relative_root),
+            root=_expand_global_root(self.root, global_root=global_root),
+            subdirectory=self.subdirectory,
+        )
+
+    def expand_relative_root(self, relative_root: str) -> SearchPathElement:
+        return SubdirectorySearchPathElement(
+            root=_expand_relative_root(self.root, relative_root=relative_root),
             subdirectory=self.subdirectory,
         )
 
@@ -143,9 +173,11 @@ class SitePackageSearchPathElement(SearchPathElement):
     def command_line_argument(self) -> str:
         return self.site_root + "$" + self.package_name
 
-    def expand_root(
-        self, project_root: str, relative_root: Optional[str]
-    ) -> SearchPathElement:
+    def expand_global_root(self, global_root: str) -> SearchPathElement:
+        # Site package does not participate in root expansion.
+        return self
+
+    def expand_relative_root(self, relative_root: str) -> SearchPathElement:
         # Site package does not participate in root expansion.
         return self
 
@@ -598,7 +630,7 @@ class Configuration:
         self._search_path: List[SearchPathElement] = []
         if search_path:
             search_path_elements = [
-                SimpleSearchPathElement(path).expand_root(
+                SimpleSearchPathElement(path).expand_global_and_relative_root(
                     project_root=project_root, relative_root=None
                 )
                 for path in search_path
@@ -814,7 +846,9 @@ class Configuration:
         constructed.
         """
         ignore_paths = [
-            _relativize_root(path, project_root=self.project_root, relative_root=None)
+            _expand_global_and_relative_root(
+                path, project_root=self.project_root, relative_root=None
+            )
             for path in self._do_not_ignore_errors_in
         ]
         paths = [path for path in ignore_paths if os.path.exists(path)]
@@ -834,7 +868,7 @@ class Configuration:
         """
         expanded_ignore_paths = []
         for path in self._ignore_all_errors:
-            rooted_path = _relativize_root(
+            rooted_path = _expand_global_and_relative_root(
                 path, project_root=self.project_root, relative_root=None
             )
             expanded = glob.glob(rooted_path)
@@ -999,7 +1033,7 @@ class Configuration:
                 if isinstance(additional_search_path, list):
                     self._search_path.extend(
                         [
-                            search_path_element.expand_root(
+                            search_path_element.expand_global_and_relative_root(
                                 project_root=self.project_root,
                                 relative_root=configuration_directory,
                             )
@@ -1012,7 +1046,7 @@ class Configuration:
                 else:
                     self._search_path.extend(
                         [
-                            search_path_element.expand_root(
+                            search_path_element.expand_global_and_relative_root(
                                 project_root=self.project_root,
                                 relative_root=configuration_directory,
                             )
