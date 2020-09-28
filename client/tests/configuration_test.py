@@ -406,6 +406,88 @@ class PartialConfigurationTest(unittest.TestCase):
         assert_overwritten("use_buck_source_database")
         assert_overwritten("version_hash")
 
+    def test_expand_relative_paths(self) -> None:
+        self.assertEqual(
+            PartialConfiguration(binary="foo").expand_relative_paths("bar").binary,
+            "bar/foo",
+        )
+        self.assertEqual(
+            PartialConfiguration(binary="~/foo").expand_relative_paths("bar").binary,
+            str(Path.home() / "foo"),
+        )
+        self.assertEqual(
+            PartialConfiguration(buck_builder_binary="foo")
+            .expand_relative_paths("bar")
+            .buck_builder_binary,
+            "bar/foo",
+        )
+        self.assertEqual(
+            PartialConfiguration(do_not_ignore_all_errors_in=["foo", "bar"])
+            .expand_relative_paths("baz")
+            .do_not_ignore_all_errors_in,
+            ["baz/foo", "baz/bar"],
+        )
+        self.assertEqual(
+            PartialConfiguration(formatter="foo")
+            .expand_relative_paths("bar")
+            .formatter,
+            "bar/foo",
+        )
+        self.assertEqual(
+            PartialConfiguration(ignore_all_errors=["foo", "bar"])
+            .expand_relative_paths("baz")
+            .ignore_all_errors,
+            ["baz/foo", "baz/bar"],
+        )
+        self.assertEqual(
+            PartialConfiguration(ignore_infer=["foo", "bar"])
+            .expand_relative_paths("baz")
+            .ignore_infer,
+            ["baz/foo", "baz/bar"],
+        )
+        self.assertEqual(
+            PartialConfiguration(logger="foo").expand_relative_paths("bar").logger,
+            "bar/foo",
+        )
+        self.assertEqual(
+            PartialConfiguration(other_critical_files=["foo", "bar"])
+            .expand_relative_paths("baz")
+            .other_critical_files,
+            ["baz/foo", "baz/bar"],
+        )
+        self.assertEqual(
+            PartialConfiguration(
+                search_path=[
+                    SimpleSearchPathElement("foo"),
+                    SubdirectorySearchPathElement("bar", "baz"),
+                    SitePackageSearchPathElement("site", "package"),
+                ]
+            )
+            .expand_relative_paths("root")
+            .search_path,
+            [
+                SimpleSearchPathElement("root/foo"),
+                SubdirectorySearchPathElement("root/bar", "baz"),
+                SitePackageSearchPathElement("site", "package"),
+            ],
+        )
+        self.assertEqual(
+            PartialConfiguration(source_directories=["foo", "bar"])
+            .expand_relative_paths("baz")
+            .source_directories,
+            ["baz/foo", "baz/bar"],
+        )
+        self.assertEqual(
+            PartialConfiguration(taint_models_path=["foo", "bar"])
+            .expand_relative_paths("baz")
+            .taint_models_path,
+            ["baz/foo", "baz/bar"],
+        )
+        self.assertEqual(
+            PartialConfiguration(typeshed="foo").expand_relative_paths("bar").typeshed,
+            "bar/foo",
+        )
+
 
 class MockCompletedProcess(NamedTuple):
     returncode: int

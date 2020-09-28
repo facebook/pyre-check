@@ -447,6 +447,65 @@ class PartialConfiguration:
         except OSError as error:
             raise InvalidConfiguration(f"Error when reading {path}: {error}")
 
+    def expand_relative_paths(self, root: str) -> "PartialConfiguration":
+        binary = self.binary
+        if binary is not None:
+            binary = expand_relative_path(root, binary)
+        buck_builder_binary = self.buck_builder_binary
+        if buck_builder_binary is not None:
+            buck_builder_binary = expand_relative_path(root, buck_builder_binary)
+        formatter = self.formatter
+        if formatter is not None:
+            formatter = expand_relative_path(root, formatter)
+        logger = self.logger
+        if logger is not None:
+            logger = expand_relative_path(root, logger)
+        source_directories = self.source_directories
+        if source_directories is not None:
+            source_directories = [
+                expand_relative_path(root, path) for path in source_directories
+            ]
+        typeshed = self.typeshed
+        if typeshed is not None:
+            typeshed = expand_relative_path(root, typeshed)
+        return PartialConfiguration(
+            autocomplete=self.autocomplete,
+            binary=binary,
+            buck_builder_binary=buck_builder_binary,
+            disabled=self.disabled,
+            do_not_ignore_all_errors_in=[
+                expand_relative_path(root, path)
+                for path in self.do_not_ignore_all_errors_in
+            ],
+            dot_pyre_directory=self.dot_pyre_directory,
+            excludes=self.excludes,
+            extensions=self.extensions,
+            file_hash=self.file_hash,
+            formatter=formatter,
+            ignore_all_errors=[
+                expand_relative_path(root, path) for path in self.ignore_all_errors
+            ],
+            ignore_infer=[
+                expand_relative_path(root, path) for path in self.ignore_infer
+            ],
+            logger=logger,
+            number_of_workers=self.number_of_workers,
+            other_critical_files=[
+                expand_relative_path(root, path) for path in self.other_critical_files
+            ],
+            search_path=[path.expand_relative_root(root) for path in self.search_path],
+            source_directories=source_directories,
+            strict=self.strict,
+            taint_models_path=[
+                expand_relative_path(root, path) for path in self.taint_models_path
+            ],
+            targets=self.targets,
+            typeshed=typeshed,
+            use_buck_builder=self.use_buck_builder,
+            use_buck_source_database=self.use_buck_source_database,
+            version_hash=self.version_hash,
+        )
+
 
 def merge_partial_configurations(
     base: PartialConfiguration, override: PartialConfiguration
