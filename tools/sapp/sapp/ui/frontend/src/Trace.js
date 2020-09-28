@@ -53,10 +53,35 @@ function Source(
       </div>
     );
   } else {
+    const value = data.file.edges[0].node.contents;
+
+    var range = null;
+    var selection = null;
+    const split_location = props.location.split('|').map(i => parseInt(i));
+    if (split_location.length === 3) {
+      range = {
+        from: {line: split_location[0] - 1, ch: split_location[1]},
+        to: {line: split_location[0] - 1, ch: split_location[2]},
+      };
+      selection = range.from;
+    }
+
     content = (
       <CodeMirror
-        value={data.file.edges[0].node.contents}
+        value={value}
         options={{lineNumbers: true, readOnly: 'nocursor'}}
+        editorDidMount={editor => {
+          if (range === null) {
+            return;
+          }
+          editor.markText(range.from, range.to, {
+            className: 'traceSelection',
+          });
+        }}
+        selection={{
+          ranges: [{anchor: selection, head: selection}],
+          focus: true,
+        }}
       />
     );
   }

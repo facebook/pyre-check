@@ -8,3 +8,7 @@
 .CodeMirror.cm-s-default {
     height: 12em;
 }
+
+.traceSelection {
+    background-color: yellow;
+}
