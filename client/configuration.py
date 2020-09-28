@@ -775,6 +775,13 @@ class FullConfiguration:
             LOG.info(f"Found: `{auto_determined_typeshed}`")
             return str(auto_determined_typeshed)
 
+    def get_version_hash(self) -> Optional[str]:
+        overriding_version_hash = os.getenv("PYRE_VERSION_HASH")
+        if overriding_version_hash:
+            LOG.warning(f"Version hash overridden with `{overriding_version_hash}`")
+            return overriding_version_hash
+        return self.version_hash
+
     def get_binary_version(self) -> Optional[str]:
         binary = self.get_binary()
         if binary is None:
@@ -1031,7 +1038,6 @@ class Configuration:
 
         # Order matters. The values will only be updated if a field is None.
         self._read(project_configuration)
-        self._override_version_hash()
         self._resolve_versioned_paths()
         self._validate()
 
@@ -1125,10 +1131,6 @@ class Configuration:
             raise InvalidConfiguration(
                 "`do_not_ignore_errors_in` field must be a list of strings."
             )
-
-    @property
-    def version_hash(self) -> str:
-        return self._version_hash or "unversioned"
 
     @property
     def buck_builder_binary(self) -> Optional[str]:
@@ -1282,6 +1284,13 @@ class Configuration:
         else:
             LOG.info(f"Found: `{auto_determined_typeshed}`")
             return str(auto_determined_typeshed)
+
+    def get_version_hash(self) -> Optional[str]:
+        overriding_version_hash = os.getenv("PYRE_VERSION_HASH")
+        if overriding_version_hash:
+            LOG.warning(f"Version hash overridden with `{overriding_version_hash}`")
+            return overriding_version_hash
+        return self._version_hash
 
     def _check_nested_configurations(self, local_root: str) -> None:
         # TODO(T67874463): Handle sanity checks against project configurations
@@ -1559,7 +1568,7 @@ class Configuration:
         ]
 
     def _resolve_versioned_paths(self) -> None:
-        version_hash = self.version_hash
+        version_hash = self._version_hash
         if not version_hash:
             return
 
@@ -1569,9 +1578,3 @@ class Configuration:
         typeshed = self._typeshed
         if typeshed:
             self._typeshed = typeshed.replace("%V", version_hash)
-
-    def _override_version_hash(self) -> None:
-        overriding_version_hash = os.getenv("PYRE_VERSION_HASH")
-        if overriding_version_hash:
-            self._version_hash = overriding_version_hash
-            LOG.warning("Version hash overridden with `%s`", self._version_hash)

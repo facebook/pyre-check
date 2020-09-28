@@ -48,8 +48,7 @@ class StartTest(unittest.TestCase):
         original_directory = "/original/directory"
         arguments = mock_arguments()
 
-        configuration = mock_configuration()
-        configuration.version_hash = "hash"
+        configuration = mock_configuration(version_hash="hash")
 
         # Check start without watchman.
         analysis_directory = AnalysisDirectory(".")
@@ -402,9 +401,8 @@ class StartTest(unittest.TestCase):
         self.assertEqual(set(command._flags()), {*flags})
 
         arguments = mock_arguments(saved_state_project="pyre/saved_state")
-        configuration = mock_configuration()
+        configuration = mock_configuration(version_hash="hash")
         configuration.relative_local_root = "first/second"
-        configuration.version_hash = "hash"
         command = Start(
             arguments,
             original_directory,

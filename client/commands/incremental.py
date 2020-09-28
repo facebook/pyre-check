@@ -153,7 +153,12 @@ class Incremental(Reporting):
 
     def _flags(self) -> List[str]:
         flags = super()._flags()
-        flags.extend(["-expected-binary-version", self._configuration.version_hash])
+        flags.extend(
+            [
+                "-expected-binary-version",
+                self._configuration.get_version_hash() or "unversioned",
+            ]
+        )
 
         typeshed = self._configuration.get_typeshed()
         search_path = [

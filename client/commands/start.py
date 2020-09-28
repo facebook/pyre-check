@@ -213,7 +213,7 @@ class Start(Reporting):
                 "-workers",
                 str(self._configuration.get_number_of_workers()),
                 "-expected-binary-version",
-                self._configuration.version_hash,
+                self._configuration.get_version_hash() or "unversioned",
             ]
         )
 

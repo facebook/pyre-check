@@ -63,7 +63,9 @@ class ProjectFilesMonitor(Subscriber):
 
         self.socket_connection = SocketConnection(self._configuration.log_directory)
         self.socket_connection.connect()
-        self.socket_connection.perform_handshake(self._configuration.version_hash)
+        self.socket_connection.perform_handshake(
+            self._configuration.get_version_hash() or "unversioned"
+        )
 
     @property
     def _name(self) -> str:

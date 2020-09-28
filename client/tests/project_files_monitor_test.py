@@ -147,10 +147,9 @@ class MonitorTest(unittest.TestCase):
             server_thread = threading.Thread(target=server)
             server_thread.start()
 
-            configuration = mock_configuration()
+            configuration = mock_configuration(version_hash="123")
             configuration.log_directory = root + "/.pyre"
             configuration.extensions = []
-            configuration.version_hash = "123"
             analysis_directory = MagicMock()
             analysis_directory.process_updated_files.side_effect = lambda files: UpdatedPaths(
                 updated_paths=[file.replace("ROOT", "ANALYSIS") for file in files],

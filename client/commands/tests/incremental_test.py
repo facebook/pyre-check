@@ -74,8 +74,7 @@ class IncrementalTest(unittest.TestCase):
         original_directory = "/original/directory"
         arguments = mock_arguments()
 
-        configuration = mock_configuration()
-        configuration.version_hash = "hash"
+        configuration = mock_configuration(version_hash="hash")
         analysis_directory = AnalysisDirectory(".")
 
         with patch.object(SocketConnection, "connect") as connect, patch.object(
@@ -278,8 +277,7 @@ class IncrementalTest(unittest.TestCase):
         find_global_and_local_root.return_value = find_directories.FoundRoot(
             Path("/root")
         )  # project root
-        configuration = mock_configuration()
-        configuration.version_hash = "hash"
+        configuration = mock_configuration(version_hash="hash")
         analysis_directory = AnalysisDirectory("/root")
 
         with patch.object(SocketConnection, "connect") as connect, patch.object(

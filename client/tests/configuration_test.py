@@ -905,6 +905,36 @@ class FullConfigurationTest(testslide.TestCase):
                 None,
             )
 
+    def test_get_version_hash_from_configuration(self) -> None:
+        with _switch_environment({}):
+            self.assertEqual(
+                FullConfiguration(
+                    project_root="irrelevant",
+                    dot_pyre_directory=Path(".pyre"),
+                    version_hash="abc",
+                ).get_version_hash(),
+                "abc",
+            )
+
+    def test_get_version_hash_environment_override(self) -> None:
+        with _switch_environment({"PYRE_VERSION_HASH": "abc"}):
+            self.assertEqual(
+                FullConfiguration(
+                    project_root="irrelevant",
+                    dot_pyre_directory=Path(".pyre"),
+                    version_hash=None,
+                ).get_version_hash(),
+                "abc",
+            )
+            self.assertEqual(
+                FullConfiguration(
+                    project_root="irrelevant",
+                    dot_pyre_directory=Path(".pyre"),
+                    version_hash="def",
+                ).get_version_hash(),
+                "abc",
+            )
+
     def test_create_from_command_arguments_only(self) -> None:
         # We assume there does not exist a `.pyre_configuration` file that
         # covers this temporary directory.
@@ -1327,7 +1357,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
         configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
         self.assertEqual(configuration.targets, ["//a/b/c"])
         self.assertEqual(configuration.source_directories, [])
-        self.assertEqual(configuration.version_hash, "unversioned")
+        self.assertEqual(configuration.get_version_hash(), None)
         self.assertEqual(configuration.logger, None)
         self.assertEqual(configuration.file_hash, None)
         self.assertTrue(configuration.disabled)
@@ -1683,15 +1713,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
         with patch.object(os, "getenv", return_value="VERSION_HASH"):
             json_load.side_effect = [{}, {}]
             configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
-            self.assertEqual(configuration.version_hash, "VERSION_HASH")
-
-        with patch.object(os, "getenv", return_value="VERSION_HASH"):
-            json_load.side_effect = [
-                {"version": "NOT_THIS_VERSION", "typeshed": "/TYPE/%V/SHED/"},
-                {},
-            ]
-            configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
-            self.assertEqual(configuration._typeshed, "/TYPE/VERSION_HASH/SHED/")
+            self.assertEqual(configuration.get_version_hash(), "VERSION_HASH")
 
         # Test buck builder fields
         json_load.side_effect = [{"use_buck_builder": True}, {}]
@@ -2103,12 +2125,9 @@ class ConfigurationIntegrationTest(unittest.TestCase):
             Configuration("", dot_pyre_directory=Path("/.pyre"))
 
     @patch.object(Configuration, "_read")
-    @patch.object(Configuration, "_override_version_hash")
     @patch.object(Configuration, "_resolve_versioned_paths")
     @patch.object(Configuration, "_validate")
-    def test_find_binary(
-        self, _validate, _resolve_versioned_paths, _override_version_hash, _read
-    ) -> None:
+    def test_find_binary(self, _validate, _resolve_versioned_paths, _read) -> None:
         # The PYRE_BINARY environment variable may change the result of this test,
         # as the configuration lets it override the actual search.
         if "PYRE_BINARY" in os.environ:

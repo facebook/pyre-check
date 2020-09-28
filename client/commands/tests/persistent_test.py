@@ -28,8 +28,7 @@ class PersistentTest(unittest.TestCase):
         Monitor: MagicMock,
     ) -> None:
         original_directory = "/original/directory"
-        configuration = mock_configuration()
-        configuration.version_hash = "hash"
+        configuration = mock_configuration(version_hash="hash")
 
         # Check start without watchman.
         with patch.object(commands.Command, "_call_client") as call_client:

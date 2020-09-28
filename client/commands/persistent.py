@@ -86,7 +86,7 @@ class Persistent(Command):
             "-log-identifier",
             '"{}"'.format(self._analysis_directory.get_root()),
             "-expected-binary-version",
-            self._configuration.version_hash,
+            self._configuration.get_version_hash() or "unversioned",
         ]
         if self._configuration.autocomplete:
             flags.append("-autocomplete")

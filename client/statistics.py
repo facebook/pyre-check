@@ -47,7 +47,10 @@ def log(
     if configuration:
         # pyre-fixme[9]: normals has type `Dict[str, str]`; used as `Union[Dict[str,
         #  Optional[str]], Dict[str, str]]`.
-        normals: Dict[str, str] = {**normals, "version": configuration.version_hash}
+        normals: Dict[str, str] = {
+            **normals,
+            "version": configuration.get_version_hash() or "unversioned",
+        }
         if not logger:
             logger = configuration.logger
     if not logger:
