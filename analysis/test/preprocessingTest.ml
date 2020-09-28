@@ -4613,6 +4613,27 @@ let test_union_shorthand _ =
   assert_replace {| 1 | 2 |} {|
      1 | 2
     |};
+  assert_replace
+    {|
+    isinstance(x, int | str)
+  |}
+    {|
+    isinstance(x, typing.Union[int, str])
+  |};
+  assert_replace
+    {|
+    isinstance(x, typing.List[int | str])
+  |}
+    {|
+    isinstance(x, typing.List[typing.Union[int, str]])
+  |};
+  assert_replace
+    {|
+    isinstance(x, int | str) and isinstance(x, bool | float)
+  |}
+    {|
+    isinstance(x, typing.Union[int, str]) and isinstance(x, typing.Union[bool, float])
+  |};
   ()
 
 

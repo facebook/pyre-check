@@ -3231,7 +3231,18 @@ let replace_union_shorthand source =
       (), [statement]
 
 
-    let expression _ expression = expression
+    let expression _ expression =
+      let transform_argument ({ Call.Argument.value; _ } as argument) =
+        { argument with Call.Argument.value = transform_shorthand_union_expression value }
+      in
+      let value =
+        match Node.value expression with
+        | Expression.Call { callee; arguments } when name_is ~name:"isinstance" callee ->
+            let arguments = List.map ~f:transform_argument arguments in
+            Expression.Call { callee; arguments }
+        | value -> value
+      in
+      { expression with Node.value }
   end)
   in
   Transform.transform () source |> Transform.source
