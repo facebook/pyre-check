@@ -128,7 +128,12 @@ class Rage(Command):
     def _rage(self, output_file: IO[str]) -> None:
         # Do not use logging. Logging goes to stderr.
         print("Client version:", __version__, file=output_file, flush=True)
-        print("Binary path:", self._configuration.binary, file=output_file, flush=True)
+        print(
+            "Binary path:",
+            self._configuration.get_binary(),
+            file=output_file,
+            flush=True,
+        )
         print(
             "Configured binary version:",
             self._configuration.get_binary_version()

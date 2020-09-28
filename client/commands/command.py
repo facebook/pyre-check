@@ -19,7 +19,7 @@ from typing import IO, Iterable, List, Optional
 
 from .. import command_arguments, json_rpc, log, recently_used_configurations, terminal
 from ..analysis_directory import AnalysisDirectory, resolve_analysis_directory
-from ..configuration import Configuration
+from ..configuration import Configuration, InvalidConfiguration
 from ..exceptions import EnvironmentException
 from ..filesystem import readable_directory, remove_if_exists
 from ..log import StreamLogger
@@ -486,7 +486,10 @@ class Command(CommandParser, ABC):
                 "`{}` is not a link tree.".format(self._analysis_directory.get_root())
             )
 
-        client_command = [self._configuration.binary, command]
+        binary = self._configuration.get_binary()
+        if binary is None:
+            raise InvalidConfiguration("Cannot find any pyre binary.")
+        client_command = [binary, command]
         client_command.extend(self._flags())
         client_command.append(self._analysis_directory.get_root())
 

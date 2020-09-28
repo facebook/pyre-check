@@ -10,6 +10,7 @@ import dataclasses
 import hashlib
 import json
 import os
+import shutil
 import site
 import subprocess
 import sys
@@ -36,7 +37,7 @@ from ..configuration import (
     create_search_paths,
     merge_partial_configurations,
 )
-from ..find_directories import CONFIGURATION_FILE, LOCAL_CONFIGURATION_FILE
+from ..find_directories import BINARY_NAME, CONFIGURATION_FILE, LOCAL_CONFIGURATION_FILE
 
 
 class PartialConfigurationTest(unittest.TestCase):
@@ -524,6 +525,18 @@ def _switch_working_directory(directory: Path) -> Generator[None, None, None]:
         os.chdir(str(original_directory))
 
 
+@contextlib.contextmanager
+def _switch_environment(environment: Mapping[str, str]) -> Generator[None, None, None]:
+    old_environment = dict(os.environ)
+    os.environ.clear()
+    os.environ.update(environment)
+    try:
+        yield
+    finally:
+        os.environ.clear()
+        os.environ.update(old_environment)
+
+
 class FullConfigurationTest(testslide.TestCase):
     def test_from_partial_configuration(self) -> None:
         configuration = FullConfiguration.from_partial_configuration(
@@ -773,6 +786,64 @@ class FullConfigurationTest(testslide.TestCase):
             ).get_number_of_workers(),
             0,
         )
+
+    def test_get_binary_from_configuration(self) -> None:
+        with _switch_environment({}):
+            self.assertEqual(
+                FullConfiguration(
+                    project_root="irrelevant",
+                    dot_pyre_directory=Path(".pyre"),
+                    binary="foo",
+                ).get_binary(),
+                "foo",
+            )
+
+    def test_get_binary_environment_override(self) -> None:
+        with _switch_environment({"PYRE_BINARY": "foo"}):
+            self.assertEqual(
+                FullConfiguration(
+                    project_root="irrelevant",
+                    dot_pyre_directory=Path(".pyre"),
+                    binary=None,
+                ).get_binary(),
+                "foo",
+            )
+            self.assertEqual(
+                FullConfiguration(
+                    project_root="irrelevant",
+                    dot_pyre_directory=Path(".pyre"),
+                    binary="bar",
+                ).get_binary(),
+                "foo",
+            )
+
+    def test_get_binary_auto_determined(self) -> None:
+        self.mock_callable(shutil, "which").for_call(BINARY_NAME).to_return_value(
+            "foo"
+        ).and_assert_called_once()
+
+        with _switch_environment({}):
+            self.assertEqual(
+                FullConfiguration(
+                    project_root="irrelevant",
+                    dot_pyre_directory=Path(".pyre"),
+                    binary=None,
+                ).get_binary(),
+                "foo",
+            )
+
+    def test_get_binary_cannot_auto_determine(self) -> None:
+        self.mock_callable(shutil, "which").to_return_value(None).and_assert_called()
+
+        with _switch_environment({}):
+            self.assertEqual(
+                FullConfiguration(
+                    project_root="irrelevant",
+                    dot_pyre_directory=Path(".pyre"),
+                    binary=None,
+                ).get_binary(),
+                None,
+            )
 
     def test_create_from_command_arguments_only(self) -> None:
         # We assume there does not exist a `.pyre_configuration` file that
@@ -1368,7 +1439,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
                 {},
             ]
             configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
-            self.assertEqual(configuration.binary, "/root/some/dir/pyre.bin")
+            self.assertEqual(configuration.get_binary(), "/root/some/dir/pyre.bin")
             self.assertEqual(configuration.typeshed, "/root/some/typeshed")
             self.assertIsNone(configuration.buck_builder_binary)
 
@@ -1377,7 +1448,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
                 {},
             ]
             configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
-            self.assertEqual(configuration.binary, "/home/user/some/dir/pyre.bin")
+            self.assertEqual(configuration.get_binary(), "/home/user/some/dir/pyre.bin")
             self.assertEqual(configuration.typeshed, "/home/user/some/typeshed")
 
             json_load.side_effect = [
@@ -1389,7 +1460,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
                 {},
             ]
             configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
-            self.assertEqual(configuration.binary, "/root/some/VERSION/pyre.bin")
+            self.assertEqual(configuration.get_binary(), "/root/some/VERSION/pyre.bin")
             self.assertEqual(configuration.typeshed, "/root/some/VERSION/typeshed")
 
             json_load.side_effect = [
@@ -1401,7 +1472,9 @@ class ConfigurationIntegrationTest(unittest.TestCase):
                 {},
             ]
             configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
-            self.assertEqual(configuration.binary, "/home/user/some/VERSION/pyre.bin")
+            self.assertEqual(
+                configuration.get_binary(), "/home/user/some/VERSION/pyre.bin"
+            )
             self.assertEqual(configuration.typeshed, "/home/user/some/VERSION/typeshed")
 
             json_load.side_effect = [
@@ -1518,14 +1591,14 @@ class ConfigurationIntegrationTest(unittest.TestCase):
             )
         self.assertEqual(configuration.typeshed, "/home/user/typeshed")
         self.assertEqual(configuration.source_directories, ["a", "/home/user/b"])
-        self.assertEqual(configuration.binary, "/home/user/bin")
+        self.assertEqual(configuration.get_binary(), "/home/user/bin")
 
         # Test manual loading of the binary
         json_load.side_effect = [{}, {}]
         configuration = Configuration(
             project_root="", binary="some/file/path/", dot_pyre_directory=Path("/.pyre")
         )
-        self.assertEqual(configuration.binary, "some/file/path/")
+        self.assertEqual(configuration.get_binary(), "some/file/path/")
 
         # Test manual loading of typeshed directory.
         json_load.side_effect = [{}, {}]
@@ -1538,11 +1611,11 @@ class ConfigurationIntegrationTest(unittest.TestCase):
 
         json_load.side_effect = [{"binary": "/binary"}, {}]
         configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
-        self.assertEqual(configuration.binary, "/binary")
+        self.assertEqual(configuration.get_binary(), "/binary")
 
         json_load.side_effect = [{"version": "VERSION", "binary": "/%V/binary"}, {}]
         configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
-        self.assertEqual(configuration.binary, "/VERSION/binary")
+        self.assertEqual(configuration.get_binary(), "/VERSION/binary")
 
         # Test version override
         with patch.object(os, "getenv", return_value="VERSION_HASH"):
@@ -1996,12 +2069,12 @@ class ConfigurationIntegrationTest(unittest.TestCase):
             "shutil.which", side_effect=accept_tmp
         ):
             configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
-            self.assertEqual(configuration._binary, "/tmp/pyre/bin/pyre.bin")
+            self.assertEqual(configuration.get_binary(), "/tmp/pyre/bin/pyre.bin")
         with patch.object(sys, "argv", ["/tmp/unknown/bin/pyre"]), patch(
             "shutil.which", side_effect=accept_tmp
         ):
             configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
-            self.assertEqual(configuration._binary, None)
+            self.assertEqual(configuration.get_binary(), None)
 
     @patch.object(Configuration, "_validate")
     def test_get_binary_version(self, _validate) -> None:

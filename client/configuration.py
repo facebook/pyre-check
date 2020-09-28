@@ -733,8 +733,29 @@ class FullConfiguration:
             self.ignore_all_errors, self.project_root
         )
 
-    def get_binary_version(self) -> Optional[str]:
+    def get_binary(self) -> Optional[str]:
+        overriding_binary = os.getenv("PYRE_BINARY")
+        if overriding_binary is not None:
+            LOG.warning(f"Binary overridden with `{overriding_binary}`")
+            return overriding_binary
+
         binary = self.binary
+        if binary is not None:
+            return binary
+
+        LOG.info(f"No binary specified, looking for `{BINARY_NAME}` in PATH")
+        binary_candidate = shutil.which(BINARY_NAME)
+        if binary_candidate is None:
+            binary_candidate_name = os.path.join(
+                os.path.dirname(sys.argv[0]), BINARY_NAME
+            )
+            binary_candidate = shutil.which(binary_candidate_name)
+        if binary_candidate is not None:
+            return binary_candidate
+        return None
+
+    def get_binary_version(self) -> Optional[str]:
+        binary = self.get_binary()
         if binary is None:
             return None
         status = subprocess.run(
@@ -1061,9 +1082,6 @@ class Configuration:
                 "`extensions` must only contain strings formatted as `.EXT`"
             )
 
-        if not os.path.exists(self.binary):
-            raise InvalidConfiguration(f"Binary at `{self.binary}` does not exist.")
-
         # Validate typeshed path and sub-elements.
         assert_readable_directory_in_configuration(self.typeshed, field_name="typeshed")
 
@@ -1119,13 +1137,6 @@ class Configuration:
     @property
     def version_hash(self) -> str:
         return self._version_hash or "unversioned"
-
-    @property
-    def binary(self) -> str:
-        binary = self._binary
-        if not binary:
-            raise InvalidConfiguration("No binary specified.")
-        return binary
 
     @property
     def typeshed(self) -> str:
@@ -1216,8 +1227,11 @@ class Configuration:
         return expanded_ignore_paths
 
     def get_binary_version(self) -> Optional[str]:
+        binary = self.get_binary()
+        if binary is None:
+            return None
         status = subprocess.run(
-            [self.binary, "-version"], stdout=subprocess.PIPE, universal_newlines=True
+            [binary, "-version"], stdout=subprocess.PIPE, universal_newlines=True
         )
         if status.returncode == 0:
             return status.stdout.strip()
@@ -1239,6 +1253,28 @@ class Configuration:
             f"Auto-set the value to {default_number_of_workers}."
         )
         return default_number_of_workers
+
+    def get_binary(self) -> Optional[str]:
+        overriding_binary = os.getenv("PYRE_BINARY")
+        if overriding_binary is not None:
+            LOG.warning(f"Binary overridden with `{overriding_binary}`")
+            return overriding_binary
+
+        binary = self._binary
+        if binary is not None:
+            return binary
+
+        LOG.info(f"No binary specified, looking for `{BINARY_NAME}` in PATH")
+        binary_candidate = shutil.which(BINARY_NAME)
+        if binary_candidate is None:
+            binary_candidate_name = os.path.join(
+                os.path.dirname(sys.argv[0]), BINARY_NAME
+            )
+            binary_candidate = shutil.which(binary_candidate_name)
+        if binary_candidate is not None:
+            return binary_candidate
+
+        return None
 
     def _check_nested_configurations(self, local_root: str) -> None:
         # TODO(T67874463): Handle sanity checks against project configurations
@@ -1534,23 +1570,6 @@ class Configuration:
             LOG.warning("Version hash overridden with `%s`", self._version_hash)
 
     def _apply_defaults(self) -> None:
-        overriding_binary = os.getenv("PYRE_BINARY")
-        if overriding_binary:
-            self._binary = overriding_binary
-            LOG.warning("Binary overridden with `%s`", self._binary)
-        if not self._binary:
-            LOG.info(f"No binary specified, looking for `{BINARY_NAME}` in PATH")
-            self._binary = shutil.which(BINARY_NAME)
-            if not self._binary:
-                binary_candidate = os.path.join(
-                    os.path.dirname(sys.argv[0]), BINARY_NAME
-                )
-                self._binary = shutil.which(binary_candidate)
-            if not self._binary:
-                LOG.warning(f"Could not find `{BINARY_NAME}` in PATH")
-            else:
-                LOG.info("Found: `%s`", self._binary)
-
         if not self._typeshed:
             LOG.info("No typeshed specified, looking for it")
             typeshed_path = find_typeshed()
