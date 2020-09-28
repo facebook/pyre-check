@@ -4564,6 +4564,52 @@ let test_union_shorthand _ =
       def bar(x: typing.Union[int, str]) -> None:
         pass
     |};
+  assert_replace
+    {|
+      def bar(x: typing.List[int | str]) -> None:
+        pass
+    |}
+    {|
+      def bar(x: typing.List[typing.Union[int, str]]) -> None:
+        pass
+    |};
+  assert_replace
+    {|
+      def bar(x: list[int | str]) -> None:
+        pass
+    |}
+    {|
+      def bar(x: list[typing.Union[int, str]]) -> None:
+        pass
+    |};
+  assert_replace
+    {|
+      def bar(x: dict[int, int | str]) -> None:
+        pass
+    |}
+    {|
+      def bar(x: dict[int, typing.Union[int, str]]) -> None:
+        pass
+    |};
+  assert_replace
+    {|
+      def bar(x: dict[int, list[int | str]]) -> None:
+        pass
+    |}
+    {|
+      def bar(x: dict[int, list[typing.Union[int, str]]]) -> None:
+        pass
+    |};
+  assert_replace
+    {|
+      def bar(x: dict[int, list[int | list[str | bool]]]) -> None:
+        pass
+    |}
+    {|
+      def bar(x: dict[int, list[typing.Union[int, list[typing.Union[str, bool]]]]]) -> None:
+        pass
+
+    |};
   assert_replace {| 1 | 2 |} {|
      1 | 2
     |};

@@ -3174,6 +3174,18 @@ let replace_union_shorthand source =
                 ]
               in
               union_value arguments
+          | Expression.Call
+              {
+                callee =
+                  { value = Name (Name.Attribute { attribute = "__getitem__"; _ }); _ } as callee;
+                arguments;
+              } ->
+              let arguments =
+                List.map arguments ~f:(fun ({ Call.Argument.value; _ } as argument) ->
+                    { argument with value = transform_expression value })
+              in
+              Expression.Call { callee; arguments }
+          | Tuple arguments -> Tuple (List.map ~f:transform_expression arguments)
           | _ -> value
         in
         { expression with Node.value }
