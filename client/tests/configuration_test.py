@@ -10,15 +10,20 @@ import hashlib
 import json
 import os
 import site
+import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
-from typing import NamedTuple, Optional
+from typing import Iterable, NamedTuple, Optional
 from unittest.mock import MagicMock, PropertyMock, call, mock_open, patch
+
+import testslide
 
 from .. import command_arguments, configuration
 from ..configuration import (
     Configuration,
+    FullConfiguration,
     InvalidConfiguration,
     PartialConfiguration,
     SimpleSearchPathElement,
@@ -486,6 +491,184 @@ class PartialConfigurationTest(unittest.TestCase):
         self.assertEqual(
             PartialConfiguration(typeshed="foo").expand_relative_paths("bar").typeshed,
             "bar/foo",
+        )
+
+
+def _ensure_directory_exists(root: Path, relatives: Iterable[str]) -> None:
+    for relative in relatives:
+        full_path = root / relative
+        full_path.mkdir(parents=True, exist_ok=True)
+
+
+class FullConfigurationTest(testslide.TestCase):
+    def test_derived_attributes(self) -> None:
+        self.assertIsNone(
+            FullConfiguration(
+                project_root="foo", dot_pyre_directory=Path(".pyre")
+            ).local_root
+        )
+        self.assertEqual(
+            FullConfiguration(
+                project_root="foo",
+                dot_pyre_directory=Path(".pyre"),
+                relative_local_root="bar",
+            ).local_root,
+            "foo/bar",
+        )
+        self.assertEqual(
+            FullConfiguration(
+                project_root="foo",
+                dot_pyre_directory=Path(".pyre"),
+                relative_local_root="bar/baz",
+            ).local_root,
+            "foo/bar/baz",
+        )
+
+        self.assertEqual(
+            FullConfiguration(
+                project_root="foo", dot_pyre_directory=Path(".pyre")
+            ).log_directory,
+            ".pyre",
+        )
+        self.assertEqual(
+            FullConfiguration(
+                project_root="foo",
+                dot_pyre_directory=Path(".pyre"),
+                relative_local_root="bar",
+            ).log_directory,
+            ".pyre/bar",
+        )
+        self.assertEqual(
+            FullConfiguration(
+                project_root="foo",
+                dot_pyre_directory=Path(".pyre"),
+                relative_local_root="bar/baz",
+            ).log_directory,
+            ".pyre/bar/baz",
+        )
+
+    def test_existent_search_path(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root)
+            _ensure_directory_exists(root_path, ["a", "b/c", "d/e/f"])
+
+            self.assertListEqual(
+                FullConfiguration(
+                    project_root="irrelevant",
+                    dot_pyre_directory=Path(".pyre"),
+                    search_path=[
+                        SimpleSearchPathElement(str(root_path / "a")),
+                        SimpleSearchPathElement(str(root_path / "x")),
+                        SubdirectorySearchPathElement(
+                            root=str(root_path / "b"), subdirectory="c"
+                        ),
+                        SubdirectorySearchPathElement(
+                            root=str(root_path / "y"), subdirectory="z"
+                        ),
+                        SitePackageSearchPathElement(
+                            site_root=str(root_path / "d/e"), package_name="f"
+                        ),
+                        SitePackageSearchPathElement(
+                            site_root=str(root_path / "u/v"), package_name="w"
+                        ),
+                    ],
+                ).get_existent_search_paths(),
+                [
+                    SimpleSearchPathElement(str(root_path / "a")),
+                    SubdirectorySearchPathElement(
+                        root=str(root_path / "b"), subdirectory="c"
+                    ),
+                    SitePackageSearchPathElement(
+                        site_root=str(root_path / "d/e"), package_name="f"
+                    ),
+                ],
+            )
+
+    def test_existent_do_not_ignore_errors(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root)
+            _ensure_directory_exists(root_path, ["a", "b/c"])
+
+            self.assertListEqual(
+                FullConfiguration(
+                    project_root=str(root_path),
+                    dot_pyre_directory=Path(".pyre"),
+                    do_not_ignore_all_errors_in=[
+                        str(root_path / "a"),
+                        str(root_path / "x"),
+                        "//b/c",
+                        "//y/z",
+                    ],
+                ).get_existent_do_not_ignore_errors_in_paths(),
+                [str(root_path / "a"), str(root_path / "b/c")],
+            )
+
+    def test_existent_ignore_all_errors(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root)
+            _ensure_directory_exists(root_path, ["a", "b/c", "b/d"])
+
+            self.assertListEqual(
+                FullConfiguration(
+                    project_root=str(root_path),
+                    dot_pyre_directory=Path(".pyre"),
+                    ignore_all_errors=[
+                        str(root_path / "a"),
+                        str(root_path / "x"),
+                        "//b/c",
+                        "//y/z",
+                        f"{root_path}/b/*",
+                    ],
+                ).get_existent_ignore_all_errors_paths(),
+                [
+                    str(root_path / "a"),
+                    str(root_path / "b/c"),
+                    str(root_path / "b/c"),
+                    str(root_path / "b/d"),
+                ],
+            )
+
+    def test_get_binary_version_unset(self) -> None:
+        self.assertIsNone(
+            FullConfiguration(
+                project_root="irrelevant", dot_pyre_directory=Path(".pyre"), binary=None
+            ).get_binary_version()
+        )
+
+    def test_get_binary_version_ok(self) -> None:
+        binary_path = "foo"
+        version = "facefacefaceb00"
+
+        self.mock_callable(subprocess, "run").to_return_value(
+            subprocess.CompletedProcess(
+                args=[binary_path, "-version"], returncode=0, stdout=f"{version}\n"
+            )
+        ).and_assert_called_once()
+
+        self.assertEqual(
+            FullConfiguration(
+                project_root="irrelevant",
+                dot_pyre_directory=Path(".pyre"),
+                binary=binary_path,
+            ).get_binary_version(),
+            version,
+        )
+
+    def test_get_binary_version_fail(self) -> None:
+        binary_path = "foo"
+
+        self.mock_callable(subprocess, "run").to_return_value(
+            subprocess.CompletedProcess(
+                args=[binary_path, "-version"], returncode=1, stdout="derp"
+            )
+        ).and_assert_called_once()
+
+        self.assertIsNone(
+            FullConfiguration(
+                project_root="irrelevant",
+                dot_pyre_directory=Path(".pyre"),
+                binary=binary_path,
+            ).get_binary_version()
         )
 
 

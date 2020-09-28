@@ -73,6 +73,26 @@ def _expand_global_and_relative_root(
     )
 
 
+def _expand_and_get_existent_ignore_all_errors_path(
+    ignore_all_errors: Iterable[str], project_root: str
+) -> List[str]:
+    expanded_ignore_paths = []
+    for path in ignore_all_errors:
+        expanded = glob.glob(_expand_global_root(path, global_root=project_root))
+        if not expanded:
+            expanded_ignore_paths.append(path)
+        else:
+            expanded_ignore_paths.extend(expanded)
+
+    paths = []
+    for path in expanded_ignore_paths:
+        if os.path.exists(path):
+            paths.append(path)
+        else:
+            LOG.warning(f"Nonexistent paths passed in to `ignore_all_errors`: `{path}`")
+    return paths
+
+
 class InvalidConfiguration(Exception):
     def __init__(self, message: str) -> None:
         self.message = f"Invalid configuration: {message}"
@@ -576,6 +596,99 @@ def merge_partial_configurations(
         ),
         version_hash=overwrite_base(base.version_hash, override.version_hash),
     )
+
+
+@dataclass(frozen=True)
+class FullConfiguration:
+    project_root: str
+    dot_pyre_directory: Path
+
+    autocomplete: bool = False
+    binary: Optional[str] = None
+    buck_builder_binary: Optional[str] = None
+    disabled: bool = False
+    do_not_ignore_all_errors_in: Sequence[str] = field(default_factory=list)
+    excludes: Sequence[str] = field(default_factory=list)
+    extensions: Sequence[str] = field(default_factory=list)
+    file_hash: Optional[str] = None
+    formatter: Optional[str] = None
+    ignore_all_errors: Sequence[str] = field(default_factory=list)
+    ignore_infer: Sequence[str] = field(default_factory=list)
+    logger: Optional[str] = None
+    number_of_workers: Optional[int] = None
+    other_critical_files: Sequence[str] = field(default_factory=list)
+    relative_local_root: Optional[str] = None
+    search_path: Sequence[SearchPathElement] = field(default_factory=list)
+    source_directories: Sequence[str] = field(default_factory=list)
+    strict: bool = False
+    taint_models_path: Sequence[str] = field(default_factory=list)
+    targets: Sequence[str] = field(default_factory=list)
+    typeshed: Optional[str] = None
+    use_buck_builder: bool = False
+    use_buck_source_database: bool = False
+    version_hash: Optional[str] = None
+
+    @property
+    def log_directory(self) -> str:
+        if self.relative_local_root is None:
+            return str(self.dot_pyre_directory)
+        return str(self.dot_pyre_directory / self.relative_local_root)
+
+    @property
+    def local_root(self) -> Optional[str]:
+        if self.relative_local_root is None:
+            return None
+        return os.path.join(self.project_root, self.relative_local_root)
+
+    def get_existent_search_paths(self) -> List[SearchPathElement]:
+        existent_paths = []
+        for search_path_element in self.search_path:
+            search_path = search_path_element.path()
+            if os.path.exists(search_path):
+                existent_paths.append(search_path_element)
+            else:
+                LOG.debug(f"Filtering out nonexistent search path: {search_path}")
+        return existent_paths
+
+    def get_existent_do_not_ignore_errors_in_paths(self) -> List[str]:
+        """
+        This is a separate method because we want to check for existing files
+        at the time this is called, not when the configuration is
+        constructed.
+        """
+        ignore_paths = [
+            _expand_global_root(path, global_root=self.project_root)
+            for path in self.do_not_ignore_all_errors_in
+        ]
+        paths = []
+        for path in ignore_paths:
+            if os.path.exists(path):
+                paths.append(path)
+            else:
+                LOG.debug(
+                    "Filtering out nonexistent paths in `do_not_ignore_errors_in`: "
+                    f"{path}"
+                )
+        return paths
+
+    def get_existent_ignore_all_errors_paths(self) -> List[str]:
+        """
+        This is a separate method because we want to check for existing files
+        at the time this is called, not when the configuration is
+        constructed.
+        """
+        return _expand_and_get_existent_ignore_all_errors_path(
+            self.ignore_all_errors, self.project_root
+        )
+
+    def get_binary_version(self) -> Optional[str]:
+        binary = self.binary
+        if binary is None:
+            return None
+        status = subprocess.run(
+            [binary, "-version"], stdout=subprocess.PIPE, universal_newlines=True
+        )
+        return status.stdout.strip() if status.returncode == 0 else None
 
 
 class _ConfigurationFile:
