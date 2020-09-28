@@ -73,6 +73,10 @@ def _expand_global_and_relative_root(
     )
 
 
+def _get_optional_value(source: Optional[T], default: T) -> T:
+    return source if source is not None else default
+
+
 def _expand_and_get_existent_ignore_all_errors_path(
     ignore_all_errors: Iterable[str], project_root: str
 ) -> List[str]:
@@ -628,6 +632,54 @@ class FullConfiguration:
     use_buck_source_database: bool = False
     version_hash: Optional[str] = None
 
+    @staticmethod
+    def from_partial_configuration(
+        project_root: Path,
+        relative_local_root: Optional[str],
+        partial_configuration: PartialConfiguration,
+    ) -> "FullConfiguration":
+        return FullConfiguration(
+            project_root=str(project_root),
+            dot_pyre_directory=_get_optional_value(
+                partial_configuration.dot_pyre_directory, project_root / LOG_DIRECTORY
+            ),
+            autocomplete=_get_optional_value(
+                partial_configuration.autocomplete, default=False
+            ),
+            binary=partial_configuration.binary,
+            buck_builder_binary=partial_configuration.buck_builder_binary,
+            disabled=_get_optional_value(partial_configuration.disabled, default=False),
+            do_not_ignore_all_errors_in=partial_configuration.do_not_ignore_all_errors_in,
+            excludes=partial_configuration.excludes,
+            extensions=partial_configuration.extensions,
+            file_hash=partial_configuration.file_hash,
+            formatter=partial_configuration.formatter,
+            ignore_all_errors=partial_configuration.ignore_all_errors,
+            ignore_infer=partial_configuration.ignore_infer,
+            logger=partial_configuration.logger,
+            number_of_workers=partial_configuration.number_of_workers,
+            other_critical_files=partial_configuration.other_critical_files,
+            relative_local_root=relative_local_root,
+            search_path=[
+                path.expand_global_root(str(project_root))
+                for path in partial_configuration.search_path
+            ],
+            source_directories=_get_optional_value(
+                partial_configuration.source_directories, default=[]
+            ),
+            strict=_get_optional_value(partial_configuration.strict, default=False),
+            taint_models_path=partial_configuration.taint_models_path,
+            targets=_get_optional_value(partial_configuration.targets, default=[]),
+            typeshed=partial_configuration.typeshed,
+            use_buck_builder=_get_optional_value(
+                partial_configuration.use_buck_builder, default=False
+            ),
+            use_buck_source_database=_get_optional_value(
+                partial_configuration.use_buck_source_database, default=False
+            ),
+            version_hash=partial_configuration.version_hash,
+        )
+
     @property
     def log_directory(self) -> str:
         if self.relative_local_root is None:
@@ -689,6 +741,47 @@ class FullConfiguration:
             [binary, "-version"], stdout=subprocess.PIPE, universal_newlines=True
         )
         return status.stdout.strip() if status.returncode == 0 else None
+
+
+def create_configuration(
+    arguments: command_arguments.CommandArguments, base_directory: Path
+) -> FullConfiguration:
+    local_root_argument = arguments.local_configuration
+    found_root = find_directories.find_global_and_local_root(
+        base_directory
+        if local_root_argument is None
+        else base_directory / local_root_argument
+    )
+
+    command_argument_configuration = PartialConfiguration.from_command_arguments(
+        arguments
+    )
+    if found_root is None:
+        project_root = Path.cwd()
+        relative_local_root = None
+        partial_configuration = command_argument_configuration
+    else:
+        project_root = found_root.global_root
+        relative_local_root = None
+        partial_configuration = PartialConfiguration.from_file(
+            project_root / CONFIGURATION_FILE
+        ).expand_relative_paths(str(project_root))
+        local_root = found_root.local_root
+        if local_root is not None:
+            relative_local_root = get_relative_local_root(project_root, local_root)
+            partial_configuration = merge_partial_configurations(
+                base=partial_configuration,
+                override=PartialConfiguration.from_file(
+                    local_root / LOCAL_CONFIGURATION_FILE
+                ).expand_relative_paths(str(local_root)),
+            )
+        partial_configuration = merge_partial_configurations(
+            base=partial_configuration, override=command_argument_configuration
+        )
+
+    return FullConfiguration.from_partial_configuration(
+        project_root, relative_local_root, partial_configuration
+    )
 
 
 class _ConfigurationFile:

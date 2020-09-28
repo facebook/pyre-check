@@ -5,6 +5,7 @@
 
 # pyre-unsafe
 
+import contextlib
 import dataclasses
 import hashlib
 import json
@@ -15,7 +16,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
-from typing import Iterable, NamedTuple, Optional
+from typing import Any, Generator, Iterable, Mapping, NamedTuple, Optional
 from unittest.mock import MagicMock, PropertyMock, call, mock_open, patch
 
 import testslide
@@ -30,6 +31,7 @@ from ..configuration import (
     SitePackageSearchPathElement,
     SubdirectorySearchPathElement,
     _expand_global_and_relative_root,
+    create_configuration,
     create_search_paths,
     merge_partial_configurations,
 )
@@ -500,7 +502,88 @@ def _ensure_directory_exists(root: Path, relatives: Iterable[str]) -> None:
         full_path.mkdir(parents=True, exist_ok=True)
 
 
+def _write_configuration_file(
+    root: Path, content: Mapping[str, Any], relative: Optional[str] = None
+) -> None:
+    if relative is None:
+        (root / CONFIGURATION_FILE).write_text(json.dumps(content))
+    else:
+        local_root = root / relative
+        local_root.mkdir(parents=True, exist_ok=True)
+        (local_root / LOCAL_CONFIGURATION_FILE).write_text(json.dumps(content))
+
+
+@contextlib.contextmanager
+def _switch_working_directory(directory: Path) -> Generator[None, None, None]:
+    original_directory = Path(".").resolve()
+    try:
+        os.chdir(str(directory))
+        yield None
+    finally:
+        os.chdir(str(original_directory))
+
+
 class FullConfigurationTest(testslide.TestCase):
+    def test_from_partial_configuration(self) -> None:
+        configuration = FullConfiguration.from_partial_configuration(
+            project_root=Path("root"),
+            relative_local_root="local",
+            partial_configuration=PartialConfiguration(
+                autocomplete=None,
+                binary="binary",
+                buck_builder_binary="buck_builder_binary",
+                disabled=None,
+                do_not_ignore_all_errors_in=["foo"],
+                dot_pyre_directory=None,
+                excludes=["exclude"],
+                extensions=[".ext"],
+                file_hash="abc",
+                formatter="formatter",
+                ignore_all_errors=["bar"],
+                ignore_infer=["baz"],
+                logger="logger",
+                number_of_workers=3,
+                other_critical_files=["critical"],
+                search_path=[SimpleSearchPathElement("search_path")],
+                source_directories=None,
+                strict=None,
+                taint_models_path=["taint"],
+                targets=None,
+                typeshed="typeshed",
+                use_buck_builder=None,
+                use_buck_source_database=None,
+                version_hash="abc",
+            ),
+        )
+        self.assertEqual(configuration.project_root, "root")
+        self.assertEqual(configuration.relative_local_root, "local")
+        self.assertEqual(configuration.autocomplete, False)
+        self.assertEqual(configuration.binary, "binary")
+        self.assertEqual(configuration.buck_builder_binary, "buck_builder_binary")
+        self.assertEqual(configuration.disabled, False)
+        self.assertListEqual(list(configuration.do_not_ignore_all_errors_in), ["foo"])
+        self.assertEqual(configuration.dot_pyre_directory, Path("root/.pyre"))
+        self.assertListEqual(list(configuration.excludes), ["exclude"])
+        self.assertEqual(configuration.extensions, [".ext"])
+        self.assertEqual(configuration.file_hash, "abc")
+        self.assertEqual(configuration.formatter, "formatter")
+        self.assertListEqual(list(configuration.ignore_all_errors), ["bar"])
+        self.assertListEqual(list(configuration.ignore_infer), ["baz"])
+        self.assertEqual(configuration.logger, "logger")
+        self.assertEqual(configuration.number_of_workers, 3)
+        self.assertListEqual(list(configuration.other_critical_files), ["critical"])
+        self.assertListEqual(
+            list(configuration.search_path), [SimpleSearchPathElement("search_path")]
+        )
+        self.assertEqual(configuration.source_directories, [])
+        self.assertEqual(configuration.strict, False)
+        self.assertEqual(configuration.taint_models_path, ["taint"])
+        self.assertEqual(configuration.targets, [])
+        self.assertEqual(configuration.typeshed, "typeshed")
+        self.assertEqual(configuration.use_buck_builder, False)
+        self.assertEqual(configuration.use_buck_source_database, False)
+        self.assertEqual(configuration.version_hash, "abc")
+
     def test_derived_attributes(self) -> None:
         self.assertIsNone(
             FullConfiguration(
@@ -670,6 +753,168 @@ class FullConfigurationTest(testslide.TestCase):
                 binary=binary_path,
             ).get_binary_version()
         )
+
+    def test_create_from_command_arguments_only(self) -> None:
+        # We assume there does not exist a `.pyre_configuration` file that
+        # covers this temporary directory.
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root)
+            with _switch_working_directory(root_path):
+                configuration = create_configuration(
+                    command_arguments.CommandArguments(
+                        local_configuration=None,
+                        version=False,
+                        debug=False,
+                        sequential=False,
+                        strict=False,
+                        additional_checks=[],
+                        show_error_traces=False,
+                        output="",
+                        enable_profiling=False,
+                        enable_memory_profiling=False,
+                        noninteractive=False,
+                        logging_sections=None,
+                        log_identifier="",
+                        logger=None,
+                        formatter=None,
+                        targets=[],
+                        use_buck_builder=False,
+                        use_buck_source_database=True,
+                        source_directories=["."],
+                        filter_directory=None,
+                        buck_mode=None,
+                        no_saved_state=False,
+                        search_path=[],
+                        binary=None,
+                        buck_builder_binary=None,
+                        exclude=[],
+                        typeshed=None,
+                        save_initial_state_to=None,
+                        load_initial_state_from=None,
+                        changed_files_path=None,
+                        saved_state_project=None,
+                        dot_pyre_directory=None,
+                        features=None,
+                    ),
+                    base_directory=Path(root),
+                )
+                self.assertEqual(configuration.project_root, str(root_path))
+                self.assertEqual(configuration.relative_local_root, None)
+                self.assertEqual(configuration.dot_pyre_directory, root_path / ".pyre")
+
+    def test_create_from_global_configuration(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root)
+            _write_configuration_file(root_path, {"strict": False})
+
+            with _switch_working_directory(root_path):
+                configuration = create_configuration(
+                    command_arguments.CommandArguments(
+                        local_configuration=None,
+                        version=False,
+                        debug=False,
+                        sequential=False,
+                        strict=True,  # override configuration file
+                        additional_checks=[],
+                        show_error_traces=False,
+                        output="",
+                        enable_profiling=False,
+                        enable_memory_profiling=False,
+                        noninteractive=False,
+                        logging_sections=None,
+                        log_identifier="",
+                        logger=None,
+                        formatter=None,
+                        targets=[],
+                        use_buck_builder=False,
+                        use_buck_source_database=True,
+                        source_directories=["."],
+                        filter_directory=None,
+                        buck_mode=None,
+                        no_saved_state=False,
+                        search_path=[],
+                        binary=None,
+                        buck_builder_binary=None,
+                        exclude=[],
+                        typeshed=None,
+                        save_initial_state_to=None,
+                        load_initial_state_from=None,
+                        changed_files_path=None,
+                        saved_state_project=None,
+                        dot_pyre_directory=Path(".pyre"),
+                        features=None,
+                    ),
+                    base_directory=Path(root),
+                )
+                self.assertEqual(configuration.project_root, str(root_path))
+                self.assertEqual(configuration.relative_local_root, None)
+                self.assertEqual(configuration.dot_pyre_directory, Path(".pyre"))
+                self.assertEqual(configuration.strict, True)
+
+    def test_create_from_local_configuration(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root)
+            _ensure_directory_exists(root_path, ["foo", "bar", "baz"])
+            _write_configuration_file(
+                root_path, {"strict": False, "search_path": ["foo"]}
+            )
+            _write_configuration_file(
+                root_path,
+                {"strict": True, "search_path": ["//bar", "baz"]},
+                relative="local",
+            )
+
+            with _switch_working_directory(root_path):
+                configuration = create_configuration(
+                    command_arguments.CommandArguments(
+                        local_configuration="local",
+                        version=False,
+                        debug=False,
+                        sequential=False,
+                        strict=False,
+                        additional_checks=[],
+                        show_error_traces=False,
+                        output="",
+                        enable_profiling=False,
+                        enable_memory_profiling=False,
+                        noninteractive=False,
+                        logging_sections=None,
+                        log_identifier="",
+                        logger=None,
+                        formatter=None,
+                        targets=[],
+                        use_buck_builder=False,
+                        use_buck_source_database=True,
+                        source_directories=["."],
+                        filter_directory=None,
+                        buck_mode=None,
+                        no_saved_state=False,
+                        search_path=[],
+                        binary=None,
+                        buck_builder_binary=None,
+                        exclude=[],
+                        typeshed=None,
+                        save_initial_state_to=None,
+                        load_initial_state_from=None,
+                        changed_files_path=None,
+                        saved_state_project=None,
+                        dot_pyre_directory=Path(".pyre"),
+                        features=None,
+                    ),
+                    base_directory=Path(root),
+                )
+                self.assertEqual(configuration.project_root, str(root_path))
+                self.assertEqual(configuration.relative_local_root, "local")
+                self.assertEqual(configuration.dot_pyre_directory, Path(".pyre"))
+                self.assertEqual(configuration.strict, True)
+                self.assertListEqual(
+                    list(configuration.search_path),
+                    [
+                        SimpleSearchPathElement(str(root_path / "foo")),
+                        SimpleSearchPathElement(str(root_path / "bar")),
+                        SimpleSearchPathElement(str(root_path / "local/baz")),
+                    ],
+                )
 
 
 class MockCompletedProcess(NamedTuple):
