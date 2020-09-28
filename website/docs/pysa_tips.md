@@ -220,17 +220,51 @@ which pass through many frames.
 
 ## Developer Quality-of-Life
 
+### Iterating quickly with Pysa
+
+On large projects, Pysa can take a long time to run; it takes about an hour to
+run on Instagram, which contains millions of lines of Python code. A few tricks
+to iterate more quickly with Pysa are:
+
+1. **Run in a sample project or test environment.** Pysa runs much more quickly
+   on smaller projects, so if you need to test something that isn't specific to
+   your environment (eg. a model that corresponds to code in typeshed) then do
+   your testing in a smaller codebase. Even if you are iterating on something
+   specific to your codebase, it can sometimes be worthwhile to port the code
+   snippet you're working on into a test project.
+   1. The stub integration tests will validate any stubs in `tools/pyre/taint`,
+      and this can be a fast shortcut for validating new stubs you want to
+      write. These tests reside in `stubs/integration_test` and can be invoked
+      by running `make stub_integration_tests` in the root of the repo.
+   1. The interprocedural analysis tests dump information about models, issues,
+      the call graph, and overrides. It can be very helpful to test code in this
+      environment if you need a detailed understanding of Pysa's internal state
+      to debug a false positive or negative. Note that these tests do not have
+      access to typeshed or any other type stubs. These tests reside in
+      `interprocedural_analyses/taint/test/integration` and can be invoked by
+      running `make test` in the root of the repo.
+1. **Skip analysis entirely if you only need to validate taint models**.
+   `pyre query validate_taint_models()` can be used to validate taint models without
+   having to run the entire analysis
+1. **Filter runs with `--rule ####`.** This option will cause Pysa to ignore
+   sources and sinks that are not involved in the given rule, saving on analysis
+   time. Eg. `pyre analyze --rule 5000`
+1. **Parallelize across machines.** If working in a could hosted environment,
+   reserving a second machine and working on two projects in parallel can be
+   effective. As Pysa is running on one machine, you can switch to the other,
+   make changes there, kick off a run, and then switch back to the first to look
+   at results.
+1. **Put in all debug statements up front.** When using the debugging tools
+   outlined above, put in way more debug statments than you think you need,
+   dumping type info and taint for anything remotely related to the flow you're
+   looking at. This will reduce the odds that you need to do a second run to
+   figure out what's going wrong
+
 ### File Types
 
 `taint.config` is a JSON file and `.pysa` files use Python syntax. If you update
 your editor to recognize those files as JSON and Python respectively, it'll make
 development easier.
-
-### Run Pysa faster with `--rule`
-
-On large projects, Pysa can take a long time to run. When you're iterating on a
-single rule, pass the `--rule` option to Pysa to speed things up a bit by
-omitting processing on all other rules. Eg. `pyre analyze --rule 5000`
 
 ## Usage Examples
 
