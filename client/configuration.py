@@ -816,6 +816,18 @@ class FullConfiguration:
         )
         return default_number_of_workers
 
+    def get_valid_extensions(self) -> List[str]:
+        vaild_extensions = []
+        for extension in self.extensions:
+            if not extension.startswith("."):
+                LOG.warning(
+                    "Filtering out extension which does not start with `.`: "
+                    f"`{extension}`"
+                )
+            else:
+                vaild_extensions.append(extension)
+        return vaild_extensions
+
 
 def create_configuration(
     arguments: command_arguments.CommandArguments, base_directory: Path
@@ -988,7 +1000,7 @@ class Configuration:
         self._local_root: Optional[str] = local_root
         self.taint_models_path: List[str] = []
         self.file_hash: Optional[str] = None
-        self.extensions: List[str] = []
+        self._extensions: List[str] = []
         self.dot_pyre_directory: Path = dot_pyre_directory
 
         relative_local_root = get_relative_local_root(
@@ -1108,14 +1120,8 @@ class Configuration:
                 "`ignore_infer` field must be a list of strings."
             )
 
-        if not is_list_of_strings(self.extensions):
+        if not is_list_of_strings(self._extensions):
             raise InvalidConfiguration("`extensions` field must be a list of strings.")
-        if not all(
-            extension.startswith(".") or not extension for extension in self.extensions
-        ):
-            raise InvalidConfiguration(
-                "`extensions` must only contain strings formatted as `.EXT`"
-            )
 
         if not is_list_of_strings(self.other_critical_files):
             raise InvalidConfiguration(
@@ -1295,6 +1301,18 @@ class Configuration:
             LOG.warning(f"Version hash overridden with `{overriding_version_hash}`")
             return overriding_version_hash
         return self._version_hash
+
+    def get_valid_extensions(self) -> List[str]:
+        vaild_extensions = []
+        for extension in self._extensions:
+            if not extension.startswith("."):
+                LOG.warning(
+                    "Filtering out extension which does not start with `.`: "
+                    f"`{extension}`"
+                )
+            else:
+                vaild_extensions.append(extension)
+        return vaild_extensions
 
     def _check_nested_configurations(self, local_root: str) -> None:
         # TODO(T67874463): Handle sanity checks against project configurations
@@ -1480,7 +1498,7 @@ class Configuration:
                     self.excludes.append(excludes)
 
                 extensions = configuration.consume("extensions", default=[])
-                self.extensions.extend(extensions)
+                self._extensions.extend(extensions)
 
                 # We rely on the configuration SHA1 to make
                 if configuration.consume("saved_state"):

@@ -62,7 +62,7 @@ class MonitorTest(unittest.TestCase):
         )
 
         # additional extensions
-        configuration.extensions = ["thrift", "whl"]
+        configuration.get_valid_extensions = lambda: [".thrift", ".whl"]
         monitor = ProjectFilesMonitor(configuration, ".", analysis_directory)
         self.assertEqual(len(monitor._subscriptions), 1)
         subscription = monitor._subscriptions[0]

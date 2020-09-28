@@ -229,7 +229,7 @@ class Start(Reporting):
         for exclude in excludes:
             flags.extend(["-exclude", exclude])
 
-        extensions = self._configuration.extensions
+        extensions = self._configuration.get_valid_extensions()
         for extension in extensions:
             flags.extend(["-extension", extension])
 

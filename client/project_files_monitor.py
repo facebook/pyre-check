@@ -56,7 +56,8 @@ class ProjectFilesMonitor(Subscriber):
         self._analysis_directory = analysis_directory
 
         self._extensions: Set[str] = set(
-            ["py", "pyi", "thrift"] + configuration.extensions
+            ["py", "pyi", "thrift"]
+            + [extension[1:] for extension in configuration.get_valid_extensions()]
         )
 
         self._watchman_path: str = self._find_watchman_path(project_root)

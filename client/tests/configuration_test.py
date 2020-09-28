@@ -954,6 +954,32 @@ class FullConfigurationTest(testslide.TestCase):
                 "abc",
             )
 
+    def test_get_valid_extensions(self) -> None:
+        self.assertListEqual(
+            FullConfiguration(
+                project_root="irrelevant",
+                dot_pyre_directory=Path(".pyre"),
+                extensions=[],
+            ).get_valid_extensions(),
+            [],
+        )
+        self.assertListEqual(
+            FullConfiguration(
+                project_root="irrelevant",
+                dot_pyre_directory=Path(".pyre"),
+                extensions=[".foo", ".bar"],
+            ).get_valid_extensions(),
+            [".foo", ".bar"],
+        )
+        self.assertListEqual(
+            FullConfiguration(
+                project_root="irrelevant",
+                dot_pyre_directory=Path(".pyre"),
+                extensions=["foo", ".bar", "baz"],
+            ).get_valid_extensions(),
+            [".bar"],
+        )
+
     def test_create_from_command_arguments_only(self) -> None:
         # We assume there does not exist a `.pyre_configuration` file that
         # covers this temporary directory.
@@ -1779,7 +1805,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
         # Test extensions
         json_load.side_effect = [{"extensions": [".a", ".b"]}, {}]
         configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
-        self.assertEqual(configuration.extensions, [".a", ".b"])
+        self.assertEqual(configuration.get_valid_extensions(), [".a", ".b"])
 
         json_load.side_effect = [{}, {}]
         configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
@@ -2127,21 +2153,6 @@ class ConfigurationIntegrationTest(unittest.TestCase):
             Configuration("", dot_pyre_directory=Path("/.pyre"))
         except BaseException:
             self.fail("Configuration should not raise.")
-
-        with self.assertRaises(InvalidConfiguration):
-            json_loads.side_effect = [
-                {
-                    "source_directories": ["a"],
-                    "binary": "abc",
-                    "logger": "/usr/logger",
-                    "version": "VERSION",
-                    "typeshed": "TYPE/%V/SHED/",
-                    "ignore_all_errors": ["buck-out/dev/gen"],
-                    "extensions": [".a", "b"],
-                },
-                {},
-            ]
-            Configuration("", dot_pyre_directory=Path("/.pyre"))
 
     @patch.object(Configuration, "_read")
     @patch.object(Configuration, "_resolve_versioned_paths")
