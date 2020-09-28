@@ -125,7 +125,6 @@ class Subscriber(object):
 
                 while self._alive:
                     # This call is blocking, which prevents this loop from burning CPU.
-                    # pyre-fixme[16]: `None` has no attribute `receive`.
                     response = connection.receive()
                     if response.get("is_fresh_instance", False):
                         if not self._ready:

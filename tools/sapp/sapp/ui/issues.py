@@ -50,6 +50,7 @@ class Query:
     def __init__(self, session: Session, current_run_id: Union[DBID, int]):
         self._session: Session = session
         self.current_run_id = current_run_id
+        # pyre-fixme[31]: Expression `)]])]` is not a valid type.
         self.issue_filters: Dict[
             Filter, Set[Tuple[Union[int, str, Tuple[int, int, ...]], ...]]
         ] = defaultdict(set)

@@ -281,6 +281,7 @@ class PrepareMixin(object):
 # we have dynamically created classes with the slots set. But until then,
 # prefer RecordMixin unless you need to change fields after creation.
 class RecordMixin(object):
+    # pyre-fixme[4]: Attribute must be annotated.
     _record = None
 
     @classmethod
@@ -293,11 +294,8 @@ class RecordMixin(object):
                 extra_fields = []
             mapper = inspect(cls)
             keys = [c.key for c in mapper.column_attrs] + ["model"] + extra_fields
-            # pyre-fixme[8]: Attribute has type `None`; used as
-            #  `Type[typing.Tuple[typing.Any, ...]]`.
             cls._record = namedtuple(cls.__name__ + "Record", keys)
 
-        # pyre-fixme[29]: `None` is not a function.
         return cls._record(model=cls, **kwargs)
 
     @classmethod

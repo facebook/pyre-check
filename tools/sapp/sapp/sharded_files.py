@@ -30,16 +30,16 @@ class ShardedFileComponents(object):
             raise ValueError("Not a sharded file: {}".format(filepattern))
 
         # pyre-fixme[4]: Attribute must be annotated.
-        # pyre-fixme[6]: `>=` is not supported for operand types `Optional[int]` and
-        #  `int`.
+        # pyre-fixme[58]: `>=` is not supported for operand types `Optional[int]`
+        #  and `int`.
         self.extension = m.group(3) if m.lastindex >= 3 else ""
         # pyre-fixme[4]: Attribute must be annotated.
-        # pyre-fixme[6]: `>=` is not supported for operand types `Optional[int]` and
-        #  `int`.
+        # pyre-fixme[58]: `>=` is not supported for operand types `Optional[int]`
+        #  and `int`.
         self.stem = m.group(1) if m.lastindex >= 1 else ""
 
-        # pyre-fixme[6]: `>=` is not supported for operand types `Optional[int]` and
-        #  `int`.
+        # pyre-fixme[58]: `>=` is not supported for operand types `Optional[int]`
+        #  and `int`.
         shards = m.group(2) if m.lastindex >= 2 else ""
         if shards == "*":
             # pyre-fixme[4]: Attribute must be annotated.

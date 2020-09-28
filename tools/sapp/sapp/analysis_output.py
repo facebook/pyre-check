@@ -193,7 +193,8 @@ class AnalysisOutput(object):
 
     def is_sharded(self) -> bool:
         if self.filename_spec:
-            # pyre-fixme[16]: `Optional` has no attribute `__getitem__`.
+            # pyre-fixme[58]: `in` is not supported for right operand type
+            #  `Optional[str]`.
             return "@" in self.filename_spec
         else:
             return False

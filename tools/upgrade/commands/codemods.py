@@ -74,6 +74,8 @@ class MissingOverrideReturnAnnotations(Command):
                 # pyre-fixme[6]: Expected `int` for 1st param but got `str`.
                 # pyre-fixme[6]: Expected `Union[int, slice]` for 1st param but got
                 # `str`.
+                # pyre-fixme[58]: `-` is not supported for operand types `str` and
+                #  `int`.
                 line = error["line"] - 1
 
                 # pyre-fixme[6]: Expected `Union[int, slice]` for 1st param but got
@@ -140,6 +142,8 @@ class MissingGlobalAnnotations(Command):
                 # pyre-fixme[6]: Expected `int` for 1st param but got `str`.
                 # pyre-fixme[6]: Expected `Union[int, slice]` for 1st param but got
                 # `str`.
+                # pyre-fixme[58]: `-` is not supported for operand types `str` and
+                #  `int`.
                 line = error["line"] - 1
 
                 # pyre-fixme[6]: Expected `Union[int, slice]` for 1st param but got
