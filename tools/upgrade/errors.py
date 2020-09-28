@@ -216,7 +216,7 @@ class Errors:
         truncate: bool = False,
         unsafe: bool = False,
     ) -> None:
-        unsuppressed_paths = []
+        unsuppressed_paths_and_exceptions = []
 
         for path_to_suppress, errors in self:
             LOG.info("Processing `%s`", path_to_suppress)
@@ -236,14 +236,18 @@ class Errors:
                 path.write_text(output)
             except SkippingGeneratedFileException:
                 LOG.warning(f"Skipping generated file at {path_to_suppress}")
-            except (ast.UnstableAST, SyntaxError):
-                unsuppressed_paths.append(path_to_suppress)
+            except (ast.UnstableAST, SyntaxError) as exception:
+                unsuppressed_paths_and_exceptions.append((path_to_suppress, exception))
 
-        if unsuppressed_paths:
-            paths_string = ", ".join(unsuppressed_paths)
+        if unsuppressed_paths_and_exceptions:
+            exception_messages = "\n".join(
+                f"{path} - {str(exception)}"
+                for path, exception in unsuppressed_paths_and_exceptions
+            )
             raise PartialErrorSuppression(
-                f"Could not fully suppress errors in: {paths_string}",
-                unsuppressed_paths,
+                "Could not fully suppress errors due to the "
+                f"following exceptions: {exception_messages}",
+                [path for path, _ in unsuppressed_paths_and_exceptions],
             )
 
 
