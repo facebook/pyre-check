@@ -202,9 +202,36 @@ the same files as sources and sinks. Functions are declared as sanitizers by
 adding a special decorator:
 
 ```python
-# Sanitizer function
+# This will remove any taint passing through a function, regardless of whether
+# it is a taint source returned by this function, taint reaching sinks within
+# the function via 'argument', or taint propagateing through 'argument' to the
+# return value.
 @Sanitize
 def django.utils.html.escape(text): ...
+```
+
+Sanitizers can also be scoped to only remove taint sources, sinks, or
+taint-in-taint-oug (TITO), rather than all taint that passes through the
+function:
+
+```python
+# This will remove any taint sources returned by this function, but allow taint
+# to reach sinks within the function via 'argument' as well as allow taint to
+# propagate through 'argument' to the return value.
+@Sanitize(TaintSource)
+def module.sanitize_source(argument): ...
+
+# This remove any taint which passes through 'argument' to reach a sink within
+# the function, but allow taint sources to be returned from the function as well
+# as allow taint to propagate through 'argument' to the return value.
+@Sanitize(TaintSink)
+def module.sanitize_sink(argument): ...
+
+# This will remove any taint which propagates through 'argument' to the return
+# value, but allow taint sources to be returned from the function as well as
+# allow taint to reach sinks within the function via 'argument'.
+@Sanitize(TaintInTaintOut)
+def module.sanitize_tito(argument): ...
 ```
 
 Attributes can also be marked as sanitizers to remove all taint passing through
@@ -221,15 +248,6 @@ sanitize inputs, but is known to always return safe data despite touching
 tainted data. One such example could be `hmac.digest(key, msg, digest)`, which
 returns sufficiently unpredictable data that the output should no longer be
 considered attacker-controlled after passing through.
-
-Class attributes can also be marked as sanitizers with the `Sanitize`
-annotation. This will prevent the propagation of any taint assigned to that
-attribute on an instance of the class. For example, this sanitizer could remove
-a false positive flow through an obviously benign attribute like `__doc__`:
-
-```python
-object.__doc__: Sanitize = ...
-```
 
 Note that sanitizers are currently universal, meaning that they remove all taint
 and can't be restricted to a specific rule or individual source to sink flows.
