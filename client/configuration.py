@@ -419,7 +419,7 @@ class PartialConfiguration:
                 ignore_infer=ensure_string_list(configuration_json, "ignore_infer"),
                 logger=ensure_option_type(configuration_json, "logger", str),
                 number_of_workers=ensure_option_type(
-                    configuration_json, "number_of_workers", int
+                    configuration_json, "workers", int
                 ),
                 other_critical_files=ensure_string_list(
                     configuration_json, "critical_files"

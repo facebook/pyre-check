@@ -174,7 +174,7 @@ class PartialConfigurationTest(unittest.TestCase):
         )
         self.assertEqual(
             PartialConfiguration.from_string(
-                json.dumps({"number_of_workers": 42})
+                json.dumps({"workers": 42})
             ).number_of_workers,
             42,
         )
@@ -292,7 +292,7 @@ class PartialConfigurationTest(unittest.TestCase):
         assert_raises(json.dumps({"ignore_all_errors": [1, 2, 3]}))
         assert_raises(json.dumps({"ignore_infer": [False, "bc"]}))
         assert_raises(json.dumps({"logger": []}))
-        assert_raises(json.dumps({"number_of_workers": "abc"}))
+        assert_raises(json.dumps({"workers": "abc"}))
         assert_raises(json.dumps({"critical_files": "abc"}))
         assert_raises(json.dumps({"source_directories": "abc"}))
         assert_raises(json.dumps({"strict": 42}))
