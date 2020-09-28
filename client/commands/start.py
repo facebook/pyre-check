@@ -102,7 +102,7 @@ class Start(Reporting):
                 self._configuration.project_root,
                 self._original_directory,
                 self._configuration.local_root,
-                self._configuration.other_critical_files,
+                list(self._configuration.other_critical_files),
             ).daemonize()
 
     def _run(self) -> None:

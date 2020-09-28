@@ -13,9 +13,8 @@ import unittest
 from unittest.mock import MagicMock, patch
 
 from .. import json_rpc, project_files_monitor
-from ..analysis_directory import AnalysisDirectory, UpdatedPaths
+from ..analysis_directory import UpdatedPaths
 from ..json_rpc import Request, read_request
-from ..process import Process
 from ..project_files_monitor import MonitorException, ProjectFilesMonitor
 from ..socket_connection import SocketConnection, SocketException
 from ..tests.mocks import mock_configuration

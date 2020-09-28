@@ -785,8 +785,8 @@ def resolve_analysis_directory(
 
     # Only read from the configuration if no explicit targets are passed in.
     if not source_directories and not targets:
-        source_directories = configuration.source_directories
-        targets = configuration.targets
+        source_directories = list(configuration.source_directories)
+        targets = list(configuration.targets)
     else:
         source_directories = source_directories or []
         targets = targets or []

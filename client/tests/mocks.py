@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Optional
 from unittest.mock import MagicMock
 
-from .. import command_arguments
+from .. import command_arguments, configuration
 from ..analysis_directory import AnalysisDirectory
 from ..commands.command import TEXT, IncrementalStyle
 from ..commands.incremental import Incremental
@@ -92,9 +92,8 @@ def mock_configuration(version_hash=None, file_hash=None) -> MagicMock:
     return configuration
 
 
-def mock_incremental_command() -> Incremental:
+def mock_incremental_command(configuration: configuration.Configuration) -> Incremental:
     arguments = mock_arguments()
-    configuration = mock_configuration()
     analysis_directory = AnalysisDirectory(".")
     return Incremental(
         arguments,

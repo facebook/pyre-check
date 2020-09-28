@@ -9,7 +9,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, call, patch
 
-from ... import commands, log
+from ... import commands, configuration as configuration_module, log
 from ...analysis_directory import AnalysisDirectory
 from .. import servers
 from ..command import JSON, TEXT
@@ -81,7 +81,7 @@ class ServersCommandTest(unittest.TestCase):
         )
 
     @patch.object(
-        servers.Configuration, "from_arguments", return_value=mock_configuration
+        configuration_module, "create_configuration", return_value=mock_configuration()
     )
     @patch.object(Path, "mkdir")
     # pyre-fixme[56]: Argument `tools.pyre.client.commands.servers` to decorator
@@ -91,7 +91,7 @@ class ServersCommandTest(unittest.TestCase):
         self,
         stop_class: MagicMock,
         make_directory: MagicMock,
-        configuration_from_arguments: MagicMock,
+        create_configuration: MagicMock,
     ) -> None:
         servers = Servers(
             command_arguments=mock_arguments(
@@ -127,7 +127,7 @@ class ServersCommandTest(unittest.TestCase):
         )
         self.assertEqual(servers._configuration.project_root, "/root")
         stop_class.assert_called()
-        configuration_from_arguments.assert_has_calls(
+        create_configuration.assert_has_calls(
             [
                 call(
                     dataclasses.replace(

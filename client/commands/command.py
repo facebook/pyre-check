@@ -367,7 +367,7 @@ class Command(CommandParser, ABC):
 
         self._configuration: Configuration = configuration
         self._version_hash: str = self._configuration.get_version_hash() or "unversioned"
-        self._taint_models_path: List[str] = self._configuration.taint_models_path
+        self._taint_models_path: List[str] = list(self._configuration.taint_models_path)
 
         self._analysis_directory: AnalysisDirectory = (
             analysis_directory or self.generate_analysis_directory()

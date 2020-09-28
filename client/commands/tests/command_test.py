@@ -11,9 +11,8 @@ from pathlib import Path
 from typing import List
 from unittest.mock import MagicMock, Mock, patch
 
-from ... import commands, find_directories
+from ... import commands, configuration as configuration_module, find_directories
 from ...analysis_directory import AnalysisDirectory
-from ...configuration import Configuration
 from ...process import Process
 from ...tests.mocks import mock_arguments, mock_configuration
 
@@ -109,7 +108,9 @@ class CommandTest(unittest.TestCase):
                 ".pyre",
             ],
         )
-        with patch.object(Configuration, "from_arguments", return_value=configuration):
+        with patch.object(
+            configuration_module, "create_configuration", return_value=configuration
+        ):
             test_command = commands.Command(
                 arguments,
                 original_directory=original_directory,

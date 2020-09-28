@@ -9,7 +9,7 @@ import subprocess
 import tempfile
 import unittest
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict
 from unittest.mock import MagicMock, call, patch
 
 from .. import analysis_directory, buck, filesystem

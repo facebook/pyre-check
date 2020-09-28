@@ -6,103 +6,34 @@
 # pyre-unsafe
 
 import argparse
-import json
-import os
 import shutil
 import unittest
+from pathlib import Path
 from unittest.mock import MagicMock, call, patch
 
-from .. import (
-    analysis_directory,
-    buck,
-    commands,
-    configuration,
-    pyre,
-    recently_used_configurations,
-    statistics,
-)
+from .. import commands, configuration, pyre, recently_used_configurations, statistics
 from ..commands import ExitCode
 from ..exceptions import EnvironmentException
 from ..pyre import _set_default_command
-from .mocks import mock_incremental_command
+from .mocks import mock_configuration, mock_incremental_command
 
 
 class PyreTest(unittest.TestCase):
-    @patch.object(configuration.Configuration, "_validate")
-    @patch.object(configuration.Configuration, "disabled", return_value=True)
-    def test_disabled(self, disabled, validate) -> None:
-        self.assertEqual(pyre.main(["check"]), 0)
-
-    @patch.object(configuration.Configuration, "_read")
-    @patch.object(configuration.Configuration, "_validate")
+    # pyre-fixme[56]: Pyre was not able to infer the type of argument
+    #  `tools.pyre.client.configuration` to decorator factory
+    #  `unittest.mock.patch.object`.
+    @patch.object(configuration, "create_configuration")
     @patch.object(commands.Persistent, "run_null_server")
-    def test_persistent_integration(self, run_null_server, validate, read) -> None:
-        validate.side_effect = commands.ClientException
+    def test_persistent_integration(
+        self, run_null_server, create_configuration
+    ) -> None:
+        create_configuration.side_effect = commands.ClientException
         self.assertEqual(pyre.main(["persistent"]), 2)
         run_null_server.assert_not_called()
 
-        validate.side_effect = EnvironmentException
+        create_configuration.side_effect = EnvironmentException
         self.assertEqual(pyre.main(["persistent"]), 0)
         run_null_server.assert_has_calls([call(timeout=3600 * 12)])
-
-    @patch.object(os, "getenv")
-    @patch.object(os, "isatty")
-    @patch.object(json, "dump")
-    @patch.object(json, "load")
-    @patch.object(configuration.Configuration, "_read")
-    @patch.object(configuration.Configuration, "_validate")
-    # pyre-fixme[56]: Argument `tools.pyre.client.buck` to decorator factory
-    #  `unittest.mock.patch.object` could not be resolved in a global scope.
-    @patch.object(buck, "generate_source_directories", return_value=["."])
-    def test_buck_build_prompting(
-        self,
-        generate_source_directories,
-        validate,
-        read,
-        _json_load,
-        _json_dump,
-        _os_isatty,
-        _os_getenv,
-    ) -> None:
-        mock_success = MagicMock()
-        mock_success.exit_code = lambda: 0
-
-        # Pretend that all CI jobs are running attached to a terminal, in a tty.
-        _os_isatty.return_value = True
-        _os_getenv.return_value = "term"
-
-        with patch.object(
-            commands.Check, "run", return_value=mock_success
-        ), patch.object(
-            analysis_directory.SharedAnalysisDirectory, "cleanup"
-        ) as cleanup:
-            self.assertEqual(pyre.main(["check"]), 0)
-            generate_source_directories.assert_not_called()
-            cleanup.assert_has_calls([call()])
-
-            # The generation of source directories is handled within _run, which is
-            # mocked here (via the mock of run()), so verify that we don't
-            # call generate_source_directories outside of run. Tests in the
-            # subcommands verify that prepare() is called, which calls
-            # generate_source_directories.
-            self.assertEqual(pyre.main(["--target", "//a/b", "check"]), 0)
-            generate_source_directories.assert_not_called()
-
-        with patch.object(commands.Incremental, "run", return_value=mock_success):
-            # One for shutil.which("watchman"),
-            # another for shutil.which(BINARY_NAME).
-            with patch.object(shutil, "which", side_effect=[True, True]):
-                self.assertEqual(pyre.main([]), 0)
-                generate_source_directories.assert_not_called()
-        with patch.object(commands.Persistent, "run", return_value=mock_success):
-            self.assertEqual(pyre.main(["persistent"]), 0)
-            generate_source_directories.assert_not_called()
-        with patch.object(commands.Start, "run", return_value=mock_success):
-            self.assertEqual(pyre.main(["start"]), 0)
-            generate_source_directories.assert_not_called()
-        with patch.object(commands.Start, "run", return_value=mock_success):
-            self.assertEqual(pyre.main(["--noninteractive", "start"]), 0)
-            generate_source_directories.assert_not_called()
 
     # pyre-fixme[56]: Argument `shutil` to decorator factory
     #  `unittest.mock.patch.object` could not be resolved in a global scope.
@@ -125,8 +56,10 @@ class PyreTest(unittest.TestCase):
     @patch.object(statistics, "log")
     def test_log_statistics(self, statistics_log: MagicMock) -> None:
         arguments = argparse.Namespace()
-        command = mock_incremental_command()
-        command._configuration.logger = MagicMock()
+        test_configuration = configuration.Configuration(
+            project_root="irrelevant", dot_pyre_directory=Path(".pyre"), logger="logger"
+        )
+        command = mock_incremental_command(test_configuration)
         pyre._log_statistics(command, arguments, 0.0, "foo", "bar", 42)
         statistics_log.assert_called_once()
 
@@ -135,8 +68,10 @@ class PyreTest(unittest.TestCase):
     @patch.object(statistics, "log")
     def test_log_statistics__should_rerun(self, statistics_log: MagicMock) -> None:
         arguments = argparse.Namespace()
-        command = mock_incremental_command()
-        command._configuration.logger = MagicMock()
+        test_configuration = configuration.Configuration(
+            project_root="irrelevant", dot_pyre_directory=Path(".pyre"), logger="logger"
+        )
+        command = mock_incremental_command(test_configuration)
         pyre._log_statistics(
             command, arguments, 0.0, "foo", "bar", 42, should_log=False
         )
@@ -161,7 +96,7 @@ class PyreTest(unittest.TestCase):
         run_pyre.side_effect = [
             pyre.FailedOutsideLocalConfigurationException(
                 exit_code=ExitCode.FAILURE,
-                command=mock_incremental_command(),
+                command=mock_incremental_command(mock_configuration()),
                 exception_message="something",
             ),
             0,
@@ -181,7 +116,7 @@ class PyreTest(unittest.TestCase):
     ) -> None:
         run_pyre.side_effect = pyre.FailedOutsideLocalConfigurationException(
             exit_code=ExitCode.FAILURE,
-            command=mock_incremental_command(),
+            command=mock_incremental_command(mock_configuration()),
             exception_message="something",
         )
         command_line_arguments = argparse.Namespace()
@@ -204,12 +139,12 @@ class PyreTest(unittest.TestCase):
         run_pyre.side_effect = [
             pyre.FailedOutsideLocalConfigurationException(
                 exit_code=ExitCode.FAILURE,
-                command=mock_incremental_command(),
+                command=mock_incremental_command(mock_configuration()),
                 exception_message="something",
             ),
             pyre.FailedOutsideLocalConfigurationException(
                 exit_code=ExitCode.FAILURE,
-                command=mock_incremental_command(),
+                command=mock_incremental_command(mock_configuration()),
                 exception_message="something",
             ),
         ]
@@ -232,7 +167,7 @@ class PyreTest(unittest.TestCase):
     ) -> None:
         run_pyre.side_effect = pyre.FailedOutsideLocalConfigurationException(
             exit_code=ExitCode.FAILURE,
-            command=mock_incremental_command(),
+            command=mock_incremental_command(mock_configuration()),
             exception_message="something",
         )
         command_line_arguments = argparse.Namespace()

@@ -16,6 +16,7 @@ import psutil
 
 from ... import recently_used_configurations, watchman
 from ...analysis_directory import AnalysisDirectory
+from ...configuration import Configuration
 from .. import kill
 from ..kill import Kill, _get_process_name
 from .command_test import mock_arguments, mock_configuration
@@ -154,10 +155,8 @@ class KillTest(unittest.TestCase):
     # pyre-fixme[56]: Argument `shutil` to decorator factory
     #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(shutil, "rmtree")
-    @patch.object(Kill, "__init__", return_value=None)
     def test_delete_caches(
         self,
-        kill_init: MagicMock,
         remove_tree: MagicMock,
         delete_recent_cache: MagicMock,
         check_output: MagicMock,
@@ -166,14 +165,12 @@ class KillTest(unittest.TestCase):
         kill_command = Kill(
             MagicMock(),
             original_directory=MagicMock(),
-            configuration=MagicMock(),
+            configuration=Configuration(
+                project_root="/root",
+                dot_pyre_directory=Path("/some/log/directory/.pyre"),
+            ),
             analysis_directory=MagicMock(),
             with_fire=MagicMock(),
-        )
-        kill_command._configuration = MagicMock()
-        kill_command._configuration.project_root = "/root"
-        kill_command._configuration.dot_pyre_directory = Path(
-            "/some/log/directory/.pyre"
         )
         path_glob.return_value = [
             "/some/scratch/directory/pyre/.buck_builder_cache",
@@ -193,21 +190,18 @@ class KillTest(unittest.TestCase):
     # pyre-fixme[56]: Argument `shutil` to decorator factory
     #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(shutil, "rmtree")
-    @patch.object(Kill, "__init__", return_value=None)
     def test_delete_caches_scratch_path_exception(
-        self, kill_init: MagicMock, remove_tree: MagicMock, check_output: MagicMock
+        self, remove_tree: MagicMock, check_output: MagicMock
     ) -> None:
         kill_command = Kill(
             MagicMock(),
             original_directory=MagicMock(),
-            configuration=MagicMock(),
+            configuration=Configuration(
+                project_root="/root",
+                dot_pyre_directory=Path("/some/log/directory/.pyre"),
+            ),
             analysis_directory=MagicMock(),
             with_fire=MagicMock(),
-        )
-        kill_command._configuration = MagicMock()
-        kill_command._configuration.project_root = "/root"
-        kill_command._configuration.dot_pyre_directory = Path(
-            "/some/log/directory/.pyre"
         )
         check_output.side_effect = Exception
         kill_command._delete_caches()
@@ -249,19 +243,18 @@ class KillTest(unittest.TestCase):
 
     @patch.object(Kill, "_delete_linked_path")
     @patch.object(Path, "glob", return_value=["a.sock", "b.sock"])
-    @patch.object(Kill, "__init__", return_value=None)
     def test_delete_server_files(
-        self, kill_init: MagicMock, glob: MagicMock, delete_linked_path: MagicMock
+        self, glob: MagicMock, delete_linked_path: MagicMock
     ) -> None:
         kill_command = Kill(
             MagicMock(),
             original_directory=MagicMock(),
-            configuration=MagicMock(),
+            configuration=Configuration(
+                project_root="/root", dot_pyre_directory=Path("/root/.pyre")
+            ),
             analysis_directory=MagicMock(),
             with_fire=MagicMock(),
         )
-        kill_command._configuration = MagicMock()
-        kill_command._configuration.dot_pyre_directory = Path("/root/.pyre")
         kill_command._delete_server_files()
         self.assertEqual(delete_linked_path.call_count, 6)
 

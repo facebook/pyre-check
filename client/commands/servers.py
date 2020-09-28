@@ -10,7 +10,7 @@ import logging
 from pathlib import Path
 from typing import List, NamedTuple, Optional
 
-from .. import command_arguments, log
+from .. import command_arguments, configuration as configuration_module, log
 from ..analysis_directory import AnalysisDirectory
 from ..configuration import Configuration
 from .command import JSON, Command
@@ -133,7 +133,7 @@ class Servers(Command):
     def _stop_servers(self, servers: List[ServerDetails]) -> None:
         for server in servers:
             LOG.warning("Stopping server for `%s` with pid %d", server.name, server.pid)
-            local_configuration = Configuration.from_arguments(
+            local_configuration = configuration_module.create_configuration(
                 dataclasses.replace(
                     self._command_arguments, local_configuration=server.local_root
                 ),
