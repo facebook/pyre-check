@@ -6,7 +6,6 @@
 
 import itertools
 import logging
-import os
 from pathlib import Path
 from typing import Callable, NamedTuple, Optional
 
@@ -116,10 +115,6 @@ def find_parent_directory_containing_directory(
 
 
 def find_typeshed() -> Optional[Path]:
-    override = os.getenv("PYRE_TYPESHED")
-    if override:
-        return Path(override)
-
     current_directory = Path(__file__).parent
 
     # Prefer the typeshed we bundled ourselves (if any) to the one

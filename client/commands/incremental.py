@@ -155,10 +155,11 @@ class Incremental(Reporting):
         flags = super()._flags()
         flags.extend(["-expected-binary-version", self._configuration.version_hash])
 
+        typeshed = self._configuration.get_typeshed()
         search_path = [
             search_path.command_line_argument()
             for search_path in self._configuration.get_existent_search_paths()
-        ] + typeshed_search_path(self._configuration.typeshed)
+        ] + (typeshed_search_path(typeshed) if typeshed is not None else [])
         if search_path:
             flags.extend(["-search-path", ",".join(search_path)])
 

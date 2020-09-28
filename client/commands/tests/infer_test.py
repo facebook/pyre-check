@@ -588,9 +588,8 @@ class PyreTest(unittest.TestCase):
 
 def mock_configuration() -> MagicMock:
     configuration = general_mock_configuration()
-    configuration.typeshed = "stub"
     configuration.search_path = ["path1", "path2"]
-    configuration.get_typeshed = MagicMock()
+    configuration.get_typeshed = lambda: "stub"
     configuration.logger = None
     configuration.strict = False
     configuration.ignore_infer = []

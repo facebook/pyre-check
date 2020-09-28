@@ -22,7 +22,7 @@ from unittest.mock import MagicMock, PropertyMock, call, mock_open, patch
 
 import testslide
 
-from .. import command_arguments, configuration
+from .. import command_arguments, configuration, find_directories
 from ..configuration import (
     Configuration,
     FullConfiguration,
@@ -845,6 +845,66 @@ class FullConfigurationTest(testslide.TestCase):
                 None,
             )
 
+    def test_get_typeshed_from_configuration(self) -> None:
+        with _switch_environment({}):
+            self.assertEqual(
+                FullConfiguration(
+                    project_root="irrelevant",
+                    dot_pyre_directory=Path(".pyre"),
+                    typeshed="foo",
+                ).get_typeshed(),
+                "foo",
+            )
+
+    def test_get_typeshed_environment_override(self) -> None:
+        with _switch_environment({"PYRE_TYPESHED": "foo"}):
+            self.assertEqual(
+                FullConfiguration(
+                    project_root="irrelevant",
+                    dot_pyre_directory=Path(".pyre"),
+                    typeshed=None,
+                ).get_typeshed(),
+                "foo",
+            )
+            self.assertEqual(
+                FullConfiguration(
+                    project_root="irrelevant",
+                    dot_pyre_directory=Path(".pyre"),
+                    typeshed="bar",
+                ).get_typeshed(),
+                "foo",
+            )
+
+    def test_get_typeshed_auto_determined(self) -> None:
+        self.mock_callable(
+            find_directories, "find_typeshed"
+        ).for_call().to_return_value(Path("foo")).and_assert_called_once()
+
+        with _switch_environment({}):
+            self.assertEqual(
+                FullConfiguration(
+                    project_root="irrelevant",
+                    dot_pyre_directory=Path(".pyre"),
+                    typeshed=None,
+                ).get_typeshed(),
+                "foo",
+            )
+
+    def test_get_typeshed_cannot_auto_determine(self) -> None:
+        self.mock_callable(
+            find_directories, "find_typeshed"
+        ).for_call().to_return_value(None).and_assert_called_once()
+
+        with _switch_environment({}):
+            self.assertEqual(
+                FullConfiguration(
+                    project_root="irrelevant",
+                    dot_pyre_directory=Path(".pyre"),
+                    typeshed=None,
+                ).get_typeshed(),
+                None,
+            )
+
     def test_create_from_command_arguments_only(self) -> None:
         # We assume there does not exist a `.pyre_configuration` file that
         # covers this temporary directory.
@@ -1274,7 +1334,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
 
         json_load.side_effect = [{"typeshed": "TYPESHED/"}, {}]
         configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
-        self.assertEqual(configuration.typeshed, "TYPESHED/")
+        self.assertEqual(configuration._typeshed, "TYPESHED/")
         self.assertEqual(configuration.file_hash, None)
 
         with patch.object(
@@ -1301,7 +1361,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
             {},
         ]
         configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
-        self.assertEqual(configuration.typeshed, "TYPE/VERSION/SHED/")
+        self.assertEqual(configuration._typeshed, "TYPE/VERSION/SHED/")
         with patch("os.path.exists", return_value=True):
             self.assertEqual(
                 configuration.get_existent_search_paths(),
@@ -1323,7 +1383,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
             {},
         ]
         configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
-        self.assertEqual(configuration.typeshed, "TYPE/VERSION/SHED/")
+        self.assertEqual(configuration._typeshed, "TYPE/VERSION/SHED/")
         with patch("os.path.exists", return_value=True):
             self.assertEqual(
                 configuration.get_existent_search_paths(),
@@ -1347,7 +1407,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
             {},
         ]
         configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
-        self.assertEqual(configuration.typeshed, "TYPE/VERSION/SHED/")
+        self.assertEqual(configuration._typeshed, "TYPE/VERSION/SHED/")
         with patch("os.path.exists", return_value=True):
             self.assertListEqual(
                 [
@@ -1373,7 +1433,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
             {},
         ]
         configuration = Configuration("project_root", dot_pyre_directory=Path("/.pyre"))
-        self.assertEqual(configuration.typeshed, "project_root/TYPE/VERSION/SHED/")
+        self.assertEqual(configuration._typeshed, "project_root/TYPE/VERSION/SHED/")
         with patch("os.path.exists", return_value=True):
             self.assertListEqual(
                 [
@@ -1407,7 +1467,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
             {},
         ]
         configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
-        self.assertEqual(configuration.typeshed, "TYPE/VERSION/SHED/")
+        self.assertEqual(configuration._typeshed, "TYPE/VERSION/SHED/")
         self.assertEqual(configuration.taint_models_path, [".pyre/taint_models"])
 
         json_load.side_effect = [
@@ -1419,7 +1479,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
             {},
         ]
         configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
-        self.assertEqual(configuration.typeshed, "TYPE/VERSION/SHED/")
+        self.assertEqual(configuration._typeshed, "TYPE/VERSION/SHED/")
         self.assertEqual(
             configuration.taint_models_path,
             [".pyre/taint_models_1", ".pyre/taint_models_2"],
@@ -1440,7 +1500,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
             ]
             configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
             self.assertEqual(configuration.get_binary(), "/root/some/dir/pyre.bin")
-            self.assertEqual(configuration.typeshed, "/root/some/typeshed")
+            self.assertEqual(configuration._typeshed, "/root/some/typeshed")
             self.assertIsNone(configuration.buck_builder_binary)
 
             json_load.side_effect = [
@@ -1449,7 +1509,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
             ]
             configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
             self.assertEqual(configuration.get_binary(), "/home/user/some/dir/pyre.bin")
-            self.assertEqual(configuration.typeshed, "/home/user/some/typeshed")
+            self.assertEqual(configuration._typeshed, "/home/user/some/typeshed")
 
             json_load.side_effect = [
                 {
@@ -1461,7 +1521,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
             ]
             configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
             self.assertEqual(configuration.get_binary(), "/root/some/VERSION/pyre.bin")
-            self.assertEqual(configuration.typeshed, "/root/some/VERSION/typeshed")
+            self.assertEqual(configuration._typeshed, "/root/some/VERSION/typeshed")
 
             json_load.side_effect = [
                 {
@@ -1475,7 +1535,9 @@ class ConfigurationIntegrationTest(unittest.TestCase):
             self.assertEqual(
                 configuration.get_binary(), "/home/user/some/VERSION/pyre.bin"
             )
-            self.assertEqual(configuration.typeshed, "/home/user/some/VERSION/typeshed")
+            self.assertEqual(
+                configuration._typeshed, "/home/user/some/VERSION/typeshed"
+            )
 
             json_load.side_effect = [
                 {"buck_builder_binary": "/some/dir/buck_builder"},
@@ -1514,7 +1576,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
                 {},
             ]
             configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
-            self.assertEqual(configuration.typeshed, "/TYPE/VERSION/SHED/")
+            self.assertEqual(configuration._typeshed, "/TYPE/VERSION/SHED/")
             self.assertEqual(
                 configuration.taint_models_path, ["/root/.pyre/taint_models"]
             )
@@ -1530,7 +1592,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
                 local_root="/root/local",
                 dot_pyre_directory=Path("/.pyre"),
             )
-            self.assertEqual(configuration.typeshed, "/TYPE/VERSION/SHED/")
+            self.assertEqual(configuration._typeshed, "/TYPE/VERSION/SHED/")
             self.assertEqual(
                 configuration.taint_models_path, ["/root/local/.pyre/taint_models"]
             )
@@ -1550,7 +1612,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
                 local_root="/root/local",
                 dot_pyre_directory=Path("/.pyre"),
             )
-            self.assertEqual(configuration.typeshed, "/TYPE/VERSION/SHED/")
+            self.assertEqual(configuration._typeshed, "/TYPE/VERSION/SHED/")
             self.assertEqual(
                 configuration.taint_models_path,
                 ["/root/local/.pyre/taint_models", "/root/global/taint_models"],
@@ -1565,7 +1627,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
             {},
         ]
         configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
-        self.assertEqual(configuration.typeshed, "/TYPE/VERSION/SHED/")
+        self.assertEqual(configuration._typeshed, "/TYPE/VERSION/SHED/")
         self.assertEqual(configuration.file_hash, "HASH")
 
         json_load.side_effect = [
@@ -1589,7 +1651,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
                 ],
                 ["/home/user/simple", "/home/user/simple$subdir"],
             )
-        self.assertEqual(configuration.typeshed, "/home/user/typeshed")
+        self.assertEqual(configuration._typeshed, "/home/user/typeshed")
         self.assertEqual(configuration.source_directories, ["a", "/home/user/b"])
         self.assertEqual(configuration.get_binary(), "/home/user/bin")
 
@@ -1607,7 +1669,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
             typeshed="some/directory/path/",
             dot_pyre_directory=Path("/.pyre"),
         )
-        self.assertEqual(configuration.typeshed, "some/directory/path/")
+        self.assertEqual(configuration._typeshed, "some/directory/path/")
 
         json_load.side_effect = [{"binary": "/binary"}, {}]
         configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
@@ -1629,7 +1691,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
                 {},
             ]
             configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
-            self.assertEqual(configuration.typeshed, "/TYPE/VERSION_HASH/SHED/")
+            self.assertEqual(configuration._typeshed, "/TYPE/VERSION_HASH/SHED/")
 
         # Test buck builder fields
         json_load.side_effect = [{"use_buck_builder": True}, {}]
@@ -1652,7 +1714,7 @@ class ConfigurationIntegrationTest(unittest.TestCase):
         # Normalize number of workers if zero.
         json_load.side_effect = [{"typeshed": "/TYPESHED/", "workers": 0}, {}]
         configuration = Configuration("", dot_pyre_directory=Path("/.pyre"))
-        self.assertEqual(configuration.typeshed, "/TYPESHED/")
+        self.assertEqual(configuration._typeshed, "/TYPESHED/")
 
         # Test excludes
         json_load.side_effect = [{"exclude": "regexp"}, {}]
@@ -1708,11 +1770,6 @@ class ConfigurationIntegrationTest(unittest.TestCase):
     @patch("os.path.isdir")
     @patch("os.path.exists")
     @patch("os.access")
-    # Need to patch this method because this test messes around with
-    # isfile/isdir via the patches above. When test optimizations are
-    # applied, _apply_defaults goes crazy; hence mock it so it doesn't
-    # run - it's not important for this test anyway.
-    @patch.object(Configuration, "_apply_defaults")
     @patch.object(Configuration, "_validate")
     @patch.object(Configuration, "_read")
     @patch(f"{configuration.__name__}.expand_relative_path")
@@ -1727,7 +1784,6 @@ class ConfigurationIntegrationTest(unittest.TestCase):
         expand_relative_path,
         configuration_read,
         configuration_validate,
-        configuration_defaults,
         os_access,
         os_path_exists,
         os_path_isdir,
@@ -1813,7 +1869,6 @@ class ConfigurationIntegrationTest(unittest.TestCase):
     @patch("os.path.isdir")
     @patch("os.path.exists")
     @patch("os.access")
-    @patch.object(Configuration, "_apply_defaults")
     @patch.object(Configuration, "_validate")
     @patch(f"{configuration.__name__}.expand_relative_path")
     @patch(f"{configuration.__name__}.find_parent_directory_containing_file")
@@ -1826,7 +1881,6 @@ class ConfigurationIntegrationTest(unittest.TestCase):
         find_parent_directory_containing_file,
         expand_relative_path,
         configuration_validate,
-        configuration_defaults,
         os_access,
         os_path_exists,
         os_path_isdir,

@@ -41,7 +41,6 @@ from .find_directories import (
     CONFIGURATION_FILE,
     LOCAL_CONFIGURATION_FILE,
     find_parent_directory_containing_file,
-    find_typeshed,
     get_relative_local_root,
 )
 from .resources import LOG_DIRECTORY
@@ -754,6 +753,28 @@ class FullConfiguration:
             return binary_candidate
         return None
 
+    def get_typeshed(self) -> Optional[str]:
+        overriding_typeshed = os.getenv("PYRE_TYPESHED")
+        if overriding_typeshed is not None:
+            LOG.warning(f"Typeshed overridden with `{overriding_typeshed}`")
+            return overriding_typeshed
+
+        typeshed = self.typeshed
+        if typeshed is not None:
+            return typeshed
+
+        LOG.info("No typeshed specified, looking for it...")
+        auto_determined_typeshed = find_directories.find_typeshed()
+        if auto_determined_typeshed is None:
+            LOG.warning(
+                "Could not find a suitable typeshed. Types for Python builtins "
+                "and standard libraries may be missing!"
+            )
+            return None
+        else:
+            LOG.info(f"Found: `{auto_determined_typeshed}`")
+            return str(auto_determined_typeshed)
+
     def get_binary_version(self) -> Optional[str]:
         binary = self.get_binary()
         if binary is None:
@@ -1012,7 +1033,6 @@ class Configuration:
         self._read(project_configuration)
         self._override_version_hash()
         self._resolve_versioned_paths()
-        self._apply_defaults()
         self._validate()
 
     @staticmethod
@@ -1082,17 +1102,6 @@ class Configuration:
                 "`extensions` must only contain strings formatted as `.EXT`"
             )
 
-        # Validate typeshed path and sub-elements.
-        assert_readable_directory_in_configuration(self.typeshed, field_name="typeshed")
-
-        # A courtesy warning since we have changed default behaviour.
-        if self._typeshed_has_obsolete_value():
-            LOG.warning(
-                f"It appears that `{self.typeshed}` points at a `stdlib` "
-                "directory. Please note that the `typeshed` configuration must "
-                "point to the root of the `typeshed` directory."
-            )
-
         non_existent_infer_paths = [
             path for path in self.ignore_infer if not os.path.exists(path)
         ]
@@ -1107,23 +1116,6 @@ class Configuration:
                 if path not in non_existent_infer_paths
             ]
 
-        for typeshed_subdirectory_name in ["stdlib", "third_party"]:
-            typeshed_subdirectory = os.path.join(
-                self.typeshed, typeshed_subdirectory_name
-            )
-            assert_readable_directory_in_configuration(typeshed_subdirectory)
-            for typeshed_version_directory_name in os.listdir(typeshed_subdirectory):
-                if not typeshed_version_directory_name[0].isdigit():
-                    raise InvalidConfiguration(
-                        "Directories inside `typeshed` must only contain "
-                        "second-level subdirectories starting with "
-                        "a version number."
-                    )
-                typeshed_version_directory = os.path.join(
-                    typeshed_subdirectory, typeshed_version_directory_name
-                )
-                assert_readable_directory_in_configuration(typeshed_version_directory)
-
         if not is_list_of_strings(self.other_critical_files):
             raise InvalidConfiguration(
                 "`critical_files` field must be a list of strings."
@@ -1137,13 +1129,6 @@ class Configuration:
     @property
     def version_hash(self) -> str:
         return self._version_hash or "unversioned"
-
-    @property
-    def typeshed(self) -> str:
-        typeshed = self._typeshed
-        if not typeshed:
-            raise InvalidConfiguration("No typeshed specified.")
-        return typeshed
 
     @property
     def buck_builder_binary(self) -> Optional[str]:
@@ -1275,6 +1260,28 @@ class Configuration:
             return binary_candidate
 
         return None
+
+    def get_typeshed(self) -> Optional[str]:
+        overriding_typeshed = os.getenv("PYRE_TYPESHED")
+        if overriding_typeshed is not None:
+            LOG.warning(f"Typeshed overridden with `{overriding_typeshed}`")
+            return overriding_typeshed
+
+        typeshed = self._typeshed
+        if typeshed is not None:
+            return typeshed
+
+        LOG.info("No typeshed specified, looking for it...")
+        auto_determined_typeshed = find_directories.find_typeshed()
+        if auto_determined_typeshed is None:
+            LOG.warning(
+                "Could not find a suitable typeshed. Types for Python builtins "
+                "and standard libraries may be missing!"
+            )
+            return None
+        else:
+            LOG.info(f"Found: `{auto_determined_typeshed}`")
+            return str(auto_determined_typeshed)
 
     def _check_nested_configurations(self, local_root: str) -> None:
         # TODO(T67874463): Handle sanity checks against project configurations
@@ -1568,23 +1575,3 @@ class Configuration:
         if overriding_version_hash:
             self._version_hash = overriding_version_hash
             LOG.warning("Version hash overridden with `%s`", self._version_hash)
-
-    def _apply_defaults(self) -> None:
-        if not self._typeshed:
-            LOG.info("No typeshed specified, looking for it")
-            typeshed_path = find_typeshed()
-            if not typeshed_path:
-                LOG.warning("Could not find a suitable typeshed")
-            else:
-                LOG.info(f"Found: `{typeshed_path}`")
-            self._typeshed = str(typeshed_path) if typeshed_path is not None else None
-
-    def _typeshed_has_obsolete_value(self) -> bool:
-        (head, tail) = os.path.split(self.typeshed)
-        if tail == "stdlib":
-            return True
-        if tail != "":
-            return False
-        # If `path` ends in a slash, tail will be empty.
-        (head, tail) = os.path.split(head)
-        return tail == "stdlib"
