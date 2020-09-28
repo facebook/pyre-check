@@ -31,6 +31,7 @@ from ..configuration import (
     SitePackageSearchPathElement,
     SubdirectorySearchPathElement,
     _expand_global_and_relative_root,
+    check_nested_local_configuration,
     create_configuration,
     create_search_paths,
     merge_partial_configurations,
@@ -915,6 +916,181 @@ class FullConfigurationTest(testslide.TestCase):
                         SimpleSearchPathElement(str(root_path / "local/baz")),
                     ],
                 )
+
+    def test_check_nested_local_configuration_no_nesting(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root)
+            _write_configuration_file(root_path, {})
+            _write_configuration_file(root_path, {}, relative="local")
+
+            try:
+                check_nested_local_configuration(
+                    FullConfiguration(
+                        project_root=root,
+                        dot_pyre_directory=Path(".pyre"),
+                        relative_local_root="local",
+                    )
+                )
+            except InvalidConfiguration:
+                self.fail("Nested local configuration check fails unexpectedly!")
+
+    def test_check_nested_local_configuration_not_excluded(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root)
+            _write_configuration_file(root_path, {})
+            _write_configuration_file(root_path, {}, relative="nest")
+            _write_configuration_file(root_path, {}, relative="nest/local")
+
+            with self.assertRaises(InvalidConfiguration):
+                check_nested_local_configuration(
+                    FullConfiguration(
+                        project_root=root,
+                        dot_pyre_directory=Path(".pyre"),
+                        relative_local_root="nest/local",
+                    )
+                )
+
+    def test_check_nested_local_configuration_excluded(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root)
+            _write_configuration_file(root_path, {})
+            _write_configuration_file(
+                root_path,
+                {"ignore_all_errors": [str(root_path / "nest/local")]},
+                relative="nest",
+            )
+            _write_configuration_file(root_path, {}, relative="nest/local")
+
+            try:
+                check_nested_local_configuration(
+                    FullConfiguration(
+                        project_root=root,
+                        dot_pyre_directory=Path(".pyre"),
+                        relative_local_root="nest/local",
+                    )
+                )
+            except InvalidConfiguration:
+                self.fail("Nested local configuration check fails unexpectedly!")
+
+    def test_check_nested_local_configuration_excluded_parent(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root)
+            _write_configuration_file(root_path, {})
+            _write_configuration_file(
+                root_path,
+                {"ignore_all_errors": [str(root_path / "nest")]},
+                relative="nest",
+            )
+            _write_configuration_file(root_path, {}, relative="nest/local")
+
+            try:
+                check_nested_local_configuration(
+                    FullConfiguration(
+                        project_root=root,
+                        dot_pyre_directory=Path(".pyre"),
+                        relative_local_root="nest/local",
+                    )
+                )
+            except InvalidConfiguration:
+                self.fail("Nested local configuration check fails unexpectedly!")
+
+    def test_check_nested_local_configuration_not_all_nesting_excluded(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root)
+            _write_configuration_file(root_path, {})
+            _write_configuration_file(root_path, {}, relative="nest0")
+            _write_configuration_file(
+                root_path,
+                {"ignore_all_errors": [str(root_path / "nest0/nest1/local")]},
+                relative="nest0/nest1",
+            )
+            _write_configuration_file(root_path, {}, relative="nest0/nest1/local")
+
+            with self.assertRaises(InvalidConfiguration):
+                check_nested_local_configuration(
+                    FullConfiguration(
+                        project_root=root,
+                        dot_pyre_directory=Path(".pyre"),
+                        relative_local_root="nest0/nest1/local",
+                    )
+                )
+
+    def test_check_nested_local_configuration_all_nesting_excluded(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root)
+            _write_configuration_file(root_path, {})
+            _write_configuration_file(
+                root_path,
+                {"ignore_all_errors": [str(root_path / "nest0/nest1/local")]},
+                relative="nest0",
+            )
+            _write_configuration_file(
+                root_path,
+                {"ignore_all_errors": [str(root_path / "nest0/nest1/local")]},
+                relative="nest0/nest1",
+            )
+            _write_configuration_file(root_path, {}, relative="nest0/nest1/local")
+
+            try:
+                check_nested_local_configuration(
+                    FullConfiguration(
+                        project_root=root,
+                        dot_pyre_directory=Path(".pyre"),
+                        relative_local_root="nest0/nest1/local",
+                    )
+                )
+            except InvalidConfiguration:
+                self.fail("Nested local configuration check fails unexpectedly!")
+
+    def test_check_nested_local_configuration_expand_global_root(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root)
+            _write_configuration_file(root_path, {})
+            _write_configuration_file(
+                root_path,
+                {"ignore_all_errors": ["//nest0/nest1/local"]},
+                relative="nest0",
+            )
+            _write_configuration_file(
+                root_path,
+                {"ignore_all_errors": [str(root_path / "nest0/**")]},
+                relative="nest0/nest1",
+            )
+            _write_configuration_file(root_path, {}, relative="nest0/nest1/local")
+
+            try:
+                check_nested_local_configuration(
+                    FullConfiguration(
+                        project_root=root,
+                        dot_pyre_directory=Path(".pyre"),
+                        relative_local_root="nest0/nest1/local",
+                    )
+                )
+            except InvalidConfiguration:
+                self.fail("Nested local configuration check fails unexpectedly!")
+
+    def test_check_nested_local_configuration_expand_relative_root(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root)
+            _write_configuration_file(root_path, {})
+            _write_configuration_file(
+                root_path, {"ignore_all_errors": ["nest1/local"]}, relative="nest0"
+            )
+            _write_configuration_file(
+                root_path, {"ignore_all_errors": ["*"]}, relative="nest0/nest1"
+            )
+            _write_configuration_file(root_path, {}, relative="nest0/nest1/local")
+
+            try:
+                check_nested_local_configuration(
+                    FullConfiguration(
+                        project_root=root,
+                        dot_pyre_directory=Path(".pyre"),
+                        relative_local_root="nest0/nest1/local",
+                    )
+                )
+            except InvalidConfiguration:
+                self.fail("Nested local configuration check fails unexpectedly!")
 
 
 class MockCompletedProcess(NamedTuple):

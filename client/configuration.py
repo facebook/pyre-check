@@ -784,6 +784,51 @@ def create_configuration(
     )
 
 
+def check_nested_local_configuration(configuration: FullConfiguration) -> None:
+    """
+    Raises `InvalidConfiguration` if the check fails.
+    """
+    local_root = configuration.local_root
+    if local_root is None:
+        return
+
+    def is_subdirectory(child: Path, parent: Path) -> bool:
+        return parent == child or parent in child.parents
+
+    # We search from the parent of the local root, looking for another local
+    # configuration file that lives above the current one
+    local_root_path = Path(local_root).resolve()
+    current_directory = local_root_path.parent
+    while True:
+        found_root = find_directories.find_global_and_local_root(current_directory)
+        if found_root is None:
+            break
+
+        nesting_local_root = found_root.local_root
+        if nesting_local_root is None:
+            break
+
+        nesting_configuration = PartialConfiguration.from_file(
+            nesting_local_root / LOCAL_CONFIGURATION_FILE
+        ).expand_relative_paths(str(nesting_local_root))
+        nesting_ignored_all_errors_path = _expand_and_get_existent_ignore_all_errors_path(
+            nesting_configuration.ignore_all_errors, str(found_root.global_root)
+        )
+        if not any(
+            is_subdirectory(child=local_root_path, parent=Path(path))
+            for path in nesting_ignored_all_errors_path
+        ):
+            error_message = (
+                "Local configuration is nested under another local configuration at "
+                f"`{nesting_local_root}`.\nPlease add `{local_root_path}` to the "
+                "`ignore_all_errors` field of the parent, or combine the sources "
+                "into a single configuration, or split the parent configuration to "
+                "avoid inconsistent errors."
+            )
+            raise InvalidConfiguration(error_message)
+        current_directory = nesting_local_root.parent
+
+
 class _ConfigurationFile:
     def __init__(self, file) -> None:
         self._deprecated = {"do_not_check": "ignore_all_errors"}
