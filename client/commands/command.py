@@ -411,7 +411,7 @@ class Command(CommandParser, ABC):
         pass
 
     def cleanup(self) -> None:
-        self._analysis_directory.cleanup()
+        self._analysis_directory.cleanup(delete_long_lasting_files=False)
 
     def _flags(self) -> List[str]:
         flags = []

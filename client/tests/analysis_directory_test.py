@@ -813,7 +813,7 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
             relative_local_root=None,
             isolate=False,
         )
-        self.assertEqual(actual, buck.SimpleBuckBuilder())
+        self.assertEqual(actual, (buck.SimpleBuckBuilder(), []))
 
     @patch.object(tempfile, "mkdtemp")
     @patch.object(analysis_directory, "find_buck_root")
@@ -837,11 +837,15 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
         )
         self.assertEqual(
             actual,
-            buck.FastBuckBuilder(
-                buck_root=find_buck_root(),
-                buck_builder_binary=configuration.buck_builder_binary,
-                buck_mode=None,
-                project_name=get_project_name(),
+            (
+                buck.FastBuckBuilder(
+                    buck_root=find_buck_root(),
+                    buck_builder_binary=configuration.buck_builder_binary,
+                    buck_mode=None,
+                    project_name=get_project_name(),
+                    output_directory=make_temporary_directory(),
+                ),
+                [make_temporary_directory()],
             ),
         )
 
@@ -863,7 +867,14 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
         )
         self.assertEqual(
             actual,
-            buck.SourceDatabaseBuckBuilder(buck_root=find_buck_root(), buck_mode=None),
+            (
+                buck.SourceDatabaseBuckBuilder(
+                    buck_root=find_buck_root(),
+                    buck_mode=None,
+                    output_directory=make_temporary_directory(),
+                ),
+                [make_temporary_directory()],
+            ),
         )
 
     @patch.object(
@@ -1081,7 +1092,9 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
         with patch.object(buck.FastBuckBuilder, "build") as build, patch.object(
             SharedAnalysisDirectory, "get_root", return_value=original_scratch_directory
         ):
-            fast_buck_builder = buck.FastBuckBuilder(buck_root="dummy_buck_root")
+            fast_buck_builder = buck.FastBuckBuilder(
+                buck_root="dummy_buck_root", output_directory="/tmp/foo"
+            )
             shared_analysis_directory = SharedAnalysisDirectory(
                 project_root=project_directory,
                 source_directories=[],
@@ -1124,7 +1137,9 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
         with patch.object(buck.FastBuckBuilder, "build") as build, patch.object(
             SharedAnalysisDirectory, "get_root", return_value=original_scratch_directory
         ):
-            fast_buck_builder = buck.FastBuckBuilder(buck_root="dummy_buck_root")
+            fast_buck_builder = buck.FastBuckBuilder(
+                buck_root="dummy_buck_root", output_directory="/tmp/foo"
+            )
             shared_analysis_directory = SharedAnalysisDirectory(
                 project_root=project_directory,
                 source_directories=[],
@@ -1195,7 +1210,9 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
     #  factory `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(analysis_directory, "SocketConnection")
     def test_notify_about_rebuild(self, socket_connection_class: MagicMock) -> None:
-        fast_buck_builder = buck.FastBuckBuilder(buck_root="dummy_buck_root")
+        fast_buck_builder = buck.FastBuckBuilder(
+            buck_root="dummy_buck_root", output_directory="/tmp/foo"
+        )
         shared_analysis_directory = SharedAnalysisDirectory(
             source_directories=[],
             targets=["target1"],
@@ -1289,7 +1306,7 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
         shared_analysis_directory = SharedAnalysisDirectory(
             source_directories=[], targets=["target1"], project_root="/"
         )
-        shared_analysis_directory.cleanup()
+        shared_analysis_directory.cleanup(delete_long_lasting_files=True)
         remove_tree.assert_has_calls([call("foo"), call("bar/baz")])
 
     @patch.object(
@@ -1306,8 +1323,9 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
         shared_analysis_directory = SharedAnalysisDirectory(
             source_directories=[], targets=["target1"], project_root="/"
         )
-        shared_analysis_directory.cleanup()
+        shared_analysis_directory.cleanup(delete_long_lasting_files=True)
 
+    @patch.object(tempfile, "mkdtemp")
     # pyre-fixme[56]: Argument `os` to decorator factory
     #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(os, "getpid", return_value=42)
@@ -1315,12 +1333,20 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
         SharedAnalysisDirectory, "get_scratch_directory", return_value="/scratch"
     )
     def test_directories_to_clean_up(
-        self, get_root: MagicMock, getpid: MagicMock
+        self,
+        get_root: MagicMock,
+        getpid: MagicMock,
+        make_temporary_directory: MagicMock,
     ) -> None:
         shared_analysis_directory = SharedAnalysisDirectory(
             source_directories=[], targets=["target1"], project_root="/", isolate=False
         )
-        self.assertEqual(shared_analysis_directory._directories_to_clean_up(), [])
+        self.assertEqual(
+            shared_analysis_directory._directories_to_clean_up(
+                delete_long_lasting_files=False
+            ),
+            [],
+        )
 
         shared_analysis_directory = SharedAnalysisDirectory(
             source_directories=[],
@@ -1330,7 +1356,9 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
             buck_builder=buck.SimpleBuckBuilder(),
         )
         self.assertEqual(
-            shared_analysis_directory._directories_to_clean_up(),
+            shared_analysis_directory._directories_to_clean_up(
+                delete_long_lasting_files=True
+            ),
             ["/scratch/shared_analysis_directory_42"],
         )
 
@@ -1339,12 +1367,18 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
             targets=["target1"],
             project_root="/",
             isolate=True,
-            buck_builder=buck.FastBuckBuilder(buck_root="dummy_buck_root"),
+            buck_builder=buck.FastBuckBuilder(
+                buck_root="dummy_buck_root", output_directory=make_temporary_directory()
+            ),
+            temporary_directories=[make_temporary_directory()],
         )
         self.assertEqual(
-            shared_analysis_directory._directories_to_clean_up(),
+            shared_analysis_directory._directories_to_clean_up(
+                delete_long_lasting_files=True
+            ),
             [
                 "/scratch/shared_analysis_directory_42",
                 "/scratch/.buck_builder_cache_isolated_42",
+                make_temporary_directory(),
             ],
         )

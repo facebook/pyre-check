@@ -9,6 +9,7 @@ import logging
 import os
 import shutil
 import subprocess
+import tempfile
 import textwrap
 from itertools import chain
 from pathlib import Path
@@ -59,6 +60,8 @@ BUCK_BUILDER_CACHE_PREFIX = ".buck_builder_cache"
 
 
 READER_WRITER_LOCK = "analysis_directory_reader_writer.lock"
+
+TEMPORARY_DIRECTORY_PREFIX = "pyre_tmp_"
 
 
 class NotWithinLocalConfigurationException(Exception):
@@ -151,7 +154,7 @@ class AnalysisDirectory:
         tracked_paths.extend(deleted_paths)
         return UpdatedPaths(updated_paths=tracked_paths, deleted_paths=deleted_paths)
 
-    def cleanup(self) -> None:
+    def cleanup(self, delete_long_lasting_files: bool) -> None:
         pass
 
     @staticmethod
@@ -194,6 +197,7 @@ class SharedAnalysisDirectory(AnalysisDirectory):
         isolate: bool = False,
         buck_builder: Optional[BuckBuilder] = None,
         configuration: Optional[Configuration] = None,
+        temporary_directories: Optional[List[str]] = None,
     ) -> None:
         self._source_directories: Set[str] = set(source_directories)
         self._targets: Set[str] = set(targets)
@@ -207,6 +211,7 @@ class SharedAnalysisDirectory(AnalysisDirectory):
         )
         self._isolate = isolate
         self._buck_builder: BuckBuilder = buck_builder or buck.SimpleBuckBuilder()
+        self._temporary_directories: List[str] = temporary_directories or []
 
         # Mapping from source files in the project root to symbolic links in the
         # analysis directory.
@@ -647,25 +652,33 @@ class SharedAnalysisDirectory(AnalysisDirectory):
         with self.acquire_writer_lock():
             return self._process_updated_files(paths)
 
-    def _directories_to_clean_up(self) -> List[str]:
-        if not self._isolate:
+    def _directories_to_clean_up(self, delete_long_lasting_files: bool) -> List[str]:
+        if not delete_long_lasting_files:
             return []
 
-        if not isinstance(self._buck_builder, buck.FastBuckBuilder):
+        if isinstance(self._buck_builder, buck.SimpleBuckBuilder):
             return [self.get_root()]
+
+        if isinstance(self._buck_builder, buck.SourceDatabaseBuckBuilder):
+            return [self.get_root(), *self._temporary_directories]
 
         project_name = _get_project_name(self._isolate, self._local_configuration_root)
         buck_builder_cache_path = os.path.join(
             self.get_scratch_directory(), f"{BUCK_BUILDER_CACHE_PREFIX}_{project_name}"
         )
-        return [self.get_root(), buck_builder_cache_path]
+        return [self.get_root(), buck_builder_cache_path, *self._temporary_directories]
 
-    def cleanup(self) -> None:
-        try:
-            for directory in self._directories_to_clean_up():
+    def cleanup(self, delete_long_lasting_files: bool) -> None:
+        delete_long_lasting_files = delete_long_lasting_files or self._isolate
+        directories_to_clean_up = self._directories_to_clean_up(
+            delete_long_lasting_files
+        )
+        LOG.debug(f"Cleaning up in the analysis directory: {directories_to_clean_up}.")
+        for directory in directories_to_clean_up:
+            try:
                 shutil.rmtree(directory)
-        except Exception as exception:
-            LOG.debug(f"Could not clean up analysis directory: {exception}")
+            except Exception as exception:
+                LOG.debug(f"Could not clean up analysis directory: {exception}")
 
     def _clear(self) -> None:
         root = self.get_root()
@@ -740,9 +753,9 @@ def _get_buck_builder(
     buck_mode: Optional[str],
     relative_local_root: Optional[str],
     isolate: bool,
-) -> BuckBuilder:
+) -> Tuple[BuckBuilder, List[str]]:
     if not configuration.use_buck_builder:
-        return buck.SimpleBuckBuilder()
+        return (buck.SimpleBuckBuilder(), [])
 
     buck_root = find_buck_root(project_root)
     if not buck_root:
@@ -750,17 +763,30 @@ def _get_buck_builder(
             f"No Buck configuration at `{project_root}` or any of its ancestors."
         )
 
+    output_directory = tempfile.mkdtemp(prefix=TEMPORARY_DIRECTORY_PREFIX)
+
     if configuration.use_buck_source_database:
-        return buck.SourceDatabaseBuckBuilder(buck_root=buck_root, buck_mode=buck_mode)
+        return (
+            buck.SourceDatabaseBuckBuilder(
+                buck_root=buck_root,
+                buck_mode=buck_mode,
+                output_directory=output_directory,
+            ),
+            [output_directory],
+        )
 
     project_name = _get_project_name(
         isolate_per_process=isolate, relative_local_root=relative_local_root
     )
-    return buck.FastBuckBuilder(
-        buck_root=buck_root,
-        buck_builder_binary=configuration.buck_builder_binary,
-        buck_mode=buck_mode,
-        project_name=project_name,
+    return (
+        buck.FastBuckBuilder(
+            buck_root=buck_root,
+            buck_builder_binary=configuration.buck_builder_binary,
+            buck_mode=buck_mode,
+            project_name=project_name,
+            output_directory=output_directory,
+        ),
+        [output_directory],
     )
 
 
@@ -818,7 +844,7 @@ def resolve_analysis_directory(
             ],
         )
     else:
-        buck_builder = _get_buck_builder(
+        buck_builder, temporary_directories = _get_buck_builder(
             project_root, configuration, buck_mode, relative_local_root, isolate
         )
 
@@ -837,5 +863,6 @@ def resolve_analysis_directory(
             ],
             isolate=isolate,
             configuration=configuration,
+            temporary_directories=temporary_directories,
         )
     return analysis_directory

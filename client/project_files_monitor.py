@@ -158,3 +158,7 @@ class ProjectFilesMonitor(Subscriber):
             ProjectFilesMonitor.base_path(configuration), ProjectFilesMonitor.NAME
         )
         return Process.is_alive(Path(pid_path))
+
+    def cleanup(self) -> None:
+        LOG.info("Cleaning up the analysis directory.")
+        self._analysis_directory.cleanup(delete_long_lasting_files=True)

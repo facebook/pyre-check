@@ -10,7 +10,6 @@ import logging
 import os
 import subprocess
 import sys
-import tempfile
 import threading
 from json.decoder import JSONDecodeError
 from logging import Logger
@@ -22,9 +21,6 @@ from .find_directories import find_parent_directory_containing_file
 
 
 LOG: Logger = logging.getLogger(__name__)
-
-
-OUTPUT_DIRECTORY_PREFIX = "pyre_tmp_"
 
 
 class BuckOut(NamedTuple):
@@ -51,15 +47,10 @@ class BuckBuilder:
 
 class SourceDatabaseBuckBuilder(BuckBuilder):
     def __init__(
-        self,
-        buck_root: str,
-        output_directory: Optional[str] = None,
-        buck_mode: Optional[str] = None,
+        self, buck_root: str, output_directory: str, buck_mode: Optional[str] = None
     ) -> None:
         self._buck_root = buck_root
-        self._output_directory: str = output_directory or tempfile.mkdtemp(
-            prefix=OUTPUT_DIRECTORY_PREFIX
-        )
+        self._output_directory = output_directory
         self._buck_mode = buck_mode
 
     def build(self, targets: Iterable[str]) -> BuckBuildOutput:
@@ -98,15 +89,13 @@ class FastBuckBuilder(BuckBuilder):
     def __init__(
         self,
         buck_root: str,
-        output_directory: Optional[str] = None,
+        output_directory: str,
         buck_builder_binary: Optional[str] = None,
         buck_mode: Optional[str] = None,
         project_name: Optional[str] = None,
     ) -> None:
         self._buck_root = buck_root
-        self._output_directory: str = output_directory or tempfile.mkdtemp(
-            prefix=OUTPUT_DIRECTORY_PREFIX
-        )
+        self._output_directory = output_directory
         self._buck_builder_binary = buck_builder_binary
         self._buck_mode = buck_mode
         self._project_name = project_name

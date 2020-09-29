@@ -60,6 +60,9 @@ class Subscriber(object):
         """
         raise NotImplementedError
 
+    def cleanup(self) -> None:
+        pass
+
     @property
     @functools.lru_cache(1)
     # pyre-fixme[10]: Name `pywatchman` is used but not defined.
@@ -140,6 +143,7 @@ class Subscriber(object):
         finally:
             LOG.info("Cleaning up lock and pid files before exiting.")
             remove_if_exists(lock_path)
+            self.cleanup()
 
     def daemonize(self) -> None:
         """We double-fork here to detach the daemon process from the parent.
