@@ -26,12 +26,14 @@ class GlobalVersionUpdate(Command):
         error_source: str,
         hash: str,
         paths: List[Path],
+        no_commit: bool,
         submit: bool,
     ) -> None:
         super().__init__(repository)
         self._error_source: str = error_source
         self._hash: str = hash
         self._paths: List[Path] = paths
+        self._no_commit: bool = no_commit
         self._submit: bool = submit
 
     @staticmethod
@@ -43,6 +45,7 @@ class GlobalVersionUpdate(Command):
             error_source=arguments.error_source,
             hash=arguments.hash,
             paths=arguments.paths,
+            no_commit=arguments.no_commit,
             submit=arguments.submit,
         )
 
@@ -63,6 +66,9 @@ class GlobalVersionUpdate(Command):
             type=ErrorSource,
             choices=list(ErrorSource),
             default=ErrorSource.GENERATE,
+        )
+        parser.add_argument(
+            "--no-commit", action="store_true", help="Keep changes in working state."
         )
         parser.add_argument("--submit", action="store_true", help=argparse.SUPPRESS)
 
@@ -102,7 +108,7 @@ class GlobalVersionUpdate(Command):
             fixme_command.run()
 
         self._repository.submit_changes(
-            commit=True,
+            commit=(not self._no_commit),
             submit=self._submit,
             title="Update pyre global configuration version",
             summary=f"Automatic upgrade to hash `{self._hash}`",

@@ -54,6 +54,7 @@ class UpdateGlobalVersionTest(unittest.TestCase):
         arguments.submit = False
         arguments.hash = "abcd"
         arguments.paths = []
+        arguments.no_commit = False
         with patch("json.dump"):
             mocks = [
                 mock_open(read_data='{"version": "old"}').return_value,
