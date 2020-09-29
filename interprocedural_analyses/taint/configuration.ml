@@ -150,20 +150,8 @@ let parse source_jsons =
     array_member "sources" json |> List.map ~f:parse_source
   in
   let parse_sinks json =
-    let parse_sink (sinks, partial_sink_labels) json =
-      let sink = Json.Util.member "name" json |> Json.Util.to_string in
-      let partial_sink_labels =
-        if List.exists ~f:(String.equal "multi_sink_labels") (Json.Util.keys json) then
-          Json.Util.member "multi_sink_labels" json
-          |> Json.Util.to_list
-          |> List.map ~f:Json.Util.to_string
-          |> fun data -> String.Map.Tree.set partial_sink_labels ~key:sink ~data
-        else
-          partial_sink_labels
-      in
-      sink :: sinks, partial_sink_labels
-    in
-    array_member "sinks" json |> List.fold ~init:([], String.Map.Tree.empty) ~f:parse_sink
+    let parse_sink json = Json.Util.member "name" json |> Json.Util.to_string in
+    array_member "sinks" json |> List.map ~f:parse_sink
   in
   let parse_features json =
     let parse_feature json = Json.Util.member "name" json |> Json.Util.to_string in
@@ -175,23 +163,16 @@ let parse source_jsons =
       failwith (Format.sprintf "Multiple rules share the same code `%d`." code);
     Hash_set.add seen_rules code
   in
-  let parse_rules ~allowed_sources ~allowed_sinks ~partial_sink_labels json =
+  let parse_rules ~allowed_sources ~allowed_sinks json =
     let parse_rule json =
       let sources =
         Json.Util.member "sources" json
         |> parse_string_list
         |> List.map ~f:(Sources.parse ~allowed:allowed_sources)
       in
-      let validate sink =
-        (* Ensure that the sink used for a normal rule is not a multi sink. *)
-        if String.Map.Tree.mem partial_sink_labels sink then
-          failwith (Format.sprintf "Multi sink `%s` can't be used for a regular rule." sink);
-        sink
-      in
       let sinks =
         Json.Util.member "sinks" json
         |> parse_string_list
-        |> List.map ~f:validate
         |> List.map ~f:(Sinks.parse ~allowed:allowed_sinks)
       in
       let name = Json.Util.member "name" json |> Json.Util.to_string in
@@ -202,7 +183,7 @@ let parse source_jsons =
     in
     array_member "rules" json |> List.map ~f:parse_rule
   in
-  let parse_combined_source_rules ~allowed_sources ~partial_sink_labels json =
+  let parse_combined_source_rules ~allowed_sources json =
     let parse_combined_source_rule (rules, partial_sink_converter, partial_sink_labels) json =
       let name = Json.Util.member "name" json |> Json.Util.to_string in
       let message_format = Json.Util.member "message_format" json |> Json.Util.to_string in
@@ -224,21 +205,15 @@ let parse source_jsons =
           let second_sources = Json.Util.member second sources |> parse_sources in
 
           let sinks, partial_sink_labels =
-            match member "partial_sink" json with
-            | `Null ->
-                (* Legacy behavior. *)
-                Json.Util.member "sinks" json |> parse_string_list, partial_sink_labels
-            | `String partial_sink ->
-                if String.Map.Tree.mem partial_sink_labels partial_sink then
-                  failwith
-                    (Format.sprintf
-                       "Partial sinks must be unique - an entry for `%s` already exists."
-                       partial_sink)
-                else
-                  ( [partial_sink],
-                    String.Map.Tree.set partial_sink_labels ~key:partial_sink ~data:[first; second]
-                  )
-            | _ -> failwith "Partial sinks must be a single string."
+            let partial_sink = Json.Util.member "partial_sink" json |> Json.Util.to_string in
+            if String.Map.Tree.mem partial_sink_labels partial_sink then
+              failwith
+                (Format.sprintf
+                   "Partial sinks must be unique - an entry for `%s` already exists."
+                   partial_sink)
+            else
+              ( [partial_sink],
+                String.Map.Tree.set partial_sink_labels ~key:partial_sink ~data:[first; second] )
           in
           let create_partial_sink label sink =
             begin
@@ -288,7 +263,7 @@ let parse source_jsons =
     in
     array_member "combined_source_rules" json
     |> List.fold
-         ~init:([], String.Map.Tree.empty, partial_sink_labels)
+         ~init:([], String.Map.Tree.empty, String.Map.Tree.empty)
          ~f:parse_combined_source_rule
   in
   let parse_implicit_sinks ~allowed_sinks json =
@@ -303,23 +278,13 @@ let parse source_jsons =
         { conditional_test }
   in
   let sources = List.concat_map source_jsons ~f:parse_sources in
-  let sinks, partial_sink_labels =
-    List.map source_jsons ~f:parse_sinks
-    |> List.unzip
-    |> fun (sinks, partial_sink_labels) ->
-    ( List.concat sinks,
-      List.fold partial_sink_labels ~init:String.Map.Tree.empty ~f:PartialSinkConverter.merge )
-  in
+  let sinks = List.concat_map source_jsons ~f:parse_sinks in
   let features = List.concat_map source_jsons ~f:parse_features in
   let rules =
-    List.concat_map
-      source_jsons
-      ~f:(parse_rules ~allowed_sources:sources ~allowed_sinks:sinks ~partial_sink_labels)
+    List.concat_map source_jsons ~f:(parse_rules ~allowed_sources:sources ~allowed_sinks:sinks)
   in
   let generated_combined_rules, partial_sink_converter, partial_sink_labels =
-    List.map
-      source_jsons
-      ~f:(parse_combined_source_rules ~allowed_sources:sources ~partial_sink_labels)
+    List.map source_jsons ~f:(parse_combined_source_rules ~allowed_sources:sources)
     |> List.unzip3
     |> fun (generated_combined_rules, partial_sink_converters, partial_sink_labels) ->
     ( List.concat generated_combined_rules,
