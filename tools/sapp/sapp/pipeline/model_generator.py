@@ -429,44 +429,51 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
         for annotation in annotations:
             location = annotation["location"]
             leaf_kind = annotation.get("leaf_kind")
+            kind = annotation["kind"]
+            (trace_leaf_kind, trace_kind) = (
+                (SharedTextKind.SINK, TraceKind.PRECONDITION)
+                if kind == "tito_transform" or kind == "sink"
+                else (SharedTextKind.SOURCE, TraceKind.POSTCONDITION)
+            )
             annotation_record = TraceFrameAnnotation.Record(
                 id=DBID(),
                 trace_frame_id=parent_id,
                 location=SourceLocation(
                     location["line"], location["start"], location["end"]
                 ),
-                kind=annotation["kind"],
+                kind=kind,
                 message=annotation["msg"],
                 leaf_id=(
                     None
                     if not leaf_kind
-                    else self._get_shared_text(SharedTextKind.SINK, leaf_kind).id
+                    else self._get_shared_text(trace_leaf_kind, leaf_kind).id
                 ),
                 link=annotation.get("link"),
                 trace_key=annotation.get("trace_key"),
             )
             self.graph.add_trace_annotation(annotation_record)
 
-            traces = annotation.get("preconditions", [])
+            traces = annotation.get("subtraces", [])
             for trace in traces:
-                tf = self._generate_annotation_precondition(
-                    run, parent_filename, parent_caller, trace, annotation
+                tf = self._generate_annotation_trace(
+                    trace_kind, run, parent_filename, parent_caller, trace, annotation
                 )
                 self.graph.add_trace_frame_annotation_trace_frame_assoc(
                     annotation_record, tf
                 )
 
-    def _generate_annotation_precondition(
-        self, run, parent_filename, parent_caller, trace, annotation
+    def _generate_annotation_trace(
+        self, trace_kind, run, parent_filename, parent_caller, trace, annotation
     ):
         # Generates the first-hop trace frames from the annotation and
-        # all dependencies of these preconditions. If this gets called, it is
+        # all dependencies of these sub traces. If this gets called, it is
         # assumed that the annotation leads to traces, and that the leaf kind
         # and depth are specified.
         callee = trace["callee"]
         callee_port = trace["port"]
+        titos = self._generate_tito(parent_filename, annotation, parent_caller)
         call_tf, leaf_ids = self._generate_raw_trace_frame(
-            TraceKind.PRECONDITION,
+            trace_kind,
             run,
             parent_filename,
             parent_caller,
@@ -474,7 +481,7 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
             callee,
             callee_port,
             annotation["location"],
-            [],  # no additional positions in an annotation's root traces
+            titos,
             [(annotation["leaf_kind"], annotation["leaf_depth"])],
             annotation["type_interval"],
             [],  # no more annotations for a precond coming from an annotation
