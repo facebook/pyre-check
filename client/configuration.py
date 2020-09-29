@@ -780,8 +780,8 @@ class Configuration:
         except NotImplementedError:
             default_number_of_workers = 4
 
-        LOG.warning(
-            "Could not determine the number of workers from configuration. "
+        LOG.info(
+            "Could not determine the number of Pyre workers from configuration. "
             f"Auto-set the value to {default_number_of_workers}."
         )
         return default_number_of_workers
