@@ -65,12 +65,7 @@ module Breadcrumb = struct
     let via_value_or_type_annotation ~via_kind ~tag ~value =
       match tag with
       | None -> `Assoc [Format.sprintf "%svia-%s" prefix via_kind, `String value]
-      | Some tag ->
-          `Assoc
-            [
-              Format.sprintf "%svia-%s-%s" prefix tag via_kind, `String value;
-              Format.sprintf "%svia-%s-of-%s" prefix via_kind tag, `String value;
-            ]
+      | Some tag -> `Assoc [Format.sprintf "%svia-%s-%s" prefix tag via_kind, `String value]
     in
     match breadcrumb with
     | FormatString -> `Assoc [prefix ^ "via", `String "format-string"]

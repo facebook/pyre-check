@@ -346,10 +346,7 @@
               }
             ],
             "features": [
-              {
-                "always-via-parameter-value": "parameter_value",
-                "always-via-value-of-parameter": "parameter_value"
-              }
+              { "always-via-parameter-value": "parameter_value" }
             ]
           }
         ]
