@@ -36,7 +36,7 @@ class TraceFrameQueryResultType(graphene.ObjectType):
     class Meta:
         interfaces = (graphene.relay.Node,)
 
-    trace_id = graphene.ID()
+    frame_id = graphene.ID()
     caller = graphene.String()
     caller_port = graphene.String()
     callee = graphene.String()
@@ -51,7 +51,7 @@ class TraceFrameQueryResultType(graphene.ObjectType):
 
     # pyre-fixme[3]: Return type must be annotated.
     # pyre-fixme[2]: Parameter must be annotated.
-    def resolve_trace_id(self, info):
+    def resolve_frame_id(self, info):
         # pyre-fixme[16]: `TraceFrameQueryResultType` has no attribute `id`.
         return self.id
 
