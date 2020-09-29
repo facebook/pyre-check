@@ -396,6 +396,14 @@ class TraceKind(enum.Enum):
     def POSTCONDITION(cls):  # noqa
         return cls.postcondition
 
+    @classmethod
+    def create_from_string(cls, value: str) -> TraceKind:  # noqa
+        if value == "precondition":
+            return cls.precondition
+        if value == "postcondition":
+            return cls.postcondition
+        raise ValueError(f"`{value}` is not a valid `TraceKind`")
+
 
 class IssueInstance(Base, PrepareMixin, MutableRecordMixin):  # noqa
     """A particularly instance of an issue found in a run"""

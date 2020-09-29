@@ -83,7 +83,12 @@ class Query(graphene.ObjectType):
         max_trace_length_to_sources=graphene.Int(),
         issue_id=graphene.Int(),
     )
+
     trace = relay.ConnectionField(TraceFrameConnection, issue_id=graphene.ID())
+    initial_trace_frames = relay.ConnectionField(
+        TraceFrameConnection, issue_id=graphene.Int(), kind=graphene.String()
+    )
+
     file = relay.ConnectionField(FileConnection, path=graphene.String())
 
     def resolve_issues(
@@ -185,6 +190,14 @@ class Query(graphene.ObjectType):
             for frame in trace_frames
             if frame.filename
         ]
+
+    def resolve_initial_trace_frames(
+        self, info: ResolveInfo, issue_id: int, kind: str
+    ) -> List[TraceFrameQueryResult]:
+        session = info.context.get("session")
+        return trace.Query(session).initial_trace_frames(
+            issue_id, TraceKind.create_from_string(kind)
+        )
 
     def resolve_file(self, info: ResolveInfo, path: str, **kwargs: Any) -> List[File]:
         if ".." in path:

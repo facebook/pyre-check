@@ -10,7 +10,16 @@
 
 import React from 'react';
 import {withRouter} from 'react-router';
-import {Alert, Spin, Breadcrumb, Card, Modal, Skeleton, Typography} from 'antd';
+import {
+  Alert,
+  Spin,
+  Breadcrumb,
+  Card,
+  Modal,
+  Skeleton,
+  Typography,
+  Select,
+} from 'antd';
 import {useQuery, gql} from '@apollo/client';
 import {Controlled as CodeMirror} from 'react-codemirror2';
 
@@ -19,6 +28,7 @@ require('codemirror/lib/codemirror.css');
 require('codemirror/mode/python/python.js');
 
 const {Text} = Typography;
+const {Option} = Select;
 
 function Source(
   props: $ReadOnly<{|path: string, location: string|}>,
@@ -89,17 +99,6 @@ function Source(
   return <div style={{border: '1px solid lightgray'}}>{content}</div>;
 }
 
-function SourceTraces(props: $ReadOnly<{|issue_id: number|}>): React$Node {
-  return (
-    <>
-      <Card title="Source Traces">
-        <Skeleton active />
-      </Card>
-      <br />
-    </>
-  );
-}
-
 function TraceRoot(
   props: $ReadOnly<{|data: any, loading: boolean|}>,
 ): React$Node {
@@ -128,12 +127,58 @@ function TraceRoot(
   );
 }
 
-function SinkTraces(props: $ReadOnly<{|issue_id: number|}>): React$Node {
+const InitialTraceFramesQuery = gql`
+  query InitialTraceFrame($issue_id: Int!, $kind: String!) {
+    initial_trace_frames(issue_id: $issue_id, kind: $kind) {
+      edges {
+        node {
+          callee
+          callee_id
+        }
+      }
+    }
+  }
+`;
+
+type Kind = 'precondition' | 'postcondition';
+
+function Expansion(props: $ReadOnly<{|issue_id: number, kind: Kind|}>): React$Node {
+  const {loading, error, data} = useQuery(InitialTraceFramesQuery, {
+    variables: {issue_id: props.issue_id, kind: props.kind},
+  });
+
+  var content = <div />;
+  if (loading) {
+    content = <Skeleton active />;
+  } else if (error) {
+    content = <Alert type="error">{error.toString()}</Alert>;
+  } else {
+    const frames = data.initial_trace_frames.edges;
+    var defaultValue = null;
+    if (frames.length > 0) {
+      defaultValue = frames[0].node.callee_id;
+    }
+    content = (
+      <>
+        <Select
+          defaultValue={defaultValue}
+          style={{width: '100%'}}
+          onChange={value => console.log(value)}>
+          {frames.map(frame => {
+            return (
+              <Option value={frame.node.callee_id}>{frame.node.callee}</Option>
+            );
+          })}
+        </Select>
+      </>
+    );
+  }
+
+  const title = props.kind === 'postcondition' ? 'Source Trace' : 'Sink Trace';
+
   return (
     <>
-      <Card title="Sink Traces">
-        <Skeleton active />
-      </Card>
+      <Card title={title}>{content}</Card>
       <br />
     </>
   );
@@ -162,9 +207,9 @@ function Trace(props: $ReadOnly<{|match: any|}>): React$Node {
 
   var content = (
     <>
-      <SourceTraces issue_id={issue_id} />
+      <Expansion issue_id={issue_id} kind="postcondition" />
       <TraceRoot data={data} loading={loading} />
-      <SinkTraces issue_id={issue_id} />
+      <Expansion issue_id={issue_id} kind="precondition" />
     </>
   );
 
