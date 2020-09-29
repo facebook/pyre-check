@@ -439,7 +439,7 @@ class TrimmedTraceGraph(TraceGraph):
 
     @staticmethod
     def _is_filename_prefixed_with(filename: str, prefixes: Iterable[str]) -> bool:
-        return any([filename.startswith(p) for p in prefixes])
+        return any(filename.startswith(p) for p in prefixes)
 
     # pyre-fixme[2]: Parameter must be annotated.
     # pyre-fixme[2]: Parameter must be annotated.

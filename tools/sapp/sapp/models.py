@@ -9,18 +9,16 @@ from __future__ import annotations
 
 import enum
 import logging
-from collections import namedtuple
 from datetime import datetime
 from decimal import Decimal
 from itertools import islice
-from typing import Any, Dict, List, Optional, Set, Tuple, Type
+from typing import Any, Dict, Optional, Set, Type
 
 from graphene_sqlalchemy.converter import (
     convert_column_to_int_or_id,
     convert_column_to_string,
     convert_sqlalchemy_type,
 )
-from munch import Munch
 from sqlalchemy import (
     Boolean,
     Column,
@@ -29,18 +27,12 @@ from sqlalchemy import (
     Float,
     Index,
     Integer,
-    MetaData,
     String,
-    Table,
-    and_,
-    exc,
     func,
-    inspect,
-    or_,
     types,
 )
 from sqlalchemy.dialects import mysql, sqlite
-from sqlalchemy.dialects.mysql import BIGINT, INTEGER
+from sqlalchemy.dialects.mysql import BIGINT
 from sqlalchemy.exc import NoSuchTableError
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.declarative import declarative_base
@@ -59,7 +51,6 @@ from .db_support import (
 )
 from .decorators import classproperty
 from .errors import AIException
-from .iterutil import split_every
 
 
 log: logging.Logger = logging.getLogger("sapp")
@@ -178,7 +169,7 @@ class SourceLocationsType(types.TypeDecorator):
     def process_bind_param(self, value, dialect) -> Optional[str]:
         if value is None:
             return None
-        return ",".join([SourceLocation.to_string(l) for l in value])
+        return ",".join([SourceLocation.to_string(location) for location in value])
 
     def process_result_value(self, value, dialect):
         if value is None or value == "":
@@ -260,35 +251,35 @@ class SharedTextKind(enum.Enum):
     sink_detail = enum.auto()
 
     @classproperty
-    def FEATURE(cls):
+    def FEATURE(cls):  # noqa
         return cls.feature
 
     @classproperty
-    def MESSAGE(cls):
+    def MESSAGE(cls):  # noqa
         return cls.message
 
     @classproperty
-    def SOURCE(cls):
+    def SOURCE(cls):  # noqa
         return cls.source
 
     @classproperty
-    def SINK(cls):
+    def SINK(cls):  # noqa
         return cls.sink
 
     @classproperty
-    def CALLABLE(cls):
+    def CALLABLE(cls):  # noqa
         return cls.callable
 
     @classproperty
-    def FILENAME(cls):
+    def FILENAME(cls):  # noqa
         return cls.filename
 
     @classproperty
-    def SOURCE_DETAIL(cls):
+    def SOURCE_DETAIL(cls):  # noqa
         return cls.source_detail
 
     @classproperty
-    def SINK_DETAIL(cls):
+    def SINK_DETAIL(cls):  # noqa
         return cls.sink_detail
 
 
@@ -398,11 +389,11 @@ class TraceKind(enum.Enum):
     postcondition = enum.auto()
 
     @classproperty
-    def PRECONDITION(cls):
+    def PRECONDITION(cls):  # noqa
         return cls.precondition
 
     @classproperty
-    def POSTCONDITION(cls):
+    def POSTCONDITION(cls):  # noqa
         return cls.postcondition
 
 
@@ -556,23 +547,23 @@ class IssueStatus(enum.Enum):
     do_not_care = enum.auto()
 
     @classproperty
-    def UNCATEGORIZED(cls):
+    def UNCATEGORIZED(cls):  # noqa
         return cls.uncategorized
 
     @classproperty
-    def BAD_PRACTICE(cls):
+    def BAD_PRACTICE(cls):  # noqa
         return cls.bad_practice
 
     @classproperty
-    def FALSE_POSITIVE(cls):
+    def FALSE_POSITIVE(cls):  # noqa
         return cls.false_positive
 
     @classproperty
-    def VALID_BUG(cls):
+    def VALID_BUG(cls):  # noqa
         return cls.valid_bug
 
     @classproperty
-    def DO_NOT_CARE(cls):
+    def DO_NOT_CARE(cls):  # noqa
         return cls.do_not_care
 
 
@@ -658,19 +649,19 @@ class RunStatus(enum.Enum):
     failed = enum.auto()
 
     @classproperty
-    def FINISHED(cls):
+    def FINISHED(cls):  # noqa
         return cls.finished
 
     @classproperty
-    def INCOMPLETE(cls):
+    def INCOMPLETE(cls):  # noqa
         return cls.incomplete
 
     @classproperty
-    def SKIPPED(cls):
+    def SKIPPED(cls):  # noqa
         return cls.skipped
 
     @classproperty
-    def FAILED(cls):
+    def FAILED(cls):  # noqa
         return cls.failed
 
 
@@ -1196,11 +1187,11 @@ class WarningCodeCategory(enum.Enum):
     code_smell = enum.auto()
 
     @classproperty
-    def BUG(cls):
+    def BUG(cls):  # noqa
         return cls.bug
 
     @classproperty
-    def CODE_SMELL(cls):
+    def CODE_SMELL(cls):  # noqa
         return cls.code_smell
 
 

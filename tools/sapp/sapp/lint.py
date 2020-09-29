@@ -106,5 +106,5 @@ def lint(click_ctx: click.Context, run_id: int, filenames: List[str]) -> None:
         for i in frames
     ]
 
-    for l in sorted(lints, key=itemgetter("filename", "line", "code", "col")):
-        click.echo(json.dumps(l))
+    for lint in sorted(lints, key=itemgetter("filename", "line", "code", "col")):
+        click.echo(json.dumps(lint))
