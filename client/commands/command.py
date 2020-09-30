@@ -236,6 +236,13 @@ class CommandParser(ABC):
             const=True,
             help=argparse.SUPPRESS,
         )
+        buck_arguments.add_argument(
+            "--no-use-buck-source-database",
+            action="store_const",
+            const=False,
+            dest="use_buck_source_database",
+            help=argparse.SUPPRESS,
+        )
 
         source_directories = parser.add_argument_group("source-directories")
         source_directories.add_argument(
