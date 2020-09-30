@@ -377,7 +377,7 @@ class PartialConfiguration:
                 if dot_pyre_directory is not None
                 else None,
                 excludes=ensure_string_list(
-                    configuration_json, "excludes", allow_single_string=True
+                    configuration_json, "exclude", allow_single_string=True
                 ),
                 extensions=ensure_string_list(configuration_json, "extensions"),
                 file_hash=file_hash,
