@@ -711,7 +711,7 @@ class Configuration:
             self.ignore_all_errors, self.project_root
         )
 
-    def get_binary(self) -> Optional[str]:
+    def get_binary_respecting_override(self) -> Optional[str]:
         overriding_binary = os.getenv("PYRE_BINARY")
         if overriding_binary is not None:
             LOG.warning(f"Binary overridden with `{overriding_binary}`")
@@ -732,7 +732,7 @@ class Configuration:
             return binary_candidate
         return None
 
-    def get_typeshed(self) -> Optional[str]:
+    def get_typeshed_respecting_override(self) -> Optional[str]:
         overriding_typeshed = os.getenv("PYRE_TYPESHED")
         if overriding_typeshed is not None:
             LOG.warning(f"Typeshed overridden with `{overriding_typeshed}`")
@@ -754,7 +754,7 @@ class Configuration:
             LOG.info(f"Found: `{auto_determined_typeshed}`")
             return str(auto_determined_typeshed)
 
-    def get_version_hash(self) -> Optional[str]:
+    def get_version_hash_respecting_override(self) -> Optional[str]:
         overriding_version_hash = os.getenv("PYRE_VERSION_HASH")
         if overriding_version_hash:
             LOG.warning(f"Version hash overridden with `{overriding_version_hash}`")
@@ -762,7 +762,7 @@ class Configuration:
         return self.version_hash
 
     def get_binary_version(self) -> Optional[str]:
-        binary = self.get_binary()
+        binary = self.get_binary_respecting_override()
         if binary is None:
             return None
         status = subprocess.run(

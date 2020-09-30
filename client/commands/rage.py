@@ -130,7 +130,7 @@ class Rage(Command):
         print("Client version:", __version__, file=output_file, flush=True)
         print(
             "Binary path:",
-            self._configuration.get_binary(),
+            self._configuration.get_binary_respecting_override(),
             file=output_file,
             flush=True,
         )

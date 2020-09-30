@@ -213,11 +213,12 @@ class Start(Reporting):
                 "-workers",
                 str(self._configuration.get_number_of_workers()),
                 "-expected-binary-version",
-                self._configuration.get_version_hash() or "unversioned",
+                self._configuration.get_version_hash_respecting_override()
+                or "unversioned",
             ]
         )
 
-        typeshed = self._configuration.get_typeshed()
+        typeshed = self._configuration.get_typeshed_respecting_override()
         search_path = [
             search_path.command_line_argument()
             for search_path in self._configuration.get_existent_search_paths()

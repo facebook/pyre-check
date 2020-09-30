@@ -414,7 +414,8 @@ class SharedAnalysisDirectory(AnalysisDirectory):
         try:
             with SocketConnection(configuration.log_directory) as socket_connection:
                 socket_connection.perform_handshake(
-                    configuration.get_version_hash() or "unversioned"
+                    configuration.get_version_hash_respecting_override()
+                    or "unversioned"
                 )
                 socket_connection.send(show_status_message)
         except (

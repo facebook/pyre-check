@@ -366,7 +366,9 @@ class Command(CommandParser, ABC):
             self._noninteractive = True
 
         self._configuration: Configuration = configuration
-        self._version_hash: str = self._configuration.get_version_hash() or "unversioned"
+        self._version_hash: str = (
+            self._configuration.get_version_hash_respecting_override() or "unversioned"
+        )
         self._taint_models_path: List[str] = list(self._configuration.taint_models_path)
 
         self._analysis_directory: AnalysisDirectory = (
@@ -486,7 +488,7 @@ class Command(CommandParser, ABC):
                 "`{}` is not a link tree.".format(self._analysis_directory.get_root())
             )
 
-        binary = self._configuration.get_binary()
+        binary = self._configuration.get_binary_respecting_override()
         if binary is None:
             raise InvalidConfiguration("Cannot find any pyre binary.")
         client_command = [binary, command]

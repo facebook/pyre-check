@@ -808,7 +808,7 @@ class ConfigurationTest(testslide.TestCase):
                     project_root="irrelevant",
                     dot_pyre_directory=Path(".pyre"),
                     binary="foo",
-                ).get_binary(),
+                ).get_binary_respecting_override(),
                 "foo",
             )
 
@@ -819,7 +819,7 @@ class ConfigurationTest(testslide.TestCase):
                     project_root="irrelevant",
                     dot_pyre_directory=Path(".pyre"),
                     binary=None,
-                ).get_binary(),
+                ).get_binary_respecting_override(),
                 "foo",
             )
             self.assertEqual(
@@ -827,7 +827,7 @@ class ConfigurationTest(testslide.TestCase):
                     project_root="irrelevant",
                     dot_pyre_directory=Path(".pyre"),
                     binary="bar",
-                ).get_binary(),
+                ).get_binary_respecting_override(),
                 "foo",
             )
 
@@ -842,7 +842,7 @@ class ConfigurationTest(testslide.TestCase):
                     project_root="irrelevant",
                     dot_pyre_directory=Path(".pyre"),
                     binary=None,
-                ).get_binary(),
+                ).get_binary_respecting_override(),
                 "foo",
             )
 
@@ -855,7 +855,7 @@ class ConfigurationTest(testslide.TestCase):
                     project_root="irrelevant",
                     dot_pyre_directory=Path(".pyre"),
                     binary=None,
-                ).get_binary(),
+                ).get_binary_respecting_override(),
                 None,
             )
 
@@ -866,7 +866,7 @@ class ConfigurationTest(testslide.TestCase):
                     project_root="irrelevant",
                     dot_pyre_directory=Path(".pyre"),
                     typeshed="foo",
-                ).get_typeshed(),
+                ).get_typeshed_respecting_override(),
                 "foo",
             )
 
@@ -877,7 +877,7 @@ class ConfigurationTest(testslide.TestCase):
                     project_root="irrelevant",
                     dot_pyre_directory=Path(".pyre"),
                     typeshed=None,
-                ).get_typeshed(),
+                ).get_typeshed_respecting_override(),
                 "foo",
             )
             self.assertEqual(
@@ -885,7 +885,7 @@ class ConfigurationTest(testslide.TestCase):
                     project_root="irrelevant",
                     dot_pyre_directory=Path(".pyre"),
                     typeshed="bar",
-                ).get_typeshed(),
+                ).get_typeshed_respecting_override(),
                 "foo",
             )
 
@@ -900,7 +900,7 @@ class ConfigurationTest(testslide.TestCase):
                     project_root="irrelevant",
                     dot_pyre_directory=Path(".pyre"),
                     typeshed=None,
-                ).get_typeshed(),
+                ).get_typeshed_respecting_override(),
                 "foo",
             )
 
@@ -915,7 +915,7 @@ class ConfigurationTest(testslide.TestCase):
                     project_root="irrelevant",
                     dot_pyre_directory=Path(".pyre"),
                     typeshed=None,
-                ).get_typeshed(),
+                ).get_typeshed_respecting_override(),
                 None,
             )
 
@@ -926,7 +926,7 @@ class ConfigurationTest(testslide.TestCase):
                     project_root="irrelevant",
                     dot_pyre_directory=Path(".pyre"),
                     version_hash="abc",
-                ).get_version_hash(),
+                ).get_version_hash_respecting_override(),
                 "abc",
             )
 
@@ -937,7 +937,7 @@ class ConfigurationTest(testslide.TestCase):
                     project_root="irrelevant",
                     dot_pyre_directory=Path(".pyre"),
                     version_hash=None,
-                ).get_version_hash(),
+                ).get_version_hash_respecting_override(),
                 "abc",
             )
             self.assertEqual(
@@ -945,7 +945,7 @@ class ConfigurationTest(testslide.TestCase):
                     project_root="irrelevant",
                     dot_pyre_directory=Path(".pyre"),
                     version_hash="def",
-                ).get_version_hash(),
+                ).get_version_hash_respecting_override(),
                 "abc",
             )
 

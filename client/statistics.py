@@ -49,7 +49,8 @@ def log(
         #  Optional[str]], Dict[str, str]]`.
         normals: Dict[str, str] = {
             **normals,
-            "version": configuration.get_version_hash() or "unversioned",
+            "version": configuration.get_version_hash_respecting_override()
+            or "unversioned",
         }
         if not logger:
             logger = configuration.logger
