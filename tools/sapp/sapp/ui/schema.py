@@ -22,6 +22,7 @@ from ..models import (
     RunStatus,
     SharedText,
     SharedTextKind,
+    TraceFrame,
     TraceKind,
 )
 from . import issues, trace
@@ -88,6 +89,12 @@ class Query(graphene.ObjectType):
     initial_trace_frames = relay.ConnectionField(
         TraceFrameConnection, issue_id=graphene.Int(), kind=graphene.String()
     )
+    next_trace_frames = relay.ConnectionField(
+        TraceFrameConnection,
+        issue_id=graphene.Int(),
+        frame_id=graphene.Int(),
+        kind=graphene.String(),
+    )
 
     file = relay.ConnectionField(FileConnection, path=graphene.String())
 
@@ -102,7 +109,7 @@ class Query(graphene.ObjectType):
         min_trace_length_to_sources: Optional[int] = None,
         max_trace_length_to_sources: Optional[int] = None,
         issue_id: Optional[int] = None,
-        **args: Any
+        **args: Any,
     ) -> List[IssueQueryResult]:
         session = get_session(info.context)
         run_id = Query.latest_run_id(session)
@@ -128,7 +135,7 @@ class Query(graphene.ObjectType):
         info: ResolveInfo,
         issue_id: DBID,
         # pyre-fixme[2]: Parameter must be annotated.
-        **args
+        **args,
     ) -> List[TraceFrameQueryResult]:
         session = info.context.get("session")
 
@@ -197,6 +204,32 @@ class Query(graphene.ObjectType):
         session = info.context.get("session")
         return trace.Query(session).initial_trace_frames(
             issue_id, TraceKind.create_from_string(kind)
+        )
+
+    def resolve_next_trace_frames(
+        self, info: ResolveInfo, issue_id: int, frame_id: int, kind: str
+    ) -> List[TraceFrameQueryResult]:
+        session = info.context.get("session")
+
+        leaf_kinds = Query.all_leaf_kinds(session)
+        run_id = DBID(Query.latest_run_id(session))
+
+        trace_kind = TraceKind.create_from_string(kind)
+        if trace_kind == TraceKind.POSTCONDITION:
+            leaf_kind = issues.Query(session, run_id).get_leaves_issue_instance(
+                session, issue_id, SharedTextKind.SOURCE
+            )
+        elif trace_kind == TraceKind.PRECONDITION:
+            leaf_kind = issues.Query(session, run_id).get_leaves_issue_instance(
+                session, issue_id, SharedTextKind.SINK
+            )
+
+        trace_frame = session.query(TraceFrame).get(frame_id)
+        if trace_frame is None:
+            raise ValueError(f"`{frame_id}` is not a valid trace frame id")
+
+        return trace.Query(session).next_trace_frames(
+            leaf_kinds, run_id, leaf_kind, trace_frame, visited_ids=set()
         )
 
     def resolve_file(self, info: ResolveInfo, path: str, **kwargs: Any) -> List[File]:
