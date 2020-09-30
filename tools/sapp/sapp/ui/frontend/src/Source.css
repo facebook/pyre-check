@@ -12,3 +12,8 @@
 .traceSelection {
     background-color: yellow;
 }
+
+.source {
+    border: 1px solid lightgray;
+    margin: 1em 0 1em 0;
+}

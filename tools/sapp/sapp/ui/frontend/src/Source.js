@@ -83,7 +83,7 @@ function Source(
     );
   }
 
-  return <div style={{border: '1px solid lightgray'}}>{content}</div>;
+  return <div class="source">{content}</div>;
 }
 
 export default Source;

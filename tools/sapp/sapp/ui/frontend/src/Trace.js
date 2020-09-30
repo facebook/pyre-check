@@ -8,7 +8,7 @@
  * @flow
  */
 
-import React from 'react';
+import React, {useState} from 'react';
 import {withRouter} from 'react-router';
 import {
   Alert,
@@ -45,7 +45,6 @@ function TraceRoot(
     <>
       <Card>
         <Text strong>{issue.code}</Text>: {issue.message}
-        <br />
         <Source path={issue.filename} location={issue.location} />
       </Card>
       <br />
@@ -55,12 +54,127 @@ function TraceRoot(
 
 type Kind = 'precondition' | 'postcondition';
 
-function Expansion(props: $ReadOnly<{|issue_id: number, kind: Kind|}>): React$Node {
+function Frame(
+  props: $ReadOnly<{|
+    issue_id: number,
+    frames: $ReadOnlyArray<any>,
+    kind: Kind,
+    displaySource: boolean,
+  |}>,
+): ReactNode {
+  const [selectedFrameId, setSelectedFrameId] = useState(null);
+
+  if (props.frames.length === 0) {
+    return (
+      <div style={{width: '100%', textAlign: 'center', padding: '2em'}}>
+        <Text type="secondary">End of trace.</Text>
+      </div>
+    );
+  }
+
+  const source = (
+    <Source
+      path={props.frames[0].node.filename}
+      location={props.frames[0].node.callee_location}
+    />
+  );
+
+  const defaultSelectedFrameId = props.frames[0].node.frame_id;
+  const select = (
+    <Select
+      defaultValue={defaultSelectedFrameId}
+      style={{width: '100%'}}
+      onChange={setSelectedFrameId}>
+      {props.frames.map(frame => {
+        return <Option value={frame.node.frame_id}>{frame.node.callee}</Option>;
+      })}
+    </Select>
+  );
+  const step = (
+    <Step
+      issue_id={props.issue_id}
+      frame_id={selectedFrameId || defaultSelectedFrameId}
+      kind={props.kind}
+    />
+  );
+
+  const isPostcondition = props.kind === 'postcondition';
+  return (
+    <>
+      {isPostcondition ? (
+        <>
+          {step}
+          {select}
+        </>
+      ) : null}
+      {props.displaySource ? source : null}
+      {!isPostcondition ? (
+        <>
+          {select}
+          {step}
+        </>
+      ) : null}
+    </>
+  );
+}
+
+function Step(
+  props: $ReadOnly<{|
+    issue_id: number,
+    frame_id: number,
+    kind: Kind,
+  |}>,
+): React$Node {
+  const NextTraceFramesQuery = gql`
+    query NextTraceFrames($issue_id: Int!, $frame_id: Int!, $kind: String!) {
+      next_trace_frames(issue_id: $issue_id, frame_id: $frame_id, kind: $kind) {
+        edges {
+          node {
+            frame_id
+            callee
+            callee_id
+            filename
+            callee_location
+          }
+        }
+      }
+    }
+  `;
+  const {loading, error, data} = useQuery(NextTraceFramesQuery, {
+    variables: {
+      issue_id: props.issue_id,
+      frame_id: props.frame_id,
+      kind: props.kind,
+    },
+  });
+
+  if (loading) {
+    return <Skeleton active />;
+  }
+
+  if (error) {
+    return <Alert type="error">{error.toString()}</Alert>;
+  }
+
+  return (
+    <Frame
+      issue_id={props.issue_id}
+      frames={data.next_trace_frames.edges}
+      kind={props.kind}
+      displaySource={true}
+    />
+  );
+}
+
+function Expansion(
+  props: $ReadOnly<{|issue_id: number, kind: Kind|}>,
+): React$Node {
   const InitialTraceFramesQuery = gql`
     query InitialTraceFrame($issue_id: Int!, $kind: String!) {
       initial_trace_frames(issue_id: $issue_id, kind: $kind) {
         edges {
           node {
+            frame_id
             callee
             callee_id
           }
@@ -72,38 +186,29 @@ function Expansion(props: $ReadOnly<{|issue_id: number, kind: Kind|}>): React$No
     variables: {issue_id: props.issue_id, kind: props.kind},
   });
 
+  const isPostcondition = props.kind === 'postcondition';
+
   var content = <div />;
   if (loading) {
     content = <Skeleton active />;
   } else if (error) {
     content = <Alert type="error">{error.toString()}</Alert>;
   } else {
-    const frames = data.initial_trace_frames.edges;
-    var defaultValue = null;
-    if (frames.length > 0) {
-      defaultValue = frames[0].node.callee_id;
-    }
     content = (
-      <>
-        <Select
-          defaultValue={defaultValue}
-          style={{width: '100%'}}
-          onChange={value => console.log(value)}>
-          {frames.map(frame => {
-            return (
-              <Option value={frame.node.callee_id}>{frame.node.callee}</Option>
-            );
-          })}
-        </Select>
-      </>
+      <Frame
+        issue_id={props.issue_id}
+        frames={data.initial_trace_frames.edges}
+        kind={props.kind}
+        displaySource={false}
+      />
     );
   }
 
-  const title = props.kind === 'postcondition' ? 'Source Trace' : 'Sink Trace';
-
   return (
     <>
-      <Card title={title}>{content}</Card>
+      <Card title={isPostcondition ? 'Source Trace' : 'Sink Trace'}>
+        {content}
+      </Card>
       <br />
     </>
   );
@@ -113,7 +218,7 @@ function Trace(props: $ReadOnly<{|match: any|}>): React$Node {
   const issue_id = props.match.params.issue_id;
 
   const IssueQuery = gql`
-    query Issue($issue_id: Int) {
+    query Issue($issue_id: Int!) {
       issues(issue_id: $issue_id) {
         edges {
           node {
