@@ -5,6 +5,7 @@
 
 import argparse
 import functools
+import json
 import logging
 import pathlib
 import re
@@ -29,6 +30,9 @@ from ..repository import Repository
 
 
 LOG: Logger = logging.getLogger(__name__)
+
+
+MISSING_ATTRIBUTE_ANNOTATION_ERROR_CODE = 4
 
 
 class MissingOverrideReturnAnnotations(Command):
@@ -253,7 +257,9 @@ class SupportSqlalchemy(ProjectErrorSuppressingCommand):
             )
         ]
 
-    def _annotate_sqlalchemy_files(self, configuration: Configuration) -> None:
+    def _annotate_sqlalchemy_files(
+        self, configuration: Configuration, unannotated_attribute_errors: Errors
+    ) -> None:
         pyre_output = configuration.run_pyre(
             arguments=[
                 "--strict",
@@ -261,12 +267,14 @@ class SupportSqlalchemy(ProjectErrorSuppressingCommand):
                 str(self._local_root),
                 "--noninteractive",
                 "infer",
+                "--json",
                 "--in-place",
                 *[str(path) for path in self.paths],
             ],
             description="Running `pyre infer`",
             should_clean=True,
             stderr_flag=None,
+            command_input=json.dumps(unannotated_attribute_errors.errors),
         )
         if pyre_output is None:
             raise UserError("Couldn't annotate sqlalchemy files.")
@@ -286,11 +294,16 @@ class SupportSqlalchemy(ProjectErrorSuppressingCommand):
         local_configuration_path = self._local_root / ".pyre_configuration.local"
         local_configuration = Configuration(local_configuration_path)
 
+        unannotated_attribute_errors = local_configuration.get_errors(
+            only_fix_error_code=MISSING_ATTRIBUTE_ANNOTATION_ERROR_CODE, strict=True
+        )
         LOG.info(
             "Annotating the following sqlalchemy files: `%s`",
             [str(path) for path in self.paths],
         )
-        self._annotate_sqlalchemy_files(local_configuration)
+        self._annotate_sqlalchemy_files(
+            local_configuration, unannotated_attribute_errors
+        )
         self._import_annotations_from_future()
 
         project_configuration = Configuration.find_project_configuration()

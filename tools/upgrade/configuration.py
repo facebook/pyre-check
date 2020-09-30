@@ -201,6 +201,7 @@ class Configuration:
         arguments: List[str],
         description: str,
         should_clean: bool,
+        command_input: Optional[str],
         stderr_flag: subprocess._FILE = subprocess.PIPE,
     ) -> Optional[subprocess.CompletedProcess[str]]:
         if should_clean:
@@ -221,23 +222,29 @@ class Configuration:
                 stdout=subprocess.PIPE,
                 stderr=stderr_flag,
                 text=True,
+                input=command_input,
             )
         except subprocess.CalledProcessError as error:
             LOG.warning("Error calling pyre: %s", str(error))
             return None
 
     def get_errors(
-        self, only_fix_error_code: Optional[int] = None, should_clean: bool = True
+        self,
+        only_fix_error_code: Optional[int] = None,
+        should_clean: bool = True,
+        command_input: Optional[str] = None,
+        strict: bool = False,
     ) -> Errors:
-        arguments = (
-            ["-l", self.root, "--output=json", "check"]
-            if self.is_local
-            else ["--output=json", "check"]
+        local_root_arguments = (
+            ["--local-configuration", self.root] if self.is_local else []
         )
+        strict_arguments = ["--strict"] if strict else []
+        arguments = [*strict_arguments, *local_root_arguments, "--output=json", "check"]
         pyre_output = self.run_pyre(
             arguments=arguments,
             description=f"Checking `{self.root}`...",
             should_clean=self.targets is not None and should_clean,
+            command_input=command_input,
         )
         if not pyre_output:
             return Errors.empty()
