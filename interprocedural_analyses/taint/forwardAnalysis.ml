@@ -966,31 +966,40 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
 
     and analyze_attribute_access ~resolution ~state ~location base attribute =
       let annotation = Interprocedural.CallResolution.resolve_ignoring_optional ~resolution base in
-      let attribute_taint =
-        let annotations =
-          let successors =
-            GlobalResolution.class_metadata (Resolution.global_resolution resolution) annotation
-            >>| (fun { ClassMetadataEnvironment.successors; _ } -> successors)
-            |> Option.value ~default:[]
-            |> List.map ~f:(fun name -> Type.Primitive name)
-          in
-          let base_annotation =
-            (* Our model definitions are ambiguous. Models could either refer to a class variable or
-               an instance variable. We explore both. *)
-            if Type.is_meta annotation then
-              [Type.single_parameter annotation]
-            else
-              []
-          in
-          (annotation :: successors) @ base_annotation
-        in
-        let attribute_taint sofar annotation =
-          Reference.create ~prefix:(Type.class_name annotation) attribute
-          |> global_model ~location
-          |> ForwardState.Tree.join sofar
-        in
-        List.fold annotations ~init:ForwardState.Tree.empty ~f:attribute_taint
+      let rec attribute_taint annotation =
+        match annotation with
+        | Type.Union annotations ->
+            List.fold
+              annotations
+              ~f:(fun existing annotation ->
+                ForwardState.Tree.join existing (attribute_taint annotation))
+              ~init:ForwardState.Tree.bottom
+        | _ ->
+            let annotations =
+              let successors =
+                GlobalResolution.class_metadata (Resolution.global_resolution resolution) annotation
+                >>| (fun { ClassMetadataEnvironment.successors; _ } -> successors)
+                |> Option.value ~default:[]
+                |> List.map ~f:(fun name -> Type.Primitive name)
+              in
+              let base_annotation =
+                (* Our model definitions are ambiguous. Models could either refer to a class
+                   variable or an instance variable. We explore both. *)
+                if Type.is_meta annotation then
+                  [Type.single_parameter annotation]
+                else
+                  []
+              in
+              (annotation :: successors) @ base_annotation
+            in
+            let attribute_taint sofar annotation =
+              Reference.create ~prefix:(Type.class_name annotation) attribute
+              |> global_model ~location
+              |> ForwardState.Tree.join sofar
+            in
+            List.fold annotations ~init:ForwardState.Tree.empty ~f:attribute_taint
       in
+      let attribute_taint = attribute_taint annotation in
       let add_tito_features taint =
         let attribute_breadcrumbs =
           Model.get_global_tito_model

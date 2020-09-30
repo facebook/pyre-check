@@ -4,7 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 from builtins import __test_sink, __test_source
-from typing import Optional
+from typing import Optional, Union
 
 
 class Token:
@@ -68,3 +68,15 @@ def test_attribute_via_dunder_dict():
     __test_sink(obj.__dict__)
     __test_sink(obj.__dict__["a"])
     __test_sink(obj.__dict__["b"])
+
+
+class Untainted:
+    token: str = ""
+
+
+def test_attribute_union(t: Union[Token, Untainted]):
+    __test_sink(t.token)
+    if isinstance(t, Token):
+        __test_sink(t.token)
+    elif isinstance(t, Untainted):
+        __test_sink(t.token)
