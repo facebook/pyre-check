@@ -53,22 +53,21 @@ function TraceRoot(
   );
 }
 
-const InitialTraceFramesQuery = gql`
-  query InitialTraceFrame($issue_id: Int!, $kind: String!) {
-    initial_trace_frames(issue_id: $issue_id, kind: $kind) {
-      edges {
-        node {
-          callee
-          callee_id
-        }
-      }
-    }
-  }
-`;
-
 type Kind = 'precondition' | 'postcondition';
 
 function Expansion(props: $ReadOnly<{|issue_id: number, kind: Kind|}>): React$Node {
+  const InitialTraceFramesQuery = gql`
+    query InitialTraceFrame($issue_id: Int!, $kind: String!) {
+      initial_trace_frames(issue_id: $issue_id, kind: $kind) {
+        edges {
+          node {
+            callee
+            callee_id
+          }
+        }
+      }
+    }
+  `;
   const {loading, error, data} = useQuery(InitialTraceFramesQuery, {
     variables: {issue_id: props.issue_id, kind: props.kind},
   });
@@ -110,25 +109,25 @@ function Expansion(props: $ReadOnly<{|issue_id: number, kind: Kind|}>): React$No
   );
 }
 
-const IssueQuery = gql`
-  query Issue($issue_id: Int) {
-    issues(issue_id: $issue_id) {
-      edges {
-        node {
-          issue_id
-          filename
-          location
-          code
-          callable
-          message
+function Trace(props: $ReadOnly<{|match: any|}>): React$Node {
+  const issue_id = props.match.params.issue_id;
+
+  const IssueQuery = gql`
+    query Issue($issue_id: Int) {
+      issues(issue_id: $issue_id) {
+        edges {
+          node {
+            issue_id
+            filename
+            location
+            code
+            callable
+            message
+          }
         }
       }
     }
-  }
-`;
-
-function Trace(props: $ReadOnly<{|match: any|}>): React$Node {
-  const issue_id = props.match.params.issue_id;
+  `;
   const {loading, error, data} = useQuery(IssueQuery, {variables: {issue_id}});
 
   var content = (
