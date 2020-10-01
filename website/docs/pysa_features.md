@@ -117,7 +117,7 @@ def django.http.response.HttpResponse.__setitem__(
 ): ...
 ```
 
-The feature would now appear as `via-value-of-set-header:Access-Control-Allow-Origin`.
+The feature would now appear as `via-set-header-value:Access-Control-Allow-Origin`.
 
 ### `via-type` Feature Using `ViaTypeOf[]`
 

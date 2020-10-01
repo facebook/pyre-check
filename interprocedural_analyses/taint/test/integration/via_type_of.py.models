@@ -167,7 +167,7 @@
                 "on_all_flows": true
               }
             ],
-            "features": [ { "always-via-type": "int" } ]
+            "features": [ { "always-via-TheY-type": "int" } ]
           }
         ]
       }
