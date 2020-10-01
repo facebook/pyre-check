@@ -25,7 +25,7 @@ from . import (
     recently_used_configurations,
     statistics,
 )
-from .commands import Command, CommandParser, ExitCode, IncrementalStyle
+from .commands import Command, ExitCode, IncrementalStyle
 from .exceptions import EnvironmentException
 from .version import __version__
 
@@ -58,8 +58,7 @@ def _set_default_command(arguments: argparse.Namespace) -> None:
 
 
 def _log_statistics(
-    command: CommandParser,
-    arguments: argparse.Namespace,
+    command: Command,
     start_time: float,
     client_exception_message: str,
     error_message: Optional[str],
@@ -70,7 +69,7 @@ def _log_statistics(
     if should_log and configuration and configuration.logger:
         statistics.log(
             category=statistics.LoggerCategory.USAGE,
-            arguments=arguments,
+            arguments=None,
             configuration=configuration,
             integers={
                 "exit_code": exit_code,
@@ -98,36 +97,25 @@ def _show_pyre_version(arguments: command_arguments.CommandArguments) -> None:
     log.stdout.write(f"Client version: {__version__}\n")
 
 
-def run_pyre(
-    arguments: argparse.Namespace, configuration: configuration_module.Configuration
+def run_pyre_command(
+    command: Command,
+    configuration: configuration_module.Configuration,
+    noninteractive: bool,
 ) -> ExitCode:
     start_time = time.time()
 
-    command: Optional[CommandParser] = None
     client_exception_message = ""
     should_log_statistics = True
     # Having this as a fails-by-default helps flag unexpected exit
     # from exception flows.
     exit_code = ExitCode.FAILURE
     try:
-        original_directory = os.getcwd()
-
         configuration_module.check_nested_local_configuration(configuration)
-        command = arguments.command(arguments, original_directory, configuration)
-        log.start_logging_to_directory(
-            arguments.noninteractive, command.configuration.log_directory
-        )
+        log.start_logging_to_directory(noninteractive, configuration.log_directory)
         exit_code = command.run().exit_code()
     except analysis_directory.NotWithinLocalConfigurationException as error:
-        if not command:
-            client_exception_message = str(error)
-            exit_code = ExitCode.FAILURE
-        else:
-            should_log_statistics = False
-            assert isinstance(command, Command)
-            raise FailedOutsideLocalConfigurationException(
-                exit_code, command, str(error)
-            )
+        should_log_statistics = False
+        raise FailedOutsideLocalConfigurationException(exit_code, command, str(error))
     except (buck.BuckException, EnvironmentException) as error:
         client_exception_message = str(error)
         exit_code = ExitCode.FAILURE
@@ -146,19 +134,17 @@ def run_pyre(
     finally:
         if len(client_exception_message) > 0:
             LOG.error(client_exception_message)
-        if command:
-            result = command.result()
-            error_message = result.error if result else None
-            command.cleanup()
-            _log_statistics(
-                command,
-                arguments,
-                start_time,
-                client_exception_message,
-                error_message,
-                exit_code,
-                should_log_statistics,
-            )
+        result = command.result()
+        error_message = result.error if result else None
+        command.cleanup()
+        _log_statistics(
+            command,
+            start_time,
+            client_exception_message,
+            error_message,
+            exit_code,
+            should_log_statistics,
+        )
     return exit_code
 
 
@@ -167,7 +153,8 @@ def _run_pyre_with_retry(arguments: argparse.Namespace) -> ExitCode:
         configuration = configuration_module.create_configuration(
             command_arguments.CommandArguments.from_arguments(arguments), Path(".")
         )
-        return run_pyre(arguments, configuration)
+        command = arguments.command(arguments, os.getcwd(), configuration)
+        return run_pyre_command(command, configuration, arguments.noninteractive)
     except configuration_module.InvalidConfiguration as error:
         LOG.error(str(error))
         return ExitCode.CONFIGURATION_ERROR
@@ -204,7 +191,8 @@ def _run_pyre_with_retry(arguments: argparse.Namespace) -> ExitCode:
         configuration = configuration_module.create_configuration(
             command_arguments.CommandArguments.from_arguments(arguments), Path(".")
         )
-        return run_pyre(arguments, configuration)
+        command = arguments.command(arguments, os.getcwd(), configuration)
+        return run_pyre_command(command, configuration, arguments.noninteractive)
     except configuration_module.InvalidConfiguration as error:
         LOG.error(str(error))
         return ExitCode.CONFIGURATION_ERROR

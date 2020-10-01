@@ -53,6 +53,7 @@ def _get_arguments() -> argparse.Namespace:
     arguments.saved_state_project = None
     arguments.dot_pyre_directory = None
     arguments.features = None
+    arguments.command = commands.Check.from_arguments
     return arguments
 
 
@@ -90,26 +91,22 @@ class PyreTest(unittest.TestCase):
     #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(statistics, "log")
     def test_log_statistics(self, statistics_log: MagicMock) -> None:
-        arguments = argparse.Namespace()
         test_configuration = configuration.Configuration(
             project_root="irrelevant", dot_pyre_directory=Path(".pyre"), logger="logger"
         )
         command = mock_incremental_command(test_configuration)
-        pyre._log_statistics(command, arguments, 0.0, "foo", "bar", 42)
+        pyre._log_statistics(command, 0.0, "foo", "bar", 42)
         statistics_log.assert_called_once()
 
     # pyre-fixme[56]: Argument `tools.pyre.client.statistics` to decorator factory
     #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(statistics, "log")
     def test_log_statistics__should_rerun(self, statistics_log: MagicMock) -> None:
-        arguments = argparse.Namespace()
         test_configuration = configuration.Configuration(
             project_root="irrelevant", dot_pyre_directory=Path(".pyre"), logger="logger"
         )
         command = mock_incremental_command(test_configuration)
-        pyre._log_statistics(
-            command, arguments, 0.0, "foo", "bar", 42, should_log=False
-        )
+        pyre._log_statistics(command, 0.0, "foo", "bar", 42, should_log=False)
         statistics_log.assert_not_called()
 
     @patch.object(
@@ -124,11 +121,14 @@ class PyreTest(unittest.TestCase):
     )
     # pyre-fixme[56]: Argument `tools.pyre.client.pyre` to decorator factory
     #  `unittest.mock.patch.object` could not be resolved in a global scope.
-    @patch.object(pyre, "run_pyre")
+    @patch.object(pyre, "run_pyre_command")
     def test_run_pyre_with_retry(
-        self, run_pyre: MagicMock, get_all_items: MagicMock, prompt_user: MagicMock
+        self,
+        run_pyre_command: MagicMock,
+        get_all_items: MagicMock,
+        prompt_user: MagicMock,
     ) -> None:
-        run_pyre.side_effect = [
+        run_pyre_command.side_effect = [
             pyre.FailedOutsideLocalConfigurationException(
                 exit_code=ExitCode.FAILURE,
                 command=mock_incremental_command(mock_configuration()),
@@ -138,25 +138,25 @@ class PyreTest(unittest.TestCase):
         ]
         command_line_arguments = _get_arguments()
         actual_exit_code = pyre._run_pyre_with_retry(command_line_arguments)
-        self.assertEqual(run_pyre.call_count, 2)
+        self.assertEqual(run_pyre_command.call_count, 2)
         self.assertEqual(actual_exit_code, ExitCode.SUCCESS)
         self.assertEqual(command_line_arguments.local_configuration, "foo/bar")
 
     @patch.object(recently_used_configurations.Cache, "get_all_items", return_value=[])
     # pyre-fixme[56]: Argument `tools.pyre.client.pyre` to decorator factory
     #  `unittest.mock.patch.object` could not be resolved in a global scope.
-    @patch.object(pyre, "run_pyre")
+    @patch.object(pyre, "run_pyre_command")
     def test_run_pyre_with_retry__no_recent_configurations(
-        self, run_pyre: MagicMock, get_all_items: MagicMock
+        self, run_pyre_command: MagicMock, get_all_items: MagicMock
     ) -> None:
-        run_pyre.side_effect = pyre.FailedOutsideLocalConfigurationException(
+        run_pyre_command.side_effect = pyre.FailedOutsideLocalConfigurationException(
             exit_code=ExitCode.FAILURE,
             command=mock_incremental_command(mock_configuration()),
             exception_message="something",
         )
         command_line_arguments = _get_arguments()
         actual_exit_code = pyre._run_pyre_with_retry(command_line_arguments)
-        self.assertEqual(run_pyre.call_count, 1)
+        self.assertEqual(run_pyre_command.call_count, 1)
         self.assertEqual(actual_exit_code, ExitCode.FAILURE)
 
     @patch.object(
@@ -167,11 +167,14 @@ class PyreTest(unittest.TestCase):
     )
     # pyre-fixme[56]: Argument `tools.pyre.client.pyre` to decorator factory
     #  `unittest.mock.patch.object` could not be resolved in a global scope.
-    @patch.object(pyre, "run_pyre")
+    @patch.object(pyre, "run_pyre_command")
     def test_run_pyre_with_retry__fail_again(
-        self, run_pyre: MagicMock, get_all_items: MagicMock, prompt_user: MagicMock
+        self,
+        run_pyre_command: MagicMock,
+        get_all_items: MagicMock,
+        prompt_user: MagicMock,
     ) -> None:
-        run_pyre.side_effect = [
+        run_pyre_command.side_effect = [
             pyre.FailedOutsideLocalConfigurationException(
                 exit_code=ExitCode.FAILURE,
                 command=mock_incremental_command(mock_configuration()),
@@ -185,7 +188,7 @@ class PyreTest(unittest.TestCase):
         ]
         command_line_arguments = _get_arguments()
         actual_exit_code = pyre._run_pyre_with_retry(command_line_arguments)
-        self.assertEqual(run_pyre.call_count, 2)
+        self.assertEqual(run_pyre_command.call_count, 2)
         self.assertEqual(actual_exit_code, commands.ExitCode.FAILURE)
 
     @patch.object(
@@ -196,16 +199,19 @@ class PyreTest(unittest.TestCase):
     )
     # pyre-fixme[56]: Argument `tools.pyre.client.pyre` to decorator factory
     #  `unittest.mock.patch.object` could not be resolved in a global scope.
-    @patch.object(pyre, "run_pyre")
+    @patch.object(pyre, "run_pyre_command")
     def test_run_pyre_with_retry__invalid_user_input(
-        self, run_pyre: MagicMock, get_all_items: MagicMock, prompt_user: MagicMock
+        self,
+        run_pyre_command: MagicMock,
+        get_all_items: MagicMock,
+        prompt_user: MagicMock,
     ) -> None:
-        run_pyre.side_effect = pyre.FailedOutsideLocalConfigurationException(
+        run_pyre_command.side_effect = pyre.FailedOutsideLocalConfigurationException(
             exit_code=ExitCode.FAILURE,
             command=mock_incremental_command(mock_configuration()),
             exception_message="something",
         )
         command_line_arguments = _get_arguments()
         actual_exit_code = pyre._run_pyre_with_retry(command_line_arguments)
-        self.assertEqual(run_pyre.call_count, 1)
+        self.assertEqual(run_pyre_command.call_count, 1)
         self.assertEqual(actual_exit_code, ExitCode.FAILURE)
