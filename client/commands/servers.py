@@ -13,7 +13,7 @@ from typing import List, NamedTuple, Optional
 from .. import command_arguments, configuration as configuration_module, log
 from ..analysis_directory import AnalysisDirectory
 from ..configuration import Configuration
-from .command import JSON, Command
+from .command import Command
 from .stop import Stop
 
 
@@ -102,7 +102,7 @@ class Servers(Command):
     def _print_server_details(
         all_server_details: List[ServerDetails], output_format: str
     ) -> None:
-        if output_format == JSON:
+        if output_format == command_arguments.JSON:
             server_details = [
                 {"pid": details.pid, "name": details.name}
                 for details in all_server_details

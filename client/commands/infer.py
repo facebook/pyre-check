@@ -28,7 +28,7 @@ from .. import command_arguments, log
 from ..analysis_directory import AnalysisDirectory
 from ..configuration import Configuration
 from ..error import Error
-from .command import JSON, Command, Result, typeshed_search_path
+from .command import Command, Result, typeshed_search_path
 from .reporting import Reporting
 
 
@@ -430,7 +430,7 @@ class Infer(Reporting):
 
     def __init__(
         self,
-        command_arguments: command_arguments.CommandArguments,
+        arguments: command_arguments.CommandArguments,
         original_directory: str,
         *,
         configuration: Configuration,
@@ -444,7 +444,7 @@ class Infer(Reporting):
         debug_infer: bool,
     ) -> None:
         super(Infer, self).__init__(
-            command_arguments, original_directory, configuration, analysis_directory
+            arguments, original_directory, configuration, analysis_directory
         )
         self._print_errors = print_errors
         self._full_only = full_only
@@ -458,7 +458,7 @@ class Infer(Reporting):
         ] = self._configuration.get_existent_ignore_infer_paths()
 
         self._show_error_traces = True
-        self._output = JSON
+        self._output = command_arguments.JSON
 
     @staticmethod
     def from_arguments(

@@ -13,7 +13,7 @@ from .. import command_arguments, log
 from ..analysis_directory import AnalysisDirectory
 from ..configuration import Configuration
 from ..error import Error
-from .command import TEXT, ClientException, Command, Result
+from .command import ClientException, Command, Result
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -40,7 +40,7 @@ class Reporting(Command):
         else:
             LOG.log(log.SUCCESS, "No type errors found")
 
-        if self._output == TEXT:
+        if self._output == command_arguments.TEXT:
             log.stdout.write("\n".join([repr(error) for error in errors]))
         else:
             log.stdout.write(json.dumps([error.__dict__ for error in errors]))

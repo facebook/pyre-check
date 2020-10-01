@@ -9,6 +9,10 @@ from pathlib import Path
 from typing import List, Optional
 
 
+TEXT: str = "text"
+JSON: str = "json"
+
+
 @dataclass(frozen=True)
 class CommandArguments:
     local_configuration: Optional[str]

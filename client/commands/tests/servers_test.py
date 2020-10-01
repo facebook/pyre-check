@@ -9,10 +9,9 @@ import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, call, patch
 
-from ... import commands, configuration as configuration_module, log
+from ... import command_arguments, commands, configuration as configuration_module, log
 from ...analysis_directory import AnalysisDirectory
 from .. import servers
-from ..command import JSON, TEXT
 from ..servers import ServerDetails, Servers
 from .command_test import mock_arguments, mock_configuration
 
@@ -38,7 +37,7 @@ class ServersCommandTest(unittest.TestCase):
                     server_pid_path=Path("/root/.pyre/foo/server/server.pid"),
                 ),
             ],
-            output_format=TEXT,
+            output_format=command_arguments.TEXT,
         )
         log_stdout.assert_has_calls(
             [
@@ -68,7 +67,7 @@ class ServersCommandTest(unittest.TestCase):
                     server_pid_path=Path("/root/.pyre/foo/server/server.pid"),
                 ),
             ],
-            output_format=JSON,
+            output_format=command_arguments.JSON,
         )
         log_stdout.assert_called_once_with(
             json.dumps(

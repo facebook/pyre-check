@@ -27,10 +27,6 @@ from ..process import Process
 from ..socket_connection import SocketConnection, SocketException
 
 
-TEXT: str = "text"
-JSON: str = "json"
-
-
 LOG: logging.Logger = logging.getLogger(__name__)
 
 
@@ -172,7 +168,10 @@ class CommandParser(ABC):
 
         # Logging.
         parser.add_argument(
-            "--output", choices=[TEXT, JSON], default=TEXT, help="How to format output"
+            "--output",
+            choices=[command_arguments.TEXT, command_arguments.JSON],
+            default=command_arguments.TEXT,
+            help="How to format output",
         )
         parser.add_argument(
             "--enable-profiling", action="store_true", help=argparse.SUPPRESS

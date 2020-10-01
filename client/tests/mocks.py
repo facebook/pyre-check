@@ -11,7 +11,7 @@ from unittest.mock import MagicMock
 
 from .. import command_arguments, configuration
 from ..analysis_directory import AnalysisDirectory
-from ..commands.command import TEXT, IncrementalStyle
+from ..commands.command import IncrementalStyle
 from ..commands.incremental import Incremental
 
 
@@ -25,7 +25,7 @@ def mock_arguments(
     local_configuration=None,
     log_identifier="",
     no_saved_state=False,
-    output=TEXT,
+    output=command_arguments.TEXT,
     save_initial_state_to=None,
     saved_state_project=None,
     sequential=False,
