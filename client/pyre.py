@@ -87,6 +87,17 @@ def _log_statistics(
         )
 
 
+def _show_pyre_version(arguments: command_arguments.CommandArguments) -> None:
+    try:
+        configuration = configuration_module.create_configuration(arguments, Path("."))
+        binary_version = configuration.get_binary_version()
+        if binary_version:
+            log.stdout.write(f"Binary version: {binary_version}\n")
+    except Exception:
+        pass
+    log.stdout.write(f"Client version: {__version__}\n")
+
+
 def run_pyre(
     arguments: argparse.Namespace, configuration: configuration_module.Configuration
 ) -> ExitCode:
@@ -101,22 +112,12 @@ def run_pyre(
     try:
         original_directory = os.getcwd()
 
-        if arguments.version:
-            try:
-                binary_version = configuration.get_binary_version()
-                if binary_version:
-                    log.stdout.write(f"Binary version: {binary_version}\n")
-            except Exception:
-                pass
-            log.stdout.write(f"Client version: {__version__}\n")
-            exit_code = ExitCode.SUCCESS
-        else:
-            configuration_module.check_nested_local_configuration(configuration)
-            command = arguments.command(arguments, original_directory, configuration)
-            log.start_logging_to_directory(
-                arguments.noninteractive, command.configuration.log_directory
-            )
-            exit_code = command.run().exit_code()
+        configuration_module.check_nested_local_configuration(configuration)
+        command = arguments.command(arguments, original_directory, configuration)
+        log.start_logging_to_directory(
+            arguments.noninteractive, command.configuration.log_directory
+        )
+        exit_code = command.run().exit_code()
     except analysis_directory.NotWithinLocalConfigurationException as error:
         if not command:
             client_exception_message = str(error)
@@ -240,6 +241,10 @@ def main(argv: List[str] = sys.argv[1:]) -> int:
         command.add_subparser(parsed_commands)
 
     arguments = parser.parse_args(argv)
+
+    if arguments.version:
+        _show_pyre_version(command_arguments.CommandArguments.from_arguments(arguments))
+        return ExitCode.SUCCESS
 
     with log.configured_logger(arguments.noninteractive):
         if not hasattr(arguments, "command"):
