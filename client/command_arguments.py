@@ -4,7 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import argparse
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List, Optional
 
@@ -15,39 +15,39 @@ JSON: str = "json"
 
 @dataclass(frozen=True)
 class CommandArguments:
-    local_configuration: Optional[str]
-    version: bool
-    debug: bool
-    sequential: bool
-    strict: bool
-    additional_checks: List[str]
-    show_error_traces: bool
-    output: str
-    enable_profiling: bool
-    enable_memory_profiling: bool
-    noninteractive: bool
-    logging_sections: Optional[str]
-    log_identifier: Optional[str]
-    logger: Optional[str]
-    formatter: Optional[str]
-    targets: List[str]
-    use_buck_builder: Optional[bool]
-    use_buck_source_database: Optional[bool]
-    source_directories: List[str]
-    filter_directory: Optional[str]
-    buck_mode: Optional[str]
-    no_saved_state: bool
-    search_path: List[str]
-    binary: Optional[str]
-    buck_builder_binary: Optional[str]
-    exclude: List[str]
-    typeshed: Optional[str]
-    save_initial_state_to: Optional[str]
-    load_initial_state_from: Optional[str]
-    changed_files_path: Optional[str]
-    saved_state_project: Optional[str]
-    dot_pyre_directory: Optional[Path]
-    features: Optional[str]
+    local_configuration: Optional[str] = None
+    version: bool = False
+    debug: bool = False
+    sequential: bool = False
+    strict: bool = False
+    additional_checks: List[str] = field(default_factory=list)
+    show_error_traces: bool = False
+    output: str = TEXT
+    enable_profiling: bool = False
+    enable_memory_profiling: bool = False
+    noninteractive: bool = False
+    logging_sections: Optional[str] = None
+    log_identifier: Optional[str] = None
+    logger: Optional[str] = None
+    formatter: Optional[str] = None
+    targets: List[str] = field(default_factory=list)
+    use_buck_builder: Optional[bool] = None
+    use_buck_source_database: Optional[bool] = None
+    source_directories: List[str] = field(default_factory=list)
+    filter_directory: Optional[str] = None
+    buck_mode: Optional[str] = None
+    no_saved_state: bool = False
+    search_path: List[str] = field(default_factory=list)
+    binary: Optional[str] = None
+    buck_builder_binary: Optional[str] = None
+    exclude: List[str] = field(default_factory=list)
+    typeshed: Optional[str] = None
+    save_initial_state_to: Optional[str] = None
+    load_initial_state_from: Optional[str] = None
+    changed_files_path: Optional[str] = None
+    saved_state_project: Optional[str] = None
+    dot_pyre_directory: Optional[Path] = None
+    features: Optional[str] = None
 
     @staticmethod
     def from_arguments(arguments: argparse.Namespace) -> "CommandArguments":
