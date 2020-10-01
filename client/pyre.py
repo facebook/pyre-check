@@ -119,17 +119,7 @@ def run_pyre(arguments: argparse.Namespace) -> ExitCode:
             )
             exit_code = command.run().exit_code()
     except analysis_directory.NotWithinLocalConfigurationException as error:
-        if arguments.command == commands.Persistent.from_arguments:
-            try:
-                commands.Persistent.run_null_server(timeout=3600 * 12)
-                exit_code = ExitCode.SUCCESS
-            except Exception as error:
-                client_exception_message = str(error)
-                exit_code = ExitCode.FAILURE
-            except KeyboardInterrupt:
-                LOG.warning("Interrupted by user")
-                exit_code = ExitCode.SUCCESS
-        elif not command:
+        if not command:
             client_exception_message = str(error)
             exit_code = ExitCode.FAILURE
         else:
@@ -143,23 +133,12 @@ def run_pyre(arguments: argparse.Namespace) -> ExitCode:
         configuration_module.InvalidConfiguration,
         EnvironmentException,
     ) as error:
-        if arguments.command == commands.Persistent.from_arguments:
-            try:
-                commands.Persistent.run_null_server(timeout=3600 * 12)
-                exit_code = ExitCode.SUCCESS
-            except Exception as error:
-                client_exception_message = str(error)
-                exit_code = ExitCode.FAILURE
-            except KeyboardInterrupt:
-                LOG.warning("Interrupted by user")
-                exit_code = ExitCode.SUCCESS
-        else:
-            client_exception_message = str(error)
-            exit_code = ExitCode.FAILURE
-            if isinstance(error, buck.BuckException):
-                exit_code = ExitCode.BUCK_ERROR
-            elif isinstance(error, configuration_module.InvalidConfiguration):
-                exit_code = ExitCode.CONFIGURATION_ERROR
+        client_exception_message = str(error)
+        exit_code = ExitCode.FAILURE
+        if isinstance(error, buck.BuckException):
+            exit_code = ExitCode.BUCK_ERROR
+        elif isinstance(error, configuration_module.InvalidConfiguration):
+            exit_code = ExitCode.CONFIGURATION_ERROR
     except commands.ClientException as error:
         client_exception_message = str(error)
         exit_code = ExitCode.FAILURE

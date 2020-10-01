@@ -19,19 +19,16 @@ from .mocks import mock_configuration, mock_incremental_command
 
 
 class PyreTest(unittest.TestCase):
-    # pyre-fixme[56]: Pyre was not able to infer the type of argument
-    #  `tools.pyre.client.configuration` to decorator factory
-    #  `unittest.mock.patch.object`.
-    @patch.object(configuration, "create_configuration")
+    @patch.object(commands.Start, "run")
     @patch.object(commands.Persistent, "run_null_server")
     def test_persistent_integration(
-        self, run_null_server, create_configuration
+        self, run_null_server: MagicMock, run_start: MagicMock
     ) -> None:
-        create_configuration.side_effect = commands.ClientException
+        run_start.side_effect = commands.ClientException
         self.assertEqual(pyre.main(["persistent"]), 2)
         run_null_server.assert_not_called()
 
-        create_configuration.side_effect = EnvironmentException
+        run_start.side_effect = EnvironmentException
         self.assertEqual(pyre.main(["persistent"]), 0)
         run_null_server.assert_has_calls([call(timeout=3600 * 12)])
 

@@ -5,17 +5,27 @@
 
 import argparse
 import json
+import logging
 import re
 import select
 import sys
 import time
 from typing import List, Optional
 
-from .. import command_arguments
+from .. import (
+    analysis_directory,
+    buck,
+    command_arguments,
+    configuration as configuration_module,
+)
 from ..analysis_directory import AnalysisDirectory
 from ..configuration import Configuration
-from .command import Command, IncrementalStyle
+from ..exceptions import EnvironmentException
+from .command import Command, ExitCode, IncrementalStyle
 from .start import Start
+
+
+LOG: logging.Logger = logging.getLogger(__name__)
 
 
 class Persistent(Command):
@@ -68,18 +78,28 @@ class Persistent(Command):
         )
 
     def _run(self) -> None:
-        Start(
-            self._command_arguments,
-            self._original_directory,
-            terminal=False,
-            store_type_check_resolution=False,
-            use_watchman=not self._no_watchman,
-            incremental_style=IncrementalStyle.FINE_GRAINED,
-            configuration=self._configuration,
-            analysis_directory=self._analysis_directory,
-        ).run()
+        try:
+            Start(
+                self._command_arguments,
+                self._original_directory,
+                terminal=False,
+                store_type_check_resolution=False,
+                use_watchman=not self._no_watchman,
+                incremental_style=IncrementalStyle.FINE_GRAINED,
+                configuration=self._configuration,
+                analysis_directory=self._analysis_directory,
+            ).run()
 
-        self._call_client(command=self.NAME, capture_output=False).check()
+            self._call_client(command=self.NAME, capture_output=False).check()
+        except (
+            analysis_directory.NotWithinLocalConfigurationException,
+            buck.BuckException,
+            configuration_module.InvalidConfiguration,
+            EnvironmentException,
+        ) as error:
+            LOG.warning(f"Running null server due to client exception: {error}")
+            Persistent.run_null_server(timeout=3600 * 12)
+            self._exit_code = ExitCode.SUCCESS
 
     def _flags(self) -> List[str]:
         flags = [
