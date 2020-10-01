@@ -3,19 +3,14 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-unsafe
-
-import contextlib
 import dataclasses
 import hashlib
 import json
-import os
 import shutil
 import subprocess
 import tempfile
 import unittest
 from pathlib import Path
-from typing import Any, Generator, Iterable, Mapping, Optional
 
 import testslide
 
@@ -32,7 +27,13 @@ from ..configuration import (
     create_search_paths,
     merge_partial_configurations,
 )
-from ..find_directories import BINARY_NAME, CONFIGURATION_FILE, LOCAL_CONFIGURATION_FILE
+from ..find_directories import BINARY_NAME
+from .setup import (
+    ensure_directories_exists,
+    switch_environment,
+    switch_working_directory,
+    write_configuration_file,
+)
 
 
 class PartialConfigurationTest(unittest.TestCase):
@@ -493,45 +494,6 @@ class PartialConfigurationTest(unittest.TestCase):
         )
 
 
-def _ensure_directory_exists(root: Path, relatives: Iterable[str]) -> None:
-    for relative in relatives:
-        full_path = root / relative
-        full_path.mkdir(parents=True, exist_ok=True)
-
-
-def _write_configuration_file(
-    root: Path, content: Mapping[str, Any], relative: Optional[str] = None
-) -> None:
-    if relative is None:
-        (root / CONFIGURATION_FILE).write_text(json.dumps(content))
-    else:
-        local_root = root / relative
-        local_root.mkdir(parents=True, exist_ok=True)
-        (local_root / LOCAL_CONFIGURATION_FILE).write_text(json.dumps(content))
-
-
-@contextlib.contextmanager
-def _switch_working_directory(directory: Path) -> Generator[None, None, None]:
-    original_directory = Path(".").resolve()
-    try:
-        os.chdir(str(directory))
-        yield None
-    finally:
-        os.chdir(str(original_directory))
-
-
-@contextlib.contextmanager
-def _switch_environment(environment: Mapping[str, str]) -> Generator[None, None, None]:
-    old_environment = dict(os.environ)
-    os.environ.clear()
-    os.environ.update(environment)
-    try:
-        yield
-    finally:
-        os.environ.clear()
-        os.environ.update(old_environment)
-
-
 class ConfigurationTest(testslide.TestCase):
     def test_from_partial_configuration(self) -> None:
         configuration = Configuration.from_partial_configuration(
@@ -642,7 +604,7 @@ class ConfigurationTest(testslide.TestCase):
     def test_existent_search_path(self) -> None:
         with tempfile.TemporaryDirectory() as root:
             root_path = Path(root)
-            _ensure_directory_exists(root_path, ["a", "b/c", "d/e/f"])
+            ensure_directories_exists(root_path, ["a", "b/c", "d/e/f"])
 
             self.assertListEqual(
                 Configuration(
@@ -679,7 +641,7 @@ class ConfigurationTest(testslide.TestCase):
     def test_existent_ignore_infer(self) -> None:
         with tempfile.TemporaryDirectory() as root:
             root_path = Path(root)
-            _ensure_directory_exists(root_path, ["a", "b/c"])
+            ensure_directories_exists(root_path, ["a", "b/c"])
 
             self.assertListEqual(
                 Configuration(
@@ -698,7 +660,7 @@ class ConfigurationTest(testslide.TestCase):
     def test_existent_do_not_ignore_errors(self) -> None:
         with tempfile.TemporaryDirectory() as root:
             root_path = Path(root)
-            _ensure_directory_exists(root_path, ["a", "b/c"])
+            ensure_directories_exists(root_path, ["a", "b/c"])
 
             self.assertListEqual(
                 Configuration(
@@ -717,7 +679,7 @@ class ConfigurationTest(testslide.TestCase):
     def test_existent_ignore_all_errors(self) -> None:
         with tempfile.TemporaryDirectory() as root:
             root_path = Path(root)
-            _ensure_directory_exists(root_path, ["a", "b/c", "b/d"])
+            ensure_directories_exists(root_path, ["a", "b/c", "b/d"])
 
             self.assertListEqual(
                 Configuration(
@@ -802,7 +764,7 @@ class ConfigurationTest(testslide.TestCase):
         )
 
     def test_get_binary_from_configuration(self) -> None:
-        with _switch_environment({}):
+        with switch_environment({}):
             self.assertEqual(
                 Configuration(
                     project_root="irrelevant",
@@ -813,7 +775,7 @@ class ConfigurationTest(testslide.TestCase):
             )
 
     def test_get_binary_environment_override(self) -> None:
-        with _switch_environment({"PYRE_BINARY": "foo"}):
+        with switch_environment({"PYRE_BINARY": "foo"}):
             self.assertEqual(
                 Configuration(
                     project_root="irrelevant",
@@ -836,7 +798,7 @@ class ConfigurationTest(testslide.TestCase):
             "foo"
         ).and_assert_called_once()
 
-        with _switch_environment({}):
+        with switch_environment({}):
             self.assertEqual(
                 Configuration(
                     project_root="irrelevant",
@@ -849,7 +811,7 @@ class ConfigurationTest(testslide.TestCase):
     def test_get_binary_cannot_auto_determine(self) -> None:
         self.mock_callable(shutil, "which").to_return_value(None).and_assert_called()
 
-        with _switch_environment({}):
+        with switch_environment({}):
             self.assertEqual(
                 Configuration(
                     project_root="irrelevant",
@@ -860,7 +822,7 @@ class ConfigurationTest(testslide.TestCase):
             )
 
     def test_get_typeshed_from_configuration(self) -> None:
-        with _switch_environment({}):
+        with switch_environment({}):
             self.assertEqual(
                 Configuration(
                     project_root="irrelevant",
@@ -871,7 +833,7 @@ class ConfigurationTest(testslide.TestCase):
             )
 
     def test_get_typeshed_environment_override(self) -> None:
-        with _switch_environment({"PYRE_TYPESHED": "foo"}):
+        with switch_environment({"PYRE_TYPESHED": "foo"}):
             self.assertEqual(
                 Configuration(
                     project_root="irrelevant",
@@ -894,7 +856,7 @@ class ConfigurationTest(testslide.TestCase):
             find_directories, "find_typeshed"
         ).for_call().to_return_value(Path("foo")).and_assert_called_once()
 
-        with _switch_environment({}):
+        with switch_environment({}):
             self.assertEqual(
                 Configuration(
                     project_root="irrelevant",
@@ -909,7 +871,7 @@ class ConfigurationTest(testslide.TestCase):
             find_directories, "find_typeshed"
         ).for_call().to_return_value(None).and_assert_called_once()
 
-        with _switch_environment({}):
+        with switch_environment({}):
             self.assertEqual(
                 Configuration(
                     project_root="irrelevant",
@@ -920,7 +882,7 @@ class ConfigurationTest(testslide.TestCase):
             )
 
     def test_get_version_hash_from_configuration(self) -> None:
-        with _switch_environment({}):
+        with switch_environment({}):
             self.assertEqual(
                 Configuration(
                     project_root="irrelevant",
@@ -931,7 +893,7 @@ class ConfigurationTest(testslide.TestCase):
             )
 
     def test_get_version_hash_environment_override(self) -> None:
-        with _switch_environment({"PYRE_VERSION_HASH": "abc"}):
+        with switch_environment({"PYRE_VERSION_HASH": "abc"}):
             self.assertEqual(
                 Configuration(
                     project_root="irrelevant",
@@ -980,7 +942,7 @@ class ConfigurationTest(testslide.TestCase):
         # covers this temporary directory.
         with tempfile.TemporaryDirectory() as root:
             root_path = Path(root)
-            with _switch_working_directory(root_path):
+            with switch_working_directory(root_path):
                 configuration = create_configuration(
                     command_arguments.CommandArguments(
                         local_configuration=None,
@@ -1026,9 +988,9 @@ class ConfigurationTest(testslide.TestCase):
     def test_create_from_global_configuration(self) -> None:
         with tempfile.TemporaryDirectory() as root:
             root_path = Path(root)
-            _write_configuration_file(root_path, {"strict": False})
+            write_configuration_file(root_path, {"strict": False})
 
-            with _switch_working_directory(root_path):
+            with switch_working_directory(root_path):
                 configuration = create_configuration(
                     command_arguments.CommandArguments(
                         local_configuration=None,
@@ -1075,17 +1037,17 @@ class ConfigurationTest(testslide.TestCase):
     def test_create_from_local_configuration(self) -> None:
         with tempfile.TemporaryDirectory() as root:
             root_path = Path(root)
-            _ensure_directory_exists(root_path, ["foo", "bar", "baz"])
-            _write_configuration_file(
+            ensure_directories_exists(root_path, ["foo", "bar", "baz"])
+            write_configuration_file(
                 root_path, {"strict": False, "search_path": ["foo"]}
             )
-            _write_configuration_file(
+            write_configuration_file(
                 root_path,
                 {"strict": True, "search_path": ["//bar", "baz"]},
                 relative="local",
             )
 
-            with _switch_working_directory(root_path):
+            with switch_working_directory(root_path):
                 configuration = create_configuration(
                     command_arguments.CommandArguments(
                         local_configuration="local",
@@ -1140,8 +1102,8 @@ class ConfigurationTest(testslide.TestCase):
     def test_check_nested_local_configuration_no_nesting(self) -> None:
         with tempfile.TemporaryDirectory() as root:
             root_path = Path(root)
-            _write_configuration_file(root_path, {})
-            _write_configuration_file(root_path, {}, relative="local")
+            write_configuration_file(root_path, {})
+            write_configuration_file(root_path, {}, relative="local")
 
             try:
                 check_nested_local_configuration(
@@ -1157,9 +1119,9 @@ class ConfigurationTest(testslide.TestCase):
     def test_check_nested_local_configuration_not_excluded(self) -> None:
         with tempfile.TemporaryDirectory() as root:
             root_path = Path(root)
-            _write_configuration_file(root_path, {})
-            _write_configuration_file(root_path, {}, relative="nest")
-            _write_configuration_file(root_path, {}, relative="nest/local")
+            write_configuration_file(root_path, {})
+            write_configuration_file(root_path, {}, relative="nest")
+            write_configuration_file(root_path, {}, relative="nest/local")
 
             with self.assertRaises(InvalidConfiguration):
                 check_nested_local_configuration(
@@ -1173,13 +1135,13 @@ class ConfigurationTest(testslide.TestCase):
     def test_check_nested_local_configuration_excluded(self) -> None:
         with tempfile.TemporaryDirectory() as root:
             root_path = Path(root)
-            _write_configuration_file(root_path, {})
-            _write_configuration_file(
+            write_configuration_file(root_path, {})
+            write_configuration_file(
                 root_path,
                 {"ignore_all_errors": [str(root_path / "nest/local")]},
                 relative="nest",
             )
-            _write_configuration_file(root_path, {}, relative="nest/local")
+            write_configuration_file(root_path, {}, relative="nest/local")
 
             try:
                 check_nested_local_configuration(
@@ -1195,13 +1157,13 @@ class ConfigurationTest(testslide.TestCase):
     def test_check_nested_local_configuration_excluded_parent(self) -> None:
         with tempfile.TemporaryDirectory() as root:
             root_path = Path(root)
-            _write_configuration_file(root_path, {})
-            _write_configuration_file(
+            write_configuration_file(root_path, {})
+            write_configuration_file(
                 root_path,
                 {"ignore_all_errors": [str(root_path / "nest")]},
                 relative="nest",
             )
-            _write_configuration_file(root_path, {}, relative="nest/local")
+            write_configuration_file(root_path, {}, relative="nest/local")
 
             try:
                 check_nested_local_configuration(
@@ -1217,14 +1179,14 @@ class ConfigurationTest(testslide.TestCase):
     def test_check_nested_local_configuration_not_all_nesting_excluded(self) -> None:
         with tempfile.TemporaryDirectory() as root:
             root_path = Path(root)
-            _write_configuration_file(root_path, {})
-            _write_configuration_file(root_path, {}, relative="nest0")
-            _write_configuration_file(
+            write_configuration_file(root_path, {})
+            write_configuration_file(root_path, {}, relative="nest0")
+            write_configuration_file(
                 root_path,
                 {"ignore_all_errors": [str(root_path / "nest0/nest1/local")]},
                 relative="nest0/nest1",
             )
-            _write_configuration_file(root_path, {}, relative="nest0/nest1/local")
+            write_configuration_file(root_path, {}, relative="nest0/nest1/local")
 
             with self.assertRaises(InvalidConfiguration):
                 check_nested_local_configuration(
@@ -1238,18 +1200,18 @@ class ConfigurationTest(testslide.TestCase):
     def test_check_nested_local_configuration_all_nesting_excluded(self) -> None:
         with tempfile.TemporaryDirectory() as root:
             root_path = Path(root)
-            _write_configuration_file(root_path, {})
-            _write_configuration_file(
+            write_configuration_file(root_path, {})
+            write_configuration_file(
                 root_path,
                 {"ignore_all_errors": [str(root_path / "nest0/nest1/local")]},
                 relative="nest0",
             )
-            _write_configuration_file(
+            write_configuration_file(
                 root_path,
                 {"ignore_all_errors": [str(root_path / "nest0/nest1/local")]},
                 relative="nest0/nest1",
             )
-            _write_configuration_file(root_path, {}, relative="nest0/nest1/local")
+            write_configuration_file(root_path, {}, relative="nest0/nest1/local")
 
             try:
                 check_nested_local_configuration(
@@ -1265,18 +1227,18 @@ class ConfigurationTest(testslide.TestCase):
     def test_check_nested_local_configuration_expand_global_root(self) -> None:
         with tempfile.TemporaryDirectory() as root:
             root_path = Path(root)
-            _write_configuration_file(root_path, {})
-            _write_configuration_file(
+            write_configuration_file(root_path, {})
+            write_configuration_file(
                 root_path,
                 {"ignore_all_errors": ["//nest0/nest1/local"]},
                 relative="nest0",
             )
-            _write_configuration_file(
+            write_configuration_file(
                 root_path,
                 {"ignore_all_errors": [str(root_path / "nest0/**")]},
                 relative="nest0/nest1",
             )
-            _write_configuration_file(root_path, {}, relative="nest0/nest1/local")
+            write_configuration_file(root_path, {}, relative="nest0/nest1/local")
 
             try:
                 check_nested_local_configuration(
@@ -1292,14 +1254,14 @@ class ConfigurationTest(testslide.TestCase):
     def test_check_nested_local_configuration_expand_relative_root(self) -> None:
         with tempfile.TemporaryDirectory() as root:
             root_path = Path(root)
-            _write_configuration_file(root_path, {})
-            _write_configuration_file(
+            write_configuration_file(root_path, {})
+            write_configuration_file(
                 root_path, {"ignore_all_errors": ["nest1/local"]}, relative="nest0"
             )
-            _write_configuration_file(
+            write_configuration_file(
                 root_path, {"ignore_all_errors": ["*"]}, relative="nest0/nest1"
             )
-            _write_configuration_file(root_path, {}, relative="nest0/nest1/local")
+            write_configuration_file(root_path, {}, relative="nest0/nest1/local")
 
             try:
                 check_nested_local_configuration(

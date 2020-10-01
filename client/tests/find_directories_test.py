@@ -18,13 +18,7 @@ from ..find_directories import (
     find_parent_directory_containing_file,
     get_relative_local_root,
 )
-
-
-def _ensure_files_exist(root: Path, relatives: Iterable[str]) -> None:
-    for relative in relatives:
-        full_path = root / relative
-        full_path.parent.mkdir(parents=True, exist_ok=True)
-        full_path.touch(exist_ok=True)
+from .setup import ensure_files_exist
 
 
 class RelativeLocalRootTest(unittest.TestCase):
@@ -69,7 +63,7 @@ class FindParentDirectoryContainingFileTest(unittest.TestCase):
     ) -> None:
         with tempfile.TemporaryDirectory() as root:
             root_path = Path(root)
-            _ensure_files_exist(root_path, files)
+            ensure_files_exist(root_path, files)
             self.assertEqual(
                 find_parent_directory_containing_file(root_path / base, target),
                 (root_path / expected) if expected is not None else None,
@@ -161,7 +155,7 @@ class FindParentDirectoryContainingDirectoryTest(unittest.TestCase):
     ) -> None:
         with tempfile.TemporaryDirectory() as root:
             root_path = Path(root)
-            _ensure_files_exist(root_path, files)
+            ensure_files_exist(root_path, files)
             self.assertEqual(
                 find_parent_directory_containing_directory(root_path / base, target),
                 (root_path / expected) if expected is not None else None,
@@ -283,7 +277,7 @@ class FindGlobalRootTest(unittest.TestCase):
     ) -> None:
         with tempfile.TemporaryDirectory() as root:
             root_path = Path(root)
-            _ensure_files_exist(root_path, files)
+            ensure_files_exist(root_path, files)
             self.assertEqual(
                 find_global_root(root_path / base),
                 (root_path / expected) if expected is not None else None,
@@ -320,7 +314,7 @@ class FindGlobalAndLocalRootTest(unittest.TestCase):
     ) -> None:
         with tempfile.TemporaryDirectory() as root:
             root_path = Path(root)
-            _ensure_files_exist(root_path, files)
+            ensure_files_exist(root_path, files)
 
             self.assertEqual(
                 find_global_and_local_root(root_path / base),
