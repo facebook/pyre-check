@@ -18,6 +18,44 @@ from ..pyre import _set_default_command
 from .mocks import mock_configuration, mock_incremental_command
 
 
+def _get_arguments() -> argparse.Namespace:
+    arguments = argparse.Namespace()
+    arguments.local_configuration = None
+    arguments.version = False
+    arguments.debug = False
+    arguments.sequential = False
+    arguments.strict = False
+    arguments.additional_check = []
+    arguments.show_error_traces = False
+    arguments.output = "text"
+    arguments.enable_profiling = False
+    arguments.enable_memory_profiling = False
+    arguments.noninteractive = True
+    arguments.logging_sections = None
+    arguments.log_identifier = None
+    arguments.logger = None
+    arguments.formatter = None
+    arguments.targets = ["//foo"]
+    arguments.use_buck_builder = False
+    arguments.use_buck_source_database = True
+    arguments.source_directories = []
+    arguments.filter_directory = []
+    arguments.buck_mode = None
+    arguments.no_saved_state = False
+    arguments.search_path = []
+    arguments.binary = None
+    arguments.buck_builder_binary = None
+    arguments.exclude = []
+    arguments.typeshed = None
+    arguments.save_initial_state_to = None
+    arguments.load_initial_state_from = None
+    arguments.changed_files_path = None
+    arguments.saved_state_project = None
+    arguments.dot_pyre_directory = None
+    arguments.features = None
+    return arguments
+
+
 class PyreTest(unittest.TestCase):
     @patch.object(commands.Start, "run")
     @patch.object(commands.Persistent, "run_null_server")
@@ -98,7 +136,7 @@ class PyreTest(unittest.TestCase):
             ),
             0,
         ]
-        command_line_arguments = argparse.Namespace()
+        command_line_arguments = _get_arguments()
         actual_exit_code = pyre._run_pyre_with_retry(command_line_arguments)
         self.assertEqual(run_pyre.call_count, 2)
         self.assertEqual(actual_exit_code, ExitCode.SUCCESS)
@@ -116,7 +154,7 @@ class PyreTest(unittest.TestCase):
             command=mock_incremental_command(mock_configuration()),
             exception_message="something",
         )
-        command_line_arguments = argparse.Namespace()
+        command_line_arguments = _get_arguments()
         actual_exit_code = pyre._run_pyre_with_retry(command_line_arguments)
         self.assertEqual(run_pyre.call_count, 1)
         self.assertEqual(actual_exit_code, ExitCode.FAILURE)
@@ -145,7 +183,7 @@ class PyreTest(unittest.TestCase):
                 exception_message="something",
             ),
         ]
-        command_line_arguments = argparse.Namespace()
+        command_line_arguments = _get_arguments()
         actual_exit_code = pyre._run_pyre_with_retry(command_line_arguments)
         self.assertEqual(run_pyre.call_count, 2)
         self.assertEqual(actual_exit_code, commands.ExitCode.FAILURE)
@@ -167,7 +205,7 @@ class PyreTest(unittest.TestCase):
             command=mock_incremental_command(mock_configuration()),
             exception_message="something",
         )
-        command_line_arguments = argparse.Namespace()
+        command_line_arguments = _get_arguments()
         actual_exit_code = pyre._run_pyre_with_retry(command_line_arguments)
         self.assertEqual(run_pyre.call_count, 1)
         self.assertEqual(actual_exit_code, ExitCode.FAILURE)

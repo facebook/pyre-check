@@ -87,7 +87,9 @@ def _log_statistics(
         )
 
 
-def run_pyre(arguments: argparse.Namespace) -> ExitCode:
+def run_pyre(
+    arguments: argparse.Namespace, configuration: configuration_module.Configuration
+) -> ExitCode:
     start_time = time.time()
 
     command: Optional[CommandParser] = None
@@ -99,9 +101,6 @@ def run_pyre(arguments: argparse.Namespace) -> ExitCode:
     try:
         original_directory = os.getcwd()
 
-        configuration = configuration_module.create_configuration(
-            command_arguments.CommandArguments.from_arguments(arguments), Path(".")
-        )
         if arguments.version:
             try:
                 binary_version = configuration.get_binary_version()
@@ -128,17 +127,11 @@ def run_pyre(arguments: argparse.Namespace) -> ExitCode:
             raise FailedOutsideLocalConfigurationException(
                 exit_code, command, str(error)
             )
-    except (
-        buck.BuckException,
-        configuration_module.InvalidConfiguration,
-        EnvironmentException,
-    ) as error:
+    except (buck.BuckException, EnvironmentException) as error:
         client_exception_message = str(error)
         exit_code = ExitCode.FAILURE
         if isinstance(error, buck.BuckException):
             exit_code = ExitCode.BUCK_ERROR
-        elif isinstance(error, configuration_module.InvalidConfiguration):
-            exit_code = ExitCode.CONFIGURATION_ERROR
     except commands.ClientException as error:
         client_exception_message = str(error)
         exit_code = ExitCode.FAILURE
@@ -170,7 +163,13 @@ def run_pyre(arguments: argparse.Namespace) -> ExitCode:
 
 def _run_pyre_with_retry(arguments: argparse.Namespace) -> ExitCode:
     try:
-        return run_pyre(arguments)
+        configuration = configuration_module.create_configuration(
+            command_arguments.CommandArguments.from_arguments(arguments), Path(".")
+        )
+        return run_pyre(arguments, configuration)
+    except configuration_module.InvalidConfiguration as error:
+        LOG.error(str(error))
+        return ExitCode.CONFIGURATION_ERROR
     except FailedOutsideLocalConfigurationException as exception:
         command = exception.command
         exit_code = exception.exit_code
@@ -201,7 +200,13 @@ def _run_pyre_with_retry(arguments: argparse.Namespace) -> ExitCode:
         f"or `cd {local_root_for_rerun} && pyre`."
     )
     try:
-        return run_pyre(arguments)
+        configuration = configuration_module.create_configuration(
+            command_arguments.CommandArguments.from_arguments(arguments), Path(".")
+        )
+        return run_pyre(arguments, configuration)
+    except configuration_module.InvalidConfiguration as error:
+        LOG.error(str(error))
+        return ExitCode.CONFIGURATION_ERROR
     except FailedOutsideLocalConfigurationException:
         LOG.error(f"Failed to rerun command in `{local_root_for_rerun}`.")
         return ExitCode.FAILURE
