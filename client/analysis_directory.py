@@ -268,8 +268,8 @@ class SharedAnalysisDirectory(AnalysisDirectory):
         if not configuration or not configuration.logger:
             return
 
-        statistics.log(
-            configuration=self._configuration,
+        statistics.log_with_configuration(
+            configuration=configuration,
             category=statistics.LoggerCategory.BUCK_EVENTS,
             integers={
                 "runtime": int(runtime * 1000),

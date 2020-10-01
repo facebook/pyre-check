@@ -11,7 +11,6 @@ import subprocess
 import sys
 import time
 import traceback
-from argparse import Namespace
 from enum import Enum
 from typing import Dict, Optional
 
@@ -34,35 +33,15 @@ class LoggerCategory(Enum):
 
 def log(
     category: LoggerCategory,
-    arguments: Optional[Namespace] = None,
-    configuration: Optional["Configuration"] = None,
+    logger: str,
     integers: Optional[Dict[str, int]] = None,
     normals: Optional[Dict[str, Optional[str]]] = None,
-    logger: Optional[str] = None,
 ) -> None:
-    integers = integers or {}
-    if "time" not in integers:
-        integers["time"] = int(time.time())
-    normals = normals or {}
-    if configuration:
-        # pyre-fixme[9]: normals has type `Dict[str, str]`; used as `Union[Dict[str,
-        #  Optional[str]], Dict[str, str]]`.
-        normals: Dict[str, str] = {
-            **normals,
-            "version": configuration.get_version_hash_respecting_override()
-            or "unversioned",
-        }
-        if not logger:
-            logger = configuration.logger
-    if not logger:
-        raise ValueError("Logger must either be given or in configuration")
-    if arguments:
-        normals = {**normals, "arguments": str(arguments)}
     try:
         statistics = {
-            "int": integers,
+            "int": {**(integers or {}), "time": int(time.time())},
             "normal": {
-                **normals,
+                **(normals or {}),
                 "command_line": " ".join(sys.argv),
                 "host": platform.node() or "",
                 "platform": platform.system() or "",
@@ -74,3 +53,25 @@ def log(
     except Exception:
         LOG.warning("Unable to log using `%s`", logger)
         LOG.info(traceback.format_exc())
+
+
+def log_with_configuration(
+    category: LoggerCategory,
+    configuration: Configuration,
+    integers: Optional[Dict[str, int]] = None,
+    normals: Optional[Dict[str, Optional[str]]] = None,
+) -> None:
+    logger = configuration.logger
+    if logger is None:
+        return
+    log(
+        category=category,
+        logger=logger,
+        integers=integers,
+        normals={
+            **(normals or {}),
+            "version": configuration.get_version_hash_respecting_override()
+            or "unversioned",
+            "configuration": str(configuration),
+        },
+    )

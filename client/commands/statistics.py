@@ -200,7 +200,7 @@ class Statistics(Command):
         if self._configuration and self._configuration.logger:
             root = str(_pyre_configuration_directory(self._configuration.local_root))
             for path, counts in data["annotations"].items():
-                statistics.log(
+                statistics.log_with_configuration(
                     statistics.LoggerCategory.ANNOTATION_COUNTS,
                     configuration=self._configuration,
                     integers=counts,
@@ -211,7 +211,7 @@ class Statistics(Command):
             for path, counts in data["ignores"].items():
                 self._log_fixmes("ignore", counts, root, path)
             for path, counts in data["strict"].items():
-                statistics.log(
+                statistics.log_with_configuration(
                     statistics.LoggerCategory.STRICT_ADOPTION,
                     configuration=self._configuration,
                     integers=counts,
@@ -222,7 +222,7 @@ class Statistics(Command):
         self, fixme_type: str, data: Dict[str, int], root: str, path: str
     ) -> None:
         for error_code, count in data.items():
-            statistics.log(
+            statistics.log_with_configuration(
                 statistics.LoggerCategory.FIXME_COUNTS,
                 configuration=self._configuration,
                 integers={"count": count},

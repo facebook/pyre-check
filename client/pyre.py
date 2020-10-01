@@ -67,9 +67,8 @@ def _log_statistics(
 ) -> None:
     configuration = command.configuration
     if should_log and configuration and configuration.logger:
-        statistics.log(
+        statistics.log_with_configuration(
             category=statistics.LoggerCategory.USAGE,
-            arguments=None,
             configuration=configuration,
             integers={
                 "exit_code": exit_code,
