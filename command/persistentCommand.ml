@@ -89,12 +89,17 @@ let run_command
     perform_autocompletion
     log_directory
     features
+    project_root
     local_root
     ()
   =
   try
     let local_root = Path.create_absolute local_root in
-    Statistics.GlobalState.initialize ~log_identifier ~project_name:(Path.last local_root) ();
+    Statistics.GlobalState.initialize
+      ~log_identifier
+      ~project_name:(Path.last local_root)
+      ~project_root
+      ();
     let configuration =
       Configuration.Analysis.create
         ~local_root
@@ -193,5 +198,9 @@ let command =
            "-features"
            (optional string)
            ~doc:"Features gated by permissions sent from the client."
+      +> flag
+           "-project-root"
+           (optional_with_default "/" string)
+           ~doc:"ROOT Where `.pyre_configuration` lives."
       +> anon (maybe_with_default "." ("source-root" %: string)))
     run_command

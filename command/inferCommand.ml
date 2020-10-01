@@ -44,6 +44,7 @@ let run_infer
       ~log_identifier
       ?logger
       ~project_name:(Path.last local_root)
+      ~project_root
       ();
     Profiling.GlobalState.initialize ~profiling_output ~memory_profiling_output ();
     let argument_to_paths argument =

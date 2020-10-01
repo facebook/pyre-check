@@ -43,6 +43,7 @@ let run_check
     Statistics.GlobalState.initialize
       ~log_identifier
       ?logger
+      ~project_root
       ~project_name:(Path.last local_root)
       ();
     Profiling.GlobalState.initialize ~profiling_output ~memory_profiling_output ();

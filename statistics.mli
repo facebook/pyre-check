@@ -8,7 +8,13 @@
 module GlobalState : sig
   type t
 
-  val initialize : ?logger:string -> ?log_identifier:string -> ?project_name:string -> unit -> unit
+  val initialize
+    :  ?logger:string ->
+    ?log_identifier:string ->
+    ?project_name:string ->
+    ?project_root:string ->
+    unit ->
+    unit
 
   val get : unit -> t
 

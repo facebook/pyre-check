@@ -622,7 +622,12 @@ let run_start_command
   let source_path = Option.value source_path ~default:[local_root] in
   let local_root = Path.create_absolute local_root in
   Log.GlobalState.initialize ~debug ~sections;
-  Statistics.GlobalState.initialize ~log_identifier ?logger ~project_name:(Path.last local_root) ();
+  Statistics.GlobalState.initialize
+    ~log_identifier
+    ?logger
+    ~project_name:(Path.last local_root)
+    ~project_root
+    ();
   Profiling.GlobalState.initialize ~profiling_output ~memory_profiling_output ();
   let filter_directories =
     filter_directories
