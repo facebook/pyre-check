@@ -1500,10 +1500,17 @@ let parse ~resolution ?path ?rule_filter ~source ~configuration models =
         | Query query -> models, query :: queries)
       ~init:([], [])
   in
+  let is_empty_model model =
+    equal_mode model.mode Normal
+    && ForwardState.is_bottom model.forward.source_taint
+    && BackwardState.is_bottom model.backward.sink_taint
+    && BackwardState.is_bottom model.backward.taint_in_taint_out
+  in
   {
     models =
       List.map new_models ~f:(fun (model, _) -> model.call_target, model.model)
       |> Callable.Map.of_alist_reduce ~f:(join ~iteration:0)
+      |> Callable.Map.filter ~f:(fun model -> not (is_empty_model model))
       |> Callable.Map.merge models ~f:(fun ~key:_ ->
            function
            | `Both (a, b) -> Some (join ~iteration:0 a b)

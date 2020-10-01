@@ -77,6 +77,11 @@ let assert_model ?source ?rules ~context ~model_source ~expect () =
   List.iter ~f:(check_expectation ~environment ~get_model) expect
 
 
+let assert_no_model ?source ?rules ~context ~model_source callable =
+  let { Taint.Model.models; _ }, _ = set_up_environment ?source ?rules ~context ~model_source () in
+  assert_false (Callable.Map.mem models callable)
+
+
 let assert_queries ?source ?rules ~context ~model_source ~expect () =
   let { Taint.Model.queries; _ }, _ = set_up_environment ?source ?rules ~context ~model_source () in
   assert_equal
@@ -1215,7 +1220,8 @@ let test_filter_by_rules context =
     ~model_source:"def test.taint() -> TaintSource[TestTest]: ..."
     ~expect:[outcome ~kind:`Function ~returns:[Sources.NamedSource "TestTest"] "test.taint"]
     ();
-  assert_model
+  assert_no_model
+    ~context
     ~rules:
       [
         {
@@ -1227,8 +1233,7 @@ let test_filter_by_rules context =
         };
       ]
     ~model_source:"def test.taint() -> TaintSource[TestTest]: ..."
-    ~expect:[outcome ~kind:`Function ~returns:[] "test.taint"]
-    ();
+    (Callable.create_function (Ast.Reference.create "test.taint"));
   assert_model
     ~rules:
       [
@@ -1249,7 +1254,8 @@ let test_filter_by_rules context =
           "test.taint";
       ]
     ();
-  assert_model
+  assert_no_model
+    ~context
     ~rules:
       [
         {
@@ -1261,8 +1267,7 @@ let test_filter_by_rules context =
         };
       ]
     ~model_source:"def test.taint(x: TaintSink[TestSink]): ..."
-    ~expect:[outcome ~kind:`Function ~sink_parameters:[] "test.taint"]
-    ();
+    (Callable.create_function (Ast.Reference.create "test.taint"));
   assert_model
     ~rules:
       [

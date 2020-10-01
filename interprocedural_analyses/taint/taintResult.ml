@@ -120,13 +120,13 @@ type sanitize_kind =
   | SanitizeSinks
   | SanitizeTITO
   | SanitizeAll
-[@@deriving show, compare]
+[@@deriving show, compare, eq]
 
 type mode =
   | SkipAnalysis (* Don't analyze at all *)
   | Sanitize of sanitize_kind list (* Analyze, but throw away inferred model *)
   | Normal
-[@@deriving show]
+[@@deriving show, eq]
 
 type call_model = {
   forward: Forward.model;
