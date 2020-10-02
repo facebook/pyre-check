@@ -108,13 +108,7 @@ class IssuesList extends React.Component<Props, State> {
                 <Col span={leftSpan} style={{textAlign: 'right'}}>
                   <Text type="secondary">Code</Text>
                 </Col>
-                <Col span={rightSpan}>{node.code}</Col>
-              </Row>
-              <Row gutter={gutter}>
-                <Col span={leftSpan} style={{textAlign: 'right'}}>
-                  <Text type="secondary">Message</Text>
-                </Col>
-                <Col span={rightSpan}>{node.message}</Col>
+                <Col span={rightSpan}>{node.code}: {node.message}</Col>
               </Row>
               <Row gutter={gutter}>
                 <Col span={leftSpan} style={{textAlign: 'right'}}>
