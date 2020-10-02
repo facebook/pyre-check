@@ -8,6 +8,7 @@ import contextlib
 import copy
 import io
 import logging
+import logging.handlers
 import os
 import re
 import sys
@@ -201,7 +202,14 @@ def start_logging_to_directory(noninteractive: bool, log_directory: str) -> None
     if not noninteractive and log_directory is not None:
         if not os.path.exists(log_directory):
             os.makedirs(log_directory)
-        handler = logging.FileHandler(os.path.join(log_directory, "pyre.stderr"))
+        handler = logging.handlers.RotatingFileHandler(
+            os.path.join(log_directory, "pyre.stderr"),
+            mode="a",
+            # Keep at most 5 log files on disk
+            backupCount=4,
+            # Limit the size of each log file to 10MB
+            maxBytes=10 * 1000 * 1000,
+        )
         handler.setFormatter(SectionFormatter())
         handler.setLevel(logging.DEBUG)
         logger = logging.getLogger()
