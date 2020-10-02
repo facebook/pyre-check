@@ -102,7 +102,7 @@ class ConsolidateNestedConfigurations(ErrorSuppressingCommand):
 
         # Suppress errors
         all_errors = configuration.get_errors()
-        for _, errors in all_errors:
+        for _, errors in all_errors.paths_to_errors.items():
             self._suppress_errors(Errors(list(errors)))
 
     def run(self) -> None:

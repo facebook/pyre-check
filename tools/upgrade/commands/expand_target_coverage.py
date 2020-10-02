@@ -98,7 +98,7 @@ class ExpandTargetCoverage(ErrorSuppressingCommand):
         all_errors = configuration.get_errors()
         error_threshold = self._fixme_threshold
 
-        for path, errors in all_errors:
+        for path, errors in all_errors.paths_to_errors.items():
             errors = list(errors)
             error_count = len(errors)
             if error_threshold and error_count > error_threshold:

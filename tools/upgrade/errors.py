@@ -11,7 +11,7 @@ import subprocess
 import sys
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, Optional, Tuple, Union, cast
+from typing import Any, Dict, Iterable, List, Optional, Union, cast
 
 import libcst
 import libcst.matchers as libcst_matchers
@@ -21,6 +21,9 @@ from . import UserError, ast
 
 LOG: logging.Logger = logging.getLogger(__name__)
 MAX_LINES_PER_FIXME: int = 4
+
+
+PyreError = Dict[str, Any]
 
 
 class LineBreakTransformer(libcst.CSTTransformer):
@@ -192,22 +195,21 @@ class Errors:
 
     def __init__(self, errors: List[Dict[str, Any]]) -> None:
         self.errors: List[Dict[str, Any]] = errors
-        self.error_iterator: Iterator[
-            Tuple[str, Iterator[Dict[str, Any]]]
-        ] = itertools.groupby(sorted(errors, key=error_path), error_path)
-        self.length: int = len(errors)
-
-    def __iter__(self) -> Iterator[Tuple[str, Iterator[Dict[str, Any]]]]:
-        return self.error_iterator.__iter__()
-
-    def __next__(self) -> Tuple[str, Iterator[Dict[str, Any]]]:
-        return self.error_iterator.__next__()
 
     def __len__(self) -> int:
-        return self.length
+        return len(self.errors)
 
     def __eq__(self, other: "Errors") -> bool:
         return self.errors == other.errors
+
+    @property
+    def paths_to_errors(self) -> Dict[str, List[PyreError]]:
+        return {
+            path: list(errors)
+            for path, errors in itertools.groupby(
+                sorted(self.errors, key=error_path), key=error_path
+            )
+        }
 
     def suppress(
         self,
@@ -218,7 +220,7 @@ class Errors:
     ) -> None:
         unsuppressed_paths_and_exceptions = []
 
-        for path_to_suppress, errors in self:
+        for path_to_suppress, errors in self.paths_to_errors.items():
             LOG.info("Processing `%s`", path_to_suppress)
             try:
                 path = Path(path_to_suppress)
@@ -540,7 +542,7 @@ def _error_to_fixme_comment_lines(
 
 
 def _build_error_map(
-    errors: Iterator[Dict[str, Any]]
+    errors: Iterable[Dict[str, Any]]
 ) -> Dict[int, List[Dict[str, str]]]:
     error_map = defaultdict(lambda: [])
     for error in errors:

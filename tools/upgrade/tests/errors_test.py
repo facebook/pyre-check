@@ -68,6 +68,25 @@ class ErrorsTest(unittest.TestCase):
         with self.assertRaises(UserError):
             Errors.from_json('[{ "path": "test.py", "key": "value" }')
 
+    def test_paths_to_errors(self) -> None:
+        errors = Errors(
+            [
+                {"path": "test1.py", "key": "value", "code": 1},
+                {"path": "test2.py", "key": "value", "code": 2},
+                {"path": "test1.py", "key": "value", "code": 3},
+            ]
+        )
+        self.assertEqual(
+            errors.paths_to_errors,
+            {
+                "test1.py": [
+                    {"code": 1, "key": "value", "path": "test1.py"},
+                    {"code": 3, "key": "value", "path": "test1.py"},
+                ],
+                "test2.py": [{"code": 2, "key": "value", "path": "test2.py"}],
+            },
+        )
+
     @patch.object(errors.Path, "read_text", return_value="")
     @patch.object(errors.Path, "write_text")
     def test_suppress(self, path_write_text, path_read_text) -> None:

@@ -103,7 +103,7 @@ class StrictDefault(ErrorSuppressingCommand):
         if len(all_errors) == 0:
             return
 
-        for path, errors in all_errors:
+        for path, errors in all_errors.paths_to_errors.items():
             errors = list(errors)
             error_count = len(errors)
             if error_count > self._fixme_threshold:
