@@ -232,31 +232,6 @@
       value = { AstExpression.Substring.kind; value };
     }
 
-let is_generator body =
-  let module YieldVisit = Visit.Make (struct
-    type t = bool
-
-    let expression result expression =
-      match result, expression with
-      | true, _ -> true
-      | false, { Node.value = AstExpression.Expression.Yield _; _ } -> true
-      | false, _ -> false
-
-
-    let statement result statement =
-      match result, statement with
-      | true, _ -> true
-      | false, { Node.value = Statement.Yield _; _ } -> true
-      | false, { Node.value = Statement.YieldFrom _; _ } -> true
-      | false, _ -> false
-  end)
-  in
-  let body =
-    List.filter body ~f:(function
-        | { Node.value = Statement.(Define _ | Class _); _ } -> false
-        | _ -> true)
-  in
-  YieldVisit.visit false (Source.create body)
 %}
 
 (* The syntactic junkyard. *)
@@ -794,7 +769,7 @@ compound_statement:
             decorators = [];
             return_annotation = annotation >>| convert;
             async = false;
-            generator = is_generator body;
+            generator = Ast.Statement.is_generator body;
             parent = None;
             nesting_define = None;
           };

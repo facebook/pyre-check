@@ -2648,3 +2648,106 @@ let show statement = Format.asprintf "%a" pp statement
 let pp_statement = PrettyPrinter.pp_statement
 
 let show_statement statement = Format.asprintf "%a" pp_statement statement
+
+let is_generator statements =
+  let open Expression in
+  let rec is_expression_generator { Node.value; _ } =
+    match value with
+    | Expression.Await await -> is_expression_generator await
+    | BooleanOperator { BooleanOperator.left; right; _ }
+    | ComparisonOperator { ComparisonOperator.left; right; _ } ->
+        is_expression_generator left || is_expression_generator right
+    | Call { Call.callee; arguments } ->
+        is_expression_generator callee
+        || List.exists arguments ~f:(fun { Call.Argument.value; _ } ->
+               is_expression_generator value)
+    | Dictionary { Dictionary.entries; keywords } ->
+        List.exists entries ~f:(fun { Dictionary.Entry.key; value } ->
+            is_expression_generator key || is_expression_generator value)
+        || List.exists keywords ~f:is_expression_generator
+    | DictionaryComprehension comprehension ->
+        is_comprehension_generator
+          ~is_element_generator:(fun { Dictionary.Entry.key; value } ->
+            is_expression_generator key || is_expression_generator value)
+          comprehension
+    | Generator comprehension
+    | ListComprehension comprehension
+    | SetComprehension comprehension ->
+        is_comprehension_generator ~is_element_generator:is_expression_generator comprehension
+    | List expressions
+    | Set expressions
+    | Tuple expressions ->
+        List.exists expressions ~f:is_expression_generator
+    | Starred Starred.(Once expression | Twice expression) -> is_expression_generator expression
+    | String { StringLiteral.kind = StringLiteral.Format expressions; _ } ->
+        List.exists expressions ~f:is_expression_generator
+    | Ternary { Ternary.target; test; alternative } ->
+        is_expression_generator target
+        || is_expression_generator test
+        || is_expression_generator alternative
+    | UnaryOperator { UnaryOperator.operand; _ } -> is_expression_generator operand
+    | WalrusOperator { WalrusOperator.value; _ } -> is_expression_generator value
+    | Yield _ -> true
+    | Complex _
+    | Ellipsis
+    | False
+    | Float _
+    | Integer _
+    | Lambda _
+    | Name _
+    | String _
+    | True ->
+        false
+  and is_comprehension_generator
+        : 'a. is_element_generator:('a -> bool) -> 'a Comprehension.t -> bool
+    =
+   fun ~is_element_generator { Comprehension.element; generators } ->
+    is_element_generator element
+    || List.exists generators ~f:(fun { Comprehension.Generator.iterator; conditions; _ } ->
+           is_expression_generator iterator || List.exists conditions ~f:is_expression_generator)
+  in
+  let is_optional_expression_generator =
+    Option.value_map ~f:is_expression_generator ~default:false
+  in
+  let rec is_statement_generator { Node.value; _ } =
+    match value with
+    | Assign { Assign.value; _ } -> is_expression_generator value
+    | Assert { Assert.test; message; _ } ->
+        is_expression_generator test || is_optional_expression_generator message
+    | Delete expression
+    | Expression expression ->
+        is_expression_generator expression
+    | Raise { Raise.expression; from } ->
+        is_optional_expression_generator expression || is_optional_expression_generator from
+    | Return { Return.expression; _ } -> is_optional_expression_generator expression
+    | For { For.iterator; body; orelse; _ } ->
+        is_expression_generator iterator
+        || is_statements_generator body
+        || is_statements_generator orelse
+    | If { If.test; body; orelse }
+    | While { While.test; body; orelse } ->
+        is_expression_generator test
+        || is_statements_generator body
+        || is_statements_generator orelse
+    | Try { Try.body; handlers; orelse; finally } ->
+        is_statements_generator body
+        || List.exists handlers ~f:(fun { Try.Handler.body; _ } -> is_statements_generator body)
+        || is_statements_generator orelse
+        || is_statements_generator finally
+    | With { With.items; body; _ } ->
+        List.exists items ~f:(fun (expression, _) -> is_expression_generator expression)
+        || is_statements_generator body
+    | Yield _
+    | YieldFrom _ ->
+        true
+    | Break
+    | Continue
+    | Class _
+    | Define _
+    | Global _
+    | Import _
+    | Nonlocal _
+    | Pass ->
+        false
+  and is_statements_generator statements = List.exists statements ~f:is_statement_generator in
+  is_statements_generator statements
