@@ -23,6 +23,10 @@ module Server : sig
   val saved_state_path : Configuration.Analysis.t -> Path.t
 end
 
+module Client : sig
+  val log_path : Configuration.Analysis.t -> Path.t
+end
+
 module Watchman : sig
   val file_monitor_log_path : Configuration.Analysis.t -> Path.t
 

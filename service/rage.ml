@@ -23,6 +23,7 @@ let get_logs configuration =
     ~f:get_log
     [
       "server", Constants.Server.log_path configuration;
+      "client", Constants.Client.log_path configuration;
       "file monitor", Constants.Watchman.file_monitor_log_path configuration;
       "configuration monitor", Constants.Watchman.configuration_monitor_log_path configuration;
       "persistent", Constants.Persistent.log_path configuration;

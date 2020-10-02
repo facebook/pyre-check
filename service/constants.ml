@@ -36,6 +36,10 @@ module Server = struct
     Path.create_relative ~root ~relative:"server.state"
 end
 
+module Client = struct
+  let log_path configuration = Configuration.Analysis.log_directory configuration ^| "pyre.stderr"
+end
+
 module Watchman = struct
   let file_monitor_log_path configuration =
     Configuration.Analysis.log_directory configuration ^| "file_monitor/file_monitor.log"
