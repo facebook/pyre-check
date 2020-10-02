@@ -170,10 +170,14 @@ class GetConfigurationPathTest(unittest.TestCase):
     def test_get_configuration_path(self):
         self.assert_configuration_path(files=[], local_root=None, expected=None)
         self.assert_configuration_path(
-            files=[".pyre_configuration"], local_root=None, expected="."
+            files=[".pyre_configuration"],
+            local_root=None,
+            expected=".pyre_configuration",
         )
         self.assert_configuration_path(
-            files=["a/.pyre_configuration"], local_root="a", expected="a"
+            files=["a/.pyre_configuration"],
+            local_root="a",
+            expected="a/.pyre_configuration",
         )
         self.assert_configuration_path(
             files=["a/.pyre_configuration", "b/c"], local_root="b", expected=None
@@ -181,10 +185,10 @@ class GetConfigurationPathTest(unittest.TestCase):
         self.assert_configuration_path(
             files=["a/.pyre_configuration", "a/b/.pyre_configuration.local"],
             local_root="a/b",
-            expected="a/b",
+            expected="a/b/.pyre_configuration.local",
         )
         self.assert_configuration_path(
             files=["a/.pyre_configuration", "a/b/.pyre_configuration.local"],
             local_root="a/b/.pyre_configuration.local",
-            expected="a/b",
+            expected="a/b/.pyre_configuration.local",
         )

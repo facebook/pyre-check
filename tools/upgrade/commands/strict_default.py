@@ -8,7 +8,11 @@ import logging
 from pathlib import Path
 from typing import Optional
 
-from tools.pyre.client.find_directories import find_global_and_local_root
+from tools.pyre.client.find_directories import (
+    CONFIGURATION_FILE,
+    LOCAL_CONFIGURATION_FILE,
+    find_global_and_local_root,
+)
 
 from .. import UserError
 from ..configuration import Configuration
@@ -29,7 +33,10 @@ def _get_configuration_path(local_configuration: Optional[Path]) -> Optional[Pat
         return None
     else:
         local_root = found_root.local_root
-        return local_root if local_root is not None else found_root.global_root
+        if local_root:
+            return local_root / LOCAL_CONFIGURATION_FILE
+        else:
+            return found_root.global_root / CONFIGURATION_FILE
 
 
 class StrictDefault(ErrorSuppressingCommand):
