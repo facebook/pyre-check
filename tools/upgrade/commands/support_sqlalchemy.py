@@ -31,6 +31,7 @@ LOG: Logger = logging.getLogger(__name__)
 
 
 MISSING_ATTRIBUTE_ANNOTATION_ERROR_CODE = 4
+UNBOUND_NAME_ERROR_CODE = 10
 
 
 def _is_sqlalchemy_error(error: PyreError) -> bool:
@@ -39,6 +40,24 @@ def _is_sqlalchemy_error(error: PyreError) -> bool:
             r"has type .*?Column\[.*but no type is specified.", error["description"]
         )
     )
+
+
+def _dequalify(type_name: str) -> str:
+    match = re.fullmatch(r"([^.]*?\.)*?([^.]+)(\[.*\])", type_name)
+    if match is None:
+        return type_name
+
+    return f"{match.group(2)}{match.group(3)}"
+
+
+def _dequalify_sqlalchemy_type(error: PyreError) -> PyreError:
+    return {
+        **error,
+        "inference": {
+            **error["inference"],
+            "annotation": _dequalify(error["inference"]["annotation"]),
+        },
+    }
 
 
 class EnableSourceDatabaseBuckBuilder(Command):
@@ -79,7 +98,7 @@ class SupportSqlalchemy(ProjectErrorSuppressingCommand):
         *,
         local_root: Path,
         paths: Sequence[Path],
-        repository: Repository
+        repository: Repository,
     ) -> None:
         super().__init__(
             command_arguments,
@@ -150,7 +169,9 @@ class SupportSqlalchemy(ProjectErrorSuppressingCommand):
     ) -> None:
         paths = [str(path) for path in sqlalchemy_path_wise_errors.keys()]
         errors = [
-            error for errors in sqlalchemy_path_wise_errors.values() for error in errors
+            _dequalify_sqlalchemy_type(error)
+            for errors in sqlalchemy_path_wise_errors.values()
+            for error in errors
         ]
         pyre_output = configuration.run_pyre(
             arguments=[

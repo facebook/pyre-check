@@ -6,7 +6,11 @@
 import unittest
 from pathlib import Path
 
-from ..commands.support_sqlalchemy import SupportSqlalchemy
+from ..commands.support_sqlalchemy import (
+    SupportSqlalchemy,
+    _dequalify,
+    _dequalify_sqlalchemy_type,
+)
 
 
 class SupportSqlalchemyTest(unittest.TestCase):
@@ -103,4 +107,35 @@ class SupportSqlalchemyTest(unittest.TestCase):
                     },
                 ]
             },
+        )
+
+    def test_dequalify_sqlalchemy_type(self) -> None:
+        self.assertEqual(
+            _dequalify_sqlalchemy_type(
+                {
+                    "path": "test1.py",
+                    "description": "something",
+                    "code": 4,
+                    "inference": {
+                        "annotation": (
+                            "sqlalchemy.sql.schema.Column[typing.Optional[int]]"
+                        )
+                    },
+                }
+            ),
+            {
+                "path": "test1.py",
+                "description": "something",
+                "code": 4,
+                "inference": {"annotation": "Column[typing.Optional[int]]"},
+            },
+        )
+
+    def test_dequalify(self) -> None:
+        self.assertEqual(_dequalify("int"), "int")
+        self.assertEqual(_dequalify("sql.Column[int]"), "Column[int]")
+        self.assertEqual(_dequalify("sqlalchemy.sql.schema.Column[int]"), "Column[int]")
+        self.assertEqual(
+            _dequalify("sqlalchemy.sql.schema.Column[typing.Optional[int]]"),
+            "Column[typing.Optional[int]]",
         )
