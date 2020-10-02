@@ -41,11 +41,16 @@ const IssueQuery = gql`
       edges {
         node {
           issue_id
+          code
+          message
+          callable
           filename
           location
-          code
-          callable
-          message
+          sources
+          source_names
+          sinks
+          sink_names
+          features
           min_trace_length_to_sources
           min_trace_length_to_sinks
         }

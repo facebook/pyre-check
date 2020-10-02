@@ -8,21 +8,117 @@
  * @flow
  */
 
-import React from 'react';
+import React, {useState} from 'react';
 import {
   Card,
   Col,
-  Divider,
   Popover,
   Row,
   Skeleton,
+  Tag,
   Tooltip,
   Typography,
 } from 'antd';
-import {CodeTwoTone} from '@ant-design/icons';
+import {
+  CodeTwoTone,
+  MinusCircleOutlined,
+  PlusCircleOutlined,
+} from '@ant-design/icons';
 import Source from './Source.js';
 
 const {Text, Link} = Typography;
+
+function ShowMore(
+  props: $ReadOnly<{|
+    items: $ReadOnlyArray<string>,
+    maximumElementsToShow: number,
+  |}>,
+): React$Node {
+  const [showMore, setShowMore] = useState(false);
+  const items = props.items;
+
+  if (items.length <= props.maximumElementsToShow) {
+    return (
+      <>
+        {items.map(feature => (
+          <Tag>{feature}</Tag>
+        ))}
+      </>
+    );
+  } else {
+    const truncatedItems = items.slice(
+      0,
+      showMore ? items.length : props.maximumElementsToShow,
+    );
+    const moreToShow = items.length - truncatedItems.length;
+    return (
+      <>
+        {truncatedItems.map(item => (
+          <Tag>{item}</Tag>
+        ))}
+        <Tag
+          onClick={() => setShowMore(!showMore)}
+          icon={!showMore ? <PlusCircleOutlined /> : <MinusCircleOutlined />}>
+          {!showMore ? `Show ${moreToShow} more...` : 'Show fewer...'}
+        </Tag>
+      </>
+    );
+  }
+}
+
+function DelayedTooltip(
+  props: $ReadOnly<{|
+    content: string,
+    children: React$Node,
+    placement?: string,
+  |}>,
+): React$Node {
+  return (
+    <Tooltip
+      mouseEnterDelay={1.0}
+      title={props.content}
+      placement={props.placement}>
+      {props.children}
+    </Tooltip>
+  );
+}
+
+const LeafKind = 'sources' | 'sinks';
+
+function Leaves(
+  props: $ReadOnly<{|
+    kind: LeafKind,
+    kinds: $ReadOnlyArray<string>,
+    names: $ReadOnlyArray<string>,
+    distance: number,
+  |}>,
+): React$Node {
+  const kindExplanation = 'Explanation for kind';
+  const distanceExplanation = 'Explanation for distance';
+  const nameExplanation = 'Explanation for name';
+
+  return (
+    <>
+      <DelayedTooltip content={kindExplanation}>
+        {props.kinds.map(kind => (
+          <Tag color={props.kind === 'sources' ? 'volcano' : 'green'}>
+            {kind}
+          </Tag>
+        ))}
+      </DelayedTooltip>{' '}
+      at{' '}
+      <DelayedTooltip content={distanceExplanation}>
+        <Text underline>minimum distance {props.distance}.</Text>
+      </DelayedTooltip>
+      <br />
+      <DelayedTooltip placement="right" content={nameExplanation}>
+        <div style={{marginTop: '.5em'}}>
+          <ShowMore items={props.names} maximumElementsToShow={5} />
+        </div>
+      </DelayedTooltip>
+    </>
+  );
+}
 
 type Props = $ReadOnly<{|
   data: any,
@@ -92,7 +188,7 @@ class IssuesList extends React.Component<Props, State> {
       const captured = this;
       setTimeout(function() {
         // Avoid clobbering the server with too many requests.
-        captured.setState({recently_started_loading: false});
+        captured.setState({regcently_started_loading: false});
       }, 1000);
       this._fetchIssues();
     }
@@ -106,6 +202,8 @@ class IssuesList extends React.Component<Props, State> {
     const gutter = [8, 8];
     const leftSpan = 4;
     const rightSpan = 20;
+
+    const featureExplanation = 'Explanation for features.';
 
     return (
       <>
@@ -155,20 +253,46 @@ class IssuesList extends React.Component<Props, State> {
                   <Text code>{node.filename}</Text>
                 </Col>
               </Row>
-              <Divider orientation="left" plain>
-                Minimum Trace Lengths
-              </Divider>
               <Row gutter={gutter}>
                 <Col span={leftSpan} style={{textAlign: 'right'}}>
-                  <Text type="secondary">To Sources</Text>
+                  <Text type="secondary">Sources</Text>
                 </Col>
-                <Col span={1}>{node.min_trace_length_to_sources}</Col>
-                <Col span={2}>
-                  <Text type="secondary" style={{textAlign: 'right'}}>
-                    To Sinks
-                  </Text>
+                <Col span={rightSpan}>
+                  <Leaves
+                    kind="sources"
+                    kinds={node.sources}
+                    names={node.source_names}
+                    distance={node.min_trace_length_to_sources}
+                  />
                 </Col>
-                <Col span={rightSpan - 3}>{node.min_trace_length_to_sinks}</Col>
+              </Row>
+              <Row gutter={gutter}>
+                <Col span={leftSpan} style={{textAlign: 'right'}}>
+                  <Text type="secondary">Sinks</Text>
+                </Col>
+                <Col span={rightSpan}>
+                  <Leaves
+                    kind="sinks"
+                    kinds={node.sinks}
+                    names={node.sink_names}
+                    distance={node.min_trace_length_to_sinks}
+                  />
+                </Col>
+              </Row>
+              <Row gutter={gutter}>
+                <Col span={leftSpan} style={{textAlign: 'right'}}>
+                  <Text type="secondary">Features</Text>
+                </Col>
+                <Col span={rightSpan}>
+                  <DelayedTooltip content={featureExplanation} placement="left">
+                    <div>
+                      <ShowMore
+                        items={node.features}
+                        maximumElementsToShow={5}
+                      />
+                    </div>
+                  </DelayedTooltip>
+                </Col>
               </Row>
             </Card>
             <br />

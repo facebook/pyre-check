@@ -592,9 +592,9 @@ details              show additional information about the current trace frame
                 builder = builder.where_exclude_features(exclude_features)
 
             issues = builder.get()
-            sources_list = builder.sources(issues)
-            sinks_list = builder.sinks(issues)
-            features_list = builder.features(issues)
+            sources_list = [builder.sources(issue.id) for issue in issues]
+            sinks_list = [builder.sinks(issue.id) for issue in issues]
+            features_list = [builder.features(issue.id) for issue in issues]
 
         issue_strings = []
         for issue, sources, sinks, features in zip(

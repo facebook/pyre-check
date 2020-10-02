@@ -36,7 +36,15 @@ CalleeText = aliased(SharedText)
 MessageText = aliased(SharedText)
 
 
+def _query(info: ResolveInfo) -> "Query":
+    # TODO(T71492980): queries here are run-independent and should be factored out.
+    return Query(info.context["session"], 1)
+
+
+# pyre-ignore[13]: unitialized class attribute
 class IssueQueryResultType(graphene.ObjectType):
+    id: DBID
+
     class Meta:
         interfaces = (graphene.relay.Node,)
 
@@ -50,12 +58,32 @@ class IssueQueryResultType(graphene.ObjectType):
     filename = graphene.String()
     location = graphene.String()
 
+    sources = graphene.List(graphene.String)
+    source_names = graphene.List(graphene.String)
+    sinks = graphene.List(graphene.String)
+    sink_names = graphene.List(graphene.String)
+    features = graphene.List(graphene.String)
+
     min_trace_length_to_sources = graphene.Int()
     min_trace_length_to_sinks = graphene.Int()
 
-    def resolve_issue_id(self, info: ResolveInfo) -> graphene.Int:
-        # pyre-fixme[16]: `IssueQueryResultType` has no attribute `id`.
+    def resolve_issue_id(self, info: ResolveInfo) -> DBID:
         return self.id
+
+    def resolve_sources(self, info: ResolveInfo) -> List[str]:
+        return list(_query(info).sources(self.id))
+
+    def resolve_source_names(self, info: ResolveInfo) -> List[str]:
+        return list(_query(info).source_names(self.id))
+
+    def resolve_sinks(self, info: ResolveInfo) -> List[str]:
+        return list(_query(info).sinks(self.id))
+
+    def resolve_sink_names(self, info: ResolveInfo) -> List[str]:
+        return list(_query(info).sink_names(self.id))
+
+    def resolve_features(self, info: ResolveInfo) -> List[str]:
+        return list(_query(info).features(self.id))
 
 
 class IssueQueryResult(NamedTuple):
@@ -170,6 +198,7 @@ class Query:
                     issues.remove(issue)
                 elif exclude_feature_set and features & exclude_feature_set:
                     issues.remove(issue)
+
         return issues
 
     def where_issue_id_is(self, issue_id: Optional[int]) -> "Query":
@@ -213,32 +242,30 @@ class Query:
         self.breadcrumb_filters[Filter.exclude_features] += features
         return self
 
-    # pyre-fixme[2]: Parameter must be annotated.
-    def sources(self, issues) -> List[Set[str]]:
-        return [
-            self.get_leaves_issue_instance(
-                self._session, int(issue.id), SharedTextKind.SINK
-            )
-            for issue in issues
-        ]
+    def sources(self, issue_id: DBID) -> Set[str]:
+        return self.get_leaves_issue_instance(
+            self._session, int(issue_id), SharedTextKind.SOURCE
+        )
 
-    # pyre-fixme[2]: Parameter must be annotated.
-    def sinks(self, issues) -> List[Set[str]]:
-        return [
-            self.get_leaves_issue_instance(
-                self._session, int(issue.id), SharedTextKind.SOURCE
-            )
-            for issue in issues
-        ]
+    def source_names(self, issue_id: DBID) -> Set[str]:
+        return self.get_leaves_issue_instance(
+            self._session, int(issue_id), SharedTextKind.SOURCE_DETAIL
+        )
 
-    # pyre-fixme[2]: Parameter must be annotated.
-    def features(self, issues) -> List[Set[str]]:
-        return [
-            self.get_leaves_issue_instance(
-                self._session, int(issue.id), SharedTextKind.FEATURE
-            )
-            for issue in issues
-        ]
+    def sinks(self, issue_id: DBID) -> Set[str]:
+        return self.get_leaves_issue_instance(
+            self._session, int(issue_id), SharedTextKind.SINK
+        )
+
+    def sink_names(self, issue_id: DBID) -> Set[str]:
+        return self.get_leaves_issue_instance(
+            self._session, int(issue_id), SharedTextKind.SINK_DETAIL
+        )
+
+    def features(self, issue_id: DBID) -> Set[str]:
+        return self.get_leaves_issue_instance(
+            self._session, int(issue_id), SharedTextKind.FEATURE
+        )
 
     # pyre-fixme[24]: Generic type `RawQuery` expects 1 type parameter.
     def get_raw_query(self) -> RawQuery:
@@ -277,25 +304,10 @@ class Query:
     def _leaf_dict_lookups(
         self, message_ids: List[int], kind: SharedTextKind, session: Session
     ) -> Set[str]:
-        if kind == SharedTextKind.SOURCE:
-            leaf_dict = {
-                int(id): contents
-                for id, contents in session.query(
-                    SharedText.id, SharedText.contents
-                ).filter(SharedText.kind == kind)
-            }
-        elif kind == SharedTextKind.SINK:
-            leaf_dict = {
-                int(id): contents
-                for id, contents in session.query(
-                    SharedText.id, SharedText.contents
-                ).filter(SharedText.kind == kind)
-            }
-        else:
-            leaf_dict = {
-                int(id): contents
-                for id, contents in session.query(
-                    SharedText.id, SharedText.contents
-                ).filter(SharedText.kind == kind)
-            }
+        leaf_dict = {
+            int(id): contents
+            for id, contents in session.query(
+                SharedText.id, SharedText.contents
+            ).filter(SharedText.kind == kind)
+        }
         return {leaf_dict[id] for id in message_ids if id in leaf_dict}
