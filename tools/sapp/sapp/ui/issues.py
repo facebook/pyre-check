@@ -3,15 +3,30 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+from __future__ import annotations
+
+from abc import ABC, abstractmethod
 from collections import defaultdict
 from enum import Enum
-from typing import Dict, List, NamedTuple, Optional, Set, Tuple, Union
+from typing import (
+    Dict,
+    Generic,
+    List,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Set,
+    TypeVar,
+    Union,
+)
 
 import graphene
 from graphql.execution.base import ResolveInfo
+from sqlalchemy import Column
 from sqlalchemy.orm import Session, aliased
 from sqlalchemy.orm.query import Query as RawQuery
 from sqlalchemy.sql.expression import or_
+from typing_extensions import Final
 
 from ..models import (
     DBID,
@@ -101,7 +116,7 @@ class IssueQueryResult(NamedTuple):
     min_trace_length_to_sinks: int
 
 
-class Filter(Enum):
+class FilterEnum(Enum):
     codes = "codes"
     callables = "callables"
     file_names = "file_names"
@@ -113,16 +128,125 @@ class Filter(Enum):
     issue_id = "issue_id"
 
 
+_Q = TypeVar("_Q")
+_T = TypeVar("_T")
+
+
+class Predicate(ABC):
+    pass
+
+
+class QueryPredicate(Predicate):
+    @abstractmethod
+    def apply(self, query: RawQuery[_Q]) -> RawQuery[_Q]:
+        ...
+
+
+class InRange(Generic[_T], QueryPredicate):
+    def __init__(
+        self,
+        column: Union[Column[_T], DBID],
+        *,
+        lower: Optional[_T] = None,
+        upper: Optional[_T] = None,
+    ) -> None:
+        self._column = column
+        self._lower: Final[Optional[_T]] = lower
+        self._upper: Final[Optional[_T]] = upper
+
+    def apply(self, query: RawQuery[_Q]) -> RawQuery[_Q]:
+        if self._lower is not None:
+            query = query.filter(self._column >= self._lower)
+        if self._upper is not None:
+            query = query.filter(self._column <= self._upper)
+        return query
+
+
+class Equals(Generic[_T], QueryPredicate):
+    def __init__(self, column: Union[Column[_T], DBID], to: _T) -> None:
+        self._column = column
+        self._to: Final[Optional[_T]] = to
+
+    def apply(self, query: RawQuery[_Q]) -> RawQuery[_Q]:
+        return query.filter(self._column == self._to)
+
+
+class IsNull(Generic[_T], QueryPredicate):
+    def __init__(self, column: Union[Column[_T], DBID]) -> None:
+        self._column = column
+
+    def apply(self, query: RawQuery[_Q]) -> RawQuery[_Q]:
+        return query.filter(self._column is None)
+
+
+class Like(Generic[_T], QueryPredicate):
+    def __init__(self, column: Union[Column[_T], DBID], items: Sequence[_T]) -> None:
+        self._column = column
+        self._items = items
+
+    def apply(self, query: RawQuery[_Q]) -> RawQuery[_Q]:
+        # pyre-ignore: SQLAlchemy too dynamic.
+        return query.filter(or_(*[self._column.like(item) for item in self._items]))
+
+
+class IssuePredicate(Predicate):
+    # TODO(T71492980): migrate to query filters to remove bottleneck.
+    @abstractmethod
+    def apply(
+        self, issues: List[IssueQueryResult], feature_map: Dict[int, Set[str]]
+    ) -> List[IssueQueryResult]:
+        ...
+
+
+class HasAll(IssuePredicate):
+    def __init__(self, features: Set[str]) -> None:
+        self._features = features
+
+    def apply(
+        self, issues: List[IssueQueryResult], feature_map: Dict[int, Set[str]]
+    ) -> List[IssueQueryResult]:
+        return [
+            issue
+            for issue in issues
+            if feature_map[int(issue.id)] & self._features == self._features
+        ]
+
+
+class HasAny(IssuePredicate):
+    def __init__(self, features: Set[str]) -> None:
+        self._features = features
+
+    def apply(
+        self, issues: List[IssueQueryResult], feature_map: Dict[int, Set[str]]
+    ) -> List[IssueQueryResult]:
+        return [
+            issue
+            for issue in issues
+            if len(feature_map[int(issue.id)] & self._features) > 0
+        ]
+
+
+class HasNone(IssuePredicate):
+    def __init__(self, features: Set[str]) -> None:
+        self._features = features
+
+    def apply(
+        self, issues: List[IssueQueryResult], feature_map: Dict[int, Set[str]]
+    ) -> List[IssueQueryResult]:
+        return [
+            issue
+            for issue in issues
+            if len(feature_map[int(issue.id)] & self._features) == 0
+        ]
+
+
 class Query:
     # pyre-fixme[3]: Return type must be annotated.
     def __init__(self, session: Session, current_run_id: Union[DBID, int]):
         self._session: Session = session
+        self._predicates: List[Predicate] = []
         self.current_run_id = current_run_id
-        # pyre-fixme[31]: Expression `)]])]` is not a valid type.
-        self.issue_filters: Dict[
-            Filter, Set[Tuple[Union[int, str, Tuple[int, int, ...]], ...]]
-        ] = defaultdict(set)
-        self.breadcrumb_filters: Dict[Filter, List[str]] = defaultdict(list)
+        self.breadcrumb_filters: Dict[FilterEnum, List[str]] = defaultdict(list)
 
     @property
     # pyre-fixme[3]: Return type must be annotated.
@@ -133,36 +257,10 @@ class Query:
 
     def get(self) -> List[IssueQueryResult]:
         query = self.get_raw_query()
-        for filter_type, filter_conditions in self.issue_filters.items():
-            if filter_type == Filter.codes:
-                column = Issue.code
-            elif filter_type == Filter.callables:
-                column = CallableText.contents
-            elif filter_type == Filter.file_names:
-                column = FilenameText.contents
-            elif filter_type == Filter.trace_length_to_sources:
-                column = IssueInstance.min_trace_length_to_sources
-            elif filter_type == Filter.trace_length_to_sinks:
-                column = IssueInstance.min_trace_length_to_sinks
-            elif filter_type == Filter.issue_id:
-                column = IssueInstance.issue_id
 
-            for filter_condition in filter_conditions:
-                if (
-                    filter_type == Filter.trace_length_to_sources
-                    or filter_type == Filter.trace_length_to_sinks
-                ):
-                    if filter_condition[0] is not None:
-                        query = query.filter(column >= filter_condition[0])
-                    if filter_condition[1] is not None:
-                        query = query.filter(column <= filter_condition[1])
-                else:
-                    if not filter_condition:
-                        query = query.filter(column is None)
-                    else:
-                        query = query.filter(
-                            or_(*[column.like(item) for item in filter_condition])
-                        )
+        for predicate in self._predicates:
+            if isinstance(predicate, QueryPredicate):
+                query = predicate.apply(query)
 
         issues = list(
             query.join(Issue, IssueInstance.issue_id == Issue.id).join(
@@ -170,77 +268,68 @@ class Query:
             )
         )
 
-        any_feature_set = set()
-        all_feature_set = set()
-        exclude_feature_set = set()
-        for filter_type, filter_condition in self.breadcrumb_filters.items():
-            if filter_type == Filter.any_features:
-                any_feature_set |= set(filter_condition)
-            elif filter_type == Filter.all_features:
-                all_feature_set |= set(filter_condition)
-            elif filter_type == Filter.exclude_features:
-                exclude_feature_set |= set(filter_condition)
-            else:
-                raise Exception(f"Invalid filter type provided: {filter_type}")
-
-            features_list = [
-                self.get_leaves_issue_instance(
+        issue_predicates = [
+            predicate
+            for predicate in self._predicates
+            if isinstance(predicate, IssuePredicate)
+        ]
+        if len(issue_predicates) > 0:
+            # We only do this when specified because the operation is expensive
+            feature_map = {
+                int(issue.id): self.get_leaves_issue_instance(
                     self._session, int(issue.id), SharedTextKind.FEATURE
                 )
                 for issue in issues
-            ]
-            for issue, features in zip(issues.copy(), features_list):
-                if any_feature_set and not (features & any_feature_set):
-                    issues.remove(issue)
-                elif all_feature_set and not (
-                    features & all_feature_set == all_feature_set
-                ):
-                    issues.remove(issue)
-                elif exclude_feature_set and features & exclude_feature_set:
-                    issues.remove(issue)
+            }
+            for issue_predicate in issue_predicates:
+                issues = issue_predicate.apply(issues, feature_map)
 
         return issues
 
+    def where(self, *predicates: Predicate) -> "Query":
+        self._predicates.extend(predicates)
+        return self
+
     def where_issue_id_is(self, issue_id: Optional[int]) -> "Query":
         if issue_id is not None:
-            self.issue_filters[Filter.issue_id].add((issue_id, issue_id))
+            self._predicates.append(Equals(IssueInstance.id, issue_id))
         return self
 
     def where_codes_is_any_of(self, codes: List[int]) -> "Query":
-        self.issue_filters[Filter.codes].add(tuple(codes))
-        return self
+        return self.where(Like(Issue.code, codes))
 
     def where_callables_is_any_of(self, callables: List[str]) -> "Query":
-        self.issue_filters[Filter.callables].add(tuple(callables))
-        return self
+        return self.where(Like(CallableText.contents, callables))
 
     def where_file_names_is_any_of(self, file_names: List[str]) -> "Query":
-        self.issue_filters[Filter.file_names].add(tuple(file_names))
-        return self
+        return self.where(Like(FilenameText.contents, file_names))
 
     def where_trace_length_to_sinks(
         self, minimum: Optional[int] = None, maximum: Optional[int] = None
     ) -> "Query":
-        self.issue_filters[Filter.trace_length_to_sinks].add((minimum, maximum))
-        return self
+        return self.where(
+            InRange(
+                IssueInstance.min_trace_length_to_sinks, lower=minimum, upper=maximum
+            )
+        )
 
     def where_trace_length_to_sources(
         self, minimum: Optional[int] = None, maximum: Optional[int] = None
     ) -> "Query":
-        self.issue_filters[Filter.trace_length_to_sources].add((minimum, maximum))
-        return self
+        return self.where(
+            InRange(
+                IssueInstance.min_trace_length_to_sources, lower=minimum, upper=maximum
+            )
+        )
 
     def where_any_features(self, features: List[str]) -> "Query":
-        self.breadcrumb_filters[Filter.any_features] += features
-        return self
+        return self.where(HasAny(set(features)))
 
     def where_all_features(self, features: List[str]) -> "Query":
-        self.breadcrumb_filters[Filter.all_features] += features
-        return self
+        return self.where(HasAll(set(features)))
 
     def where_exclude_features(self, features: List[str]) -> "Query":
-        self.breadcrumb_filters[Filter.exclude_features] += features
-        return self
+        return self.where(HasNone(set(features)))
 
     def sources(self, issue_id: DBID) -> Set[str]:
         return self.get_leaves_issue_instance(
