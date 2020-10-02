@@ -418,6 +418,49 @@ let test_cross_repository_models context =
             [{ name = "source_parameter"; sources = [Sources.NamedSource "UserControlled"] }]
           "test.cross_repository_source";
       ]
+    ();
+  assert_model
+    ~source:{|
+      def cross_repository_source(source_parameter): ...
+    |}
+    ~model_source:
+      {|
+      def test.cross_repository_source(
+        source_parameter: CrossRepositoryTaintAnchor[
+          TaintSource[UserControlled],
+          'crossRepositorySource',
+          'formal(0)',
+        ]): ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~source_parameters:
+            [{ name = "source_parameter"; sources = [Sources.NamedSource "UserControlled"] }]
+          "test.cross_repository_source";
+      ]
+    ();
+  assert_model
+    ~source:{|
+      def cross_repository_sink(x): ...
+    |}
+    ~model_source:
+      {|
+      def test.cross_repository_sink(
+        x: CrossRepositoryTaintAnchor[
+          TaintSink[Test],
+          'crossRepositorySink',
+          'formal(0)',
+        ]): ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~sink_parameters:[{ name = "x"; sinks = [Sinks.NamedSink "Test"] }]
+          "test.cross_repository_sink";
+      ]
     ()
 
 

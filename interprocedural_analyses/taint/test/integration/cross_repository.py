@@ -17,3 +17,12 @@ def returns_crtex_source():
 def test():
     s = returns_crtex_source()
     __test_sink(s)
+
+
+def cross_repository_anchor_sink(sink_parameter):
+    pass
+
+
+def test_cross_repository_anchor():
+    source = __test_source()
+    cross_repository_anchor_sink(source)

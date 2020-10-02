@@ -55,6 +55,90 @@
   }
 }
 {
+  "kind": "issue",
+  "data": {
+    "callable": "cross_repository.test_cross_repository_anchor",
+    "callable_line": 26,
+    "code": 5002,
+    "line": 28,
+    "start": 33,
+    "end": 39,
+    "filename": "cross_repository.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "cross_repository.py",
+              "line": 27,
+              "start": 13,
+              "end": 28
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-via": "special_source" } ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "cross_repository.py",
+              "line": 28,
+              "start": 33,
+              "end": 39
+            },
+            "leaves": [
+              {
+                "port": "anchor:formal(0)",
+                "kind": "Test",
+                "name": "crossRepositoryAnchor",
+                "on_all_flows": true
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_source" } ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "cross_repository.cross_repository_anchor_sink",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(sink_parameter)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [
+              {
+                "port": "anchor:formal(0)",
+                "kind": "Test",
+                "name": "crossRepositoryAnchor",
+                "on_all_flows": true
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "cross_repository.cross_repository_source",

@@ -443,6 +443,65 @@ let rec parse_annotations ~configuration ~parameters annotation =
                 raise_invalid_model
                   "Cross repository taint must be of the form CrossRepositoryTaint[taint, \
                    canonical_name, canonical_port, producer_id]." )
+        | Call { callee; arguments }
+          when [%compare.equal: string option]
+                 (base_name callee)
+                 (Some "CrossRepositoryTaintAnchor") -> (
+            match arguments with
+            | [
+             {
+               Call.Argument.value =
+                 {
+                   Node.value =
+                     Expression.Tuple
+                       [
+                         { Node.value = taint; _ };
+                         {
+                           Node.value =
+                             Expression.String { StringLiteral.value = canonical_name; _ };
+                           _;
+                         };
+                         {
+                           Node.value =
+                             Expression.String { StringLiteral.value = canonical_port; _ };
+                           _;
+                         };
+                       ];
+                   _;
+                 };
+               _;
+             };
+            ] ->
+                let add_cross_repository_information annotation =
+                  let leaf_name =
+                    Features.Simple.LeafName
+                      {
+                        leaf = canonical_name;
+                        port = Some (Format.sprintf "anchor:%s" canonical_port);
+                      }
+                  in
+                  match annotation with
+                  | Source source ->
+                      Source
+                        {
+                          source with
+                          breadcrumbs = leaf_name :: source.breadcrumbs;
+                          leaf_name_provided = true;
+                        }
+                  | Sink sink ->
+                      Sink
+                        {
+                          sink with
+                          breadcrumbs = leaf_name :: sink.breadcrumbs;
+                          leaf_name_provided = true;
+                        }
+                  | _ -> annotation
+                in
+                parse_annotation taint |> List.map ~f:add_cross_repository_information
+            | _ ->
+                raise_invalid_model
+                  "Cross repository taint anchor must be of the form \
+                   CrossRepositoryTaintAnchor[taint, canonical_name, canonical_port]." )
         | Call
             {
               callee;
