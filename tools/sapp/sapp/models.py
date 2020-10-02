@@ -282,6 +282,10 @@ class SharedTextKind(enum.Enum):
     def SINK_DETAIL(cls):  # noqa
         return cls.sink_detail
 
+    @classmethod
+    def from_string(cls, string: str) -> Optional[SharedTextKind]:
+        return cls.__members__.get(string)
+
 
 class SharedText(Base, PrepareMixin, RecordMixin):  # noqa
     """Any string-ish type that can be shared as a property of some other

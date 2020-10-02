@@ -4,6 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import builtins
+import enum
 import itertools
 import os
 import sys
@@ -79,6 +80,11 @@ class ListFilterException(Exception):
     pass
 
 
+class LeafOrderBy(str, enum.Enum):
+    name = "name"
+    number_issues = "number_issues"
+
+
 class Interactive:
     help_message = f"""
 Commands =======================================================================
@@ -92,6 +98,7 @@ state                show the internal state of the tool for debugging
 runs                 list all completed static analysis runs
 issues               list all issues for the selected run
 frames               show trace frames independently of an issue
+leaves               list all leaves of issues for the selected run
 show                 show info about selected issue or trace frame
 
 == Selection commands ==
@@ -151,6 +158,7 @@ details              show additional information about the current trace frame
             "list": self.list_source_code,
             "frames": self.frames,
             "frame": self.frame,
+            "leaves": self.leaves,
             "parents": self.parents,
             "details": self.details,
             "analysis_output": self.analysis_output,
@@ -741,6 +749,77 @@ details              show additional information about the current trace frame
 
         self._generate_trace_from_frame()
         self.show()
+
+    @catch_keyboard_interrupt()
+    @catch_user_error()
+    def leaves(
+        self,
+        kind: str = "sink",
+        use_pager: Optional[bool] = None,
+        limit: Optional[int] = None,
+        order_by: Optional[LeafOrderBy] = None,
+    ) -> None:
+        """Lists leaves of issues for the selected run.
+
+        Parameters (all optional):
+            kind: source|sink|feature (default: sink)       the type of leaves to show
+            use_pager: bool                                 use a unix style pager for output
+            limit: int (default: all)                       how many leaves to display
+            order_by: name|number_issues (default: random)  sort by a criteria
+        """
+        pager = self._resolve_pager(use_pager)
+        leaves: DefaultDict[str, int] = defaultdict(int)
+
+        text_kind = SharedTextKind.from_string(kind)
+        if text_kind is None:
+            raise UserError("Invalid kind.")
+
+        # Show leaf names instead of leaf kinds.
+        if text_kind == SharedTextKind.source:
+            text_kind = SharedTextKind.source_detail
+        elif text_kind == SharedTextKind.sink:
+            text_kind = SharedTextKind.sink_detail
+
+        with self.db.make_session() as session:
+            query = (
+                session.query(
+                    IssueInstanceSharedTextAssoc.shared_text_id, SharedText.contents
+                )
+                .join(
+                    SharedText,
+                    IssueInstanceSharedTextAssoc.shared_text_id == SharedText.id,
+                )
+                .join(
+                    IssueInstance,
+                    IssueInstanceSharedTextAssoc.issue_instance_id == IssueInstance.id,
+                )
+                .filter(IssueInstance.run_id == self.current_run_id)
+                .filter(SharedText.kind == text_kind)
+            )
+            for (_, name) in query:
+                leaves[name] += 1
+
+        query: Iterable[Tuple[str, int]]
+        if order_by == LeafOrderBy.name:
+            query = sorted(leaves.items(), key=lambda leaf: leaf[0])
+        elif order_by == LeafOrderBy.number_issues:
+            query = sorted(leaves.items(), key=lambda leaf: leaf[1], reverse=True)
+        elif order_by is None:
+            query = leaves.items()
+        else:
+            raise UserError("Invalid order_by method.")
+
+        if limit is not None:
+            query = itertools.islice(query, limit)
+
+        leaves_strings = []
+        for name, number_issues in query:
+            leaves_strings.append(f"{name} (in {number_issues} issues)")
+
+        pager("\n".join(leaves_strings))
+        print(
+            f"Found {len(leaves)} {kind}s in issues with run_id {self.current_run_id}."
+        )
 
     @catch_keyboard_interrupt()
     @catch_user_error()
