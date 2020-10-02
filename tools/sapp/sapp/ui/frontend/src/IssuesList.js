@@ -9,7 +9,18 @@
  */
 
 import React from 'react';
-import {Card, Skeleton, Row, Col, Typography, Divider} from 'antd';
+import {
+  Card,
+  Col,
+  Divider,
+  Popover,
+  Row,
+  Skeleton,
+  Tooltip,
+  Typography,
+} from 'antd';
+import {CodeTwoTone} from '@ant-design/icons';
+import Source from './Source.js';
 
 const {Text, Link} = Typography;
 
@@ -108,7 +119,9 @@ class IssuesList extends React.Component<Props, State> {
                 <Col span={leftSpan} style={{textAlign: 'right'}}>
                   <Text type="secondary">Code</Text>
                 </Col>
-                <Col span={rightSpan}>{node.code}: {node.message}</Col>
+                <Col span={rightSpan}>
+                  {node.code}: {node.message}
+                </Col>
               </Row>
               <Row gutter={gutter}>
                 <Col span={leftSpan} style={{textAlign: 'right'}}>
@@ -123,7 +136,23 @@ class IssuesList extends React.Component<Props, State> {
                   <Text type="secondary">Location</Text>
                 </Col>
                 <Col span={rightSpan}>
-                  {node.filename}:{node.location}
+                  <Tooltip title="Click to preview">
+                    <Popover
+                      title="Source preview"
+                      content={
+                        <div style={{width: '600px'}}>
+                          <Source
+                            path={node.filename}
+                            location={node.location}
+                          />
+                        </div>
+                      }
+                      placement="bottomRight"
+                      trigger="click">
+                      <CodeTwoTone />
+                    </Popover>
+                  </Tooltip>{' '}
+                  <Text code>{node.filename}</Text>
                 </Col>
               </Row>
               <Divider orientation="left" plain>
