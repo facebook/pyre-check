@@ -26,7 +26,7 @@ from ..models import (
     TraceKind,
 )
 from . import issues, trace
-from .interactive import IssueQueryResult, IssueQueryResultType
+from .issues import IssueQueryResult, IssueQueryResultType
 from .trace import TraceFrameQueryResult, TraceFrameQueryResultType
 
 

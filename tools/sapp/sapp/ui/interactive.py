@@ -14,7 +14,6 @@ from typing import (
     Dict,
     Iterable,
     List,
-    NamedTuple,
     Optional,
     Set,
     Tuple,
@@ -24,7 +23,6 @@ from typing import (
 )
 
 import click
-import graphene
 import IPython
 from IPython import paths
 from IPython.core import page
@@ -49,20 +47,17 @@ from ..models import (
     Issue,
     IssueInstance,
     IssueInstanceSharedTextAssoc,
-    IssueInstanceTraceFrameAssoc,
     Run,
     RunStatus,
     SharedText,
     SharedTextKind,
-    SourceLocation,
     TraceFrame,
-    TraceFrameLeafAssoc,
     TraceKind,
     create as create_models,
 )
 from ..pipeline.base_parser import BaseParser
 from . import trace
-from .issues import Query
+from .issues import IssueQueryResult, Query
 from .trace import TraceFrameQueryResult, TraceTuple
 
 
@@ -78,37 +73,6 @@ CallerText = aliased(SharedText)
 CalleeText = aliased(SharedText)
 # pyre-fixme[5]: Global expression must be annotated.
 MessageText = aliased(SharedText)
-
-
-class IssueQueryResult(NamedTuple):
-    id: DBID
-    filename: str
-    location: SourceLocation
-    code: int
-    callable: str
-    message: str
-    min_trace_length_to_sources: int
-    min_trace_length_to_sinks: int
-
-
-class IssueQueryResultType(graphene.ObjectType):
-    class Meta:
-        interfaces = (graphene.relay.Node,)
-
-    issue_id = graphene.ID()
-    filename = graphene.String()
-    location = graphene.String()
-    code = graphene.Int()
-    callable = graphene.String()
-    message = graphene.String()
-    min_trace_length_to_sources = graphene.Int()
-    min_trace_length_to_sinks = graphene.Int()
-
-    # pyre-fixme[3]: Return type must be annotated.
-    # pyre-fixme[2]: Parameter must be annotated.
-    def resolve_issue_id(self, info):
-        # pyre-fixme[16]: `IssueQueryResultType` has no attribute `id`.
-        return self.id
 
 
 class ListFilterException(Exception):

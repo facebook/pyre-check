@@ -5,8 +5,10 @@
 
 from collections import defaultdict
 from enum import Enum
-from typing import Dict, List, Optional, Set, Tuple, Union
+from typing import Dict, List, NamedTuple, Optional, Set, Tuple, Union
 
+import graphene
+from graphql.execution.base import ResolveInfo
 from sqlalchemy.orm import Session, aliased
 from sqlalchemy.orm.query import Query as RawQuery
 from sqlalchemy.sql.expression import or_
@@ -18,6 +20,7 @@ from ..models import (
     IssueInstanceSharedTextAssoc,
     SharedText,
     SharedTextKind,
+    SourceLocation,
 )
 
 
@@ -31,6 +34,35 @@ CallerText = aliased(SharedText)
 CalleeText = aliased(SharedText)
 # pyre-fixme[5]: Global expression must be annotated.
 MessageText = aliased(SharedText)
+
+
+class IssueQueryResultType(graphene.ObjectType):
+    class Meta:
+        interfaces = (graphene.relay.Node,)
+
+    issue_id = graphene.ID()
+    filename = graphene.String()
+    location = graphene.String()
+    code = graphene.Int()
+    callable = graphene.String()
+    message = graphene.String()
+    min_trace_length_to_sources = graphene.Int()
+    min_trace_length_to_sinks = graphene.Int()
+
+    def resolve_issue_id(self, info: ResolveInfo) -> graphene.Int:
+        # pyre-fixme[16]: `IssueQueryResultType` has no attribute `id`.
+        return self.id
+
+
+class IssueQueryResult(NamedTuple):
+    id: DBID
+    filename: str
+    location: SourceLocation
+    code: int
+    callable: str
+    message: str
+    min_trace_length_to_sources: int
+    min_trace_length_to_sinks: int
 
 
 class Filter(Enum):
@@ -63,9 +95,7 @@ class Query:
             raise Exception("No current session found for query!")
         return self._session
 
-    # pyre-fixme[24]: Generic type `list` expects 1 type parameter, use
-    #  `typing.List` to avoid runtime subscripting errors.
-    def get(self) -> List:
+    def get(self) -> List[IssueQueryResult]:
         query = self.get_raw_query()
         for filter_type, filter_conditions in self.issue_filters.items():
             if filter_type == Filter.codes:
