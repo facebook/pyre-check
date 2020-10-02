@@ -11,7 +11,7 @@ import pathlib
 import re
 from logging import Logger
 from pathlib import Path
-from typing import List, Sequence
+from typing import Dict, List, Optional, Sequence
 
 import libcst
 from libcst.codemod import CodemodContext
@@ -24,7 +24,7 @@ from ..commands.command import (
     ProjectErrorSuppressingCommand,
 )
 from ..configuration import Configuration
-from ..errors import Errors, PathsToErrors, UserError
+from ..errors import Errors, PathsToErrors, PyreError, UserError
 from ..filesystem import find_files, path_exists
 from ..repository import Repository
 
@@ -33,6 +33,14 @@ LOG: Logger = logging.getLogger(__name__)
 
 
 MISSING_ATTRIBUTE_ANNOTATION_ERROR_CODE = 4
+
+
+def _is_sqlalchemy_error(error: PyreError) -> bool:
+    return bool(
+        re.search(
+            r"has type .*?Column\[.*but no type is specified.", error["description"]
+        )
+    )
 
 
 class MissingOverrideReturnAnnotations(Command):
@@ -180,7 +188,7 @@ class SupportSqlalchemy(ProjectErrorSuppressingCommand):
         command_arguments: CommandArguments,
         *,
         local_root: Path,
-        paths: List[Path],
+        paths: Sequence[Path],
         repository: Repository
     ) -> None:
         super().__init__(
@@ -193,7 +201,7 @@ class SupportSqlalchemy(ProjectErrorSuppressingCommand):
             submit=False,
         )
         self._local_root = local_root
-        self._paths = paths
+        self._paths: Optional[Sequence[Path]] = paths if len(paths) > 0 else None
 
     @staticmethod
     def from_arguments(
@@ -222,22 +230,35 @@ class SupportSqlalchemy(ProjectErrorSuppressingCommand):
             "paths", help="Paths using sqlalchemy", type=path_exists, nargs="*"
         )
 
-    @property
-    @functools.lru_cache(1)
-    def paths(self) -> List[Path]:
-        if len(self._paths) > 0:
-            return self._paths
+    @staticmethod
+    def _get_sqlalchemy_errors(
+        path_wise_errors: Dict[str, List[PyreError]],
+        filter_paths: Optional[Sequence[Path]],
+    ) -> PathsToErrors:
+        all_pathwise_sqlalchemy_errors = {
+            Path(pathname): [error for error in errors if _is_sqlalchemy_error(error)]
+            for pathname, errors in path_wise_errors.items()
+        }
 
-        return [
-            Path(filename)
-            for filename in find_files(
-                directory=self._local_root, name="*.py", grep_pattern="declarative_base"
-            )
-        ]
+        nonempty_pathwise_sqlalchemy_errors = {
+            path: errors
+            for path, errors in all_pathwise_sqlalchemy_errors.items()
+            if len(errors) > 0
+        }
+
+        if filter_paths is None:
+            return nonempty_pathwise_sqlalchemy_errors
+
+        return {
+            path: errors
+            for path, errors in nonempty_pathwise_sqlalchemy_errors.items()
+            if path in filter_paths
+        }
 
     def _annotate_sqlalchemy_files(
         self, configuration: Configuration, sqlalchemy_path_wise_errors: PathsToErrors
     ) -> None:
+        paths = [str(path) for path in sqlalchemy_path_wise_errors.keys()]
         errors = [
             error for errors in sqlalchemy_path_wise_errors.values() for error in errors
         ]
@@ -250,7 +271,7 @@ class SupportSqlalchemy(ProjectErrorSuppressingCommand):
                 "infer",
                 "--json",
                 "--in-place",
-                *[str(path) for path in sqlalchemy_path_wise_errors.keys()],
+                *paths,
             ],
             description="Running `pyre infer`",
             should_clean=True,
@@ -282,11 +303,9 @@ class SupportSqlalchemy(ProjectErrorSuppressingCommand):
             only_fix_error_code=MISSING_ATTRIBUTE_ANNOTATION_ERROR_CODE, strict=True
         )
 
-        sqlalchemy_path_wise_errors = {
-            Path(path): errors
-            for path, errors in unannotated_attribute_errors.paths_to_errors.items()
-            if Path(path) in self.paths
-        }
+        sqlalchemy_path_wise_errors = self._get_sqlalchemy_errors(
+            unannotated_attribute_errors.paths_to_errors, self._paths
+        )
 
         if len(sqlalchemy_path_wise_errors) == 0:
             LOG.warning("No paths with missing annotations. Exiting...")
