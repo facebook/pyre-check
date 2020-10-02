@@ -41,11 +41,15 @@ class IssueQueryResultType(graphene.ObjectType):
         interfaces = (graphene.relay.Node,)
 
     issue_id = graphene.ID()
+
+    code = graphene.Int()
+    message = graphene.String()
+
+    callable = graphene.String()
+
     filename = graphene.String()
     location = graphene.String()
-    code = graphene.Int()
-    callable = graphene.String()
-    message = graphene.String()
+
     min_trace_length_to_sources = graphene.Int()
     min_trace_length_to_sinks = graphene.Int()
 
@@ -56,11 +60,15 @@ class IssueQueryResultType(graphene.ObjectType):
 
 class IssueQueryResult(NamedTuple):
     id: DBID
+
+    code: int
+    message: str
+
+    callable: str
+
     filename: str
     location: SourceLocation
-    code: int
-    callable: str
-    message: str
+
     min_trace_length_to_sources: int
     min_trace_length_to_sinks: int
 
