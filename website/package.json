@@ -17,7 +17,7 @@
     "classnames": "^2.2.6",
     "react": "^16.10.2",
     "react-dom": "^16.10.2",
-    "docusaurus-plugin-internaldocs-fb": "^0.3.6",
+    "docusaurus-plugin-internaldocs-fb": "^0.4.0",
     "internaldocs-fb-helpers": "^1.1.0"
   }
 }
