@@ -11,7 +11,7 @@ import shutil
 import sys
 import time
 import traceback
-from dataclasses import dataclass, replace
+from dataclasses import replace
 from pathlib import Path
 from typing import List, Optional
 
@@ -31,13 +31,6 @@ from .version import __version__
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
-
-
-@dataclass
-class FailedOutsideLocalConfigurationException(Exception):
-    exit_code: ExitCode
-    command: Command
-    exception_message: str
 
 
 def _set_default_command(arguments: argparse.Namespace) -> None:
@@ -112,9 +105,6 @@ def run_pyre_command(
         configuration_module.check_nested_local_configuration(configuration)
         log.start_logging_to_directory(noninteractive, configuration.log_directory)
         exit_code = command.run().exit_code()
-    except analysis_directory.NotWithinLocalConfigurationException as error:
-        should_log_statistics = False
-        raise FailedOutsideLocalConfigurationException(exit_code, command, str(error))
     except (buck.BuckException, EnvironmentException) as error:
         client_exception_message = str(error)
         exit_code = ExitCode.FAILURE
@@ -189,57 +179,30 @@ def _create_configuration_with_retry(
     raise configuration_module.InvalidConfiguration(error_message)
 
 
-def _run_pyre_with_retry(arguments: argparse.Namespace) -> ExitCode:
+def _run_pyre(arguments: argparse.Namespace) -> ExitCode:
     try:
-        configuration = configuration_module.create_configuration(
-            command_arguments.CommandArguments.from_arguments(arguments), Path(".")
-        )
+        command_argument = command_arguments.CommandArguments.from_arguments(arguments)
+        base_directory = Path(".")
+        # These commands are either noninteractive or insensitive to where
+        # local root is.
+        if arguments.command in [
+            commands.Kill.from_arguments,
+            commands.Persistent.from_arguments,
+            commands.Servers.from_arguments,
+        ]:
+            configuration = configuration_module.create_configuration(
+                command_argument, base_directory
+            )
+        else:
+            configuration = _create_configuration_with_retry(
+                command_argument, base_directory
+            )
+
         command = arguments.command(arguments, os.getcwd(), configuration)
         return run_pyre_command(command, configuration, arguments.noninteractive)
     except configuration_module.InvalidConfiguration as error:
         LOG.error(str(error))
         return ExitCode.CONFIGURATION_ERROR
-    except FailedOutsideLocalConfigurationException as exception:
-        command = exception.command
-        exit_code = exception.exit_code
-        client_exception_message = exception.exception_message
-
-    configurations = recently_used_configurations.Cache(
-        command.configuration.dot_pyre_directory
-    ).get_all_items()
-    if not configurations:
-        LOG.error(client_exception_message)
-        return exit_code
-
-    LOG.warning(
-        f"Could not find a Pyre local configuration at `{command._original_directory}`."
-    )
-    local_root_for_rerun = recently_used_configurations.prompt_user_for_local_root(
-        configurations
-    )
-    if not local_root_for_rerun:
-        return exit_code
-
-    arguments.local_configuration = local_root_for_rerun
-    LOG.warning(
-        f"Rerunning the command in recent local configuration `{local_root_for_rerun}`."
-    )
-    LOG.warning(
-        f"Hint: To avoid this prompt, run `pyre -l {local_root_for_rerun}` "
-        f"or `cd {local_root_for_rerun} && pyre`."
-    )
-    try:
-        configuration = configuration_module.create_configuration(
-            command_arguments.CommandArguments.from_arguments(arguments), Path(".")
-        )
-        command = arguments.command(arguments, os.getcwd(), configuration)
-        return run_pyre_command(command, configuration, arguments.noninteractive)
-    except configuration_module.InvalidConfiguration as error:
-        LOG.error(str(error))
-        return ExitCode.CONFIGURATION_ERROR
-    except FailedOutsideLocalConfigurationException:
-        LOG.error(f"Failed to rerun command in `{local_root_for_rerun}`.")
-        return ExitCode.FAILURE
 
 
 # Need the default argument here since this is our entry point in setup.py
@@ -283,7 +246,7 @@ def main(argv: List[str] = sys.argv[1:]) -> int:
         if arguments.command == commands.Initialize.from_arguments:
             exit_code = arguments.command().run().exit_code()
             return exit_code
-        return _run_pyre_with_retry(arguments)
+        return _run_pyre(arguments)
 
 
 if __name__ == "__main__":
