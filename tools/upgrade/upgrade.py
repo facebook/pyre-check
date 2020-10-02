@@ -16,7 +16,6 @@ from .commands.codemods import (
     EnableSourceDatabaseBuckBuilder,
     MissingGlobalAnnotations,
     MissingOverrideReturnAnnotations,
-    SupportSqlalchemy,
 )
 from .commands.consolidate_nested_configurations import ConsolidateNestedConfigurations
 from .commands.expand_target_coverage import ExpandTargetCoverage
@@ -26,6 +25,7 @@ from .commands.fixme_single import FixmeSingle
 from .commands.fixme_targets import FixmeTargets
 from .commands.global_version_update import GlobalVersionUpdate
 from .commands.strict_default import StrictDefault
+from .commands.support_sqlalchemy import SupportSqlalchemy
 from .commands.targets_to_configuration import TargetsToConfiguration
 from .repository import Repository
 
