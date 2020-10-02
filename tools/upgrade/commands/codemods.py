@@ -24,7 +24,7 @@ from ..commands.command import (
     ProjectErrorSuppressingCommand,
 )
 from ..configuration import Configuration
-from ..errors import Errors, UserError
+from ..errors import Errors, PathsToErrors, UserError
 from ..filesystem import find_files, path_exists
 from ..repository import Repository
 
@@ -236,8 +236,11 @@ class SupportSqlalchemy(ProjectErrorSuppressingCommand):
         ]
 
     def _annotate_sqlalchemy_files(
-        self, configuration: Configuration, unannotated_attribute_errors: Errors
+        self, configuration: Configuration, sqlalchemy_path_wise_errors: PathsToErrors
     ) -> None:
+        errors = [
+            error for errors in sqlalchemy_path_wise_errors.values() for error in errors
+        ]
         pyre_output = configuration.run_pyre(
             arguments=[
                 "--strict",
@@ -247,23 +250,26 @@ class SupportSqlalchemy(ProjectErrorSuppressingCommand):
                 "infer",
                 "--json",
                 "--in-place",
-                *[str(path) for path in self.paths],
+                *[str(path) for path in sqlalchemy_path_wise_errors.keys()],
             ],
             description="Running `pyre infer`",
             should_clean=True,
             stderr_flag=None,
-            command_input=json.dumps(unannotated_attribute_errors.errors),
+            command_input=json.dumps(errors),
         )
         if pyre_output is None:
             raise UserError("Couldn't annotate sqlalchemy files.")
 
-    def _import_annotations_from_future(self) -> None:
+    def _import_annotations_from_future(
+        self, sqlalchemy_path_wise_errors: PathsToErrors
+    ) -> None:
         """We need this because the original sqlalchemy types aren't generic
         and will fail at runtime."""
         LOG.info("Importing necessary annotations...")
         context = CodemodContext()
         AddImportsVisitor.add_needed_import(context, "__future__", "annotations")
-        for path in self.paths:
+        paths = list(sqlalchemy_path_wise_errors.keys())
+        for path in paths:
             source = libcst.parse_module(path.read_text())
             modified_tree = AddImportsVisitor(context).transform_module(source)
             path.write_text(modified_tree.code)
@@ -275,14 +281,27 @@ class SupportSqlalchemy(ProjectErrorSuppressingCommand):
         unannotated_attribute_errors = local_configuration.get_errors(
             only_fix_error_code=MISSING_ATTRIBUTE_ANNOTATION_ERROR_CODE, strict=True
         )
+
+        sqlalchemy_path_wise_errors = {
+            Path(path): errors
+            for path, errors in unannotated_attribute_errors.paths_to_errors.items()
+            if Path(path) in self.paths
+        }
+
+        if len(sqlalchemy_path_wise_errors) == 0:
+            LOG.warning("No paths with missing annotations. Exiting...")
+            return
+
+        LOG.info("Found errors: %s", sqlalchemy_path_wise_errors)
+
         LOG.info(
             "Annotating the following sqlalchemy files: `%s`",
-            [str(path) for path in self.paths],
+            list(sqlalchemy_path_wise_errors.keys()),
         )
         self._annotate_sqlalchemy_files(
-            local_configuration, unannotated_attribute_errors
+            local_configuration, sqlalchemy_path_wise_errors
         )
-        self._import_annotations_from_future()
+        self._import_annotations_from_future(sqlalchemy_path_wise_errors)
 
         project_configuration = Configuration.find_project_configuration()
         self._suppress_errors_in_project(

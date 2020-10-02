@@ -24,6 +24,7 @@ MAX_LINES_PER_FIXME: int = 4
 
 
 PyreError = Dict[str, Any]
+PathsToErrors = Dict[Path, List[PyreError]]
 
 
 class LineBreakTransformer(libcst.CSTTransformer):
