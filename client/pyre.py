@@ -11,7 +11,7 @@ import shutil
 import sys
 import time
 import traceback
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import List, Optional
 
@@ -145,6 +145,48 @@ def run_pyre_command(
             should_log_statistics,
         )
     return exit_code
+
+
+def _create_configuration_with_retry(
+    arguments: command_arguments.CommandArguments, base_directory: Path
+) -> configuration_module.Configuration:
+    configuration = configuration_module.create_configuration(arguments, base_directory)
+    if len(configuration.source_directories) > 0 or len(configuration.targets) > 0:
+        return configuration
+
+    # Heuristic: If neither `source_directories` nor `targets` is specified,
+    # and if there exists recently-used local configurations, we guess that
+    # the user may have forgotten to specifiy `-l`.
+    error_message = "No buck targets or source directories to analyze."
+    recently_used_local_roots = recently_used_configurations.Cache(
+        configuration.dot_pyre_directory
+    ).get_all_items()
+    if len(recently_used_local_roots) == 0:
+        raise configuration_module.InvalidConfiguration(error_message)
+
+    LOG.warning(error_message)
+    local_root_for_rerun = recently_used_configurations.prompt_user_for_local_root(
+        recently_used_local_roots
+    )
+    if local_root_for_rerun is None:
+        raise configuration_module.InvalidConfiguration(
+            "Cannot determine which recent local root to rerun. "
+        )
+
+    LOG.warning(f"Restarting pyre under local root `{local_root_for_rerun}`...")
+    LOG.warning(
+        f"Hint: To avoid this prompt, run `pyre -l {local_root_for_rerun}` "
+        f"or `cd {local_root_for_rerun} && pyre`."
+    )
+    new_configuration = configuration_module.create_configuration(
+        replace(arguments, local_configuration=local_root_for_rerun), base_directory
+    )
+    if (
+        len(new_configuration.source_directories) > 0
+        or len(new_configuration.targets) > 0
+    ):
+        return new_configuration
+    raise configuration_module.InvalidConfiguration(error_message)
 
 
 def _run_pyre_with_retry(arguments: argparse.Namespace) -> ExitCode:
