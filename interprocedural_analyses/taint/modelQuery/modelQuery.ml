@@ -93,22 +93,13 @@ let apply_query_rule
     []
 
 
-let apply_all_rules
-    ~resolution
-    ~scheduler
-    ~configuration
-    ~rule_filter
-    ~rules
-    ~callables
-    ~models
-    ~skip_overrides
-  =
+let apply_all_rules ~resolution ~scheduler ~configuration ~rule_filter ~rules ~callables ~models =
   let global_resolution = Resolution.global_resolution resolution in
   if List.length rules > 0 then
     let sources_to_keep, sinks_to_keep =
       ModelParser.compute_sources_and_sinks_to_keep ~configuration ~rule_filter
     in
-    let apply_rules (models, skip_overrides) callable =
+    let apply_rules models callable =
       let taint_to_model =
         List.concat_map rules ~f:(fun rule ->
             apply_query_rule
@@ -126,7 +117,7 @@ let apply_all_rules
             ~sinks_to_keep
             taint_to_model
         with
-        | Some (model, skipped_override) ->
+        | Some model ->
             let models =
               let model =
                 match Callable.Map.find models (callable :> Callable.t) with
@@ -135,16 +126,10 @@ let apply_all_rules
               in
               Callable.Map.set models ~key:(callable :> Callable.t) ~data:model
             in
-            let skip_overrides =
-              match skipped_override with
-              | Some skipped_override ->
-                  Ast.Reference.Set.add skip_overrides (Ast.Node.value skipped_override)
-              | None -> skip_overrides
-            in
-            models, skip_overrides
-        | _ -> models, skip_overrides
+            models
+        | _ -> models
       else
-        models, skip_overrides
+        models
     in
     let callables =
       List.filter_map callables ~f:(function
@@ -156,7 +141,7 @@ let apply_all_rules
       Map.merge_skewed new_models models ~combine:(fun ~key:_ left right ->
           Taint.Result.join ~iteration:0 left right)
     in
-    let new_models, new_skip_overrides =
+    let new_models =
       Scheduler.map_reduce
         scheduler
         ~policy:
@@ -164,16 +149,14 @@ let apply_all_rules
              ~minimum_chunk_size:500
              ~preferred_chunks_per_worker:1
              ())
-        ~initial:(Callable.Map.empty, Ast.Reference.Set.empty)
-        ~map:(fun (models, skip_overrides) callables ->
-          List.fold callables ~init:(models, skip_overrides) ~f:apply_rules)
-        ~reduce:(fun (new_models, new_skip_overrides) (models, skip_overrides) ->
-          ( Map.merge_skewed new_models models ~combine:(fun ~key:_ left right ->
-                Taint.Result.join ~iteration:0 left right),
-            Ast.Reference.Set.union new_skip_overrides skip_overrides ))
+        ~initial:Callable.Map.empty
+        ~map:(fun models callables -> List.fold callables ~init:models ~f:apply_rules)
+        ~reduce:(fun new_models models ->
+          Map.merge_skewed new_models models ~combine:(fun ~key:_ left right ->
+              Taint.Result.join ~iteration:0 left right))
         ~inputs:callables
         ()
     in
-    merge_models new_models models, Ast.Reference.Set.union new_skip_overrides skip_overrides
+    merge_models new_models models
   else
-    models, skip_overrides
+    models

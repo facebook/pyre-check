@@ -842,7 +842,7 @@ let test_invalid_models context =
     ();
   assert_invalid_model
     ~model_source:"def test.sink(parameter: SkipAnalysis): ..."
-    ~expect:"Invalid model for `test.sink`: SkipAnalysis annotation must be in return position"
+    ~expect:"Invalid model for `test.sink`: Unrecognized taint annotation `SkipAnalysis`"
     ();
   assert_invalid_model
     ~model_source:"def test.sink(parameter: TaintSink[X, Y, LocalReturn]): ..."

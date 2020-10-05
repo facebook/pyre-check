@@ -40,9 +40,6 @@ module T : sig
         breadcrumbs: breadcrumbs;
         path: Abstract.TreeDomain.Label.path;
       }
-    | SkipAnalysis (* Don't analyze methods with SkipAnalysis *)
-    | SkipOverrides (* Analyze as normally, but assume no overrides exist. *)
-    | Sanitize
 
   type annotation_kind =
     | ParameterAnnotation of AccessPath.Root.t
@@ -109,4 +106,4 @@ val create_model_from_annotations
   sources_to_keep:Sources.Set.t option ->
   sinks_to_keep:Sinks.Set.t option ->
   (T.annotation_kind * T.taint_annotation) list ->
-  (TaintResult.call_model * Ast.Reference.t Ast.Node.t option) option
+  TaintResult.call_model option

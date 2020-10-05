@@ -20,5 +20,4 @@ val apply_all_rules
   rules:Taint.Model.ModelQuery.rule list ->
   callables:Interprocedural.Callable.real_target list ->
   models:Taint.Result.call_model Interprocedural.Callable.Map.t ->
-  skip_overrides:Ast.Reference.Set.t ->
-  Taint.Result.call_model Interprocedural.Callable.Map.t * Ast.Reference.Set.t
+  Taint.Result.call_model Interprocedural.Callable.Map.t

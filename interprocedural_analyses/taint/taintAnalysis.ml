@@ -98,7 +98,7 @@ include Taint.Result.Register (struct
             List.iter errors ~f:(fun error -> Log.error "%s" error);
             if verify && not (List.is_empty errors) then
               raise (Model.InvalidModel (List.hd_exn errors));
-            let models, skip_overrides =
+            let models =
               let callables =
                 List.rev_append stubs functions
                 |> List.filter_map ~f:(function
@@ -114,7 +114,6 @@ include Taint.Result.Register (struct
                 ~rules:queries
                 ~callables
                 ~models
-                ~skip_overrides
             in
             if find_obscure_flows then
               models |> remove_sinks |> add_obscure_sinks, skip_overrides

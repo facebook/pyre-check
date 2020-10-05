@@ -47,9 +47,6 @@ module Model = struct
         breadcrumbs: breadcrumbs;
         path: Abstract.TreeDomain.Label.path;
       }
-    | SkipAnalysis (* Don't analyze methods with SkipAnalysis *)
-    | SkipOverrides (* Analyze as normally, but assume no overrides exist. *)
-    | Sanitize
   [@@deriving show, compare]
 
   (* Exposed for testing. *)

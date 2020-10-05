@@ -447,7 +447,7 @@ let initialize
   let initial_models, skip_overrides =
     let inferred_models = Model.infer_class_models ~environment in
     match models with
-    | None -> inferred_models, Reference.Set.empty
+    | None -> inferred_models, Ast.Reference.Set.empty
     | Some source ->
         let { Taint.Model.models; errors; skip_overrides; queries = rules } =
           Model.parse
@@ -462,19 +462,19 @@ let initialize
              (List.to_string errors ~f:ident))
           (List.is_empty errors);
 
-        TaintModelQuery.ModelQuery.apply_all_rules
-          ~resolution
-          ~configuration:taint_configuration
-          ~scheduler:(Test.mock_scheduler ())
-          ~rule_filter:None
-          ~rules
-          ~models
-          ~skip_overrides
-          ~callables:
-            (List.filter_map (List.rev_append stubs callables) ~f:(function
-                | (`Function _ as callable), _ -> Some (callable :> Callable.real_target)
-                | (`Method _ as callable), _ -> Some (callable :> Callable.real_target)
-                | _ -> None))
+        ( TaintModelQuery.ModelQuery.apply_all_rules
+            ~resolution
+            ~configuration:taint_configuration
+            ~scheduler:(Test.mock_scheduler ())
+            ~rule_filter:None
+            ~rules
+            ~models
+            ~callables:
+              (List.filter_map (List.rev_append stubs callables) ~f:(function
+                  | (`Function _ as callable), _ -> Some (callable :> Callable.real_target)
+                  | (`Method _ as callable), _ -> Some (callable :> Callable.real_target)
+                  | _ -> None)),
+          skip_overrides )
   in
   (* Overrides must be done first, as they influence the call targets. *)
   let overrides =

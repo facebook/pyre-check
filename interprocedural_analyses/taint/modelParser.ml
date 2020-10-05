@@ -48,9 +48,6 @@ module T = struct
         breadcrumbs: breadcrumbs;
         path: Abstract.TreeDomain.Label.path;
       }
-    | SkipAnalysis (* Don't analyze methods with SkipAnalysis *)
-    | SkipOverrides (* Analyze as normally, but assume no overrides exist. *)
-    | Sanitize
   [@@deriving show, compare]
 
   type annotation_kind =
@@ -379,10 +376,6 @@ let rec parse_annotations ~configuration ~parameters annotation =
               | Tito ({ path; _ } as tito) -> Tito { tito with path = field :: path }
               | AddFeatureToArgument ({ path; _ } as add_feature_to_argument) ->
                   AddFeatureToArgument { add_feature_to_argument with path = field :: path }
-              | SkipAnalysis
-              | SkipOverrides
-              | Sanitize ->
-                  annotation
             in
             parse_annotation expression |> List.map ~f:extend_path
         | Call { callee; arguments }
@@ -599,9 +592,6 @@ let rec parse_annotations ~configuration ~parameters annotation =
             | _ -> raise_invalid_annotation () )
         | Name (Name.Identifier "TaintInTaintOut") ->
             [Tito { tito = Sinks.LocalReturn; breadcrumbs = []; path = [] }]
-        | Name (Name.Identifier "SkipAnalysis") -> [SkipAnalysis]
-        | Name (Name.Identifier "SkipOverrides") -> [SkipOverrides]
-        | Name (Name.Identifier "Sanitize") -> [Sanitize]
         | _ -> raise_invalid_annotation ()
       in
       parse_annotation value
@@ -909,71 +899,53 @@ let add_taint_annotation_to_model
     ~callable_annotation
     ~sources_to_keep
     ~sinks_to_keep
-    ~name
-    (model, skipped_override)
+    model
     annotation
   =
   match annotation_kind with
-  | ReturnAnnotation ->
+  | ReturnAnnotation -> (
       let root = AccessPath.Root.LocalResult in
-      let model =
-        match annotation with
-        | Sink { sink; breadcrumbs; path; leaf_name_provided } ->
-            List.map ~f:Features.SimpleSet.inject breadcrumbs
-            |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
-            |> introduce_sink_taint ~root ~path ~leaf_name_provided ~sinks_to_keep model sink
-        | Source { source; breadcrumbs; path; leaf_name_provided } ->
-            List.map ~f:Features.SimpleSet.inject breadcrumbs
-            |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
-            |> introduce_source_taint ~root ~path ~leaf_name_provided ~sources_to_keep model source
-        | Tito _ -> raise_invalid_model "Invalid return annotation: TaintInTaintOut"
-        | AddFeatureToArgument _ ->
-            raise_invalid_model "Invalid return annotation: AddFeatureToArgument"
-        | SkipAnalysis -> { model with mode = TaintResult.SkipAnalysis }
-        | SkipOverrides -> model
-        | Sanitize -> { model with mode = TaintResult.Sanitize [SanitizeAll] }
-      in
-      let skipped_override =
-        match annotation with
-        | SkipOverrides -> Some name
-        | _ -> skipped_override
-      in
-      model, skipped_override
-  | ParameterAnnotation root ->
-      let model =
-        match annotation with
-        | Sink { sink; breadcrumbs; path; leaf_name_provided } ->
-            List.map ~f:Features.SimpleSet.inject breadcrumbs
-            |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
-            |> introduce_sink_taint ~root ~path ~leaf_name_provided ~sinks_to_keep model sink
-        | Source { source; breadcrumbs; path; leaf_name_provided } ->
-            List.map ~f:Features.SimpleSet.inject breadcrumbs
-            |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
-            |> introduce_source_taint ~root ~path ~leaf_name_provided ~sources_to_keep model source
-        | Tito { tito; breadcrumbs; path } ->
-            (* For tito, both the parameter and the return type can provide type based breadcrumbs *)
-            List.map ~f:Features.SimpleSet.inject breadcrumbs
-            |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
-            |> add_signature_based_breadcrumbs
-                 ~resolution
-                 AccessPath.Root.LocalResult
-                 ~callable_annotation
-            |> introduce_taint_in_taint_out ~root ~path model tito
-        | AddFeatureToArgument { breadcrumbs; path } ->
-            List.map ~f:Features.SimpleSet.inject breadcrumbs
-            |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
-            |> introduce_sink_taint
-                 ~root
-                 ~path
-                 ~leaf_name_provided:false
-                 ~sinks_to_keep
-                 model
-                 Sinks.AddFeatureToArgument
-        | SkipAnalysis -> raise_invalid_model "SkipAnalysis annotation must be in return position"
-        | SkipOverrides -> raise_invalid_model "SkipOverrides annotation must be in return position"
-        | Sanitize -> raise_invalid_model "Sanitize annotation must be in return position"
-      in
-      model, skipped_override
+      match annotation with
+      | Sink { sink; breadcrumbs; path; leaf_name_provided } ->
+          List.map ~f:Features.SimpleSet.inject breadcrumbs
+          |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
+          |> introduce_sink_taint ~root ~path ~leaf_name_provided ~sinks_to_keep model sink
+      | Source { source; breadcrumbs; path; leaf_name_provided } ->
+          List.map ~f:Features.SimpleSet.inject breadcrumbs
+          |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
+          |> introduce_source_taint ~root ~path ~leaf_name_provided ~sources_to_keep model source
+      | Tito _ -> raise_invalid_model "Invalid return annotation: TaintInTaintOut"
+      | AddFeatureToArgument _ ->
+          raise_invalid_model "Invalid return annotation: AddFeatureToArgument" )
+  | ParameterAnnotation root -> (
+      match annotation with
+      | Sink { sink; breadcrumbs; path; leaf_name_provided } ->
+          List.map ~f:Features.SimpleSet.inject breadcrumbs
+          |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
+          |> introduce_sink_taint ~root ~path ~leaf_name_provided ~sinks_to_keep model sink
+      | Source { source; breadcrumbs; path; leaf_name_provided } ->
+          List.map ~f:Features.SimpleSet.inject breadcrumbs
+          |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
+          |> introduce_source_taint ~root ~path ~leaf_name_provided ~sources_to_keep model source
+      | Tito { tito; breadcrumbs; path } ->
+          (* For tito, both the parameter and the return type can provide type based breadcrumbs *)
+          List.map ~f:Features.SimpleSet.inject breadcrumbs
+          |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
+          |> add_signature_based_breadcrumbs
+               ~resolution
+               AccessPath.Root.LocalResult
+               ~callable_annotation
+          |> introduce_taint_in_taint_out ~root ~path model tito
+      | AddFeatureToArgument { breadcrumbs; path } ->
+          List.map ~f:Features.SimpleSet.inject breadcrumbs
+          |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
+          |> introduce_sink_taint
+               ~root
+               ~path
+               ~leaf_name_provided:false
+               ~sinks_to_keep
+               model
+               Sinks.AddFeatureToArgument )
 
 
 let parse_return_taint ~configuration ~parameters expression =
@@ -1146,18 +1118,27 @@ let create ~resolution ?path ~configuration ~rule_filter source =
             in
             List.filter_map bases ~f:class_sink_base
           in
-          let source_annotations =
+          let source_annotations, skip_analysis =
             let class_source_base { Call.Argument.value; _ } =
               if Expression.show value |> String.is_prefix ~prefix:"TaintSource[" then
-                Some value
+                Some (Either.First value)
               else if Expression.show value |> String.equal "SkipAnalysis" then
-                Some value
+                Some (Either.Second ())
               else
                 None
             in
             List.filter_map bases ~f:class_source_base
+            |> List.fold ~init:([], false) ~f:(fun (source_annotations, skip_analysis) ->
+                 function
+                 | Either.First source_annotation ->
+                     source_annotation :: source_annotations, skip_analysis
+                 | Either.Second _ -> source_annotations, true)
           in
-          if (not (List.is_empty sink_annotations)) || not (List.is_empty source_annotations) then
+          if
+            (not (List.is_empty sink_annotations))
+            || (not (List.is_empty source_annotations))
+            || skip_analysis
+          then
             class_definitions global_resolution name
             >>= List.hd
             >>| (fun { Node.value = { Class.body; _ }; _ } ->
@@ -1174,7 +1155,7 @@ let create ~resolution ?path ~configuration ~rule_filter source =
                             } as signature;
                           _;
                         } ->
-                        let signature ~source_annotation ~sink_annotation =
+                        let signature ~skip_analysis ~source_annotation ~sink_annotation =
                           let parameters =
                             let sink_parameter parameter =
                               let update_annotation { Parameter.name; value; _ } =
@@ -1199,6 +1180,19 @@ let create ~resolution ?path ~configuration ~rule_filter source =
                             else
                               []
                           in
+                          let decorators =
+                            if skip_analysis then
+                              {
+                                Decorator.name =
+                                  Node.create_with_default_location
+                                    (Reference.create "SkipAnalysis");
+                                arguments = None;
+                              }
+                              :: decorators
+                            else
+                              decorators
+                          in
+
                           ParsedSignature
                             ( {
                                 signature with
@@ -1212,16 +1206,29 @@ let create ~resolution ?path ~configuration ~rule_filter source =
                         let sources =
                           List.map source_annotations ~f:(fun source_annotation ->
                               signature
+                                ~skip_analysis:false
                                 ~source_annotation:(Some source_annotation)
                                 ~sink_annotation:None)
                         in
                         let sinks =
                           List.map sink_annotations ~f:(fun sink_annotation ->
                               signature
+                                ~skip_analysis:false
                                 ~source_annotation:None
                                 ~sink_annotation:(Some sink_annotation))
                         in
-                        sources @ sinks
+                        let skip_analysis_defines =
+                          if skip_analysis then
+                            [
+                              signature
+                                ~skip_analysis:true
+                                ~source_annotation:None
+                                ~sink_annotation:None;
+                            ]
+                          else
+                            []
+                        in
+                        skip_analysis_defines @ sources @ sinks
                     | _ -> []
                   in
 
@@ -1301,8 +1308,14 @@ let create ~resolution ?path ~configuration ~rule_filter source =
             {
               Define.Signature.name = Node.create ~location:name_location name;
               parameters = [Parameter.create ~location:Location.any ~name:"$global" ()];
-              decorators = [];
-              return_annotation = Some annotation;
+              decorators =
+                [
+                  {
+                    Decorator.name = Node.create_with_default_location (Reference.create "Sanitize");
+                    arguments = None;
+                  };
+                ];
+              return_annotation = None;
               async = false;
               generator = false;
               parent = None;
@@ -1475,10 +1488,10 @@ let create ~resolution ?path ~configuration ~rule_filter source =
              ~f:(parse_parameter_taint ~configuration ~parameters))
           (parse_return_taint ~configuration ~parameters return_annotation)
       in
-      let model, skipped_override =
+      let model =
         List.fold
           annotations
-          ~init:(TaintResult.empty_model, None)
+          ~init:TaintResult.empty_model
           ~f:(fun accumulator (annotation, annotation_kind) ->
             add_taint_annotation_to_model
               ~resolution:(Resolution.global_resolution resolution)
@@ -1486,7 +1499,6 @@ let create ~resolution ?path ~configuration ~rule_filter source =
               ~callable_annotation
               ~sources_to_keep
               ~sinks_to_keep
-              ~name
               accumulator
               annotation)
       in
@@ -1524,7 +1536,7 @@ let create ~resolution ?path ~configuration ~rule_filter source =
             | "SkipOverrides" -> mode, Some define_name
             | _ -> mode, skipped_override
           in
-          List.fold top_level_decorators ~f:adjust_mode ~init:(model.mode, skipped_override)
+          List.fold top_level_decorators ~f:adjust_mode ~init:(model.mode, None)
         in
         { model with mode }, skipped_override
       in
@@ -1590,8 +1602,7 @@ let create_model_from_annotations ~resolution ~callable ~sources_to_keep ~sinks_
     Interprocedural.Callable.get_module_and_definition ~resolution:global_resolution callable
   with
   | None -> None
-  | Some (_, { Node.value = { Define.signature = { Define.Signature.name; _ } as define; _ }; _ })
-    ->
+  | Some (_, { Node.value = { Define.signature = define; _ }; _ }) ->
       let callable_annotation =
         callable_annotation ~resolution define
         |> Annotation.annotation
@@ -1604,7 +1615,7 @@ let create_model_from_annotations ~resolution ~callable ~sources_to_keep ~sinks_
       in
       List.fold
         annotations
-        ~init:(TaintResult.empty_model, None)
+        ~init:TaintResult.empty_model
         ~f:(fun accumulator (annotation_kind, annotation) ->
           add_taint_annotation_to_model
             ~resolution:global_resolution
@@ -1612,7 +1623,6 @@ let create_model_from_annotations ~resolution ~callable ~sources_to_keep ~sinks_
             ~callable_annotation
             ~sources_to_keep
             ~sinks_to_keep
-            ~name
             accumulator
             annotation)
       |> Option.some
