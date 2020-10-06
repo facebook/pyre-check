@@ -171,7 +171,7 @@ class Query(graphene.ObjectType):
         )
 
         return [
-            frame._replace(file_content=Query.file_content(frame.filename))
+            frame._replace(file_content=Query().resolve_file(info, path=frame.filename))
             for frame in trace_frames
             if frame.filename
         ]
@@ -214,7 +214,8 @@ class Query(graphene.ObjectType):
         if ".." in path:
             raise FileNotFoundError("Attempted directory traversal")
 
-        contents = (Path(info.context["source_directory"]) / path).read_text()
+        source_directory = Path(info.context.get("source_directory") or os.getcwd())
+        contents = (source_directory / path).read_text()
         return [File(path=path, contents=contents)]
 
     @staticmethod
@@ -251,16 +252,6 @@ class Query(graphene.ObjectType):
                 .scalar()
             )
         )
-
-    @staticmethod
-    def file_content(filename: str) -> str:
-        repository_directory = os.getcwd()
-        file_path = os.path.join(repository_directory, filename)
-        try:
-            with open(file_path, "r") as file:
-                return "".join(file.readlines())
-        except FileNotFoundError:
-            return "File not found"
 
 
 schema = graphene.Schema(query=Query, auto_camelcase=False)
