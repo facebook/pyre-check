@@ -22,7 +22,7 @@ from typing import (
 
 import graphene
 from graphql.execution.base import ResolveInfo
-from sqlalchemy import Column
+from sqlalchemy import Column, func
 from sqlalchemy.orm import Session, aliased
 from sqlalchemy.orm.query import Query as RawQuery
 from sqlalchemy.sql.expression import or_
@@ -49,6 +49,8 @@ CallerText = aliased(SharedText)
 CalleeText = aliased(SharedText)
 # pyre-fixme[5]: Global expression must be annotated.
 MessageText = aliased(SharedText)
+# pyre-fixme[5]: Global expression must be annotated.
+FeatureText = aliased(SharedText)
 
 
 def _query(info: ResolveInfo) -> "Query":
@@ -59,6 +61,7 @@ def _query(info: ResolveInfo) -> "Query":
 # pyre-ignore[13]: unitialized class attribute
 class IssueQueryResultType(graphene.ObjectType):
     id: DBID
+    concatenated_features: str
 
     class Meta:
         interfaces = (graphene.relay.Node,)
@@ -98,7 +101,7 @@ class IssueQueryResultType(graphene.ObjectType):
         return list(_query(info).sink_names(self.id))
 
     def resolve_features(self, info: ResolveInfo) -> List[str]:
-        return list(_query(info).features(self.id))
+        return self.concatenated_features.split(",")
 
 
 class IssueQueryResult(NamedTuple):
@@ -114,6 +117,8 @@ class IssueQueryResult(NamedTuple):
 
     min_trace_length_to_sources: int
     min_trace_length_to_sinks: int
+
+    # concatenated_features: str
 
 
 class FilterEnum(Enum):
@@ -351,6 +356,28 @@ class Query:
 
     # pyre-fixme[24]: Generic type `RawQuery` expects 1 type parameter.
     def get_raw_query(self) -> RawQuery:
+        features = (
+            self._session.query(
+                # pyre-ignore: SQAlchemy sadness.
+                IssueInstance.id.label("id"),
+                func.group_concat(FeatureText.contents.distinct()).label(
+                    "concatenated_features"
+                ),
+            )
+            .join(
+                IssueInstanceSharedTextAssoc,
+                IssueInstanceSharedTextAssoc.issue_instance_id == IssueInstance.id,
+                isouter=True,
+            )
+            .join(
+                FeatureText,
+                FeatureText.id == IssueInstanceSharedTextAssoc.shared_text_id,
+                isouter=True,
+            )
+            .filter(FeatureText.kind == SharedTextKind.FEATURE)
+            .group_by(IssueInstance)
+            .subquery()
+        )
         return (
             self._session.query(
                 IssueInstance.id,
@@ -361,10 +388,12 @@ class Query:
                 MessageText.contents.label("message"),
                 IssueInstance.min_trace_length_to_sources,
                 IssueInstance.min_trace_length_to_sinks,
+                features.c.concatenated_features,
             )
             .filter(IssueInstance.run_id == self._run_id)
             .join(FilenameText, FilenameText.id == IssueInstance.filename_id)
             .join(CallableText, CallableText.id == IssueInstance.callable_id)
+            .join(features, IssueInstance.id == features.c.id, isouter=True)
         )
 
     def get_leaves_issue_instance(
