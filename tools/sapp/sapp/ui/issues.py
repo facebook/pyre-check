@@ -121,18 +121,6 @@ class IssueQueryResult(NamedTuple):
     # concatenated_features: str
 
 
-class FilterEnum(Enum):
-    codes = "codes"
-    callables = "callables"
-    file_names = "file_names"
-    trace_length_to_sources = "trace_length_to_sources"
-    trace_length_to_sinks = "trace_length_to_sinks"
-    any_features = "any_features"
-    all_features = "all_features"
-    exclude_features = "exclude_features"
-    issue_id = "issue_id"
-
-
 _Q = TypeVar("_Q")
 _T = TypeVar("_T")
 
@@ -251,7 +239,6 @@ class Query:
         self._session: Session = session
         self._predicates: List[Predicate] = []
         self._run_id = run_id
-        self.breadcrumb_filters: Dict[FilterEnum, List[str]] = defaultdict(list)
 
     def get(self) -> List[IssueQueryResult]:
         query = self.get_raw_query()
