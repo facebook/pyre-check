@@ -242,10 +242,10 @@ class HasNone(IssuePredicate):
 
 class Query:
     # pyre-fixme[3]: Return type must be annotated.
-    def __init__(self, session: Session, current_run_id: Union[DBID, int]):
+    def __init__(self, session: Session, run_id: Union[DBID, int]):
         self._session: Session = session
         self._predicates: List[Predicate] = []
-        self.current_run_id = current_run_id
+        self._run_id = run_id
         self.breadcrumb_filters: Dict[FilterEnum, List[str]] = defaultdict(list)
 
     def get(self) -> List[IssueQueryResult]:
@@ -362,7 +362,7 @@ class Query:
                 IssueInstance.min_trace_length_to_sources,
                 IssueInstance.min_trace_length_to_sinks,
             )
-            .filter(IssueInstance.run_id == self.current_run_id)
+            .filter(IssueInstance.run_id == self._run_id)
             .join(FilenameText, FilenameText.id == IssueInstance.filename_id)
             .join(CallableText, CallableText.id == IssueInstance.callable_id)
         )
