@@ -248,13 +248,6 @@ class Query:
         self.current_run_id = current_run_id
         self.breadcrumb_filters: Dict[FilterEnum, List[str]] = defaultdict(list)
 
-    @property
-    # pyre-fixme[3]: Return type must be annotated.
-    def session(self):
-        if self._session is None:
-            raise Exception("No current session found for query!")
-        return self._session
-
     def get(self) -> List[IssueQueryResult]:
         query = self.get_raw_query()
 
