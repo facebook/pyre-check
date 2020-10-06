@@ -11,7 +11,7 @@ import graphene
 from graphene import relay
 from graphene_sqlalchemy import get_session
 from graphql.execution.base import ResolveInfo
-from sqlalchemy.orm import Session, aliased
+from sqlalchemy.orm import Session
 from sqlalchemy.sql import func
 
 from ..models import (
@@ -26,18 +26,6 @@ from ..models import (
 from . import issues, trace
 from .issues import IssueQueryResult, IssueQueryResultType
 from .trace import TraceFrameQueryResult, TraceFrameQueryResultType
-
-
-# pyre-fixme[5]: Global expression must be annotated.
-FilenameText = aliased(SharedText)
-# pyre-fixme[5]: Global expression must be annotated.
-CallableText = aliased(SharedText)
-# pyre-fixme[5]: Global expression must be annotated.
-CallerText = aliased(SharedText)
-# pyre-fixme[5]: Global expression must be annotated.
-CalleeText = aliased(SharedText)
-# pyre-fixme[5]: Global expression must be annotated.
-MessageText = aliased(SharedText)
 
 
 class IssueConnection(relay.Connection):
