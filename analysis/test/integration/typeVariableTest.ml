@@ -2411,6 +2411,50 @@ let test_user_defined_parameter_specification_classes context =
   ()
 
 
+let test_duplicate_type_variables context =
+  let assert_type_errors = assert_type_errors ~context in
+  assert_type_errors
+    {|
+    from typing import TypeVar, Generic
+
+    T = TypeVar("T")
+    S = TypeVar("S")
+    class A(Generic[T, S, T]):
+        pass
+  |}
+    ["Duplicate type variables [59]: Duplicate type variable `T` in Generic[...]."];
+  assert_type_errors
+    {|
+    from typing import TypeVar, Protocol
+
+    T = TypeVar("T")
+    class A(Protocol[T, T, T]):
+        pass
+  |}
+    ["Duplicate type variables [59]: Duplicate type variable `T` in Protocol[...]."];
+  assert_type_errors
+    {|
+    from typing import Generic
+    from pyre_extensions import ListVariadic
+
+    Ts = ListVariadic("Ts")
+    class A(Generic[Ts, Ts]):
+        pass
+  |}
+    ["Duplicate type variables [59]: Duplicate type variable `Ts` in Generic[...]."];
+  assert_type_errors
+    {|
+    from typing import Generic
+    from pyre_extensions import ParameterSpecification
+
+    P = ParameterSpecification("P")
+    class A(Generic[P, P]):
+        pass
+  |}
+    ["Duplicate type variables [59]: Duplicate type variable `P` in Generic[...]."];
+  ()
+
+
 let () =
   "typeVariable"
   >::: [
@@ -2428,5 +2472,6 @@ let () =
          "user_defined_variadics" >:: test_user_defined_variadics;
          "concatenation" >:: test_concatenation_operator;
          "user_defined_parameter_variadics" >:: test_user_defined_parameter_specification_classes;
+         "duplicate_type_variables" >:: test_duplicate_type_variables;
        ]
   |> Test.run

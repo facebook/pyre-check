@@ -198,6 +198,10 @@ and incompatible_overload_kind =
   | DifferingDecorators
   | MisplacedOverloadDecorator
 
+and polymorphism_base_class =
+  | GenericBase
+  | ProtocolBase
+
 and unsupported_operand_kind =
   | Binary of {
       operator_name: Identifier.t;
@@ -377,6 +381,10 @@ and kind =
       mismatch: mismatch;
     }
   | TypedDictionaryInitializationError of typed_dictionary_initialization_mismatch
+  | DuplicateTypeVariables of {
+      variable: Type.Variable.t;
+      base: polymorphism_base_class;
+    }
   (* Additional errors. *)
   (* TODO(T38384376): split this into a separate module. *)
   | DeadStore of Identifier.t
@@ -444,6 +452,7 @@ let code = function
   | InvalidDecoration _ -> 56
   | IncompatibleAsyncGeneratorReturnType _ -> 57
   | UnsupportedOperand _ -> 58
+  | DuplicateTypeVariables _ -> 59
   | ParserFailure _ -> 404
   (* Additional errors. *)
   | UnawaitedAwaitable _ -> 1001
@@ -453,6 +462,7 @@ let code = function
 
 let name = function
   | AnalysisFailure _ -> "Analysis failure"
+  | DuplicateTypeVariables _ -> "Duplicate type variables"
   | ParserFailure _ -> "Parsing failure"
   | DeadStore _ -> "Dead store"
   | Deobfuscation _ -> "Deobfuscation"
@@ -1977,6 +1987,21 @@ let rec messages ~concise ~signature location kind =
           (show_sanitized_expression expression)
           start_line;
       ]
+  | DuplicateTypeVariables { variable; base } -> (
+      let format : ('b, Format.formatter, unit, string) format4 =
+        match base with
+        | GenericBase -> "Duplicate type variable `%s` in Generic[...]."
+        | ProtocolBase -> "Duplicate type variable `%s` in Protocol[...]."
+      in
+      match variable with
+      | Type.Variable.Unary { Type.Record.Variable.RecordUnary.variable = name; _ } ->
+          [Format.asprintf format name]
+      | Type.Variable.ParameterVariadic var ->
+          let name = Type.Variable.Variadic.Parameters.name var in
+          [Format.asprintf format name]
+      | Type.Variable.ListVariadic var ->
+          let name = Type.Variable.Variadic.List.name var in
+          [Format.asprintf format name] )
   | UnboundName name when concise ->
       [Format.asprintf "Name `%a` is used but not defined." Identifier.pp_sanitized name]
   | UnboundName name ->
@@ -2322,6 +2347,7 @@ let due_to_analysis_limitations { kind; _ } =
   | ParserFailure _
   | DeadStore _
   | Deobfuscation _
+  | DuplicateTypeVariables _
   | IllegalAnnotationTarget _
   | IncompatibleAsyncGeneratorReturnType _
   | IncompatibleConstructorAnnotation _
@@ -2556,6 +2582,13 @@ let less_or_equal ~resolution left right =
       less_or_equal_mismatch left.mismatch right.mismatch
   | UnawaitedAwaitable left, UnawaitedAwaitable right -> equal_unawaited_awaitable left right
   | UnboundName left_name, UnboundName right_name -> Identifier.equal_sanitized left_name right_name
+  | ( DuplicateTypeVariables { variable = left; base = left_base },
+      DuplicateTypeVariables { variable = right; base = right_base } ) -> (
+      match left_base, right_base with
+      | GenericBase, GenericBase
+      | ProtocolBase, ProtocolBase ->
+          Type.Variable.equal left right
+      | _ -> false )
   | UndefinedAttribute left, UndefinedAttribute right
     when Identifier.equal_sanitized left.attribute right.attribute -> (
       match left.origin, right.origin with
@@ -2661,6 +2694,7 @@ let less_or_equal ~resolution left right =
   | TypedDictionaryKeyNotFound _, _
   | UnawaitedAwaitable _, _
   | UnboundName _, _
+  | DuplicateTypeVariables _, _
   | UndefinedAttribute _, _
   | UndefinedImport _, _
   | UndefinedType _, _
@@ -2909,6 +2943,14 @@ let join ~resolution left right =
     | UnboundName left_name, UnboundName right_name
       when Identifier.equal_sanitized left_name right_name ->
         left.kind
+    | ( DuplicateTypeVariables { variable = left; base = GenericBase },
+        DuplicateTypeVariables { variable = right; base = GenericBase } )
+      when Type.Variable.equal left right ->
+        DuplicateTypeVariables { variable = left; base = GenericBase }
+    | ( DuplicateTypeVariables { variable = left; base = ProtocolBase },
+        DuplicateTypeVariables { variable = right; base = ProtocolBase } )
+      when Type.Variable.equal left right ->
+        DuplicateTypeVariables { variable = left; base = ProtocolBase }
     | ( UndefinedAttribute { origin = Class left; attribute = left_attribute },
         UndefinedAttribute { origin = Class right; attribute = right_attribute } )
       when Identifier.equal_sanitized left_attribute right_attribute ->
@@ -3071,6 +3113,7 @@ let join ~resolution left right =
     | TypedDictionaryInitializationError _, _
     | UnawaitedAwaitable _, _
     | UnboundName _, _
+    | DuplicateTypeVariables _, _
     | UndefinedAttribute _, _
     | UndefinedImport _, _
     | UndefinedType _, _
@@ -3673,6 +3716,8 @@ let dequalify
     | UnsafeCast kind -> UnsafeCast kind
     | UnawaitedAwaitable { references; expression } ->
         UnawaitedAwaitable { references = List.map references ~f:dequalify_reference; expression }
+    | DuplicateTypeVariables { variable; base } ->
+        DuplicateTypeVariables { variable = Type.Variable.dequalify dequalify_map variable; base }
     | UnboundName name -> UnboundName (dequalify_identifier name)
     | UndefinedAttribute { attribute; origin } ->
         let origin : origin =

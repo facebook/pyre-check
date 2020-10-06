@@ -5159,9 +5159,31 @@ module State (Context : Context) = struct
                 | _ -> errors )
             | _, _ -> errors
           in
+          let check_duplicate_typevars errors parameters base =
+            let rec get_duplicate_typevars parameters duplicates =
+              match parameters with
+              | parameter :: rest when List.exists ~f:(Type.Variable.equal parameter) rest ->
+                  get_duplicate_typevars rest (parameter :: duplicates)
+              | _ -> duplicates
+            in
+            let emit_duplicate_errors errors variable =
+              emit_error ~errors ~location ~kind:(Error.DuplicateTypeVariables { variable; base })
+            in
+            List.fold_left
+              ~f:emit_duplicate_errors
+              ~init:errors
+              (get_duplicate_typevars (Type.Variable.all_free_variables parameters) [])
+          in
           match GlobalResolution.parse_annotation global_resolution base with
-          | Type.Parametric { name; parameters = extended_parameters }
-            when not (String.equal name "typing.Generic") ->
+          | Type.Parametric { name; _ } as parametric when String.equal name "typing.Generic" ->
+              check_duplicate_typevars errors parametric GenericBase
+          | Type.Parametric { name; parameters = extended_parameters } as parametric ->
+              let errors =
+                if String.equal name "typing.Protocol" then
+                  check_duplicate_typevars errors parametric ProtocolBase
+                else
+                  errors
+              in
               Type.Parameter.all_singles extended_parameters
               >>| (fun extended_parameters ->
                     let actual_parameters =

@@ -189,6 +189,10 @@ and incompatible_overload_kind =
   | DifferingDecorators
   | MisplacedOverloadDecorator
 
+and polymorphism_base_class =
+  | GenericBase
+  | ProtocolBase
+
 and unsupported_operand_kind =
   | Binary of {
       operator_name: Identifier.t;
@@ -368,6 +372,10 @@ and kind =
       mismatch: mismatch;
     }
   | TypedDictionaryInitializationError of typed_dictionary_initialization_mismatch
+  | DuplicateTypeVariables of {
+      variable: Type.Variable.t;
+      base: polymorphism_base_class;
+    }
   (* Additional errors. *)
   | DeadStore of Identifier.t
   | Deobfuscation of Source.t
