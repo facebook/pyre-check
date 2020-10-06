@@ -26,7 +26,7 @@ from . import (
     recently_used_configurations,
     statistics as statistics_module,
 )
-from .commands import Command, ExitCode
+from .commands import Command, ExitCode, v2
 from .exceptions import EnvironmentException
 from .version import __version__
 
@@ -330,6 +330,7 @@ def _create_configuration_with_retry(
 @click.option("--changed-files-path", type=str, hidden=True)
 @click.option("--saved-state-project", type=str, hidden=True)
 @click.option("--features", type=str, hidden=True)
+@click.option("--use-command-v2", is_flag=True, default=False, hidden=True)
 def pyre(
     context: click.Context,
     local_configuration: Optional[str],
@@ -365,6 +366,7 @@ def pyre(
     changed_files_path: Optional[str],
     saved_state_project: Optional[str],
     features: Optional[str],
+    use_command_v2: bool,
 ) -> int:
     arguments = command_arguments.CommandArguments(
         local_configuration=local_configuration,
@@ -402,6 +404,7 @@ def pyre(
         if dot_pyre_directory is not None
         else None,
         features=features,
+        use_command_v2=use_command_v2,
     )
     if arguments.version:
         _show_pyre_version(arguments)
@@ -916,21 +919,26 @@ def start(
     """
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
     configuration = _create_configuration_with_retry(command_argument, Path("."))
-    return run_pyre_command(
-        commands.Start(
-            command_argument,
-            original_directory=os.getcwd(),
-            configuration=configuration,
-            terminal=terminal,
-            store_type_check_resolution=store_type_check_resolution,
-            use_watchman=not no_watchman,
-            incremental_style=commands.IncrementalStyle.SHALLOW
-            if incremental_style == str(commands.IncrementalStyle.SHALLOW)
-            else commands.IncrementalStyle.FINE_GRAINED,
-        ),
-        configuration,
-        command_argument.noninteractive,
-    )
+    if command_argument.use_command_v2:
+        return v2.start.run(
+            configuration, terminal, store_type_check_resolution, no_watchman
+        )
+    else:
+        return run_pyre_command(
+            commands.Start(
+                command_argument,
+                original_directory=os.getcwd(),
+                configuration=configuration,
+                terminal=terminal,
+                store_type_check_resolution=store_type_check_resolution,
+                use_watchman=not no_watchman,
+                incremental_style=commands.IncrementalStyle.SHALLOW
+                if incremental_style == str(commands.IncrementalStyle.SHALLOW)
+                else commands.IncrementalStyle.FINE_GRAINED,
+            ),
+            configuration,
+            command_argument.noninteractive,
+        )
 
 
 @pyre.command()
