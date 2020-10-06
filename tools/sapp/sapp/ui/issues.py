@@ -241,7 +241,45 @@ class Query:
         self._run_id = run_id
 
     def get(self) -> List[IssueQueryResult]:
-        query = self.get_raw_query()
+        features = (
+            self._session.query(
+                # pyre-ignore: SQAlchemy sadness.
+                IssueInstance.id.label("id"),
+                func.group_concat(FeatureText.contents.distinct()).label(
+                    "concatenated_features"
+                ),
+            )
+            .join(
+                IssueInstanceSharedTextAssoc,
+                IssueInstanceSharedTextAssoc.issue_instance_id == IssueInstance.id,
+                isouter=True,
+            )
+            .join(
+                FeatureText,
+                FeatureText.id == IssueInstanceSharedTextAssoc.shared_text_id,
+                isouter=True,
+            )
+            .filter(FeatureText.kind == SharedTextKind.FEATURE)
+            .group_by(IssueInstance)
+            .subquery()
+        )
+        query = (
+            self._session.query(
+                IssueInstance.id,
+                FilenameText.contents.label("filename"),
+                IssueInstance.location,
+                Issue.code,
+                CallableText.contents.label("callable"),
+                MessageText.contents.label("message"),
+                IssueInstance.min_trace_length_to_sources,
+                IssueInstance.min_trace_length_to_sinks,
+                features.c.concatenated_features,
+            )
+            .filter(IssueInstance.run_id == self._run_id)
+            .join(FilenameText, FilenameText.id == IssueInstance.filename_id)
+            .join(CallableText, CallableText.id == IssueInstance.callable_id)
+            .join(features, IssueInstance.id == features.c.id, isouter=True)
+        )
 
         for predicate in self._predicates:
             if isinstance(predicate, QueryPredicate):
@@ -339,48 +377,6 @@ class Query:
     def features(self, issue_id: DBID) -> Set[str]:
         return self.get_leaves_issue_instance(
             self._session, int(issue_id), SharedTextKind.FEATURE
-        )
-
-    # pyre-fixme[24]: Generic type `RawQuery` expects 1 type parameter.
-    def get_raw_query(self) -> RawQuery:
-        features = (
-            self._session.query(
-                # pyre-ignore: SQAlchemy sadness.
-                IssueInstance.id.label("id"),
-                func.group_concat(FeatureText.contents.distinct()).label(
-                    "concatenated_features"
-                ),
-            )
-            .join(
-                IssueInstanceSharedTextAssoc,
-                IssueInstanceSharedTextAssoc.issue_instance_id == IssueInstance.id,
-                isouter=True,
-            )
-            .join(
-                FeatureText,
-                FeatureText.id == IssueInstanceSharedTextAssoc.shared_text_id,
-                isouter=True,
-            )
-            .filter(FeatureText.kind == SharedTextKind.FEATURE)
-            .group_by(IssueInstance)
-            .subquery()
-        )
-        return (
-            self._session.query(
-                IssueInstance.id,
-                FilenameText.contents.label("filename"),
-                IssueInstance.location,
-                Issue.code,
-                CallableText.contents.label("callable"),
-                MessageText.contents.label("message"),
-                IssueInstance.min_trace_length_to_sources,
-                IssueInstance.min_trace_length_to_sinks,
-                features.c.concatenated_features,
-            )
-            .filter(IssueInstance.run_id == self._run_id)
-            .join(FilenameText, FilenameText.id == IssueInstance.filename_id)
-            .join(CallableText, CallableText.id == IssueInstance.callable_id)
-            .join(features, IssueInstance.id == features.c.id, isouter=True)
         )
 
     def get_leaves_issue_instance(

@@ -16,8 +16,6 @@ from sqlalchemy.sql import func
 
 from ..models import (
     DBID,
-    Issue,
-    IssueInstance,
     Run,
     RunStatus,
     SharedText,
@@ -109,7 +107,7 @@ class Query(graphene.ObjectType):
         min_trace_length_to_sources: Optional[int] = None,
         max_trace_length_to_sources: Optional[int] = None,
         issue_id: Optional[int] = None,
-        **args: Any,
+        **kwargs: Any,
     ) -> List[IssueQueryResult]:
         session = get_session(info.context)
         run_id = Query.latest_run_id(session)
@@ -131,32 +129,22 @@ class Query(graphene.ObjectType):
         return builder.get()
 
     def resolve_trace(
-        self,
-        info: ResolveInfo,
-        issue_id: DBID,
-        # pyre-fixme[2]: Parameter must be annotated.
-        **args,
+        self, info: ResolveInfo, issue_id: DBID, **args: Any
     ) -> List[TraceFrameQueryResult]:
         session = info.context.get("session")
 
         run_id = DBID(Query.latest_run_id(session))
 
-        issue = (
-            issues.Query(session, run_id)
-            .get_raw_query()
-            .filter(IssueInstance.id == issue_id)
-            .join(Issue, IssueInstance.issue_id == Issue.id)
-            .first()
-        )
+        issue = issues.Query(session, run_id).where_issue_id_is(int(issue_id)).get()[0]
 
         leaf_kinds = Query.all_leaf_kinds(session)
 
         builder = issues.Query(session, run_id)
         sources = builder.get_leaves_issue_instance(
-            session, issue.id, SharedTextKind.SOURCE
+            session, int(issue.id), SharedTextKind.SOURCE
         )
         sinks = builder.get_leaves_issue_instance(
-            session, issue.id, SharedTextKind.SINK
+            session, int(issue.id), SharedTextKind.SINK
         )
 
         postcondition_navigation = trace.Query(session).navigate_trace_frames(
@@ -165,7 +153,7 @@ class Query(graphene.ObjectType):
             sources,
             sinks,
             trace.Query(session).initial_trace_frames(
-                issue.id, TraceKind.POSTCONDITION
+                int(issue.id), TraceKind.POSTCONDITION
             ),
         )
         precondition_navigation = trace.Query(session).navigate_trace_frames(
@@ -173,7 +161,9 @@ class Query(graphene.ObjectType):
             run_id,
             sources,
             sinks,
-            trace.Query(session).initial_trace_frames(issue.id, TraceKind.PRECONDITION),
+            trace.Query(session).initial_trace_frames(
+                int(issue.id), TraceKind.PRECONDITION
+            ),
         )
 
         trace_frames = (
