@@ -139,4 +139,7 @@ class ConfigurationMonitor(Subscriber):
         pid_path = watchman.compute_pid_path(
             ConfigurationMonitor.base_path(configuration), ConfigurationMonitor.NAME
         )
-        return Process.is_alive(Path(pid_path))
+        is_alive = Process.is_alive(Path(pid_path))
+        if not is_alive:
+            LOG.warning("The configuration monitor is down.")
+        return is_alive

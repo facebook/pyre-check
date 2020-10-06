@@ -157,7 +157,10 @@ class ProjectFilesMonitor(Subscriber):
         pid_path = watchman.compute_pid_path(
             ProjectFilesMonitor.base_path(configuration), ProjectFilesMonitor.NAME
         )
-        return Process.is_alive(Path(pid_path))
+        is_alive = Process.is_alive(Path(pid_path))
+        if not is_alive:
+            LOG.warning("The file monitor is down.")
+        return is_alive
 
     def cleanup(self) -> None:
         LOG.info("Cleaning up the analysis directory.")
