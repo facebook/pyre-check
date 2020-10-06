@@ -4,9 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 
-import argparse
 import json
-import os
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Type, Union
 
@@ -91,12 +89,6 @@ def _find_paths(local_configuration: Optional[str], paths: Set[str]) -> List[Pat
     return [pyre_configuration_directory]
 
 
-def file_exists(path: str) -> str:
-    if not os.path.exists(path):
-        raise argparse.ArgumentTypeError("ERROR: " + str(path) + " does not exist")
-    return path
-
-
 class Statistics(Command):
     NAME = "statistics"
 
@@ -115,39 +107,6 @@ class Statistics(Command):
         )
         self._filter_paths: Set[str] = set(filter_paths)
         self._log_results: bool = log_results
-
-    @staticmethod
-    def from_arguments(
-        arguments: argparse.Namespace,
-        original_directory: str,
-        configuration: Configuration,
-        analysis_directory: Optional[AnalysisDirectory] = None,
-    ) -> "Statistics":
-        return Statistics(
-            command_arguments.CommandArguments.from_arguments(arguments),
-            original_directory,
-            configuration=configuration,
-            analysis_directory=analysis_directory,
-            filter_paths=arguments.filter_paths,
-            log_results=arguments.log_results,
-        )
-
-    @classmethod
-    def add_subparser(cls, parser: argparse._SubParsersAction) -> None:
-        statistics = parser.add_parser(
-            cls.NAME, epilog="Collect various syntactic metrics on type coverage."
-        )
-        statistics.set_defaults(command=cls.from_arguments)
-        # TODO[T60916205]: Rename this argument, it doesn't make sense anymore
-        statistics.add_argument(
-            "filter_paths", nargs="*", type=file_exists, help=argparse.SUPPRESS
-        )
-        statistics.add_argument(
-            "--log-results",
-            type=bool,
-            default=False,
-            help="Log the statistics results to external tables.",
-        )
 
     def _collect_statistics(self, modules: Dict[str, cst.Module]) -> Dict[str, Any]:
         modules_with_metadata = {

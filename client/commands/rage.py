@@ -3,8 +3,6 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-import argparse
-import os
 import sys
 from typing import IO, List, Optional
 
@@ -38,40 +36,6 @@ class Rage(Command):
         )
         self._log_directory_for_binary: str = self._configuration.log_directory
         self._output_path: Final[Optional[str]] = output_path
-
-    @staticmethod
-    def from_arguments(
-        arguments: argparse.Namespace,
-        original_directory: str,
-        configuration: Configuration,
-        analysis_directory: Optional[AnalysisDirectory] = None,
-    ) -> "Rage":
-        return Rage(
-            command_arguments.CommandArguments.from_arguments(arguments),
-            original_directory=original_directory,
-            configuration=configuration,
-            analysis_directory=analysis_directory,
-            output_path=arguments.output_path,
-        )
-
-    @classmethod
-    def add_subparser(cls, parser: argparse._SubParsersAction) -> None:
-        rage = parser.add_parser(
-            cls.NAME,
-            epilog="""
-            Collects troubleshooting diagnostics for Pyre, and writes this
-            information to the terminal or to a file.
-            """,
-        )
-        rage.set_defaults(command=cls.from_arguments)
-        rage.add_argument(
-            "--output-file",
-            default=None,
-            metavar="PATH",
-            dest="output_path",
-            help="The path to the output file (defaults to stdout)",
-            type=os.path.abspath,
-        )
 
     def _flags(self) -> List[str]:
         return ["-log-directory", self._log_directory_for_binary]

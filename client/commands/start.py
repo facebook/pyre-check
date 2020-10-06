@@ -3,7 +3,6 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-import argparse
 import errno
 import logging
 import os
@@ -49,49 +48,6 @@ class Start(Reporting):
         self._incremental_style = incremental_style
 
         self._enable_logging_section("environment")
-
-    @staticmethod
-    def from_arguments(
-        arguments: argparse.Namespace,
-        original_directory: str,
-        configuration: Configuration,
-        analysis_directory: Optional[AnalysisDirectory] = None,
-    ) -> "Start":
-        return Start(
-            command_arguments.CommandArguments.from_arguments(arguments),
-            original_directory,
-            configuration=configuration,
-            analysis_directory=analysis_directory,
-            terminal=arguments.terminal,
-            store_type_check_resolution=arguments.store_type_check_resolution,
-            use_watchman=not arguments.no_watchman,
-            incremental_style=arguments.incremental_style,
-        )
-
-    @classmethod
-    def add_subparser(cls, parser: argparse._SubParsersAction) -> None:
-        start = parser.add_parser(cls.NAME, epilog="Starts a pyre server as a daemon.")
-        start.set_defaults(command=cls.from_arguments)
-        start.add_argument(
-            "--terminal", action="store_true", help="Run the server in the terminal."
-        )
-        start.add_argument(
-            "--store-type-check-resolution",
-            action="store_true",
-            help="Store extra information for `types` queries.",
-        )
-        start.add_argument(
-            "--no-watchman",
-            action="store_true",
-            help="Do not spawn a watchman client in the background.",
-        )
-        start.add_argument(
-            "--incremental-style",
-            type=IncrementalStyle,
-            choices=list(IncrementalStyle),
-            default=IncrementalStyle.FINE_GRAINED,
-            help="How to approach doing incremental checks.",
-        )
 
     def _start_configuration_monitor(self) -> None:
         if self._use_watchman:

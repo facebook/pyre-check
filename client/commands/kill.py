@@ -3,7 +3,6 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-import argparse
 import logging
 import os
 import shutil
@@ -90,29 +89,6 @@ class Kill(Command):
             command_arguments, original_directory, configuration, analysis_directory
         )
         self._with_fire = with_fire
-
-    @staticmethod
-    def from_arguments(
-        arguments: argparse.Namespace,
-        original_directory: str,
-        configuration: Configuration,
-        analysis_directory: Optional[AnalysisDirectory] = None,
-    ) -> "Kill":
-        return Kill(
-            command_arguments.CommandArguments.from_arguments(arguments),
-            original_directory=original_directory,
-            configuration=configuration,
-            analysis_directory=analysis_directory,
-            with_fire=arguments.with_fire,
-        )
-
-    @classmethod
-    def add_subparser(cls, parser: argparse._SubParsersAction) -> None:
-        kill = parser.add_parser(cls.NAME)
-        kill.set_defaults(command=cls.from_arguments)
-        kill.add_argument(
-            "--with-fire", action="store_true", help="A no-op flag that adds emphasis."
-        )
 
     def generate_analysis_directory(self) -> AnalysisDirectory:
         return AnalysisDirectory(".")

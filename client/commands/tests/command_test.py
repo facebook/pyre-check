@@ -5,7 +5,6 @@
 
 # pyre-unsafe
 
-import argparse
 import unittest
 from pathlib import Path
 from typing import List
@@ -156,43 +155,4 @@ class CommandTest(unittest.TestCase):
                 "root/third_party/3",
                 "root/third_party/2and3",
             ],
-        )
-
-    def test_argument_parsing(self) -> None:
-        parser = argparse.ArgumentParser()
-        commands.Command.add_arguments(parser)
-        self.assertEqual(
-            parser.parse_args(["--use-buck-builder"]).use_buck_builder, True
-        )
-        self.assertEqual(
-            parser.parse_args(["--use-legacy-buck-builder"]).use_buck_builder, False
-        )
-        self.assertEqual(parser.parse_args([]).use_buck_builder, None)
-
-    def test_argument_parsing__buck_source_database(self) -> None:
-        parser = argparse.ArgumentParser()
-        commands.Command.add_arguments(parser)
-        self.assertEqual(parser.parse_args([]).use_buck_source_database, None)
-        self.assertEqual(
-            parser.parse_args(["--use-buck-source-database"]).use_buck_source_database,
-            True,
-        )
-        self.assertEqual(
-            parser.parse_args(
-                ["--no-use-buck-source-database"]
-            ).use_buck_source_database,
-            False,
-        )
-        # Multiple arguments means that the last one is picked.
-        self.assertEqual(
-            parser.parse_args(
-                ["--no-use-buck-source-database", "--use-buck-source-database"]
-            ).use_buck_source_database,
-            True,
-        )
-        self.assertEqual(
-            parser.parse_args(
-                ["--use-buck-source-database", "--no-use-buck-source-database"]
-            ).use_buck_source_database,
-            False,
         )

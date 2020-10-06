@@ -5,7 +5,6 @@
 
 # pyre-unsafe
 
-import argparse
 import functools
 import json
 import logging
@@ -419,12 +418,6 @@ def annotate_from_existing_stubs(
         subprocess.call(formatter, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 
-def file_exists(path):
-    if not os.path.exists(path):
-        raise argparse.ArgumentTypeError("ERROR: " + str(path) + " does not exist")
-    return path
-
-
 class Infer(Reporting):
     NAME = "infer"
 
@@ -460,83 +453,10 @@ class Infer(Reporting):
         self._show_error_traces = True
         self._output = command_arguments.JSON
 
-    @staticmethod
-    def from_arguments(
-        arguments: argparse.Namespace,
-        original_directory: str,
-        configuration: Configuration,
-        analysis_directory: Optional[AnalysisDirectory] = None,
-    ) -> "Infer":
-        return Infer(
-            command_arguments.CommandArguments.from_arguments(arguments),
-            original_directory,
-            configuration=configuration,
-            analysis_directory=analysis_directory,
-            print_errors=arguments.print_only,
-            full_only=arguments.full_only,
-            recursive=arguments.recursive,
-            in_place=arguments.in_place,
-            errors_from_stdin=arguments.errors_from_stdin,
-            annotate_from_existing_stubs=arguments.annotate_from_existing_stubs,
-            debug_infer=arguments.debug_infer,
-        )
-
-    @classmethod
-    def add_subparser(cls, parser: argparse._SubParsersAction) -> None:
-        infer = parser.add_parser(cls.NAME)
-        infer.set_defaults(command=cls.from_arguments)
-        infer.add_argument(
-            "-p",
-            "--print-only",
-            action="store_true",
-            help="Print raw JSON errors to standard output, "
-            + "without converting to stubs or annnotating.",
-        )
-        infer.add_argument(
-            "-f",
-            "--full-only",
-            action="store_true",
-            help="Only output fully annotated functions. Requires infer flag.",
-        )
-        infer.add_argument(
-            "-r",
-            "--recursive",
-            action="store_true",
-            help="Recursively run infer until no new annotations are generated."
-            + " Requires infer flag.",
-        )
-        infer.add_argument(
-            "-i",
-            "--in-place",
-            nargs="*",
-            metavar="path",
-            type=file_exists,
-            help="Add annotations to functions in selected paths."
-            + " Takes a set of files and folders to add annotations to."
-            + " If no paths are given, all functions are annotated."
-            + " WARNING: Modifies original files and requires infer flag and retype",
-        )
-        infer.add_argument(
-            "--json",
-            action="store_true",
-            dest="errors_from_stdin",
-            help="Accept JSON input instead of running full check.",
-        )
-        infer.add_argument(
-            "--annotate-from-existing-stubs",
-            action="store_true",
-            help="Add annotations from existing stubs.",
-        )
-        infer.add_argument(
-            "--debug-infer",
-            action="store_true",
-            help="Print error message when file fails to annotate.",
-        )
-
     def run(self) -> Command:
         if self._annotate_from_existing_stubs:
             if self._in_place is None:
-                raise argparse.ArgumentTypeError(
+                raise ValueError(
                     "--annotate-from-existing-stubs cannot be used without the \
                     --in-place argument"
                 )

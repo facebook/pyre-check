@@ -3,7 +3,6 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-import argparse
 import json
 import logging
 import os
@@ -295,33 +294,6 @@ class Profile(Command):
             command_arguments, original_directory, configuration, analysis_directory
         )
         self._profile_output: ProfileOutput = profile_output
-
-    @staticmethod
-    def from_arguments(
-        arguments: argparse.Namespace,
-        original_directory: str,
-        configuration: Configuration,
-        analysis_directory: Optional[AnalysisDirectory] = None,
-    ) -> "Profile":
-        return Profile(
-            command_arguments.CommandArguments.from_arguments(arguments),
-            original_directory,
-            configuration=configuration,
-            analysis_directory=analysis_directory,
-            profile_output=arguments.profile_output,
-        )
-
-    @classmethod
-    def add_subparser(cls, parser: argparse._SubParsersAction) -> None:
-        profile = parser.add_parser(cls.NAME)
-        profile.set_defaults(command=cls.from_arguments)
-        profile.add_argument(
-            "--profile-output",
-            type=ProfileOutput,
-            choices=ProfileOutput,
-            help="Specify what to output.",
-            default=ProfileOutput.COLD_START_PHASES,
-        )
 
     def get_stdout(self) -> Path:
         server_stdout_path = os.path.join(

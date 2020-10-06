@@ -4,8 +4,6 @@
 # LICENSE file in the root directory of this source tree.
 
 
-import argparse
-import os
 from typing import List, Optional
 
 from typing_extensions import Final
@@ -13,7 +11,6 @@ from typing_extensions import Final
 from .. import command_arguments, log
 from ..analysis_directory import AnalysisDirectory, resolve_analysis_directory
 from ..configuration import Configuration
-from ..filesystem import readable_directory, writable_directory
 from .check import Check
 
 
@@ -54,71 +51,6 @@ class Analyze(Check):
         self._rules: Final[Optional[List[int]]] = rules
         self._find_obscure_flows: bool = find_obscure_flows
         self._dump_model_query_results = dump_model_query_results
-
-    @staticmethod
-    def from_arguments(
-        arguments: argparse.Namespace,
-        original_directory: str,
-        configuration: Configuration,
-        analysis_directory: Optional[AnalysisDirectory] = None,
-    ) -> "Analyze":
-        return Analyze(
-            command_arguments.CommandArguments.from_arguments(arguments),
-            original_directory,
-            configuration=configuration,
-            analysis_directory=analysis_directory,
-            analysis=arguments.analysis,
-            taint_models_path=arguments.taint_models_path,
-            no_verify=arguments.no_verify,
-            save_results_to=arguments.save_results_to,
-            dump_call_graph=arguments.dump_call_graph,
-            repository_root=arguments.repository_root,
-            rules=arguments.rule,
-            find_obscure_flows=arguments.find_obscure_flows,
-            dump_model_query_results=arguments.dump_model_query_results,
-        )
-
-    @classmethod
-    def add_subparser(cls, parser: argparse._SubParsersAction) -> None:
-        analyze = parser.add_parser(cls.NAME)
-        analyze.set_defaults(command=cls.from_arguments)
-        analyze.add_argument(
-            "analysis",
-            nargs="?",
-            default="taint",
-            help="Type of analysis to run: {taint}",
-        )
-        analyze.add_argument(
-            "--taint-models-path",
-            action="append",
-            default=[],
-            type=readable_directory,
-            help="Location of taint models",
-        )
-        analyze.add_argument(
-            "--no-verify",
-            action="store_true",
-            help="Do not verify models for the taint analysis.",
-        )
-        analyze.add_argument(
-            "--save-results-to",
-            default=None,
-            type=writable_directory,
-            help="Directory to write analysis results to.",
-        )
-        analyze.add_argument("--dump-call-graph", action="store_true")
-        analyze.add_argument("--repository-root", type=os.path.abspath)
-        analyze.add_argument("--rule", action="append", type=int)
-        analyze.add_argument(
-            "--find-obscure-flows",
-            action="store_true",
-            help="Perform a taint analysis to find flows through obscure models.",
-        )
-        analyze.add_argument(
-            "--dump-model-query-results",
-            action="store_true",
-            help="Provide model query debugging output.",
-        )
 
     def generate_analysis_directory(self) -> AnalysisDirectory:
         return resolve_analysis_directory(

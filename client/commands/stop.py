@@ -3,7 +3,6 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-import argparse
 import logging
 import os
 import time
@@ -36,25 +35,6 @@ class Stop(Command):
             command_arguments, original_directory, configuration, analysis_directory
         )
         self._from_restart = from_restart
-
-    @staticmethod
-    def from_arguments(
-        arguments: argparse.Namespace,
-        original_directory: str,
-        configuration: Configuration,
-        analysis_directory: Optional[AnalysisDirectory] = None,
-    ) -> "Stop":
-        return Stop(
-            command_arguments.CommandArguments.from_arguments(arguments),
-            original_directory,
-            configuration=configuration,
-            analysis_directory=analysis_directory,
-        )
-
-    @classmethod
-    def add_subparser(cls, parser: argparse._SubParsersAction) -> None:
-        stop = parser.add_parser(cls.NAME, epilog="Signals the Pyre server to stop.")
-        stop.set_defaults(command=cls.from_arguments)
 
     def _flags(self) -> List[str]:
         flags = []

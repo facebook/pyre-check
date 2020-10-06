@@ -3,7 +3,6 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-import argparse
 import json
 import logging
 import os
@@ -37,21 +36,6 @@ class Initialize(CommandParser):
 
     def __init__(self) -> None:
         super().__init__()
-
-    @staticmethod
-    def from_arguments() -> "Initialize":
-        return Initialize()
-
-    @classmethod
-    def add_subparser(cls, parser: argparse._SubParsersAction) -> None:
-        initialize = parser.add_parser(cls.NAME, aliases=["init"])
-        initialize.set_defaults(command=cls.from_arguments)
-        initialize.add_argument(
-            "--local",
-            action="store_true",
-            help="[DEPRECATED] Initializes a local configuration \
-            in a project subdirectory.",
-        )
 
     def _get_configuration(self) -> Dict[str, Any]:
         configuration: Dict[str, Any] = {}

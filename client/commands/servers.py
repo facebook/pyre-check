@@ -3,7 +3,6 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-import argparse
 import dataclasses
 import json
 import logging
@@ -65,35 +64,6 @@ class Servers(Command):
             command_arguments, original_directory, configuration, analysis_directory
         )
         self._subcommand = subcommand
-
-    @staticmethod
-    def from_arguments(
-        arguments: argparse.Namespace,
-        original_directory: str,
-        configuration: Configuration,
-        analysis_directory: Optional[AnalysisDirectory] = None,
-    ) -> "Servers":
-        return Servers(
-            command_arguments.CommandArguments.from_arguments(arguments),
-            original_directory,
-            configuration=configuration,
-            analysis_directory=analysis_directory,
-            subcommand=arguments.servers_subcommand,
-        )
-
-    @classmethod
-    def add_subparser(cls, parser: argparse._SubParsersAction) -> None:
-        servers_parser = parser.add_parser(
-            cls.NAME,
-            epilog="""
-            Command to manipulate multiple Pyre servers.
-            """,
-        )
-        servers_parser.set_defaults(command=cls.from_arguments)
-        subparsers = servers_parser.add_subparsers(dest="servers_subcommand")
-
-        subparsers.add_parser("list", help="List running servers.")
-        subparsers.add_parser("stop", help="Stop all running servers.")
 
     def is_root_server_running(self) -> bool:
         return any(server.is_root() for server in self._all_server_details())

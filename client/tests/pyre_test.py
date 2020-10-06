@@ -5,8 +5,6 @@
 
 # pyre-unsafe
 
-import argparse
-import shutil
 import tempfile
 import unittest
 from pathlib import Path
@@ -23,52 +21,12 @@ from .. import (
     statistics,
 )
 from ..exceptions import EnvironmentException
-from ..pyre import _set_default_command
 from .mocks import mock_incremental_command
 from .setup import (
     ensure_directories_exists,
     switch_working_directory,
     write_configuration_file,
 )
-
-
-def _get_arguments() -> argparse.Namespace:
-    arguments = argparse.Namespace()
-    arguments.local_configuration = None
-    arguments.version = False
-    arguments.debug = False
-    arguments.sequential = False
-    arguments.strict = False
-    arguments.additional_check = []
-    arguments.show_error_traces = False
-    arguments.output = "text"
-    arguments.enable_profiling = False
-    arguments.enable_memory_profiling = False
-    arguments.noninteractive = True
-    arguments.logging_sections = None
-    arguments.log_identifier = None
-    arguments.logger = None
-    arguments.formatter = None
-    arguments.targets = ["//foo"]
-    arguments.use_buck_builder = False
-    arguments.use_buck_source_database = True
-    arguments.source_directories = []
-    arguments.filter_directory = []
-    arguments.buck_mode = None
-    arguments.no_saved_state = False
-    arguments.search_path = []
-    arguments.binary = None
-    arguments.buck_builder_binary = None
-    arguments.exclude = []
-    arguments.typeshed = None
-    arguments.save_initial_state_to = None
-    arguments.load_initial_state_from = None
-    arguments.changed_files_path = None
-    arguments.saved_state_project = None
-    arguments.dot_pyre_directory = None
-    arguments.features = None
-    arguments.command = commands.Check.from_arguments
-    return arguments
 
 
 class PyreTest(unittest.TestCase):
@@ -84,22 +42,6 @@ class PyreTest(unittest.TestCase):
         run_start.side_effect = EnvironmentException
         self.assertEqual(pyre.main(["persistent"]), 0)
         run_null_server.assert_has_calls([call(timeout=3600 * 12)])
-
-    # pyre-fixme[56]: Argument `shutil` to decorator factory
-    #  `unittest.mock.patch.object` could not be resolved in a global scope.
-    @patch.object(shutil, "which", return_value=True)
-    def test_set_default_command__watchman_exists(self, which: MagicMock) -> None:
-        arguments = argparse.Namespace()
-        _set_default_command(arguments)
-        self.assertEqual(arguments.command, commands.Incremental.from_arguments)
-
-    # pyre-fixme[56]: Argument `shutil` to decorator factory
-    #  `unittest.mock.patch.object` could not be resolved in a global scope.
-    @patch.object(shutil, "which", return_value=False)
-    def test_set_default_command__no_watchman(self, which: MagicMock) -> None:
-        arguments = argparse.Namespace()
-        _set_default_command(arguments)
-        self.assertEqual(arguments.command, commands.Check.from_arguments)
 
     # pyre-fixme[56]: Argument `tools.pyre.client.statistics` to decorator factory
     #  `unittest.mock.patch.object` could not be resolved in a global scope.

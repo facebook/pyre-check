@@ -3,7 +3,6 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-import argparse
 import logging
 from logging import Logger
 from typing import List, Optional
@@ -32,30 +31,6 @@ class Check(Reporting):
         super(Check, self).__init__(
             command_arguments, original_directory, configuration, analysis_directory
         )
-
-    @staticmethod
-    def from_arguments(
-        arguments: argparse.Namespace,
-        original_directory: str,
-        configuration: Configuration,
-        analysis_directory: Optional[AnalysisDirectory] = None,
-    ) -> "Check":
-        return Check(
-            command_arguments.CommandArguments.from_arguments(arguments),
-            original_directory,
-            configuration=configuration,
-            analysis_directory=analysis_directory,
-        )
-
-    @classmethod
-    def add_subparser(cls, parser: argparse._SubParsersAction) -> None:
-        check = parser.add_parser(
-            cls.NAME,
-            epilog="""
-          Runs a one-time check of a project without initializing a type check server.
-        """,
-        )
-        check.set_defaults(command=cls.from_arguments)
 
     def generate_analysis_directory(self) -> AnalysisDirectory:
         return resolve_analysis_directory(

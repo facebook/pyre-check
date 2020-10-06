@@ -3,7 +3,6 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-import argparse
 import logging
 from logging import Logger
 from typing import List, Optional
@@ -41,60 +40,6 @@ class Incremental(Reporting):
         self._incremental_style = incremental_style
         self._no_start_server = no_start_server
         self._no_watchman = no_watchman
-
-    @staticmethod
-    def from_arguments(
-        arguments: argparse.Namespace,
-        original_directory: str,
-        configuration: Configuration,
-        analysis_directory: Optional[AnalysisDirectory] = None,
-    ) -> "Incremental":
-        return Incremental(
-            command_arguments.CommandArguments.from_arguments(arguments),
-            original_directory,
-            configuration=configuration,
-            analysis_directory=analysis_directory,
-            nonblocking=arguments.nonblocking,
-            incremental_style=arguments.incremental_style,
-            no_start_server=arguments.no_start,
-            no_watchman=getattr(arguments, "no_watchman", False),
-        )
-
-    @classmethod
-    def add_subparser(cls, parser: argparse._SubParsersAction) -> None:
-        incremental_help = """
-        Connects to a running Pyre server and returns the current type errors for your
-        project. If no server exists for your projects, starts a new one. Running `pyre`
-        implicitly runs `pyre incremental`.
-
-        By default, incremental checks ensure that all dependencies of changed files are
-        analyzed before returning results. If you'd like to get partial type checking
-        results eagerly, you can run `pyre incremental --nonblocking`.
-        """
-        incremental = parser.add_parser(cls.NAME, epilog=incremental_help)
-        incremental.set_defaults(command=cls.from_arguments)
-        incremental.add_argument(
-            "--nonblocking",
-            action="store_true",
-            help=(
-                "Ask the server to return partial results immediately, "
-                "even if analysis is still in progress."
-            ),
-        )
-        incremental.add_argument(
-            "--incremental-style",
-            type=IncrementalStyle,
-            choices=list(IncrementalStyle),
-            default=IncrementalStyle.FINE_GRAINED,
-            help="How to approach doing incremental checks.",
-        )
-        incremental.add_argument(
-            "--no-start", action="store_true", help=argparse.SUPPRESS
-        )
-        # This is mostly to allow `restart` to pass on the flag to `start`.
-        incremental.add_argument(
-            "--no-watchman", action="store_true", help=argparse.SUPPRESS
-        )
 
     def _run(self) -> None:
         if self._state() == State.DEAD:

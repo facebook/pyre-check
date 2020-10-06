@@ -3,7 +3,6 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-import argparse
 import json
 import logging
 import re
@@ -44,38 +43,6 @@ class Persistent(Command):
             command_arguments, original_directory, configuration, analysis_directory
         )
         self._no_watchman: bool = no_watchman
-
-    @staticmethod
-    def from_arguments(
-        arguments: argparse.Namespace,
-        original_directory: str,
-        configuration: Configuration,
-        analysis_directory: Optional[AnalysisDirectory] = None,
-    ) -> "Persistent":
-        return Persistent(
-            command_arguments.CommandArguments.from_arguments(arguments),
-            original_directory,
-            configuration=configuration,
-            analysis_directory=analysis_directory,
-            no_watchman=arguments.no_watchman,
-        )
-
-    @classmethod
-    def add_subparser(cls, parser: argparse._SubParsersAction) -> None:
-        persistent = parser.add_parser(
-            cls.NAME,
-            epilog="""
-            Entry point for IDE integration to Pyre. Communicates with a
-            Pyre server using the Language Server Protocol, accepts input from stdin and
-            writing diagnostics and responses from the Pyre server to stdout.
-            """,
-        )
-        persistent.set_defaults(command=cls.from_arguments, noninteractive=True)
-        persistent.add_argument(
-            "--no-watchman",
-            action="store_true",
-            help="Do not spawn a watchman client in the background.",
-        )
 
     def _run(self) -> None:
         try:
