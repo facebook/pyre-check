@@ -1728,6 +1728,7 @@ class InteractiveTest(TestCase):
             message="root",
             min_trace_length_to_sources=1,
             min_trace_length_to_sinks=1,
+            features=set(),
         )
         sources = []
         sinks = ["sink1", "sink2"]
@@ -1756,6 +1757,7 @@ class InteractiveTest(TestCase):
             message="root",
             min_trace_length_to_sources=1,
             min_trace_length_to_sinks=1,
+            features=set(),
         )
         sources = []
         sinks = ["sink1"]
@@ -1783,6 +1785,7 @@ class InteractiveTest(TestCase):
             message="root",
             min_trace_length_to_sources=0,
             min_trace_length_to_sinks=6,
+            features=set(),
         )
         sources = []
         sinks = ["sink1", "sink2"]
@@ -1801,6 +1804,7 @@ class InteractiveTest(TestCase):
             message="root",
             min_trace_length_to_sources=3,
             min_trace_length_to_sinks=1,
+            features=set(),
         )
         sources = []
         sinks = ["sink1", "sink2"]

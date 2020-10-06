@@ -6,10 +6,8 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from collections import defaultdict
-from enum import Enum
 from typing import (
-    Dict,
+    Any,
     Generic,
     List,
     NamedTuple,
@@ -101,7 +99,8 @@ class IssueQueryResultType(graphene.ObjectType):
         return list(_query(info).sink_names(self.id))
 
     def resolve_features(self, info: ResolveInfo) -> List[str]:
-        return self.concatenated_features.split(",")
+        # pyre-ignore[6]: graphene too dynamic.
+        return sorted(self.features)
 
 
 class IssueQueryResult(NamedTuple):
@@ -118,7 +117,24 @@ class IssueQueryResult(NamedTuple):
     min_trace_length_to_sources: int
     min_trace_length_to_sinks: int
 
-    # concatenated_features: str
+    features: Set[str]
+
+    @staticmethod
+    # pyre-fixme[2]: Parameter annotation cannot be `Any`.
+    def from_record(record: Any) -> IssueQueryResult:
+        return IssueQueryResult(
+            id=record.id,
+            code=record.code,
+            message=record.message,
+            callable=record.callable,
+            filename=record.filename,
+            location=record.location,
+            min_trace_length_to_sources=record.min_trace_length_to_sources,
+            min_trace_length_to_sinks=record.min_trace_length_to_sinks,
+            features=set(record.concatenated_features.split(","))
+            if record.concatenated_features
+            else set(),
+        )
 
 
 _Q = TypeVar("_Q")
@@ -185,9 +201,7 @@ class Like(Generic[_T], QueryPredicate):
 class IssuePredicate(Predicate):
     # TODO(T71492980): migrate to query filters to remove bottleneck.
     @abstractmethod
-    def apply(
-        self, issues: List[IssueQueryResult], feature_map: Dict[int, Set[str]]
-    ) -> List[IssueQueryResult]:
+    def apply(self, issues: List[IssueQueryResult]) -> List[IssueQueryResult]:
         ...
 
 
@@ -195,13 +209,11 @@ class HasAll(IssuePredicate):
     def __init__(self, features: Set[str]) -> None:
         self._features = features
 
-    def apply(
-        self, issues: List[IssueQueryResult], feature_map: Dict[int, Set[str]]
-    ) -> List[IssueQueryResult]:
+    def apply(self, issues: List[IssueQueryResult]) -> List[IssueQueryResult]:
         return [
             issue
             for issue in issues
-            if feature_map[int(issue.id)] & self._features == self._features
+            if issue.features & self._features == self._features
         ]
 
 
@@ -209,28 +221,16 @@ class HasAny(IssuePredicate):
     def __init__(self, features: Set[str]) -> None:
         self._features = features
 
-    def apply(
-        self, issues: List[IssueQueryResult], feature_map: Dict[int, Set[str]]
-    ) -> List[IssueQueryResult]:
-        return [
-            issue
-            for issue in issues
-            if len(feature_map[int(issue.id)] & self._features) > 0
-        ]
+    def apply(self, issues: List[IssueQueryResult]) -> List[IssueQueryResult]:
+        return [issue for issue in issues if len(issue.features & self._features) > 0]
 
 
 class HasNone(IssuePredicate):
     def __init__(self, features: Set[str]) -> None:
         self._features = features
 
-    def apply(
-        self, issues: List[IssueQueryResult], feature_map: Dict[int, Set[str]]
-    ) -> List[IssueQueryResult]:
-        return [
-            issue
-            for issue in issues
-            if len(feature_map[int(issue.id)] & self._features) == 0
-        ]
+    def apply(self, issues: List[IssueQueryResult]) -> List[IssueQueryResult]:
+        return [issue for issue in issues if len(issue.features & self._features) == 0]
 
 
 class Query:
@@ -285,11 +285,12 @@ class Query:
             if isinstance(predicate, QueryPredicate):
                 query = predicate.apply(query)
 
-        issues = list(
-            query.join(Issue, IssueInstance.issue_id == Issue.id).join(
+        issues = [
+            IssueQueryResult.from_record(record)
+            for record in query.join(Issue, IssueInstance.issue_id == Issue.id).join(
                 MessageText, MessageText.id == IssueInstance.message_id
             )
-        )
+        ]
 
         issue_predicates = [
             predicate
@@ -297,15 +298,8 @@ class Query:
             if isinstance(predicate, IssuePredicate)
         ]
         if len(issue_predicates) > 0:
-            # We only do this when specified because the operation is expensive
-            feature_map = {
-                int(issue.id): self.get_leaves_issue_instance(
-                    self._session, int(issue.id), SharedTextKind.FEATURE
-                )
-                for issue in issues
-            }
             for issue_predicate in issue_predicates:
-                issues = issue_predicate.apply(issues, feature_map)
+                issues = issue_predicate.apply(issues)
 
         return issues
 
