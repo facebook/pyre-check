@@ -921,7 +921,12 @@ def start(
     configuration = _create_configuration_with_retry(command_argument, Path("."))
     if command_argument.use_command_v2:
         return v2.start.run(
-            configuration, terminal, store_type_check_resolution, no_watchman
+            configuration,
+            command_arguments.StartArguments(
+                terminal=terminal,
+                store_type_check_resolution=store_type_check_resolution,
+                no_watchman=no_watchman,
+            ),
         )
     else:
         return run_pyre_command(

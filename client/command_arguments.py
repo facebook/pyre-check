@@ -48,3 +48,10 @@ class CommandArguments:
     dot_pyre_directory: Optional[Path] = None
     features: Optional[str] = None
     use_command_v2: bool = False
+
+
+@dataclass(frozen=True)
+class StartArguments:
+    terminal: bool = False
+    store_type_check_resolution: bool = False
+    no_watchman: bool = False

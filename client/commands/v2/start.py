@@ -5,7 +5,7 @@
 
 import logging
 
-from ... import commands, configuration
+from ... import command_arguments, commands, configuration
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -13,9 +13,7 @@ LOG: logging.Logger = logging.getLogger(__name__)
 
 def run(
     configuration: configuration.Configuration,
-    terminal: bool,
-    store_type_check_resolution: bool,
-    no_watchman: bool,
+    start_arguments: command_arguments.StartArguments,
 ) -> commands.ExitCode:
     LOG.warning("Not implemented yet")
     return commands.ExitCode.SUCCESS
