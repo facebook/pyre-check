@@ -52,7 +52,7 @@ let set_up_environment ?source ?rules ~context ~model_source () =
     | Some rules -> Some (List.map rules ~f:(fun { Taint.TaintConfiguration.Rule.code; _ } -> code))
     | None -> None
   in
-  let ({ Taint.Model.errors; _ } as parse_result) =
+  let ({ Taint.Model.errors; skip_overrides; _ } as parse_result) =
     Taint.Model.parse ~resolution ?rule_filter ~source ~configuration Callable.Map.empty
   in
   assert_bool
@@ -62,13 +62,20 @@ let set_up_environment ?source ?rules ~context ~model_source () =
   let environment =
     Analysis.TypeEnvironment.create global_environment |> Analysis.TypeEnvironment.read_only
   in
-  parse_result, environment
+  parse_result, environment, skip_overrides
 
 
-let assert_model ?source ?rules ~context ~model_source ~expect () =
-  let { Taint.Model.models; _ }, environment =
+let assert_model ?source ?rules ?expected_skipped_overrides ~context ~model_source ~expect () =
+  let { Taint.Model.models; _ }, environment, skip_overrides =
     set_up_environment ?source ?rules ~context ~model_source ()
   in
+  begin
+    match expected_skipped_overrides with
+    | Some expected ->
+        let expected_set = List.map expected ~f:Ast.Reference.create |> Ast.Reference.Set.of_list in
+        assert_equal ~cmp:Ast.Reference.Set.equal expected_set skip_overrides
+    | None -> ()
+  end;
   let get_model callable =
     let message = Format.asprintf "Model %a missing" Interprocedural.Callable.pp callable in
     Callable.Map.find models callable |> Option.value_exn ?here:None ?error:None ~message, false
@@ -78,12 +85,16 @@ let assert_model ?source ?rules ~context ~model_source ~expect () =
 
 
 let assert_no_model ?source ?rules ~context ~model_source callable =
-  let { Taint.Model.models; _ }, _ = set_up_environment ?source ?rules ~context ~model_source () in
+  let { Taint.Model.models; _ }, _, _ =
+    set_up_environment ?source ?rules ~context ~model_source ()
+  in
   assert_false (Callable.Map.mem models callable)
 
 
 let assert_queries ?source ?rules ~context ~model_source ~expect () =
-  let { Taint.Model.queries; _ }, _ = set_up_environment ?source ?rules ~context ~model_source () in
+  let { Taint.Model.queries; _ }, _, _ =
+    set_up_environment ?source ?rules ~context ~model_source ()
+  in
   assert_equal
     ~cmp:(List.equal (fun left right -> Taint.Model.ModelQuery.compare_rule left right = 0))
     ~printer:(List.to_string ~f:Taint.Model.ModelQuery.show_rule)
@@ -640,6 +651,19 @@ let test_class_models context =
           ~analysis_mode:Taint.Result.SkipAnalysis
           "test.SkipMe.method_with_multiple_parameters";
       ]
+    ();
+  (* Skip overrides do not generate methods. *)
+  assert_model
+    ~source:
+      {|
+        class SkipMe:
+          def SkipMe.method(parameter): ...
+          def SkipMe.method_with_multiple_parameters(first, second): ...
+      |}
+    ~model_source:"class test.SkipMe(SkipOverrides): ..."
+    ~expected_skipped_overrides:
+      ["test.SkipMe.method"; "test.SkipMe.method_with_multiple_parameters"]
+    ~expect:[]
     ()
 
 

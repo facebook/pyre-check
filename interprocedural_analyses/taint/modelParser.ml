@@ -1118,26 +1118,35 @@ let create ~resolution ?path ~configuration ~rule_filter source =
             in
             List.filter_map bases ~f:class_sink_base
           in
-          let source_annotations, skip_analysis =
+          let source_annotations, extra_decorators =
+            let decorator_with_name name =
+              {
+                Decorator.name = Node.create_with_default_location (Reference.create name);
+                arguments = None;
+              }
+            in
             let class_source_base { Call.Argument.value; _ } =
-              if Expression.show value |> String.is_prefix ~prefix:"TaintSource[" then
+              let name = Expression.show value in
+              if String.is_prefix name ~prefix:"TaintSource[" then
                 Some (Either.First value)
-              else if Expression.show value |> String.equal "SkipAnalysis" then
-                Some (Either.Second ())
+              else if String.equal name "SkipAnalysis" then
+                Some (Either.Second (decorator_with_name "SkipAnalysis"))
+              else if String.equal name "SkipOverrides" then
+                Some (Either.Second (decorator_with_name "SkipOverrides"))
               else
                 None
             in
             List.filter_map bases ~f:class_source_base
-            |> List.fold ~init:([], false) ~f:(fun (source_annotations, skip_analysis) ->
+            |> List.fold ~init:([], []) ~f:(fun (source_annotations, decorators) ->
                  function
                  | Either.First source_annotation ->
-                     source_annotation :: source_annotations, skip_analysis
-                 | Either.Second _ -> source_annotations, true)
+                     source_annotation :: source_annotations, decorators
+                 | Either.Second decorator -> source_annotations, decorator :: decorators)
           in
           if
             (not (List.is_empty sink_annotations))
             || (not (List.is_empty source_annotations))
-            || skip_analysis
+            || not (List.is_empty extra_decorators)
           then
             class_definitions global_resolution name
             >>= List.hd
@@ -1155,7 +1164,7 @@ let create ~resolution ?path ~configuration ~rule_filter source =
                             } as signature;
                           _;
                         } ->
-                        let signature ~skip_analysis ~source_annotation ~sink_annotation =
+                        let signature ~extra_decorators ~source_annotation ~sink_annotation =
                           let parameters =
                             let sink_parameter parameter =
                               let update_annotation { Parameter.name; value; _ } =
@@ -1180,19 +1189,7 @@ let create ~resolution ?path ~configuration ~rule_filter source =
                             else
                               []
                           in
-                          let decorators =
-                            if skip_analysis then
-                              {
-                                Decorator.name =
-                                  Node.create_with_default_location
-                                    (Reference.create "SkipAnalysis");
-                                arguments = None;
-                              }
-                              :: decorators
-                            else
-                              decorators
-                          in
-
+                          let decorators = List.rev_append extra_decorators decorators in
                           ParsedSignature
                             ( {
                                 signature with
@@ -1206,29 +1203,29 @@ let create ~resolution ?path ~configuration ~rule_filter source =
                         let sources =
                           List.map source_annotations ~f:(fun source_annotation ->
                               signature
-                                ~skip_analysis:false
+                                ~extra_decorators:[]
                                 ~source_annotation:(Some source_annotation)
                                 ~sink_annotation:None)
                         in
                         let sinks =
                           List.map sink_annotations ~f:(fun sink_annotation ->
                               signature
-                                ~skip_analysis:false
+                                ~extra_decorators:[]
                                 ~source_annotation:None
                                 ~sink_annotation:(Some sink_annotation))
                         in
-                        let skip_analysis_defines =
-                          if skip_analysis then
+                        let skip_analysis_or_overrides_defines =
+                          if not (List.is_empty extra_decorators) then
                             [
                               signature
-                                ~skip_analysis:true
+                                ~extra_decorators
                                 ~source_annotation:None
                                 ~sink_annotation:None;
                             ]
                           else
                             []
                         in
-                        skip_analysis_defines @ sources @ sinks
+                        skip_analysis_or_overrides_defines @ sources @ sinks
                     | _ -> []
                   in
 
