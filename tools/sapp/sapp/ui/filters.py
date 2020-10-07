@@ -82,7 +82,6 @@ class Like(Generic[_T], QueryPredicate):
 
 
 class IssuePredicate(Predicate):
-    # TODO(T71492980): migrate to query filters to remove bottleneck.
     @abstractmethod
     def apply(self, issues: List[IssueQueryResult]) -> List[IssueQueryResult]:
         ...
