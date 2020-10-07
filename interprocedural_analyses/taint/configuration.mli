@@ -29,6 +29,13 @@ type analysis_model_constraints = {
 
 type partial_sink_converter = (Sources.t list * Sinks.t) list String.Map.Tree.t
 
+type missing_flows_kind =
+  | Obscure
+  | Type
+[@@deriving eq, show]
+
+val missing_flows_kind_from_string : string -> missing_flows_kind option
+
 type t = {
   sources: string list;
   sinks: string list;
@@ -37,7 +44,7 @@ type t = {
   implicit_sinks: implicit_sinks;
   partial_sink_converter: partial_sink_converter;
   partial_sink_labels: string list Core.String.Map.Tree.t;
-  find_obscure_flows: bool;
+  find_missing_flows: missing_flows_kind option;
   dump_model_query_results: bool;
   analysis_model_constraints: analysis_model_constraints;
 }
@@ -60,7 +67,7 @@ val default : t
 
 val create
   :  rule_filter:int list option ->
-  find_obscure_flows:bool ->
+  find_missing_flows:missing_flows_kind option ->
   dump_model_query_results:bool ->
   paths:Path.t list ->
   t
@@ -70,6 +77,8 @@ val validate : t -> unit
 val conditional_test_sinks : unit -> Sinks.t list
 
 val get_triggered_sink : partial_sink:Sinks.partial_sink -> source:Sources.t -> Sinks.t option
+
+val is_missing_flow_analysis : missing_flows_kind -> bool
 
 val get_maximum_model_width : unit -> int
 

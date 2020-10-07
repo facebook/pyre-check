@@ -28,7 +28,11 @@ include Taint.Result.Register (struct
       Yojson.Safe.Util.member key value |> Yojson.Safe.Util.to_bool_option |> Option.value ~default
     in
     let verify = json_bool_member "verify_models" taint ~default:true in
-    let find_obscure_flows = json_bool_member "find_obscure_flows" taint ~default:false in
+    let find_missing_flows =
+      Yojson.Safe.Util.member "find_missing_flows" taint
+      |> Yojson.Safe.Util.to_string_option
+      >>= TaintConfiguration.missing_flows_kind_from_string
+    in
     let dump_model_query_results =
       json_bool_member "dump_model_query_results" taint ~default:false
     in
@@ -87,7 +91,7 @@ include Taint.Result.Register (struct
             let configuration =
               TaintConfiguration.create
                 ~rule_filter
-                ~find_obscure_flows
+                ~find_missing_flows
                 ~dump_model_query_results
                 ~paths
             in
@@ -115,10 +119,13 @@ include Taint.Result.Register (struct
                 ~callables
                 ~models
             in
-            if find_obscure_flows then
-              models |> remove_sinks |> add_obscure_sinks, skip_overrides
-            else
-              models, skip_overrides
+            let models =
+              match find_missing_flows with
+              | Some Obscure -> models |> remove_sinks |> add_obscure_sinks
+              | Some Type -> models |> remove_sinks
+              | None -> models
+            in
+            models, skip_overrides
           with
           | exn ->
               Log.error "Error getting taint models.";

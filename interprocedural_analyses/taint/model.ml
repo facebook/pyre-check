@@ -54,6 +54,47 @@ let add_obscure_sink ~resolution ~call_target model =
           { model with backward = { model.backward with sink_taint } } )
 
 
+let register_unknown_callee_model callable =
+  (* Add a model with sinks on *args and **kwargs. *)
+  let sink_leaf =
+    BackwardState.Tree.create_leaf (BackwardTaint.singleton (Sinks.NamedSink "UnknownCallee"))
+  in
+  let sink_taint =
+    BackwardState.assign
+      ~root:(AccessPath.Root.StarParameter { position = 0 })
+      ~path:[]
+      sink_leaf
+      BackwardState.empty
+    |> BackwardState.assign
+         ~root:(AccessPath.Root.StarStarParameter { excluded = [] })
+         ~path:[]
+         sink_leaf
+  in
+  (* Add taint-in-taint-out for all parameters. *)
+  let local_return = BackwardState.Tree.create_leaf (BackwardTaint.singleton Sinks.LocalReturn) in
+  let taint_in_taint_out =
+    BackwardState.assign
+      ~root:(AccessPath.Root.StarParameter { position = 0 })
+      ~path:[]
+      local_return
+      BackwardState.empty
+    |> BackwardState.assign
+         ~root:(AccessPath.Root.StarStarParameter { excluded = [] })
+         ~path:[]
+         local_return
+  in
+  Interprocedural.Fixpoint.add_predefined
+    Interprocedural.Fixpoint.Epoch.predefined
+    callable
+    (Interprocedural.Result.make_model
+       TaintResult.kind
+       {
+         TaintResult.forward = TaintResult.Forward.empty;
+         backward = { sink_taint; taint_in_taint_out };
+         mode = SkipAnalysis;
+       })
+
+
 let get_callsite_model ~resolution ~call_target ~arguments =
   let call_target = (call_target :> Callable.t) in
   match Interprocedural.Fixpoint.get_model call_target with

@@ -27,6 +27,7 @@ from . import (
     statistics as statistics_module,
 )
 from .commands import Command, ExitCode, v2
+from .commands.analyze import MissingFlowsKind
 from .exceptions import EnvironmentException
 from .version import __version__
 
@@ -443,9 +444,8 @@ def pyre(
 @click.option("--repository-root", type=os.path.abspath)
 @click.option("--rule", type=int, multiple=True, hidden=True)
 @click.option(
-    "--find-obscure-flows",
-    is_flag=True,
-    default=False,
+    "--find-missing-flows",
+    type=click.Choice([kind.value for kind in MissingFlowsKind]),
     help="Perform a taint analysis to find flows through obscure models.",
 )
 @click.option(
@@ -464,7 +464,7 @@ def analyze(
     dump_call_graph: bool,
     repository_root: Optional[str],
     rule: Iterable[int],
-    find_obscure_flows: bool,
+    find_missing_flows: Optional[str],
     dump_model_query_results: bool,
 ) -> int:
     """
@@ -485,7 +485,11 @@ def analyze(
             dump_call_graph=dump_call_graph,
             repository_root=repository_root,
             rules=list(rules) if len(rules) > 0 else None,
-            find_obscure_flows=find_obscure_flows,
+            find_missing_flows=(
+                MissingFlowsKind(find_missing_flows)
+                if find_missing_flows is not None
+                else None
+            ),
             dump_model_query_results=dump_model_query_results,
         ),
         configuration,

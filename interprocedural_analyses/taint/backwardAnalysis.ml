@@ -345,6 +345,22 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
         in
         List.fold ~f:(analyze_argument ~obscure_taint) combined_matches ~init:state
       in
+      let call_targets =
+        match call_targets with
+        | [] when Configuration.is_missing_flow_analysis Type ->
+            (* Create a symbolic callable, using the location as the name *)
+            let location_string =
+              Location.WithModule.show
+                (Location.with_module ~qualifier:FunctionContext.qualifier location)
+            in
+            let callable_name = Reference.create location_string in
+            let callable = Interprocedural.Callable.create_function callable_name in
+            let callable = (callable :> Interprocedural.Callable.t) in
+            if not (Interprocedural.Fixpoint.has_model callable) then
+              Model.register_unknown_callee_model callable;
+            [callable, None]
+        | _ -> call_targets
+      in
       match call_targets with
       | [] ->
           (* If we don't have a call target: propagate argument taint. *)

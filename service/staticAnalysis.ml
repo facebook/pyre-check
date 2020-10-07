@@ -219,7 +219,7 @@ let analyze
           dump_call_graph;
           verify_models;
           rule_filter;
-          find_obscure_flows;
+          find_missing_flows;
           dump_model_query_results;
           _;
         } as analysis_configuration )
@@ -255,6 +255,11 @@ let analyze
             ["rule_filter", `List (List.map rule_filter ~f:(fun rule -> `Int rule))]
         | None -> []
       in
+      let find_missing_flows_settings =
+        match find_missing_flows with
+        | Some missing_flow -> ["find_missing_flows", `String missing_flow]
+        | None -> []
+      in
       `Assoc
         [
           ( "taint",
@@ -262,10 +267,10 @@ let analyze
               ( [
                   "model_paths", `List taint_model_paths;
                   "verify_models", `Bool verify_models;
-                  "find_obscure_flows", `Bool find_obscure_flows;
                   "dump_model_query_results", `Bool dump_model_query_results;
                 ]
-              @ rule_settings ) );
+              @ rule_settings
+              @ find_missing_flows_settings ) );
         ]
     in
     let functions = (List.map callables_with_dependency_information ~f:fst :> Callable.t list) in

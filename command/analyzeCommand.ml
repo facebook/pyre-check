@@ -23,7 +23,7 @@ let run_analysis
     dump_call_graph
     repository_root
     rule_filter
-    find_obscure_flows
+    find_missing_flows
     dump_model_query_results
     _verbose
     expected_version
@@ -159,7 +159,7 @@ let run_analysis
                   dump_call_graph;
                   verify_models = not no_verify;
                   rule_filter;
-                  find_obscure_flows;
+                  find_missing_flows;
                   dump_model_query_results;
                 }
               ~filename_lookup
@@ -216,9 +216,9 @@ let command =
            (optional (Arg_type.comma_separated int))
            ~doc:"If set, filter the analysis to only consider the provided rule numbers."
       +> flag
-           "-find-obscure-flows"
-           no_arg
-           ~doc:"Perform a taint analysis to find flows through obscure models."
+           "-find-missing-flows"
+           (optional string)
+           ~doc:"Perform a taint analysis to find missing flows."
       +> flag "-dump-model-query-results" no_arg ~doc:"Provide debugging output for model queries."
       ++ Specification.base_command_line_arguments)
     run_analysis

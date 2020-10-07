@@ -41,6 +41,19 @@ let default_analysis_model_constraints =
 
 type partial_sink_converter = (Sources.t list * Sinks.t) list String.Map.Tree.t
 
+type missing_flows_kind =
+  (* Find missing flows through obscure models. *)
+  | Obscure
+  (* Find missing flows due to missing type information. *)
+  | Type
+[@@deriving eq, show]
+
+let missing_flows_kind_from_string = function
+  | "obscure" -> Some Obscure
+  | "type" -> Some Type
+  | _ -> None
+
+
 type t = {
   sources: string list;
   sinks: string list;
@@ -49,7 +62,7 @@ type t = {
   implicit_sinks: implicit_sinks;
   partial_sink_converter: partial_sink_converter;
   partial_sink_labels: string list String.Map.Tree.t;
-  find_obscure_flows: bool;
+  find_missing_flows: missing_flows_kind option;
   dump_model_query_results: bool;
   analysis_model_constraints: analysis_model_constraints;
 }
@@ -63,7 +76,7 @@ let empty =
     partial_sink_converter = String.Map.Tree.empty;
     implicit_sinks = empty_implicit_sinks;
     partial_sink_labels = String.Map.Tree.empty;
-    find_obscure_flows = false;
+    find_missing_flows = None;
     dump_model_query_results = false;
     analysis_model_constraints = default_analysis_model_constraints;
   }
@@ -322,7 +335,7 @@ let parse source_jsons =
     partial_sink_converter;
     implicit_sinks;
     partial_sink_labels;
-    find_obscure_flows = false;
+    find_missing_flows = None;
     dump_model_query_results = false;
     analysis_model_constraints =
       { default_analysis_model_constraints with maximum_overrides_to_analyze };
@@ -451,7 +464,7 @@ let default =
     partial_sink_converter = String.Map.Tree.empty;
     implicit_sinks = empty_implicit_sinks;
     partial_sink_labels = String.Map.Tree.empty;
-    find_obscure_flows = false;
+    find_missing_flows = None;
     dump_model_query_results = false;
     analysis_model_constraints = default_analysis_model_constraints;
   }
@@ -470,7 +483,24 @@ let obscure_flows_configuration configuration =
           message_format = "Data from [{$sources}] source(s) may reach an obscure model";
         };
       ];
-    find_obscure_flows = true;
+    find_missing_flows = Some Obscure;
+  }
+
+
+let missing_type_flows_configuration configuration =
+  {
+    configuration with
+    rules =
+      [
+        {
+          sources = List.map ~f:(fun source -> Sources.NamedSource source) configuration.sources;
+          sinks = [Sinks.NamedSink "UnknownCallee"];
+          code = 6003;
+          name = "Unknown callee flow.";
+          message_format = "Data from [{$sources}] source(s) may flow to an unknown callee";
+        };
+      ];
+    find_missing_flows = Some Type;
   }
 
 
@@ -480,7 +510,7 @@ let get () =
   | Some configuration -> configuration
 
 
-let create ~rule_filter ~find_obscure_flows ~dump_model_query_results ~paths =
+let create ~rule_filter ~find_missing_flows ~dump_model_query_results ~paths =
   let file_paths = Path.get_matching_files_recursively ~suffix:".config" ~paths in
   let parse_configuration config_file =
     if not (Path.file_exists config_file) then
@@ -505,10 +535,10 @@ let create ~rule_filter ~find_obscure_flows ~dump_model_query_results ~paths =
   let configuration = parse configurations in
   validate configuration;
   let configuration =
-    if find_obscure_flows then
-      obscure_flows_configuration configuration
-    else
-      configuration
+    match find_missing_flows with
+    | Some Obscure -> obscure_flows_configuration configuration
+    | Some Type -> missing_type_flows_configuration configuration
+    | None -> configuration
   in
   let configuration = { configuration with dump_model_query_results } in
   match rule_filter with
@@ -528,6 +558,12 @@ let conditional_test_sinks () =
 let get_triggered_sink ~partial_sink ~source =
   let { partial_sink_converter; _ } = get () in
   PartialSinkConverter.get_triggered_sink partial_sink_converter ~partial_sink ~source
+
+
+let is_missing_flow_analysis kind =
+  match get () with
+  | { find_missing_flows; _ } ->
+      Option.equal equal_missing_flows_kind (Some kind) find_missing_flows
 
 
 let get_maximum_model_width () =

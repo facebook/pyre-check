@@ -142,7 +142,7 @@ module StaticAnalysis : sig
     (* Analysis configuration *)
     configuration: Analysis.t;
     rule_filter: int list option;
-    find_obscure_flows: bool;
+    find_missing_flows: string option;
     dump_model_query_results: bool;
   }
 end

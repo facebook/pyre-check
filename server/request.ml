@@ -814,7 +814,7 @@ let rec process_type_query_request
           let configuration =
             Taint.TaintConfiguration.create
               ~rule_filter:None
-              ~find_obscure_flows:false
+              ~find_missing_flows:None
               ~dump_model_query_results:false
               ~paths
           in

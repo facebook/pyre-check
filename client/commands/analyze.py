@@ -4,6 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 
+import enum
 from typing import List, Optional
 
 from typing_extensions import Final
@@ -12,6 +13,11 @@ from .. import command_arguments, log
 from ..analysis_directory import AnalysisDirectory, resolve_analysis_directory
 from ..configuration import Configuration
 from .check import Check
+
+
+class MissingFlowsKind(str, enum.Enum):
+    OBSCURE: str = "obscure"
+    TYPE: str = "type"
 
 
 class Analyze(Check):
@@ -31,7 +37,7 @@ class Analyze(Check):
         dump_call_graph: bool,
         repository_root: Optional[str],
         rules: Optional[List[int]],
-        find_obscure_flows: bool = False,
+        find_missing_flows: Optional[MissingFlowsKind] = None,
         dump_model_query_results: bool = False,
     ) -> None:
         super(Analyze, self).__init__(
@@ -49,7 +55,7 @@ class Analyze(Check):
         self._dump_call_graph: bool = dump_call_graph
         self._repository_root: Final[Optional[str]] = repository_root
         self._rules: Final[Optional[List[int]]] = rules
-        self._find_obscure_flows: bool = find_obscure_flows
+        self._find_missing_flows: Optional[MissingFlowsKind] = find_missing_flows
         self._dump_model_query_results = dump_model_query_results
 
     def generate_analysis_directory(self) -> AnalysisDirectory:
@@ -83,8 +89,9 @@ class Analyze(Check):
         rules = self._rules
         if rules is not None:
             flags.extend(["-rules", ",".join(str(rule) for rule in rules)])
-        if self._find_obscure_flows:
-            flags.append("-find-obscure-flows")
+        find_missing_flows = self._find_missing_flows
+        if find_missing_flows:
+            flags.extend(["-find-missing-flows", find_missing_flows.value])
         if self._dump_model_query_results:
             flags.append("-dump-model-query-results")
         return flags
