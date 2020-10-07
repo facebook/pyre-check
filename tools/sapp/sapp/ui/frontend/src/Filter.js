@@ -9,6 +9,7 @@
  */
 
 import React, {useState} from 'react';
+import {useQuery, gql} from '@apollo/client';
 import {
   Popover,
   Button,
@@ -18,11 +19,27 @@ import {
   Row,
   Col,
   Divider,
+  Select,
 } from 'antd';
 import {SearchOutlined} from '@ant-design/icons';
 
+const {Option} = Select;
+
 const Filter = (props: {refetch: any}) => {
   const [visible, setVisible] = useState(false);
+
+  const codesQuery = gql`
+    query Codes {
+      codes {
+        edges {
+          node {
+            code
+          }
+        }
+      }
+    }
+  `;
+  const {data: codes} = useQuery(codesQuery);
 
   const onFinish = values => {
     const split = input => {
@@ -31,13 +48,6 @@ const Filter = (props: {refetch: any}) => {
       }
       return undefined;
     };
-
-    let codes = split(values.codes);
-    if (codes !== undefined) {
-      values.codes = codes.map(parseInt);
-    } else {
-      values.codes = undefined;
-    }
 
     values.file_names = split(values.file_names);
     values.callables = split(values.callables);
@@ -78,7 +88,15 @@ const Filter = (props: {refetch: any}) => {
         initialValues={{remember: true}}
         onFinish={onFinish}>
         <Form.Item label="Codes" name="codes">
-          <Input />
+          <Select mode="tags">
+            {(codes?.codes?.edges || []).map(edge => {
+              return (
+                <Option key={edge.node.code}>
+                  {edge.node.code.toString()}
+                </Option>
+              );
+            })}
+          </Select>
         </Form.Item>
         <Form.Item label="File Names" name="file_names">
           <Input />

@@ -23,7 +23,7 @@ from ..models import (
     TraceFrame,
     TraceKind,
 )
-from . import issues, trace
+from . import issues, trace, typeahead
 from .issues import IssueQueryResult, IssueQueryResultType
 from .trace import TraceFrameQueryResult, TraceFrameQueryResultType
 
@@ -56,6 +56,11 @@ class FileConnection(relay.Connection):
         node = FileType
 
 
+class CodeConnection(relay.Connection):
+    class Meta:
+        node = typeahead.CodeType
+
+
 class Query(graphene.ObjectType):
     # pyre-fixme[4]: Attribute must be annotated.
     node = relay.Node.Field()
@@ -81,6 +86,9 @@ class Query(graphene.ObjectType):
         frame_id=graphene.Int(),
         kind=graphene.String(),
     )
+
+    # Typeahead data.
+    codes = relay.ConnectionField(CodeConnection)
 
     file = relay.ConnectionField(FileConnection, path=graphene.String())
 
@@ -209,6 +217,10 @@ class Query(graphene.ObjectType):
         return trace.Query(session).next_trace_frames(
             leaf_kinds, run_id, leaf_kind, trace_frame, visited_ids=set()
         )
+
+    def resolve_codes(self, info: ResolveInfo) -> List[typeahead.Code]:
+        session = info.context["session"]
+        return typeahead.all_codes(session)
 
     def resolve_file(self, info: ResolveInfo, path: str, **kwargs: Any) -> List[File]:
         if ".." in path:
