@@ -8,7 +8,7 @@
  * @flow
  */
 
-import React from 'react';
+import React, {useEffect, useState} from 'react';
 import {useQuery, gql} from '@apollo/client';
 import {Modal, Breadcrumb} from 'antd';
 import IssuesList from './IssuesList';
@@ -63,10 +63,28 @@ const IssueQuery = gql`
 `;
 
 const Issues = () => {
+  const [oldData, setOldData] = useState(null);
+  const [refetching, setRefetching] = useState(false);
   const {loading, error, data, fetchMore, refetch} = useQuery(IssueQuery);
 
+  // Ridiculous workaround for https://github.com/apollographql/react-apollo/issues/3709.
+  const clearAndRefetch = values => {
+    setOldData(data);
+    setRefetching(true);
+    refetch(values);
+  };
+  useEffect(() => {
+    if (data !== oldData) {
+      setRefetching(false);
+    }
+  }, [data, oldData, setOldData]);
+
   var content = (
-    <IssuesList data={data} fetchMore={fetchMore} loading={loading} />
+    <IssuesList
+      data={refetching ? null : data}
+      fetchMore={fetchMore}
+      loading={refetching || loading}
+    />
   );
 
   if (error) {
@@ -79,7 +97,7 @@ const Issues = () => {
 
   return (
     <>
-      <Filter refetch={refetch} />
+      <Filter refetch={clearAndRefetch} />
       <Breadcrumb style={{margin: '16px 0'}}>
         <Breadcrumb.Item>Issues</Breadcrumb.Item>
       </Breadcrumb>
