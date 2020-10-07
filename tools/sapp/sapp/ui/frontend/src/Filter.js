@@ -23,8 +23,6 @@ import {
 } from 'antd';
 import {SearchOutlined} from '@ant-design/icons';
 
-const {Option} = Select;
-
 const Filter = (props: {refetch: any}) => {
   const [visible, setVisible] = useState(false);
 
@@ -100,22 +98,24 @@ const Filter = (props: {refetch: any}) => {
         initialValues={{remember: true}}
         onFinish={onFinish}>
         <Form.Item label="Codes" name="codes">
-          <Select mode="tags">
-            {(codes?.codes?.edges || []).map(edge => {
-              return (
-                <Option key={edge.node.code}>
-                  {edge.node.code.toString()}
-                </Option>
-              );
+          <Select
+            mode="multiple"
+            options={(codes?.codes?.edges || []).map(edge => {
+              return {
+                value: edge.node.code,
+              };
             })}
-          </Select>
+          />
         </Form.Item>
         <Form.Item label="Paths" name="file_names">
-          <Select mode="tags">
-            {(paths?.paths?.edges || []).map(edge => {
-              return <Option key={edge.node.path}>{edge.node.path}</Option>;
+          <Select
+            mode="multiple"
+            options={(paths?.paths?.edges || []).map(edge => {
+              return {
+                value: edge.node.path,
+              };
             })}
-          </Select>
+          />
         </Form.Item>
         <Form.Item label="Callables" name="callables">
           <Input />
