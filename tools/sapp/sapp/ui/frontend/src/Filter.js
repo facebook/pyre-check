@@ -113,27 +113,6 @@ const Filter = (props: {refetch: any, refetching: boolean}) => {
 
   const onFinish = values => {
     setSubmittedValues(formHandle.getFieldValue());
-
-    const parse_bound = input => {
-      if (input !== '' && input !== undefined) {
-        return parseInt(input.trim());
-      }
-      return undefined;
-    };
-
-    values.min_trace_length_to_sinks = parse_bound(
-      values.min_trace_length_to_sinks,
-    );
-    values.max_trace_length_to_sinks = parse_bound(
-      values.max_trace_length_to_sinks,
-    );
-    values.min_trace_length_to_sources = parse_bound(
-      values.min_trace_length_to_sources,
-    );
-    values.max_trace_length_to_sources = parse_bound(
-      values.max_trace_length_to_sources,
-    );
-
     props.refetch(values);
     setVisible(false);
   };
