@@ -154,14 +154,14 @@ const Filter = (props: {refetch: any, refetching: boolean}) => {
               <Form.Item
                 name="min_trace_length_to_sources"
                 style={{marginBottom: 0}}>
-                <InputNumber placeholder="min" />
+                <InputNumber placeholder="min" min={0} />
               </Form.Item>
             </Col>
             <Col span={6}>
               <Form.Item
                 name="max_trace_length_to_sources"
                 style={{marginBottom: 0}}>
-                <InputNumber placeholder="max" />
+                <InputNumber placeholder="max" min={0} />
               </Form.Item>
             </Col>
           </Row>
@@ -172,14 +172,14 @@ const Filter = (props: {refetch: any, refetching: boolean}) => {
               <Form.Item
                 name="min_trace_length_to_sinks"
                 style={{marginBottom: 0}}>
-                <InputNumber placeholder="min" />
+                <InputNumber placeholder="min" min={0} />
               </Form.Item>
             </Col>
             <Col span={6}>
               <Form.Item
                 name="max_trace_length_to_sinks"
                 style={{marginBottom: 0}}>
-                <InputNumber placeholder="max" />
+                <InputNumber placeholder="max" min={0} />
               </Form.Item>
             </Col>
           </Row>
