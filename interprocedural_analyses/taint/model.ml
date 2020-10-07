@@ -23,6 +23,10 @@ type t = {
 }
 [@@deriving show]
 
+let remove_sinks model =
+  { model with backward = { model.backward with sink_taint = BackwardState.empty } }
+
+
 let add_obscure_sink ~resolution ~call_target model =
   match Callable.get_real_target call_target with
   | None -> model
@@ -45,7 +49,7 @@ let add_obscure_sink ~resolution ~call_target model =
             BackwardState.assign ~root ~path:[] sink sink_taint
           in
           let sink_taint =
-            List.fold_left ~init:BackwardState.empty ~f:add_parameter_sink parameters
+            List.fold_left ~init:model.backward.sink_taint ~f:add_parameter_sink parameters
           in
           { model with backward = { model.backward with sink_taint } } )
 

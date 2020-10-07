@@ -60,13 +60,13 @@ include Taint.Result.Register (struct
             Set.union skip_overrides new_skip_overrides,
             List.rev_append new_queries queries ))
     in
-    let remove_sinks models =
-      Callable.Map.map ~f:(fun model -> { model with backward = Backward.empty }) models
-    in
+    let remove_sinks models = Callable.Map.map ~f:Model.remove_sinks models in
     let add_obscure_sinks models =
       let add_obscure_sink models callable =
         let model =
-          Model.add_obscure_sink ~resolution ~call_target:callable Taint.Result.empty_model
+          Callable.Map.find models callable
+          |> Option.value ~default:Taint.Result.empty_model
+          |> Model.add_obscure_sink ~resolution ~call_target:callable
         in
         Callable.Map.set models ~key:callable ~data:model
       in
