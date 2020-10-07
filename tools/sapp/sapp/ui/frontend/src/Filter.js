@@ -98,17 +98,21 @@ const Filter = (props: {refetch: any, refetching: boolean}) => {
   `;
   const {data: paths} = useQuery(pathsQuery);
 
+  const callablesQuery = gql`
+    query Callables {
+      callables {
+        edges {
+          node {
+            callable
+          }
+        }
+      }
+    }
+  `;
+  const {data: callables} = useQuery(callablesQuery);
+
   const onFinish = values => {
     setSubmittedValues(formHandle.getFieldValue());
-
-    const split = input => {
-      if (input !== '' && input !== undefined) {
-        return input.trim().split(';');
-      }
-      return undefined;
-    };
-
-    values.callables = split(values.callables);
 
     const parse_bound = input => {
       if (input !== '' && input !== undefined) {
@@ -167,7 +171,14 @@ const Filter = (props: {refetch: any, refetching: boolean}) => {
           />
         </Form.Item>
         <Form.Item label="Callables" name="callables">
-          <Input />
+          <Select
+            mode="multiple"
+            options={(callables?.callables?.edges || []).map(edge => {
+              return {
+                value: edge.node.callable,
+              };
+            })}
+          />
         </Form.Item>
         <Divider orientation="left" plain>
           Trace Lengths

@@ -41,3 +41,21 @@ def all_paths(session: Session) -> List[Path]:
         .group_by(SharedText)
         .all()
     )
+
+
+class CallableType(graphene.ObjectType):
+    callable = graphene.String()
+
+
+class Callable(NamedTuple):
+    callable: str
+
+
+def all_callables(session: Session) -> List[Callable]:
+    return (
+        # pyre-fixme[16]: `str` has no attribute `label`.
+        session.query(IssueInstance, SharedText.contents.label("callable"))
+        .join(SharedText, SharedText.id == IssueInstance.callable_id)
+        .group_by(SharedText)
+        .all()
+    )
