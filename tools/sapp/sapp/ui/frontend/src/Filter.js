@@ -8,7 +8,7 @@
  * @flow
  */
 
-import React from 'react';
+import React, {useState} from 'react';
 import {
   Popover,
   Button,
@@ -22,6 +22,8 @@ import {
 import {SearchOutlined} from '@ant-design/icons';
 
 const Filter = (props: {refetch: any}) => {
+  const [visible, setVisible] = useState(false);
+
   const onFinish = values => {
     const split = input => {
       if (input !== '' && input !== undefined) {
@@ -61,6 +63,7 @@ const Filter = (props: {refetch: any}) => {
     );
 
     props.refetch(values);
+    setVisible(false);
   };
 
   const form = (
@@ -131,7 +134,11 @@ const Filter = (props: {refetch: any}) => {
   return (
     <>
       <div style={{textAlign: 'right', margin: '10px 0 -40px 0'}}>
-        <Popover content={form} placement="bottomRight" trigger="click">
+        <Popover
+          visible={visible}
+          content={form}
+          placement="bottomRight"
+          onClick={() => setVisible(!visible)}>
           <Button icon={<SearchOutlined />}>Filter...</Button>
         </Popover>
       </div>
