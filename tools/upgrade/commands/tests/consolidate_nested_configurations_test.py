@@ -36,9 +36,11 @@ class ConsolidateNestedConfigurationsTest(unittest.TestCase):
             "a/.pyre_configuration.local",
             "b/.pyre_configuration.local",
             "a/b/.pyre_configuration.local",
+            "aa/.pyre_configuration.local",
         ]
         expected_mapping = {
             "a/.pyre_configuration.local": ["a/b/.pyre_configuration.local"],
+            "aa/.pyre_configuration.local": [],
             "b/.pyre_configuration.local": [],
         }
         mapping = ConsolidateNestedConfigurations.from_arguments(

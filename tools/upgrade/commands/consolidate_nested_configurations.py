@@ -58,8 +58,9 @@ class ConsolidateNestedConfigurations(ErrorSuppressingCommand):
         )
         parser.add_argument("--submit", action="store_true", help=argparse.SUPPRESS)
 
+    @staticmethod
     def gather_nested_configuration_mapping(
-        self, configurations: List[str]
+        configurations: List[str],
     ) -> Dict[str, List[str]]:
         nested_configurations = {}
         for configuration in configurations:
@@ -69,9 +70,9 @@ class ConsolidateNestedConfigurations(ErrorSuppressingCommand):
             inserted = False
             for topmost_configuration in nested_configurations.keys():
                 existing = topmost_configuration.replace(
-                    "/.pyre_configuration.local", ""
+                    ".pyre_configuration.local", ""
                 )
-                current = configuration.replace("/.pyre_configuration.local", "")
+                current = configuration.replace(".pyre_configuration.local", "")
                 if current.startswith(existing):
                     nested_configurations[topmost_configuration].append(configuration)
                     inserted = True
