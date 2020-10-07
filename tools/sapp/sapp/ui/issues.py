@@ -5,26 +5,12 @@
 
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
-from typing import (
-    Any,
-    Generic,
-    List,
-    NamedTuple,
-    Optional,
-    Sequence,
-    Set,
-    TypeVar,
-    Union,
-)
+from typing import Any, List, NamedTuple, Optional, Set, Union
 
 import graphene
 from graphql.execution.base import ResolveInfo
-from sqlalchemy import Column, func
+from sqlalchemy import func
 from sqlalchemy.orm import Session, aliased
-from sqlalchemy.orm.query import Query as RawQuery
-from sqlalchemy.sql.expression import or_
-from typing_extensions import Final
 
 from ..models import (
     DBID,
@@ -35,6 +21,7 @@ from ..models import (
     SharedTextKind,
     SourceLocation,
 )
+from . import filters
 
 
 # pyre-fixme[5]: Global expression must be annotated.
@@ -137,107 +124,11 @@ class IssueQueryResult(NamedTuple):
         )
 
 
-_Q = TypeVar("_Q")
-_T = TypeVar("_T")
-
-
-class Predicate(ABC):
-    pass
-
-
-class QueryPredicate(Predicate):
-    @abstractmethod
-    def apply(self, query: RawQuery[_Q]) -> RawQuery[_Q]:
-        ...
-
-
-class InRange(Generic[_T], QueryPredicate):
-    def __init__(
-        self,
-        column: Union[Column[_T], DBID],
-        *,
-        lower: Optional[_T] = None,
-        upper: Optional[_T] = None,
-    ) -> None:
-        self._column = column
-        self._lower: Final[Optional[_T]] = lower
-        self._upper: Final[Optional[_T]] = upper
-
-    def apply(self, query: RawQuery[_Q]) -> RawQuery[_Q]:
-        if self._lower is not None:
-            query = query.filter(self._column >= self._lower)
-        if self._upper is not None:
-            query = query.filter(self._column <= self._upper)
-        return query
-
-
-class Equals(Generic[_T], QueryPredicate):
-    def __init__(self, column: Union[Column[_T], DBID], to: _T) -> None:
-        self._column = column
-        self._to: Final[Optional[_T]] = to
-
-    def apply(self, query: RawQuery[_Q]) -> RawQuery[_Q]:
-        return query.filter(self._column == self._to)
-
-
-class IsNull(Generic[_T], QueryPredicate):
-    def __init__(self, column: Union[Column[_T], DBID]) -> None:
-        self._column = column
-
-    def apply(self, query: RawQuery[_Q]) -> RawQuery[_Q]:
-        return query.filter(self._column is None)
-
-
-class Like(Generic[_T], QueryPredicate):
-    def __init__(self, column: Union[Column[_T], DBID], items: Sequence[_T]) -> None:
-        self._column = column
-        self._items = items
-
-    def apply(self, query: RawQuery[_Q]) -> RawQuery[_Q]:
-        # pyre-ignore: SQLAlchemy too dynamic.
-        return query.filter(or_(*[self._column.like(item) for item in self._items]))
-
-
-class IssuePredicate(Predicate):
-    # TODO(T71492980): migrate to query filters to remove bottleneck.
-    @abstractmethod
-    def apply(self, issues: List[IssueQueryResult]) -> List[IssueQueryResult]:
-        ...
-
-
-class HasAll(IssuePredicate):
-    def __init__(self, features: Set[str]) -> None:
-        self._features = features
-
-    def apply(self, issues: List[IssueQueryResult]) -> List[IssueQueryResult]:
-        return [
-            issue
-            for issue in issues
-            if issue.features & self._features == self._features
-        ]
-
-
-class HasAny(IssuePredicate):
-    def __init__(self, features: Set[str]) -> None:
-        self._features = features
-
-    def apply(self, issues: List[IssueQueryResult]) -> List[IssueQueryResult]:
-        return [issue for issue in issues if len(issue.features & self._features) > 0]
-
-
-class HasNone(IssuePredicate):
-    def __init__(self, features: Set[str]) -> None:
-        self._features = features
-
-    def apply(self, issues: List[IssueQueryResult]) -> List[IssueQueryResult]:
-        return [issue for issue in issues if len(issue.features & self._features) == 0]
-
-
 class Query:
     # pyre-fixme[3]: Return type must be annotated.
     def __init__(self, session: Session, run_id: Union[DBID, int]):
         self._session: Session = session
-        self._predicates: List[Predicate] = []
+        self._predicates: List[filters.Predicate] = []
         self._run_id = run_id
 
     def get(self) -> List[IssueQueryResult]:
@@ -282,7 +173,7 @@ class Query:
         )
 
         for predicate in self._predicates:
-            if isinstance(predicate, QueryPredicate):
+            if isinstance(predicate, filters.QueryPredicate):
                 query = predicate.apply(query)
 
         issues = [
@@ -295,7 +186,7 @@ class Query:
         issue_predicates = [
             predicate
             for predicate in self._predicates
-            if isinstance(predicate, IssuePredicate)
+            if isinstance(predicate, filters.IssuePredicate)
         ]
         if len(issue_predicates) > 0:
             for issue_predicate in issue_predicates:
@@ -303,29 +194,29 @@ class Query:
 
         return issues
 
-    def where(self, *predicates: Predicate) -> "Query":
+    def where(self, *predicates: filters.Predicate) -> "Query":
         self._predicates.extend(predicates)
         return self
 
     def where_issue_id_is(self, issue_id: Optional[int]) -> "Query":
         if issue_id is not None:
-            self._predicates.append(Equals(IssueInstance.id, issue_id))
+            self._predicates.append(filters.Equals(IssueInstance.id, issue_id))
         return self
 
     def where_codes_is_any_of(self, codes: List[int]) -> "Query":
-        return self.where(Like(Issue.code, codes))
+        return self.where(filters.Like(Issue.code, codes))
 
     def where_callables_is_any_of(self, callables: List[str]) -> "Query":
-        return self.where(Like(CallableText.contents, callables))
+        return self.where(filters.Like(CallableText.contents, callables))
 
     def where_file_names_is_any_of(self, file_names: List[str]) -> "Query":
-        return self.where(Like(FilenameText.contents, file_names))
+        return self.where(filters.Like(FilenameText.contents, file_names))
 
     def where_trace_length_to_sinks(
         self, minimum: Optional[int] = None, maximum: Optional[int] = None
     ) -> "Query":
         return self.where(
-            InRange(
+            filters.InRange(
                 IssueInstance.min_trace_length_to_sinks, lower=minimum, upper=maximum
             )
         )
@@ -334,19 +225,19 @@ class Query:
         self, minimum: Optional[int] = None, maximum: Optional[int] = None
     ) -> "Query":
         return self.where(
-            InRange(
+            filters.InRange(
                 IssueInstance.min_trace_length_to_sources, lower=minimum, upper=maximum
             )
         )
 
     def where_any_features(self, features: List[str]) -> "Query":
-        return self.where(HasAny(set(features)))
+        return self.where(filters.HasAny(set(features)))
 
     def where_all_features(self, features: List[str]) -> "Query":
-        return self.where(HasAll(set(features)))
+        return self.where(filters.HasAll(set(features)))
 
     def where_exclude_features(self, features: List[str]) -> "Query":
-        return self.where(HasNone(set(features)))
+        return self.where(filters.HasNone(set(features)))
 
     def sources(self, issue_id: DBID) -> Set[str]:
         return self.get_leaves_issue_instance(
