@@ -80,11 +80,7 @@ const Issues = () => {
   }, [data, oldData, setOldData]);
 
   var content = (
-    <IssuesList
-      data={refetching ? null : data}
-      fetchMore={fetchMore}
-      loading={refetching || loading}
-    />
+    <IssuesList data={data} fetchMore={fetchMore} loading={loading} />
   );
 
   if (error) {
@@ -97,7 +93,7 @@ const Issues = () => {
 
   return (
     <>
-      <Filter refetch={clearAndRefetch} />
+      <Filter refetch={clearAndRefetch} refetching={refetching} />
       <Breadcrumb style={{margin: '16px 0'}}>
         <Breadcrumb.Item>Issues</Breadcrumb.Item>
       </Breadcrumb>

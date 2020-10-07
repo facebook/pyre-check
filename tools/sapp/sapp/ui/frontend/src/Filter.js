@@ -23,7 +23,7 @@ import {
 } from 'antd';
 import {SearchOutlined} from '@ant-design/icons';
 
-const Filter = (props: {refetch: any}) => {
+const Filter = (props: {refetch: any, refetching: boolean}) => {
   const [visible, setVisible] = useState(false);
 
   const codesQuery = gql`
@@ -161,7 +161,7 @@ const Filter = (props: {refetch: any}) => {
         </Form.Item>
         <Form.Item wrapperCol={{offset: 10, span: 20}}>
           <Button onClick={() => formHandle.resetFields()}>Clear</Button>{' '}
-          <Button type="primary" htmlType="submit">
+          <Button type="primary" htmlType="submit" loading={props.refetching}>
             Apply
           </Button>
         </Form.Item>
@@ -173,7 +173,7 @@ const Filter = (props: {refetch: any}) => {
     <>
       <div style={{textAlign: 'right', margin: '10px 0 -40px 0'}}>
         <Popover
-          visible={visible}
+          visible={visible || props.refetching}
           content={form}
           placement="bottomRight"
           onClick={() => setVisible(!visible)}>
