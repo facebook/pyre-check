@@ -61,6 +61,11 @@ class CodeConnection(relay.Connection):
         node = typeahead.CodeType
 
 
+class PathConnection(relay.Connection):
+    class Meta:
+        node = typeahead.PathType
+
+
 class Query(graphene.ObjectType):
     # pyre-fixme[4]: Attribute must be annotated.
     node = relay.Node.Field()
@@ -89,6 +94,7 @@ class Query(graphene.ObjectType):
 
     # Typeahead data.
     codes = relay.ConnectionField(CodeConnection)
+    paths = relay.ConnectionField(PathConnection)
 
     file = relay.ConnectionField(FileConnection, path=graphene.String())
 
@@ -221,6 +227,10 @@ class Query(graphene.ObjectType):
     def resolve_codes(self, info: ResolveInfo) -> List[typeahead.Code]:
         session = info.context["session"]
         return typeahead.all_codes(session)
+
+    def resolve_paths(self, info: ResolveInfo) -> List[typeahead.Path]:
+        session = info.context["session"]
+        return typeahead.all_paths(session)
 
     def resolve_file(self, info: ResolveInfo, path: str, **kwargs: Any) -> List[File]:
         if ".." in path:

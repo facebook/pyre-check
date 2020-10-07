@@ -41,6 +41,19 @@ const Filter = (props: {refetch: any}) => {
   `;
   const {data: codes} = useQuery(codesQuery);
 
+  const pathsQuery = gql`
+    query Paths {
+      paths {
+        edges {
+          node {
+            path
+          }
+        }
+      }
+    }
+  `;
+  const {data: paths} = useQuery(pathsQuery);
+
   const onFinish = values => {
     const split = input => {
       if (input !== '' && input !== undefined) {
@@ -49,7 +62,6 @@ const Filter = (props: {refetch: any}) => {
       return undefined;
     };
 
-    values.file_names = split(values.file_names);
     values.callables = split(values.callables);
 
     const parse_bound = input => {
@@ -98,8 +110,12 @@ const Filter = (props: {refetch: any}) => {
             })}
           </Select>
         </Form.Item>
-        <Form.Item label="File Names" name="file_names">
-          <Input />
+        <Form.Item label="Paths" name="file_names">
+          <Select mode="tags">
+            {(paths?.paths?.edges || []).map(edge => {
+              return <Option key={edge.node.path}>{edge.node.path}</Option>;
+            })}
+          </Select>
         </Form.Item>
         <Form.Item label="Callables" name="callables">
           <Input />

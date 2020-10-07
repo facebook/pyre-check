@@ -10,7 +10,7 @@ from typing import List, NamedTuple
 import graphene
 from sqlalchemy.orm import Session
 
-from ..models import Issue
+from ..models import Issue, IssueInstance, SharedText
 
 
 class CodeType(graphene.ObjectType):
@@ -23,3 +23,21 @@ class Code(NamedTuple):
 
 def all_codes(session: Session) -> List[Code]:
     return session.query(Issue.code.distinct().label("code")).all()
+
+
+class PathType(graphene.ObjectType):
+    path = graphene.String()
+
+
+class Path(NamedTuple):
+    path: str
+
+
+def all_paths(session: Session) -> List[Path]:
+    return (
+        # pyre-fixme[16]: `str` has no attribute `label`.
+        session.query(IssueInstance, SharedText.contents.label("path"))
+        .join(SharedText, SharedText.id == IssueInstance.filename_id)
+        .group_by(SharedText)
+        .all()
+    )
