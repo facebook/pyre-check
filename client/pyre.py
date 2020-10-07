@@ -923,9 +923,16 @@ def start(
         return v2.start.run(
             configuration,
             command_arguments.StartArguments(
-                terminal=terminal,
-                store_type_check_resolution=store_type_check_resolution,
+                changed_files_path=command_argument.changed_files_path,
+                debug=command_argument.debug,
+                load_initial_state_from=command_argument.load_initial_state_from,
                 no_watchman=no_watchman,
+                save_initial_state_to=command_argument.save_initial_state_to,
+                saved_state_project=command_argument.saved_state_project,
+                sequential=command_argument.sequential,
+                show_error_traces=command_argument.show_error_traces,
+                store_type_check_resolution=store_type_check_resolution,
+                terminal=terminal,
             ),
         )
     else:

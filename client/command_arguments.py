@@ -52,6 +52,13 @@ class CommandArguments:
 
 @dataclass(frozen=True)
 class StartArguments:
-    terminal: bool = False
-    store_type_check_resolution: bool = False
+    changed_files_path: Optional[str] = None
+    debug: bool = False
+    load_initial_state_from: Optional[str] = None
     no_watchman: bool = False
+    save_initial_state_to: Optional[str] = None
+    saved_state_project: Optional[str] = None
+    sequential: bool = False
+    show_error_traces: bool = False
+    store_type_check_resolution: bool = False
+    terminal: bool = False
