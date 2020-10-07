@@ -83,7 +83,7 @@ function DelayedTooltip(
   );
 }
 
-const LeafKind = 'sources' | 'sinks';
+type LeafKind = 'sources' | 'sinks';
 
 function Leaves(
   props: $ReadOnly<{|
@@ -188,7 +188,7 @@ class IssuesList extends React.Component<Props, State> {
       const captured = this;
       setTimeout(function() {
         // Avoid clobbering the server with too many requests.
-        captured.setState({regcently_started_loading: false});
+        captured.setState({recently_started_loading: false});
       }, 1000);
       this._fetchIssues();
     }

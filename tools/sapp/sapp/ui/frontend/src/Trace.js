@@ -61,7 +61,7 @@ function Frame(
     kind: Kind,
     displaySource: boolean,
   |}>,
-): ReactNode {
+): React$Node {
   const [selectedFrameId, setSelectedFrameId] = useState(null);
 
   if (props.frames.length === 0) {
