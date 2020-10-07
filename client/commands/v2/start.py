@@ -6,9 +6,15 @@
 import dataclasses
 import enum
 import logging
-from typing import Any, Dict, Optional, Sequence, Tuple, Union
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
-from ... import command_arguments, commands, configuration
+from ... import (
+    command_arguments,
+    commands,
+    configuration as configuration_module,
+    find_directories,
+)
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -92,7 +98,7 @@ class Arguments:
     number_of_workers: int = 1
     parallel: bool = True
     saved_state_action: Optional[SavedStateAction] = None
-    search_paths: Sequence[configuration.SearchPathElement] = dataclasses.field(
+    search_paths: Sequence[configuration_module.SearchPathElement] = dataclasses.field(
         default_factory=list
     )
     show_error_traces: bool = False
@@ -138,8 +144,129 @@ class Arguments:
         }
 
 
+def get_critical_files(
+    configuration: configuration_module.Configuration,
+) -> List[CriticalFile]:
+    def get_full_path(root: str, relative: str) -> str:
+        full_path = (Path(root) / relative).resolve(strict=False)
+        if not full_path.exists():
+            LOG.warning(f"Critical file does not exist: {full_path}")
+        return str(full_path)
+
+    local_root = configuration.local_root
+    return [
+        CriticalFile(
+            policy=MatchPolicy.FULL_PATH,
+            path=get_full_path(
+                root=configuration.project_root,
+                relative=find_directories.CONFIGURATION_FILE,
+            ),
+        ),
+        *(
+            []
+            if local_root is None
+            else [
+                CriticalFile(
+                    policy=MatchPolicy.FULL_PATH,
+                    path=get_full_path(
+                        root=local_root,
+                        relative=find_directories.LOCAL_CONFIGURATION_FILE,
+                    ),
+                )
+            ]
+        ),
+        *(
+            [
+                CriticalFile(
+                    policy=MatchPolicy.FULL_PATH,
+                    path=get_full_path(root=path, relative=""),
+                )
+                for path in configuration.other_critical_files
+            ]
+        ),
+    ]
+
+
+def get_saved_state_action(
+    start_arguments: command_arguments.StartArguments,
+    relative_local_root: Optional[str] = None,
+) -> Optional[SavedStateAction]:
+    # Loading states from file takes precedence
+    saved_state_file = start_arguments.load_initial_state_from
+    if saved_state_file is not None:
+        return LoadSavedStateFromFile(
+            shared_memory_path=saved_state_file,
+            changed_files_path=start_arguments.changed_files_path,
+        )
+
+    saved_state_project = start_arguments.saved_state_project
+    if saved_state_project is not None:
+        return LoadSavedStateFromProject(
+            project_name=saved_state_project,
+            project_metadata=relative_local_root.replace("/", "$")
+            if relative_local_root is not None
+            else None,
+        )
+
+    return None
+
+
+def find_watchman_root(base: Path) -> Optional[Path]:
+    return find_directories.find_parent_directory_containing_file(
+        base, ".watchmanconfig"
+    )
+
+
+def create_server_arguments(
+    configuration: configuration_module.Configuration,
+    start_arguments: command_arguments.StartArguments,
+) -> Arguments:
+    """
+    Translate client configurations and command-line flags to server
+    configurations.
+
+    This API is not pure since it needs to access filesystem to filter out
+    nonexistent directories. It is idempotent though, since it does not alter
+    any filesystem state.
+    """
+    source_directories = configuration.source_directories or []
+    if len(source_directories) == 0:
+        raise configuration_module.InvalidConfiguration(
+            "New server does not have buck support yet."
+        )
+    return Arguments(
+        log_path=configuration.log_directory,
+        global_root=configuration.project_root,
+        checked_directory_allowlist=(
+            configuration.get_existent_do_not_ignore_errors_in_paths()
+        ),
+        checked_directory_blocklist=(
+            configuration.get_existent_ignore_all_errors_paths()
+        ),
+        critical_files=get_critical_files(configuration),
+        debug=start_arguments.debug,
+        excludes=configuration.excludes,
+        extensions=configuration.get_valid_extensions(),
+        local_root=configuration.local_root,
+        number_of_workers=configuration.get_number_of_workers(),
+        parallel=not start_arguments.sequential,
+        saved_state_action=get_saved_state_action(
+            start_arguments, relative_local_root=configuration.relative_local_root
+        ),
+        search_paths=configuration.get_existent_search_paths(),
+        show_error_traces=start_arguments.show_error_traces,
+        source_paths=source_directories,
+        store_type_check_resolution=start_arguments.store_type_check_resolution,
+        strict=configuration.strict,
+        taint_models_path=configuration.taint_models_path,
+        watchman_root=None
+        if start_arguments.no_watchman
+        else str(find_watchman_root(Path(configuration.project_root))),
+    )
+
+
 def run(
-    configuration: configuration.Configuration,
+    configuration: configuration_module.Configuration,
     start_arguments: command_arguments.StartArguments,
 ) -> commands.ExitCode:
     LOG.warning("Not implemented yet")
