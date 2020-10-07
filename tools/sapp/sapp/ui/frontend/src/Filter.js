@@ -66,11 +66,14 @@ const Filter = (props: {refetch: any}) => {
     setVisible(false);
   };
 
+  const [formHandle] = Form.useForm();
+
   const form = (
     <div style={{width: '300px'}}>
       <Form
         labelCol={{span: 10}}
         wrapperCol={{span: 30}}
+        form={formHandle}
         name="basic"
         initialValues={{remember: true}}
         onFinish={onFinish}>
@@ -123,6 +126,7 @@ const Filter = (props: {refetch: any}) => {
           </Row>
         </Form.Item>
         <Form.Item wrapperCol={{offset: 10, span: 20}}>
+          <Button onClick={() => formHandle.resetFields()}>Clear</Button>{' '}
           <Button type="primary" htmlType="submit">
             Apply
           </Button>
