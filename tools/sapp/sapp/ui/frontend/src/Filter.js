@@ -10,17 +10,7 @@
 
 import React, {useState} from 'react';
 import {useQuery, gql} from '@apollo/client';
-import {
-  Popover,
-  Button,
-  Form,
-  Input,
-  InputNumber,
-  Row,
-  Col,
-  Divider,
-  Select,
-} from 'antd';
+import {Popover, Button, Form, InputNumber, Row, Col, Select} from 'antd';
 import {SearchOutlined} from '@ant-design/icons';
 
 type Values = {
@@ -118,10 +108,9 @@ const Filter = (props: {refetch: any, refetching: boolean}) => {
   };
 
   const form = (
-    <div style={{width: '300px'}}>
+    <div style={{width: '500px'}}>
       <Form
-        labelCol={{span: 10}}
-        wrapperCol={{span: 30}}
+        layout="vertical"
         form={formHandle}
         name="basic"
         initialValues={{remember: true}}
@@ -159,37 +148,16 @@ const Filter = (props: {refetch: any, refetching: boolean}) => {
             })}
           />
         </Form.Item>
-        <Divider orientation="left" plain>
-          Trace Lengths
-        </Divider>
-        <Form.Item label="to Sinks">
+        <Form.Item label="Trace Lengths from Sources">
           <Row>
-            <Col span={8}>
-              <Form.Item
-                name="min_trace_length_to_sinks"
-                style={{marginBottom: 0}}>
-                <InputNumber placeholder="min" />
-              </Form.Item>
-            </Col>
-            <Col span={8}>
-              <Form.Item
-                name="max_trace_length_to_sinks"
-                style={{marginBottom: 0}}>
-                <InputNumber placeholder="max" />
-              </Form.Item>
-            </Col>
-          </Row>
-        </Form.Item>
-        <Form.Item label="to Sources">
-          <Row>
-            <Col span={8}>
+            <Col span={6}>
               <Form.Item
                 name="min_trace_length_to_sources"
                 style={{marginBottom: 0}}>
                 <InputNumber placeholder="min" />
               </Form.Item>
             </Col>
-            <Col span={8}>
+            <Col span={6}>
               <Form.Item
                 name="max_trace_length_to_sources"
                 style={{marginBottom: 0}}>
@@ -198,22 +166,42 @@ const Filter = (props: {refetch: any, refetching: boolean}) => {
             </Col>
           </Row>
         </Form.Item>
-        <Form.Item wrapperCol={{offset: 10, span: 20}}>
-          <Button
-            onClick={() => {
-              formHandle.resetFields();
-              setCurrentValues(formHandle.getFieldValue());
-            }}
-            disabled={!valuesSet(currentValues)}>
-            Clear
-          </Button>{' '}
-          <Button
-            type="primary"
-            htmlType="submit"
-            disabled={!valuesChanged(submittedValues, currentValues)}
-            loading={props.refetching}>
-            Apply
-          </Button>
+        <Form.Item label="Trace Lengths to Sinks">
+          <Row>
+            <Col span={6}>
+              <Form.Item
+                name="min_trace_length_to_sinks"
+                style={{marginBottom: 0}}>
+                <InputNumber placeholder="min" />
+              </Form.Item>
+            </Col>
+            <Col span={6}>
+              <Form.Item
+                name="max_trace_length_to_sinks"
+                style={{marginBottom: 0}}>
+                <InputNumber placeholder="max" />
+              </Form.Item>
+            </Col>
+          </Row>
+        </Form.Item>
+        <Form.Item>
+          <div style={{textAlign: 'right'}}>
+            <Button
+              onClick={() => {
+                formHandle.resetFields();
+                setCurrentValues(formHandle.getFieldValue());
+              }}
+              disabled={!valuesSet(currentValues)}>
+              Clear
+            </Button>{' '}
+            <Button
+              type="primary"
+              htmlType="submit"
+              disabled={!valuesChanged(submittedValues, currentValues)}
+              loading={props.refetching}>
+              Apply
+            </Button>
+          </div>
         </Form.Item>
       </Form>
     </div>
