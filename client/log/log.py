@@ -56,7 +56,9 @@ class Character:
 
 class SectionFormatter(logging.Formatter):
     def __init__(self) -> None:
-        super(SectionFormatter, self).__init__("%(asctime)s %(levelname)s %(message)s")
+        super(SectionFormatter, self).__init__(
+            "%(asctime)s [PID %(process)d] %(levelname)s %(message)s"
+        )
 
     def format(self, record: logging.LogRecord) -> str:
         formatted = super(SectionFormatter, self).format(record)
