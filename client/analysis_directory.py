@@ -200,7 +200,7 @@ class SharedAnalysisDirectory(AnalysisDirectory):
         temporary_directories: Optional[List[str]] = None,
     ) -> None:
         self._source_directories: Set[str] = set(source_directories)
-        self._targets: Set[str] = set(targets)
+        self._targets: List[str] = targets
         self._original_directory = original_directory
         self._project_root = project_root
         self._filter_paths: Set[str] = filter_paths or set()
