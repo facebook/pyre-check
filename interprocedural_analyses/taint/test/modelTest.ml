@@ -1021,12 +1021,13 @@ let test_invalid_models context =
   assert_invalid_model
     ~model_source:"test.missing_global: TaintSink[Test]"
     ~expect:
-      "Invalid model for `test.missing_global`: Modeled entity is not part of the environment!"
+      "Invalid model for `test.missing_global`: `test.missing_global` does not correspond to a \
+       class's attribute or a global."
     ();
   assert_valid_model ~model_source:"test.C.unannotated_class_variable: TaintSink[Test]" ();
   assert_invalid_model
     ~model_source:"test.C.missing: TaintSink[Test]"
-    ~expect:"Invalid model for `test.C.missing`: Modeled entity is not part of the environment!"
+    ~expect:"Invalid model for `test.C.missing`: Class `test.C` has no attribute `missing`."
     ();
   assert_invalid_model
     ~model_source:
@@ -1256,6 +1257,45 @@ let test_invalid_models context =
       def foo(__: int, kwonly: str) -> None: ...
     |}
     ~model_source:"def test.foo(__: TaintSource[A], kwonly): ..."
+    ();
+  assert_invalid_model
+    ~source:{|
+      class C:
+        @property
+        def foo(self) -> int: ...
+    |}
+    ~model_source:"test.C.foo: TaintSource[A] = ..."
+    ~expect:"Invalid model for `test.C.foo`: Class `test.C` has no attribute `foo`."
+    ();
+  assert_invalid_model
+    ~source:{|
+      class C:
+        foo = 1
+      class D(C):
+        pass
+    |}
+    ~model_source:"test.D.foo: TaintSource[A] = ..."
+    ~expect:"Invalid model for `test.D.foo`: Class `test.D` has no attribute `foo`."
+    ();
+  assert_valid_model
+    ~source:{|
+      class C:
+        foo = 1
+      class D(C):
+        pass
+    |}
+    ~model_source:"test.C.foo: TaintSource[A] = ..."
+    ();
+  assert_valid_model
+    ~source:
+      {|
+      class C:
+        foo = 1
+      class D(C):
+        def __init__(self):
+          self.foo = 2
+    |}
+    ~model_source:"test.D.foo: TaintSource[A] = ..."
     ()
 
 

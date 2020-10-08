@@ -244,3 +244,56 @@ let verify_signature ~normalized_model_parameters ~name callable_annotation =
           raise_invalid_model error
       | None -> () )
   | _ -> ()
+
+
+exception
+  GlobalVerificationError of {
+    name: string;
+    message: string;
+  }
+
+let verify_global ~resolution ~name =
+  let name = demangle_class_attribute (Reference.show name) |> Reference.create in
+  let global_resolution = Resolution.global_resolution resolution in
+  let global = GlobalResolution.global global_resolution name in
+  if Option.is_some global then
+    ()
+  else
+    let class_summary, attribute_name =
+      ( Reference.as_list name
+        |> List.drop_last
+        >>| Reference.create_from_list
+        >>| Reference.show
+        >>| (fun class_name -> Type.Primitive class_name)
+        >>= GlobalResolution.class_definition global_resolution
+        >>| Node.value,
+        Reference.last name )
+    in
+    match class_summary with
+    | Some { ClassSummary.attribute_components; name = class_name; _ } ->
+        let attributes, constructor_attributes =
+          ( Statement.Class.attributes ~include_generated_attributes:false attribute_components,
+            Statement.Class.constructor_attributes attribute_components )
+        in
+        if
+          Identifier.SerializableMap.mem attribute_name attributes
+          || Identifier.SerializableMap.mem attribute_name constructor_attributes
+        then
+          ()
+        else
+          let error =
+            Format.sprintf
+              "Class `%s` has no attribute `%s`."
+              (Reference.show class_name)
+              attribute_name
+          in
+          Log.error "%s" error;
+          raise (GlobalVerificationError { name = Reference.show name; message = error })
+    | _ ->
+        let error =
+          Format.sprintf
+            "`%s` does not correspond to a class's attribute or a global."
+            (Reference.show name)
+        in
+        Log.error "%s" error;
+        raise (GlobalVerificationError { name = Reference.show name; message = error })

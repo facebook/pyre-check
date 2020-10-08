@@ -16,3 +16,11 @@ val verify_signature
   name:Reference.t ->
   Type.Callable.t option ->
   unit
+
+exception
+  GlobalVerificationError of {
+    name: string;
+    message: string;
+  }
+
+val verify_global : resolution:Resolution.t -> name:Reference.t -> unit

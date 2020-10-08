@@ -513,6 +513,8 @@ and Class : sig
     AttributeComponents.t ->
     Attribute.t Identifier.SerializableMap.t
 
+  val constructor_attributes : AttributeComponents.t -> Attribute.t Identifier.SerializableMap.t
+
   val attributes
     :  ?include_generated_attributes:bool ->
     ?in_test:bool ->
@@ -1131,6 +1133,10 @@ end = struct
     (* Merge with decreasing priority. *)
     additional_attributes
     |> Identifier.SerializableMap.merge merge_attribute_maps implicitly_assigned_attributes
+
+
+  let constructor_attributes { AttributeComponents.constructor_attributes; _ } =
+    constructor_attributes
 
 
   let attributes

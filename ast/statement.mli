@@ -206,6 +206,8 @@ and Class : sig
     AttributeComponents.t ->
     Attribute.t Identifier.SerializableMap.t
 
+  val constructor_attributes : AttributeComponents.t -> Attribute.t Identifier.SerializableMap.t
+
   val attributes
     :  ?include_generated_attributes:bool ->
     ?in_test:bool ->
