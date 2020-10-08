@@ -3,15 +3,14 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-unsafe
-
 import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, mock_open, patch
 
 from ... import upgrade
 from ...repository import Repository
-from ..fixme_single import Configuration, ErrorSuppressingCommand, FixmeSingle
+from ..command import ErrorSuppressingCommand
+from ..fixme_single import Configuration, FixmeSingle
 
 
 repository = Repository()
@@ -27,13 +26,13 @@ class FixmeSingleTest(unittest.TestCase):
     @patch(f"{upgrade.__name__}.Repository.submit_changes")
     def test_run_fixme_single(
         self,
-        submit_changes,
-        suppress_errors,
-        get_errors,
-        remove_version,
-        configuration_write,
-        find_configuration,
-        subprocess,
+        submit_changes: MagicMock,
+        suppress_errors: MagicMock,
+        get_errors: MagicMock,
+        remove_version: MagicMock,
+        configuration_write: MagicMock,
+        find_configuration: MagicMock,
+        subprocess: MagicMock,
     ) -> None:
         arguments = MagicMock()
         arguments.submit = True

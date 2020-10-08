@@ -10,8 +10,7 @@ from pathlib import Path
 from ..configuration import Configuration
 from ..filesystem import path_exists
 from ..repository import Repository
-from .command import ErrorSuppressingCommand  # noqa
-from .command import CommandArguments, ProjectErrorSuppressingCommand
+from .command import CommandArguments, ErrorSource, ProjectErrorSuppressingCommand
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -25,7 +24,7 @@ class FixmeSingle(ProjectErrorSuppressingCommand):
         repository: Repository,
         only_fix_error_code: int,
         upgrade_version: bool,
-        error_source: str,
+        error_source: ErrorSource,
         no_commit: bool,
         submit: bool,
         path: Path,

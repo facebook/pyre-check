@@ -129,14 +129,14 @@ class ProjectErrorSuppressingCommand(ErrorSuppressingCommand):
         repository: Repository,
         only_fix_error_code: Optional[int],
         upgrade_version: bool,
-        error_source: str,
+        error_source: ErrorSource,
         no_commit: bool,
         submit: bool,
     ) -> None:
         super().__init__(command_arguments, repository)
         self._only_fix_error_code: Optional[int] = only_fix_error_code
         self._upgrade_version: bool = upgrade_version
-        self._error_source: str = error_source
+        self._error_source: ErrorSource = error_source
         self._no_commit: bool = no_commit
         self._submit: bool = submit
 
@@ -177,7 +177,7 @@ class ProjectErrorSuppressingCommand(ErrorSuppressingCommand):
                 return
         errors = (
             Errors.from_stdin(self._only_fix_error_code)
-            if self._error_source == "stdin" and not self._upgrade_version
+            if self._error_source == ErrorSource.STDIN and not self._upgrade_version
             else configuration.get_errors(only_fix_error_code=self._only_fix_error_code)
         )
         if len(errors) > 0:

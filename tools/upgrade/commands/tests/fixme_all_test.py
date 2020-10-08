@@ -14,7 +14,7 @@ from unittest.mock import MagicMock, call, mock_open, patch
 from ... import upgrade
 from ...repository import Repository
 from .. import command
-from ..command import ProjectErrorSuppressingCommand
+from ..command import ErrorSource, ProjectErrorSuppressingCommand
 from ..fixme_all import Configuration, ErrorSuppressingCommand, FixmeAll
 
 
@@ -139,7 +139,7 @@ class FixmeAllTest(unittest.TestCase):
         arguments = MagicMock()
         arguments.submit = False
         arguments.lint = False
-        arguments.error_source = "generate"
+        arguments.error_source = ErrorSource.GENERATE
         arguments.upgrade_version = True
         arguments.no_commit = False
         gather.return_value = []
@@ -183,7 +183,7 @@ class FixmeAllTest(unittest.TestCase):
         # Test with lint
         submit_changes.reset_mock()
         suppress_errors.reset_mock()
-        arguments.error_source = "generate"
+        arguments.error_source = ErrorSource.GENERATE
         arguments.lint = True
         ProjectErrorSuppressingCommand(
             command.CommandArguments.from_arguments(arguments),
@@ -207,7 +207,7 @@ class FixmeAllTest(unittest.TestCase):
         submit_changes.reset_mock()
         suppress_errors.reset_mock()
         get_errors.reset_mock()
-        arguments.error_source = "stdin"
+        arguments.error_source = ErrorSource.STDIN
         arguments.lint = True
         arguments.upgrade_version = False
         errors_from_stdin.return_value = pyre_errors
@@ -256,7 +256,7 @@ class FixmeAllTest(unittest.TestCase):
         arguments = MagicMock()
         arguments.submit = False
         arguments.lint = False
-        arguments.error_source = "generate"
+        arguments.error_source = ErrorSource.GENERATE
         arguments.upgrade_version = True
         arguments.no_commit = False
         gather.return_value = [
