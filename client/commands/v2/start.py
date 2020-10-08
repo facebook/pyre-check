@@ -5,15 +5,20 @@
 
 import dataclasses
 import enum
+import json
 import logging
+import os
+import subprocess
+import tempfile
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple, Union
 
 from ... import (
     command_arguments,
     commands,
     configuration as configuration_module,
     find_directories,
+    log,
 )
 
 
@@ -265,9 +270,87 @@ def create_server_arguments(
     )
 
 
+def _write_argument_file(arguments: Arguments, to_path: Path) -> None:
+    LOG.info(f"Writing server startup configurations into {to_path}...")
+    serialized_arguments = arguments.serialize()
+    LOG.debug(f"Arguments:\n{json.dumps(serialized_arguments, indent=2)}")
+    to_path.write_text(json.dumps(serialized_arguments))
+
+
+def _run_in_foreground(command: Sequence[str], environment: Mapping[str, str]) -> int:
+    # In foreground mode, we shell out to the backend server and block on it.
+    # Server stdout/stderr will be forwarded to the current terminal.
+    try:
+        LOG.info("Starting server in the foreground...\n")
+        result = subprocess.run(
+            command, env=environment, stdout=None, stderr=None, universal_newlines=True
+        )
+        return result.returncode
+    except KeyboardInterrupt:
+        # Backend server will exit cleanly when receiving SIGINT.
+        return 0
+
+
+def _run_in_background(
+    command: Sequence[str], environment: Mapping[str, str], log_directory: Path
+) -> int:
+    # In background mode, we asynchronously start the server with `Popen` and
+    # detach it from the current process immediately with `start_new_session`.
+    # Do not call `wait()` on the Popen object to avoid blocking.
+    # Server stdout/stderr will be forwarded to dedicated log files.
+    with open(str(log_directory / "server.stdout"), "a") as server_stdout, open(
+        str(log_directory / "server.stderr"), "a"
+    ) as server_stderr:
+        subprocess.Popen(
+            command,
+            stdout=server_stdout,
+            stderr=server_stderr,
+            env=environment,
+            start_new_session=True,
+            universal_newlines=True,
+        )
+    log.stdout.write("Server is starting in the background.\n")
+    return 0
+
+
 def run(
     configuration: configuration_module.Configuration,
     start_arguments: command_arguments.StartArguments,
 ) -> commands.ExitCode:
-    LOG.warning("Not implemented yet")
-    return commands.ExitCode.SUCCESS
+    binary_location = configuration.get_binary_respecting_override()
+    if binary_location is None:
+        raise configuration_module.InvalidConfiguration(
+            "Cannot locate a Pyre binary to run."
+        )
+
+    log_directory = Path(configuration.log_directory) / "new_server"
+    log_directory.mkdir(parents=True, exist_ok=True)
+    # Use distinct file name for different PIDs to avoid file write races from
+    # multiple concurrent `pyre start` processes.
+    argument_file_path = log_directory / f"arguments_{os.getpid()}.json"
+    _write_argument_file(
+        arguments=create_server_arguments(configuration, start_arguments),
+        to_path=argument_file_path,
+    )
+
+    server_command = [binary_location, "newserver", str(argument_file_path)]
+    server_environment = {
+        **os.environ,
+        # This is to make sure that backend server shares the socket root
+        # directory with the client.
+        # TODO: It might be cleaner to turn this into a configuration option
+        # instead.
+        "TMPDIR": tempfile.gettempdir(),
+    }
+    if start_arguments.terminal:
+        return_code = _run_in_foreground(server_command, server_environment)
+    else:
+        return_code = _run_in_background(
+            server_command, server_environment, log_directory
+        )
+
+    if return_code == 0:
+        return commands.ExitCode.SUCCESS
+    else:
+        LOG.error(f"Server exited with non-zero return code: {return_code}")
+        return commands.ExitCode.FAILURE
