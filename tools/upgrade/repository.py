@@ -15,7 +15,12 @@ class Repository:
         "https://fb.workplace.com/groups/295311271085134/permalink/552700215346237/"
     )
 
-    def commit_message(self, title: str, summary_override: Optional[str] = None) -> str:
+    def commit_message(
+        self,
+        title: str,
+        summary_override: Optional[str] = None,
+        reviewers: Optional[List[str]] = None,
+    ) -> str:
         return ""
 
     def add_paths(self, paths: List[Path]) -> None:
@@ -30,6 +35,7 @@ class Repository:
         submit: bool,
         title: Optional[str] = None,
         summary: Optional[str] = None,
+        reviewers: Optional[List[str]] = None,
         ignore_failures: bool = False,
         set_dependencies: bool = True,
     ) -> None:
