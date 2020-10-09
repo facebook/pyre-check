@@ -32,7 +32,7 @@ class GetGraphQLSourcesTest(unittest.TestCase):
             graphql_module="tools.pyre.tools.generate_taint_models.tests",
             graphql_object_type=GraphQLObjectType,
         ).gather_functions_to_model()
-        self.assertSetEqual(set(functions), {function_1, function_2})
+        self.assertTrue({function_1, function_2}.issubset(set(functions)))
 
         # Run the same test again, passing in a list for 'graphql_module', to
         # ensure both work
@@ -41,7 +41,7 @@ class GetGraphQLSourcesTest(unittest.TestCase):
             graphql_object_type=GraphQLObjectType,
         ).gather_functions_to_model()
 
-        self.assertSetEqual(set(functions), {function_1, function_2})
+        self.assertTrue({function_1, function_2}.issubset(set(functions)))
 
     def test_compute_models(self) -> None:
         source = "TaintSource[UserControlled]"

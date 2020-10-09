@@ -25,6 +25,7 @@ from .get_constructor_initialized_attribute_sources import (  # noqa
     ConstructorInitializedAttributeSourceGenerator,
 )
 from .get_django_class_based_view_models import DjangoClassBasedViewModels  # noqa
+from .get_dynamic_graphql_sources import DynamicGraphQLSourceGenerator  # noqa
 from .get_exit_nodes import ExitNodeGenerator  # noqa
 from .get_filtered_sources import FilteredSourceGenerator  # noqa
 from .get_globals import GlobalModelGenerator  # noqa
