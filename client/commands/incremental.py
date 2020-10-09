@@ -4,10 +4,17 @@
 # LICENSE file in the root directory of this source tree.
 
 import logging
+import os
 from logging import Logger
 from typing import List, Optional
 
-from .. import command_arguments, configuration_monitor, json_rpc, project_files_monitor
+from .. import (
+    command_arguments,
+    configuration_monitor,
+    filesystem,
+    json_rpc,
+    project_files_monitor,
+)
 from ..analysis_directory import AnalysisDirectory
 from ..configuration import Configuration
 from .command import ExitCode, IncrementalStyle, Result, State, typeshed_search_path
@@ -46,48 +53,59 @@ class Incremental(Reporting):
         self._no_watchman = no_watchman
 
     def _ensure_server_and_monitors_are_initialized(self) -> None:
-        if self._state() == State.DEAD:
-            if not self._no_start_server:
-                LOG.info(
-                    "Starting server at `%s`.", self._analysis_directory.get_root()
-                )
-                exit_code = (
-                    Start(
-                        self._command_arguments,
-                        self._original_directory,
-                        configuration=self._configuration,
-                        analysis_directory=self._analysis_directory,
-                        terminal=False,
-                        store_type_check_resolution=False,
-                        use_watchman=not self._no_watchman,
-                        incremental_style=self._incremental_style,
-                    )
-                    .run()
-                    .exit_code()
-                )
-                if exit_code != ExitCode.SUCCESS:
-                    self._exit_code = ExitCode.FAILURE
-                    raise ClientInitializationError
-        else:
-            if not self._no_watchman and (
-                not project_files_monitor.ProjectFilesMonitor.is_alive(
-                    self._configuration
-                )
-                or not configuration_monitor.ConfigurationMonitor.is_alive(
-                    self._configuration
-                )
-            ):
-                LOG.warning(
-                    "Pyre's file watching service is down."
-                    " Results may be inconsistent with full checks."
-                    " Please run `pyre restart` to bring Pyre server to a "
-                    "consistent state again."
-                )
-                self._exit_code = ExitCode.INCONSISTENT_SERVER
-                raise ClientInitializationError
+        LOG.info("Waiting for server...")
+        client_lock = os.path.join(self._configuration.log_directory, "client.lock")
 
-        if self._state() != State.DEAD:
-            LOG.info("Waiting for server...")
+        # The client lock guards the critical section of initializing the
+        # configuration monitor, the analysis directory, the server, and the
+        # file monitor.
+        #
+        # * Otherwise, there may be a race where the server has started up but not yet
+        # finished initializing. That would mean the file monitor wouldn't be
+        # alive yet, which would lead to spurious "file monitor is down" failures.
+        # * Another race is where the analysis directory has been built by a
+        # background `pyre start` but the server has not yet been started up.
+        # That would make Incremental unnecessarily run Start again.
+        with filesystem.acquire_lock(client_lock, blocking=True):
+            if self._state() == State.DEAD:
+                if not self._no_start_server:
+                    LOG.info(
+                        "Starting server at `%s`.", self._analysis_directory.get_root()
+                    )
+                    exit_code = (
+                        Start(
+                            self._command_arguments,
+                            self._original_directory,
+                            configuration=self._configuration,
+                            analysis_directory=self._analysis_directory,
+                            terminal=False,
+                            store_type_check_resolution=False,
+                            use_watchman=not self._no_watchman,
+                            incremental_style=self._incremental_style,
+                        )
+                        .run()
+                        .exit_code()
+                    )
+                    if exit_code != ExitCode.SUCCESS:
+                        self._exit_code = ExitCode.FAILURE
+                        raise ClientInitializationError
+            else:
+                if not self._no_watchman and (
+                    not project_files_monitor.ProjectFilesMonitor.is_alive(
+                        self._configuration
+                    )
+                    or not configuration_monitor.ConfigurationMonitor.is_alive(
+                        self._configuration
+                    )
+                ):
+                    LOG.warning(
+                        "Pyre's file watching service is down."
+                        " Results may be inconsistent with full checks."
+                        " Please run `pyre restart` to bring Pyre server to a "
+                        "consistent state again."
+                    )
+                    self._exit_code = ExitCode.INCONSISTENT_SERVER
+                    raise ClientInitializationError
 
     def _run(self) -> None:
         try:
