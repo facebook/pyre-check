@@ -18,6 +18,10 @@ from .start import Start
 LOG: Logger = logging.getLogger(__name__)
 
 
+class ClientInitializationError(Exception):
+    pass
+
+
 class Incremental(Reporting):
     NAME = "incremental"
 
@@ -41,7 +45,7 @@ class Incremental(Reporting):
         self._no_start_server = no_start_server
         self._no_watchman = no_watchman
 
-    def _run(self) -> None:
+    def _ensure_server_and_monitors_are_initialized(self) -> None:
         if self._state() == State.DEAD:
             if not self._no_start_server:
                 LOG.info(
@@ -63,7 +67,7 @@ class Incremental(Reporting):
                 )
                 if exit_code != ExitCode.SUCCESS:
                     self._exit_code = ExitCode.FAILURE
-                    return
+                    raise ClientInitializationError
         else:
             if not self._no_watchman and (
                 not project_files_monitor.ProjectFilesMonitor.is_alive(
@@ -80,10 +84,16 @@ class Incremental(Reporting):
                     "consistent state again."
                 )
                 self._exit_code = ExitCode.INCONSISTENT_SERVER
-                return
+                raise ClientInitializationError
 
         if self._state() != State.DEAD:
             LOG.info("Waiting for server...")
+
+    def _run(self) -> None:
+        try:
+            self._ensure_server_and_monitors_are_initialized()
+        except ClientInitializationError:
+            return
 
         with self._analysis_directory.acquire_shared_reader_lock():
             request = json_rpc.Request(
