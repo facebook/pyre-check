@@ -520,3 +520,11 @@ class TargetsToConfigurationTest(unittest.TestCase):
         configuration.deduplicate_targets()
         expected_targets = ["//a/b:"]
         self.assertEqual(expected_targets, configuration.targets)
+
+        mock_check_output.side_effect = [b"//a/b:x\n//a/b:y", b"//a/b/:x"]
+        configuration = Configuration(
+            Path("test"), {"targets": ["//preserve:order", "//a/b:x", "//a/b/..."]}
+        )
+        configuration.deduplicate_targets()
+        expected_targets = ["//preserve:order", "//a/b/..."]
+        self.assertEqual(expected_targets, configuration.targets)
