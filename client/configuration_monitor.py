@@ -39,9 +39,10 @@ class ConfigurationMonitor(Subscriber):
         local_configuration_root: Optional[str],
         other_critical_files: List[str],
     ) -> None:
-        super(ConfigurationMonitor, self).__init__(self.base_path(configuration))
+        super(ConfigurationMonitor, self).__init__(
+            self.base_path(configuration), configuration
+        )
         self._command_arguments = command_arguments
-        self._configuration = configuration
         self._analysis_directory = analysis_directory
         self._project_root_path: Path = Path(project_root).resolve()
         self._original_directory = original_directory
@@ -141,5 +142,5 @@ class ConfigurationMonitor(Subscriber):
         )
         is_alive = Process.is_alive(Path(pid_path))
         if not is_alive:
-            LOG.warning("The configuration monitor is down.")
+            LOG.debug("The configuration monitor is down.")
         return is_alive

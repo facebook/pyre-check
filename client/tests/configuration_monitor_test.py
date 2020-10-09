@@ -16,12 +16,20 @@ from ..tests.mocks import mock_arguments, mock_configuration
 
 
 class MonitorTest(unittest.TestCase):
+    @patch.object(
+        configuration_monitor.ConfigurationMonitor, "_sleep_until_monitor_is_up"
+    )
     @patch("os.fork")
     @patch("os.close")
     @patch("os._exit")
     @patch.object(configuration_monitor.ConfigurationMonitor, "_run")
     def test_daemonize(
-        self, run: MagicMock, _exit: MagicMock, _close: MagicMock, fork: MagicMock
+        self,
+        run: MagicMock,
+        _exit: MagicMock,
+        _close: MagicMock,
+        fork: MagicMock,
+        sleep_until_monitor_is_up: MagicMock,
     ) -> None:
         arguments = mock_arguments()
         configuration = mock_configuration()

@@ -10,15 +10,19 @@ import logging.handlers
 import os
 import signal
 import sys
+import time
+from abc import abstractstaticmethod
 from pathlib import Path
 from typing import Any, Dict, List, NamedTuple
 
+from .configuration import Configuration
 from .filesystem import acquire_lock, remove_if_exists
 from .process import Process
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
+WAIT_TIME_IN_SECONDS = 10.0
 
 Subscription = NamedTuple(
     "Subscription", [("root", str), ("name", str), ("subscription", Dict[str, Any])]
@@ -29,13 +33,18 @@ class WatchmanRestartedException(Exception):
     pass
 
 
+class WatchmanSubscriberTimedOut(Exception):
+    pass
+
+
 def compute_pid_path(base_path: str, name: str) -> str:
     return str(Path(base_path, f"{name}.pid"))
 
 
 class Subscriber(object):
-    def __init__(self, base_path: str) -> None:
+    def __init__(self, base_path: str, configuration: Configuration) -> None:
         self._base_path: str = base_path
+        self._configuration = configuration
         self._alive: bool = True
         self._ready: bool = False
 
@@ -59,6 +68,13 @@ class Subscriber(object):
             Callback invoked when a message is received from watchman
         """
         raise NotImplementedError
+
+    @staticmethod
+    @abstractstaticmethod
+    def is_alive(configuration: Configuration) -> bool:
+        """This needs to be a static method. It is called by newly-spawned
+        commands, which are in a different process."""
+        ...
 
     def cleanup(self) -> None:
         pass
@@ -147,6 +163,15 @@ class Subscriber(object):
             remove_if_exists(lock_path)
             self.cleanup()
 
+    def _sleep_until_monitor_is_up(self) -> None:
+        stop_time = time.time() + WAIT_TIME_IN_SECONDS
+        LOG.info("Waiting for monitor to start up...")
+        while time.time() < stop_time:
+            if self.is_alive(self._configuration):
+                return
+            time.sleep(0.1)
+        raise WatchmanSubscriberTimedOut
+
     def daemonize(self) -> None:
         """We double-fork here to detach the daemon process from the parent.
            If we were to just fork the child as a daemon, we'd have to worry about the
@@ -168,6 +193,8 @@ class Subscriber(object):
                     os._exit(1)
             else:
                 os._exit(0)
+
+        self._sleep_until_monitor_is_up()
 
 
 def stop_subscriptions(base_path: str, subscriber_name: str) -> None:

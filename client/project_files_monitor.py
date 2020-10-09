@@ -51,8 +51,9 @@ class ProjectFilesMonitor(Subscriber):
         project_root: str,
         analysis_directory: AnalysisDirectory,
     ) -> None:
-        super(ProjectFilesMonitor, self).__init__(self.base_path(configuration))
-        self._configuration = configuration
+        super(ProjectFilesMonitor, self).__init__(
+            self.base_path(configuration), configuration
+        )
         self._analysis_directory = analysis_directory
 
         self._extensions: Set[str] = set(
@@ -159,7 +160,7 @@ class ProjectFilesMonitor(Subscriber):
         )
         is_alive = Process.is_alive(Path(pid_path))
         if not is_alive:
-            LOG.warning("The file monitor is down.")
+            LOG.debug("The file monitor is down.")
         return is_alive
 
     def cleanup(self) -> None:
