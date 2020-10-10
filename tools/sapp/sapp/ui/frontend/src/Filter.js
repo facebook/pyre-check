@@ -29,57 +29,12 @@ import {SearchOutlined} from '@ant-design/icons';
 const {TabPane} = Tabs;
 const {Text} = Typography;
 
-type Values = {
-  codes?: $ReadOnlyArray<number>,
-  file_names?: $ReadOnlyArray<string>,
-  callables?: string,
-  min_trace_length_to_sinks?: number,
-  max_trace_length_to_sinks?: number,
-  min_trace_length_to_sources?: number,
-  max_trace_length_to_sources?: number,
-};
-
-const valuesChanged = (submittedValues: Values, values: Values): boolean => {
-  return (
-    submittedValues.codes !== values.codes ||
-    submittedValues.file_names !== values.file_names ||
-    submittedValues.callables !== values.callables ||
-    submittedValues.min_trace_length_to_sinks !==
-      values.min_trace_length_to_sinks ||
-    submittedValues.max_trace_length_to_sinks !==
-      values.max_trace_length_to_sinks ||
-    submittedValues.min_trace_length_to_sources !==
-      values.min_trace_length_to_sources ||
-    submittedValues.max_trace_length_to_sources !==
-      values.max_trace_length_to_sources
-  );
-};
-
-const valuesSet = (values: Values): boolean => {
-  return Boolean(
-    (values.codes || []).length > 0 ||
-      (values.file_names || []).length > 0 ||
-      values.callables ||
-      (values.min_trace_length_to_sinks || 0) > 0 ||
-      (values.max_trace_length_to_sinks || 0) > 0 ||
-      (values.min_trace_length_to_sources || 0) > 0 ||
-      (values.max_trace_length_to_sources || 0) > 0,
-  );
-};
-
 const FilterForm = (props: {
   form: any,
   refetch: any,
   refetching: boolean,
   setVisible: boolean => void,
 }): React$Node => {
-  const [submittedValues, setSubmittedValues] = useState(
-    props.form.getFieldValue(),
-  );
-  const [currentValues, setCurrentValues] = useState(
-    props.form.getFieldValue(),
-  );
-
   const codesQuery = gql`
     query Codes {
       codes {
@@ -120,7 +75,6 @@ const FilterForm = (props: {
   const {data: callables} = useQuery(callablesQuery);
 
   const onFinish = values => {
-    setSubmittedValues(props.form.getFieldValue());
     props.refetch(values);
     props.setVisible(false);
   };
@@ -131,10 +85,7 @@ const FilterForm = (props: {
       form={props.form}
       name="basic"
       initialValues={{remember: true}}
-      onFinish={onFinish}
-      onValuesChange={() => {
-        setCurrentValues(props.form.getFieldValue());
-      }}>
+      onFinish={onFinish}>
       <Form.Item label="Codes" name="codes">
         <Select
           mode="multiple"
@@ -206,16 +157,10 @@ const FilterForm = (props: {
           <Button
             onClick={() => {
               props.form.resetFields();
-              setCurrentValues(props.form.getFieldValue());
-            }}
-            disabled={!valuesSet(currentValues)}>
+            }}>
             Clear
           </Button>{' '}
-          <Button
-            type="primary"
-            htmlType="submit"
-            disabled={!valuesChanged(submittedValues, currentValues)}
-            loading={props.refetching}>
+          <Button type="primary" htmlType="submit" loading={props.refetching}>
             Apply
           </Button>
         </div>
@@ -284,7 +229,6 @@ const Filter = (props: {refetch: any, refetching: boolean}) => {
       codes: filter.codes,
     });
     setActiveKey('custom');
-    form.submit();
   };
 
   const content = (
