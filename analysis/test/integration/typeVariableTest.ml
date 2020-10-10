@@ -1301,6 +1301,50 @@ let test_callable_parameter_variadics context =
        `typing.Callable(invalid)[[Named(x, int), Named(y, str)], int]`.";
       "Missing argument [20]: Call `call_n_times` expects argument in position 1.";
     ];
+  (* Decorator to supply an argument to a method. *)
+  assert_type_errors
+    {|
+      from typing import *
+      from pyre_extensions import ParameterSpecification
+      from pyre_extensions.type_variable_operators import Concatenate
+
+      P = ParameterSpecification("P")
+      R = TypeVar("R")
+
+      class Client: ...
+
+      def with_client(
+        f: Callable[Concatenate["Foo", Client, P], R]
+      ) -> Callable[Concatenate["Foo", P], R]:
+        def inner(__self: "Foo", *args: P.args, **kwargs: P.kwargs) -> R:
+          return f(__self, Client(), *args, **kwargs)
+        return inner
+
+      class Foo:
+        @with_client
+        def takes_int_str(self, client: Client, x: int, y: str) -> int:
+          # Use `client` here.
+
+          return x + 7
+
+      reveal_type(with_client)
+      x: Foo
+      reveal_type(x.takes_int_str)
+
+      x.takes_int_str(1, "A") # Accepted
+      x.takes_int_str("B", 2) # Correctly rejected by the type checker
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `test.with_client` is \
+       `typing.Callable(with_client)[[Named(f, \
+       typing.Callable[pyre_extensions.type_variable_operators.Concatenate[Foo, Client, test.P], \
+       Variable[R]])], typing.Callable[pyre_extensions.type_variable_operators.Concatenate[Foo, \
+       test.P], Variable[R]]]`.";
+      "Revealed type [-1]: Revealed type for `x.takes_int_str` is \
+       `BoundMethod[typing.Callable[[Foo, Named(x, int), Named(y, str)], int], Foo]`.";
+      "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter to \
+       anonymous call but got `str`.";
+    ];
   (* PyTorch style delegation pattern *)
   assert_type_errors
     {|
