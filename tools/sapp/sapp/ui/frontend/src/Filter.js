@@ -19,12 +19,14 @@ import {
   Form,
   Input,
   InputNumber,
+  Modal,
   Row,
   Col,
   Select,
+  Tooltip,
   Typography,
 } from 'antd';
-import {SearchOutlined} from '@ant-design/icons';
+import {SearchOutlined, PlusOutlined} from '@ant-design/icons';
 
 const {Text} = Typography;
 
@@ -152,6 +154,7 @@ const FilterForm = (props: {
           </Col>
         </Row>
       </Form.Item>
+      <Divider />
       <Form.Item>
         <div style={{textAlign: 'right'}}>
           <Button onClick={props.onClear}>Clear</Button>{' '}
@@ -164,6 +167,39 @@ const FilterForm = (props: {
   );
 };
 
+const SaveFilterModal = (
+  props: $ReadOnly<{|filterForm: any, visible: boolean, hide: void => void|}>,
+): React$Node => {
+  const [form] = Form.useForm();
+
+  const onOk = (): void => {
+    // TODO(T71492980): do the actual backend work.
+    console.log('Saving...');
+    console.log(form.getFieldsValue());
+    console.log(props.filterForm.getFieldsValue());
+    props.hide();
+  };
+
+  return (
+    <Modal
+      title="Save Filters..."
+      visible={props.visible}
+      onOk={onOk}
+      okText="Save"
+      onCancel={props.hide}
+      zIndex={2000}>
+      <Form layout="vertical" form={form}>
+        <Form.Item label="Name" name="name">
+          <Input />
+        </Form.Item>
+        <Form.Item label="Description" name="description">
+          <Input />
+        </Form.Item>
+      </Form>
+    </Modal>
+  );
+};
+
 type FilterNode = {
   name: string,
   description: string,
@@ -171,9 +207,14 @@ type FilterNode = {
 };
 
 const SavedFilters = (
-  props: $ReadOnly<{|onChange: FilterNode => mixed, filter: ?FilterNode|}>,
+  props: $ReadOnly<{|
+    form: any,
+    onChange: FilterNode => mixed,
+    filter: ?FilterNode,
+  |}>,
 ): React$Node => {
   const [search, setSearch] = useState(null);
+  const [saveModalVisible, setSaveModalVisible] = useState(false);
 
   const filtersQuery = gql`
     query Filters {
@@ -226,14 +267,30 @@ const SavedFilters = (
   };
 
   return (
-    <AutoComplete
-      style={{width: '100%'}}
-      options={options}
-      onSelect={onSelect}
-      onSearch={setSearch}
-      value={props.filter?.name || null}>
-      <Input.Search placeholder="saved filter" />
-    </AutoComplete>
+    <Row justify="space-between">
+      <Col span={22}>
+        <AutoComplete
+          style={{width: '100%'}}
+          options={options}
+          onSelect={onSelect}
+          onSearch={setSearch}
+          value={props.filter?.name || null}>
+          <Input.Search placeholder="saved filter" />
+        </AutoComplete>
+      </Col>
+      <Col>
+        <Tooltip title="Save Current Filter">
+          <SaveFilterModal
+            filterForm={props.form}
+            visible={saveModalVisible}
+            hide={() => setSaveModalVisible(false)}
+          />
+          <Button
+            icon={<PlusOutlined />}
+            onClick={() => setSaveModalVisible(true)}></Button>
+        </Tooltip>
+      </Col>
+    </Row>
   );
 };
 
@@ -256,7 +313,7 @@ const Filter = (props: {refetch: any, refetching: boolean}) => {
 
   const content = (
     <div style={{width: '500px'}}>
-      <SavedFilters onChange={updateForm} filter={filter} />
+      <SavedFilters form={form} onChange={updateForm} filter={filter} />
       <Divider />
       <FilterForm
         form={form}
