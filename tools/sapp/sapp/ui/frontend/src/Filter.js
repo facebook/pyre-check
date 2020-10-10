@@ -190,7 +190,8 @@ const FilterForm = (props: {
             onClick={() => {
               props.onChange({});
               form.resetFields();
-            }}>
+            }}
+            disabled={Object.keys(props.currentFilter).length === 0}>
             Clear
           </Button>{' '}
           <Button
