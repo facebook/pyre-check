@@ -28,6 +28,8 @@ import {
 } from 'antd';
 import {SearchOutlined, PlusOutlined} from '@ant-design/icons';
 
+import './Filter.css';
+
 const {Text} = Typography;
 
 type FilterDescription = {
