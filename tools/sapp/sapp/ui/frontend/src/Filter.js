@@ -62,6 +62,8 @@ const FilterForm = (props: {
       props.currentFilter.max_trace_length_to_sources,
   });
 
+  const [appliedFilter, setAppliedFilter] = useState<FilterDescription>({});
+
   const codesQuery = gql`
     query Codes {
       codes {
@@ -101,8 +103,9 @@ const FilterForm = (props: {
   `;
   const {data: callables} = useQuery(callablesQuery);
 
-  const onFinish = values => {
-    props.refetch(values);
+  const onFinish = (filter: FilterDescription) => {
+    setAppliedFilter(filter);
+    props.refetch(filter);
     props.setVisible(false);
   };
 
@@ -190,7 +193,14 @@ const FilterForm = (props: {
             }}>
             Clear
           </Button>{' '}
-          <Button type="primary" htmlType="submit" loading={props.refetching}>
+          <Button
+            type="primary"
+            htmlType="submit"
+            loading={props.refetching}
+            disabled={
+              JSON.stringify(appliedFilter) ===
+              JSON.stringify(props.currentFilter)
+            }>
             Apply
           </Button>
         </div>
