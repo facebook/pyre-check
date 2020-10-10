@@ -22,7 +22,6 @@ import {
   Row,
   Col,
   Select,
-  Skeleton,
   Typography,
 } from 'antd';
 import {SearchOutlined} from '@ant-design/icons';
@@ -34,6 +33,7 @@ const FilterForm = (props: {
   refetch: any,
   refetching: boolean,
   setVisible: boolean => void,
+  onClear: void => void,
 }): React$Node => {
   const codesQuery = gql`
     query Codes {
@@ -154,12 +154,7 @@ const FilterForm = (props: {
       </Form.Item>
       <Form.Item>
         <div style={{textAlign: 'right'}}>
-          <Button
-            onClick={() => {
-              props.form.resetFields();
-            }}>
-            Clear
-          </Button>{' '}
+          <Button onClick={props.onClear}>Clear</Button>{' '}
           <Button type="primary" htmlType="submit" loading={props.refetching}>
             Apply
           </Button>
@@ -176,7 +171,7 @@ type FilterNode = {
 };
 
 const SavedFilters = (
-  props: $ReadOnly<{|onChange: FilterNode => mixed|}>,
+  props: $ReadOnly<{|onChange: FilterNode => mixed, filter: ?FilterNode|}>,
 ): React$Node => {
   const [search, setSearch] = useState(null);
 
@@ -235,7 +230,8 @@ const SavedFilters = (
       style={{width: '100%'}}
       options={options}
       onSelect={onSelect}
-      onSearch={setSearch}>
+      onSearch={setSearch}
+      value={props.filter?.name || null}>
       <Input.Search placeholder="saved filter" />
     </AutoComplete>
   );
@@ -244,22 +240,30 @@ const SavedFilters = (
 const Filter = (props: {refetch: any, refetching: boolean}) => {
   const [form] = Form.useForm();
   const [visible, setVisible] = useState(false);
+  const [filter, setFilter] = useState(null);
 
   const updateForm = (filter: FilterNode): void => {
+    setFilter(filter);
     form.setFieldsValue({
       codes: filter.codes,
     });
   };
 
+  const onClear = (): void => {
+    setFilter(null);
+    form.resetFields();
+  };
+
   const content = (
     <div style={{width: '500px'}}>
-      <SavedFilters onChange={updateForm} />
+      <SavedFilters onChange={updateForm} filter={filter} />
       <Divider />
       <FilterForm
         form={form}
         refetch={props.refetch}
         refetching={props.refetching}
         setVisible={setVisible}
+        onClear={onClear}
       />
     </div>
   );
