@@ -23,7 +23,7 @@ from ..models import (
     TraceFrame,
     TraceKind,
 )
-from . import issues, trace, typeahead
+from . import filters as filters_module, issues, trace, typeahead
 from .issues import IssueQueryResult, IssueQueryResultType
 from .trace import TraceFrameQueryResult, TraceFrameQueryResultType
 
@@ -71,6 +71,11 @@ class CallableConnection(relay.Connection):
         node = typeahead.CallableType
 
 
+class FilterConnection(relay.Connection):
+    class Meta:
+        node = filters_module.FilterType
+
+
 class Query(graphene.ObjectType):
     # pyre-fixme[4]: Attribute must be annotated.
     node = relay.Node.Field()
@@ -103,6 +108,8 @@ class Query(graphene.ObjectType):
     callables = relay.ConnectionField(CallableConnection)
 
     file = relay.ConnectionField(FileConnection, path=graphene.String())
+
+    filters = relay.ConnectionField(FilterConnection)
 
     def resolve_issues(
         self,
@@ -249,6 +256,10 @@ class Query(graphene.ObjectType):
         source_directory = Path(info.context.get("source_directory") or os.getcwd())
         contents = (source_directory / path).read_text()
         return [File(path=path, contents=contents)]
+
+    def resolve_filters(self, info: ResolveInfo) -> List[filters_module.Filter]:
+        session = info.context["session"]
+        return filters_module.all_filters(session)
 
     @staticmethod
     def all_leaf_kinds(

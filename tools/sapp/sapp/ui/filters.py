@@ -6,9 +6,21 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Generic, List, Optional, Sequence, Set, TypeVar, Union
+from typing import (
+    TYPE_CHECKING,
+    Generic,
+    List,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Set,
+    TypeVar,
+    Union,
+)
 
+import graphene
 from sqlalchemy import Column
+from sqlalchemy.orm import Session
 from sqlalchemy.orm.query import Query
 from sqlalchemy.sql.expression import or_
 from typing_extensions import Final
@@ -113,3 +125,29 @@ class HasNone(IssuePredicate):
 
     def apply(self, issues: List[IssueQueryResult]) -> List[IssueQueryResult]:
         return [issue for issue in issues if len(issue.features & self._features) == 0]
+
+
+class FilterType(graphene.ObjectType):
+    name = graphene.String()
+    description = graphene.String()
+    codes = graphene.List(graphene.Int)
+
+
+class Filter(NamedTuple):
+    name: str
+    description: str
+    codes: List[int]
+
+
+def all_filters(session: Session) -> List[Filter]:
+    # TODO(T71492980): these are dummy filters for now.
+    return [
+        Filter(
+            name="Codes 5029", description="Only issues with code 5029", codes=[5029]
+        ),
+        Filter(
+            name="Codes 5029/5011",
+            description="Only issues with codes 5029 or 5011",
+            codes=[5029, 5012],
+        ),
+    ]
