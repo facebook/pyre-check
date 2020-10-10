@@ -12,21 +12,21 @@ import React, {useState} from 'react';
 import {useQuery, gql} from '@apollo/client';
 import {
   Alert,
+  AutoComplete,
+  Divider,
   Popover,
   Button,
   Form,
+  Input,
   InputNumber,
-  List,
   Row,
   Col,
   Select,
   Skeleton,
-  Tabs,
   Typography,
 } from 'antd';
 import {SearchOutlined} from '@ant-design/icons';
 
-const {TabPane} = Tabs;
 const {Text} = Typography;
 
 const FilterForm = (props: {
@@ -178,6 +178,8 @@ type FilterNode = {
 const SavedFilters = (
   props: $ReadOnly<{|onChange: FilterNode => mixed|}>,
 ): React$Node => {
+  const [search, setSearch] = useState(null);
+
   const filtersQuery = gql`
     query Filters {
       filters {
@@ -193,59 +195,72 @@ const SavedFilters = (
   `;
   const {loading, error, data} = useQuery(filtersQuery);
 
-  if (loading) {
-    return <Skeleton active />;
-  }
-
   if (error) {
     return <Alert type="error">{error.toString()}</Alert>;
   }
 
-  return (
-    <List
-      dataSource={data.filters.edges}
-      renderItem={edge => (
-        <List.Item>
-          <div
-            style={{cursor: 'pointer'}}
-            onClick={() => props.onChange(edge.node)}>
+  const filters = loading ? [] : data.filters.edges;
+
+  const options = filters
+    .filter(edge => {
+      if (search === null) {
+        return true;
+      }
+      return (
+        edge.node.name.toLowerCase().includes(search.toLowerCase()) ||
+        edge.node.description.toLowerCase().includes(search.toLowerCase())
+      );
+    })
+    .map(edge => {
+      return {
+        value: edge.node.name,
+        label: (
+          <div>
             {edge.node.name}
             <br />
             <Text type="secondary">{edge.node.description}</Text>
           </div>
-        </List.Item>
-      )}
-    />
+        ),
+      };
+    });
+
+  var filterMap = {};
+  filters.forEach(edge => (filterMap[edge.node.name] = edge.node));
+  const onSelect = (value: string): void => {
+    props.onChange(filterMap[value]);
+  };
+
+  return (
+    <AutoComplete
+      style={{width: '100%'}}
+      options={options}
+      onSelect={onSelect}
+      onSearch={setSearch}>
+      <Input.Search placeholder="saved filter" />
+    </AutoComplete>
   );
 };
 
 const Filter = (props: {refetch: any, refetching: boolean}) => {
   const [form] = Form.useForm();
   const [visible, setVisible] = useState(false);
-  const [activeKey, setActiveKey] = useState('custom');
 
   const updateForm = (filter: FilterNode): void => {
     form.setFieldsValue({
       codes: filter.codes,
     });
-    setActiveKey('custom');
   };
 
   const content = (
     <div style={{width: '500px'}}>
-      <Tabs activeKey={activeKey} onTabClick={setActiveKey} type="card">
-        <TabPane tab="Custom" key="custom">
-          <FilterForm
-            form={form}
-            refetch={props.refetch}
-            refetching={props.refetching}
-            setVisible={setVisible}
-          />
-        </TabPane>
-        <TabPane tab="Saved" key="saved">
-          <SavedFilters onChange={updateForm} />
-        </TabPane>
-      </Tabs>
+      <SavedFilters onChange={updateForm} />
+      <Divider />
+      <FilterForm
+        form={form}
+        refetch={props.refetch}
+        refetching={props.refetching}
+        setVisible={setVisible}
+      />
     </div>
   );
 
