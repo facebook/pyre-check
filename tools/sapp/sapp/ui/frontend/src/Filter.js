@@ -30,13 +30,38 @@ import {SearchOutlined, PlusOutlined} from '@ant-design/icons';
 
 const {Text} = Typography;
 
+type FilterDescription = {
+  name?: string,
+  description?: string,
+  codes?: $ReadOnlyArray<number>,
+  file_names?: $ReadOnlyArray<string>,
+  callables?: $ReadOnlyArray<string>,
+  min_trace_length_to_sinks?: number,
+  max_trace_length_to_sinks?: number,
+  min_trace_length_to_sources?: number,
+  max_trace_length_to_sources?: number,
+};
+
 const FilterForm = (props: {
-  form: any,
   refetch: any,
   refetching: boolean,
   setVisible: boolean => void,
-  onClear: void => void,
+  currentFilter: FilterDescription,
+  onChange: FilterDescription => void,
 }): React$Node => {
+  const [form] = Form.useForm();
+  form.setFieldsValue({
+    codes: props.currentFilter.codes,
+    file_names: props.currentFilter.file_names,
+    callables: props.currentFilter.callables,
+    min_trace_length_to_sinks: props.currentFilter.min_trace_length_to_sinks,
+    max_trace_length_to_sinks: props.currentFilter.max_trace_length_to_sinks,
+    min_trace_length_to_sources:
+      props.currentFilter.min_trace_length_to_sources,
+    max_trace_length_to_sources:
+      props.currentFilter.max_trace_length_to_sources,
+  });
+
   const codesQuery = gql`
     query Codes {
       codes {
@@ -84,10 +109,11 @@ const FilterForm = (props: {
   return (
     <Form
       layout="vertical"
-      form={props.form}
+      form={form}
       name="basic"
       initialValues={{remember: true}}
-      onFinish={onFinish}>
+      onFinish={onFinish}
+      onFieldsChange={() => props.onChange(form.getFieldsValue())}>
       <Form.Item label="Codes" name="codes">
         <Select
           mode="multiple"
@@ -157,7 +183,13 @@ const FilterForm = (props: {
       <Divider />
       <Form.Item>
         <div style={{textAlign: 'right'}}>
-          <Button onClick={props.onClear}>Clear</Button>{' '}
+          <Button
+            onClick={() => {
+              props.onChange({});
+              form.resetFields();
+            }}>
+            Clear
+          </Button>{' '}
           <Button type="primary" htmlType="submit" loading={props.refetching}>
             Apply
           </Button>
@@ -168,7 +200,11 @@ const FilterForm = (props: {
 };
 
 const SaveFilterModal = (
-  props: $ReadOnly<{|filterForm: any, visible: boolean, hide: void => void|}>,
+  props: $ReadOnly<{|
+    currentFilter: FilterDescription,
+    visible: boolean,
+    hide: void => void,
+  |}>,
 ): React$Node => {
   const [form] = Form.useForm();
 
@@ -176,7 +212,7 @@ const SaveFilterModal = (
     // TODO(T71492980): do the actual backend work.
     console.log('Saving...');
     console.log(form.getFieldsValue());
-    console.log(props.filterForm.getFieldsValue());
+    console.log(props.currentFilter);
     props.hide();
   };
 
@@ -200,17 +236,10 @@ const SaveFilterModal = (
   );
 };
 
-type FilterNode = {
-  name: string,
-  description: string,
-  codes: $ReadOnlyArray<number>,
-};
-
 const SavedFilters = (
   props: $ReadOnly<{|
-    form: any,
-    onChange: FilterNode => mixed,
-    filter: ?FilterNode,
+    onChange: FilterDescription => mixed,
+    currentFilter: FilterDescription,
   |}>,
 ): React$Node => {
   const [search, setSearch] = useState(null);
@@ -274,14 +303,14 @@ const SavedFilters = (
           options={options}
           onSelect={onSelect}
           onSearch={setSearch}
-          value={props.filter?.name || null}>
+          value={props.currentFilter?.name || null}>
           <Input.Search placeholder="saved filter" />
         </AutoComplete>
       </Col>
       <Col>
         <Tooltip title="Save Current Filter">
           <SaveFilterModal
-            filterForm={props.form}
+            currentFilter={props.currentFilter}
             visible={saveModalVisible}
             hide={() => setSaveModalVisible(false)}
           />
@@ -295,32 +324,23 @@ const SavedFilters = (
 };
 
 const Filter = (props: {refetch: any, refetching: boolean}) => {
-  const [form] = Form.useForm();
   const [visible, setVisible] = useState(false);
-  const [filter, setFilter] = useState(null);
+  const [currentFilter, setCurrentFilter] = useState<FilterDescription>({});
 
-  const updateForm = (filter: FilterNode): void => {
-    setFilter(filter);
-    form.setFieldsValue({
-      codes: filter.codes,
-    });
-  };
-
-  const onClear = (): void => {
-    setFilter(null);
-    form.resetFields();
+  const updateForm = (filter: FilterDescription): void => {
+    setCurrentFilter(filter);
   };
 
   const content = (
     <div style={{width: '500px'}}>
-      <SavedFilters form={form} onChange={updateForm} filter={filter} />
+      <SavedFilters onChange={updateForm} currentFilter={currentFilter} />
       <Divider />
       <FilterForm
-        form={form}
         refetch={props.refetch}
         refetching={props.refetching}
+        currentFilter={currentFilter}
         setVisible={setVisible}
-        onClear={onClear}
+        onChange={updateForm}
       />
     </div>
   );
