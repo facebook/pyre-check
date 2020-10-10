@@ -326,7 +326,12 @@ const SavedFilters = (
           />
           <Button
             icon={<PlusOutlined />}
-            onClick={() => setSaveModalVisible(true)}></Button>
+            onClick={() => setSaveModalVisible(true)}
+            disabled={
+              Object.keys(props.currentFilter).length === 0 ||
+              props.currentFilter?.name !== undefined
+            }
+          />
         </Tooltip>
       </Col>
     </Row>
