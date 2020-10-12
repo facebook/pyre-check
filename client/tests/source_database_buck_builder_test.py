@@ -201,3 +201,15 @@ class SourceDatabaseBuckBuilderTest(unittest.TestCase):
             Path("output_directory"),
             Path("buck_root"),
         )
+
+    def test_normalize_specification(self) -> None:
+        self.assertEqual(
+            source_database_buck_builder._normalize_specification("foo/bar:baz"),
+            "//foo/bar:baz",
+        )
+        self.assertEqual(
+            source_database_buck_builder._normalize_specification(
+                "some_root//foo/bar:baz"
+            ),
+            "some_root//foo/bar:baz",
+        )

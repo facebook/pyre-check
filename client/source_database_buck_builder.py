@@ -54,7 +54,7 @@ def _get_buck_query_arguments(
 
 
 def _normalize_specification(specification: str) -> str:
-    return specification if specification.startswith("//") else "//" + specification
+    return specification if "//" in specification else "//" + specification
 
 
 def _ignore_target(target: str) -> bool:
