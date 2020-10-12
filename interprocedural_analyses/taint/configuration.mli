@@ -19,11 +19,19 @@ module Rule : sig
   [@@deriving eq, show]
 end
 
-type implicit_sinks = { conditional_test: Sinks.t list }
+type literal_string_sink = {
+  pattern: Re2.t;
+  sink_kind: Sinks.t;
+}
+
+type implicit_sinks = {
+  conditional_test: Sinks.t list;
+  literal_string_sinks: literal_string_sink list;
+}
 
 type literal_string_source = {
   pattern: Re2.t;
-  kind: Sources.t;
+  source_kind: Sources.t;
 }
 
 type implicit_sources = { literal_strings: literal_string_source list }
@@ -83,6 +91,8 @@ val create
 val validate : t -> unit
 
 val conditional_test_sinks : unit -> Sinks.t list
+
+val literal_string_sinks : unit -> literal_string_sink list
 
 val literal_string_sources : unit -> literal_string_source list
 

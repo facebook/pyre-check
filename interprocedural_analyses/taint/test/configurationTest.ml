@@ -594,6 +594,24 @@ let test_validate _ =
               ]
             }
           }
+    |};
+  assert_validation_error
+    ~error:"Unsupported taint sink `Misspelled`"
+    {|
+          {
+            sources: [],
+            sinks: [{ name: "Test" }],
+            features: [],
+            rules: [],
+            implicit_sinks: {
+              literal_strings: [
+                {
+                  "regexp": "^\\d+$",
+                  "kind": "Misspelled"
+                }
+              ]
+            }
+          }
     |}
 
 
@@ -621,12 +639,45 @@ let test_implicit_sources _ =
   in
   assert_equal configuration.sources ["StringDigit"];
   match configuration.implicit_sources with
-  | { TaintConfiguration.literal_strings = [{ pattern; kind }] } ->
-      assert_equal ~cmp:Sources.equal kind (Sources.NamedSource "StringDigit");
+  | { TaintConfiguration.literal_strings = [{ pattern; source_kind }] } ->
+      assert_equal ~cmp:Sources.equal source_kind (Sources.NamedSource "StringDigit");
       assert_equal
         ~cmp:(fun left right -> Re2.compare left right = 0)
         pattern
         (Re2.create_exn "^\\d+$")
+  | _ -> Test.assert_unreached ()
+
+
+let test_implicit_sinks _ =
+  let configuration =
+    TaintConfiguration.parse
+      [
+        Yojson.Safe.from_string
+          {|
+          { sources: [],
+            sinks: [{ name: "HTMLContainer" }],
+            features: [],
+            rules: [],
+            implicit_sinks: {
+              literal_strings: [
+                {
+                  "regexp": "<.*>",
+                  "kind": "HTMLContainer"
+                }
+              ]
+            }
+           }
+           |};
+      ]
+  in
+  assert_equal configuration.sinks ["HTMLContainer"];
+  match configuration.implicit_sinks with
+  | { TaintConfiguration.literal_string_sinks = [{ pattern; sink_kind }]; _ } ->
+      assert_equal ~cmp:Sinks.equal sink_kind (Sinks.NamedSink "HTMLContainer");
+      assert_equal
+        ~cmp:(fun left right -> Re2.compare left right = 0)
+        pattern
+        (Re2.create_exn "<.*>")
   | _ -> Test.assert_unreached ()
 
 
@@ -636,6 +687,7 @@ let () =
          "combined_source_rules" >:: test_combined_source_rules;
          "empty" >:: test_empty;
          "implicit_sources" >:: test_implicit_sources;
+         "implicit_sinks" >:: test_implicit_sinks;
          "invalid_sink" >:: test_invalid_sink;
          "invalid_source" >:: test_invalid_source;
          "multiple_configurations" >:: test_multiple_configurations;

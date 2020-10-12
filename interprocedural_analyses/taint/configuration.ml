@@ -21,13 +21,21 @@ module Rule = struct
   [@@deriving eq, show]
 end
 
-type implicit_sinks = { conditional_test: Sinks.t list }
+type literal_string_sink = {
+  pattern: Re2.t;
+  sink_kind: Sinks.t;
+}
 
-let empty_implicit_sinks = { conditional_test = [] }
+type implicit_sinks = {
+  conditional_test: Sinks.t list;
+  literal_string_sinks: literal_string_sink list;
+}
+
+let empty_implicit_sinks = { conditional_test = []; literal_string_sinks = [] }
 
 type literal_string_source = {
   pattern: Re2.t;
-  kind: Sources.t;
+  source_kind: Sources.t;
 }
 
 type implicit_sources = { literal_strings: literal_string_source list }
@@ -295,11 +303,30 @@ let parse source_jsons =
     | `Null -> empty_implicit_sinks
     | implicit_sinks ->
         let conditional_test =
-          array_member "conditional_test" implicit_sinks
-          |> List.map ~f:(fun json ->
-                 Json.Util.to_string json |> Sinks.parse ~allowed:allowed_sinks)
+          match member "conditional_test" implicit_sinks with
+          | `Null -> []
+          | conditional_test ->
+              Json.Util.to_list conditional_test
+              |> List.map ~f:(fun json ->
+                     Json.Util.to_string json |> Sinks.parse ~allowed:allowed_sinks)
         in
-        { conditional_test }
+        let literal_string_sinks =
+          match member "literal_strings" implicit_sinks with
+          | `Null -> []
+          | literal_strings ->
+              Json.Util.to_list literal_strings
+              |> List.map ~f:(fun json ->
+                     let sink_kind =
+                       Json.Util.member "kind" json
+                       |> Json.Util.to_string
+                       |> Sinks.parse ~allowed:allowed_sinks
+                     in
+                     let pattern =
+                       Json.Util.member "regexp" json |> Json.Util.to_string |> Re2.create_exn
+                     in
+                     { sink_kind; pattern })
+        in
+        { conditional_test; literal_string_sinks }
   in
   let parse_implicit_sources ~allowed_sources json =
     match member "implicit_sources" json with
@@ -308,7 +335,7 @@ let parse source_jsons =
         let literal_strings =
           array_member "literal_strings" implicit_sources
           |> List.map ~f:(fun json ->
-                 let kind =
+                 let source_kind =
                    Json.Util.member "kind" json
                    |> Json.Util.to_string
                    |> Sources.parse ~allowed:allowed_sources
@@ -316,7 +343,7 @@ let parse source_jsons =
                  let pattern =
                    Json.Util.member "regexp" json |> Json.Util.to_string |> Re2.create_exn
                  in
-                 { kind; pattern })
+                 { source_kind; pattern })
         in
         { literal_strings }
   in
@@ -337,11 +364,14 @@ let parse source_jsons =
   in
 
   let merge_implicit_sinks left right =
-    { conditional_test = left.conditional_test @ right.conditional_test }
+    {
+      conditional_test = left.conditional_test @ right.conditional_test;
+      literal_string_sinks = left.literal_string_sinks @ right.literal_string_sinks;
+    }
   in
   let implicit_sinks =
     List.map source_jsons ~f:(parse_implicit_sinks ~allowed_sinks:sinks)
-    |> List.fold ~init:{ conditional_test = [] } ~f:merge_implicit_sinks
+    |> List.fold ~init:empty_implicit_sinks ~f:merge_implicit_sinks
   in
   let maximum_overrides_to_analyze =
     let parse_overrides_to_analyze json =
@@ -592,7 +622,12 @@ let create ~rule_filter ~find_missing_flows ~dump_model_query_results ~paths =
 
 let conditional_test_sinks () =
   match get () with
-  | { implicit_sinks = { conditional_test }; _ } -> conditional_test
+  | { implicit_sinks = { conditional_test; _ }; _ } -> conditional_test
+
+
+let literal_string_sinks () =
+  match get () with
+  | { implicit_sinks = { literal_string_sinks; _ }; _ } -> literal_string_sinks
 
 
 let get_triggered_sink ~partial_sink ~source =

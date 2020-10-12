@@ -1048,7 +1048,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
         if List.is_empty literal_string_regular_expressions then
           ForwardState.Tree.empty
         else
-          let add_matching_source_kind tree { Configuration.pattern; kind } =
+          let add_matching_source_kind tree { Configuration.pattern; source_kind = kind } =
             if Re2.matches pattern value then
               ForwardState.Tree.join
                 tree
