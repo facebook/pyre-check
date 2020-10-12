@@ -21,6 +21,13 @@ end
 
 type implicit_sinks = { conditional_test: Sinks.t list }
 
+type literal_string_source = {
+  pattern: Re2.t;
+  kind: Sources.t;
+}
+
+type implicit_sources = { literal_strings: literal_string_source list }
+
 type analysis_model_constraints = {
   maximum_model_width: int;
   maximum_complex_access_path_length: int;
@@ -42,6 +49,7 @@ type t = {
   features: string list;
   rules: Rule.t list;
   implicit_sinks: implicit_sinks;
+  implicit_sources: implicit_sources;
   partial_sink_converter: partial_sink_converter;
   partial_sink_labels: string list Core.String.Map.Tree.t;
   find_missing_flows: missing_flows_kind option;

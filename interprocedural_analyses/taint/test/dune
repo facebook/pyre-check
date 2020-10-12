@@ -14,6 +14,6 @@
  (modules :standard \ testHelper)
  (preprocess
   (pps ppx_sexp_message))
- (libraries oUnit pyrelib.test pyrelib.ast pyrelib.analysis
+ (libraries oUnit re2 pyrelib.test pyrelib.ast pyrelib.analysis
    pyrelib.interprocedural pyrelib.taint pyrelib.taintTestHelper
    pyrelib.taintAnalysis pyrelib.taintIntegrationTest))

@@ -576,7 +576,58 @@ let test_validate _ =
         }
       }
       |};
-    ]
+    ];
+  assert_validation_error
+    ~error:"Unsupported taint source `MisspelledStringDigit`"
+    {|
+          {
+            sources: [{ name: "StringDigit" }],
+            sinks: [],
+            features: [],
+            rules: [],
+            implicit_sources: {
+              literal_strings: [
+                {
+                  "regexp": "^\\d+$",
+                  "kind": "MisspelledStringDigit"
+                }
+              ]
+            }
+          }
+    |}
+
+
+let test_implicit_sources _ =
+  let configuration =
+    TaintConfiguration.parse
+      [
+        Yojson.Safe.from_string
+          {|
+          { sources: [{ name: "StringDigit" }],
+            sinks: [],
+            features: [],
+            rules: [],
+            implicit_sources: {
+              literal_strings: [
+                {
+                  "regexp": "^\\d+$",
+                  "kind": "StringDigit"
+                }
+              ]
+            }
+           }
+           |};
+      ]
+  in
+  assert_equal configuration.sources ["StringDigit"];
+  match configuration.implicit_sources with
+  | { TaintConfiguration.literal_strings = [{ pattern; kind }] } ->
+      assert_equal ~cmp:Sources.equal kind (Sources.NamedSource "StringDigit");
+      assert_equal
+        ~cmp:(fun left right -> Re2.compare left right = 0)
+        pattern
+        (Re2.create_exn "^\\d+$")
+  | _ -> Test.assert_unreached ()
 
 
 let () =
@@ -584,11 +635,12 @@ let () =
   >::: [
          "combined_source_rules" >:: test_combined_source_rules;
          "empty" >:: test_empty;
+         "implicit_sources" >:: test_implicit_sources;
          "invalid_sink" >:: test_invalid_sink;
          "invalid_source" >:: test_invalid_source;
-         "simple" >:: test_simple;
-         "partial_sink_converter" >:: test_partial_sink_converter;
          "multiple_configurations" >:: test_multiple_configurations;
+         "partial_sink_converter" >:: test_partial_sink_converter;
+         "simple" >:: test_simple;
          "validate" >:: test_validate;
        ]
   |> Test.run

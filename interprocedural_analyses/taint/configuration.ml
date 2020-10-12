@@ -25,6 +25,15 @@ type implicit_sinks = { conditional_test: Sinks.t list }
 
 let empty_implicit_sinks = { conditional_test = [] }
 
+type literal_string_source = {
+  pattern: Re2.t;
+  kind: Sources.t;
+}
+
+type implicit_sources = { literal_strings: literal_string_source list }
+
+let empty_implicit_sources = { literal_strings = [] }
+
 type analysis_model_constraints = {
   maximum_model_width: int;
   maximum_complex_access_path_length: int;
@@ -60,6 +69,7 @@ type t = {
   features: string list;
   rules: Rule.t list;
   implicit_sinks: implicit_sinks;
+  implicit_sources: implicit_sources;
   partial_sink_converter: partial_sink_converter;
   partial_sink_labels: string list String.Map.Tree.t;
   find_missing_flows: missing_flows_kind option;
@@ -75,6 +85,7 @@ let empty =
     rules = [];
     partial_sink_converter = String.Map.Tree.empty;
     implicit_sinks = empty_implicit_sinks;
+    implicit_sources = empty_implicit_sources;
     partial_sink_labels = String.Map.Tree.empty;
     find_missing_flows = None;
     dump_model_query_results = false;
@@ -290,6 +301,26 @@ let parse source_jsons =
         in
         { conditional_test }
   in
+  let parse_implicit_sources ~allowed_sources json =
+    match member "implicit_sources" json with
+    | `Null -> { literal_strings = [] }
+    | implicit_sources ->
+        let literal_strings =
+          array_member "literal_strings" implicit_sources
+          |> List.map ~f:(fun json ->
+                 let kind =
+                   Json.Util.member "kind" json
+                   |> Json.Util.to_string
+                   |> Sources.parse ~allowed:allowed_sources
+                 in
+                 let pattern =
+                   Json.Util.member "regexp" json |> Json.Util.to_string |> Re2.create_exn
+                 in
+                 { kind; pattern })
+        in
+        { literal_strings }
+  in
+
   let sources = List.concat_map source_jsons ~f:parse_sources in
   let sinks = List.concat_map source_jsons ~f:parse_sinks in
   let features = List.concat_map source_jsons ~f:parse_features in
@@ -327,6 +358,13 @@ let parse source_jsons =
     | [maximum_overrides_to_analyze] -> Some maximum_overrides_to_analyze
     | _ -> failwith "Multiple values were passed in for overrides to analyze."
   in
+  let merge_implicit_sources left right =
+    { literal_strings = left.literal_strings @ right.literal_strings }
+  in
+  let implicit_sources =
+    List.map source_jsons ~f:(parse_implicit_sources ~allowed_sources:sources)
+    |> List.fold ~init:empty_implicit_sources ~f:merge_implicit_sources
+  in
   {
     sources;
     sinks;
@@ -334,6 +372,7 @@ let parse source_jsons =
     rules = List.rev_append rules generated_combined_rules;
     partial_sink_converter;
     implicit_sinks;
+    implicit_sources;
     partial_sink_labels;
     find_missing_flows = None;
     dump_model_query_results = false;
@@ -462,8 +501,9 @@ let default =
         };
       ];
     partial_sink_converter = String.Map.Tree.empty;
-    implicit_sinks = empty_implicit_sinks;
     partial_sink_labels = String.Map.Tree.empty;
+    implicit_sinks = empty_implicit_sinks;
+    implicit_sources = empty_implicit_sources;
     find_missing_flows = None;
     dump_model_query_results = false;
     analysis_model_constraints = default_analysis_model_constraints;
