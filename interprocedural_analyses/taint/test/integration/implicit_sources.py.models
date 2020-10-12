@@ -6,7 +6,17 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "IPAddress" } ] } ]
+        "taint": [
+          {
+            "root": {
+              "filename": "implicit_sources.py",
+              "line": 15,
+              "start": 11,
+              "end": 47
+            },
+            "leaves": [ { "kind": "IPAddress" } ]
+          }
+        ]
       }
     ],
     "sinks": [],
@@ -20,7 +30,17 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "IPAddress" } ] } ]
+        "taint": [
+          {
+            "root": {
+              "filename": "implicit_sources.py",
+              "line": 10,
+              "start": 11,
+              "end": 28
+            },
+            "leaves": [ { "kind": "IPAddress" } ]
+          }
+        ]
       }
     ],
     "sinks": [],
@@ -35,8 +55,24 @@
       {
         "port": "result",
         "taint": [
-          { "decl": null, "leaves": [ { "kind": "HTMLPattern" } ] },
-          { "decl": null, "leaves": [ { "kind": "IPAddress" } ] }
+          {
+            "root": {
+              "filename": "implicit_sources.py",
+              "line": 23,
+              "start": 11,
+              "end": 30
+            },
+            "leaves": [ { "kind": "HTMLPattern" } ]
+          },
+          {
+            "root": {
+              "filename": "implicit_sources.py",
+              "line": 23,
+              "start": 11,
+              "end": 30
+            },
+            "leaves": [ { "kind": "IPAddress" } ]
+          }
         ]
       }
     ],

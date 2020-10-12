@@ -1042,7 +1042,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       |>> ForwardState.Tree.join attribute_taint
 
 
-    and analyze_string_literal ~resolution ~state { StringLiteral.value; kind } =
+    and analyze_string_literal ~resolution ~state ~location { StringLiteral.value; kind } =
       let value_taint =
         let literal_string_regular_expressions = Configuration.literal_string_sources () in
         if List.is_empty literal_string_regular_expressions then
@@ -1052,7 +1052,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             if Re2.matches pattern value then
               ForwardState.Tree.join
                 tree
-                (ForwardState.Tree.create_leaf (ForwardTaint.singleton kind))
+                (ForwardState.Tree.create_leaf (ForwardTaint.singleton ~location kind))
             else
               tree
           in
@@ -1063,15 +1063,39 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       in
       match kind with
       | StringLiteral.Format expressions ->
-          List.fold
-            expressions
-            ~f:(fun (taint, state) expression ->
-              analyze_expression ~resolution ~state ~expression |>> ForwardState.Tree.join taint)
-            ~init:(ForwardState.Tree.empty, state)
-          |>> ForwardState.Tree.transform
-                ForwardTaint.simple_feature
-                Abstract.Domain.(Add Domains.format_string_feature)
-          |>> ForwardState.Tree.join value_taint
+          let taint, state =
+            List.fold
+              expressions
+              ~f:(fun (taint, state) expression ->
+                analyze_expression ~resolution ~state ~expression |>> ForwardState.Tree.join taint)
+              ~init:(ForwardState.Tree.empty, state)
+            |>> ForwardState.Tree.transform
+                  ForwardTaint.simple_feature
+                  Abstract.Domain.(Add Domains.format_string_feature)
+            |>> ForwardState.Tree.join value_taint
+          in
+          (* Compute flows of user-controlled data -> literal string sinks if applicable. *)
+          let () =
+            let literal_string_sinks = Configuration.literal_string_sinks () in
+            (* We try to be a bit clever about bailing out early and not computing the matches. *)
+            if (not (List.is_empty literal_string_sinks)) && not (ForwardState.Tree.is_bottom taint)
+            then
+              let backwards_taint =
+                List.fold
+                  literal_string_sinks
+                  ~f:(fun taint { Configuration.sink_kind; pattern } ->
+                    if Re2.matches pattern value then
+                      BackwardState.Tree.join
+                        taint
+                        (BackwardState.Tree.create_leaf
+                           (BackwardTaint.singleton ~location sink_kind))
+                    else
+                      taint)
+                  ~init:BackwardState.Tree.bottom
+              in
+              FunctionContext.check_flow ~location ~source_tree:taint ~sink_tree:backwards_taint
+          in
+          taint, state
       | _ -> value_taint, state
 
 
@@ -1149,7 +1173,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       | Starred (Starred.Twice expression) ->
           analyze_expression ~resolution ~state ~expression
           |>> ForwardState.Tree.read [Abstract.TreeDomain.Label.Any]
-      | String string_literal -> analyze_string_literal ~resolution ~state string_literal
+      | String string_literal -> analyze_string_literal ~resolution ~state ~location string_literal
       | Ternary { target; test; alternative } ->
           let state = analyze_condition ~resolution test state in
           let taint_then, state_then = analyze_expression ~resolution ~state ~expression:target in
