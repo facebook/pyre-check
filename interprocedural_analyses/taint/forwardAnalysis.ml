@@ -1042,6 +1042,39 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       |>> ForwardState.Tree.join attribute_taint
 
 
+    and analyze_string_literal ~resolution ~state { StringLiteral.value; kind } =
+      let value_taint =
+        let literal_string_regular_expressions = Configuration.literal_string_sources () in
+        if List.is_empty literal_string_regular_expressions then
+          ForwardState.Tree.empty
+        else
+          let add_matching_source_kind tree { Configuration.pattern; kind } =
+            if Re2.matches pattern value then
+              ForwardState.Tree.join
+                tree
+                (ForwardState.Tree.create_leaf (ForwardTaint.singleton kind))
+            else
+              tree
+          in
+          List.fold
+            literal_string_regular_expressions
+            ~init:ForwardState.Tree.empty
+            ~f:add_matching_source_kind
+      in
+      match kind with
+      | StringLiteral.Format expressions ->
+          List.fold
+            expressions
+            ~f:(fun (taint, state) expression ->
+              analyze_expression ~resolution ~state ~expression |>> ForwardState.Tree.join taint)
+            ~init:(ForwardState.Tree.empty, state)
+          |>> ForwardState.Tree.transform
+                ForwardTaint.simple_feature
+                Abstract.Domain.(Add Domains.format_string_feature)
+          |>> ForwardState.Tree.join value_taint
+      | _ -> value_taint, state
+
+
     and analyze_expression ~resolution ~state ~expression:({ Node.location; _ } as expression) =
       let location = Location.with_module ~qualifier:FunctionContext.qualifier location in
       match expression.Node.value with
@@ -1116,16 +1149,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       | Starred (Starred.Twice expression) ->
           analyze_expression ~resolution ~state ~expression
           |>> ForwardState.Tree.read [Abstract.TreeDomain.Label.Any]
-      | String { StringLiteral.kind = StringLiteral.Format expressions; _ } ->
-          List.fold
-            expressions
-            ~f:(fun (taint, state) expression ->
-              analyze_expression ~resolution ~state ~expression |>> ForwardState.Tree.join taint)
-            ~init:(ForwardState.Tree.empty, state)
-          |>> ForwardState.Tree.transform
-                ForwardTaint.simple_feature
-                Abstract.Domain.(Add Domains.format_string_feature)
-      | String _ -> ForwardState.Tree.empty, state
+      | String string_literal -> analyze_string_literal ~resolution ~state string_literal
       | Ternary { target; test; alternative } ->
           let state = analyze_condition ~resolution test state in
           let taint_then, state_then = analyze_expression ~resolution ~state ~expression:target in

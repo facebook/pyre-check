@@ -84,6 +84,8 @@ val validate : t -> unit
 
 val conditional_test_sinks : unit -> Sinks.t list
 
+val literal_string_sources : unit -> literal_string_source list
+
 val get_triggered_sink : partial_sink:Sinks.partial_sink -> source:Sources.t -> Sinks.t option
 
 val is_missing_flow_analysis : missing_flows_kind -> bool

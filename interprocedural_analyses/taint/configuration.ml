@@ -611,6 +611,11 @@ let get_maximum_model_width () =
   | { analysis_model_constraints = { maximum_model_width; _ }; _ } -> maximum_model_width
 
 
+let literal_string_sources () =
+  let { implicit_sources; _ } = get () in
+  implicit_sources.literal_strings
+
+
 let maximum_return_access_path_width = 5
 
 let maximum_return_access_path_depth = 3
