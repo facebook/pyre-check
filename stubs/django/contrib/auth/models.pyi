@@ -7,7 +7,10 @@
 
 from typing import Any, Optional
 
-from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
+from django.contrib.auth.base_user import (
+    AbstractBaseUser as AbstractBaseUser,
+    BaseUserManager as BaseUserManager,
+)
 from django.db import models
 
 class UserManager(BaseUserManager):

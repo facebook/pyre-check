@@ -16,3 +16,9 @@ def path(
     kwargs: Optional[Mapping[str, Any]] = ...,
     name: Optional[str] = ...,
 ) -> Union[URLPattern, URLResolver]: ...
+def re_path(
+    route: str,
+    view: Any,
+    kwargs: Optional[Mapping[str, Any]] = ...,
+    name: Optional[str] = ...,
+) -> Union[URLPattern, URLResolver]: ...
