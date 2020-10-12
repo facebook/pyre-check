@@ -559,7 +559,7 @@ def incremental(
 
 
 @pyre.command()
-@click.argument("modify_paths", type=filesystem.exists, nargs=-1)
+@click.argument("modify_paths", type=filesystem.file_or_directory_exists, nargs=-1)
 @click.option(
     "-p",
     "--print-only",

@@ -88,6 +88,12 @@ def exists(path: str) -> str:
     return path
 
 
+def file_or_directory_exists(path: str) -> str:
+    if os.path.isdir(path) or os.path.isfile(path):
+        return path
+    raise ValueError("%s is not a valid path" % path)
+
+
 def is_parent(parent: str, child: str) -> bool:
     return child.startswith(parent.rstrip(os.sep) + os.sep)
 
