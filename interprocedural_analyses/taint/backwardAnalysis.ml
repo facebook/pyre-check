@@ -872,6 +872,38 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           | _ -> analyze_regular_call ~taint state ~callee ~arguments )
 
 
+    and analyze_string_literal ~resolution ~taint ~state ~location { StringLiteral.value; kind } =
+      match kind with
+      | StringLiteral.Format expressions ->
+          let taint =
+            let literal_string_sinks = Configuration.literal_string_sinks () in
+            if List.is_empty literal_string_sinks then
+              taint
+            else
+              List.fold
+                literal_string_sinks
+                ~f:(fun taint { Configuration.sink_kind; pattern } ->
+                  if Re2.matches pattern value then
+                    BackwardState.Tree.join
+                      taint
+                      (BackwardState.Tree.create_leaf (BackwardTaint.singleton ~location sink_kind))
+                  else
+                    taint)
+                ~init:taint
+          in
+          let taint =
+            BackwardState.Tree.transform
+              BackwardTaint.simple_feature
+              Abstract.Domain.(Add Domains.format_string_feature)
+              taint
+          in
+          List.fold
+            expressions
+            ~f:(fun state expression -> analyze_expression ~resolution ~taint ~state ~expression)
+            ~init:state
+      | _ -> state
+
+
     and analyze_expression
         ~resolution
         ~taint
@@ -992,18 +1024,13 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       | Starred (Starred.Twice expression) ->
           let taint = BackwardState.Tree.prepend [Abstract.TreeDomain.Label.Any] taint in
           analyze_expression ~resolution ~taint ~state ~expression
-      | String { StringLiteral.kind = StringLiteral.Format expressions; _ } ->
-          let taint =
-            BackwardState.Tree.transform
-              BackwardTaint.simple_feature
-              Abstract.Domain.(Add Domains.format_string_feature)
-              taint
-          in
-          List.fold
-            expressions
-            ~f:(fun state expression -> analyze_expression ~resolution ~taint ~state ~expression)
-            ~init:state
-      | String _ -> state
+      | String string_literal ->
+          analyze_string_literal
+            ~resolution
+            ~taint
+            ~state
+            ~location:(Location.with_module ~qualifier:FunctionContext.qualifier location)
+            string_literal
       | Ternary { target; test; alternative } ->
           let state_then = analyze_expression ~resolution ~taint ~state ~expression:target in
           let state_else = analyze_expression ~resolution ~taint ~state ~expression:alternative in

@@ -1,0 +1,4 @@
+@generated
+Call dependencies
+implicit_sinks.inline_issue (fun) -> [__test_source (fun)]
+implicit_sinks.propagate_sink (fun) -> []

@@ -1,0 +1,26 @@
+@generated
+{
+  "kind": "model",
+  "data": {
+    "callable": "implicit_sinks.propagate_sink",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(a)",
+        "taint": [
+          {
+            "root": {
+              "filename": "implicit_sinks.py",
+              "line": 12,
+              "start": 4,
+              "end": 12
+            },
+            "leaves": [ { "kind": "Test" } ],
+            "features": [ { "always-via": "format-string" } ]
+          }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
