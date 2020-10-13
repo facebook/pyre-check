@@ -178,3 +178,17 @@ def save_filter(session: Session, filter: Filter) -> None:
     LOG.debug(f"Storing {filter}")
     session.add(FilterRecord.from_filter(filter))
     session.commit()
+
+
+class EmptyDeletionError(Exception):
+    pass
+
+
+def delete_filter(session: Session, name: str) -> None:
+    LOG.info(f"Deleting {name}")
+    deleted_rows = (
+        session.query(FilterRecord).filter(FilterRecord.name == name).delete()
+    )
+    if deleted_rows == 0:
+        raise EmptyDeletionError(f'No filter with `name` "{name}" exists.')
+    session.commit()
