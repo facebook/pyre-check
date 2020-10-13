@@ -8,6 +8,20 @@
 open Core
 module Path = Pyre.Path
 
+module ServerEvent = struct
+  type t =
+    | SocketCreated of Path.t
+    | ServerInitialized
+    | Exception of string
+  [@@deriving sexp, compare, hash, to_yojson]
+
+  let serialize event = to_yojson event |> Yojson.Safe.to_string
+
+  let write ~output_channel event =
+    let open Lwt.Infix in
+    serialize event |> Lwt_io.fprintl output_channel >>= fun () -> Lwt_io.flush output_channel
+end
+
 (* Socket paths in most Unixes are limited to a length of +-100 characters, whereas `log_path` might
    exceed that limit. We have to work around this by shortening the original log path into
    `/tmp/pyre_server_XXX.sock`, where XXX is obtained by computing an MD5 hash of `log_path`. *)
@@ -320,12 +334,30 @@ let start_server
   catch (fun () -> with_server ?watchman server_configuration ~f) on_exception
 
 
-let start_server_and_wait server_configuration =
+let start_server_and_wait ?event_channel server_configuration =
   let open Lwt in
+  let write_event event =
+    match event_channel with
+    | None -> return_unit
+    | Some output_channel ->
+        catch
+          (fun () -> ServerEvent.write ~output_channel event)
+          (function
+            | Lwt_io.Channel_closed _
+            | Caml.Unix.Unix_error (Caml.Unix.EPIPE, _, _) ->
+                return_unit
+            | exn -> Lwt.fail exn)
+  in
   start_server
     server_configuration
-    ~on_started:(fun _ -> wait_on_signals [Signal.int])
+    ~on_server_socket_ready:(fun socket_path ->
+      (* An empty message signals that server socket has been created. *)
+      write_event (ServerEvent.SocketCreated socket_path))
+    ~on_started:(fun _ ->
+      write_event ServerEvent.ServerInitialized >>= fun () -> wait_on_signals [Signal.int])
     ~on_exception:(fun exn ->
       Log.error "Exception thrown from Pyre server.";
-      Log.error "%s" (Exn.to_string exn);
-      return_unit)
+      let message = Exn.to_string exn in
+      Log.error "%s" message;
+      (* A non-empty message signals that an error has occurred. *)
+      write_event (ServerEvent.Exception message))
