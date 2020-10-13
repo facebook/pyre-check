@@ -65,6 +65,6 @@ third party libraries such as Django, which are not in typeshed.
 
 - `pyre analyze` erroring out? Make sure type annotations didn't sneak into your
   `.pysa` model files. The only annotations you should have should be taint
-  annoations: `__source: TaintSink[CodeExecution]`. Make sure you remove all
+  annotations: `__source: TaintSink[CodeExecution]`. Make sure you remove all
   type annotations such as `__source: Union[str, bytes, CodeType]` from your
   `.pysa` files.
