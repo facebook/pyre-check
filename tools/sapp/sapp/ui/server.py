@@ -16,8 +16,8 @@ from flask_graphql import GraphQLView
 from pyre_extensions import none_throws
 from sqlalchemy.orm import Session, scoped_session, sessionmaker
 
+from .. import models
 from ..db import DB
-from ..models import Base
 from .schema import schema
 
 
@@ -65,7 +65,9 @@ def start_server(
     )
     session = scoped_session(sessionmaker(bind=engine))
     # pyre-fixme[16]: `Type` has no attribute `query`.
-    Base.query = session.query_property()
+    models.Base.query = session.query_property()
+    # We have additional tables for the UI that need to be created.
+    models.create(database)
 
     application.add_url_rule(
         "/graphql",

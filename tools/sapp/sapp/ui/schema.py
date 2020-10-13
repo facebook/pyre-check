@@ -73,7 +73,7 @@ class CallableConnection(relay.Connection):
 
 class FilterConnection(relay.Connection):
     class Meta:
-        node = filters_module.FilterType
+        node = filters_module.Filter
 
 
 class Query(graphene.ObjectType):
@@ -297,4 +297,26 @@ class Query(graphene.ObjectType):
         )
 
 
-schema = graphene.Schema(query=Query, auto_camelcase=False)
+class SaveFilterMutation(relay.ClientIDMutation):
+    node = graphene.Field(filters_module.Filter)
+
+    class Input:
+        name = graphene.String(required=True)
+        description = graphene.String()
+        codes = graphene.List(graphene.Int)
+
+    def mutate_and_get_payload(
+        self, info: ResolveInfo, **kwargs: Any
+    ) -> "SaveFilterMutation":
+        session = info.context.get("session")
+        filter = filters_module.Filter(**kwargs)
+        filters_module.save_filter(session, filter)
+        return SaveFilterMutation(node=filter)
+
+
+class Mutation(graphene.ObjectType):
+    # pyre-fixme[4]: Attribute must be annotated.
+    save_filter = SaveFilterMutation.Field()
+
+
+schema = graphene.Schema(query=Query, mutation=Mutation, auto_camelcase=False)

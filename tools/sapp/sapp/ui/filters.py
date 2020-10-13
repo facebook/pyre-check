@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import logging
 from abc import ABC, abstractmethod
 from typing import (
     TYPE_CHECKING,
@@ -19,17 +20,20 @@ from typing import (
 )
 
 import graphene
-from sqlalchemy import Column
+from sqlalchemy import Column, String
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.query import Query
 from sqlalchemy.sql.expression import or_
 from typing_extensions import Final
 
-from ..models import DBID
+from ..models import DBID, Base
 
 
 if TYPE_CHECKING:
     from .issues import IssueQueryResult  # noqa
+
+
+LOG: logging.Logger = logging.getLogger(__name__)
 
 
 _Q = TypeVar("_Q")
@@ -127,27 +131,50 @@ class HasNone(IssuePredicate):
         return [issue for issue in issues if len(issue.features & self._features) == 0]
 
 
-class FilterType(graphene.ObjectType):
-    name = graphene.String()
+class Filter(graphene.ObjectType):
+    name = graphene.String(required=True)
     description = graphene.String()
     codes = graphene.List(graphene.Int)
 
+    @staticmethod
+    def from_record(record: FilterRecord) -> Filter:
+        codes = record.codes
+        return Filter(
+            name=record.name,
+            description=record.description,
+            codes=[int(code) for code in codes.split(",")] if codes else None,
+        )
 
-class Filter(NamedTuple):
-    name: str
-    description: str
-    codes: List[int]
+
+class FilterRecord(Base):
+    __tablename__ = "filters"
+
+    name: Column[str] = Column(
+        String(length=255), nullable=False, unique=True, primary_key=True
+    )
+    description: Column[Optional[str]] = Column(String(length=1024), nullable=True)
+
+    codes: Column[Optional[str]] = Column(
+        String(length=1024), nullable=True, doc="Comma-separated list of codes"
+    )
+
+    @staticmethod
+    def from_filter(filter: Filter) -> FilterRecord:
+        codes = filter.codes
+        return FilterRecord(
+            # pyre-ignore[6]: graphene too dynamic.
+            name=filter.name,
+            description=filter.description,
+            # pyre-ignore[16]: graphene too dynamic.
+            codes=",".join([str(code) for code in codes]) if codes else None,
+        )
 
 
 def all_filters(session: Session) -> List[Filter]:
-    # TODO(T71492980): these are dummy filters for now.
-    return [
-        Filter(
-            name="Codes 5029", description="Only issues with code 5029", codes=[5029]
-        ),
-        Filter(
-            name="Codes 5029/5011",
-            description="Only issues with codes 5029 or 5011",
-            codes=[5029, 5012],
-        ),
-    ]
+    return [Filter.from_record(record) for record in session.query(FilterRecord).all()]
+
+
+def save_filter(session: Session, filter: Filter) -> None:
+    LOG.debug(f"Storing {filter}")
+    session.add(FilterRecord.from_filter(filter))
+    session.commit()
