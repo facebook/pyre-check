@@ -20,7 +20,7 @@ const IssueQuery = gql`
   query Issue(
     $after: String
     $codes: [Int]
-    $file_names: [String]
+    $paths: [String]
     $callables: [String]
     $min_trace_length_to_sinks: Int
     $max_trace_length_to_sinks: Int
@@ -31,7 +31,7 @@ const IssueQuery = gql`
       first: 20
       after: $after
       codes: $codes
-      file_names: $file_names
+      paths: $paths
       callables: $callables
       min_trace_length_to_sinks: $min_trace_length_to_sinks
       max_trace_length_to_sinks: $max_trace_length_to_sinks

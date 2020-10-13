@@ -209,8 +209,8 @@ class Query:
     def where_callables_is_any_of(self, callables: List[str]) -> "Query":
         return self.where(filters.Like(CallableText.contents, callables))
 
-    def where_file_names_is_any_of(self, file_names: List[str]) -> "Query":
-        return self.where(filters.Like(FilenameText.contents, file_names))
+    def where_path_is_any_of(self, paths: List[str]) -> "Query":
+        return self.where(filters.Like(FilenameText.contents, paths))
 
     def where_trace_length_to_sinks(
         self, minimum: Optional[int] = None, maximum: Optional[int] = None

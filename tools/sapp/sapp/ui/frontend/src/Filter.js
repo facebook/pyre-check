@@ -36,7 +36,7 @@ type FilterDescription = {
   name?: string,
   description?: string,
   codes?: $ReadOnlyArray<number>,
-  file_names?: $ReadOnlyArray<string>,
+  paths?: $ReadOnlyArray<string>,
   callables?: $ReadOnlyArray<string>,
   min_trace_length_to_sinks?: number,
   max_trace_length_to_sinks?: number,
@@ -54,7 +54,7 @@ const FilterForm = (props: {
   const [form] = Form.useForm();
   form.setFieldsValue({
     codes: props.currentFilter.codes,
-    file_names: props.currentFilter.file_names,
+    paths: props.currentFilter.paths,
     callables: props.currentFilter.callables,
     min_trace_length_to_sinks: props.currentFilter.min_trace_length_to_sinks,
     max_trace_length_to_sinks: props.currentFilter.max_trace_length_to_sinks,
@@ -129,7 +129,7 @@ const FilterForm = (props: {
           })}
         />
       </Form.Item>
-      <Form.Item label="Paths" name="file_names">
+      <Form.Item label="Paths" name="paths">
         <Select
           mode="multiple"
           options={(paths?.paths?.edges || []).map(edge => {

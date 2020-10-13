@@ -167,8 +167,7 @@ class QueryTest(TestCase):
             )
             builder = Query(session, latest_run_id)
             issue_ids = {
-                int(issue.id)
-                for issue in builder.where_file_names_is_any_of(["1234"]).get()
+                int(issue.id) for issue in builder.where_path_is_any_of(["1234"]).get()
             }
             self.assertNotIn(1, issue_ids)
             self.assertNotIn(2, issue_ids)
@@ -177,7 +176,7 @@ class QueryTest(TestCase):
             builder = Query(session, latest_run_id)
             issue_ids = {
                 int(issue.id)
-                for issue in builder.where_file_names_is_any_of(["module/s%"]).get()
+                for issue in builder.where_path_is_any_of(["module/s%"]).get()
             }
             self.assertIn(1, issue_ids)
             self.assertIn(2, issue_ids)
@@ -186,7 +185,7 @@ class QueryTest(TestCase):
             builder = Query(session, latest_run_id)
             issue_ids = {
                 int(issue.id)
-                for issue in builder.where_file_names_is_any_of(["%__init__.py"]).get()
+                for issue in builder.where_path_is_any_of(["%__init__.py"]).get()
             }
             self.assertNotIn(1, issue_ids)
             self.assertNotIn(2, issue_ids)

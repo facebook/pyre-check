@@ -514,7 +514,7 @@ details              show additional information about the current trace frame
                     raise UserError("'filenames' should be str or list of str.")
                 if isinstance(filenames, str):
                     filenames = [filenames]
-                builder = builder.where_file_names_is_any_of(filenames)
+                builder = builder.where_path_is_any_of(filenames)
 
             if (exact_trace_length_to_sources is not None) and (
                 max_trace_length_to_sources is not None

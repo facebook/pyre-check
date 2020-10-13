@@ -83,7 +83,7 @@ class Query(graphene.ObjectType):
         IssueConnection,
         codes=graphene.List(graphene.Int, default_value=["%"]),
         callables=graphene.List(graphene.String, default_value=["%"]),
-        file_names=graphene.List(graphene.String, default_value=["%"]),
+        paths=graphene.List(graphene.String, default_value=["%"]),
         min_trace_length_to_sinks=graphene.Int(),
         max_trace_length_to_sinks=graphene.Int(),
         min_trace_length_to_sources=graphene.Int(),
@@ -116,7 +116,7 @@ class Query(graphene.ObjectType):
         info: ResolveInfo,
         codes: List[int],
         callables: List[str],
-        file_names: List[str],
+        paths: List[str],
         min_trace_length_to_sinks: Optional[int] = None,
         max_trace_length_to_sinks: Optional[int] = None,
         min_trace_length_to_sources: Optional[int] = None,
@@ -131,7 +131,7 @@ class Query(graphene.ObjectType):
             issues.Query(session, run_id)
             .where_codes_is_any_of(codes)
             .where_callables_is_any_of(callables)
-            .where_file_names_is_any_of(file_names)
+            .where_path_is_any_of(paths)
             .where_trace_length_to_sinks(
                 min_trace_length_to_sinks, max_trace_length_to_sinks
             )
