@@ -40,7 +40,7 @@ def main() -> None:
                 url_pattern_type=UrlPattern,
                 url_resolver_type=Ignore,
             )
-        )  # ,
+        ),
         # "decorator_extracted_params": generate_taint_models.<GENERATOR_NAME>(
         #     root=".",
         #     annotation_specifications=[
@@ -57,7 +57,7 @@ def main() -> None:
     generate_taint_models.run_generators(
         generators,
         default_modes=[
-            "django_path_params"  # ,
+            "django_path_params",
             # "decorator_extracted_params"
         ],
     )
