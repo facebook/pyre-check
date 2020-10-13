@@ -52,16 +52,18 @@ const FilterForm = (props: {
   setCurrentFilter: FilterDescription => void,
 }): React$Node => {
   const [form] = Form.useForm();
+
+  var values = props.currentFilter;
+  // Remove `null` values to work around display issues in form with lists.
+  Object.keys(values).forEach(key => values[key] == null && delete values[key]);
   form.setFieldsValue({
-    codes: props.currentFilter.codes,
-    paths: props.currentFilter.paths,
-    callables: props.currentFilter.callables,
-    min_trace_length_to_sinks: props.currentFilter.min_trace_length_to_sinks,
-    max_trace_length_to_sinks: props.currentFilter.max_trace_length_to_sinks,
-    min_trace_length_to_sources:
-      props.currentFilter.min_trace_length_to_sources,
-    max_trace_length_to_sources:
-      props.currentFilter.max_trace_length_to_sources,
+    codes: values.codes,
+    paths: values.paths,
+    callables: values.callables,
+    min_trace_length_to_sinks: values.min_trace_length_to_sinks,
+    max_trace_length_to_sinks: values.max_trace_length_to_sinks,
+    min_trace_length_to_sources: values.min_trace_length_to_sources,
+    max_trace_length_to_sources: values.max_trace_length_to_sources,
   });
 
   const [appliedFilter, setAppliedFilter] = useState<FilterDescription>({});
@@ -226,14 +228,40 @@ const SaveFilterModal = (
     props.onSave(data.save_filter.node);
   };
   const saveFilterMutation = gql`
-    mutation SaveFilter($name: String!, $description: String, $codes: [Int]) {
+    mutation SaveFilter(
+      $name: String!
+      $description: String
+      $codes: [Int]
+      $paths: [String]
+      $callables: [String]
+      $min_trace_length_to_sinks: Int
+      $max_trace_length_to_sinks: Int
+      $min_trace_length_to_sources: Int
+      $max_trace_length_to_sources: Int
+    ) {
       save_filter(
-        input: {name: $name, description: $description, codes: $codes}
+        input: {
+          name: $name
+          description: $description
+          codes: $codes
+          paths: $paths
+          callables: $callables
+          min_trace_length_to_sinks: $min_trace_length_to_sinks
+          max_trace_length_to_sinks: $max_trace_length_to_sinks
+          min_trace_length_to_sources: $min_trace_length_to_sources
+          max_trace_length_to_sources: $max_trace_length_to_sources
+        }
       ) {
         node {
           name
           description
           codes
+          paths
+          callables
+          min_trace_length_to_sinks
+          max_trace_length_to_sinks
+          min_trace_length_to_sources
+          max_trace_length_to_sources
         }
       }
     }
@@ -250,7 +278,7 @@ const SaveFilterModal = (
       variables: {
         name: values.name,
         description: values.description,
-        codes: props.currentFilter.codes,
+        ...props.currentFilter,
       },
     });
     props.hide();
@@ -293,6 +321,12 @@ const SavedFilters = (
             name
             description
             codes
+            paths
+            callables
+            min_trace_length_to_sinks
+            max_trace_length_to_sinks
+            min_trace_length_to_sources
+            max_trace_length_to_sources
           }
         }
       }

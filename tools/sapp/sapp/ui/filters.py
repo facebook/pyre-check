@@ -7,20 +7,10 @@ from __future__ import annotations
 
 import logging
 from abc import ABC, abstractmethod
-from typing import (
-    TYPE_CHECKING,
-    Generic,
-    List,
-    NamedTuple,
-    Optional,
-    Sequence,
-    Set,
-    TypeVar,
-    Union,
-)
+from typing import TYPE_CHECKING, Generic, List, Optional, Sequence, Set, TypeVar, Union
 
 import graphene
-from sqlalchemy import Column, String
+from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.query import Query
 from sqlalchemy.sql.expression import or_
@@ -135,14 +125,28 @@ class Filter(graphene.ObjectType):
     name = graphene.String(required=True)
     description = graphene.String()
     codes = graphene.List(graphene.Int)
+    paths = graphene.List(graphene.String)
+    callables = graphene.List(graphene.String)
+    min_trace_length_to_sinks = graphene.Int()
+    max_trace_length_to_sinks = graphene.Int()
+    min_trace_length_to_sources = graphene.Int()
+    max_trace_length_to_sources = graphene.Int()
 
     @staticmethod
     def from_record(record: FilterRecord) -> Filter:
         codes = record.codes
+        paths = record.paths
+        callables = record.callables
         return Filter(
             name=record.name,
             description=record.description,
             codes=[int(code) for code in codes.split(",")] if codes else None,
+            paths=paths.split(",") if paths else None,
+            callables=callables.split(",") if callables else None,
+            min_trace_length_to_sinks=record.min_trace_length_to_sinks,
+            max_trace_length_to_sinks=record.max_trace_length_to_sinks,
+            min_trace_length_to_sources=record.min_trace_length_to_sources,
+            max_trace_length_to_sources=record.max_trace_length_to_sources,
         )
 
 
@@ -157,16 +161,37 @@ class FilterRecord(Base):
     codes: Column[Optional[str]] = Column(
         String(length=1024), nullable=True, doc="Comma-separated list of codes"
     )
+    paths: Column[Optional[str]] = Column(
+        String(length=1024), nullable=True, doc="Comma-separated list of paths"
+    )
+    callables: Column[Optional[str]] = Column(
+        String(length=1024), nullable=True, doc="Comma-separated list of paths"
+    )
+
+    min_trace_length_to_sinks: Column[Optional[int]] = Column(Integer, nullable=True)
+    max_trace_length_to_sinks: Column[Optional[int]] = Column(Integer, nullable=True)
+    min_trace_length_to_sources: Column[Optional[int]] = Column(Integer, nullable=True)
+    max_trace_length_to_sources: Column[Optional[int]] = Column(Integer, nullable=True)
 
     @staticmethod
     def from_filter(filter: Filter) -> FilterRecord:
         codes = filter.codes
+        paths = filter.paths
+        callables = filter.callables
         return FilterRecord(
             # pyre-ignore[6]: graphene too dynamic.
             name=filter.name,
             description=filter.description,
             # pyre-ignore[16]: graphene too dynamic.
             codes=",".join([str(code) for code in codes]) if codes else None,
+            # pyre-ignore[6]: graphene too dynamic.
+            paths=",".join(paths) if paths else None,
+            # pyre-ignore[6]: graphene too dynamic.
+            callables=",".join(callables) if callables else None,
+            min_trace_length_to_sinks=filter.min_trace_length_to_sinks,
+            max_trace_length_to_sinks=filter.max_trace_length_to_sinks,
+            min_trace_length_to_sources=filter.min_trace_length_to_sources,
+            max_trace_length_to_sources=filter.max_trace_length_to_sources,
         )
 
 

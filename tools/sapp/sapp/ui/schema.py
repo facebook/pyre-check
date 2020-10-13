@@ -304,6 +304,12 @@ class SaveFilterMutation(relay.ClientIDMutation):
         name = graphene.String(required=True)
         description = graphene.String()
         codes = graphene.List(graphene.Int)
+        paths = graphene.List(graphene.String)
+        callables = graphene.List(graphene.String)
+        min_trace_length_to_sinks = graphene.Int()
+        max_trace_length_to_sinks = graphene.Int()
+        min_trace_length_to_sources = graphene.Int()
+        max_trace_length_to_sources = graphene.Int()
 
     def mutate_and_get_payload(
         self, info: ResolveInfo, **kwargs: Any
