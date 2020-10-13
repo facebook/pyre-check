@@ -240,7 +240,9 @@ const FilterForm = (props: {
               props.setCurrentFilter({});
               form.resetFields();
             }}
-            disabled={Object.keys(props.currentFilter).length === 0}>
+            disabled={
+              Object.keys(props.currentFilter).length === 0 || props.refetching
+            }>
             Clear
           </Button>{' '}
           <Button
