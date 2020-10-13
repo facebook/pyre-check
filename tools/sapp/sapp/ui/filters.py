@@ -185,7 +185,7 @@ class EmptyDeletionError(Exception):
 
 
 def delete_filter(session: Session, name: str) -> None:
-    LOG.info(f"Deleting {name}")
+    LOG.debug(f"Deleting {name}")
     deleted_rows = (
         session.query(FilterRecord).filter(FilterRecord.name == name).delete()
     )

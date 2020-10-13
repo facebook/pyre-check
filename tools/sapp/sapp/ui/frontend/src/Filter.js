@@ -9,7 +9,7 @@
  */
 
 import React, {useState} from 'react';
-import {useQuery, gql} from '@apollo/client';
+import {useQuery, useMutation, gql} from '@apollo/client';
 import {
   Alert,
   AutoComplete,
@@ -49,7 +49,7 @@ const FilterForm = (props: {
   refetching: boolean,
   setVisible: boolean => void,
   currentFilter: FilterDescription,
-  onChange: FilterDescription => void,
+  setCurrentFilter: FilterDescription => void,
 }): React$Node => {
   const [form] = Form.useForm();
   form.setFieldsValue({
@@ -118,7 +118,7 @@ const FilterForm = (props: {
       name="basic"
       initialValues={{remember: true}}
       onFinish={onFinish}
-      onFieldsChange={() => props.onChange(form.getFieldsValue())}>
+      onFieldsChange={() => props.setCurrentFilter(form.getFieldsValue())}>
       <Form.Item label="Codes" name="codes">
         <Select
           mode="multiple"
@@ -190,7 +190,7 @@ const FilterForm = (props: {
         <div style={{textAlign: 'right'}}>
           <Button
             onClick={() => {
-              props.onChange({});
+              props.setCurrentFilter({});
               form.resetFields();
             }}
             disabled={Object.keys(props.currentFilter).length === 0}>
@@ -217,15 +217,42 @@ const SaveFilterModal = (
     currentFilter: FilterDescription,
     visible: boolean,
     hide: void => void,
+    onSave: FilterDescription => void,
   |}>,
 ): React$Node => {
   const [form] = Form.useForm();
 
+  const onCompleted = (data: any): void => {
+    props.onSave(data.save_filter.node);
+  };
+  const saveFilterMutation = gql`
+    mutation SaveFilter($name: String!, $description: String, $codes: [Int]) {
+      save_filter(
+        input: {name: $name, description: $description, codes: $codes}
+      ) {
+        node {
+          name
+          description
+          codes
+        }
+      }
+    }
+  `;
+  const [saveFilter, {error}] = useMutation(saveFilterMutation, {onCompleted});
+
+  if (error) {
+    return <Alert type="error">{error.toString()}</Alert>;
+  }
+
   const onOk = (): void => {
-    // TODO(T71492980): do the actual backend work.
-    console.log('Saving...');
-    console.log(form.getFieldsValue());
-    console.log(props.currentFilter);
+    const values = form.getFieldsValue();
+    saveFilter({
+      variables: {
+        name: values.name,
+        description: values.description,
+        codes: props.currentFilter.codes,
+      },
+    });
     props.hide();
   };
 
@@ -251,8 +278,8 @@ const SaveFilterModal = (
 
 const SavedFilters = (
   props: $ReadOnly<{|
-    onChange: FilterDescription => mixed,
     currentFilter: FilterDescription,
+    setCurrentFilter: FilterDescription => mixed,
   |}>,
 ): React$Node => {
   const [search, setSearch] = useState(null);
@@ -271,7 +298,7 @@ const SavedFilters = (
       }
     }
   `;
-  const {loading, error, data} = useQuery(filtersQuery);
+  const {loading, error, data, refetch} = useQuery(filtersQuery);
 
   if (error) {
     return <Alert type="error">{error.toString()}</Alert>;
@@ -305,7 +332,12 @@ const SavedFilters = (
   var filterMap = {};
   filters.forEach(edge => (filterMap[edge.node.name] = edge.node));
   const onSelect = (value: string): void => {
-    props.onChange(filterMap[value]);
+    props.setCurrentFilter(filterMap[value]);
+  };
+
+  const onSave = (filter: FilterDescription): void => {
+    props.setCurrentFilter(filter);
+    refetch();
   };
 
   return (
@@ -326,6 +358,7 @@ const SavedFilters = (
             currentFilter={props.currentFilter}
             visible={saveModalVisible}
             hide={() => setSaveModalVisible(false)}
+            onSave={onSave}
           />
           <Button
             icon={<PlusOutlined />}
@@ -345,20 +378,19 @@ const Filter = (props: {refetch: any, refetching: boolean}) => {
   const [visible, setVisible] = useState(false);
   const [currentFilter, setCurrentFilter] = useState<FilterDescription>({});
 
-  const updateForm = (filter: FilterDescription): void => {
-    setCurrentFilter(filter);
-  };
-
   const content = (
     <div style={{width: '500px'}}>
-      <SavedFilters onChange={updateForm} currentFilter={currentFilter} />
+      <SavedFilters
+        currentFilter={currentFilter}
+        setCurrentFilter={setCurrentFilter}
+      />
       <Divider />
       <FilterForm
         refetch={props.refetch}
         refetching={props.refetching}
-        currentFilter={currentFilter}
         setVisible={setVisible}
-        onChange={updateForm}
+        currentFilter={currentFilter}
+        setCurrentFilter={setCurrentFilter}
       />
     </div>
   );
