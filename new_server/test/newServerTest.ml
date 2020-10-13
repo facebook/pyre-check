@@ -120,11 +120,12 @@ module ScratchProject = struct
     { context; server_configuration; watchman }
 
 
-  let test_server_with ~f { context; server_configuration; watchman } =
+  let test_server_with ?on_server_socket_ready ~f { context; server_configuration; watchman } =
     Memory.reset_shared_memory ();
     Start.start_server
       server_configuration
       ?watchman
+      ?on_server_socket_ready
       ~on_exception:(function
         | OUnitTest.OUnit_failure _ as exn ->
             (* We need to re-raise OUnit test failures since OUnit relies on it for error reporting. *)

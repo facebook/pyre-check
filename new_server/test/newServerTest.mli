@@ -36,5 +36,9 @@ module ScratchProject : sig
     (string * string) list ->
     t
 
-  val test_server_with : f:(Client.t -> unit Lwt.t) -> t -> unit Lwt.t
+  val test_server_with
+    :  ?on_server_socket_ready:(Pyre.Path.t -> unit Lwt.t) ->
+    f:(Client.t -> unit Lwt.t) ->
+    t ->
+    unit Lwt.t
 end

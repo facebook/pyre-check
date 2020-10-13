@@ -271,11 +271,7 @@ let with_server ?watchman ~f ({ ServerConfiguration.log_path; _ } as server_conf
     (Lwt_unix.ADDR_UNIX (Path.absolute socket_path))
     (handle_connection ~server_state)
   >>= fun server ->
-  let server_waiter () =
-    (* Force the server state initialization to run immediately so the computation does not need to
-       happen inside request handlers. *)
-    Lazy.force server_state >>= f
-  in
+  let server_waiter () = f (socket_path, server_state) in
   let server_destructor () =
     Log.info "Server is going down. Cleaning up...";
     Lwt_io.shutdown_server server
@@ -309,9 +305,19 @@ let wait_on_signals fatal_signals =
   return_unit
 
 
-let start_server ?watchman ~on_started ~on_exception server_configuration =
+let start_server
+    ?watchman
+    ?(on_server_socket_ready = fun _ -> Lwt.return_unit)
+    ~on_started
+    ~on_exception
+    server_configuration
+  =
   let open Lwt in
-  catch (fun () -> with_server ?watchman server_configuration ~f:on_started) on_exception
+  let f (socket_path, uninitialized_server_state) =
+    on_server_socket_ready socket_path
+    >>= fun _ -> Lazy.force uninitialized_server_state >>= on_started
+  in
+  catch (fun () -> with_server ?watchman server_configuration ~f) on_exception
 
 
 let start_server_and_wait server_configuration =

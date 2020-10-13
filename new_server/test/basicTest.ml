@@ -281,10 +281,24 @@ let test_watchman_integration context =
   |> ScratchProject.test_server_with ~f:(test_watchman_integration ~watchman_mailbox)
 
 
+let test_on_server_socket_ready context =
+  (* Test `on_server_socket_ready` gets correctly invoked before `on_start`. *)
+  let established_flag = ref false in
+  ScratchProject.setup ~context ~include_typeshed_stubs:false ~include_helper_builtins:false []
+  |> ScratchProject.test_server_with
+       ~on_server_socket_ready:(fun _ ->
+         established_flag := true;
+         Lwt.return_unit)
+       ~f:(fun _ ->
+         assert_bool "Established flag should have been set to `true`" !established_flag;
+         Lwt.return_unit)
+
+
 let () =
   "basic_test"
   >::: [
          "basic" >:: OUnitLwt.lwt_wrapper test_basic;
          "watchman_integration" >:: OUnitLwt.lwt_wrapper test_watchman_integration;
+         "on_server_socket_ready" >:: OUnitLwt.lwt_wrapper test_on_server_socket_ready;
        ]
   |> Test.run
