@@ -34,6 +34,8 @@ class CommandArguments:
     unsafe: bool
     force_format_unsuppressed: bool
     lint: bool
+    no_commit: bool
+    submit: bool
 
     @staticmethod
     def from_arguments(arguments: argparse.Namespace) -> "CommandArguments":
@@ -46,6 +48,8 @@ class CommandArguments:
                 arguments, "force_format_unsuppressed", False
             ),
             lint=arguments.lint,
+            no_commit=arguments.no_commit,
+            submit=arguments.submit,
         )
 
 
@@ -75,6 +79,8 @@ class ErrorSuppressingCommand(Command):
             command_arguments.force_format_unsuppressed
         )
         self._lint: bool = command_arguments.lint
+        self._no_commit: bool = command_arguments.no_commit
+        self._submit: bool = command_arguments.submit
 
     @staticmethod
     def add_arguments(parser: argparse.ArgumentParser) -> None:
@@ -106,6 +112,8 @@ class ErrorSuppressingCommand(Command):
             help="Run lint to ensure added fixmes comply with black formatting. \
             Doubles the runtime of pyre-ugprade.",
         )
+        parser.add_argument("--no-commit", action="store_true", help=argparse.SUPPRESS)
+        parser.add_argument("--submit", action="store_true", help=argparse.SUPPRESS)
 
     def _suppress_errors(self, errors: Errors) -> None:
         try:
@@ -130,15 +138,11 @@ class ProjectErrorSuppressingCommand(ErrorSuppressingCommand):
         only_fix_error_code: Optional[int],
         upgrade_version: bool,
         error_source: ErrorSource,
-        no_commit: bool,
-        submit: bool,
     ) -> None:
         super().__init__(command_arguments, repository)
         self._only_fix_error_code: Optional[int] = only_fix_error_code
         self._upgrade_version: bool = upgrade_version
         self._error_source: ErrorSource = error_source
-        self._no_commit: bool = no_commit
-        self._submit: bool = submit
 
     @classmethod
     def add_arguments(cls, parser: argparse.ArgumentParser) -> None:
@@ -160,8 +164,6 @@ class ProjectErrorSuppressingCommand(ErrorSuppressingCommand):
             default=ErrorSource.GENERATE,
             type=ErrorSource,
         )
-        parser.add_argument("--no-commit", action="store_true", help=argparse.SUPPRESS)
-        parser.add_argument("--submit", action="store_true", help=argparse.SUPPRESS)
 
     def _suppress_errors_in_project(
         self, configuration: Configuration, root: Path

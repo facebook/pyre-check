@@ -27,8 +27,6 @@ class FixmeAll(ProjectErrorSuppressingCommand):
             only_fix_error_code=arguments.only_fix_error_code,
             upgrade_version=arguments.upgrade_version,
             error_source=arguments.error_source,
-            no_commit=arguments.no_commit,
-            submit=arguments.submit,
         )
 
     @classmethod

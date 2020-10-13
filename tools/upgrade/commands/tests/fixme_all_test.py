@@ -171,8 +171,6 @@ class FixmeAllTest(unittest.TestCase):
             only_fix_error_code=None,
             upgrade_version=arguments.upgrade_version,
             error_source=arguments.error_source,
-            no_commit=arguments.no_commit,
-            submit=arguments.submit,
         )._suppress_errors_in_project(configuration, Path("/root"))
         run_global_version_update.assert_not_called()
         suppress_errors.assert_called_once_with(pyre_errors)
@@ -191,8 +189,6 @@ class FixmeAllTest(unittest.TestCase):
             only_fix_error_code=None,
             upgrade_version=arguments.upgrade_version,
             error_source=arguments.error_source,
-            no_commit=arguments.no_commit,
-            submit=arguments.submit,
         )._suppress_errors_in_project(configuration, Path("/root"))
         errors_from_stdin.assert_not_called()
         run_global_version_update.assert_not_called()
@@ -218,8 +214,6 @@ class FixmeAllTest(unittest.TestCase):
             only_fix_error_code=None,
             upgrade_version=arguments.upgrade_version,
             error_source=arguments.error_source,
-            no_commit=arguments.no_commit,
-            submit=arguments.submit,
         )._suppress_errors_in_project(configuration, Path("/root"))
         # Called in the first round to get initial errors
         errors_from_stdin.assert_called()

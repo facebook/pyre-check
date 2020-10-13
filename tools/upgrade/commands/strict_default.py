@@ -118,3 +118,16 @@ class StrictDefault(ErrorSuppressingCommand):
 
         if self._lint:
             self._repository.format()
+
+        title = f"Convert {self._local_configuration} to use strict default"
+        summary = (
+            "Turning on strict default; files with more than "
+            + f"{self._fixme_threshold} errors opted-out of strict."
+        )
+        self._repository.submit_changes(
+            commit=(not self._no_commit),
+            submit=self._submit,
+            title=title,
+            summary=summary,
+            set_dependencies=False,
+        )

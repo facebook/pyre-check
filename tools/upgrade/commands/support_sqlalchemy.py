@@ -106,8 +106,6 @@ class SupportSqlalchemy(ProjectErrorSuppressingCommand):
             only_fix_error_code=None,
             upgrade_version=False,
             error_source=ErrorSource.GENERATE.value,
-            no_commit=True,
-            submit=False,
         )
         self._local_root = local_root
         self._paths: Optional[Sequence[Path]] = paths if len(paths) > 0 else None

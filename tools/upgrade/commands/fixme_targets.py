@@ -27,13 +27,9 @@ class FixmeTargets(ErrorSuppressingCommand):
         *,
         repository: Repository,
         subdirectory: Optional[str],
-        no_commit: bool,
-        submit: bool,
     ) -> None:
         super().__init__(command_arguments, repository)
         self._subdirectory: Final[Optional[str]] = subdirectory
-        self._no_commit: bool = no_commit
-        self._submit: bool = submit
 
     @staticmethod
     def from_arguments(
@@ -44,20 +40,14 @@ class FixmeTargets(ErrorSuppressingCommand):
             command_arguments,
             repository=repository,
             subdirectory=arguments.subdirectory,
-            no_commit=arguments.no_commit,
-            submit=arguments.submit,
         )
 
     @classmethod
     def add_arguments(cls, parser: argparse.ArgumentParser) -> None:
         super(FixmeTargets, cls).add_arguments(parser)
         parser.set_defaults(command=cls.from_arguments)
-        parser.add_argument("--submit", action="store_true", help=argparse.SUPPRESS)
         parser.add_argument(
             "--subdirectory", help="Only upgrade TARGETS files within this directory."
-        )
-        parser.add_argument(
-            "--no-commit", action="store_true", help="Keep changes in working state."
         )
 
     def run(self) -> None:

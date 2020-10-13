@@ -28,14 +28,10 @@ class ExpandTargetCoverage(ErrorSuppressingCommand):
         repository: Repository,
         subdirectory: Optional[str],
         fixme_threshold: bool,
-        no_commit: bool,
-        submit: bool,
     ) -> None:
         super().__init__(command_arguments, repository)
         self._subdirectory: Final[Optional[str]] = subdirectory
         self._fixme_threshold: bool = fixme_threshold
-        self._no_commit: bool = no_commit
-        self._submit: bool = submit
 
     @staticmethod
     def from_arguments(
@@ -47,8 +43,6 @@ class ExpandTargetCoverage(ErrorSuppressingCommand):
             repository=repository,
             subdirectory=arguments.subdirectory,
             fixme_threshold=arguments.fixme_threshold,
-            no_commit=arguments.no_commit,
-            submit=arguments.submit,
         )
 
     @classmethod
@@ -63,10 +57,6 @@ class ExpandTargetCoverage(ErrorSuppressingCommand):
             type=int,
             help="Ignore all errors in a file if fixme count exceeds threshold.",
         )
-        parser.add_argument(
-            "--no-commit", action="store_true", help="Keep changes in working state."
-        )
-        parser.add_argument("--submit", action="store_true", help=argparse.SUPPRESS)
 
     def run(self) -> None:
         subdirectory = self._subdirectory

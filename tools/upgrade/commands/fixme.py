@@ -43,6 +43,7 @@ class Fixme(ErrorSuppressingCommand):
 
     @classmethod
     def add_arguments(cls, parser: argparse.ArgumentParser) -> None:
+        # Make this compatible with `fixme-single`.
         super(Fixme, cls).add_arguments(parser)
         parser.set_defaults(command=cls.from_arguments)
         parser.add_argument(
@@ -57,8 +58,6 @@ class Fixme(ErrorSuppressingCommand):
             help="Only add fixmes for errors with this specific error code.",
             default=None,
         )
-        # Make this compatible with `fixme-single`.
-        parser.add_argument("--no-commit", action="store_true", help=argparse.SUPPRESS)
 
     def run(self) -> None:
         if self._error_source == ErrorSource.GENERATE:

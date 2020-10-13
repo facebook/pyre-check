@@ -25,8 +25,6 @@ class FixmeSingle(ProjectErrorSuppressingCommand):
         only_fix_error_code: int,
         upgrade_version: bool,
         error_source: ErrorSource,
-        no_commit: bool,
-        submit: bool,
         path: Path,
     ) -> None:
         super().__init__(
@@ -35,8 +33,6 @@ class FixmeSingle(ProjectErrorSuppressingCommand):
             only_fix_error_code=only_fix_error_code,
             upgrade_version=upgrade_version,
             error_source=error_source,
-            no_commit=no_commit,
-            submit=submit,
         )
         self._path: Path = path
 
@@ -51,8 +47,6 @@ class FixmeSingle(ProjectErrorSuppressingCommand):
             only_fix_error_code=arguments.only_fix_error_code,
             upgrade_version=arguments.upgrade_version,
             error_source=arguments.error_source,
-            no_commit=arguments.no_commit,
-            submit=arguments.submit,
             path=arguments.path,
         )
 

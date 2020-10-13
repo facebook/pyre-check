@@ -21,18 +21,10 @@ LOG: logging.Logger = logging.getLogger(__name__)
 
 class FixConfiguration(ErrorSuppressingCommand):
     def __init__(
-        self,
-        command_arguments: CommandArguments,
-        *,
-        repository: Repository,
-        path: Path,
-        no_commit: bool,
-        submit: bool,
+        self, command_arguments: CommandArguments, *, repository: Repository, path: Path
     ) -> None:
         super().__init__(command_arguments, repository)
         self._path: Path = path
-        self._no_commit: bool = no_commit
-        self._submit: bool = submit
         self._configuration: Optional[Configuration] = Configuration(
             path / ".pyre_configuration.local"
         )
@@ -43,11 +35,7 @@ class FixConfiguration(ErrorSuppressingCommand):
     ) -> "FixConfiguration":
         command_arguments = CommandArguments.from_arguments(arguments)
         return FixConfiguration(
-            command_arguments,
-            repository=repository,
-            path=arguments.path,
-            no_commit=arguments.no_commit,
-            submit=arguments.submit,
+            command_arguments, repository=repository, path=arguments.path
         )
 
     @classmethod
@@ -59,8 +47,6 @@ class FixConfiguration(ErrorSuppressingCommand):
             help="Path to project root with local configuration",
             type=path_exists,
         )
-        parser.add_argument("--no-commit", action="store_true", help=argparse.SUPPRESS)
-        parser.add_argument("--submit", action="store_true", help=argparse.SUPPRESS)
 
     def _remove_bad_targets(self) -> None:
         configuration = self._configuration

@@ -66,8 +66,6 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
         subdirectory: Optional[str],
         glob: int,
         fixme_threshold: int,
-        no_commit: bool,
-        submit: bool,
         pyre_only: bool,
         strict: bool,
     ) -> None:
@@ -75,8 +73,6 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
         self._subdirectory: Final[Optional[str]] = subdirectory
         self._glob: int = glob
         self._fixme_threshold: int = fixme_threshold
-        self._no_commit: bool = no_commit
-        self._submit: bool = submit
         self._pyre_only: bool = pyre_only
         self._strict: bool = strict
 
@@ -91,8 +87,6 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
             subdirectory=arguments.subdirectory,
             glob=arguments.glob,
             fixme_threshold=arguments.fixme_threshold,
-            no_commit=arguments.no_commit,
-            submit=arguments.submit,
             pyre_only=arguments.pyre_only,
             strict=arguments.strict,
         )
@@ -126,10 +120,6 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
             action="store_true",
             help="Only convert pyre targets to configuration.",
         )
-        parser.add_argument(
-            "--no-commit", action="store_true", help="Keep changes in working state."
-        )
-        parser.add_argument("--submit", action="store_true", help=argparse.SUPPRESS)
 
     def remove_target_typing_fields(self, files: List[Path]) -> None:
         LOG.info("Removing typing options from %s targets files", len(files))
