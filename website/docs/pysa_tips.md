@@ -235,7 +235,7 @@ to iterate more quickly with Pysa are:
    1. The stub integration tests will validate any stubs in `tools/pyre/taint`,
       and this can be a fast shortcut for validating new stubs you want to
       write. These tests reside in `stubs/integration_test` and can be invoked
-      by running `make stub_integration_tests` in the root of the repo.
+      by running `make stubs_integration_test` in the root of the repo.
    1. The interprocedural analysis tests dump information about models, issues,
       the call graph, and overrides. It can be very helpful to test code in this
       environment if you need a detailed understanding of Pysa's internal state
