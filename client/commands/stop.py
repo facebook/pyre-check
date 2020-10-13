@@ -9,7 +9,7 @@ import time
 from logging import Logger
 from typing import List, Optional
 
-from .. import command_arguments, configuration_monitor, watchman
+from .. import command_arguments, configuration_monitor, filesystem, watchman
 from ..analysis_directory import AnalysisDirectory
 from ..configuration import Configuration
 from ..project_files_monitor import ProjectFilesMonitor
@@ -50,7 +50,7 @@ class Stop(Command):
         except (OSError, ValueError):
             return None
 
-    def _run(self) -> None:
+    def _stop(self) -> None:
         if self._state() == State.DEAD:
             if self._from_restart:
                 LOG.info("No server running.")
@@ -94,3 +94,16 @@ class Stop(Command):
             configuration_monitor.ConfigurationMonitor.base_path(self._configuration),
             configuration_monitor.ConfigurationMonitor.NAME,
         )
+
+    def _run(self) -> None:
+        LOG.info("Waiting for the client lock...")
+        client_lock = os.path.join(self._configuration.log_directory, "client.lock")
+
+        # Acquire the client lock to prevent a potential race with a background
+        # `pyre start`.
+        # Otherwise, `pyre stop` would stop some of the processes but not
+        # others. For example, that may stop the configuration monitor but
+        # leave the server alive, which would lead to errors saying "File
+        # watching service is down".
+        with filesystem.acquire_lock(client_lock, blocking=True):
+            self._stop()
