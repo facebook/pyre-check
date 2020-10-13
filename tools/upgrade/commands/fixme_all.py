@@ -8,14 +8,25 @@ import logging
 
 from ..configuration import Configuration
 from ..repository import Repository
-from .command import ErrorSuppressingCommand  # noqa
-from .command import CommandArguments, ProjectErrorSuppressingCommand
+from .command import CommandArguments, ErrorSource, ErrorSuppressingCommand
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
 
-class FixmeAll(ProjectErrorSuppressingCommand):
+class FixmeAll(ErrorSuppressingCommand):
+    def __init__(
+        self,
+        command_arguments: CommandArguments,
+        *,
+        repository: Repository,
+        upgrade_version: bool,
+        error_source: ErrorSource,
+    ) -> None:
+        super().__init__(command_arguments, repository=repository)
+        self._upgrade_version: bool = upgrade_version
+        self._error_source: ErrorSource = error_source
+
     @staticmethod
     def from_arguments(
         arguments: argparse.Namespace, repository: Repository
@@ -24,7 +35,6 @@ class FixmeAll(ProjectErrorSuppressingCommand):
         return FixmeAll(
             command_arguments,
             repository=repository,
-            only_fix_error_code=arguments.only_fix_error_code,
             upgrade_version=arguments.upgrade_version,
             error_source=arguments.error_source,
         )
@@ -33,11 +43,25 @@ class FixmeAll(ProjectErrorSuppressingCommand):
     def add_arguments(cls, parser: argparse.ArgumentParser) -> None:
         super(FixmeAll, cls).add_arguments(parser)
         parser.set_defaults(command=cls.from_arguments)
+        parser.add_argument(
+            "--upgrade-version",
+            action="store_true",
+            help="Upgrade and clean project if a version override set.",
+        )
+        parser.add_argument(
+            "--error-source",
+            choices=list(ErrorSource),
+            default=ErrorSource.GENERATE,
+            type=ErrorSource,
+        )
 
     def run(self) -> None:
         project_configuration = Configuration.find_project_configuration()
         configurations = Configuration.gather_local_configurations()
         for configuration in configurations:
             self._suppress_errors_in_project(
-                configuration, project_configuration.parent
+                configuration=configuration,
+                root=project_configuration.parent,
+                error_source=self._error_source,
+                upgrade_version=self._upgrade_version,
             )

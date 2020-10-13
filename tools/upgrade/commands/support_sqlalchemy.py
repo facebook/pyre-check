@@ -15,12 +15,7 @@ import libcst
 from libcst.codemod import CodemodContext
 from libcst.codemod.visitors import AddImportsVisitor
 
-from ..commands.command import (
-    Command,
-    CommandArguments,
-    ErrorSource,
-    ProjectErrorSuppressingCommand,
-)
+from ..commands.command import Command, CommandArguments, ErrorSuppressingCommand
 from ..configuration import Configuration
 from ..errors import PathsToErrors, PyreError, UserError
 from ..filesystem import path_exists
@@ -91,7 +86,7 @@ class EnableSourceDatabaseBuckBuilder(Command):
             configuration.write()
 
 
-class SupportSqlalchemy(ProjectErrorSuppressingCommand):
+class SupportSqlalchemy(ErrorSuppressingCommand):
     def __init__(
         self,
         command_arguments: CommandArguments,
@@ -100,13 +95,7 @@ class SupportSqlalchemy(ProjectErrorSuppressingCommand):
         paths: Sequence[Path],
         repository: Repository,
     ) -> None:
-        super().__init__(
-            command_arguments,
-            repository=repository,
-            only_fix_error_code=None,
-            upgrade_version=False,
-            error_source=ErrorSource.GENERATE.value,
-        )
+        super().__init__(command_arguments, repository=repository)
         self._local_root = local_root
         self._paths: Optional[Sequence[Path]] = paths if len(paths) > 0 else None
 

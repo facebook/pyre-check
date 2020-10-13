@@ -10,31 +10,26 @@ from pathlib import Path
 from ..configuration import Configuration
 from ..filesystem import path_exists
 from ..repository import Repository
-from .command import CommandArguments, ErrorSource, ProjectErrorSuppressingCommand
+from .command import CommandArguments, ErrorSource, ErrorSuppressingCommand
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
 
-class FixmeSingle(ProjectErrorSuppressingCommand):
+class FixmeSingle(ErrorSuppressingCommand):
     def __init__(
         self,
         command_arguments: CommandArguments,
         *,
         repository: Repository,
-        only_fix_error_code: int,
+        path: Path,
         upgrade_version: bool,
         error_source: ErrorSource,
-        path: Path,
     ) -> None:
-        super().__init__(
-            command_arguments,
-            repository=repository,
-            only_fix_error_code=only_fix_error_code,
-            upgrade_version=upgrade_version,
-            error_source=error_source,
-        )
+        super().__init__(command_arguments, repository=repository)
         self._path: Path = path
+        self._upgrade_version: bool = upgrade_version
+        self._error_source: ErrorSource = error_source
 
     @staticmethod
     def from_arguments(
@@ -44,10 +39,9 @@ class FixmeSingle(ProjectErrorSuppressingCommand):
         return FixmeSingle(
             command_arguments,
             repository=repository,
-            only_fix_error_code=arguments.only_fix_error_code,
+            path=arguments.path,
             upgrade_version=arguments.upgrade_version,
             error_source=arguments.error_source,
-            path=arguments.path,
         )
 
     @classmethod
@@ -59,9 +53,25 @@ class FixmeSingle(ProjectErrorSuppressingCommand):
             help="Path to project root with local configuration",
             type=path_exists,
         )
+        parser.add_argument(
+            "--upgrade-version",
+            action="store_true",
+            help="Upgrade and clean project if a version override set.",
+        )
+        parser.add_argument(
+            "--error-source",
+            choices=list(ErrorSource),
+            default=ErrorSource.GENERATE,
+            type=ErrorSource,
+        )
 
     def run(self) -> None:
         project_configuration = Configuration.find_project_configuration()
         configuration_path = self._path / ".pyre_configuration.local"
         configuration = Configuration(configuration_path)
-        self._suppress_errors_in_project(configuration, project_configuration.parent)
+        self._suppress_errors_in_project(
+            configuration=configuration,
+            root=project_configuration.parent,
+            error_source=self._error_source,
+            upgrade_version=self._upgrade_version,
+        )
