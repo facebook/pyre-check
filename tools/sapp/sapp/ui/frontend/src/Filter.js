@@ -388,13 +388,13 @@ const SavedFilters = (
         </AutoComplete>
       </Col>
       <Col>
+        <SaveFilterModal
+          currentFilter={props.currentFilter}
+          visible={saveModalVisible}
+          hide={() => setSaveModalVisible(false)}
+          onSave={onSave}
+        />
         <Tooltip title="Save Current Filter">
-          <SaveFilterModal
-            currentFilter={props.currentFilter}
-            visible={saveModalVisible}
-            hide={() => setSaveModalVisible(false)}
-            onSave={onSave}
-          />
           <Button
             icon={<PlusOutlined />}
             onClick={() => setSaveModalVisible(true)}
