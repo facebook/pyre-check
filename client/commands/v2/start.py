@@ -11,7 +11,7 @@ import os
 import subprocess
 import tempfile
 from pathlib import Path
-from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple, Union
+from typing import IO, Any, Dict, List, Mapping, Optional, Sequence, Tuple, Union
 
 from ... import (
     command_arguments,
@@ -270,11 +270,12 @@ def create_server_arguments(
     )
 
 
-def _write_argument_file(arguments: Arguments, to_path: Path) -> None:
-    LOG.info(f"Writing server startup configurations into {to_path}...")
+def _write_argument_file(output_file: IO[str], arguments: Arguments) -> None:
+    LOG.info(f"Writing server startup configurations into {output_file.name}...")
     serialized_arguments = arguments.serialize()
     LOG.debug(f"Arguments:\n{json.dumps(serialized_arguments, indent=2)}")
-    to_path.write_text(json.dumps(serialized_arguments))
+    output_file.write(json.dumps(serialized_arguments))
+    output_file.flush()
 
 
 def _run_in_foreground(
@@ -358,24 +359,26 @@ def run(
 
     log_directory = Path(configuration.log_directory) / "new_server"
     log_directory.mkdir(parents=True, exist_ok=True)
+
     # Use distinct file name for different PIDs to avoid file write races from
     # multiple concurrent `pyre start` processes.
-    argument_file_path = log_directory / f"arguments_{os.getpid()}.json"
-    _write_argument_file(
-        arguments=create_server_arguments(configuration, start_arguments),
-        to_path=argument_file_path,
-    )
+    with tempfile.NamedTemporaryFile(
+        mode="w", prefix="pyre_arguments_", suffix=".json"
+    ) as argument_file:
+        _write_argument_file(
+            argument_file, create_server_arguments(configuration, start_arguments)
+        )
 
-    server_command = [binary_location, "newserver", str(argument_file_path)]
-    server_environment = {
-        **os.environ,
-        # This is to make sure that backend server shares the socket root
-        # directory with the client.
-        # TODO: It might be cleaner to turn this into a configuration option
-        # instead.
-        "TMPDIR": tempfile.gettempdir(),
-    }
-    if start_arguments.terminal:
-        return _run_in_foreground(server_command, server_environment)
-    else:
-        return _run_in_background(server_command, server_environment, log_directory)
+        server_command = [binary_location, "newserver", argument_file.name]
+        server_environment = {
+            **os.environ,
+            # This is to make sure that backend server shares the socket root
+            # directory with the client.
+            # TODO(T77556312): It might be cleaner to turn this into a
+            # configuration option instead.
+            "TMPDIR": tempfile.gettempdir(),
+        }
+        if start_arguments.terminal:
+            return _run_in_foreground(server_command, server_environment)
+        else:
+            return _run_in_background(server_command, server_environment, log_directory)
