@@ -70,6 +70,72 @@ def eval_and_log(*, eval: TaintSink[RemoteCodeExecution], **kwargs): ...
 
 This allows us to catch flows only into the `eval` keyword argument.
 
+## Literal String Sources And Sinks
+
+Some security vulnerabilities are best captured by modelling strings of a given
+form flowing to dangerous functions, or format strings that match a pattern getting
+tainted data passed in.
+
+To mark all literal strings matching a pattern as sources, you first need to add a
+regular expression corresponding to the pattern to your `taint.config`:
+
+```json
+{
+  "sources": [
+    {
+      "name": "IPAddress"
+    }
+  ],
+  "implicit_sources": {
+     "literal_strings": [
+       {
+         "regexp": "\\d{1,3}(\\.\\d{1,3})+",
+         "kind": "IPAddress",
+         "description": "String that looks like an IP address."
+       }
+     ]
+  }
+}
+```
+
+With this regex in place, whenever Pysa sees a string such as `123.456.789.123`, it will flag it
+as a taint source with the kind `IPAddress`.
+
+```python
+def test() -> None:
+    ip_address = "123.456.789.123"
+    dont_pass_an_ip_address(ip_address) # Pysa will now flag this.
+```
+
+The converse of supporting literal strings as sinks is also supported, with a narrower use case. The
+syntax allows you to model data being used to format f-strings. To add a literal sink, first add the
+literal_sink to your configuration
+
+```json
+{
+  "sinks": [
+    {
+      "name": "MayBeRendered"
+    }
+  ],
+  "implicit_sinks": {
+     "literal_strings": [
+       {
+         "regexp": "^<.*>$",
+         "kind": "MayBeRendered",
+         "description": "Indicates a string whose contents may be rendered."
+       }
+     ]
+  }
+```
+
+Now, Pysa will treat any values flowing into a f-string as a regular sink:
+
+```python
+def may_render(parameter: str) -> None:
+    result = f"<content={parameter}>"
+```
+
 ## Combined Source Rules
 
 Some security vulnerabilities are better modeled as *multiple* sources reaching
