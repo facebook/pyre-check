@@ -26,7 +26,7 @@ import {
   Tooltip,
   Typography,
 } from 'antd';
-import {SearchOutlined, PlusOutlined} from '@ant-design/icons';
+import {SearchOutlined, PlusOutlined, MinusOutlined} from '@ant-design/icons';
 
 import './Filter.css';
 
@@ -312,6 +312,7 @@ const SavedFilters = (
 ): React$Node => {
   const [search, setSearch] = useState(null);
   const [saveModalVisible, setSaveModalVisible] = useState(false);
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
 
   const filtersQuery = gql`
     query Filters {
@@ -332,10 +333,27 @@ const SavedFilters = (
       }
     }
   `;
-  const {loading, error, data, refetch} = useQuery(filtersQuery);
+  const {loading, error: filterError, data, refetch} = useQuery(filtersQuery);
 
-  if (error) {
-    return <Alert type="error">{error.toString()}</Alert>;
+  const deleteFilterMutation = gql`
+    mutation DeleteFilter($name: String!) {
+      delete_filter(input: {name: $name}) {
+        clientMutationId
+      }
+    }
+  `;
+  const [deleteFilter, {error: deleteError}] = useMutation(
+    deleteFilterMutation,
+    {
+      onCompleted: refetch,
+    },
+  );
+
+  if (filterError) {
+    return <Alert type="error">{filterError.toString()}</Alert>;
+  }
+  if (deleteError) {
+    return <Alert type="error">{deleteError.toString()}</Alert>;
   }
 
   const filters = loading ? [] : data.filters.edges;
@@ -375,9 +393,15 @@ const SavedFilters = (
     refetch();
   };
 
+  const onDelete = (): void => {
+    deleteFilter({variables: {name: props.currentFilter.name}});
+    setDeleteModalVisible(false);
+    props.setCurrentFilter({});
+  };
+
   return (
     <Row justify="space-between">
-      <Col span={22}>
+      <Col span={20}>
         <AutoComplete
           style={{width: '100%'}}
           options={options}
@@ -388,6 +412,22 @@ const SavedFilters = (
         </AutoComplete>
       </Col>
       <Col>
+        <Modal
+          visible={deleteModalVisible}
+          okText="Delete"
+          onOk={onDelete}
+          onCancel={() => setDeleteModalVisible(false)}
+          zIndex={2000}>
+          Do you really want to delete{' '}
+          <Text keyboard>{props.currentFilter.name}</Text>
+        </Modal>
+        <Tooltip title="Delete Selected Filter">
+          <Button
+            icon={<MinusOutlined />}
+            onClick={() => setDeleteModalVisible(true)}
+            disabled={props.currentFilter?.name === undefined}
+          />
+        </Tooltip>{' '}
         <SaveFilterModal
           currentFilter={props.currentFilter}
           visible={saveModalVisible}
