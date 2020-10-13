@@ -28,10 +28,13 @@ let run_server configuration_file =
       | Result.Ok ({ Newserver.ServerConfiguration.log_path; _ } as server_configuration) ->
           Newserver.StartupNotification.consume ~log_path ()
           |> Option.iter ~f:(fun message -> Log.warning "%s" message);
-          Lwt_main.run
-            (Newserver.Start.start_server_and_wait
-               ~event_channel:Lwt_io.stdout
-               server_configuration) )
+          let exit_status =
+            Lwt_main.run
+              (Newserver.Start.start_server_and_wait
+                 ~event_channel:Lwt_io.stdout
+                 server_configuration)
+          in
+          exit (Newserver.Start.ExitStatus.exit_code exit_status) )
 
 
 let command =

@@ -120,7 +120,13 @@ module ScratchProject = struct
     { context; server_configuration; watchman }
 
 
-  let test_server_with ?on_server_socket_ready ~f { context; server_configuration; watchman } =
+  let test_server_with
+      ?(expected_exit_status = Start.ExitStatus.Ok)
+      ?on_server_socket_ready
+      ~f
+      { context; server_configuration; watchman }
+    =
+    let open Lwt.Infix in
     Memory.reset_shared_memory ();
     Start.start_server
       server_configuration
@@ -131,8 +137,8 @@ module ScratchProject = struct
             (* We need to re-raise OUnit test failures since OUnit relies on it for error reporting. *)
             raise exn
         | exn ->
-            let message = Format.sprintf "Uncaught exception: %s" (Exn.to_string exn) in
-            assert_failure message)
+            Log.error "Uncaught exception: %s" (Exn.to_string exn);
+            Lwt.return Start.ExitStatus.Error)
       ~on_started:(fun server_state ->
         (* Open a connection to the started server and send some test messages. *)
         let socket_address =
@@ -141,6 +147,15 @@ module ScratchProject = struct
         in
         let test_client (input_channel, output_channel) =
           f { Client.context; server_state; input_channel; output_channel }
+          >>= fun () -> Lwt.return Start.ExitStatus.Ok
         in
         Lwt_io.with_connection socket_address test_client)
+    >>= fun actual_exit_status ->
+    assert_equal
+      ~ctxt:context
+      ~printer:(fun status -> Sexp.to_string (Start.ExitStatus.sexp_of_t status))
+      ~cmp:[%compare.equal: Start.ExitStatus.t]
+      expected_exit_status
+      actual_exit_status;
+    Lwt.return_unit
 end

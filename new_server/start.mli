@@ -17,6 +17,15 @@ module ServerEvent : sig
   val write : output_channel:Lwt_io.output_channel -> t -> unit Lwt.t
 end
 
+module ExitStatus : sig
+  type t =
+    | Ok
+    | Error
+  [@@deriving sexp, compare, hash]
+
+  val exit_code : t -> int
+end
+
 (* Start the server from a given configuration. Then invoke `on_started` if the server starts and
    its state fully initialized. *)
 (* If `on_server_socket_ready` is provided, it will be invoked right after the server socket gets
@@ -29,10 +38,10 @@ end
 val start_server
   :  ?watchman:Watchman.Raw.t ->
   ?on_server_socket_ready:(Pyre.Path.t -> unit Lwt.t) ->
-  on_started:(ServerState.t ref -> unit Lwt.t) ->
-  on_exception:(exn -> unit Lwt.t) ->
+  on_started:(ServerState.t ref -> ExitStatus.t Lwt.t) ->
+  on_exception:(exn -> ExitStatus.t Lwt.t) ->
   ServerConfiguration.t ->
-  unit Lwt.t
+  ExitStatus.t Lwt.t
 
 (* Start the server and blocks forever until exceptional events occur. Returns immediately when the
    server fails to start. *)
@@ -42,4 +51,4 @@ val start_server
 val start_server_and_wait
   :  ?event_channel:Lwt_io.output_channel ->
   ServerConfiguration.t ->
-  unit Lwt.t
+  ExitStatus.t Lwt.t

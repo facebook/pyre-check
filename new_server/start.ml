@@ -22,6 +22,17 @@ module ServerEvent = struct
     serialize event |> Lwt_io.fprintl output_channel >>= fun () -> Lwt_io.flush output_channel
 end
 
+module ExitStatus = struct
+  type t =
+    | Ok
+    | Error
+  [@@deriving sexp, compare, hash]
+
+  let exit_code = function
+    | Ok -> 0
+    | Error -> 1
+end
+
 (* Socket paths in most Unixes are limited to a length of +-100 characters, whereas `log_path` might
    exceed that limit. We have to work around this by shortening the original log path into
    `/tmp/pyre_server_XXX.sock`, where XXX is obtained by computing an MD5 hash of `log_path`. *)
@@ -300,6 +311,9 @@ let with_server ?watchman ~f ({ ServerConfiguration.log_path; _ } as server_conf
       | Some subscriber ->
           let watchman_waiter =
             Watchman.Subscriber.listen ~f:(on_watchman_update ~server_state) subscriber
+            >>= fun () ->
+            (* Lost watchman connection is considered an error. *)
+            return ExitStatus.Error
           in
           (* Make sure when the watchman subscriber crashes, the server would go down as well. *)
           Lwt.choose [server_waiter (); watchman_waiter])
@@ -354,10 +368,11 @@ let start_server_and_wait ?event_channel server_configuration =
       (* An empty message signals that server socket has been created. *)
       write_event (ServerEvent.SocketCreated socket_path))
     ~on_started:(fun _ ->
-      write_event ServerEvent.ServerInitialized >>= fun () -> wait_on_signals [Signal.int])
+      write_event ServerEvent.ServerInitialized
+      >>= fun () -> wait_on_signals [Signal.int] >>= fun () -> return ExitStatus.Ok)
     ~on_exception:(fun exn ->
       Log.error "Exception thrown from Pyre server.";
       let message = Exn.to_string exn in
       Log.error "%s" message;
       (* A non-empty message signals that an error has occurred. *)
-      write_event (ServerEvent.Exception message))
+      write_event (ServerEvent.Exception message) >>= fun () -> return ExitStatus.Error)

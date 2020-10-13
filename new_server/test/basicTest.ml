@@ -281,6 +281,22 @@ let test_watchman_integration context =
   |> ScratchProject.test_server_with ~f:(test_watchman_integration ~watchman_mailbox)
 
 
+let test_watchman_failure context =
+  let mock_watchman =
+    let send _ = Lwt.return_unit in
+    let receive () = failwith "Intentional watchman failure" in
+    Watchman.Raw.create_for_testing ~send ~receive ()
+  in
+  ScratchProject.setup
+    ~context
+    ~include_typeshed_stubs:false
+    ~include_helper_builtins:false
+    ~watchman:mock_watchman
+    []
+  |> ScratchProject.test_server_with ~expected_exit_status:Start.ExitStatus.Error ~f:(fun _ ->
+         Lwt.return_unit)
+
+
 let test_on_server_socket_ready context =
   (* Test `on_server_socket_ready` gets correctly invoked before `on_start`. *)
   let established_flag = ref false in
@@ -299,6 +315,7 @@ let () =
   >::: [
          "basic" >:: OUnitLwt.lwt_wrapper test_basic;
          "watchman_integration" >:: OUnitLwt.lwt_wrapper test_watchman_integration;
+         "watchman_failure" >:: OUnitLwt.lwt_wrapper test_watchman_failure;
          "on_server_socket_ready" >:: OUnitLwt.lwt_wrapper test_on_server_socket_ready;
        ]
   |> Test.run
