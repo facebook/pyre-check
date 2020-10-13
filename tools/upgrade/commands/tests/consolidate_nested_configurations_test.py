@@ -6,16 +6,18 @@
 # pyre-unsafe
 
 import json
+import os
+import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import MagicMock, call, mock_open, patch
+from unittest.mock import MagicMock, call, patch
 
 from ... import errors
 from ...repository import Repository
 from .. import consolidate_nested_configurations
 from ..consolidate_nested_configurations import (
     ConsolidateNestedConfigurations,
-    ErrorSuppressingCommand,
+    consolidate_nested,
 )
 
 
@@ -48,125 +50,113 @@ class ConsolidateNestedConfigurationsTest(unittest.TestCase):
         ).gather_nested_configuration_mapping(configurations)
         self.assertEqual(expected_mapping, mapping)
 
-    @patch("builtins.open")
     @patch(f"{consolidate_nested_configurations.__name__}.Repository.remove_paths")
     @patch(f"{consolidate_nested_configurations.__name__}.Configuration.get_errors")
-    @patch(
-        f"{consolidate_nested_configurations.__name__}.Configuration.deduplicate_targets"
-    )
-    @patch(f"{consolidate_nested_configurations.__name__}.Configuration.add_strict")
-    @patch.object(ErrorSuppressingCommand, "_apply_suppressions")
-    def test_consolidate(
-        self,
-        apply_suppressions,
-        add_strict,
-        deduplicate_targets,
-        get_errors,
-        remove_paths,
-        open_mock,
-    ) -> None:
-        arguments = MagicMock()
+    def test_consolidate(self, get_errors, remove_paths) -> None:
         get_errors.return_value = errors.Errors([])
-        with patch("json.dump") as dump_mock:
-            mocks = [
-                mock_open(read_data=json.dumps({"targets": ["//a/..."]})).return_value,
-                mock_open(read_data=json.dumps({"targets": ["//b/..."]})).return_value,
-                mock_open(read_data=json.dumps({"targets": ["//x/..."]})).return_value,
-                mock_open(read_data="{}").return_value,
-            ]
-            open_mock.side_effect = mocks
-            ConsolidateNestedConfigurations.from_arguments(
-                arguments, repository
-            ).consolidate(
-                Path("subdirectory/.pyre_configuration.local"),
-                [
-                    Path("subdirectory/a/.pyre_configuration.local"),
-                    Path("subdirectory/b/.pyre_configuration.local"),
-                ],
-            )
-            expected_configuration_contents = {
-                "targets": ["//x/...", "//a/...", "//b/..."]
-            }
-            open_mock.assert_has_calls(
-                [
-                    call(Path("subdirectory/a/.pyre_configuration.local"), "r"),
-                    call(Path("subdirectory/b/.pyre_configuration.local"), "r"),
-                    call(Path("subdirectory/.pyre_configuration.local"), "r"),
-                    call(Path("subdirectory/.pyre_configuration.local"), "w"),
-                ]
-            )
-            dump_mock.assert_called_once_with(
-                expected_configuration_contents, mocks[3], indent=2, sort_keys=True
-            )
-        deduplicate_targets.assert_called_once()
-        remove_paths.assert_called_once_with(
-            [
-                Path("subdirectory/a/.pyre_configuration.local"),
-                Path("subdirectory/b/.pyre_configuration.local"),
-            ]
-        )
+        with tempfile.TemporaryDirectory() as root:
+            configuration_path = os.path.join(root, ".pyre_configuration.local")
+            nested_a = tempfile.mkdtemp("a", dir=root)
+            nested_b = tempfile.mkdtemp("b", dir=root)
+            nested_a_configuration = os.path.join(nested_a, ".pyre_configuration.local")
+            nested_b_configuration = os.path.join(nested_b, ".pyre_configuration.local")
+            with open(configuration_path, "w+") as configuration_file, open(
+                nested_a_configuration, "w+"
+            ) as nested_configuration_a, open(
+                nested_b_configuration, "w+"
+            ) as nested_configuration_b:
+                json.dump({"targets": ["//x/..."]}, configuration_file)
+                json.dump({"targets": ["//a/..."]}, nested_configuration_a)
+                json.dump({"targets": ["//b/..."]}, nested_configuration_b)
+
+                configuration_file.seek(0)
+                nested_configuration_a.seek(0)
+                nested_configuration_b.seek(0)
+
+                consolidate_nested(
+                    repository,
+                    Path(configuration_path),
+                    [Path(nested_a_configuration), Path(nested_b_configuration)],
+                )
+                remove_paths.assert_has_calls(
+                    [
+                        call([Path(nested_a_configuration)]),
+                        call([Path(nested_b_configuration)]),
+                    ]
+                )
+                self.assertEqual(
+                    json.load(configuration_file),
+                    {"targets": ["//x/...", "//a/...", "//b/..."]},
+                )
 
     @patch(f"{consolidate_nested_configurations.__name__}.Repository.submit_changes")
-    @patch(f"{consolidate_nested_configurations.__name__}.find_files")
-    @patch(
-        f"{consolidate_nested_configurations.__name__}.ConsolidateNestedConfigurations.consolidate"
-    )
-    @patch(
-        f"{consolidate_nested_configurations.__name__}.ConsolidateNestedConfigurations.gather_nested_configuration_mapping"
-    )
-    def test_run(self, gather, consolidate, find_files, submit_changes) -> None:
-        arguments = MagicMock()
-        arguments.subdirectory = "subdirectory"
-        arguments.lint = False
-        arguments.no_commit = False
+    @patch(f"{consolidate_nested_configurations.__name__}.consolidate_nested")
+    def test_run_skip(self, consolidate, submit_changes) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            arguments = MagicMock()
+            arguments.subdirectory = root
+            arguments.lint = False
+            arguments.no_commit = False
 
-        # Skip if no configurations found
-        find_files.return_value = []
-        ConsolidateNestedConfigurations.from_arguments(arguments, repository).run()
-        gather.assert_not_called()
-        consolidate.assert_not_called()
+            # Skip if no configurations found
+            ConsolidateNestedConfigurations.from_arguments(arguments, repository).run()
+            consolidate.assert_not_called()
 
-        # Skip if only one configuration found
-        find_files.return_value = ["subdirectory/.pyre_configuration.local"]
-        ConsolidateNestedConfigurations.from_arguments(arguments, repository).run()
-        gather.assert_not_called()
-        consolidate.assert_not_called()
+            # Skip if only one configuration found
+            with open(os.path.join(root, ".pyre_configuration.local"), "w+"):
+                ConsolidateNestedConfigurations.from_arguments(
+                    arguments, repository
+                ).run()
+                consolidate.assert_not_called()
 
-        # Consolidate with existing topmost configuration
-        configurations = [
-            "subdirectory/.pyre_configuration.local",
-            "subdirectory/a/.pyre_configuration.local",
-            "subdirectory/b/.pyre_configuration.local",
-        ]
-        find_files.return_value = configurations
-        gather.return_value = {
-            "subdirectory/.pyre_configuration.local": [
-                "subdirectory/a/.pyre_configuration.local",
-                "subdirectory/b/.pyre_configuration.local",
-            ]
-        }
-        ConsolidateNestedConfigurations.from_arguments(arguments, repository).run()
-        gather.assert_called_once_with(configurations)
-        consolidate.assert_called_once_with(
-            Path("subdirectory/.pyre_configuration.local"),
-            [
-                Path("subdirectory/a/.pyre_configuration.local"),
-                Path("subdirectory/b/.pyre_configuration.local"),
-            ],
-        )
+    @patch(f"{consolidate_nested_configurations.__name__}.Repository.submit_changes")
+    @patch(f"{consolidate_nested_configurations.__name__}.consolidate_nested")
+    @patch(f"{consolidate_nested_configurations.__name__}.Configuration.get_errors")
+    def test_run_topmost(self, get_errors, consolidate, submit_changes) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            arguments = MagicMock()
+            arguments.subdirectory = root
+            arguments.lint = False
+            arguments.no_commit = False
 
-        # Consolidate with no existing topmost configuration
-        gather.reset_mock()
-        consolidate.reset_mock()
-        configurations = [
-            "subdirectory/a/.pyre_configuration.local",
-            "subdirectory/b/.pyre_configuration.local",
-        ]
-        find_files.return_value = configurations
-        gather.return_value = {
-            "subdirectory/a/.pyre_configuration.local": [],
-            "subdirectory/b/.pyre_configuration.local": [],
-        }
-        ConsolidateNestedConfigurations.from_arguments(arguments, repository).run()
-        gather.assert_called_once_with(configurations)
-        consolidate.assert_not_called()
+            # Consolidate with existing topmost configuration
+            subdirectory_a = tempfile.mkdtemp("a", dir=root)
+            subdirectory_b = tempfile.mkdtemp("b", dir=root)
+            with open(
+                os.path.join(root, ".pyre_configuration.local"), "w+"
+            ) as configuration, open(
+                os.path.join(subdirectory_a, ".pyre_configuration.local"), "w+"
+            ) as nested_a, open(
+                os.path.join(subdirectory_b, ".pyre_configuration.local"), "w+"
+            ) as nested_b:
+                json.dump({"targets": ["//x/..."]}, configuration)
+                configuration.seek(0)
+                ConsolidateNestedConfigurations.from_arguments(
+                    arguments, repository
+                ).run()
+                consolidate.assert_called_once_with(
+                    repository,
+                    Path(configuration.name),
+                    sorted([Path(nested_a.name), Path(nested_b.name)]),
+                )
+
+    @patch(f"{consolidate_nested_configurations.__name__}.Repository.submit_changes")
+    @patch(f"{consolidate_nested_configurations.__name__}.consolidate_nested")
+    @patch(f"{consolidate_nested_configurations.__name__}.Configuration.get_errors")
+    def test_run_no_topmost(self, get_errors, consolidate, submit_changes) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            arguments = MagicMock()
+            arguments.subdirectory = root
+            arguments.lint = False
+            arguments.no_commit = False
+
+            # Consolidate with no existing topmost configuration
+            subdirectory_a = tempfile.mkdtemp("a", dir=root)
+            subdirectory_b = tempfile.mkdtemp("b", dir=root)
+            with open(
+                os.path.join(subdirectory_a, ".pyre_configuration.local"), "w+"
+            ), open(os.path.join(subdirectory_b, ".pyre_configuration.local"), "w+"):
+                ConsolidateNestedConfigurations.from_arguments(
+                    arguments, repository
+                ).run()
+                consolidate.assert_not_called()

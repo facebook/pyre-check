@@ -11,13 +11,28 @@ from typing import Dict, List, Optional
 from typing_extensions import Final
 
 from ..configuration import Configuration
-from ..errors import Errors
 from ..filesystem import find_files
 from ..repository import Repository
 from .command import CommandArguments, ErrorSuppressingCommand
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
+
+
+def consolidate_nested(
+    repository: Repository, topmost: Path, nested: List[Path]
+) -> None:
+    total_targets = []
+    for nested_configuration in nested:
+        configuration = Configuration(nested_configuration)
+        targets = configuration.targets
+        if targets:
+            total_targets.extend(targets)
+            repository.remove_paths([nested_configuration])
+    configuration = Configuration(topmost)
+    configuration.add_targets(total_targets)
+    configuration.deduplicate_targets()
+    configuration.write()
 
 
 class ConsolidateNestedConfigurations(ErrorSuppressingCommand):
@@ -78,24 +93,6 @@ class ConsolidateNestedConfigurations(ErrorSuppressingCommand):
                 nested_configurations[configuration] = []
         return nested_configurations
 
-    def consolidate(self, topmost: Path, nested: List[Path]) -> None:
-        total_targets = []
-        for nested_configuration in nested:
-            configuration = Configuration(nested_configuration)
-            targets = configuration.targets
-            if targets:
-                total_targets.extend(targets)
-        configuration = Configuration(topmost)
-        configuration.add_targets(total_targets)
-        configuration.deduplicate_targets()
-        configuration.write()
-        self._repository.remove_paths(nested)
-
-        # Suppress errors
-        all_errors = configuration.get_errors()
-        for _, errors in all_errors.paths_to_errors.items():
-            self._apply_suppressions(Errors(list(errors)))
-
     def run(self) -> None:
         subdirectory = self._subdirectory
         subdirectory = Path(subdirectory) if subdirectory else Path.cwd()
@@ -121,9 +118,14 @@ class ConsolidateNestedConfigurations(ErrorSuppressingCommand):
         for topmost, nested in nested_configurations.items():
             if len(nested) == 0:
                 continue
-            self.consolidate(
-                Path(topmost), [Path(configuration) for configuration in nested]
+            consolidate_nested(
+                self._repository,
+                Path(topmost),
+                [Path(configuration) for configuration in nested],
             )
+            configuration = Configuration(Path(topmost))
+            errors = configuration.get_errors()
+            self._apply_suppressions(errors)
 
         self._repository.submit_changes(
             commit=(not self._no_commit),

@@ -14,6 +14,7 @@ from ..configuration import Configuration
 from ..filesystem import path_exists
 from ..repository import Repository
 from .command import CommandArguments, ErrorSuppressingCommand
+from .consolidate_nested_configurations import consolidate_nested
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -76,22 +77,18 @@ class FixConfiguration(ErrorSuppressingCommand):
             configuration.write()
 
     def _consolidate_nested(self) -> None:
-        configuration = self._configuration
         parent_local_configuration = Configuration.find_parent_file(
             ".pyre_configuration.local", self._path.parent
         )
-        if not parent_local_configuration or not configuration:
+        if not parent_local_configuration:
             return
         LOG.info(f"Consolidating with configuration at: {parent_local_configuration}")
-        parent_configuration = Configuration(parent_local_configuration)
-        child_targets = configuration.targets
-        if not child_targets:
-            return
-        parent_configuration.add_targets(child_targets)
-        parent_configuration.deduplicate_targets()
-        parent_configuration.write()
-        self._repository.remove_paths([configuration.get_path()])
-        self._configuration = parent_configuration
+        consolidate_nested(
+            self._repository,
+            parent_local_configuration,
+            [self._path / ".pyre_configuration.local"],
+        )
+        self._configuration = Configuration(parent_local_configuration)
 
     def _commit_changes(self) -> None:
         title = "Fix broken configuration for {}".format(str(self._path))
