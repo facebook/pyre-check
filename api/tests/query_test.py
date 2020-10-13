@@ -103,11 +103,11 @@ class QueryAPITest(unittest.TestCase):
         # Superclasses.
         self.assertEqual(hierarchy.superclasses("Foo"), ["object"])
         self.assertEqual(hierarchy.superclasses("object"), [])
-        self.assertEqual(hierarchy.superclasses("Nonexistent"), None)
+        self.assertEqual(hierarchy.superclasses("Nonexistent"), [])
         # Subclasses.
         self.assertEqual(hierarchy.subclasses("object"), ["Foo"])
         self.assertEqual(hierarchy.subclasses("Foo"), [])
-        self.assertEqual(hierarchy.subclasses("Nonexistent"), None)
+        self.assertEqual(hierarchy.subclasses("Nonexistent"), [])
 
         pyre_connection.query_server.return_value = {
             "response": [
@@ -126,8 +126,6 @@ class QueryAPITest(unittest.TestCase):
             {"Foo": ["Bar", "Baz"], "Bar": ["object"], "object": []},
         )
         self.assertEqual(class_hierarchy.superclasses("Foo"), ["Bar", "Baz"])
-        pyre_connection.query_server.return_value = {"error": "Found an issue"}
-        self.assertEqual(query.get_class_hierarchy(pyre_connection), None)
 
     def test_get_superclasses(self) -> None:
         pyre_connection = MagicMock()
@@ -138,10 +136,6 @@ class QueryAPITest(unittest.TestCase):
             query.get_superclasses(pyre_connection, "Scooter"),
             ["Bike", "Vehicle", "object"],
         )
-        pyre_connection.query_server.return_value = {
-            "error": "Type `Foo` was not found in the type order."
-        }
-        self.assertEqual(query.get_superclasses(pyre_connection, "Foo"), [])
 
     def test_get_attributes(self) -> None:
         pyre_connection = MagicMock()
@@ -154,10 +148,6 @@ class QueryAPITest(unittest.TestCase):
             }
         }
         self.assertEqual(query.get_attributes(pyre_connection, "a.C"), ["a", "foo"])
-        pyre_connection.query_server.return_value = {
-            "error": "Type `Foo` was not found in the type order."
-        }
-        self.assertEqual(query.get_superclasses(pyre_connection, "Foo"), [])
 
     def test_get_call_graph(self) -> None:
         pyre_connection = MagicMock()

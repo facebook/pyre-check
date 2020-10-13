@@ -11,6 +11,8 @@ from pathlib import Path
 from types import TracebackType
 from typing import Any, Dict, List, NamedTuple, Optional
 
+from typing_extensions import TypedDict
+
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -21,7 +23,13 @@ class PyreCheckResult(NamedTuple):
     errors: Optional[List[str]]
 
 
-PyreQueryResult = Dict[str, Any]
+# pyre-ignore[33]: We don't have GADT's yet.
+class PyreQueryResult(TypedDict):
+    response: Any
+
+
+class PyreQueryError(Exception):
+    pass
 
 
 class PyreConnection:
@@ -74,7 +82,22 @@ class PyreConnection:
             cwd=str(self.pyre_directory),
         )
 
-    def query_server(self, query: str) -> Optional[PyreQueryResult]:
+    @staticmethod
+    def _validate_query_response(response: str) -> PyreQueryResult:
+        try:
+            response = json.loads(response)
+        except json.decoder.JSONDecodeError as decode_error:
+            raise PyreQueryError(f"`{response} is not valid JSON.") from decode_error
+        if "error" in response:
+            raise PyreQueryError(response["error"])
+        if "response" not in response:
+            raise PyreQueryError(
+                'The server response is invalid: It does not contain an "error" or'
+                f'"response" field. Response: `{response}`."'
+            )
+        return response
+
+    def query_server(self, query: str) -> PyreQueryResult:
         if not self.server_initialized:
             self.start_server()
         LOG.debug(f"Running query: `pyre query '{query}'`")
@@ -84,8 +107,10 @@ class PyreConnection:
             cwd=str(self.pyre_directory),
         )
         if result.returncode != 0:
-            return None
-        return json.loads(result.stdout.decode())
+            raise PyreQueryError(
+                f"Error while running query, Pyre exited with a code of {result.returncode}."
+            )
+        return self._validate_query_response(result.stdout.decode())
 
 
 def _parse_check_output(

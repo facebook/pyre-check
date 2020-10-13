@@ -7,20 +7,30 @@
 import subprocess
 import unittest
 from pathlib import Path
-from unittest.mock import _patch, call, patch
+from unittest.mock import MagicMock, call, patch
 
-from ..connection import PyreConnection
+from ..connection import PyreConnection, PyreQueryError
 
 
 class ConnectionApiTest(unittest.TestCase):
+    # pyre-ignore[56]
+    @patch.object(
+        PyreConnection,
+        "_validate_query_response",
+        side_effect=lambda response: response,
+    )
     @patch("subprocess.run")
-    def test_query_server(self, run: _patch) -> None:
+    def test_query_server(
+        self, run: MagicMock, _validate_query_response: MagicMock
+    ) -> None:
+        run_result = MagicMock()
+        run_result.returncode = 0
+        run.return_value = run_result
         # We always start a server once when querying.
         pyre_connection = PyreConnection(Path("/tmp"))
-        pyre_connection.start_server()
+        pyre_connection.server_initialized = False
         pyre_connection.query_server("hi")
         self.assertEqual(
-            # pyre-ignore: _patch types are deficient.
             run.call_args_list,
             [
                 call(["pyre", "--noninteractive", "start"], cwd="/tmp"),
@@ -36,7 +46,6 @@ class ConnectionApiTest(unittest.TestCase):
                 ),
             ],
         )
-        # pyre-ignore: _patch types are deficient.
         run.reset_mock()
 
         pyre_connection = PyreConnection(Path("/tmp"))
@@ -103,6 +112,18 @@ class ConnectionApiTest(unittest.TestCase):
                 ),
                 call(["pyre", "--noninteractive", "stop"], check=True, cwd="/tmp"),
             ],
+        )
+
+    def test_validate_query_response(self) -> None:
+        with self.assertRaisesRegex(PyreQueryError, "Foo"):
+            PyreConnection._validate_query_response('{"error": "Foo"}')
+        with self.assertRaisesRegex(PyreQueryError, "is not valid JSON."):
+            PyreConnection._validate_query_response("asdf")
+        with self.assertRaisesRegex(PyreQueryError, "The server response is invalid."):
+            PyreConnection._validate_query_response("{}")
+        self.assertEqual(
+            PyreConnection._validate_query_response('{"response": "Foo"}'),
+            {"response": "Foo"},
         )
 
     def test_context_manager(self) -> None:
