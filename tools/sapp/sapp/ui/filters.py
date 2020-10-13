@@ -127,6 +127,8 @@ class Filter(graphene.ObjectType):
     codes = graphene.List(graphene.Int)
     paths = graphene.List(graphene.String)
     callables = graphene.List(graphene.String)
+    features_mode = graphene.String()
+    features = graphene.List(graphene.String)
     min_trace_length_to_sinks = graphene.Int()
     max_trace_length_to_sinks = graphene.Int()
     min_trace_length_to_sources = graphene.Int()
@@ -137,12 +139,15 @@ class Filter(graphene.ObjectType):
         codes = record.codes
         paths = record.paths
         callables = record.callables
+        features = record.features
         return Filter(
             name=record.name,
             description=record.description,
             codes=[int(code) for code in codes.split(",")] if codes else None,
             paths=paths.split(",") if paths else None,
             callables=callables.split(",") if callables else None,
+            features_mode=record.features_mode,
+            features=features.split(",") if features else None,
             min_trace_length_to_sinks=record.min_trace_length_to_sinks,
             max_trace_length_to_sinks=record.max_trace_length_to_sinks,
             min_trace_length_to_sources=record.min_trace_length_to_sources,
@@ -168,6 +173,9 @@ class FilterRecord(Base):
         String(length=1024), nullable=True, doc="Comma-separated list of paths"
     )
 
+    features_mode: Column[Optional[str]] = Column(String(length=10), nullable=True)
+    features: Column[Optional[str]] = Column(String(length=1024), nullable=True)
+
     min_trace_length_to_sinks: Column[Optional[int]] = Column(Integer, nullable=True)
     max_trace_length_to_sinks: Column[Optional[int]] = Column(Integer, nullable=True)
     min_trace_length_to_sources: Column[Optional[int]] = Column(Integer, nullable=True)
@@ -178,6 +186,7 @@ class FilterRecord(Base):
         codes = filter.codes
         paths = filter.paths
         callables = filter.callables
+        features = filter.features
         return FilterRecord(
             # pyre-ignore[6]: graphene too dynamic.
             name=filter.name,
@@ -188,6 +197,8 @@ class FilterRecord(Base):
             paths=",".join(paths) if paths else None,
             # pyre-ignore[6]: graphene too dynamic.
             callables=",".join(callables) if callables else None,
+            # pyre-ignore[6]: graphene too dynamic.
+            features=",".join(features) if features else None,
             min_trace_length_to_sinks=filter.min_trace_length_to_sinks,
             max_trace_length_to_sinks=filter.max_trace_length_to_sinks,
             min_trace_length_to_sources=filter.min_trace_length_to_sources,

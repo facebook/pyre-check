@@ -10,7 +10,7 @@ from typing import List, NamedTuple
 import graphene
 from sqlalchemy.orm import Session
 
-from ..models import Issue, IssueInstance, SharedText
+from ..models import Issue, IssueInstance, SharedText, SharedTextKind
 
 
 class CodeType(graphene.ObjectType):
@@ -57,5 +57,18 @@ def all_callables(session: Session) -> List[Callable]:
         session.query(IssueInstance, SharedText.contents.label("callable"))
         .join(SharedText, SharedText.id == IssueInstance.callable_id)
         .group_by(SharedText)
+        .all()
+    )
+
+
+class Feature(graphene.ObjectType):
+    feature = graphene.String()
+
+
+def all_features(session: Session) -> List[Feature]:
+    return (
+        # pyre-fixme[16]: `str` has no attribute `label`.
+        session.query(SharedText, SharedText.contents.label("feature"))
+        .filter(SharedText.kind == SharedTextKind.FEATURE)
         .all()
     )

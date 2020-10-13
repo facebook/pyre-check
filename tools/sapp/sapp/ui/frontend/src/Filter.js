@@ -38,6 +38,8 @@ type FilterDescription = {
   codes?: $ReadOnlyArray<number>,
   paths?: $ReadOnlyArray<string>,
   callables?: $ReadOnlyArray<string>,
+  features_mode?: string,
+  features?: $ReadOnlyArray<string>,
   min_trace_length_to_sinks?: number,
   max_trace_length_to_sinks?: number,
   min_trace_length_to_sources?: number,
@@ -60,6 +62,8 @@ const FilterForm = (props: {
     codes: values.codes,
     paths: values.paths,
     callables: values.callables,
+    features_mode: values.features_mode,
+    features: values.features,
     min_trace_length_to_sinks: values.min_trace_length_to_sinks,
     max_trace_length_to_sinks: values.max_trace_length_to_sinks,
     min_trace_length_to_sources: values.min_trace_length_to_sources,
@@ -107,6 +111,19 @@ const FilterForm = (props: {
   `;
   const {data: callables} = useQuery(callablesQuery);
 
+  const featuresQuery = gql`
+    query Features {
+      features {
+        edges {
+          node {
+            feature
+          }
+        }
+      }
+    }
+  `;
+  const {data: features} = useQuery(featuresQuery);
+
   const onFinish = (filter: FilterDescription) => {
     setAppliedFilter(filter);
     props.refetch(filter);
@@ -150,6 +167,34 @@ const FilterForm = (props: {
             };
           })}
         />
+      </Form.Item>
+      <Form.Item label="Features">
+        <Row>
+          <Col span={6}>
+            <Form.Item name="features_mode">
+              <Select
+                options={[
+                  {value: 'all of'},
+                  {value: 'any of'},
+                  {value: 'none of'},
+                ]}
+                defaultValue="all of"
+              />
+            </Form.Item>
+          </Col>
+          <Col span={18}>
+            <Form.Item name="features">
+              <Select
+                mode="multiple"
+                options={(features?.features?.edges || []).map(edge => {
+                  return {
+                    value: edge.node.feature,
+                  };
+                })}
+              />
+            </Form.Item>
+          </Col>
+        </Row>
       </Form.Item>
       <Form.Item label="Trace Lengths from Sources">
         <Row>
@@ -234,6 +279,8 @@ const SaveFilterModal = (
       $codes: [Int]
       $paths: [String]
       $callables: [String]
+      $features_mode: String
+      $features: [String]
       $min_trace_length_to_sinks: Int
       $max_trace_length_to_sinks: Int
       $min_trace_length_to_sources: Int
@@ -246,6 +293,8 @@ const SaveFilterModal = (
           codes: $codes
           paths: $paths
           callables: $callables
+          features_mode: $features_mode
+          features: $features
           min_trace_length_to_sinks: $min_trace_length_to_sinks
           max_trace_length_to_sinks: $max_trace_length_to_sinks
           min_trace_length_to_sources: $min_trace_length_to_sources
@@ -258,6 +307,8 @@ const SaveFilterModal = (
           codes
           paths
           callables
+          features_mode
+          features
           min_trace_length_to_sinks
           max_trace_length_to_sinks
           min_trace_length_to_sources
@@ -324,6 +375,8 @@ const SavedFilters = (
             codes
             paths
             callables
+            features_mode
+            features
             min_trace_length_to_sinks
             max_trace_length_to_sinks
             min_trace_length_to_sources
