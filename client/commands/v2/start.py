@@ -18,8 +18,8 @@ from ... import (
     commands,
     configuration as configuration_module,
     find_directories,
-    log,
 )
+from . import server_event
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -277,40 +277,73 @@ def _write_argument_file(arguments: Arguments, to_path: Path) -> None:
     to_path.write_text(json.dumps(serialized_arguments))
 
 
-def _run_in_foreground(command: Sequence[str], environment: Mapping[str, str]) -> int:
+def _run_in_foreground(
+    command: Sequence[str], environment: Mapping[str, str]
+) -> commands.ExitCode:
     # In foreground mode, we shell out to the backend server and block on it.
     # Server stdout/stderr will be forwarded to the current terminal.
+    return_code = 0
     try:
-        LOG.info("Starting server in the foreground...\n")
+        LOG.warning("Starting server in the foreground...")
         result = subprocess.run(
-            command, env=environment, stdout=None, stderr=None, universal_newlines=True
+            command,
+            env=environment,
+            stdout=subprocess.DEVNULL,
+            stderr=None,
+            universal_newlines=True,
         )
-        return result.returncode
+        return_code = result.returncode
     except KeyboardInterrupt:
         # Backend server will exit cleanly when receiving SIGINT.
-        return 0
+        pass
+
+    if return_code == 0:
+        return commands.ExitCode.SUCCESS
+    else:
+        LOG.error(f"Server exited with non-zero return code: {return_code}")
+        return commands.ExitCode.FAILURE
 
 
 def _run_in_background(
     command: Sequence[str], environment: Mapping[str, str], log_directory: Path
-) -> int:
+) -> commands.ExitCode:
     # In background mode, we asynchronously start the server with `Popen` and
     # detach it from the current process immediately with `start_new_session`.
     # Do not call `wait()` on the Popen object to avoid blocking.
-    # Server stdout/stderr will be forwarded to dedicated log files.
-    with open(str(log_directory / "server.stdout"), "a") as server_stdout, open(
-        str(log_directory / "server.stderr"), "a"
-    ) as server_stderr:
-        subprocess.Popen(
+    # Server stderr will be forwarded to dedicated log files.
+    # Server stdout will be used as additional communication channel for status
+    # updates.
+    with open(str(log_directory / "server.stderr"), "a") as server_stderr:
+        server_process = subprocess.Popen(
             command,
-            stdout=server_stdout,
+            stdout=subprocess.PIPE,
             stderr=server_stderr,
             env=environment,
             start_new_session=True,
             universal_newlines=True,
         )
-    log.stdout.write("Server is starting in the background.\n")
-    return 0
+        LOG.info("Server is starting in the background.\n")
+        # Block until we receive the first server event from stdout
+        server_stdout = server_process.stdout
+        if server_stdout is None:
+            raise RuntimeError(
+                "subprocess.Popen failed to set up a pipe for server stdout"
+            )
+        else:
+            event_string = server_stdout.readline().strip()
+
+            event = server_event.create_from_string(event_string)
+            if event is None:
+                LOG.error(f"Unrecognized status update from server: {event_string}")
+                return commands.ExitCode.FAILURE
+            elif isinstance(event, server_event.SocketCreated):
+                return commands.ExitCode.SUCCESS
+            elif isinstance(event, server_event.ServerException):
+                LOG.error(f"Failed to start server: {event.message}")
+                return commands.ExitCode.FAILURE
+            else:
+                LOG.warning(f"Unexpected initial server status update: {event}")
+                return commands.ExitCode.FAILURE
 
 
 def run(
@@ -343,14 +376,6 @@ def run(
         "TMPDIR": tempfile.gettempdir(),
     }
     if start_arguments.terminal:
-        return_code = _run_in_foreground(server_command, server_environment)
+        return _run_in_foreground(server_command, server_environment)
     else:
-        return_code = _run_in_background(
-            server_command, server_environment, log_directory
-        )
-
-    if return_code == 0:
-        return commands.ExitCode.SUCCESS
-    else:
-        LOG.error(f"Server exited with non-zero return code: {return_code}")
-        return commands.ExitCode.FAILURE
+        return _run_in_background(server_command, server_environment, log_directory)
