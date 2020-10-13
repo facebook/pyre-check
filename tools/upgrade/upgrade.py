@@ -19,6 +19,7 @@ from .commands.codemods import (
 )
 from .commands.consolidate_nested_configurations import ConsolidateNestedConfigurations
 from .commands.expand_target_coverage import ExpandTargetCoverage
+from .commands.fix_configuration import FixConfiguration
 from .commands.fixme import Fixme
 from .commands.fixme_all import FixmeAll
 from .commands.fixme_single import FixmeSingle
@@ -90,6 +91,10 @@ def run(repository: Repository) -> None:
     # Subcommand: Consolidate nested local configurations
     consolidate_nested_configurations = commands.add_parser("consolidate-nested")
     ConsolidateNestedConfigurations.add_arguments(consolidate_nested_configurations)
+
+    # Subcommand: Attempt remediation on broken configuration.
+    fix_configuration = commands.add_parser("fix-configuration")
+    FixConfiguration.add_arguments(fix_configuration)
 
     enable_source_database_buck_builder = commands.add_parser(
         "enable-source-database-buck-builder"
