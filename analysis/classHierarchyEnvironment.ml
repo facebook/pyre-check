@@ -53,11 +53,8 @@ let get_parents alias_environment name ~dependency =
         let supertype, parameters = parse_annotation ~allow_untracked:true value |> Type.split in
         match supertype with
         | Type.Top ->
-            Statistics.event
-              ~name:"superclass of top"
-              ~section:`Environment
-              ~normals:["unresolved name", Expression.show value]
-              ();
+            Log.log ~section:`Environment "Unresolved superclass name: %a" Expression.pp value;
+            ();
             None
         | Type.Primitive primitive
           when not
