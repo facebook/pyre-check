@@ -53,7 +53,8 @@ def _log_statistics(
                 "runtime": int((time.time() - start_time) * 1000),
             },
             normals={
-                "root": configuration.local_root,
+                "project_root": configuration.project_root,
+                "root": configuration.relative_local_root,
                 "cwd": os.getcwd(),
                 "client_version": __version__,
                 "command": command.NAME,
