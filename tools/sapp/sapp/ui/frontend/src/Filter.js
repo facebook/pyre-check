@@ -347,7 +347,7 @@ const SavedFilters = (
       }
       return (
         edge.node.name.toLowerCase().includes(search.toLowerCase()) ||
-        edge.node.description.toLowerCase().includes(search.toLowerCase())
+        edge.node.description?.toLowerCase()?.includes(search.toLowerCase())
       );
     })
     .map(edge => {
@@ -366,6 +366,7 @@ const SavedFilters = (
   var filterMap = {};
   filters.forEach(edge => (filterMap[edge.node.name] = edge.node));
   const onSelect = (value: string): void => {
+    setSearch(null);
     props.setCurrentFilter(filterMap[value]);
   };
 
@@ -382,7 +383,7 @@ const SavedFilters = (
           options={options}
           onSelect={onSelect}
           onSearch={setSearch}
-          value={props.currentFilter?.name || null}>
+          value={search || props.currentFilter?.name || null}>
           <Input.Search placeholder="saved filter" />
         </AutoComplete>
       </Col>
