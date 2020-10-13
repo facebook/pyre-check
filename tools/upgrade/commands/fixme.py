@@ -62,15 +62,15 @@ class Fixme(ErrorSuppressingCommand):
     def run(self) -> None:
         if self._error_source == ErrorSource.GENERATE:
             errors = self._generate_errors()
-            self._suppress_errors(errors)
+            self._apply_suppressions(errors)
 
             if self._lint:
                 if self._repository.format():
                     errors = self._generate_errors()
-                    self._suppress_errors(errors)
+                    self._apply_suppressions(errors)
         else:
             errors = Errors.from_stdin(self._only_fix_error_code)
-            self._suppress_errors(errors)
+            self._apply_suppressions(errors)
 
     def _generate_errors(self) -> Errors:
         configuration_path = Configuration.find_project_configuration()

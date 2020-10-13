@@ -69,7 +69,7 @@ class FixmeSingle(ErrorSuppressingCommand):
         project_configuration = Configuration.find_project_configuration()
         configuration_path = self._path / ".pyre_configuration.local"
         configuration = Configuration(configuration_path)
-        self._suppress_errors_in_project(
+        self._suppress_errors(
             configuration=configuration,
             root=project_configuration.parent,
             error_source=self._error_source,

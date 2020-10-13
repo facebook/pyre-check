@@ -114,11 +114,11 @@ class FixConfiguration(ErrorSuppressingCommand):
             LOG.info(f"Checking for errors in: {configuration.get_path()}")
             try:
                 errors = configuration.get_errors()
-                self._suppress_errors(errors)
+                self._apply_suppressions(errors)
                 if self._lint:
                     if self._repository.format():
                         errors = configuration.get_errors(should_clean=False)
-                        self._suppress_errors(errors)
+                        self._apply_suppressions(errors)
             except UserError as error:
                 LOG.warning(
                     f"Configuration at {configuration.get_path()} still "

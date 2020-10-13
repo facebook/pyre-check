@@ -15,7 +15,7 @@ from ... import upgrade
 from ...repository import Repository
 from .. import command
 from ..command import ErrorSource, ErrorSuppressingCommand
-from ..fixme_all import Configuration, ErrorSuppressingCommand, FixmeAll
+from ..fixme_all import Configuration, FixmeAll
 
 
 repository = Repository()
@@ -120,14 +120,14 @@ class FixmeAllTest(unittest.TestCase):
     @patch.object(Configuration, "gather_local_configurations")
     @patch(f"{command.__name__}.Errors.from_stdin")
     @patch.object(upgrade.GlobalVersionUpdate, "run")
-    @patch.object(ErrorSuppressingCommand, "_suppress_errors")
+    @patch.object(ErrorSuppressingCommand, "_apply_suppressions")
     @patch(f"{upgrade.__name__}.Repository.submit_changes")
     @patch(f"{upgrade.__name__}.Repository.format")
     def test_upgrade_project(
         self,
         repository_format,
         submit_changes,
-        suppress_errors,
+        apply_suppressions,
         run_global_version_update,
         errors_from_stdin,
         gather,
@@ -144,7 +144,7 @@ class FixmeAllTest(unittest.TestCase):
         arguments.no_commit = False
         gather.return_value = []
         FixmeAll.from_arguments(arguments, repository).run()
-        suppress_errors.assert_not_called()
+        apply_suppressions.assert_not_called()
         submit_changes.assert_not_called()
 
         pyre_errors = [
@@ -167,26 +167,26 @@ class FixmeAllTest(unittest.TestCase):
         configuration.get_path()
         ErrorSuppressingCommand(
             command.CommandArguments.from_arguments(arguments), repository=repository
-        )._suppress_errors_in_project(
+        )._suppress_errors(
             configuration,
             Path("/root"),
             upgrade_version=arguments.upgrade_version,
             error_source=arguments.error_source,
         )
         run_global_version_update.assert_not_called()
-        suppress_errors.assert_called_once_with(pyre_errors)
+        apply_suppressions.assert_called_once_with(pyre_errors)
         submit_changes.assert_called_once_with(
             commit=True, submit=False, title="Update pyre version for local"
         )
 
         # Test with lint
         submit_changes.reset_mock()
-        suppress_errors.reset_mock()
+        apply_suppressions.reset_mock()
         arguments.error_source = ErrorSource.GENERATE
         arguments.lint = True
         ErrorSuppressingCommand(
             command.CommandArguments.from_arguments(arguments), repository=repository
-        )._suppress_errors_in_project(
+        )._suppress_errors(
             configuration,
             Path("/root"),
             upgrade_version=arguments.upgrade_version,
@@ -195,7 +195,7 @@ class FixmeAllTest(unittest.TestCase):
         errors_from_stdin.assert_not_called()
         run_global_version_update.assert_not_called()
         calls = [call(pyre_errors), call(pyre_errors)]
-        suppress_errors.assert_has_calls(calls)
+        apply_suppressions.assert_has_calls(calls)
         submit_changes.assert_called_once_with(
             commit=True, submit=False, title="Update pyre version for local"
         )
@@ -203,7 +203,7 @@ class FixmeAllTest(unittest.TestCase):
         # Test with from_stdin and lint
         repository_format.return_value = True
         submit_changes.reset_mock()
-        suppress_errors.reset_mock()
+        apply_suppressions.reset_mock()
         get_errors.reset_mock()
         arguments.error_source = ErrorSource.STDIN
         arguments.lint = True
@@ -212,7 +212,7 @@ class FixmeAllTest(unittest.TestCase):
         get_errors.return_value = pyre_errors
         ErrorSuppressingCommand(
             command.CommandArguments.from_arguments(arguments), repository=repository
-        )._suppress_errors_in_project(
+        )._suppress_errors(
             configuration,
             Path("/root"),
             upgrade_version=arguments.upgrade_version,
@@ -224,7 +224,7 @@ class FixmeAllTest(unittest.TestCase):
         get_errors.assert_called_once()
         run_global_version_update.assert_not_called()
         calls = [call(pyre_errors), call(pyre_errors)]
-        suppress_errors.assert_has_calls(calls)
+        apply_suppressions.assert_has_calls(calls)
         submit_changes.assert_called_once_with(
             commit=True, submit=False, title="Suppress pyre errors for local"
         )
@@ -236,12 +236,12 @@ class FixmeAllTest(unittest.TestCase):
     @patch.object(Configuration, "remove_version")
     @patch.object(Configuration, "get_errors")
     @patch.object(upgrade.GlobalVersionUpdate, "run")
-    @patch.object(ErrorSuppressingCommand, "_suppress_errors")
+    @patch.object(ErrorSuppressingCommand, "_apply_suppressions")
     @patch(f"{upgrade.__name__}.Repository.submit_changes")
     def test_run_fixme_all(
         self,
         submit_changes,
-        suppress_errors,
+        apply_suppressions,
         run_global_version_update,
         get_errors,
         remove_version,
@@ -262,12 +262,12 @@ class FixmeAllTest(unittest.TestCase):
         get_errors.return_value = []
         FixmeAll.from_arguments(arguments, repository).run()
         run_global_version_update.assert_not_called()
-        suppress_errors.assert_not_called()
+        apply_suppressions.assert_not_called()
         submit_changes.assert_called_once_with(
             commit=True, submit=False, title="Update pyre version for local"
         )
 
-        suppress_errors.reset_mock()
+        apply_suppressions.reset_mock()
         submit_changes.reset_mock()
         pyre_errors = [
             {
@@ -285,33 +285,33 @@ class FixmeAllTest(unittest.TestCase):
         get_errors.return_value = pyre_errors
         FixmeAll.from_arguments(arguments, repository).run()
         run_global_version_update.assert_not_called()
-        suppress_errors.assert_called_once_with(pyre_errors)
+        apply_suppressions.assert_called_once_with(pyre_errors)
         submit_changes.assert_called_once_with(
             commit=True, submit=False, title="Update pyre version for local"
         )
 
         # Test configuraton with no version set
-        suppress_errors.reset_mock()
+        apply_suppressions.reset_mock()
         submit_changes.reset_mock()
         gather.return_value = [
             Configuration(Path("local/.pyre_configuration.local"), {})
         ]
         FixmeAll.from_arguments(arguments, repository).run()
-        suppress_errors.assert_not_called()
+        apply_suppressions.assert_not_called()
         submit_changes.assert_not_called()
 
         arguments.upgrade_version = False
-        suppress_errors.reset_mock()
+        apply_suppressions.reset_mock()
         submit_changes.reset_mock()
         FixmeAll.from_arguments(arguments, repository).run()
-        suppress_errors.assert_called_once_with(pyre_errors)
+        apply_suppressions.assert_called_once_with(pyre_errors)
         submit_changes.assert_called_once_with(
             commit=True, submit=False, title="Suppress pyre errors for local"
         )
 
         # Test with given hash
         arguments.upgrade_version = True
-        suppress_errors.reset_mock()
+        apply_suppressions.reset_mock()
         submit_changes.reset_mock()
         gather.return_value = [
             Configuration(Path("local/.pyre_configuration.local"), {"version": 123})
@@ -320,7 +320,7 @@ class FixmeAllTest(unittest.TestCase):
         arguments.submit = True
         FixmeAll.from_arguments(arguments, repository).run()
         run_global_version_update.assert_not_called()
-        suppress_errors.assert_called_once_with(pyre_errors)
+        apply_suppressions.assert_called_once_with(pyre_errors)
         submit_changes.assert_called_once_with(
             commit=True, submit=True, title="Update pyre version for local"
         )

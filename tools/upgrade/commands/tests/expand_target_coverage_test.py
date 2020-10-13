@@ -26,14 +26,14 @@ class ExpandTargetCoverageTest(unittest.TestCase):
     @patch(f"{expand_target_coverage.__name__}.Configuration.get_errors")
     @patch(f"{expand_target_coverage.__name__}.Configuration.deduplicate_targets")
     @patch(f"{expand_target_coverage.__name__}.add_local_mode")
-    @patch.object(ErrorSuppressingCommand, "_suppress_errors")
+    @patch.object(ErrorSuppressingCommand, "_apply_suppressions")
     @patch(f"{expand_target_coverage.__name__}.Repository.format")
     @patch(f"{expand_target_coverage.__name__}.find_files")
     def test_run_expand_target_coverage(
         self,
         find_files,
         repository_format,
-        suppress_errors,
+        apply_suppressions,
         add_local_mode,
         deduplicate_targets,
         get_errors,
@@ -78,10 +78,10 @@ class ExpandTargetCoverageTest(unittest.TestCase):
         find_files.return_value = ["nested/.pyre_configuration.local"]
         ExpandTargetCoverage.from_arguments(arguments, repository).run()
         open_mock.assert_not_called()
-        suppress_errors.assert_not_called()
+        apply_suppressions.assert_not_called()
 
         # Expand coverage and suppress errors
-        suppress_errors.reset_mock()
+        apply_suppressions.reset_mock()
         open_mock.reset_mock()
         find_files.return_value = []
         get_errors.return_value = errors.Errors(pyre_errors)
@@ -106,12 +106,12 @@ class ExpandTargetCoverageTest(unittest.TestCase):
                 expected_configuration_contents, mocks[1], indent=2, sort_keys=True
             )
         deduplicate_targets.assert_called_once()
-        suppress_errors.assert_has_calls([call(errors.Errors(pyre_errors))])
+        apply_suppressions.assert_has_calls([call(errors.Errors(pyre_errors))])
         add_local_mode.assert_not_called()
 
         # Expand coverage with no errors returned
         deduplicate_targets.reset_mock()
-        suppress_errors.reset_mock()
+        apply_suppressions.reset_mock()
         open_mock.reset_mock()
         get_errors.return_value = errors.Errors([])
         with patch("json.dump") as dump_mock:
@@ -134,12 +134,12 @@ class ExpandTargetCoverageTest(unittest.TestCase):
                 expected_configuration_contents, mocks[1], indent=2, sort_keys=True
             )
         deduplicate_targets.assert_called_once()
-        suppress_errors.assert_not_called()
+        apply_suppressions.assert_not_called()
         add_local_mode.assert_not_called()
 
         # Expand coverage hitting fixme threshold
         deduplicate_targets.reset_mock()
-        suppress_errors.reset_mock()
+        apply_suppressions.reset_mock()
         open_mock.reset_mock()
         arguments.fixme_threshold = 1
         get_errors.return_value = errors.Errors(pyre_errors)
@@ -163,5 +163,5 @@ class ExpandTargetCoverageTest(unittest.TestCase):
                 expected_configuration_contents, mocks[1], indent=2, sort_keys=True
             )
         deduplicate_targets.assert_called_once()
-        suppress_errors.assert_not_called()
+        apply_suppressions.assert_not_called()
         add_local_mode.assert_called_once_with("local.py", filesystem.LocalMode.IGNORE)

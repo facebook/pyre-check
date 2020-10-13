@@ -99,13 +99,13 @@ class ExpandTargetCoverage(ErrorSuppressingCommand):
                 )
                 add_local_mode(path, LocalMode.IGNORE)
             else:
-                self._suppress_errors(Errors(errors))
+                self._apply_suppressions(Errors(errors))
 
         # Lint and re-run pyre once to resolve most formatting issues
         if self._lint:
             if self._repository.format():
                 errors = configuration.get_errors(should_clean=False)
-                self._suppress_errors(errors)
+                self._apply_suppressions(errors)
 
         self._repository.submit_changes(
             commit=(not self._no_commit),

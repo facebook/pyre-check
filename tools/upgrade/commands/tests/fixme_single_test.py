@@ -22,12 +22,12 @@ class FixmeSingleTest(unittest.TestCase):
     @patch.object(Configuration, "write")
     @patch.object(Configuration, "remove_version")
     @patch.object(Configuration, "get_errors")
-    @patch.object(ErrorSuppressingCommand, "_suppress_errors")
+    @patch.object(ErrorSuppressingCommand, "_apply_suppressions")
     @patch(f"{upgrade.__name__}.Repository.submit_changes")
     def test_run_fixme_single(
         self,
         submit_changes: MagicMock,
-        suppress_errors: MagicMock,
+        apply_suppressions: MagicMock,
         get_errors: MagicMock,
         remove_version: MagicMock,
         configuration_write: MagicMock,
@@ -44,18 +44,18 @@ class FixmeSingleTest(unittest.TestCase):
         configuration_contents = '{"targets":[]}'
         with patch("builtins.open", mock_open(read_data=configuration_contents)):
             FixmeSingle.from_arguments(arguments, repository).run()
-            suppress_errors.assert_not_called()
+            apply_suppressions.assert_not_called()
             submit_changes.assert_not_called()
 
         configuration_contents = '{"version": 123}'
         with patch("builtins.open", mock_open(read_data=configuration_contents)):
             FixmeSingle.from_arguments(arguments, repository).run()
-            suppress_errors.assert_not_called()
+            apply_suppressions.assert_not_called()
             submit_changes.assert_called_once_with(
                 commit=True, submit=True, title="Update pyre version for local"
             )
 
-        suppress_errors.reset_mock()
+        apply_suppressions.reset_mock()
         submit_changes.reset_mock()
         pyre_errors = [
             {
@@ -73,7 +73,7 @@ class FixmeSingleTest(unittest.TestCase):
         get_errors.return_value = pyre_errors
         with patch("builtins.open", mock_open(read_data=configuration_contents)):
             FixmeSingle.from_arguments(arguments, repository).run()
-            suppress_errors.assert_called_once_with(pyre_errors)
+            apply_suppressions.assert_called_once_with(pyre_errors)
             submit_changes.assert_called_once_with(
                 commit=True, submit=True, title="Update pyre version for local"
             )

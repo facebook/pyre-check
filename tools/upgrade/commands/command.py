@@ -115,7 +115,7 @@ class ErrorSuppressingCommand(Command):
         parser.add_argument("--no-commit", action="store_true", help=argparse.SUPPRESS)
         parser.add_argument("--submit", action="store_true", help=argparse.SUPPRESS)
 
-    def _suppress_errors(self, errors: Errors) -> None:
+    def _apply_suppressions(self, errors: Errors) -> None:
         try:
             errors.suppress(
                 self._comment, self._max_line_length, self._truncate, self._unsafe
@@ -128,7 +128,7 @@ class ErrorSuppressingCommand(Command):
                 self._comment, self._max_line_length, self._truncate, self._unsafe
             )
 
-    def _suppress_errors_in_project(
+    def _suppress_errors(
         self,
         configuration: Configuration,
         root: Path,
@@ -151,7 +151,7 @@ class ErrorSuppressingCommand(Command):
             else configuration.get_errors(only_fix_error_code)
         )
         if len(errors) > 0:
-            self._suppress_errors(errors)
+            self._apply_suppressions(errors)
 
             # Lint and re-run pyre once to resolve most formatting issues
             if self._lint:
@@ -159,7 +159,7 @@ class ErrorSuppressingCommand(Command):
                     errors = configuration.get_errors(
                         only_fix_error_code, should_clean=False
                     )
-                    self._suppress_errors(errors)
+                    self._apply_suppressions(errors)
 
         project_root = root.resolve()
         local_root = configuration.get_directory().resolve()

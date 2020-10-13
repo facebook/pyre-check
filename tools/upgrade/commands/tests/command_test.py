@@ -16,7 +16,7 @@ from ..fixme_single import FixmeSingle
 
 
 class CommandTest(unittest.TestCase):
-    def test_suppress_errors(self) -> None:
+    def test_apply_suppressions(self) -> None:
         arguments = MagicMock()
         arguments.force_format_unsuppressed = False
 
@@ -28,7 +28,7 @@ class CommandTest(unittest.TestCase):
         errors = MagicMock()
         errors.suppress = successful_suppression
 
-        ErrorSuppressingCommand(arguments, repository)._suppress_errors(errors)
+        ErrorSuppressingCommand(arguments, repository)._apply_suppressions(errors)
         successful_suppression.assert_called_once()
 
         errors.reset_mock()
@@ -38,7 +38,7 @@ class CommandTest(unittest.TestCase):
         )
         errors.suppress = repeaded_unsuccessful_suppression
         with self.assertRaises(PartialErrorSuppression):
-            ErrorSuppressingCommand(arguments, repository)._suppress_errors(errors)
+            ErrorSuppressingCommand(arguments, repository)._apply_suppressions(errors)
         repeaded_unsuccessful_suppression.assert_called_once()
 
         errors.reset_mock()
@@ -46,7 +46,7 @@ class CommandTest(unittest.TestCase):
 
         arguments.force_format_unsuppressed = True
         with self.assertRaises(PartialErrorSuppression):
-            ErrorSuppressingCommand(arguments, repository)._suppress_errors(errors)
+            ErrorSuppressingCommand(arguments, repository)._apply_suppressions(errors)
         force_format.assert_called_once()
         repeaded_unsuccessful_suppression.assert_has_calls(
             [
@@ -80,7 +80,7 @@ class CommandTest(unittest.TestCase):
         mixed_suppression = MagicMock(side_effect=MixedSuppression())
         errors.suppress = mixed_suppression
 
-        ErrorSuppressingCommand(arguments, repository)._suppress_errors(errors)
+        ErrorSuppressingCommand(arguments, repository)._apply_suppressions(errors)
         force_format.assert_called_once()
         mixed_suppression.assert_has_calls(
             [

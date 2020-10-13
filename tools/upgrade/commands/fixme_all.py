@@ -59,7 +59,7 @@ class FixmeAll(ErrorSuppressingCommand):
         project_configuration = Configuration.find_project_configuration()
         configurations = Configuration.gather_local_configurations()
         for configuration in configurations:
-            self._suppress_errors_in_project(
+            self._suppress_errors(
                 configuration=configuration,
                 root=project_configuration.parent,
                 error_source=self._error_source,

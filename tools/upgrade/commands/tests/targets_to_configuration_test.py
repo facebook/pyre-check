@@ -144,7 +144,7 @@ class TargetsToConfigurationTest(unittest.TestCase):
     @patch(f"{targets_to_configuration.__name__}.remove_non_pyre_ignores")
     @patch(f"{targets_to_configuration.__name__}.Configuration.get_errors")
     @patch(f"{targets_to_configuration.__name__}.add_local_mode")
-    @patch.object(ErrorSuppressingCommand, "_suppress_errors")
+    @patch.object(ErrorSuppressingCommand, "_apply_suppressions")
     @patch(f"{targets_to_configuration.__name__}.Repository.format")
     @patch(
         f"{targets_to_configuration.__name__}.TargetsToConfiguration.remove_target_typing_fields"
@@ -155,7 +155,7 @@ class TargetsToConfigurationTest(unittest.TestCase):
         run_strict_default,
         remove_target_typing_fields,
         repository_format,
-        suppress_errors,
+        apply_suppressions,
         add_local_mode,
         get_errors,
         remove_non_pyre_ignores,
@@ -223,7 +223,7 @@ class TargetsToConfigurationTest(unittest.TestCase):
             dump_mock.assert_called_once_with(
                 expected_configuration_contents, mocks[0], indent=2, sort_keys=True
             )
-            suppress_errors.assert_has_calls([call(errors.Errors(pyre_errors))])
+            apply_suppressions.assert_has_calls([call(errors.Errors(pyre_errors))])
             add_local_mode.assert_not_called()
             add_paths.assert_called_once_with(
                 [Path("subdirectory/.pyre_configuration.local")]
@@ -231,7 +231,7 @@ class TargetsToConfigurationTest(unittest.TestCase):
             remove_target_typing_fields.assert_called_once()
 
         # Add to existing local project configuration
-        suppress_errors.reset_mock()
+        apply_suppressions.reset_mock()
         open_mock.reset_mock()
         dump_mock.reset_mock()
         remove_target_typing_fields.reset_mock()
@@ -267,13 +267,13 @@ class TargetsToConfigurationTest(unittest.TestCase):
             dump_mock.assert_called_once_with(
                 expected_configuration_contents, mocks[1], indent=2, sort_keys=True
             )
-        suppress_errors.assert_has_calls([call(errors.Errors(pyre_errors))])
+        apply_suppressions.assert_has_calls([call(errors.Errors(pyre_errors))])
         add_local_mode.assert_not_called()
         remove_target_typing_fields.assert_called_once()
         run_strict_default.assert_not_called()
 
         # Add strict to configuration with strict targets
-        suppress_errors.reset_mock()
+        apply_suppressions.reset_mock()
         open_mock.reset_mock()
         dump_mock.reset_mock()
         add_paths.reset_mock()
@@ -309,7 +309,7 @@ class TargetsToConfigurationTest(unittest.TestCase):
             dump_mock.assert_called_once_with(
                 expected_configuration_contents, mocks[0], indent=2, sort_keys=True
             )
-            suppress_errors.assert_has_calls([call(errors.Errors(pyre_errors))])
+            apply_suppressions.assert_has_calls([call(errors.Errors(pyre_errors))])
             add_local_mode.assert_not_called()
             add_paths.assert_called_once_with(
                 [Path("subdirectory/.pyre_configuration.local")]
@@ -318,7 +318,7 @@ class TargetsToConfigurationTest(unittest.TestCase):
             run_strict_default.assert_called_once()
 
         # Strict option is on, but no strict targets found.
-        suppress_errors.reset_mock()
+        apply_suppressions.reset_mock()
         open_mock.reset_mock()
         dump_mock.reset_mock()
         add_paths.reset_mock()
@@ -354,7 +354,7 @@ class TargetsToConfigurationTest(unittest.TestCase):
             dump_mock.assert_called_once_with(
                 expected_configuration_contents, mocks[0], indent=2, sort_keys=True
             )
-            suppress_errors.assert_has_calls([call(errors.Errors(pyre_errors))])
+            apply_suppressions.assert_has_calls([call(errors.Errors(pyre_errors))])
             add_local_mode.assert_not_called()
             add_paths.assert_called_once_with(
                 [Path("subdirectory/.pyre_configuration.local")]

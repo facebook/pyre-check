@@ -55,10 +55,10 @@ class ConsolidateNestedConfigurationsTest(unittest.TestCase):
         f"{consolidate_nested_configurations.__name__}.Configuration.deduplicate_targets"
     )
     @patch(f"{consolidate_nested_configurations.__name__}.Configuration.add_strict")
-    @patch.object(ErrorSuppressingCommand, "_suppress_errors")
+    @patch.object(ErrorSuppressingCommand, "_apply_suppressions")
     def test_consolidate(
         self,
-        suppress_errors,
+        apply_suppressions,
         add_strict,
         deduplicate_targets,
         get_errors,

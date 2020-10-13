@@ -85,7 +85,7 @@ class FixmeTargets(ErrorSuppressingCommand):
         if not errors:
             return
 
-        self._suppress_errors(errors)
+        self._apply_suppressions(errors)
 
         if not self._lint:
             return
@@ -96,4 +96,4 @@ class FixmeTargets(ErrorSuppressingCommand):
                 LOG.info("Errors unchanged after linting.")
                 return
             LOG.info("Found %d type errors after linting.", len(errors))
-            self._suppress_errors(errors)
+            self._apply_suppressions(errors)

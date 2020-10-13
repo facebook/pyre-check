@@ -65,8 +65,8 @@ class FixmeTargetsTest(unittest.TestCase):
         )
 
     @patch("subprocess.run")
-    @patch.object(ErrorSuppressingCommand, "_suppress_errors")
-    def test_run_fixme_targets_file(self, suppress_errors, subprocess) -> None:
+    @patch.object(ErrorSuppressingCommand, "_apply_suppressions")
+    def test_run_fixme_targets_file(self, apply_suppressions, subprocess) -> None:
         arguments = MagicMock()
         arguments.subdirectory = None
         arguments.no_commit = False
@@ -96,7 +96,7 @@ class FixmeTargetsTest(unittest.TestCase):
             stdout=-1,
             stderr=-1,
         )
-        suppress_errors.assert_not_called()
+        apply_suppressions.assert_not_called()
 
         buck_return.returncode = 0
         subprocess.return_value = buck_return
@@ -108,7 +108,7 @@ class FixmeTargetsTest(unittest.TestCase):
                 Target("herp", strict=False, pyre=True),
             ],
         )
-        suppress_errors.assert_not_called()
+        apply_suppressions.assert_not_called()
 
         buck_return.returncode = 32
         buck_return.stdout = b"""
@@ -185,11 +185,11 @@ class FixmeTargetsTest(unittest.TestCase):
                 Target("herp", strict=False, pyre=True),
             ],
         )
-        suppress_errors.assert_called_once_with(expected_errors)
+        apply_suppressions.assert_called_once_with(expected_errors)
 
         # Test fallback to type check targets with modified names
         subprocess.reset_mock()
-        suppress_errors.reset_mock()
+        apply_suppressions.reset_mock()
         failed_buck_return = MagicMock()
         failed_buck_return.returncode = 5
         failed_buck_return.stdout = b""
@@ -230,10 +230,10 @@ class FixmeTargetsTest(unittest.TestCase):
                 ),
             ]
         )
-        suppress_errors.assert_called_once_with(expected_errors)
+        apply_suppressions.assert_called_once_with(expected_errors)
 
         subprocess.reset_mock()
-        suppress_errors.reset_mock()
+        apply_suppressions.reset_mock()
         failed_buck_return = MagicMock()
         failed_buck_return.returncode = 5
         failed_buck_return.stdout = b""
@@ -284,4 +284,4 @@ class FixmeTargetsTest(unittest.TestCase):
                 ),
             ]
         )
-        suppress_errors.assert_called_once_with(expected_errors)
+        apply_suppressions.assert_called_once_with(expected_errors)

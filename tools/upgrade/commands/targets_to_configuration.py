@@ -223,7 +223,7 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
                 add_local_mode(path, LocalMode.IGNORE)
             else:
                 try:
-                    self._suppress_errors(Errors(errors))
+                    self._apply_suppressions(Errors(errors))
                 except PartialErrorSuppression:
                     LOG.warning(f"Could not suppress all errors in {path}")
                     LOG.info("Run with --unsafe to force suppression anyway.")
@@ -248,7 +248,7 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
             if self._repository.format():
                 errors = configuration.get_errors(should_clean=False)
                 try:
-                    self._suppress_errors(errors)
+                    self._apply_suppressions(errors)
                 except PartialErrorSuppression:
                     LOG.warning(f"Could not suppress all errors in {path}")
                     LOG.info("Run with --unsafe to force suppression anyway.")
