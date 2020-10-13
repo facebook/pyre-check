@@ -101,7 +101,7 @@ let sample ?(integers = []) ?(normals = []) ?(metadata = true) () =
         "binary", Sys.argv.(0);
         "root", GlobalState.global_state.project_name;
         "username", GlobalState.username;
-        "hostname", GlobalState.hostname;
+        "host", GlobalState.hostname;
         "identifier", GlobalState.global_state.log_identifier;
         "project_root", GlobalState.global_state.project_root;
       ]
