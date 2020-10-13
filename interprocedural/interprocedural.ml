@@ -8,6 +8,7 @@
 module AnalysisKind = AnalysisKind
 module Analysis = InterproceduralAnalysis
 module Callable = Callable
+module CallGraph = CallGraph
 module CallResolution = CallResolution
 module DependencyGraph = DependencyGraph
 module DependencyGraphSharedMemory = DependencyGraphSharedMemory
