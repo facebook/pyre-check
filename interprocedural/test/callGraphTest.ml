@@ -32,10 +32,16 @@ let test_call_graph_of_define context =
         Analysis.TypeEnvironment.read_only type_environment )
     in
     assert_equal
-      ~cmp:(Location.Map.equal (List.equal Interprocedural.Callable.equal))
+      ~cmp:(Location.Map.equal Interprocedural.CallGraph.equal_callees)
       ~printer:(fun map ->
-        Location.Map.sexp_of_t (List.sexp_of_t Interprocedural.Callable.sexp_of_t) map
-        |> Sexp.to_string_hum)
+        map
+        |> Location.Map.to_alist
+        |> List.map ~f:(fun (key, value) ->
+               Format.sprintf
+                 "%s: %s"
+                 (Location.show key)
+                 (Interprocedural.CallGraph.show_callees value))
+        |> String.concat ~sep:"\n")
       expected
       (Interprocedural.CallGraph.call_graph_of_define ~environment ~define)
   in
@@ -55,7 +61,8 @@ let test_call_graph_of_define context =
                Location.start = { Location.line = 3; column = 4 };
                stop = { Location.line = 3; column = 9 };
              },
-             [`Function "test.bar"] );
+             Interprocedural.CallGraph.RegularTargets
+               { implicit_self = false; targets = [`Function "test.bar"] } );
          ])
 
 

@@ -9,11 +9,22 @@ open Core
 open Analysis
 open Ast
 
+type callees =
+  | ConstructorTargets of {
+      new_targets: Callable.t list;
+      init_targets: Callable.t list;
+    }
+  | RegularTargets of {
+      implicit_self: bool;
+      targets: Callable.t list;
+    }
+[@@deriving eq, show]
+
 let resolve_callee ~resolution ~callee =
   match Resolution.resolve_expression_to_type resolution callee with
   | Type.Callable { Type.Callable.kind = Type.Callable.Named name; _ } ->
-      [Callable.create_function name]
-  | _ -> []
+      Some (RegularTargets { implicit_self = false; targets = [Callable.create_function name] })
+  | _ -> None
 
 
 (* This is a bit of a trick. The only place that knows where the local annotation map keys is the
@@ -27,7 +38,7 @@ module DefineCallGraph (Context : sig
 
   val parent : Reference.t option
 
-  val callees_at_location : Callable.t list Location.Table.t
+  val callees_at_location : callees Location.Table.t
 end) =
 Fixpoint.Make (struct
   module CalleeVisitor = Visit.Make (struct
@@ -36,10 +47,12 @@ Fixpoint.Make (struct
     let expression resolution { Node.value; location } =
       match value with
       | Expression.Expression.Call { Expression.Call.callee; _ } ->
-          Location.Table.set
-            Context.callees_at_location
-            ~key:location
-            ~data:(resolve_callee ~resolution ~callee);
+          begin
+            match resolve_callee ~resolution ~callee with
+            | Some targets ->
+                Location.Table.set Context.callees_at_location ~key:location ~data:targets
+            | None -> ()
+          end;
           resolution
       | _ -> resolution
 
