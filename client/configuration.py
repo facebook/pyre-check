@@ -712,11 +712,6 @@ class Configuration:
         )
 
     def get_binary_respecting_override(self) -> Optional[str]:
-        overriding_binary = os.getenv("PYRE_BINARY")
-        if overriding_binary is not None:
-            LOG.warning(f"Binary overridden with `{overriding_binary}`")
-            return overriding_binary
-
         binary = self.binary
         if binary is not None:
             return binary
@@ -733,11 +728,6 @@ class Configuration:
         return None
 
     def get_typeshed_respecting_override(self) -> Optional[str]:
-        overriding_typeshed = os.getenv("PYRE_TYPESHED")
-        if overriding_typeshed is not None:
-            LOG.warning(f"Typeshed overridden with `{overriding_typeshed}`")
-            return overriding_typeshed
-
         typeshed = self.typeshed
         if typeshed is not None:
             return typeshed

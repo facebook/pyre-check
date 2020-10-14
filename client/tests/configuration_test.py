@@ -754,25 +754,6 @@ class ConfigurationTest(testslide.TestCase):
                 "foo",
             )
 
-    def test_get_binary_environment_override(self) -> None:
-        with switch_environment({"PYRE_BINARY": "foo"}):
-            self.assertEqual(
-                Configuration(
-                    project_root="irrelevant",
-                    dot_pyre_directory=Path(".pyre"),
-                    binary=None,
-                ).get_binary_respecting_override(),
-                "foo",
-            )
-            self.assertEqual(
-                Configuration(
-                    project_root="irrelevant",
-                    dot_pyre_directory=Path(".pyre"),
-                    binary="bar",
-                ).get_binary_respecting_override(),
-                "foo",
-            )
-
     def test_get_binary_auto_determined(self) -> None:
         self.mock_callable(shutil, "which").for_call(BINARY_NAME).to_return_value(
             "foo"
@@ -808,25 +789,6 @@ class ConfigurationTest(testslide.TestCase):
                     project_root="irrelevant",
                     dot_pyre_directory=Path(".pyre"),
                     typeshed="foo",
-                ).get_typeshed_respecting_override(),
-                "foo",
-            )
-
-    def test_get_typeshed_environment_override(self) -> None:
-        with switch_environment({"PYRE_TYPESHED": "foo"}):
-            self.assertEqual(
-                Configuration(
-                    project_root="irrelevant",
-                    dot_pyre_directory=Path(".pyre"),
-                    typeshed=None,
-                ).get_typeshed_respecting_override(),
-                "foo",
-            )
-            self.assertEqual(
-                Configuration(
-                    project_root="irrelevant",
-                    dot_pyre_directory=Path(".pyre"),
-                    typeshed="bar",
                 ).get_typeshed_respecting_override(),
                 "foo",
             )
