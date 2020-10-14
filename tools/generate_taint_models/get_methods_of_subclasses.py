@@ -26,6 +26,7 @@ class MethodsOfSubclassesGenerator(ModelGenerator[PyreFunctionDefinitionModel]):
         pyre_connection: PyreConnection,
         annotations: AnnotationSpecification,
         whitelist: Optional[WhitelistSpecification] = None,
+        transitive: bool = False,
     ) -> None:
         self.base_classes = base_classes
         self.pyre_connection = pyre_connection
@@ -33,6 +34,7 @@ class MethodsOfSubclassesGenerator(ModelGenerator[PyreFunctionDefinitionModel]):
         self.whitelist: WhitelistSpecification = whitelist or WhitelistSpecification(
             parameter_name={"self"}
         )
+        self.transitive = transitive
 
     def gather_functions_to_model(self) -> Iterable[Callable[..., object]]:
         return []
@@ -45,7 +47,7 @@ class MethodsOfSubclassesGenerator(ModelGenerator[PyreFunctionDefinitionModel]):
         models: List[PyreFunctionDefinitionModel] = []
 
         definitions = get_all_subclass_defines_from_pyre(
-            self.base_classes, self.pyre_connection
+            self.base_classes, self.pyre_connection, self.transitive
         )
 
         if definitions is None:
