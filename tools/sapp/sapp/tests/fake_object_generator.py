@@ -82,11 +82,15 @@ class FakeObjectGenerator:
         callee_port="at the beginning of time",
         filename="lib/server/posts/request.py",
         location=(4, 5, 6),
+        leaves=None,
     ):
+        leaves = leaves or []
         filename_record = self.filename(filename)
         caller_record = self.callable(caller)
         callee_record = self.callable(callee)
         trace_frame = TraceFrame.Record(
+            extra_fields=["leaf_mapping"],
+            leaf_mapping=[(leaf.id.local_id, leaf.id.local_id) for (leaf, _) in leaves],
             id=DBID(),
             kind=TraceKind.PRECONDITION,
             caller_id=caller_record.id,
@@ -104,6 +108,8 @@ class FakeObjectGenerator:
         )
         if self.graph:
             self.graph.add_trace_frame(trace_frame)
+            for (leaf, depth) in leaves:
+                self.graph.add_trace_frame_leaf_assoc(trace_frame, leaf, depth)
         else:
             self.saver.add(trace_frame)
         return trace_frame
@@ -116,11 +122,15 @@ class FakeObjectGenerator:
         callee_port="callee_meh",
         filename="lib/server/posts/response.py",
         location=(4, 5, 6),
+        leaves=None,
     ):
+        leaves = leaves or []
         filename_record = self.filename(filename)
         caller_record = self.callable(caller)
         callee_record = self.callable(callee)
         trace_frame = TraceFrame.Record(
+            extra_fields=["leaf_mapping"],
+            leaf_mapping=[(leaf.id.local_id, leaf.id.local_id) for (leaf, _) in leaves],
             id=DBID(),
             kind=TraceKind.POSTCONDITION,
             caller_id=caller_record.id,
@@ -138,6 +148,8 @@ class FakeObjectGenerator:
         )
         if self.graph:
             self.graph.add_trace_frame(trace_frame)
+            for (leaf, depth) in leaves:
+                self.graph.add_trace_frame_leaf_assoc(trace_frame, leaf, depth)
         else:
             self.saver.add(trace_frame)
         return trace_frame

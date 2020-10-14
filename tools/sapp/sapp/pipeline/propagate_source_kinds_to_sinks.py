@@ -76,7 +76,7 @@ class PropagateSourceKindsToSinks(  # pyre-fixme[13]
             frame for frame in initial_frames if frame.kind == TraceKind.PRECONDITION
         ]
         source_kind_list = [
-            graph.get_trace_frame_leaf_ids_by_kind(frame, SharedTextKind.source)
+            graph.get_incoming_leaf_kinds_of_frame(frame)
             for frame in initial_source_frames
         ]
         if len(source_kind_list) == 0:
@@ -98,7 +98,9 @@ class PropagateSourceKindsToSinks(  # pyre-fixme[13]
                     start_frame,
                     {
                         sink_id: new_kinds
-                        for sink_id in graph.get_trace_frame_leaf_ids(start_frame)
+                        for sink_id in graph.get_outgoing_leaf_kinds_of_frame(
+                            start_frame
+                        )
                     },
                     0,
                 )
@@ -118,26 +120,25 @@ class PropagateSourceKindsToSinks(  # pyre-fixme[13]
 
             self._update_visited(frame_id, depth, kind_map)
 
-            next_frames = [
-                (next_frame, graph.get_trace_frame_leaf_ids(frame))
-                for next_frame in self.graph.get_trace_frames_from_caller(
-                    # pyre-fixme[6]: Expected `TraceKind` for 1st param but got `str`.
-                    frame.kind,
-                    frame.callee_id,
-                    frame.callee_port,
-                )
-            ]
+            next_frames = self.graph.get_trace_frames_from_caller(
+                # pyre-fixme[6]: Expected `TraceKind` for 1st param but got `str`.
+                frame.kind,
+                frame.callee_id,
+                frame.callee_port,
+            )
+
             queue.extend(
                 (
                     frame,
                     {
-                        sink: sources
-                        for sink, sources in kind_map.items()
-                        if sink in sink_kinds
+                        callee_sink: kind_map[caller_sink]
+                        # pyre-fixme[16]: extra fields are not known to pyre
+                        for (caller_sink, callee_sink) in frame.leaf_mapping
+                        if caller_sink in kind_map
                     },
                     depth + 1,
                 )
-                for (frame, sink_kinds) in next_frames
+                for frame in next_frames
             )
 
     def run(self, input: TraceGraph, summary: Summary) -> Tuple[TraceGraph, Summary]:

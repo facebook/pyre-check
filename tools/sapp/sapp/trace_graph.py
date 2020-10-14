@@ -11,6 +11,7 @@ from typing import DefaultDict, Dict, Iterable, List, Optional, Set, Tuple
 from .bulk_saver import BulkSaver
 from .models import (
     DBID,
+    SHARED_TEXT_LENGTH,
     Issue,
     IssueInstance,
     IssueInstanceFixInfo,
@@ -208,6 +209,14 @@ class TraceGraph(object):
             shared_text.contents
         ] = shared_text.id.local_id
 
+    def get_or_add_shared_text(self, kind: SharedTextKind, name: str) -> SharedText:
+        name = name[:SHARED_TEXT_LENGTH]
+        shared_text = self.get_shared_text(kind, name)
+        if shared_text is None:
+            shared_text = SharedText.Record(id=DBID(), contents=name, kind=kind)
+            self.add_shared_text(shared_text)
+        return shared_text
+
     def add_trace_frame_leaf_assoc(
         self, trace_frame: TraceFrame, leaf: SharedText, depth: int
     ) -> None:
@@ -279,15 +288,16 @@ class TraceGraph(object):
             trace_frame.callee_port,
         )
 
+    def add_issue_instance_shared_text_assoc_id(
+        self, instance: IssueInstance, shared_text_id: int
+    ) -> None:
+        self._issue_instance_shared_text_assoc[instance.id.local_id].add(shared_text_id)
+        self._shared_text_issue_instance_assoc[shared_text_id].add(instance.id.local_id)
+
     def add_issue_instance_shared_text_assoc(
         self, instance: IssueInstance, shared_text: SharedText
     ) -> None:
-        self._issue_instance_shared_text_assoc[instance.id.local_id].add(
-            shared_text.id.local_id
-        )
-        self._shared_text_issue_instance_assoc[shared_text.id.local_id].add(
-            instance.id.local_id
-        )
+        self.add_issue_instance_shared_text_assoc_id(instance, shared_text.id.local_id)
 
     def get_issue_instance_shared_texts(
         self, instance_id: int, kind: SharedTextKind
@@ -354,3 +364,73 @@ class TraceGraph(object):
                     self._issue_instances[instance_id],
                     self._shared_texts[shared_text_id],
                 )
+
+    def compute_next_leaf_kinds(
+        self, leaves: Set[int], leaf_mapping: Set[Tuple[int, int]]
+    ) -> Set[int]:
+        """Normally, we would just intersect leaves and frame leaves, but since frame
+        leaves can indicate local transforms of the form T1:...:Tn@G1..Gm:S, we need
+        to be more careful.
+
+        We first need to identify which frame leaves match by substituting the @
+        for :, in general that would be T1:..Tn:G1..Gm:S. Then given these
+        matches, erase everything up to and including the @ sign. That will be
+        the new leaf kind.  In general, that is G1..Gm:S.
+
+        leaf_mapping is already normalized to (caller_leaf_id, callee_leaf_id),
+        i.e. which callers map to which caller ids obtained by performing the
+        substitutions.
+
+        For non-transform kinds, the leaf mapping contains identical
+        caller_leaf_id, callee_leaf_id.
+        """
+
+        next_kinds = set()
+        for (caller_id, callee_id) in leaf_mapping:
+            if caller_id in leaves:
+                next_kinds.add(callee_id)
+        return next_kinds
+
+    def compute_prev_leaf_kinds(
+        self, leaves: Set[int], leaf_mapping: Set[Tuple[int, int]]
+    ) -> Set[int]:
+        """Same as next_leaf_kinds but when following from leaves to issues."""
+        next_kinds = set()
+        for (caller_id, callee_id) in leaf_mapping:
+            if callee_id in leaves:
+                next_kinds.add(caller_id)
+        return next_kinds
+
+    def get_transform_normalized_kind_id(self, leaf_kind: SharedText) -> int:
+        assert (
+            leaf_kind.kind == SharedTextKind.SINK
+            or leaf_kind.kind == SharedTextKind.SOURCE
+        )
+        if "@" in leaf_kind.contents:
+            normal_name = leaf_kind.contents.replace("@", ":", 1)
+            normal_kind = self.get_or_add_shared_text(leaf_kind.kind, normal_name)
+            return normal_kind.id.local_id
+        else:
+            return leaf_kind.id.local_id
+
+    def get_transformed_kind_id(self, leaf_kind: SharedText) -> int:
+        assert (
+            leaf_kind.kind == SharedTextKind.SINK
+            or leaf_kind.kind == SharedTextKind.SOURCE
+        )
+        if "@" in leaf_kind.contents:
+            splits = leaf_kind.contents.split("@", 1)
+            remaining_kind = self.get_or_add_shared_text(leaf_kind.kind, splits[1])
+            return remaining_kind.id.local_id
+        else:
+            return leaf_kind.id.local_id
+
+    def get_incoming_leaf_kinds_of_frame(self, trace_frame: TraceFrame) -> Set[int]:
+        # pyre-fixme[16]: extra fields are not known to pyre
+        assert trace_frame.leaf_mapping is not None
+        return {callee_kind for (callee_kind, _) in trace_frame.leaf_mapping}
+
+    def get_outgoing_leaf_kinds_of_frame(self, trace_frame: TraceFrame) -> Set[int]:
+        # pyre-fixme[16]: extra fields are not known to pyre
+        assert trace_frame.leaf_mapping is not None
+        return {caller_kind for (_, caller_kind) in trace_frame.leaf_mapping}

@@ -14,7 +14,6 @@ import ujson as json
 
 from ..models import (
     DBID,
-    SHARED_TEXT_LENGTH,
     Issue,
     IssueDBID,
     IssueInstance,
@@ -120,13 +119,20 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
         Also create sink entries and associate related issues"""
 
         trace_frames = []
-
+        final_sink_kinds = set()
+        initial_source_kinds = set()
         for p in entry["preconditions"]:
-            tf = self._generate_issue_traces(TraceKind.PRECONDITION, run, entry, p)
+            tf, new_sink_ids = self._generate_issue_traces(
+                TraceKind.PRECONDITION, run, entry, p
+            )
+            final_sink_kinds.update(new_sink_ids)
             trace_frames.append(tf)
 
         for p in entry["postconditions"]:
-            tf = self._generate_issue_traces(TraceKind.POSTCONDITION, run, entry, p)
+            tf, new_source_ids = self._generate_issue_traces(
+                TraceKind.POSTCONDITION, run, entry, p
+            )
+            initial_source_kinds.update(new_source_ids)
             trace_frames.append(tf)
 
         features = set()
@@ -135,14 +141,6 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
 
         callable = entry["callable"]
         handle = self._get_issue_handle(entry)
-        initial_sources = {
-            self._get_shared_text(SharedTextKind.SOURCE, kind)
-            for (_name, kind, _depth) in entry["initial_sources"]
-        }
-        final_sinks = {
-            self._get_shared_text(SharedTextKind.SINK, kind)
-            for (_name, kind, _depth) in entry["final_sinks"]
-        }
 
         source_details = {
             self._get_shared_text(SharedTextKind.SOURCE_DETAIL, name)
@@ -199,12 +197,12 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
             callable_count=callablesCount[callable],
         )
 
-        for sink in final_sinks:
-            self.graph.add_issue_instance_shared_text_assoc(instance, sink)
+        for sink in final_sink_kinds:
+            self.graph.add_issue_instance_shared_text_assoc_id(instance, sink)
         for detail in sink_details:
             self.graph.add_issue_instance_shared_text_assoc(instance, detail)
-        for source in initial_sources:
-            self.graph.add_issue_instance_shared_text_assoc(instance, source)
+        for source in initial_source_kinds:
+            self.graph.add_issue_instance_shared_text_assoc_id(instance, source)
         for detail in source_details:
             self.graph.add_issue_instance_shared_text_assoc(instance, detail)
 
@@ -243,7 +241,7 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
         callee = callinfo["callee"]
         callee_port = callinfo["port"]
         titos = self._generate_tito(issue["filename"], callinfo, caller)
-        call_tf, leaf_ids = self._generate_raw_trace_frame(
+        call_tf, leaf_mapping_ids = self._generate_raw_trace_frame(
             kind,
             run=run,
             filename=issue["filename"],
@@ -257,31 +255,38 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
             titos=titos,
             annotations=callinfo.get("annotations", []),
         )
-        self._generate_transitive_trace_frames(run, call_tf, leaf_ids)
-        return call_tf
+        caller_leaf_ids = set()
+        callee_leaf_ids = set()
+        for (caller_id, callee_id) in leaf_mapping_ids:
+            caller_leaf_ids.add(caller_id)
+            callee_leaf_ids.add(callee_id)
+        self._generate_transitive_trace_frames(run, call_tf, callee_leaf_ids)
+        return call_tf, caller_leaf_ids
 
     def _generate_transitive_trace_frames(
-        self, run: Run, start_frame: TraceFrame, leaf_ids: Set[int]
+        self, run: Run, start_frame: TraceFrame, outgoing_leaf_ids: Set[int]
     ):
-        """Generates all trace reachable from start_frame, provided they contain a
-        leaf_id from the initial set of leaf_ids."""
+        """Generates all trace frames reachable from start_frame, provided they contain
+        a leaf_id from the initial set of leaf_ids. Also applies tito transforms
+        in reverse, meaning it strips off local transforms from leaf kinds when
+        necessary."""
 
         kind = start_frame.kind
-        queue = [(start_frame, leaf_ids)]
+        queue = [(start_frame, outgoing_leaf_ids)]
         while len(queue) > 0:
-            frame, leaves = queue.pop()
-            if len(leaves) == 0:
+            frame, outgoing_leaves = queue.pop()
+            if len(outgoing_leaves) == 0:
                 continue
 
             frame_id = frame.id.local_id
             if frame_id in self.visited_frames:
-                leaves = leaves - self.visited_frames[frame_id]
-                if len(leaves) == 0:
+                outgoing_leaves = outgoing_leaves - self.visited_frames[frame_id]
+                if len(outgoing_leaves) == 0:
                     continue
                 else:
-                    self.visited_frames[frame_id].update(leaves)
+                    self.visited_frames[frame_id].update(outgoing_leaves)
             else:
-                self.visited_frames[frame_id] = leaves
+                self.visited_frames[frame_id] = outgoing_leaves
 
             next_frames = self._get_or_populate_trace_frames(
                 # pyre-fixme[6]: Expected `TraceKind` for 1st param but got `str`.
@@ -292,9 +297,13 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
             )
             queue.extend(
                 [
-                    # pyre-fixme[16]: `_Alias` has no attribute `intersection`.
-                    (frame, Set.intersection(leaves, frame_leaves))
-                    for (frame, frame_leaves) in next_frames
+                    (
+                        frame,
+                        self.graph.compute_next_leaf_kinds(
+                            outgoing_leaves, leaf_mapping
+                        ),
+                    )
+                    for (frame, leaf_mapping) in next_frames
                 ]
             )
 
@@ -309,10 +318,11 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
 
     def _get_or_populate_trace_frames(
         self, kind: TraceKind, run: Run, caller_id: DBID, caller_port: str
-    ) -> List[Tuple[TraceFrame, Set[int]]]:  # TraceFrame, LeafIds
+    ) -> List[Tuple[TraceFrame, Set[Tuple[int, int]]]]:  # TraceFrame, LeafId mappings
         if self.graph.has_trace_frames_with_caller(kind, caller_id, caller_port):
             return [
-                (frame, self.graph.get_trace_frame_leaf_ids(frame))
+                # pyre-fixme[16]: extra fields are not known to pyre
+                (frame, frame.leaf_mapping)
                 for frame in self.graph.get_trace_frames_from_caller(
                     kind, caller_id, caller_port
                 )
@@ -363,7 +373,7 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
         leaves,
         type_interval,
         annotations,
-    ):
+    ) -> Tuple[TraceFrame, Set[Tuple[int, int]]]:
         leaf_kind = (
             SharedTextKind.SOURCE
             if kind is TraceKind.POSTCONDITION
@@ -373,7 +383,18 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
         caller_record = self._get_shared_text(SharedTextKind.CALLABLE, caller)
         callee_record = self._get_shared_text(SharedTextKind.CALLABLE, callee)
         filename_record = self._get_shared_text(SharedTextKind.FILENAME, filename)
-        trace_frame = TraceFrame.Record(
+
+        leaf_records = []
+        leaf_mapping_ids: Set[Tuple[int, int]] = set()
+        for (leaf, depth) in leaves:
+            leaf_record = self._get_shared_text(leaf_kind, leaf)
+            caller_leaf_id = self.graph.get_transform_normalized_kind_id(leaf_record)
+            callee_leaf_id = self.graph.get_transformed_kind_id(leaf_record)
+            leaf_mapping_ids.add((caller_leaf_id, callee_leaf_id))
+            leaf_records.append((leaf_record, depth))
+
+        trace_frame: TraceFrame = TraceFrame.Record(
+            extra_fields=["leaf_mapping"],
             id=DBID(),
             kind=kind,
             caller_id=caller_record.id,
@@ -392,19 +413,17 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
             type_interval_lower=lb,
             type_interval_upper=ub,
             migrated_id=None,
+            leaf_mapping=leaf_mapping_ids,
         )
 
-        leaf_ids = set()
-        for (leaf, depth) in leaves:
-            leaf_record = self._get_shared_text(leaf_kind, leaf)
-            leaf_ids.add(leaf_record.id.local_id)
+        for (leaf_record, depth) in leaf_records:
             self.graph.add_trace_frame_leaf_assoc(trace_frame, leaf_record, depth)
 
         self.graph.add_trace_frame(trace_frame)
         self._generate_trace_annotations(
             trace_frame.id, filename, caller, annotations, run
         )
-        return trace_frame, leaf_ids
+        return trace_frame, leaf_mapping_ids
 
     def _generate_issue_feature_contents(self, issue, feature):
         # Generates a synthetic feature from the extra/feature
@@ -472,7 +491,7 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
         callee = trace["callee"]
         callee_port = trace["port"]
         titos = self._generate_tito(parent_filename, annotation, parent_caller)
-        call_tf, leaf_ids = self._generate_raw_trace_frame(
+        call_tf, leaf_mapping_ids = self._generate_raw_trace_frame(
             trace_kind,
             run,
             parent_filename,
@@ -486,19 +505,16 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
             annotation["type_interval"],
             [],  # no more annotations for a precond coming from an annotation
         )
-        self._generate_transitive_trace_frames(run, call_tf, leaf_ids)
+        self._generate_transitive_trace_frames(
+            run, call_tf, {callee_id for (_, callee_id) in leaf_mapping_ids}
+        )
         return call_tf
 
     def _get_issue_handle(self, entry):
         return entry["handle"]
 
-    def _get_shared_text(self, kind, name):
-        name = name[:SHARED_TEXT_LENGTH]
-        shared_text = self.graph.get_shared_text(kind, name)
-        if shared_text is None:
-            shared_text = SharedText.Record(id=DBID(), contents=name, kind=kind)
-            self.graph.add_shared_text(shared_text)
-        return shared_text
+    def _get_shared_text(self, kind: SharedTextKind, name: str) -> SharedText:
+        return self.graph.get_or_add_shared_text(kind, name)
 
     @staticmethod
     def get_location(entry, is_relative=False):

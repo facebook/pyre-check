@@ -20,6 +20,7 @@ from ..models import (
     RunSummary,
     TraceFrame,
     TraceFrameAnnotation,
+    TraceFrameLeafAssoc,
     TraceKind,
 )
 from ..trace_graph import TraceGraph
@@ -83,10 +84,11 @@ class DatabaseSaver(PipelineStep[TraceGraph, RunSummary]):
 
         trace_frames = self.bulk_saver.get_items_to_add(TraceFrame)
         log.info(
-            "Saving %d issues, %d trace frames, %d trace annotations",
+            "Saving %d issues, %d trace frames, %d trace annotations, %d trace frame leaf assocs",
             len(self.bulk_saver.get_items_to_add(Issue)),
             len(self.bulk_saver.get_items_to_add(TraceFrame)),
             len(self.bulk_saver.get_items_to_add(TraceFrameAnnotation)),
+            len(self.bulk_saver.get_items_to_add(TraceFrameLeafAssoc)),
         )
 
         num_pre = 0
