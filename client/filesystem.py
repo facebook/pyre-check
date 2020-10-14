@@ -11,6 +11,7 @@ import os
 import shutil
 import subprocess
 from contextlib import contextmanager
+from pathlib import Path
 from typing import ContextManager, Dict, Generator, Iterable, List, Optional, Set
 
 from .exceptions import EnvironmentException
@@ -65,11 +66,11 @@ def translate_path(root: str, path: str) -> str:
 
 
 def expand_relative_path(root: str, path: str) -> str:
-    path = os.path.expanduser(path)
-    if os.path.isabs(path):
-        return path
+    expanded_path = Path(path).expanduser()
+    if expanded_path.is_absolute():
+        return str(expanded_path)
     else:
-        return os.path.join(root, path)
+        return str(Path(root) / expanded_path)
 
 
 def translate_paths(paths: Set[str], original_directory: str) -> Set[str]:
