@@ -20,11 +20,23 @@ type callees =
     }
 [@@deriving eq, show]
 
-let resolve_callee ~resolution ~callee =
-  match Resolution.resolve_expression_to_type resolution callee with
-  | Type.Callable { Type.Callable.kind = Type.Callable.Named name; _ } ->
-      Some (RegularTargets { implicit_self = false; targets = [Callable.create_function name] })
+let rec resolve_callees_from_type ?receiver_type callable_type =
+  match callable_type with
+  | Type.Callable { Type.Callable.kind = Type.Callable.Named name; _ } -> (
+      match receiver_type with
+      | Some _ ->
+          Some (RegularTargets { implicit_self = true; targets = [Callable.create_method name] })
+      | None ->
+          Some (RegularTargets { implicit_self = false; targets = [Callable.create_function name] })
+      )
+  | Type.Parametric { name = "BoundMethod"; parameters = [Single callable; Single receiver_type] }
+    ->
+      resolve_callees_from_type ~receiver_type callable
   | _ -> None
+
+
+let resolve_callees ~resolution ~callee =
+  Resolution.resolve_expression_to_type resolution callee |> resolve_callees_from_type
 
 
 (* This is a bit of a trick. The only place that knows where the local annotation map keys is the
@@ -48,7 +60,7 @@ Fixpoint.Make (struct
       match value with
       | Expression.Expression.Call { Expression.Call.callee; _ } ->
           begin
-            match resolve_callee ~resolution ~callee with
+            match resolve_callees ~resolution ~callee with
             | Some targets ->
                 Location.Table.set Context.callees_at_location ~key:location ~data:targets
             | None -> ()

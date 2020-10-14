@@ -77,6 +77,26 @@ let test_call_graph_of_define context =
         ( "3:4-3:9",
           Interprocedural.CallGraph.RegularTargets
             { implicit_self = false; targets = [`Function "test.bar"] } );
+      ];
+  assert_call_graph_of_define
+    ~source:
+      {|
+     def foo(c: C):
+         c.m()
+
+     class C:
+       def m(self):
+         pass
+  |}
+    ~define_name:"test.foo"
+    ~expected:
+      [
+        ( "3:4-3:9",
+          Interprocedural.CallGraph.RegularTargets
+            {
+              implicit_self = true;
+              targets = [Interprocedural.Callable.create_method (Reference.create "test.C.m")];
+            } );
       ]
 
 
