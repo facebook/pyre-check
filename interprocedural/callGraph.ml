@@ -8,6 +8,7 @@
 open Core
 open Analysis
 open Ast
+open Pyre
 
 type callees =
   | ConstructorTargets of {
@@ -19,6 +20,30 @@ type callees =
       targets: Callable.t list;
     }
 [@@deriving eq, show]
+
+let merge_targets left right =
+  match left, right with
+  | ( RegularTargets { implicit_self = left_implicit_self; targets = left_targets },
+      RegularTargets { implicit_self = right_implicit_self; targets = right_targets } )
+    when Bool.equal left_implicit_self right_implicit_self ->
+      Some
+        (RegularTargets
+           {
+             implicit_self = left_implicit_self;
+             targets = List.rev_append left_targets right_targets;
+           })
+  | ( ConstructorTargets { new_targets = left_new_targets; init_targets = left_init_targets },
+      ConstructorTargets { new_targets = right_new_targets; init_targets = right_init_targets } ) ->
+      Some
+        (ConstructorTargets
+           {
+             new_targets = List.rev_append left_new_targets right_new_targets;
+             init_targets = List.rev_append left_init_targets right_init_targets;
+           })
+  | _ ->
+      (* TODO(T77637504): We should probably error here. *)
+      None
+
 
 let rec resolve_callees_from_type ?receiver_type callable_type =
   match callable_type with
@@ -32,6 +57,12 @@ let rec resolve_callees_from_type ?receiver_type callable_type =
   | Type.Parametric { name = "BoundMethod"; parameters = [Single callable; Single receiver_type] }
     ->
       resolve_callees_from_type ~receiver_type callable
+  | Type.Union (element :: elements) ->
+      let first_targets = resolve_callees_from_type ?receiver_type element in
+      List.fold elements ~init:first_targets ~f:(fun combined_targets new_target ->
+          combined_targets
+          >>= fun combined_targets ->
+          resolve_callees_from_type ?receiver_type new_target >>= merge_targets combined_targets)
   | _ -> None
 
 

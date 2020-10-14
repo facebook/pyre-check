@@ -87,7 +87,7 @@ let test_call_graph_of_define context =
      class C:
        def m(self):
          pass
-  |}
+      |}
     ~define_name:"test.foo"
     ~expected:
       [
@@ -97,6 +97,25 @@ let test_call_graph_of_define context =
               implicit_self = true;
               targets = [Interprocedural.Callable.create_method (Reference.create "test.C.m")];
             } );
+      ];
+  assert_call_graph_of_define
+    ~source:
+      {|
+     def foo():
+       if 1 > 2:
+         f = bar
+       else:
+         f = baz
+       f()
+     def baz(): ...
+     def bar(): ...
+      |}
+    ~define_name:"test.foo"
+    ~expected:
+      [
+        ( "7:2-7:5",
+          Interprocedural.CallGraph.RegularTargets
+            { implicit_self = false; targets = [`Function "test.bar"; `Function "test.baz"] } );
       ]
 
 
