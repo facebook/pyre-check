@@ -23,7 +23,7 @@ from ..models import (
     TraceFrame,
     TraceKind,
 )
-from ..trace_graph import TraceGraph
+from ..trace_graph import LeafMapping, TraceGraph
 
 
 class FakeObjectGenerator:
@@ -90,7 +90,10 @@ class FakeObjectGenerator:
         callee_record = self.callable(callee)
         trace_frame = TraceFrame.Record(
             extra_fields=["leaf_mapping"],
-            leaf_mapping=[(leaf.id.local_id, leaf.id.local_id) for (leaf, _) in leaves],
+            leaf_mapping={
+                LeafMapping(leaf.id.local_id, leaf.id.local_id, leaf.id.local_id)
+                for (leaf, _) in leaves
+            },
             id=DBID(),
             kind=TraceKind.PRECONDITION,
             caller_id=caller_record.id,
@@ -130,7 +133,10 @@ class FakeObjectGenerator:
         callee_record = self.callable(callee)
         trace_frame = TraceFrame.Record(
             extra_fields=["leaf_mapping"],
-            leaf_mapping=[(leaf.id.local_id, leaf.id.local_id) for (leaf, _) in leaves],
+            leaf_mapping={
+                LeafMapping(leaf.id.local_id, leaf.id.local_id, leaf.id.local_id)
+                for (leaf, _) in leaves
+            },
             id=DBID(),
             kind=TraceKind.POSTCONDITION,
             caller_id=caller_record.id,

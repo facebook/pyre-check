@@ -131,10 +131,10 @@ class PropagateSourceKindsToSinks(  # pyre-fixme[13]
                 (
                     frame,
                     {
-                        callee_sink: kind_map[caller_sink]
+                        leaf_map.callee_leaf: kind_map[leaf_map.caller_leaf]
                         # pyre-fixme[16]: extra fields are not known to pyre
-                        for (caller_sink, callee_sink) in frame.leaf_mapping
-                        if caller_sink in kind_map
+                        for leaf_map in frame.leaf_mapping
+                        if leaf_map.caller_leaf in kind_map
                     },
                     depth + 1,
                 )

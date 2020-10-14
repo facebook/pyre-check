@@ -5,10 +5,10 @@
 
 import logging
 from collections import deque
-from typing import Tuple
+from typing import Set, Tuple
 
 from ..models import DBID, SharedText, SharedTextKind
-from ..trace_graph import TraceGraph
+from ..trace_graph import LeafMapping, TraceGraph
 from . import PipelineStep, Summary
 
 
@@ -83,6 +83,11 @@ class AddIssueInstanceLeaves(PipelineStep[TraceGraph, TraceGraph]):
         )
         for trace_frame_id, depth in depth_by_frame_id.items():
             trace_frame = graph.get_trace_frame_from_id(trace_frame_id)
+            # pyre-fixme[16]: leaf_mapping is an extra field
+            leaf_mapping: Set[LeafMapping] = trace_frame.leaf_mapping
+            leaf_mapping.add(
+                LeafMapping(leaf.id.local_id, leaf.id.local_id, leaf.id.local_id)
+            )
             graph.add_trace_frame_leaf_assoc(trace_frame, leaf, depth)
 
         return graph, summary

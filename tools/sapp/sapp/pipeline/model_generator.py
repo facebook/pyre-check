@@ -28,7 +28,7 @@ from ..models import (
     TraceFrameAnnotation,
     TraceKind,
 )
-from ..trace_graph import TraceGraph
+from ..trace_graph import LeafMapping, TraceGraph
 from . import DictEntries, PipelineStep, Summary
 
 
@@ -257,9 +257,9 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
         )
         caller_leaf_ids = set()
         callee_leaf_ids = set()
-        for (caller_id, callee_id) in leaf_mapping_ids:
-            caller_leaf_ids.add(caller_id)
-            callee_leaf_ids.add(callee_id)
+        for leaf_map in leaf_mapping_ids:
+            caller_leaf_ids.add(leaf_map.caller_leaf)
+            callee_leaf_ids.add(leaf_map.callee_leaf)
         self._generate_transitive_trace_frames(run, call_tf, callee_leaf_ids)
         return call_tf, caller_leaf_ids
 
@@ -307,18 +307,9 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
                 ]
             )
 
-    def _is_leaf_port(self, port: str) -> bool:
-        return (
-            port == "leaf"
-            or port == "source"
-            or port == "sink"
-            or port.startswith("anchor:")
-            or port.startswith("producer:")
-        )
-
     def _get_or_populate_trace_frames(
         self, kind: TraceKind, run: Run, caller_id: DBID, caller_port: str
-    ) -> List[Tuple[TraceFrame, Set[Tuple[int, int]]]]:  # TraceFrame, LeafId mappings
+    ) -> List[Tuple[TraceFrame, Set[LeafMapping]]]:  # TraceFrame, LeafId mappings
         if self.graph.has_trace_frames_with_caller(kind, caller_id, caller_port):
             return [
                 # pyre-fixme[16]: extra fields are not known to pyre
@@ -332,11 +323,13 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
             self._generate_trace_frame(kind, run, e)
             for e in self.summary["trace_entries"][kind].pop(key, [])
         ]
-        if len(new) == 0 and not self._is_leaf_port(key[1]):
+        if len(new) == 0 and not self.graph.is_leaf_port(key[1]):
             self.summary["missing_traces"][kind].add(key)
         return new
 
-    def _generate_trace_frame(self, kind: TraceKind, run, entry):
+    def _generate_trace_frame(
+        self, kind: TraceKind, run, entry
+    ) -> Tuple[TraceFrame, Set[LeafMapping]]:
         callee_location = entry["callee_location"]
         titos = self._generate_tito(entry["filename"], entry, entry["caller"])
         leaves = entry.get("leaves", None)
@@ -373,7 +366,7 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
         leaves,
         type_interval,
         annotations,
-    ) -> Tuple[TraceFrame, Set[Tuple[int, int]]]:
+    ) -> Tuple[TraceFrame, Set[LeafMapping]]:
         leaf_kind = (
             SharedTextKind.SOURCE
             if kind is TraceKind.POSTCONDITION
@@ -385,12 +378,18 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
         filename_record = self._get_shared_text(SharedTextKind.FILENAME, filename)
 
         leaf_records = []
-        leaf_mapping_ids: Set[Tuple[int, int]] = set()
+        leaf_mapping_ids: Set[LeafMapping] = set()
         for (leaf, depth) in leaves:
             leaf_record = self._get_shared_text(leaf_kind, leaf)
             caller_leaf_id = self.graph.get_transform_normalized_kind_id(leaf_record)
             callee_leaf_id = self.graph.get_transformed_kind_id(leaf_record)
-            leaf_mapping_ids.add((caller_leaf_id, callee_leaf_id))
+            leaf_mapping_ids.add(
+                LeafMapping(
+                    caller_leaf=caller_leaf_id,
+                    callee_leaf=callee_leaf_id,
+                    transform=leaf_record.id.local_id,
+                )
+            )
             leaf_records.append((leaf_record, depth))
 
         trace_frame: TraceFrame = TraceFrame.Record(
@@ -506,7 +505,7 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
             [],  # no more annotations for a precond coming from an annotation
         )
         self._generate_transitive_trace_frames(
-            run, call_tf, {callee_id for (_, callee_id) in leaf_mapping_ids}
+            run, call_tf, {leaf_map.callee_leaf for leaf_map in leaf_mapping_ids}
         )
         return call_tf
 
