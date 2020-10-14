@@ -7,8 +7,6 @@ from django.http import HttpResponse, HttpResponseNotAllowed
 from django.template.response import TemplateResponse
 from django.utils.decorators import classonlymethod
 
-logger = logging.getLogger("django.request")
-
 class ContextMixin:
     extra_context = None
     def get_context_data(self, **kwargs): ...
