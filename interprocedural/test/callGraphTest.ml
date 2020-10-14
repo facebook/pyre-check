@@ -12,6 +12,24 @@ open Test
 
 let test_call_graph_of_define context =
   let assert_call_graph_of_define ~source ~define_name ~expected =
+    let expected =
+      let parse_location location =
+        let parse_position position =
+          let line_and_column = String.split ~on:':' position in
+          {
+            Location.line = Int.of_string (List.nth_exn line_and_column 0);
+            column = Int.of_string (List.nth_exn line_and_column 1);
+          }
+        in
+        let positions = String.split ~on:'-' location in
+        {
+          Location.start = parse_position (List.nth_exn positions 0);
+          stop = parse_position (List.nth_exn positions 1);
+        }
+      in
+      List.map expected ~f:(fun (key, value) -> parse_location key, value)
+      |> Location.Map.of_alist_exn
+    in
     let define, environment =
       let find_define = function
         | { Node.value = Statement.Statement.Define define; _ }
@@ -55,15 +73,11 @@ let test_call_graph_of_define context =
   |}
     ~define_name:"test.foo"
     ~expected:
-      (Location.Map.of_alist_exn
-         [
-           ( {
-               Location.start = { Location.line = 3; column = 4 };
-               stop = { Location.line = 3; column = 9 };
-             },
-             Interprocedural.CallGraph.RegularTargets
-               { implicit_self = false; targets = [`Function "test.bar"] } );
-         ])
+      [
+        ( "3:4-3:9",
+          Interprocedural.CallGraph.RegularTargets
+            { implicit_self = false; targets = [`Function "test.bar"] } );
+      ]
 
 
 let () =
