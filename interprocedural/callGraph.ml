@@ -8,6 +8,8 @@
 open Core
 open Analysis
 open Ast
+open Expression
+open Pyre
 
 type callees =
   | ConstructorTargets of {
@@ -68,8 +70,44 @@ let rec resolve_callees_from_type ?receiver_type callable_type =
   | _ -> None
 
 
+let defining_attribute ~resolution parent_type attribute =
+  let global_resolution = Resolution.global_resolution resolution in
+  Type.split parent_type
+  |> fst
+  |> Type.primitive_name
+  >>= fun class_name ->
+  GlobalResolution.attribute_from_class_name
+    ~transitive:true
+    ~resolution:global_resolution
+    ~name:attribute
+    ~instantiated:parent_type
+    class_name
+  >>= fun instantiated_attribute ->
+  if Annotated.Attribute.defined instantiated_attribute then
+    Some instantiated_attribute
+  else
+    Resolution.fallback_attribute ~resolution ~name:attribute class_name
+
+
+let rec resolve_ignoring_optional ~resolution expression =
+  let annotation =
+    match Node.value expression with
+    | Expression.Name (Name.Attribute { base; attribute; _ }) -> (
+        let base_type =
+          resolve_ignoring_optional ~resolution base
+          |> fun annotation -> Type.optional_value annotation |> Option.value ~default:annotation
+        in
+        match defining_attribute ~resolution base_type attribute with
+        | Some _ -> Resolution.resolve_attribute_access resolution ~base_type ~attribute
+        | None -> Resolution.resolve_expression_to_type resolution expression
+        (* Lookup the base_type for the attribute you were interested in *) )
+    | _ -> Resolution.resolve_expression_to_type resolution expression
+  in
+  Type.optional_value annotation |> Option.value ~default:annotation
+
+
 let resolve_callees ~resolution ~callee =
-  Resolution.resolve_expression_to_type resolution callee |> resolve_callees_from_type
+  resolve_ignoring_optional ~resolution callee |> resolve_callees_from_type
 
 
 (* This is a bit of a trick. The only place that knows where the local annotation map keys is the
@@ -91,7 +129,7 @@ Fixpoint.Make (struct
 
     let expression resolution { Node.value; location } =
       match value with
-      | Expression.Expression.Call { Expression.Call.callee; _ } ->
+      | Expression.Call { Call.callee; _ } ->
           begin
             match resolve_callees ~resolution ~callee with
             | Some targets ->

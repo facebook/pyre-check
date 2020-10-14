@@ -11,40 +11,7 @@ open Analysis
 open Expression
 open Pyre
 
-let defining_attribute ~resolution parent_type attribute =
-  let global_resolution = Resolution.global_resolution resolution in
-  Type.split parent_type
-  |> fst
-  |> Type.primitive_name
-  >>= fun class_name ->
-  GlobalResolution.attribute_from_class_name
-    ~transitive:true
-    ~resolution:global_resolution
-    ~name:attribute
-    ~instantiated:parent_type
-    class_name
-  >>= fun instantiated_attribute ->
-  if Annotated.Attribute.defined instantiated_attribute then
-    Some instantiated_attribute
-  else
-    Resolution.fallback_attribute ~resolution ~name:attribute class_name
-
-
 let strip_optional annotation = Type.optional_value annotation |> Option.value ~default:annotation
-
-let rec resolve_ignoring_optional ~resolution expression =
-  let annotation =
-    match Node.value expression with
-    | Expression.Name (Name.Attribute { base; attribute; _ }) -> (
-        let base_type = resolve_ignoring_optional ~resolution base |> strip_optional in
-        match defining_attribute ~resolution base_type attribute with
-        | Some _ -> Resolution.resolve_attribute_access resolution ~base_type ~attribute
-        | None -> Resolution.resolve_expression_to_type resolution expression
-        (* Lookup the base_type for the attribute you were interested in *) )
-    | _ -> Resolution.resolve_expression_to_type resolution expression
-  in
-  strip_optional annotation
-
 
 let strip_optional_and_meta t =
   t |> (fun t -> if Type.is_meta t then Type.single_parameter t else t) |> strip_optional
@@ -54,7 +21,7 @@ let get_property_defining_parent ~resolution ~base ~attribute =
   let annotation =
     Resolution.resolve_expression_to_type resolution base |> strip_optional_and_meta
   in
-  match defining_attribute ~resolution annotation attribute with
+  match CallGraph.defining_attribute ~resolution annotation attribute with
   | Some property when Annotated.Attribute.property property ->
       Annotated.Attribute.parent property |> Reference.create |> Option.some
   | _ -> None
@@ -139,7 +106,7 @@ let rec is_all_names = function
 
 
 let resolve_target ~resolution ?receiver_type callee =
-  let callable_type = resolve_ignoring_optional ~resolution callee in
+  let callable_type = CallGraph.resolve_ignoring_optional ~resolution callee in
   let global =
     match get_identifier_base callee, Node.value callee with
     | Some "super", _
@@ -155,7 +122,7 @@ let resolve_target ~resolution ?receiver_type callee =
         let is_class =
           match Node.value callee with
           | Name (Name.Attribute { base; _ }) ->
-              resolve_ignoring_optional ~resolution base
+              CallGraph.resolve_ignoring_optional ~resolution base
               |> GlobalResolution.class_definition (Resolution.global_resolution resolution)
               |> Option.is_some
           | _ -> false
@@ -255,7 +222,7 @@ let resolve_target ~resolution ?receiver_type callee =
              non-classmethod LRU cache wrappers. Reconstruct self in this case. *)
           match Node.value callee with
           | Expression.Name (Name.Attribute { base; _ }) ->
-              resolve_ignoring_optional ~resolution base
+              CallGraph.resolve_ignoring_optional ~resolution base
               |> fun implementing_class -> resolve_lru_cache ~implementing_class
           | _ -> None, None )
       | Parametric
@@ -326,7 +293,7 @@ let resolve_target ~resolution ?receiver_type callee =
 
 
 let get_indirect_targets ~resolution ~receiver ~method_name =
-  let receiver_type = resolve_ignoring_optional ~resolution receiver in
+  let receiver_type = CallGraph.resolve_ignoring_optional ~resolution receiver in
   let callee =
     Expression.Name (Name.Attribute { base = receiver; attribute = method_name; special = false })
     |> Node.create_with_default_location
@@ -342,7 +309,7 @@ let resolve_property_targets ~resolution ~base ~attribute ~setter =
   | None -> None
   | Some defining_parent ->
       let targets =
-        let receiver_type = resolve_ignoring_optional ~resolution base in
+        let receiver_type = CallGraph.resolve_ignoring_optional ~resolution base in
         if Type.is_meta receiver_type then
           [Callable.create_method (Reference.create ~prefix:defining_parent attribute), None]
         else

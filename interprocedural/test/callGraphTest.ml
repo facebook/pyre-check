@@ -134,8 +134,54 @@ let test_call_graph_of_define context =
         ( "7:2-7:5",
           Interprocedural.CallGraph.RegularTargets
             { implicit_self = false; targets = [`Function "test.bar"] } );
+      ];
+  assert_call_graph_of_define
+    ~source:
+      {|
+     from typing import Optional
+
+     def foo(c: Optional[C]):
+       c.m()
+     class C:
+       def m():
+         ...
+
+      |}
+    ~define_name:"test.foo"
+    ~expected:
+      [
+        ( "5:2-5:7",
+          Interprocedural.CallGraph.RegularTargets
+            {
+              implicit_self = true;
+              targets = [Interprocedural.Callable.create_method (Reference.create "test.C.m")];
+            } );
       ]
 
 
+let test_resolve_ignoring_optional context =
+  let assert_resolved_without_optional ~source ~expression ~expected =
+    let resolution =
+      ScratchProject.setup ~context ["x.py", source] |> ScratchProject.build_resolution
+    in
+    Interprocedural.CallGraph.resolve_ignoring_optional
+      ~resolution
+      (Test.parse_single_expression expression)
+    |> assert_equal ~printer:Type.show expected
+  in
+  assert_resolved_without_optional
+    ~source:{|
+    class Data:
+      def __init__(self, x: int) -> None: ...
+  |}
+    ~expression:"x.Data()"
+    ~expected:(Type.Primitive "x.Data")
+
+
 let () =
-  "interproceduralCallGraph" >::: ["call_graph_of_define" >:: test_call_graph_of_define] |> Test.run
+  "interproceduralCallGraph"
+  >::: [
+         "call_graph_of_define" >:: test_call_graph_of_define;
+         "resolve_ignoring_optional" >:: test_resolve_ignoring_optional;
+       ]
+  |> Test.run
