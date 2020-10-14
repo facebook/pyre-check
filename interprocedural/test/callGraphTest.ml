@@ -116,6 +116,24 @@ let test_call_graph_of_define context =
         ( "7:2-7:5",
           Interprocedural.CallGraph.RegularTargets
             { implicit_self = false; targets = [`Function "test.bar"; `Function "test.baz"] } );
+      ];
+  assert_call_graph_of_define
+    ~source:
+      {|
+     def foo():
+       if 1 > 2:
+         f = bar
+       else:
+         f = None
+       f()
+     def bar(): ...
+      |}
+    ~define_name:"test.foo"
+    ~expected:
+      [
+        ( "7:2-7:5",
+          Interprocedural.CallGraph.RegularTargets
+            { implicit_self = false; targets = [`Function "test.bar"] } );
       ]
 
 

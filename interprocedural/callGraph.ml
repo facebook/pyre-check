@@ -8,7 +8,6 @@
 open Core
 open Analysis
 open Ast
-open Pyre
 
 type callees =
   | ConstructorTargets of {
@@ -23,8 +22,8 @@ type callees =
 
 let merge_targets left right =
   match left, right with
-  | ( RegularTargets { implicit_self = left_implicit_self; targets = left_targets },
-      RegularTargets { implicit_self = right_implicit_self; targets = right_targets } )
+  | ( Some (RegularTargets { implicit_self = left_implicit_self; targets = left_targets }),
+      Some (RegularTargets { implicit_self = right_implicit_self; targets = right_targets }) )
     when Bool.equal left_implicit_self right_implicit_self ->
       Some
         (RegularTargets
@@ -32,14 +31,19 @@ let merge_targets left right =
              implicit_self = left_implicit_self;
              targets = List.rev_append left_targets right_targets;
            })
-  | ( ConstructorTargets { new_targets = left_new_targets; init_targets = left_init_targets },
-      ConstructorTargets { new_targets = right_new_targets; init_targets = right_init_targets } ) ->
+  | ( Some (ConstructorTargets { new_targets = left_new_targets; init_targets = left_init_targets }),
+      Some
+        (ConstructorTargets { new_targets = right_new_targets; init_targets = right_init_targets })
+    ) ->
       Some
         (ConstructorTargets
            {
              new_targets = List.rev_append left_new_targets right_new_targets;
              init_targets = List.rev_append left_init_targets right_init_targets;
            })
+  | Some left, None -> Some left
+  | None, Some right -> Some right
+  | None, None -> None
   | _ ->
       (* TODO(T77637504): We should probably error here. *)
       None
@@ -60,9 +64,7 @@ let rec resolve_callees_from_type ?receiver_type callable_type =
   | Type.Union (element :: elements) ->
       let first_targets = resolve_callees_from_type ?receiver_type element in
       List.fold elements ~init:first_targets ~f:(fun combined_targets new_target ->
-          combined_targets
-          >>= fun combined_targets ->
-          resolve_callees_from_type ?receiver_type new_target >>= merge_targets combined_targets)
+          resolve_callees_from_type ?receiver_type new_target |> merge_targets combined_targets)
   | _ -> None
 
 
