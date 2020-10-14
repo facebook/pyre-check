@@ -67,6 +67,7 @@ class Check(Reporting):
             flags.extend(
                 ["-ignore-all-errors", ";".join(sorted(ignore_all_errors_paths))]
             )
+        flags.extend(["-source-path", self._analysis_directory.get_root()])
         if search_path:
             flags.extend(["-search-path", ",".join(search_path)])
         excludes = self._configuration.excludes
