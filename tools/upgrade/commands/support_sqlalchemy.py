@@ -221,4 +221,7 @@ class SupportSqlalchemy(ErrorSuppressingCommand):
         self._import_annotations_from_future(sqlalchemy_path_wise_errors)
 
         project_configuration = Configuration.find_project_configuration()
-        self._suppress_errors(local_configuration, project_configuration.parent)
+        self._suppress_errors(local_configuration)
+
+        title = "Suppress errors for {}".format(self._local_root)
+        self._repository.commit_changes(commit=(not self._no_commit), title=title)

@@ -18,7 +18,7 @@ repository = Repository()
 
 class FixmeSingleTest(unittest.TestCase):
     @patch("subprocess.run")
-    @patch.object(Configuration, "find_project_configuration", return_value=Path("."))
+    @patch.object(Configuration, "find_project_configuration", return_value=Path("/"))
     @patch.object(Configuration, "write")
     @patch.object(Configuration, "remove_version")
     @patch.object(Configuration, "get_errors")
@@ -35,7 +35,7 @@ class FixmeSingleTest(unittest.TestCase):
         subprocess: MagicMock,
     ) -> None:
         arguments = MagicMock()
-        arguments.path = Path("local")
+        arguments.path = Path("/local")
         arguments.error_source = "generate"
         arguments.lint = False
         arguments.no_commit = False
@@ -44,8 +44,11 @@ class FixmeSingleTest(unittest.TestCase):
         with patch("builtins.open", mock_open(read_data=configuration_contents)):
             FixmeSingle.from_arguments(arguments, repository).run()
             apply_suppressions.assert_not_called()
-            commit_changes.assert_not_called()
+            commit_changes.assert_called_once_with(
+                commit=True, title="Update pyre version for local"
+            )
 
+        commit_changes.reset_mock()
         configuration_contents = '{"version": 123}'
         with patch("builtins.open", mock_open(read_data=configuration_contents)):
             FixmeSingle.from_arguments(arguments, repository).run()

@@ -127,7 +127,6 @@ class ErrorSuppressingCommand(Command):
     def _suppress_errors(
         self,
         configuration: Configuration,
-        root: Path,
         error_source: ErrorSource = ErrorSource.GENERATE,
         upgrade_version: bool = False,
         only_fix_error_code: Optional[int] = None,
@@ -156,11 +155,3 @@ class ErrorSuppressingCommand(Command):
                         only_fix_error_code, should_clean=False
                     )
                     self._apply_suppressions(errors)
-
-        project_root = root.resolve()
-        local_root = configuration.get_directory().resolve()
-        title = "{} for {}".format(
-            "Update pyre version" if upgrade_version else "Suppress pyre errors",
-            str(local_root.relative_to(project_root)),
-        )
-        self._repository.commit_changes(commit=(not self._no_commit), title=title)

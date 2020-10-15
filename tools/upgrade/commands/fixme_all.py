@@ -61,7 +61,14 @@ class FixmeAll(ErrorSuppressingCommand):
         for configuration in configurations:
             self._suppress_errors(
                 configuration=configuration,
-                root=project_configuration.parent,
                 error_source=self._error_source,
                 upgrade_version=self._upgrade_version,
             )
+            local_root = configuration.get_directory().resolve()
+            title = "{} for {}".format(
+                "Update pyre version"
+                if self._upgrade_version
+                else "Suppress pyre errors",
+                str(local_root.relative_to(project_configuration.resolve())),
+            )
+            self._repository.commit_changes(commit=(not self._no_commit), title=title)
