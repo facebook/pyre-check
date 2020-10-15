@@ -19,7 +19,7 @@ repository = Repository()
 
 class UpdateGlobalVersionTest(unittest.TestCase):
     @patch("subprocess.run")
-    @patch(f"{upgrade.__name__}.Repository.submit_changes")
+    @patch(f"{upgrade.__name__}.Repository.commit_changes")
     @patch.object(
         Configuration, "find_project_configuration", return_value=Path("/root")
     )
@@ -47,11 +47,10 @@ class UpdateGlobalVersionTest(unittest.TestCase):
         configuration_write,
         configuration_set_version,
         find_project_configuration,
-        submit_changes,
+        commit_changes,
         subprocess,
     ) -> None:
         arguments = MagicMock()
-        arguments.submit = False
         arguments.hash = "abcd"
         arguments.paths = []
         arguments.no_commit = False
@@ -68,9 +67,8 @@ class UpdateGlobalVersionTest(unittest.TestCase):
                 [call("abcd"), call("old"), call("old")]
             )
             configuration_write.assert_has_calls([call(), call(), call()])
-            submit_changes.assert_called_once_with(
+            commit_changes.assert_called_once_with(
                 commit=True,
-                submit=False,
                 title="Update pyre global configuration version",
                 summary="Automatic upgrade to hash `abcd`",
                 ignore_failures=True,
@@ -98,7 +96,7 @@ class UpdateGlobalVersionTest(unittest.TestCase):
         subprocess.reset_mock()
         configuration_set_version.reset_mock()
         configuration_write.reset_mock()
-        submit_changes.reset_mock()
+        commit_changes.reset_mock()
         arguments.paths = []
         with patch("json.dump"):
             mocks = [
@@ -116,9 +114,8 @@ class UpdateGlobalVersionTest(unittest.TestCase):
             )
             configuration_write.assert_has_calls([call(), call(), call()])
             run_fixme.assert_called_once()
-            submit_changes.assert_called_once_with(
+            commit_changes.assert_called_once_with(
                 commit=True,
-                submit=False,
                 title="Update pyre global configuration version",
                 summary="Automatic upgrade to hash `abcd`",
                 ignore_failures=True,

@@ -442,7 +442,7 @@ class TargetsToConfigurationTest(unittest.TestCase):
         )
         self.assertEqual(expected_directories, directories)
 
-    @patch(f"{targets_to_configuration.__name__}.Repository.submit_changes")
+    @patch(f"{targets_to_configuration.__name__}.Repository.commit_changes")
     @patch(
         f"{targets_to_configuration.__name__}.TargetsToConfiguration._gather_directories"
     )
@@ -450,7 +450,7 @@ class TargetsToConfigurationTest(unittest.TestCase):
         f"{targets_to_configuration.__name__}.TargetsToConfiguration.convert_directory"
     )
     def test_run_targets_to_configuration(
-        self, convert_directory, gather_directories, submit_changes
+        self, convert_directory, gather_directories, commit_changes
     ) -> None:
         arguments = MagicMock()
         arguments.subdirectory = "subdirectory"
@@ -462,7 +462,7 @@ class TargetsToConfigurationTest(unittest.TestCase):
         gather_directories.return_value = [Path("subdirectory")]
         TargetsToConfiguration.from_arguments(arguments, repository).run()
         convert_directory.assert_called_once_with(Path("subdirectory"))
-        submit_changes.assert_called_once()
+        commit_changes.assert_called_once()
 
         convert_directory.reset_mock()
         gather_directories.return_value = [

@@ -89,9 +89,9 @@ class ConsolidateNestedConfigurationsTest(unittest.TestCase):
                     {"targets": ["//x/...", "//a/...", "//b/..."]},
                 )
 
-    @patch(f"{consolidate_nested_configurations.__name__}.Repository.submit_changes")
+    @patch(f"{consolidate_nested_configurations.__name__}.Repository.commit_changes")
     @patch(f"{consolidate_nested_configurations.__name__}.consolidate_nested")
-    def test_run_skip(self, consolidate, submit_changes) -> None:
+    def test_run_skip(self, consolidate, commit_changes) -> None:
         with tempfile.TemporaryDirectory() as root:
             arguments = MagicMock()
             arguments.subdirectory = root
@@ -109,10 +109,10 @@ class ConsolidateNestedConfigurationsTest(unittest.TestCase):
                 ).run()
                 consolidate.assert_not_called()
 
-    @patch(f"{consolidate_nested_configurations.__name__}.Repository.submit_changes")
+    @patch(f"{consolidate_nested_configurations.__name__}.Repository.commit_changes")
     @patch(f"{consolidate_nested_configurations.__name__}.consolidate_nested")
     @patch(f"{consolidate_nested_configurations.__name__}.Configuration.get_errors")
-    def test_run_topmost(self, get_errors, consolidate, submit_changes) -> None:
+    def test_run_topmost(self, get_errors, consolidate, commit_changes) -> None:
         with tempfile.TemporaryDirectory() as root:
             arguments = MagicMock()
             arguments.subdirectory = root
@@ -140,10 +140,10 @@ class ConsolidateNestedConfigurationsTest(unittest.TestCase):
                     sorted([Path(nested_a.name), Path(nested_b.name)]),
                 )
 
-    @patch(f"{consolidate_nested_configurations.__name__}.Repository.submit_changes")
+    @patch(f"{consolidate_nested_configurations.__name__}.Repository.commit_changes")
     @patch(f"{consolidate_nested_configurations.__name__}.consolidate_nested")
     @patch(f"{consolidate_nested_configurations.__name__}.Configuration.get_errors")
-    def test_run_no_topmost(self, get_errors, consolidate, submit_changes) -> None:
+    def test_run_no_topmost(self, get_errors, consolidate, commit_changes) -> None:
         with tempfile.TemporaryDirectory() as root:
             arguments = MagicMock()
             arguments.subdirectory = root

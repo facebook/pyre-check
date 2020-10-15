@@ -27,9 +27,9 @@ class FixmeTargetsTest(unittest.TestCase):
     )
     @patch.object(FixmeTargets, "_run_fixme_targets_file")
     @patch(f"{fixme_targets.__name__}.find_targets")
-    @patch(f"{fixme_targets.__name__}.Repository.submit_changes")
+    @patch(f"{fixme_targets.__name__}.Repository.commit_changes")
     def test_fixme_targets(
-        self, submit_changes, find_targets, fix_file, find_configuration, subprocess
+        self, commit_changes, find_targets, fix_file, find_configuration, subprocess
     ) -> None:
         arguments = MagicMock()
         arguments.subdirectory = None
@@ -37,31 +37,27 @@ class FixmeTargetsTest(unittest.TestCase):
         find_targets.return_value = {}
         FixmeTargets.from_arguments(arguments, repository).run()
         fix_file.assert_not_called()
-        submit_changes.assert_not_called()
+        commit_changes.assert_not_called()
 
         find_targets.return_value = {"a/b/TARGETS": ["derp", "herp", "merp"]}
         FixmeTargets.from_arguments(arguments, repository).run()
         fix_file.assert_called_once_with(
             Path("."), "a/b/TARGETS", ["derp", "herp", "merp"]
         )
-        submit_changes.assert_called_once_with(
-            commit=True,
-            submit=arguments.submit,
-            title="Upgrade pyre version for . (TARGETS)",
+        commit_changes.assert_called_once_with(
+            commit=True, title="Upgrade pyre version for . (TARGETS)"
         )
 
         # Test subdirectory
         fix_file.reset_mock()
-        submit_changes.reset_mock()
+        commit_changes.reset_mock()
         arguments.subdirectory = "derp"
         FixmeTargets.from_arguments(arguments, repository).run()
         fix_file.assert_called_once_with(
             Path("."), "a/b/TARGETS", ["derp", "herp", "merp"]
         )
-        submit_changes.assert_called_once_with(
-            commit=True,
-            submit=arguments.submit,
-            title="Upgrade pyre version for derp (TARGETS)",
+        commit_changes.assert_called_once_with(
+            commit=True, title="Upgrade pyre version for derp (TARGETS)"
         )
 
     @patch("subprocess.run")

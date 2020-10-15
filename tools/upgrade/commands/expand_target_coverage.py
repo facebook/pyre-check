@@ -107,9 +107,8 @@ class ExpandTargetCoverage(ErrorSuppressingCommand):
                 errors = configuration.get_errors(should_clean=False)
                 self._apply_suppressions(errors)
 
-        self._repository.submit_changes(
+        self._repository.commit_changes(
             commit=(not self._no_commit),
-            submit=self._submit,
             title=f"Expand target type coverage in {local_configuration}",
             summary="Expanding type coverage of targets in configuration.",
             set_dependencies=False,

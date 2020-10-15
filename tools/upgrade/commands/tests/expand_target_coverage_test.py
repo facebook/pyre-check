@@ -21,7 +21,7 @@ repository = Repository()
 
 class ExpandTargetCoverageTest(unittest.TestCase):
     @patch("builtins.open")
-    @patch(f"{expand_target_coverage.__name__}.Repository.submit_changes")
+    @patch(f"{expand_target_coverage.__name__}.Repository.commit_changes")
     @patch(f"{expand_target_coverage.__name__}.Configuration.find_local_configuration")
     @patch(f"{expand_target_coverage.__name__}.Configuration.get_errors")
     @patch(f"{expand_target_coverage.__name__}.Configuration.deduplicate_targets")
@@ -38,7 +38,7 @@ class ExpandTargetCoverageTest(unittest.TestCase):
         deduplicate_targets,
         get_errors,
         find_local_configuration,
-        submit_changes,
+        commit_changes,
         open_mock,
     ) -> None:
         arguments = MagicMock()

@@ -29,10 +29,9 @@ class Repository:
     def remove_paths(self, paths: List[Path]) -> None:
         pass
 
-    def submit_changes(
+    def commit_changes(
         self,
         commit: bool,
-        submit: bool,
         title: Optional[str] = None,
         summary: Optional[str] = None,
         reviewers: Optional[List[str]] = None,

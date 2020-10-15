@@ -23,10 +23,10 @@ class FixmeSingleTest(unittest.TestCase):
     @patch.object(Configuration, "remove_version")
     @patch.object(Configuration, "get_errors")
     @patch.object(ErrorSuppressingCommand, "_apply_suppressions")
-    @patch(f"{upgrade.__name__}.Repository.submit_changes")
+    @patch(f"{upgrade.__name__}.Repository.commit_changes")
     def test_run_fixme_single(
         self,
-        submit_changes: MagicMock,
+        commit_changes: MagicMock,
         apply_suppressions: MagicMock,
         get_errors: MagicMock,
         remove_version: MagicMock,
@@ -35,7 +35,6 @@ class FixmeSingleTest(unittest.TestCase):
         subprocess: MagicMock,
     ) -> None:
         arguments = MagicMock()
-        arguments.submit = True
         arguments.path = Path("local")
         arguments.error_source = "generate"
         arguments.lint = False
@@ -45,18 +44,18 @@ class FixmeSingleTest(unittest.TestCase):
         with patch("builtins.open", mock_open(read_data=configuration_contents)):
             FixmeSingle.from_arguments(arguments, repository).run()
             apply_suppressions.assert_not_called()
-            submit_changes.assert_not_called()
+            commit_changes.assert_not_called()
 
         configuration_contents = '{"version": 123}'
         with patch("builtins.open", mock_open(read_data=configuration_contents)):
             FixmeSingle.from_arguments(arguments, repository).run()
             apply_suppressions.assert_not_called()
-            submit_changes.assert_called_once_with(
-                commit=True, submit=True, title="Update pyre version for local"
+            commit_changes.assert_called_once_with(
+                commit=True, title="Update pyre version for local"
             )
 
         apply_suppressions.reset_mock()
-        submit_changes.reset_mock()
+        commit_changes.reset_mock()
         pyre_errors = [
             {
                 "line": 2,
@@ -74,6 +73,6 @@ class FixmeSingleTest(unittest.TestCase):
         with patch("builtins.open", mock_open(read_data=configuration_contents)):
             FixmeSingle.from_arguments(arguments, repository).run()
             apply_suppressions.assert_called_once_with(pyre_errors)
-            submit_changes.assert_called_once_with(
-                commit=True, submit=True, title="Update pyre version for local"
+            commit_changes.assert_called_once_with(
+                commit=True, title="Update pyre version for local"
             )

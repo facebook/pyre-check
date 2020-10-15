@@ -92,9 +92,8 @@ class FixConfiguration(ErrorSuppressingCommand):
 
     def _commit_changes(self) -> None:
         title = "Fix broken configuration for {}".format(str(self._path))
-        self._repository.submit_changes(
+        self._repository.commit_changes(
             commit=(not self._no_commit),
-            submit=self._submit,
             title=title,
             summary="Cleaning up broken pyre configurations by removing targets "
             + "that cannot build and removing nested configurations where applicable.",

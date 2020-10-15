@@ -63,9 +63,8 @@ class FixmeTargets(ErrorSuppressingCommand):
         for path, targets in all_targets.items():
             self._run_fixme_targets_file(project_directory, path, targets)
 
-        self._repository.submit_changes(
+        self._repository.commit_changes(
             commit=(not self._no_commit),
-            submit=self._submit,
             title=f"Upgrade pyre version for {search_root} (TARGETS)",
         )
 

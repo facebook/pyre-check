@@ -27,14 +27,12 @@ class GlobalVersionUpdate(Command):
         hash: str,
         paths: List[Path],
         no_commit: bool,
-        submit: bool,
     ) -> None:
         super().__init__(repository)
         self._error_source: str = error_source
         self._hash: str = hash
         self._paths: List[Path] = paths
         self._no_commit: bool = no_commit
-        self._submit: bool = submit
 
     @staticmethod
     def from_arguments(
@@ -46,7 +44,6 @@ class GlobalVersionUpdate(Command):
             hash=arguments.hash,
             paths=arguments.paths,
             no_commit=arguments.no_commit,
-            submit=arguments.submit,
         )
 
     @classmethod
@@ -70,7 +67,6 @@ class GlobalVersionUpdate(Command):
         parser.add_argument(
             "--no-commit", action="store_true", help="Keep changes in working state."
         )
-        parser.add_argument("--submit", action="store_true", help=argparse.SUPPRESS)
 
     def _set_local_overrides(
         self, configuration_paths: List[Path], old_version: str
@@ -100,7 +96,6 @@ class GlobalVersionUpdate(Command):
                 force_format_unsuppressed=False,
                 lint=True,
                 no_commit=True,
-                submit=False,
             )
             fixme_command = Fixme(
                 command_arguments,
@@ -109,9 +104,8 @@ class GlobalVersionUpdate(Command):
             )
             fixme_command.run()
 
-        self._repository.submit_changes(
+        self._repository.commit_changes(
             commit=(not self._no_commit),
-            submit=self._submit,
             title="Update pyre global configuration version",
             summary=f"Automatic upgrade to hash `{self._hash}`",
             ignore_failures=True,

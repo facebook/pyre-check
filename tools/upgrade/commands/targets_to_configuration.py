@@ -280,9 +280,8 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
                 f"no more than {glob} fixmes per file."
             )
         title = f"Convert type check targets in {subdirectory} to use configuration"
-        self._repository.submit_changes(
+        self._repository.commit_changes(
             commit=(not self._no_commit),
-            submit=self._submit,
             title=title,
             summary=summary,
             set_dependencies=False,

@@ -33,13 +33,12 @@ def _raise_on_bad_target(build_command, timeout) -> str:
 class FixmeConfigurationTest(unittest.TestCase):
     @patch("subprocess.check_output")
     @patch.object(Configuration, "get_errors")
-    @patch(f"{upgrade.__name__}.Repository.submit_changes")
+    @patch(f"{upgrade.__name__}.Repository.commit_changes")
     @patch(f"{upgrade.__name__}.Repository.remove_paths")
     def test_run_fix_configuration(
-        self, remove_paths, submit_changes, get_errors, check_output
+        self, remove_paths, commit_changes, get_errors, check_output
     ) -> None:
         arguments = MagicMock()
-        arguments.submit = True
         arguments.lint = False
         arguments.no_commit = False
         with tempfile.TemporaryDirectory() as root:
@@ -52,11 +51,11 @@ class FixmeConfigurationTest(unittest.TestCase):
                 configuration_file.seek(0)
                 FixConfiguration.from_arguments(arguments, repository).run()
                 get_errors.assert_called_once()
-                submit_changes.assert_called_once()
+                commit_changes.assert_called_once()
 
             # Remove bad targets.
             get_errors.reset_mock()
-            submit_changes.reset_mock()
+            commit_changes.reset_mock()
             check_output.side_effect = _raise_on_bad_target
             with open(configuration_path, "w+") as configuration_file:
                 json.dump(
@@ -78,11 +77,11 @@ class FixmeConfigurationTest(unittest.TestCase):
                     {"targets": ["//good:target", "//timeout:target"]},
                 )
                 get_errors.assert_called_once()
-                submit_changes.assert_called_once()
+                commit_changes.assert_called_once()
 
             # Remove configuration with only bad targets.
             get_errors.reset_mock()
-            submit_changes.reset_mock()
+            commit_changes.reset_mock()
             with open(configuration_path, "w+") as configuration_file:
                 json.dump(
                     {"targets": ["//bad:target1", "//bad:target2"]}, configuration_file
@@ -91,12 +90,12 @@ class FixmeConfigurationTest(unittest.TestCase):
                 FixConfiguration.from_arguments(arguments, repository).run()
                 remove_paths.assert_called_once_with([Path(configuration_path)])
                 get_errors.assert_not_called()
-                submit_changes.assert_called_once()
+                commit_changes.assert_called_once()
 
             # Consolidate nested configurations.
             remove_paths.reset_mock()
             get_errors.reset_mock()
-            submit_changes.reset_mock()
+            commit_changes.reset_mock()
             with open(configuration_path, "w+") as configuration_file:
                 json.dump({"targets": ["//parent:target"]}, configuration_file)
                 configuration_file.seek(0)
@@ -122,4 +121,4 @@ class FixmeConfigurationTest(unittest.TestCase):
                         [Path(nested_configuration_path)]
                     )
                     get_errors.assert_called_once()
-                    submit_changes.assert_called_once()
+                    commit_changes.assert_called_once()

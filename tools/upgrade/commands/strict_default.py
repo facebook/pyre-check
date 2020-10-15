@@ -123,9 +123,8 @@ class StrictDefault(ErrorSuppressingCommand):
             "Turning on strict default; files with more than "
             + f"{self._fixme_threshold} errors opted-out of strict."
         )
-        self._repository.submit_changes(
+        self._repository.commit_changes(
             commit=(not self._no_commit),
-            submit=self._submit,
             title=title,
             summary=summary,
             set_dependencies=False,

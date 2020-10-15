@@ -127,9 +127,8 @@ class ConsolidateNestedConfigurations(ErrorSuppressingCommand):
             errors = configuration.get_errors()
             self._apply_suppressions(errors)
 
-        self._repository.submit_changes(
+        self._repository.commit_changes(
             commit=(not self._no_commit),
-            submit=self._submit,
             title=f"Consolidate configurations in {subdirectory}",
             summary="Consolidating nested configurations.",
             set_dependencies=False,

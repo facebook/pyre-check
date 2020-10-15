@@ -35,7 +35,6 @@ class CommandArguments:
     force_format_unsuppressed: bool
     lint: bool
     no_commit: bool
-    submit: bool
 
     @staticmethod
     def from_arguments(arguments: argparse.Namespace) -> "CommandArguments":
@@ -49,7 +48,6 @@ class CommandArguments:
             ),
             lint=arguments.lint,
             no_commit=arguments.no_commit,
-            submit=arguments.submit,
         )
 
 
@@ -80,7 +78,6 @@ class ErrorSuppressingCommand(Command):
         )
         self._lint: bool = command_arguments.lint
         self._no_commit: bool = command_arguments.no_commit
-        self._submit: bool = command_arguments.submit
 
     @staticmethod
     def add_arguments(parser: argparse.ArgumentParser) -> None:
@@ -113,7 +110,6 @@ class ErrorSuppressingCommand(Command):
             Doubles the runtime of pyre-ugprade.",
         )
         parser.add_argument("--no-commit", action="store_true", help=argparse.SUPPRESS)
-        parser.add_argument("--submit", action="store_true", help=argparse.SUPPRESS)
 
     def _apply_suppressions(self, errors: Errors) -> None:
         try:
@@ -167,6 +163,4 @@ class ErrorSuppressingCommand(Command):
             "Update pyre version" if upgrade_version else "Suppress pyre errors",
             str(local_root.relative_to(project_root)),
         )
-        self._repository.submit_changes(
-            commit=(not self._no_commit), submit=self._submit, title=title
-        )
+        self._repository.commit_changes(commit=(not self._no_commit), title=title)
