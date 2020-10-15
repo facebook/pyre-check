@@ -373,7 +373,7 @@ class PartialConfiguration:
                 ),
                 disabled=ensure_option_type(configuration_json, "disabled", bool),
                 do_not_ignore_all_errors_in=ensure_string_list(
-                    configuration_json, "do_not_ignore_all_errors_in"
+                    configuration_json, "do_not_ignore_errors_in"
                 ),
                 dot_pyre_directory=Path(dot_pyre_directory)
                 if dot_pyre_directory is not None

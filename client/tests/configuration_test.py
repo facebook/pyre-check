@@ -96,7 +96,7 @@ class PartialConfigurationTest(unittest.TestCase):
         self.assertListEqual(
             list(
                 PartialConfiguration.from_string(
-                    json.dumps({"do_not_ignore_all_errors_in": ["foo", "bar"]})
+                    json.dumps({"do_not_ignore_errors_in": ["foo", "bar"]})
                 ).do_not_ignore_all_errors_in
             ),
             ["foo", "bar"],
@@ -261,7 +261,7 @@ class PartialConfigurationTest(unittest.TestCase):
         assert_raises(json.dumps({"binary": True}))
         assert_raises(json.dumps({"buck_builder_binary": ["."]}))
         assert_raises(json.dumps({"disabled": "False"}))
-        assert_raises(json.dumps({"do_not_ignore_all_errors_in": "abc"}))
+        assert_raises(json.dumps({"do_not_ignore_errors_in": "abc"}))
         assert_raises(json.dumps({"dot_pyre_directory": {}}))
         assert_raises(json.dumps({"exclude": 42}))
         assert_raises(json.dumps({"extensions": {"derp": 42}}))
