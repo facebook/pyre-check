@@ -8,7 +8,9 @@
 open Core
 open OUnit2
 open Ast
+open Analysis
 open Test
+open Interprocedural
 
 let test_call_graph_of_define context =
   let assert_call_graph_of_define ~source ~define_name ~expected =
@@ -50,27 +52,21 @@ let test_call_graph_of_define context =
       in
       ( List.find_map_exn (Ast.Source.statements test_source) ~f:find_define,
         test_source,
-        Analysis.TypeEnvironment.read_only type_environment )
+        TypeEnvironment.read_only type_environment )
     in
-    let overrides =
-      Interprocedural.DependencyGraph.create_overrides ~environment ~source:test_source
-    in
-    Interprocedural.DependencyGraphSharedMemory.record_overrides overrides;
+    let overrides = DependencyGraph.create_overrides ~environment ~source:test_source in
+    DependencyGraphSharedMemory.record_overrides overrides;
     assert_equal
-      ~cmp:(Location.Map.equal Interprocedural.CallGraph.equal_callees)
+      ~cmp:(Location.Map.equal CallGraph.equal_callees)
       ~printer:(fun map ->
         map
         |> Location.Map.to_alist
         |> List.map ~f:(fun (key, value) ->
-               Format.sprintf
-                 "%s: %s"
-                 (Location.show key)
-                 (Interprocedural.CallGraph.show_callees value))
+               Format.sprintf "%s: %s" (Location.show key) (CallGraph.show_callees value))
         |> String.concat ~sep:"\n")
       expected
-      (Interprocedural.CallGraph.call_graph_of_define ~environment ~define);
-    Interprocedural.DependencyGraphSharedMemory.remove_overriding_types
-      (Reference.Map.keys overrides)
+      (CallGraph.call_graph_of_define ~environment ~define);
+    DependencyGraphSharedMemory.remove_overriding_types (Reference.Map.keys overrides)
   in
   assert_call_graph_of_define
     ~source:{|
@@ -84,8 +80,7 @@ let test_call_graph_of_define context =
     ~expected:
       [
         ( "3:4-3:9",
-          Interprocedural.CallGraph.RegularTargets
-            { implicit_self = false; targets = [`Function "test.bar"] } );
+          CallGraph.RegularTargets { implicit_self = false; targets = [`Function "test.bar"] } );
       ];
   assert_call_graph_of_define
     ~source:
@@ -101,10 +96,10 @@ let test_call_graph_of_define context =
     ~expected:
       [
         ( "3:4-3:9",
-          Interprocedural.CallGraph.RegularTargets
+          CallGraph.RegularTargets
             {
               implicit_self = true;
-              targets = [Interprocedural.Callable.create_method (Reference.create "test.C.m")];
+              targets = [Callable.create_method (Reference.create "test.C.m")];
             } );
       ];
   assert_call_graph_of_define
@@ -123,7 +118,7 @@ let test_call_graph_of_define context =
     ~expected:
       [
         ( "7:2-7:5",
-          Interprocedural.CallGraph.RegularTargets
+          CallGraph.RegularTargets
             { implicit_self = false; targets = [`Function "test.bar"; `Function "test.baz"] } );
       ];
   assert_call_graph_of_define
@@ -141,8 +136,7 @@ let test_call_graph_of_define context =
     ~expected:
       [
         ( "7:2-7:5",
-          Interprocedural.CallGraph.RegularTargets
-            { implicit_self = false; targets = [`Function "test.bar"] } );
+          CallGraph.RegularTargets { implicit_self = false; targets = [`Function "test.bar"] } );
       ];
   assert_call_graph_of_define
     ~source:
@@ -160,10 +154,10 @@ let test_call_graph_of_define context =
     ~expected:
       [
         ( "5:2-5:7",
-          Interprocedural.CallGraph.RegularTargets
+          CallGraph.RegularTargets
             {
               implicit_self = true;
-              targets = [Interprocedural.Callable.create_method (Reference.create "test.C.m")];
+              targets = [Callable.create_method (Reference.create "test.C.m")];
             } );
       ];
   assert_call_graph_of_define
@@ -187,10 +181,10 @@ let test_call_graph_of_define context =
     ~expected:
       [
         ( "5:2-5:7",
-          Interprocedural.CallGraph.RegularTargets
+          CallGraph.RegularTargets
             {
               implicit_self = true;
-              targets = [Interprocedural.Callable.create_override (Reference.create "test.C.m")];
+              targets = [Callable.create_override (Reference.create "test.C.m")];
             } );
       ];
   assert_call_graph_of_define
@@ -213,13 +207,13 @@ let test_call_graph_of_define context =
     ~expected:
       [
         ( "5:2-5:7",
-          Interprocedural.CallGraph.RegularTargets
+          CallGraph.RegularTargets
             {
               implicit_self = true;
               targets =
                 [
-                  Interprocedural.Callable.create_method (Reference.create "test.C.m");
-                  Interprocedural.Callable.create_method (Reference.create "test.E.m");
+                  Callable.create_method (Reference.create "test.C.m");
+                  Callable.create_method (Reference.create "test.E.m");
                 ];
             } );
       ];
@@ -235,11 +229,10 @@ let test_call_graph_of_define context =
     ~expected:
       [
         ( "5:3-5:7",
-          Interprocedural.CallGraph.RegularTargets
+          CallGraph.RegularTargets
             {
               implicit_self = true;
-              targets =
-                [Interprocedural.Callable.create_method (Reference.create "test.C.__call__")];
+              targets = [Callable.create_method (Reference.create "test.C.__call__")];
             } );
       ];
   assert_call_graph_of_define
@@ -255,11 +248,10 @@ let test_call_graph_of_define context =
     ~expected:
       [
         ( "6:3-6:7",
-          Interprocedural.CallGraph.RegularTargets
+          CallGraph.RegularTargets
             {
               implicit_self = false;
-              targets =
-                [Interprocedural.Callable.create_function (Reference.create "test.C.__call__")];
+              targets = [Callable.create_function (Reference.create "test.C.__call__")];
             } );
       ];
   assert_call_graph_of_define
@@ -275,11 +267,10 @@ let test_call_graph_of_define context =
     ~expected:
       [
         ( "6:3-6:7",
-          Interprocedural.CallGraph.RegularTargets
+          CallGraph.RegularTargets
             {
               implicit_self = true;
-              targets =
-                [Interprocedural.Callable.create_method (Reference.create "test.C.__call__")];
+              targets = [Callable.create_method (Reference.create "test.C.__call__")];
             } );
       ];
   assert_call_graph_of_define
@@ -294,17 +285,10 @@ let test_call_graph_of_define context =
     ~expected:
       [
         ( "5:2-5:5",
-          Interprocedural.CallGraph.ConstructorTargets
+          CallGraph.ConstructorTargets
             {
-              init_targets =
-                [
-                  `Method
-                    { Interprocedural.Callable.class_name = "test.C"; method_name = "__init__" };
-                ];
-              new_targets =
-                [
-                  `Method { Interprocedural.Callable.class_name = "object"; method_name = "__new__" };
-                ];
+              init_targets = [`Method { Callable.class_name = "test.C"; method_name = "__init__" }];
+              new_targets = [`Method { Callable.class_name = "object"; method_name = "__new__" }];
             } );
       ];
   assert_call_graph_of_define
@@ -319,17 +303,10 @@ let test_call_graph_of_define context =
     ~expected:
       [
         ( "5:2-5:5",
-          Interprocedural.CallGraph.ConstructorTargets
+          CallGraph.ConstructorTargets
             {
-              init_targets =
-                [
-                  `Method
-                    { Interprocedural.Callable.class_name = "object"; method_name = "__init__" };
-                ];
-              new_targets =
-                [
-                  `Method { Interprocedural.Callable.class_name = "test.C"; method_name = "__new__" };
-                ];
+              init_targets = [`Method { Callable.class_name = "object"; method_name = "__init__" }];
+              new_targets = [`Method { Callable.class_name = "test.C"; method_name = "__new__" }];
             } );
       ];
   assert_call_graph_of_define
@@ -347,21 +324,16 @@ let test_call_graph_of_define context =
     ~expected:
       [
         ( "8:2-8:5",
-          Interprocedural.CallGraph.RegularTargets
+          CallGraph.RegularTargets
             {
               implicit_self = true;
-              targets =
-                [
-                  `Method
-                    { Interprocedural.Callable.class_name = "test.C"; method_name = "p$setter" };
-                ];
+              targets = [`Method { Callable.class_name = "test.C"; method_name = "p$setter" }];
             } );
         ( "8:8-8:11",
-          Interprocedural.CallGraph.RegularTargets
+          CallGraph.RegularTargets
             {
               implicit_self = true;
-              targets =
-                [`Method { Interprocedural.Callable.class_name = "test.C"; method_name = "p" }];
+              targets = [`Method { Callable.class_name = "test.C"; method_name = "p" }];
             } );
       ]
 
@@ -371,9 +343,7 @@ let test_resolve_ignoring_optional context =
     let resolution =
       ScratchProject.setup ~context ["x.py", source] |> ScratchProject.build_resolution
     in
-    Interprocedural.CallGraph.resolve_ignoring_optional
-      ~resolution
-      (Test.parse_single_expression expression)
+    CallGraph.resolve_ignoring_optional ~resolution (Test.parse_single_expression expression)
     |> assert_equal ~printer:Type.show expected
   in
   assert_resolved_without_optional
