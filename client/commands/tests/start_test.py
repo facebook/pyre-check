@@ -91,35 +91,6 @@ class StartTest(unittest.TestCase):
             Monitor.assert_called_once_with(configuration, "/root", analysis_directory)
             Monitor.return_value.daemonize.assert_called_once_with()
 
-        # This magic is necessary to test, because the inner call to ping a server is
-        # always non-blocking.
-        def pass_when_blocking(file_descriptor, command):
-            if not pass_when_blocking.failed and (command & fcntl.LOCK_NB):
-                pass_when_blocking.failed = True
-                raise OSError(errno.EAGAIN, "Only accepting blocking calls.")
-
-        pass_when_blocking.failed = False
-
-        lock_file.side_effect = pass_when_blocking
-        # EAGAINs get caught.
-        with patch("builtins.open", mock_open()), patch.object(
-            commands.Command, "_call_client"
-        ) as call_client, patch.object(
-            project_files_monitor, "ProjectFilesMonitor"
-        ) as Monitor:
-            Start(
-                arguments,
-                original_directory,
-                terminal=False,
-                store_type_check_resolution=False,
-                use_watchman=False,
-                incremental_style=commands.IncrementalStyle.FINE_GRAINED,
-                configuration=configuration,
-                analysis_directory=analysis_directory,
-            ).run()
-            call_client.assert_called_once_with(command=Start.NAME)
-            Monitor.assert_not_called()
-
         lock_file.side_effect = None
 
         def raise_mount_error(fileno, command):

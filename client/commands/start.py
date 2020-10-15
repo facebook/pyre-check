@@ -62,57 +62,43 @@ class Start(Reporting):
             ).daemonize()
 
     def _run(self) -> None:
-        blocking = False
         lock = os.path.join(self._configuration.log_directory, "client.lock")
-        while True:
-            # Be optimistic in grabbing the lock in order to provide users with
-            # a message when the lock is being waited on.
+        LOG.info("Waiting on the pyre client lock.")
+        with filesystem.acquire_lock(lock, blocking=True):
+            self._start_configuration_monitor()
+            # This unsafe call is OK due to the client lock always
+            # being acquired before starting a server - no server can
+            # spawn in the interim which would cause a race.
             try:
-                with filesystem.acquire_lock(lock, blocking):
-                    self._start_configuration_monitor()
-                    # This unsafe call is OK due to the client lock always
-                    # being acquired before starting a server - no server can
-                    # spawn in the interim which would cause a race.
-                    try:
-                        with filesystem.acquire_lock(
-                            os.path.join(
-                                self._configuration.log_directory,
-                                "server",
-                                "server.lock",
-                            ),
-                            blocking=False,
-                        ):
-                            pass
-                    except OSError:
-                        LOG.warning(
-                            "Server at `%s` exists, skipping.",
-                            self._analysis_directory.get_root(),
-                        )
-                        return
+                with filesystem.acquire_lock(
+                    os.path.join(
+                        self._configuration.log_directory, "server", "server.lock"
+                    ),
+                    blocking=False,
+                ):
+                    pass
+            except OSError:
+                LOG.warning(
+                    "Server at `%s` exists, skipping.",
+                    self._analysis_directory.get_root(),
+                )
+                return
 
-                    self._analysis_directory.prepare()
+            self._analysis_directory.prepare()
 
-                    self._call_client(command=self.NAME).check()
+            self._call_client(command=self.NAME).check()
 
-                    if self._use_watchman:
-                        try:
-                            file_monitor = project_files_monitor.ProjectFilesMonitor(
-                                self._configuration,
-                                self._configuration.project_root,
-                                self._analysis_directory,
-                            )
-                            file_monitor.daemonize()
-                            LOG.debug("Initialized file monitor.")
-                        except project_files_monitor.MonitorException as error:
-                            LOG.warning("Failed to initialize file monitor: %s", error)
-
-                    return
-            except OSError as exception:
-                if exception.errno == errno.EAGAIN:
-                    blocking = True
-                    LOG.info("Waiting on the pyre client lock.")
-                else:
-                    raise exception
+            if self._use_watchman:
+                try:
+                    file_monitor = project_files_monitor.ProjectFilesMonitor(
+                        self._configuration,
+                        self._configuration.project_root,
+                        self._analysis_directory,
+                    )
+                    file_monitor.daemonize()
+                    LOG.debug("Initialized file monitor.")
+                except project_files_monitor.MonitorException as error:
+                    LOG.warning("Failed to initialize file monitor: %s", error)
 
     def _flags(self) -> List[str]:
         flags = super()._flags()
