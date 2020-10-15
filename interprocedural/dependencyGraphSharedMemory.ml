@@ -49,3 +49,6 @@ let record_overrides ?maximum_overrides_to_analyze overrides =
         add_overriding_types ~member ~subtypes
   in
   Reference.Map.iteri overrides ~f:record_override_edge
+
+
+let remove_overriding_types keys = Overrides.remove_batch (Overrides.KeySet.of_list keys)

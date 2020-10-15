@@ -45,59 +45,6 @@ let extract_constant_name { Node.value = expression; _ } =
   | _ -> None
 
 
-(* Figure out what target to pick for an indirect call that resolves to implementation_target.
-   E.g., if the receiver type is A, and A derives from Base, and the target is Base.method, then
-   targetting the override tree of Base.method is wrong, as it would include all siblings for A.
-
- * Instead, we have the following cases:
- * a) receiver type matches implementation_target's declaring type -> override implementation_target
- * b) no implementation_target override entries are subclasses of A -> real implementation_target
- * c) some override entries are subclasses of A -> search upwards for actual implementation,
- *    and override all those where the override name is
- *  1) the override target if it exists in the override shared mem
- *  2) the real target otherwise
- *)
-let compute_indirect_targets ~resolution ~receiver_type implementation_target =
-  (* Target name must be the resolved implementation target *)
-  let global_resolution = Resolution.global_resolution resolution in
-  let get_class_type = GlobalResolution.parse_reference global_resolution in
-  let get_actual_target method_name =
-    if DependencyGraphSharedMemory.overrides_exist method_name then
-      Callable.create_override method_name
-    else
-      Callable.create_method method_name
-  in
-  let receiver_type = strip_optional_and_meta receiver_type |> Type.weaken_literals in
-  let declaring_type = Reference.prefix implementation_target in
-  if
-    declaring_type
-    >>| Reference.equal (Type.class_name receiver_type)
-    |> Option.value ~default:false
-  then (* case a *)
-    [get_actual_target implementation_target]
-  else
-    let target_callable = Callable.create_method implementation_target in
-    match DependencyGraphSharedMemory.get_overriding_types ~member:implementation_target with
-    | None ->
-        (* case b *)
-        [target_callable]
-    | Some overriding_types ->
-        (* case c *)
-        let keep_subtypes candidate =
-          let candidate_type = get_class_type candidate in
-          GlobalResolution.less_or_equal global_resolution ~left:candidate_type ~right:receiver_type
-        in
-        let override_targets =
-          let create_override_target class_name =
-            let method_name = Reference.last implementation_target in
-            Reference.create ~prefix:class_name method_name |> get_actual_target
-          in
-          List.filter overriding_types ~f:keep_subtypes
-          |> fun subtypes -> List.map subtypes ~f:create_override_target
-        in
-        target_callable :: override_targets
-
-
 let rec is_all_names = function
   | Expression.Name (Name.Identifier identifier) when not (is_local identifier) -> true
   | Name (Name.Attribute { base; attribute; _ }) when not (is_local attribute) ->
@@ -252,7 +199,7 @@ let resolve_target ~resolution ?receiver_type callee =
     | Some { kind = Named name; _ }, self_argument, _, _, _ when is_all_names ->
         [Callable.create_method name, self_argument]
     | Some { kind = Named name; _ }, self_argument, _, Some type_or_class, _ ->
-        compute_indirect_targets ~resolution ~receiver_type:type_or_class name
+        CallGraph.compute_indirect_targets ~resolution ~receiver_type:type_or_class name
         |> List.map ~f:(fun target -> target, self_argument)
     | _, _, Type.Union annotations, _, _ -> List.concat_map ~f:resolve_type annotations
     | Some { kind = Named name; _ }, _, _, _, _ when is_local_variable -> (
@@ -314,7 +261,7 @@ let resolve_property_targets ~resolution ~base ~attribute ~setter =
           [Callable.create_method (Reference.create ~prefix:defining_parent attribute), None]
         else
           let callee = Reference.create ~prefix:defining_parent attribute in
-          compute_indirect_targets ~resolution ~receiver_type callee
+          CallGraph.compute_indirect_targets ~resolution ~receiver_type callee
           |> List.map ~f:(fun target -> target, None)
       in
       if setter then

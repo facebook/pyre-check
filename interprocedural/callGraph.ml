@@ -51,22 +51,90 @@ let merge_targets left right =
       None
 
 
-let rec resolve_callees_from_type ?receiver_type callable_type =
+let strip_optional annotation = Type.optional_value annotation |> Option.value ~default:annotation
+
+let strip_meta annotation =
+  if Type.is_meta annotation then
+    Type.single_parameter annotation
+  else
+    annotation
+
+
+(* Figure out what target to pick for an indirect call that resolves to implementation_target.
+   E.g., if the receiver type is A, and A derives from Base, and the target is Base.method, then
+   targeting the override tree of Base.method is wrong, as it would include all siblings for A.
+
+ * Instead, we have the following cases:
+ * a) receiver type matches implementation_target's declaring type -> override implementation_target
+ * b) no implementation_target override entries are subclasses of A -> real implementation_target
+ * c) some override entries are subclasses of A -> search upwards for actual implementation,
+ *    and override all those where the override name is
+ *  1) the override target if it exists in the override shared mem
+ *  2) the real target otherwise
+ *)
+let compute_indirect_targets ~resolution ~receiver_type implementation_target =
+  (* Target name must be the resolved implementation target *)
+  let global_resolution = Resolution.global_resolution resolution in
+  let get_class_type = GlobalResolution.parse_reference global_resolution in
+  let get_actual_target method_name =
+    if DependencyGraphSharedMemory.overrides_exist method_name then
+      Callable.create_override method_name
+    else
+      Callable.create_method method_name
+  in
+  let receiver_type = receiver_type |> strip_meta |> strip_optional |> Type.weaken_literals in
+  let declaring_type = Reference.prefix implementation_target in
+  if
+    declaring_type
+    >>| Reference.equal (Type.class_name receiver_type)
+    |> Option.value ~default:false
+  then (* case a *)
+    [get_actual_target implementation_target]
+  else
+    let target_callable = Callable.create_method implementation_target in
+    match DependencyGraphSharedMemory.get_overriding_types ~member:implementation_target with
+    | None ->
+        (* case b *)
+        [target_callable]
+    | Some overriding_types ->
+        (* case c *)
+        let keep_subtypes candidate =
+          let candidate_type = get_class_type candidate in
+          GlobalResolution.less_or_equal global_resolution ~left:candidate_type ~right:receiver_type
+        in
+        let override_targets =
+          let create_override_target class_name =
+            let method_name = Reference.last implementation_target in
+            Reference.create ~prefix:class_name method_name |> get_actual_target
+          in
+          List.filter overriding_types ~f:keep_subtypes
+          |> fun subtypes -> List.map subtypes ~f:create_override_target
+        in
+        target_callable :: override_targets
+
+
+let rec resolve_callees_from_type ~resolution ?receiver_type callable_type =
   match callable_type with
   | Type.Callable { Type.Callable.kind = Type.Callable.Named name; _ } -> (
       match receiver_type with
-      | Some _ ->
-          Some (RegularTargets { implicit_self = true; targets = [Callable.create_method name] })
+      | Some receiver_type ->
+          Some
+            (RegularTargets
+               {
+                 implicit_self = true;
+                 targets = compute_indirect_targets ~resolution ~receiver_type name;
+               })
       | None ->
           Some (RegularTargets { implicit_self = false; targets = [Callable.create_function name] })
       )
   | Type.Parametric { name = "BoundMethod"; parameters = [Single callable; Single receiver_type] }
     ->
-      resolve_callees_from_type ~receiver_type callable
+      resolve_callees_from_type ~resolution ~receiver_type callable
   | Type.Union (element :: elements) ->
-      let first_targets = resolve_callees_from_type ?receiver_type element in
+      let first_targets = resolve_callees_from_type ~resolution ?receiver_type element in
       List.fold elements ~init:first_targets ~f:(fun combined_targets new_target ->
-          resolve_callees_from_type ?receiver_type new_target |> merge_targets combined_targets)
+          resolve_callees_from_type ~resolution ?receiver_type new_target
+          |> merge_targets combined_targets)
   | _ -> None
 
 
@@ -107,7 +175,7 @@ let rec resolve_ignoring_optional ~resolution expression =
 
 
 let resolve_callees ~resolution ~callee =
-  resolve_ignoring_optional ~resolution callee |> resolve_callees_from_type
+  resolve_ignoring_optional ~resolution callee |> resolve_callees_from_type ~resolution
 
 
 (* This is a bit of a trick. The only place that knows where the local annotation map keys is the

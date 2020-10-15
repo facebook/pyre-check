@@ -30,7 +30,7 @@ let test_call_graph_of_define context =
       List.map expected ~f:(fun (key, value) -> parse_location key, value)
       |> Location.Map.of_alist_exn
     in
-    let define, environment =
+    let define, test_source, environment =
       let find_define = function
         | { Node.value = Statement.Statement.Define define; _ }
           when String.equal (Reference.show (Node.value (Statement.Define.name define))) define_name
@@ -39,16 +39,23 @@ let test_call_graph_of_define context =
         | _ -> None
       in
       let project = Test.ScratchProject.setup ~context ["test.py", source] in
-      ScratchProject.build_type_environment project
-      |> fun { ScratchProject.BuiltTypeEnvironment.type_environment; sources } ->
-      ( List.find_map_exn
-          ~f:find_define
-          (List.find_map_exn
-             sources
-             ~f:(fun { Source.source_path = { SourcePath.qualifier; _ }; statements; _ } ->
-               Option.some_if (String.equal (Reference.show qualifier) "test") statements)),
+      let { ScratchProject.BuiltTypeEnvironment.type_environment; sources } =
+        ScratchProject.build_type_environment project
+      in
+      let test_source =
+        List.find_map_exn
+          sources
+          ~f:(fun ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source) ->
+            Option.some_if (String.equal (Reference.show qualifier) "test") source)
+      in
+      ( List.find_map_exn (Ast.Source.statements test_source) ~f:find_define,
+        test_source,
         Analysis.TypeEnvironment.read_only type_environment )
     in
+    let overrides =
+      Interprocedural.DependencyGraph.create_overrides ~environment ~source:test_source
+    in
+    Interprocedural.DependencyGraphSharedMemory.record_overrides overrides;
     assert_equal
       ~cmp:(Location.Map.equal Interprocedural.CallGraph.equal_callees)
       ~printer:(fun map ->
@@ -61,7 +68,9 @@ let test_call_graph_of_define context =
                  (Interprocedural.CallGraph.show_callees value))
         |> String.concat ~sep:"\n")
       expected
-      (Interprocedural.CallGraph.call_graph_of_define ~environment ~define)
+      (Interprocedural.CallGraph.call_graph_of_define ~environment ~define);
+    Interprocedural.DependencyGraphSharedMemory.remove_overriding_types
+      (Reference.Map.keys overrides)
   in
   assert_call_graph_of_define
     ~source:{|
@@ -155,6 +164,63 @@ let test_call_graph_of_define context =
             {
               implicit_self = true;
               targets = [Interprocedural.Callable.create_method (Reference.create "test.C.m")];
+            } );
+      ];
+  assert_call_graph_of_define
+    ~source:
+      {|
+     from typing import Optional
+
+     def foo(c: C):
+       c.m()
+     class C:
+       def m():
+         ...
+     class D(C):
+       def m():
+         ...
+     class E(D):
+       def m():
+         ...
+      |}
+    ~define_name:"test.foo"
+    ~expected:
+      [
+        ( "5:2-5:7",
+          Interprocedural.CallGraph.RegularTargets
+            {
+              implicit_self = true;
+              targets = [Interprocedural.Callable.create_override (Reference.create "test.C.m")];
+            } );
+      ];
+  assert_call_graph_of_define
+    ~source:
+      {|
+     from typing import Optional
+
+     def foo(d: D):
+       d.m()
+     class C:
+       def m():
+         ...
+     class D(C):
+       pass
+     class E(D):
+       def m():
+         ...
+      |}
+    ~define_name:"test.foo"
+    ~expected:
+      [
+        ( "5:2-5:7",
+          Interprocedural.CallGraph.RegularTargets
+            {
+              implicit_self = true;
+              targets =
+                [
+                  Interprocedural.Callable.create_method (Reference.create "test.C.m");
+                  Interprocedural.Callable.create_method (Reference.create "test.E.m");
+                ];
             } );
       ]
 

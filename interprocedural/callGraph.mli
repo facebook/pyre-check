@@ -29,4 +29,10 @@ val defining_attribute
   string ->
   Annotated.Attribute.instantiated option
 
+val compute_indirect_targets
+  :  resolution:Resolution.t ->
+  receiver_type:Type.t ->
+  Ast.Reference.t ->
+  Callable.t list
+
 val resolve_ignoring_optional : resolution:Resolution.t -> Ast.Expression.t -> Type.t
