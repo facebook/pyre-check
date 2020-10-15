@@ -7,6 +7,6 @@
 set -x
 set -e
 
-pip install pyre-check black==19.3b0 pywatchman psutil ipython libcst
+pip install pyre-check black==20.8b1 pywatchman psutil ipython libcst
 pyre --version
 black --version
