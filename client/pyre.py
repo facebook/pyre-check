@@ -610,6 +610,12 @@ def incremental(
     default=False,
     help="Print error message when file fails to annotate.",
 )
+@click.option(
+    "--full-stubs",
+    is_flag=True,
+    default=False,
+    help="Include pre-existing annotations in the generated stubs.",
+)
 @click.pass_context
 def infer(
     context: click.Context,
@@ -621,6 +627,7 @@ def infer(
     json: bool,
     annotate_from_existing_stubs: bool,
     debug_infer: bool,
+    full_stubs: bool,
 ) -> int:
     """
     Try adding type annotations to untyped codebase.
@@ -640,6 +647,7 @@ def infer(
             errors_from_stdin=json,
             annotate_from_existing_stubs=annotate_from_existing_stubs,
             debug_infer=debug_infer,
+            full_stubs=full_stubs,
         ),
         configuration,
         command_argument.noninteractive,

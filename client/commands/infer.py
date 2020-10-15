@@ -16,7 +16,7 @@ import sys
 from collections import defaultdict
 from logging import Logger
 from pathlib import Path
-from typing import IO, Any, List, Optional, Sequence, Set, Union
+from typing import IO, Any, Dict, List, Optional, Sequence, Set, Union
 
 import libcst
 from libcst.codemod import CodemodContext
@@ -25,10 +25,12 @@ from typing_extensions import Final
 
 from .. import command_arguments, log
 from ..analysis_directory import AnalysisDirectory
+from ..annotation_collector import AnnotationCollector
 from ..configuration import Configuration
 from ..error import Error
 from .command import Command, Result, typeshed_search_path
 from .reporting import Reporting
+from .statistics import _get_paths, parse_path_to_module
 
 
 LOG: Logger = logging.getLogger(__name__)
@@ -418,6 +420,33 @@ def annotate_from_existing_stubs(
         subprocess.call(formatter, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 
+def _existing_annotations_as_errors(
+    modules: Dict[Path, Optional[libcst.Module]], project_root: str
+) -> List[Error]:
+    errors = []
+    for path_name, module in modules.items():
+        path_name = str(path_name)
+        path = path_name.replace(".py", "").replace(project_root + "/", "")
+        collector = AnnotationCollector(path)
+        if module is not None:
+            module.visit(collector)
+        for stub in collector.stubs:
+            errors.append(
+                Error(
+                    error={
+                        "path": path_name.replace(project_root + "/", ""),
+                        "inference": stub,
+                        "line": 0,
+                        "column": 0,
+                        "code": 0,
+                        "name": "example_string",
+                        "description": "example description",
+                    }
+                )
+            )
+    return errors
+
+
 class Infer(Reporting):
     NAME = "infer"
 
@@ -435,6 +464,7 @@ class Infer(Reporting):
         errors_from_stdin: bool,
         annotate_from_existing_stubs: bool,
         debug_infer: bool,
+        full_stubs: bool,
     ) -> None:
         super(Infer, self).__init__(
             arguments, original_directory, configuration, analysis_directory
@@ -449,6 +479,7 @@ class Infer(Reporting):
         self._ignore_infer: List[
             str
         ] = self._configuration.get_existent_ignore_infer_paths()
+        self._full_stubs = full_stubs
 
         self._show_error_traces = True
         self._output = command_arguments.JSON
@@ -471,6 +502,20 @@ class Infer(Reporting):
                 self._in_place,
                 self._debug_infer,
             )
+            return self
+        if self._full_stubs:
+            # TODO[T70992118]: Need to support specific files, or directory
+            # (mimic behaviour of in place flag)
+            paths = _get_paths(Path(self._original_directory))
+            modules = {path: parse_path_to_module(path) for path in paths}
+            errors = _existing_annotations_as_errors(
+                modules, self._configuration.project_root
+            )
+            type_directory = Path(
+                os.path.join(self._configuration.log_directory, "types")
+            )
+            stubs = generate_stub_files(full_only=False, errors=errors)
+            write_stubs_to_disk(stubs, type_directory)
             return self
         if self._errors_from_stdin:
             result = self._get_errors_from_stdin()
