@@ -201,6 +201,8 @@ module NodeVisitor = struct
   let node = node_base ~postcondition:false
 
   let node_postcondition = node_base ~postcondition:true
+
+  let visit_statement_children _ _ = true
 end
 
 module Visit = struct

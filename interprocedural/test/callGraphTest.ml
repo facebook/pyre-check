@@ -331,6 +331,38 @@ let test_call_graph_of_define context =
                   `Method { Interprocedural.Callable.class_name = "test.C"; method_name = "__new__" };
                 ];
             } );
+      ];
+  assert_call_graph_of_define
+    ~source:
+      {|
+        class C:
+          @property
+          def p(self) -> int: ...
+          @p.setter
+          def p(self, v: int) -> None: ...
+        def foo(c: C):
+          c.p = c.p
+      |}
+    ~define_name:"test.foo"
+    ~expected:
+      [
+        ( "8:2-8:5",
+          Interprocedural.CallGraph.RegularTargets
+            {
+              implicit_self = true;
+              targets =
+                [
+                  `Method
+                    { Interprocedural.Callable.class_name = "test.C"; method_name = "p$setter" };
+                ];
+            } );
+        ( "8:8-8:11",
+          Interprocedural.CallGraph.RegularTargets
+            {
+              implicit_self = true;
+              targets =
+                [`Method { Interprocedural.Callable.class_name = "test.C"; method_name = "p" }];
+            } );
       ]
 
 

@@ -229,6 +229,45 @@ let resolve_callees ~resolution ~callee =
   resolve_ignoring_optional ~resolution callee |> resolve_callees_from_type ~resolution
 
 
+let get_property_defining_parent ~resolution ~base ~attribute =
+  let annotation =
+    Resolution.resolve_expression_to_type resolution base |> strip_meta |> strip_optional
+  in
+  match defining_attribute ~resolution annotation attribute with
+  | Some property when Annotated.Attribute.property property ->
+      Annotated.Attribute.parent property |> Reference.create |> Option.some
+  | _ -> None
+
+
+let resolve_property_targets ~resolution ~base ~attribute ~setter =
+  match get_property_defining_parent ~resolution ~base ~attribute with
+  | None -> None
+  | Some defining_parent ->
+      let targets =
+        let targets =
+          let receiver_type = resolve_ignoring_optional ~resolution base in
+          if Type.is_meta receiver_type then
+            [Callable.create_method (Reference.create ~prefix:defining_parent attribute)]
+          else
+            let callee = Reference.create ~prefix:defining_parent attribute in
+            compute_indirect_targets ~resolution ~receiver_type callee
+        in
+        if setter then
+          let to_setter target =
+            match target with
+            | `OverrideTarget { Callable.class_name; method_name } ->
+                `OverrideTarget { Callable.class_name; method_name = method_name ^ "$setter" }
+            | `Method { Callable.class_name; method_name } ->
+                `Method { Callable.class_name; method_name = method_name ^ "$setter" }
+            | _ -> target
+          in
+          List.map targets ~f:to_setter
+        else
+          targets
+      in
+      Some (RegularTargets { implicit_self = true; targets })
+
+
 (* This is a bit of a trick. The only place that knows where the local annotation map keys is the
    fixpoint (shared across the type check and additional static analysis modules). By having a
    fixpoint that always terminates (by having a state = unit), we re-use the fixpoint id's without
@@ -243,24 +282,45 @@ module DefineCallGraph (Context : sig
   val callees_at_location : callees Location.Table.t
 end) =
 Fixpoint.Make (struct
-  module CalleeVisitor = Visit.Make (struct
-    type t = Resolution.t
+  type visitor_t = {
+    resolution: Resolution.t;
+    is_assignment_target: bool;
+  }
 
-    let expression resolution { Node.value; location } =
+  module NodeVisitor = struct
+    type nonrec t = visitor_t
+
+    let expression_visitor ({ resolution; is_assignment_target } as state) { Node.value; location } =
+      let register_targets targets =
+        Option.iter targets ~f:(fun data ->
+            Location.Table.set Context.callees_at_location ~key:location ~data)
+      in
       match value with
       | Expression.Call { Call.callee; _ } ->
-          begin
-            match resolve_callees ~resolution ~callee with
-            | Some targets ->
-                Location.Table.set Context.callees_at_location ~key:location ~data:targets
-            | None -> ()
-          end;
-          resolution
-      | _ -> resolution
+          resolve_callees ~resolution ~callee |> register_targets;
+          state
+      | Expression.Name (Name.Attribute { Name.Attribute.base; attribute; _ }) ->
+          resolve_property_targets ~resolution ~base ~attribute ~setter:is_assignment_target
+          |> register_targets;
+          state
+      | _ -> state
 
 
-    let statement resolution _ = resolution
-  end)
+    let statement_visitor state _ = state
+
+    let node state = function
+      | Visit.Expression expression -> expression_visitor state expression
+      | Visit.Statement statement -> statement_visitor state statement
+      | _ -> state
+
+
+    let visit_statement_children _ statement =
+      match Node.value statement with
+      | Statement.Statement.Assign _ -> false
+      | _ -> true
+  end
+
+  module CalleeVisitor = Visit.MakeNodeVisitor (NodeVisitor)
 
   type t = unit [@@deriving show]
 
@@ -269,8 +329,18 @@ Fixpoint.Make (struct
   let widen ~previous:_ ~next:_ ~iteration:_ = ()
 
   let forward_statement ~resolution ~statement =
-    CalleeVisitor.visit resolution (Ast.Source.create [statement]) |> ignore;
-    ()
+    match Node.value statement with
+    | Statement.Statement.Assign { Statement.Assign.target; value; _ } ->
+        CalleeVisitor.visit_expression
+          ~state:(ref { resolution; is_assignment_target = true })
+          target;
+        CalleeVisitor.visit_expression
+          ~state:(ref { resolution; is_assignment_target = false })
+          value
+    | _ ->
+        CalleeVisitor.visit_statement
+          ~state:(ref { resolution; is_assignment_target = false })
+          statement
 
 
   let forward ~key _ ~statement =

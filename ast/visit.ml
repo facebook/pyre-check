@@ -22,6 +22,8 @@ module type NodeVisitor = sig
   type t
 
   val node : t -> node -> t
+
+  val visit_statement_children : t -> Statement.t -> bool
 end
 
 module MakeNodeVisitor (Visitor : NodeVisitor) = struct
@@ -214,7 +216,8 @@ module MakeNodeVisitor (Visitor : NodeVisitor) = struct
       | Break ->
           ()
     in
-    visit_children (Node.value statement);
+    if Visitor.visit_statement_children !state statement then
+      visit_children (Node.value statement);
     visit_node ~state ~visitor (Statement statement)
 
 
@@ -241,6 +244,9 @@ module Make (Visitor : Visitor) = struct
         | Expression expression -> Visitor.expression state expression
         | Statement statement -> Visitor.statement state statement
         | _ -> state
+
+
+      let visit_statement_children _ _ = true
     end)
     in
     NodeVisitor.visit
@@ -356,6 +362,9 @@ struct
         match NodePredicate.predicate node with
         | Some result -> { state with nodes = result :: nodes }
         | None -> state
+
+
+      let visit_statement_children _ _ = true
     end
     in
     let module CollectingVisit = MakeNodeVisitor (CollectingVisitor) in
