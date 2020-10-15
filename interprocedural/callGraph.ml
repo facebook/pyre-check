@@ -164,7 +164,29 @@ let rec resolve_callees_from_type ~resolution ?receiver_type callable_type =
                  })
         | annotation -> resolve_callees_from_type ~resolution annotation
       else
-        None
+        resolve_constructor_callee ~resolution callable_type
+
+
+and resolve_constructor_callee ~resolution class_type =
+  match
+    ( Resolution.resolve_attribute_access resolution ~base_type:class_type ~attribute:"__new__",
+      Resolution.resolve_attribute_access resolution ~base_type:class_type ~attribute:"__init__" )
+  with
+  | Type.Any, _
+  | Type.Top, _
+  | _, Type.Any
+  | _, Type.Top ->
+      None
+  | new_callable_type, init_callable_type -> (
+      let new_targets, init_targets =
+        ( resolve_callees_from_type ~resolution ~receiver_type:class_type new_callable_type,
+          resolve_callees_from_type ~resolution ~receiver_type:class_type init_callable_type )
+      in
+      match new_targets, init_targets with
+      | ( Some (RegularTargets { targets = new_targets; _ }),
+          Some (RegularTargets { targets = init_targets; _ }) ) ->
+          Some (ConstructorTargets { new_targets; init_targets })
+      | _ -> None )
 
 
 let defining_attribute ~resolution parent_type attribute =

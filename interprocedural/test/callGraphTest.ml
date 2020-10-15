@@ -281,6 +281,56 @@ let test_call_graph_of_define context =
               targets =
                 [Interprocedural.Callable.create_method (Reference.create "test.C.__call__")];
             } );
+      ];
+  assert_call_graph_of_define
+    ~source:
+      {|
+       class C:
+         def __init__(self, a): ...
+       def foo():
+         C()
+    |}
+    ~define_name:"test.foo"
+    ~expected:
+      [
+        ( "5:2-5:5",
+          Interprocedural.CallGraph.ConstructorTargets
+            {
+              init_targets =
+                [
+                  `Method
+                    { Interprocedural.Callable.class_name = "test.C"; method_name = "__init__" };
+                ];
+              new_targets =
+                [
+                  `Method { Interprocedural.Callable.class_name = "object"; method_name = "__new__" };
+                ];
+            } );
+      ];
+  assert_call_graph_of_define
+    ~source:
+      {|
+       class C:
+         def __new__(cls, a): ...
+       def foo():
+         C()
+    |}
+    ~define_name:"test.foo"
+    ~expected:
+      [
+        ( "5:2-5:5",
+          Interprocedural.CallGraph.ConstructorTargets
+            {
+              init_targets =
+                [
+                  `Method
+                    { Interprocedural.Callable.class_name = "object"; method_name = "__init__" };
+                ];
+              new_targets =
+                [
+                  `Method { Interprocedural.Callable.class_name = "test.C"; method_name = "__new__" };
+                ];
+            } );
       ]
 
 
