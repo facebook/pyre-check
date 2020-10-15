@@ -33,7 +33,7 @@ class GlobalModelGenerator(ModelGenerator[Model]):
     ) -> None:
         self.root: str = root
         self.stub_root: Final[Optional[str]] = stub_root
-        self.blacklisted_globals: Set[str] = (blacklisted_globals or set())
+        self.blacklisted_globals: Set[str] = blacklisted_globals or set()
         self.blacklisted_global_directories: Set[str] = (
             blacklisted_global_directories or set()
         )

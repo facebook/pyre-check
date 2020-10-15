@@ -51,21 +51,21 @@ class Subscriber(object):
     @property
     def _name(self) -> str:
         """
-            A name to identify the subscriber. Used as the directory and file names
-            for the log, lock, and pid files.
+        A name to identify the subscriber. Used as the directory and file names
+        for the log, lock, and pid files.
         """
         raise NotImplementedError
 
     @property
     def _subscriptions(self) -> List[Subscription]:
         """
-            List of subscriptions
+        List of subscriptions
         """
         raise NotImplementedError
 
     def _handle_response(self, response: Dict[str, Any]) -> None:
         """
-            Callback invoked when a message is received from watchman
+        Callback invoked when a message is received from watchman
         """
         raise NotImplementedError
 
@@ -174,8 +174,8 @@ class Subscriber(object):
 
     def daemonize(self) -> None:
         """We double-fork here to detach the daemon process from the parent.
-           If we were to just fork the child as a daemon, we'd have to worry about the
-           parent process exiting zombifying the daemon."""
+        If we were to just fork the child as a daemon, we'd have to worry about the
+        parent process exiting zombifying the daemon."""
         LOG.debug(f"Daemonizing the {self._name}.")
         if os.fork() == 0:
             pid = os.fork()

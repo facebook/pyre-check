@@ -197,8 +197,8 @@ class FastBuckBuilder(BuckBuilder):
 class SimpleBuckBuilder(BuckBuilder):
     def build(self, targets: Iterable[str]) -> BuckBuildOutput:
         """
-            Shell out to buck to build the targets, then yield the paths to the
-            link trees.
+        Shell out to buck to build the targets, then yield the paths to the
+        link trees.
         """
         return BuckBuildOutput(
             output_directories=list(generate_source_directories(targets)),

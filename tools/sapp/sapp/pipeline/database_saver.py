@@ -62,7 +62,7 @@ class DatabaseSaver(PipelineStep[TraceGraph, RunSummary]):
 
     # pyre-fixme[3]: Return type must be annotated.
     def _prep_save(self):
-        """ Prepares the bulk saver to load the trace graph info into the
+        """Prepares the bulk saver to load the trace graph info into the
         database.
         """
         log.info("Preparing bulk save.")
@@ -78,8 +78,7 @@ class DatabaseSaver(PipelineStep[TraceGraph, RunSummary]):
             )
 
     def _save(self) -> RunSummary:
-        """ Saves bulk saver's info into the databases in bulk.
-        """
+        """Saves bulk saver's info into the databases in bulk."""
         assert self.summary["run"] is not None, "Must have called process before"
 
         trace_frames = self.bulk_saver.get_items_to_add(TraceFrame)

@@ -20,13 +20,13 @@ from .watchman import LOG, Subscriber, Subscription
 
 class ConfigurationMonitor(Subscriber):
     """
-        The ConfigurationMonitor watches only for .pyre_configuration(.local)
-        files, and will kill the corresponding server when a configuration changes.
-        Logs are found in
-        .pyre/<local-root>/configuration_monitor/configuration_monitor.log
-        To kill a monitor, get pid from
-        .pyre/<local-root>/configuration_monitor/configuration_monitor.pid
-        and kill <pid>.
+    The ConfigurationMonitor watches only for .pyre_configuration(.local)
+    files, and will kill the corresponding server when a configuration changes.
+    Logs are found in
+    .pyre/<local-root>/configuration_monitor/configuration_monitor.log
+    To kill a monitor, get pid from
+    .pyre/<local-root>/configuration_monitor/configuration_monitor.pid
+    and kill <pid>.
     """
 
     def __init__(

@@ -79,10 +79,10 @@ class Parser(BaseParser):
         self, handle: IO[str]
     ) -> Iterable[Tuple[Dict[str, Any], Dict[str, int]]]:
         """Parse analysis in jsonlines format:
-            { "file_version": 2, "config": <json> }
-            { <error1> }
-            { <error2> }
-            ...
+        { "file_version": 2, "config": <json> }
+        { <error1> }
+        { <error2> }
+        ...
         """
         header = json.loads(handle.readline())
         assert header["file_version"] == 2

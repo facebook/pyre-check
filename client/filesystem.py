@@ -168,13 +168,13 @@ def _compute_symbolic_link_mapping(
     directory: str, extensions: Iterable[str]
 ) -> Dict[str, str]:
     """
-        Given a shared analysis directory, produce a mapping from actual source files
-        to files contained within this directory. Only includes files which have
-        one of the provided extensions.
+    Given a shared analysis directory, produce a mapping from actual source files
+    to files contained within this directory. Only includes files which have
+    one of the provided extensions.
 
-        Watchman watches actual source files, so when a change is detected to a
-        file, this mapping can be used to identify what file changed from Pyre's
-        perspective.
+    Watchman watches actual source files, so when a change is detected to a
+    file, this mapping can be used to identify what file changed from Pyre's
+    perspective.
     """
     symbolic_links = {}
     try:
@@ -264,12 +264,12 @@ class Filesystem:
         self, root: str, patterns: List[str], exclude: Optional[List[str]] = None
     ) -> List[str]:
         """
-            Return the list of files that match any of the patterns within root.
-            If exclude is provided, files that match an exclude pattern are omitted.
+        Return the list of files that match any of the patterns within root.
+        If exclude is provided, files that match an exclude pattern are omitted.
 
-            Note: The `find` command does not understand globs properly.
-                e.g. 'a/*.py' will match 'a/b/c.py'
-            For this reason, avoid calling this method with glob patterns.
+        Note: The `find` command does not understand globs properly.
+            e.g. 'a/*.py' will match 'a/b/c.py'
+        For this reason, avoid calling this method with glob patterns.
         """
 
         command = ["find", "."]

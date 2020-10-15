@@ -76,7 +76,7 @@ class FunctionStub:
         return " -> " + dequalify(self.actual) if self.actual else ""
 
     def _get_parameter_string(self) -> str:
-        """ Depending on if an argument has a type, the style for default values
+        """Depending on if an argument has a type, the style for default values
         changes. E.g.
            def fun(x=5)
            def fun(x : int = 5)
@@ -236,9 +236,9 @@ class StubFile:
 
     def to_string(self) -> str:
         """We currently ignore nested classes, i.e.:
-          class X:
-              class Y:
-                  [ALL OF THIS IS IGNORED]
+        class X:
+            class Y:
+                [ALL OF THIS IS IGNORED]
         """
         classes = defaultdict(list)
         typing_imports = set()

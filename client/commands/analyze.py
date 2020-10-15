@@ -47,8 +47,8 @@ class Analyze(Check):
             analysis_directory=analysis_directory,
         )
         self._analysis: str = analysis
-        self._taint_models_path: List[str] = (
-            taint_models_path or list(self._configuration.taint_models_path)
+        self._taint_models_path: List[str] = taint_models_path or list(
+            self._configuration.taint_models_path
         )
         self._no_verify: bool = no_verify
         self._save_results_to: Final[Optional[str]] = save_results_to

@@ -134,16 +134,16 @@ class AnalysisDirectory:
 
     def process_updated_files(self, paths: List[str]) -> UpdatedPaths:
         """
-            Process a list of paths which were added/removed/updated, making any
-            necessary changes to the directory:
-                - For an AnalysisDirectory, nothing needs to be changed, since
-                  the mapping from source file to analysis file is 1:1.
-                - For a SharedAnalysisDirectory, the symbolic links (as well as
-                  the reverse-mapping we track) need to be updated to account for
-                  new and deleted files.
+        Process a list of paths which were added/removed/updated, making any
+        necessary changes to the directory:
+            - For an AnalysisDirectory, nothing needs to be changed, since
+              the mapping from source file to analysis file is 1:1.
+            - For a SharedAnalysisDirectory, the symbolic links (as well as
+              the reverse-mapping we track) need to be updated to account for
+              new and deleted files.
 
-            Return a list of files (corresponding to the given paths) that Pyre
-            should be tracking.
+        Return a list of files (corresponding to the given paths) that Pyre
+        should be tracking.
         """
         deleted_paths = [path for path in paths if not os.path.isfile(path)]
         tracked_paths = [

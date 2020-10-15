@@ -150,9 +150,11 @@ class MonitorTest(unittest.TestCase):
             configuration.log_directory = root + "/.pyre"
             configuration.extensions = []
             analysis_directory = MagicMock()
-            analysis_directory.process_updated_files.side_effect = lambda files: UpdatedPaths(
-                updated_paths=[file.replace("ROOT", "ANALYSIS") for file in files],
-                deleted_paths=[],
+            analysis_directory.process_updated_files.side_effect = (
+                lambda files: UpdatedPaths(
+                    updated_paths=[file.replace("ROOT", "ANALYSIS") for file in files],
+                    deleted_paths=[],
+                )
             )
 
             # only create the monitor once the socket is open

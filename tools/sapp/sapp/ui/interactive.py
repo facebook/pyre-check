@@ -429,8 +429,7 @@ details              show additional information about the current trace frame
     @catch_user_error()
     # pyre-fixme[3]: Return type must be annotated.
     def show(self):
-        """ More details about the selected issue or trace frame.
-        """
+        """More details about the selected issue or trace frame."""
         self._verify_entrypoint_selected()
 
         if self.current_issue_instance_id != -1:
@@ -972,8 +971,7 @@ details              show additional information about the current trace frame
     @catch_user_error()
     # pyre-fixme[3]: Return type must be annotated.
     def next_cursor_location(self):
-        """Move cursor to the next trace frame.
-        """
+        """Move cursor to the next trace frame."""
         self._verify_entrypoint_selected()
         self.current_trace_frame_index = min(
             self.current_trace_frame_index + 1, len(self.trace_tuples) - 1
@@ -983,8 +981,7 @@ details              show additional information about the current trace frame
     @catch_user_error()
     # pyre-fixme[3]: Return type must be annotated.
     def prev_cursor_location(self):
-        """Move cursor to the previous trace frame.
-        """
+        """Move cursor to the previous trace frame."""
         self._verify_entrypoint_selected()
         self.current_trace_frame_index = max(self.current_trace_frame_index - 1, 0)
         self.trace()
@@ -1233,8 +1230,7 @@ details              show additional information about the current trace frame
     def _group_trace_frames(
         self, trace_frames: Iterable[TraceFrameQueryResult], limit: int
     ) -> Dict[Tuple[str, str], List[TraceFrameQueryResult]]:
-        """Buckets together trace frames that have the same caller:caller_port.
-        """
+        """Buckets together trace frames that have the same caller:caller_port."""
         caller_buckets: DefaultDict[
             Tuple[str, str], List[TraceFrameQueryResult]
         ] = defaultdict(list)
@@ -1709,8 +1705,7 @@ details              show additional information about the current trace frame
     def _get_callable_from_trace_tuple(
         self, trace_tuple: TraceTuple
     ) -> Tuple[str, str]:
-        """Returns either (caller, caller_port) or (callee, callee_port).
-        """
+        """Returns either (caller, caller_port) or (callee, callee_port)."""
         trace_frame = trace_tuple.trace_frame
         if trace_tuple.placeholder:
             return trace_frame.caller, trace_frame.caller_port

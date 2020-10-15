@@ -254,12 +254,14 @@ class PartialConfiguration:
         arguments: command_arguments.CommandArguments,
     ) -> "PartialConfiguration":
         strict: Optional[bool] = True if arguments.strict else None
-        source_directories: Optional[List[str]] = arguments.source_directories if len(
+        source_directories: Optional[List[str]] = (
             arguments.source_directories
-        ) > 0 else None
-        targets: Optional[List[str]] = arguments.targets if len(
-            arguments.targets
-        ) > 0 else None
+            if len(arguments.source_directories) > 0
+            else None
+        )
+        targets: Optional[List[str]] = (
+            arguments.targets if len(arguments.targets) > 0 else None
+        )
         return PartialConfiguration(
             autocomplete=None,
             binary=arguments.binary,
@@ -857,8 +859,10 @@ def check_nested_local_configuration(configuration: Configuration) -> None:
         nesting_configuration = PartialConfiguration.from_file(
             nesting_local_root / LOCAL_CONFIGURATION_FILE
         ).expand_relative_paths(str(nesting_local_root))
-        nesting_ignored_all_errors_path = _expand_and_get_existent_ignore_all_errors_path(
-            nesting_configuration.ignore_all_errors, str(found_root.global_root)
+        nesting_ignored_all_errors_path = (
+            _expand_and_get_existent_ignore_all_errors_path(
+                nesting_configuration.ignore_all_errors, str(found_root.global_root)
+            )
         )
         if not any(
             is_subdirectory(child=local_root_path, parent=Path(path))

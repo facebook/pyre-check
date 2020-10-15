@@ -94,16 +94,14 @@ class BaseParser(PipelineStep[InputFiles, DictEntries]):
 
     # @abstractmethod
     def parse(self, input: AnalysisOutput) -> Iterable[Dict[str, Any]]:
-        """Must return objects with a 'type': ParseType field.
-        """
+        """Must return objects with a 'type': ParseType field."""
         raise NotImplementedError("Abstract method called!")
         return
         yield
 
     # @abstractmethod
     def parse_handle(self, handle: TextIO) -> Iterable[Dict[str, Any]]:
-        """Must return objects with a 'type': ParseType field.
-        """
+        """Must return objects with a 'type': ParseType field."""
         raise NotImplementedError("Abstract method called!")
         return
         yield

@@ -357,10 +357,10 @@ class TraceGraph(object):
 
     def _save_trace_frame_leaf_assoc(self, bulk_saver: BulkSaver) -> None:
         """Adds trace frame leaf assocs to bulk saver after filtering them:
-           1. if frame is a leaf, include all kinds
-           2. otherwise, find outgoing leaf kinds and intersect with union of incoming
-              leaf kinds of all successor frames.
-           3. include only kinds that map to one of these outgoing kinds.
+        1. if frame is a leaf, include all kinds
+        2. otherwise, find outgoing leaf kinds and intersect with union of incoming
+           leaf kinds of all successor frames.
+        3. include only kinds that map to one of these outgoing kinds.
         """
         for trace_frame_id, leaf_ids in self._trace_frame_leaf_assoc.items():
             frame = self._trace_frames[trace_frame_id]
@@ -377,7 +377,7 @@ class TraceGraph(object):
 
     def _is_opposite_leaf(self, frame: TraceFrame, leaf: SharedText) -> bool:
         """We may be propagating sources along sink traces or vice versa. These should
-           not be filtered and are identified here."""
+        not be filtered and are identified here."""
         return (
             frame.kind == TraceKind.PRECONDITION and leaf.kind == SharedTextKind.SOURCE
         ) or (

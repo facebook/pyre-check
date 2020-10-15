@@ -179,8 +179,8 @@ class Repository:
 
     def _copy_commit(self, original_path, destination_path) -> None:
         """
-            Copies the next commit at original_path to destination path. Can be
-            overridden by child classes to change copying logic.
+        Copies the next commit at original_path to destination path. Can be
+        overridden by child classes to change copying logic.
         """
         # I could not find the right flags for rsync to touch/write
         # only the changed files. This is crucial for watchman to

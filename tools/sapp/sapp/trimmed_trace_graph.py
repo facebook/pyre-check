@@ -19,16 +19,14 @@ class TrimmedTraceGraph(TraceGraph):
     def __init__(
         self, affected_files: List[str], affected_issues_only: bool = False
     ) -> None:
-        """Creates an empty TrimmedTraceGraph.
-        """
+        """Creates an empty TrimmedTraceGraph."""
         super().__init__()
         self._affected_files = affected_files
         self._affected_issues_only = affected_issues_only
         self._visited_trace_frame_ids: Set[int] = set()
 
     def populate_from_trace_graph(self, graph: TraceGraph) -> None:
-        """Populates this graph from the given one based on affected_files
-        """
+        """Populates this graph from the given one based on affected_files"""
         # Track which trace frames have been visited as we populate the full
         # traces of the graph.
         self._visited_trace_frame_ids: Set[int] = set()
@@ -324,7 +322,7 @@ class TrimmedTraceGraph(TraceGraph):
             add_condition(condition_id)
 
     def _populate_issue_and_traces(self, graph: TraceGraph, instance_id: int) -> None:
-        """ Copies an issue over from the given trace graph, including all its
+        """Copies an issue over from the given trace graph, including all its
         traces and assocs.
         """
         self._populate_issue(graph, instance_id)
@@ -369,7 +367,7 @@ class TrimmedTraceGraph(TraceGraph):
             self.add_issue_instance_shared_text_assoc(instance, shared_text)
 
     def _populate_trace(self, graph: TraceGraph, trace_frame_ids: List[int]) -> None:
-        """ Populates (from the given trace graph) the forward and backward
+        """Populates (from the given trace graph) the forward and backward
         traces reachable from the given traces (including input trace frames).
         Make sure to respect trace kind in successors
         """
@@ -391,7 +389,7 @@ class TrimmedTraceGraph(TraceGraph):
             )
 
     def _add_trace_frame(self, graph: TraceGraph, trace_frame: TraceFrame) -> None:
-        """ Copies the trace frame from 'graph' to this (self) graph.
+        """Copies the trace frame from 'graph' to this (self) graph.
         Also copies all the trace_frame-leaf assocs since we don't
         know which ones are needed until we know the issue that reaches it
         """

@@ -175,8 +175,7 @@ class AnalysisOutput(object):
                     yield f
 
     def file_names(self) -> Iterable[str]:
-        """Generates all file names that are used to generate file_handles.
-        """
+        """Generates all file names that are used to generate file_handles."""
         filename_spec = self.filename_spec
         filename_glob = self.filename_glob
         if self.is_sharded():

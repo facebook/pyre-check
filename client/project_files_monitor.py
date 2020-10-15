@@ -37,10 +37,10 @@ def _log_paths(message: str, paths: Sequence[str]) -> None:
 
 class ProjectFilesMonitor(Subscriber):
     """
-        Logs from this monitor are found in
-        .pyre/<local root>/file_monitor/file_monitor.log
-        One file monitor is spawned per pyre server. When a server is stopped,
-        the process of pyre file monitor associated to it is killed.
+    Logs from this monitor are found in
+    .pyre/<local root>/file_monitor/file_monitor.log
+    One file monitor is spawned per pyre server. When a server is stopped,
+    the process of pyre file monitor associated to it is killed.
     """
 
     NAME = "file_monitor"
