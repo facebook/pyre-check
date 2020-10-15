@@ -222,6 +222,65 @@ let test_call_graph_of_define context =
                   Interprocedural.Callable.create_method (Reference.create "test.E.m");
                 ];
             } );
+      ];
+  assert_call_graph_of_define
+    ~source:
+      {|
+    class C:
+      def __call__(self, a: int): ...
+    def foo(c: C):
+       c(1)
+    |}
+    ~define_name:"test.foo"
+    ~expected:
+      [
+        ( "5:3-5:7",
+          Interprocedural.CallGraph.RegularTargets
+            {
+              implicit_self = true;
+              targets =
+                [Interprocedural.Callable.create_method (Reference.create "test.C.__call__")];
+            } );
+      ];
+  assert_call_graph_of_define
+    ~source:
+      {|
+    class C:
+      @staticmethod
+      def __call__(a: int): ...
+    def foo(c: C):
+       c(1)
+    |}
+    ~define_name:"test.foo"
+    ~expected:
+      [
+        ( "6:3-6:7",
+          Interprocedural.CallGraph.RegularTargets
+            {
+              implicit_self = false;
+              targets =
+                [Interprocedural.Callable.create_function (Reference.create "test.C.__call__")];
+            } );
+      ];
+  assert_call_graph_of_define
+    ~source:
+      {|
+    from typing import Protocol
+    class C(Protocol):
+      def __call__(self, a: int): ...
+    def foo(c: C):
+       c(1)
+    |}
+    ~define_name:"test.foo"
+    ~expected:
+      [
+        ( "6:3-6:7",
+          Interprocedural.CallGraph.RegularTargets
+            {
+              implicit_self = true;
+              targets =
+                [Interprocedural.Callable.create_method (Reference.create "test.C.__call__")];
+            } );
       ]
 
 
