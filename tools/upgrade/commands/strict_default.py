@@ -8,12 +8,11 @@ import logging
 from pathlib import Path
 from typing import Optional
 
-from tools.pyre.client.find_directories import (
+from ....client.find_directories import (
     CONFIGURATION_FILE,
     LOCAL_CONFIGURATION_FILE,
     find_global_and_local_root,
 )
-
 from .. import UserError
 from ..configuration import Configuration
 from ..errors import Errors, PartialErrorSuppression
