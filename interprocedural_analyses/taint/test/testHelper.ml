@@ -482,7 +482,7 @@ let initialize
       DependencyGraph.create_overrides ~environment ~source
       |> Reference.Map.filter_keys ~f:(fun override -> not (Set.mem skip_overrides override))
     in
-    Service.StaticAnalysis.record_overrides overrides;
+    DependencyGraphSharedMemory.record_overrides overrides;
     DependencyGraph.from_overrides overrides
   in
   let callgraph =

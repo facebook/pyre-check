@@ -16,8 +16,6 @@ val record_and_merge_call_graph
   source:Source.t ->
   DependencyGraph.callgraph
 
-val record_overrides : ?maximum_overrides_to_analyze:int -> DependencyGraph.overrides -> unit
-
 type found_callable = {
   callable: Callable.real_target;
   define: Define.t Node.t;

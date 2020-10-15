@@ -12,3 +12,5 @@ val add_overriding_types : member:Reference.t -> subtypes:Reference.t list -> un
 val get_overriding_types : member:Reference.t -> Reference.t list option
 
 val overrides_exist : Reference.t -> bool
+
+val record_overrides : ?maximum_overrides_to_analyze:int -> DependencyGraph.overrides -> unit
