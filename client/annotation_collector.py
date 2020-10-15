@@ -14,9 +14,9 @@ class AnnotationCollector(cst.CSTVisitor):
         self.class_name: List[str] = []
         self.path_name: str = str(path_name).replace("/", ".")
 
-    def visit_FunctionDef(self, node: cst.FunctionDef) -> None:
+    def visit_FunctionDef(self, node: cst.FunctionDef) -> bool:
         if node.returns is None:
-            return
+            return False
         class_name = ".".join(self.class_name)
         name = (
             node.name.value
@@ -48,12 +48,28 @@ class AnnotationCollector(cst.CSTVisitor):
             "parent": class_name if self.class_name else None,
         }
         self.stubs.append(function_stub)
+        return False
 
     def visit_ClassDef(self, node: cst.ClassDef) -> None:
         self.class_name.append(node.name.value)
 
     def leave_ClassDef(self, original_node: cst.ClassDef) -> None:
         self.class_name.remove(original_node.name.value)
+
+    def visit_AnnAssign(self, node: cst.AnnAssign) -> None:
+        target_name = self.code_for_node(node.target)
+        if target_name is None:
+            return
+        class_name = ".".join(self.class_name)
+        attribute_name = (
+            class_name + "." + target_name if self.class_name else target_name
+        )
+        stub = {
+            "attribute_name": self.path_name + "." + attribute_name,
+            "annotation": self.code_for_node(node.annotation.annotation),
+            "parent": class_name if self.class_name else None,
+        }
+        self.stubs.append(stub)
 
     # Class helper methods
     @classmethod

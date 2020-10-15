@@ -139,6 +139,24 @@ class HelperTest(unittest.TestCase):
             "@@click\n\ndef foo() -> int: ...",
         )
 
+        # attributes
+        assert_stub_equal(
+            """
+            x: int = 10
+            """,
+            "x: int = ...",
+        )
+        assert_stub_equal(
+            """
+            class Foo:
+                x: int = 10
+            """,
+            """
+            class Foo:
+                x: int = ...
+            """,
+        )
+
 
 class PyreTest(unittest.TestCase):
     def assert_imports(self, error_json, expected_imports) -> None:
