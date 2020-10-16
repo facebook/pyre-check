@@ -30,7 +30,7 @@ from ..configuration import Configuration
 from ..error import Error
 from .command import Command, Result, typeshed_search_path
 from .reporting import Reporting
-from .statistics import _get_paths, parse_path_to_module
+from .statistics import _get_paths, _parse_paths, parse_path_to_module
 
 
 LOG: Logger = logging.getLogger(__name__)
@@ -464,7 +464,7 @@ class Infer(Reporting):
         errors_from_stdin: bool,
         annotate_from_existing_stubs: bool,
         debug_infer: bool,
-        full_stubs: bool,
+        full_stub_paths: Optional[List[str]],
     ) -> None:
         super(Infer, self).__init__(
             arguments, original_directory, configuration, analysis_directory
@@ -479,7 +479,7 @@ class Infer(Reporting):
         self._ignore_infer: List[
             str
         ] = self._configuration.get_existent_ignore_infer_paths()
-        self._full_stubs = full_stubs
+        self._full_stub_paths: Final[Optional[List[str]]] = full_stub_paths
 
         self._show_error_traces = True
         self._output = command_arguments.JSON
@@ -503,10 +503,11 @@ class Infer(Reporting):
                 self._debug_infer,
             )
             return self
-        if self._full_stubs:
-            # TODO[T70992118]: Need to support specific files, or directory
-            # (mimic behaviour of in place flag)
-            paths = _get_paths(Path(self._original_directory))
+        if self._full_stub_paths is not None:
+            if self._full_stub_paths:
+                paths = _parse_paths([Path(path) for path in self._full_stub_paths])
+            else:
+                paths = _get_paths(Path(self._original_directory))
             modules = {path: parse_path_to_module(path) for path in paths}
             errors = _existing_annotations_as_errors(
                 modules, self._configuration.project_root

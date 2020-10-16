@@ -706,7 +706,7 @@ class InferTest(unittest.TestCase):
                 errors_from_stdin=False,
                 annotate_from_existing_stubs=False,
                 debug_infer=False,
-                full_stubs=False,
+                full_stub_paths=None,
             )
             self.assertEqual(
                 command._flags(),
@@ -741,7 +741,7 @@ class InferTest(unittest.TestCase):
                 errors_from_stdin=False,
                 annotate_from_existing_stubs=False,
                 debug_infer=False,
-                full_stubs=False,
+                full_stub_paths=None,
             )
             self.assertEqual(
                 command._flags(),
@@ -776,7 +776,7 @@ class InferTest(unittest.TestCase):
                     errors_from_stdin=True,
                     annotate_from_existing_stubs=False,
                     debug_infer=False,
-                    full_stubs=False,
+                    full_stub_paths=None,
                 )
                 self.assertEqual(
                     command._flags(),
@@ -811,7 +811,7 @@ class InferTest(unittest.TestCase):
                     errors_from_stdin=True,
                     annotate_from_existing_stubs=False,
                     debug_infer=False,
-                    full_stubs=False,
+                    full_stub_paths=None,
                 )
                 self.assertEqual(
                     command._flags(),
