@@ -4,6 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 
+import json
 import logging
 import os
 import shutil
@@ -64,15 +65,36 @@ def _log_statistics(
         )
 
 
+def _show_pyre_version_as_text(
+    binary_version: Optional[str], client_version: str
+) -> None:
+    if binary_version:
+        log.stdout.write(f"Binary version: {binary_version}\n")
+    log.stdout.write(f"Client version: {__version__}\n")
+
+
+def _show_pyre_version_as_json(
+    binary_version: Optional[str], client_version: str
+) -> None:
+    version_json = {
+        **({} if binary_version is None else {"binary": binary_version}),
+        "client": client_version,
+    }
+    log.stdout.write(f"{json.dumps(version_json)}\n")
+
+
 def _show_pyre_version(arguments: command_arguments.CommandArguments) -> None:
+    binary_version: Optional[str] = None
+    client_version: str = __version__
     try:
         configuration = configuration_module.create_configuration(arguments, Path("."))
         binary_version = configuration.get_binary_version()
-        if binary_version:
-            log.stdout.write(f"Binary version: {binary_version}\n")
     except Exception:
         pass
-    log.stdout.write(f"Client version: {__version__}\n")
+    if arguments.output == command_arguments.JSON:
+        _show_pyre_version_as_json(binary_version, client_version)
+    else:
+        _show_pyre_version_as_text(binary_version, client_version)
 
 
 def run_pyre_command(
