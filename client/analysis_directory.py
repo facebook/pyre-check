@@ -222,7 +222,7 @@ class SharedAnalysisDirectory(AnalysisDirectory):
 
     def get_scratch_directory(self) -> str:
         try:
-            return (
+            return os.path.realpath(
                 subprocess.check_output(["mkscratch", "path", "--subdir", "pyre"])
                 .decode("utf-8")
                 .strip()
