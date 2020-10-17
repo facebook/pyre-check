@@ -175,6 +175,20 @@ class SitePackageSearchPathElement(SearchPathElement):
         return self
 
 
+def _get_site_roots() -> List[str]:
+    try:
+        return site.getsitepackages()
+    except AttributeError:
+        # There are a few Python versions that ship with a broken venv,
+        # where `getsitepackages` is not available.
+        LOG.warning(
+            "`site.getsitepackages()` is not available in your virtualenv. "
+            "This is a known virtualenv bug and as a workaround please avoid"
+            'using `"site-package"` in your search path configuration.'
+        )
+        return []
+
+
 def create_search_paths(
     json: Union[str, Dict[str, str]], site_roots: Iterable[str]
 ) -> List[SearchPathElement]:
@@ -355,12 +369,12 @@ class PartialConfiguration:
                     element
                     for json in search_path_json
                     for element in create_search_paths(
-                        json, site_roots=site.getsitepackages()
+                        json, site_roots=_get_site_roots()
                     )
                 ]
             else:
                 search_path = create_search_paths(
-                    search_path_json, site_roots=site.getsitepackages()
+                    search_path_json, site_roots=_get_site_roots()
                 )
 
             partial_configuration = PartialConfiguration(
