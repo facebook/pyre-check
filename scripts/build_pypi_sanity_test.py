@@ -61,6 +61,7 @@ def run_sanity_test(version: str, use_wheel: bool) -> None:
         builder.create(venv)
 
         pyre_path = venv / "bin" / "pyre"
+        pyre_upgrade_path = venv / "bin" / "pyre-upgrade"
 
         # Confirm that pypi package can be successfully installed
         wheel_flag = "--only-binary" if use_wheel else "--no-binary"
@@ -78,6 +79,7 @@ def run_sanity_test(version: str, use_wheel: bool) -> None:
             ]
         )
         production_assert(pyre_path.exists(), "Pyre was not installed.")
+        production_assert(pyre_upgrade_path.exists(), "Pyre upgrade was not installed.")
 
         # Create test project.
         with tempfile.TemporaryDirectory() as temporary_project:
@@ -99,7 +101,7 @@ def run_sanity_test(version: str, use_wheel: bool) -> None:
             )
             validate_configuration(temporary_project_path)
 
-            # Confirm Pyre reports errors as expected.
+            # Confirm `pyre` reports errors as expected.
             result = subprocess.run(
                 [pyre_path, "--output=json", "check"],
                 capture_output=True,
@@ -117,6 +119,19 @@ def run_sanity_test(version: str, use_wheel: bool) -> None:
                 "Incorrect pyre errors returned."
                 if errors
                 else "Expected pyre errors but none returned.",
+            )
+
+            # Confirm `pyre-upgrade` runs successfully.
+            upgrade_process = subprocess.run(
+                [str(pyre_upgrade_path), "fixme"],
+                cwd=temporary_project_path,
+                input=b"[]",
+                capture_output=True,
+            )
+            error_message = upgrade_process.stderr.decode()
+            production_assert(
+                upgrade_process.returncode == 0,
+                f"Failed to run `pyre-upgrade` successfully: {error_message}",
             )
 
 
