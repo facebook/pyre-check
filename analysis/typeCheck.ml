@@ -2751,7 +2751,7 @@ module State (Context : Context) = struct
           | _ -> resolution, [], left
         in
         let operator = { operator with left } in
-        match ComparisonOperator.override operator with
+        match ComparisonOperator.override ~location operator with
         | Some expression ->
             let resolved = forward_expression ~resolution ~expression in
             { resolved with errors = List.append errors resolved.errors }

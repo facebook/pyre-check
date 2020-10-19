@@ -176,7 +176,7 @@ and ComparisonOperator : sig
 
   val pp_comparison_operator : Format.formatter -> operator -> unit
 
-  val override : t -> Expression.t option
+  val override : location:Location.t -> t -> Expression.t option
 
   val location_insensitive_compare : t -> t -> int
 end = struct
@@ -230,7 +230,7 @@ end = struct
       | NotIn -> "not in" )
 
 
-  let override { left = { Node.location; _ } as left; operator; right } =
+  let override ~location { left; operator; right } =
     let left, right =
       match operator with
       | In -> right, left

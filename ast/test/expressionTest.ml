@@ -356,9 +356,9 @@ let test_delocalize _ =
 
 let test_comparison_operator_override _ =
   let assert_override source expected =
-    let operator =
+    let operator, location =
       match parse_single_expression source with
-      | { Node.value = ComparisonOperator operator; _ } -> operator
+      | { Node.value = ComparisonOperator operator; location } -> operator, location
       | _ -> failwith "Could not parse comparison operator."
     in
     assert_equal
@@ -368,7 +368,7 @@ let test_comparison_operator_override _ =
         | _ -> "None")
       ~cmp:(Option.equal (fun left right -> Expression.location_insensitive_compare left right = 0))
       (expected >>| parse_single_expression ~coerce_special_methods:true)
-      (ComparisonOperator.override operator)
+      (ComparisonOperator.override ~location operator)
   in
   assert_override "a < b" (Some "a.__lt__(b)");
   assert_override "a == b" (Some "a.__eq__(b)");

@@ -1108,7 +1108,9 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           let right_taint, state = analyze_expression ~resolution ~state ~expression:right in
           ForwardState.Tree.join left_taint right_taint, state
       | ComparisonOperator ({ left; operator = _; right } as comparison) -> (
-          match ComparisonOperator.override comparison with
+          match
+            ComparisonOperator.override ~location:(Location.strip_module location) comparison
+          with
           | Some override -> analyze_expression ~resolution ~state ~expression:override
           | None ->
               let left_taint, state = analyze_expression ~resolution ~state ~expression:left in

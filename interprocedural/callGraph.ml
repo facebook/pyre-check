@@ -416,7 +416,7 @@ Fixpoint.Make (struct
           |> register_targets;
           state
       | Expression.ComparisonOperator comparison -> (
-          match ComparisonOperator.override comparison with
+          match ComparisonOperator.override ~location comparison with
           | Some { Node.value = Expression.Call call; _ } ->
               resolve_callees ~resolution ~call |> register_targets;
               state

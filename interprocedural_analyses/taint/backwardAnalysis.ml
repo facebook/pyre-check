@@ -915,7 +915,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           analyze_expression ~resolution ~taint ~state ~expression:right
           |> fun state -> analyze_expression ~resolution ~taint ~state ~expression:left
       | ComparisonOperator ({ left; operator = _; right } as comparison) -> (
-          match ComparisonOperator.override comparison with
+          match ComparisonOperator.override ~location comparison with
           | Some override -> analyze_expression ~resolution ~taint ~state ~expression:override
           | None ->
               analyze_expression ~resolution ~taint ~state ~expression:right

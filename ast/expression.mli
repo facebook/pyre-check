@@ -93,7 +93,7 @@ and ComparisonOperator : sig
 
   val pp_comparison_operator : Format.formatter -> operator -> unit
 
-  val override : t -> Expression.t option
+  val override : location:Location.t -> t -> Expression.t option
 
   val location_insensitive_compare : t -> t -> int
 end
