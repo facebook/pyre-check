@@ -34,7 +34,7 @@ let test_call_graph_of_define context =
     in
     let define, test_source, environment =
       let find_define = function
-        | { Node.value = Statement.Statement.Define define; _ }
+        | { Node.value = define; _ }
           when String.equal (Reference.show (Node.value (Statement.Define.name define))) define_name
           ->
             Some define
@@ -50,7 +50,7 @@ let test_call_graph_of_define context =
           ~f:(fun ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source) ->
             Option.some_if (String.equal (Reference.show qualifier) "test") source)
       in
-      ( List.find_map_exn (Ast.Source.statements test_source) ~f:find_define,
+      ( List.find_map_exn (Preprocessing.defines test_source) ~f:find_define,
         test_source,
         TypeEnvironment.read_only type_environment )
     in
@@ -449,6 +449,36 @@ let test_call_graph_of_define context =
       [
         ( "2:10-2:15",
           CallGraph.RegularTargets { implicit_self = false; targets = [`Function "test.bar"] } );
+      ];
+  assert_call_graph_of_define
+    ~source:
+      {|
+      class C:
+        def f(self, x: int) -> int:
+          return x
+
+      class D(C):
+        def f(self, x: int) -> int:
+          return x
+
+        def g(self) -> None:
+          super().f(1)
+      |}
+    ~define_name:"test.D.g"
+    ~expected:
+      [
+        ( "11:4-11:11",
+          CallGraph.ConstructorTargets
+            {
+              new_targets = [`Method { Callable.class_name = "object"; method_name = "__new__" }];
+              init_targets = [`Method { Callable.class_name = "super"; method_name = "__init__" }];
+            } );
+        ( "11:4-11:16",
+          CallGraph.RegularTargets
+            {
+              implicit_self = true;
+              targets = [`Method { Callable.class_name = "test.C"; method_name = "f" }];
+            } );
       ]
 
 

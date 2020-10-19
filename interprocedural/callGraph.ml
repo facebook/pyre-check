@@ -91,6 +91,7 @@ type callee_kind =
   | Method
   | Function
   | RecognizedCallableTarget of string
+  | SuperCall
 
 let rec callee_kind ~resolution callee callee_type =
   let is_local identifier = String.is_prefix ~prefix:"$" identifier in
@@ -100,7 +101,18 @@ let rec callee_kind ~resolution callee callee_type =
         is_all_names (Node.value base)
     | _ -> false
   in
+  let is_super_call =
+    let rec is_super callee =
+      match Node.value callee with
+      | Expression.Call { callee = { Node.value = Name (Name.Identifier "super"); _ }; _ } -> true
+      | Call { callee; _ } -> is_super callee
+      | Name (Name.Attribute { base; _ }) -> is_super base
+      | _ -> false
+    in
+    is_super callee
+  in
   match callee_type with
+  | _ when is_super_call -> SuperCall
   | Type.Parametric { name = "BoundMethod"; _ } -> Method
   | Type.Callable _ -> (
       match Node.value callee with
@@ -198,12 +210,12 @@ let rec resolve_callees_from_type ~resolution ?receiver_type ~callee_kind callab
   | Type.Callable { Type.Callable.kind = Type.Callable.Named name; _ } -> (
       match receiver_type with
       | Some receiver_type ->
-          Some
-            (RegularTargets
-               {
-                 implicit_self = true;
-                 targets = compute_indirect_targets ~resolution ~receiver_type name;
-               })
+          let targets =
+            match callee_kind with
+            | SuperCall -> [Callable.create_method name]
+            | _ -> compute_indirect_targets ~resolution ~receiver_type name
+          in
+          Some (RegularTargets { implicit_self = true; targets })
       | None ->
           let target =
             match callee_kind with
