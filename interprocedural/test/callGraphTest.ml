@@ -435,6 +435,20 @@ let test_call_graph_of_define context =
         ( "9:2-9:35",
           CallGraph.RegularTargets
             { implicit_self = false; targets = [`Function "test.callable_target"] } );
+      ];
+  assert_call_graph_of_define
+    ~source:{|
+      def foo(x=bar()):
+        pass
+
+      def bar():
+        pass
+      |}
+    ~define_name:"test.foo"
+    ~expected:
+      [
+        ( "2:10-2:15",
+          CallGraph.RegularTargets { implicit_self = false; targets = [`Function "test.bar"] } );
       ]
 
 

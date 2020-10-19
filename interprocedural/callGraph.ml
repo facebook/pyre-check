@@ -393,7 +393,7 @@ module DefineCallGraph (Context : sig
 
   val callees_at_location : callees Location.Table.t
 end) =
-Fixpoint.Make (struct
+struct
   type visitor_t = {
     resolution: Resolution.t;
     is_assignment_target: bool;
@@ -440,41 +440,43 @@ Fixpoint.Make (struct
 
   module CalleeVisitor = Visit.MakeNodeVisitor (NodeVisitor)
 
-  type t = unit [@@deriving show]
+  include Fixpoint.Make (struct
+    type t = unit [@@deriving show]
 
-  let less_or_equal ~left:_ ~right:_ = true
+    let less_or_equal ~left:_ ~right:_ = true
 
-  let widen ~previous:_ ~next:_ ~iteration:_ = ()
+    let widen ~previous:_ ~next:_ ~iteration:_ = ()
 
-  let forward_statement ~resolution ~statement =
-    match Node.value statement with
-    | Statement.Statement.Assign { Statement.Assign.target; value; _ } ->
-        CalleeVisitor.visit_expression
-          ~state:(ref { resolution; is_assignment_target = true })
-          target;
-        CalleeVisitor.visit_expression
-          ~state:(ref { resolution; is_assignment_target = false })
-          value
-    | _ ->
-        CalleeVisitor.visit_statement
-          ~state:(ref { resolution; is_assignment_target = false })
-          statement
-
-
-  let forward ~key _ ~statement =
-    let resolution =
-      TypeCheck.resolution_with_key
-        ~global_resolution:Context.global_resolution
-        ~local_annotations:Context.local_annotations
-        ~parent:Context.parent
-        ~key
-        (module TypeCheck.DummyContext)
-    in
-    forward_statement ~resolution ~statement
+    let forward_statement ~resolution ~statement =
+      match Node.value statement with
+      | Statement.Statement.Assign { Statement.Assign.target; value; _ } ->
+          CalleeVisitor.visit_expression
+            ~state:(ref { resolution; is_assignment_target = true })
+            target;
+          CalleeVisitor.visit_expression
+            ~state:(ref { resolution; is_assignment_target = false })
+            value
+      | _ ->
+          CalleeVisitor.visit_statement
+            ~state:(ref { resolution; is_assignment_target = false })
+            statement
 
 
-  let backward ~key:_ _ ~statement:_ = ()
-end)
+    let forward ~key _ ~statement =
+      let resolution =
+        TypeCheck.resolution_with_key
+          ~global_resolution:Context.global_resolution
+          ~local_annotations:Context.local_annotations
+          ~parent:Context.parent
+          ~key
+          (module TypeCheck.DummyContext)
+      in
+      forward_statement ~resolution ~statement
+
+
+    let backward ~key:_ _ ~statement:_ = ()
+  end)
+end
 
 let call_graph_of_define
     ~environment
@@ -494,5 +496,21 @@ let call_graph_of_define
     let callees_at_location = callees_at_location
   end)
   in
+  (* Handle parameters. *)
+  let () =
+    let resolution =
+      TypeCheck.resolution
+        (TypeEnvironment.ReadOnly.global_resolution environment)
+        (module TypeCheck.DummyContext)
+    in
+    List.iter
+      define.Ast.Statement.Define.signature.parameters
+      ~f:(fun { Node.value = { Parameter.value; _ }; _ } ->
+        Option.iter value ~f:(fun value ->
+            DefineFixpoint.CalleeVisitor.visit_expression
+              ~state:(ref { DefineFixpoint.resolution; is_assignment_target = false })
+              value))
+  in
+
   DefineFixpoint.forward ~cfg:(Cfg.create define) ~initial:() |> ignore;
   Location.Table.to_alist callees_at_location |> Location.Map.of_alist_exn
