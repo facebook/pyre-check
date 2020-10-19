@@ -51,6 +51,68 @@ let merge_targets left right =
       None
 
 
+let defining_attribute ~resolution parent_type attribute =
+  let global_resolution = Resolution.global_resolution resolution in
+  Type.split parent_type
+  |> fst
+  |> Type.primitive_name
+  >>= fun class_name ->
+  GlobalResolution.attribute_from_class_name
+    ~transitive:true
+    ~resolution:global_resolution
+    ~name:attribute
+    ~instantiated:parent_type
+    class_name
+  >>= fun instantiated_attribute ->
+  if Annotated.Attribute.defined instantiated_attribute then
+    Some instantiated_attribute
+  else
+    Resolution.fallback_attribute ~resolution ~name:attribute class_name
+
+
+let rec resolve_ignoring_optional ~resolution expression =
+  let annotation =
+    match Node.value expression with
+    | Expression.Name (Name.Attribute { base; attribute; _ }) -> (
+        let base_type =
+          resolve_ignoring_optional ~resolution base
+          |> fun annotation -> Type.optional_value annotation |> Option.value ~default:annotation
+        in
+        match defining_attribute ~resolution base_type attribute with
+        | Some _ -> Resolution.resolve_attribute_access resolution ~base_type ~attribute
+        | None -> Resolution.resolve_expression_to_type resolution expression
+        (* Lookup the base_type for the attribute you were interested in *) )
+    | _ -> Resolution.resolve_expression_to_type resolution expression
+  in
+  Type.optional_value annotation |> Option.value ~default:annotation
+
+
+type callee_kind =
+  | Method
+  | Function
+
+let rec callee_kind ~resolution callee callee_type =
+  match callee_type with
+  | Type.Parametric { name = "BoundMethod"; _ } -> Method
+  | Type.Callable _ -> (
+      match Node.value callee with
+      | Expression.Name (Name.Attribute { base; _ }) ->
+          let is_class =
+            resolve_ignoring_optional ~resolution base
+            |> GlobalResolution.class_definition (Resolution.global_resolution resolution)
+            |> Option.is_some
+          in
+          if is_class then
+            Method
+          else
+            Function
+      | _ -> Function )
+  | Type.Union (callee_type :: _) -> callee_kind ~resolution callee callee_type
+  | _ ->
+      (* We must be dealing with a callable class. *)
+      Method
+
+
 let strip_optional annotation = Type.optional_value annotation |> Option.value ~default:annotation
 
 let strip_meta annotation =
@@ -113,7 +175,7 @@ let compute_indirect_targets ~resolution ~receiver_type implementation_target =
         target_callable :: override_targets
 
 
-let rec resolve_callees_from_type ~resolution ?receiver_type callable_type =
+let rec resolve_callees_from_type ~resolution ?receiver_type ~callee_kind callable_type =
   match callable_type with
   | Type.Callable { Type.Callable.kind = Type.Callable.Named name; _ } -> (
       match receiver_type with
@@ -125,15 +187,21 @@ let rec resolve_callees_from_type ~resolution ?receiver_type callable_type =
                  targets = compute_indirect_targets ~resolution ~receiver_type name;
                })
       | None ->
-          Some (RegularTargets { implicit_self = false; targets = [Callable.create_function name] })
-      )
+          let target =
+            match callee_kind with
+            | Method -> Callable.create_method name
+            | Function -> Callable.create_function name
+          in
+          Some (RegularTargets { implicit_self = false; targets = [target] }) )
   | Type.Parametric { name = "BoundMethod"; parameters = [Single callable; Single receiver_type] }
     ->
-      resolve_callees_from_type ~resolution ~receiver_type callable
+      resolve_callees_from_type ~resolution ~receiver_type ~callee_kind callable
   | Type.Union (element :: elements) ->
-      let first_targets = resolve_callees_from_type ~resolution ?receiver_type element in
+      let first_targets =
+        resolve_callees_from_type ~resolution ~callee_kind ?receiver_type element
+      in
       List.fold elements ~init:first_targets ~f:(fun combined_targets new_target ->
-          resolve_callees_from_type ~resolution ?receiver_type new_target
+          resolve_callees_from_type ~resolution ?receiver_type ~callee_kind new_target
           |> merge_targets combined_targets)
   | callable_type ->
       (* Handle callable classes. `typing.Type` interacts specially with __call__, so we choose to
@@ -162,7 +230,7 @@ let rec resolve_callees_from_type ~resolution ?receiver_type callable_type =
                          { Callable.class_name = primitive_callable_name; method_name = "__call__" };
                      ];
                  })
-        | annotation -> resolve_callees_from_type ~resolution annotation
+        | annotation -> resolve_callees_from_type ~resolution ~callee_kind annotation
       else
         resolve_constructor_callee ~resolution callable_type
 
@@ -179,8 +247,16 @@ and resolve_constructor_callee ~resolution class_type =
       None
   | new_callable_type, init_callable_type -> (
       let new_targets, init_targets =
-        ( resolve_callees_from_type ~resolution ~receiver_type:class_type new_callable_type,
-          resolve_callees_from_type ~resolution ~receiver_type:class_type init_callable_type )
+        ( resolve_callees_from_type
+            ~resolution
+            ~receiver_type:class_type
+            ~callee_kind:Method
+            new_callable_type,
+          resolve_callees_from_type
+            ~resolution
+            ~receiver_type:class_type
+            ~callee_kind:Method
+            init_callable_type )
       in
       match new_targets, init_targets with
       | ( Some (RegularTargets { targets = new_targets; _ }),
@@ -189,44 +265,10 @@ and resolve_constructor_callee ~resolution class_type =
       | _ -> None )
 
 
-let defining_attribute ~resolution parent_type attribute =
-  let global_resolution = Resolution.global_resolution resolution in
-  Type.split parent_type
-  |> fst
-  |> Type.primitive_name
-  >>= fun class_name ->
-  GlobalResolution.attribute_from_class_name
-    ~transitive:true
-    ~resolution:global_resolution
-    ~name:attribute
-    ~instantiated:parent_type
-    class_name
-  >>= fun instantiated_attribute ->
-  if Annotated.Attribute.defined instantiated_attribute then
-    Some instantiated_attribute
-  else
-    Resolution.fallback_attribute ~resolution ~name:attribute class_name
-
-
-let rec resolve_ignoring_optional ~resolution expression =
-  let annotation =
-    match Node.value expression with
-    | Expression.Name (Name.Attribute { base; attribute; _ }) -> (
-        let base_type =
-          resolve_ignoring_optional ~resolution base
-          |> fun annotation -> Type.optional_value annotation |> Option.value ~default:annotation
-        in
-        match defining_attribute ~resolution base_type attribute with
-        | Some _ -> Resolution.resolve_attribute_access resolution ~base_type ~attribute
-        | None -> Resolution.resolve_expression_to_type resolution expression
-        (* Lookup the base_type for the attribute you were interested in *) )
-    | _ -> Resolution.resolve_expression_to_type resolution expression
-  in
-  Type.optional_value annotation |> Option.value ~default:annotation
-
-
 let resolve_callees ~resolution ~callee =
-  resolve_ignoring_optional ~resolution callee |> resolve_callees_from_type ~resolution
+  let callee_type = resolve_ignoring_optional ~resolution callee in
+  let callee_kind = callee_kind ~resolution callee callee_type in
+  resolve_callees_from_type ~callee_kind ~resolution callee_type
 
 
 let get_property_defining_parent ~resolution ~base ~attribute =

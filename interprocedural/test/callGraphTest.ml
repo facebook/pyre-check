@@ -251,7 +251,7 @@ let test_call_graph_of_define context =
           CallGraph.RegularTargets
             {
               implicit_self = false;
-              targets = [Callable.create_function (Reference.create "test.C.__call__")];
+              targets = [Callable.create_method (Reference.create "test.C.__call__")];
             } );
       ];
   assert_call_graph_of_define
@@ -334,6 +334,25 @@ let test_call_graph_of_define context =
             {
               implicit_self = true;
               targets = [`Method { Callable.class_name = "test.C"; method_name = "p" }];
+            } );
+      ];
+  assert_call_graph_of_define
+    ~source:
+      {|
+        class C:
+          @staticmethod
+          def f(a: int) -> int: ...
+        def foo():
+          C.f()
+      |}
+    ~define_name:"test.foo"
+    ~expected:
+      [
+        ( "6:2-6:7",
+          CallGraph.RegularTargets
+            {
+              implicit_self = false;
+              targets = [`Method { Callable.class_name = "test.C"; method_name = "f" }];
             } );
       ]
 
