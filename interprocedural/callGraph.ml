@@ -265,7 +265,56 @@ and resolve_constructor_callee ~resolution class_type =
       | _ -> None )
 
 
-let resolve_callees ~resolution ~callee =
+let transform_special_calls ~resolution { Call.callee; arguments } =
+  match callee, arguments with
+  | ( {
+        Node.value =
+          Expression.Name
+            (Name.Attribute
+              {
+                base = { Node.value = Expression.Name (Name.Identifier "functools"); _ };
+                attribute = "partial";
+                _;
+              });
+        _;
+      },
+      { Call.Argument.value = actual_callable; _ } :: actual_arguments ) ->
+      Some { Call.callee = actual_callable; arguments = actual_arguments }
+  | ( {
+        Node.value =
+          Name
+            (Name.Attribute
+              {
+                base = { Node.value = Expression.Name (Name.Identifier "multiprocessing"); _ };
+                attribute = "Process";
+                _;
+              });
+        _;
+      },
+      [
+        { Call.Argument.value = process_callee; name = Some { Node.value = "$parameter$target"; _ } };
+        {
+          Call.Argument.value = { Node.value = Expression.Tuple process_arguments; _ };
+          name = Some { Node.value = "$parameter$args"; _ };
+        };
+      ] ) ->
+      Some
+        {
+          Call.callee = process_callee;
+          arguments =
+            List.map process_arguments ~f:(fun value -> { Call.Argument.value; name = None });
+        }
+  | _ -> SpecialCallResolution.redirect ~resolution { Call.callee; arguments }
+
+
+let redirect_special_calls ~resolution call =
+  match transform_special_calls ~resolution call with
+  | Some call -> call
+  | None -> Annotated.Call.redirect_special_calls ~resolution call
+
+
+let resolve_callees ~resolution ~call =
+  let { Call.callee; _ } = redirect_special_calls ~resolution call in
   let callee_type = resolve_ignoring_optional ~resolution callee in
   let callee_kind = callee_kind ~resolution callee callee_type in
   resolve_callees_from_type ~callee_kind ~resolution callee_type
@@ -338,8 +387,8 @@ Fixpoint.Make (struct
             Location.Table.set Context.callees_at_location ~key:location ~data)
       in
       match value with
-      | Expression.Call { Call.callee; _ } ->
-          resolve_callees ~resolution ~callee |> register_targets;
+      | Expression.Call call ->
+          resolve_callees ~resolution ~call |> register_targets;
           state
       | Expression.Name (Name.Attribute { Name.Attribute.base; attribute; _ }) ->
           resolve_property_targets ~resolution ~base ~attribute ~setter:is_assignment_target
@@ -347,8 +396,8 @@ Fixpoint.Make (struct
           state
       | Expression.ComparisonOperator comparison -> (
           match ComparisonOperator.override comparison with
-          | Some { Node.value = Expression.Call { Call.callee; _ }; _ } ->
-              resolve_callees ~resolution ~callee |> register_targets;
+          | Some { Node.value = Expression.Call call; _ } ->
+              resolve_callees ~resolution ~call |> register_targets;
               state
           | _ -> state )
       | _ -> state

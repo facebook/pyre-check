@@ -66,7 +66,7 @@ let add_callee
   in
   let callables =
     match
-      Interprocedural.CallResolution.transform_special_calls
+      Interprocedural.CallGraph.transform_special_calls
         ~resolution
         { Expression.Call.callee; arguments }
     with

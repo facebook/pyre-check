@@ -6,6 +6,7 @@
  *)
 
 open Analysis
+open Ast.Expression
 
 type callees =
   | ConstructorTargets of {
@@ -36,3 +37,7 @@ val compute_indirect_targets
   Callable.t list
 
 val resolve_ignoring_optional : resolution:Resolution.t -> Ast.Expression.t -> Type.t
+
+val transform_special_calls : resolution:Resolution.t -> Call.t -> Call.t option
+
+val redirect_special_calls : resolution:Resolution.t -> Call.t -> Call.t

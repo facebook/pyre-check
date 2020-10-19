@@ -381,6 +381,41 @@ let test_call_graph_of_define context =
               implicit_self = true;
               targets = [`Method { Callable.class_name = "int"; method_name = "__gt__" }];
             } );
+      ];
+  assert_call_graph_of_define
+    ~source:
+      {|
+      class C:
+        def __repr__(self) -> str: ...
+
+      def foo(c: C):
+        repr(c)
+    |}
+    ~define_name:"test.foo"
+    ~expected:
+      [
+        ( "6:2-6:9",
+          CallGraph.RegularTargets
+            {
+              implicit_self = true;
+              targets = [`Method { Callable.class_name = "test.C"; method_name = "__repr__" }];
+            } );
+      ];
+  assert_call_graph_of_define
+    ~source:
+      {|
+      from functools import partial
+      def f(a, b):
+        ...
+
+      def foo():
+        partial(f, 1)
+    |}
+    ~define_name:"test.foo"
+    ~expected:
+      [
+        ( "7:2-7:15",
+          CallGraph.RegularTargets { implicit_self = false; targets = [`Function "test.f"] } );
       ]
 
 

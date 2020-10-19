@@ -490,9 +490,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
     and analyze_call ~resolution location ~taint ~state ~callee ~arguments =
       let analyze_regular_call ~taint state ~callee ~arguments =
         let ({ Call.callee; arguments } as call_expression) =
-          Interprocedural.CallResolution.redirect_special_calls
-            ~resolution
-            { Call.callee; arguments }
+          Interprocedural.CallGraph.redirect_special_calls ~resolution { Call.callee; arguments }
         in
         match AccessPath.get_global ~resolution callee, Node.value callee with
         | _, Name (Name.Identifier "reveal_taint") -> (

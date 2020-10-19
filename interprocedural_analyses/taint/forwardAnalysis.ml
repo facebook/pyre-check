@@ -755,7 +755,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                 { argument with Call.Argument.value = all_argument })
           in
           let { Call.callee; arguments } =
-            Interprocedural.CallResolution.redirect_special_calls
+            Interprocedural.CallGraph.redirect_special_calls
               ~resolution
               { Call.callee = lambda_callee; arguments }
           in
@@ -948,7 +948,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       | _ -> (
           let call = { Call.callee; arguments } in
           let { Call.callee; arguments } =
-            Interprocedural.CallResolution.redirect_special_calls ~resolution call
+            Interprocedural.CallGraph.redirect_special_calls ~resolution call
           in
           let lambda_arguments, reversed_non_lambda_arguments =
             let is_callable argument =

@@ -34,10 +34,6 @@ val resolve_property_targets
   setter:bool ->
   target list option
 
-val transform_special_calls : resolution:Resolution.t -> Call.t -> Call.t option
-
-val redirect_special_calls : resolution:Resolution.t -> Call.t -> Call.t
-
 type constructor_targets = {
   new_targets: target list;
   init_targets: target list;
