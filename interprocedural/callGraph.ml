@@ -90,8 +90,16 @@ let rec resolve_ignoring_optional ~resolution expression =
 type callee_kind =
   | Method
   | Function
+  | RecognizedCallableTarget of string
 
 let rec callee_kind ~resolution callee callee_type =
+  let is_local identifier = String.is_prefix ~prefix:"$" identifier in
+  let rec is_all_names = function
+    | Expression.Name (Name.Identifier identifier) when not (is_local identifier) -> true
+    | Name (Name.Attribute { base; attribute; _ }) when not (is_local attribute) ->
+        is_all_names (Node.value base)
+    | _ -> false
+  in
   match callee_type with
   | Type.Parametric { name = "BoundMethod"; _ } -> Method
   | Type.Callable _ -> (
@@ -108,6 +116,16 @@ let rec callee_kind ~resolution callee callee_type =
             Function
       | _ -> Function )
   | Type.Union (callee_type :: _) -> callee_kind ~resolution callee callee_type
+  | _
+    when is_all_names (Node.value callee)
+         && Type.Set.mem SpecialCallResolution.recognized_callable_target_types callee_type -> (
+      match callee with
+      | { Node.value = Expression.Name name; _ } ->
+          Ast.Expression.name_to_reference name
+          >>| Reference.show
+          >>| (fun name -> RecognizedCallableTarget name)
+          |> Option.value ~default:Method
+      | _ -> Method )
   | _ ->
       (* We must be dealing with a callable class. *)
       Method
@@ -190,7 +208,7 @@ let rec resolve_callees_from_type ~resolution ?receiver_type ~callee_kind callab
           let target =
             match callee_kind with
             | Method -> Callable.create_method name
-            | Function -> Callable.create_function name
+            | _ -> Callable.create_function name
           in
           Some (RegularTargets { implicit_self = false; targets = [target] }) )
   | Type.Parametric { name = "BoundMethod"; parameters = [Single callable; Single receiver_type] }
@@ -317,7 +335,10 @@ let resolve_callees ~resolution ~call =
   let { Call.callee; _ } = redirect_special_calls ~resolution call in
   let callee_type = resolve_ignoring_optional ~resolution callee in
   let callee_kind = callee_kind ~resolution callee callee_type in
-  resolve_callees_from_type ~callee_kind ~resolution callee_type
+  match callee_kind with
+  | RecognizedCallableTarget name ->
+      Some (RegularTargets { implicit_self = false; targets = [`Function name] })
+  | _ -> resolve_callees_from_type ~callee_kind ~resolution callee_type
 
 
 let get_property_defining_parent ~resolution ~base ~attribute =
