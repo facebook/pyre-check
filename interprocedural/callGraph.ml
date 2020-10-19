@@ -345,6 +345,12 @@ Fixpoint.Make (struct
           resolve_property_targets ~resolution ~base ~attribute ~setter:is_assignment_target
           |> register_targets;
           state
+      | Expression.ComparisonOperator comparison -> (
+          match ComparisonOperator.override comparison with
+          | Some { Node.value = Expression.Call { Call.callee; _ }; _ } ->
+              resolve_callees ~resolution ~callee |> register_targets;
+              state
+          | _ -> state )
       | _ -> state
 
 

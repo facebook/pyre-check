@@ -120,6 +120,12 @@ let test_call_graph_of_define context =
         ( "7:2-7:5",
           CallGraph.RegularTargets
             { implicit_self = false; targets = [`Function "test.bar"; `Function "test.baz"] } );
+        ( "3:5-3:10",
+          CallGraph.RegularTargets
+            {
+              implicit_self = true;
+              targets = [`Method { Callable.class_name = "int"; method_name = "__le__" }];
+            } );
       ];
   assert_call_graph_of_define
     ~source:
@@ -135,6 +141,12 @@ let test_call_graph_of_define context =
     ~define_name:"test.foo"
     ~expected:
       [
+        ( "3:5-3:10",
+          CallGraph.RegularTargets
+            {
+              implicit_self = true;
+              targets = [`Method { Callable.class_name = "int"; method_name = "__le__" }];
+            } );
         ( "7:2-7:5",
           CallGraph.RegularTargets { implicit_self = false; targets = [`Function "test.bar"] } );
       ];
@@ -353,6 +365,21 @@ let test_call_graph_of_define context =
             {
               implicit_self = false;
               targets = [`Method { Callable.class_name = "test.C"; method_name = "f" }];
+            } );
+      ];
+  assert_call_graph_of_define
+    ~source:{|
+        def foo():
+          1 > 2
+      |}
+    ~define_name:"test.foo"
+    ~expected:
+      [
+        ( "3:2-3:7",
+          CallGraph.RegularTargets
+            {
+              implicit_self = true;
+              targets = [`Method { Callable.class_name = "int"; method_name = "__gt__" }];
             } );
       ]
 
