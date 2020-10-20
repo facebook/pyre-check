@@ -479,6 +479,30 @@ let test_call_graph_of_define context =
               implicit_self = true;
               targets = [`Method { Callable.class_name = "test.C"; method_name = "f" }];
             } );
+      ];
+  assert_call_graph_of_define
+    ~source:
+      {|
+      class C:
+        def f(self, x: int) -> int:
+          return x
+
+      class D(C):
+        def f(self, x: int) -> int:
+          return x
+
+      def foo(c: C):
+        C.f(c, 1)
+      |}
+    ~define_name:"test.foo"
+    ~expected:
+      [
+        ( "11:2-11:11",
+          CallGraph.RegularTargets
+            {
+              implicit_self = false;
+              targets = [`Method { Callable.class_name = "test.C"; method_name = "f" }];
+            } );
       ]
 
 

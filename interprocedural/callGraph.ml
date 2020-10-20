@@ -88,10 +88,9 @@ let rec resolve_ignoring_optional ~resolution expression =
 
 
 type callee_kind =
-  | Method
+  | Method of { is_direct_call: bool }
   | Function
   | RecognizedCallableTarget of string
-  | SuperCall
 
 let rec callee_kind ~resolution callee callee_type =
   let is_local identifier = String.is_prefix ~prefix:"$" identifier in
@@ -112,18 +111,21 @@ let rec callee_kind ~resolution callee callee_type =
     is_super callee
   in
   match callee_type with
-  | _ when is_super_call -> SuperCall
-  | Type.Parametric { name = "BoundMethod"; _ } -> Method
+  | _ when is_super_call -> Method { is_direct_call = true }
+  | Type.Parametric { name = "BoundMethod"; _ } -> Method { is_direct_call = false }
   | Type.Callable _ -> (
       match Node.value callee with
       | Expression.Name (Name.Attribute { base; _ }) ->
-          let is_class =
-            resolve_ignoring_optional ~resolution base
+          let parent_type = resolve_ignoring_optional ~resolution base in
+          let is_class () =
+            parent_type
             |> GlobalResolution.class_definition (Resolution.global_resolution resolution)
             |> Option.is_some
           in
-          if is_class then
-            Method
+          if Type.is_meta parent_type then
+            Method { is_direct_call = true }
+          else if is_class () then
+            Method { is_direct_call = false }
           else
             Function
       | _ -> Function )
@@ -136,11 +138,11 @@ let rec callee_kind ~resolution callee callee_type =
           Ast.Expression.name_to_reference name
           >>| Reference.show
           >>| (fun name -> RecognizedCallableTarget name)
-          |> Option.value ~default:Method
-      | _ -> Method )
+          |> Option.value ~default:(Method { is_direct_call = false })
+      | _ -> Method { is_direct_call = false } )
   | _ ->
       (* We must be dealing with a callable class. *)
-      Method
+      Method { is_direct_call = false }
 
 
 let strip_optional annotation = Type.optional_value annotation |> Option.value ~default:annotation
@@ -212,14 +214,14 @@ let rec resolve_callees_from_type ~resolution ?receiver_type ~callee_kind callab
       | Some receiver_type ->
           let targets =
             match callee_kind with
-            | SuperCall -> [Callable.create_method name]
+            | Method { is_direct_call = true } -> [Callable.create_method name]
             | _ -> compute_indirect_targets ~resolution ~receiver_type name
           in
           Some (RegularTargets { implicit_self = true; targets })
       | None ->
           let target =
             match callee_kind with
-            | Method -> Callable.create_method name
+            | Method _ -> Callable.create_method name
             | _ -> Callable.create_function name
           in
           Some (RegularTargets { implicit_self = false; targets = [target] }) )
@@ -280,12 +282,12 @@ and resolve_constructor_callee ~resolution class_type =
         ( resolve_callees_from_type
             ~resolution
             ~receiver_type:class_type
-            ~callee_kind:Method
+            ~callee_kind:(Method { is_direct_call = true })
             new_callable_type,
           resolve_callees_from_type
             ~resolution
             ~receiver_type:class_type
-            ~callee_kind:Method
+            ~callee_kind:(Method { is_direct_call = true })
             init_callable_type )
       in
       match new_targets, init_targets with
