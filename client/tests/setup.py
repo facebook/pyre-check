@@ -6,8 +6,11 @@
 import contextlib
 import json
 import os
+import socketserver
+import tempfile
+import threading
 from pathlib import Path
-from typing import Any, Generator, Iterable, Mapping, Optional
+from typing import Any, Generator, Iterable, Mapping, Optional, Type
 
 from ..find_directories import CONFIGURATION_FILE, LOCAL_CONFIGURATION_FILE
 
@@ -56,3 +59,26 @@ def switch_environment(environment: Mapping[str, str]) -> Generator[None, None, 
     finally:
         os.environ.clear()
         os.environ.update(old_environment)
+
+
+class TestServer(socketserver.ThreadingMixIn, socketserver.UnixStreamServer):
+    pass
+
+
+@contextlib.contextmanager
+def spawn_unix_stream_server(
+    handler: Type[socketserver.BaseRequestHandler],
+) -> Generator[Path, None, None]:
+    with tempfile.TemporaryDirectory() as socket_root:
+        socket_path = Path(socket_root) / "test.socket"
+        # Spawn a test server on another thread
+        server = TestServer(str(socket_path), handler)
+        server_thread = threading.Thread(target=server.serve_forever)
+        try:
+            server_thread.start()
+            yield socket_path
+        finally:
+            # Shutdown the server and terminate the test
+            server.shutdown()
+            server.server_close()
+            server_thread.join()
