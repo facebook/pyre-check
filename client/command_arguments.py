@@ -62,3 +62,10 @@ class StartArguments:
     show_error_traces: bool = False
     store_type_check_resolution: bool = False
     terminal: bool = False
+
+
+@dataclass(frozen=True)
+class IncrementalArguments:
+    nonblocking: bool = False
+    no_start: bool = False
+    no_watchman: bool = False

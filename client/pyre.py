@@ -573,15 +573,25 @@ def incremental(
     analyzed before returning results. If you'd like to get partial type checking
     results eagerly, you can run `pyre incremental --nonblocking`.
     """
-    return _run_incremental_command(
-        arguments=context.obj["arguments"],
-        nonblocking=nonblocking,
-        incremental_style=commands.IncrementalStyle.SHALLOW
-        if incremental_style == str(commands.IncrementalStyle.SHALLOW)
-        else commands.IncrementalStyle.FINE_GRAINED,
-        no_start_server=no_start,
-        no_watchman=no_watchman,
-    )
+    command_argument: command_arguments.CommandArguments = context.obj["arguments"]
+    if command_argument.use_command_v2:
+        configuration = _create_configuration_with_retry(command_argument, Path("."))
+        return v2.incremental.run(
+            configuration,
+            command_arguments.IncrementalArguments(
+                nonblocking=nonblocking, no_start=no_start, no_watchman=no_watchman
+            ),
+        )
+    else:
+        return _run_incremental_command(
+            arguments=command_argument,
+            nonblocking=nonblocking,
+            incremental_style=commands.IncrementalStyle.SHALLOW
+            if incremental_style == str(commands.IncrementalStyle.SHALLOW)
+            else commands.IncrementalStyle.FINE_GRAINED,
+            no_start_server=no_start,
+            no_watchman=no_watchman,
+        )
 
 
 @pyre.command()
