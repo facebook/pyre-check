@@ -7,6 +7,7 @@ import contextlib
 import hashlib
 import io
 import socket
+import tempfile
 from pathlib import Path
 from typing import BinaryIO, Generator, TextIO, Tuple
 
@@ -20,10 +21,14 @@ def get_socket_path(root: Path, log_directory: Path) -> Path:
     Implementation needs to be kept in sync with the `socket_path_of` function
     in `pyre/new_server/start.ml`.
     """
-    log_path_digest = hashlib.md5(
-        str(log_directory.resolve(strict=False)).encode("utf-8")
-    ).hexdigest()
+    log_path_digest = hashlib.md5(str(log_directory).encode("utf-8")).hexdigest()
     return root / f"pyre_server_{log_path_digest}.sock"
+
+
+def get_default_socket_path(log_directory: Path) -> Path:
+    # TODO(T77556312): It might be cleaner to turn the root dir into a
+    # configuration option instead.
+    return get_socket_path(Path(tempfile.gettempdir()), log_directory)
 
 
 @contextlib.contextmanager

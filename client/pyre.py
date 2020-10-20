@@ -1033,15 +1033,18 @@ def stop(context: click.Context) -> int:
     configuration = configuration_module.create_configuration(
         command_argument, Path(".")
     )
-    return run_pyre_command(
-        commands.Stop(
-            command_argument,
-            original_directory=os.getcwd(),
-            configuration=configuration,
-        ),
-        configuration,
-        command_argument.noninteractive,
-    )
+    if command_argument.use_command_v2:
+        return v2.stop.run(configuration)
+    else:
+        return run_pyre_command(
+            commands.Stop(
+                command_argument,
+                original_directory=os.getcwd(),
+                configuration=configuration,
+            ),
+            configuration,
+            command_argument.noninteractive,
+        )
 
 
 # Need the default argument here since this is our entry point in setup.py
