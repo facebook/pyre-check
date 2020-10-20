@@ -112,7 +112,8 @@ let rec callee_kind ~resolution callee callee_type =
   in
   match callee_type with
   | _ when is_super_call -> Method { is_direct_call = true }
-  | Type.Parametric { name = "BoundMethod"; _ } -> Method { is_direct_call = false }
+  | Type.Parametric { name = "BoundMethod"; _ } ->
+      Method { is_direct_call = is_all_names (Node.value callee) }
   | Type.Callable _ -> (
       match Node.value callee with
       | Expression.Name (Name.Attribute { base; _ }) ->
