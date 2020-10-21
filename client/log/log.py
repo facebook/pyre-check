@@ -17,6 +17,8 @@ import time
 from types import TracebackType
 from typing import Generator, Iterable, Optional, Pattern, Sequence
 
+import click
+
 
 PERFORMANCE: int = 15
 PROMPT: int = 50
@@ -227,9 +229,9 @@ def cleanup() -> None:
 
     output = stdout.getvalue()
     if output:
-        sys.stdout.write(output)
+        click.echo(output, nl=False)
         if not output.endswith("\n"):
-            sys.stdout.write("\n")
+            click.echo()
 
 
 @contextlib.contextmanager

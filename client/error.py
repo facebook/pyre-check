@@ -10,6 +10,8 @@ import logging
 import sys
 from typing import Any, Dict, Sequence
 
+import click
+
 from . import command_arguments, log, terminal
 from .log import Color, Format
 
@@ -60,6 +62,12 @@ class Error:
     def to_json(self) -> Dict[str, Any]:
         return dataclasses.asdict(self)
 
+    def to_text(self) -> str:
+        path = click.style(self.path, fg="red")
+        line = click.style(str(self.line), fg="yellow")
+        column = click.style(str(self.column), fg="yellow")
+        return f"{path}:{line}:{column} {self.description}"
+
 
 def print_errors(errors: Sequence[Error], output: str) -> None:
     length = len(errors)
@@ -70,7 +78,7 @@ def print_errors(errors: Sequence[Error], output: str) -> None:
         LOG.log(log.SUCCESS, "No type errors found")
 
     if output == command_arguments.TEXT:
-        log.stdout.write("\n".join([repr(error) for error in errors]))
+        log.stdout.write("\n".join([error.to_text() for error in errors]))
     else:
         log.stdout.write(json.dumps([error.to_json() for error in errors]))
 
