@@ -4983,6 +4983,7 @@ let resolve_class annotation =
         |> List.fold ~init:(Some []) ~f:flatten_optional
         >>| List.concat
         >>| List.rev
+    | Annotated annotation -> extract ~meta annotation
     | annotation when is_meta annotation -> single_parameter annotation |> extract ~meta:true
     | _ -> (
         match split annotation |> fst |> primitive_name with
