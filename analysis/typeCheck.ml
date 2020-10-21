@@ -6038,9 +6038,8 @@ let exit_state ~resolution (module Context : Context) =
     Log.log ~section:`Check "Checking %a" Reference.pp name;
     Context.Builder.initialize ();
     let dump = Define.dump define in
-    if dump then (
-      Log.dump "Checking `%s`..." (Log.Color.yellow (Reference.show name));
-      Log.dump "AST:\n%a" Define.pp define );
+    if dump then
+      Log.dump "AST:\n%a" Define.pp define;
     if Define.dump_locations define then
       Log.dump "AST with Locations:\n%s" (Define.show_json define);
     let cfg = Cfg.create define in
@@ -6158,7 +6157,6 @@ let check_function_definition
     { FunctionDefinition.body; siblings; qualifier }
   =
   let timer = Timer.start () in
-  Log.log ~section:`Check "Checking `%a`..." Reference.pp name;
 
   let check_define =
     let call_graph_builder =
