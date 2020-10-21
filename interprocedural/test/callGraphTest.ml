@@ -529,6 +529,30 @@ let test_call_graph_of_define context =
               implicit_self = true;
               targets = [`Method { Callable.class_name = "test.C"; method_name = "f" }];
             } );
+      ];
+  assert_call_graph_of_define
+    ~source:
+      {|
+      def hof(f, arg):
+        f(arg)
+
+      def bar(x):
+        pass
+
+      def foo():
+        hof(bar, 1)
+      |}
+    ~define_name:"test.foo"
+    ~expected:
+      [
+        ( "9:2-9:13",
+          CallGraph.HigherOrderTargets
+            {
+              higher_order_function =
+                { CallGraph.implicit_self = false; targets = [`Function "test.hof"] };
+              callable_argument =
+                0, { CallGraph.implicit_self = false; targets = [`Function "test.bar"] };
+            } );
       ]
 
 

@@ -11,14 +11,21 @@ open Ast
 open Expression
 open Pyre
 
+type regular_targets = {
+  implicit_self: bool;
+  targets: Callable.t list;
+}
+[@@deriving eq, show]
+
 type callees =
   | ConstructorTargets of {
       new_targets: Callable.t list;
       init_targets: Callable.t list;
     }
-  | RegularTargets of {
-      implicit_self: bool;
-      targets: Callable.t list;
+  | RegularTargets of regular_targets
+  | HigherOrderTargets of {
+      higher_order_function: regular_targets;
+      callable_argument: int * regular_targets;
     }
 [@@deriving eq, show]
 
@@ -347,13 +354,29 @@ let redirect_special_calls ~resolution call =
 
 
 let resolve_callees ~resolution ~call =
-  let { Call.callee; _ } = redirect_special_calls ~resolution call in
+  let { Call.callee; arguments } = redirect_special_calls ~resolution call in
+  let higher_order_function_argument =
+    let get_higher_order_function_targets index { Call.Argument.value = argument; _ } =
+      let argument_type = resolve_ignoring_optional ~resolution argument in
+      let argument_kind = callee_kind ~resolution argument argument_type in
+      match resolve_callees_from_type ~callee_kind:argument_kind ~resolution argument_type with
+      | Some (RegularTargets regular_targets) -> Some (index, regular_targets)
+      | _ -> None
+    in
+    List.find_mapi arguments ~f:get_higher_order_function_targets
+  in
   let callee_type = resolve_ignoring_optional ~resolution callee in
   let callee_kind = callee_kind ~resolution callee callee_type in
-  match callee_kind with
-  | RecognizedCallableTarget name ->
-      Some (RegularTargets { implicit_self = false; targets = [`Function name] })
-  | _ -> resolve_callees_from_type ~callee_kind ~resolution callee_type
+  let regular_callees =
+    match callee_kind with
+    | RecognizedCallableTarget name ->
+        Some (RegularTargets { implicit_self = false; targets = [`Function name] })
+    | _ -> resolve_callees_from_type ~callee_kind ~resolution callee_type
+  in
+  match higher_order_function_argument, regular_callees with
+  | Some callable_argument, Some (RegularTargets higher_order_function) ->
+      Some (HigherOrderTargets { higher_order_function; callable_argument })
+  | _ -> regular_callees
 
 
 let get_property_defining_parent ~resolution ~base ~attribute =

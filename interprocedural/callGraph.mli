@@ -8,14 +8,21 @@
 open Analysis
 open Ast.Expression
 
+type regular_targets = {
+  implicit_self: bool;
+  targets: Callable.t list;
+}
+[@@deriving eq, show]
+
 type callees =
   | ConstructorTargets of {
       new_targets: Callable.t list;
       init_targets: Callable.t list;
     }
-  | RegularTargets of {
-      implicit_self: bool;
-      targets: Callable.t list;
+  | RegularTargets of regular_targets
+  | HigherOrderTargets of {
+      higher_order_function: regular_targets;
+      callable_argument: int * regular_targets;
     }
 [@@deriving eq, show]
 
