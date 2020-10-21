@@ -107,14 +107,16 @@ type callee_kind =
   | Function
   | RecognizedCallableTarget of string
 
+let is_local identifier = String.is_prefix ~prefix:"$" identifier
+
+let rec is_all_names = function
+  | Expression.Name (Name.Identifier identifier) when not (is_local identifier) -> true
+  | Name (Name.Attribute { base; attribute; _ }) when not (is_local attribute) ->
+      is_all_names (Node.value base)
+  | _ -> false
+
+
 let rec callee_kind ~resolution callee callee_type =
-  let is_local identifier = String.is_prefix ~prefix:"$" identifier in
-  let rec is_all_names = function
-    | Expression.Name (Name.Identifier identifier) when not (is_local identifier) -> true
-    | Name (Name.Attribute { base; attribute; _ }) when not (is_local attribute) ->
-        is_all_names (Node.value base)
-    | _ -> false
-  in
   let is_super_call =
     let rec is_super callee =
       match Node.value callee with
@@ -361,6 +363,71 @@ and resolve_constructor_callee ~resolution class_type =
       | _ -> None )
 
 
+let resolve_lru_cache ~resolution ~callee:{ Node.value = callee; _ } ~implementing_class =
+  match implementing_class, callee with
+  | Type.Top, Expression.Name name when is_all_names callee ->
+      (* If implementing_class is unknown, this must be a function rather than a method. We can use
+         global resolution on the callee. *)
+      GlobalResolution.global
+        (Resolution.global_resolution resolution)
+        (Ast.Expression.name_to_reference_exn name)
+      >>= fun { AttributeResolution.Global.undecorated_signature; _ } ->
+      undecorated_signature
+      >>= fun undecorated_signature ->
+      resolve_callees_from_type
+        ~resolution
+        ~callee_kind:Function
+        ~collapse_tito:true
+        (Type.Callable undecorated_signature)
+  | _ -> (
+      let implementing_class_name =
+        if Type.is_meta implementing_class then
+          Type.parameters implementing_class
+          >>= fun parameters ->
+          List.nth parameters 0
+          >>= function
+          | Single implementing_class -> Some implementing_class
+          | _ -> None
+        else
+          Some implementing_class
+      in
+      match implementing_class_name with
+      | Some implementing_class_name ->
+          let class_primitive =
+            match implementing_class_name with
+            | Parametric { name; _ } -> Some name
+            | Primitive name -> Some name
+            | _ -> None
+          in
+          let method_name =
+            match callee with
+            | Expression.Name (Name.Attribute { attribute; _ }) -> Some attribute
+            | _ -> None
+          in
+          method_name
+          >>= (fun method_name ->
+                class_primitive >>| fun class_name -> Format.sprintf "%s.%s" class_name method_name)
+          >>| Reference.create
+          (* Here, we blindly reconstruct the callable instead of going through the global
+             resolution, as Pyre doesn't have an API to get the undecorated signature of methods. *)
+          >>= fun name ->
+          let callable_type =
+            Type.Callable
+              {
+                Type.Callable.kind = Named name;
+                implementation = { annotation = Type.Any; parameters = Type.Callable.Defined [] };
+                overloads = [];
+              }
+          in
+          resolve_callees_from_type
+            ~resolution
+            ~receiver_type:implementing_class
+            ~callee_kind:(Method { is_direct_call = false })
+            ~collapse_tito:true
+            callable_type
+      | _ -> None )
+
+
 let transform_special_calls ~resolution { Call.callee; arguments } =
   match callee, arguments with
   | ( {
@@ -409,34 +476,46 @@ let redirect_special_calls ~resolution call =
   | None -> Annotated.Call.redirect_special_calls ~resolution call
 
 
+let resolve_regular_callees ~resolution ~callee =
+  let callee_type = resolve_ignoring_optional ~resolution callee in
+  let callee_kind = callee_kind ~resolution callee callee_type in
+  let collapse_tito = collapse_tito ~resolution ~callee ~callable_type:callee_type in
+  match callee_kind, callee_type with
+  | RecognizedCallableTarget name, _ ->
+      Some (RegularTargets { implicit_self = false; targets = [`Function name]; collapse_tito })
+  | ( _,
+      Parametric
+        {
+          name = "BoundMethod";
+          parameters =
+            [
+              Single (Parametric { name = "functools._lru_cache_wrapper"; _ });
+              Single implementing_class;
+            ];
+        } ) ->
+      resolve_lru_cache ~resolution ~callee ~implementing_class
+  | _, Parametric { name = "functools._lru_cache_wrapper"; _ } -> (
+      (* Because of the special class, we don't get a bound method & lose the self argument for
+         non-classmethod LRU cache wrappers. Reconstruct self in this case. *)
+      match Node.value callee with
+      | Expression.Name (Name.Attribute { base; _ }) ->
+          resolve_ignoring_optional ~resolution base
+          |> fun implementing_class -> resolve_lru_cache ~resolution ~callee ~implementing_class
+      | _ -> None )
+  | _ -> resolve_callees_from_type ~callee_kind ~resolution ~collapse_tito callee_type
+
+
 let resolve_callees ~resolution ~call =
   let { Call.callee; arguments } = redirect_special_calls ~resolution call in
   let higher_order_function_argument =
     let get_higher_order_function_targets index { Call.Argument.value = argument; _ } =
-      let argument_type = resolve_ignoring_optional ~resolution argument in
-      let argument_kind = callee_kind ~resolution argument argument_type in
-      let collapse_tito = collapse_tito ~resolution ~callee:argument ~callable_type:argument_type in
-      match
-        resolve_callees_from_type
-          ~callee_kind:argument_kind
-          ~resolution
-          ~collapse_tito
-          argument_type
-      with
+      match resolve_regular_callees ~resolution ~callee:argument with
       | Some (RegularTargets regular_targets) -> Some (index, regular_targets)
       | _ -> None
     in
     List.find_mapi arguments ~f:get_higher_order_function_targets
   in
-  let callee_type = resolve_ignoring_optional ~resolution callee in
-  let callee_kind = callee_kind ~resolution callee callee_type in
-  let collapse_tito = collapse_tito ~resolution ~callee ~callable_type:callee_type in
-  let regular_callees =
-    match callee_kind with
-    | RecognizedCallableTarget name ->
-        Some (RegularTargets { implicit_self = false; targets = [`Function name]; collapse_tito })
-    | _ -> resolve_callees_from_type ~callee_kind ~resolution ~collapse_tito callee_type
-  in
+  let regular_callees = resolve_regular_callees ~resolution ~callee in
   match higher_order_function_argument, regular_callees with
   | Some callable_argument, Some (RegularTargets higher_order_function) ->
       Some (HigherOrderTargets { higher_order_function; callable_argument })

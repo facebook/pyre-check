@@ -638,6 +638,52 @@ let test_call_graph_of_define context =
               targets =
                 [`Method { Callable.class_name = "test.Builder"; method_name = "set_saved" }];
             } );
+      ];
+  assert_call_graph_of_define
+    ~source:
+      {|
+      from functools import lru_cache
+      @lru_cache()
+      def f() -> int:
+        return 0
+
+      def foo():
+        f()
+    |}
+    ~define_name:"test.foo"
+    ~expected:
+      [
+        ( "8:2-8:5",
+          CallGraph.RegularTargets
+            {
+              CallGraph.implicit_self = false;
+              collapse_tito = true;
+              targets = [`Function "test.f"];
+            } );
+      ];
+
+  assert_call_graph_of_define
+    ~source:
+      {|
+      from functools import lru_cache
+      class C:
+        @lru_cache()
+        def m(self, x: int) -> int:
+          return x
+
+      def foo(c: C):
+        c.m(1)
+      |}
+    ~define_name:"test.foo"
+    ~expected:
+      [
+        ( "9:2-9:8",
+          CallGraph.RegularTargets
+            {
+              CallGraph.implicit_self = true;
+              collapse_tito = true;
+              targets = [`Method { Callable.class_name = "test.C"; method_name = "m" }];
+            } );
       ]
 
 
