@@ -116,7 +116,7 @@ class ReportingTest(unittest.TestCase):
             self.assertEqual(len(errors), 1)
             [error] = errors
             self.assertFalse(error.ignore_error)
-            self.assertEqual(error.path, "test/path.py")
+            self.assertEqual(error.error.path, "test/path.py")
 
         return
 

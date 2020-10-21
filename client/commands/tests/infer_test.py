@@ -160,7 +160,7 @@ class HelperTest(unittest.TestCase):
 
 class PyreTest(unittest.TestCase):
     def assert_imports(self, error_json, expected_imports) -> None:
-        error = LegacyError(error_json)
+        error = LegacyError.create(error_json)
         stub = None
         if FunctionStub.is_instance(error.inference):
             stub = FunctionStub(error.inference)
@@ -205,7 +205,7 @@ class PyreTest(unittest.TestCase):
         )
 
     def assert_stub(self, error_jsons, expected, full_only: bool = False) -> None:
-        errors = [LegacyError(error_json) for error_json in error_jsons]
+        errors = [LegacyError.create(error_json) for error_json in error_jsons]
         self.assertEqual(
             StubFile(errors, full_only=full_only).to_string().strip(),
             textwrap.dedent(expected.rstrip()),

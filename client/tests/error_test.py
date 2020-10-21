@@ -25,7 +25,7 @@ class ErrorTest(unittest.TestCase):
     }
 
     def test_repr(self) -> None:
-        error = LegacyError(self.fake_error)
+        error = LegacyError.create(self.fake_error)
 
         with patch("{}.terminal.is_capable".format(client), return_value=True):
             self.assertEqual(
@@ -37,7 +37,7 @@ class ErrorTest(unittest.TestCase):
             self.assertEqual(repr(error), "c.py:4:11 Fake error")
 
     def test_key_with_color(self) -> None:
-        error = LegacyError(self.fake_error)
+        error = LegacyError.create(self.fake_error)
 
         self.assertEqual(
             error._key_with_color(),
@@ -45,14 +45,15 @@ class ErrorTest(unittest.TestCase):
         )
 
     def test_long_description(self) -> None:
-        error = LegacyError(self.fake_error)
-        self.assertEqual(error.long_description, "")
+        error = LegacyError.create(self.fake_error)
+        self.assertEqual(error.error.long_description, "")
 
         error_with_long_description = self.fake_error
         error_with_long_description[
             "long_description"
         ] = "Fake error.\nAnd this is why this is an error."
-        error = LegacyError(error_with_long_description)
+        error = LegacyError.create(error_with_long_description)
         self.assertEqual(
-            error.long_description, "Fake error.\nAnd this is why this is an error."
+            error.error.long_description,
+            "Fake error.\nAnd this is why this is an error.",
         )

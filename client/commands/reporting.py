@@ -43,7 +43,7 @@ class Reporting(Command):
         if self._output == command_arguments.TEXT:
             log.stdout.write("\n".join([repr(error) for error in errors]))
         else:
-            log.stdout.write(json.dumps([error.__dict__ for error in errors]))
+            log.stdout.write(json.dumps([error.error.to_json() for error in errors]))
 
     def _get_directories_to_analyze(self) -> Set[str]:
         return self._analysis_directory.get_filter_roots()
@@ -73,7 +73,7 @@ class Reporting(Command):
         errors: List[LegacyError] = []
         results: List[Dict[str, Any]] = self._load_errors_from_json(result.output)
         for error in results:
-            errors.append(LegacyError(error, ignore_error=False))
+            errors.append(LegacyError.create(error, ignore_error=False))
         return errors
 
     def _relativize_errors(
@@ -81,7 +81,7 @@ class Reporting(Command):
     ) -> Sequence[LegacyError]:
         relativized_errors = []
         for error in errors:
-            path = os.path.realpath(os.path.join(relative_root, error.path))
+            path = os.path.realpath(os.path.join(relative_root, error.error.path))
             # Nonexistent paths can be created when search path stubs are renamed.
             if not path.startswith(
                 self._configuration.project_root
@@ -90,16 +90,15 @@ class Reporting(Command):
 
             # Relativize path to user's cwd.
             relative_path = self._relative_path(path)
-            error.path = relative_path
-
-            relativized_errors.append(error)
+            relativized_errors.append(error.with_path(relative_path))
 
         return relativized_errors
 
     def _filter_errors(self, errors: Sequence[LegacyError]) -> Sequence[LegacyError]:
         filtered_errors = [error for error in errors if not error.is_ignored()]
         sorted_errors = sorted(
-            filtered_errors, key=lambda error: (error.path, error.line, error.column)
+            filtered_errors,
+            key=lambda error: (error.error.path, error.error.line, error.error.column),
         )
         return sorted_errors
 

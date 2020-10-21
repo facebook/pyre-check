@@ -167,7 +167,7 @@ class Stub:
     stub: Optional[Union[FieldStub, FunctionStub]] = None
 
     def __init__(self, error) -> None:
-        self.path = Path(error.path)
+        self.path = Path(error.error.path)
         self.parent = error.inference.get("parent")
         self.stub = None
         if FunctionStub.is_instance(error.inference):
@@ -234,7 +234,7 @@ class StubFile:
         self._fields = [stub for stub in stubs if stub.is_field()]
         self._functions = [stub for stub in stubs if stub.is_function()]
         self._methods = [stub for stub in stubs if stub.is_method()]
-        self._path = Path(errors[0].path)
+        self._path = Path(errors[0].error.path)
 
     def to_string(self) -> str:
         """We currently ignore nested classes, i.e.:
@@ -302,10 +302,10 @@ def generate_stub_files(
 ) -> List[StubFile]:
     errors = [error for error in errors if error.inference]
     files = defaultdict(list)
-    errors.sort(key=lambda error: error.line)
+    errors.sort(key=lambda error: error.error.line)
 
     for error in errors:
-        files[error.path].append(error)
+        files[error.error.path].append(error)
 
     stubs = []
     for _path, errors in files.items():
@@ -430,8 +430,8 @@ def _existing_annotations_as_errors(
             module.visit(collector)
         for stub in collector.stubs:
             errors.append(
-                LegacyError(
-                    error={
+                LegacyError.create(
+                    {
                         "path": path_name.replace(project_root + "/", ""),
                         "inference": stub,
                         "line": 0,
