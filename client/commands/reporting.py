@@ -73,34 +73,31 @@ class Reporting(Command):
         errors: List[LegacyError] = []
         results: List[Dict[str, Any]] = self._load_errors_from_json(result.output)
         for error in results:
-            errors.append(
-                LegacyError(error, ignore_error=False, external_to_global_root=False)
-            )
+            errors.append(LegacyError(error, ignore_error=False))
         return errors
 
     def _relativize_errors(
         self, relative_root: str, errors: Sequence[LegacyError]
     ) -> Sequence[LegacyError]:
+        relativized_errors = []
         for error in errors:
             path = os.path.realpath(os.path.join(relative_root, error.path))
+            # Nonexistent paths can be created when search path stubs are renamed.
+            if not path.startswith(
+                self._configuration.project_root
+            ) or not os.path.exists(path):
+                continue
 
             # Relativize path to user's cwd.
             relative_path = self._relative_path(path)
             error.path = relative_path
 
-            # Nonexistent paths can be created when search path stubs are renamed.
-            if not path.startswith(
-                self._configuration.project_root
-            ) or not os.path.exists(path):
-                error.external_to_global_root = True
-        return errors
+            relativized_errors.append(error)
+
+        return relativized_errors
 
     def _filter_errors(self, errors: Sequence[LegacyError]) -> Sequence[LegacyError]:
-        filtered_errors = [
-            error
-            for error in errors
-            if (not error.is_ignored() and (not (error.is_external_to_global_root())))
-        ]
+        filtered_errors = [error for error in errors if not error.is_ignored()]
         sorted_errors = sorted(
             filtered_errors, key=lambda error: (error.path, error.line, error.column)
         )

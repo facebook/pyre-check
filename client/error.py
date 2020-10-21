@@ -13,13 +13,11 @@ from .log import Color, Format
 
 class LegacyError:
     ignore_error: bool = False
-    external_to_global_root: bool = False
 
     def __init__(
         self,
         error: Dict[str, Any],
         ignore_error: bool = False,
-        external_to_global_root: bool = False,
     ) -> None:
         self.line: int = error["line"]
         self.column: int = error["column"]
@@ -31,7 +29,6 @@ class LegacyError:
         self.concise_description: str = error.get("concise_description", "")
         self.inference: str = error["inference"]
         self.ignore_error: bool = ignore_error or error.get("ignore_error", False)
-        self.external_to_global_root: bool = external_to_global_root
 
     def __repr__(self) -> str:
         if terminal.is_capable(file=sys.stdout):
@@ -73,6 +70,3 @@ class LegacyError:
 
     def is_ignored(self) -> bool:
         return self.ignore_error
-
-    def is_external_to_global_root(self) -> bool:
-        return self.external_to_global_root

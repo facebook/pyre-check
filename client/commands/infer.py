@@ -300,11 +300,7 @@ class StubFile:
 def generate_stub_files(
     full_only: bool, errors: Sequence[LegacyError]
 ) -> List[StubFile]:
-    errors = [
-        error
-        for error in errors
-        if error.inference and not (error.is_external_to_global_root())
-    ]
+    errors = [error for error in errors if error.inference]
     files = defaultdict(list)
     errors.sort(key=lambda error: error.line)
 

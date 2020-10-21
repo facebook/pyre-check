@@ -60,7 +60,6 @@ class ReportingTest(unittest.TestCase):
             self.assertEqual(len(errors), 1)
             [error] = errors
             self.assertFalse(error.ignore_error)
-            self.assertFalse(error.external_to_global_root)
 
         arguments = mock_arguments(targets=["//f/g:target"])
         configuration.targets = []
@@ -72,7 +71,6 @@ class ReportingTest(unittest.TestCase):
             self.assertEqual(len(errors), 1)
             [error] = errors
             self.assertFalse(error.ignore_error)
-            self.assertFalse(error.external_to_global_root)
 
         original_directory = "/f/g/target"
         arguments = mock_arguments(targets=["//f/g:target"])
@@ -85,7 +83,6 @@ class ReportingTest(unittest.TestCase):
             self.assertEqual(len(errors), 1)
             [error] = errors
             self.assertFalse(error.ignore_error)
-            self.assertFalse(error.external_to_global_root)
 
         # Called from root with local configuration command line argument
         original_directory = "/root"  # called from
@@ -100,7 +97,6 @@ class ReportingTest(unittest.TestCase):
             self.assertEqual(len(errors), 1)
             [error] = errors
             self.assertFalse(error.ignore_error)
-            self.assertFalse(error.external_to_global_root)
 
         # Test overlapping analysis directory and error path
         original_directory = "/root"  # called from
@@ -120,7 +116,6 @@ class ReportingTest(unittest.TestCase):
             self.assertEqual(len(errors), 1)
             [error] = errors
             self.assertFalse(error.ignore_error)
-            self.assertFalse(error.external_to_global_root)
             self.assertEqual(error.path, "test/path.py")
 
         return
@@ -138,7 +133,6 @@ class ReportingTest(unittest.TestCase):
             self.assertEqual(len(errors), 1)
             [error] = errors
             self.assertTrue(error.ignore_error)
-            self.assertFalse(error.external_to_global_root)
 
     # pyre-fixme[56]: Argument `json` to decorator factory
     #  `unittest.mock.patch.object` could not be resolved in a global scope.
