@@ -10,6 +10,7 @@ open Ast.Expression
 
 type regular_targets = {
   implicit_self: bool;
+  collapse_tito: bool;
   targets: Callable.t list;
 }
 [@@deriving eq, show]

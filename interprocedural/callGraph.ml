@@ -13,6 +13,7 @@ open Pyre
 
 type regular_targets = {
   implicit_self: bool;
+  collapse_tito: bool;
   targets: Callable.t list;
 }
 [@@deriving eq, show]
@@ -31,14 +32,21 @@ type callees =
 
 let merge_targets left right =
   match left, right with
-  | ( Some (RegularTargets { implicit_self = left_implicit_self; targets = left_targets }),
-      Some (RegularTargets { implicit_self = right_implicit_self; targets = right_targets }) )
+  | ( Some
+        (RegularTargets
+          {
+            implicit_self = left_implicit_self;
+            targets = left_targets;
+            collapse_tito = left_collapse_tito;
+          }),
+      Some (RegularTargets { implicit_self = right_implicit_self; targets = right_targets; _ }) )
     when Bool.equal left_implicit_self right_implicit_self ->
       Some
         (RegularTargets
            {
              implicit_self = left_implicit_self;
              targets = List.rev_append left_targets right_targets;
+             collapse_tito = left_collapse_tito;
            })
   | ( Some (ConstructorTargets { new_targets = left_new_targets; init_targets = left_init_targets }),
       Some
@@ -215,7 +223,47 @@ let compute_indirect_targets ~resolution ~receiver_type implementation_target =
         target_callable :: override_targets
 
 
-let rec resolve_callees_from_type ~resolution ?receiver_type ~callee_kind callable_type =
+let collapse_tito ~resolution ~callee ~callable_type =
+  (* For most cases, it is simply incorrect to not collapse tito, as it will lead to incorrect
+   * mapping from input to output taint. However, the collapsing of tito adversely affects our
+   * analysis in the case of the builder pattern, i.e.
+   *
+   * class C:
+   *  def set_field(self, field) -> "C":
+   *    self.field = field
+   *    return self
+   *
+   * In this case, collapsing tito leads to field
+   * tainting the entire `self` for chained call. To prevent this problem, we special case
+   * builders to preserve the tito structure. *)
+  match callable_type with
+  | Type.Parametric { name = "BoundMethod"; parameters = [_; Type.Parameter.Single implicit] } ->
+      let return_annotation =
+        (* To properly substitute type variables, we simulate `callee.__call__` for the bound
+           method. *)
+        let to_simulate =
+          Node.create_with_default_location
+            (Expression.Name
+               (Name.Attribute { base = callee; attribute = "__call__"; special = true }))
+        in
+        Resolution.resolve_expression resolution to_simulate
+        |> snd
+        |> function
+        | Type.Callable { Type.Callable.implementation; _ } ->
+            Type.Callable.Overload.return_annotation implementation
+        | _ -> Type.Top
+      in
+      not (Type.equal implicit return_annotation)
+  | _ -> true
+
+
+let rec resolve_callees_from_type
+    ~resolution
+    ?receiver_type
+    ~callee_kind
+    ~collapse_tito
+    callable_type
+  =
   match callable_type with
   | Type.Callable { Type.Callable.kind = Type.Callable.Named name; _ } -> (
       match receiver_type with
@@ -225,23 +273,28 @@ let rec resolve_callees_from_type ~resolution ?receiver_type ~callee_kind callab
             | Method { is_direct_call = true } -> [Callable.create_method name]
             | _ -> compute_indirect_targets ~resolution ~receiver_type name
           in
-          Some (RegularTargets { implicit_self = true; targets })
+          Some (RegularTargets { implicit_self = true; targets; collapse_tito })
       | None ->
           let target =
             match callee_kind with
             | Method _ -> Callable.create_method name
             | _ -> Callable.create_function name
           in
-          Some (RegularTargets { implicit_self = false; targets = [target] }) )
+          Some (RegularTargets { implicit_self = false; targets = [target]; collapse_tito }) )
   | Type.Parametric { name = "BoundMethod"; parameters = [Single callable; Single receiver_type] }
     ->
-      resolve_callees_from_type ~resolution ~receiver_type ~callee_kind callable
+      resolve_callees_from_type ~resolution ~receiver_type ~callee_kind ~collapse_tito callable
   | Type.Union (element :: elements) ->
       let first_targets =
-        resolve_callees_from_type ~resolution ~callee_kind ?receiver_type element
+        resolve_callees_from_type ~resolution ~callee_kind ?receiver_type ~collapse_tito element
       in
       List.fold elements ~init:first_targets ~f:(fun combined_targets new_target ->
-          resolve_callees_from_type ~resolution ?receiver_type ~callee_kind new_target
+          resolve_callees_from_type
+            ~resolution
+            ?receiver_type
+            ~callee_kind
+            ~collapse_tito
+            new_target
           |> merge_targets combined_targets)
   | callable_type ->
       (* Handle callable classes. `typing.Type` interacts specially with __call__, so we choose to
@@ -269,8 +322,9 @@ let rec resolve_callees_from_type ~resolution ?receiver_type ~callee_kind callab
                        `Method
                          { Callable.class_name = primitive_callable_name; method_name = "__call__" };
                      ];
+                   collapse_tito;
                  })
-        | annotation -> resolve_callees_from_type ~resolution ~callee_kind annotation
+        | annotation -> resolve_callees_from_type ~resolution ~callee_kind ~collapse_tito annotation
       else
         resolve_constructor_callee ~resolution callable_type
 
@@ -291,11 +345,13 @@ and resolve_constructor_callee ~resolution class_type =
             ~resolution
             ~receiver_type:class_type
             ~callee_kind:(Method { is_direct_call = true })
+            ~collapse_tito:true
             new_callable_type,
           resolve_callees_from_type
             ~resolution
             ~receiver_type:class_type
             ~callee_kind:(Method { is_direct_call = true })
+            ~collapse_tito:true
             init_callable_type )
       in
       match new_targets, init_targets with
@@ -359,7 +415,14 @@ let resolve_callees ~resolution ~call =
     let get_higher_order_function_targets index { Call.Argument.value = argument; _ } =
       let argument_type = resolve_ignoring_optional ~resolution argument in
       let argument_kind = callee_kind ~resolution argument argument_type in
-      match resolve_callees_from_type ~callee_kind:argument_kind ~resolution argument_type with
+      let collapse_tito = collapse_tito ~resolution ~callee:argument ~callable_type:argument_type in
+      match
+        resolve_callees_from_type
+          ~callee_kind:argument_kind
+          ~resolution
+          ~collapse_tito
+          argument_type
+      with
       | Some (RegularTargets regular_targets) -> Some (index, regular_targets)
       | _ -> None
     in
@@ -367,11 +430,12 @@ let resolve_callees ~resolution ~call =
   in
   let callee_type = resolve_ignoring_optional ~resolution callee in
   let callee_kind = callee_kind ~resolution callee callee_type in
+  let collapse_tito = collapse_tito ~resolution ~callee ~callable_type:callee_type in
   let regular_callees =
     match callee_kind with
     | RecognizedCallableTarget name ->
-        Some (RegularTargets { implicit_self = false; targets = [`Function name] })
-    | _ -> resolve_callees_from_type ~callee_kind ~resolution callee_type
+        Some (RegularTargets { implicit_self = false; targets = [`Function name]; collapse_tito })
+    | _ -> resolve_callees_from_type ~callee_kind ~resolution ~collapse_tito callee_type
   in
   match higher_order_function_argument, regular_callees with
   | Some callable_argument, Some (RegularTargets higher_order_function) ->
@@ -415,7 +479,7 @@ let resolve_property_targets ~resolution ~base ~attribute ~setter =
         else
           targets
       in
-      Some (RegularTargets { implicit_self = true; targets })
+      Some (RegularTargets { implicit_self = true; targets; collapse_tito = true })
 
 
 (* This is a bit of a trick. The only place that knows where the local annotation map keys is the
