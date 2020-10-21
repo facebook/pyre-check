@@ -27,7 +27,7 @@ from .. import command_arguments, log
 from ..analysis_directory import AnalysisDirectory
 from ..annotation_collector import AnnotationCollector
 from ..configuration import Configuration
-from ..error import Error
+from ..error import LegacyError
 from .command import Command, Result, typeshed_search_path
 from .reporting import Reporting
 from .statistics import _get_paths, _parse_paths, parse_path_to_module
@@ -297,7 +297,9 @@ class StubFile:
         path.write_text(contents)
 
 
-def generate_stub_files(full_only: bool, errors: Sequence[Error]) -> List[StubFile]:
+def generate_stub_files(
+    full_only: bool, errors: Sequence[LegacyError]
+) -> List[StubFile]:
     errors = [
         error
         for error in errors
@@ -422,7 +424,7 @@ def annotate_from_existing_stubs(
 
 def _existing_annotations_as_errors(
     modules: Dict[Path, Optional[libcst.Module]], project_root: str
-) -> List[Error]:
+) -> List[LegacyError]:
     errors = []
     for path_name, module in modules.items():
         path_name = str(path_name)
@@ -432,7 +434,7 @@ def _existing_annotations_as_errors(
             module.visit(collector)
         for stub in collector.stubs:
             errors.append(
-                Error(
+                LegacyError(
                     error={
                         "path": path_name.replace(project_root + "/", ""),
                         "inference": stub,
@@ -571,7 +573,7 @@ class Infer(Reporting):
 
     def _get_errors(
         self, result: Result, bypass_filtering: bool = False, from_stdin: bool = False
-    ) -> Sequence[Error]:
+    ) -> Sequence[LegacyError]:
         analysis_root = os.path.realpath(self._analysis_directory.get_root())
         relative_root = self._original_directory if from_stdin else analysis_root
         errors = self._relativize_errors(relative_root, self._parse_raw_errors(result))

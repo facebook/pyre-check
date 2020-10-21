@@ -11,7 +11,7 @@ from . import terminal
 from .log import Color, Format
 
 
-class Error:
+class LegacyError:
     ignore_error: bool = False
     external_to_global_root: bool = False
 
@@ -59,12 +59,12 @@ class Error:
         )
 
     def __eq__(self, other: object) -> bool:
-        if not isinstance(other, Error):
+        if not isinstance(other, LegacyError):
             return False
         return self.__key() == other.__key()
 
     def __lt__(self, other: object) -> bool:
-        if not isinstance(other, Error):
+        if not isinstance(other, LegacyError):
             return False
         return self.__key() < other.__key()
 

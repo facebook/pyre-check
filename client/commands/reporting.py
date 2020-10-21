@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Optional, Sequence, Set
 from .. import command_arguments, log
 from ..analysis_directory import AnalysisDirectory
 from ..configuration import Configuration
-from ..error import Error
+from ..error import LegacyError
 from .command import ClientException, Command, Result
 
 
@@ -33,7 +33,7 @@ class Reporting(Command):
             command_arguments, original_directory, configuration, analysis_directory
         )
 
-    def _print(self, errors: Sequence[Error]) -> None:
+    def _print(self, errors: Sequence[LegacyError]) -> None:
         if errors:
             length = len(errors)
             LOG.error("Found %d type error%s!", length, "s" if length > 1 else "")
@@ -68,19 +68,19 @@ class Reporting(Command):
             LOG.debug("Invalid JSON output: %s", json_output)
         return error_list
 
-    def _parse_raw_errors(self, result: Result) -> Sequence[Error]:
+    def _parse_raw_errors(self, result: Result) -> Sequence[LegacyError]:
         result.check()
-        errors: List[Error] = []
+        errors: List[LegacyError] = []
         results: List[Dict[str, Any]] = self._load_errors_from_json(result.output)
         for error in results:
             errors.append(
-                Error(error, ignore_error=False, external_to_global_root=False)
+                LegacyError(error, ignore_error=False, external_to_global_root=False)
             )
         return errors
 
     def _relativize_errors(
-        self, relative_root: str, errors: Sequence[Error]
-    ) -> Sequence[Error]:
+        self, relative_root: str, errors: Sequence[LegacyError]
+    ) -> Sequence[LegacyError]:
         for error in errors:
             path = os.path.realpath(os.path.join(relative_root, error.path))
 
@@ -95,7 +95,7 @@ class Reporting(Command):
                 error.external_to_global_root = True
         return errors
 
-    def _filter_errors(self, errors: Sequence[Error]) -> Sequence[Error]:
+    def _filter_errors(self, errors: Sequence[LegacyError]) -> Sequence[LegacyError]:
         filtered_errors = [
             error
             for error in errors
@@ -106,7 +106,7 @@ class Reporting(Command):
         )
         return sorted_errors
 
-    def _get_errors(self, result: Result) -> Sequence[Error]:
+    def _get_errors(self, result: Result) -> Sequence[LegacyError]:
         analysis_root = os.path.realpath(self._analysis_directory.get_root())
         errors = self._relativize_errors(analysis_root, self._parse_raw_errors(result))
 

@@ -29,7 +29,7 @@ from ...commands.infer import (
     dequalify,
     generate_stub_files,
 )
-from ...error import Error
+from ...error import LegacyError
 from .command_test import (
     mock_arguments,
     mock_configuration as general_mock_configuration,
@@ -160,7 +160,7 @@ class HelperTest(unittest.TestCase):
 
 class PyreTest(unittest.TestCase):
     def assert_imports(self, error_json, expected_imports) -> None:
-        error = Error(error_json)
+        error = LegacyError(error_json)
         stub = None
         if FunctionStub.is_instance(error.inference):
             stub = FunctionStub(error.inference)
@@ -205,7 +205,7 @@ class PyreTest(unittest.TestCase):
         )
 
     def assert_stub(self, error_jsons, expected, full_only: bool = False) -> None:
-        errors = [Error(error_json) for error_json in error_jsons]
+        errors = [LegacyError(error_json) for error_json in error_jsons]
         self.assertEqual(
             StubFile(errors, full_only=full_only).to_string().strip(),
             textwrap.dedent(expected.rstrip()),
