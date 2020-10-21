@@ -9,10 +9,10 @@ import logging
 import os
 from typing import Any, Dict, List, Optional, Sequence, Set
 
-from .. import command_arguments, log
+from .. import command_arguments
 from ..analysis_directory import AnalysisDirectory
 from ..configuration import Configuration
-from ..error import LegacyError
+from ..error import LegacyError, print_errors
 from .command import ClientException, Command, Result
 
 
@@ -34,16 +34,7 @@ class Reporting(Command):
         )
 
     def _print(self, errors: Sequence[LegacyError]) -> None:
-        if errors:
-            length = len(errors)
-            LOG.error("Found %d type error%s!", length, "s" if length > 1 else "")
-        else:
-            LOG.log(log.SUCCESS, "No type errors found")
-
-        if self._output == command_arguments.TEXT:
-            log.stdout.write("\n".join([repr(error) for error in errors]))
-        else:
-            log.stdout.write(json.dumps([error.error.to_json() for error in errors]))
+        print_errors([error.error for error in errors], output=self._output)
 
     def _get_directories_to_analyze(self) -> Set[str]:
         return self._analysis_directory.get_filter_roots()

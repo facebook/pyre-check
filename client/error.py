@@ -6,11 +6,15 @@
 
 import dataclasses
 import json
+import logging
 import sys
-from typing import Any, Dict
+from typing import Any, Dict, Sequence
 
-from . import terminal
+from . import command_arguments, log, terminal
 from .log import Color, Format
+
+
+LOG: logging.Logger = logging.getLogger(__name__)
 
 
 class ErrorParsingFailure(Exception):
@@ -55,6 +59,20 @@ class Error:
 
     def to_json(self) -> Dict[str, Any]:
         return dataclasses.asdict(self)
+
+
+def print_errors(errors: Sequence[Error], output: str) -> None:
+    length = len(errors)
+    if length != 0:
+        suffix = "s" if length > 1 else ""
+        LOG.error(f"Found {length} type error{suffix}!")
+    else:
+        LOG.log(log.SUCCESS, "No type errors found")
+
+    if output == command_arguments.TEXT:
+        log.stdout.write("\n".join([repr(error) for error in errors]))
+    else:
+        log.stdout.write(json.dumps([error.to_json() for error in errors]))
 
 
 class LegacyError:
