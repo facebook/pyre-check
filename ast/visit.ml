@@ -17,6 +17,7 @@ type node =
   | Parameter of Parameter.t
   | Reference of Reference.t Node.t
   | Substring of Substring.t Node.t
+  | Generator of Comprehension.Generator.t
 
 module type NodeVisitor = sig
   type t
@@ -46,9 +47,10 @@ module MakeNodeVisitor (Visitor : NodeVisitor) = struct
     let visitor = Option.value visitor_override ~default:Visitor.node in
     let visit_expression = visit_expression ~state ?visitor_override in
     let visit_generator
-        { Comprehension.Generator.target; iterator; conditions; _ }
+        ({ Comprehension.Generator.target; iterator; conditions; _ } as generator)
         ~visit_expression
       =
+      visit_node ~state ~visitor (Generator generator);
       visit_expression target;
       visit_expression iterator;
       List.iter conditions ~f:visit_expression
@@ -75,24 +77,24 @@ module MakeNodeVisitor (Visitor : NodeVisitor) = struct
           List.iter entries ~f:(visit_entry ~visit_expression);
           List.iter keywords ~f:visit_expression |> ignore
       | DictionaryComprehension { Comprehension.element; generators } ->
-          visit_entry element ~visit_expression;
-          List.iter generators ~f:(visit_generator ~visit_expression)
+          List.iter generators ~f:(visit_generator ~visit_expression);
+          visit_entry element ~visit_expression
       | Generator { Comprehension.element; generators } ->
-          visit_expression element;
-          List.iter generators ~f:(visit_generator ~visit_expression)
+          List.iter generators ~f:(visit_generator ~visit_expression);
+          visit_expression element
       | Lambda { Lambda.parameters; body } ->
           List.iter parameters ~f:(visit_parameter ~state ~visitor ~visit_expression);
           visit_expression body
       | List elements -> List.iter elements ~f:visit_expression
       | ListComprehension { Comprehension.element; generators } ->
-          visit_expression element;
-          List.iter generators ~f:(visit_generator ~visit_expression)
+          List.iter generators ~f:(visit_generator ~visit_expression);
+          visit_expression element
       | Name (Name.Identifier _) -> ()
       | Name (Name.Attribute { base; _ }) -> visit_expression base
       | Set elements -> List.iter elements ~f:visit_expression
       | SetComprehension { Comprehension.element; generators } ->
-          visit_expression element;
-          List.iter generators ~f:(visit_generator ~visit_expression)
+          List.iter generators ~f:(visit_generator ~visit_expression);
+          visit_expression element
       | Starred starred -> (
           match starred with
           | Starred.Once expression
@@ -421,6 +423,7 @@ let collect_locations source =
           | Parameter node -> Some (Node.location node)
           | Reference node -> Some (Node.location node)
           | Substring node -> Some (Node.location node)
+          | Generator _ -> None
       end)
   in
   let { Collector.nodes; _ } = Collector.collect source in

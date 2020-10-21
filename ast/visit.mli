@@ -14,6 +14,7 @@ type node =
   | Parameter of Parameter.t
   | Reference of Reference.t Node.t
   | Substring of Substring.t Node.t
+  | Generator of Comprehension.Generator.t
 
 module type NodeVisitor = sig
   type t

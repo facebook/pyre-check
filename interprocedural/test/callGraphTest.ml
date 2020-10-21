@@ -684,6 +684,34 @@ let test_call_graph_of_define context =
               collapse_tito = true;
               targets = [`Method { Callable.class_name = "test.C"; method_name = "m" }];
             } );
+      ];
+  assert_call_graph_of_define
+    ~source:
+      {|
+    class C:
+        def run(self) -> str:
+            return ""
+
+    def foo() -> None:
+        cs: List[C] = [C()]
+        result = [c.run() for c in cs]
+    |}
+    ~define_name:"test.foo"
+    ~expected:
+      [
+        ( "7:19-7:22",
+          CallGraph.ConstructorTargets
+            {
+              new_targets = [`Method { Callable.class_name = "object"; method_name = "__new__" }];
+              init_targets = [`Method { Callable.class_name = "object"; method_name = "__init__" }];
+            } );
+        ( "8:14-8:21",
+          CallGraph.RegularTargets
+            {
+              CallGraph.implicit_self = true;
+              collapse_tito = true;
+              targets = [`Method { Callable.class_name = "test.C"; method_name = "run" }];
+            } );
       ]
 
 

@@ -607,9 +607,22 @@ struct
 
     let statement_visitor state _ = state
 
+    let generator_visitor ({ resolution; _ } as state) generator =
+      (* Since generators create variables that Pyre sees as scoped within the generator, handle
+         them by adding the generator's bindings to the resolution. *)
+      {
+        state with
+        resolution =
+          Resolution.resolve_assignment
+            resolution
+            (Ast.Statement.Statement.generator_assignment generator);
+      }
+
+
     let node state = function
       | Visit.Expression expression -> expression_visitor state expression
       | Visit.Statement statement -> statement_visitor state statement
+      | Visit.Generator generator -> generator_visitor state generator
       | _ -> state
 
 

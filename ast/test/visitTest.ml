@@ -233,6 +233,9 @@ let test_node_visitor _ =
       | Visit.Substring _ ->
           increment state "substring";
           state
+      | Visit.Generator _ ->
+          increment state "generator";
+          state
 
 
     let visit_statement_children _ _ = true

@@ -223,6 +223,7 @@ let collect_nodes_as_strings source =
           Some (Identifier.sanitized name, location)
       | Visit.Reference { Node.value; location } -> Some (Reference.show value, location)
       | Visit.Substring { Node.value; location } -> Some (Expression.Substring.show value, location)
+      | Visit.Generator _ -> None
   end)
   in
   Collector.collect source
