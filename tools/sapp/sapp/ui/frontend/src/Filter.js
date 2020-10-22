@@ -31,7 +31,7 @@ import {
 import {
   FilterOutlined,
   PlusOutlined,
-  MinusOutlined,
+  MinusCircleOutlined,
   InfoCircleOutlined,
   MoreOutlined,
   SaveOutlined,
@@ -209,69 +209,71 @@ const FilterForm = (props: {
             <Form.Item
               key={index}
               label={index === 0 ? <Label title="features" /> : null}>
-              <Row style={{marginTop: 5}}>
-                <Col span={6}>
-                  <Form.Item name={['features', index, 'mode']}>
-                    <Select
-                      options={[
-                        {value: 'all of'},
-                        {value: 'any of'},
-                        {value: 'none of'},
-                      ]}
+              <div class="form-features">
+                <Row style={{marginTop: 5}} justify="space-between">
+                  <Col span={6}>
+                    <Form.Item name={['features', index, 'mode']}>
+                      <Select
+                        options={[
+                          {value: 'all of'},
+                          {value: 'any of'},
+                          {value: 'none of'},
+                        ]}
+                      />
+                    </Form.Item>
+                  </Col>
+                  <Col span={16}>
+                    <Form.Item name={['features', index, 'features']}>
+                      <Select
+                        mode="multiple"
+                        options={(features?.features?.edges || []).map(edge => {
+                          return {
+                            value: edge.node.feature,
+                          };
+                        })}
+                      />
+                    </Form.Item>
+                  </Col>
+                  <Col>
+                    <Button
+                      type="text"
+                      onClick={() => {
+                        const newFeatureConditions = (
+                          props.currentFilter.features || []
+                        ).filter((_, filterIndex) => index !== filterIndex);
+                        props.setCurrentFilter({
+                          ...props.currentFilter,
+                          features: newFeatureConditions,
+                        });
+                      }}
+                      disabled={props.currentFilter.features.length < 2}
+                      icon={<MinusCircleOutlined />}
                     />
-                  </Form.Item>
-                </Col>
-                <Col span={15}>
-                  <Form.Item name={['features', index, 'features']}>
-                    <Select
-                      mode="multiple"
-                      options={(features?.features?.edges || []).map(edge => {
-                        return {
-                          value: edge.node.feature,
-                        };
-                      })}
-                    />
-                  </Form.Item>
-                </Col>
-                <Col span={3} style={{textAlign: 'right'}}>
-                  <Button
-                    type="dashed"
-                    onClick={() => {
-                      const newFeatureConditions = (
-                        props.currentFilter.features || []
-                      ).filter((_, filterIndex) => index !== filterIndex);
-                      props.setCurrentFilter({
-                        ...props.currentFilter,
-                        features: newFeatureConditions,
-                      });
-                    }}
-                    disabled={props.currentFilter.features.length < 2}>
-                    <MinusOutlined />
-                  </Button>
-                </Col>
-              </Row>
+                  </Col>
+                </Row>
+              </div>
             </Form.Item>
           );
         })}
-        {props.currentFilter.features[props.currentFilter.features.length - 1]
-          .features.length > 0 ? (
-          <Form.Item style={{marginTop: 5, textAlign: 'right'}}>
-            <Button
-              type="dashed"
-              onClick={() => {
-                const newFeatureConditions = [
-                  ...(props.currentFilter.features || []),
-                  {mode: 'all of', features: []},
-                ];
-                props.setCurrentFilter({
-                  ...props.currentFilter,
-                  features: newFeatureConditions,
-                });
-              }}>
-              <PlusOutlined /> Add Condition
-            </Button>
-          </Form.Item>
-        ) : null}
+        <Button
+          type="dashed"
+          size="small"
+          onClick={() => {
+            const newFeatureConditions = [
+              ...(props.currentFilter.features || []),
+              {mode: 'all of', features: []},
+            ];
+            props.setCurrentFilter({
+              ...props.currentFilter,
+              features: newFeatureConditions,
+            });
+          }}
+          icon={<PlusOutlined />}
+          style={{width: '100%', marginTop: 5}}
+          block>
+          {' '}
+          Add Condition
+        </Button>
       </Form.Item>
       <Form.Item label="Trace Lengths from Sources">
         <Row>

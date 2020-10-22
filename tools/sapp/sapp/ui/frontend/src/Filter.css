@@ -12,3 +12,7 @@
 .ant-form-item .ant-form-item {
     margin-bottom: 0 !important;
 }
+
+.form-features .ant-row {
+    flex-flow: nowrap !important;
+}
