@@ -22,6 +22,7 @@ const IssueQuery = gql`
     $codes: [Int]
     $paths: [String]
     $callables: [String]
+    $features: [FeatureCondition]
     $min_trace_length_to_sinks: Int
     $max_trace_length_to_sinks: Int
     $min_trace_length_to_sources: Int
@@ -33,6 +34,7 @@ const IssueQuery = gql`
       codes: $codes
       paths: $paths
       callables: $callables
+      features: $features
       min_trace_length_to_sinks: $min_trace_length_to_sinks
       max_trace_length_to_sinks: $max_trace_length_to_sinks
       min_trace_length_to_sources: $min_trace_length_to_sources

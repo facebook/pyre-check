@@ -32,18 +32,26 @@ import './Filter.css';
 
 const {Text} = Typography;
 
+type FeatureCondition = {
+  mode: string,
+  features: $ReadOnlyArray<string>,
+};
+
 type FilterDescription = {
   name?: string,
   description?: string,
   codes?: $ReadOnlyArray<number>,
   paths?: $ReadOnlyArray<string>,
   callables?: $ReadOnlyArray<string>,
-  features_mode?: string,
-  features?: $ReadOnlyArray<string>,
+  features?: $ReadOnlyArray<FeatureCondition>,
   min_trace_length_to_sinks?: number,
   max_trace_length_to_sinks?: number,
   min_trace_length_to_sources?: number,
   max_trace_length_to_sources?: number,
+};
+
+const emptyFilter = {
+  features: [{mode: 'all of', features: []}],
 };
 
 const FilterForm = (props: {
@@ -62,7 +70,6 @@ const FilterForm = (props: {
     codes: values.codes,
     paths: values.paths,
     callables: values.callables,
-    features_mode: values.features_mode,
     features: values.features,
     min_trace_length_to_sinks: values.min_trace_length_to_sinks,
     max_trace_length_to_sinks: values.max_trace_length_to_sinks,
@@ -70,7 +77,9 @@ const FilterForm = (props: {
     max_trace_length_to_sources: values.max_trace_length_to_sources,
   });
 
-  const [appliedFilter, setAppliedFilter] = useState<FilterDescription>({});
+  const [appliedFilter, setAppliedFilter] = useState<FilterDescription>(
+    emptyFilter,
+  );
 
   const codesQuery = gql`
     query Codes {
@@ -168,33 +177,70 @@ const FilterForm = (props: {
           })}
         />
       </Form.Item>
-      <Form.Item label="Features">
-        <Row>
-          <Col span={6}>
-            <Form.Item name="features_mode">
-              <Select
-                options={[
-                  {value: 'all of'},
-                  {value: 'any of'},
-                  {value: 'none of'},
-                ]}
-                defaultValue="all of"
-              />
+      <Form.Item>
+        {(props.currentFilter.features || []).map((feature, index) => {
+          return (
+            <Form.Item key={index} label={index === 0 ? 'Features' : ''}>
+              <Row style={{marginTop: 5}}>
+                <Col span={6}>
+                  <Form.Item name={['features', index, 'mode']}>
+                    <Select
+                      options={[
+                        {value: 'all of'},
+                        {value: 'any of'},
+                        {value: 'none of'},
+                      ]}
+                    />
+                  </Form.Item>
+                </Col>
+                <Col span={15}>
+                  <Form.Item name={['features', index, 'features']}>
+                    <Select
+                      mode="multiple"
+                      options={(features?.features?.edges || []).map(edge => {
+                        return {
+                          value: edge.node.feature,
+                        };
+                      })}
+                    />
+                  </Form.Item>
+                </Col>
+                <Col span={3} style={{textAlign: 'right'}}>
+                  <Button
+                    type="dashed"
+                    onClick={() => {
+                      const newFeatureConditions = (
+                        props.currentFilter.features || []
+                      ).filter((_, filterIndex) => index !== filterIndex);
+                      props.setCurrentFilter({
+                        ...props.currentFilter,
+                        features: newFeatureConditions,
+                      });
+                    }}
+                    disabled={props.currentFilter.features.length < 2}>
+                    <MinusOutlined />
+                  </Button>
+                </Col>
+              </Row>
             </Form.Item>
-          </Col>
-          <Col span={18}>
-            <Form.Item name="features">
-              <Select
-                mode="multiple"
-                options={(features?.features?.edges || []).map(edge => {
-                  return {
-                    value: edge.node.feature,
-                  };
-                })}
-              />
-            </Form.Item>
-          </Col>
-        </Row>
+          );
+        })}
+        <Form.Item style={{marginTop: 5, textAlign: 'right'}}>
+          <Button
+            type="dashed"
+            onClick={() => {
+              const newFeatureConditions = [
+                ...(props.currentFilter.features || []),
+                {mode: 'all of', features: []},
+              ];
+              props.setCurrentFilter({
+                ...props.currentFilter,
+                features: newFeatureConditions,
+              });
+            }}>
+            <PlusOutlined /> Add Condition
+          </Button>
+        </Form.Item>
       </Form.Item>
       <Form.Item label="Trace Lengths from Sources">
         <Row>
@@ -237,7 +283,7 @@ const FilterForm = (props: {
         <div style={{textAlign: 'right'}}>
           <Button
             onClick={() => {
-              props.setCurrentFilter({});
+              props.setCurrentFilter(emptyFilter);
               form.resetFields();
             }}
             disabled={
@@ -423,7 +469,7 @@ const SavedFilters = (
   const onDelete = (): void => {
     deleteFilter({variables: {name: props.currentFilter.name}});
     setDeleteModalVisible(false);
-    props.setCurrentFilter({});
+    props.setCurrentFilter(emptyFilter);
   };
 
   return (
@@ -478,7 +524,9 @@ const SavedFilters = (
 
 const Filter = (props: {refetch: any, refetching: boolean}) => {
   const [visible, setVisible] = useState(false);
-  const [currentFilter, setCurrentFilter] = useState<FilterDescription>({});
+  const [currentFilter, setCurrentFilter] = useState<FilterDescription>(
+    emptyFilter,
+  );
 
   const content = (
     <div style={{width: '500px'}}>

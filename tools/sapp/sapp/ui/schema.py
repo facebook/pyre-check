@@ -81,6 +81,11 @@ class FilterConnection(relay.Connection):
         node = filters_module.Filter
 
 
+class FeatureCondition(graphene.InputObjectType):
+    mode = graphene.String()
+    features = graphene.List(graphene.String)
+
+
 class Query(graphene.ObjectType):
     # pyre-fixme[4]: Attribute must be annotated.
     node = relay.Node.Field()
@@ -89,8 +94,7 @@ class Query(graphene.ObjectType):
         codes=graphene.List(graphene.Int, default_value=["%"]),
         paths=graphene.List(graphene.String, default_value=["%"]),
         callables=graphene.List(graphene.String, default_value=["%"]),
-        features_mode=graphene.String(),
-        features=graphene.List(graphene.String),
+        features=graphene.List(FeatureCondition),
         min_trace_length_to_sinks=graphene.Int(),
         max_trace_length_to_sinks=graphene.Int(),
         min_trace_length_to_sources=graphene.Int(),
@@ -125,8 +129,7 @@ class Query(graphene.ObjectType):
         codes: List[int],
         paths: List[str],
         callables: List[str],
-        features_mode: Optional[str] = None,
-        features: Optional[List[str]] = None,
+        features: Optional[List[FeatureCondition]] = None,
         min_trace_length_to_sinks: Optional[int] = None,
         max_trace_length_to_sinks: Optional[int] = None,
         min_trace_length_to_sources: Optional[int] = None,
@@ -151,13 +154,16 @@ class Query(graphene.ObjectType):
             .where_issue_id_is(issue_id)
         )
 
-        if features_mode and features:
-            if features_mode == "any of":
-                builder = builder.where_any_features(features)
-            if features_mode == "all of":
-                builder = builder.where_all_features(features)
-            if features_mode == "none of":
-                builder = builder.where_exclude_features(features)
+        for feature in features or []:
+            if feature.mode == "any of":
+                # pyre-ignore[6]: graphene too dynamic.
+                builder = builder.where_any_features(feature.features)
+            if feature.mode == "all of":
+                # pyre-ignore[6]: graphene too dynamic.
+                builder = builder.where_all_features(feature.features)
+            if feature.mode == "none of":
+                # pyre-ignore[6]: graphene too dynamic.
+                builder = builder.where_exclude_features(feature.features)
 
         return builder.get()
 
