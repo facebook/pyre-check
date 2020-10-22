@@ -78,7 +78,6 @@ class SourceDatabaseBuckBuilderTest(unittest.TestCase):
                 ["//foo/bar:baz", "//foo/bar:tests-library"]
             ),
             [
-                "build",
                 "--show-full-json-output",
                 "//foo/bar:baz#source-db",
                 "//foo/bar:tests-library#source-db",

@@ -10,6 +10,7 @@ import logging
 import shutil
 import subprocess
 import sys
+import tempfile
 from itertools import chain
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -91,7 +92,6 @@ def _get_buck_build_arguments(targets: List[str]) -> List[str]:
     # onto a consistent set of platforms, but this has a cost of invalidating the
     # parser cache, which may not be worth it.
     return [
-        "build",
         "--show-full-json-output",
         *(f"{target}#source-db" for target in targets),
     ]
@@ -102,7 +102,11 @@ def _build_targets(
 ) -> Dict[str, str]:
     build_arguments = _get_buck_build_arguments(targets)
     LOG.info("Running `buck build`...")
-    return json.loads(_buck(build_arguments, isolation_prefix))
+    with tempfile.NamedTemporaryFile(
+        "w+", prefix="pyre_buck_build_arguments"
+    ) as arguments_file:
+        Path(arguments_file.name).write_text("\n".join(build_arguments))
+        return json.loads(_buck(["build", f"@{arguments_file.name}"], isolation_prefix))
 
 
 def _load_source_databases(
