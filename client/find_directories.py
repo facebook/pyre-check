@@ -7,7 +7,7 @@
 import itertools
 import logging
 from pathlib import Path
-from typing import Callable, NamedTuple, Optional
+from typing import Callable, List, NamedTuple, Optional
 
 
 CONFIGURATION_FILE: str = ".pyre_configuration"
@@ -135,6 +135,30 @@ def find_typeshed() -> Optional[Path]:
 
     # This is a terrible, terrible hack.
     return find_parent_directory_containing_directory(current_directory, "typeshed/")
+
+
+def find_typeshed_search_paths(typeshed_root: Path) -> List[Path]:
+    """
+    Given the root of typeshed, find all subdirectories in it that can be used
+    as search paths for Pyre.
+    """
+    search_path = []
+    typeshed_subdirectories = ["stdlib", "third_party"]
+    for typeshed_subdirectory_name in typeshed_subdirectories:
+        typeshed_subdirectory = typeshed_root / typeshed_subdirectory_name
+        if not typeshed_subdirectory.is_dir():
+            continue
+
+        # Always prefer newer version over older version
+        version_names = sorted(
+            (x.name for x in typeshed_subdirectory.iterdir()), reverse=True
+        )
+        for version_name in version_names:
+            # Anything under 2/ or 2.x is unusable for Pyre
+            if version_name.startswith("2") and version_name != "2and3":
+                continue
+            search_path.append(typeshed_subdirectory / version_name)
+    return search_path
 
 
 def find_taint_models_directory() -> Optional[Path]:

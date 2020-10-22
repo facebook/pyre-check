@@ -16,9 +16,10 @@ from ..find_directories import (
     find_global_root,
     find_parent_directory_containing_directory,
     find_parent_directory_containing_file,
+    find_typeshed_search_paths,
     get_relative_local_root,
 )
-from .setup import ensure_files_exist
+from .setup import ensure_directories_exists, ensure_files_exist
 
 
 class RelativeLocalRootTest(unittest.TestCase):
@@ -371,3 +372,35 @@ class FindGlobalAndLocalRootTest(unittest.TestCase):
             base=".",
             expected=None,
         )
+
+
+class FindTypeshedTest(unittest.TestCase):
+    def test_find_typeshed_search_paths(self) -> None:
+        self.maxDiff = None
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root)
+            ensure_directories_exists(
+                root_path,
+                [
+                    f"stdlib/{version}"
+                    for version in ["2.7", "2", "2and3", "3.5", "3.6", "3.7", "3"]
+                ]
+                + [f"third_party/{version}" for version in ["3", "3.5", "2", "2and3"]],
+            )
+
+            self.assertListEqual(
+                find_typeshed_search_paths(root_path),
+                [
+                    root_path / subdirectory
+                    for subdirectory in [
+                        "stdlib/3.7",
+                        "stdlib/3.6",
+                        "stdlib/3.5",
+                        "stdlib/3",
+                        "stdlib/2and3",
+                        "third_party/3.5",
+                        "third_party/3",
+                        "third_party/2and3",
+                    ]
+                ],
+            )
