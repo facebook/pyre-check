@@ -272,49 +272,21 @@ const SaveFilterModal = (
   const [form] = Form.useForm();
 
   const onCompleted = (data: any): void => {
-    props.onSave(data.save_filter.node);
+    const filter = {
+      ...data.save_filter.node,
+      ...JSON.parse(data.save_filter.node.json),
+    };
+    props.onSave(filter);
   };
   const saveFilterMutation = gql`
-    mutation SaveFilter(
-      $name: String!
-      $description: String
-      $codes: [Int]
-      $paths: [String]
-      $callables: [String]
-      $features_mode: String
-      $features: [String]
-      $min_trace_length_to_sinks: Int
-      $max_trace_length_to_sinks: Int
-      $min_trace_length_to_sources: Int
-      $max_trace_length_to_sources: Int
-    ) {
+    mutation SaveFilter($name: String!, $description: String, $json: String!) {
       save_filter(
-        input: {
-          name: $name
-          description: $description
-          codes: $codes
-          paths: $paths
-          callables: $callables
-          features_mode: $features_mode
-          features: $features
-          min_trace_length_to_sinks: $min_trace_length_to_sinks
-          max_trace_length_to_sinks: $max_trace_length_to_sinks
-          min_trace_length_to_sources: $min_trace_length_to_sources
-          max_trace_length_to_sources: $max_trace_length_to_sources
-        }
+        input: {name: $name, description: $description, json: $json}
       ) {
         node {
           name
           description
-          codes
-          paths
-          callables
-          features_mode
-          features
-          min_trace_length_to_sinks
-          max_trace_length_to_sinks
-          min_trace_length_to_sources
-          max_trace_length_to_sources
+          json
         }
       }
     }
@@ -331,7 +303,7 @@ const SaveFilterModal = (
       variables: {
         name: values.name,
         description: values.description,
-        ...props.currentFilter,
+        json: JSON.stringify(props.currentFilter),
       },
     });
     props.hide();
@@ -374,15 +346,7 @@ const SavedFilters = (
           node {
             name
             description
-            codes
-            paths
-            callables
-            features_mode
-            features
-            min_trace_length_to_sinks
-            max_trace_length_to_sinks
-            min_trace_length_to_sources
-            max_trace_length_to_sources
+            json
           }
         }
       }
@@ -411,33 +375,41 @@ const SavedFilters = (
     return <Alert type="error">{deleteError.toString()}</Alert>;
   }
 
-  const filters = loading ? [] : data.filters.edges;
+  const filters = loading
+    ? []
+    : data.filters.edges.map(edge => {
+        const decoded = JSON.parse(edge.node.json);
+        return {
+          ...edge.node,
+          ...decoded,
+        };
+      });
 
   const options = filters
-    .filter(edge => {
+    .filter(filter => {
       if (search === null) {
         return true;
       }
       return (
-        edge.node.name.toLowerCase().includes(search.toLowerCase()) ||
-        edge.node.description?.toLowerCase()?.includes(search.toLowerCase())
+        filter.name.toLowerCase().includes(search.toLowerCase()) ||
+        filter.description?.toLowerCase()?.includes(search.toLowerCase())
       );
     })
-    .map(edge => {
+    .map(filter => {
       return {
-        value: edge.node.name,
+        value: filter.name,
         label: (
           <div>
-            {edge.node.name}
+            {filter.name}
             <br />
-            <Text type="secondary">{edge.node.description}</Text>
+            <Text type="secondary">{filter.description}</Text>
           </div>
         ),
       };
     });
 
   var filterMap = {};
-  filters.forEach(edge => (filterMap[edge.node.name] = edge.node));
+  filters.forEach(filter => (filterMap[filter.name] = filter));
   const onSelect = (value: string): void => {
     setSearch(null);
     props.setCurrentFilter(filterMap[value]);
