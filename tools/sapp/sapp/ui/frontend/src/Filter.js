@@ -144,6 +144,7 @@ const FilterForm = (props: {
       layout="vertical"
       form={form}
       name="basic"
+      autoComplete="off"
       initialValues={{remember: true}}
       onFinish={onFinish}
       onFieldsChange={() => props.setCurrentFilter(form.getFieldsValue())}>
@@ -363,7 +364,7 @@ const SaveFilterModal = (
       okText="Save"
       onCancel={props.hide}
       zIndex={2000}>
-      <Form layout="vertical" form={form}>
+      <Form layout="vertical" form={form} autoComplete="off">
         <Form.Item label="Name" name="name">
           <Input />
         </Form.Item>
