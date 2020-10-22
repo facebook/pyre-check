@@ -34,6 +34,8 @@ import {
   MinusOutlined,
   InfoCircleOutlined,
   MoreOutlined,
+  SaveOutlined,
+  DeleteOutlined,
 } from '@ant-design/icons';
 import {Documentation} from './Documentation.js';
 
@@ -537,12 +539,14 @@ const SavedFilters = (
                   Object.keys(props.currentFilter).length === 0 ||
                   props.currentFilter?.name !== undefined
                 }
-                onClick={() => setSaveModalVisible(true)}>
+                onClick={() => setSaveModalVisible(true)}
+                icon={<SaveOutlined />}>
                 Save...
               </Menu.Item>
               <Menu.Item
                 disabled={props.currentFilter?.name === undefined}
-                onClick={() => setDeleteModalVisible(true)}>
+                onClick={() => setDeleteModalVisible(true)}
+                icon={<DeleteOutlined />}>
                 Delete...
               </Menu.Item>
             </Menu>
