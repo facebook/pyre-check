@@ -299,7 +299,10 @@ class StartTest(testslide.TestCase):
                 Arguments(
                     log_path=str(root_path / ".pyre/local"),
                     global_root=str(root_path),
-                    checked_directory_allowlist=[str(root_path / "allows")],
+                    checked_directory_allowlist=[
+                        str(root_path / "local/src"),
+                        str(root_path / "allows"),
+                    ],
                     checked_directory_blocklist=[str(root_path / "blocks")],
                     critical_files=[
                         CriticalFile(

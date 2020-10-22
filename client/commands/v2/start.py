@@ -234,17 +234,19 @@ def create_server_arguments(
     nonexistent directories. It is idempotent though, since it does not alter
     any filesystem state.
     """
-    source_directories = configuration.source_directories or []
+    source_directories: Sequence[str] = configuration.source_directories or []
     if len(source_directories) == 0:
         raise configuration_module.InvalidConfiguration(
             "New server does not have buck support yet."
         )
+    check_directory_allowlist = (
+        list(source_directories)
+        + configuration.get_existent_do_not_ignore_errors_in_paths()
+    )
     return Arguments(
         log_path=configuration.log_directory,
         global_root=configuration.project_root,
-        checked_directory_allowlist=(
-            configuration.get_existent_do_not_ignore_errors_in_paths()
-        ),
+        checked_directory_allowlist=check_directory_allowlist,
         checked_directory_blocklist=(
             configuration.get_existent_ignore_all_errors_paths()
         ),
