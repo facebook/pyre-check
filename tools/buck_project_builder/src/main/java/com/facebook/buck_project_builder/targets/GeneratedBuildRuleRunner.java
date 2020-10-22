@@ -72,18 +72,4 @@ public final class GeneratedBuildRuleRunner {
       throw new IOException(exception.getMessage());
     }
   }
-
-  public static @Nullable String getBuiltTargetExecutable(String builderTarget, String buckRoot)
-      throws IOException {
-    try (InputStream inputStream =
-        CommandLine.getCommandLineOutput(
-            new File(buckRoot), "buck", "build", "@mode/opt", "--show-json-output", builderTarget)) {
-      JsonElement builtOutputElement =
-          new JsonParser()
-              .parse(new InputStreamReader(inputStream))
-              .getAsJsonObject()
-              .get(builderTarget);
-      return builtOutputElement == null ? null : builtOutputElement.getAsString();
-    }
-  }
 }
