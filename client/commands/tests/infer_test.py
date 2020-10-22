@@ -22,7 +22,6 @@ from ...commands.infer import (
     FieldStub,
     FunctionStub,
     Infer,
-    Stub,
     StubFile,
     _existing_annotations_as_errors,
     _relativize_access,
@@ -34,9 +33,6 @@ from .command_test import (
     mock_arguments,
     mock_configuration as general_mock_configuration,
 )
-
-
-_typeshed_search_path: str = "{}.typeshed_search_path".format(commands.infer.__name__)
 
 
 def build_json(inference) -> Dict[str, Union[int, str]]:
@@ -681,7 +677,6 @@ class InferTest(unittest.TestCase):
         return_value=find_directories.FoundRoot(Path(".")),
     )
     @patch.object(json, "loads", return_value={"errors": []})
-    @patch(_typeshed_search_path, Mock(return_value=["path3"]))
     # pyre-fixme[56]: Argument `set()` to decorator factory
     #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(commands.Reporting, "_get_directories_to_analyze", return_value=set())
@@ -720,8 +715,6 @@ class InferTest(unittest.TestCase):
                     ".pyre",
                     "-source-path",
                     ".",
-                    "-search-path",
-                    "path3",
                 ],
             )
             command.run()
@@ -755,8 +748,6 @@ class InferTest(unittest.TestCase):
                     ".pyre",
                     "-source-path",
                     ".",
-                    "-search-path",
-                    "path3",
                 ],
             )
             command.run()
@@ -790,8 +781,6 @@ class InferTest(unittest.TestCase):
                         ".pyre",
                         "-source-path",
                         ".",
-                        "-search-path",
-                        "path3",
                     ],
                 )
                 command.run()
@@ -825,8 +814,6 @@ class InferTest(unittest.TestCase):
                         ".pyre",
                         "-source-path",
                         ".",
-                        "-search-path",
-                        "path3",
                         "-ignore-infer",
                         "path1.py;path2.py",
                     ],

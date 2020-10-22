@@ -28,7 +28,7 @@ from ..analysis_directory import AnalysisDirectory
 from ..annotation_collector import AnnotationCollector
 from ..configuration import Configuration
 from ..error import LegacyError
-from .command import Command, Result, typeshed_search_path
+from .command import Command, Result
 from .reporting import Reporting
 from .statistics import _get_paths, _parse_paths, parse_path_to_module
 
@@ -554,11 +554,10 @@ class Infer(Reporting):
         if len(filter_directories):
             flags.extend(["-filter-directories", ";".join(sorted(filter_directories))])
 
-        typeshed = self._configuration.get_typeshed_respecting_override()
         search_path = [
             search_path.command_line_argument()
             for search_path in self._configuration.get_existent_search_paths()
-        ] + (typeshed_search_path(typeshed) if typeshed is not None else [])
+        ]
         flags.extend(["-source-path", self._analysis_directory.get_root()])
         if search_path:
             flags.extend(["-search-path", ",".join(search_path)])

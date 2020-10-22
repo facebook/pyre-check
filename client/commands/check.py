@@ -10,7 +10,7 @@ from typing import List, Optional
 from .. import command_arguments
 from ..analysis_directory import AnalysisDirectory, resolve_analysis_directory
 from ..configuration import Configuration
-from .command import ExitCode, typeshed_search_path
+from .command import ExitCode
 from .reporting import Reporting
 
 
@@ -54,11 +54,10 @@ class Check(Reporting):
             flags.extend(["-filter-directories", ";".join(sorted(filter_directories))])
         flags.extend(["-workers", str(self._configuration.get_number_of_workers())])
 
-        typeshed = self._configuration.get_typeshed_respecting_override()
         search_path = [
             search_path.command_line_argument()
             for search_path in self._configuration.get_existent_search_paths()
-        ] + (typeshed_search_path(typeshed) if typeshed is not None else [])
+        ]
 
         ignore_all_errors_paths = (
             self._configuration.get_existent_ignore_all_errors_paths()

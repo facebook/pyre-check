@@ -685,7 +685,20 @@ class Configuration:
                 existent_paths.append(search_path_element)
             else:
                 LOG.debug(f"Filtering out nonexistent search path: {search_path}")
-        return existent_paths
+
+        typeshed_root = self.get_typeshed_respecting_override()
+        typeshed_paths = (
+            []
+            if typeshed_root is None
+            else [
+                SimpleSearchPathElement(str(element))
+                for element in find_directories.find_typeshed_search_paths(
+                    Path(typeshed_root)
+                )
+            ]
+        )
+
+        return existent_paths + typeshed_paths
 
     def get_existent_ignore_infer_paths(self) -> List[str]:
         existent_paths = []

@@ -17,7 +17,7 @@ from .. import (
 )
 from ..analysis_directory import AnalysisDirectory
 from ..configuration import Configuration
-from .command import IncrementalStyle, typeshed_search_path
+from .command import IncrementalStyle
 from .reporting import Reporting
 
 
@@ -160,11 +160,10 @@ class Start(Reporting):
             ]
         )
 
-        typeshed = self._configuration.get_typeshed_respecting_override()
         search_path = [
             search_path.command_line_argument()
             for search_path in self._configuration.get_existent_search_paths()
-        ] + (typeshed_search_path(typeshed) if typeshed is not None else [])
+        ]
         flags.extend(["-source-path", self._analysis_directory.get_root()])
         if search_path:
             flags.extend(["-search-path", ",".join(search_path)])

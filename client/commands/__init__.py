@@ -30,7 +30,6 @@ from .command import (  # noqa; noqa; noqa
     CommandParser as CommandParser,
     ExitCode as ExitCode,
     ProfileOutput as ProfileOutput,
-    typeshed_search_path as typeshed_search_path,
     IncrementalStyle as IncrementalStyle,
 )
 

@@ -92,28 +92,6 @@ class Result:
             )
 
 
-def typeshed_search_path(typeshed_root: str) -> List[str]:
-    search_path = []
-    typeshed_subdirectories = ["stdlib", "third_party"]
-    for typeshed_subdirectory_name in typeshed_subdirectories:
-        typeshed_subdirectory = os.path.join(typeshed_root, typeshed_subdirectory_name)
-        if (
-            not os.path.isdir(typeshed_subdirectory)
-            or typeshed_subdirectory_name == "tests"
-            or typeshed_subdirectory_name[0] == "."
-        ):
-            continue
-
-        # Always prefer newer version over older version
-        version_names = sorted(os.listdir(typeshed_subdirectory), reverse=True)
-        for version_name in version_names:
-            # Anything under 2/ or 2.x is unusable for Pyre
-            if version_name.startswith("2") and version_name != "2and3":
-                continue
-            search_path.append(os.path.join(typeshed_subdirectory, version_name))
-    return search_path
-
-
 def _convert_json_response_to_result(response: json_rpc.Response) -> Result:
     error = response.error
     error_message = None

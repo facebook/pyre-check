@@ -6,7 +6,6 @@
 # pyre-unsafe
 
 import errno
-import fcntl
 import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, Mock, mock_open, patch
@@ -24,16 +23,12 @@ from ..start import Start
 from .command_test import mock_arguments, mock_configuration
 
 
-_typeshed_search_path: str = "{}.typeshed_search_path".format(commands.start.__name__)
-
-
 class StartTest(unittest.TestCase):
     @patch(
         f"{find_directories.__name__}.find_global_and_local_root",
         return_value=find_directories.FoundRoot(Path(".")),
     )
     @patch("fcntl.lockf")
-    @patch(_typeshed_search_path, Mock(return_value=["path3"]))
     # pyre-fixme[56]: Argument `set()` to decorator factory
     #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(commands.Reporting, "_get_directories_to_analyze", return_value=set())
@@ -181,7 +176,6 @@ class StartTest(unittest.TestCase):
         f"{find_directories.__name__}.find_global_and_local_root",
         return_value=find_directories.FoundRoot(Path(".")),
     )
-    @patch(_typeshed_search_path, Mock(return_value=["path3"]))
     # pyre-fixme[56]: Argument `set()` to decorator factory
     #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(commands.Reporting, "_get_directories_to_analyze", return_value=set())
@@ -201,8 +195,6 @@ class StartTest(unittest.TestCase):
             "hash",
             "-source-path",
             ".",
-            "-search-path",
-            "path3",
             "-new-incremental-check",
         ]
 
@@ -467,7 +459,6 @@ class StartTest(unittest.TestCase):
         f"{find_directories.__name__}.find_global_and_local_root",
         return_value=find_directories.FoundRoot(Path(".")),
     )
-    @patch(_typeshed_search_path, Mock(return_value=["path3"]))
     # pyre-fixme[56]: Argument `set()` to decorator factory
     #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(commands.Reporting, "_get_directories_to_analyze", return_value=set())
@@ -496,8 +487,6 @@ class StartTest(unittest.TestCase):
             "hash",
             "-source-path",
             ".",
-            "-search-path",
-            "path3",
             "-new-incremental-check",
         ]
         command = Start(

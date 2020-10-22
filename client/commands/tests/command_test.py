@@ -7,8 +7,7 @@
 
 import unittest
 from pathlib import Path
-from typing import List
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import MagicMock, patch
 
 from ... import commands, configuration as configuration_module, find_directories
 from ...analysis_directory import AnalysisDirectory
@@ -129,30 +128,3 @@ class CommandTest(unittest.TestCase):
                     ".pyre",
                 ],
             )
-
-    @patch("os.path.isdir", Mock(return_value=True))
-    @patch("os.listdir")
-    def test_grofiling(self, os_listdir) -> None:
-        # Mock typeshed file hierarchy
-        def mock_listdir(path: str) -> List[str]:
-            if path == "root/stdlib":
-                return ["2.7", "2", "2and3", "3.5", "3.6", "3.7", "3"]
-            elif path == "root/third_party":
-                return ["3", "3.5", "2", "2and3"]
-            else:
-                raise RuntimeError("Path not expected by mock listdir")
-
-        os_listdir.side_effect = mock_listdir
-        self.assertEqual(
-            commands.typeshed_search_path("root"),
-            [
-                "root/stdlib/3.7",
-                "root/stdlib/3.6",
-                "root/stdlib/3.5",
-                "root/stdlib/3",
-                "root/stdlib/2and3",
-                "root/third_party/3.5",
-                "root/third_party/3",
-                "root/third_party/2and3",
-            ],
-        )

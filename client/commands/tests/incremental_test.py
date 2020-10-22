@@ -10,7 +10,7 @@ import os
 import subprocess
 import unittest
 from pathlib import Path
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import MagicMock, patch
 
 from ... import commands, find_directories, json_rpc
 from ...analysis_directory import AnalysisDirectory, SharedAnalysisDirectory
@@ -18,11 +18,6 @@ from ...commands import command, incremental, stop  # noqa
 from ...socket_connection import SocketConnection
 from ..command import IncrementalStyle
 from .command_test import mock_arguments, mock_configuration
-
-
-_typeshed_search_path: str = "{}.typeshed_search_path".format(
-    commands.incremental.__name__
-)
 
 
 class IncrementalTest(unittest.TestCase):
@@ -41,7 +36,6 @@ class IncrementalTest(unittest.TestCase):
         return_value=find_directories.FoundRoot(Path("/root")),
     )
     @patch.object(os.path, "exists", side_effect=lambda path: True)
-    @patch(_typeshed_search_path, Mock(return_value=["path3"]))
     @patch.object(commands.Command, "_state")
     @patch.object(incremental, "Start")
     # pyre-fixme[56]: Argument `tools.pyre.client.commands.stop` to decorator
@@ -103,8 +97,6 @@ class IncrementalTest(unittest.TestCase):
                     "hash",
                     "-source-path",
                     ".",
-                    "-search-path",
-                    "path3",
                 ],
             )
 
@@ -144,8 +136,6 @@ class IncrementalTest(unittest.TestCase):
                     "hash",
                     "-source-path",
                     ".",
-                    "-search-path",
-                    "path3",
                     "-nonblocking",
                 ],
             )
@@ -180,8 +170,6 @@ class IncrementalTest(unittest.TestCase):
                     "hash",
                     "-source-path",
                     ".",
-                    "-search-path",
-                    "path3",
                 ],
             )
 
@@ -224,8 +212,6 @@ class IncrementalTest(unittest.TestCase):
                     "hash",
                     "-source-path",
                     ".",
-                    "-search-path",
-                    "path3",
                 ],
             )
 
@@ -264,8 +250,6 @@ class IncrementalTest(unittest.TestCase):
                     "hash",
                     "-source-path",
                     ".",
-                    "-search-path",
-                    "path3",
                 ],
             )
 
@@ -331,8 +315,6 @@ class IncrementalTest(unittest.TestCase):
                     "hash",
                     "-source-path",
                     "/root",
-                    "-search-path",
-                    "path3",
                 ],
             )
 

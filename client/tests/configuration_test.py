@@ -618,6 +618,30 @@ class ConfigurationTest(testslide.TestCase):
                 ],
             )
 
+    def test_existent_search_path_with_typeshed(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root)
+            ensure_directories_exists(root_path, ["a"])
+            ensure_directories_exists(
+                root_path, ["typeshed/stdlib/3", "typeshed/third_party/3"]
+            )
+
+            self.assertListEqual(
+                Configuration(
+                    project_root="irrelevant",
+                    dot_pyre_directory=Path(".pyre"),
+                    search_path=[
+                        SimpleSearchPathElement(str(root_path / "a")),
+                    ],
+                    typeshed=str(root_path / "typeshed"),
+                ).get_existent_search_paths(),
+                [
+                    SimpleSearchPathElement(str(root_path / "a")),
+                    SimpleSearchPathElement(str(root_path / "typeshed/stdlib/3")),
+                    SimpleSearchPathElement(str(root_path / "typeshed/third_party/3")),
+                ],
+            )
+
     def test_existent_ignore_infer(self) -> None:
         with tempfile.TemporaryDirectory() as root:
             root_path = Path(root)

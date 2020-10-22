@@ -7,15 +7,11 @@
 
 import unittest
 from pathlib import Path
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import MagicMock, patch
 
 from ... import commands, find_directories
 from ...analysis_directory import AnalysisDirectory
-from ...commands import check
 from .command_test import mock_arguments, mock_configuration
-
-
-_typeshed_search_path: str = "{}.typeshed_search_path".format(check.__name__)
 
 
 class AnalyzeTest(unittest.TestCase):
@@ -25,7 +21,6 @@ class AnalyzeTest(unittest.TestCase):
     )
     @patch("subprocess.check_output")
     @patch("os.path.realpath")
-    @patch(_typeshed_search_path, Mock(return_value=["path3"]))
     # pyre-fixme[56]: Argument `set()` to decorator factory
     #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(commands.Reporting, "_get_directories_to_analyze", return_value=set())
@@ -72,8 +67,6 @@ class AnalyzeTest(unittest.TestCase):
                     "5",
                     "-source-path",
                     ".",
-                    "-search-path",
-                    "path3",
                     "-analysis",
                     "taint",
                     "-dump-call-graph",
@@ -112,8 +105,6 @@ class AnalyzeTest(unittest.TestCase):
                     "5",
                     "-source-path",
                     ".",
-                    "-search-path",
-                    "path3",
                     "-analysis",
                     "taint",
                     "-taint-models",
@@ -154,8 +145,6 @@ class AnalyzeTest(unittest.TestCase):
                     "5",
                     "-source-path",
                     ".",
-                    "-search-path",
-                    "path3",
                     "-analysis",
                     "taint",
                     "-taint-models",
@@ -198,8 +187,6 @@ class AnalyzeTest(unittest.TestCase):
                     "5",
                     "-source-path",
                     ".",
-                    "-search-path",
-                    "path3",
                     "-analysis",
                     "taint",
                     "-taint-models",
@@ -241,8 +228,6 @@ class AnalyzeTest(unittest.TestCase):
                     "5",
                     "-source-path",
                     ".",
-                    "-search-path",
-                    "path3",
                     "-analysis",
                     "taint",
                     "-taint-models",
@@ -285,8 +270,6 @@ class AnalyzeTest(unittest.TestCase):
                     "5",
                     "-source-path",
                     ".",
-                    "-search-path",
-                    "path3",
                     "-analysis",
                     "taint",
                     "-taint-models",
@@ -329,8 +312,6 @@ class AnalyzeTest(unittest.TestCase):
                     "5",
                     "-source-path",
                     ".",
-                    "-search-path",
-                    "path3",
                     "-analysis",
                     "taint",
                     "-taint-models",
@@ -373,8 +354,6 @@ class AnalyzeTest(unittest.TestCase):
                     "5",
                     "-source-path",
                     ".",
-                    "-search-path",
-                    "path3",
                     "-analysis",
                     "taint",
                     "-taint-models",
@@ -420,8 +399,6 @@ class AnalyzeTest(unittest.TestCase):
                     "5",
                     "-source-path",
                     ".",
-                    "-search-path",
-                    "path3",
                     "-analysis",
                     "taint",
                     "-taint-models",
@@ -464,8 +441,6 @@ class AnalyzeTest(unittest.TestCase):
                     "5",
                     "-source-path",
                     ".",
-                    "-search-path",
-                    "path3",
                     "-analysis",
                     "liveness",
                     "-taint-models",
