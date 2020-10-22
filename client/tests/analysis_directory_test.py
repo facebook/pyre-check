@@ -869,7 +869,13 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
     def test_get_buck_builder__source_database_buck_builder(
         self, find_buck_root: MagicMock, make_temporary_directory: MagicMock
     ) -> None:
-        configuration = MagicMock(use_buck_source_database=True)
+        configuration = configuration_module.Configuration.from_partial_configuration(
+            project_root=Path("root"),
+            relative_local_root="local",
+            partial_configuration=configuration_module.PartialConfiguration(
+                use_buck_builder=True, use_buck_source_database=True
+            ),
+        )
         actual = _get_buck_builder(
             project_root="root",
             configuration=configuration,
@@ -884,6 +890,7 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
                     buck_root=find_buck_root(),
                     buck_mode=None,
                     output_directory=make_temporary_directory(),
+                    isolation_prefix=None,
                 ),
                 [make_temporary_directory()],
             ),

@@ -282,7 +282,10 @@ class BuckTest(unittest.TestCase):
     )
     def test_build_exception(self, build: MagicMock) -> None:
         buck_builder = buck.SourceDatabaseBuckBuilder(
-            buck_root="/root", output_directory="/output", buck_mode=None
+            buck_root="/root",
+            output_directory="/output",
+            buck_mode=None,
+            isolation_prefix=None,
         )
         with self.assertRaises(buck.BuckException):
             buck_builder.build(["some_broken_target"])

@@ -67,7 +67,7 @@ class SourceDatabaseBuckBuilderTest(unittest.TestCase):
 
         self.assertEqual(
             source_database_buck_builder._query_targets(
-                ["//foo/bar/...", "//bar:baz"], mode=None
+                ["//foo/bar/...", "//bar:baz"], isolation_prefix=None, mode=None
             ),
             ["//foo/bar:baz", "//foo/bar:tests-library", "//bar:baz"],
         )
@@ -192,6 +192,7 @@ class SourceDatabaseBuckBuilderTest(unittest.TestCase):
             ["//foo/bar/..."],
             output_directory=Path("output_directory"),
             buck_root=Path("buck_root"),
+            isolation_prefix=None,
             mode=None,
         )
         query_targets.assert_called_once()

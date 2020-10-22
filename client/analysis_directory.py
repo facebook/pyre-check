@@ -772,6 +772,7 @@ def _get_buck_builder(
                 buck_root=buck_root,
                 buck_mode=buck_mode,
                 output_directory=output_directory,
+                isolation_prefix=configuration.isolation_prefix,
             ),
             [output_directory],
         )

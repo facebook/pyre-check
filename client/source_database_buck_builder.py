@@ -25,10 +25,14 @@ class SourceDatabase(TypedDict):
     dependencies: Dict[str, str]
 
 
-def _buck(arguments: List[str]) -> str:
-    return subprocess.check_output(["buck"] + arguments, stderr=subprocess.PIPE).decode(
-        "utf-8"
+def _buck(arguments: List[str], isolation_prefix: Optional[str]) -> str:
+    isolation_prefix_arguments = (
+        ["--isolation_prefix", isolation_prefix] if isolation_prefix is not None else []
     )
+    return subprocess.check_output(
+        ["buck"] + isolation_prefix_arguments + arguments,
+        stderr=subprocess.PIPE,
+    ).decode("utf-8")
 
 
 def _get_buck_query_arguments(
@@ -62,14 +66,20 @@ def _ignore_target(target: str) -> bool:
     return target.endswith(suffixes_for_ignored_targets)
 
 
-def _query_targets(target_specifications: List[str], mode: Optional[str]) -> List[str]:
+def _query_targets(
+    target_specifications: List[str],
+    mode: Optional[str],
+    isolation_prefix: Optional[str],
+) -> List[str]:
     normalized_target_specifications = [
         _normalize_specification(specification)
         for specification in target_specifications
     ]
     query_arguments = _get_buck_query_arguments(normalized_target_specifications, mode)
     LOG.info("Running `buck query`...")
-    specification_targets_dictionary = json.loads(_buck(query_arguments))
+    specification_targets_dictionary = json.loads(
+        _buck(query_arguments, isolation_prefix)
+    )
     targets = list(chain(*specification_targets_dictionary.values()))
     return [target for target in targets if not _ignore_target(target)]
 
@@ -86,10 +96,12 @@ def _get_buck_build_arguments(targets: List[str]) -> List[str]:
     ]
 
 
-def _build_targets(targets: List[str]) -> Dict[str, str]:
+def _build_targets(
+    targets: List[str], isolation_prefix: Optional[str]
+) -> Dict[str, str]:
     build_arguments = _get_buck_build_arguments(targets)
     LOG.info("Running `buck build`...")
-    return json.loads(_buck(build_arguments))
+    return json.loads(_buck(build_arguments, isolation_prefix))
 
 
 def _load_source_databases(
@@ -148,9 +160,14 @@ def build(
     output_directory: Path,
     buck_root: Path,
     mode: Optional[str],
+    isolation_prefix: Optional[str],
 ) -> None:
-    targets = _query_targets(target_specifications, mode)
-    target_path_dictionary = _build_targets(targets)
+    targets = _query_targets(
+        target_specifications,
+        mode,
+        isolation_prefix,
+    )
+    target_path_dictionary = _build_targets(targets, isolation_prefix)
     source_databases = _load_source_databases(target_path_dictionary)
     link_map = _merge_source_databases(source_databases)
     _build_link_tree(link_map, output_directory, buck_root)
@@ -162,6 +179,7 @@ def main(argv: List[str]) -> None:
     parser.add_argument("--debug", action="store_true")
     parser.add_argument("--mode")
     parser.add_argument("--project_name")
+    parser.add_argument("--isolation_prefix")
     parser.add_argument("--output_directory", required=True, type=Path)
     parser.add_argument("--buck_root", dest="buck_root", required=True, type=Path)
     parser.add_argument("target_specifications", nargs="*")
@@ -172,6 +190,7 @@ def main(argv: List[str]) -> None:
         arguments.output_directory,
         arguments.buck_root,
         arguments.mode,
+        arguments.isolation_prefix,
     )
 
 

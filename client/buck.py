@@ -49,10 +49,15 @@ class BuckBuilder:
 
 class SourceDatabaseBuckBuilder(BuckBuilder):
     def __init__(
-        self, buck_root: str, output_directory: str, buck_mode: Optional[str] = None
+        self,
+        buck_root: str,
+        output_directory: str,
+        isolation_prefix: Optional[str],
+        buck_mode: Optional[str] = None,
     ) -> None:
         self._buck_root = buck_root
         self._output_directory = output_directory
+        self._isolation_prefix = isolation_prefix
         self._buck_mode = buck_mode
 
     def build(self, targets: Iterable[str]) -> BuckBuildOutput:
@@ -62,6 +67,7 @@ class SourceDatabaseBuckBuilder(BuckBuilder):
                 Path(self._output_directory),
                 Path(self._buck_root),
                 self._buck_mode,
+                self._isolation_prefix,
             )
             return BuckBuildOutput(
                 output_directories=[self._output_directory], unsupported_files=[]
@@ -84,6 +90,7 @@ class SourceDatabaseBuckBuilder(BuckBuilder):
             self._buck_root == other._buck_root
             and self._output_directory == other._output_directory
             and self._buck_mode == other._buck_mode
+            and self._isolation_prefix == other._isolation_prefix
         )
 
 
