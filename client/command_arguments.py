@@ -48,6 +48,7 @@ class CommandArguments:
     dot_pyre_directory: Optional[Path] = None
     features: Optional[str] = None
     use_command_v2: bool = False
+    isolation_prefix: Optional[str] = None
 
 
 @dataclass(frozen=True)

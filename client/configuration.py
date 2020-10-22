@@ -235,6 +235,7 @@ class PartialConfiguration:
     formatter: Optional[str] = None
     ignore_all_errors: Sequence[str] = field(default_factory=list)
     ignore_infer: Sequence[str] = field(default_factory=list)
+    isolation_prefix: Optional[str] = None
     logger: Optional[str] = None
     number_of_workers: Optional[int] = None
     other_critical_files: Sequence[str] = field(default_factory=list)
@@ -289,6 +290,7 @@ class PartialConfiguration:
             formatter=arguments.formatter,
             ignore_all_errors=[],
             ignore_infer=[],
+            isolation_prefix=arguments.isolation_prefix,
             logger=arguments.logger,
             number_of_workers=None,
             other_critical_files=[],
@@ -402,6 +404,9 @@ class PartialConfiguration:
                     configuration_json, "ignore_all_errors"
                 ),
                 ignore_infer=ensure_string_list(configuration_json, "ignore_infer"),
+                isolation_prefix=ensure_option_type(
+                    configuration_json, "isolation_prefix", str
+                ),
                 logger=ensure_option_type(configuration_json, "logger", str),
                 number_of_workers=ensure_option_type(
                     configuration_json, "workers", int
@@ -497,6 +502,7 @@ class PartialConfiguration:
             ignore_infer=[
                 expand_relative_path(root, path) for path in self.ignore_infer
             ],
+            isolation_prefix=self.isolation_prefix,
             logger=logger,
             number_of_workers=self.number_of_workers,
             other_critical_files=[
@@ -558,6 +564,9 @@ def merge_partial_configurations(
             base.ignore_all_errors, override.ignore_all_errors
         ),
         ignore_infer=append_base(base.ignore_infer, override=override.ignore_infer),
+        isolation_prefix=overwrite_base(
+            base.isolation_prefix, override.isolation_prefix
+        ),
         logger=overwrite_base(base.logger, override.logger),
         number_of_workers=overwrite_base(
             base.number_of_workers, override.number_of_workers

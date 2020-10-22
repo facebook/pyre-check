@@ -358,6 +358,7 @@ def _create_configuration_with_retry(
 @click.option("--saved-state-project", type=str, hidden=True)
 @click.option("--features", type=str, hidden=True)
 @click.option("--use-command-v2", is_flag=True, default=False, hidden=True)
+@click.option("--isolation-prefix", type=str, hidden=True)
 def pyre(
     context: click.Context,
     local_configuration: Optional[str],
@@ -394,6 +395,7 @@ def pyre(
     saved_state_project: Optional[str],
     features: Optional[str],
     use_command_v2: bool,
+    isolation_prefix: Optional[str],
 ) -> int:
     arguments = command_arguments.CommandArguments(
         local_configuration=local_configuration,
@@ -432,6 +434,7 @@ def pyre(
         else None,
         features=features,
         use_command_v2=use_command_v2,
+        isolation_prefix=isolation_prefix,
     )
     if arguments.version:
         _show_pyre_version(arguments)
