@@ -50,6 +50,9 @@ class Error:
         except KeyError as key_error:
             message = f"Missing field from error json: {key_error}"
             raise ErrorParsingFailure(message) from key_error
+        except TypeError as type_error:
+            message = f"Field type mismatch: {type_error}"
+            raise ErrorParsingFailure(message) from type_error
 
     @staticmethod
     def from_string(error_string: str) -> "Error":

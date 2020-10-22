@@ -6,10 +6,11 @@
 # pyre-unsafe
 
 import unittest
+from typing import Any, Dict
 from unittest.mock import patch
 
 from .. import __name__ as client
-from ..error import LegacyError
+from ..error import Error, ErrorParsingFailure, LegacyError
 
 
 class ErrorTest(unittest.TestCase):
@@ -23,6 +24,78 @@ class ErrorTest(unittest.TestCase):
         "inference": {},
         "define": "c.$toplevel",
     }
+
+    def test_json_parsing(self) -> None:
+        def assert_parsed(json: Dict[str, Any], expected: Error) -> None:
+            self.assertEqual(Error.from_json(json), expected)
+
+        def assert_not_parsed(json: Dict[str, Any]) -> None:
+            with self.assertRaises(ErrorParsingFailure):
+                Error.from_json(json)
+
+        assert_not_parsed({})
+        assert_not_parsed({"derp": 42})
+        assert_not_parsed({"line": "abc", "column": []})
+        assert_not_parsed({"line": 1, "column": 1})
+
+        assert_parsed(
+            {
+                "line": 1,
+                "column": 1,
+                "path": "test.py",
+                "code": 1,
+                "name": "Some name",
+                "description": "Some description",
+            },
+            expected=Error(
+                line=1,
+                column=1,
+                path="test.py",
+                code=1,
+                name="Some name",
+                description="Some description",
+            ),
+        )
+        assert_parsed(
+            {
+                "line": 2,
+                "column": 2,
+                "path": "test.py",
+                "code": 2,
+                "name": "Some name",
+                "description": "Some description",
+                "long_description": "Some long description",
+            },
+            expected=Error(
+                line=2,
+                column=2,
+                path="test.py",
+                code=2,
+                name="Some name",
+                description="Some description",
+                long_description="Some long description",
+            ),
+        )
+        assert_parsed(
+            {
+                "line": 3,
+                "column": 3,
+                "path": "test.py",
+                "code": 3,
+                "name": "Some name",
+                "description": "Some description",
+                "concise_description": "Some concise description",
+            },
+            expected=Error(
+                line=3,
+                column=3,
+                path="test.py",
+                code=3,
+                name="Some name",
+                description="Some description",
+                concise_description="Some concise description",
+            ),
+        )
 
     def test_repr(self) -> None:
         error = LegacyError.create(self.fake_error)
