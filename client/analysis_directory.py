@@ -786,6 +786,7 @@ def _get_buck_builder(
             buck_mode=buck_mode,
             project_name=project_name,
             output_directory=output_directory,
+            isolation_prefix=configuration.isolation_prefix,
         ),
         [output_directory],
     )

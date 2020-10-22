@@ -16,6 +16,8 @@ from logging import Logger
 from pathlib import Path
 from typing import Dict, Iterable, List, NamedTuple, Optional, Set, Tuple
 
+from typing_extensions import Final
+
 from . import source_database_buck_builder
 from .find_directories import find_parent_directory_containing_file
 
@@ -90,6 +92,7 @@ class FastBuckBuilder(BuckBuilder):
         self,
         buck_root: str,
         output_directory: str,
+        isolation_prefix: Optional[str],
         buck_builder_binary: Optional[str] = None,
         buck_mode: Optional[str] = None,
         project_name: Optional[str] = None,
@@ -99,6 +102,7 @@ class FastBuckBuilder(BuckBuilder):
         self._buck_builder_binary = buck_builder_binary
         self._buck_mode = buck_mode
         self._project_name = project_name
+        self._isolation_prefix: Final[Optional[str]] = isolation_prefix
         self.conflicting_files: List[str] = []
         self.unsupported_files: List[str] = []
 
@@ -113,6 +117,7 @@ class FastBuckBuilder(BuckBuilder):
             and self._project_name == other._project_name
             and self.conflicting_files == other.conflicting_files
             and self.unsupported_files == other.unsupported_files
+            and self._isolation_prefix == other._isolation_prefix
         )
 
     def _get_builder_executable(self) -> str:
@@ -125,15 +130,24 @@ class FastBuckBuilder(BuckBuilder):
         return builder_binary
 
     def build(self, targets: Iterable[str]) -> BuckBuildOutput:
-        command = [
-            self._get_builder_executable(),
-            "-J-Djava.net.preferIPv6Addresses=true",
-            "-J-Djava.net.preferIPv6Stack=true",
-            "--buck_root",
-            self._buck_root,
-            "--output_directory",
-            self._output_directory,
-        ] + list(targets)
+        isolation_prefix_arguments = (
+            ["--isolation_prefix", self._isolation_prefix]
+            if self._isolation_prefix is not None
+            else []
+        )
+        command = (
+            [
+                self._get_builder_executable(),
+                "-J-Djava.net.preferIPv6Addresses=true",
+                "-J-Djava.net.preferIPv6Stack=true",
+                "--buck_root",
+                self._buck_root,
+                "--output_directory",
+                self._output_directory,
+            ]
+            + isolation_prefix_arguments
+            + list(targets)
+        )
         command.append("--debug")
         buck_mode = self._buck_mode
         if buck_mode:

@@ -612,6 +612,7 @@ class Configuration:
     formatter: Optional[str] = None
     ignore_all_errors: Sequence[str] = field(default_factory=list)
     ignore_infer: Sequence[str] = field(default_factory=list)
+    isolation_prefix: Optional[str] = None
     logger: Optional[str] = None
     number_of_workers: Optional[int] = None
     other_critical_files: Sequence[str] = field(default_factory=list)
@@ -650,6 +651,7 @@ class Configuration:
             formatter=partial_configuration.formatter,
             ignore_all_errors=partial_configuration.ignore_all_errors,
             ignore_infer=partial_configuration.ignore_infer,
+            isolation_prefix=partial_configuration.isolation_prefix,
             logger=partial_configuration.logger,
             number_of_workers=partial_configuration.number_of_workers,
             other_critical_files=partial_configuration.other_critical_files,

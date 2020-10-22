@@ -12,7 +12,12 @@ from pathlib import Path
 from typing import Dict
 from unittest.mock import MagicMock, call, patch
 
-from .. import analysis_directory, buck, filesystem
+from .. import (
+    analysis_directory,
+    buck,
+    configuration as configuration_module,
+    filesystem,
+)
 from ..analysis_directory import (
     REBUILD_THRESHOLD_FOR_NEW_OR_DELETED_PATHS,
     REBUILD_THRESHOLD_FOR_UPDATED_PATHS,
@@ -827,7 +832,13 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
         find_buck_root: MagicMock,
         make_temporary_directory: MagicMock,
     ) -> None:
-        configuration = MagicMock(use_buck_builder=True, use_buck_source_database=False)
+        configuration = configuration_module.Configuration.from_partial_configuration(
+            project_root=Path("root"),
+            relative_local_root="local",
+            partial_configuration=configuration_module.PartialConfiguration(
+                use_buck_builder=True, use_buck_source_database=False
+            ),
+        )
         actual = _get_buck_builder(
             project_root="root",
             configuration=configuration,
@@ -844,6 +855,7 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
                     buck_mode=None,
                     project_name=get_project_name(),
                     output_directory=make_temporary_directory(),
+                    isolation_prefix=None,
                 ),
                 [make_temporary_directory()],
             ),
@@ -1093,7 +1105,9 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
             SharedAnalysisDirectory, "get_root", return_value=original_scratch_directory
         ):
             fast_buck_builder = buck.FastBuckBuilder(
-                buck_root="dummy_buck_root", output_directory="/tmp/foo"
+                buck_root="dummy_buck_root",
+                output_directory="/tmp/foo",
+                isolation_prefix=None,
             )
             shared_analysis_directory = SharedAnalysisDirectory(
                 project_root=project_directory,
@@ -1138,7 +1152,9 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
             SharedAnalysisDirectory, "get_root", return_value=original_scratch_directory
         ):
             fast_buck_builder = buck.FastBuckBuilder(
-                buck_root="dummy_buck_root", output_directory="/tmp/foo"
+                buck_root="dummy_buck_root",
+                output_directory="/tmp/foo",
+                isolation_prefix=None,
             )
             shared_analysis_directory = SharedAnalysisDirectory(
                 project_root=project_directory,
@@ -1211,7 +1227,9 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
     @patch.object(analysis_directory, "SocketConnection")
     def test_notify_about_rebuild(self, socket_connection_class: MagicMock) -> None:
         fast_buck_builder = buck.FastBuckBuilder(
-            buck_root="dummy_buck_root", output_directory="/tmp/foo"
+            buck_root="dummy_buck_root",
+            output_directory="/tmp/foo",
+            isolation_prefix=None,
         )
         shared_analysis_directory = SharedAnalysisDirectory(
             source_directories=[],
@@ -1368,7 +1386,9 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
             project_root="/",
             isolate=True,
             buck_builder=buck.FastBuckBuilder(
-                buck_root="dummy_buck_root", output_directory=make_temporary_directory()
+                buck_root="dummy_buck_root",
+                output_directory=make_temporary_directory(),
+                isolation_prefix=None,
             ),
             temporary_directories=[make_temporary_directory()],
         )
