@@ -29,8 +29,9 @@ def _buck(arguments: List[str], isolation_prefix: Optional[str]) -> str:
     isolation_prefix_arguments = (
         ["--isolation_prefix", isolation_prefix] if isolation_prefix is not None else []
     )
+    client_id_arguments = ["--config", "client.id=pyre"]
     return subprocess.check_output(
-        ["buck"] + isolation_prefix_arguments + arguments,
+        ["buck"] + isolation_prefix_arguments + arguments + client_id_arguments,
         stderr=subprocess.PIPE,
     ).decode("utf-8")
 
