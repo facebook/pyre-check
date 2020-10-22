@@ -19,12 +19,12 @@ import {
   Button,
   Form,
   Input,
-  InputNumber,
   Menu,
   Modal,
   Row,
   Col,
   Select,
+  Slider,
   Tooltip,
   Typography,
 } from 'antd';
@@ -55,23 +55,27 @@ type FilterDescription = {
   paths?: $ReadOnlyArray<string>,
   callables?: $ReadOnlyArray<string>,
   features?: $ReadOnlyArray<FeatureCondition>,
-  min_trace_length_to_sinks?: number,
-  max_trace_length_to_sinks?: number,
-  min_trace_length_to_sources?: number,
-  max_trace_length_to_sources?: number,
+  trace_lenght_from_sources?: $ReadOnlyArray<number>,
+  trace_length_to_sinks?: $ReadOnlyArray<number>,
 };
 
 const emptyFilter = {
   features: [{mode: 'all of', features: []}],
 };
 
-const Label = (props: $ReadOnly<{title: string}>): React$Node => {
-  const title = Documentation.filter[props.title];
+const infiniteTraceLength = 31;
+
+const Label = (props: $ReadOnly<{label: string}>): React$Node => {
+  const title = props.label
+    .split(/(?=[A-Z])/)
+    .map(value => value.charAt(0).toUpperCase() + value.slice(1))
+    .join(' ');
+  const tooltip = Documentation.filter[props.label];
   return (
     <>
-      {props.title.charAt(0).toUpperCase() + props.title.slice(1)}
-      {title !== undefined ? (
-        <Tooltip title={title}>
+      {title}
+      {tooltip !== undefined ? (
+        <Tooltip title={tooltip}>
           <InfoCircleOutlined style={{marginLeft: 3}} />
         </Tooltip>
       ) : null}
@@ -96,10 +100,8 @@ const FilterForm = (props: {
     paths: values.paths,
     callables: values.callables,
     features: values.features,
-    min_trace_length_to_sinks: values.min_trace_length_to_sinks,
-    max_trace_length_to_sinks: values.max_trace_length_to_sinks,
-    min_trace_length_to_sources: values.min_trace_length_to_sources,
-    max_trace_length_to_sources: values.max_trace_length_to_sources,
+    trace_length_from_sources: values.trace_length_from_sources,
+    trace_length_to_sinks: values.trace_length_to_sinks,
   });
 
   const [appliedFilter, setAppliedFilter] = useState<FilterDescription>(
@@ -159,8 +161,31 @@ const FilterForm = (props: {
   const {data: features} = useQuery(featuresQuery);
 
   const onFinish = (filter: FilterDescription) => {
+    const rangeValue = value => {
+      if (value === 0) {
+        return undefined;
+      }
+      if (value === infiniteTraceLength) {
+        return undefined;
+      }
+      return value;
+    };
     setAppliedFilter(filter);
-    props.refetch(filter);
+    props.refetch({
+      ...filter,
+      min_trace_length_to_sources: rangeValue(
+        (filter.trace_length_from_sources || [])[0],
+      ),
+      max_trace_length_to_sources: rangeValue(
+        (filter.trace_length_from_sources || [])[1],
+      ),
+      min_trace_length_to_sinks: rangeValue(
+        (filter.trace_length_to_sinks || [])[0],
+      ),
+      max_trace_length_to_sinks: rangeValue(
+        (filter.trace_length_to_sinks || [])[1],
+      ),
+    });
     props.setVisible(false);
   };
 
@@ -173,7 +198,7 @@ const FilterForm = (props: {
       initialValues={{remember: true}}
       onFinish={onFinish}
       onFieldsChange={() => props.setCurrentFilter(form.getFieldsValue())}>
-      <Form.Item label={<Label title="codes" />} name="codes">
+      <Form.Item label={<Label label="codes" />} name="codes">
         <Select
           mode="multiple"
           options={(codes?.codes?.edges || []).map(edge => {
@@ -183,7 +208,7 @@ const FilterForm = (props: {
           })}
         />
       </Form.Item>
-      <Form.Item label={<Label title="paths" />} name="paths">
+      <Form.Item label={<Label label="paths" />} name="paths">
         <Select
           mode="multiple"
           options={(paths?.paths?.edges || []).map(edge => {
@@ -193,7 +218,7 @@ const FilterForm = (props: {
           })}
         />
       </Form.Item>
-      <Form.Item label={<Label title="callables" />} name="callables">
+      <Form.Item label={<Label label="callables" />} name="callables">
         <Select
           mode="multiple"
           options={(callables?.callables?.edges || []).map(edge => {
@@ -208,7 +233,7 @@ const FilterForm = (props: {
           return (
             <Form.Item
               key={index}
-              label={index === 0 ? <Label title="features" /> : null}>
+              label={index === 0 ? <Label label="features" /> : null}>
               <div class="form-features">
                 <Row style={{marginTop: 5}} justify="space-between">
                   <Col span={6}>
@@ -275,42 +300,54 @@ const FilterForm = (props: {
           Add Condition
         </Button>
       </Form.Item>
-      <Form.Item label="Trace Lengths from Sources">
-        <Row>
-          <Col span={6}>
-            <Form.Item
-              name="min_trace_length_to_sources"
-              style={{marginBottom: 0}}>
-              <InputNumber placeholder="min" min={0} />
-            </Form.Item>
-          </Col>
-          <Col span={6}>
-            <Form.Item
-              name="max_trace_length_to_sources"
-              style={{marginBottom: 0}}>
-              <InputNumber placeholder="max" min={0} />
-            </Form.Item>
-          </Col>
-        </Row>
-      </Form.Item>
-      <Form.Item label="Trace Lengths to Sinks">
-        <Row>
-          <Col span={6}>
-            <Form.Item
-              name="min_trace_length_to_sinks"
-              style={{marginBottom: 0}}>
-              <InputNumber placeholder="min" min={0} />
-            </Form.Item>
-          </Col>
-          <Col span={6}>
-            <Form.Item
-              name="max_trace_length_to_sinks"
-              style={{marginBottom: 0}}>
-              <InputNumber placeholder="max" min={0} />
-            </Form.Item>
-          </Col>
-        </Row>
-      </Form.Item>
+      <div class="form-trace-lengths">
+        <Form.Item label={<Label label="traceLengths" />}>
+          <Row>
+            <Col span={5} style={{paddingTop: 4}}>
+              <Text type="secondary">From Sources </Text>
+            </Col>
+            <Col span={18}>
+              <Form.Item name="trace_length_from_sources">
+                <Slider
+                  range
+                  min={0}
+                  max={infiniteTraceLength}
+                  defaultValue={[0, infiniteTraceLength]}
+                  marks={{
+                    0: '0',
+                    31: '+inf',
+                  }}
+                  tipFormatter={value =>
+                    value === infiniteTraceLength ? '+inf' : value
+                  }
+                />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row>
+            <Col span={5} style={{paddingTop: 4}}>
+              <Text type="secondary">To Sinks </Text>
+            </Col>
+            <Col span={18}>
+              <Form.Item name="trace_length_to_sinks">
+                <Slider
+                  range
+                  min={0}
+                  max={infiniteTraceLength}
+                  defaultValue={[0, infiniteTraceLength]}
+                  marks={{
+                    0: '0',
+                    31: '+inf',
+                  }}
+                  tipFormatter={value =>
+                    value === infiniteTraceLength ? '+inf' : value
+                  }
+                />
+              </Form.Item>
+            </Col>
+          </Row>
+        </Form.Item>
+      </div>
       <Divider />
       <Form.Item>
         <div style={{textAlign: 'right'}}>

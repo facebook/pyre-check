@@ -16,3 +16,7 @@
 .form-features .ant-row {
     flex-flow: nowrap !important;
 }
+
+.form-trace-lengths {
+    height: 120px;
+}

@@ -21,5 +21,6 @@ export const Documentation = {
     callables: 'Only show issues that originate in a specific callable',
     features:
       'Only show issues with traces whose features match these conditions',
+    traceLengths: 'Only show issues with traces of lenght',
   },
 };
