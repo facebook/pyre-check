@@ -248,22 +248,25 @@ const FilterForm = (props: {
             </Form.Item>
           );
         })}
-        <Form.Item style={{marginTop: 5, textAlign: 'right'}}>
-          <Button
-            type="dashed"
-            onClick={() => {
-              const newFeatureConditions = [
-                ...(props.currentFilter.features || []),
-                {mode: 'all of', features: []},
-              ];
-              props.setCurrentFilter({
-                ...props.currentFilter,
-                features: newFeatureConditions,
-              });
-            }}>
-            <PlusOutlined /> Add Condition
-          </Button>
-        </Form.Item>
+        {props.currentFilter.features[props.currentFilter.features.length - 1]
+          .features.length > 0 ? (
+          <Form.Item style={{marginTop: 5, textAlign: 'right'}}>
+            <Button
+              type="dashed"
+              onClick={() => {
+                const newFeatureConditions = [
+                  ...(props.currentFilter.features || []),
+                  {mode: 'all of', features: []},
+                ];
+                props.setCurrentFilter({
+                  ...props.currentFilter,
+                  features: newFeatureConditions,
+                });
+              }}>
+              <PlusOutlined /> Add Condition
+            </Button>
+          </Form.Item>
+        ) : null}
       </Form.Item>
       <Form.Item label="Trace Lengths from Sources">
         <Row>
