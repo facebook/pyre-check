@@ -14,11 +14,13 @@ import {
   Alert,
   AutoComplete,
   Divider,
+  Dropdown,
   Popover,
   Button,
   Form,
   Input,
   InputNumber,
+  Menu,
   Modal,
   Row,
   Col,
@@ -31,6 +33,7 @@ import {
   PlusOutlined,
   MinusOutlined,
   InfoCircleOutlined,
+  MoreOutlined,
 } from '@ant-design/icons';
 import {Documentation} from './Documentation.js';
 
@@ -500,7 +503,7 @@ const SavedFilters = (
 
   return (
     <Row justify="space-between">
-      <Col span={20}>
+      <Col span={22}>
         <AutoComplete
           style={{width: '100%'}}
           options={options}
@@ -520,31 +523,33 @@ const SavedFilters = (
           Do you really want to delete{' '}
           <Text keyboard>{props.currentFilter.name}</Text>
         </Modal>
-        <Tooltip title="Delete Selected Filter">
-          <Button
-            type="dashed"
-            icon={<MinusOutlined />}
-            onClick={() => setDeleteModalVisible(true)}
-            disabled={props.currentFilter?.name === undefined}
-          />
-        </Tooltip>{' '}
         <SaveFilterModal
           currentFilter={props.currentFilter}
           visible={saveModalVisible}
           hide={() => setSaveModalVisible(false)}
           onSave={onSave}
         />
-        <Tooltip title="Save Current Filter">
-          <Button
-            type="dashed"
-            icon={<PlusOutlined />}
-            onClick={() => setSaveModalVisible(true)}
-            disabled={
-              Object.keys(props.currentFilter).length === 0 ||
-              props.currentFilter?.name !== undefined
-            }
-          />
-        </Tooltip>
+        <Dropdown
+          overlay={
+            <Menu>
+              <Menu.Item
+                disabled={
+                  Object.keys(props.currentFilter).length === 0 ||
+                  props.currentFilter?.name !== undefined
+                }
+                onClick={() => setSaveModalVisible(true)}>
+                Save...
+              </Menu.Item>
+              <Menu.Item
+                disabled={props.currentFilter?.name === undefined}
+                onClick={() => setDeleteModalVisible(true)}>
+                Delete...
+              </Menu.Item>
+            </Menu>
+          }
+          placement="bottomRight">
+          <Button type="text" icon={<MoreOutlined />} ghost />
+        </Dropdown>
       </Col>
     </Row>
   );
