@@ -579,7 +579,10 @@ def incremental(
         return v2.incremental.run(
             configuration,
             command_arguments.IncrementalArguments(
-                nonblocking=nonblocking, no_start=no_start, no_watchman=no_watchman
+                output=command_argument.output,
+                nonblocking=nonblocking,
+                no_start=no_start,
+                no_watchman=no_watchman,
             ),
         )
     else:
