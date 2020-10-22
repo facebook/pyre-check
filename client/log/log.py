@@ -84,11 +84,13 @@ class TimedStreamHandler(logging.StreamHandler):
         self._active_lines: int = 0
 
         # Preamble preparing terminal.
-        sys.stderr.write(
+        click.echo(
             Format.NEWLINE
             + Format.CLEAR_LINE
             + Format.CURSOR_UP_LINE
-            + Format.HIDE_CURSOR
+            + Format.HIDE_CURSOR,
+            file=sys.stderr,
+            nl=False,
         )
 
         thread = threading.Thread(target=self._thread)
@@ -107,24 +109,25 @@ class TimedStreamHandler(logging.StreamHandler):
 
     def emit(self, record: logging.LogRecord, age: Optional[float] = None) -> None:
         suffix = ""
-        color = ""
-        active_lines = record.msg.count("\n") + 1
+        color: Optional[str] = None
+        message = record.msg
+        active_lines = message.count("\n") + 1
         truncate = Format.TRUNCATE_OVERFLOW
         if record.levelname in self.LINE_BREAKING_LEVELS:
-            record.msg += "\n"
+            message += "\n"
 
         if record.levelname == "ERROR":
-            color = Color.RED
+            color = "red"
             self._record = None
             active_lines = 0
             truncate = Format.WRAP_OVERFLOW
         elif record.levelname == "WARNING":
-            color = Color.YELLOW
+            color = "yellow"
             self._record = None
             active_lines = 0
             truncate = Format.WRAP_OVERFLOW
         elif record.levelname == "PROMPT":
-            color = Color.YELLOW
+            color = "yellow"
             self._record = None
             active_lines = 0
             truncate = Format.WRAP_OVERFLOW
@@ -134,27 +137,23 @@ class TimedStreamHandler(logging.StreamHandler):
             truncate = Format.WRAP_OVERFLOW
         elif age:
             if age > 10:
-                color = Color.YELLOW
+                color = "yellow"
             if age > 30:
-                color = Color.RED
-            suffix = " {}[{:.1f}s]{}".format(
-                color if color else "", age, Format.CLEAR if color else ""
-            )
+                color = "red"
+            suffix = click.style(" [{:.1f}s]".format(age), fg=color)
         else:
             self._record = record
             self._last_update = time.time()
 
+        prompt = click.style(f"{Character.LAMBDA}", fg=color)
+        new_message = f"{self.clear_lines()}{prompt} {truncate}{message}{suffix}"
+
         timed_record = copy.copy(record)
         timed_record.msg = (
-            "{clear_line}{color} {cursor}{clear} {truncate}{message}{suffix}"
-        ).format(
-            clear_line=self.clear_lines(),
-            color=color,
-            cursor=Character.LAMBDA,
-            clear=Format.CLEAR,
-            truncate=truncate,
-            message=record.msg,
-            suffix=suffix,
+            f"{click.unstyle(new_message)}\n"
+            # pyre-ignore[16]: Missing typeshed stub for this API
+            if click.utils.should_strip_ansi(stream=sys.stderr)
+            else new_message
         )
         self._active_lines = active_lines
         super(TimedStreamHandler, self).emit(timed_record)
@@ -172,11 +171,11 @@ class TimedStreamHandler(logging.StreamHandler):
         self._terminate = True
 
         if self._active_lines > 0:
-            sys.stderr.write(self.clear_lines())
+            click.echo(self.clear_lines(), file=sys.stderr, nl=False)
             self._active_lines = 0
 
         # Reset terminal.
-        sys.stderr.write(Format.WRAP_OVERFLOW + Format.SHOW_CURSOR)
+        click.echo(Format.WRAP_OVERFLOW + Format.SHOW_CURSOR, file=sys.stderr, nl=False)
         sys.stderr.flush()
 
 
