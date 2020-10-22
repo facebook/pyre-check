@@ -3,16 +3,18 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import io
 import tempfile
 from pathlib import Path
 from typing import Iterable, Tuple
 
 import testslide
 
-from .... import command_arguments, configuration
+from .... import command_arguments, commands, configuration
 from ....tests import setup
 from ..start import (
     Arguments,
+    BackgroundEventWaiter,
     CriticalFile,
     LoadSavedStateFromFile,
     LoadSavedStateFromProject,
@@ -337,3 +339,17 @@ class StartTest(testslide.TestCase):
                     watchman_root=str(root_path),
                 ),
             )
+
+    def test_background_waiter(self) -> None:
+        def assert_exit_status(event_output: str, expected: commands.ExitCode) -> None:
+            self.assertEqual(
+                BackgroundEventWaiter().wait_on(io.StringIO(event_output)), expected
+            )
+
+        assert_exit_status("garbage", commands.ExitCode.FAILURE)
+        assert_exit_status("[]", commands.ExitCode.FAILURE)
+        assert_exit_status(
+            '["SocketCreated", "/path/to/socket"]', commands.ExitCode.SUCCESS
+        )
+        assert_exit_status('["ServerInitialized"]', commands.ExitCode.FAILURE)
+        assert_exit_status('["ServerException", "message"]', commands.ExitCode.FAILURE)

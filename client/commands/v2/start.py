@@ -307,8 +307,39 @@ def _run_in_foreground(
         return commands.ExitCode.FAILURE
 
 
+class EventParsingException(Exception):
+    pass
+
+
+def parse_server_event(event_string: str) -> server_event.Event:
+    event = server_event.create_from_string(event_string)
+    if event is None:
+        raise EventParsingException(
+            f"Unrecognized status update from server: {event_string}"
+        )
+    elif isinstance(event, server_event.ServerException):
+        raise EventParsingException(f"Failed to start server: {event.message}")
+    return event
+
+
+class BackgroundEventWaiter:
+    def wait_on(self, event_stream: IO[str]) -> commands.ExitCode:
+        try:
+            initial_event = parse_server_event(event_stream.readline().strip())
+            if isinstance(initial_event, server_event.SocketCreated):
+                return commands.ExitCode.SUCCESS
+            LOG.warning(f"Unexpected initial server status update: {initial_event}")
+            return commands.ExitCode.FAILURE
+        except EventParsingException as error:
+            LOG.error(error)
+            return commands.ExitCode.FAILURE
+
+
 def _run_in_background(
-    command: Sequence[str], environment: Mapping[str, str], log_directory: Path
+    command: Sequence[str],
+    environment: Mapping[str, str],
+    log_directory: Path,
+    event_waiter: BackgroundEventWaiter,
 ) -> commands.ExitCode:
     # In background mode, we asynchronously start the server with `Popen` and
     # detach it from the current process immediately with `start_new_session`.
@@ -326,27 +357,13 @@ def _run_in_background(
             universal_newlines=True,
         )
         LOG.info("Server is starting in the background.\n")
-        # Block until we receive the first server event from stdout
         server_stdout = server_process.stdout
         if server_stdout is None:
             raise RuntimeError(
                 "subprocess.Popen failed to set up a pipe for server stdout"
             )
-        else:
-            event_string = server_stdout.readline().strip()
-
-            event = server_event.create_from_string(event_string)
-            if event is None:
-                LOG.error(f"Unrecognized status update from server: {event_string}")
-                return commands.ExitCode.FAILURE
-            elif isinstance(event, server_event.SocketCreated):
-                return commands.ExitCode.SUCCESS
-            elif isinstance(event, server_event.ServerException):
-                LOG.error(f"Failed to start server: {event.message}")
-                return commands.ExitCode.FAILURE
-            else:
-                LOG.warning(f"Unexpected initial server status update: {event}")
-                return commands.ExitCode.FAILURE
+        # Block until an expected server event is obtained from stdout
+        return event_waiter.wait_on(server_stdout)
 
 
 def run(
@@ -383,4 +400,9 @@ def run(
         if start_arguments.terminal:
             return _run_in_foreground(server_command, server_environment)
         else:
-            return _run_in_background(server_command, server_environment, log_directory)
+            return _run_in_background(
+                server_command,
+                server_environment,
+                log_directory,
+                BackgroundEventWaiter(),
+            )
