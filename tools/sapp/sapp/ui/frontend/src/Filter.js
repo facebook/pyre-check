@@ -496,6 +496,7 @@ const SavedFilters = (
         </Modal>
         <Tooltip title="Delete Selected Filter">
           <Button
+            type="dashed"
             icon={<MinusOutlined />}
             onClick={() => setDeleteModalVisible(true)}
             disabled={props.currentFilter?.name === undefined}
@@ -509,6 +510,7 @@ const SavedFilters = (
         />
         <Tooltip title="Save Current Filter">
           <Button
+            type="dashed"
             icon={<PlusOutlined />}
             onClick={() => setSaveModalVisible(true)}
             disabled={
