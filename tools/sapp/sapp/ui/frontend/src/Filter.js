@@ -29,7 +29,7 @@ import {
   Typography,
 } from 'antd';
 import {
-  SearchOutlined,
+  FilterOutlined,
   PlusOutlined,
   MinusOutlined,
   InfoCircleOutlined,
@@ -582,12 +582,11 @@ const Filter = (props: {refetch: any, refetching: boolean}) => {
     <>
       <div style={{textAlign: 'right', margin: '10px 0 -40px 0'}}>
         <Popover
-          title="Filter Issues..."
           visible={visible || props.refetching}
           content={content}
           placement="bottomRight"
           onClick={() => setVisible(!visible)}>
-          <Button icon={<SearchOutlined />}>Filter...</Button>
+          <Button icon={<FilterOutlined />}>Filter</Button>
         </Popover>
       </div>
     </>
