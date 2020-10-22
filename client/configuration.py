@@ -528,8 +528,8 @@ def merge_partial_configurations(
     def overwrite_base(base: Optional[T], override: Optional[T]) -> Optional[T]:
         return base if override is None else override
 
-    def append_base(base: Sequence[T], override: Sequence[T]) -> Sequence[T]:
-        return list(base) + list(override)
+    def prepend_base(base: Sequence[T], override: Sequence[T]) -> Sequence[T]:
+        return list(override) + list(base)
 
     def raise_when_overridden(
         base: Optional[T], override: Optional[T], name: str
@@ -550,20 +550,20 @@ def merge_partial_configurations(
             base.buck_builder_binary, override.buck_builder_binary
         ),
         disabled=overwrite_base(base.disabled, override.disabled),
-        do_not_ignore_all_errors_in=append_base(
+        do_not_ignore_all_errors_in=prepend_base(
             base.do_not_ignore_all_errors_in, override.do_not_ignore_all_errors_in
         ),
         dot_pyre_directory=overwrite_base(
             base.dot_pyre_directory, override.dot_pyre_directory
         ),
-        excludes=append_base(base.excludes, override.excludes),
-        extensions=append_base(base.extensions, override.extensions),
+        excludes=prepend_base(base.excludes, override.excludes),
+        extensions=prepend_base(base.extensions, override.extensions),
         file_hash=overwrite_base(base.file_hash, override.file_hash),
         formatter=overwrite_base(base.formatter, override.formatter),
-        ignore_all_errors=append_base(
+        ignore_all_errors=prepend_base(
             base.ignore_all_errors, override.ignore_all_errors
         ),
-        ignore_infer=append_base(base.ignore_infer, override=override.ignore_infer),
+        ignore_infer=prepend_base(base.ignore_infer, override=override.ignore_infer),
         isolation_prefix=overwrite_base(
             base.isolation_prefix, override.isolation_prefix
         ),
@@ -571,17 +571,17 @@ def merge_partial_configurations(
         number_of_workers=overwrite_base(
             base.number_of_workers, override.number_of_workers
         ),
-        other_critical_files=append_base(
+        other_critical_files=prepend_base(
             base.other_critical_files, override.other_critical_files
         ),
-        search_path=append_base(base.search_path, override.search_path),
+        search_path=prepend_base(base.search_path, override.search_path),
         source_directories=raise_when_overridden(
             base.source_directories,
             override.source_directories,
             name="source_directories",
         ),
         strict=overwrite_base(base.strict, override.strict),
-        taint_models_path=append_base(
+        taint_models_path=prepend_base(
             base.taint_models_path, override.taint_models_path
         ),
         targets=raise_when_overridden(base.targets, override.targets, name="targets"),

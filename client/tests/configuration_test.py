@@ -338,7 +338,7 @@ class PartialConfigurationTest(unittest.TestCase):
                 override_value,
             )
 
-        def assert_appended(attribute_name: str) -> None:
+        def assert_prepended(attribute_name: str) -> None:
             # The actual value doesn't really matter. We only care about equalities.
             # This is obviously not type-safe but it does save a significant amount
             # of keystrokes.
@@ -352,7 +352,7 @@ class PartialConfigurationTest(unittest.TestCase):
                     ),
                     attribute_name,
                 ),
-                [base_value, override_value],
+                [override_value, base_value],
             )
 
         def assert_raise_when_overridden(attribute_name: str) -> None:
@@ -370,21 +370,21 @@ class PartialConfigurationTest(unittest.TestCase):
         assert_overwritten("autocomplete")
         assert_overwritten("buck_builder_binary")
         assert_overwritten("disabled")
-        assert_appended("do_not_ignore_all_errors_in")
+        assert_prepended("do_not_ignore_all_errors_in")
         assert_overwritten("dot_pyre_directory")
-        assert_appended("excludes")
-        assert_appended("extensions")
+        assert_prepended("excludes")
+        assert_prepended("extensions")
         assert_overwritten("file_hash")
         assert_overwritten("formatter")
-        assert_appended("ignore_all_errors")
-        assert_appended("ignore_infer")
+        assert_prepended("ignore_all_errors")
+        assert_prepended("ignore_infer")
         assert_overwritten("logger")
         assert_overwritten("number_of_workers")
-        assert_appended("other_critical_files")
-        assert_appended("search_path")
+        assert_prepended("other_critical_files")
+        assert_prepended("search_path")
         assert_raise_when_overridden("source_directories")
         assert_overwritten("strict")
-        assert_appended("taint_models_path")
+        assert_prepended("taint_models_path")
         assert_raise_when_overridden("targets")
         assert_overwritten("typeshed")
         assert_overwritten("use_buck_builder")
@@ -967,9 +967,9 @@ class ConfigurationTest(testslide.TestCase):
                 self.assertListEqual(
                     list(configuration.search_path),
                     [
-                        SimpleSearchPathElement(str(root_path / "foo")),
                         SimpleSearchPathElement(str(root_path / "bar")),
                         SimpleSearchPathElement(str(root_path / "local/baz")),
+                        SimpleSearchPathElement(str(root_path / "foo")),
                     ],
                 )
 
