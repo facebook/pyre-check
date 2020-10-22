@@ -16,11 +16,14 @@ import {
   Card,
   Modal,
   Skeleton,
+  Tooltip,
   Typography,
   Select,
 } from 'antd';
+import {InfoCircleOutlined} from '@ant-design/icons';
 import {useQuery, gql} from '@apollo/client';
 import Source from './Source.js';
+import {Documentation} from './Documentation.js';
 
 const {Text} = Typography;
 const {Option} = Select;
@@ -43,8 +46,14 @@ function TraceRoot(
 
   return (
     <>
-      <Card>
-        <Text strong>{issue.code}</Text>: {issue.message}
+      <Card
+        size="small"
+        title={<>Root: {issue.message}</>}
+        extra={
+          <Tooltip title={Documentation.trace.root}>
+            <InfoCircleOutlined />
+          </Tooltip>
+        }>
         <Source path={issue.filename} location={issue.location} />
       </Card>
       <br />
@@ -204,9 +213,23 @@ function Expansion(
     );
   }
 
+  const extra = (
+    <Tooltip
+      title={
+        isPostcondition
+          ? Documentation.trace.fromSource
+          : Documentation.trace.toSink
+      }>
+      <InfoCircleOutlined />
+    </Tooltip>
+  );
+
   return (
     <>
-      <Card title={isPostcondition ? 'Source Trace' : 'Sink Trace'}>
+      <Card
+        size="small"
+        title={isPostcondition ? 'Trace from Source' : 'Trace to Sink'}
+        extra={extra}>
         {content}
       </Card>
       <br />

@@ -23,4 +23,9 @@ export const Documentation = {
       'Only show issues with traces whose features match these conditions',
     traceLengths: 'Only show issues with traces of lenght',
   },
+  trace: {
+    fromSource: 'Trace from the issue root to the source where data originates',
+    root: 'Where the trace from the source meets the trace to the sink',
+    toSink: 'Trace from the issue root to the data sink',
+  },
 };
