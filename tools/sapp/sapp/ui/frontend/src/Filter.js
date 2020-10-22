@@ -26,7 +26,13 @@ import {
   Tooltip,
   Typography,
 } from 'antd';
-import {SearchOutlined, PlusOutlined, MinusOutlined} from '@ant-design/icons';
+import {
+  SearchOutlined,
+  PlusOutlined,
+  MinusOutlined,
+  InfoCircleOutlined,
+} from '@ant-design/icons';
+import {Documentation} from './Documentation.js';
 
 import './Filter.css';
 
@@ -52,6 +58,20 @@ type FilterDescription = {
 
 const emptyFilter = {
   features: [{mode: 'all of', features: []}],
+};
+
+const Label = (props: $ReadOnly<{title: string}>): React$Node => {
+  const title = Documentation.filter[props.title];
+  return (
+    <>
+      {props.title.charAt(0).toUpperCase() + props.title.slice(1)}
+      {title !== undefined ? (
+        <Tooltip title={title}>
+          <InfoCircleOutlined style={{marginLeft: 3}} />
+        </Tooltip>
+      ) : null}
+    </>
+  );
 };
 
 const FilterForm = (props: {
@@ -148,7 +168,7 @@ const FilterForm = (props: {
       initialValues={{remember: true}}
       onFinish={onFinish}
       onFieldsChange={() => props.setCurrentFilter(form.getFieldsValue())}>
-      <Form.Item label="Codes" name="codes">
+      <Form.Item label={<Label title="codes" />} name="codes">
         <Select
           mode="multiple"
           options={(codes?.codes?.edges || []).map(edge => {
@@ -158,7 +178,7 @@ const FilterForm = (props: {
           })}
         />
       </Form.Item>
-      <Form.Item label="Paths" name="paths">
+      <Form.Item label={<Label title="paths" />} name="paths">
         <Select
           mode="multiple"
           options={(paths?.paths?.edges || []).map(edge => {
@@ -168,7 +188,7 @@ const FilterForm = (props: {
           })}
         />
       </Form.Item>
-      <Form.Item label="Callables" name="callables">
+      <Form.Item label={<Label title="callables" />} name="callables">
         <Select
           mode="multiple"
           options={(callables?.callables?.edges || []).map(edge => {
@@ -181,7 +201,9 @@ const FilterForm = (props: {
       <Form.Item>
         {(props.currentFilter.features || []).map((feature, index) => {
           return (
-            <Form.Item key={index} label={index === 0 ? 'Features' : ''}>
+            <Form.Item
+              key={index}
+              label={index === 0 ? <Label title="features" /> : null}>
               <Row style={{marginTop: 5}}>
                 <Col span={6}>
                   <Form.Item name={['features', index, 'mode']}>
