@@ -29,12 +29,16 @@ public final class BuckCells {
     return ImmutableMap.copyOf(parsedMap);
   }
 
-  public static ImmutableMap<String, String> getCellMappings() throws BuilderException {
+  public static ImmutableMap<String, String> getCellMappings(@Nullable String isolationPrefix)
+      throws BuilderException {
     try {
+      ImmutableList<String> command =
+          isolationPrefix != null
+              ? ImmutableList.of(
+                  "buck", "--isolation_prefix", isolationPrefix, "audit", "cell", "--json")
+              : ImmutableList.of("buck", "audit", "cell", "--json");
       return parseCellMappings(
-          IOUtils.toString(
-              CommandLine.getCommandLineOutput(ImmutableList.of("buck", "audit", "cell", "--json")),
-              Charset.defaultCharset()));
+          IOUtils.toString(CommandLine.getCommandLineOutput(command), Charset.defaultCharset()));
     } catch (IOException exception) {
       throw new BuilderException(
           "'buck audit cell' failed to run. There must be errors in your dev environment.");

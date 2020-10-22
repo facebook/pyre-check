@@ -23,14 +23,15 @@ public final class BuckQuery {
 
   private BuckQuery() {}
 
-  public static JsonObject getBuildTargetJson(ImmutableList<String> targets, @Nullable String mode)
+  public static JsonObject getBuildTargetJson(
+      ImmutableList<String> targets, @Nullable String mode, @Nullable String isolationPrefix)
       throws BuilderException {
     if (targets.isEmpty()) {
       throw new BuilderException("Targets should not be empty.");
     }
     SimpleLogger.info("Querying buck for target information (`buck query`)...");
     long start = System.currentTimeMillis();
-    ImmutableList<String> buildCommand = getBuildCommand(targets, mode);
+    ImmutableList<String> buildCommand = getBuildCommand(targets, mode, isolationPrefix);
     try (InputStream commandLineOutput = CommandLine.getCommandLineOutput(buildCommand)) {
       JsonElement parsedJson = new JsonParser().parse(new InputStreamReader(commandLineOutput));
       double buckQueryTime = (System.currentTimeMillis() - start) / 1000.0;
@@ -54,7 +55,7 @@ public final class BuckQuery {
   }
 
   private static ImmutableList<String> getBuildCommand(
-      ImmutableList<String> targets, @Nullable String mode) {
+      ImmutableList<String> targets, @Nullable String mode, @Nullable String isolationPrefix) {
     /*
      * The command that we will run has the form:
      *
@@ -69,8 +70,11 @@ public final class BuckQuery {
      *
      * See: https://buck.build/command/query.html for more detail.
      */
-    ImmutableList.Builder<String> builder =
-        ImmutableList.<String>builder().add("buck").add("query");
+    ImmutableList.Builder<String> builder = ImmutableList.<String>builder().add("buck");
+    if (isolationPrefix != null) {
+      builder.add("--isolation_prefix").add(isolationPrefix);
+    }
+    builder.add("query");
     if (mode != null) {
       builder.add(mode);
     }

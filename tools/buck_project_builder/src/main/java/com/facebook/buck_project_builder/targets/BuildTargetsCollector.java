@@ -104,26 +104,28 @@ public final class BuildTargetsCollector {
   }
 
   /** @return a builder that contains all the target information necessary for building. */
-  public BuildTargetsBuilder getBuilder(long startTime, ImmutableList<String> targets)
+  public BuildTargetsBuilder getBuilder(
+      long startTime, ImmutableList<String> targets, @Nullable String isolationPrefix)
       throws BuilderException, IOException {
     collectBuildTargets(
-        BuckCells.getCellMappings(), BuckQuery.getBuildTargetJson(targets, this.mode));
+        BuckCells.getCellMappings(isolationPrefix),
+        BuckQuery.getBuildTargetJson(targets, this.mode, isolationPrefix));
     // Filter thrift libraries
     this.thriftLibraryTargets.removeIf(
         target -> {
           String commandString = target.getCommand();
           return commandString.contains("py:")
-              && this.thriftLibraryTargets.contains(
-                  new ThriftLibraryTarget(
-                      commandString.replace("py:", "mstch_pyi:"),
-                      target.getBaseModulePath(),
-                      target.getSources()))
+                  && this.thriftLibraryTargets.contains(
+                      new ThriftLibraryTarget(
+                          commandString.replace("py:", "mstch_pyi:"),
+                          target.getBaseModulePath(),
+                          target.getSources()))
               || commandString.contains(":new_style")
-              && this.thriftLibraryTargets.contains(
-                new ThriftLibraryTarget(
-                  commandString.replace(":new_style", ":asyncio,new_style"),
-                  target.getBaseModulePath(),
-                  target.getSources()));
+                  && this.thriftLibraryTargets.contains(
+                      new ThriftLibraryTarget(
+                          commandString.replace(":new_style", ":asyncio,new_style"),
+                          target.getBaseModulePath(),
+                          target.getSources()));
         });
     return new BuildTargetsBuilder(
         startTime,

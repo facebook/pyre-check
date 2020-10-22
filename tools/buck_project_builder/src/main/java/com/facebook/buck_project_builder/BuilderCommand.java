@@ -27,6 +27,7 @@ final class BuilderCommand {
   private final ImmutableList<String> targets;
   private final @Nullable String mode;
   private final @Nullable String projectName;
+  private final @Nullable String isolationPrefix;
 
   BuilderCommand(
       boolean debug,
@@ -34,13 +35,15 @@ final class BuilderCommand {
       String outputDirectory,
       ImmutableList<String> targets,
       @Nullable String mode,
-      @Nullable String projectName) {
+      @Nullable String projectName,
+      @Nullable String isolationPrefix) {
     this.debug = debug;
     this.buckRoot = buckRoot;
     this.outputDirectory = outputDirectory;
     this.targets = targets;
     this.mode = mode;
     this.projectName = projectName;
+    this.isolationPrefix = isolationPrefix;
   }
 
   static BuilderCommand fromCommandLineArguments(String[] arguments) throws BuilderException {
@@ -51,6 +54,7 @@ final class BuilderCommand {
     parsingOptions.addOption(Option.builder().hasArg().longOpt("output_directory").build());
     parsingOptions.addOption(Option.builder().hasArg().longOpt("mode").build());
     parsingOptions.addOption(Option.builder().hasArg().longOpt("project_name").build());
+    parsingOptions.addOption(Option.builder().hasArg().longOpt("isolation_prefix").build());
     try {
       CommandLine parsedArguments = parser.parse(parsingOptions, arguments);
       String buckRoot = parsedArguments.getOptionValue("buck_root");
@@ -64,13 +68,16 @@ final class BuilderCommand {
       @Nullable String mode = parsedArguments.getOptionValue("mode");
       List<String> targets = parsedArguments.getArgList();
       @Nullable String projectName = parsedArguments.getOptionValue("project_name");
+      @Nullable String isolationPrefix = parsedArguments.getOptionValue("isolation_prefix");
+
       return new BuilderCommand(
           parsedArguments.hasOption("debug"),
           buckRoot,
           outputDirectory,
           ImmutableList.copyOf(targets),
           mode,
-          projectName);
+          projectName,
+          isolationPrefix);
     } catch (ParseException exception) {
       throw new BuilderException(
           "Unexpected command line arguments. Detail: " + exception.getMessage());
@@ -91,6 +98,10 @@ final class BuilderCommand {
 
   public ImmutableList<String> getTargets() {
     return targets;
+  }
+
+  public @Nullable String getIsolationPrefix() {
+    return isolationPrefix;
   }
 
   public String getMode() {
@@ -114,6 +125,9 @@ final class BuilderCommand {
         && buckRoot.equals(builderCommand.buckRoot)
         && outputDirectory.equals(builderCommand.outputDirectory)
         && targets.equals(builderCommand.targets)
+        && (isolationPrefix != null
+            ? isolationPrefix.equals(builderCommand.isolationPrefix)
+            : builderCommand.isolationPrefix == null)
         && (projectName != null
             ? projectName.equals(builderCommand.projectName)
             : builderCommand.projectName == null);
@@ -121,13 +135,13 @@ final class BuilderCommand {
 
   @Override
   public int hashCode() {
-    return Objects.hash(debug, buckRoot, outputDirectory, targets, projectName);
+    return Objects.hash(debug, buckRoot, outputDirectory, targets, projectName, isolationPrefix);
   }
 
   @Override
   public String toString() {
     return String.format(
-        "{debug=%b, buckRoot=%s, outputDirectory=%s, targets=%s, projectName=%s}",
-        debug, buckRoot, outputDirectory, targets, projectName);
+        "{debug=%b, buckRoot=%s, outputDirectory=%s, targets=%s, projectName=%s, isolationPrefix=%s}",
+        debug, buckRoot, outputDirectory, targets, projectName, isolationPrefix);
   }
 }

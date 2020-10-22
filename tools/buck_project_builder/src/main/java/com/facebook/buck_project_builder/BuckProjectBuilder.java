@@ -57,7 +57,7 @@ public final class BuckProjectBuilder {
                         platformSelector,
                         commandRewriter,
                         mode)
-                    .getBuilder(start, targets)
+                    .getBuilder(start, targets, command.getIsolationPrefix())
                     .buildTargets(buckRoot, projectName);
             if (command.isDebug()) {
               System.out.println(new Gson().toJson(debugOutput));
