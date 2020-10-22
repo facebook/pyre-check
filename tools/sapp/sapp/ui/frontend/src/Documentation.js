@@ -9,6 +9,12 @@
  */
 
 export const Documentation = {
+  issues: {
+    kind: 'Explanation for kind',
+    distance: 'Explanation for distance',
+    name: 'Explanation for name',
+    feature: 'Explanation for feature',
+  },
   filter: {
     codes: 'Only show issues with codes',
     paths: 'Only show issues in files at a given path',

@@ -25,6 +25,7 @@ import {
   PlusCircleOutlined,
 } from '@ant-design/icons';
 import Source from './Source.js';
+import {Documentation} from './Documentation.js';
 
 const {Text, Link} = Typography;
 
@@ -93,13 +94,9 @@ function Leaves(
     distance: number,
   |}>,
 ): React$Node {
-  const kindExplanation = 'Explanation for kind';
-  const distanceExplanation = 'Explanation for distance';
-  const nameExplanation = 'Explanation for name';
-
   return (
     <>
-      <DelayedTooltip content={kindExplanation}>
+      <DelayedTooltip content={Documentation.issues.kind}>
         {props.kinds.map(kind => (
           <Tag color={props.kind === 'sources' ? 'volcano' : 'green'}>
             {kind}
@@ -107,11 +104,11 @@ function Leaves(
         ))}
       </DelayedTooltip>{' '}
       at{' '}
-      <DelayedTooltip content={distanceExplanation}>
+      <DelayedTooltip content={Documentation.issues.distance}>
         <Text underline>minimum distance {props.distance}.</Text>
       </DelayedTooltip>
       <br />
-      <DelayedTooltip placement="right" content={nameExplanation}>
+      <DelayedTooltip placement="right" content={Documentation.issues.name}>
         <div style={{marginTop: '.5em'}}>
           <ShowMore items={props.names} maximumElementsToShow={5} />
         </div>
@@ -203,8 +200,6 @@ class IssuesList extends React.Component<Props, State> {
     const leftSpan = 4;
     const rightSpan = 20;
 
-    const featureExplanation = 'Explanation for features.';
-
     return (
       <>
         {this.props.data.issues.edges.map(({node}) => (
@@ -284,7 +279,9 @@ class IssuesList extends React.Component<Props, State> {
                   <Text type="secondary">Features</Text>
                 </Col>
                 <Col span={rightSpan}>
-                  <DelayedTooltip content={featureExplanation} placement="left">
+                  <DelayedTooltip
+                    content={Documentation.issues.feature}
+                    placement="left">
                     <div>
                       <ShowMore
                         items={node.features}
