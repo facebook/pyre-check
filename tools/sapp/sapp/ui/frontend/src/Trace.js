@@ -59,10 +59,18 @@ function TraceRoot(
 
 type Kind = 'precondition' | 'postcondition';
 
-function Frame(
+type Frame = $ReadOnly<{
+  frame_id: number,
+  callee: string,
+  callee_id: number,
+  filename: string,
+  callee_location: string,
+}>;
+
+function SelectFrame(
   props: $ReadOnly<{|
     issue_id: number,
-    frames: $ReadOnlyArray<any>,
+    frames: $ReadOnlyArray<Frame>,
     kind: Kind,
     displaySource: boolean,
   |}>,
@@ -79,12 +87,12 @@ function Frame(
 
   const source = (
     <Source
-      path={props.frames[0].node.filename}
-      location={props.frames[0].node.callee_location}
+      path={props.frames[0].filename}
+      location={props.frames[0].callee_location}
     />
   );
 
-  const defaultSelectedFrameId = props.frames[0].node.frame_id;
+  const defaultSelectedFrameId = props.frames[0].frame_id;
   const select = (
     <Tooltip title={Documentation.trace.frameSelection}>
       <Select
@@ -93,9 +101,7 @@ function Frame(
         onChange={setSelectedFrameId}
         suffixIcon={<BranchesOutlined />}>
         {props.frames.map(frame => {
-          return (
-            <Option value={frame.node.frame_id}>{frame.node.callee}</Option>
-          );
+          return <Option value={frame.frame_id}>{frame.callee}</Option>;
         })}
       </Select>
     </Tooltip>
@@ -157,6 +163,7 @@ function Step(
       kind: props.kind,
     },
   });
+  const frames = (data?.next_trace_frames?.edges || []).map(edge => edge.node);
 
   if (loading) {
     return <Skeleton active />;
@@ -167,9 +174,9 @@ function Step(
   }
 
   return (
-    <Frame
+    <SelectFrame
       issue_id={props.issue_id}
-      frames={data.next_trace_frames.edges}
+      frames={frames}
       kind={props.kind}
       displaySource={true}
     />
@@ -187,6 +194,8 @@ function Expansion(
             frame_id
             callee
             callee_id
+            filename
+            callee_location
           }
         }
       }
@@ -195,6 +204,9 @@ function Expansion(
   const {loading, error, data} = useQuery(InitialTraceFramesQuery, {
     variables: {issue_id: props.issue_id, kind: props.kind},
   });
+  const frames = (data?.initial_trace_frames?.edges || []).map(
+    edge => edge.node,
+  );
 
   const isPostcondition = props.kind === 'postcondition';
 
@@ -205,9 +217,9 @@ function Expansion(
     content = <Alert type="error">{error.toString()}</Alert>;
   } else {
     content = (
-      <Frame
+      <SelectFrame
         issue_id={props.issue_id}
-        frames={data.initial_trace_frames.edges}
+        frames={frames}
         kind={props.kind}
         displaySource={false}
       />
