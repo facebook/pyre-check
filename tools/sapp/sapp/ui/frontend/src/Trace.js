@@ -75,7 +75,9 @@ function SelectFrame(
     displaySource: boolean,
   |}>,
 ): React$Node {
-  const [selectedFrameId, setSelectedFrameId] = useState(null);
+  const [selectedFrameId, setSelectedFrameId] = useState(
+    props.frames.length === 0 ? 0 : props.frames[0].frame_id,
+  );
 
   if (props.frames.length === 0) {
     return (
@@ -92,11 +94,10 @@ function SelectFrame(
     />
   );
 
-  const defaultSelectedFrameId = props.frames[0].frame_id;
   const select = (
     <Tooltip title={Documentation.trace.frameSelection}>
       <Select
-        defaultValue={defaultSelectedFrameId}
+        defaultValue={selectedFrameId}
         style={{width: '100%'}}
         onChange={setSelectedFrameId}
         suffixIcon={<BranchesOutlined />}>
@@ -109,7 +110,7 @@ function SelectFrame(
   const step = (
     <LoadFrame
       issue_id={props.issue_id}
-      frame_id={selectedFrameId || defaultSelectedFrameId}
+      frame_id={selectedFrameId}
       kind={props.kind}
     />
   );
