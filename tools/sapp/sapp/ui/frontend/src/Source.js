@@ -9,7 +9,8 @@
  */
 
 import React from 'react';
-import {Alert, Spin} from 'antd';
+import {Alert, Button, Spin, Tooltip} from 'antd';
+import {SelectOutlined} from '@ant-design/icons';
 import {useQuery, gql} from '@apollo/client';
 import {Controlled as CodeMirror} from 'react-codemirror2';
 
@@ -50,36 +51,50 @@ function Source(
       </div>
     );
   } else {
+    // Parse location of format `line|column_start|column_end`.
+    const split_location = props.location.split('|').map(i => parseInt(i));
+    if (split_location.length !== 3) {
+      throw new Error(`Invalid Location: ${props.location}`);
+    }
+    const line = split_location[0] - 1;
+    const range = {
+      from: {line, ch: split_location[1]},
+      to: {line, ch: split_location[2]},
+    };
+
     const value = data.file.edges[0].node.contents;
 
-    var range = null;
-    var selection = null;
-    const split_location = props.location.split('|').map(i => parseInt(i));
-    if (split_location.length === 3) {
-      range = {
-        from: {line: split_location[0] - 1, ch: split_location[1]},
-        to: {line: split_location[0] - 1, ch: split_location[2]},
-      };
-      selection = range.from;
-    }
+    // React codemirror is horribly broken so store a reference to underlying
+    // JS implementation.
+    var editor = null;
 
     content = (
-      <CodeMirror
-        value={value}
-        options={{lineNumbers: true, readOnly: 'nocursor'}}
-        editorDidMount={editor => {
-          if (range === null) {
-            return;
-          }
-          editor.markText(range.from, range.to, {
-            className: 'traceSelection',
-          });
-        }}
-        selection={{
-          ranges: [{anchor: selection, head: selection}],
-          focus: true,
-        }}
-      />
+      <>
+        <div class="source-menu">
+          <Tooltip title="Reset Scroll" placement="bottom">
+            <Button
+              size="small"
+              icon={<SelectOutlined />}
+              type="text"
+              onClick={() => editor.scrollIntoView({line, ch: 0})}
+            />
+          </Tooltip>
+        </div>
+        <CodeMirror
+          value={value}
+          options={{lineNumbers: true, readOnly: 'nocursor'}}
+          editorDidMount={nativeEditor => {
+            editor = nativeEditor;
+            if (range === null) {
+              return;
+            }
+            editor.markText(range.from, range.to, {
+              className: 'traceSelection',
+            });
+            editor.scrollIntoView({line, ch: 0});
+          }}
+        />
+      </>
     );
   }
 
