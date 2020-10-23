@@ -20,9 +20,10 @@
 
 .source {
     border: 1px solid lightgray;
-    margin: 1em 0 1em 0;
+    margin: .2em 0 1em 0;
 }
 
 .source-menu {
-    float: right;
+    text-align: right;
+    margin-top: .3em;
 }
