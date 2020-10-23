@@ -94,7 +94,7 @@ function Source(
             size="small"
             icon={<SelectOutlined />}
             type="text"
-            onClick={() => editor.scrollIntoView({line, ch: 0})}
+            onClick={() => editor && editor.scrollIntoView({line, ch: 0})}
             disabled={loading || error}
           />
         </Tooltip>

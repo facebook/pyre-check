@@ -54,7 +54,7 @@ type FilterDescription = {
   paths?: $ReadOnlyArray<string>,
   callables?: $ReadOnlyArray<string>,
   features?: $ReadOnlyArray<FeatureCondition>,
-  trace_lenght_from_sources?: $ReadOnlyArray<number>,
+  trace_length_from_sources?: $ReadOnlyArray<number>,
   trace_length_to_sinks?: $ReadOnlyArray<number>,
 };
 
@@ -211,6 +211,8 @@ const FilterForm = (props: {
     props.setCurrentFilter({...values, callables});
   };
 
+  const features = props.currentFilter.features || [];
+
   return (
     <Form
       layout="vertical"
@@ -285,7 +287,7 @@ const FilterForm = (props: {
       </Form.Item>
       <div class="form-features">
         <Form.Item>
-          {(props.currentFilter.features || []).map((feature, index) => {
+          {features.map((feature, index) => {
             return (
               <Form.Item
                 key={index}
@@ -322,7 +324,7 @@ const FilterForm = (props: {
                           features: newFeatureConditions,
                         });
                       }}
-                      disabled={props.currentFilter.features.length < 2}
+                      disabled={features.length < 2}
                       icon={<MinusCircleOutlined />}
                     />
                   </Col>
@@ -368,8 +370,8 @@ const FilterForm = (props: {
                   max={infiniteTraceLength}
                   defaultValue={[0, infiniteTraceLength]}
                   marks={{
-                    0: '0',
-                    31: '+inf',
+                    '0': '0',
+                    '31': '+inf',
                   }}
                   tipFormatter={value =>
                     value === infiniteTraceLength ? '+inf' : value
@@ -390,8 +392,8 @@ const FilterForm = (props: {
                   max={infiniteTraceLength}
                   defaultValue={[0, infiniteTraceLength]}
                   marks={{
-                    0: '0',
-                    31: '+inf',
+                    '0': '0',
+                    '31': '+inf',
                   }}
                   tipFormatter={value =>
                     value === infiniteTraceLength ? '+inf' : value
