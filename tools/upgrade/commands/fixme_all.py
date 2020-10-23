@@ -69,6 +69,6 @@ class FixmeAll(ErrorSuppressingCommand):
                 "Update pyre version"
                 if self._upgrade_version
                 else "Suppress pyre errors",
-                str(local_root.relative_to(project_configuration.resolve())),
+                str(local_root.relative_to(project_configuration.parent.resolve())),
             )
             self._repository.commit_changes(commit=(not self._no_commit), title=title)
