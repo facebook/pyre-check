@@ -107,7 +107,7 @@ function SelectFrame(
     </Tooltip>
   );
   const step = (
-    <Step
+    <LoadFrame
       issue_id={props.issue_id}
       frame_id={selectedFrameId || defaultSelectedFrameId}
       kind={props.kind}
@@ -134,7 +134,7 @@ function SelectFrame(
   );
 }
 
-function Step(
+function LoadFrame(
   props: $ReadOnly<{|
     issue_id: number,
     frame_id: number,
