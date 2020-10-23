@@ -362,7 +362,7 @@ class Command(CommandParser, ABC):
                 self._configuration.log_directory, "server/server.stdout"
             )
             with subprocess.Popen(
-                ["tail", "--follow", "--lines=0", stderr_file],
+                ["tail", "-F", "-n", "0", stderr_file],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.DEVNULL,
                 universal_newlines=True,

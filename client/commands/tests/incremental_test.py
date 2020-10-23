@@ -101,7 +101,7 @@ class IncrementalTest(unittest.TestCase):
             test_command.run()
             connect.assert_called_once()
             popen.assert_called_once_with(
-                ["tail", "--follow", "--lines=0", ".pyre/server/server.stdout"],
+                ["tail", "-F", "-n", "0", ".pyre/server/server.stdout"],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.DEVNULL,
                 universal_newlines=True,
