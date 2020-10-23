@@ -5,6 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+.CodeMirror {
+    resize: vertical;
+    overflow: auto !important;
+}
+
 .CodeMirror.cm-s-default {
     height: 12em;
 }
