@@ -6,6 +6,7 @@
 from typing import Any, Dict, List, NamedTuple, Optional, Set, Tuple, Union
 
 import graphene
+from graphql.execution.base import ResolveInfo
 from sqlalchemy.orm import Session, aliased
 
 from ..models import (
@@ -48,9 +49,7 @@ class TraceFrameQueryResultType(graphene.ObjectType):
     filename = graphene.String()
     trace_length = graphene.Int()
 
-    # pyre-fixme[3]: Return type must be annotated.
-    # pyre-fixme[2]: Parameter must be annotated.
-    def resolve_frame_id(self, info):
+    def resolve_frame_id(self, info: ResolveInfo) -> DBID:
         # pyre-fixme[16]: `TraceFrameQueryResultType` has no attribute `id`.
         return self.id
 
