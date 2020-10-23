@@ -25,19 +25,17 @@ import {
   Col,
   Select,
   Slider,
-  Tooltip,
   Typography,
 } from 'antd';
 import {
   FilterOutlined,
   PlusOutlined,
   MinusCircleOutlined,
-  InfoCircleOutlined,
   MoreOutlined,
   SaveOutlined,
   DeleteOutlined,
 } from '@ant-design/icons';
-import {Documentation} from './Documentation.js';
+import {DocumentationTooltip} from './Documentation.js';
 
 import './Filter.css';
 
@@ -70,15 +68,10 @@ const Label = (props: $ReadOnly<{label: string}>): React$Node => {
     .split(/(?=[A-Z])/)
     .map(value => value.charAt(0).toUpperCase() + value.slice(1))
     .join(' ');
-  const tooltip = Documentation.filter[props.label];
   return (
     <>
       {title}
-      {tooltip !== undefined ? (
-        <Tooltip title={tooltip}>
-          <InfoCircleOutlined style={{marginLeft: 3}} />
-        </Tooltip>
-      ) : null}
+      <DocumentationTooltip path={'filter.' + props.label} />
     </>
   );
 };

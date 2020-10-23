@@ -8,6 +8,11 @@
  * @flow
  */
 
+import React from 'react';
+import {Tooltip, Typography} from 'antd';
+
+const {Text} = Typography;
+
 export const Documentation = {
   issues: {
     kind: 'Explanation for kind',
@@ -29,3 +34,19 @@ export const Documentation = {
     toSink: 'Trace from the issue root to the data sink',
   },
 };
+
+export function DocumentationTooltip(
+  props: $ReadOnly<{path: string}>,
+): React$Node {
+  var title = Documentation;
+  for (const element of props.path.split('.')) {
+    title = title[element];
+  }
+  return (
+    <div style={{display: 'inline', marginLeft: 4}}>
+      <Tooltip title={title}>
+        <Text type="secondary">[?]</Text>
+      </Tooltip>
+    </div>
+  );
+}
