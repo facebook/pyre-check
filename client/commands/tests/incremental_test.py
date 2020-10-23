@@ -95,8 +95,6 @@ class IncrementalTest(unittest.TestCase):
                     ".pyre",
                     "-expected-binary-version",
                     "hash",
-                    "-source-path",
-                    ".",
                 ],
             )
 
@@ -134,8 +132,6 @@ class IncrementalTest(unittest.TestCase):
                     ".pyre",
                     "-expected-binary-version",
                     "hash",
-                    "-source-path",
-                    ".",
                     "-nonblocking",
                 ],
             )
@@ -168,8 +164,6 @@ class IncrementalTest(unittest.TestCase):
                     ".pyre",
                     "-expected-binary-version",
                     "hash",
-                    "-source-path",
-                    ".",
                 ],
             )
 
@@ -210,8 +204,6 @@ class IncrementalTest(unittest.TestCase):
                     ".pyre",
                     "-expected-binary-version",
                     "hash",
-                    "-source-path",
-                    ".",
                 ],
             )
 
@@ -248,8 +240,6 @@ class IncrementalTest(unittest.TestCase):
                     ".pyre",
                     "-expected-binary-version",
                     "hash",
-                    "-source-path",
-                    ".",
                 ],
             )
 
@@ -313,8 +303,6 @@ class IncrementalTest(unittest.TestCase):
                     ".pyre",
                     "-expected-binary-version",
                     "hash",
-                    "-source-path",
-                    "/root",
                 ],
             )
 

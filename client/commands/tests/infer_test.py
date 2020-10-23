@@ -713,8 +713,6 @@ class InferTest(unittest.TestCase):
                     "/root",
                     "-log-directory",
                     ".pyre",
-                    "-source-path",
-                    ".",
                 ],
             )
             command.run()
@@ -746,8 +744,6 @@ class InferTest(unittest.TestCase):
                     "/root",
                     "-log-directory",
                     ".pyre",
-                    "-source-path",
-                    ".",
                 ],
             )
             command.run()
@@ -779,8 +775,6 @@ class InferTest(unittest.TestCase):
                         "/root",
                         "-log-directory",
                         ".pyre",
-                        "-source-path",
-                        ".",
                     ],
                 )
                 command.run()
@@ -812,8 +806,6 @@ class InferTest(unittest.TestCase):
                         "/root",
                         "-log-directory",
                         ".pyre",
-                        "-source-path",
-                        ".",
                         "-ignore-infer",
                         "path1.py;path2.py",
                     ],

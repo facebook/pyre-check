@@ -164,7 +164,6 @@ class Start(Reporting):
             search_path.command_line_argument()
             for search_path in self._configuration.get_existent_search_paths()
         ]
-        flags.extend(["-source-path", self._analysis_directory.get_root()])
         if search_path:
             flags.extend(["-search-path", ",".join(search_path)])
 

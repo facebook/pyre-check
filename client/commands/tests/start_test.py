@@ -193,8 +193,6 @@ class StartTest(unittest.TestCase):
             "5",
             "-expected-binary-version",
             "hash",
-            "-source-path",
-            ".",
             "-new-incremental-check",
         ]
 
@@ -485,8 +483,6 @@ class StartTest(unittest.TestCase):
             "5",
             "-expected-binary-version",
             "hash",
-            "-source-path",
-            ".",
             "-new-incremental-check",
         ]
         command = Start(

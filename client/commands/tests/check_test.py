@@ -63,8 +63,6 @@ class CheckTest(unittest.TestCase):
                     ".pyre",
                     "-workers",
                     "5",
-                    "-source-path",
-                    ".",
                 ],
             )
             command.run()
@@ -130,8 +128,6 @@ class CheckTest(unittest.TestCase):
                     ".pyre",
                     "-workers",
                     "5",
-                    "-source-path",
-                    ".",
                 ],
             )
             command.run()
@@ -180,8 +176,6 @@ class CheckTest(unittest.TestCase):
                     "a;b",
                     "-workers",
                     "5",
-                    "-source-path",
-                    ".",
                 ],
             )
             command.run()
@@ -227,8 +221,6 @@ class CheckTest(unittest.TestCase):
                     ".pyre",
                     "-workers",
                     "5",
-                    "-source-path",
-                    ".",
                 ],
             )
             exit_code = command.run().exit_code()
@@ -277,8 +269,6 @@ class CheckTest(unittest.TestCase):
                     ".pyre",
                     "-workers",
                     "5",
-                    "-source-path",
-                    ".",
                 ],
             )
             command.run()
