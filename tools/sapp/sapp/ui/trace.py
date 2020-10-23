@@ -33,6 +33,9 @@ CalleeText = aliased(SharedText)
 MessageText = aliased(SharedText)
 
 
+LEAF_NAMES: Set[str] = {"source", "sink", "leaf"}
+
+
 class TraceFrameQueryResultType(graphene.ObjectType):
     class Meta:
         interfaces = (graphene.relay.Node,)
@@ -48,13 +51,14 @@ class TraceFrameQueryResultType(graphene.ObjectType):
     kind = graphene.String()
     filename = graphene.String()
     trace_length = graphene.Int()
+    is_leaf = graphene.Boolean()
 
     def resolve_frame_id(self, info: ResolveInfo) -> DBID:
         # pyre-fixme[16]: `TraceFrameQueryResultType` has no attribute `id`.
         return self.id
 
-
-LEAF_NAMES: Set[str] = {"source", "sink", "leaf"}
+    def resolve_is_leaf(self, info: ResolveInfo) -> bool:
+        return self.callee_port in LEAF_NAMES
 
 
 class TraceFrameQueryResult(NamedTuple):

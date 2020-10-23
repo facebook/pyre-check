@@ -57,6 +57,16 @@ function TraceRoot(
   );
 }
 
+function EndOfTrace(
+  props: $ReadOnly<{message: string, type?: string}>,
+): React$Node {
+  return (
+    <div style={{width: '100%', textAlign: 'center', padding: '2em'}}>
+      <Text type={props.type || 'secondary'}>{props.message}</Text>
+    </div>
+  );
+}
+
 type Kind = 'precondition' | 'postcondition';
 
 type Frame = $ReadOnly<{
@@ -65,6 +75,7 @@ type Frame = $ReadOnly<{
   callee_id: number,
   filename: string,
   callee_location: string,
+  is_leaf: boolean,
 }>;
 
 function SelectFrame(
@@ -75,16 +86,12 @@ function SelectFrame(
     displaySource: boolean,
   |}>,
 ): React$Node {
-  const [selectedFrameId, setSelectedFrameId] = useState(
-    props.frames.length === 0 ? 0 : props.frames[0].frame_id,
+  const [selectedFrameIndex, setSelectedFrameIndex] = useState(
+    props.frames.length === 0 ? null : 0,
   );
 
   if (props.frames.length === 0) {
-    return (
-      <div style={{width: '100%', textAlign: 'center', padding: '2em'}}>
-        <Text type="secondary">End of trace.</Text>
-      </div>
-    );
+    return <EndOfTrace message="Missing Trace Frame" type="warning" />;
   }
 
   const source = (
@@ -97,30 +104,35 @@ function SelectFrame(
   const select = (
     <Tooltip title={Documentation.trace.frameSelection}>
       <Select
-        defaultValue={selectedFrameId}
+        defaultValue={selectedFrameIndex}
         style={{width: '100%'}}
-        onChange={setSelectedFrameId}
+        onChange={setSelectedFrameIndex}
         suffixIcon={<BranchesOutlined />}>
-        {props.frames.map(frame => {
-          return <Option value={frame.frame_id}>{frame.callee}</Option>;
+        {props.frames.map((frame, index) => {
+          return <Option value={index}>{frame.callee}</Option>;
         })}
       </Select>
     </Tooltip>
   );
-  const step = (
-    <LoadFrame
-      issue_id={props.issue_id}
-      frame_id={selectedFrameId}
-      kind={props.kind}
-    />
-  );
+
+  var next = null;
+  if (selectedFrameIndex !== null) {
+    const frame = props.frames[selectedFrameIndex];
+    if (frame.is_leaf) {
+      next = <EndOfTrace message="End Of Trace" />;
+    } else {
+      next = (
+        <LoadFrame issue_id={props.issue_id} frame={frame} kind={props.kind} />
+      );
+    }
+  }
 
   const isPostcondition = props.kind === 'postcondition';
   return (
     <>
       {isPostcondition ? (
         <>
-          {step}
+          {next}
           {select}
         </>
       ) : null}
@@ -128,7 +140,7 @@ function SelectFrame(
       {!isPostcondition ? (
         <>
           {select}
-          {step}
+          {next}
         </>
       ) : null}
     </>
@@ -138,7 +150,7 @@ function SelectFrame(
 function LoadFrame(
   props: $ReadOnly<{|
     issue_id: number,
-    frame_id: number,
+    frame: Frame,
     kind: Kind,
   |}>,
 ): React$Node {
@@ -152,6 +164,7 @@ function LoadFrame(
             callee_id
             filename
             callee_location
+            is_leaf
           }
         }
       }
@@ -160,7 +173,7 @@ function LoadFrame(
   const {loading, error, data} = useQuery(NextTraceFramesQuery, {
     variables: {
       issue_id: props.issue_id,
-      frame_id: props.frame_id,
+      frame_id: props.frame.frame_id,
       kind: props.kind,
     },
   });
@@ -197,6 +210,7 @@ function Expansion(
             callee_id
             filename
             callee_location
+            is_leaf
           }
         }
       }
