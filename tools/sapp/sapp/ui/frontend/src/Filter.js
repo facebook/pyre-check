@@ -221,13 +221,27 @@ const FilterForm = (props: {
       onFinish={onFinish}
       onFieldsChange={onFieldsChange}>
       <Form.Item label={<Label label="codes" />} name="codes">
-        <Select mode="multiple" options={allCodes.map(value => ({value}))} />
+        <Row>
+          <Col span={22}>
+            <Select
+              mode="multiple"
+              options={allCodes.map(value => ({value}))}
+            />
+          </Col>
+        </Row>
       </Form.Item>
       <Form.Item label={<Label label="paths" />} name="paths">
-        <Select mode="multiple" options={allPaths.map(value => ({value}))} />
+        <Row>
+          <Col span={22}>
+            <Select
+              mode="multiple"
+              options={allPaths.map(value => ({value}))}
+            />
+          </Col>
+        </Row>
       </Form.Item>
       <Form.Item label={<Label label="callables" />}>
-        <Row style={{marginTop: 5}} justify="space-between">
+        <Row style={{marginTop: 5}}>
           <Col span={6}>
             <Form.Item>
               <Select
@@ -243,7 +257,7 @@ const FilterForm = (props: {
               />
             </Form.Item>
           </Col>
-          <Col span={17}>
+          <Col span={16}>
             <Form.Item name="callables">
               {callablesMode === 'is' ? (
                 <Select
@@ -269,14 +283,14 @@ const FilterForm = (props: {
           </Col>
         </Row>
       </Form.Item>
-      <Form.Item>
-        {(props.currentFilter.features || []).map((feature, index) => {
-          return (
-            <Form.Item
-              key={index}
-              label={index === 0 ? <Label label="features" /> : null}>
-              <div class="form-features">
-                <Row style={{marginTop: 5}} justify="space-between">
+      <div class="form-features">
+        <Form.Item>
+          {(props.currentFilter.features || []).map((feature, index) => {
+            return (
+              <Form.Item
+                key={index}
+                label={index === 0 ? <Label label="features" /> : null}>
+                <Row style={{marginTop: 5}}>
                   <Col span={6}>
                     <Form.Item name={['features', index, 'mode']}>
                       <Select
@@ -296,7 +310,7 @@ const FilterForm = (props: {
                       />
                     </Form.Item>
                   </Col>
-                  <Col>
+                  <Col span={2}>
                     <Button
                       type="text"
                       onClick={() => {
@@ -313,37 +327,40 @@ const FilterForm = (props: {
                     />
                   </Col>
                 </Row>
-              </div>
-            </Form.Item>
-          );
-        })}
-        <Button
-          type="dashed"
-          size="small"
-          onClick={() => {
-            const newFeatureConditions = [
-              ...(props.currentFilter.features || []),
-              {mode: 'all of', features: []},
-            ];
-            props.setCurrentFilter({
-              ...props.currentFilter,
-              features: newFeatureConditions,
-            });
-          }}
-          icon={<PlusOutlined />}
-          style={{width: '100%', marginTop: 5}}
-          block>
-          {' '}
-          Add Condition
-        </Button>
-      </Form.Item>
+              </Form.Item>
+            );
+          })}
+          <Row>
+            <Col span={22}>
+              <Button
+                type="dashed"
+                onClick={() => {
+                  const newFeatureConditions = [
+                    ...(props.currentFilter.features || []),
+                    {mode: 'all of', features: []},
+                  ];
+                  props.setCurrentFilter({
+                    ...props.currentFilter,
+                    features: newFeatureConditions,
+                  });
+                }}
+                icon={<PlusOutlined />}
+                style={{width: '100%', marginTop: 5}}
+                block>
+                {' '}
+                Add Condition
+              </Button>
+            </Col>
+          </Row>
+        </Form.Item>
+      </div>
       <div class="form-trace-lengths">
         <Form.Item label={<Label label="traceLengths" />}>
           <Row>
-            <Col span={5} style={{paddingTop: 4}}>
+            <Col span={6} style={{paddingTop: 4}}>
               <Text type="secondary">From Sources </Text>
             </Col>
-            <Col span={18}>
+            <Col span={15}>
               <Form.Item name="trace_length_from_sources">
                 <Slider
                   range
@@ -362,10 +379,10 @@ const FilterForm = (props: {
             </Col>
           </Row>
           <Row>
-            <Col span={5} style={{paddingTop: 4}}>
+            <Col span={6} style={{paddingTop: 4}}>
               <Text type="secondary">To Sinks </Text>
             </Col>
-            <Col span={18}>
+            <Col span={15}>
               <Form.Item name="trace_length_to_sinks">
                 <Slider
                   range

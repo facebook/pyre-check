@@ -6,17 +6,18 @@
  */
 
 .ant-form-item {
-    margin-bottom: 20px !important;
+    margin-bottom: 0px !important;
 }
 
 .ant-form-item .ant-form-item {
     margin-bottom: 0 !important;
 }
 
-.form-features .ant-row {
-    flex-flow: nowrap !important;
+.form-features {
+    margin-top: 20px;
 }
 
 .form-trace-lengths {
+    margin-top: 20px;
     height: 120px;
 }
