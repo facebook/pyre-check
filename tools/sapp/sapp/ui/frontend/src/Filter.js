@@ -25,6 +25,7 @@ import {
   Col,
   Select,
   Slider,
+  Tooltip,
   Typography,
 } from 'antd';
 import {
@@ -85,17 +86,23 @@ const FilterForm = (props: {
 }): React$Node => {
   const [form] = Form.useForm();
 
+  const [callablesMode, setCallablesMode] = useState('is');
+
   var values = props.currentFilter;
   // Remove `null` values to work around display issues in form with lists.
   Object.keys(values).forEach(key => values[key] == null && delete values[key]);
   form.setFieldsValue({
     codes: values.codes,
     paths: values.paths,
-    callables: values.callables,
     features: values.features,
     trace_length_from_sources: values.trace_length_from_sources,
     trace_length_to_sinks: values.trace_length_to_sinks,
   });
+  if (callablesMode === 'is') {
+    form.setFieldsValue({
+      callables: values.callables,
+    });
+  }
 
   const [appliedFilter, setAppliedFilter] = useState<FilterDescription>(
     emptyFilter,
@@ -112,7 +119,8 @@ const FilterForm = (props: {
       }
     }
   `;
-  const {data: codes} = useQuery(codesQuery);
+  const {data: codesData} = useQuery(codesQuery);
+  const allCodes = (codesData?.codes?.edges || []).map(edge => edge.node.code);
 
   const pathsQuery = gql`
     query Paths {
@@ -125,7 +133,8 @@ const FilterForm = (props: {
       }
     }
   `;
-  const {data: paths} = useQuery(pathsQuery);
+  const {data: pathsData} = useQuery(pathsQuery);
+  const allPaths = (pathsData?.paths?.edges || []).map(edge => edge.node.path);
 
   const callablesQuery = gql`
     query Callables {
@@ -138,7 +147,10 @@ const FilterForm = (props: {
       }
     }
   `;
-  const {data: callables} = useQuery(callablesQuery);
+  const {data: callablesData} = useQuery(callablesQuery);
+  const allCallables = (callablesData?.callables?.edges || []).map(
+    edge => edge.node.callable,
+  );
 
   const featuresQuery = gql`
     query Features {
@@ -151,7 +163,10 @@ const FilterForm = (props: {
       }
     }
   `;
-  const {data: features} = useQuery(featuresQuery);
+  const {data: featuresData} = useQuery(featuresQuery);
+  const allFeatures = (featuresData?.features?.edges || []).map(
+    edge => edge.node.feature,
+  );
 
   const onFinish = (filter: FilterDescription) => {
     const rangeValue = value => {
@@ -182,6 +197,20 @@ const FilterForm = (props: {
     props.setVisible(false);
   };
 
+  const onFieldsChange = () => {
+    values = form.getFieldsValue();
+    var callables = values.callables;
+    if (callables !== undefined && !Array.isArray(callables)) {
+      if (callables === '') {
+        callables = [];
+      } else {
+        const pattern = callables;
+        callables = allCallables.filter(callable => callable.match(pattern));
+      }
+    }
+    props.setCurrentFilter({...values, callables});
+  };
+
   return (
     <Form
       layout="vertical"
@@ -190,36 +219,55 @@ const FilterForm = (props: {
       autoComplete="off"
       initialValues={{remember: true}}
       onFinish={onFinish}
-      onFieldsChange={() => props.setCurrentFilter(form.getFieldsValue())}>
+      onFieldsChange={onFieldsChange}>
       <Form.Item label={<Label label="codes" />} name="codes">
-        <Select
-          mode="multiple"
-          options={(codes?.codes?.edges || []).map(edge => {
-            return {
-              value: edge.node.code,
-            };
-          })}
-        />
+        <Select mode="multiple" options={allCodes.map(value => ({value}))} />
       </Form.Item>
       <Form.Item label={<Label label="paths" />} name="paths">
-        <Select
-          mode="multiple"
-          options={(paths?.paths?.edges || []).map(edge => {
-            return {
-              value: edge.node.path,
-            };
-          })}
-        />
+        <Select mode="multiple" options={allPaths.map(value => ({value}))} />
       </Form.Item>
-      <Form.Item label={<Label label="callables" />} name="callables">
-        <Select
-          mode="multiple"
-          options={(callables?.callables?.edges || []).map(edge => {
-            return {
-              value: edge.node.callable,
-            };
-          })}
-        />
+      <Form.Item label={<Label label="callables" />}>
+        <Row style={{marginTop: 5}} justify="space-between">
+          <Col span={6}>
+            <Form.Item>
+              <Select
+                options={[{value: 'is'}, {value: 'matches'}]}
+                value={callablesMode}
+                onChange={value => {
+                  props.setCurrentFilter({
+                    ...props.currentFilter,
+                    callables: undefined,
+                  });
+                  setCallablesMode(value);
+                }}
+              />
+            </Form.Item>
+          </Col>
+          <Col span={17}>
+            <Form.Item name="callables">
+              {callablesMode === 'is' ? (
+                <Select
+                  mode="multiple"
+                  options={allCallables.map(value => ({value}))}
+                />
+              ) : (
+                <Input
+                  placeholder="regular experssion"
+                  onChange={onFieldsChange}
+                  suffix={
+                    <Tooltip
+                      title={(props.currentFilter.callables || []).join('\n')}
+                      placement="bottom">
+                      <Text type="secondary" size="small">{`[${
+                        (props.currentFilter.callables || []).length
+                      }]`}</Text>
+                    </Tooltip>
+                  }
+                />
+              )}
+            </Form.Item>
+          </Col>
+        </Row>
       </Form.Item>
       <Form.Item>
         {(props.currentFilter.features || []).map((feature, index) => {
@@ -244,11 +292,7 @@ const FilterForm = (props: {
                     <Form.Item name={['features', index, 'features']}>
                       <Select
                         mode="multiple"
-                        options={(features?.features?.edges || []).map(edge => {
-                          return {
-                            value: edge.node.feature,
-                          };
-                        })}
+                        options={allFeatures.map(value => ({value}))}
                       />
                     </Form.Item>
                   </Col>
