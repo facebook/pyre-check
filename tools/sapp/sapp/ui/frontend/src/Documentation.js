@@ -32,6 +32,7 @@ export const Documentation = {
     fromSource: 'Trace from the issue root to the source where data originates',
     root: 'Where the trace from the source meets the trace to the sink',
     toSink: 'Trace from the issue root to the data sink',
+    frameSelection: 'Explore alternative traces leading to the same sink',
   },
 };
 

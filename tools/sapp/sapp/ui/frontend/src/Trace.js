@@ -16,12 +16,14 @@ import {
   Card,
   Modal,
   Skeleton,
-  Typography,
   Select,
+  Tooltip,
+  Typography,
 } from 'antd';
+import {BranchesOutlined} from '@ant-design/icons';
 import {useQuery, gql} from '@apollo/client';
 import Source from './Source.js';
-import {DocumentationTooltip} from './Documentation.js';
+import {Documentation, DocumentationTooltip} from './Documentation.js';
 
 const {Text} = Typography;
 const {Option} = Select;
@@ -84,14 +86,19 @@ function Frame(
 
   const defaultSelectedFrameId = props.frames[0].node.frame_id;
   const select = (
-    <Select
-      defaultValue={defaultSelectedFrameId}
-      style={{width: '100%'}}
-      onChange={setSelectedFrameId}>
-      {props.frames.map(frame => {
-        return <Option value={frame.node.frame_id}>{frame.node.callee}</Option>;
-      })}
-    </Select>
+    <Tooltip title={Documentation.trace.frameSelection}>
+      <Select
+        defaultValue={defaultSelectedFrameId}
+        style={{width: '100%'}}
+        onChange={setSelectedFrameId}
+        suffixIcon={<BranchesOutlined />}>
+        {props.frames.map(frame => {
+          return (
+            <Option value={frame.node.frame_id}>{frame.node.callee}</Option>
+          );
+        })}
+      </Select>
+    </Tooltip>
   );
   const step = (
     <Step
