@@ -961,6 +961,12 @@ def servers(context: click.Context, subcommand: str) -> int:
     default=str(commands.IncrementalStyle.FINE_GRAINED),
     help="[DEPRECATED] How to approach doing incremental checks.",
 )
+@click.option(
+    "--wait-on-initialization/--no-wait-on-initialization",
+    default=False,
+    hidden=True,
+    help="When `--terminal` is unset, wait for server initialization to finish.",
+)
 @click.pass_context
 def start(
     context: click.Context,
@@ -968,6 +974,7 @@ def start(
     store_type_check_resolution: bool,
     no_watchman: bool,
     incremental_style: str,
+    wait_on_initialization: bool,
 ) -> int:
     """
     Starts a pyre server as a daemon.
@@ -988,6 +995,7 @@ def start(
                 show_error_traces=command_argument.show_error_traces,
                 store_type_check_resolution=store_type_check_resolution,
                 terminal=terminal,
+                wait_on_initialization=wait_on_initialization,
             ),
         )
     else:

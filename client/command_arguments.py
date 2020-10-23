@@ -63,6 +63,7 @@ class StartArguments:
     show_error_traces: bool = False
     store_type_check_resolution: bool = False
     terminal: bool = False
+    wait_on_initialization: bool = False
 
 
 @dataclass(frozen=True)
