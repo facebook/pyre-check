@@ -12,6 +12,7 @@ from .log import (  # noqa: F401
     StreamLogger,
     cleanup,
     configured_logger,
+    file_tailer,
     get_input,
     get_optional_input,
     get_yes_no_input,

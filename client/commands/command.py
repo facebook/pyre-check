@@ -22,7 +22,7 @@ from ..analysis_directory import AnalysisDirectory, resolve_analysis_directory
 from ..configuration import Configuration, InvalidConfiguration
 from ..exceptions import EnvironmentException
 from ..filesystem import remove_if_exists
-from ..log import StreamLogger
+from ..log import StreamLogger, file_tailer
 from ..process import Process
 from ..socket_connection import SocketConnection, SocketException
 
@@ -361,28 +361,20 @@ class Command(CommandParser, ABC):
             stderr_file = os.path.join(
                 self._configuration.log_directory, "server/server.stdout"
             )
-            with subprocess.Popen(
-                ["tail", "-F", "-n", "0", stderr_file],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.DEVNULL,
-                universal_newlines=True,
-            ) as stderr_tail:
-                try:
-                    with SocketConnection(
-                        self._configuration.log_directory
-                    ) as socket_connection:
-                        socket_connection.perform_handshake(version_hash)
-                        # pyre-fixme[6]: Expected `Iterable[str]` for 1st param but
-                        #  got `Optional[IO[typing.Any]]`.
-                        with StreamLogger(stderr_tail.stdout):
-                            socket_connection.send(request)
-                            response = socket_connection.read()
-                        result = _convert_json_response_to_result(response)
-                        result.check()
-                        self._socket_result_handler(result)
-                finally:
-                    stderr_tail.terminate()
+            with file_tailer(Path(stderr_file)) as stderr_tail:
+                with SocketConnection(
+                    self._configuration.log_directory
+                ) as socket_connection:
+                    socket_connection.perform_handshake(version_hash)
+                    with StreamLogger(stderr_tail) as stderr_logger:
+                        socket_connection.send(request)
+                        response = socket_connection.read()
+                    result = _convert_json_response_to_result(response)
+                    result.check()
+                    self._socket_result_handler(result)
+            stderr_logger.join()
         except (
+            OSError,
             SocketException,
             ResourceWarning,
             ClientException,
