@@ -261,6 +261,7 @@ let collapse_tito ~resolution ~callee ~callable_type =
 
 let rec resolve_callees_from_type
     ~resolution
+    ?(resolving_callable_class = false)
     ?receiver_type
     ~callee_kind
     ~collapse_tito
@@ -326,7 +327,16 @@ let rec resolve_callees_from_type
                      ];
                    collapse_tito;
                  })
-        | annotation -> resolve_callees_from_type ~resolution ~callee_kind ~collapse_tito annotation
+        | annotation ->
+            if not resolving_callable_class then
+              resolve_callees_from_type
+                ~resolution
+                ~resolving_callable_class:true
+                ~callee_kind
+                ~collapse_tito
+                annotation
+            else
+              None
       else
         resolve_constructor_callee ~resolution callable_type
 

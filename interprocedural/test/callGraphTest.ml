@@ -712,7 +712,26 @@ let test_call_graph_of_define context =
               collapse_tito = true;
               targets = [`Method { Callable.class_name = "test.C"; method_name = "run" }];
             } );
-      ]
+      ];
+
+  (* Ensure we don't infinite loop when resolving callable classes. *)
+  assert_call_graph_of_define
+    ~source:
+      {|
+    from typing import Any, Callable
+    def to_c(callable: Callable[..., Any]) -> C:
+      ...
+
+    class C:
+      @to_c
+      def __call__(self) -> "C":
+        return self
+
+    def foo(c: C) -> None:
+      c()
+    |}
+    ~define_name:"test.foo"
+    ~expected:[]
 
 
 let test_resolve_ignoring_optional context =
