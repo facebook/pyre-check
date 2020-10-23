@@ -47,7 +47,6 @@ class TraceFrameQueryResultType(graphene.ObjectType):
     kind = graphene.String()
     filename = graphene.String()
     trace_length = graphene.Int()
-    file_content = graphene.String()
 
     # pyre-fixme[3]: Return type must be annotated.
     # pyre-fixme[2]: Parameter must be annotated.
@@ -71,7 +70,6 @@ class TraceFrameQueryResult(NamedTuple):
     kind: Optional[TraceKind] = None
     filename: Optional[str] = None
     trace_length: Optional[int] = None
-    file_content: Optional[str] = None
 
     @staticmethod
     # pyre-fixme[2]: Parameter annotation cannot be `Any`.
@@ -88,7 +86,6 @@ class TraceFrameQueryResult(NamedTuple):
             kind=record.kind,
             filename=record.filename,
             trace_length=getattr(record, "trace_length", None),
-            file_content=getattr(record, "file_content", None),
         )
 
     def is_leaf(self) -> bool:

@@ -167,66 +167,6 @@ class Query(graphene.ObjectType):
 
         return builder.get()
 
-    def resolve_trace(
-        self, info: ResolveInfo, issue_id: DBID, **args: Any
-    ) -> List[TraceFrameQueryResult]:
-        session = info.context.get("session")
-
-        run_id = DBID(Query.latest_run_id(session))
-
-        issue = issues.Query(session, run_id).where_issue_id_is(int(issue_id)).get()[0]
-
-        leaf_kinds = Query.all_leaf_kinds(session)
-
-        builder = issues.Query(session, run_id)
-        sources = builder.get_leaves_issue_instance(
-            session, int(issue.id), SharedTextKind.SOURCE
-        )
-        sinks = builder.get_leaves_issue_instance(
-            session, int(issue.id), SharedTextKind.SINK
-        )
-
-        postcondition_navigation = trace.Query(session).navigate_trace_frames(
-            leaf_kinds,
-            run_id,
-            sources,
-            sinks,
-            trace.Query(session).initial_trace_frames(
-                int(issue.id), TraceKind.POSTCONDITION
-            ),
-        )
-        precondition_navigation = trace.Query(session).navigate_trace_frames(
-            leaf_kinds,
-            run_id,
-            sources,
-            sinks,
-            trace.Query(session).initial_trace_frames(
-                int(issue.id), TraceKind.PRECONDITION
-            ),
-        )
-
-        trace_frames = (
-            [frame_tuple[0] for frame_tuple in reversed(postcondition_navigation)]
-            + [
-                TraceFrameQueryResult(
-                    id=DBID(0),
-                    caller="",
-                    caller_port="",
-                    callee=issue.callable,
-                    callee_port="root",
-                    filename=issue.filename,
-                    callee_location=issue.location,
-                )
-            ]
-            + [frame_tuple[0] for frame_tuple in precondition_navigation]
-        )
-
-        return [
-            frame._replace(file_content=Query().resolve_file(info, path=frame.filename))
-            for frame in trace_frames
-            if frame.filename
-        ]
-
     def resolve_initial_trace_frames(
         self, info: ResolveInfo, issue_id: int, kind: str
     ) -> List[TraceFrameQueryResult]:
