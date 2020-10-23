@@ -207,7 +207,7 @@ class IssuesList extends React.Component<Props, State> {
             <Card
               size="small"
               title={<>Issue {node.issue_id}</>}
-              extra={<Link href={`/trace/${node.issue_id}`}>Trace</Link>}>
+              extra={<Link href={`/trace/${node.issue_id}`}>Traces</Link>}>
               <Row gutter={gutter}>
                 <Col span={leftSpan} style={{textAlign: 'right'}}>
                   <Text type="secondary">Code</Text>
