@@ -20,7 +20,7 @@ import {
   Tooltip,
   Typography,
 } from 'antd';
-import {BranchesOutlined} from '@ant-design/icons';
+import {BranchesOutlined, ColumnHeightOutlined} from '@ant-design/icons';
 import {useQuery, gql} from '@apollo/client';
 import Source from './Source.js';
 import {Documentation, DocumentationTooltip} from './Documentation.js';
@@ -75,6 +75,7 @@ type Frame = $ReadOnly<{
   callee_id: number,
   filename: string,
   callee_location: string,
+  trace_length: number,
   is_leaf: boolean,
 }>;
 
@@ -102,17 +103,27 @@ function SelectFrame(
   );
 
   const select = (
-    <Tooltip title={Documentation.trace.frameSelection}>
-      <Select
-        defaultValue={selectedFrameIndex}
-        style={{width: '100%'}}
-        onChange={setSelectedFrameIndex}
-        suffixIcon={<BranchesOutlined />}>
-        {props.frames.map((frame, index) => {
-          return <Option value={index}>{frame.callee}</Option>;
-        })}
-      </Select>
-    </Tooltip>
+    <Select
+      defaultValue={selectedFrameIndex}
+      style={{width: '100%'}}
+      onChange={setSelectedFrameIndex}
+      suffixIcon={
+        <Tooltip title={Documentation.trace.frameSelection}>
+          <BranchesOutlined style={{fontSize: '0.9em'}} />
+        </Tooltip>
+      }>
+      {props.frames.map((frame, index) => {
+        return (
+          <Option value={index}>
+            <Tooltip title="Distance to sink">
+              {frame.trace_length}
+              <ColumnHeightOutlined style={{fontSize: '.9em'}} />
+            </Tooltip>{' '}
+            {frame.callee}
+          </Option>
+        );
+      })}
+    </Select>
   );
 
   var next = null;
@@ -164,6 +175,7 @@ function LoadFrame(
             callee_id
             filename
             callee_location
+            trace_length
             is_leaf
           }
         }
@@ -210,6 +222,7 @@ function Expansion(
             callee_id
             filename
             callee_location
+            trace_length
             is_leaf
           }
         }
