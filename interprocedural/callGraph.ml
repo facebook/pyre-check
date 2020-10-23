@@ -638,7 +638,10 @@ struct
 
     let visit_statement_children _ statement =
       match Node.value statement with
-      | Statement.Statement.Assign _ -> false
+      | Statement.Statement.Assign _
+      | Statement.Statement.Define _
+      | Statement.Statement.Class _ ->
+          false
       | _ -> true
   end
 
