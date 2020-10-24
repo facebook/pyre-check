@@ -60,7 +60,7 @@ def _display_type_errors(socket_path: Path) -> None:
         error.print_errors(type_errors, output="text")
 
 
-def _run_incremental(
+def run_incremental(
     configuration: configuration_module.Configuration,
     incremental_arguments: command_arguments.IncrementalArguments,
 ) -> None:
@@ -87,7 +87,7 @@ def run(
     incremental_arguments: command_arguments.IncrementalArguments,
 ) -> commands.ExitCode:
     try:
-        _run_incremental(configuration, incremental_arguments)
+        run_incremental(configuration, incremental_arguments)
         return commands.ExitCode.SUCCESS
     except Exception as error:
         raise commands.ClientException(

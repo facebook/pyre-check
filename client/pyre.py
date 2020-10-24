@@ -900,21 +900,44 @@ def restart(
     """
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
     configuration = _create_configuration_with_retry(command_argument, Path("."))
-    return run_pyre_command(
-        commands.Restart(
-            command_argument,
-            original_directory=os.getcwd(),
-            configuration=configuration,
-            terminal=terminal,
+    if command_argument.use_command_v2:
+        start_arguments = command_arguments.StartArguments(
+            changed_files_path=command_argument.changed_files_path,
+            debug=command_argument.debug,
+            load_initial_state_from=command_argument.load_initial_state_from,
+            no_watchman=no_watchman,
+            save_initial_state_to=command_argument.save_initial_state_to,
+            saved_state_project=command_argument.saved_state_project,
+            sequential=command_argument.sequential,
+            show_error_traces=command_argument.show_error_traces,
             store_type_check_resolution=store_type_check_resolution,
-            use_watchman=not no_watchman,
-            incremental_style=commands.IncrementalStyle.SHALLOW
-            if incremental_style == str(commands.IncrementalStyle.SHALLOW)
-            else commands.IncrementalStyle.FINE_GRAINED,
-        ),
-        configuration,
-        command_argument.noninteractive,
-    )
+            terminal=terminal,
+            wait_on_initialization=True,
+        )
+        return v2.restart.run(
+            configuration,
+            command_arguments.IncrementalArguments(
+                output=command_argument.output,
+                no_start=False,
+                start_arguments=start_arguments,
+            ),
+        )
+    else:
+        return run_pyre_command(
+            commands.Restart(
+                command_argument,
+                original_directory=os.getcwd(),
+                configuration=configuration,
+                terminal=terminal,
+                store_type_check_resolution=store_type_check_resolution,
+                use_watchman=not no_watchman,
+                incremental_style=commands.IncrementalStyle.SHALLOW
+                if incremental_style == str(commands.IncrementalStyle.SHALLOW)
+                else commands.IncrementalStyle.FINE_GRAINED,
+            ),
+            configuration,
+            command_argument.noninteractive,
+        )
 
 
 @pyre.command()
