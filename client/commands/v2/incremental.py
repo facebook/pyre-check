@@ -14,7 +14,7 @@ from ... import (
     configuration as configuration_module,
     error,
 )
-from . import server_connection
+from . import server_connection, start
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -70,7 +70,19 @@ def _run_incremental(
     try:
         _display_type_errors(socket_path)
     except OSError:
-        LOG.error("Not implemented yet")
+        if incremental_arguments.no_start:
+            raise commands.ClientException("Cannot find a running Pyre server.")
+
+        LOG.info("Cannot find a running Pyre server. Starting a new one...")
+        start_arguments = command_arguments.StartArguments(
+            no_watchman=incremental_arguments.no_watchman, wait_on_initialization=True
+        )
+        start_status = start.run(configuration, start_arguments)
+        if start_status != commands.ExitCode.SUCCESS:
+            raise commands.ClientException(
+                f"`pyre start` failed with non-zero exit code: {start_status}"
+            )
+        _display_type_errors(socket_path)
 
 
 def run(
