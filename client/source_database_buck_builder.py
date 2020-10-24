@@ -30,9 +30,15 @@ def _buck(arguments: List[str], isolation_prefix: Optional[str]) -> str:
     isolation_prefix_arguments = (
         ["--isolation_prefix", isolation_prefix] if isolation_prefix is not None else []
     )
-    client_id_arguments = ["--config", "client.id=pyre"]
+    command = (
+        ["buck"]
+        + isolation_prefix_arguments
+        + arguments
+        + ["--config", "client.id=pyre"]
+    )
+    LOG.debug("Running `%s`", " ".join(command))
     return subprocess.check_output(
-        ["buck"] + isolation_prefix_arguments + arguments + client_id_arguments,
+        command,
         stderr=subprocess.PIPE,
     ).decode("utf-8")
 

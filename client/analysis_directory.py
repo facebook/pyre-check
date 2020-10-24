@@ -772,7 +772,9 @@ def _get_buck_builder(
                 buck_root=buck_root,
                 buck_mode=buck_mode,
                 output_directory=output_directory,
-                isolation_prefix=configuration.isolation_prefix,
+                isolation_prefix=(
+                    configuration.get_isolation_prefix_respecting_override()
+                ),
             ),
             [output_directory],
         )
@@ -787,7 +789,7 @@ def _get_buck_builder(
             buck_mode=buck_mode,
             project_name=project_name,
             output_directory=output_directory,
-            isolation_prefix=configuration.isolation_prefix,
+            isolation_prefix=configuration.get_isolation_prefix_respecting_override(),
         ),
         [output_directory],
     )
