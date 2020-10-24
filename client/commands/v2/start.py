@@ -285,6 +285,14 @@ def create_server_arguments(
     )
 
 
+def get_server_identifier(configuration: configuration_module.Configuration) -> str:
+    global_identifier = Path(configuration.project_root).name
+    relative_local_root = configuration.relative_local_root
+    if relative_local_root is None:
+        return global_identifier
+    return f"{global_identifier}/{relative_local_root}"
+
+
 def _write_argument_file(output_file: IO[str], arguments: Arguments) -> None:
     LOG.info(f"Writing server startup configurations into {output_file.name}...")
     serialized_arguments = arguments.serialize()
@@ -420,6 +428,7 @@ def run(
             " since no filesystem updates will be sent to the Pyre server."
         )
 
+    LOG.info(f"Starting server at `{get_server_identifier(configuration)}`...")
     with tempfile.NamedTemporaryFile(
         mode="w", prefix="pyre_arguments_", suffix=".json"
     ) as argument_file:

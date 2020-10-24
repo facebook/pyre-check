@@ -7,7 +7,7 @@ import logging
 from pathlib import Path
 
 from ... import commands, configuration as configuration_module
-from . import server_connection
+from . import server_connection, start
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -30,11 +30,7 @@ def run(configuration: configuration_module.Configuration) -> commands.ExitCode:
     try:
         stop_server(socket_path)
 
-        local_root = configuration.local_root
-        server_root = (
-            local_root if local_root is not None else configuration.project_root
-        )
-        LOG.info(f"Stopped server at {server_root}\n")
+        LOG.info(f"Stopped server at `{start.get_server_identifier(configuration)}`\n")
         return commands.ExitCode.SUCCESS
     except Exception as error:
         raise commands.ClientException(

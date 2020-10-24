@@ -7,7 +7,7 @@ import logging
 from pathlib import Path
 
 from ... import command_arguments, commands, configuration as configuration_module
-from . import incremental, server_connection, stop
+from . import incremental, server_connection, start, stop
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -19,6 +19,7 @@ def _stop_server_if_needed(configuration: configuration_module.Configuration) ->
             log_directory=Path(configuration.log_directory)
         )
         stop.stop_server(socket_path)
+        LOG.info(f"Stopped server at `{start.get_server_identifier(configuration)}`")
     except OSError:
         # This usually means there's no server running
         pass
