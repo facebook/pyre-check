@@ -3,6 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import contextlib
 import dataclasses
 import enum
 import json
@@ -11,13 +12,25 @@ import os
 import subprocess
 import tempfile
 from pathlib import Path
-from typing import IO, Any, Dict, List, Mapping, Optional, Sequence, Tuple, Union
+from typing import (
+    IO,
+    Any,
+    Dict,
+    Generator,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+)
 
 from ... import (
     command_arguments,
     commands,
     configuration as configuration_module,
     find_directories,
+    log,
 )
 from . import server_event
 
@@ -348,6 +361,14 @@ class BackgroundEventWaiter:
             return commands.ExitCode.FAILURE
 
 
+@contextlib.contextmanager
+def _background_logging(log_file: Path) -> Generator[None, None, None]:
+    with log.file_tailer(log_file) as log_stream:
+        with log.StreamLogger(log_stream) as logger:
+            yield
+    logger.join()
+
+
 def _run_in_background(
     command: Sequence[str],
     environment: Mapping[str, str],
@@ -360,7 +381,8 @@ def _run_in_background(
     # Server stderr will be forwarded to dedicated log files.
     # Server stdout will be used as additional communication channel for status
     # updates.
-    with open(str(log_directory / "server.stderr"), "a") as server_stderr:
+    log_file = log_directory / "server.stderr"
+    with open(str(log_file), "a") as server_stderr:
         server_process = subprocess.Popen(
             command,
             stdout=subprocess.PIPE,
@@ -369,14 +391,16 @@ def _run_in_background(
             start_new_session=True,
             universal_newlines=True,
         )
-        LOG.info("Server is starting in the background.\n")
-        server_stdout = server_process.stdout
-        if server_stdout is None:
-            raise RuntimeError(
-                "subprocess.Popen failed to set up a pipe for server stdout"
-            )
-        # Block until an expected server event is obtained from stdout
-        return event_waiter.wait_on(server_stdout)
+
+    LOG.info("Server is starting in the background.\n")
+    server_stdout = server_process.stdout
+    if server_stdout is None:
+        raise RuntimeError("subprocess.Popen failed to set up a pipe for server stdout")
+    # Block until an expected server event is obtained from stdout
+    with _background_logging(log_file):
+        exit_code = event_waiter.wait_on(server_stdout)
+        server_stdout.close()
+        return exit_code
 
 
 def run(
