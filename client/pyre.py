@@ -579,13 +579,25 @@ def incremental(
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
     if command_argument.use_command_v2:
         configuration = _create_configuration_with_retry(command_argument, Path("."))
+        start_arguments = command_arguments.StartArguments(
+            changed_files_path=command_argument.changed_files_path,
+            debug=command_argument.debug,
+            load_initial_state_from=command_argument.load_initial_state_from,
+            no_watchman=no_watchman,
+            save_initial_state_to=command_argument.save_initial_state_to,
+            saved_state_project=command_argument.saved_state_project,
+            sequential=command_argument.sequential,
+            show_error_traces=command_argument.show_error_traces,
+            store_type_check_resolution=False,
+            terminal=False,
+            wait_on_initialization=True,
+        )
         return v2.incremental.run(
             configuration,
             command_arguments.IncrementalArguments(
                 output=command_argument.output,
-                nonblocking=nonblocking,
                 no_start=no_start,
-                no_watchman=no_watchman,
+                start_arguments=start_arguments,
             ),
         )
     else:

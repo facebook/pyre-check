@@ -74,10 +74,7 @@ def _run_incremental(
             raise commands.ClientException("Cannot find a running Pyre server.")
 
         LOG.info("Cannot find a running Pyre server. Starting a new one...")
-        start_arguments = command_arguments.StartArguments(
-            no_watchman=incremental_arguments.no_watchman, wait_on_initialization=True
-        )
-        start_status = start.run(configuration, start_arguments)
+        start_status = start.run(configuration, incremental_arguments.start_arguments)
         if start_status != commands.ExitCode.SUCCESS:
             raise commands.ClientException(
                 f"`pyre start` failed with non-zero exit code: {start_status}"

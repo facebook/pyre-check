@@ -69,6 +69,5 @@ class StartArguments:
 @dataclass(frozen=True)
 class IncrementalArguments:
     output: str = TEXT
-    nonblocking: bool = False
     no_start: bool = False
-    no_watchman: bool = False
+    start_arguments: StartArguments = field(default_factory=StartArguments)
