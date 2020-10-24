@@ -71,7 +71,7 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
     ) -> None:
         super().__init__(command_arguments, repository)
         self._subdirectory: Final[Optional[str]] = subdirectory
-        self._glob: int = glob
+        self._glob_threshold: Optional[int] = glob
         self._fixme_threshold: int = fixme_threshold
         self._pyre_only: bool = pyre_only
         self._strict: bool = strict
@@ -123,7 +123,7 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
 
     def remove_target_typing_fields(self, files: List[Path]) -> None:
         LOG.info("Removing typing options from %s targets files", len(files))
-        if self._pyre_only and not self._glob:
+        if self._pyre_only and not self._glob_threshold:
             for path in files:
                 targets_file = Path(path)
                 source = targets_file.read_text()
@@ -143,35 +143,9 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
             ] + [str(file) for file in files]
             subprocess.run(remove_typing_fields_command)
 
-    def convert_directory(self, directory: Path) -> None:
-        all_targets = find_targets(directory, pyre_only=self._pyre_only)
-        if not all_targets:
-            LOG.warning("No configuration created because no targets found.")
-            return
-        if self._glob:
-            new_targets = ["//" + str(directory) + "/..."]
-            targets_files = [
-                directory / path
-                for path in get_filesystem().list(
-                    str(directory), patterns=[r"**/TARGETS"]
-                )
-            ]
-        else:
-            new_targets = []
-            targets_files = []
-            for path, targets in all_targets.items():
-                targets_files.append(Path(path))
-                new_targets += [
-                    "//" + path.replace("/TARGETS", "") + ":" + target.name
-                    for target in targets
-                ]
-
-        apply_strict = self._strict and any(
-            target.strict
-            for target in [
-                target for target_list in all_targets.values() for target in target_list
-            ]
-        )
+    def find_or_create_configuration(
+        self, directory: Path, new_targets: List[str]
+    ) -> Configuration:
         configuration_path = directory / ".pyre_configuration.local"
         if configuration_path.exists():
             LOG.warning(
@@ -191,29 +165,75 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
 
             # Add newly created configuration files to version control
             self._repository.add_paths([configuration_path])
+        return configuration
 
-        # Remove all type-related target settings
-        self.remove_target_typing_fields(targets_files)
-        if not self._pyre_only:
-            remove_non_pyre_ignores(directory)
+    def convert_directory(self, directory: Path) -> None:
+        all_targets = find_targets(directory, pyre_only=self._pyre_only)
+        if not all_targets:
+            LOG.warning("No configuration created because no targets found.")
+            return
 
-        all_errors = configuration.get_errors()
-        error_threshold = self._fixme_threshold
-        glob_threshold = self._glob
+        # Set strict default to true if any binary or unittest targets are strict.
+        apply_strict = self._strict and any(
+            target.strict
+            for target in [
+                target for target_list in all_targets.values() for target in target_list
+            ]
+        )
 
-        for path, errors in all_errors.paths_to_errors.items():
-            errors = list(errors)
-            error_count = len(errors)
-            if glob_threshold and error_count > glob_threshold:
+        # Collect targets.
+        new_targets = []
+        targets_files = []
+        for path, targets in all_targets.items():
+            targets_files.append(Path(path))
+            new_targets += [
+                "//" + path.replace("/TARGETS", "") + ":" + target.name
+                for target in targets
+            ]
+
+        configuration = self.find_or_create_configuration(directory, new_targets)
+
+        # Try setting a glob target.
+        glob_threshold = self._glob_threshold
+        all_errors = None
+        if glob_threshold is not None:
+            original_targets = configuration.targets
+            configuration.targets = ["//" + str(directory) + "/..."]
+            configuration.write()
+
+            all_errors = configuration.get_errors()
+            if any(
+                len(errors) > glob_threshold
+                for errors in all_errors.paths_to_errors.values()
+            ):
                 # Fall back to non-glob codemod.
                 LOG.info(
                     "Exceeding error threshold of %d; falling back to listing "
                     "individual targets.",
                     glob_threshold,
                 )
-                self._repository.revert_all(remove_untracked=True)
-                self._glob = None
-                return self.run()
+                configuration.targets = original_targets
+                configuration.write()
+            else:
+                targets_files = [
+                    directory / path
+                    for path in get_filesystem().list(
+                        str(directory), patterns=[r"**/TARGETS"]
+                    )
+                ]
+        if not all_errors:
+            all_errors = configuration.get_errors()
+
+        # Remove all type-related target settings.
+        self.remove_target_typing_fields(targets_files)
+        if not self._pyre_only:
+            remove_non_pyre_ignores(directory)
+
+        # Suppress errors.
+        error_threshold = self._fixme_threshold
+        for path, errors in all_errors.paths_to_errors.items():
+            errors = list(errors)
+            error_count = len(errors)
             if error_threshold and error_count > error_threshold:
                 LOG.info(
                     "%d errors found in `%s`. Adding file-level ignore.",
@@ -235,7 +255,15 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
                 "Adding strict setting to configuration."
             )
             strict_codemod = StrictDefault(
-                self._command_arguments,
+                command_arguments=CommandArguments(
+                    comment=self._comment,
+                    max_line_length=self._max_line_length,
+                    truncate=self._truncate,
+                    unsafe=self._unsafe,
+                    force_format_unsuppressed=self._force_format_unsuppressed,
+                    lint=self._lint,
+                    no_commit=True,
+                ),
                 repository=self._repository,
                 local_configuration=directory,
                 remove_strict_headers=True,
@@ -272,7 +300,7 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
                 converted.append(directory)
 
         summary = self._repository.MIGRATION_SUMMARY
-        glob = self._glob
+        glob = self._glob_threshold
         if glob:
             summary += (
                 f"\n\nConfiguration target automatically expanded to include "
