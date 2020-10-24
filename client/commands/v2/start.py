@@ -124,7 +124,7 @@ class Arguments:
     store_type_check_resolution: bool = False
     strict: bool = False
     taint_models_path: Sequence[str] = dataclasses.field(default_factory=list)
-    watchman_root: Optional[str] = None
+    watchman_root: Optional[Path] = None
 
     def serialize(self) -> Dict[str, Any]:
         return {
@@ -142,7 +142,7 @@ class Arguments:
             **(
                 {}
                 if self.watchman_root is None
-                else {"watchman_root": self.watchman_root}
+                else {"watchman_root": str(self.watchman_root)}
             ),
             "taint_model_paths": self.taint_models_path,
             "debug": self.debug,
@@ -281,7 +281,7 @@ def create_server_arguments(
         taint_models_path=configuration.taint_models_path,
         watchman_root=None
         if start_arguments.no_watchman
-        else str(find_watchman_root(Path(configuration.project_root))),
+        else find_watchman_root(Path(configuration.project_root)),
     )
 
 
@@ -413,14 +413,17 @@ def run(
     log_directory = Path(configuration.log_directory) / "new_server"
     log_directory.mkdir(parents=True, exist_ok=True)
 
-    # Use distinct file name for different PIDs to avoid file write races from
-    # multiple concurrent `pyre start` processes.
+    server_arguments = create_server_arguments(configuration, start_arguments)
+    if not start_arguments.no_watchman and server_arguments.watchman_root is None:
+        LOG.warning(
+            "Cannot find a watchman root. Incremental check will not be functional"
+            " since no filesystem updates will be sent to the Pyre server."
+        )
+
     with tempfile.NamedTemporaryFile(
         mode="w", prefix="pyre_arguments_", suffix=".json"
     ) as argument_file:
-        _write_argument_file(
-            argument_file, create_server_arguments(configuration, start_arguments)
-        )
+        _write_argument_file(argument_file, server_arguments)
 
         server_command = [binary_location, "newserver", argument_file.name]
         server_environment = {

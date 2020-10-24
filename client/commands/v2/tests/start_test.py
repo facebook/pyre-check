@@ -137,7 +137,7 @@ class ArgumentTest(testslide.TestCase):
                 log_path="/log",
                 global_root="/project",
                 local_root="/project/local",
-                watchman_root="/project",
+                watchman_root=Path("/project"),
             ),
             [("local_root", "/project/local"), ("watchman_root", "/project")],
         )
@@ -337,9 +337,30 @@ class StartTest(testslide.TestCase):
                     store_type_check_resolution=True,
                     strict=True,
                     taint_models_path=[str(root_path / "taint")],
-                    watchman_root=str(root_path),
+                    watchman_root=root_path,
                 ),
             )
+
+    def test_create_server_arguments_watchman_not_found(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root)
+            setup.ensure_directories_exists(root_path, [".pyre", "src"])
+            setup.write_configuration_file(
+                root_path,
+                {"source_directories": ["src"]},
+            )
+            arguments = create_server_arguments(
+                configuration.create_configuration(
+                    command_arguments.CommandArguments(
+                        dot_pyre_directory=root_path / ".pyre",
+                    ),
+                    root_path,
+                ),
+                command_arguments.StartArguments(
+                    no_watchman=False,
+                ),
+            )
+            self.assertIsNone(arguments.watchman_root)
 
     def test_background_waiter_socket_create(self) -> None:
         def assert_ok(event_output: str, wait_on_initialization: bool) -> None:
