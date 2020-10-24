@@ -16,6 +16,7 @@ from ..start import (
     Arguments,
     BackgroundEventWaiter,
     CriticalFile,
+    EventParsingException,
     LoadSavedStateFromFile,
     LoadSavedStateFromProject,
     MatchPolicy,
@@ -341,47 +342,39 @@ class StartTest(testslide.TestCase):
             )
 
     def test_background_waiter_socket_create(self) -> None:
-        def assert_exit_status(event_output: str, expected: commands.ExitCode) -> None:
-            self.assertEqual(
-                BackgroundEventWaiter(wait_on_initialization=False).wait_on(
-                    io.StringIO(event_output)
-                ),
-                expected,
-            )
+        def assert_ok(event_output: str, wait_on_initialization: bool) -> None:
+            BackgroundEventWaiter(
+                wait_on_initialization=wait_on_initialization
+            ).wait_on(io.StringIO(event_output))
 
-        assert_exit_status("garbage", commands.ExitCode.FAILURE)
-        assert_exit_status("[]", commands.ExitCode.FAILURE)
-        assert_exit_status(
-            '["SocketCreated", "/path/to/socket"]', commands.ExitCode.SUCCESS
+        def assert_raises(event_output: str, wait_on_initialization: bool) -> None:
+            with self.assertRaises(EventParsingException):
+                BackgroundEventWaiter(
+                    wait_on_initialization=wait_on_initialization
+                ).wait_on(io.StringIO(event_output))
+
+        assert_raises("garbage", wait_on_initialization=False)
+        assert_raises("[]", wait_on_initialization=False)
+        assert_ok('["SocketCreated", "/path/to/socket"]', wait_on_initialization=False)
+        assert_raises('["ServerInitialized"]', wait_on_initialization=False)
+        assert_raises('["ServerException", "message"]', wait_on_initialization=False)
+
+        assert_raises("garbage", wait_on_initialization=True)
+        assert_raises("[]", wait_on_initialization=True)
+        assert_raises(
+            '["SocketCreated", "/path/to/socket"]', wait_on_initialization=True
         )
-        assert_exit_status('["ServerInitialized"]', commands.ExitCode.FAILURE)
-        assert_exit_status('["ServerException", "message"]', commands.ExitCode.FAILURE)
-
-    def test_background_waiter_server_initialize(self) -> None:
-        def assert_exit_status(event_output: str, expected: commands.ExitCode) -> None:
-            self.assertEqual(
-                BackgroundEventWaiter(wait_on_initialization=True).wait_on(
-                    io.StringIO(event_output)
-                ),
-                expected,
-            )
-
-        assert_exit_status("garbage", commands.ExitCode.FAILURE)
-        assert_exit_status("[]", commands.ExitCode.FAILURE)
-        assert_exit_status(
-            '["SocketCreated", "/path/to/socket"]', commands.ExitCode.FAILURE
-        )
-        assert_exit_status('["ServerException", "message"]', commands.ExitCode.FAILURE)
-        assert_exit_status(
+        assert_raises('["ServerException", "message"]', wait_on_initialization=True)
+        assert_raises(
             '["SocketCreated", "/path/to/socket"]\n' + '["ServerException", "message"]',
-            commands.ExitCode.FAILURE,
+            wait_on_initialization=True,
         )
-        assert_exit_status(
+        assert_raises(
             '["SocketCreated", "/path/to/socket"]\n'
             + '["SocketCreated", "/path/to/socket"]',
-            commands.ExitCode.FAILURE,
+            wait_on_initialization=True,
         )
-        assert_exit_status(
+        assert_ok(
             '["SocketCreated", "/path/to/socket"]\n' + '["ServerInitialized"]',
-            commands.ExitCode.SUCCESS,
+            wait_on_initialization=True,
         )

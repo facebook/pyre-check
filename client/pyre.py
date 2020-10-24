@@ -1077,14 +1077,14 @@ def main(argv: List[str] = sys.argv[1:]) -> int:
     with log.configured_logger(noninteractive):
         try:
             return_code = pyre(argv, auto_envvar_prefix="PYRE", standalone_mode=False)
-        except EnvironmentException as error:
-            LOG.error(str(error))
-            return_code = ExitCode.FAILURE
         except configuration_module.InvalidConfiguration as error:
             LOG.error(str(error))
             return ExitCode.CONFIGURATION_ERROR
         except click.ClickException as error:
             error.show()
+            return_code = ExitCode.FAILURE
+        except Exception as error:
+            LOG.error(str(error))
             return_code = ExitCode.FAILURE
     return return_code
 

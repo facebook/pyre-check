@@ -93,5 +93,6 @@ def run(
         _run_incremental(configuration, incremental_arguments)
         return commands.ExitCode.SUCCESS
     except Exception as error:
-        LOG.error(f"Exception occured during incremental query: {error}")
-        return commands.ExitCode.FAILURE
+        raise commands.ClientException(
+            f"Exception occured during incremental query: {error}"
+        ) from error

@@ -37,5 +37,6 @@ def run(configuration: configuration_module.Configuration) -> commands.ExitCode:
         LOG.info(f"Stopped server at {server_root}\n")
         return commands.ExitCode.SUCCESS
     except Exception as error:
-        LOG.error(f"Exception occured during server stop: {error}")
-        return commands.ExitCode.FAILURE
+        raise commands.ClientException(
+            f"Exception occured during server stop: {error}"
+        ) from error

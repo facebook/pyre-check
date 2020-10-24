@@ -341,24 +341,21 @@ class BackgroundEventWaiter:
     def __init__(self, wait_on_initialization: bool) -> None:
         self.wait_on_initialization = wait_on_initialization
 
-    def wait_on(self, event_stream: IO[str]) -> commands.ExitCode:
-        try:
-            # The first event is expected to be socket creation
-            initial_event = parse_server_event(event_stream.readline().strip())
-            if isinstance(initial_event, server_event.SocketCreated):
-                if not self.wait_on_initialization:
-                    return commands.ExitCode.SUCCESS
+    def wait_on(self, event_stream: IO[str]) -> None:
+        # The first event is expected to be socket creation
+        initial_event = parse_server_event(event_stream.readline().strip())
+        if isinstance(initial_event, server_event.SocketCreated):
+            if not self.wait_on_initialization:
+                return
 
-                # The second event is expected to be server initialization
-                second_event = parse_server_event(event_stream.readline().strip())
-                if isinstance(second_event, server_event.ServerInitialized):
-                    return commands.ExitCode.SUCCESS
+            # The second event is expected to be server initialization
+            second_event = parse_server_event(event_stream.readline().strip())
+            if isinstance(second_event, server_event.ServerInitialized):
+                return
 
-            LOG.warning(f"Unexpected initial server status update: {initial_event}")
-            return commands.ExitCode.FAILURE
-        except EventParsingException as error:
-            LOG.error(error)
-            return commands.ExitCode.FAILURE
+        raise EventParsingException(
+            f"Unexpected initial server status update: {initial_event}"
+        )
 
 
 @contextlib.contextmanager
@@ -398,9 +395,9 @@ def _run_in_background(
         raise RuntimeError("subprocess.Popen failed to set up a pipe for server stdout")
     # Block until an expected server event is obtained from stdout
     with _background_logging(log_file):
-        exit_code = event_waiter.wait_on(server_stdout)
+        event_waiter.wait_on(server_stdout)
         server_stdout.close()
-        return exit_code
+        return commands.ExitCode.SUCCESS
 
 
 def run(
