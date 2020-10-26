@@ -173,8 +173,8 @@ details              show additional information about the current trace frame
         self._current_run_id: DBID = DBID(-1)
 
         # Trace exploration relies on either of these
-        self.current_issue_instance_id: int = -1
-        self.current_frame_id: int = -1
+        self.current_issue_instance_id: DBID = DBID(-1)
+        self.current_frame_id: DBID = DBID(-1)
 
         self.sources: Set[str] = set()
         self.sinks: Set[str] = set()
@@ -230,14 +230,13 @@ details              show additional information about the current trace frame
         # pyre-fixme[16]: Module `builtins` has no attribute `help`.
         builtins.help(object)
 
-    # pyre-fixme[3]: Return type must be annotated.
-    def state(self):
+    def state(self) -> None:
         print(f"              Database: {self.db.dbtype}:{self.db.dbname}")
         print(f"       Analysis Output: {self.current_analysis_output}")
         print(f"  Repository directory: {self.repository_directory}")
         print(f"           Current run: {self._current_run_id}")
-        print(f"Current issue instance: {self.current_issue_instance_id}")
-        print(f"   Current trace frame: {self.current_frame_id}")
+        print(f"Current issue instance: {int(self.current_issue_instance_id)}")
+        print(f"   Current trace frame: {int(self.current_frame_id)}")
         print(f"        Sources filter: {self.sources}")
         print(f"          Sinks filter: {self.sinks}")
 
@@ -405,8 +404,8 @@ details              show additional information about the current trace frame
                 session, issue_instance_id, SharedTextKind.FEATURE
             )
 
-        self.current_issue_instance_id = int(selected_issue.id)
-        self.current_frame_id = -1
+        self.current_issue_instance_id = selected_issue.id
+        self.current_frame_id = DBID(-1)
         self.current_trace_frame_index = 1  # first one after the source
 
         print(f"Set issue to {issue_instance_id}.")
@@ -425,7 +424,7 @@ details              show additional information about the current trace frame
         """More details about the selected issue or trace frame."""
         self._verify_entrypoint_selected()
 
-        if self.current_issue_instance_id != -1:
+        if int(self.current_issue_instance_id) != -1:
             self._show_current_issue_instance()
             return
 
@@ -730,8 +729,8 @@ details              show additional information about the current trace frame
 
                 self.sources = set()
 
-        self.current_frame_id = int(selected_frame.id)
-        self.current_issue_instance_id = -1
+        self.current_frame_id = selected_frame.id
+        self.current_issue_instance_id = DBID(-1)
 
         print(f"Set trace frame to {frame_id}.")
         if int(selected_frame.run_id) != self._current_run_id:
@@ -871,12 +870,10 @@ details              show additional information about the current trace frame
         with self.db.make_session() as session:
             issue = self._get_current_issue(session)
             postcondition_initial_frames = trace.Query(session).initial_frames(
-                # pyre-fixme[6]: Expected `int` for 1st param but got `DBID`.
                 issue.id,
                 TraceKind.POSTCONDITION,
             )
             precondition_initial_frames = trace.Query(session).initial_frames(
-                # pyre-fixme[6]: Expected `int` for 1st param but got `DBID`.
                 issue.id,
                 TraceKind.PRECONDITION,
             )
@@ -1661,9 +1658,15 @@ details              show additional information about the current trace frame
         return None
 
     def _verify_entrypoint_selected(self) -> None:
-        assert self.current_issue_instance_id == -1 or self.current_frame_id == -1
+        assert (
+            int(self.current_issue_instance_id) == -1
+            or int(self.current_frame_id) == -1
+        )
 
-        if self.current_issue_instance_id == -1 and self.current_frame_id == -1:
+        if (
+            int(self.current_issue_instance_id) == -1
+            and int(self.current_frame_id) == -1
+        ):
             raise UserError(
                 "Use 'issue ID' or 'frame ID' to select an entrypoint first."
             )

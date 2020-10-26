@@ -162,7 +162,7 @@ class Query:
         self._cached_leaf_lookup: Optional[LeafLookup] = None
 
     def initial_frames(
-        self, issue_id: int, kind: TraceKind
+        self, issue_id: DBID, kind: TraceKind
     ) -> List[TraceFrameQueryResult]:
         return [
             TraceFrameQueryResult.from_record(result)

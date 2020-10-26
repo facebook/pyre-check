@@ -104,12 +104,12 @@ class InteractiveTest(TestCase):
             filename=filename,
         )
 
-    def testState(self):
-        self.interactive._current_run_id = 1
-        self.interactive.current_issue_instance_id = 2
-        self.interactive.current_frame_id = 3
-        self.interactive.sources = {1}
-        self.interactive.sinks = {2}
+    def testState(self) -> None:
+        self.interactive._current_run_id = DBID(1)
+        self.interactive.current_issue_instance_id = DBID(2)
+        self.interactive.current_frame_id = DBID(3)
+        self.interactive.sources = {"1"}
+        self.interactive.sinks = {"2"}
 
         self.interactive.state()
         output = self.stdout.getvalue()
@@ -118,8 +118,8 @@ class InteractiveTest(TestCase):
         self.assertIn("Current run: 1", output)
         self.assertIn("Current issue instance: 2", output)
         self.assertIn("Current trace frame: 3", output)
-        self.assertIn("Sources filter: {1}", output)
-        self.assertIn("Sinks filter: {2}", output)
+        self.assertIn("Sources filter: {'1'}", output)
+        self.assertIn("Sinks filter: {'2'}", output)
 
     def testListIssuesBasic(self):
         run = self.fakes.run()
@@ -641,14 +641,14 @@ class InteractiveTest(TestCase):
         self.interactive.setup()
 
         self.interactive.issue(2)
-        self.assertEqual(self.interactive.current_issue_instance_id, 2)
+        self.assertEqual(int(self.interactive.current_issue_instance_id), 2)
         stdout = self.stdout.getvalue().strip()
         self.assertNotIn("Issue 1", stdout)
         self.assertIn("Issue 2", stdout)
         self.assertNotIn("Issue 3", stdout)
 
         self.interactive.issue(1)
-        self.assertEqual(self.interactive.current_issue_instance_id, 1)
+        self.assertEqual(int(self.interactive.current_issue_instance_id), 1)
         stdout = self.stdout.getvalue().strip()
         self.assertIn("Issue 1", stdout)
         self.assertNotIn("Issue 3", stdout)
@@ -1637,26 +1637,26 @@ class InteractiveTest(TestCase):
         self.interactive.trace_tuples[0].trace_frame.id = 4
         self.assertEqual(-1, self.interactive._current_branch_index(trace_frames))
 
-    def testVerifyEntrypointSelected(self):
-        self.interactive.current_issue_instance_id = -1
-        self.interactive.current_frame_id = -1
+    def testVerifyEntrypointSelected(self) -> None:
+        self.interactive.current_issue_instance_id = DBID(-1)
+        self.interactive.current_frame_id = DBID(-1)
         with self.assertRaises(UserError):
             self.interactive._verify_entrypoint_selected()
 
-        self.interactive.current_issue_instance_id = 1
+        self.interactive.current_issue_instance_id = DBID(1)
         try:
             self.interactive._verify_entrypoint_selected()
         except UserError:
             self.fail("Unexpected UserError")
 
-        self.interactive.current_issue_instance_id = -1
-        self.interactive.current_frame_id = 1
+        self.interactive.current_issue_instance_id = DBID(-1)
+        self.interactive.current_frame_id = DBID(1)
         try:
             self.interactive._verify_entrypoint_selected()
         except UserError:
             self.fail("Unexpected UserError")
 
-        self.interactive.current_issue_instance_id = 1
+        self.interactive.current_issue_instance_id = DBID(1)
         with self.assertRaises(AssertionError):
             self.interactive._verify_entrypoint_selected()
 

@@ -12,7 +12,7 @@ from graphene import relay
 from graphene_sqlalchemy import get_session
 from graphql.execution.base import ResolveInfo
 
-from ..models import SharedTextKind, TraceFrame, TraceKind
+from ..models import DBID, SharedTextKind, TraceFrame, TraceKind
 from . import filters as filters_module, issues, trace, typeahead
 from .issues import IssueQueryResult, IssueQueryResultType
 from .trace import TraceFrameQueryResult, TraceFrameQueryResultType
@@ -161,7 +161,7 @@ class Query(graphene.ObjectType):
     ) -> List[TraceFrameQueryResult]:
         session = info.context.get("session")
         return trace.Query(session).initial_frames(
-            issue_id, TraceKind.create_from_string(kind)
+            DBID(issue_id), TraceKind.create_from_string(kind)
         )
 
     def resolve_next_trace_frames(
