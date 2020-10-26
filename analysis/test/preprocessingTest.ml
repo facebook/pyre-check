@@ -2581,6 +2581,18 @@ let test_expand_typed_dictionaries _ =
         name: str
         year: int
     |};
+  (* Ignore initial values for TypedDict field. *)
+  assert_expand
+    {|
+      class Movie(mypy_extensions.TypedDict):
+        name: str
+        year: int = 2020
+    |}
+    {|
+      class Movie(TypedDictionary):
+        name: str
+        year: int
+    |};
   ()
 
 

@@ -1896,12 +1896,7 @@ let expand_typed_dictionary_declarations
               | {
                   Node.value =
                     Statement.Assign
-                      {
-                        target = { Node.value = Name name; _ };
-                        annotation = Some annotation;
-                        value = { Node.value = Ellipsis; _ };
-                        parent = _;
-                      };
+                      { target = { Node.value = Name name; _ }; annotation = Some annotation; _ };
                   _;
                 } ->
                   Reference.drop_prefix ~prefix:class_name (name_to_reference_exn name)

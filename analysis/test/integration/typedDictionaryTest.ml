@@ -1054,6 +1054,17 @@ let test_check_typed_dictionaries context =
        `typing.Union[Movie, Movie2]` but no type is specified.";
       "Revealed type [-1]: Revealed type for `x` is `typing.Union[Movie, Movie2]`.";
     ];
+  assert_test_typed_dictionary
+    {|
+      from mypy_extensions import TypedDict
+      class HasIllegalInitializedField(TypedDict):
+        foo: int
+        bar: str = "hello"
+      movie: HasIllegalInitializedField
+      movie["bar"]
+      reveal_type(movie["bar"])
+    |}
+    ["Revealed type [-1]: Revealed type for `movie[\"bar\"]` is `str`."];
   ()
 
 
