@@ -4353,6 +4353,12 @@ let test_with _ =
            body = [+Statement.Expression !"b"];
            async = false;
          };
+    ];
+  assert_parsed_equal
+    "with a as b: # type: int\n\tb\n"
+    [
+      +Statement.With
+         { With.items = [!"a", Some !"b"]; body = [+Statement.Expression !"b"]; async = false };
     ]
 
 

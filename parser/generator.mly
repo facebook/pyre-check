@@ -833,6 +833,7 @@ compound_statement:
 
   | start = WITH;
     items = parser_generator_separated_nonempty_list(COMMA, with_item); COLON;
+    ANNOTATION_COMMENT?;
     body = block {
       let convert_item (expression, expression_option) =
         (convert expression, expression_option >>| convert)
