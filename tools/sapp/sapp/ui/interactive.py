@@ -867,16 +867,16 @@ details              show additional information about the current trace frame
             postcondition_navigation = trace.Query(
                 session, self._current_run_id
             ).navigate_trace_frames(
+                postcondition_initial_frames,
                 self.sources,
                 self.sinks,
-                postcondition_initial_frames,
             )
             precondition_navigation = trace.Query(
                 session, self._current_run_id
             ).navigate_trace_frames(
+                precondition_initial_frames,
                 self.sources,
                 self.sinks,
-                precondition_initial_frames,
             )
 
         self.trace_tuples = (
@@ -922,9 +922,9 @@ details              show additional information about the current trace frame
             navigation = trace.Query(
                 session, self._current_run_id
             ).navigate_trace_frames(
+                [TraceFrameQueryResult.from_record(trace_frame)],
                 self.sources,
                 self.sinks,
-                [TraceFrameQueryResult.from_record(trace_frame)],
             )
 
         first_trace_frame = navigation[0][0]
@@ -1055,9 +1055,9 @@ details              show additional information about the current trace frame
             new_navigation = trace.Query(
                 session, self._current_run_id
             ).navigate_trace_frames(
+                branches,
                 self.sources,
                 self.sinks,
-                branches,
                 selected_number - 1,
             )
 

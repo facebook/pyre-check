@@ -184,9 +184,9 @@ class QueryTest(TestCase):
             session.commit()
 
             result = Query(session).navigate_trace_frames(
+                [TraceFrameQueryResult.from_record(frames[0])],
                 set(),
                 {"sink1"},
-                [TraceFrameQueryResult.from_record(frames[0])],
             )
             self.assertEqual(len(result), 2)
             self.assertEqual(int(result[0][0].id), int(frames[0].id))
@@ -249,9 +249,9 @@ class QueryTest(TestCase):
             session.commit()
 
             result = Query(session).navigate_trace_frames(
+                [TraceFrameQueryResult.from_record(frames[0])],
                 set(),
                 {"sink"},
-                [TraceFrameQueryResult.from_record(frames[0])],
             )
             self.assertEqual(len(frames), 4)
             self.assertNotEqual(

@@ -198,9 +198,9 @@ class Query:
 
     def navigate_trace_frames(
         self,
+        initial_trace_frames: List[TraceFrameQueryResult],
         sources: Set[str],
         sinks: Set[str],
-        initial_trace_frames: List[TraceFrameQueryResult],
         index: int = 0,
     ) -> List[Tuple[TraceFrameQueryResult, int]]:
         if not initial_trace_frames:
