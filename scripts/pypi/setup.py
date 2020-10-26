@@ -42,9 +42,11 @@ def get_data_files(directory: str, extension_glob: str) -> Tuple[str, List[str]]
 
 
 def find_taint_stubs() -> List[Tuple[str, List[str]]]:
-    _, taint_stubs = get_data_files(
-        directory=os.path.join(os.getcwd(), "taint"), extension_glob="*"
-    )
+    taint_stubs = []
+    for path in Path(os.path.join(os.getcwd(), "taint")).iterdir():
+        if path.is_dir():
+            _, temporary_stubs = get_data_files(directory=str(path), extension_glob="*")
+            taint_stubs += temporary_stubs
     _, third_party_taint_stubs = get_data_files(
         directory=os.path.join(os.getcwd(), "third_party_taint"), extension_glob="*"
     )

@@ -53,8 +53,7 @@ class TestCreatingWheel(unittest.TestCase):
             self.assertTrue(command_directory.is_dir())
 
     @patch("subprocess.run")
-    @patch("shutil.copy")
-    def test_rsync(self, copy: Mock, subprocess_run: Mock) -> None:
+    def test_rsync(self, subprocess_run: Mock) -> None:
         with tempfile.TemporaryDirectory() as build_root:
             build_path = Path(build_root)
             add_init_files(build_path)
@@ -64,12 +63,10 @@ class TestCreatingWheel(unittest.TestCase):
                 "rsync",
                 "-avm",
                 "--filter=+ */",
-                "--filter=-! *.pysa",
                 build_root,
             ]
             self.assertTrue(all(x in args[0] for x in expected_args))
             subprocess_run.assert_called()
-            copy.assert_called()
 
     def test_patch_version(self) -> None:
         with tempfile.TemporaryDirectory() as build_root:
