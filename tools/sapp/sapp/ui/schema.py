@@ -5,27 +5,17 @@
 
 import os
 from pathlib import Path
-from typing import Any, List, NamedTuple, Optional, Tuple
+from typing import Any, List, NamedTuple, Optional
 
 import graphene
 from graphene import relay
 from graphene_sqlalchemy import get_session
 from graphql.execution.base import ResolveInfo
-from sqlalchemy.orm import Session
-from sqlalchemy.sql import func
 
-from ..models import (
-    DBID,
-    Run,
-    RunStatus,
-    SharedText,
-    SharedTextKind,
-    TraceFrame,
-    TraceKind,
-)
+from ..models import SharedTextKind, TraceFrame, TraceKind
 from . import filters as filters_module, issues, trace, typeahead
 from .issues import IssueQueryResult, IssueQueryResultType
-from .trace import LeafLookup, TraceFrameQueryResult, TraceFrameQueryResultType
+from .trace import TraceFrameQueryResult, TraceFrameQueryResultType
 
 
 class IssueConnection(relay.Connection):
@@ -194,7 +184,6 @@ class Query(graphene.ObjectType):
             raise ValueError(f"`{frame_id}` is not a valid trace frame id")
 
         return trace.Query(session).next_trace_frames(
-            trace.LeafLookup.create(session),
             leaf_kind,
             trace_frame,
             visited_ids=set(),

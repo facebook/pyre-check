@@ -90,11 +90,8 @@ class QueryTest(TestCase):
         with self.db.make_session() as session:
             session.add(run)
             session.commit()
-            leaf_lookup = LeafLookup.create(session)
 
-            next_frames = Query(session).next_trace_frames(
-                leaf_lookup, {"sink1"}, frames[0], set()
-            )
+            next_frames = Query(session).next_trace_frames({"sink1"}, frames[0], set())
             self.assertEqual(len(next_frames), 1)
             self.assertEqual(int(next_frames[0].id), int(frames[1].id))
 
@@ -134,10 +131,8 @@ class QueryTest(TestCase):
             session.add(run)
             session.commit()
 
-            leaf_lookup = LeafLookup.create(session)
-
             next_frames = Query(session).next_trace_frames(
-                leaf_lookup, {"sink1"}, frames[1], set(), backwards=True
+                {"sink1"}, frames[1], set(), backwards=True
             )
 
             self.assertEqual(len(next_frames), 1)
@@ -169,11 +164,7 @@ class QueryTest(TestCase):
             session.add(run2)
             session.commit()
 
-            leaf_lookup = LeafLookup.create(session)
-
-            next_frames = Query(session).next_trace_frames(
-                leaf_lookup, {"sink1"}, frames[2], set()
-            )
+            next_frames = Query(session).next_trace_frames({"sink1"}, frames[2], set())
             self.assertEqual(len(next_frames), 1)
             self.assertEqual(int(next_frames[0].id), int(frames[3].id))
 
@@ -192,10 +183,7 @@ class QueryTest(TestCase):
             session.add(run)
             session.commit()
 
-            leaf_lookup = LeafLookup.create(session)
-
             result = Query(session).navigate_trace_frames(
-                leaf_lookup,
                 set(),
                 {"sink1"},
                 [TraceFrameQueryResult.from_record(frames[0])],
@@ -260,10 +248,7 @@ class QueryTest(TestCase):
             session.add(run)
             session.commit()
 
-            leaf_lookup = LeafLookup.create(session)
-
             result = Query(session).navigate_trace_frames(
-                leaf_lookup,
                 set(),
                 {"sink"},
                 [TraceFrameQueryResult.from_record(frames[0])],

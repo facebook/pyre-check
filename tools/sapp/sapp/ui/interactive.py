@@ -720,12 +720,12 @@ details              show additional information about the current trace frame
             if selected_frame.kind == TraceKind.POSTCONDITION:
                 self.sinks = set()
                 self.sources = trace.Query(session).get_leaves_trace_frame(
-                    self._leaf_lookup, int(selected_frame.id), SharedTextKind.SOURCE
+                    int(selected_frame.id), SharedTextKind.SOURCE
                 )
 
             else:
                 self.sinks = trace.Query(session).get_leaves_trace_frame(
-                    self._leaf_lookup, int(selected_frame.id), SharedTextKind.SINK
+                    int(selected_frame.id), SharedTextKind.SINK
                 )
 
                 self.sources = set()
@@ -850,7 +850,6 @@ details              show additional information about the current trace frame
             parent_trace_frames = trace.Query(
                 session, self._current_run_id
             ).next_trace_frames(
-                self._leaf_lookup,
                 leaf_kind,
                 current_trace_tuple.trace_frame,
                 set(),
@@ -885,7 +884,6 @@ details              show additional information about the current trace frame
             postcondition_navigation = trace.Query(
                 session, self._current_run_id
             ).navigate_trace_frames(
-                self._leaf_lookup,
                 self.sources,
                 self.sinks,
                 postcondition_initial_frames,
@@ -893,7 +891,6 @@ details              show additional information about the current trace frame
             precondition_navigation = trace.Query(
                 session, self._current_run_id
             ).navigate_trace_frames(
-                self._leaf_lookup,
                 self.sources,
                 self.sinks,
                 precondition_initial_frames,
@@ -944,7 +941,6 @@ details              show additional information about the current trace frame
             navigation = trace.Query(
                 session, self._current_run_id
             ).navigate_trace_frames(
-                self._leaf_lookup,
                 self.sources,
                 self.sinks,
                 [TraceFrameQueryResult.from_record(trace_frame)],
@@ -1019,7 +1015,6 @@ details              show additional information about the current trace frame
                     [
                         leaf
                         for leaf in trace.Query(session).get_leaves_trace_frame(
-                            self._leaf_lookup,
                             int(frame.id),
                             trace.trace_kind_to_shared_text_kind(frame.kind),
                         )
@@ -1081,7 +1076,6 @@ details              show additional information about the current trace frame
             new_navigation = trace.Query(
                 session, self._current_run_id
             ).navigate_trace_frames(
-                self._leaf_lookup,
                 self.sources,
                 self.sinks,
                 branches,
@@ -1206,7 +1200,6 @@ details              show additional information about the current trace frame
             )
 
         return trace.Query(session, self._current_run_id).next_trace_frames(
-            self._leaf_lookup,
             leaf_kind,
             parent_trace_frame,
             set(),
@@ -1512,9 +1505,7 @@ details              show additional information about the current trace frame
 
         with self.db.make_session() as session:
             leaves_output = f"\n{' ' * 13}".join(
-                trace.Query(session).get_leaves_trace_frame(
-                    self._leaf_lookup, trace_frame.id, leaf_kind
-                )
+                trace.Query(session).get_leaves_trace_frame(trace_frame.id, leaf_kind)
             )
 
         return "\n".join(

@@ -8,7 +8,6 @@ from typing import Any, Dict, List, NamedTuple, Optional, Sequence, Set, Tuple, 
 import graphene
 from graphql.execution.base import ResolveInfo
 from sqlalchemy.orm import Session, aliased
-from . import run
 
 from ..models import (
     DBID,
@@ -20,6 +19,7 @@ from ..models import (
     TraceFrameLeafAssoc,
     TraceKind,
 )
+from . import run
 
 
 # pyre-fixme[5]: Global expression must be annotated.
@@ -159,6 +159,7 @@ class Query:
     def __init__(self, session: Session, run_id: Optional[DBID] = None) -> None:
         self._session: Session = session
         self._run_id: DBID = run_id or run.Query(session).latest()
+        self._cached_leaf_lookup: Optional[LeafLookup] = None
 
     def initial_trace_frames(
         self, issue_id: int, kind: TraceKind
@@ -197,7 +198,6 @@ class Query:
 
     def navigate_trace_frames(
         self,
-        leaf_lookup: LeafLookup,
         sources: Set[str],
         sinks: Set[str],
         initial_trace_frames: List[TraceFrameQueryResult],
@@ -218,9 +218,7 @@ class Query:
                     trace_frame.kind == TraceKind.POSTCONDITION
                     or trace_frame.kind == TraceKind.PRECONDITION
                 )
-            next_nodes = self.next_trace_frames(
-                leaf_lookup, leaf_kind, trace_frame, visited_ids
-            )
+            next_nodes = self.next_trace_frames(leaf_kind, trace_frame, visited_ids)
 
             if len(next_nodes) == 0:
                 # Denote a missing frame by setting caller to None
@@ -244,7 +242,6 @@ class Query:
 
     def next_trace_frames(
         self,
-        leaf_lookup: LeafLookup,
         leaf_kind: Set[str],
         trace_frame: TraceFrameQueryResult,
         visited_ids: Set[int],
@@ -300,7 +297,6 @@ class Query:
             if int(frame.id) not in visited_ids and leaf_kind.intersection(
                 set(
                     self.get_leaves_trace_frame(
-                        leaf_lookup,
                         int(frame.id),
                         trace_kind_to_shared_text_kind(frame.kind),
                     )
@@ -310,9 +306,18 @@ class Query:
 
         return [TraceFrameQueryResult.from_record(frame) for frame in filtered_results]
 
+    @property
+    def _leaf_lookup(self) -> LeafLookup:
+        leaf_lookup = self._cached_leaf_lookup
+        if leaf_lookup is not None:
+            return leaf_lookup
+
+        leaf_lookup = LeafLookup.create(self._session)
+        self._cached_leaf_lookup = leaf_lookup
+        return leaf_lookup
+
     def get_leaves_trace_frame(
         self,
-        leaf_lookup: LeafLookup,
         trace_frame_id: Union[int, DBID],
         kind: SharedTextKind,
     ) -> Set[str]:
@@ -324,7 +329,7 @@ class Query:
             .filter(TraceFrameLeafAssoc.trace_frame_id == trace_frame_id)
             .filter(SharedText.kind == kind)
         ]
-        return leaf_lookup.resolve(ids, kind)
+        return self._leaf_lookup.resolve(ids, kind)
 
 
 def trace_kind_to_shared_text_kind(trace_kind: Optional[TraceKind]) -> SharedTextKind:
