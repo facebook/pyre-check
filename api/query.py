@@ -3,10 +3,11 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import re
 from functools import lru_cache
 from typing import Any, Dict, Iterable, List, NamedTuple, Optional
 
-from .connection import PyreConnection
+from .connection import PyreConnection, PyreQueryError
 
 
 class DefineParameter(NamedTuple):
@@ -80,6 +81,13 @@ class ClassHierarchy:
 
     def superclasses(self, class_name: str) -> List[str]:
         return self.hierarchy.get(class_name, [])
+
+
+class InvalidModel(NamedTuple):
+    fully_qualified_name: str
+    path: str
+    line: int
+    full_error_message: str
 
 
 def _defines(pyre_connection: PyreConnection, modules: Iterable[str]) -> List[Define]:
@@ -166,3 +174,38 @@ def _parse_location(location_json: Dict[str, Any]) -> Location:
 
 def _parse_position(position_json: Dict[str, Any]) -> Position:
     return Position(line=position_json["line"], column=position_json["column"])
+
+
+def get_invalid_taint_models(
+    pyre_connection: PyreConnection,
+) -> List[InvalidModel]:
+    errors: List[InvalidModel] = []
+    try:
+        _ = pyre_connection.query_server("validate_taint_models()")
+    except PyreQueryError as exception:
+        message = exception.args[0]
+        if "Invalid model for" not in message:
+            raise exception
+
+        model_extractor = re.compile(
+            r".*`(?P<name>.*)`.*`(?P<path>.*):(?P<line>\d*)`.*"
+        )
+
+        for error in message.split("\n"):
+            extracted = model_extractor.search(error)
+            if not extracted:
+                raise exception
+            fully_qualified_name = extracted.group("name")
+            path = extracted.group("path")
+            line = int(extracted.group("line"))
+
+            errors.append(
+                InvalidModel(
+                    fully_qualified_name=fully_qualified_name,
+                    path=path,
+                    line=line,
+                    full_error_message=error,
+                )
+            )
+
+    return errors
