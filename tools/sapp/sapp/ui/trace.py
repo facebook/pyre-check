@@ -161,7 +161,7 @@ class Query:
         self._run_id: DBID = run_id or run.Query(session).latest()
         self._cached_leaf_lookup: Optional[LeafLookup] = None
 
-    def initial_trace_frames(
+    def initial_frames(
         self, issue_id: int, kind: TraceKind
     ) -> List[TraceFrameQueryResult]:
         return [
@@ -218,7 +218,7 @@ class Query:
                     trace_frame.kind == TraceKind.POSTCONDITION
                     or trace_frame.kind == TraceKind.PRECONDITION
                 )
-            next_nodes = self.next_trace_frames(leaf_kind, trace_frame, visited_ids)
+            next_nodes = self.next_frames(trace_frame, leaf_kind, visited_ids)
 
             if len(next_nodes) == 0:
                 # Denote a missing frame by setting caller to None
@@ -240,10 +240,10 @@ class Query:
             trace_frames.append((next_nodes[0], len(next_nodes)))
         return trace_frames
 
-    def next_trace_frames(
+    def next_frames(
         self,
+        frame: TraceFrameQueryResult,
         leaf_kind: Set[str],
-        trace_frame: TraceFrameQueryResult,
         visited_ids: Set[int],
         backwards: bool = False,
     ) -> List[TraceFrameQueryResult]:
@@ -267,7 +267,7 @@ class Query:
                 TraceFrameLeafAssoc.trace_length,
             )
             .filter(TraceFrame.run_id == self._run_id)
-            .filter(TraceFrame.kind == trace_frame.kind)
+            .filter(TraceFrame.kind == frame.kind)
             .join(CallerText, CallerText.id == TraceFrame.caller_id)
             .join(CalleeText, CalleeText.id == TraceFrame.callee_id)
             .join(FilenameText, FilenameText.id == TraceFrame.filename_id)
@@ -276,12 +276,12 @@ class Query:
             )  # skip recursive calls for now
         )
         if backwards:
-            query = query.filter(TraceFrame.callee_id == trace_frame.caller_id).filter(
-                TraceFrame.callee_port == trace_frame.caller_port
+            query = query.filter(TraceFrame.callee_id == frame.caller_id).filter(
+                TraceFrame.callee_port == frame.caller_port
             )
         else:
-            query = query.filter(TraceFrame.caller_id == trace_frame.callee_id).filter(
-                TraceFrame.caller_port == trace_frame.callee_port
+            query = query.filter(TraceFrame.caller_id == frame.callee_id).filter(
+                TraceFrame.caller_port == frame.callee_port
             )
 
         results = (

@@ -849,9 +849,9 @@ details              show additional information about the current trace frame
 
             parent_trace_frames = trace.Query(
                 session, self._current_run_id
-            ).next_trace_frames(
-                leaf_kind,
+            ).next_frames(
                 current_trace_tuple.trace_frame,
+                leaf_kind,
                 set(),
                 backwards=True,
             )
@@ -870,12 +870,12 @@ details              show additional information about the current trace frame
     def _generate_trace_from_issue(self) -> None:
         with self.db.make_session() as session:
             issue = self._get_current_issue(session)
-            postcondition_initial_frames = trace.Query(session).initial_trace_frames(
+            postcondition_initial_frames = trace.Query(session).initial_frames(
                 # pyre-fixme[6]: Expected `int` for 1st param but got `DBID`.
                 issue.id,
                 TraceKind.POSTCONDITION,
             )
-            precondition_initial_frames = trace.Query(session).initial_trace_frames(
+            precondition_initial_frames = trace.Query(session).initial_frames(
                 # pyre-fixme[6]: Expected `int` for 1st param but got `DBID`.
                 issue.id,
                 TraceKind.PRECONDITION,
@@ -1183,7 +1183,7 @@ details              show additional information about the current trace frame
                 if self._is_before_root()
                 else TraceKind.PRECONDITION
             )
-            return trace.Query(session).initial_trace_frames(
+            return trace.Query(session).initial_frames(
                 self.current_issue_instance_id, kind
             )
 
@@ -1199,9 +1199,9 @@ details              show additional information about the current trace frame
                 or parent_trace_frame.kind == TraceKind.PRECONDITION
             )
 
-        return trace.Query(session, self._current_run_id).next_trace_frames(
-            leaf_kind,
+        return trace.Query(session, self._current_run_id).next_frames(
             parent_trace_frame,
+            leaf_kind,
             set(),
         )
 

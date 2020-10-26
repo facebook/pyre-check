@@ -91,7 +91,7 @@ class QueryTest(TestCase):
             session.add(run)
             session.commit()
 
-            next_frames = Query(session).next_trace_frames({"sink1"}, frames[0], set())
+            next_frames = Query(session).next_frames(frames[0], {"sink1"}, set())
             self.assertEqual(len(next_frames), 1)
             self.assertEqual(int(next_frames[0].id), int(frames[1].id))
 
@@ -131,8 +131,8 @@ class QueryTest(TestCase):
             session.add(run)
             session.commit()
 
-            next_frames = Query(session).next_trace_frames(
-                {"sink1"}, frames[1], set(), backwards=True
+            next_frames = Query(session).next_frames(
+                frames[1], {"sink1"}, set(), backwards=True
             )
 
             self.assertEqual(len(next_frames), 1)
@@ -164,7 +164,7 @@ class QueryTest(TestCase):
             session.add(run2)
             session.commit()
 
-            next_frames = Query(session).next_trace_frames({"sink1"}, frames[2], set())
+            next_frames = Query(session).next_frames(frames[2], {"sink1"}, set())
             self.assertEqual(len(next_frames), 1)
             self.assertEqual(int(next_frames[0].id), int(frames[3].id))
 
