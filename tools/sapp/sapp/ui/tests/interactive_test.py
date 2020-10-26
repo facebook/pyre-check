@@ -2263,27 +2263,6 @@ else:
         )
         self.assertTrue(self.interactive.trace_tuples[0].placeholder)
 
-    def testAllLeavesByKind(self):
-        shared_texts = [
-            SharedText(id=1, contents="source1", kind=SharedTextKind.SOURCE),
-            SharedText(id=2, contents="source2", kind=SharedTextKind.SOURCE),
-            SharedText(id=3, contents="source3", kind=SharedTextKind.SOURCE),
-            SharedText(id=4, contents="sink4", kind=SharedTextKind.SINK),
-            SharedText(id=5, contents="sink5", kind=SharedTextKind.SINK),
-        ]
-        with self.db.make_session() as session:
-            self._add_to_session(session, shared_texts)
-            session.commit()
-
-            self.assertEqual(
-                self.interactive._all_leaves_by_kind(session, SharedTextKind.SOURCE),
-                {1: "source1", 2: "source2", 3: "source3"},
-            )
-            self.assertEqual(
-                self.interactive._all_leaves_by_kind(session, SharedTextKind.SINK),
-                {4: "sink4", 5: "sink5"},
-            )
-
     def testDetails(self):
         run = self.fakes.run()
         frames = [

@@ -202,11 +202,7 @@ details              show additional information about the current trace frame
                 .scalar()
             )
 
-            self._leaf_lookup = trace.LeafLookup(
-                self._all_leaves_by_kind(session, SharedTextKind.SOURCE),
-                self._all_leaves_by_kind(session, SharedTextKind.SINK),
-                self._all_leaves_by_kind(session, SharedTextKind.FEATURE),
-            )
+            self._leaf_lookup = trace.LeafLookup.create(session)
 
         print("=" * len(self.welcome_message))
         print(self.welcome_message)
@@ -1681,16 +1677,6 @@ details              show additional information about the current trace frame
         current_trace_tuple = self.trace_tuples[self.current_trace_frame_index]
         if current_trace_tuple.branches < 2:
             raise UserError("This trace frame has no alternate branches to take.")
-
-    def _all_leaves_by_kind(
-        self, session: Session, kind: SharedTextKind
-    ) -> Dict[int, str]:
-        return {
-            int(id): contents
-            for id, contents in session.query(
-                SharedText.id, SharedText.contents
-            ).filter(SharedText.kind == kind)
-        }
 
     def _num_issues_with_callable(self, callable: str) -> int:
         with self.db.make_session() as session:

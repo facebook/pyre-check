@@ -197,7 +197,7 @@ class Query(graphene.ObjectType):
             raise ValueError(f"`{frame_id}` is not a valid trace frame id")
 
         return trace.Query(session).next_trace_frames(
-            Query.leaf_lookup(session),
+            trace.LeafLookup.create(session),
             run_id,
             leaf_kind,
             trace_frame,
@@ -231,31 +231,6 @@ class Query(graphene.ObjectType):
     def resolve_filters(self, info: ResolveInfo) -> List[filters_module.Filter]:
         session = info.context["session"]
         return filters_module.all_filters(session)
-
-    @staticmethod
-    def leaf_lookup(
-        session: Session,
-    ) -> LeafLookup:
-        return LeafLookup(
-            {
-                int(id): contents
-                for id, contents in session.query(
-                    SharedText.id, SharedText.contents
-                ).filter(SharedText.kind == SharedTextKind.SOURCE)
-            },
-            {
-                int(id): contents
-                for id, contents in session.query(
-                    SharedText.id, SharedText.contents
-                ).filter(SharedText.kind == SharedTextKind.SINK)
-            },
-            {
-                int(id): contents
-                for id, contents in session.query(
-                    SharedText.id, SharedText.contents
-                ).filter(SharedText.kind == SharedTextKind.FEATURE)
-            },
-        )
 
     @staticmethod
     def latest_run_id(session: Session) -> DBID:

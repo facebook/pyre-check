@@ -119,6 +119,29 @@ class LeafLookup:
             SharedTextKind.FEATURE: features,
         }
 
+    @staticmethod
+    def create(session: Session) -> "LeafLookup":
+        return LeafLookup(
+            {
+                int(id): contents
+                for id, contents in session.query(
+                    SharedText.id, SharedText.contents
+                ).filter(SharedText.kind == SharedTextKind.SOURCE)
+            },
+            {
+                int(id): contents
+                for id, contents in session.query(
+                    SharedText.id, SharedText.contents
+                ).filter(SharedText.kind == SharedTextKind.SINK)
+            },
+            {
+                int(id): contents
+                for id, contents in session.query(
+                    SharedText.id, SharedText.contents
+                ).filter(SharedText.kind == SharedTextKind.FEATURE)
+            },
+        )
+
     def resolve(self, ids: Sequence[int], kind: SharedTextKind) -> Set[str]:
         if kind not in [
             SharedTextKind.SOURCE,

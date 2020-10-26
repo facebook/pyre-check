@@ -4,14 +4,14 @@
 # LICENSE file in the root directory of this source tree.
 
 import unittest
-from typing import Any, Dict, List
+from typing import Any, List
 from unittest import TestCase
 
-from sqlalchemy.orm import Session
 from sqlalchemy.sql import func
 
 from ...db import DB, DBType
 from ...models import (
+    DBID,
     Run,
     RunStatus,
     SharedText,
@@ -48,15 +48,33 @@ class QueryTest(TestCase):
             ),
         ]
 
-    def _all_leaves_by_kind(
-        self, session: Session, kind: SharedTextKind
-    ) -> Dict[int, str]:
-        return {
-            int(id): contents
-            for id, contents in session.query(
-                SharedText.id, SharedText.contents
-            ).filter(SharedText.kind == kind)
-        }
+    def testLeafLookup(self) -> None:
+        shared_texts = [
+            SharedText(id=DBID(1), contents="source1", kind=SharedTextKind.SOURCE),
+            SharedText(id=DBID(2), contents="source2", kind=SharedTextKind.SOURCE),
+            SharedText(id=DBID(3), contents="source3", kind=SharedTextKind.SOURCE),
+            SharedText(id=DBID(4), contents="sink4", kind=SharedTextKind.SINK),
+            SharedText(id=DBID(5), contents="sink5", kind=SharedTextKind.SINK),
+        ]
+        with self.db.make_session() as session:
+            for shared_text in shared_texts:
+                session.add(shared_text)
+            session.commit()
+
+            leaf_lookup = LeafLookup.create(session)
+
+            self.assertEqual(
+                leaf_lookup.resolve([1, 2], SharedTextKind.SOURCE),
+                {"source1", "source2"},
+            )
+            self.assertEqual(
+                leaf_lookup.resolve([3], SharedTextKind.SOURCE),
+                {"source3"},
+            )
+            self.assertEqual(
+                leaf_lookup.resolve([4, 5], SharedTextKind.SINK),
+                {"sink4", "sink5"},
+            )
 
     def testNextTraceFrames(self) -> None:
         run = self.fakes.run()
@@ -72,11 +90,7 @@ class QueryTest(TestCase):
         with self.db.make_session() as session:
             session.add(run)
             session.commit()
-            leaf_lookup = LeafLookup(
-                self._all_leaves_by_kind(session, SharedTextKind.SOURCE),
-                self._all_leaves_by_kind(session, SharedTextKind.SINK),
-                self._all_leaves_by_kind(session, SharedTextKind.FEATURE),
-            )
+            leaf_lookup = LeafLookup.create(session)
 
             latest_run_id = (
                 session.query(func.max(Run.id))
@@ -132,11 +146,7 @@ class QueryTest(TestCase):
                 .scalar()
             )
 
-            leaf_lookup = LeafLookup(
-                self._all_leaves_by_kind(session, SharedTextKind.SOURCE),
-                self._all_leaves_by_kind(session, SharedTextKind.SINK),
-                self._all_leaves_by_kind(session, SharedTextKind.FEATURE),
-            )
+            leaf_lookup = LeafLookup.create(session)
 
             next_frames = Query(session).next_trace_frames(
                 leaf_lookup, latest_run_id, {"sink1"}, frames[1], set(), backwards=True
@@ -171,11 +181,7 @@ class QueryTest(TestCase):
             session.add(run2)
             session.commit()
 
-            leaf_lookup = LeafLookup(
-                self._all_leaves_by_kind(session, SharedTextKind.SOURCE),
-                self._all_leaves_by_kind(session, SharedTextKind.SINK),
-                self._all_leaves_by_kind(session, SharedTextKind.FEATURE),
-            )
+            leaf_lookup = LeafLookup.create(session)
 
             latest_run_id = (
                 session.query(func.max(Run.id))
@@ -204,11 +210,7 @@ class QueryTest(TestCase):
             session.add(run)
             session.commit()
 
-            leaf_lookup = LeafLookup(
-                self._all_leaves_by_kind(session, SharedTextKind.SOURCE),
-                self._all_leaves_by_kind(session, SharedTextKind.SINK),
-                self._all_leaves_by_kind(session, SharedTextKind.FEATURE),
-            )
+            leaf_lookup = LeafLookup.create(session)
 
             latest_run_id = (
                 session.query(func.max(Run.id))
@@ -283,11 +285,7 @@ class QueryTest(TestCase):
             session.add(run)
             session.commit()
 
-            leaf_lookup = LeafLookup(
-                self._all_leaves_by_kind(session, SharedTextKind.SOURCE),
-                self._all_leaves_by_kind(session, SharedTextKind.SINK),
-                self._all_leaves_by_kind(session, SharedTextKind.FEATURE),
-            )
+            leaf_lookup = LeafLookup.create(session)
 
             latest_run_id = (
                 session.query(func.max(Run.id))
