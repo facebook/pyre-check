@@ -25,7 +25,7 @@ from ..models import (
 )
 from . import filters as filters_module, issues, trace, typeahead
 from .issues import IssueQueryResult, IssueQueryResultType
-from .trace import TraceFrameQueryResult, TraceFrameQueryResultType
+from .trace import LeafLookup, TraceFrameQueryResult, TraceFrameQueryResultType
 
 
 class IssueConnection(relay.Connection):
@@ -180,7 +180,6 @@ class Query(graphene.ObjectType):
     ) -> List[TraceFrameQueryResult]:
         session = info.context.get("session")
 
-        leaf_kinds = Query.all_leaf_kinds(session)
         run_id = DBID(Query.latest_run_id(session))
 
         trace_kind = TraceKind.create_from_string(kind)
@@ -198,7 +197,11 @@ class Query(graphene.ObjectType):
             raise ValueError(f"`{frame_id}` is not a valid trace frame id")
 
         return trace.Query(session).next_trace_frames(
-            leaf_kinds, run_id, leaf_kind, trace_frame, visited_ids=set()
+            Query.leaf_lookup(session),
+            run_id,
+            leaf_kind,
+            trace_frame,
+            visited_ids=set(),
         )
 
     def resolve_codes(self, info: ResolveInfo) -> List[typeahead.Code]:
@@ -230,10 +233,10 @@ class Query(graphene.ObjectType):
         return filters_module.all_filters(session)
 
     @staticmethod
-    def all_leaf_kinds(
+    def leaf_lookup(
         session: Session,
-    ) -> Tuple[Dict[int, str], Dict[int, str], Dict[int, str]]:
-        return (
+    ) -> LeafLookup:
+        return LeafLookup(
             {
                 int(id): contents
                 for id, contents in session.query(

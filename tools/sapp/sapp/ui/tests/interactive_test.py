@@ -105,7 +105,7 @@ class InteractiveTest(TestCase):
         )
 
     def testState(self):
-        self.interactive.current_run_id = 1
+        self.interactive._current_run_id = 1
         self.interactive.current_issue_instance_id = 2
         self.interactive.current_frame_id = 3
         self.interactive.sources = {1}
@@ -614,16 +614,16 @@ class InteractiveTest(TestCase):
             session.commit()
 
         self.interactive.latest_run("c")
-        self.assertEqual(self.interactive.current_run_id, 6)
+        self.assertEqual(int(self.interactive._current_run_id), 6)
 
         self.interactive.latest_run("b")
-        self.assertEqual(self.interactive.current_run_id, 5)
+        self.assertEqual(int(self.interactive._current_run_id), 5)
 
         self.interactive.latest_run("a")
-        self.assertEqual(self.interactive.current_run_id, 3)
+        self.assertEqual(int(self.interactive._current_run_id), 3)
 
         self.interactive.latest_run("d")
-        self.assertEqual(self.interactive.current_run_id, 3)
+        self.assertEqual(int(self.interactive._current_run_id), 3)
         self.assertIn("No runs with kind 'd'", self.stderr.getvalue())
 
     def testSetIssue(self):
@@ -682,9 +682,9 @@ class InteractiveTest(TestCase):
             session.commit()
 
         self.interactive.setup()
-        self.assertEqual(int(self.interactive.current_run_id), 2)
+        self.assertEqual(int(self.interactive._current_run_id), 2)
         self.interactive.issue(1)
-        self.assertEqual(int(self.interactive.current_run_id), 1)
+        self.assertEqual(int(self.interactive._current_run_id), 1)
 
     def testGetSources(self):
         self.fakes.instance()
@@ -1971,7 +1971,7 @@ else:
         )
         self.fakes.save_all(self.db)
 
-        self.interactive.current_run_id = 1
+        self.interactive._current_run_id = 1
         self._clear_stdout()
         self.interactive.frames(kind=TraceKind.POSTCONDITION)
         self.assertEqual(
@@ -2003,7 +2003,7 @@ else:
             session.add(run)
             session.commit()
 
-        self.interactive.current_run_id = 1
+        self.interactive._current_run_id = 1
         self._clear_stdout()
         self.interactive.frames(callers=["call2"])
         self.assertEqual(
@@ -2117,9 +2117,9 @@ else:
             session.commit()
 
         self.interactive.setup()
-        self.assertEqual(int(self.interactive.current_run_id), 2)
+        self.assertEqual(int(self.interactive._current_run_id), 2)
         self.interactive.frame(int(frames[0].id))
-        self.assertEqual(int(self.interactive.current_run_id), 1)
+        self.assertEqual(int(self.interactive._current_run_id), 1)
 
     def testIsBeforeRoot(self):
         self.interactive.trace_tuples = [

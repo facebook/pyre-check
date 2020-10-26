@@ -3,7 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from typing import Any, Dict, List, NamedTuple, Optional, Set, Tuple, Union
+from typing import Any, Dict, List, NamedTuple, Optional, Sequence, Set, Tuple, Union
 
 import graphene
 from graphql.execution.base import ResolveInfo
@@ -109,6 +109,28 @@ class TraceTuple(NamedTuple):
     placeholder: bool = False
 
 
+class LeafLookup:
+    def __init__(
+        self, sources: Dict[int, str], sinks: Dict[int, str], features: Dict[int, str]
+    ) -> None:
+        self._lookup: Dict[SharedTextKind, Dict[int, str]] = {
+            SharedTextKind.SOURCE: sources,
+            SharedTextKind.SINK: sinks,
+            SharedTextKind.FEATURE: features,
+        }
+
+    def resolve(self, ids: Sequence[int], kind: SharedTextKind) -> Set[str]:
+        if kind not in [
+            SharedTextKind.SOURCE,
+            SharedTextKind.SINK,
+            SharedTextKind.FEATURE,
+        ]:
+            raise ValueError(f"Cannot resolve ids of kind `{kind}`")
+
+        lookup = self._lookup[kind]
+        return {lookup[id] for id in ids if id in lookup}
+
+
 class Query:
     def __init__(self, session: Session) -> None:
         self._session: Session = session
@@ -150,7 +172,7 @@ class Query:
 
     def navigate_trace_frames(
         self,
-        leaf_dicts: Tuple[Dict[int, str], Dict[int, str], Dict[int, str]],
+        leaf_lookup: LeafLookup,
         current_run_id: DBID,
         sources: Set[str],
         sinks: Set[str],
@@ -173,7 +195,7 @@ class Query:
                     or trace_frame.kind == TraceKind.PRECONDITION
                 )
             next_nodes = self.next_trace_frames(
-                leaf_dicts, current_run_id, leaf_kind, trace_frame, visited_ids
+                leaf_lookup, current_run_id, leaf_kind, trace_frame, visited_ids
             )
 
             if len(next_nodes) == 0:
@@ -198,7 +220,7 @@ class Query:
 
     def next_trace_frames(
         self,
-        leaf_dicts: Tuple[Dict[int, str], Dict[int, str], Dict[int, str]],
+        leaf_lookup: LeafLookup,
         current_run_id: DBID,
         leaf_kind: Set[str],
         trace_frame: TraceFrameQueryResult,
@@ -255,7 +277,7 @@ class Query:
             if int(frame.id) not in visited_ids and leaf_kind.intersection(
                 set(
                     self.get_leaves_trace_frame(
-                        leaf_dicts,
+                        leaf_lookup,
                         int(frame.id),
                         trace_kind_to_shared_text_kind(frame.kind),
                     )
@@ -267,11 +289,11 @@ class Query:
 
     def get_leaves_trace_frame(
         self,
-        leaf_dicts: Tuple[Dict[int, str], Dict[int, str], Dict[int, str]],
+        leaf_lookup: LeafLookup,
         trace_frame_id: Union[int, DBID],
         kind: SharedTextKind,
     ) -> Set[str]:
-        message_ids = [
+        ids = [
             int(id)
             for id, in self._session.query(SharedText.id)
             .distinct(SharedText.id)
@@ -279,10 +301,7 @@ class Query:
             .filter(TraceFrameLeafAssoc.trace_frame_id == trace_frame_id)
             .filter(SharedText.kind == kind)
         ]
-        leaf_sources, leaf_sinks, features_dict = leaf_dicts
-        return leaf_dict_lookups(
-            leaf_sources, leaf_sinks, features_dict, message_ids, kind
-        )
+        return leaf_lookup.resolve(ids, kind)
 
 
 def trace_kind_to_shared_text_kind(trace_kind: Optional[TraceKind]) -> SharedTextKind:
@@ -292,19 +311,3 @@ def trace_kind_to_shared_text_kind(trace_kind: Optional[TraceKind]) -> SharedTex
         return SharedTextKind.SINK
 
     raise AssertionError(f"{trace_kind} is invalid")
-
-
-def leaf_dict_lookups(
-    sources_dict: Dict[int, str],
-    sinks_dict: Dict[int, str],
-    features_dict: Dict[int, str],
-    message_ids: List[int],
-    kind: SharedTextKind,
-) -> Set[str]:
-    if kind == SharedTextKind.SOURCE:
-        leaf_dict = sources_dict
-    elif kind == SharedTextKind.SINK:
-        leaf_dict = sinks_dict
-    else:
-        leaf_dict = features_dict
-    return {leaf_dict[id] for id in message_ids if id in leaf_dict}
