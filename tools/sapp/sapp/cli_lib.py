@@ -106,7 +106,6 @@ def default_database(ctx: click.Context, _param: Parameter, value: Optional[str]
 def explore(ctx: Context, ipython_args):
     scope_vars = Interactive(
         database=ctx.database,
-        # pyre-fixme[6]: Expected `str` for 2nd param but got `Optional[str]`.
         repository_directory=ctx.repository,
         parser_class=ctx.parser_class,
     ).setup()
