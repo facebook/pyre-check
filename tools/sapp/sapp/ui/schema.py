@@ -5,7 +5,7 @@
 
 import os
 from pathlib import Path
-from typing import Any, Dict, List, NamedTuple, Optional, Tuple
+from typing import Any, List, NamedTuple, Optional, Tuple
 
 import graphene
 from graphene import relay
@@ -138,10 +138,9 @@ class Query(graphene.ObjectType):
         **kwargs: Any,
     ) -> List[IssueQueryResult]:
         session = get_session(info.context)
-        run_id = Query.latest_run_id(session)
 
         builder = (
-            issues.Query(session, run_id)
+            issues.Query(session)
             .where_codes_is_any_of(codes)
             .where_callables_is_any_of(callables)
             .where_path_is_any_of(paths)
@@ -180,15 +179,13 @@ class Query(graphene.ObjectType):
     ) -> List[TraceFrameQueryResult]:
         session = info.context.get("session")
 
-        run_id = DBID(Query.latest_run_id(session))
-
         trace_kind = TraceKind.create_from_string(kind)
         if trace_kind == TraceKind.POSTCONDITION:
-            leaf_kind = issues.Query(session, run_id).get_leaves_issue_instance(
+            leaf_kind = issues.Query(session).get_leaves_issue_instance(
                 session, issue_id, SharedTextKind.SOURCE
             )
         elif trace_kind == TraceKind.PRECONDITION:
-            leaf_kind = issues.Query(session, run_id).get_leaves_issue_instance(
+            leaf_kind = issues.Query(session).get_leaves_issue_instance(
                 session, issue_id, SharedTextKind.SINK
             )
 
@@ -198,7 +195,6 @@ class Query(graphene.ObjectType):
 
         return trace.Query(session).next_trace_frames(
             trace.LeafLookup.create(session),
-            run_id,
             leaf_kind,
             trace_frame,
             visited_ids=set(),
@@ -231,16 +227,6 @@ class Query(graphene.ObjectType):
     def resolve_filters(self, info: ResolveInfo) -> List[filters_module.Filter]:
         session = info.context["session"]
         return filters_module.all_filters(session)
-
-    @staticmethod
-    def latest_run_id(session: Session) -> DBID:
-        return DBID(
-            (
-                session.query(func.max(Run.id))
-                .filter(Run.status == RunStatus.FINISHED)
-                .scalar()
-            )
-        )
 
 
 class SaveFilterMutation(relay.ClientIDMutation):

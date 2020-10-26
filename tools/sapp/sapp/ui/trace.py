@@ -8,6 +8,7 @@ from typing import Any, Dict, List, NamedTuple, Optional, Sequence, Set, Tuple, 
 import graphene
 from graphql.execution.base import ResolveInfo
 from sqlalchemy.orm import Session, aliased
+from . import run
 
 from ..models import (
     DBID,
@@ -155,8 +156,9 @@ class LeafLookup:
 
 
 class Query:
-    def __init__(self, session: Session) -> None:
+    def __init__(self, session: Session, run_id: Optional[DBID] = None) -> None:
         self._session: Session = session
+        self._run_id: DBID = run_id or run.Query(session).latest()
 
     def initial_trace_frames(
         self, issue_id: int, kind: TraceKind
@@ -196,7 +198,6 @@ class Query:
     def navigate_trace_frames(
         self,
         leaf_lookup: LeafLookup,
-        current_run_id: DBID,
         sources: Set[str],
         sinks: Set[str],
         initial_trace_frames: List[TraceFrameQueryResult],
@@ -218,7 +219,7 @@ class Query:
                     or trace_frame.kind == TraceKind.PRECONDITION
                 )
             next_nodes = self.next_trace_frames(
-                leaf_lookup, current_run_id, leaf_kind, trace_frame, visited_ids
+                leaf_lookup, leaf_kind, trace_frame, visited_ids
             )
 
             if len(next_nodes) == 0:
@@ -244,7 +245,6 @@ class Query:
     def next_trace_frames(
         self,
         leaf_lookup: LeafLookup,
-        current_run_id: DBID,
         leaf_kind: Set[str],
         trace_frame: TraceFrameQueryResult,
         visited_ids: Set[int],
@@ -269,7 +269,7 @@ class Query:
                 FilenameText.contents.label("filename"),
                 TraceFrameLeafAssoc.trace_length,
             )
-            .filter(TraceFrame.run_id == current_run_id)
+            .filter(TraceFrame.run_id == self._run_id)
             .filter(TraceFrame.kind == trace_frame.kind)
             .join(CallerText, CallerText.id == TraceFrame.caller_id)
             .join(CalleeText, CalleeText.id == TraceFrame.callee_id)

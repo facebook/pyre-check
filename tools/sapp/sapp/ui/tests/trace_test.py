@@ -92,14 +92,8 @@ class QueryTest(TestCase):
             session.commit()
             leaf_lookup = LeafLookup.create(session)
 
-            latest_run_id = (
-                session.query(func.max(Run.id))
-                .filter(Run.status == RunStatus.FINISHED)
-                .scalar()
-            )
-
             next_frames = Query(session).next_trace_frames(
-                leaf_lookup, latest_run_id, {"sink1"}, frames[0], set()
+                leaf_lookup, {"sink1"}, frames[0], set()
             )
             self.assertEqual(len(next_frames), 1)
             self.assertEqual(int(next_frames[0].id), int(frames[1].id))
@@ -140,16 +134,10 @@ class QueryTest(TestCase):
             session.add(run)
             session.commit()
 
-            latest_run_id = (
-                session.query(func.max(Run.id))
-                .filter(Run.status == RunStatus.FINISHED)
-                .scalar()
-            )
-
             leaf_lookup = LeafLookup.create(session)
 
             next_frames = Query(session).next_trace_frames(
-                leaf_lookup, latest_run_id, {"sink1"}, frames[1], set(), backwards=True
+                leaf_lookup, {"sink1"}, frames[1], set(), backwards=True
             )
 
             self.assertEqual(len(next_frames), 1)
@@ -183,14 +171,8 @@ class QueryTest(TestCase):
 
             leaf_lookup = LeafLookup.create(session)
 
-            latest_run_id = (
-                session.query(func.max(Run.id))
-                .filter(Run.status == RunStatus.FINISHED)
-                .scalar()
-            )
-
             next_frames = Query(session).next_trace_frames(
-                leaf_lookup, latest_run_id, {"sink1"}, frames[2], set()
+                leaf_lookup, {"sink1"}, frames[2], set()
             )
             self.assertEqual(len(next_frames), 1)
             self.assertEqual(int(next_frames[0].id), int(frames[3].id))
@@ -212,15 +194,8 @@ class QueryTest(TestCase):
 
             leaf_lookup = LeafLookup.create(session)
 
-            latest_run_id = (
-                session.query(func.max(Run.id))
-                .filter(Run.status == RunStatus.FINISHED)
-                .scalar()
-            )
-
             result = Query(session).navigate_trace_frames(
                 leaf_lookup,
-                latest_run_id,
                 set(),
                 {"sink1"},
                 [TraceFrameQueryResult.from_record(frames[0])],
@@ -287,15 +262,8 @@ class QueryTest(TestCase):
 
             leaf_lookup = LeafLookup.create(session)
 
-            latest_run_id = (
-                session.query(func.max(Run.id))
-                .filter(Run.status == RunStatus.FINISHED)
-                .scalar()
-            )
-
             result = Query(session).navigate_trace_frames(
                 leaf_lookup,
-                latest_run_id,
                 set(),
                 {"sink"},
                 [TraceFrameQueryResult.from_record(frames[0])],

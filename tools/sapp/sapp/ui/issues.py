@@ -21,7 +21,7 @@ from ..models import (
     SharedTextKind,
     SourceLocation,
 )
-from . import filters
+from . import filters, run
 
 
 # pyre-fixme[5]: Global expression must be annotated.
@@ -40,7 +40,7 @@ FeatureText = aliased(SharedText)
 
 def _query(info: ResolveInfo) -> "Query":
     # TODO(T71492980): queries here are run-independent and should be factored out.
-    return Query(info.context["session"], 1)
+    return Query(info.context["session"], DBID(1))
 
 
 # pyre-ignore[13]: unitialized class attribute
@@ -125,11 +125,10 @@ class IssueQueryResult(NamedTuple):
 
 
 class Query:
-    # pyre-fixme[3]: Return type must be annotated.
-    def __init__(self, session: Session, run_id: Union[DBID, int]):
+    def __init__(self, session: Session, run_id: Optional[DBID] = None) -> None:
         self._session: Session = session
         self._predicates: List[filters.Predicate] = []
-        self._run_id = run_id
+        self._run_id: DBID = run_id or run.Query(session).latest()
 
     def get(self) -> List[IssueQueryResult]:
         features = (

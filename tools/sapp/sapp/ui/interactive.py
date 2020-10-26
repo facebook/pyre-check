@@ -847,9 +847,10 @@ details              show additional information about the current trace frame
                     or current_trace_tuple.trace_frame.kind == TraceKind.PRECONDITION
                 )
 
-            parent_trace_frames = trace.Query(session).next_trace_frames(
+            parent_trace_frames = trace.Query(
+                session, self._current_run_id
+            ).next_trace_frames(
                 self._leaf_lookup,
-                self._current_run_id,
                 leaf_kind,
                 current_trace_tuple.trace_frame,
                 set(),
@@ -881,16 +882,18 @@ details              show additional information about the current trace frame
                 TraceKind.PRECONDITION,
             )
 
-            postcondition_navigation = trace.Query(session).navigate_trace_frames(
+            postcondition_navigation = trace.Query(
+                session, self._current_run_id
+            ).navigate_trace_frames(
                 self._leaf_lookup,
-                self._current_run_id,
                 self.sources,
                 self.sinks,
                 postcondition_initial_frames,
             )
-            precondition_navigation = trace.Query(session).navigate_trace_frames(
+            precondition_navigation = trace.Query(
+                session, self._current_run_id
+            ).navigate_trace_frames(
                 self._leaf_lookup,
-                self._current_run_id,
                 self.sources,
                 self.sinks,
                 precondition_initial_frames,
@@ -938,9 +941,10 @@ details              show additional information about the current trace frame
                 .join(FilenameText, FilenameText.id == TraceFrame.filename_id)
                 .one()
             )
-            navigation = trace.Query(session).navigate_trace_frames(
+            navigation = trace.Query(
+                session, self._current_run_id
+            ).navigate_trace_frames(
                 self._leaf_lookup,
-                self._current_run_id,
                 self.sources,
                 self.sinks,
                 [TraceFrameQueryResult.from_record(trace_frame)],
@@ -1074,9 +1078,10 @@ details              show additional information about the current trace frame
                     "Branch number invalid "
                     f"(expected 1-{len(branches)} but got {selected_number})."
                 )
-            new_navigation = trace.Query(session).navigate_trace_frames(
+            new_navigation = trace.Query(
+                session, self._current_run_id
+            ).navigate_trace_frames(
                 self._leaf_lookup,
-                self._current_run_id,
                 self.sources,
                 self.sinks,
                 branches,
@@ -1200,9 +1205,8 @@ details              show additional information about the current trace frame
                 or parent_trace_frame.kind == TraceKind.PRECONDITION
             )
 
-        return trace.Query(session).next_trace_frames(
+        return trace.Query(session, self._current_run_id).next_trace_frames(
             self._leaf_lookup,
-            self._current_run_id,
             leaf_kind,
             parent_trace_frame,
             set(),
