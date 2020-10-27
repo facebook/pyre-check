@@ -89,6 +89,19 @@ class StrictDefault(ErrorSuppressingCommand):
             help="Mark file as unsafe if fixme count exceeds threshold.",
         )
 
+    def _commit_changes(self) -> None:
+        title = f"Convert {self._local_configuration} to use strict default"
+        summary = (
+            "Turning on strict default; files with more than "
+            + f"{self._fixme_threshold} errors opted-out of strict."
+        )
+        self._repository.commit_changes(
+            commit=(not self._no_commit),
+            title=title,
+            summary=summary,
+            set_dependencies=False,
+        )
+
     def run(self) -> None:
         configuration_path = _get_configuration_path(self._local_configuration)
         if configuration_path is None:
@@ -100,6 +113,7 @@ class StrictDefault(ErrorSuppressingCommand):
         all_errors = configuration.get_errors()
 
         if len(all_errors) == 0:
+            self._commit_changes()
             return
 
         for path, errors in all_errors.paths_to_errors.items():
@@ -113,14 +127,4 @@ class StrictDefault(ErrorSuppressingCommand):
         if self._lint:
             self._repository.format()
 
-        title = f"Convert {self._local_configuration} to use strict default"
-        summary = (
-            "Turning on strict default; files with more than "
-            + f"{self._fixme_threshold} errors opted-out of strict."
-        )
-        self._repository.commit_changes(
-            commit=(not self._no_commit),
-            title=title,
-            summary=summary,
-            set_dependencies=False,
-        )
+        self._commit_changes()
