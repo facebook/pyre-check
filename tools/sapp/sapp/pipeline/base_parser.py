@@ -177,7 +177,7 @@ class BaseParser(PipelineStep[InputFiles, DictEntries]):
                     # Use exact handle match too in case linemap is missing.
                     previous_handles.add(master_key)
 
-        log.info("Parsing hh_server output")
+        log.info("Parsing analysis output...")
         for typ, key, e in self._analysis_output_to_parsed_types(inputfile):
             if typ == ParseType.ISSUE:
                 # We are only interested in issues that weren't in the previous
