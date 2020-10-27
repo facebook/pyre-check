@@ -18,7 +18,7 @@ type regular_targets = {
 }
 [@@deriving eq, show]
 
-type callees =
+type raw_callees =
   | ConstructorTargets of {
       new_targets: Callable.t list;
       init_targets: Callable.t list;
@@ -29,6 +29,26 @@ type callees =
       callable_argument: int * regular_targets;
     }
 [@@deriving eq, show]
+
+type callees =
+  | Callees of {
+      callee_name: string;
+      callees: raw_callees;
+    }
+  | SyntheticCallees of raw_callees String.Map.t
+[@@deriving eq]
+
+let pp_callees formatter = function
+  | Callees { callee_name; callees } ->
+      Format.fprintf formatter "%s: %s" callee_name (show_raw_callees callees)
+  | SyntheticCallees map ->
+      Map.to_alist map
+      |> List.map ~f:(fun (key, value) -> Format.sprintf "%s: %s" key (show_raw_callees value))
+      |> String.concat ~sep:", "
+      |> Format.fprintf formatter "%s"
+
+
+let show_callees callees = Format.asprintf "%a" pp_callees callees
 
 let merge_targets left right =
   match left, right with
@@ -571,6 +591,15 @@ let resolve_property_targets ~resolution ~base ~attribute ~setter =
       Some (RegularTargets { implicit_self = true; targets; collapse_tito = true })
 
 
+let call_name { Call.callee; _ } =
+  match Node.value callee with
+  | Name (Name.Attribute { attribute; _ }) -> attribute
+  | Name (Name.Identifier name) -> name
+  | _ ->
+      (* Fall back to something that hopefully identifies the call well. *)
+      Expression.show callee
+
+
 (* This is a bit of a trick. The only place that knows where the local annotation map keys is the
    fixpoint (shared across the type check and additional static analysis modules). By having a
    fixpoint that always terminates (by having a state = unit), we re-use the fixpoint id's without
@@ -594,22 +623,32 @@ struct
     type nonrec t = visitor_t
 
     let expression_visitor ({ resolution; is_assignment_target } as state) { Node.value; location } =
-      let register_targets targets =
+      let register_targets ~callee_name targets =
         Option.iter targets ~f:(fun data ->
+            let data =
+              match Location.Table.find Context.callees_at_location location with
+              | Some (Callees { callee_name = existing_callee_name; callees }) ->
+                  SyntheticCallees
+                    (String.Map.of_alist_reduce
+                       ~f:(fun existing _ -> existing)
+                       [existing_callee_name, callees; callee_name, data])
+              | Some (SyntheticCallees map) -> SyntheticCallees (Map.set map ~key:callee_name ~data)
+              | None -> Callees { callee_name; callees = data }
+            in
             Location.Table.set Context.callees_at_location ~key:location ~data)
       in
       match value with
       | Expression.Call call ->
-          resolve_callees ~resolution ~call |> register_targets;
+          resolve_callees ~resolution ~call |> register_targets ~callee_name:(call_name call);
           state
       | Expression.Name (Name.Attribute { Name.Attribute.base; attribute; _ }) ->
           resolve_property_targets ~resolution ~base ~attribute ~setter:is_assignment_target
-          |> register_targets;
+          |> register_targets ~callee_name:attribute;
           state
       | Expression.ComparisonOperator comparison -> (
           match ComparisonOperator.override ~location comparison with
           | Some { Node.value = Expression.Call call; _ } ->
-              resolve_callees ~resolution ~call |> register_targets;
+              resolve_callees ~resolution ~call |> register_targets ~callee_name:(call_name call);
               state
           | _ -> state )
       | _ -> state

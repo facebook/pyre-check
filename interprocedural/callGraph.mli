@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+open Core
 open Analysis
 open Ast.Expression
 
@@ -15,7 +16,7 @@ type regular_targets = {
 }
 [@@deriving eq, show]
 
-type callees =
+type raw_callees =
   | ConstructorTargets of {
       new_targets: Callable.t list;
       init_targets: Callable.t list;
@@ -25,6 +26,14 @@ type callees =
       higher_order_function: regular_targets;
       callable_argument: int * regular_targets;
     }
+[@@deriving eq, show]
+
+type callees =
+  | Callees of {
+      callee_name: string;
+      callees: raw_callees;
+    }
+  | SyntheticCallees of raw_callees String.Map.t
 [@@deriving eq, show]
 
 val call_graph_of_define
@@ -43,6 +52,8 @@ val compute_indirect_targets
   receiver_type:Type.t ->
   Ast.Reference.t ->
   Callable.t list
+
+val call_name : Call.t -> string
 
 val resolve_ignoring_optional : resolution:Resolution.t -> Ast.Expression.t -> Type.t
 
