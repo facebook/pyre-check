@@ -4290,14 +4290,23 @@ module State (Context : Context) = struct
                         RefinementUnit.refine ~global_resolution annotation refined
                       in
                       let annotation =
+                        (* Do not refine targets explicitly annotated as 'Any' to allow for escape
+                           hatch *)
                         if explicit && is_valid_annotation then
                           let annotation = Annotation.create_immutable ~final:is_final guide in
-                          if Type.is_concrete resolved && not (Type.is_ellipsis resolved) then
+                          if
+                            Type.is_concrete resolved
+                            && (not (Type.is_ellipsis resolved))
+                            && not (Type.is_any (Annotation.annotation annotation))
+                          then
                             refine_annotation annotation resolved
                           else
                             annotation
                         else if is_immutable then
-                          refine_annotation target_annotation guide
+                          if Type.is_any (Annotation.original target_annotation) then
+                            target_annotation
+                          else
+                            refine_annotation target_annotation guide
                         else
                           Annotation.create guide
                       in

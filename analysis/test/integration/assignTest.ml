@@ -241,7 +241,31 @@ let test_check_assign context =
         reveal_type(x)
     |}
     ["Revealed type [-1]: Revealed type for `x` is `Dict[str, Union[int, str]]`."];
+  assert_default_type_errors
+    {|
+      from typing import Any
 
+      def i() -> str:
+        x: Any
+        reveal_type(x)
+        x = 42
+        reveal_type(x)
+        return x
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `typing.Any`.";
+      "Revealed type [-1]: Revealed type for `x` is `typing.Any`.";
+    ];
+  assert_default_type_errors
+    {|
+      from typing import Any
+
+      def h() -> str:
+        x: Any = 42
+        reveal_type(x)
+        return x
+    |}
+    ["Revealed type [-1]: Revealed type for `x` is `typing.Any`."];
   assert_default_type_errors
     {|
        from typing import Any, Callable
