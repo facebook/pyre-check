@@ -77,7 +77,7 @@ def start_server(
             graphiql=True,
             get_context=lambda: {
                 "session": session,
-                "source_directory": source_directory,
+                "source_directory": os.path.expanduser(source_directory),
             },
         ),
     )
