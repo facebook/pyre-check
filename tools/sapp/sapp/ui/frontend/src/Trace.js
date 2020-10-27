@@ -24,6 +24,7 @@ import {BranchesOutlined, ColumnHeightOutlined} from '@ant-design/icons';
 import {useQuery, gql} from '@apollo/client';
 import Source from './Source.js';
 import {Documentation, DocumentationTooltip} from './Documentation.js';
+import {Issue, IssueSkeleton} from './Issue.js';
 
 const {Text} = Typography;
 const {Option} = Select;
@@ -281,11 +282,18 @@ function Trace(props: $ReadOnly<{|match: any|}>): React$Node {
         edges {
           node {
             issue_id
+            code
+            message
+            callable
             filename
             location
-            code
-            callable
-            message
+            sources
+            source_names
+            sinks
+            sink_names
+            features
+            min_trace_length_to_sources
+            min_trace_length_to_sinks
           }
         }
       }
@@ -293,19 +301,26 @@ function Trace(props: $ReadOnly<{|match: any|}>): React$Node {
   `;
   const {loading, error, data} = useQuery(IssueQuery, {variables: {issue_id}});
 
-  var content = (
-    <>
-      <Expansion issue_id={issue_id} kind="postcondition" />
-      <TraceRoot data={data} loading={loading} />
-      <Expansion issue_id={issue_id} kind="precondition" />
-    </>
-  );
-
+  var content = null;
   if (error) {
     content = (
       <Modal title="Error" visible={true} footer={null}>
         <p>{error.toString()}</p>
       </Modal>
+    );
+  } else {
+    content = (
+      <>
+        {loading ? (
+          <IssueSkeleton />
+        ) : (
+          <Issue issue={data.issues.edges[0].node} hideTitle={true} />
+        )}
+        <br />
+        <Expansion issue_id={issue_id} kind="postcondition" />
+        <TraceRoot data={data} loading={loading} />
+        <Expansion issue_id={issue_id} kind="precondition" />
+      </>
     );
   }
 

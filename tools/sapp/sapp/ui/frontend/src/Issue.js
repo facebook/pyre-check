@@ -133,7 +133,9 @@ type IssueDescription = {
   min_trace_length_to_sinks: number,
 };
 
-export function Issue(props: $ReadOnly<{issue: IssueDescription}>): React$Node {
+export function Issue(
+  props: $ReadOnly<{issue: IssueDescription, hideTitle?: boolean}>,
+): React$Node {
   const gutter = [8, 8];
   const leftSpan = 4;
   const rightSpan = 20;
@@ -141,8 +143,12 @@ export function Issue(props: $ReadOnly<{issue: IssueDescription}>): React$Node {
   return (
     <Card
       size="small"
-      title={<>Issue {props.issue.issue_id}</>}
-      extra={<Link href={`/trace/${props.issue.issue_id}`}>Traces</Link>}>
+      title={props.hideTitle ? 'Issue' : <>Issue {props.issue.issue_id}</>}
+      extra={
+        props.hideTitle ? null : (
+          <Link href={`/trace/${props.issue.issue_id}`}>Traces</Link>
+        )
+      }>
       <Row gutter={gutter}>
         <Col span={leftSpan} style={{textAlign: 'right'}}>
           <Text type="secondary">Code</Text>
