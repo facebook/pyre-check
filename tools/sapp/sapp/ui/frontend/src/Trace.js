@@ -111,7 +111,8 @@ function SelectFrame(
         <Tooltip title={Documentation.trace.frameSelection}>
           <BranchesOutlined style={{fontSize: '0.9em'}} />
         </Tooltip>
-      }>
+      }
+      disabled={props.frames.length < 2}>
       {props.frames.map((frame, index) => {
         return (
           <Option value={index}>
