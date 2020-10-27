@@ -112,10 +112,12 @@ class StrictDefault(ErrorSuppressingCommand):
         configuration.write()
         all_errors = configuration.get_errors()
 
+        # Early exit if adding strict did not result in new errors.
         if len(all_errors) == 0:
             self._commit_changes()
             return
 
+        # Suppress new errors, or add local mode where threshold is exceeded.
         for path, errors in all_errors.paths_to_errors.items():
             errors = list(errors)
             error_count = len(errors)
@@ -124,7 +126,7 @@ class StrictDefault(ErrorSuppressingCommand):
             else:
                 self._apply_suppressions(Errors(errors))
 
-        if self._lint:
-            self._repository.format()
+        # Re-suppress and apply lint after changing local modes.
+        self._suppress_errors(configuration)
 
         self._commit_changes()
