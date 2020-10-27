@@ -5,7 +5,7 @@
 
 from __future__ import annotations
 
-from typing import Any, List, NamedTuple, Optional, Set, Union
+from typing import Any, List, NamedTuple, Optional, Set
 
 import graphene
 from graphql.execution.base import ResolveInfo

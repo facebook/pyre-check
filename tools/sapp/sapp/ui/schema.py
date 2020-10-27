@@ -12,7 +12,7 @@ from graphene import relay
 from graphene_sqlalchemy import get_session
 from graphql.execution.base import ResolveInfo
 
-from ..models import DBID, SharedTextKind, TraceFrame, TraceKind
+from ..models import DBID, TraceFrame, TraceKind
 from . import filters as filters_module, issues, trace, typeahead
 from .issues import IssueQueryResult, IssueQueryResultType
 from .trace import TraceFrameQueryResult, TraceFrameQueryResultType
