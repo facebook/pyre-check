@@ -155,181 +155,186 @@ class LeafLookup:
         return {lookup[id] for id in ids if id in lookup}
 
 
-class Query:
-    def __init__(self, session: Session, run_id: Optional[DBID] = None) -> None:
-        self._session: Session = session
-        self._run_id: DBID = run_id or run.Query(session).latest()
-        self._cached_leaf_lookup: Optional[LeafLookup] = None
-
-    def initial_frames(
-        self, issue_id: DBID, kind: TraceKind
-    ) -> List[TraceFrameQueryResult]:
-        return [
-            TraceFrameQueryResult.from_record(result)
-            for result in self._session.query(
-                TraceFrame.id,
-                TraceFrame.caller_id,
-                CallerText.contents.label("caller"),
-                TraceFrame.caller_port,
-                TraceFrame.callee_id,
-                CalleeText.contents.label("callee"),
-                TraceFrame.callee_port,
-                TraceFrame.callee_location,
-                TraceFrame.kind,
-                FilenameText.contents.label("filename"),
-                TraceFrameLeafAssoc.trace_length,
-            )
-            .filter(TraceFrame.kind == kind)
-            .join(
-                IssueInstanceTraceFrameAssoc,
-                IssueInstanceTraceFrameAssoc.trace_frame_id == TraceFrame.id,
-            )
-            .filter(IssueInstanceTraceFrameAssoc.issue_instance_id == issue_id)
-            .join(CallerText, CallerText.id == TraceFrame.caller_id)
-            .join(CalleeText, CalleeText.id == TraceFrame.callee_id)
-            .join(FilenameText, FilenameText.id == TraceFrame.filename_id)
-            .join(
-                TraceFrameLeafAssoc, TraceFrameLeafAssoc.trace_frame_id == TraceFrame.id
-            )
-            .group_by(TraceFrame.id)
-            .order_by(TraceFrameLeafAssoc.trace_length, TraceFrame.callee_location)
-            .all()
-        ]
-
-    def navigate_trace_frames(
-        self,
-        initial_trace_frames: List[TraceFrameQueryResult],
-        sources: Set[str],
-        sinks: Set[str],
-        index: int = 0,
-    ) -> List[Tuple[TraceFrameQueryResult, int]]:
-        if not initial_trace_frames:
-            return []
-        trace_frames = [(initial_trace_frames[index], len(initial_trace_frames))]
-        visited_ids: Set[int] = {int(initial_trace_frames[index].id)}
-        while not trace_frames[-1][0].is_leaf():
-            trace_frame, branches = trace_frames[-1]
-            if trace_frame.kind == TraceKind.POSTCONDITION:
-                leaf_kind = sources
-            elif trace_frame.kind == TraceKind.PRECONDITION:
-                leaf_kind = sinks
-            else:
-                assert (
-                    trace_frame.kind == TraceKind.POSTCONDITION
-                    or trace_frame.kind == TraceKind.PRECONDITION
-                )
-            next_nodes = self.next_frames(trace_frame, leaf_kind, visited_ids)
-
-            if len(next_nodes) == 0:
-                # Denote a missing frame by setting caller to None
-                trace_frames.append(
-                    (
-                        TraceFrameQueryResult(
-                            id=DBID(0),
-                            callee=trace_frame.callee,
-                            callee_port=trace_frame.callee_port,
-                            caller="",
-                            caller_port="",
-                        ),
-                        0,
-                    )
-                )
-                return trace_frames
-
-            visited_ids.add(int(next_nodes[0].id))
-            trace_frames.append((next_nodes[0], len(next_nodes)))
-        return trace_frames
-
-    def next_frames(
-        self,
-        frame: TraceFrameQueryResult,
-        leaf_kind: Set[str],
-        visited_ids: Set[int],
-        backwards: bool = False,
-    ) -> List[TraceFrameQueryResult]:
-        """Finds all trace frames that the given trace_frame flows to.
-
-        When backwards=True, the result will include the parameter trace_frame,
-        since we are filtering on the parameter's callee.
-        """
-        query = (
-            self._session.query(
-                TraceFrame.id,
-                TraceFrame.caller_id,
-                CallerText.contents.label("caller"),
-                TraceFrame.caller_port,
-                TraceFrame.callee_id,
-                CalleeText.contents.label("callee"),
-                TraceFrame.callee_port,
-                TraceFrame.callee_location,
-                TraceFrame.kind,
-                FilenameText.contents.label("filename"),
-                TraceFrameLeafAssoc.trace_length,
-            )
-            .filter(TraceFrame.run_id == self._run_id)
-            .filter(TraceFrame.kind == frame.kind)
-            .join(CallerText, CallerText.id == TraceFrame.caller_id)
-            .join(CalleeText, CalleeText.id == TraceFrame.callee_id)
-            .join(FilenameText, FilenameText.id == TraceFrame.filename_id)
-            .filter(
-                TraceFrame.caller_id != TraceFrame.callee_id
-            )  # skip recursive calls for now
+def initial_frames(
+    session: Session,
+    issue_id: DBID,
+    kind: TraceKind,
+) -> List[TraceFrameQueryResult]:
+    return [
+        TraceFrameQueryResult.from_record(result)
+        for result in session.query(
+            TraceFrame.id,
+            TraceFrame.caller_id,
+            CallerText.contents.label("caller"),
+            TraceFrame.caller_port,
+            TraceFrame.callee_id,
+            CalleeText.contents.label("callee"),
+            TraceFrame.callee_port,
+            TraceFrame.callee_location,
+            TraceFrame.kind,
+            FilenameText.contents.label("filename"),
+            TraceFrameLeafAssoc.trace_length,
         )
-        if backwards:
-            query = query.filter(TraceFrame.callee_id == frame.caller_id).filter(
-                TraceFrame.callee_port == frame.caller_port
-            )
+        .filter(TraceFrame.kind == kind)
+        .join(
+            IssueInstanceTraceFrameAssoc,
+            IssueInstanceTraceFrameAssoc.trace_frame_id == TraceFrame.id,
+        )
+        .filter(IssueInstanceTraceFrameAssoc.issue_instance_id == issue_id)
+        .join(CallerText, CallerText.id == TraceFrame.caller_id)
+        .join(CalleeText, CalleeText.id == TraceFrame.callee_id)
+        .join(FilenameText, FilenameText.id == TraceFrame.filename_id)
+        .join(TraceFrameLeafAssoc, TraceFrameLeafAssoc.trace_frame_id == TraceFrame.id)
+        .group_by(TraceFrame.id)
+        .order_by(TraceFrameLeafAssoc.trace_length, TraceFrame.callee_location)
+        .all()
+    ]
+
+
+def navigate_trace_frames(
+    session: Session,
+    initial_trace_frames: List[TraceFrameQueryResult],
+    sources: Set[str],
+    sinks: Set[str],
+    index: int = 0,
+) -> List[Tuple[TraceFrameQueryResult, int]]:
+    leaf_lookup = LeafLookup.create(session)
+
+    if not initial_trace_frames:
+        return []
+    trace_frames = [(initial_trace_frames[index], len(initial_trace_frames))]
+    visited_ids: Set[int] = {int(initial_trace_frames[index].id)}
+    while not trace_frames[-1][0].is_leaf():
+        trace_frame, branches = trace_frames[-1]
+        if trace_frame.kind == TraceKind.POSTCONDITION:
+            leaf_kind = sources
+        elif trace_frame.kind == TraceKind.PRECONDITION:
+            leaf_kind = sinks
         else:
-            query = query.filter(TraceFrame.caller_id == frame.callee_id).filter(
-                TraceFrame.caller_port == frame.callee_port
+            assert (
+                trace_frame.kind == TraceKind.POSTCONDITION
+                or trace_frame.kind == TraceKind.PRECONDITION
             )
-
-        results = (
-            query.join(
-                TraceFrameLeafAssoc, TraceFrameLeafAssoc.trace_frame_id == TraceFrame.id
-            )
-            .group_by(TraceFrame.id)
-            .order_by(TraceFrameLeafAssoc.trace_length, TraceFrame.callee_location)
+        next_nodes = next_frames(
+            session, trace_frame, leaf_kind, visited_ids, leaf_lookup=leaf_lookup
         )
 
-        filtered_results = []
-        for frame in results:
-            if int(frame.id) not in visited_ids and leaf_kind.intersection(
-                set(
-                    self.get_leaves_trace_frame(
-                        int(frame.id),
-                        trace_kind_to_shared_text_kind(frame.kind),
-                    )
+        if len(next_nodes) == 0:
+            # Denote a missing frame by setting caller to None
+            trace_frames.append(
+                (
+                    TraceFrameQueryResult(
+                        id=DBID(0),
+                        callee=trace_frame.callee,
+                        callee_port=trace_frame.callee_port,
+                        caller="",
+                        caller_port="",
+                    ),
+                    0,
                 )
-            ):
-                filtered_results.append(frame)
+            )
+            return trace_frames
 
-        return [TraceFrameQueryResult.from_record(frame) for frame in filtered_results]
+        visited_ids.add(int(next_nodes[0].id))
+        trace_frames.append((next_nodes[0], len(next_nodes)))
+    return trace_frames
 
-    @property
-    def _leaf_lookup(self) -> LeafLookup:
-        leaf_lookup = self._cached_leaf_lookup
-        if leaf_lookup is not None:
-            return leaf_lookup
 
-        leaf_lookup = LeafLookup.create(self._session)
-        self._cached_leaf_lookup = leaf_lookup
+def next_frames(
+    session: Session,
+    frame: TraceFrameQueryResult,
+    leaf_kind: Set[str],
+    visited_ids: Set[int],
+    run_id: Optional[DBID] = None,
+    leaf_lookup: Optional[LeafLookup] = None,
+    backwards: bool = False,
+) -> List[TraceFrameQueryResult]:
+    """Finds all trace frames that the given trace_frame flows to.
+
+    When backwards=True, the result will include the parameter trace_frame,
+    since we are filtering on the parameter's callee.
+    """
+    query = (
+        session.query(
+            TraceFrame.id,
+            TraceFrame.caller_id,
+            CallerText.contents.label("caller"),
+            TraceFrame.caller_port,
+            TraceFrame.callee_id,
+            CalleeText.contents.label("callee"),
+            TraceFrame.callee_port,
+            TraceFrame.callee_location,
+            TraceFrame.kind,
+            FilenameText.contents.label("filename"),
+            TraceFrameLeafAssoc.trace_length,
+        )
+        .filter(TraceFrame.run_id == (run_id or run.latest(session)))
+        .filter(TraceFrame.kind == frame.kind)
+        .join(CallerText, CallerText.id == TraceFrame.caller_id)
+        .join(CalleeText, CalleeText.id == TraceFrame.callee_id)
+        .join(FilenameText, FilenameText.id == TraceFrame.filename_id)
+        .filter(
+            TraceFrame.caller_id != TraceFrame.callee_id
+        )  # skip recursive calls for now
+    )
+    if backwards:
+        query = query.filter(TraceFrame.callee_id == frame.caller_id).filter(
+            TraceFrame.callee_port == frame.caller_port
+        )
+    else:
+        query = query.filter(TraceFrame.caller_id == frame.callee_id).filter(
+            TraceFrame.caller_port == frame.callee_port
+        )
+
+    results = (
+        query.join(
+            TraceFrameLeafAssoc, TraceFrameLeafAssoc.trace_frame_id == TraceFrame.id
+        )
+        .group_by(TraceFrame.id)
+        .order_by(TraceFrameLeafAssoc.trace_length, TraceFrame.callee_location)
+    )
+
+    filtered_results = []
+    for frame in results:
+        if int(frame.id) not in visited_ids and leaf_kind.intersection(
+            set(
+                get_leaves_trace_frame(
+                    session,
+                    int(frame.id),
+                    trace_kind_to_shared_text_kind(frame.kind),
+                    _leaf_lookup(session, leaf_lookup),
+                )
+            )
+        ):
+            filtered_results.append(frame)
+
+    return [TraceFrameQueryResult.from_record(frame) for frame in filtered_results]
+
+
+def _leaf_lookup(
+    session: Session, leaf_lookup: Optional[LeafLookup] = None
+) -> LeafLookup:
+    if leaf_lookup:
         return leaf_lookup
 
-    def get_leaves_trace_frame(
-        self,
-        trace_frame_id: Union[int, DBID],
-        kind: SharedTextKind,
-    ) -> Set[str]:
-        ids = [
-            int(id)
-            for id, in self._session.query(SharedText.id)
-            .distinct(SharedText.id)
-            .join(TraceFrameLeafAssoc, SharedText.id == TraceFrameLeafAssoc.leaf_id)
-            .filter(TraceFrameLeafAssoc.trace_frame_id == trace_frame_id)
-            .filter(SharedText.kind == kind)
-        ]
-        return self._leaf_lookup.resolve(ids, kind)
+    return LeafLookup.create(session)
+
+
+def get_leaves_trace_frame(
+    session: Session,
+    trace_frame_id: Union[int, DBID],
+    kind: SharedTextKind,
+    leaf_lookup: Optional[LeafLookup] = None,
+) -> Set[str]:
+    ids = [
+        int(id)
+        for id, in session.query(SharedText.id)
+        .distinct(SharedText.id)
+        .join(TraceFrameLeafAssoc, SharedText.id == TraceFrameLeafAssoc.leaf_id)
+        .filter(TraceFrameLeafAssoc.trace_frame_id == trace_frame_id)
+        .filter(SharedText.kind == kind)
+    ]
+    return _leaf_lookup(session, leaf_lookup).resolve(ids, kind)
 
 
 def trace_kind_to_shared_text_kind(trace_kind: Optional[TraceKind]) -> SharedTextKind:

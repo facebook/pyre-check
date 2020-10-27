@@ -130,7 +130,7 @@ class Query(graphene.ObjectType):
         session = get_session(info.context)
 
         builder = (
-            issues.Query(session)
+            issues.Instance(session)
             .where_codes_is_any_of(codes)
             .where_callables_is_any_of(callables)
             .where_path_is_any_of(paths)
@@ -145,13 +145,13 @@ class Query(graphene.ObjectType):
 
         for feature in features or []:
             if feature.mode == "any of":
-                # pyre-ignore[6]: graphene too dynamic.
+                # pyre-fixme[6]: Expected `List[str]` for 1st param but got `List`.
                 builder = builder.where_any_features(feature.features)
             if feature.mode == "all of":
-                # pyre-ignore[6]: graphene too dynamic.
+                # pyre-fixme[6]: Expected `List[str]` for 1st param but got `List`.
                 builder = builder.where_all_features(feature.features)
             if feature.mode == "none of":
-                # pyre-ignore[6]: graphene too dynamic.
+                # pyre-fixme[6]: Expected `List[str]` for 1st param but got `List`.
                 builder = builder.where_exclude_features(feature.features)
 
         return builder.get()
@@ -160,8 +160,8 @@ class Query(graphene.ObjectType):
         self, info: ResolveInfo, issue_id: int, kind: str
     ) -> List[TraceFrameQueryResult]:
         session = info.context.get("session")
-        return trace.Query(session).initial_frames(
-            DBID(issue_id), TraceKind.create_from_string(kind)
+        return trace.initial_frames(
+            session, DBID(issue_id), TraceKind.create_from_string(kind)
         )
 
     def resolve_next_trace_frames(
@@ -171,11 +171,11 @@ class Query(graphene.ObjectType):
 
         trace_kind = TraceKind.create_from_string(kind)
         if trace_kind == TraceKind.POSTCONDITION:
-            leaf_kind = issues.Query(session).get_leaves_issue_instance(
+            leaf_kind = issues.Instance(session).get_leaves_issue_instance(
                 session, issue_id, SharedTextKind.SOURCE
             )
         elif trace_kind == TraceKind.PRECONDITION:
-            leaf_kind = issues.Query(session).get_leaves_issue_instance(
+            leaf_kind = issues.Instance(session).get_leaves_issue_instance(
                 session, issue_id, SharedTextKind.SINK
             )
 
@@ -183,7 +183,8 @@ class Query(graphene.ObjectType):
         if trace_frame is None:
             raise ValueError(f"`{frame_id}` is not a valid trace frame id")
 
-        return trace.Query(session).next_frames(
+        return trace.next_frames(
+            session,
             trace_frame,
             leaf_kind,
             visited_ids=set(),

@@ -38,9 +38,9 @@ MessageText = aliased(SharedText)
 FeatureText = aliased(SharedText)
 
 
-def _query(info: ResolveInfo) -> "Query":
+def _query(info: ResolveInfo) -> "Instance":
     # TODO(T71492980): queries here are run-independent and should be factored out.
-    return Query(info.context["session"], DBID(1))
+    return Instance(info.context["session"], DBID(1))
 
 
 # pyre-ignore[13]: unitialized class attribute
@@ -124,11 +124,11 @@ class IssueQueryResult(NamedTuple):
         )
 
 
-class Query:
+class Instance:
     def __init__(self, session: Session, run_id: Optional[DBID] = None) -> None:
         self._session: Session = session
         self._predicates: List[filters.Predicate] = []
-        self._run_id: DBID = run_id or run.Query(session).latest()
+        self._run_id: DBID = run_id or run.latest(session)
 
     def get(self) -> List[IssueQueryResult]:
         features = (
@@ -193,27 +193,27 @@ class Query:
 
         return issues
 
-    def where(self, *predicates: filters.Predicate) -> "Query":
+    def where(self, *predicates: filters.Predicate) -> "Instance":
         self._predicates.extend(predicates)
         return self
 
-    def where_issue_id_is(self, issue_id: Optional[int]) -> "Query":
+    def where_issue_id_is(self, issue_id: Optional[int]) -> "Instance":
         if issue_id is not None:
             self._predicates.append(filters.Equals(IssueInstance.id, issue_id))
         return self
 
-    def where_codes_is_any_of(self, codes: List[int]) -> "Query":
+    def where_codes_is_any_of(self, codes: List[int]) -> "Instance":
         return self.where(filters.Like(Issue.code, codes))
 
-    def where_callables_is_any_of(self, callables: List[str]) -> "Query":
+    def where_callables_is_any_of(self, callables: List[str]) -> "Instance":
         return self.where(filters.Like(CallableText.contents, callables))
 
-    def where_path_is_any_of(self, paths: List[str]) -> "Query":
+    def where_path_is_any_of(self, paths: List[str]) -> "Instance":
         return self.where(filters.Like(FilenameText.contents, paths))
 
     def where_trace_length_to_sinks(
         self, minimum: Optional[int] = None, maximum: Optional[int] = None
-    ) -> "Query":
+    ) -> "Instance":
         return self.where(
             filters.InRange(
                 IssueInstance.min_trace_length_to_sinks, lower=minimum, upper=maximum
@@ -222,20 +222,20 @@ class Query:
 
     def where_trace_length_to_sources(
         self, minimum: Optional[int] = None, maximum: Optional[int] = None
-    ) -> "Query":
+    ) -> "Instance":
         return self.where(
             filters.InRange(
                 IssueInstance.min_trace_length_to_sources, lower=minimum, upper=maximum
             )
         )
 
-    def where_any_features(self, features: List[str]) -> "Query":
+    def where_any_features(self, features: List[str]) -> "Instance":
         return self.where(filters.HasAny(set(features)))
 
-    def where_all_features(self, features: List[str]) -> "Query":
+    def where_all_features(self, features: List[str]) -> "Instance":
         return self.where(filters.HasAll(set(features)))
 
-    def where_exclude_features(self, features: List[str]) -> "Query":
+    def where_exclude_features(self, features: List[str]) -> "Instance":
         return self.where(filters.HasNone(set(features)))
 
     def sources(self, issue_id: DBID) -> Set[str]:

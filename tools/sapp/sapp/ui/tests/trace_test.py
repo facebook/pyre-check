@@ -20,7 +20,8 @@ from ...models import (
     create as create_models,
 )
 from ...tests.fake_object_generator import FakeObjectGenerator
-from ..trace import LeafLookup, Query, TraceFrameQueryResult
+from .. import trace as trace_module
+from ..trace import LeafLookup, TraceFrameQueryResult
 
 
 class QueryTest(TestCase):
@@ -91,7 +92,7 @@ class QueryTest(TestCase):
             session.add(run)
             session.commit()
 
-            next_frames = Query(session).next_frames(frames[0], {"sink1"}, set())
+            next_frames = trace_module.next_frames(session, frames[0], {"sink1"}, set())
             self.assertEqual(len(next_frames), 1)
             self.assertEqual(int(next_frames[0].id), int(frames[1].id))
 
@@ -131,8 +132,8 @@ class QueryTest(TestCase):
             session.add(run)
             session.commit()
 
-            next_frames = Query(session).next_frames(
-                frames[1], {"sink1"}, set(), backwards=True
+            next_frames = trace_module.next_frames(
+                session, frames[1], {"sink1"}, set(), backwards=True
             )
 
             self.assertEqual(len(next_frames), 1)
@@ -164,7 +165,7 @@ class QueryTest(TestCase):
             session.add(run2)
             session.commit()
 
-            next_frames = Query(session).next_frames(frames[2], {"sink1"}, set())
+            next_frames = trace_module.next_frames(session, frames[2], {"sink1"}, set())
             self.assertEqual(len(next_frames), 1)
             self.assertEqual(int(next_frames[0].id), int(frames[3].id))
 
@@ -183,7 +184,8 @@ class QueryTest(TestCase):
             session.add(run)
             session.commit()
 
-            result = Query(session).navigate_trace_frames(
+            result = trace_module.navigate_trace_frames(
+                session,
                 [TraceFrameQueryResult.from_record(frames[0])],
                 set(),
                 {"sink1"},
@@ -248,7 +250,8 @@ class QueryTest(TestCase):
             session.add(run)
             session.commit()
 
-            result = Query(session).navigate_trace_frames(
+            result = trace_module.navigate_trace_frames(
+                session,
                 [TraceFrameQueryResult.from_record(frames[0])],
                 set(),
                 {"sink"},

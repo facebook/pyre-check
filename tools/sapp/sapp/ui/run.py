@@ -9,15 +9,11 @@ from sqlalchemy.sql import func
 from ..models import DBID, Run, RunStatus
 
 
-class Query:
-    def __init__(self, session: Session) -> None:
-        self._session: Session = session
-
-    def latest(self) -> DBID:
-        return DBID(
-            (
-                self._session.query(func.max(Run.id))
-                .filter(Run.status == RunStatus.FINISHED)
-                .scalar()
-            )
+def latest(session: Session) -> DBID:
+    return DBID(
+        (
+            session.query(func.max(Run.id))
+            .filter(Run.status == RunStatus.FINISHED)
+            .scalar()
         )
+    )
