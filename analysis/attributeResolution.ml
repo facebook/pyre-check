@@ -1672,10 +1672,17 @@ class base class_metadata_environment dependency =
                 | _ -> (
                     let overload parameter =
                       let generics = List.map generics ~f:Type.Variable.to_parameter in
-                      {
-                        Type.Callable.annotation = Type.meta (Type.parametric name generics);
-                        parameters = Defined [self_parameter; parameter];
-                      }
+                      match name, generics with
+                      | "typing.Optional", [Single generic] ->
+                          {
+                            Type.Callable.annotation = Type.meta (Type.optional generic);
+                            parameters = Defined [self_parameter; parameter];
+                          }
+                      | _ ->
+                          {
+                            Type.Callable.annotation = Type.meta (Type.parametric name generics);
+                            parameters = Defined [self_parameter; parameter];
+                          }
                     in
                     match generics with
                     | [ListVariadic variable] ->

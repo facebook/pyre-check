@@ -399,6 +399,19 @@ let test_check_unbounded_variables context =
       "Incompatible variable type [9]: l is declared to have type `List[G[object]]` but is used as \
        type `List[typing.Union[G[int], G[str]]]`.";
     ];
+  assert_type_errors
+    {|
+      from typing import Generic, Optional, TypeVar
+
+      _T = TypeVar('_T')
+
+      class ContextVar(Generic[_T]):
+        def __init__(self, name: str, *, default: _T = ...) -> None: ...
+
+      def foo() -> None:
+        x: ContextVar[Optional[int]] = ContextVar[Optional[int]]("var1", default=None)
+    |}
+    [];
   ()
 
 
