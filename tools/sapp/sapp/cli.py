@@ -15,8 +15,7 @@ from .lint import lint
 from .pipeline.pysa_taint_parser import Parser
 
 
-# pyre-fixme[5]: Global expression must be annotated.
-logger = logging.getLogger("sapp")
+LOG: logging.Logger = logging.getLogger("sapp")
 
 
 @common_options
@@ -36,7 +35,7 @@ def cli(
         database=DB(database_engine, database_name, assertions=True),
         parser_class=Parser,
     )
-    logger.debug(f"Context: {ctx.obj}")
+    LOG.debug(f"Context: {ctx.obj}")
 
 
 for command in commands:
