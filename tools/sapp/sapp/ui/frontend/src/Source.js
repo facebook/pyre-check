@@ -80,7 +80,9 @@ function Source(
           editor.markText(range.from, range.to, {
             className: 'traceSelection',
           });
-          editor.scrollIntoView({line, ch: 0});
+
+          const offset = editor.heightAtLine(line > 4 ? line - 3 : 1, 'local');
+          editor.scrollTo(0, offset);
         }}
       />
     );
