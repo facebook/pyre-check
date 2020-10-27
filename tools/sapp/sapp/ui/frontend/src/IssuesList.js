@@ -9,8 +9,7 @@
  */
 
 import React from 'react';
-import {Card, Skeleton} from 'antd';
-import {Issue} from './Issue.js';
+import {Issue, IssueSkeleton} from './Issue.js';
 
 type Props = $ReadOnly<{|
   data: any,
@@ -109,38 +108,12 @@ class IssuesList extends React.Component<Props, State> {
     }
     return (
       <>
-        <Card>
-          <Skeleton active />
-        </Card>
-        <br />
-        <Card>
-          <Skeleton active />
-        </Card>
-        <br />
-        <Card>
-          <Skeleton active />
-        </Card>
-        <br />
-        <Card>
-          <Skeleton active />
-        </Card>
-        <br />
-        <Card>
-          <Skeleton active />
-        </Card>
-        <br />
-        <Card>
-          <Skeleton active />
-        </Card>
-        <br />
-        <Card>
-          <Skeleton active />
-        </Card>
-        <br />
-        <Card>
-          <Skeleton active />
-        </Card>
-        <br />
+        {[...Array(5).keys()].map(() => (
+          <>
+            <IssueSkeleton />
+            <br />
+          </>
+        ))}
       </>
     );
   }

@@ -9,7 +9,16 @@
  */
 
 import React, {useState} from 'react';
-import {Card, Col, Popover, Row, Tag, Tooltip, Typography} from 'antd';
+import {
+  Card,
+  Col,
+  Popover,
+  Row,
+  Skeleton,
+  Tag,
+  Tooltip,
+  Typography,
+} from 'antd';
 import {
   CodeTwoTone,
   MinusCircleOutlined,
@@ -217,6 +226,14 @@ export function Issue(props: $ReadOnly<{issue: IssueDescription}>): React$Node {
           </DelayedTooltip>
         </Col>
       </Row>
+    </Card>
+  );
+}
+
+export function IssueSkeleton(): React$Node {
+  return (
+    <Card>
+      <Skeleton active paragraph={{rows: 10}} />
     </Card>
   );
 }
