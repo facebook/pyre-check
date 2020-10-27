@@ -91,20 +91,6 @@ def django.core.cache.backends.base.BaseCache.get_many(self, keys, version=...) 
 def django.core.cache.backends.base.BaseCache.set(self, key, value: TaintSink[MemcacheSink], timeout, version): ...
 def django.core.cache.backends.base.BaseCache.set_many(self, data: TaintSink[MemcacheSink], timeout, version): ...
 
-# Logging
-
-def django.core.mail.send_mail(
-  subject: TaintSink[Logging],
-  message: TaintSink[Logging],
-  from_email,
-  recipient_list,
-  fail_silently=...,
-  auth_user=...,
-  auth_password=...,
-  connection=...,
-  html_message: TaintSink[Logging]=...
-): ...
-
 # SQL
 
 # See: https://docs.djangoproject.com/en/2.2/topics/db/sql/#executing-raw-queries

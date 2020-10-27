@@ -1,0 +1,28 @@
+# Email
+def smtplib.SMTP.sendmail(
+	self, 
+	from_addr: TaintSink[EmailSend], 
+	to_addrs: TaintSink[EmailSend], 
+	msg: TaintSink[EmailSend]
+): ...
+
+def django.core.mail.send_mail(
+	subject: TaintSink[EmailSend],
+	message: TaintSink[EmailSend],
+	from_email: TaintSink[EmailSend],
+	recipient_list: TaintSink[EmailSend],
+	html_message: TaintSink[EmailSend]=...
+): ...
+def django.core.mail.message.EmailMessage.__init__(
+	self, 
+	subject: TaintSink[EmailSend], 
+	body: TaintSink[EmailSend], 
+	from_email: TaintSink[EmailSend]=...,
+	to: TaintSink[EmailSend]=..., 
+	bcc: TaintSink[EmailSend]=..., 
+	attachments: TaintSink[EmailSend]=..., 
+	headers: TaintSink[EmailSend]=..., 
+	cc: TaintSink[EmailSend]=..., 
+	reply_to: TaintSink[EmailSend]=...,
+	connection=...
+): ...
