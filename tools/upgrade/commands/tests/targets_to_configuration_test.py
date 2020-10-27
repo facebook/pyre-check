@@ -203,6 +203,7 @@ class TargetsToConfigurationTest(unittest.TestCase):
         get_errors.side_effect = [
             errors.Errors(pyre_errors),
             errors.Errors(pyre_errors),
+            errors.Errors(pyre_errors),
         ]
         with patch("json.dump") as dump_mock:
             mocks = [mock_open(read_data="{}").return_value]
@@ -237,6 +238,7 @@ class TargetsToConfigurationTest(unittest.TestCase):
         remove_target_typing_fields.reset_mock()
         path_exists.return_value = True
         get_errors.side_effect = [
+            errors.Errors(pyre_errors),
             errors.Errors(pyre_errors),
             errors.Errors(pyre_errors),
         ]
@@ -282,6 +284,7 @@ class TargetsToConfigurationTest(unittest.TestCase):
         get_errors.side_effect = [
             errors.Errors(pyre_errors),
             errors.Errors(pyre_errors),
+            errors.Errors(pyre_errors),
         ]
         find_targets.return_value = {
             "subdirectory/a/TARGETS": [Target("target_one", strict=False, pyre=True)],
@@ -325,6 +328,7 @@ class TargetsToConfigurationTest(unittest.TestCase):
         remove_target_typing_fields.reset_mock()
         run_strict_default.reset_mock()
         get_errors.side_effect = [
+            errors.Errors(pyre_errors),
             errors.Errors(pyre_errors),
             errors.Errors(pyre_errors),
         ]
