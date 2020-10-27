@@ -15,7 +15,7 @@ from ....client.find_directories import (
 )
 from .. import UserError
 from ..configuration import Configuration
-from ..errors import Errors, PartialErrorSuppression
+from ..errors import Errors
 from ..filesystem import LocalMode, add_local_mode, path_exists
 from ..repository import Repository
 from .command import CommandArguments, ErrorSuppressingCommand
@@ -108,12 +108,7 @@ class StrictDefault(ErrorSuppressingCommand):
             if error_count > self._fixme_threshold:
                 add_local_mode(path, LocalMode.UNSAFE)
             else:
-                try:
-                    self._apply_suppressions(Errors(errors))
-                except PartialErrorSuppression:
-                    LOG.warning(f"Could not suppress all errors in {path}")
-                    LOG.info("Run with --unsafe to force suppression anyway.")
-                    self._repository.revert_all(remove_untracked=True)
+                self._apply_suppressions(Errors(errors))
 
         if self._lint:
             self._repository.format()

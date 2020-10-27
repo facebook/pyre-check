@@ -248,8 +248,8 @@ class Errors:
                 for path, exception in unsuppressed_paths_and_exceptions
             )
             raise PartialErrorSuppression(
-                "Could not fully suppress errors due to the "
-                f"following exceptions: {exception_messages}",
+                "Could not fully suppress errors due to the following exceptions: "
+                f"{exception_messages}\n Run with `--unsafe` to suppress anyway.",
                 [path for path, _ in unsuppressed_paths_and_exceptions],
             )
 

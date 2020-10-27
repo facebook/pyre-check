@@ -13,7 +13,7 @@ import libcst
 from typing_extensions import Final
 
 from ..configuration import Configuration
-from ..errors import Errors, PartialErrorSuppression
+from ..errors import Errors
 from ..filesystem import (
     LocalMode,
     add_local_mode,
@@ -242,12 +242,7 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
                 )
                 add_local_mode(path, LocalMode.IGNORE)
             else:
-                try:
-                    self._apply_suppressions(Errors(errors))
-                except PartialErrorSuppression:
-                    LOG.warning(f"Could not suppress all errors in {path}")
-                    LOG.info("Run with --unsafe to force suppression anyway.")
-                    self._repository.revert_all(remove_untracked=True)
+                self._apply_suppressions(Errors(errors))
 
         if apply_strict:
             LOG.info(
@@ -275,12 +270,7 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
         if self._lint:
             if self._repository.format():
                 errors = configuration.get_errors(should_clean=False)
-                try:
-                    self._apply_suppressions(errors)
-                except PartialErrorSuppression:
-                    LOG.warning(f"Could not suppress all errors in {path}")
-                    LOG.info("Run with --unsafe to force suppression anyway.")
-                    self._repository.revert_all(remove_untracked=True)
+                self._apply_suppressions(errors)
 
     def run(self) -> None:
         # TODO(T62926437): Basic integration testing.
