@@ -28,10 +28,9 @@ logger = logging.getLogger("sapp")
     help="database engine to use",
 )
 @click.pass_context
-# pyre-fixme[3]: Return type must be annotated.
 def cli(
-    ctx: click.Context, repository: str, database_name: str, database_engine: DBType
-):
+    ctx: click.Context, repository: str, database_name: str, database_engine: str
+) -> None:
     ctx.obj = Context(
         repository=repository,
         database=DB(database_engine, database_name, assertions=True),

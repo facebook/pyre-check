@@ -9,19 +9,18 @@ This file defines the underlying db used by SAPP library.
 
 import logging
 from contextlib import contextmanager
-from typing import Iterator
+from typing import Any, Iterator, Optional, Type
 
 import sqlalchemy
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session, scoped_session, sessionmaker
-from sqlalchemy.pool import AssertionPool
+from sqlalchemy.pool import AssertionPool, Pool
 
 from . import errors
 from .decorators import retryable
 
 
-# pyre-fixme[5]: Global expression must be annotated.
-log = logging.getLogger("sapp")
+LOG: logging.Logger = logging.getLogger("sapp")
 
 
 class DBType(sqlalchemy.Enum):
@@ -36,33 +35,21 @@ class DB(object):
     """File-based DB when using SQLITE"""
     DEFAULT_DB_FILE = "sapp.db"
 
-    # pyre-fixme[3]: Return type must be annotated.
     def __init__(
         self,
-        # pyre-fixme[2]: Parameter must be annotated.
-        dbtype,
-        # pyre-fixme[2]: Parameter must be annotated.
-        dbname=None,
-        # pyre-fixme[2]: Parameter must be annotated.
-        debug=False,
-        # pyre-fixme[2]: Parameter must be annotated.
-        read_only=False,
-        # pyre-fixme[2]: Parameter must be annotated.
-        assertions=False,
-    ):
-        # pyre-fixme[4]: Attribute must be annotated.
+        dbtype: str,
+        dbname: Optional[str] = None,
+        debug: bool = False,
+        read_only: bool = False,
+        assertions: bool = False,
+    ) -> None:
         self.dbtype = dbtype
-        # pyre-fixme[4]: Attribute must be annotated.
-        self.dbname = dbname or self.DEFAULT_DB_FILE
-        # pyre-fixme[4]: Attribute must be annotated.
+        self.dbname: str = dbname or self.DEFAULT_DB_FILE
         self.debug = debug
-        # pyre-fixme[4]: Attribute must be annotated.
         self.read_only = read_only
-        # pyre-fixme[4]: Attribute must be annotated.
         self.assertions = assertions
 
-        # pyre-fixme[4]: Attribute must be annotated.
-        self.poolclass = assertions and AssertionPool or None
+        self.poolclass: Optional[Type[Pool]] = AssertionPool if assertions else None
 
         if dbtype == DBType.MEMORY:
             # pyre-fixme[4]: Attribute must be annotated.
@@ -80,16 +67,13 @@ class DB(object):
         elif dbtype == DBType.XDB:
             self._create_xdb_engine()
         else:
-            raise errors.AIException("Invalid db type: " + dbtype)
+            raise errors.AIException(f"Invalid db type: {dbtype}")
 
-    # pyre-fixme[3]: Return type must be annotated.
-    def _create_xdb_engine(self):
+    def _create_xdb_engine(self) -> None:
         raise NotImplementedError
 
     @contextmanager
-    # pyre-fixme[2]: Parameter must be annotated.
-    # pyre-fixme[2]: Parameter must be annotated.
-    def make_session(self, *args, **kwargs) -> Iterator[Session]:
+    def make_session(self, *args: Any, **kwargs: Any) -> Iterator[Session]:
         session = self.make_session_object(*args, **kwargs)
         try:
             yield session
@@ -97,10 +81,7 @@ class DB(object):
             self.close_session(session)
 
     @retryable(num_tries=2, retryable_exs=[OperationalError])
-    # pyre-fixme[3]: Return type must be annotated.
-    # pyre-fixme[2]: Parameter must be annotated.
-    # pyre-fixme[2]: Parameter must be annotated.
-    def make_session_object(self, *args, **kwargs):
+    def make_session_object(self, *args: Any, **kwargs: Any) -> None:
         # use scoped_session so sessionmaker generates the same session in
         # different threads. This is useful for UTs.
         session = scoped_session(sessionmaker(bind=self.engine))(*args, **kwargs)
@@ -113,13 +94,9 @@ class DB(object):
         return session
 
     @retryable(num_tries=2, retryable_exs=[OperationalError])
-    # pyre-fixme[3]: Return type must be annotated.
-    # pyre-fixme[2]: Parameter must be annotated.
-    def close_session(self, session):
+    def close_session(self, session: Session) -> None:
         session.close()
 
 
-# pyre-fixme[3]: Return type must be annotated.
-# pyre-fixme[2]: Parameter must be annotated.
-def ping_db(session):
+def ping_db(session: Session) -> None:
     session.execute("SELECT 1")
