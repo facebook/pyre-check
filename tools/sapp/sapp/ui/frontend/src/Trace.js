@@ -260,7 +260,7 @@ function Expansion(
     <>
       <Card
         size="small"
-        title={isPostcondition ? 'Trace from Source' : 'Trace to Sink'}
+        title={isPostcondition ? 'Traces from Source' : 'Traces to Sink'}
         extra={
           <DocumentationTooltip
             path={isPostcondition ? 'trace.fromSource' : 'trace.toSink'}
