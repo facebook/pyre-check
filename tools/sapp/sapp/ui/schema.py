@@ -171,13 +171,9 @@ class Query(graphene.ObjectType):
 
         trace_kind = TraceKind.create_from_string(kind)
         if trace_kind == TraceKind.POSTCONDITION:
-            leaf_kind = issues.Instance(session).get_leaves_issue_instance(
-                session, issue_id, SharedTextKind.SOURCE
-            )
+            leaf_kind = issues.sources(session, DBID(issue_id))
         elif trace_kind == TraceKind.PRECONDITION:
-            leaf_kind = issues.Instance(session).get_leaves_issue_instance(
-                session, issue_id, SharedTextKind.SINK
-            )
+            leaf_kind = issues.sinks(session, DBID(issue_id))
 
         trace_frame = session.query(TraceFrame).get(frame_id)
         if trace_frame is None:

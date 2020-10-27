@@ -38,11 +38,6 @@ MessageText = aliased(SharedText)
 FeatureText = aliased(SharedText)
 
 
-def _query(info: ResolveInfo) -> "Instance":
-    # TODO(T71492980): queries here are run-independent and should be factored out.
-    return Instance(info.context["session"], DBID(1))
-
-
 # pyre-ignore[13]: unitialized class attribute
 class IssueQueryResultType(graphene.ObjectType):
     id: DBID
@@ -74,16 +69,16 @@ class IssueQueryResultType(graphene.ObjectType):
         return self.id
 
     def resolve_sources(self, info: ResolveInfo) -> List[str]:
-        return list(_query(info).sources(self.id))
+        return list(sources(info.context["session"], self.id))
 
     def resolve_source_names(self, info: ResolveInfo) -> List[str]:
-        return list(_query(info).source_names(self.id))
+        return list(source_names(info.context["session"], self.id))
 
     def resolve_sinks(self, info: ResolveInfo) -> List[str]:
-        return list(_query(info).sinks(self.id))
+        return list(sinks(info.context["session"], self.id))
 
     def resolve_sink_names(self, info: ResolveInfo) -> List[str]:
-        return list(_query(info).sink_names(self.id))
+        return list(sink_names(info.context["session"], self.id))
 
     def resolve_features(self, info: ResolveInfo) -> List[str]:
         # pyre-ignore[6]: graphene too dynamic.
@@ -238,54 +233,46 @@ class Instance:
     def where_exclude_features(self, features: List[str]) -> "Instance":
         return self.where(filters.HasNone(set(features)))
 
-    def sources(self, issue_id: DBID) -> Set[str]:
-        return self.get_leaves_issue_instance(
-            self._session, int(issue_id), SharedTextKind.SOURCE
+
+def sources(session: Session, issue_id: DBID) -> Set[str]:
+    return _get_leaves(session, issue_id, SharedTextKind.SOURCE)
+
+
+def source_names(session: Session, issue_id: DBID) -> Set[str]:
+    return _get_leaves(session, issue_id, SharedTextKind.SOURCE_DETAIL)
+
+
+def sinks(session: Session, issue_id: DBID) -> Set[str]:
+    return _get_leaves(session, issue_id, SharedTextKind.SINK)
+
+
+def sink_names(session: Session, issue_id: DBID) -> Set[str]:
+    return _get_leaves(session, issue_id, SharedTextKind.SINK_DETAIL)
+
+
+def features(session: Session, issue_id: DBID) -> Set[str]:
+    return _get_leaves(session, issue_id, SharedTextKind.FEATURE)
+
+
+def _get_leaves(
+    session: Session, issue_instance_id: DBID, kind: SharedTextKind
+) -> Set[str]:
+    message_ids = [
+        int(id)
+        for id, in session.query(SharedText.id)
+        .distinct(SharedText.id)
+        .join(
+            IssueInstanceSharedTextAssoc,
+            SharedText.id == IssueInstanceSharedTextAssoc.shared_text_id,
         )
+        .filter(IssueInstanceSharedTextAssoc.issue_instance_id == issue_instance_id)
+        .filter(SharedText.kind == kind)
+    ]
 
-    def source_names(self, issue_id: DBID) -> Set[str]:
-        return self.get_leaves_issue_instance(
-            self._session, int(issue_id), SharedTextKind.SOURCE_DETAIL
+    leaf_lookup = {
+        int(id): contents
+        for id, contents in session.query(SharedText.id, SharedText.contents).filter(
+            SharedText.kind == kind
         )
-
-    def sinks(self, issue_id: DBID) -> Set[str]:
-        return self.get_leaves_issue_instance(
-            self._session, int(issue_id), SharedTextKind.SINK
-        )
-
-    def sink_names(self, issue_id: DBID) -> Set[str]:
-        return self.get_leaves_issue_instance(
-            self._session, int(issue_id), SharedTextKind.SINK_DETAIL
-        )
-
-    def features(self, issue_id: DBID) -> Set[str]:
-        return self.get_leaves_issue_instance(
-            self._session, int(issue_id), SharedTextKind.FEATURE
-        )
-
-    def get_leaves_issue_instance(
-        self, session: Session, issue_instance_id: int, kind: SharedTextKind
-    ) -> Set[str]:
-        message_ids = [
-            int(id)
-            for id, in session.query(SharedText.id)
-            .distinct(SharedText.id)
-            .join(
-                IssueInstanceSharedTextAssoc,
-                SharedText.id == IssueInstanceSharedTextAssoc.shared_text_id,
-            )
-            .filter(IssueInstanceSharedTextAssoc.issue_instance_id == issue_instance_id)
-            .filter(SharedText.kind == kind)
-        ]
-        return self._leaf_dict_lookups(message_ids, kind, session)
-
-    def _leaf_dict_lookups(
-        self, message_ids: List[int], kind: SharedTextKind, session: Session
-    ) -> Set[str]:
-        leaf_dict = {
-            int(id): contents
-            for id, contents in session.query(
-                SharedText.id, SharedText.contents
-            ).filter(SharedText.kind == kind)
-        }
-        return {leaf_dict[id] for id in message_ids if id in leaf_dict}
+    }
+    return {leaf_lookup[id] for id in message_ids if id in leaf_lookup}
