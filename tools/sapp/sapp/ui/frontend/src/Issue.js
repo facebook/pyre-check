@@ -21,6 +21,7 @@ import {
 } from 'antd';
 import {
   CodeTwoTone,
+  FireOutlined,
   MinusCircleOutlined,
   PlusCircleOutlined,
 } from '@ant-design/icons';
@@ -143,7 +144,12 @@ export function Issue(
   return (
     <Card
       size="small"
-      title={props.hideTitle ? 'Issue' : <>Issue {props.issue.issue_id}</>}
+      title={
+        <>
+          <FireOutlined style={{marginRight: '.5em'}} />
+          {props.hideTitle ? 'Issue' : <>Issue {props.issue.issue_id}</>}
+        </>
+      }
       extra={
         props.hideTitle ? null : (
           <Link href={`/trace/${props.issue.issue_id}`}>Traces</Link>

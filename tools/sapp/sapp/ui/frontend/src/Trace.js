@@ -20,7 +20,13 @@ import {
   Tooltip,
   Typography,
 } from 'antd';
-import {BranchesOutlined, ColumnHeightOutlined} from '@ant-design/icons';
+import {
+  BranchesOutlined,
+  ColumnHeightOutlined,
+  VerticalAlignMiddleOutlined,
+  VerticalAlignBottomOutlined,
+  VerticalAlignTopOutlined,
+} from '@ant-design/icons';
 import {useQuery, gql} from '@apollo/client';
 import Source from './Source.js';
 import {Documentation, DocumentationTooltip} from './Documentation.js';
@@ -49,7 +55,12 @@ function TraceRoot(
     <>
       <Card
         size="small"
-        title={<>Root: {issue.message}</>}
+        title={
+          <>
+            <VerticalAlignMiddleOutlined style={{marginRight: '.5em'}} />
+            Trace Root
+          </>
+        }
         extra={<DocumentationTooltip path="trace.root" />}>
         <Source path={issue.filename} location={issue.location} />
       </Card>
@@ -260,7 +271,19 @@ function Expansion(
     <>
       <Card
         size="small"
-        title={isPostcondition ? 'Traces from Source' : 'Traces to Sink'}
+        title={
+          isPostcondition ? (
+            <>
+              <VerticalAlignBottomOutlined style={{marginRight: '.5em'}} />
+              Traces from Source
+            </>
+          ) : (
+            <>
+              <VerticalAlignTopOutlined style={{marginRight: '.5em'}} />
+              Traces to Sink
+            </>
+          )
+        }
         extra={
           <DocumentationTooltip
             path={isPostcondition ? 'trace.fromSource' : 'trace.toSink'}
