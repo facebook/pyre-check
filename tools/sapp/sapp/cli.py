@@ -5,6 +5,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import logging
+import os
 
 import click
 
@@ -32,7 +33,9 @@ def cli(
 ) -> None:
     ctx.obj = Context(
         repository=repository,
-        database=DB(database_engine, database_name, assertions=True),
+        database=DB(
+            database_engine, os.path.expanduser(database_name), assertions=True
+        ),
         parser_class=Parser,
     )
     LOG.debug(f"Context: {ctx.obj}")
