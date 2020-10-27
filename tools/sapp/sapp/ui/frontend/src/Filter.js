@@ -362,7 +362,7 @@ const FilterForm = (props: {
             <Col span={6} style={{paddingTop: 4}}>
               <Text type="secondary">From Sources </Text>
             </Col>
-            <Col span={15}>
+            <Col span={16}>
               <Form.Item name="trace_length_from_sources">
                 <Slider
                   range
@@ -371,10 +371,10 @@ const FilterForm = (props: {
                   defaultValue={[0, infiniteTraceLength]}
                   marks={{
                     '0': '0',
-                    '31': '+inf',
+                    '31': 'unlimited',
                   }}
                   tipFormatter={value =>
-                    value === infiniteTraceLength ? '+inf' : value
+                    value === infiniteTraceLength ? 'unlimited' : value
                   }
                 />
               </Form.Item>
@@ -384,7 +384,7 @@ const FilterForm = (props: {
             <Col span={6} style={{paddingTop: 4}}>
               <Text type="secondary">To Sinks </Text>
             </Col>
-            <Col span={15}>
+            <Col span={16}>
               <Form.Item name="trace_length_to_sinks">
                 <Slider
                   range
@@ -393,10 +393,10 @@ const FilterForm = (props: {
                   defaultValue={[0, infiniteTraceLength]}
                   marks={{
                     '0': '0',
-                    '31': '+inf',
+                    '31': 'unlimited',
                   }}
                   tipFormatter={value =>
-                    value === infiniteTraceLength ? '+inf' : value
+                    value === infiniteTraceLength ? 'unlimited' : value
                   }
                 />
               </Form.Item>
