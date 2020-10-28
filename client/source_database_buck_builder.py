@@ -7,6 +7,7 @@ import argparse
 import itertools
 import json
 import logging
+import re
 import shutil
 import subprocess
 import sys
@@ -103,6 +104,21 @@ def _get_buck_build_arguments(targets: List[str]) -> List[str]:
     ]
 
 
+def _load_json_ignoring_extra_data(source: str) -> Dict[str, str]:
+    try:
+        return json.loads(source)
+    except json.JSONDecodeError as exception:
+        LOG.warning("Failed to parse JSON. Retrying by ignoring extra data...")
+
+        match = re.search(r"Extra data: line ([0-9]+) column", exception.args[0])
+        if match is None:
+            raise exception
+
+        line_number = int(match.group(1))
+        source_without_extra_data = "\n".join(source.splitlines()[: line_number - 1])
+        return json.loads(source_without_extra_data)
+
+
 def _build_targets(
     targets: List[str], isolation_prefix: Optional[str]
 ) -> Dict[str, str]:
@@ -112,7 +128,11 @@ def _build_targets(
         "w+", prefix="pyre_buck_build_arguments"
     ) as arguments_file:
         Path(arguments_file.name).write_text("\n".join(build_arguments))
-        return json.loads(_buck(["build", f"@{arguments_file.name}"], isolation_prefix))
+
+        output = _buck(["build", f"@{arguments_file.name}"], isolation_prefix)
+        LOG.debug(f"JSON output of `buck build`: {output}")
+
+        return _load_json_ignoring_extra_data(output)
 
 
 def _load_source_databases(
