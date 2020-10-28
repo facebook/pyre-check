@@ -18,3 +18,10 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+.logo {
+  color: white;
+  font-size: 20px;
+  max-width: 800px;
+  margin: 0 auto 0 auto;
+}

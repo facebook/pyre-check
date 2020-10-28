@@ -16,6 +16,7 @@ import Trace from './Trace';
 import * as serviceWorker from './serviceWorker';
 import {Route, BrowserRouter as Router} from 'react-router-dom';
 import {ApolloClient, InMemoryCache, ApolloProvider} from '@apollo/client';
+import {FireFilled} from '@ant-design/icons';
 
 import 'antd/dist/antd.css';
 
@@ -31,8 +32,9 @@ const routing = (
     <Router>
       <Layout>
         <Header>
-          <div>
-            <h1 class="logo">SAPP</h1>
+          <div class="logo">
+            <FireFilled style={{marginRight: '.2em'}} />
+            SAPP
           </div>
         </Header>
         <Content>
