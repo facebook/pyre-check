@@ -5,6 +5,7 @@
 
 import contextlib
 import dataclasses
+import datetime
 import enum
 import json
 import logging
@@ -386,7 +387,9 @@ def _run_in_background(
     # Server stderr will be forwarded to dedicated log files.
     # Server stdout will be used as additional communication channel for status
     # updates.
-    log_file = log_directory / "server.stderr"
+    log_file = log_directory / datetime.datetime.now().strftime(
+        "server.stderr.%Y_%m_%d_%H_%M_%S_%f"
+    )
     with open(str(log_file), "a") as server_stderr:
         server_process = subprocess.Popen(
             command,
@@ -405,6 +408,10 @@ def _run_in_background(
     with _background_logging(log_file):
         event_waiter.wait_on(server_stdout)
         server_stdout.close()
+        # Symlink the log file to a known location for subsequent `pyre incremental`
+        # to find.
+        (log_directory / "server.stderr").symlink_to(log_file)
+
         return commands.ExitCode.SUCCESS
 
 
