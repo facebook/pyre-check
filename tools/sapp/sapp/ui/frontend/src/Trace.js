@@ -69,16 +69,6 @@ function TraceRoot(
   );
 }
 
-function EndOfTrace(
-  props: $ReadOnly<{message: string, type?: string}>,
-): React$Node {
-  return (
-    <div style={{width: '100%', textAlign: 'center', padding: '2em'}}>
-      <Text type={props.type || 'secondary'}>{props.message}</Text>
-    </div>
-  );
-}
-
 type Kind = 'precondition' | 'postcondition';
 
 type Frame = $ReadOnly<{
@@ -104,7 +94,11 @@ function SelectFrame(
   );
 
   if (props.frames.length === 0) {
-    return <EndOfTrace message="Missing Trace Frame" type="warning" />;
+    return (
+      <div style={{width: '100%', textAlign: 'center', padding: '2em'}}>
+        <Text type="warning">Missing Trace Frame</Text>
+      </div>
+    );
   }
 
   const source = (
@@ -114,41 +108,46 @@ function SelectFrame(
     />
   );
 
-  const select = (
-    <Select
-      defaultValue={selectedFrameIndex}
-      style={{width: '100%'}}
-      onChange={setSelectedFrameIndex}
-      suffixIcon={
-        <Tooltip title={Documentation.trace.frameSelection}>
-          <BranchesOutlined style={{fontSize: '0.9em'}} />
-        </Tooltip>
-      }
-      disabled={props.frames.length < 2}>
-      {props.frames.map((frame, index) => {
-        return (
-          <Option value={index}>
-            <Tooltip title="Distance to sink">
-              {frame.trace_length}
-              <ColumnHeightOutlined style={{fontSize: '.9em'}} />
-            </Tooltip>{' '}
-            {frame.callee}
-          </Option>
-        );
-      })}
-    </Select>
-  );
+  const isLeaf =
+    selectedFrameIndex !== null && props.frames[selectedFrameIndex].is_leaf;
+
+  var select = null;
+  if (!isLeaf) {
+    select = (
+      <Select
+        defaultValue={selectedFrameIndex}
+        style={{width: '100%'}}
+        onChange={setSelectedFrameIndex}
+        suffixIcon={
+          <Tooltip title={Documentation.trace.frameSelection}>
+            <BranchesOutlined style={{fontSize: '0.9em'}} />
+          </Tooltip>
+        }
+        disabled={props.frames.length < 2}>
+        {props.frames.map((frame, index) => {
+          return (
+            <Option value={index}>
+              <Tooltip title="Distance to sink">
+                {frame.trace_length}
+                <ColumnHeightOutlined style={{fontSize: '.9em'}} />
+              </Tooltip>{' '}
+              {frame.callee}
+            </Option>
+          );
+        })}
+      </Select>
+    );
+  }
 
   var next = null;
-  if (selectedFrameIndex !== null) {
-    const frame = props.frames[selectedFrameIndex];
-    if (frame.is_leaf) {
-      next = <EndOfTrace message="End Of Trace" />;
-    } else {
-      next = (
-        <LoadFrame issue_id={props.issue_id} frame={frame} kind={props.kind} />
-      );
-    }
+  if (selectedFrameIndex !== null && !isLeaf) {
+    next = (
+      <LoadFrame
+        issue_id={props.issue_id}
+        frame={props.frames[selectedFrameIndex]}
+        kind={props.kind}
+      />
+    );
   }
 
   const isPostcondition = props.kind === 'postcondition';
