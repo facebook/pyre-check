@@ -540,6 +540,8 @@ We determine locations for expressions using the following guidelines:
 ### Batching Queries
 The `batch` command can be used to run several queries at once and return a map of responses. The list of queries to batch may include any combination of other valid queries except for `batch` itself.
 
+The response for a `batch` command will be a list of responses the same length as the number of queries getting batched, and the order of the responses will match the order of the queries.
+
 ```bash
 $ pyre query "batch(less_or_equal(int, str), join(int, str))"
 {
