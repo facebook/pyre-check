@@ -157,7 +157,7 @@ class Statistics(Command):
 
     def _log_to_scuba(self, data: Dict[str, Any]) -> None:
         if self._configuration and self._configuration.logger:
-            root = str(_pyre_configuration_directory(self._configuration.local_root))
+            root = str(self._configuration.relative_local_root)
             for path, counts in data["annotations"].items():
                 statistics.log_with_configuration(
                     statistics.LoggerCategory.ANNOTATION_COUNTS,
