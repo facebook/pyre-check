@@ -28,7 +28,7 @@ function Source(
   }
   const line = split_location[0] - 1;
   const range = {
-    from: {line, ch: split_location[1]},
+    from: {line, ch: split_location[1] - 1},
     to: {line, ch: split_location[2]},
   };
 
