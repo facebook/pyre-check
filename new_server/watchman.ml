@@ -236,8 +236,6 @@ module Subscriber = struct
 
   let setting_of { setting; _ } = setting
 
-  let connection_of { connection; _ } = connection
-
   let listen ~f { connection; initial_clock; setting = _ } =
     let open Lwt.Infix in
     let rec do_listen () =

@@ -164,22 +164,28 @@ let initialize_server_state
         match watchman_subscriber with
         | None -> failwith "Watchman is not enabled"
         | Some watchman_subscriber ->
-            let { Watchman.Subscriber.Setting.root = watchman_root; filter = watchman_filter; _ } =
+            let {
+              Watchman.Subscriber.Setting.root = watchman_root;
+              filter = watchman_filter;
+              raw;
+              _;
+            }
+              =
               Watchman.Subscriber.setting_of watchman_subscriber
             in
-            let watchman_connection = Watchman.Subscriber.connection_of watchman_subscriber in
-            let target = Path.create_relative ~root:log_path ~relative:"server/server.state" in
-            SavedState.query_and_fetch_exn
-              {
-                SavedState.Setting.watchman_root;
-                watchman_filter;
-                watchman_connection;
-                project_name;
-                project_metadata;
-                critical_files;
-                target;
-              }
-            >>= fun fetched -> Lwt.return (Result.Ok fetched))
+            Watchman.Raw.with_connection raw ~f:(fun watchman_connection ->
+                let target = Path.create_relative ~root:log_path ~relative:"server/server.state" in
+                SavedState.query_and_fetch_exn
+                  {
+                    SavedState.Setting.watchman_root;
+                    watchman_filter;
+                    watchman_connection;
+                    project_name;
+                    project_metadata;
+                    critical_files;
+                    target;
+                  }
+                >>= fun fetched -> Lwt.return (Result.Ok fetched)))
       (fun exn ->
         let message =
           Format.sprintf
