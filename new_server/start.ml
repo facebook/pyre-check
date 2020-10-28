@@ -174,7 +174,9 @@ let initialize_server_state
               Watchman.Subscriber.setting_of watchman_subscriber
             in
             Watchman.Raw.with_connection raw ~f:(fun watchman_connection ->
-                let target = Path.create_relative ~root:log_path ~relative:"server/server.state" in
+                let target =
+                  Path.create_relative ~root:log_path ~relative:"new_server/server.state"
+                in
                 SavedState.query_and_fetch_exn
                   {
                     SavedState.Setting.watchman_root;
