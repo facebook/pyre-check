@@ -27,9 +27,15 @@ function Source(
     throw new Error(`Invalid Location: ${props.location}`);
   }
   const line = split_location[0] - 1;
+  var begin = split_location[1];
+  var end = split_location[2];
+  if (end < begin) {
+    // TODO(T78595608): remove temporary workaround for Pysa inverting locations.
+    [begin, end] = [end, begin];
+  }
   const range = {
-    from: {line, ch: split_location[1] - 1},
-    to: {line, ch: split_location[2]},
+    from: {line, ch: begin - 1},
+    to: {line, ch: end},
   };
 
   const SourceQuery = gql`
