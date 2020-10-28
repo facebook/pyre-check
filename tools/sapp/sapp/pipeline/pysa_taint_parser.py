@@ -259,11 +259,6 @@ class Parser(BaseParser):
 
     # pyre-fixme[3]: Return type must be annotated.
     # pyre-fixme[2]: Parameter must be annotated.
-    def _get_position_or_default(self, json):
-        return json.get("position", {"line": 0, "start": 0, "end": 0})
-
-    # pyre-fixme[3]: Return type must be annotated.
-    # pyre-fixme[2]: Parameter must be annotated.
     # pyre-fixme[2]: Parameter must be annotated.
     def _parse_issue_trace_fragments(self, leaf_port, traces):
         fragments = []
