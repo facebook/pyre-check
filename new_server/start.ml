@@ -381,6 +381,10 @@ let start_server_and_wait ?event_channel server_configuration =
     ~on_exception:(fun exn ->
       let message =
         match exn with
+        | Watchman.ConnectionError message -> Format.sprintf "Watchman connection error: %s" message
+        | Watchman.SubscriptionError message ->
+            Format.sprintf "Watchman subscription error: %s" message
+        | Watchman.QueryError message -> Format.sprintf "Watchman query error: %s" message
         | Unix.Unix_error (Unix.EADDRINUSE, _, _) ->
             "A Pyre server is already running for the current project."
         | _ -> Exn.to_string exn
