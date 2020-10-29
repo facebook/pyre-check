@@ -375,6 +375,14 @@ def _background_logging(log_file: Path) -> Generator[None, None, None]:
     logger.join()
 
 
+def _create_symbolic_link(source: Path, target: Path) -> None:
+    try:
+        source.unlink()
+    except FileNotFoundError:
+        pass
+    source.symlink_to(target)
+
+
 def _run_in_background(
     command: Sequence[str],
     environment: Mapping[str, str],
@@ -408,9 +416,10 @@ def _run_in_background(
     with _background_logging(log_file):
         event_waiter.wait_on(server_stdout)
         server_stdout.close()
+
         # Symlink the log file to a known location for subsequent `pyre incremental`
         # to find.
-        (log_directory / "server.stderr").symlink_to(log_file)
+        _create_symbolic_link(log_directory / "server.stderr", log_file)
 
         return commands.ExitCode.SUCCESS
 
