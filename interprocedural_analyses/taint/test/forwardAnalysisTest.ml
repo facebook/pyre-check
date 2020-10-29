@@ -53,11 +53,16 @@ let assert_taint ?models ~context source expect =
   let analyze_and_store_in_order define =
     let call_target = Callable.create define in
     let () = Log.log ~section:`Taint "Analyzing %a" Interprocedural.Callable.pp call_target in
+    let environment = TypeEnvironment.read_only environment in
+    let call_graph_of_define =
+      Interprocedural.CallGraph.call_graph_of_define ~environment ~define:(Ast.Node.value define)
+    in
     let forward, _errors, _ =
       ForwardAnalysis.run
-        ~environment:(TypeEnvironment.read_only environment)
+        ~environment
         ~qualifier
         ~define
+        ~call_graph_of_define
         ~existing_model:Taint.Result.empty_model
     in
     let model = { Taint.Result.empty_model with forward } in

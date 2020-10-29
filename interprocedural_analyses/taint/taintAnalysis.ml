@@ -136,8 +136,11 @@ include Taint.Result.Register (struct
 
 
   let analyze ~callable:_ ~environment ~qualifier ~define ~mode existing_model =
+    let call_graph_of_define =
+      Interprocedural.CallGraph.call_graph_of_define ~environment ~define:(Ast.Node.value define)
+    in
     let forward, result, triggered_sinks =
-      ForwardAnalysis.run ~environment ~qualifier ~define ~existing_model
+      ForwardAnalysis.run ~environment ~qualifier ~define ~call_graph_of_define ~existing_model
     in
     let backward =
       BackwardAnalysis.run ~environment ~qualifier ~define ~existing_model ~triggered_sinks
