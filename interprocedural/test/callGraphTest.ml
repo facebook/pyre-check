@@ -831,6 +831,41 @@ let test_call_graph_of_define context =
                        targets = [`Function "test.to_cm"];
                      } );
                ]) );
+      ];
+  (* Only the last attribute is a setter for chained property setter calls. *)
+  assert_call_graph_of_define
+    ~source:
+      {|
+        class C:
+          @property
+          def p(self) -> "C":
+            ...
+          @p.setter
+          def p(self, new_value: "C") -> None:
+            ...
+
+        def foo(c: C):
+          c.p.p = c
+      |}
+    ~define_name:"test.foo"
+    ~expected:
+      [
+        ( "11:2-11:5",
+          Callees
+            (CallGraph.RegularTargets
+               {
+                 CallGraph.implicit_self = true;
+                 collapse_tito = true;
+                 targets = [`Method { Callable.class_name = "test.C"; method_name = "p" }];
+               }) );
+        ( "11:2-11:7",
+          Callees
+            (CallGraph.RegularTargets
+               {
+                 CallGraph.implicit_self = true;
+                 collapse_tito = true;
+                 targets = [`Method { Callable.class_name = "test.C"; method_name = "p$setter" }];
+               }) );
       ]
 
 

@@ -617,15 +617,17 @@ module DefineCallGraph (Context : sig
   val callees_at_location : unprocessed_callees Location.Table.t
 end) =
 struct
+  type assignment_target = { location: Location.t }
+
   type visitor_t = {
     resolution: Resolution.t;
-    is_assignment_target: bool;
+    assignment_target: assignment_target option;
   }
 
   module NodeVisitor = struct
     type nonrec t = visitor_t
 
-    let expression_visitor ({ resolution; is_assignment_target } as state) { Node.value; location } =
+    let expression_visitor ({ resolution; assignment_target } as state) { Node.value; location } =
       let register_targets ~callee_name targets =
         Option.iter targets ~f:(fun data ->
             let data =
@@ -645,7 +647,13 @@ struct
           resolve_callees ~resolution ~call |> register_targets ~callee_name:(call_name call);
           state
       | Expression.Name (Name.Attribute { Name.Attribute.base; attribute; _ }) ->
-          resolve_property_targets ~resolution ~base ~attribute ~setter:is_assignment_target
+          let setter =
+            match assignment_target with
+            | Some { location = assignment_target_location } ->
+                Location.equal assignment_target_location location
+            | None -> false
+          in
+          resolve_property_targets ~resolution ~base ~attribute ~setter
           |> register_targets ~callee_name:attribute;
           state
       | Expression.ComparisonOperator comparison -> (
@@ -700,14 +708,13 @@ struct
       match Node.value statement with
       | Statement.Statement.Assign { Statement.Assign.target; value; _ } ->
           CalleeVisitor.visit_expression
-            ~state:(ref { resolution; is_assignment_target = true })
+            ~state:
+              (ref { resolution; assignment_target = Some { location = Node.location target } })
             target;
-          CalleeVisitor.visit_expression
-            ~state:(ref { resolution; is_assignment_target = false })
-            value
+          CalleeVisitor.visit_expression ~state:(ref { resolution; assignment_target = None }) value
       | _ ->
           CalleeVisitor.visit_statement
-            ~state:(ref { resolution; is_assignment_target = false })
+            ~state:(ref { resolution; assignment_target = None })
             statement
 
 
@@ -757,7 +764,7 @@ let call_graph_of_define
       ~f:(fun { Node.value = { Parameter.value; _ }; _ } ->
         Option.iter value ~f:(fun value ->
             DefineFixpoint.CalleeVisitor.visit_expression
-              ~state:(ref { DefineFixpoint.resolution; is_assignment_target = false })
+              ~state:(ref { DefineFixpoint.resolution; assignment_target = None })
               value))
   in
 
