@@ -60,6 +60,11 @@ def _display_type_errors(socket_path: Path) -> None:
         error.print_errors(type_errors, output="text")
 
 
+def _show_progress_and_display_type_errors(log_path: Path, socket_path: Path) -> None:
+    with start.background_logging(log_path):
+        _display_type_errors(socket_path)
+
+
 def run_incremental(
     configuration: configuration_module.Configuration,
     incremental_arguments: command_arguments.IncrementalArguments,
@@ -67,8 +72,10 @@ def run_incremental(
     socket_path = server_connection.get_default_socket_path(
         log_directory=Path(configuration.log_directory)
     )
+    # Need to be consistent with the log symlink location in start command
+    log_path = Path(configuration.log_directory) / "new_server" / "server.stderr"
     try:
-        _display_type_errors(socket_path)
+        _show_progress_and_display_type_errors(log_path, socket_path)
     except OSError:
         if incremental_arguments.no_start:
             raise commands.ClientException("Cannot find a running Pyre server.")
@@ -79,7 +86,7 @@ def run_incremental(
             raise commands.ClientException(
                 f"`pyre start` failed with non-zero exit code: {start_status}"
             )
-        _display_type_errors(socket_path)
+        _show_progress_and_display_type_errors(log_path, socket_path)
 
 
 def run(

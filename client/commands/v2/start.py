@@ -368,7 +368,7 @@ class BackgroundEventWaiter:
 
 
 @contextlib.contextmanager
-def _background_logging(log_file: Path) -> Generator[None, None, None]:
+def background_logging(log_file: Path) -> Generator[None, None, None]:
     with log.file_tailer(log_file) as log_stream:
         with log.StreamLogger(log_stream) as logger:
             yield
@@ -413,7 +413,7 @@ def _run_in_background(
     if server_stdout is None:
         raise RuntimeError("subprocess.Popen failed to set up a pipe for server stdout")
     # Block until an expected server event is obtained from stdout
-    with _background_logging(log_file):
+    with background_logging(log_file):
         event_waiter.wait_on(server_stdout)
         server_stdout.close()
 
