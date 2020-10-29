@@ -75,6 +75,22 @@ def _ignore_target(target: str) -> bool:
     return target.endswith(suffixes_for_ignored_targets)
 
 
+def _load_json_ignoring_extra_data(source: str) -> Dict[str, str]:
+    try:
+        return json.loads(source)
+    except json.JSONDecodeError as exception:
+        LOG.debug(f"JSON output: {source}")
+        LOG.warning("Failed to parse JSON. Retrying by ignoring extra data...")
+
+        match = re.search(r"Extra data: line ([0-9]+) column", exception.args[0])
+        if match is None:
+            raise exception
+
+        line_number = int(match.group(1))
+        source_without_extra_data = "\n".join(source.splitlines()[: line_number - 1])
+        return json.loads(source_without_extra_data)
+
+
 def _query_targets(
     target_specifications: List[str],
     mode: Optional[str],
@@ -86,7 +102,7 @@ def _query_targets(
     ]
     query_arguments = _get_buck_query_arguments(normalized_target_specifications, mode)
     LOG.info("Running `buck query`...")
-    specification_targets_dictionary = json.loads(
+    specification_targets_dictionary = _load_json_ignoring_extra_data(
         _buck(query_arguments, isolation_prefix)
     )
     targets = list(chain(*specification_targets_dictionary.values()))
@@ -104,21 +120,6 @@ def _get_buck_build_arguments(targets: List[str]) -> List[str]:
     ]
 
 
-def _load_json_ignoring_extra_data(source: str) -> Dict[str, str]:
-    try:
-        return json.loads(source)
-    except json.JSONDecodeError as exception:
-        LOG.warning("Failed to parse JSON. Retrying by ignoring extra data...")
-
-        match = re.search(r"Extra data: line ([0-9]+) column", exception.args[0])
-        if match is None:
-            raise exception
-
-        line_number = int(match.group(1))
-        source_without_extra_data = "\n".join(source.splitlines()[: line_number - 1])
-        return json.loads(source_without_extra_data)
-
-
 def _build_targets(
     targets: List[str], isolation_prefix: Optional[str]
 ) -> Dict[str, str]:
@@ -130,8 +131,6 @@ def _build_targets(
         Path(arguments_file.name).write_text("\n".join(build_arguments))
 
         output = _buck(["build", f"@{arguments_file.name}"], isolation_prefix)
-        LOG.debug(f"JSON output of `buck build`: {output}")
-
         return _load_json_ignoring_extra_data(output)
 
 
