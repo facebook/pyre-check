@@ -39,6 +39,7 @@ class Analyze(Check):
         rules: Optional[List[int]],
         find_missing_flows: Optional[MissingFlowsKind] = None,
         dump_model_query_results: bool = False,
+        use_cache: bool,
     ) -> None:
         super(Analyze, self).__init__(
             command_arguments,
@@ -57,6 +58,7 @@ class Analyze(Check):
         self._rules: Final[Optional[List[int]]] = rules
         self._find_missing_flows: Optional[MissingFlowsKind] = find_missing_flows
         self._dump_model_query_results = dump_model_query_results
+        self._use_cache: bool = use_cache
 
     def generate_analysis_directory(self) -> AnalysisDirectory:
         return resolve_analysis_directory(
@@ -94,6 +96,8 @@ class Analyze(Check):
             flags.extend(["-find-missing-flows", find_missing_flows.value])
         if self._dump_model_query_results:
             flags.append("-dump-model-query-results")
+        if self._use_cache:
+            flags.append("-use-cache")
         return flags
 
     def _run(self, retries: int = 1) -> None:

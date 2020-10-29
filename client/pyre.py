@@ -483,6 +483,12 @@ def pyre(
     default=False,
     help="Provide model query debugging output.",
 )
+@click.option(
+    "--use-cache",
+    is_flag=True,
+    default=False,
+    help="Store information in .pyre/pysa.cache for faster runs.",
+)
 @click.pass_context
 def analyze(
     context: click.Context,
@@ -495,6 +501,7 @@ def analyze(
     rule: Iterable[int],
     find_missing_flows: Optional[str],
     dump_model_query_results: bool,
+    use_cache: bool,
 ) -> int:
     """
     Run Pysa, the inter-procedural static analysis tool.
@@ -520,6 +527,7 @@ def analyze(
                 else None
             ),
             dump_model_query_results=dump_model_query_results,
+            use_cache=use_cache,
         ),
         configuration,
         command_argument.noninteractive,
