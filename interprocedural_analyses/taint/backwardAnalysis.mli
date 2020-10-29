@@ -13,6 +13,7 @@ val run
   :  environment:TypeEnvironment.ReadOnly.t ->
   qualifier:Reference.t ->
   define:Define.t Node.t ->
+  call_graph_of_define:Interprocedural.CallGraph.callees Location.Map.t ->
   existing_model:TaintResult.call_model ->
   triggered_sinks:ForwardAnalysis.triggered_sinks ->
   TaintResult.Backward.model

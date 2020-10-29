@@ -30,11 +30,17 @@ let assert_taint ~context source expected =
   let analyze_and_store_in_order define =
     let call_target = Callable.create define in
     let () = Log.log ~section:`Taint "Analyzing %a" Interprocedural.Callable.pp call_target in
+    let call_graph_of_define =
+      Interprocedural.CallGraph.call_graph_of_define
+        ~environment:(TypeEnvironment.read_only environment)
+        ~define:(Ast.Node.value define)
+    in
     let backward =
       BackwardAnalysis.run
         ~environment:(TypeEnvironment.read_only environment)
         ~qualifier
         ~define
+        ~call_graph_of_define
         ~existing_model:Taint.Result.empty_model
         ~triggered_sinks:(Ast.Location.Table.create ())
     in

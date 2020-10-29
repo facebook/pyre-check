@@ -143,7 +143,13 @@ include Taint.Result.Register (struct
       ForwardAnalysis.run ~environment ~qualifier ~define ~call_graph_of_define ~existing_model
     in
     let backward =
-      BackwardAnalysis.run ~environment ~qualifier ~define ~existing_model ~triggered_sinks
+      BackwardAnalysis.run
+        ~environment
+        ~qualifier
+        ~define
+        ~call_graph_of_define
+        ~existing_model
+        ~triggered_sinks
     in
     let model =
       match mode with
