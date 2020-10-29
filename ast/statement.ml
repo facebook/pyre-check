@@ -1305,6 +1305,8 @@ and Define : sig
 
   val dump_locations : t -> bool
 
+  val dump_call_graph : t -> bool
+
   val show_json : t -> string
 
   val implicit_attributes : t -> definition:Class.t -> Attribute.t Identifier.SerializableMap.t
@@ -1668,6 +1670,8 @@ end = struct
   let dump_cfg define = contains_call define "pyre_dump_cfg"
 
   let dump_locations define = contains_call define "pyre_dump_locations"
+
+  let dump_call_graph define = contains_call define "pyre_dump_call_graph"
 
   let show_json define = define |> to_yojson |> Yojson.Safe.pretty_to_string
 

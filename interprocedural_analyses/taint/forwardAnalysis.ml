@@ -1562,6 +1562,17 @@ let run ~environment ~qualifier ~define ~call_graph_of_define ~existing_model =
       Hashtbl.set triggered_sinks ~key:location ~data:new_triggered_sinks
   end
   in
+  if Define.dump_call_graph (Node.value define) then
+    Map.to_alist call_graph_of_define
+    |> List.map ~f:(fun (key, callees) ->
+           Format.sprintf
+             "%s: %s"
+             (Location.show key)
+             (Interprocedural.CallGraph.show_callees callees))
+    |> String.concat ~sep:"\n"
+    |> Log.dump
+         "Call graph of `%s`:\n %s"
+         (Define.name (Node.value define) |> Node.value |> Reference.show);
   let module AnalysisInstance = AnalysisInstance (Context) in
   let open AnalysisInstance in
   log "Starting analysis of %a" Interprocedural.Callable.pp (Interprocedural.Callable.create define);
