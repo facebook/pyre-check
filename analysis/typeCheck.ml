@@ -5699,13 +5699,15 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
                         | _ -> true
                       in
                       if
-                        ( GlobalResolution.less_or_equal
-                            global_resolution
-                            ~left:actual
-                            ~right:expected
-                        || Type.is_top actual
-                        || Type.contains_variable actual )
-                        && overridable
+                        Ast.Expression.is_private_attribute
+                          (Annotated.Attribute.name overridden_attribute)
+                        || ( GlobalResolution.less_or_equal
+                               global_resolution
+                               ~left:actual
+                               ~right:expected
+                           || Type.is_top actual
+                           || Type.contains_variable actual )
+                           && overridable
                       then (* TODO(T53997072): Support type variable instantiation for overrides. *)
                         None
                       else

@@ -1042,7 +1042,7 @@ let test_check_attribute_initialization context =
                 return var < self.LIMIT
 
         class Bar(Foo):
-            LIMIT = 2 
+            LIMIT = 2
     |}
     [];
 
@@ -1645,6 +1645,27 @@ let test_check_annotated context =
         return a.foo()
     |}
     ["Undefined attribute [16]: `str` has no attribute `foo`."];
+  assert_type_errors
+    ~context
+    {|
+      class C:
+        a: int = 0
+      class D(C):
+        a: str = ""
+    |}
+    [
+      "Inconsistent override [15]: `a` overrides attribute defined in `C` inconsistently. Type \
+       `str` is not a subtype of the overridden attribute `int`.";
+    ];
+  assert_type_errors
+    ~context
+    {|
+      class C:
+        __a: int = 0
+      class D(C):
+        __a: str = ""
+    |}
+    [];
   ()
 
 
