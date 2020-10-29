@@ -8,6 +8,58 @@
 open Core
 open Pyre
 
+module Cache = struct
+  let cache_filename : string = "pysa.cache"
+
+  let load ~configuration =
+    let path =
+      Path.create_relative
+        ~root:(Configuration.Analysis.log_directory configuration)
+        ~relative:cache_filename
+    in
+    if Path.file_exists path then (
+      try
+        Log.info "Found existing cache file: %s" (Path.absolute path);
+        Log.warning
+          "Getting type information from the cache file at %s. Please try deleting this file and \
+           running again if unexpected results occur."
+          (Path.absolute path);
+        Memory.load_shared_memory ~path:(Path.absolute path) ~configuration;
+        let module_tracker = Analysis.ModuleTracker.SharedMemory.load () in
+        let ast_environment = Analysis.AstEnvironment.load module_tracker in
+        let environment =
+          Analysis.AnnotatedGlobalEnvironment.create ast_environment
+          |> Analysis.TypeEnvironment.create
+        in
+        Analysis.SharedMemoryKeys.DependencyKey.Registry.load ();
+        Log.info "Loaded state from cache file: %s" (Path.absolute path);
+        Some environment
+      with
+      | error ->
+          Log.error
+            "Error loading cached state from %s: %s The existing cache file will be discarded."
+            (Path.absolute path)
+            (Exn.to_string error);
+          None )
+    else
+      None
+
+
+  let save ~configuration ~environment =
+    let path =
+      Path.create_relative
+        ~root:(Configuration.Analysis.log_directory configuration)
+        ~relative:cache_filename
+    in
+    Path.remove path;
+    Memory.SharedMemory.collect `aggressive;
+    Analysis.TypeEnvironment.module_tracker environment |> Analysis.ModuleTracker.SharedMemory.store;
+    Analysis.TypeEnvironment.ast_environment environment |> Analysis.AstEnvironment.store;
+    Analysis.SharedMemoryKeys.DependencyKey.Registry.store ();
+    Memory.save_shared_memory ~path:(Path.absolute path) ~configuration;
+    Log.info "Saved state to cache file: %s" (Path.absolute path)
+end
+
 let get_analysis_kind = function
   | "taint" -> TaintAnalysis.abstract_kind
   | "liveness" -> DeadStore.Analysis.abstract_kind
@@ -25,6 +77,7 @@ let run_analysis
     rule_filter
     find_missing_flows
     dump_model_query_results
+    use_cache
     _verbose
     expected_version
     sections
@@ -93,6 +146,7 @@ let run_analysis
         ~source_path:(List.map source_path ~f:Path.create_absolute)
         ()
     in
+    let _ = Memory.get_heap_handle configuration in
     let result_json_path = result_json_path >>| Path.create_absolute ~follow_symbolic_links:false in
     let () =
       match result_json_path with
@@ -101,6 +155,7 @@ let run_analysis
           failwith "bad argument"
       | _ -> ()
     in
+    let cached_environment = if use_cache then Cache.load ~configuration else None in
     (fun () ->
       let timer = Timer.start () in
       (* In order to save time, sanity check models before starting the analysis. *)
@@ -111,27 +166,35 @@ let run_analysis
         ~rule_filter:None
         ~paths:configuration.Configuration.Analysis.taint_model_paths
       |> ignore;
-
       Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->
-          let environment, ast_environment, qualifiers =
-            let configuration =
-              (* In order to get an accurate call graph and type information, we need to ensure that
-                 we schedule a type check for external files. *)
-              { configuration with analyze_external_sources = true }
-            in
-            Service.Check.check
-              ~scheduler
-              ~configuration
-              ~call_graph_builder:(module Taint.CallGraphBuilder)
-            |> fun { environment; _ } ->
-            let qualifiers =
-              Analysis.TypeEnvironment.module_tracker environment
-              |> Analysis.ModuleTracker.tracked_explicit_modules
-            in
-            ( environment,
-              Analysis.TypeEnvironment.ast_environment environment
-              |> Analysis.AstEnvironment.read_only,
-              qualifiers )
+          let environment =
+            match cached_environment with
+            | Some loaded_environment ->
+                Log.info "Using existing cached environment.";
+                loaded_environment
+            | _ ->
+                let configuration =
+                  (* In order to get an accurate call graph and type information, we need to ensure
+                     that we schedule a type check for external files. *)
+                  { configuration with analyze_external_sources = true }
+                in
+                Log.info "No cached environment loaded, starting a clean run.";
+                Service.Check.check
+                  ~scheduler
+                  ~configuration
+                  ~call_graph_builder:(module Taint.CallGraphBuilder)
+                |> fun { environment; _ } ->
+                if use_cache then Cache.save ~configuration ~environment;
+                environment
+          in
+
+          let ast_environment =
+            Analysis.TypeEnvironment.ast_environment environment
+            |> Analysis.AstEnvironment.read_only
+          in
+          let qualifiers =
+            Analysis.TypeEnvironment.module_tracker environment
+            |> Analysis.ModuleTracker.tracked_explicit_modules
           in
           let filename_lookup path_reference =
             match repository_root with
@@ -220,5 +283,6 @@ let command =
            (optional string)
            ~doc:"Perform a taint analysis to find missing flows."
       +> flag "-dump-model-query-results" no_arg ~doc:"Provide debugging output for model queries."
+      +> flag "-use-cache" no_arg ~doc:"Store information in .pyre/pysa.cache for faster runs."
       ++ Specification.base_command_line_arguments)
     run_analysis
