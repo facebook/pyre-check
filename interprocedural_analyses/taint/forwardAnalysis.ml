@@ -1481,7 +1481,7 @@ let run ~environment ~qualifier ~define ~call_graph_of_define ~existing_model =
 
     let get_callees ~location ~call =
       match Map.find call_graph_of_define location with
-      | Some (Interprocedural.CallGraph.Callees { callees; _ }) -> Some callees
+      | Some (Interprocedural.CallGraph.Callees callees) -> Some callees
       | Some (Interprocedural.CallGraph.SyntheticCallees name_to_callees) ->
           Map.find name_to_callees (Interprocedural.CallGraph.call_name call)
       | None -> None
@@ -1489,7 +1489,7 @@ let run ~environment ~qualifier ~define ~call_graph_of_define ~existing_model =
 
     let get_property_callees ~location ~attribute =
       match Map.find call_graph_of_define location with
-      | Some (Interprocedural.CallGraph.Callees { callees; _ }) -> Some callees
+      | Some (Interprocedural.CallGraph.Callees callees) -> Some callees
       | Some (Interprocedural.CallGraph.SyntheticCallees name_to_callees) ->
           Map.find name_to_callees attribute
       | None -> None

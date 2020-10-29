@@ -29,10 +29,7 @@ type raw_callees =
 [@@deriving eq, show]
 
 type callees =
-  | Callees of {
-      callee_name: string;
-      callees: raw_callees;
-    }
+  | Callees of raw_callees
   | SyntheticCallees of raw_callees String.Map.t
 [@@deriving eq, show]
 

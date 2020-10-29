@@ -30,17 +30,20 @@ type raw_callees =
     }
 [@@deriving eq, show]
 
-type callees =
-  | Callees of {
+type unprocessed_callees =
+  | Named of {
       callee_name: string;
       callees: raw_callees;
     }
+  | Synthetic of raw_callees String.Map.t
+
+type callees =
+  | Callees of raw_callees
   | SyntheticCallees of raw_callees String.Map.t
 [@@deriving eq]
 
 let pp_callees formatter = function
-  | Callees { callee_name; callees } ->
-      Format.fprintf formatter "%s: %s" callee_name (show_raw_callees callees)
+  | Callees callees -> Format.fprintf formatter "%s" (show_raw_callees callees)
   | SyntheticCallees map ->
       Map.to_alist map
       |> List.map ~f:(fun (key, value) -> Format.sprintf "%s: %s" key (show_raw_callees value))
@@ -611,7 +614,7 @@ module DefineCallGraph (Context : sig
 
   val parent : Reference.t option
 
-  val callees_at_location : callees Location.Table.t
+  val callees_at_location : unprocessed_callees Location.Table.t
 end) =
 struct
   type visitor_t = {
@@ -627,13 +630,13 @@ struct
         Option.iter targets ~f:(fun data ->
             let data =
               match Location.Table.find Context.callees_at_location location with
-              | Some (Callees { callee_name = existing_callee_name; callees }) ->
-                  SyntheticCallees
+              | Some (Named { callee_name = existing_callee_name; callees }) ->
+                  Synthetic
                     (String.Map.of_alist_reduce
                        ~f:(fun existing _ -> existing)
                        [existing_callee_name, callees; callee_name, data])
-              | Some (SyntheticCallees map) -> SyntheticCallees (Map.set map ~key:callee_name ~data)
-              | None -> Callees { callee_name; callees = data }
+              | Some (Synthetic map) -> Synthetic (Map.set map ~key:callee_name ~data)
+              | None -> Named { callee_name; callees = data }
             in
             Location.Table.set Context.callees_at_location ~key:location ~data)
       in
@@ -759,4 +762,9 @@ let call_graph_of_define
   in
 
   DefineFixpoint.forward ~cfg:(Cfg.create define) ~initial:() |> ignore;
-  Location.Table.to_alist callees_at_location |> Location.Map.of_alist_exn
+  Location.Table.to_alist callees_at_location
+  |> List.map ~f:(fun (key, value) ->
+         match value with
+         | Synthetic map -> key, SyntheticCallees map
+         | Named { callees; _ } -> key, Callees callees)
+  |> Location.Map.of_alist_exn
