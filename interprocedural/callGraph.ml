@@ -35,17 +35,17 @@ type unprocessed_callees =
       callee_name: string;
       callees: raw_callees;
     }
-  | Synthetic of raw_callees String.Map.t
+  | Synthetic of raw_callees String.Map.Tree.t
 
 type callees =
   | Callees of raw_callees
-  | SyntheticCallees of raw_callees String.Map.t
+  | SyntheticCallees of raw_callees String.Map.Tree.t
 [@@deriving eq]
 
 let pp_callees formatter = function
   | Callees callees -> Format.fprintf formatter "%s" (show_raw_callees callees)
   | SyntheticCallees map ->
-      Map.to_alist map
+      String.Map.Tree.to_alist map
       |> List.map ~f:(fun (key, value) -> Format.sprintf "%s: %s" key (show_raw_callees value))
       |> String.concat ~sep:", "
       |> Format.fprintf formatter "%s"
@@ -632,10 +632,10 @@ struct
               match Location.Table.find Context.callees_at_location location with
               | Some (Named { callee_name = existing_callee_name; callees }) ->
                   Synthetic
-                    (String.Map.of_alist_reduce
+                    (String.Map.Tree.of_alist_reduce
                        ~f:(fun existing _ -> existing)
                        [existing_callee_name, callees; callee_name, data])
-              | Some (Synthetic map) -> Synthetic (Map.set map ~key:callee_name ~data)
+              | Some (Synthetic map) -> Synthetic (String.Map.Tree.set map ~key:callee_name ~data)
               | None -> Named { callee_name; callees = data }
             in
             Location.Table.set Context.callees_at_location ~key:location ~data)
@@ -768,3 +768,33 @@ let call_graph_of_define
          | Synthetic map -> key, SyntheticCallees map
          | Named { callees; _ } -> key, Callees callees)
   |> Location.Map.of_alist_exn
+
+
+module SharedMemory = struct
+  include Memory.WithCache.Make
+            (Callable.RealKey)
+            (struct
+              type t = callees Location.Map.Tree.t
+
+              let prefix = Prefix.make ()
+
+              let description = "call graphs of defines"
+
+              let unmarshall value = Marshal.from_string value 0
+            end)
+
+  let add ~callable ~callees = add callable (Location.Map.to_tree callees)
+
+  let get ~callable = get callable >>| Location.Map.of_tree
+
+  let get_or_compute ~callable ~environment ~define =
+    match get ~callable with
+    | Some map -> map
+    | None ->
+        let callees = call_graph_of_define ~environment ~define in
+        add ~callable ~callees;
+        callees
+
+
+  let remove callables = KeySet.of_list callables |> remove_batch
+end

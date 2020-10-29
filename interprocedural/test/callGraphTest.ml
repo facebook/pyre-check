@@ -131,7 +131,7 @@ let test_call_graph_of_define context =
                }) );
         ( "3:5-3:10",
           CallGraph.SyntheticCallees
-            (String.Map.of_alist_exn
+            (String.Map.Tree.of_alist_exn
                [
                  ( "__le__",
                    CallGraph.RegularTargets
@@ -165,7 +165,7 @@ let test_call_graph_of_define context =
       [
         ( "3:5-3:10",
           CallGraph.SyntheticCallees
-            (String.Map.of_alist_exn
+            (String.Map.Tree.of_alist_exn
                [
                  ( "__le__",
                    CallGraph.RegularTargets
@@ -807,7 +807,7 @@ let test_call_graph_of_define context =
       [
         ( "4:7-4:14",
           CallGraph.SyntheticCallees
-            (String.Map.of_alist_exn
+            (String.Map.Tree.of_alist_exn
                [
                  ( "__enter__",
                    CallGraph.RegularTargets

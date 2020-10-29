@@ -135,9 +135,12 @@ include Taint.Result.Register (struct
     { Interprocedural.Result.initial_models = models; skip_overrides }
 
 
-  let analyze ~callable:_ ~environment ~qualifier ~define ~mode existing_model =
+  let analyze ~callable ~environment ~qualifier ~define ~mode existing_model =
     let call_graph_of_define =
-      Interprocedural.CallGraph.call_graph_of_define ~environment ~define:(Ast.Node.value define)
+      Interprocedural.CallGraph.SharedMemory.get_or_compute
+        ~callable
+        ~environment
+        ~define:(Ast.Node.value define)
     in
     let forward, result, triggered_sinks =
       ForwardAnalysis.run ~environment ~qualifier ~define ~call_graph_of_define ~existing_model

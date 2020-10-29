@@ -7,7 +7,8 @@
 
 open Core
 open Analysis
-open Ast.Expression
+open Ast
+open Expression
 
 type regular_targets = {
   implicit_self: bool;
@@ -30,7 +31,7 @@ type raw_callees =
 
 type callees =
   | Callees of raw_callees
-  | SyntheticCallees of raw_callees String.Map.t
+  | SyntheticCallees of raw_callees String.Map.Tree.t
 [@@deriving eq, show]
 
 val call_graph_of_define
@@ -57,3 +58,17 @@ val resolve_ignoring_optional : resolution:Resolution.t -> Ast.Expression.t -> T
 val transform_special_calls : resolution:Resolution.t -> Call.t -> Call.t option
 
 val redirect_special_calls : resolution:Resolution.t -> Call.t -> Call.t
+
+module SharedMemory : sig
+  val add : callable:Callable.real_target -> callees:callees Location.Map.t -> unit
+
+  (* Attempts to read the call graph for the given callable from shared memory. If it doesn't exist,
+     computes the call graph and writes to shard memory. *)
+  val get_or_compute
+    :  callable:Callable.real_target ->
+    environment:Analysis.TypeEnvironment.ReadOnly.t ->
+    define:Ast.Statement.Define.t ->
+    callees Ast.Location.Map.t
+
+  val remove : Callable.real_target list -> unit
+end
