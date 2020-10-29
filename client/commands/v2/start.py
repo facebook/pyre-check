@@ -33,7 +33,7 @@ from ... import (
     find_directories,
     log,
 )
-from . import server_event
+from . import server_connection, server_event
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -395,8 +395,10 @@ def _run_in_background(
     # Server stderr will be forwarded to dedicated log files.
     # Server stdout will be used as additional communication channel for status
     # updates.
-    log_file = log_directory / datetime.datetime.now().strftime(
-        "server.stderr.%Y_%m_%d_%H_%M_%S_%f"
+    log_file = (
+        log_directory
+        / "new_server"
+        / datetime.datetime.now().strftime("server.stderr.%Y_%m_%d_%H_%M_%S_%f")
     )
     with open(str(log_file), "a") as server_stderr:
         server_process = subprocess.Popen(
@@ -412,16 +414,38 @@ def _run_in_background(
     server_stdout = server_process.stdout
     if server_stdout is None:
         raise RuntimeError("subprocess.Popen failed to set up a pipe for server stdout")
-    # Block until an expected server event is obtained from stdout
-    with background_logging(log_file):
-        event_waiter.wait_on(server_stdout)
+
+    try:
+        # Block until an expected server event is obtained from stdout
+        with background_logging(log_file):
+            event_waiter.wait_on(server_stdout)
+            server_stdout.close()
+
+            # Symlink the log file to a known location for subsequent `pyre incremental`
+            # to find.
+            _create_symbolic_link(
+                log_directory / "new_server" / "server.stderr", log_file
+            )
+
+            return commands.ExitCode.SUCCESS
+    except KeyboardInterrupt:
+        LOG.info("SIGINT received. Terminating background server...")
+
+        # If a background server has spawned and the user hits Ctrl-C, bring down
+        # the spwaned server as well.
         server_stdout.close()
+        server_process.terminate()
+        server_process.wait()
 
-        # Symlink the log file to a known location for subsequent `pyre incremental`
-        # to find.
-        _create_symbolic_link(log_directory / "server.stderr", log_file)
+        # Since we abruptly terminate the background server, it may not have the
+        # chance to clean up the socket file properly. Make sure the file is
+        # removed on our side.
+        try:
+            server_connection.get_default_socket_path(log_directory).unlink()
+        except FileNotFoundError:
+            pass
 
-        return commands.ExitCode.SUCCESS
+        raise commands.ClientException("Interrupted by SIGINT.")
 
 
 def run(
@@ -434,8 +458,8 @@ def run(
             "Cannot locate a Pyre binary to run."
         )
 
-    log_directory = Path(configuration.log_directory) / "new_server"
-    log_directory.mkdir(parents=True, exist_ok=True)
+    log_directory = Path(configuration.log_directory)
+    (log_directory / "new_server").mkdir(parents=True, exist_ok=True)
 
     server_arguments = create_server_arguments(configuration, start_arguments)
     if not start_arguments.no_watchman and server_arguments.watchman_root is None:
