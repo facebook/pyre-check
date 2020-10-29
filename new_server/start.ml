@@ -379,6 +379,11 @@ let start_server_and_wait ?event_channel server_configuration =
       write_event ServerEvent.ServerInitialized
       >>= fun () -> wait_on_signals [Signal.int] >>= fun () -> return ExitStatus.Ok)
     ~on_exception:(fun exn ->
-      let message = Exn.to_string exn in
+      let message =
+        match exn with
+        | Unix.Unix_error (Unix.EADDRINUSE, _, _) ->
+            "A Pyre server is already running for the current project."
+        | _ -> Exn.to_string exn
+      in
       Log.error "%s" message;
       write_event (ServerEvent.Exception message) >>= fun () -> return ExitStatus.Error)
