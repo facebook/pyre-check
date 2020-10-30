@@ -8,6 +8,7 @@
 open Core
 open Analysis
 open Ast
+open Statement
 open Expression
 open Pyre
 
@@ -688,9 +689,9 @@ struct
 
     let visit_statement_children _ statement =
       match Node.value statement with
-      | Statement.Statement.Assign _
-      | Statement.Statement.Define _
-      | Statement.Statement.Class _ ->
+      | Statement.Assign _
+      | Statement.Define _
+      | Statement.Class _ ->
           false
       | _ -> true
   end
@@ -706,7 +707,7 @@ struct
 
     let forward_statement ~resolution ~statement =
       match Node.value statement with
-      | Statement.Statement.Assign { Statement.Assign.target; value; _ } ->
+      | Statement.Assign { Assign.target; value; _ } ->
           CalleeVisitor.visit_expression
             ~state:
               (ref { resolution; assignment_target = Some { location = Node.location target } })
@@ -736,8 +737,7 @@ end
 
 let call_graph_of_define
     ~environment
-    ~define:
-      ({ Statement.Define.signature = { Statement.Define.Signature.name; parent; _ }; _ } as define)
+    ~define:({ Define.signature = { Define.Signature.name; parent; _ }; _ } as define)
   =
   let callees_at_location = Location.Table.create () in
   let module DefineFixpoint = DefineCallGraph (struct
@@ -805,3 +805,41 @@ module SharedMemory = struct
 
   let remove callables = KeySet.of_list callables |> remove_batch
 end
+
+let create_callgraph ?(use_shared_memory = false) ~environment ~source =
+  let fold_defines dependencies = function
+    | { Node.value = define; _ } when Define.is_overloaded_function define -> dependencies
+    | define ->
+        let call_graph_of_define =
+          if use_shared_memory then
+            SharedMemory.get_or_compute
+              ~callable:(Callable.create define)
+              ~environment
+              ~define:(Node.value define)
+          else
+            call_graph_of_define ~environment ~define:(Node.value define)
+        in
+        let callees found_callees =
+          let targets_of_callees = function
+            | RegularTargets { targets; _ } -> targets
+            | ConstructorTargets { new_targets; init_targets } ->
+                List.rev_append new_targets init_targets
+            | HigherOrderTargets
+                {
+                  higher_order_function = { targets = higher_order_targets; _ };
+                  callable_argument = _, { targets = argument_targets; _ };
+                } ->
+                List.rev_append higher_order_targets argument_targets
+          in
+          match found_callees with
+          | Callees callees -> targets_of_callees callees
+          | SyntheticCallees map ->
+              String.Map.Tree.data map |> List.concat_map ~f:targets_of_callees
+        in
+        Location.Map.data call_graph_of_define
+        |> List.concat_map ~f:callees
+        |> List.dedup_and_sort ~compare:Callable.compare
+        |> fun callees ->
+        Callable.RealMap.set dependencies ~key:(Callable.create define) ~data:callees
+  in
+  Preprocessing.defines source |> List.fold ~init:Callable.RealMap.empty ~f:fold_defines

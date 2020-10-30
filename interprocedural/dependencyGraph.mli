@@ -37,8 +37,6 @@ val from_overrides : overrides -> t
 
 val from_callgraph : callgraph -> t
 
-val create_callgraph : environment:TypeEnvironment.ReadOnly.t -> source:Source.t -> callgraph
-
 val create_overrides : environment:TypeEnvironment.ReadOnly.t -> source:Source.t -> overrides
 
 val union : t -> t -> t

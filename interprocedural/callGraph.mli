@@ -72,3 +72,9 @@ module SharedMemory : sig
 
   val remove : Callable.real_target list -> unit
 end
+
+val create_callgraph
+  :  ?use_shared_memory:bool ->
+  environment:TypeEnvironment.ReadOnly.t ->
+  source:Source.t ->
+  DependencyGraph.callgraph

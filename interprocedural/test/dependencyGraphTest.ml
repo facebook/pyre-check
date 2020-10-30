@@ -49,7 +49,7 @@ let create_call_graph ?(update_environment_with = []) ~context source_text =
         errors
       |> failwith
   in
-  DependencyGraph.create_callgraph ~environment ~source
+  CallGraph.create_callgraph ~use_shared_memory:false ~environment ~source
 
 
 let create_callable = function
@@ -144,7 +144,10 @@ let test_construction context =
          a = A()
     |}
     ~expected:
-      [`Method "test.A.__init__", []; `Method "test.B.__init__", [`Method "test.A.__init__"]];
+      [
+        `Method "test.A.__init__", [];
+        `Method "test.B.__init__", [`Method "test.A.__init__"; `Method "object.__new__"];
+      ];
   assert_call_graph
     ~update_environment_with:
       [{ handle = "foobar.pyi"; source = {|
@@ -489,7 +492,8 @@ let test_strongly_connected_components context =
     let source, environment = setup ~context ~handle source in
     let partitions =
       let edges =
-        DependencyGraph.create_callgraph ~environment ~source |> DependencyGraph.from_callgraph
+        CallGraph.create_callgraph ~use_shared_memory:false ~environment ~source
+        |> DependencyGraph.from_callgraph
       in
       DependencyGraph.partition ~edges
     in
@@ -570,6 +574,7 @@ let test_strongly_connected_components context =
     ~handle:"s2.py"
     ~expected:
       [
+        [`Method "object.__new__"];
         [`Method "s2.Foo.__init__"];
         [`Method "s2.Bar.__init__"];
         [`Method "s2.Foo.c1"; `Method "s2.Foo.c2"];
