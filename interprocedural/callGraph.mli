@@ -39,23 +39,9 @@ val call_graph_of_define
   define:Ast.Statement.Define.t ->
   callees Ast.Location.Map.t
 
-val defining_attribute
-  :  resolution:Resolution.t ->
-  Type.t ->
-  string ->
-  Annotated.Attribute.instantiated option
-
-val compute_indirect_targets
-  :  resolution:Resolution.t ->
-  receiver_type:Type.t ->
-  Ast.Reference.t ->
-  Callable.t list
-
 val call_name : Call.t -> string
 
 val resolve_ignoring_optional : resolution:Resolution.t -> Ast.Expression.t -> Type.t
-
-val transform_special_calls : resolution:Resolution.t -> Call.t -> Call.t option
 
 val redirect_special_calls : resolution:Resolution.t -> Call.t -> Call.t
 
