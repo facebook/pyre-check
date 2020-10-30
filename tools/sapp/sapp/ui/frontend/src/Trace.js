@@ -125,7 +125,12 @@ function SelectFrame(
         onChange={setSelectedFrameIndex}
         suffixIcon={
           props.frames.length > 1 ? (
-            <Tooltip title={Documentation.trace.frameSelection}>
+            <Tooltip
+              title={
+                props.kind === 'precondition'
+                  ? Documentation.trace.frameSelectionPrecondition
+                  : Documentation.trace.frameSelectionPostcondition
+              }>
               <BranchesOutlined style={{fontSize: '0.9em'}} />
             </Tooltip>
           ) : null
