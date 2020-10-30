@@ -12,6 +12,42 @@ import React from 'react';
 import {Tooltip, Typography} from 'antd';
 const {Text} = Typography;
 
+export function HumanReadablePort(props: $ReadOnly<{port: string}>) {
+  // TODO(T71492980): hard-coding heuristics for Pysa right now.
+  var port = props.port;
+
+  var access = '';
+  var accesses = port.match(/(\[.*\])+/);
+  if (accesses) {
+    port = port.slice(0, port.length - accesses[1].length);
+    accesses = accesses[1]
+      .split(']')
+      .filter(access => access !== '')
+      .map(access => access.slice(1))
+      .map(access => <Text code>{access}</Text>);
+    access = <> accessing {accesses}</>;
+  }
+
+  if (port === 'result') {
+    port = 'returns';
+  }
+  const formal_match = port.match(/formal\((.*)\)/);
+  if (formal_match) {
+    port = (
+      <>
+        into parameter <Text code>{formal_match[1]}</Text>
+      </>
+    );
+  }
+
+  return (
+    <Text>
+      {port}
+      {access}
+    </Text>
+  );
+}
+
 export function HumanReadable(
   props: $ReadOnly<{
     input: string,

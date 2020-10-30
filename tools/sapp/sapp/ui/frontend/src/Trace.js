@@ -34,7 +34,7 @@ import {useQuery, gql} from '@apollo/client';
 import Source from './Source.js';
 import {Documentation} from './Documentation.js';
 import {Issue, IssueSkeleton} from './Issue.js';
-import {HumanReadable} from './HumanReadable';
+import {HumanReadable, HumanReadablePort} from './HumanReadable';
 
 const {Text} = Typography;
 const {Option} = Select;
@@ -141,7 +141,8 @@ function SelectFrame(
                 {frame.trace_length}
                 <ColumnHeightOutlined style={{fontSize: '.9em'}} />
               </Tooltip>{' '}
-              <HumanReadable input={frame.callee} /> ({frame.callee_port})
+              <HumanReadable input={frame.callee} code threshold={30} />{' '}
+              <HumanReadablePort port={frame.callee_port || ''} />
             </Option>
           );
         })}
