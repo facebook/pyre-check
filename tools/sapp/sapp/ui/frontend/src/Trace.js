@@ -24,8 +24,9 @@ import {
   Typography,
 } from 'antd';
 import {
-  BranchesOutlined,
-  ColumnHeightOutlined,
+  ExpandAltOutlined,
+  LoginOutlined,
+  LogoutOutlined,
   VerticalAlignMiddleOutlined,
   VerticalAlignBottomOutlined,
   VerticalAlignTopOutlined,
@@ -113,37 +114,41 @@ function SelectFrame(
     />
   );
 
+  const isPostcondition = props.kind === 'postcondition';
   const isLeaf =
     selectedFrameIndex !== null && props.frames[selectedFrameIndex].is_leaf;
 
   var select = null;
   if (!isLeaf) {
+    const icon = (frame): React$Node => {
+      const leaf = isPostcondition ? 'source' : 'sink';
+
+      var icon = <ExpandAltOutlined />;
+      if (frame.trace_length === 1) {
+        icon = isPostcondition ? <LogoutOutlined /> : <LoginOutlined />;
+      }
+
+      return (
+        <Tooltip title={`Distance to ${leaf}`}>
+          <Text type="secondary">
+            {icon} {frame.trace_length}{' '}
+          </Text>
+        </Tooltip>
+      );
+    };
+
     select = (
       <div class="Trace-select">
         <Select
           defaultValue={selectedFrameIndex}
           style={{width: '100%'}}
           onChange={setSelectedFrameIndex}
-          suffixIcon={
-            props.frames.length > 1 ? (
-              <Tooltip
-                title={
-                  props.kind === 'precondition'
-                    ? Documentation.trace.frameSelectionPrecondition
-                    : Documentation.trace.frameSelectionPostcondition
-                }>
-                <BranchesOutlined style={{fontSize: '0.9em'}} />
-              </Tooltip>
-            ) : null
-          }
+          suffixIcon={null}
           disabled={props.frames.length < 2}>
           {props.frames.map((frame, index) => {
             return (
               <Option value={index}>
-                <Tooltip title="Distance to sink">
-                  {frame.trace_length}
-                  <ColumnHeightOutlined style={{fontSize: '.9em'}} />
-                </Tooltip>{' '}
+                {icon(frame)}
                 <HumanReadable input={frame.callee} code threshold={30} />{' '}
                 <HumanReadablePort port={frame.callee_port || ''} />
               </Option>
@@ -165,7 +170,6 @@ function SelectFrame(
     );
   }
 
-  const isPostcondition = props.kind === 'postcondition';
   return (
     <>
       {isPostcondition ? (
