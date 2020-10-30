@@ -14,12 +14,20 @@
     height: 12em;
 }
 
-.traceSelection {
-    background-color: yellow;
+.Source-selection {
+    color: rgb(225, 60, 56);
+    background-color: rgb(253, 241, 240);
+    border: 1px solid rgb(242, 167, 161);
+    border-radius: 2px;
+    padding: 2;
 }
 
-.traceTito {
-    background-color: orange;
+.Source-tito {
+    color: rgb(114, 193, 64);
+    background-color: rgb(248, 255, 238);
+    border: 1px solid rgb(193, 231, 151);
+    border-radius: 2px;
+    padding: 2;
 }
 
 .source {

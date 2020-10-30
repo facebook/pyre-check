@@ -104,12 +104,12 @@ function Source(
           editor = nativeEditor;
 
           editor.markText(range.from, range.to, {
-            className: 'traceSelection',
+            className: 'Source-selection',
           });
 
           parseRanges(props.titos).forEach(range => {
             nativeEditor.markText(range.from, range.to, {
-              className: 'traceTito',
+              className: 'Source-tito',
             });
           });
 
