@@ -74,6 +74,7 @@ type Kind = 'precondition' | 'postcondition';
 type Frame = $ReadOnly<{
   frame_id: number,
   callee: string,
+  callee_port: string,
   callee_id: number,
   filename: string,
   callee_location: string,
@@ -132,7 +133,7 @@ function SelectFrame(
                 {frame.trace_length}
                 <ColumnHeightOutlined style={{fontSize: '.9em'}} />
               </Tooltip>{' '}
-              {frame.callee}
+              {frame.callee} ({frame.callee_port})
             </Option>
           );
         })}
@@ -185,6 +186,7 @@ function LoadFrame(
           node {
             frame_id
             callee
+            callee_port
             callee_id
             filename
             callee_location
