@@ -10,6 +10,18 @@
     overflow: auto !important;
 }
 
+
+.CodeMirror-foldmarker {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  display: block;
+  color: rgb(153, 153, 153);
+  background-color: rgb(247, 247, 247);
+  margin-top: .5em;
+  padding: .5em;
+}
+
 .Source-selection {
     color: rgb(225, 60, 56);
     background-color: rgb(253, 241, 240);

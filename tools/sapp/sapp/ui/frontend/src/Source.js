@@ -17,6 +17,7 @@ import {Documentation} from './Documentation';
 
 import './Source.css';
 require('codemirror/lib/codemirror.css');
+require('codemirror/addon/fold/foldcode.js');
 require('codemirror/mode/python/python.js');
 
 const {Text} = Typography;
@@ -84,19 +85,53 @@ function parseRanges(
 
 type Layout = $ReadOnly<{
   totalLines: number,
+  folds: Array<{line: number, range: Range}>,
 }>;
 
-function computeLayout(ranges: Array<Range>): Layout {
+const linesPerFold = 4;
+
+function computeLayout(
+  ranges: Array<Range>,
+  lines: $ReadOnlyArray<string>,
+): Layout {
   if (ranges.length === 0) {
-    return {totalLines: 10};
+    return {totalLines: 10, folds: []};
   }
 
-  return {
-    totalLines: Math.max(
-      ranges[ranges.length - 1].from.line - ranges[0].from.line + 3,
-      10,
-    ),
-  };
+  var totalLines = Math.max(
+    ranges[ranges.length - 1].from.line - ranges[0].from.line + 3,
+    10,
+  );
+
+  var folds = [];
+
+  const foldingThreshold = 10;
+  const padding = 1;
+
+  for (var index = 0; index < ranges.length - 1; index++) {
+    const distance = ranges[index + 1].from.line - ranges[index].from.line;
+    const foldSize = distance - 2 * padding;
+    if (distance > foldingThreshold) {
+      const startLine = ranges[index].from.line + padding;
+      const endLine = startLine + foldSize;
+      folds.push({
+        line: startLine,
+        range: {
+          from: {
+            line: startLine,
+            ch: lines[startLine].length,
+          },
+          to: {
+            line: endLine,
+            ch: lines[endLine].length,
+          },
+        },
+      });
+      totalLines = totalLines - foldSize + linesPerFold;
+    }
+  }
+
+  return {totalLines, folds};
 }
 
 function Source(
@@ -148,7 +183,7 @@ function Source(
       (left, right) => left.from.line - right.from.line,
     );
 
-    const layout = computeLayout(ranges);
+    const layout = computeLayout(ranges, lines);
 
     // React codemirror is horribly broken so store a reference to underlying
     // JS implementation.
@@ -177,12 +212,24 @@ function Source(
             });
           });
 
-          editor.setSize(null, layout.totalLines * editor.defaultTextHeight());
+          layout.folds.forEach(fold => {
+            nativeEditor.foldCode(fold.line, {
+              rangeFinder: _ => fold.range,
+              widget: `Hiding ${fold.range.to.line -
+                fold.line} lines. Click to expand...`,
+            });
+          });
+
+          const textHeight = editor.defaultTextHeight();
+          editor.setSize(null, layout.totalLines * textHeight);
           const offset = editor.heightAtLine(
             ranges[ranges.length - 1].from.line - layout.totalLines + 2,
             'local',
           );
-          editor.scrollTo(0, offset);
+          editor.scrollTo(
+            0,
+            offset - (linesPerFold + 2) * layout.folds.length * textHeight,
+          );
         }}
       />
     );
