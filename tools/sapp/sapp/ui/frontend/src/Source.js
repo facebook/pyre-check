@@ -18,25 +18,46 @@ import './Source.css';
 require('codemirror/lib/codemirror.css');
 require('codemirror/mode/python/python.js');
 
+type Location = $ReadOnly<{
+  line: number,
+  ch: number,
+}>;
+
+type Range = $ReadOnly<{
+  from: Location,
+  to: Location,
+}>;
+
+function parseRanges(input: ?string): Array<Range> {
+  if (input === undefined || input === null || input === '') {
+    return [];
+  }
+
+  return input.split(';').map(input => {
+    const numbers = input.split('|').map(i => parseInt(i));
+    if (numbers.length !== 3) {
+      throw new Error(`Invalid Location: ${input}`);
+    }
+    const line = numbers[0] - 1;
+    var begin = numbers[1];
+    var end = numbers[2];
+    if (end < begin) {
+      // TODO(T78595608): remove temporary workaround for Pysa inverting locations.
+      [begin, end] = [end, begin];
+    }
+
+    return {
+      from: {line, ch: begin - 1},
+      to: {line, ch: end},
+    };
+  });
+}
+
 function Source(
-  props: $ReadOnly<{|path: string, location: string|}>,
+  props: $ReadOnly<{|path: string, location: string, titos?: string|}>,
 ): React$Node {
-  // Parse location of format `line|column_start|column_end`.
-  const split_location = props.location.split('|').map(i => parseInt(i));
-  if (split_location.length !== 3) {
-    throw new Error(`Invalid Location: ${props.location}`);
-  }
-  const line = split_location[0] - 1;
-  var begin = split_location[1];
-  var end = split_location[2];
-  if (end < begin) {
-    // TODO(T78595608): remove temporary workaround for Pysa inverting locations.
-    [begin, end] = [end, begin];
-  }
-  const range = {
-    from: {line, ch: begin - 1},
-    to: {line, ch: end},
-  };
+  const range = parseRanges(props.location)[0];
+  const line = range.from.line;
 
   const SourceQuery = gql`
     query Issue($path: String) {
@@ -68,7 +89,8 @@ function Source(
       </div>
     );
   } else {
-    const value = data.file.edges[0].node.contents;
+    const value =
+      data.file.edges[0].node.contents + '\n# ' + (props.titos || 'no titos');
 
     // React codemirror is horribly broken so store a reference to underlying
     // JS implementation.
@@ -80,11 +102,15 @@ function Source(
         options={{lineNumbers: true, readOnly: 'nocursor'}}
         editorDidMount={nativeEditor => {
           editor = nativeEditor;
-          if (range === null) {
-            return;
-          }
+
           editor.markText(range.from, range.to, {
             className: 'traceSelection',
+          });
+
+          parseRanges(props.titos).forEach(range => {
+            nativeEditor.markText(range.from, range.to, {
+              className: 'traceTito',
+            });
           });
 
           const offset = editor.heightAtLine(line > 4 ? line - 3 : 1, 'local');

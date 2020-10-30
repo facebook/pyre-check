@@ -53,6 +53,7 @@ class TraceFrameQueryResultType(graphene.ObjectType):
     filename = graphene.String()
     trace_length = graphene.Int()
     is_leaf = graphene.Boolean()
+    titos = graphene.String()
 
     def resolve_frame_id(self, info: ResolveInfo) -> DBID:
         # pyre-fixme[16]: `TraceFrameQueryResultType` has no attribute `id`.
@@ -74,6 +75,7 @@ class TraceFrameQueryResult(NamedTuple):
     kind: Optional[TraceKind] = None
     filename: Optional[str] = None
     trace_length: Optional[int] = None
+    titos: Optional[str] = None
 
     @staticmethod
     # pyre-fixme[2]: Parameter annotation cannot be `Any`.
@@ -90,6 +92,7 @@ class TraceFrameQueryResult(NamedTuple):
             kind=record.kind,
             filename=record.filename,
             trace_length=getattr(record, "trace_length", None),
+            titos=";".join([str(titos) for titos in getattr(record, "titos", [])]),
         )
 
     def is_leaf(self) -> bool:
@@ -174,6 +177,7 @@ def initial_frames(
             TraceFrame.kind,
             FilenameText.contents.label("filename"),
             TraceFrameLeafAssoc.trace_length,
+            TraceFrame.titos,
         )
         .filter(TraceFrame.kind == kind)
         .join(
@@ -267,6 +271,7 @@ def next_frames(
             TraceFrame.kind,
             FilenameText.contents.label("filename"),
             TraceFrameLeafAssoc.trace_length,
+            TraceFrame.titos,
         )
         .filter(TraceFrame.run_id == (run_id or run.latest(session)))
         .filter(TraceFrame.kind == frame.kind)

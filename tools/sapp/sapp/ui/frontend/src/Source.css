@@ -18,6 +18,10 @@
     background-color: yellow;
 }
 
+.traceTito {
+    background-color: orange;
+}
+
 .source {
     border: 1px solid lightgray;
     margin: .2em 0 1em 0;

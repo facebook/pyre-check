@@ -79,6 +79,7 @@ type Frame = $ReadOnly<{
   callee_location: string,
   trace_length: number,
   is_leaf: boolean,
+  titos: string,
 }>;
 
 function SelectFrame(
@@ -105,6 +106,7 @@ function SelectFrame(
     <Source
       path={props.frames[0].filename}
       location={props.frames[0].callee_location}
+      titos={props.frames[0].titos}
     />
   );
 
@@ -189,6 +191,7 @@ function LoadFrame(
             callee_location
             trace_length
             is_leaf
+            titos
           }
         }
       }
