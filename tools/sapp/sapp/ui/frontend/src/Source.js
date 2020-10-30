@@ -9,8 +9,8 @@
  */
 
 import React from 'react';
-import {Alert, Button, Spin, Tooltip} from 'antd';
-import {SelectOutlined} from '@ant-design/icons';
+import {Alert, Button, Tooltip, Typography} from 'antd';
+import {SelectOutlined, LoadingOutlined} from '@ant-design/icons';
 import {useQuery, gql} from '@apollo/client';
 import {Controlled as CodeMirror} from 'react-codemirror2';
 import {Documentation} from './Documentation';
@@ -18,6 +18,8 @@ import {Documentation} from './Documentation';
 import './Source.css';
 require('codemirror/lib/codemirror.css');
 require('codemirror/mode/python/python.js');
+
+const {Text} = Typography;
 
 type Location = $ReadOnly<{
   line: number,
@@ -111,7 +113,11 @@ function Source(
   } else if (loading) {
     content = (
       <div style={{height: '12em', textAlign: 'center', paddingTop: '5em'}}>
-        <Spin tip={`Loading ${props.path}...`} />
+        <Text type="secondary">
+          <LoadingOutlined />
+          <br />
+          Loading {props.path}...
+        </Text>
       </div>
     );
   } else {
