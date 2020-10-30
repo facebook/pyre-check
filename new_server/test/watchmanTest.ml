@@ -141,6 +141,22 @@ let test_subscription _ =
     ~expected:[]
     [`Assoc ["version", `String version_name; "subscribe", `String subscription_name]]
   >>= fun () ->
+  (* Non-files update is ok. *)
+  assert_updates
+    ~expected:[]
+    [
+      initial_success_response;
+      `Assoc
+        [
+          "unilateral", `Bool true;
+          "root", `String (Path.absolute root);
+          "subscription", `String subscription_name;
+          "version", `String version_name;
+          "clock", `String initial_clock;
+          "state-enter", `String "hg.transaction";
+        ];
+    ]
+  >>= fun () ->
   (* Single file in single update. *)
   assert_updates
     ~expected:[[Path.create_relative ~root ~relative:"foo.py"]]
