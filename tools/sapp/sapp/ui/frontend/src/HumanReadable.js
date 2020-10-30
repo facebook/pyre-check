@@ -41,7 +41,7 @@ export function HumanReadablePort(props: $ReadOnly<{port: string}>) {
   }
 
   return (
-    <Text>
+    <Text type="secondary">
       {port}
       {access}
     </Text>
