@@ -4667,6 +4667,16 @@ let test_union_shorthand _ =
     {|
       issubclass(dict, typing.Union[float, str])
     |};
+  assert_replace
+    {|
+      def foo(x: typing.Callable[[int | str, str], int]) -> int:
+        ...
+
+    |}
+    {|
+      def foo(x: typing.Callable[[typing.Union[int, str], str], int]) -> int:
+        ...
+    |};
   ()
 
 

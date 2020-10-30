@@ -3181,6 +3181,7 @@ let replace_union_shorthand source =
               in
               Expression.Call { callee; arguments }
           | Tuple arguments -> Tuple (List.map ~f:transform_expression arguments)
+          | List arguments -> List (List.map ~f:transform_expression arguments)
           | _ -> value
         in
         { expression with Node.value }
