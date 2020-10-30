@@ -159,8 +159,14 @@ export function Issue(
           <Text type="secondary">Code</Text>
         </Col>
         <Col span={rightSpan}>
-          {props.issue.code}: {props.issue.message}
+          <Text code>{props.issue.code}</Text>
         </Col>
+      </Row>
+      <Row gutter={gutter}>
+        <Col span={leftSpan} style={{textAlign: 'right'}}>
+          <Text type="secondary">Description</Text>
+        </Col>
+        <Col span={rightSpan}>{props.issue.message}</Col>
       </Row>
       <Row gutter={gutter}>
         <Col span={leftSpan} style={{textAlign: 'right'}}>
