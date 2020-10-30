@@ -1,0 +1,16 @@
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+.Trace-select .ant-select-selection-item {
+  white-space: normal;
+}
+
+.Trace-select .ant-select-selector {
+  overflow: visible;
+  display: block;
+  height: auto !important;
+}

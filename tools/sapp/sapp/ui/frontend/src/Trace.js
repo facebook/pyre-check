@@ -36,6 +36,8 @@ import {Documentation} from './Documentation.js';
 import {Issue, IssueSkeleton} from './Issue.js';
 import {HumanReadable, HumanReadablePort} from './HumanReadable';
 
+require('./Trace.css');
+
 const {Text} = Typography;
 const {Option} = Select;
 
@@ -117,36 +119,38 @@ function SelectFrame(
   var select = null;
   if (!isLeaf) {
     select = (
-      <Select
-        defaultValue={selectedFrameIndex}
-        style={{width: '100%'}}
-        onChange={setSelectedFrameIndex}
-        suffixIcon={
-          props.frames.length > 1 ? (
-            <Tooltip
-              title={
-                props.kind === 'precondition'
-                  ? Documentation.trace.frameSelectionPrecondition
-                  : Documentation.trace.frameSelectionPostcondition
-              }>
-              <BranchesOutlined style={{fontSize: '0.9em'}} />
-            </Tooltip>
-          ) : null
-        }
-        disabled={props.frames.length < 2}>
-        {props.frames.map((frame, index) => {
-          return (
-            <Option value={index}>
-              <Tooltip title="Distance to sink">
-                {frame.trace_length}
-                <ColumnHeightOutlined style={{fontSize: '.9em'}} />
-              </Tooltip>{' '}
-              <HumanReadable input={frame.callee} code threshold={30} />{' '}
-              <HumanReadablePort port={frame.callee_port || ''} />
-            </Option>
-          );
-        })}
-      </Select>
+      <div class="Trace-select">
+        <Select
+          defaultValue={selectedFrameIndex}
+          style={{width: '100%'}}
+          onChange={setSelectedFrameIndex}
+          suffixIcon={
+            props.frames.length > 1 ? (
+              <Tooltip
+                title={
+                  props.kind === 'precondition'
+                    ? Documentation.trace.frameSelectionPrecondition
+                    : Documentation.trace.frameSelectionPostcondition
+                }>
+                <BranchesOutlined style={{fontSize: '0.9em'}} />
+              </Tooltip>
+            ) : null
+          }
+          disabled={props.frames.length < 2}>
+          {props.frames.map((frame, index) => {
+            return (
+              <Option value={index}>
+                <Tooltip title="Distance to sink">
+                  {frame.trace_length}
+                  <ColumnHeightOutlined style={{fontSize: '.9em'}} />
+                </Tooltip>{' '}
+                <HumanReadable input={frame.callee} code threshold={30} />{' '}
+                <HumanReadablePort port={frame.callee_port || ''} />
+              </Option>
+            );
+          })}
+        </Select>
+      </div>
     );
   }
 
