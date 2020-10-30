@@ -34,6 +34,7 @@ import {useQuery, gql} from '@apollo/client';
 import Source from './Source.js';
 import {Documentation} from './Documentation.js';
 import {Issue, IssueSkeleton} from './Issue.js';
+import {HumanReadable} from './HumanReadable';
 
 const {Text} = Typography;
 const {Option} = Select;
@@ -59,11 +60,8 @@ function TraceRoot(
       <Card>
         <Text>
           <VerticalAlignMiddleOutlined style={{marginRight: '.5em'}} />
-          Source and sink traces meet at
-          <Text code style={{wordBreak: 'break-all'}}>
-            {issue.callable}
-          </Text>
-          .
+          Source and sink traces meet at{' '}
+          <HumanReadable input={issue.callable} code />.
         </Text>
         <Source path={issue.filename} location={issue.location} />
       </Card>
@@ -143,7 +141,7 @@ function SelectFrame(
                 {frame.trace_length}
                 <ColumnHeightOutlined style={{fontSize: '.9em'}} />
               </Tooltip>{' '}
-              {frame.callee} ({frame.callee_port})
+              <HumanReadable input={frame.callee} /> ({frame.callee_port})
             </Option>
           );
         })}
@@ -286,11 +284,7 @@ function Expansion(
             {issue.sources.map(leave => (
               <Tag color="green">{leave}</Tag>
             ))}
-            flowing <i>up to</i>{' '}
-            <Text code style={{wordBreak: 'break-all'}}>
-              {issue.callable}
-            </Text>
-            .
+            flowing <i>up to</i> <HumanReadable input={issue.callable} code />.
           </Text>
           <Divider plain>Traces</Divider>
         </>
@@ -304,10 +298,7 @@ function Expansion(
             {issue.sources.map(leave => (
               <Tag color="green">{leave}</Tag>
             ))}
-            flowing <i>from</i>{' '}
-            <Text code style={{wordBreak: 'break-all'}}>
-              {issue.callable}
-            </Text>{' '}
+            flowing <i>from</i> <HumanReadable input={issue.callable} code />{' '}
             into sinks of {issue.sinks.length === 1 ? 'type ' : 'types '}
             {issue.sinks.map(leave => (
               <Tag color="red">{leave}</Tag>

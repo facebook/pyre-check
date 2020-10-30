@@ -27,6 +27,7 @@ import {
 } from '@ant-design/icons';
 import Source from './Source.js';
 import {Documentation} from './Documentation.js';
+import {HumanReadable} from './HumanReadable';
 
 const {Text, Link} = Typography;
 
@@ -166,7 +167,7 @@ export function Issue(
           <Text type="secondary">Callable</Text>
         </Col>
         <Col span={rightSpan}>
-          <Text code>{props.issue.callable}</Text>
+          <HumanReadable input={props.issue.callable} code />
         </Col>
       </Row>
       <Row gutter={gutter}>
@@ -190,7 +191,7 @@ export function Issue(
               <CodeTwoTone />
             </Popover>
           </Tooltip>{' '}
-          <Text code>{props.issue.filename}</Text>
+          <HumanReadable input={props.issue.filename} code separator="/" />
         </Col>
       </Row>
       <Row gutter={gutter}>
