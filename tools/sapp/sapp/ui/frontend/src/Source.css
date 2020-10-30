@@ -10,10 +10,6 @@
     overflow: auto !important;
 }
 
-.CodeMirror.cm-s-default {
-    height: 12em;
-}
-
 .Source-selection {
     color: rgb(225, 60, 56);
     background-color: rgb(253, 241, 240);

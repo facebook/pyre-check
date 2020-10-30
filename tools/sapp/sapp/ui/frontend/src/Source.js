@@ -82,6 +82,23 @@ function parseRanges(
   });
 }
 
+type Layout = $ReadOnly<{
+  totalLines: number,
+}>;
+
+function computeLayout(ranges: Array<Range>): Layout {
+  if (ranges.length === 0) {
+    return {totalLines: 10};
+  }
+
+  return {
+    totalLines: Math.max(
+      ranges[ranges.length - 1].from.line - ranges[0].from.line + 3,
+      10,
+    ),
+  };
+}
+
 function Source(
   props: $ReadOnly<{|path: string, location: string, titos?: string|}>,
 ): React$Node {
@@ -125,6 +142,13 @@ function Source(
     const lines = source.split('\n');
     const range = parseRanges(props.location, lines)[0];
     line = range.from.line;
+    const titos = parseRanges(props.titos, lines);
+
+    const ranges = [...titos, range].sort(
+      (left, right) => left.from.line - right.from.line,
+    );
+
+    const layout = computeLayout(ranges);
 
     // React codemirror is horribly broken so store a reference to underlying
     // JS implementation.
@@ -144,7 +168,7 @@ function Source(
             },
           });
 
-          parseRanges(props.titos, lines).forEach(range => {
+          titos.forEach(range => {
             nativeEditor.markText(range.from, range.to, {
               className: 'Source-tito',
               attributes: {
@@ -153,10 +177,11 @@ function Source(
             });
           });
 
-          if (line === null) {
-            return;
-          }
-          const offset = editor.heightAtLine(line > 4 ? line - 3 : 1, 'local');
+          editor.setSize(null, layout.totalLines * editor.defaultTextHeight());
+          const offset = editor.heightAtLine(
+            ranges[ranges.length - 1].from.line - layout.totalLines + 2,
+            'local',
+          );
           editor.scrollTo(0, offset);
         }}
       />
