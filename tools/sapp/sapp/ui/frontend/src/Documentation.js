@@ -34,6 +34,10 @@ export const Documentation = {
     toSink: 'Trace from the issue root to the data sink',
     frameSelection: 'Explore alternative traces leading to the same sink',
   },
+  source: {
+    toNextFrame: 'Flow to next frame',
+    tito: 'Flow through function',
+  },
 };
 
 export function DocumentationTooltip(

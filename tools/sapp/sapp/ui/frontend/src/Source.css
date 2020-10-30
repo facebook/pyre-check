@@ -20,6 +20,7 @@
     border: 1px solid rgb(242, 167, 161);
     border-radius: 2px;
     padding: 2;
+    cursor: help;
 }
 
 .Source-tito {
@@ -28,6 +29,7 @@
     border: 1px solid rgb(193, 231, 151);
     border-radius: 2px;
     padding: 2;
+    cursor: help;
 }
 
 .source {

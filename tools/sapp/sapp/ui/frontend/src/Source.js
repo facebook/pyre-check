@@ -13,6 +13,7 @@ import {Alert, Button, Spin, Tooltip} from 'antd';
 import {SelectOutlined} from '@ant-design/icons';
 import {useQuery, gql} from '@apollo/client';
 import {Controlled as CodeMirror} from 'react-codemirror2';
+import {Documentation} from './Documentation';
 
 import './Source.css';
 require('codemirror/lib/codemirror.css');
@@ -132,11 +133,17 @@ function Source(
 
           editor.markText(range.from, range.to, {
             className: 'Source-selection',
+            attributes: {
+              title: Documentation.source.toNextFrame,
+            },
           });
 
           parseRanges(props.titos, lines).forEach(range => {
             nativeEditor.markText(range.from, range.to, {
               className: 'Source-tito',
+              attributes: {
+                title: Documentation.source.tito,
+              },
             });
           });
 
