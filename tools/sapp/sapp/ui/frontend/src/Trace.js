@@ -87,7 +87,6 @@ function SelectFrame(
     issue_id: number,
     frames: $ReadOnlyArray<Frame>,
     kind: Kind,
-    displaySource: boolean,
   |}>,
 ): React$Node {
   const [selectedFrameIndex, setSelectedFrameIndex] = useState(
@@ -161,7 +160,7 @@ function SelectFrame(
           {select}
         </>
       ) : null}
-      {props.displaySource ? source : null}
+      {source}
       {!isPostcondition ? (
         <>
           {select}
@@ -215,12 +214,7 @@ function LoadFrame(
   }
 
   return (
-    <SelectFrame
-      issue_id={props.issue_id}
-      frames={frames}
-      kind={props.kind}
-      displaySource={true}
-    />
+    <SelectFrame issue_id={props.issue_id} frames={frames} kind={props.kind} />
   );
 }
 
@@ -264,7 +258,6 @@ function Expansion(
         issue_id={props.issue_id}
         frames={frames}
         kind={props.kind}
-        displaySource={false}
       />
     );
   }
