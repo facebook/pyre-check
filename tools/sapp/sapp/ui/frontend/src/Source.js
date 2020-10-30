@@ -28,7 +28,30 @@ type Range = $ReadOnly<{
   to: Location,
 }>;
 
-function parseRanges(input: ?string): Array<Range> {
+function adjustRange(range: Range, lines: $ReadOnlyArray<string>): Range {
+  // TODO(T78595608): workaround for inaccurate Pysa locations with leading and
+  // trailing whitespaces.
+
+  // Assuming all ranges are single line.
+  const source = lines[range.from.line].slice(range.from.ch, range.to.ch);
+  const leadingWhitespace = source.search(/\S/);
+  const trailingWhitespace = source.length - source.trimEnd().length;
+  return {
+    from: {
+      line: range.from.line,
+      ch: range.from.ch + leadingWhitespace,
+    },
+    to: {
+      line: range.to.line,
+      ch: range.to.ch - trailingWhitespace,
+    },
+  };
+}
+
+function parseRanges(
+  input: ?string,
+  lines: $ReadOnlyArray<string>,
+): Array<Range> {
   if (input === undefined || input === null || input === '') {
     return [];
   }
@@ -46,18 +69,20 @@ function parseRanges(input: ?string): Array<Range> {
       [begin, end] = [end, begin];
     }
 
-    return {
-      from: {line, ch: begin - 1},
-      to: {line, ch: end},
-    };
+    return adjustRange(
+      {
+        from: {line, ch: begin - 1},
+        to: {line, ch: end},
+      },
+      lines,
+    );
   });
 }
 
 function Source(
   props: $ReadOnly<{|path: string, location: string, titos?: string|}>,
 ): React$Node {
-  const range = parseRanges(props.location)[0];
-  const line = range.from.line;
+  var line = null;
 
   const SourceQuery = gql`
     query Issue($path: String) {
@@ -89,8 +114,10 @@ function Source(
       </div>
     );
   } else {
-    const value =
-      data.file.edges[0].node.contents + '\n# ' + (props.titos || 'no titos');
+    const source = data.file.edges[0].node.contents;
+    const lines = source.split('\n');
+    const range = parseRanges(props.location, lines)[0];
+    line = range.from.line;
 
     // React codemirror is horribly broken so store a reference to underlying
     // JS implementation.
@@ -98,7 +125,7 @@ function Source(
 
     content = (
       <CodeMirror
-        value={value}
+        value={source}
         options={{lineNumbers: true, readOnly: 'nocursor'}}
         editorDidMount={nativeEditor => {
           editor = nativeEditor;
@@ -107,12 +134,15 @@ function Source(
             className: 'Source-selection',
           });
 
-          parseRanges(props.titos).forEach(range => {
+          parseRanges(props.titos, lines).forEach(range => {
             nativeEditor.markText(range.from, range.to, {
               className: 'Source-tito',
             });
           });
 
+          if (line === null) {
+            return;
+          }
           const offset = editor.heightAtLine(line > 4 ? line - 3 : 1, 'local');
           editor.scrollTo(0, offset);
         }}
@@ -128,7 +158,9 @@ function Source(
             size="small"
             icon={<SelectOutlined />}
             type="text"
-            onClick={() => editor && editor.scrollIntoView({line, ch: 0})}
+            onClick={() =>
+              editor && editor.scrollIntoView({line: line || 0, ch: 0})
+            }
             disabled={loading || error}
           />
         </Tooltip>
