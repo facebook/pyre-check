@@ -124,9 +124,11 @@ function SelectFrame(
         style={{width: '100%'}}
         onChange={setSelectedFrameIndex}
         suffixIcon={
-          <Tooltip title={Documentation.trace.frameSelection}>
-            <BranchesOutlined style={{fontSize: '0.9em'}} />
-          </Tooltip>
+          props.frames.length > 1 ? (
+            <Tooltip title={Documentation.trace.frameSelection}>
+              <BranchesOutlined style={{fontSize: '0.9em'}} />
+            </Tooltip>
+          ) : null
         }
         disabled={props.frames.length < 2}>
         {props.frames.map((frame, index) => {
