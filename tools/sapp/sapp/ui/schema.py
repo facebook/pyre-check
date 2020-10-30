@@ -28,7 +28,7 @@ class TraceFrameConnection(relay.Connection):
         node = TraceFrameQueryResultType
 
 
-class FileType(graphene.ObjectType):
+class File(graphene.ObjectType):
     class Meta:
         interfaces = (relay.Node,)
 
@@ -36,29 +36,24 @@ class FileType(graphene.ObjectType):
     contents = graphene.String()
 
 
-class File(NamedTuple):
-    path: str
-    contents: str
-
-
 class FileConnection(relay.Connection):
     class Meta:
-        node = FileType
+        node = File
 
 
 class CodeConnection(relay.Connection):
     class Meta:
-        node = typeahead.CodeType
+        node = typeahead.Code
 
 
 class PathConnection(relay.Connection):
     class Meta:
-        node = typeahead.PathType
+        node = typeahead.Path
 
 
 class CallableConnection(relay.Connection):
     class Meta:
-        node = typeahead.CallableType
+        node = typeahead.Callable
 
 
 class FeatureConnection(relay.Connection):

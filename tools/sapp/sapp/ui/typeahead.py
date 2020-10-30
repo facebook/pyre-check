@@ -13,24 +13,16 @@ from sqlalchemy.orm import Session
 from ..models import Issue, IssueInstance, SharedText, SharedTextKind
 
 
-class CodeType(graphene.ObjectType):
+class Code(graphene.ObjectType):
     code = graphene.Int()
-
-
-class Code(NamedTuple):
-    code: int
 
 
 def all_codes(session: Session) -> List[Code]:
     return session.query(Issue.code.distinct().label("code")).all()
 
 
-class PathType(graphene.ObjectType):
+class Path(graphene.ObjectType):
     path = graphene.String()
-
-
-class Path(NamedTuple):
-    path: str
 
 
 def all_paths(session: Session) -> List[Path]:
@@ -43,12 +35,8 @@ def all_paths(session: Session) -> List[Path]:
     )
 
 
-class CallableType(graphene.ObjectType):
+class Callable(graphene.ObjectType):
     callable = graphene.String()
-
-
-class Callable(NamedTuple):
-    callable: str
 
 
 def all_callables(session: Session) -> List[Callable]:
