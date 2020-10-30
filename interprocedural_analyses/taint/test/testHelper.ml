@@ -389,7 +389,7 @@ let initialize
     let project = Test.ScratchProject.setup ~context [handle, source_content] in
     let { Test.ScratchProject.BuiltTypeEnvironment.type_environment; _ }, errors =
       Test.ScratchProject.build_type_environment_and_postprocess
-        ~call_graph_builder:(module Taint.CallGraphBuilder)
+        ~call_graph_builder:(module Callgraph.NullBuilder)
         project
     in
     ( Test.ScratchProject.configuration_of project,

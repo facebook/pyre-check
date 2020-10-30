@@ -182,7 +182,7 @@ let run_analysis
                 Service.Check.check
                   ~scheduler
                   ~configuration
-                  ~call_graph_builder:(module Taint.CallGraphBuilder)
+                  ~call_graph_builder:(module Analysis.Callgraph.NullBuilder)
                 |> fun { environment; _ } ->
                 if use_cache then Cache.save ~configuration ~environment;
                 environment

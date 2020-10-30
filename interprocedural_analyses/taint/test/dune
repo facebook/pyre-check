@@ -8,7 +8,7 @@
    pyrelib.interprocedural pyrelib.taint pyrelib.taintModelQuery))
 
 (tests
- (names accessPathTest callGraphBuilderTest configurationTest domainTest
+ (names accessPathTest configurationTest domainTest
    integrationTest featuresTest fixpointTest flowTest forwardAnalysisTest
    backwardAnalysisTest modelTest)
  (modules :standard \ testHelper)
