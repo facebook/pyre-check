@@ -8,15 +8,18 @@
  * @flow
  */
 
+import type {IssueDescription} from './Issue.js';
 import React, {useState} from 'react';
 import {withRouter} from 'react-router';
 import {
   Alert,
   Breadcrumb,
   Card,
+  Divider,
   Modal,
   Skeleton,
   Select,
+  Tag,
   Tooltip,
   Typography,
 } from 'antd';
@@ -29,7 +32,7 @@ import {
 } from '@ant-design/icons';
 import {useQuery, gql} from '@apollo/client';
 import Source from './Source.js';
-import {Documentation, DocumentationTooltip} from './Documentation.js';
+import {Documentation} from './Documentation.js';
 import {Issue, IssueSkeleton} from './Issue.js';
 
 const {Text} = Typography;
@@ -53,15 +56,15 @@ function TraceRoot(
 
   return (
     <>
-      <Card
-        size="small"
-        title={
-          <>
-            <VerticalAlignMiddleOutlined style={{marginRight: '.5em'}} />
-            Trace Root
-          </>
-        }
-        extra={<DocumentationTooltip path="trace.root" />}>
+      <Card>
+        <Text>
+          <VerticalAlignMiddleOutlined style={{marginRight: '.5em'}} />
+          Source and sink traces meet at
+          <Text code style={{wordBreak: 'break-all'}}>
+            {issue.callable}
+          </Text>
+          .
+        </Text>
         <Source path={issue.filename} location={issue.location} />
       </Card>
       <br />
@@ -221,7 +224,7 @@ function LoadFrame(
 }
 
 function Expansion(
-  props: $ReadOnly<{|issue_id: number, kind: Kind|}>,
+  props: $ReadOnly<{|issue_id: number, issue: ?IssueDescription, kind: Kind|}>,
 ): React$Node {
   const InitialTraceFramesQuery = gql`
     query InitialTraceFrame($issue_id: Int!, $kind: String!) {
@@ -249,7 +252,7 @@ function Expansion(
 
   const isPostcondition = props.kind === 'postcondition';
 
-  var content = <div />;
+  var content = null;
   if (loading) {
     content = <Skeleton active />;
   } else if (error) {
@@ -264,28 +267,55 @@ function Expansion(
     );
   }
 
+  var description = null;
+  const issue = props.issue;
+  if (issue != null) {
+    if (isPostcondition) {
+      description = (
+        <>
+          <Text>
+            <VerticalAlignTopOutlined style={{marginRight: '.5em'}} />
+            Data of {issue.sources.length === 1 ? 'type ' : 'types '}
+            {issue.sources.map(leave => (
+              <Tag color="green">{leave}</Tag>
+            ))}
+            flowing <i>up to</i>{' '}
+            <Text code style={{wordBreak: 'break-all'}}>
+              {issue.callable}
+            </Text>
+            .
+          </Text>
+          <Divider plain>Traces</Divider>
+        </>
+      );
+    } else {
+      description = (
+        <>
+          <Text>
+            <VerticalAlignBottomOutlined style={{marginRight: '.5em'}} />
+            Data of {issue.sources.length === 1 ? 'type ' : 'types '}
+            {issue.sources.map(leave => (
+              <Tag color="green">{leave}</Tag>
+            ))}
+            flowing <i>from</i>{' '}
+            <Text code style={{wordBreak: 'break-all'}}>
+              {issue.callable}
+            </Text>{' '}
+            into sinks of {issue.sinks.length === 1 ? 'type ' : 'types '}
+            {issue.sinks.map(leave => (
+              <Tag color="red">{leave}</Tag>
+            ))}
+            .
+          </Text>
+          <Divider plain>Traces</Divider>
+        </>
+      );
+    }
+  }
   return (
     <>
-      <Card
-        size="small"
-        title={
-          isPostcondition ? (
-            <>
-              <VerticalAlignBottomOutlined style={{marginRight: '.5em'}} />
-              Traces from Source
-            </>
-          ) : (
-            <>
-              <VerticalAlignTopOutlined style={{marginRight: '.5em'}} />
-              Traces to Sink
-            </>
-          )
-        }
-        extra={
-          <DocumentationTooltip
-            path={isPostcondition ? 'trace.fromSource' : 'trace.toSink'}
-          />
-        }>
+      <Card>
+        {description}
         {content}
       </Card>
       <br />
@@ -329,17 +359,14 @@ function Trace(props: $ReadOnly<{|match: any|}>): React$Node {
       </Modal>
     );
   } else {
+    const issue = data?.issues?.edges[0]?.node || null;
     content = (
       <>
-        {loading ? (
-          <IssueSkeleton />
-        ) : (
-          <Issue issue={data.issues.edges[0].node} hideTitle={true} />
-        )}
+        {loading ? <IssueSkeleton /> : <Issue issue={issue} hideTitle={true} />}
         <br />
-        <Expansion issue_id={issue_id} kind="postcondition" />
+        <Expansion issue_id={issue_id} issue={issue} kind="postcondition" />
         <TraceRoot data={data} loading={loading} />
-        <Expansion issue_id={issue_id} kind="precondition" />
+        <Expansion issue_id={issue_id} issue={issue} kind="precondition" />
       </>
     );
   }

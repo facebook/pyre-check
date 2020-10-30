@@ -116,7 +116,7 @@ function Leaves(
   );
 }
 
-type IssueDescription = {
+export type IssueDescription = {
   issue_id: number,
   code: number,
   message: string,
