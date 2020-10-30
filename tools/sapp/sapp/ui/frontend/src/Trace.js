@@ -346,7 +346,7 @@ function Trace(props: $ReadOnly<{|match: any|}>): React$Node {
     <>
       <Breadcrumb style={{margin: '16px 0'}}>
         <Breadcrumb.Item href="/">Issues</Breadcrumb.Item>
-        <Breadcrumb.Item>Trace for Issue {issue_id}</Breadcrumb.Item>
+        <Breadcrumb.Item>Traces for Issue {issue_id}</Breadcrumb.Item>
       </Breadcrumb>
       {content}
     </>
