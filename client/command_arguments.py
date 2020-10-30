@@ -56,6 +56,7 @@ class StartArguments:
     changed_files_path: Optional[str] = None
     debug: bool = False
     load_initial_state_from: Optional[str] = None
+    no_saved_state: bool = False
     no_watchman: bool = False
     save_initial_state_to: Optional[str] = None
     saved_state_project: Optional[str] = None

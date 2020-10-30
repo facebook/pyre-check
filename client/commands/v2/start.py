@@ -271,7 +271,9 @@ def create_server_arguments(
         local_root=configuration.local_root,
         number_of_workers=configuration.get_number_of_workers(),
         parallel=not start_arguments.sequential,
-        saved_state_action=get_saved_state_action(
+        saved_state_action=None
+        if start_arguments.no_saved_state
+        else get_saved_state_action(
             start_arguments, relative_local_root=configuration.relative_local_root
         ),
         search_paths=configuration.get_existent_search_paths(),

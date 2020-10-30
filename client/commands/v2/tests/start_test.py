@@ -400,6 +400,27 @@ class StartTest(testslide.TestCase):
             )
             self.assertIsNone(arguments.watchman_root)
 
+    def test_create_server_arguments_disable_saved_state(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root)
+            setup.ensure_directories_exists(root_path, [".pyre", "src"])
+            setup.write_configuration_file(
+                root_path,
+                {"source_directories": ["src"]},
+            )
+            arguments = create_server_arguments(
+                configuration.create_configuration(
+                    command_arguments.CommandArguments(
+                        dot_pyre_directory=root_path / ".pyre",
+                    ),
+                    root_path,
+                ),
+                command_arguments.StartArguments(
+                    no_saved_state=True, saved_state_project="some/project"
+                ),
+            )
+            self.assertIsNone(arguments.saved_state_action)
+
     def test_background_waiter_socket_create(self) -> None:
         def assert_ok(event_output: str, wait_on_initialization: bool) -> None:
             BackgroundEventWaiter(
