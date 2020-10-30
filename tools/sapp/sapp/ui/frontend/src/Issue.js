@@ -99,9 +99,7 @@ function Leaves(
     <>
       <DelayedTooltip content={Documentation.issues.kind}>
         {props.kinds.map(kind => (
-          <Tag color={props.kind === 'sources' ? 'volcano' : 'green'}>
-            {kind}
-          </Tag>
+          <Tag color={props.kind === 'sources' ? 'green' : 'red'}>{kind}</Tag>
         ))}
       </DelayedTooltip>{' '}
       at{' '}
