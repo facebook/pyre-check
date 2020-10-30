@@ -151,9 +151,14 @@ let initialize_server_state
     with
     | exn ->
         let message =
-          Format.sprintf
-            "Cannot fetch saved state from file due to exception: %s"
-            (Exn.to_string exn)
+          let detailed_message =
+            match exn with
+            | Watchman.ConnectionError message
+            | Watchman.QueryError message ->
+                message
+            | _ -> Exn.to_string exn
+          in
+          Format.sprintf "Cannot fetch saved state from file: %s" detailed_message
         in
         Lwt.return (Result.Error message)
   in
@@ -190,9 +195,14 @@ let initialize_server_state
                 >>= fun fetched -> Lwt.return (Result.Ok fetched)))
       (fun exn ->
         let message =
-          Format.sprintf
-            "Cannot fetch saved state from project due to exception: %s"
-            (Exn.to_string exn)
+          let detailed_message =
+            match exn with
+            | Watchman.ConnectionError message
+            | Watchman.QueryError message ->
+                message
+            | _ -> Exn.to_string exn
+          in
+          Format.sprintf "Cannot fetch saved state from project: %s" detailed_message
         in
         Lwt.return (Result.Error message))
   in
