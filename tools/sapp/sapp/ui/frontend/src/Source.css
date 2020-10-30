@@ -47,3 +47,7 @@
     text-align: right;
     margin-top: .3em;
 }
+
+::-webkit-resizer {
+  border-bottom: 2px solid lightgray;
+}
