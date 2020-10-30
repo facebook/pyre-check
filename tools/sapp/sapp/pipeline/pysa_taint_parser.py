@@ -331,7 +331,9 @@ class Parser(BaseParser):
                     "port": port,
                     "location": location,
                     "leaves": leaves,
-                    "titos": trace.get("tito", []),
+                    "titos": [
+                        self._adjust_location(tito) for tito in trace.get("tito", [])
+                    ],
                     "features": trace.get("features", []),
                     "type_interval": {},
                 }
