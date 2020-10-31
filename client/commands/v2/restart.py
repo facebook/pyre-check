@@ -18,6 +18,7 @@ def _stop_server_if_needed(configuration: configuration_module.Configuration) ->
         socket_path = server_connection.get_default_socket_path(
             log_directory=Path(configuration.log_directory)
         )
+        LOG.info("Stopping the server if needed...")
         stop.stop_server(socket_path)
         LOG.info(f"Stopped server at `{start.get_server_identifier(configuration)}`")
     except OSError:

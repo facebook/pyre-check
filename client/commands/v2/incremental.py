@@ -61,6 +61,7 @@ def _display_type_errors(socket_path: Path) -> None:
 
 
 def _show_progress_and_display_type_errors(log_path: Path, socket_path: Path) -> None:
+    LOG.info("Waiting for server...")
     with start.background_logging(log_path):
         _display_type_errors(socket_path)
 

@@ -447,7 +447,7 @@ def _run_in_background(
         except FileNotFoundError:
             pass
 
-        raise commands.ClientException("Interrupted by SIGINT.")
+        raise commands.ClientException("Interrupted by user. No server is spawned.")
 
 
 def run(

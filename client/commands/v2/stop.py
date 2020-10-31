@@ -28,6 +28,7 @@ def run(configuration: configuration_module.Configuration) -> commands.ExitCode:
         log_directory=Path(configuration.log_directory)
     )
     try:
+        LOG.info("Stopping the server...")
         stop_server(socket_path)
 
         LOG.info(f"Stopped server at `{start.get_server_identifier(configuration)}`\n")
