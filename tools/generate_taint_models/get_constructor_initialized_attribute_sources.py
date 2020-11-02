@@ -7,7 +7,7 @@
 
 
 import logging
-from typing import Callable, Iterable, List
+from typing import Callable, Iterable, List, Optional, Type, TypeVar
 
 from .constructor_generator import gather_all_constructors_in_hierarchy
 from .inspect_parser import extract_parameters, extract_qualified_name
@@ -16,6 +16,7 @@ from .model_generator import ModelGenerator
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
+T = TypeVar("T")
 
 
 class ConstructorInitializedAttributeSourceGenerator(ModelGenerator[AssignmentModel]):
@@ -31,13 +32,17 @@ class ConstructorInitializedAttributeSourceGenerator(ModelGenerator[AssignmentMo
     def __init__(
         self,
         classes_to_taint: List[str],
+        filter_classes_by: Optional[Callable[[Type[T]], bool]] = None,
         taint_annotation: str = "TaintSource[UserControlled]",
     ) -> None:
         self.classes_to_taint: List[str] = classes_to_taint
+        self.filter_classes_by = filter_classes_by
         self.taint_annotation: str = taint_annotation
 
     def gather_functions_to_model(self) -> Iterable[Callable[..., object]]:
-        return gather_all_constructors_in_hierarchy(self.classes_to_taint)
+        return gather_all_constructors_in_hierarchy(
+            self.classes_to_taint, self.filter_classes_by
+        )
 
     def compute_models(
         self, functions_to_model: Iterable[Callable[..., object]]

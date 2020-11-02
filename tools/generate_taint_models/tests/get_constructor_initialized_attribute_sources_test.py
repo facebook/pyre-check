@@ -28,3 +28,22 @@ class ConstructorInitializedAttributeSourceGeneratorTest(unittest.TestCase):
                 f"{qualifier}.TestChildClassB.x: Taint = ...",
             },
         )
+
+    def test_filter(self) -> None:
+        self.assertEqual(
+            set(
+                map(
+                    str,
+                    ConstructorInitializedAttributeSourceGenerator(
+                        classes_to_taint=[f"{qualifier}.TestClass"],
+                        filter_classes_by=(
+                            lambda module: not module.__name__ == "TestChildClassB"
+                        ),
+                        taint_annotation="Taint",
+                    ).generate_models(),
+                )
+            ),
+            {
+                f"{qualifier}.TestGrandChildClassA.x: Taint = ...",
+            },
+        )

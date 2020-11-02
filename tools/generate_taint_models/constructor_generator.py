@@ -7,7 +7,7 @@
 
 import logging
 from importlib import import_module
-from typing import Callable, Iterable, List, Type, TypeVar
+from typing import Callable, Iterable, List, Optional, Type, TypeVar
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -22,9 +22,10 @@ def all_subclasses(parent_class: Type[T]) -> Iterable[Type[T]]:
 
 def gather_all_constructors_in_hierarchy(
     classes_to_taint: List[str],
+    filter_classes_by: Optional[Callable[[Type[T]], bool]] = None,
 ) -> Iterable[Callable[..., object]]:
     LOG.info(f"Getting all init functions from `{classes_to_taint}`")
-    all_inits_from_classes = []
+    all_inits_from_classes = set()
     for class_str_to_taint in classes_to_taint:
         try:
             module_path, class_name = class_str_to_taint.rsplit(".", 1)
@@ -35,6 +36,7 @@ def gather_all_constructors_in_hierarchy(
             )
             continue
         class_to_taint = getattr(import_module(module_path), class_name)
+
         # if the parent class (or any of its parents) passed does not define
         # its __init__ then there is no way to get a callable that resolves
         # to anything but object (which would be useless)
@@ -45,9 +47,13 @@ def gather_all_constructors_in_hierarchy(
             )
             continue
         children_classes = all_subclasses(class_to_taint)
-        all_inits_from_classes += [
+
+        all_inits_from_classes.update(
             child.__init__
             for child in children_classes
-            if child.__init__ != class_to_taint.__init__
-        ]
-    return list(set(all_inits_from_classes))
+            if (
+                child.__init__ != class_to_taint.__init__
+                and (filter_classes_by(child) if filter_classes_by else True)
+            )
+        )
+    return list(all_inits_from_classes)
