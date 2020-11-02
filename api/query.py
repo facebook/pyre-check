@@ -5,9 +5,18 @@
 
 import re
 from functools import lru_cache
-from typing import Any, Dict, Iterable, List, NamedTuple, Optional
+from itertools import islice
+from typing import Any, Dict, Generator, Iterable, List, NamedTuple, Optional, TypeVar
 
 from .connection import PyreConnection, PyreQueryError
+
+
+T = TypeVar("T")
+
+
+class Attributes(NamedTuple):
+    name: str
+    annotation: Optional[str]
 
 
 class DefineParameter(NamedTuple):
@@ -147,10 +156,55 @@ def get_superclasses(pyre_connection: PyreConnection, class_name: str) -> List[s
     return result["response"]["superclasses"]
 
 
-def get_attributes(pyre_connection: PyreConnection, class_name: str) -> List[str]:
+def _get_batch(
+    iterable: Iterable[T], batch_size: Optional[int]
+) -> Generator[Iterable[T], None, None]:
+    if not batch_size:
+        yield iterable
+    elif batch_size <= 0:
+        raise ValueError(
+            "batch_size must a positive integer, provided: `{}`".format(batch_size)
+        )
+    else:
+        iterator = iter(iterable)
+        batch = list(islice(iterator, batch_size))
+        while batch:
+            yield batch
+            batch = list(islice(iterator, batch_size))
+
+
+def _get_attributes(
+    pyre_connection: PyreConnection, class_name: str
+) -> List[Attributes]:
     query = f"attributes({class_name})"
     response = pyre_connection.query_server(query)["response"]
-    return [attribute["name"] for attribute in response["attributes"]]
+    return [
+        Attributes(name=attribute["name"], annotation=attribute["annotation"])
+        for attribute in response["attributes"]
+    ]
+
+
+def get_attributes(
+    pyre_connection: PyreConnection,
+    class_names: Iterable[str],
+    batch_size: Optional[int] = None,
+) -> Dict[str, List[Attributes]]:
+    all_responses = {}
+    for batch in _get_batch(class_names, batch_size):
+        query = "batch({})".format(", ".join([f"attributes({name})" for name in batch]))
+        responses = pyre_connection.query_server(query)["response"]
+        all_responses.update(
+            {
+                class_name: [
+                    Attributes(
+                        name=attribute["name"], annotation=attribute["annotation"]
+                    )
+                    for attribute in response["response"]["attributes"]
+                ]
+                for class_name, response in zip(batch, responses)
+            }
+        )
+    return all_responses
 
 
 def get_call_graph(

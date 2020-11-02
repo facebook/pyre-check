@@ -140,14 +140,127 @@ class QueryAPITest(unittest.TestCase):
     def test_get_attributes(self) -> None:
         pyre_connection = MagicMock()
         pyre_connection.query_server.return_value = {
-            "response": {
-                "attributes": [
-                    {"annotation": "int", "name": "a"},
-                    {"annotation": "typing.Callable(a.C.foo)[[], str]", "name": "foo"},
-                ]
-            }
+            "response": [
+                {
+                    "response": {
+                        "attributes": [
+                            {"annotation": "int", "name": "a"},
+                            {
+                                "annotation": "typing.Callable(a.C.foo)[[], str]",
+                                "name": "foo",
+                            },
+                        ]
+                    }
+                }
+            ]
         }
-        self.assertEqual(query.get_attributes(pyre_connection, "a.C"), ["a", "foo"])
+        self.assertEqual(
+            query.get_attributes(pyre_connection, ["a.C"]),
+            {
+                "a.C": [
+                    query.Attributes(name="a", annotation="int"),
+                    query.Attributes(
+                        name="foo", annotation="typing.Callable(a.C.foo)[[], str]"
+                    ),
+                ]
+            },
+        )
+
+    def test_get_attributes_batch(self) -> None:
+        pyre_connection = MagicMock()
+        pyre_connection.query_server.return_value = {
+            "response": [
+                {
+                    "response": {
+                        "attributes": [
+                            {"annotation": "int", "name": "a"},
+                            {
+                                "annotation": "typing.Callable(a.C.foo)[[], str]",
+                                "name": "foo",
+                            },
+                        ]
+                    }
+                },
+                {
+                    "response": {
+                        "attributes": [
+                            {"annotation": "str", "name": "b"},
+                            {"annotation": None, "name": "c"},
+                        ]
+                    }
+                },
+            ]
+        }
+        self.assertEqual(
+            query.get_attributes(
+                pyre_connection,
+                [
+                    "TestClassA",
+                    "TestClassB",
+                ],
+                batch_size=100,
+            ),
+            {
+                "TestClassA": [
+                    query.Attributes(name="a", annotation="int"),
+                    query.Attributes(
+                        name="foo", annotation="typing.Callable(a.C.foo)[[], str]"
+                    ),
+                ],
+                "TestClassB": [
+                    query.Attributes(name="b", annotation="str"),
+                    query.Attributes(name="c", annotation=None),
+                ],
+            },
+        )
+
+    def test_get_attributes_batch_no_size(self) -> None:
+        pyre_connection = MagicMock()
+        pyre_connection.query_server.return_value = {
+            "response": [
+                {
+                    "response": {
+                        "attributes": [
+                            {"annotation": "int", "name": "a"},
+                            {
+                                "annotation": "typing.Callable(a.C.foo)[[], str]",
+                                "name": "foo",
+                            },
+                        ]
+                    }
+                },
+                {
+                    "response": {
+                        "attributes": [
+                            {"annotation": "str", "name": "b"},
+                            {"annotation": None, "name": "c"},
+                        ]
+                    }
+                },
+            ]
+        }
+        self.assertEqual(
+            query.get_attributes(
+                pyre_connection,
+                [
+                    "TestClassA",
+                    "TestClassB",
+                ],
+                batch_size=None,
+            ),
+            {
+                "TestClassA": [
+                    query.Attributes(name="a", annotation="int"),
+                    query.Attributes(
+                        name="foo", annotation="typing.Callable(a.C.foo)[[], str]"
+                    ),
+                ],
+                "TestClassB": [
+                    query.Attributes(name="b", annotation="str"),
+                    query.Attributes(name="c", annotation=None),
+                ],
+            },
+        )
 
     def test_get_call_graph(self) -> None:
         pyre_connection = MagicMock()
