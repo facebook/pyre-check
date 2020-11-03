@@ -7,6 +7,8 @@
  * @format
  */
 
+const {fbContent} = require('internaldocs-fb-helpers');
+
 /* List of projects/orgs using Pyre for the users page */
 
 const users = [
@@ -17,14 +19,6 @@ const users = [
     pinned: true,
   },
 ];
-
-function FBInternal(elements) {
-  return process.env.FB_INTERNAL ? elements : [];
-}
-
-function FBInternalWithOssFallback(elements, fallback) {
-  return process.env.FB_INTERNAL ? elements : fallback;
-}
 
 module.exports = {
   // ...
@@ -75,14 +69,14 @@ module.exports = {
       },
       items: [
         {to: 'docs/getting-started', label: 'Documentation', position: 'left'},
-        FBInternalWithOssFallback(
-          {
+        fbContent({
+          internal: {
             to: 'docs/fb/development-getting-started',
             label: 'Development @ FB',
             position: 'left',
           },
-          {},
-        ),
+          external: {},
+        }),
         {
           href: 'https://github.com/facebook/pyre-check',
           label: 'GitHub',
