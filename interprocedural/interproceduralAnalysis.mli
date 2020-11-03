@@ -7,8 +7,14 @@
 
 module Kind = AnalysisKind
 
+type expensive_callable = {
+  time_to_analyze_in_ms: int;
+  callable: Callable.t;
+}
+
 type result = {
   callables_processed: int;
+  expensive_callables: expensive_callable list;
   callables_to_dump: Callable.Set.t;
 }
 

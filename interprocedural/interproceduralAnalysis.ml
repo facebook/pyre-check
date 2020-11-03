@@ -478,29 +478,43 @@ let emit_externalization ~filename_lookup kind emitter callable =
   externalize ~filename_lookup kind callable |> List.iter ~f:emitter
 
 
+type expensive_callable = {
+  time_to_analyze_in_ms: int;
+  callable: Callable.t;
+}
+
 type result = {
   callables_processed: int;
+  expensive_callables: expensive_callable list;
   callables_to_dump: Callable.Set.t;
 }
 
 (* Called on a worker with a set of functions to analyze. *)
 let one_analysis_pass ~analyses ~step ~environment ~callables =
   let analyses = List.map ~f:Result.get_abstract_analysis analyses in
-  let analyze_and_cache callable =
+  let analyze_and_cache expensive_callables callable =
     let timer = Timer.start () in
     let result = analyze_callable analyses step callable environment in
+    Fixpoint.add_state step callable result;
     (* Log outliers. *)
-    if Timer.stop_in_ms timer > 500 then
+    if Timer.stop_in_ms timer > 500 then begin
       Statistics.performance
         ~name:"static analysis of expensive callable"
         ~timer
         ~section:`Interprocedural
         ~normals:["callable", Callable.show callable]
         ();
-    Fixpoint.add_state step callable result
+      { time_to_analyze_in_ms = Timer.stop_in_ms timer; callable } :: expensive_callables
+    end
+    else
+      expensive_callables
   in
-  List.iter callables ~f:analyze_and_cache;
-  { callables_processed = List.length callables; callables_to_dump = !callables_to_dump }
+  let expensive_callables = List.fold callables ~f:analyze_and_cache ~init:[] in
+  {
+    callables_processed = List.length callables;
+    callables_to_dump = !callables_to_dump;
+    expensive_callables;
+  }
 
 
 let get_callable_dependents ~dependencies callable =
@@ -627,22 +641,40 @@ let compute_fixpoint
         {
           callables_processed;
           callables_to_dump = Callable.Set.union left.callables_to_dump right.callables_to_dump;
+          expensive_callables = List.rev_append left.expensive_callables right.expensive_callables;
         }
       in
       let () =
         Fixpoint.oldify old_batch;
-        let { callables_to_dump = iteration_callables_to_dump; _ } =
+        let {
+          callables_to_dump = iteration_callables_to_dump;
+          expensive_callables = iteration_expensive_callables;
+          _;
+        }
+          =
           Scheduler.map_reduce
             scheduler
             ~policy:(Scheduler.Policy.legacy_fixed_chunk_size 1000)
             ~map:(fun _ callables -> one_analysis_pass ~analyses ~step ~environment ~callables)
-            ~initial:{ callables_processed = 0; callables_to_dump = Callable.Set.empty }
+            ~initial:
+              {
+                callables_processed = 0;
+                callables_to_dump = Callable.Set.empty;
+                expensive_callables = [];
+              }
             ~reduce
             ~inputs:callables_to_analyze
             ()
         in
         callables_to_dump := Callable.Set.union !callables_to_dump iteration_callables_to_dump;
-        Fixpoint.remove_old old_batch
+        Fixpoint.remove_old old_batch;
+        Log.log
+          ~section:`Performance
+          "Expensive callables for iteration %d: %s"
+          iteration
+          ( List.map iteration_expensive_callables ~f:(fun { time_to_analyze_in_ms; callable } ->
+                Format.sprintf "`%s`: %d ms" (Callable.show callable) time_to_analyze_in_ms)
+          |> String.concat ~sep:", " )
       in
       let callables_to_analyze =
         compute_callables_to_reanalyze
