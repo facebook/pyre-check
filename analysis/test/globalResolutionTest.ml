@@ -819,7 +819,8 @@ let test_class_attributes context =
          ~uninstantiated_annotation:
            "typing.Callable(test.Prot.method)[[Named(self, test.Prot), Named(x, int)], str]"
          "method"
-         "typing.Callable[[Named(x, int)], str]");
+         "BoundMethod[typing.Callable(test.Prot.method)[[Named(self, test.Prot), Named(x, int)], \
+          str], test.Prot]");
   (* This is still not great, since the signature of ExplicitProtChild.method is probably actually
      [[ExplicitProtChild, int], str] not [[Prot, int], str] as this would suggest, but until
      typeshed is fixed to explicitly re-list all of the methods inherited from protocol parents *)
@@ -835,8 +836,8 @@ let test_class_attributes context =
          "method"
          ~uninstantiated_annotation:
            "typing.Callable(test.Prot.method)[[Named(self, test.Prot), Named(x, int)], str]"
-         "BoundMethod[typing.Callable[[Named(self, test.Prot), Named(x, int)], str], \
-          test.ExplicitProtChild]");
+         "BoundMethod[typing.Callable(test.Prot.method)[[Named(self, test.Prot), Named(x, int)], \
+          str], test.ExplicitProtChild]");
   let tself = Type.variable "TSelf" in
   assert_attribute
     ~parent:"BoundMethod"

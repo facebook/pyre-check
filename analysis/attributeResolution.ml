@@ -1853,20 +1853,8 @@ class base class_metadata_environment dependency =
                   ConstraintsSet.Solution.instantiate_single_variable solution synthetic
                 in
                 let function_dunder_get callable =
-                  let instantiated_is_protocol () =
-                    Type.split instantiated
-                    |> fst
-                    |> UnannotatedGlobalEnvironment.ReadOnly.is_protocol
-                         (unannotated_global_environment class_metadata_environment)
-                         ?dependency
-                  in
                   if accessed_through_class then
                     Type.Callable callable
-                  else if (not (String.equal class_name "object")) && instantiated_is_protocol ()
-                  then (* TODO(T66895305): Find a way to remove this without tanking Pysa perf *)
-                    let order = self#full_order ~assumptions in
-                    partial_apply_self callable ~order ~self_type:instantiated
-                    |> fun callable -> Type.Callable { callable with kind = Anonymous }
                   else
                     Type.parametric "BoundMethod" [Single (Callable callable); Single instantiated]
                 in

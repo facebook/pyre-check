@@ -866,6 +866,38 @@ let test_call_graph_of_define context =
                  collapse_tito = true;
                  targets = [`Method { Callable.class_name = "test.C"; method_name = "p$setter" }];
                }) );
+      ];
+  assert_call_graph_of_define
+    ~source:
+      {|
+        from typing import Protocol
+        class C(Protocol):
+          def f(self) -> int: ...
+
+        def foo(c: C):
+          c.f()
+          C.f(c)
+
+    |}
+    ~define_name:"test.foo"
+    ~expected:
+      [
+        ( "7:2-7:7",
+          Callees
+            (CallGraph.RegularTargets
+               {
+                 CallGraph.implicit_self = true;
+                 collapse_tito = true;
+                 targets = [`Method { Callable.class_name = "test.C"; method_name = "f" }];
+               }) );
+        ( "8:2-8:8",
+          Callees
+            (CallGraph.RegularTargets
+               {
+                 CallGraph.implicit_self = false;
+                 collapse_tito = true;
+                 targets = [`Method { Callable.class_name = "test.C"; method_name = "f" }];
+               }) );
       ]
 
 
