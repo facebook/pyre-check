@@ -20,6 +20,10 @@ module T = struct
     | TriggeredPartialSink of partial_sink
     | LocalReturn (* Special marker to describe function in-out behavior *)
     | NamedSink of string
+    | ParametricSink of {
+        sink_name: string;
+        subkind: string;
+      }
     | ParameterUpdate of int (* Special marker to describe side effect in-out behavior *)
     | AddFeatureToArgument
       (* Special marker to designate modifying the state the parameter passed in. *)
@@ -36,6 +40,7 @@ let show = function
   | TriggeredPartialSink { kind; label } -> Format.sprintf "TriggeredPartialSink[%s[%s]]" kind label
   | LocalReturn -> "LocalReturn"
   | NamedSink name -> name
+  | ParametricSink { sink_name; subkind } -> Format.sprintf "%s[%s]" sink_name subkind
   | ParameterUpdate index -> Format.sprintf "ParameterUpdate%d" index
   | AddFeatureToArgument -> "AddFeatureToArgument"
 
@@ -48,9 +53,11 @@ let create = function
   | name -> failwith (Format.sprintf "Unsupported taint sink `%s`" name)
 
 
-let parse ~allowed name =
+let parse ~allowed ?subkind name =
   if List.mem allowed name ~equal:String.equal then
-    NamedSink name
+    match subkind with
+    | Some subkind -> ParametricSink { sink_name = name; subkind }
+    | None -> NamedSink name
   else
     create name
 

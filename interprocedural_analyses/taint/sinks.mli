@@ -19,13 +19,17 @@ type t =
   | TriggeredPartialSink of partial_sink
   | LocalReturn (* Special marker to describe function in-out behavior *)
   | NamedSink of string
+  | ParametricSink of {
+      sink_name: string;
+      subkind: string;
+    }
   | ParameterUpdate of int (* Special marker to describe function in-out behavior *)
   | AddFeatureToArgument
 [@@deriving compare, eq, sexp, show, hash]
 
 val name : string
 
-val parse : allowed:string list -> string -> t
+val parse : allowed:string list -> ?subkind:string -> string -> t
 
 val ignore_leaf_at_call : t -> bool
 

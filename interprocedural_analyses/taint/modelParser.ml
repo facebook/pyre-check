@@ -312,10 +312,10 @@ let rec parse_annotations ~configuration ~parameters annotation =
   let get_sink_kinds expression =
     let open Configuration in
     let kinds, breadcrumbs = extract_leafs expression in
-    List.map kinds ~f:(fun (kind, _) ->
+    List.map kinds ~f:(fun (kind, subkind) ->
         Sink
           {
-            sink = Sinks.parse ~allowed:configuration.sinks kind;
+            sink = Sinks.parse ~allowed:configuration.sinks ?subkind kind;
             breadcrumbs;
             path = [];
             leaf_name_provided = false;

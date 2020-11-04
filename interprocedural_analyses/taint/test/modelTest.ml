@@ -413,6 +413,27 @@ let test_sink_models context =
           "test.multiple";
       ]
     ();
+  assert_model
+    ~model_source:
+      {|
+        def test.sink(parameter: TaintSink[TestSink[Subkind]]):
+          ...
+      |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~sink_parameters:
+            [
+              {
+                name = "parameter";
+                sinks = [Sinks.ParametricSink { sink_name = "TestSink"; subkind = "Subkind" }];
+              };
+            ]
+          "test.sink";
+      ]
+    ();
+
   ()
 
 
