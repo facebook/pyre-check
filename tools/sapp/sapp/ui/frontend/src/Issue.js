@@ -118,7 +118,7 @@ function Leaves(
 }
 
 export type IssueDescription = {
-  issue_id: number,
+  issue_instance_id: number,
   code: number,
   message: string,
   callable: string,
@@ -159,12 +159,16 @@ export function Issue(
       title={
         <>
           <FireOutlined style={{marginRight: '.5em'}} />
-          {props.hideTitle ? 'Issue' : <>Issue {props.issue.issue_id}</>}
+          {props.hideTitle ? (
+            'Issue'
+          ) : (
+            <>Issue {props.issue.issue_instance_id}</>
+          )}
         </>
       }
       extra={
         props.hideTitle ? null : (
-          <Link href={`/trace/${props.issue.issue_id}`}>Traces</Link>
+          <Link href={`/trace/${props.issue.issue_instance_id}`}>Traces</Link>
         )
       }>
       <Row gutter={gutter}>

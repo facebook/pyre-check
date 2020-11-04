@@ -78,7 +78,8 @@ class QueryTest(TestCase):
             )
             builder = Instance(session, latest_run_id)
             issue_ids = {
-                int(issue.id) for issue in builder.where_codes_is_any_of([6016]).get()
+                int(issue.issue_instance_id)
+                for issue in builder.where_codes_is_any_of([6016]).get()
             }
             self.assertIn(1, issue_ids)
             self.assertNotIn(2, issue_ids)
@@ -86,7 +87,7 @@ class QueryTest(TestCase):
 
             builder = Instance(session, latest_run_id)
             issue_ids = {
-                int(issue.id)
+                int(issue.issue_instance_id)
                 for issue in builder.where_codes_is_any_of([6017, 6018]).get()
             }
             self.assertNotIn(1, issue_ids)
@@ -95,7 +96,8 @@ class QueryTest(TestCase):
 
             builder = Instance(session, latest_run_id)
             issue_ids = {
-                int(issue.id) for issue in builder.where_codes_is_any_of([1234]).get()
+                int(issue.issue_instance_id)
+                for issue in builder.where_codes_is_any_of([1234]).get()
             }
             self.assertNotIn(1, issue_ids)
             self.assertNotIn(2, issue_ids)
@@ -103,7 +105,7 @@ class QueryTest(TestCase):
 
             builder = Instance(session, latest_run_id)
             issue_ids = {
-                int(issue.id)
+                int(issue.issue_instance_id)
                 for issue in builder.where_codes_is_any_of([6017])
                 .where_codes_is_any_of([6018])
                 .get()
@@ -121,7 +123,7 @@ class QueryTest(TestCase):
             )
             builder = Instance(session, latest_run_id)
             issue_ids = {
-                int(issue.id)
+                int(issue.issue_instance_id)
                 for issue in builder.where_callables_is_any_of(["%sub%"]).get()
             }
             self.assertIn(1, issue_ids)
@@ -130,7 +132,7 @@ class QueryTest(TestCase):
 
             builder = Instance(session, latest_run_id)
             issue_ids = {
-                int(issue.id)
+                int(issue.issue_instance_id)
                 for issue in builder.where_callables_is_any_of(["1234"]).get()
             }
             self.assertNotIn(1, issue_ids)
@@ -139,7 +141,7 @@ class QueryTest(TestCase):
 
             builder = Instance(session, latest_run_id)
             issue_ids = {
-                int(issue.id)
+                int(issue.issue_instance_id)
                 for issue in builder.where_callables_is_any_of(["%function3"]).get()
             }
             self.assertNotIn(1, issue_ids)
@@ -148,7 +150,7 @@ class QueryTest(TestCase):
 
             builder = Instance(session, latest_run_id)
             issue_ids = {
-                int(issue.id)
+                int(issue.issue_instance_id)
                 for issue in builder.where_callables_is_any_of(["%function3"])
                 .where_callables_is_any_of(["%sub%"])
                 .get()
@@ -166,7 +168,8 @@ class QueryTest(TestCase):
             )
             builder = Instance(session, latest_run_id)
             issue_ids = {
-                int(issue.id) for issue in builder.where_path_is_any_of(["1234"]).get()
+                int(issue.issue_instance_id)
+                for issue in builder.where_path_is_any_of(["1234"]).get()
             }
             self.assertNotIn(1, issue_ids)
             self.assertNotIn(2, issue_ids)
@@ -174,7 +177,7 @@ class QueryTest(TestCase):
 
             builder = Instance(session, latest_run_id)
             issue_ids = {
-                int(issue.id)
+                int(issue.issue_instance_id)
                 for issue in builder.where_path_is_any_of(["module/s%"]).get()
             }
             self.assertIn(1, issue_ids)
@@ -183,7 +186,7 @@ class QueryTest(TestCase):
 
             builder = Instance(session, latest_run_id)
             issue_ids = {
-                int(issue.id)
+                int(issue.issue_instance_id)
                 for issue in builder.where_path_is_any_of(["%__init__.py"]).get()
             }
             self.assertNotIn(1, issue_ids)
@@ -200,7 +203,7 @@ class QueryTest(TestCase):
 
             builder = Instance(session, latest_run_id)
             issue_ids = {
-                int(issue.id)
+                int(issue.issue_instance_id)
                 for issue in builder.where_trace_length_to_sinks(1, 1).get()
             }
             self.assertIn(1, issue_ids)
@@ -209,7 +212,7 @@ class QueryTest(TestCase):
 
             builder = Instance(session, latest_run_id)
             issue_ids = {
-                int(issue.id)
+                int(issue.issue_instance_id)
                 for issue in builder.where_trace_length_to_sources(1, 1).get()
             }
             self.assertIn(1, issue_ids)
@@ -218,7 +221,7 @@ class QueryTest(TestCase):
 
             builder = Instance(session, latest_run_id)
             issue_ids = {
-                int(issue.id)
+                int(issue.issue_instance_id)
                 for issue in builder.where_trace_length_to_sources(0, 1).get()
             }
             self.assertIn(1, issue_ids)
@@ -227,7 +230,7 @@ class QueryTest(TestCase):
 
             builder = Instance(session, latest_run_id)
             issue_ids = {
-                int(issue.id)
+                int(issue.issue_instance_id)
                 for issue in builder.where_trace_length_to_sinks(0, 1).get()
             }
             self.assertIn(1, issue_ids)
@@ -236,7 +239,7 @@ class QueryTest(TestCase):
 
             builder = Instance(session, latest_run_id)
             issue_ids = {
-                int(issue.id)
+                int(issue.issue_instance_id)
                 for issue in builder.where_trace_length_to_sinks(0, 2).get()
             }
             self.assertIn(1, issue_ids)
@@ -245,7 +248,7 @@ class QueryTest(TestCase):
 
             builder = Instance(session, latest_run_id)
             issue_ids = {
-                int(issue.id)
+                int(issue.issue_instance_id)
                 for issue in builder.where_trace_length_to_sinks(0, 2).get()
             }
             self.assertIn(1, issue_ids)
@@ -254,7 +257,7 @@ class QueryTest(TestCase):
 
             builder = Instance(session, latest_run_id)
             issue_ids = {
-                int(issue.id)
+                int(issue.issue_instance_id)
                 for issue in builder.where_trace_length_to_sources(0, 1)
                 .where_trace_length_to_sinks(0, 1)
                 .get()
@@ -265,7 +268,7 @@ class QueryTest(TestCase):
 
             builder = Instance(session, latest_run_id)
             issue_ids = {
-                int(issue.id)
+                int(issue.issue_instance_id)
                 for issue in builder.where_trace_length_to_sources(0, 1)
                 .where_trace_length_to_sinks(0, 2)
                 .get()
@@ -276,7 +279,7 @@ class QueryTest(TestCase):
 
             builder = Instance(session, latest_run_id)
             issue_ids = {
-                int(issue.id)
+                int(issue.issue_instance_id)
                 for issue in builder.where_trace_length_to_sources(0, 0).get()
             }
             self.assertNotIn(1, issue_ids)
@@ -286,7 +289,7 @@ class QueryTest(TestCase):
 
             builder = Instance(session, latest_run_id)
             issue_ids = {
-                int(issue.id)
+                int(issue.issue_instance_id)
                 for issue in builder.where_trace_length_to_sinks(0, 0).get()
             }
             self.assertNotIn(1, issue_ids)
@@ -321,14 +324,14 @@ class QueryTest(TestCase):
             )
             builder = Instance(session, latest_run_id)
             issue_ids = {
-                int(issue.id)
+                int(issue.issue_instance_id)
                 for issue in builder.where_any_features(["via:feature1"]).get()
             }
             self.assertIn(1, issue_ids)
 
             builder = Instance(session, latest_run_id)
             issue_ids = {
-                int(issue.id)
+                int(issue.issue_instance_id)
                 for issue in builder.where_any_features(
                     ["via:feature1", "via:feature2"]
                 ).get()
@@ -336,7 +339,7 @@ class QueryTest(TestCase):
             self.assertIn(1, issue_ids)
             builder = Instance(session, latest_run_id)
             issue_ids = {
-                int(issue.id)
+                int(issue.issue_instance_id)
                 for issue in builder.where_any_features(
                     ["via:feature1", "via:feature3"]
                 ).get()
@@ -345,7 +348,7 @@ class QueryTest(TestCase):
 
             builder = Instance(session, latest_run_id)
             issue_ids = {
-                int(issue.id)
+                int(issue.issue_instance_id)
                 for issue in builder.where_any_features(["via:feature3"]).get()
             }
             self.assertNotIn(1, issue_ids)
@@ -377,14 +380,14 @@ class QueryTest(TestCase):
             )
             builder = Instance(session, latest_run_id)
             issue_ids = {
-                int(issue.id)
+                int(issue.issue_instance_id)
                 for issue in builder.where_all_features(["via:feature1"]).get()
             }
             self.assertIn(1, issue_ids)
 
             builder = Instance(session, latest_run_id)
             issue_ids = {
-                int(issue.id)
+                int(issue.issue_instance_id)
                 for issue in builder.where_all_features(
                     ["via:feature1", "via:feature2"]
                 ).get()
@@ -393,14 +396,14 @@ class QueryTest(TestCase):
 
             builder = Instance(session, latest_run_id)
             issue_ids = {
-                int(issue.id)
+                int(issue.issue_instance_id)
                 for issue in builder.where_all_features(["via:feature3"]).get()
             }
             self.assertNotIn(1, issue_ids)
 
             builder = Instance(session, latest_run_id)
             issue_ids = {
-                int(issue.id)
+                int(issue.issue_instance_id)
                 for issue in builder.where_all_features(
                     ["via:feature1", "via:feature3"]
                 ).get()
@@ -445,14 +448,15 @@ class QueryTest(TestCase):
 
             builder = Instance(session, latest_run_id)
             issue_ids = {
-                int(issue.id) for issue in builder.where_exclude_features([]).get()
+                int(issue.issue_instance_id)
+                for issue in builder.where_exclude_features([]).get()
             }
             self.assertIn(1, issue_ids)
             self.assertIn(2, issue_ids)
 
             builder = Instance(session, latest_run_id)
             issue_ids = {
-                int(issue.id)
+                int(issue.issue_instance_id)
                 for issue in builder.where_exclude_features(["via:feature1"]).get()
             }
             self.assertNotIn(1, issue_ids)
@@ -460,7 +464,7 @@ class QueryTest(TestCase):
 
             builder = Instance(session, latest_run_id)
             issue_ids = {
-                int(issue.id)
+                int(issue.issue_instance_id)
                 for issue in builder.where_exclude_features(["via:feature2"]).get()
             }
             self.assertNotIn(1, issue_ids)
@@ -468,7 +472,7 @@ class QueryTest(TestCase):
 
             builder = Instance(session, latest_run_id)
             issue_ids = {
-                int(issue.id)
+                int(issue.issue_instance_id)
                 for issue in builder.where_exclude_features(["via:feature3"]).get()
             }
             self.assertIn(1, issue_ids)
@@ -476,7 +480,7 @@ class QueryTest(TestCase):
 
             builder = Instance(session, latest_run_id)
             issue_ids = {
-                int(issue.id)
+                int(issue.issue_instance_id)
                 for issue in builder.where_exclude_features(
                     ["via:feature1", "via:feature2"]
                 ).get()
@@ -486,7 +490,7 @@ class QueryTest(TestCase):
 
             builder = Instance(session, latest_run_id)
             issue_ids = {
-                int(issue.id)
+                int(issue.issue_instance_id)
                 for issue in builder.where_exclude_features(
                     ["via:feature1", "via:feature4"]
                 ).get()
@@ -496,7 +500,7 @@ class QueryTest(TestCase):
 
             builder = Instance(session, latest_run_id)
             issue_ids = {
-                int(issue.id)
+                int(issue.issue_instance_id)
                 for issue in builder.where_exclude_features(
                     ["via:feature2", "via:feature4"]
                 ).get()
@@ -506,7 +510,7 @@ class QueryTest(TestCase):
 
             builder = Instance(session, latest_run_id)
             issue_ids = {
-                int(issue.id)
+                int(issue.issue_instance_id)
                 for issue in builder.where_exclude_features(
                     ["via:feature1", "via:feature3"]
                 ).get()

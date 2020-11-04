@@ -150,7 +150,7 @@ const IssueQuery = gql`
     ) {
       edges {
         node {
-          issue_id
+          issue_instance_id
           code
           message
           callable

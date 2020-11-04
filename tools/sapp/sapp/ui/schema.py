@@ -85,16 +85,16 @@ class Query(graphene.ObjectType):
         max_trace_length_to_sinks=graphene.Int(),
         min_trace_length_to_sources=graphene.Int(),
         max_trace_length_to_sources=graphene.Int(),
-        issue_id=graphene.Int(),
+        issue_instance_id=graphene.Int(),
     )
 
-    trace = relay.ConnectionField(TraceFrameConnection, issue_id=graphene.ID())
+    trace = relay.ConnectionField(TraceFrameConnection, issue_instance_id=graphene.ID())
     initial_trace_frames = relay.ConnectionField(
-        TraceFrameConnection, issue_id=graphene.Int(), kind=graphene.String()
+        TraceFrameConnection, issue_instance_id=graphene.Int(), kind=graphene.String()
     )
     next_trace_frames = relay.ConnectionField(
         TraceFrameConnection,
-        issue_id=graphene.Int(),
+        issue_instance_id=graphene.Int(),
         frame_id=graphene.Int(),
         kind=graphene.String(),
     )
@@ -120,7 +120,7 @@ class Query(graphene.ObjectType):
         max_trace_length_to_sinks: Optional[int] = None,
         min_trace_length_to_sources: Optional[int] = None,
         max_trace_length_to_sources: Optional[int] = None,
-        issue_id: Optional[int] = None,
+        issue_instance_id: Optional[int] = None,
         **kwargs: Any,
     ) -> List[IssueQueryResult]:
         session = get_session(info.context)
@@ -136,7 +136,7 @@ class Query(graphene.ObjectType):
             .where_trace_length_to_sources(
                 min_trace_length_to_sources, max_trace_length_to_sources
             )
-            .where_issue_id_is(issue_id)
+            .where_issue_instance_id_is(issue_instance_id)
         )
 
         for feature in features or []:
@@ -153,23 +153,23 @@ class Query(graphene.ObjectType):
         return builder.get()
 
     def resolve_initial_trace_frames(
-        self, info: ResolveInfo, issue_id: int, kind: str
+        self, info: ResolveInfo, issue_instance_id: int, kind: str
     ) -> List[TraceFrameQueryResult]:
         session = info.context.get("session")
         return trace.initial_frames(
-            session, DBID(issue_id), TraceKind.create_from_string(kind)
+            session, DBID(issue_instance_id), TraceKind.create_from_string(kind)
         )
 
     def resolve_next_trace_frames(
-        self, info: ResolveInfo, issue_id: int, frame_id: int, kind: str
+        self, info: ResolveInfo, issue_instance_id: int, frame_id: int, kind: str
     ) -> List[TraceFrameQueryResult]:
         session = info.context.get("session")
 
         trace_kind = TraceKind.create_from_string(kind)
         if trace_kind == TraceKind.POSTCONDITION:
-            leaf_kind = issues.sources(session, DBID(issue_id))
+            leaf_kind = issues.sources(session, DBID(issue_instance_id))
         elif trace_kind == TraceKind.PRECONDITION:
-            leaf_kind = issues.sinks(session, DBID(issue_id))
+            leaf_kind = issues.sinks(session, DBID(issue_instance_id))
 
         trace_frame = session.query(TraceFrame).get(frame_id)
         if trace_frame is None:

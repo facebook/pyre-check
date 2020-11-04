@@ -40,13 +40,12 @@ FeatureText = aliased(SharedText)
 
 # pyre-ignore[13]: unitialized class attribute
 class IssueQueryResultType(graphene.ObjectType):
-    id: DBID
     concatenated_features: str
 
     class Meta:
         interfaces = (graphene.relay.Node,)
 
-    issue_id = graphene.ID()
+    issue_instance_id = graphene.ID()
 
     code = graphene.Int()
     message = graphene.String()
@@ -65,20 +64,21 @@ class IssueQueryResultType(graphene.ObjectType):
     min_trace_length_to_sources = graphene.Int()
     min_trace_length_to_sinks = graphene.Int()
 
-    def resolve_issue_id(self, info: ResolveInfo) -> DBID:
-        return self.id
-
     def resolve_sources(self, info: ResolveInfo) -> List[str]:
-        return list(sources(info.context["session"], self.id))
+        # pyre-ignore[6]: graphene too dynamic.
+        return list(sources(info.context["session"], self.issue_instance_id))
 
     def resolve_source_names(self, info: ResolveInfo) -> List[str]:
-        return list(source_names(info.context["session"], self.id))
+        # pyre-ignore[6]: graphene too dynamic.
+        return list(source_names(info.context["session"], self.issue_instance_id))
 
     def resolve_sinks(self, info: ResolveInfo) -> List[str]:
-        return list(sinks(info.context["session"], self.id))
+        # pyre-ignore[6]: graphene too dynamic.
+        return list(sinks(info.context["session"], self.issue_instance_id))
 
     def resolve_sink_names(self, info: ResolveInfo) -> List[str]:
-        return list(sink_names(info.context["session"], self.id))
+        # pyre-ignore[6]: graphene too dynamic.
+        return list(sink_names(info.context["session"], self.issue_instance_id))
 
     def resolve_features(self, info: ResolveInfo) -> List[str]:
         # pyre-ignore[6]: graphene too dynamic.
@@ -86,7 +86,7 @@ class IssueQueryResultType(graphene.ObjectType):
 
 
 class IssueQueryResult(NamedTuple):
-    id: DBID
+    issue_instance_id: DBID
 
     code: int
     message: str
@@ -105,7 +105,7 @@ class IssueQueryResult(NamedTuple):
     # pyre-fixme[2]: Parameter annotation cannot be `Any`.
     def from_record(record: Any) -> IssueQueryResult:
         return IssueQueryResult(
-            id=record.id,
+            issue_instance_id=record.issue_instance_id,
             code=record.code,
             message=record.message,
             callable=record.callable,
@@ -150,7 +150,7 @@ class Instance:
         )
         query = (
             self._session.query(
-                IssueInstance.id,
+                IssueInstance.id.label("issue_instance_id"),
                 FilenameText.contents.label("filename"),
                 IssueInstance.location,
                 Issue.code,
@@ -192,7 +192,7 @@ class Instance:
         self._predicates.extend(predicates)
         return self
 
-    def where_issue_id_is(self, issue_id: Optional[int]) -> "Instance":
+    def where_issue_instance_id_is(self, issue_id: Optional[int]) -> "Instance":
         if issue_id is not None:
             self._predicates.append(filters.Equals(IssueInstance.id, issue_id))
         return self

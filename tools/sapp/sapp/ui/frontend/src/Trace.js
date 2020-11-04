@@ -89,7 +89,7 @@ type Frame = $ReadOnly<{
 
 function SelectFrame(
   props: $ReadOnly<{|
-    issue_id: number,
+    issue_instance_id: number,
     frames: $ReadOnlyArray<Frame>,
     kind: Kind,
   |}>,
@@ -163,7 +163,7 @@ function SelectFrame(
   if (selectedFrameIndex !== null && !isLeaf) {
     next = (
       <LoadFrame
-        issue_id={props.issue_id}
+        issue_instance_id={props.issue_instance_id}
         frame={props.frames[selectedFrameIndex]}
         kind={props.kind}
       />
@@ -191,14 +191,22 @@ function SelectFrame(
 
 function LoadFrame(
   props: $ReadOnly<{|
-    issue_id: number,
+    issue_instance_id: number,
     frame: Frame,
     kind: Kind,
   |}>,
 ): React$Node {
   const NextTraceFramesQuery = gql`
-    query NextTraceFrames($issue_id: Int!, $frame_id: Int!, $kind: String!) {
-      next_trace_frames(issue_id: $issue_id, frame_id: $frame_id, kind: $kind) {
+    query NextTraceFrames(
+      $issue_instance_id: Int!
+      $frame_id: Int!
+      $kind: String!
+    ) {
+      next_trace_frames(
+        issue_instance_id: $issue_instance_id
+        frame_id: $frame_id
+        kind: $kind
+      ) {
         edges {
           node {
             frame_id
@@ -217,7 +225,7 @@ function LoadFrame(
   `;
   const {loading, error, data} = useQuery(NextTraceFramesQuery, {
     variables: {
-      issue_id: props.issue_id,
+      issue_instance_id: props.issue_instance_id,
       frame_id: props.frame.frame_id,
       kind: props.kind,
     },
@@ -233,16 +241,24 @@ function LoadFrame(
   }
 
   return (
-    <SelectFrame issue_id={props.issue_id} frames={frames} kind={props.kind} />
+    <SelectFrame
+      issue_instance_id={props.issue_instance_id}
+      frames={frames}
+      kind={props.kind}
+    />
   );
 }
 
 function Expansion(
-  props: $ReadOnly<{|issue_id: number, issue: ?IssueDescription, kind: Kind|}>,
+  props: $ReadOnly<{|
+    issue_instance_id: number,
+    issue: ?IssueDescription,
+    kind: Kind,
+  |}>,
 ): React$Node {
   const InitialTraceFramesQuery = gql`
-    query InitialTraceFrame($issue_id: Int!, $kind: String!) {
-      initial_trace_frames(issue_id: $issue_id, kind: $kind) {
+    query InitialTraceFrame($issue_instance_id: Int!, $kind: String!) {
+      initial_trace_frames(issue_instance_id: $issue_instance_id, kind: $kind) {
         edges {
           node {
             frame_id
@@ -258,7 +274,7 @@ function Expansion(
     }
   `;
   const {loading, error, data} = useQuery(InitialTraceFramesQuery, {
-    variables: {issue_id: props.issue_id, kind: props.kind},
+    variables: {issue_instance_id: props.issue_instance_id, kind: props.kind},
   });
   const frames = (data?.initial_trace_frames?.edges || []).map(
     edge => edge.node,
@@ -274,7 +290,7 @@ function Expansion(
   } else {
     content = (
       <SelectFrame
-        issue_id={props.issue_id}
+        issue_instance_id={props.issue_instance_id}
         frames={frames}
         kind={props.kind}
       />
@@ -331,14 +347,14 @@ function Expansion(
 }
 
 function Trace(props: $ReadOnly<{|match: any|}>): React$Node {
-  const issue_id = props.match.params.issue_id;
+  const issue_instance_id = props.match.params.issue_id;
 
   const IssueQuery = gql`
-    query Issue($issue_id: Int!) {
-      issues(issue_id: $issue_id) {
+    query Issue($issue_instance_id: Int!) {
+      issues(issue_instance_id: $issue_instance_id) {
         edges {
           node {
-            issue_id
+            issue_instance_id
             code
             message
             callable
@@ -356,7 +372,9 @@ function Trace(props: $ReadOnly<{|match: any|}>): React$Node {
       }
     }
   `;
-  const {loading, error, data} = useQuery(IssueQuery, {variables: {issue_id}});
+  const {loading, error, data} = useQuery(IssueQuery, {
+    variables: {issue_instance_id},
+  });
 
   var content = null;
   if (error) {
@@ -371,9 +389,17 @@ function Trace(props: $ReadOnly<{|match: any|}>): React$Node {
       <>
         {loading ? <IssueSkeleton /> : <Issue issue={issue} hideTitle={true} />}
         <br />
-        <Expansion issue_id={issue_id} issue={issue} kind="postcondition" />
+        <Expansion
+          issue_instance_id={issue_instance_id}
+          issue={issue}
+          kind="postcondition"
+        />
         <TraceRoot data={data} loading={loading} />
-        <Expansion issue_id={issue_id} issue={issue} kind="precondition" />
+        <Expansion
+          issue_instance_id={issue_instance_id}
+          issue={issue}
+          kind="precondition"
+        />
       </>
     );
   }
@@ -382,7 +408,7 @@ function Trace(props: $ReadOnly<{|match: any|}>): React$Node {
     <>
       <Breadcrumb style={{margin: '16px 0'}}>
         <Breadcrumb.Item href="/">Issues</Breadcrumb.Item>
-        <Breadcrumb.Item>Traces for Issue {issue_id}</Breadcrumb.Item>
+        <Breadcrumb.Item>Traces for Issue {issue_instance_id}</Breadcrumb.Item>
       </Breadcrumb>
       {content}
     </>

@@ -572,11 +572,16 @@ details              show additional information about the current trace frame
 
             issues = builder.get()
             sources_list = [
-                issues_module.sources(session, issue.id) for issue in issues
+                issues_module.sources(session, issue.issue_instance_id)
+                for issue in issues
             ]
-            sinks_list = [issues_module.sinks(session, issue.id) for issue in issues]
+            sinks_list = [
+                issues_module.sinks(session, issue.issue_instance_id)
+                for issue in issues
+            ]
             features_list = [
-                issues_module.features(session, issue.id) for issue in issues
+                issues_module.features(session, issue.issue_instance_id)
+                for issue in issues
             ]
 
         issue_strings = []
@@ -861,12 +866,12 @@ details              show additional information about the current trace frame
             issue = self._get_current_issue(session)
             postcondition_initial_frames = trace.initial_frames(
                 session,
-                issue.id,
+                issue.issue_instance_id,
                 TraceKind.POSTCONDITION,
             )
             precondition_initial_frames = trace.initial_frames(
                 session,
-                issue.id,
+                issue.issue_instance_id,
                 TraceKind.PRECONDITION,
             )
 
@@ -1458,7 +1463,7 @@ details              show additional information about the current trace frame
         features_output = f"\n{' ' * 18}".join(features)
         return "\n".join(
             [
-                f"Issue {issue.id}",
+                f"Issue {issue.issue_instance_id}",
                 f"            Code: {issue.code}",
                 f"         Message: {issue.message}",
                 f"        Callable: {issue.callable}",
@@ -1570,7 +1575,8 @@ details              show additional information about the current trace frame
     def _get_current_issue(self, session: Session) -> IssueQueryResult:
         return (
             session.query(
-                IssueInstance.id,
+                # pyre-ignore[16]: SQLAlchemy
+                IssueInstance.id.label("issue_instance_id"),
                 FilenameText.contents.label("filename"),
                 IssueInstance.location,
                 Issue.code,
