@@ -83,9 +83,8 @@ def _pyre_configuration_directory(local_configuration: Optional[str]) -> Path:
 
 def _find_paths(local_configuration: Optional[str], paths: Set[str]) -> List[Path]:
     pyre_configuration_directory = _pyre_configuration_directory(local_configuration)
-
     if paths:
-        return [pyre_configuration_directory / path for path in paths]
+        return [Path(path).absolute() for path in paths]
     return [pyre_configuration_directory]
 
 

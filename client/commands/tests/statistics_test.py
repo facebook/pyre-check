@@ -24,8 +24,13 @@ from ..statistics import Statistics, _find_paths, parse_path_to_module
 from .command_test import mock_arguments, mock_configuration
 
 
+def mock_absolute(self: Path) -> Path:
+    return Path("example/path/client/" + self.name)
+
+
 class StatisticsTest(unittest.TestCase):
-    def test_find_targets(self) -> None:
+    @patch.object(Path, "absolute", mock_absolute)
+    def test_find_paths(self) -> None:
         self.assertEqual(
             _find_paths("example/path/client", set()), [Path("example/path/client")]
         )
