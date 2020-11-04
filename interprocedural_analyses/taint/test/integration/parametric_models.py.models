@@ -1,0 +1,120 @@
+@generated
+{
+  "kind": "issue",
+  "data": {
+    "callable": "parametric_models.f_and_g_to_test",
+    "callable_line": 21,
+    "code": 7001,
+    "line": 27,
+    "start": 9,
+    "end": 10,
+    "filename": "parametric_models.py",
+    "message": "[WithSubkind[A], WithSubkind[B]] flow into expects subkind.",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "parametric_models.py",
+              "line": 23,
+              "start": 12,
+              "end": 15
+            },
+            "leaves": [
+              {
+                "kind": "WithSubkind[A]",
+                "name": "parametric_models.f",
+                "on_all_flows": true
+              }
+            ]
+          },
+          {
+            "root": {
+              "filename": "parametric_models.py",
+              "line": 25,
+              "start": 12,
+              "end": 15
+            },
+            "leaves": [
+              {
+                "kind": "WithSubkind[B]",
+                "name": "parametric_models.g",
+                "on_all_flows": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "parametric_models.py",
+              "line": 27,
+              "start": 9,
+              "end": 10
+            },
+            "leaves": [
+              {
+                "kind": "ExpectsSubkind",
+                "name": "parametric_models.sink",
+                "on_all_flows": true
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "features": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "parametric_models.f",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          { "decl": null, "leaves": [ { "kind": "WithSubkind[A]" } ] }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "parametric_models.g",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          { "decl": null, "leaves": [ { "kind": "WithSubkind[B]" } ] }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "parametric_models.sink",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          { "decl": null, "leaves": [ { "kind": "ExpectsSubkind" } ] }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}

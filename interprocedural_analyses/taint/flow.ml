@@ -136,11 +136,17 @@ let get_issue_features { source_taint; sink_taint } =
 
 
 let generate_issues ~define { location; flows } =
+  let erase_source_subkind = function
+    | Sources.ParametricSource { source_name; _ } -> Sources.NamedSource source_name
+    | source -> source
+  in
+
   let partitions =
     let partition { source_taint; sink_taint } =
       {
         source_partition =
-          ForwardTaint.partition ForwardTaint.leaf source_taint ~f:(fun leaf -> Some leaf);
+          ForwardTaint.partition ForwardTaint.leaf source_taint ~f:(fun leaf ->
+              Some (erase_source_subkind leaf));
         sink_partition =
           BackwardTaint.partition BackwardTaint.leaf sink_taint ~f:(fun leaf -> Some leaf);
       }
@@ -150,7 +156,7 @@ let generate_issues ~define { location; flows } =
   let apply_rule { Rule.sources; sinks; code; _ } =
     let get_source_taint { source_partition; _ } =
       let add_source_taint source_taint source =
-        match Map.Poly.find source_partition source with
+        match Map.Poly.find source_partition (erase_source_subkind source) with
         | Some taint -> ForwardTaint.join source_taint taint
         | None -> source_taint
       in
