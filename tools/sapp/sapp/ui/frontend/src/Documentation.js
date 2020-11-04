@@ -19,6 +19,7 @@ export const Documentation = {
     distance: 'Explanation for distance',
     name: 'Explanation for name',
     feature: 'Explanation for feature',
+    likelyNew: 'Explanation for new',
   },
   filter: {
     codes: 'Only show issues with codes',

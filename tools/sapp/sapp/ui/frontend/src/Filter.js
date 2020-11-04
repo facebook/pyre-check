@@ -13,6 +13,7 @@ import {useQuery, useMutation, gql} from '@apollo/client';
 import {
   Alert,
   AutoComplete,
+  Checkbox,
   Divider,
   Dropdown,
   Popover,
@@ -56,6 +57,7 @@ type FilterDescription = {
   features?: $ReadOnlyArray<FeatureCondition>,
   traceLengthFromSources?: $ReadOnlyArray<number>,
   traceLengthToSinks?: $ReadOnlyArray<number>,
+  is_new_issue?: boolean,
 };
 
 const emptyFilter = {
@@ -69,6 +71,12 @@ const filterEqual = (
   left: FilterDescription,
   right: FilterDescription,
 ): boolean => {
+  Object.keys(left).forEach(key =>
+    left[key] === undefined ? delete left[key] : {},
+  );
+  Object.keys(right).forEach(key =>
+    right[key] === undefined ? delete right[key] : {},
+  );
   return JSON.stringify(left) === JSON.stringify(right);
 };
 
@@ -344,6 +352,31 @@ const Features = (
   );
 };
 
+const IsNewIssue = (
+  props: $ReadOnly<{
+    currentFilter: FilterDescription,
+    setCurrentFilter: FilterDescription => void,
+  }>,
+): React$Node => {
+  return (
+    <>
+      <Label label="status" />
+      <div>
+        <Checkbox
+          checked={props.currentFilter.is_new_issue}
+          onChange={event =>
+            props.setCurrentFilter({
+              ...props.currentFilter,
+              is_new_issue: event.target.checked ? true : undefined,
+            })
+          }
+        />{' '}
+        only show likely new issues
+      </div>
+    </>
+  );
+};
+
 type TraceLengthKind = 'sources' | 'sinks';
 
 const TraceLength = (
@@ -429,6 +462,11 @@ const FilterForm = (props: {
         setCurrentFilter={props.setCurrentFilter}
       />
       <Features
+        currentFilter={props.currentFilter}
+        setCurrentFilter={props.setCurrentFilter}
+      />
+      <Divider />
+      <IsNewIssue
         currentFilter={props.currentFilter}
         setCurrentFilter={props.setCurrentFilter}
       />

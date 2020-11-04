@@ -21,6 +21,7 @@ import {
 } from 'antd';
 import {
   CodeTwoTone,
+  ExclamationCircleOutlined,
   FireOutlined,
   MinusCircleOutlined,
   PlusCircleOutlined,
@@ -132,6 +133,7 @@ export type IssueDescription = {
   features: $ReadOnlyArray<string>,
   min_trace_length_to_sources: number,
   min_trace_length_to_sinks: number,
+  is_new_issue: boolean,
 };
 
 export function Issue(
@@ -185,6 +187,18 @@ export function Issue(
         <Label>Description</Label>
         <Item>{props.issue.message}</Item>
       </Row>
+      {props.issue.is_new_issue ? (
+        <Row gutter={gutter}>
+          <Label>Status</Label>
+          <Item>
+            <Tooltip title={Documentation.issues.likelyNew}>
+              <Tag icon={<ExclamationCircleOutlined />} color="warning">
+                likely new
+              </Tag>
+            </Tooltip>
+          </Item>
+        </Row>
+      ) : null}
       <Row gutter={gutter}>
         <Label>Callable</Label>
         <Item>

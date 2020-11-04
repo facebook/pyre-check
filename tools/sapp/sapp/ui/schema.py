@@ -97,6 +97,7 @@ class Query(graphene.ObjectType):
         min_trace_length_to_sources=graphene.Int(),
         max_trace_length_to_sources=graphene.Int(),
         issue_instance_id=graphene.Int(),
+        is_new_issue=graphene.Boolean(),
     )
 
     trace = relay.ConnectionField(TraceFrameConnection, issue_instance_id=graphene.ID())
@@ -137,6 +138,7 @@ class Query(graphene.ObjectType):
         min_trace_length_to_sources: Optional[int] = None,
         max_trace_length_to_sources: Optional[int] = None,
         issue_instance_id: Optional[int] = None,
+        is_new_issue: Optional[bool] = None,
         **kwargs: Any,
     ) -> List[IssueQueryResult]:
         session = get_session(info.context)
@@ -153,6 +155,7 @@ class Query(graphene.ObjectType):
                 min_trace_length_to_sources, max_trace_length_to_sources
             )
             .where_issue_instance_id_is(issue_instance_id)
+            .where_is_new_issue(is_new_issue)
         )
 
         for feature in features or []:

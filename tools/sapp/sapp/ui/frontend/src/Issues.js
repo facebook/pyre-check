@@ -137,6 +137,7 @@ const IssueQuery = gql`
     $max_trace_length_to_sinks: Int
     $min_trace_length_to_sources: Int
     $max_trace_length_to_sources: Int
+    $is_new_issue: Boolean
   ) {
     issues(
       first: 20
@@ -150,6 +151,7 @@ const IssueQuery = gql`
       max_trace_length_to_sinks: $max_trace_length_to_sinks
       min_trace_length_to_sources: $min_trace_length_to_sources
       max_trace_length_to_sources: $max_trace_length_to_sources
+      is_new_issue: $is_new_issue
     ) {
       edges {
         node {
@@ -165,6 +167,7 @@ const IssueQuery = gql`
           sinks
           sink_names
           features
+          is_new_issue
           min_trace_length_to_sources
           min_trace_length_to_sinks
         }

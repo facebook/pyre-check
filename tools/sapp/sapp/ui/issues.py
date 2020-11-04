@@ -62,6 +62,8 @@ class IssueQueryResultType(graphene.ObjectType):
     sink_names = graphene.List(graphene.String)
     features = graphene.List(graphene.String)
 
+    is_new_issue = graphene.Boolean()
+
     min_trace_length_to_sources = graphene.Int()
     min_trace_length_to_sinks = graphene.Int()
 
@@ -98,6 +100,8 @@ class IssueQueryResult(NamedTuple):
     filename: str
     location: SourceLocation
 
+    is_new_issue: bool
+
     min_trace_length_to_sources: int
     min_trace_length_to_sinks: int
 
@@ -114,6 +118,7 @@ class IssueQueryResult(NamedTuple):
             callable=record.callable,
             filename=record.filename,
             location=record.location,
+            is_new_issue=record.is_new_issue,
             min_trace_length_to_sources=record.min_trace_length_to_sources,
             min_trace_length_to_sinks=record.min_trace_length_to_sinks,
             features=set(record.concatenated_features.split(","))
@@ -161,6 +166,7 @@ class Instance:
                 Issue.code,
                 CallableText.contents.label("callable"),
                 MessageText.contents.label("message"),
+                IssueInstance.is_new_issue,
                 IssueInstance.min_trace_length_to_sources,
                 IssueInstance.min_trace_length_to_sinks,
                 features.c.concatenated_features,
@@ -200,6 +206,11 @@ class Instance:
     def where_issue_instance_id_is(self, issue_id: Optional[int]) -> "Instance":
         if issue_id is not None:
             self._predicates.append(filters.Equals(IssueInstance.id, issue_id))
+        return self
+
+    def where_is_new_issue(self, is_new_issue: Optional[bool]) -> "Instance":
+        if is_new_issue:
+            self._predicates.append(filters.Equals(IssueInstance.is_new_issue, True))
         return self
 
     def where_codes_is_any_of(self, codes: List[int]) -> "Instance":
