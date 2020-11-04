@@ -31,5 +31,6 @@ def runs(session: Session) -> List[Run]:
     return (
         session.query(RunColumn.id.label("run_id"), RunColumn.date)
         .filter(RunColumn.status == "finished")
+        .order_by(RunColumn.id.desc())
         .all()
     )
