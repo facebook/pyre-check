@@ -23,7 +23,10 @@ module T = struct
   let _ = show_breadcrumbs (* unused but derived *)
 
   type leaf_kind =
-    | Leaf of string
+    | Leaf of {
+        name: string;
+        subkind: string option;
+      }
     | Breadcrumbs of breadcrumbs
 
   type taint_annotation =
@@ -182,6 +185,11 @@ let rec parse_annotations ~configuration ~parameters annotation =
           (show_expression expression.Node.value)
         |> failwith
   in
+  let extract_subkind { Node.value = expression; _ } =
+    match expression with
+    | Expression.Name (Name.Identifier subkind) -> Some subkind
+    | _ -> None
+  in
   let base_name = function
     | {
         Node.value =
@@ -238,7 +246,7 @@ let rec parse_annotations ~configuration ~parameters annotation =
   in
   let rec extract_kinds expression =
     match expression.Node.value with
-    | Expression.Name (Name.Identifier taint_kind) -> [Leaf taint_kind]
+    | Expression.Name (Name.Identifier taint_kind) -> [Leaf { name = taint_kind; subkind = None }]
     | Name (Name.Attribute { base; _ }) -> extract_kinds base
     | Call { callee; arguments = { Call.Argument.value = expression; _ } :: _ } -> (
         match base_name callee with
@@ -260,8 +268,18 @@ let rec parse_annotations ~configuration ~parameters annotation =
         | Some "Updates" ->
             extract_names expression
             |> List.map ~f:(fun name ->
-                   Leaf (Format.sprintf "ParameterUpdate%d" (get_parameter_position name)))
-        | _ -> extract_kinds callee )
+                   Leaf
+                     {
+                       name = Format.sprintf "ParameterUpdate%d" (get_parameter_position name);
+                       subkind = None;
+                     })
+        | _ ->
+            let kinds = extract_kinds callee in
+            let subkind = extract_subkind expression in
+            List.map kinds ~f:(fun kind ->
+                match kind with
+                | Leaf { name; subkind = None } -> Leaf { name; subkind }
+                | _ -> kind) )
     | Call { callee; _ } -> extract_kinds callee
     | Tuple expressions -> List.concat_map ~f:extract_kinds expressions
     | _ ->
@@ -274,7 +292,7 @@ let rec parse_annotations ~configuration ~parameters annotation =
     let kinds, breadcrumbs =
       extract_kinds expression
       |> List.partition_map ~f:(function
-             | Leaf l -> Either.First l
+             | Leaf { name = leaf; subkind } -> Either.First (leaf, subkind)
              | Breadcrumbs b -> Either.Second b)
     in
     kinds, List.concat breadcrumbs
@@ -282,10 +300,10 @@ let rec parse_annotations ~configuration ~parameters annotation =
   let get_source_kinds expression =
     let open Configuration in
     let kinds, breadcrumbs = extract_leafs expression in
-    List.map kinds ~f:(fun kind ->
+    List.map kinds ~f:(fun (kind, subkind) ->
         Source
           {
-            source = Sources.parse ~allowed:configuration.sources kind;
+            source = Sources.parse ~allowed:configuration.sources ?subkind kind;
             breadcrumbs;
             path = [];
             leaf_name_provided = false;
@@ -294,7 +312,7 @@ let rec parse_annotations ~configuration ~parameters annotation =
   let get_sink_kinds expression =
     let open Configuration in
     let kinds, breadcrumbs = extract_leafs expression in
-    List.map kinds ~f:(fun kind ->
+    List.map kinds ~f:(fun (kind, _) ->
         Sink
           {
             sink = Sinks.parse ~allowed:configuration.sinks kind;
@@ -309,7 +327,7 @@ let rec parse_annotations ~configuration ~parameters annotation =
     match kinds with
     | [] -> [Tito { tito = Sinks.LocalReturn; breadcrumbs; path = [] }]
     | _ ->
-        List.map kinds ~f:(fun kind ->
+        List.map kinds ~f:(fun (kind, _) ->
             Tito { tito = Sinks.parse ~allowed:configuration.sinks kind; breadcrumbs; path = [] })
   in
   let extract_attach_features ~name expression =

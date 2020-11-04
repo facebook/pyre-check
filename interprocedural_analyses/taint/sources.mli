@@ -8,11 +8,15 @@
 type t =
   | Attach
   | NamedSource of string
+  | ParametricSource of {
+      source_name: string;
+      subkind: string;
+    }
 [@@deriving compare, eq, sexp, show, hash]
 
 val name : string
 
-val parse : allowed:string list -> string -> t
+val parse : allowed:string list -> ?subkind:string -> string -> t
 
 val ignore_leaf_at_call : t -> bool
 

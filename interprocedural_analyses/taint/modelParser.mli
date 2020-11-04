@@ -15,7 +15,10 @@ module T : sig
   type breadcrumbs = Features.Simple.t list [@@deriving show, compare]
 
   type leaf_kind =
-    | Leaf of string
+    | Leaf of {
+        name: string;
+        subkind: string option;
+      }
     | Breadcrumbs of breadcrumbs
 
   type taint_annotation =

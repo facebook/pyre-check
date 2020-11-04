@@ -200,6 +200,17 @@ let test_source_models context =
     |}
     ~expect:[outcome ~kind:`Method ~returns:[Sources.NamedSource "Test"] "test.C.foo"]
     ();
+  assert_model
+    ~source:"def f(x: int): ..."
+    ~model_source:"def test.f(x) -> TaintSource[Test[Subkind]]: ..."
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~returns:[Sources.ParametricSource { source_name = "Test"; subkind = "Subkind" }]
+          "test.f";
+      ]
+    ();
   ()
 
 

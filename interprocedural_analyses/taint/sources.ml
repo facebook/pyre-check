@@ -11,6 +11,10 @@ module T = struct
   type t =
     | Attach
     | NamedSource of string
+    | ParametricSource of {
+        source_name: string;
+        subkind: string;
+      }
   [@@deriving compare, eq, sexp, show, hash]
 end
 
@@ -21,6 +25,7 @@ let _ = show (* unused *)
 let show = function
   | Attach -> "Attach"
   | NamedSource name -> name
+  | ParametricSource { source_name; subkind } -> Format.sprintf "%s[%s]" source_name subkind
 
 
 let create = function
@@ -32,9 +37,11 @@ let ignore_leaf_at_call = function
   | _ -> false
 
 
-let parse ~allowed name =
+let parse ~allowed ?subkind name =
   if List.mem allowed name ~equal:String.equal then
-    NamedSource name
+    match subkind with
+    | Some subkind -> ParametricSource { source_name = name; subkind }
+    | None -> NamedSource name
   else
     create name
 
