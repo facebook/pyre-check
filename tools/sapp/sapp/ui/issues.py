@@ -45,6 +45,7 @@ class IssueQueryResultType(graphene.ObjectType):
     class Meta:
         interfaces = (graphene.relay.Node,)
 
+    issue_id = graphene.ID()
     issue_instance_id = graphene.ID()
 
     code = graphene.Int()
@@ -86,6 +87,7 @@ class IssueQueryResultType(graphene.ObjectType):
 
 
 class IssueQueryResult(NamedTuple):
+    issue_id: DBID
     issue_instance_id: DBID
 
     code: int
@@ -105,6 +107,7 @@ class IssueQueryResult(NamedTuple):
     # pyre-fixme[2]: Parameter annotation cannot be `Any`.
     def from_record(record: Any) -> IssueQueryResult:
         return IssueQueryResult(
+            issue_id=record.issue_id,
             issue_instance_id=record.issue_instance_id,
             code=record.code,
             message=record.message,
@@ -153,6 +156,8 @@ class Instance:
                 IssueInstance.id.label("issue_instance_id"),
                 FilenameText.contents.label("filename"),
                 IssueInstance.location,
+                # pyre-ignore[16]: SQLAlchemy
+                Issue.id.label("issue_id"),
                 Issue.code,
                 CallableText.contents.label("callable"),
                 MessageText.contents.label("message"),

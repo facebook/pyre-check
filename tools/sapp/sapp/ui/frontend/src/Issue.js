@@ -118,6 +118,7 @@ function Leaves(
 }
 
 export type IssueDescription = {
+  issue_id: number,
   issue_instance_id: number,
   code: number,
   message: string,
@@ -159,11 +160,7 @@ export function Issue(
       title={
         <>
           <FireOutlined style={{marginRight: '.5em'}} />
-          {props.hideTitle ? (
-            'Issue'
-          ) : (
-            <>Issue {props.issue.issue_instance_id}</>
-          )}
+          {props.hideTitle ? 'Issue' : <>Issue {props.issue.issue_id}</>}
         </>
       }
       extra={

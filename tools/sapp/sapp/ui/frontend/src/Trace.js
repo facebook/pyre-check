@@ -354,6 +354,7 @@ function Trace(props: $ReadOnly<{|match: any|}>): React$Node {
       issues(issue_instance_id: $issue_instance_id) {
         edges {
           node {
+            issue_id
             issue_instance_id
             code
             message
@@ -375,6 +376,7 @@ function Trace(props: $ReadOnly<{|match: any|}>): React$Node {
   const {loading, error, data} = useQuery(IssueQuery, {
     variables: {issue_instance_id},
   });
+  const issue = data?.issues?.edges[0]?.node || null;
 
   var content = null;
   if (error) {
@@ -384,7 +386,6 @@ function Trace(props: $ReadOnly<{|match: any|}>): React$Node {
       </Modal>
     );
   } else {
-    const issue = data?.issues?.edges[0]?.node || null;
     content = (
       <>
         {loading ? <IssueSkeleton /> : <Issue issue={issue} hideTitle={true} />}
@@ -408,7 +409,9 @@ function Trace(props: $ReadOnly<{|match: any|}>): React$Node {
     <>
       <Breadcrumb style={{margin: '16px 0'}}>
         <Breadcrumb.Item href="/">Issues</Breadcrumb.Item>
-        <Breadcrumb.Item>Traces for Issue {issue_instance_id}</Breadcrumb.Item>
+        <Breadcrumb.Item>
+          Traces for Issue {issue?.issue_id || ''}
+        </Breadcrumb.Item>
       </Breadcrumb>
       {content}
     </>

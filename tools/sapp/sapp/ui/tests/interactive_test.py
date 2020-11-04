@@ -1720,6 +1720,7 @@ class InteractiveTest(TestCase):
 
     def testCreateIssueOutputStringNoSourcesNoSinks(self):
         issue = IssueQueryResult(
+            issue_id=1,
             issue_instance_id=1,
             filename="module.py",
             location=SourceLocation(1, 2, 3),
@@ -1749,6 +1750,7 @@ class InteractiveTest(TestCase):
 
     def testCreateIssueOutputStringNoFeatures(self):
         issue = IssueQueryResult(
+            issue_id=1,
             issue_instance_id=1,
             filename="module.py",
             location=SourceLocation(1, 2, 3),
@@ -1777,6 +1779,7 @@ class InteractiveTest(TestCase):
 
     def testCreateIssueOutputStringTraceLength(self):
         issue1 = IssueQueryResult(
+            issue_id=1,
             issue_instance_id=1,
             filename="module.py",
             location=SourceLocation(1, 2, 3),
@@ -1796,6 +1799,7 @@ class InteractiveTest(TestCase):
         self.assertIn("Min Trace Length: Source (0) | Sink (6)", result)
 
         issue2 = IssueQueryResult(
+            issue_id=1,
             issue_instance_id=1,
             filename="module.py",
             location=SourceLocation(1, 2, 3),
