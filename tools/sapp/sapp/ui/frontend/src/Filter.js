@@ -36,7 +36,7 @@ import {
   SaveOutlined,
   DeleteOutlined,
 } from '@ant-design/icons';
-import {DocumentationTooltip} from './Documentation.js';
+import {Documentation} from './Documentation.js';
 
 import './Filter.css';
 
@@ -54,8 +54,8 @@ type FilterDescription = {
   paths?: $ReadOnlyArray<string>,
   callables?: $ReadOnlyArray<string>,
   features?: $ReadOnlyArray<FeatureCondition>,
-  trace_length_from_sources?: $ReadOnlyArray<number>,
-  trace_length_to_sinks?: $ReadOnlyArray<number>,
+  traceLengthFromSources?: $ReadOnlyArray<number>,
+  traceLengthToSinks?: $ReadOnlyArray<number>,
 };
 
 const emptyFilter = {
@@ -63,6 +63,7 @@ const emptyFilter = {
 };
 
 const infiniteTraceLength = 31;
+const gutter = [8, 8];
 
 const Label = (props: $ReadOnly<{label: string}>): React$Node => {
   const title = props.label
@@ -71,43 +72,19 @@ const Label = (props: $ReadOnly<{label: string}>): React$Node => {
     .join(' ');
   return (
     <>
-      {title}
-      <DocumentationTooltip path={'filter.' + props.label} />
+      <Tooltip title={Documentation.filter[props.label]}>
+        <Text type="secondary"> {title}</Text>
+      </Tooltip>
     </>
   );
 };
 
-const FilterForm = (props: {
-  refetch: any,
-  refetching: boolean,
-  setVisible: boolean => void,
-  currentFilter: FilterDescription,
-  setCurrentFilter: FilterDescription => void,
-}): React$Node => {
-  const [form] = Form.useForm();
-
-  const [callablesMode, setCallablesMode] = useState('is');
-
-  var values = props.currentFilter;
-  // Remove `null` values to work around display issues in form with lists.
-  Object.keys(values).forEach(key => values[key] == null && delete values[key]);
-  form.setFieldsValue({
-    codes: values.codes,
-    paths: values.paths,
-    features: values.features,
-    trace_length_from_sources: values.trace_length_from_sources,
-    trace_length_to_sinks: values.trace_length_to_sinks,
-  });
-  if (callablesMode === 'is') {
-    form.setFieldsValue({
-      callables: values.callables,
-    });
-  }
-
-  const [appliedFilter, setAppliedFilter] = useState<FilterDescription>(
-    emptyFilter,
-  );
-
+const Codes = (
+  props: $ReadOnly<{
+    currentFilter: FilterDescription,
+    setCurrentFilter: FilterDescription => void,
+  }>,
+): React$Node => {
   const codesQuery = gql`
     query Codes {
       codes {
@@ -122,6 +99,32 @@ const FilterForm = (props: {
   const {data: codesData} = useQuery(codesQuery);
   const allCodes = (codesData?.codes?.edges || []).map(edge => edge.node.code);
 
+  return (
+    <>
+      <Label label="codes" />
+      <Row gutter={gutter}>
+        <Col span={22}>
+          <Select
+            mode="multiple"
+            value={props.currentFilter.codes}
+            options={allCodes.map(value => ({value}))}
+            style={{width: '100%'}}
+            onChange={codes =>
+              props.setCurrentFilter({...props.currentFilter, codes})
+            }
+          />
+        </Col>
+      </Row>
+    </>
+  );
+};
+
+const Paths = (
+  props: $ReadOnly<{
+    currentFilter: FilterDescription,
+    setCurrentFilter: FilterDescription => void,
+  }>,
+): React$Node => {
   const pathsQuery = gql`
     query Paths {
       paths {
@@ -135,6 +138,35 @@ const FilterForm = (props: {
   `;
   const {data: pathsData} = useQuery(pathsQuery);
   const allPaths = (pathsData?.paths?.edges || []).map(edge => edge.node.path);
+
+  return (
+    <>
+      <Label label="paths" />
+      <Row gutter={gutter}>
+        <Col span={22}>
+          <Select
+            mode="multiple"
+            value={props.currentFilter.paths}
+            options={allPaths.map(value => ({value}))}
+            style={{width: '100%'}}
+            onChange={paths =>
+              props.setCurrentFilter({...props.currentFilter, paths})
+            }
+          />
+        </Col>
+      </Row>
+    </>
+  );
+};
+
+const Callables = (
+  props: $ReadOnly<{
+    currentFilter: FilterDescription,
+    setCurrentFilter: FilterDescription => void,
+  }>,
+): React$Node => {
+  const [mode, setMode] = useState('is');
+  const [inputValue, setInputValue] = useState(null);
 
   const callablesQuery = gql`
     query Callables {
@@ -152,6 +184,65 @@ const FilterForm = (props: {
     edge => edge.node.callable,
   );
 
+  return (
+    <>
+      <Label label="callables" />
+      <Row gutter={gutter}>
+        <Col span={6}>
+          <Select
+            options={[{value: 'is'}, {value: 'matches'}]}
+            value={mode}
+            onChange={setMode}
+            style={{width: '100%'}}
+          />
+        </Col>
+        <Col span={16}>
+          {mode === 'is' ? (
+            <Select
+              mode="multiple"
+              value={props.currentFilter.callables}
+              options={allCallables.map(value => ({value}))}
+              style={{width: '100%'}}
+              onChange={callables =>
+                props.setCurrentFilter({...props.currentFilter, callables})
+              }
+            />
+          ) : (
+            <Input
+              placeholder="regular experssion"
+              style={{width: '100%'}}
+              value={inputValue}
+              onChange={event => {
+                const value = event.target.value;
+                setInputValue(value);
+                const callables = allCallables.filter(callable =>
+                  callable.match(value),
+                );
+                props.setCurrentFilter({...props.currentFilter, callables});
+              }}
+              suffix={
+                <Tooltip
+                  title={(props.currentFilter.callables || []).join('\n')}
+                  placement="bottom">
+                  <Text type="secondary" size="small">
+                    {(props.currentFilter.callables || []).length}
+                  </Text>
+                </Tooltip>
+              }
+            />
+          )}
+        </Col>
+      </Row>
+    </>
+  );
+};
+
+const Features = (
+  props: $ReadOnly<{
+    currentFilter: FilterDescription,
+    setCurrentFilter: FilterDescription => void,
+  }>,
+): React$Node => {
   const featuresQuery = gql`
     query Features {
       features {
@@ -168,7 +259,150 @@ const FilterForm = (props: {
     edge => edge.node.feature,
   );
 
-  const onFinish = (filter: FilterDescription) => {
+  const features = props.currentFilter.features || [];
+
+  return (
+    <>
+      <Label label="features" />
+      {features.map((feature, index) => {
+        const updateFeature = update => {
+          var newFeatures = [...features];
+          newFeatures[index] = {...feature, ...update};
+          props.setCurrentFilter({
+            ...props.currentFilter,
+            features: newFeatures,
+          });
+        };
+
+        return (
+          <Row gutter={gutter}>
+            <Col span={6}>
+              <Select
+                options={[
+                  {value: 'all of'},
+                  {value: 'any of'},
+                  {value: 'none of'},
+                ]}
+                value={feature.mode}
+                style={{width: '100%'}}
+                onChange={mode => updateFeature({mode})}
+              />
+            </Col>
+            <Col span={16}>
+              <Select
+                mode="multiple"
+                options={allFeatures.map(value => ({value}))}
+                value={feature.features}
+                onChange={features => updateFeature({features})}
+                style={{width: '100%'}}
+              />
+            </Col>
+            <Col span={2}>
+              <Button
+                type="text"
+                onClick={() => {
+                  props.setCurrentFilter({
+                    ...props.currentFilter,
+                    features: features.filter(
+                      (_, filterIndex) => index !== filterIndex,
+                    ),
+                  });
+                }}
+                disabled={features.length < 2}
+                icon={<MinusCircleOutlined />}
+              />
+            </Col>
+          </Row>
+        );
+      })}
+      <Row gutter={gutter}>
+        <Col span={22}>
+          <Button
+            type="dashed"
+            onClick={() => {
+              props.setCurrentFilter({
+                ...props.currentFilter,
+                features: [...features, {mode: 'all of', features: []}],
+              });
+            }}
+            icon={<PlusOutlined />}
+            style={{width: '100%', marginTop: 5}}
+            block>
+            {' '}
+            Add Condition
+          </Button>
+        </Col>
+      </Row>
+    </>
+  );
+};
+
+type TraceLengthKind = 'sources' | 'sinks';
+
+const TraceLength = (
+  props: $ReadOnly<{
+    kind: TraceLengthKind,
+    currentFilter: FilterDescription,
+    setCurrentFilter: FilterDescription => void,
+  }>,
+): React$Node => {
+  const value =
+    props.kind === 'sources'
+      ? props.currentFilter.traceLengthFromSources
+      : props.currentFilter.traceLengthToSinks;
+  return (
+    <Row gutter={gutter}>
+      <Col span={5} style={{paddingTop: 10}}>
+        <Text type="secondary">
+          {props.kind === 'sources' ? 'From Sources' : 'To Sinks'}
+        </Text>
+      </Col>
+      <Col span={17}>
+        <Slider
+          range
+          min={0}
+          max={infiniteTraceLength}
+          defaultValue={[0, infiniteTraceLength]}
+          marks={{
+            '0': '0',
+            '31': 'unlimited',
+          }}
+          tipFormatter={value =>
+            value === infiniteTraceLength ? 'unlimited' : value
+          }
+          value={value}
+          onChange={value => {
+            if (props.kind === 'sources') {
+              props.setCurrentFilter({
+                ...props.currentFilter,
+                traceLengthFromSources: value,
+              });
+            } else {
+              props.setCurrentFilter({
+                ...props.currentFilter,
+                traceLengthToSinks: value,
+              });
+            }
+          }}
+        />
+      </Col>
+    </Row>
+  );
+};
+
+const FilterForm = (props: {
+  refetch: any,
+  refetching: boolean,
+  setVisible: boolean => void,
+  currentFilter: FilterDescription,
+  setCurrentFilter: FilterDescription => void,
+}): React$Node => {
+  const [appliedFilter, setAppliedFilter] = useState<FilterDescription>(
+    emptyFilter,
+  );
+
+  const apply = () => {
+    setAppliedFilter(props.currentFilter);
     const rangeValue = value => {
       if (value === 0) {
         return undefined;
@@ -178,258 +412,78 @@ const FilterForm = (props: {
       }
       return value;
     };
-    setAppliedFilter(filter);
+
     props.refetch({
-      ...filter,
+      ...props.currentFilter,
       min_trace_length_to_sources: rangeValue(
-        (filter.trace_length_from_sources || [])[0],
+        (props.currentFilter.traceLengthFromSources || [])[0],
       ),
       max_trace_length_to_sources: rangeValue(
-        (filter.trace_length_from_sources || [])[1],
+        (props.currentFilter.traceLengthFromSources || [])[1],
       ),
       min_trace_length_to_sinks: rangeValue(
-        (filter.trace_length_to_sinks || [])[0],
+        (props.currentFilter.traceLengthToSinks || [])[0],
       ),
       max_trace_length_to_sinks: rangeValue(
-        (filter.trace_length_to_sinks || [])[1],
+        (props.currentFilter.traceLengthToSinks || [])[1],
       ),
     });
     props.setVisible(false);
   };
 
-  const onFieldsChange = () => {
-    values = form.getFieldsValue();
-    var callables = values.callables;
-    if (callables !== undefined && !Array.isArray(callables)) {
-      if (callables === '') {
-        callables = [];
-      } else {
-        const pattern = callables;
-        callables = allCallables.filter(callable => callable.match(pattern));
-      }
-    }
-    props.setCurrentFilter({...values, callables});
-  };
-
-  const features = props.currentFilter.features || [];
-
   return (
-    <Form
-      layout="vertical"
-      form={form}
-      name="basic"
-      autoComplete="off"
-      initialValues={{remember: true}}
-      onFinish={onFinish}
-      onFieldsChange={onFieldsChange}>
-      <Form.Item label={<Label label="codes" />} name="codes">
-        <Row>
-          <Col span={22}>
-            <Select
-              mode="multiple"
-              options={allCodes.map(value => ({value}))}
-            />
-          </Col>
-        </Row>
-      </Form.Item>
-      <Form.Item label={<Label label="paths" />} name="paths">
-        <Row>
-          <Col span={22}>
-            <Select
-              mode="multiple"
-              options={allPaths.map(value => ({value}))}
-            />
-          </Col>
-        </Row>
-      </Form.Item>
-      <Form.Item label={<Label label="callables" />}>
-        <Row style={{marginTop: 5}}>
-          <Col span={6}>
-            <Form.Item>
-              <Select
-                options={[{value: 'is'}, {value: 'matches'}]}
-                value={callablesMode}
-                onChange={value => {
-                  props.setCurrentFilter({
-                    ...props.currentFilter,
-                    callables: undefined,
-                  });
-                  setCallablesMode(value);
-                }}
-              />
-            </Form.Item>
-          </Col>
-          <Col span={16}>
-            <Form.Item name="callables">
-              {callablesMode === 'is' ? (
-                <Select
-                  mode="multiple"
-                  options={allCallables.map(value => ({value}))}
-                />
-              ) : (
-                <Input
-                  placeholder="regular experssion"
-                  onChange={onFieldsChange}
-                  suffix={
-                    <Tooltip
-                      title={(props.currentFilter.callables || []).join('\n')}
-                      placement="bottom">
-                      <Text type="secondary" size="small">{`[${
-                        (props.currentFilter.callables || []).length
-                      }]`}</Text>
-                    </Tooltip>
-                  }
-                />
-              )}
-            </Form.Item>
-          </Col>
-        </Row>
-      </Form.Item>
-      <div class="form-features">
-        <Form.Item>
-          {features.map((feature, index) => {
-            return (
-              <Form.Item
-                key={index}
-                label={index === 0 ? <Label label="features" /> : null}>
-                <Row style={{marginTop: 5}}>
-                  <Col span={6}>
-                    <Form.Item name={['features', index, 'mode']}>
-                      <Select
-                        options={[
-                          {value: 'all of'},
-                          {value: 'any of'},
-                          {value: 'none of'},
-                        ]}
-                      />
-                    </Form.Item>
-                  </Col>
-                  <Col span={16}>
-                    <Form.Item name={['features', index, 'features']}>
-                      <Select
-                        mode="multiple"
-                        options={allFeatures.map(value => ({value}))}
-                      />
-                    </Form.Item>
-                  </Col>
-                  <Col span={2}>
-                    <Button
-                      type="text"
-                      onClick={() => {
-                        const newFeatureConditions = (
-                          props.currentFilter.features || []
-                        ).filter((_, filterIndex) => index !== filterIndex);
-                        props.setCurrentFilter({
-                          ...props.currentFilter,
-                          features: newFeatureConditions,
-                        });
-                      }}
-                      disabled={features.length < 2}
-                      icon={<MinusCircleOutlined />}
-                    />
-                  </Col>
-                </Row>
-              </Form.Item>
-            );
-          })}
-          <Row>
-            <Col span={22}>
-              <Button
-                type="dashed"
-                onClick={() => {
-                  const newFeatureConditions = [
-                    ...(props.currentFilter.features || []),
-                    {mode: 'all of', features: []},
-                  ];
-                  props.setCurrentFilter({
-                    ...props.currentFilter,
-                    features: newFeatureConditions,
-                  });
-                }}
-                icon={<PlusOutlined />}
-                style={{width: '100%', marginTop: 5}}
-                block>
-                {' '}
-                Add Condition
-              </Button>
-            </Col>
-          </Row>
-        </Form.Item>
-      </div>
-      <div class="form-trace-lengths">
-        <Form.Item label={<Label label="traceLengths" />}>
-          <Row>
-            <Col span={6} style={{paddingTop: 4}}>
-              <Text type="secondary">From Sources </Text>
-            </Col>
-            <Col span={16}>
-              <Form.Item name="trace_length_from_sources">
-                <Slider
-                  range
-                  min={0}
-                  max={infiniteTraceLength}
-                  defaultValue={[0, infiniteTraceLength]}
-                  marks={{
-                    '0': '0',
-                    '31': 'unlimited',
-                  }}
-                  tipFormatter={value =>
-                    value === infiniteTraceLength ? 'unlimited' : value
-                  }
-                />
-              </Form.Item>
-            </Col>
-          </Row>
-          <Row>
-            <Col span={6} style={{paddingTop: 4}}>
-              <Text type="secondary">To Sinks </Text>
-            </Col>
-            <Col span={16}>
-              <Form.Item name="trace_length_to_sinks">
-                <Slider
-                  range
-                  min={0}
-                  max={infiniteTraceLength}
-                  defaultValue={[0, infiniteTraceLength]}
-                  marks={{
-                    '0': '0',
-                    '31': 'unlimited',
-                  }}
-                  tipFormatter={value =>
-                    value === infiniteTraceLength ? 'unlimited' : value
-                  }
-                />
-              </Form.Item>
-            </Col>
-          </Row>
-        </Form.Item>
-      </div>
+    <>
+      <Codes
+        currentFilter={props.currentFilter}
+        setCurrentFilter={props.setCurrentFilter}
+      />
+      <Paths
+        currentFilter={props.currentFilter}
+        setCurrentFilter={props.setCurrentFilter}
+      />
+      <Callables
+        currentFilter={props.currentFilter}
+        setCurrentFilter={props.setCurrentFilter}
+      />
+      <Features
+        currentFilter={props.currentFilter}
+        setCurrentFilter={props.setCurrentFilter}
+      />
       <Divider />
-      <Form.Item>
-        <div style={{textAlign: 'right'}}>
-          <Button
-            onClick={() => {
-              props.setCurrentFilter(emptyFilter);
-              form.resetFields();
-            }}
-            disabled={
-              Object.keys(props.currentFilter).length === 0 || props.refetching
-            }>
-            Clear
-          </Button>{' '}
-          <Button
-            type="primary"
-            htmlType="submit"
-            loading={props.refetching}
-            disabled={
-              JSON.stringify(appliedFilter) ===
-              JSON.stringify(props.currentFilter)
-            }>
-            Apply
-          </Button>
-        </div>
-      </Form.Item>
-    </Form>
+      <Label label="traceLengths" />
+      <TraceLength
+        kind="sources"
+        currentFilter={props.currentFilter}
+        setCurrentFilter={props.setCurrentFilter}
+      />
+      <TraceLength
+        kind="sinks"
+        currentFilter={props.currentFilter}
+        setCurrentFilter={props.setCurrentFilter}
+      />
+      <Divider />
+      <div style={{textAlign: 'right'}}>
+        <Button
+          onClick={() => {
+            props.setCurrentFilter(emptyFilter);
+          }}
+          disabled={
+            JSON.stringify(props.currentFilter) === JSON.stringify(emptyFilter)
+          }>
+          Clear
+        </Button>{' '}
+        <Button
+          type="primary"
+          onClick={apply}
+          loading={props.refetching}
+          disabled={
+            JSON.stringify(appliedFilter) ===
+            JSON.stringify(props.currentFilter)
+          }>
+          Apply
+        </Button>
+      </div>
+    </>
   );
 };
 
