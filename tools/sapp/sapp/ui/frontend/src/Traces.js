@@ -37,7 +37,7 @@ import {Documentation} from './Documentation.js';
 import {Issue, IssueSkeleton} from './Issue.js';
 import {HumanReadable, HumanReadablePort} from './HumanReadable';
 
-require('./Trace.css');
+require('./Traces.css');
 
 const {Text} = Typography;
 const {Option} = Select;

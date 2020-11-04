@@ -13,9 +13,14 @@ from graphene_sqlalchemy import get_session
 from graphql.execution.base import ResolveInfo
 
 from ..models import DBID, TraceFrame, TraceKind
-from . import filters as filters_module, issues, trace, typeahead
+from . import filters as filters_module, issues, run, trace, typeahead
 from .issues import IssueQueryResult, IssueQueryResultType
 from .trace import TraceFrameQueryResult, TraceFrameQueryResultType
+
+
+class RunConnection(relay.Connection):
+    class Meta:
+        node = run.Run
 
 
 class IssueConnection(relay.Connection):
@@ -75,6 +80,11 @@ class FeatureCondition(graphene.InputObjectType):
 class Query(graphene.ObjectType):
     # pyre-fixme[4]: Attribute must be annotated.
     node = relay.Node.Field()
+
+    runs = relay.ConnectionField(
+        RunConnection,
+    )
+
     issues = relay.ConnectionField(
         IssueConnection,
         codes=graphene.List(graphene.Int, default_value=["%"]),
@@ -108,6 +118,10 @@ class Query(graphene.ObjectType):
     file = relay.ConnectionField(FileConnection, path=graphene.String())
 
     filters = relay.ConnectionField(FilterConnection)
+
+    def resolve_runs(self, info: ResolveInfo) -> List[run.Run]:
+        session = get_session(info.context)
+        return run.runs(session)
 
     def resolve_issues(
         self,

@@ -165,7 +165,7 @@ export function Issue(
       }
       extra={
         props.hideTitle ? null : (
-          <Link href={`/trace/${props.issue.issue_instance_id}`}>Traces</Link>
+          <Link href={`traces/${props.issue.issue_instance_id}`}>Traces</Link>
         )
       }>
       <Row gutter={gutter}>
