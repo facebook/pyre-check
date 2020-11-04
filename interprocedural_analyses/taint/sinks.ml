@@ -45,23 +45,6 @@ let show = function
   | AddFeatureToArgument -> "AddFeatureToArgument"
 
 
-let create = function
-  | "LocalReturn" -> LocalReturn
-  | update when String.is_prefix update ~prefix:"ParameterUpdate" ->
-      let index = String.chop_prefix_exn update ~prefix:"ParameterUpdate" in
-      ParameterUpdate (Int.of_string index)
-  | name -> failwith (Format.sprintf "Unsupported taint sink `%s`" name)
-
-
-let parse ~allowed ?subkind name =
-  if List.mem allowed name ~equal:String.equal then
-    match subkind with
-    | Some subkind -> ParametricSink { sink_name = name; subkind }
-    | None -> NamedSink name
-  else
-    create name
-
-
 let ignore_leaf_at_call = function
   | Attach -> true
   | _ -> false

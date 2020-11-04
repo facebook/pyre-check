@@ -72,8 +72,8 @@ let missing_flows_kind_from_string = function
 
 
 type t = {
-  sources: string list;
-  sinks: string list;
+  sources: AnnotationParser.source_or_sink list;
+  sinks: AnnotationParser.source_or_sink list;
   features: string list;
   rules: Rule.t list;
   implicit_sinks: implicit_sinks;
@@ -176,15 +176,19 @@ let parse source_jsons =
     | `Null -> []
     | json -> Json.Util.to_list json
   in
+  let kind json =
+    match member "kind" json with
+    | `Null -> AnnotationParser.Named
+    | `String "parametric" -> AnnotationParser.Parametric
+    | unexpected -> failwith (Format.sprintf "Unexpected kind %s" (Json.Util.to_string unexpected))
+  in
   let parse_string_list json = Json.Util.to_list json |> List.map ~f:Json.Util.to_string in
-  let parse_sources json =
-    let parse_source json = Json.Util.member "name" json |> Json.Util.to_string in
-    array_member "sources" json |> List.map ~f:parse_source
+  let parse_source_or_sink json =
+    let name = Json.Util.member "name" json |> Json.Util.to_string in
+    { AnnotationParser.name; kind = kind json }
   in
-  let parse_sinks json =
-    let parse_sink json = Json.Util.member "name" json |> Json.Util.to_string in
-    array_member "sinks" json |> List.map ~f:parse_sink
-  in
+  let parse_sources json = array_member "sources" json |> List.map ~f:parse_source_or_sink in
+  let parse_sinks json = array_member "sinks" json |> List.map ~f:parse_source_or_sink in
   let parse_features json =
     let parse_feature json = Json.Util.member "name" json |> Json.Util.to_string in
     array_member "features" json |> List.map ~f:parse_feature
@@ -200,12 +204,12 @@ let parse source_jsons =
       let sources =
         Json.Util.member "sources" json
         |> parse_string_list
-        |> List.map ~f:(Sources.parse ~allowed:allowed_sources)
+        |> List.map ~f:(AnnotationParser.parse_source ~allowed:allowed_sources)
       in
       let sinks =
         Json.Util.member "sinks" json
         |> parse_string_list
-        |> List.map ~f:(Sinks.parse ~allowed:allowed_sinks)
+        |> List.map ~f:(AnnotationParser.parse_sink ~allowed:allowed_sinks)
       in
       let name = Json.Util.member "name" json |> Json.Util.to_string in
       let message_format = Json.Util.member "message_format" json |> Json.Util.to_string in
@@ -227,10 +231,10 @@ let parse source_jsons =
       | [first; second] ->
           let parse_sources sources =
             match sources with
-            | `String source -> [Sources.parse ~allowed:allowed_sources source]
+            | `String source -> [AnnotationParser.parse_source ~allowed:allowed_sources source]
             | `List sources ->
                 List.map sources ~f:Json.Util.to_string
-                |> List.map ~f:(Sources.parse ~allowed:allowed_sources)
+                |> List.map ~f:(AnnotationParser.parse_source ~allowed:allowed_sources)
             | _ -> failwith "Expected a string or list of strings for combined rule sources."
           in
           let first_sources = Json.Util.member first sources |> parse_sources in
@@ -308,7 +312,7 @@ let parse source_jsons =
           | conditional_test ->
               Json.Util.to_list conditional_test
               |> List.map ~f:(fun json ->
-                     Json.Util.to_string json |> Sinks.parse ~allowed:allowed_sinks)
+                     Json.Util.to_string json |> AnnotationParser.parse_sink ~allowed:allowed_sinks)
         in
         let literal_string_sinks =
           match member "literal_strings" implicit_sinks with
@@ -319,7 +323,7 @@ let parse source_jsons =
                      let sink_kind =
                        Json.Util.member "kind" json
                        |> Json.Util.to_string
-                       |> Sinks.parse ~allowed:allowed_sinks
+                       |> AnnotationParser.parse_sink ~allowed:allowed_sinks
                      in
                      let pattern =
                        Json.Util.member "regexp" json |> Json.Util.to_string |> Re2.create_exn
@@ -338,7 +342,7 @@ let parse source_jsons =
                  let source_kind =
                    Json.Util.member "kind" json
                    |> Json.Util.to_string
-                   |> Sources.parse ~allowed:allowed_sources
+                   |> AnnotationParser.parse_source ~allowed:allowed_sources
                  in
                  let pattern =
                    Json.Util.member "regexp" json |> Json.Util.to_string |> Re2.create_exn
@@ -412,18 +416,19 @@ let parse source_jsons =
 
 
 let validate { sources; sinks; features; _ } =
-  let ensure_list_unique ~kind elements =
+  let ensure_list_unique ~kind ~get_name elements =
     let seen = String.Hash_set.create () in
     let ensure_unique element =
+      let element = get_name element in
       if Hash_set.mem seen element then
         failwith (Format.sprintf "Duplicate entry for %s: `%s`" kind element);
       Hash_set.add seen element
     in
     List.iter elements ~f:ensure_unique
   in
-  ensure_list_unique ~kind:"source" sources;
-  ensure_list_unique ~kind:"sink" sinks;
-  ensure_list_unique ~kind:"feature" features
+  ensure_list_unique ~kind:"source" ~get_name:(fun { AnnotationParser.name; _ } -> name) sources;
+  ensure_list_unique ~kind:"sink" ~get_name:(fun { AnnotationParser.name; _ } -> name) sinks;
+  ensure_list_unique ~kind:"feature" ~get_name:ident features
 
 
 let register configuration =
@@ -436,19 +441,24 @@ let register configuration =
 
 let default =
   {
-    sources = ["Demo"; "Test"; "UserControlled"; "PII"; "Secrets"; "Cookies"];
+    sources =
+      List.map
+        ~f:(fun name -> { AnnotationParser.name; kind = Named })
+        ["Demo"; "Test"; "UserControlled"; "PII"; "Secrets"; "Cookies"];
     sinks =
-      [
-        "Demo";
-        "FileSystem";
-        "GetAttr";
-        "Logging";
-        "RemoteCodeExecution";
-        "SQL";
-        "Test";
-        "XMLParser";
-        "XSS";
-      ];
+      List.map
+        ~f:(fun name -> { AnnotationParser.name; kind = Named })
+        [
+          "Demo";
+          "FileSystem";
+          "GetAttr";
+          "Logging";
+          "RemoteCodeExecution";
+          "SQL";
+          "Test";
+          "XMLParser";
+          "XSS";
+        ];
     features =
       [
         "copy";
@@ -546,7 +556,10 @@ let obscure_flows_configuration configuration =
     rules =
       [
         {
-          sources = List.map ~f:(fun source -> Sources.NamedSource source) configuration.sources;
+          sources =
+            List.map
+              ~f:(fun { name = source; _ } -> Sources.NamedSource source)
+              configuration.sources;
           sinks = [Sinks.NamedSink "Obscure"];
           code = 6002;
           name = "Obscure flow.";
@@ -563,7 +576,10 @@ let missing_type_flows_configuration configuration =
     rules =
       [
         {
-          sources = List.map ~f:(fun source -> Sources.NamedSource source) configuration.sources;
+          sources =
+            List.map
+              ~f:(fun { name = source; _ } -> Sources.NamedSource source)
+              configuration.sources;
           sinks = [Sinks.NamedSink "UnknownCallee"];
           code = 6003;
           name = "Unknown callee flow.";

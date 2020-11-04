@@ -28,11 +28,27 @@ let set_up_environment ?source ?rules ~context ~model_source () =
       | Some rules -> rules
       | None -> []
     in
+    let named name = { AnnotationParser.name; kind = Named } in
     Taint.TaintConfiguration.
       {
         empty with
-        sources = ["TestTest"; "UserControlled"; "Test"; "Demo"];
-        sinks = ["TestSink"; "OtherSink"; "Test"; "Demo"; "XSS"];
+        sources =
+          [
+            named "TestTest";
+            named "UserControlled";
+            named "Test";
+            named "Demo";
+            { AnnotationParser.name = "WithSubkind"; kind = Parametric };
+          ];
+        sinks =
+          [
+            named "TestSink";
+            named "OtherSink";
+            named "Test";
+            named "Demo";
+            named "XSS";
+            { AnnotationParser.name = "TestSinkWithSubkind"; kind = Parametric };
+          ];
         features = ["special"];
         partial_sink_labels = String.Map.Tree.of_alist_exn ["Test", ["a"; "b"]];
         rules;
@@ -202,12 +218,12 @@ let test_source_models context =
     ();
   assert_model
     ~source:"def f(x: int): ..."
-    ~model_source:"def test.f(x) -> TaintSource[Test[Subkind]]: ..."
+    ~model_source:"def test.f(x) -> TaintSource[WithSubkind[Subkind]]: ..."
     ~expect:
       [
         outcome
           ~kind:`Function
-          ~returns:[Sources.ParametricSource { source_name = "Test"; subkind = "Subkind" }]
+          ~returns:[Sources.ParametricSource { source_name = "WithSubkind"; subkind = "Subkind" }]
           "test.f";
       ]
     ();
@@ -416,7 +432,7 @@ let test_sink_models context =
   assert_model
     ~model_source:
       {|
-        def test.sink(parameter: TaintSink[TestSink[Subkind]]):
+        def test.sink(parameter: TaintSink[TestSinkWithSubkind[Subkind]]):
           ...
       |}
     ~expect:
@@ -427,7 +443,8 @@ let test_sink_models context =
             [
               {
                 name = "parameter";
-                sinks = [Sinks.ParametricSink { sink_name = "TestSink"; subkind = "Subkind" }];
+                sinks =
+                  [Sinks.ParametricSink { sink_name = "TestSinkWithSubkind"; subkind = "Subkind" }];
               };
             ]
           "test.sink";
@@ -866,8 +883,9 @@ let test_invalid_models context =
       TaintConfiguration.
         {
           empty with
-          sources = ["A"; "B"];
-          sinks = ["X"; "Y"; "Test"];
+          sources = List.map ~f:(fun name -> { AnnotationParser.name; kind = Named }) ["A"; "B"];
+          sinks =
+            List.map ~f:(fun name -> { AnnotationParser.name; kind = Named }) ["X"; "Y"; "Test"];
           features = ["featureA"; "featureB"];
           rules = [];
           partial_sink_labels = String.Map.Tree.of_alist_exn ["Test", ["a"; "b"]];
@@ -1328,6 +1346,22 @@ let test_invalid_models context =
           self.foo = 2
     |}
     ~model_source:"test.D.foo: TaintSource[A] = ..."
+    ();
+  assert_invalid_model
+    ~source:{|
+      def foo(x):
+        ...
+    |}
+    ~model_source:"def test.foo(x) -> TaintSource[A[Subkind]]: ..."
+    ~expect:"Invalid model for `test.foo`: Unsupported taint source `A`"
+    ();
+  assert_invalid_model
+    ~source:{|
+      def foo(x):
+        ...
+    |}
+    ~model_source:"def test.foo(x: TaintSink[X[Subkind]]): ..."
+    ~expect:"Invalid model for `test.foo`: Unsupported taint sink `X`"
     ()
 
 

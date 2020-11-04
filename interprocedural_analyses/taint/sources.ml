@@ -28,22 +28,9 @@ let show = function
   | ParametricSource { source_name; subkind } -> Format.sprintf "%s[%s]" source_name subkind
 
 
-let create = function
-  | name -> failwith (Format.sprintf "Unsupported taint source `%s`" name)
-
-
 let ignore_leaf_at_call = function
   | Attach -> true
   | _ -> false
-
-
-let parse ~allowed ?subkind name =
-  if List.mem allowed name ~equal:String.equal then
-    match subkind with
-    | Some subkind -> ParametricSource { source_name = name; subkind }
-    | None -> NamedSource name
-  else
-    create name
 
 
 module Set = Set.Make (struct

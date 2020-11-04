@@ -303,7 +303,7 @@ let rec parse_annotations ~configuration ~parameters annotation =
     List.map kinds ~f:(fun (kind, subkind) ->
         Source
           {
-            source = Sources.parse ~allowed:configuration.sources ?subkind kind;
+            source = AnnotationParser.parse_source ~allowed:configuration.sources ?subkind kind;
             breadcrumbs;
             path = [];
             leaf_name_provided = false;
@@ -315,7 +315,7 @@ let rec parse_annotations ~configuration ~parameters annotation =
     List.map kinds ~f:(fun (kind, subkind) ->
         Sink
           {
-            sink = Sinks.parse ~allowed:configuration.sinks ?subkind kind;
+            sink = AnnotationParser.parse_sink ~allowed:configuration.sinks ?subkind kind;
             breadcrumbs;
             path = [];
             leaf_name_provided = false;
@@ -328,7 +328,12 @@ let rec parse_annotations ~configuration ~parameters annotation =
     | [] -> [Tito { tito = Sinks.LocalReturn; breadcrumbs; path = [] }]
     | _ ->
         List.map kinds ~f:(fun (kind, _) ->
-            Tito { tito = Sinks.parse ~allowed:configuration.sinks kind; breadcrumbs; path = [] })
+            Tito
+              {
+                tito = AnnotationParser.parse_sink ~allowed:configuration.sinks kind;
+                breadcrumbs;
+                path = [];
+              })
   in
   let extract_attach_features ~name expression =
     let keep_features = function

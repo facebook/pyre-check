@@ -16,6 +16,7 @@ module Features = Features
 module Flow = Flow
 module ForwardAnalysis = ForwardAnalysis
 module ModelParser = ModelParser
+module AnnotationParser = AnnotationParser
 
 module Model = struct
   include Model

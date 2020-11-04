@@ -12,6 +12,8 @@ open Pyre
 
 let parse configuration = TaintConfiguration.parse [Yojson.Safe.from_string configuration]
 
+let named name = { AnnotationParser.name; kind = Named }
+
 let test_simple _ =
   let configuration =
     parse
@@ -43,8 +45,8 @@ let test_simple _ =
     }
   |}
   in
-  assert_equal configuration.sources ["A"; "B"];
-  assert_equal configuration.sinks ["C"; "D"];
+  assert_equal configuration.sources [named "A"; named "B"];
+  assert_equal configuration.sinks [named "C"; named "D"];
   assert_equal configuration.features ["E"; "F"];
   assert_equal (List.length configuration.rules) 1;
   assert_equal (List.hd_exn configuration.rules).code 2001;
@@ -148,7 +150,7 @@ let test_combined_source_rules _ =
     }
   |}
   in
-  assert_equal configuration.sources ["A"; "B"];
+  assert_equal configuration.sources [named "A"; named "B"];
   assert_equal configuration.sinks [];
   assert_equal
     ~printer:(List.to_string ~f:Taint.TaintConfiguration.Rule.show)
@@ -193,7 +195,7 @@ let test_combined_source_rules _ =
     }
   |}
   in
-  assert_equal configuration.sources ["A"; "B"; "C"];
+  assert_equal configuration.sources [named "A"; named "B"; named "C"];
   assert_equal configuration.sinks [];
   assert_equal
     (String.Map.Tree.to_alist configuration.partial_sink_labels)
@@ -382,8 +384,8 @@ let test_multiple_configurations _ =
           |};
       ]
   in
-  assert_equal configuration.sources ["A"; "B"];
-  assert_equal configuration.sinks ["C"; "D"];
+  assert_equal configuration.sources [named "A"; named "B"];
+  assert_equal configuration.sinks [named "C"; named "D"];
   assert_equal configuration.features ["E"; "F"];
   assert_equal (List.length configuration.rules) 1;
   assert_equal (List.hd_exn configuration.rules).code 2001;
@@ -637,7 +639,7 @@ let test_implicit_sources _ =
            |};
       ]
   in
-  assert_equal configuration.sources ["StringDigit"];
+  assert_equal configuration.sources [named "StringDigit"];
   match configuration.implicit_sources with
   | { TaintConfiguration.literal_strings = [{ pattern; source_kind }] } ->
       assert_equal ~cmp:Sources.equal source_kind (Sources.NamedSource "StringDigit");
@@ -670,7 +672,7 @@ let test_implicit_sinks _ =
            |};
       ]
   in
-  assert_equal configuration.sinks ["HTMLContainer"];
+  assert_equal configuration.sinks [named "HTMLContainer"];
   match configuration.implicit_sinks with
   | { TaintConfiguration.literal_string_sinks = [{ pattern; sink_kind }]; _ } ->
       assert_equal ~cmp:Sinks.equal sink_kind (Sinks.NamedSink "HTMLContainer");

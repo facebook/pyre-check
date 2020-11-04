@@ -29,8 +29,6 @@ type t =
 
 val name : string
 
-val parse : allowed:string list -> ?subkind:string -> string -> t
-
 val ignore_leaf_at_call : t -> bool
 
 module Set : Set.S with type Elt.t = t
