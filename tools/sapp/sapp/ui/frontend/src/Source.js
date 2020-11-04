@@ -10,7 +10,7 @@
 
 import React from 'react';
 import {Alert, Button, Tooltip, Typography} from 'antd';
-import {SelectOutlined, LoadingOutlined} from '@ant-design/icons';
+import {EditOutlined, SelectOutlined, LoadingOutlined} from '@ant-design/icons';
 import {useQuery, gql} from '@apollo/client';
 import {Controlled as CodeMirror} from 'react-codemirror2';
 import {Documentation} from './Documentation';
@@ -145,6 +145,7 @@ function Source(
         edges {
           node {
             contents
+            editor_link
           }
         }
       }
@@ -153,6 +154,7 @@ function Source(
   const {loading, error, data} = useQuery(SourceQuery, {
     variables: {path: props.path},
   });
+  const file = data?.file?.edges[0]?.node;
 
   var content = <div />;
   if (error) {
@@ -173,7 +175,7 @@ function Source(
       </div>
     );
   } else {
-    const source = data.file.edges[0].node.contents;
+    const source = file.contents;
     const lines = source.split('\n');
     const range = parseRanges(props.location, lines)[0];
     line = range.from.line;
@@ -238,6 +240,17 @@ function Source(
   return (
     <>
       <div class="source-menu">
+        <Tooltip title="Open in Editor" placement="bottom">
+          <Button
+            size="small"
+            icon={<EditOutlined />}
+            type="text"
+            onClick={() => {
+              window.location = file.editor_link;
+            }}
+            disabled={loading || error || !Boolean(file.editor_link)}
+          />
+        </Tooltip>
         <Tooltip title="Reset Scroll" placement="bottom">
           <Button
             size="small"

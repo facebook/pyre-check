@@ -231,12 +231,20 @@ def analyze(
 @option(
     "--source-directory", default=os.getcwd(), help="Directory to look for source code"
 )
+@option(
+    "--editor-schema",
+    default=None,
+    help="Editor schema to open files from a browser, e.g. `vscode:`",
+)
 @pass_context
-# pyre-fixme[3]: Return type must be annotated.
 def server(
-    ctx: Context, debug: bool, static_resources: Optional[str], source_directory: str
-):
-    start_server(ctx.database, debug, static_resources, source_directory)
+    ctx: Context,
+    debug: bool,
+    static_resources: Optional[str],
+    source_directory: str,
+    editor_schema: Optional[str],
+) -> None:
+    start_server(ctx.database, debug, static_resources, source_directory, editor_schema)
 
 
 # pyre-fixme[5]: Global expression must be annotated.

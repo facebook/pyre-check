@@ -34,6 +34,7 @@ class File(graphene.ObjectType):
 
     path = graphene.String()
     contents = graphene.String()
+    editor_link = graphene.String()
 
 
 class FileConnection(relay.Connection):
@@ -202,8 +203,15 @@ class Query(graphene.ObjectType):
             raise FileNotFoundError("Attempted directory traversal")
 
         source_directory = Path(info.context.get("source_directory") or os.getcwd())
-        contents = (source_directory / path).read_text()
-        return [File(path=path, contents=contents)]
+        full_path = source_directory / path
+        contents = full_path.read_text()
+
+        editor_link = None
+        editor_schema = info.context.get("editor_schema")
+        if editor_schema is not None:
+            editor_link = f"{editor_schema}//file/{str(full_path)}"
+
+        return [File(path=path, contents=contents, editor_link=editor_link)]
 
     def resolve_filters(self, info: ResolveInfo) -> List[filters_module.Filter]:
         session = info.context["session"]
