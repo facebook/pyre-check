@@ -1,0 +1,20 @@
+# Models for commonly used protocols.
+@SkipOverrides
+def typing.Iterable.__iter__(self: TaintInTaintOut[LocalReturn]): ...
+@SkipOverrides
+def typing.Iterator.__iter__(self: TaintInTaintOut[LocalReturn]): ...
+# `__next__` is handled specially in the analysis.
+@SkipOverrides
+def typing.Iterator.__next__(self): ...
+
+@SkipOverrides
+@Sanitize
+def typing.Sized.__len__(self): ...
+
+@SkipOverrides
+@Sanitize
+def _SupportsIndex.__index__(self): ...
+
+@SkipOverrides
+@Sanitize
+def typing.SupportsInt.__int__(self): ...
