@@ -351,8 +351,8 @@ function Trace(props: $ReadOnly<{|match: any|}>): React$Node {
   const issue_instance_id = props.match.params.issue_instance_id;
 
   const IssueQuery = gql`
-    query Issue($issue_instance_id: Int!) {
-      issues(issue_instance_id: $issue_instance_id) {
+    query Issue($run_id: Int!, $issue_instance_id: Int!) {
+      issues(run_id: $run_id, issue_instance_id: $issue_instance_id) {
         edges {
           node {
             issue_id
@@ -375,7 +375,7 @@ function Trace(props: $ReadOnly<{|match: any|}>): React$Node {
     }
   `;
   const {loading, error, data} = useQuery(IssueQuery, {
-    variables: {issue_instance_id},
+    variables: {run_id, issue_instance_id},
   });
   const issue = data?.issues?.edges[0]?.node || null;
 

@@ -87,6 +87,7 @@ class Query(graphene.ObjectType):
 
     issues = relay.ConnectionField(
         IssueConnection,
+        run_id=graphene.Int(required=True),
         codes=graphene.List(graphene.Int, default_value=["%"]),
         paths=graphene.List(graphene.String, default_value=["%"]),
         callables=graphene.List(graphene.String, default_value=["%"]),
@@ -126,6 +127,7 @@ class Query(graphene.ObjectType):
     def resolve_issues(
         self,
         info: ResolveInfo,
+        run_id: int,
         codes: List[int],
         paths: List[str],
         callables: List[str],
@@ -140,7 +142,7 @@ class Query(graphene.ObjectType):
         session = get_session(info.context)
 
         builder = (
-            issues.Instance(session)
+            issues.Instance(session, DBID(run_id))
             .where_codes_is_any_of(codes)
             .where_callables_is_any_of(callables)
             .where_path_is_any_of(paths)

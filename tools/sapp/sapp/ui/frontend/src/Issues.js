@@ -128,6 +128,7 @@ class IssuesList extends React.Component<Props, State> {
 const IssueQuery = gql`
   query Issue(
     $after: String
+    $run_id: Int!
     $codes: [Int]
     $paths: [String]
     $callables: [String]
@@ -140,6 +141,7 @@ const IssueQuery = gql`
     issues(
       first: 20
       after: $after
+      run_id: $run_id
       codes: $codes
       paths: $paths
       callables: $callables
@@ -183,7 +185,7 @@ const Issues = (props: $ReadOnly<{match: any}>): React$Node => {
   const [oldData, setOldData] = useState(null);
   const [refetching, setRefetching] = useState(false);
   const {loading, error, data, fetchMore, refetch} = useQuery(IssueQuery, {
-    variables,
+    variables: {...variables, run_id},
   });
 
   // Ridiculous workaround for https://github.com/apollographql/react-apollo/issues/3709.
