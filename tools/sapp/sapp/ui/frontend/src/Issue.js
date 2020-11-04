@@ -137,8 +137,21 @@ export function Issue(
   props: $ReadOnly<{issue: IssueDescription, hideTitle?: boolean}>,
 ): React$Node {
   const gutter = [8, 8];
-  const leftSpan = 4;
-  const rightSpan = 20;
+
+  const Label = (props: $ReadOnly<{children: React$Node}>): React$Node => {
+    return (
+      <Col span={4} style={{textAlign: 'right'}}>
+        <Text type="secondary">{props.children}</Text>
+      </Col>
+    );
+  };
+  const Item = (props: $ReadOnly<{children: React$Node}>): React$Node => {
+    return (
+      <Col span={20}>
+        <Text type="secondary">{props.children}</Text>
+      </Col>
+    );
+  };
 
   return (
     <Card
@@ -155,32 +168,24 @@ export function Issue(
         )
       }>
       <Row gutter={gutter}>
-        <Col span={leftSpan} style={{textAlign: 'right'}}>
-          <Text type="secondary">Code</Text>
-        </Col>
-        <Col span={rightSpan}>
+        <Label>Code</Label>
+        <Item>
           <Text code>{props.issue.code}</Text>
-        </Col>
+        </Item>
       </Row>
       <Row gutter={gutter}>
-        <Col span={leftSpan} style={{textAlign: 'right'}}>
-          <Text type="secondary">Description</Text>
-        </Col>
-        <Col span={rightSpan}>{props.issue.message}</Col>
+        <Label>Description</Label>
+        <Item>{props.issue.message}</Item>
       </Row>
       <Row gutter={gutter}>
-        <Col span={leftSpan} style={{textAlign: 'right'}}>
-          <Text type="secondary">Callable</Text>
-        </Col>
-        <Col span={rightSpan}>
+        <Label>Callable</Label>
+        <Item>
           <HumanReadable input={props.issue.callable} code />
-        </Col>
+        </Item>
       </Row>
       <Row gutter={gutter}>
-        <Col span={leftSpan} style={{textAlign: 'right'}}>
-          <Text type="secondary">Location</Text>
-        </Col>
-        <Col span={rightSpan}>
+        <Label>Location</Label>
+        <Item>
           <Tooltip title="Click to preview">
             <Popover
               title="Source preview"
@@ -198,39 +203,33 @@ export function Issue(
             </Popover>
           </Tooltip>{' '}
           <HumanReadable input={props.issue.filename} code separator="/" />
-        </Col>
+        </Item>
       </Row>
       <Row gutter={gutter}>
-        <Col span={leftSpan} style={{textAlign: 'right'}}>
-          <Text type="secondary">Sources</Text>
-        </Col>
-        <Col span={rightSpan}>
+        <Label>Sources</Label>
+        <Item>
           <Leaves
             kind="sources"
             kinds={props.issue.sources}
             names={props.issue.source_names}
             distance={props.issue.min_trace_length_to_sources}
           />
-        </Col>
+        </Item>
       </Row>
       <Row gutter={gutter}>
-        <Col span={leftSpan} style={{textAlign: 'right'}}>
-          <Text type="secondary">Sinks</Text>
-        </Col>
-        <Col span={rightSpan}>
+        <Label>Sinks</Label>
+        <Item>
           <Leaves
             kind="sinks"
             kinds={props.issue.sinks}
             names={props.issue.sink_names}
             distance={props.issue.min_trace_length_to_sinks}
           />
-        </Col>
+        </Item>
       </Row>
       <Row gutter={gutter}>
-        <Col span={leftSpan} style={{textAlign: 'right'}}>
-          <Text type="secondary">Features</Text>
-        </Col>
-        <Col span={rightSpan}>
+        <Label>Features</Label>
+        <Item>
           <DelayedTooltip
             content={Documentation.issues.feature}
             placement="left">
@@ -241,7 +240,7 @@ export function Issue(
               />
             </div>
           </DelayedTooltip>
-        </Col>
+        </Item>
       </Row>
     </Card>
   );
