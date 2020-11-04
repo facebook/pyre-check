@@ -347,7 +347,8 @@ function Expansion(
 }
 
 function Trace(props: $ReadOnly<{|match: any|}>): React$Node {
-  const issue_instance_id = props.match.params.issue_id;
+  const run_id = props.match.params.run_id;
+  const issue_instance_id = props.match.params.issue_instance_id;
 
   const IssueQuery = gql`
     query Issue($issue_instance_id: Int!) {
@@ -388,7 +389,11 @@ function Trace(props: $ReadOnly<{|match: any|}>): React$Node {
   } else {
     content = (
       <>
-        {loading ? <IssueSkeleton /> : <Issue issue={issue} hideTitle={true} />}
+        {loading ? (
+          <IssueSkeleton />
+        ) : (
+          <Issue run_id={run_id} issue={issue} hideTitle={true} />
+        )}
         <br />
         <Expansion
           issue_instance_id={issue_instance_id}
@@ -408,10 +413,9 @@ function Trace(props: $ReadOnly<{|match: any|}>): React$Node {
   return (
     <>
       <Breadcrumb style={{margin: '16px 0'}}>
-        <Breadcrumb.Item href="/">Issues</Breadcrumb.Item>
-        <Breadcrumb.Item>
-          Traces for Issue {issue?.issue_id || ''}
-        </Breadcrumb.Item>
+        <Breadcrumb.Item href="/runs">Runs</Breadcrumb.Item>
+        <Breadcrumb.Item href={`/run/${run_id}`}>Run {run_id}</Breadcrumb.Item>
+        <Breadcrumb.Item>Issue {issue?.issue_id || ''}</Breadcrumb.Item>
       </Breadcrumb>
       {content}
     </>

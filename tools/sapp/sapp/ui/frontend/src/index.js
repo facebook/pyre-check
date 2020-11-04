@@ -48,8 +48,19 @@ function IssuesForLatestRun(): React$Node {
 
   const {loading, error} = useQuery(RunsQuery, {
     onCompleted: data => {
-      // TODO(T71492980): pass run id to issues.
-      window.location = '/issues';
+      var run_id = -1;
+      data.runs.edges.forEach(edge => {
+        if (edge.node.run_id > run_id) {
+          run_id = edge.node.run_id;
+        }
+      });
+      if (run_id === -1) {
+        Modal.error({
+          title: 'Unable to load run data',
+          content: 'No completed run found',
+        });
+      }
+      window.location = `/run/${run_id}`;
     },
   });
 
@@ -64,7 +75,7 @@ function IssuesForLatestRun(): React$Node {
           <Text type="secondary">
             <LoadingOutlined />
             <br />
-            Loading runs...
+            Loading latest run...
           </Text>
         </div>
       </Card>
@@ -88,8 +99,12 @@ const routing = (
           <div class="main">
             <Route exact path="/" component={IssuesForLatestRun} />
             <Route exact path="/runs/" component={Runs} />
-            <Route exact path="/issues/" component={Issues} />
-            <Route exact path="/traces/:issue_id/" component={Traces} />
+            <Route exact path="/run/:run_id/" component={Issues} />
+            <Route
+              exact
+              path="/run/:run_id/issue/:issue_instance_id"
+              component={Traces}
+            />
           </div>
         </Content>
         <Footer />

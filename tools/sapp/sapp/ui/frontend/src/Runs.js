@@ -48,7 +48,7 @@ function Run(props: $ReadOnly<{run: RunDescription}>): React$Node {
             Run {props.run.run_id}
           </>
         }
-        extra={<Link href="/issues">Issues</Link>}>
+        extra={<Link href={`/run/${props.run.run_id}`}>Issues</Link>}>
         <Row gutter={gutter}>
           <Label>Date</Label>
           <Item>

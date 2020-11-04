@@ -17,6 +17,7 @@ import {Issue, IssueSkeleton} from './Issue.js';
 import './Issues.css';
 
 type Props = $ReadOnly<{|
+  run_id: number,
   data: any,
   fetchMore: any,
   loading: boolean,
@@ -99,7 +100,7 @@ class IssuesList extends React.Component<Props, State> {
       <>
         {this.props.data.issues.edges.map(({node}) => (
           <>
-            <Issue issue={node} />
+            <Issue run_id={this.props.run_id} issue={node} />
             <br />
           </>
         ))}
@@ -173,7 +174,9 @@ const IssueQuery = gql`
   }
 `;
 
-const Issues = (): React$Node => {
+const Issues = (props: $ReadOnly<{match: any}>): React$Node => {
+  const run_id = props.match.params.run_id;
+
   const savedFilter = loadFilter();
   const variables = savedFilter ? filterToVariables(savedFilter) : null;
 
@@ -196,7 +199,12 @@ const Issues = (): React$Node => {
   }, [data, oldData, setOldData]);
 
   var content = (
-    <IssuesList data={data} fetchMore={fetchMore} loading={loading} />
+    <IssuesList
+      run_id={run_id}
+      data={data}
+      fetchMore={fetchMore}
+      loading={loading}
+    />
   );
 
   if (error) {
@@ -211,7 +219,8 @@ const Issues = (): React$Node => {
     <>
       <Filter refetch={clearAndRefetch} refetching={refetching} />
       <Breadcrumb style={{margin: '16px 0'}}>
-        <Breadcrumb.Item>Issues</Breadcrumb.Item>
+        <Breadcrumb.Item href="/runs">Runs</Breadcrumb.Item>
+        <Breadcrumb.Item>Run {run_id}</Breadcrumb.Item>
       </Breadcrumb>
       {content}
     </>

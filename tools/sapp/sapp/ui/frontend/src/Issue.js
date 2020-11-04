@@ -135,7 +135,11 @@ export type IssueDescription = {
 };
 
 export function Issue(
-  props: $ReadOnly<{issue: IssueDescription, hideTitle?: boolean}>,
+  props: $ReadOnly<{
+    run_id: number,
+    issue: IssueDescription,
+    hideTitle?: boolean,
+  }>,
 ): React$Node {
   const gutter = [8, 8];
 
@@ -165,7 +169,10 @@ export function Issue(
       }
       extra={
         props.hideTitle ? null : (
-          <Link href={`traces/${props.issue.issue_instance_id}`}>Traces</Link>
+          <Link
+            href={`/run/${props.run_id}/issue/${props.issue.issue_instance_id}`}>
+            Traces
+          </Link>
         )
       }>
       <Row gutter={gutter}>
