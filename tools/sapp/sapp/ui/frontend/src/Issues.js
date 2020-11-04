@@ -11,7 +11,7 @@
 import React, {useEffect, useState} from 'react';
 import {useQuery, gql} from '@apollo/client';
 import {Modal, Breadcrumb} from 'antd';
-import Filter from './Filter';
+import Filter, {loadFilter, filterToVariables} from './Filter';
 import {Issue, IssueSkeleton} from './Issue.js';
 
 import './Issues.css';
@@ -172,10 +172,15 @@ const IssueQuery = gql`
   }
 `;
 
-const Issues = () => {
+const Issues = (): React$Node => {
+  const savedFilter = loadFilter();
+  const variables = savedFilter ? filterToVariables(savedFilter) : null;
+
   const [oldData, setOldData] = useState(null);
   const [refetching, setRefetching] = useState(false);
-  const {loading, error, data, fetchMore, refetch} = useQuery(IssueQuery);
+  const {loading, error, data, fetchMore, refetch} = useQuery(IssueQuery, {
+    variables,
+  });
 
   // Ridiculous workaround for https://github.com/apollographql/react-apollo/issues/3709.
   const clearAndRefetch = values => {

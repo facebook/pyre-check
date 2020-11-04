@@ -8,7 +8,7 @@
  * @flow
  */
 
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {useQuery, useMutation, gql} from '@apollo/client';
 import {
   Alert,
@@ -64,6 +64,13 @@ const emptyFilter = {
 
 const infiniteTraceLength = 31;
 const gutter = [8, 8];
+
+const filterEqual = (
+  left: FilterDescription,
+  right: FilterDescription,
+): boolean => {
+  return JSON.stringify(left) === JSON.stringify(right);
+};
 
 const Label = (props: $ReadOnly<{label: string}>): React$Node => {
   const title = props.label
@@ -391,43 +398,19 @@ const TraceLength = (
 };
 
 const FilterForm = (props: {
-  refetch: any,
+  refetch: mixed => mixed,
   refetching: boolean,
   setVisible: boolean => void,
   currentFilter: FilterDescription,
   setCurrentFilter: FilterDescription => void,
 }): React$Node => {
   const [appliedFilter, setAppliedFilter] = useState<FilterDescription>(
-    emptyFilter,
+    loadFilter() || emptyFilter,
   );
 
   const apply = () => {
     setAppliedFilter(props.currentFilter);
-    const rangeValue = value => {
-      if (value === 0) {
-        return undefined;
-      }
-      if (value === infiniteTraceLength) {
-        return undefined;
-      }
-      return value;
-    };
-
-    props.refetch({
-      ...props.currentFilter,
-      min_trace_length_to_sources: rangeValue(
-        (props.currentFilter.traceLengthFromSources || [])[0],
-      ),
-      max_trace_length_to_sources: rangeValue(
-        (props.currentFilter.traceLengthFromSources || [])[1],
-      ),
-      min_trace_length_to_sinks: rangeValue(
-        (props.currentFilter.traceLengthToSinks || [])[0],
-      ),
-      max_trace_length_to_sinks: rangeValue(
-        (props.currentFilter.traceLengthToSinks || [])[1],
-      ),
-    });
+    props.refetch(filterToVariables(props.currentFilter));
     props.setVisible(false);
   };
 
@@ -467,19 +450,14 @@ const FilterForm = (props: {
           onClick={() => {
             props.setCurrentFilter(emptyFilter);
           }}
-          disabled={
-            JSON.stringify(props.currentFilter) === JSON.stringify(emptyFilter)
-          }>
+          disabled={filterEqual(props.currentFilter, emptyFilter)}>
           Clear
         </Button>{' '}
         <Button
           type="primary"
           onClick={apply}
           loading={props.refetching}
-          disabled={
-            JSON.stringify(appliedFilter) ===
-            JSON.stringify(props.currentFilter)
-          }>
+          disabled={filterEqual(props.currentFilter, appliedFilter)}>
           Apply
         </Button>
       </div>
@@ -708,11 +686,49 @@ const SavedFilters = (
   );
 };
 
+export function loadFilter(): ?FilterDescription {
+  const filter = window.sessionStorage.getItem('filter');
+  if (filter !== undefined) {
+    return JSON.parse(filter);
+  }
+  return null;
+}
+
+export function filterToVariables(filter: FilterDescription): mixed {
+  const rangeValue = value => {
+    if (value === 0) {
+      return undefined;
+    }
+    if (value === infiniteTraceLength) {
+      return undefined;
+    }
+    return value;
+  };
+
+  return {
+    ...filter,
+    min_trace_length_to_sources: rangeValue(
+      (filter.traceLengthFromSources || [])[0],
+    ),
+    max_trace_length_to_sources: rangeValue(
+      (filter.traceLengthFromSources || [])[1],
+    ),
+    min_trace_length_to_sinks: rangeValue((filter.traceLengthToSinks || [])[0]),
+    max_trace_length_to_sinks: rangeValue((filter.traceLengthToSinks || [])[1]),
+  };
+}
+
 const Filter = (props: {refetch: any, refetching: boolean}) => {
+  const initialFilter = loadFilter() || emptyFilter;
+
   const [visible, setVisible] = useState(false);
   const [currentFilter, setCurrentFilter] = useState<FilterDescription>(
-    emptyFilter,
+    initialFilter,
   );
+
+  useEffect(() => {
+    window.sessionStorage.setItem('filter', JSON.stringify(currentFilter));
+  }, [currentFilter]);
 
   const content = (
     <div style={{width: '500px'}}>
@@ -739,7 +755,11 @@ const Filter = (props: {refetch: any, refetching: boolean}) => {
           content={content}
           placement="bottomRight"
           onClick={() => setVisible(!visible)}>
-          <Button icon={<FilterOutlined />}>Filter</Button>
+          <Button
+            icon={<FilterOutlined />}
+            type={!filterEqual(initialFilter, emptyFilter) ? 'primary' : null}>
+            Filter
+          </Button>
         </Popover>
       </div>
     </>
