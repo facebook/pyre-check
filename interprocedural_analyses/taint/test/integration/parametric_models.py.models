@@ -3,9 +3,9 @@
   "kind": "issue",
   "data": {
     "callable": "parametric_models.f_and_g_to_test",
-    "callable_line": 21,
+    "callable_line": 24,
     "code": 7001,
-    "line": 27,
+    "line": 30,
     "start": 9,
     "end": 10,
     "filename": "parametric_models.py",
@@ -17,7 +17,7 @@
           {
             "root": {
               "filename": "parametric_models.py",
-              "line": 23,
+              "line": 26,
               "start": 12,
               "end": 15
             },
@@ -32,7 +32,7 @@
           {
             "root": {
               "filename": "parametric_models.py",
-              "line": 25,
+              "line": 28,
               "start": 12,
               "end": 15
             },
@@ -52,7 +52,7 @@
           {
             "root": {
               "filename": "parametric_models.py",
-              "line": 27,
+              "line": 30,
               "start": 9,
               "end": 10
             },
@@ -68,6 +68,89 @@
       }
     ],
     "features": []
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "parametric_models.test_to_subkind_sink",
+    "callable_line": 48,
+    "code": 7002,
+    "line": 50,
+    "start": 18,
+    "end": 19,
+    "filename": "parametric_models.py",
+    "message":
+      "[Test] flow into [SinkWithSubkind[SinkA], SinkWithSubkind[SinkB]].",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "parametric_models.py",
+              "line": 49,
+              "start": 8,
+              "end": 23
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-via": "special_source" } ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "call": {
+              "position": {
+                "filename": "parametric_models.py",
+                "line": 50,
+                "start": 18,
+                "end": 19
+              },
+              "resolves_to": [ "parametric_models.inferred_sink" ],
+              "port": "formal(x)",
+              "length": 1
+            },
+            "leaves": [
+              {
+                "kind": "SinkWithSubkind[SinkA]",
+                "name": "parametric_models.sink_subkind_a",
+                "on_all_flows": true
+              }
+            ]
+          },
+          {
+            "call": {
+              "position": {
+                "filename": "parametric_models.py",
+                "line": 50,
+                "start": 18,
+                "end": 19
+              },
+              "resolves_to": [ "parametric_models.inferred_sink" ],
+              "port": "formal(x)",
+              "length": 1
+            },
+            "leaves": [
+              {
+                "kind": "SinkWithSubkind[SinkB]",
+                "name": "parametric_models.sink_subkind_b",
+                "on_all_flows": true
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_source" } ]
   }
 }
 {
@@ -105,6 +188,51 @@
 {
   "kind": "model",
   "data": {
+    "callable": "parametric_models.inferred_sink",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "root": {
+              "filename": "parametric_models.py",
+              "line": 43,
+              "start": 23,
+              "end": 24
+            },
+            "leaves": [
+              {
+                "kind": "SinkWithSubkind[SinkA]",
+                "name": "parametric_models.sink_subkind_a",
+                "on_all_flows": true
+              }
+            ]
+          },
+          {
+            "root": {
+              "filename": "parametric_models.py",
+              "line": 45,
+              "start": 23,
+              "end": 24
+            },
+            "leaves": [
+              {
+                "kind": "SinkWithSubkind[SinkB]",
+                "name": "parametric_models.sink_subkind_b",
+                "on_all_flows": true
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "parametric_models.sink",
     "sources": [],
     "sinks": [
@@ -112,6 +240,44 @@
         "port": "formal(x)",
         "taint": [
           { "decl": null, "leaves": [ { "kind": "ExpectsSubkind" } ] }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "parametric_models.sink_subkind_a",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "SinkWithSubkind[SinkA]" } ]
+          }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "parametric_models.sink_subkind_b",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "SinkWithSubkind[SinkB]" } ]
+          }
         ]
       }
     ],

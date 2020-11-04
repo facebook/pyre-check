@@ -6,6 +6,9 @@
 # flake8: noqa
 
 
+from builtins import __test_source
+
+
 def f():
     ...
 
@@ -25,3 +28,23 @@ def f_and_g_to_test():
         a = g()
 
     sink(a)
+
+
+def sink_subkind_a(x):
+    ...
+
+
+def sink_subkind_b(x):
+    ...
+
+
+def inferred_sink(x):
+    if 1 > 2:
+        sink_subkind_a(x)
+    else:
+        sink_subkind_b(x)
+
+
+def test_to_subkind_sink():
+    x = __test_source()
+    inferred_sink(x)
