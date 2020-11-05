@@ -613,7 +613,7 @@ let test_check_immutable_annotations context =
       def f(x: int) -> None:
         x: str = int_to_str(x)
     |}
-    [];
+    ["Illegal annotation target [35]: Target `x` cannot be annotated after it is first declared."];
   assert_type_errors
     {|
     constant: int
@@ -815,11 +815,13 @@ let test_check_immutable_annotations context =
         x = 1
     |}
     [];
-  assert_type_errors {|
+  assert_type_errors
+    {|
       def foo(x: int) -> None:
         x: str
         x = "hi"
-    |} [];
+    |}
+    ["Illegal annotation target [35]: Target `x` cannot be annotated after it is first declared."];
   assert_type_errors
     {|
       def foo() -> None:

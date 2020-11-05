@@ -212,6 +212,10 @@ and unsupported_operand_kind =
       operator_name: Identifier.t;
       operand: Type.t;
     }
+
+and illegal_annotation_target_kind =
+  | InvalidExpression
+  | Reassignment
 [@@deriving compare, eq, sexp, show, hash]
 
 type invalid_decoration = {
@@ -230,7 +234,10 @@ and invalid_decoration_reason =
 and kind =
   | AnalysisFailure of Type.t
   | ParserFailure of string
-  | IllegalAnnotationTarget of Expression.t
+  | IllegalAnnotationTarget of {
+      target: Expression.t;
+      kind: illegal_annotation_target_kind;
+    }
   | ImpossibleAssertion of {
       expression: Expression.t;
       annotation: Type.t;
@@ -670,8 +677,18 @@ let rec messages ~concise ~signature location kind =
   | DeadStore name -> [Format.asprintf "Value assigned to `%a` is never used." pp_identifier name]
   | Deobfuscation source -> [Format.asprintf "\n%a" Source.pp source]
   | IllegalAnnotationTarget _ when concise -> ["Target cannot be annotated."]
-  | IllegalAnnotationTarget expression ->
-      [Format.asprintf "Target `%s` cannot be annotated." (show_sanitized_expression expression)]
+  | IllegalAnnotationTarget { target; kind } ->
+      let reason =
+        match kind with
+        | InvalidExpression -> ""
+        | Reassignment -> " after it is first declared"
+      in
+      [
+        Format.asprintf
+          "Target `%s` cannot be annotated%s."
+          (show_sanitized_expression target)
+          reason;
+      ]
   | IncompleteType { target; annotation; attempted_action } ->
       let inferred =
         match annotation with
@@ -2407,7 +2424,13 @@ let less_or_equal ~resolution left right =
       String.equal left_message right_message
   | DeadStore left, DeadStore right -> Identifier.equal left right
   | Deobfuscation left, Deobfuscation right -> Source.equal left right
-  | IllegalAnnotationTarget left, IllegalAnnotationTarget right -> Expression.equal left right
+  | ( IllegalAnnotationTarget { target = left_target; kind = left_kind },
+      IllegalAnnotationTarget { target = right_target; kind = right_kind } ) -> (
+      match left_kind, right_kind with
+      | InvalidExpression, InvalidExpression
+      | Reassignment, Reassignment ->
+          Expression.equal left_target right_target
+      | _, _ -> false )
   | ImpossibleAssertion left, ImpossibleAssertion right when Expression.equal left.test right.test
     ->
       GlobalResolution.less_or_equal resolution ~left:left.annotation ~right:right.annotation
@@ -2740,9 +2763,14 @@ let join ~resolution left right =
         ParserFailure left_message
     | DeadStore left, DeadStore right when Identifier.equal left right -> DeadStore left
     | Deobfuscation left, Deobfuscation right when Source.equal left right -> Deobfuscation left
-    | IllegalAnnotationTarget left, IllegalAnnotationTarget right when Expression.equal left right
-      ->
-        IllegalAnnotationTarget left
+    | ( IllegalAnnotationTarget { target = left; kind = InvalidExpression },
+        IllegalAnnotationTarget { target = right; kind = InvalidExpression } )
+      when Expression.equal left right ->
+        IllegalAnnotationTarget { target = left; kind = InvalidExpression }
+    | ( IllegalAnnotationTarget { target = left; kind = Reassignment },
+        IllegalAnnotationTarget { target = right; kind = Reassignment } )
+      when Expression.equal left right ->
+        IllegalAnnotationTarget { target = left; kind = Reassignment }
     | IncompatibleAsyncGeneratorReturnType left, IncompatibleAsyncGeneratorReturnType right ->
         IncompatibleAsyncGeneratorReturnType (GlobalResolution.join resolution left right)
     | IncompatibleAwaitableType left, IncompatibleAwaitableType right ->
@@ -3514,7 +3542,8 @@ let dequalify
     | AnalysisFailure annotation -> AnalysisFailure (dequalify annotation)
     | DeadStore name -> DeadStore name
     | Deobfuscation left -> Deobfuscation left
-    | IllegalAnnotationTarget left -> IllegalAnnotationTarget left
+    | IllegalAnnotationTarget { target = left; kind } ->
+        IllegalAnnotationTarget { target = left; kind }
     | ImpossibleAssertion ({ annotation; _ } as assertion) ->
         ImpossibleAssertion { assertion with annotation = dequalify annotation }
     | IncompatibleAsyncGeneratorReturnType actual ->

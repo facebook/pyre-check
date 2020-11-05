@@ -266,6 +266,43 @@ let test_check_assign context =
         return x
     |}
     ["Revealed type [-1]: Revealed type for `x` is `typing.Any`."];
+  assert_type_errors
+    {|
+      def f() -> None:
+        x: int = 25
+        x: str = "hi"
+    |}
+    ["Illegal annotation target [35]: Target `x` cannot be annotated after it is first declared."];
+  assert_type_errors
+    {|
+      def f() -> None:
+        x: int = 42
+        def g(x: str) -> None:
+          print x
+        g("hello")
+    |}
+    [];
+  assert_type_errors
+    {|
+      def f() -> None:
+        x = 1
+        x: int = 2
+    |}
+    ["Illegal annotation target [35]: Target `x` cannot be annotated after it is first declared."];
+  assert_type_errors {|
+      def f() -> None:
+        x: int = 1
+        x: int = 2
+    |} [];
+  assert_type_errors
+    {|
+      def f() -> None:
+        y = 0
+        while (y < 10):
+          y += 1
+          x: int = 2
+    |}
+    [];
   assert_default_type_errors
     {|
        from typing import Any, Callable

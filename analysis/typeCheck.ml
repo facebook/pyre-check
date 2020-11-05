@@ -3843,7 +3843,14 @@ module State (Context : Context) = struct
                     in
                     not is_setattr_any_defined
                   in
-
+                  let is_global =
+                    match name with
+                    | Identifier identifier ->
+                        Resolution.is_global resolution ~reference:(Reference.create identifier)
+                    | Attribute _ as name when is_simple_name name ->
+                        Resolution.is_global resolution ~reference:(name_to_reference_exn name)
+                    | _ -> false
+                  in
                   let check_errors errors resolved =
                     match reference with
                     | Some reference ->
@@ -4019,6 +4026,34 @@ module State (Context : Context) = struct
                           >>| emit_invalid_enumeration_literal_errors ~resolution ~location ~errors
                           |> Option.value ~default:errors
                         in
+                        let check_previously_annotated errors =
+                          match name with
+                          | Name.Identifier identifier ->
+                              let is_locally_defined =
+                                Option.is_some
+                                  (Resolution.get_local
+                                     ~global_fallback:false
+                                     ~reference:(Reference.create identifier)
+                                     resolution)
+                              in
+                              let is_reannotation_with_same_type =
+                                (* TODO(T77219514): special casing for re-annotation in loops can be
+                                   removed when fixpoint is gone *)
+                                Annotation.is_immutable target_annotation
+                                && Type.equal expected (Annotation.original target_annotation)
+                              in
+                              if
+                                explicit && is_locally_defined && not is_reannotation_with_same_type
+                              then
+                                emit_error
+                                  ~errors
+                                  ~location
+                                  ~kind:
+                                    (Error.IllegalAnnotationTarget { target; kind = Reassignment })
+                              else
+                                errors
+                          | _ -> errors
+                        in
                         let errors =
                           match modifying_read_only_error with
                           | Some error ->
@@ -4033,6 +4068,7 @@ module State (Context : Context) = struct
                         |> check_undefined_attribute_target
                         |> check_nested_explicit_type_alias
                         |> check_enumeration_literal
+                        |> check_previously_annotated
                     | _ -> errors
                   in
 
@@ -4197,7 +4233,9 @@ module State (Context : Context) = struct
                               ( emit_error
                                   ~errors
                                   ~location
-                                  ~kind:(Error.IllegalAnnotationTarget target),
+                                  ~kind:
+                                    (Error.IllegalAnnotationTarget
+                                       { target; kind = InvalidExpression }),
                                 false )
                             else if
                               Annotated.Attribute.defined attribute
@@ -4269,20 +4307,16 @@ module State (Context : Context) = struct
                               errors, true )
                     | _ ->
                         if explicit then
-                          ( emit_error ~errors ~location ~kind:(Error.IllegalAnnotationTarget target),
+                          ( emit_error
+                              ~errors
+                              ~location
+                              ~kind:
+                                (Error.IllegalAnnotationTarget { target; kind = InvalidExpression }),
                             false )
                         else
                           errors, true
                   in
                   let propagate_annotations ~errors ~is_valid_annotation ~resolved =
-                    let is_global =
-                      match name with
-                      | Identifier identifier ->
-                          Resolution.is_global resolution ~reference:(Reference.create identifier)
-                      | Attribute _ as name when is_simple_name name ->
-                          Resolution.is_global resolution ~reference:(name_to_reference_exn name)
-                      | _ -> false
-                    in
                     if is_global && not (Define.is_toplevel Context.define.value) then
                       resolution, errors
                     else
@@ -4481,7 +4515,10 @@ module State (Context : Context) = struct
               | _ ->
                   if Option.is_some annotation then
                     ( resolution,
-                      emit_error ~errors ~location ~kind:(Error.IllegalAnnotationTarget target) )
+                      emit_error
+                        ~errors
+                        ~location
+                        ~kind:(Error.IllegalAnnotationTarget { target; kind = InvalidExpression }) )
                   else
                     resolution, errors
             in

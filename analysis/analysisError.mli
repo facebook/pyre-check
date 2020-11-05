@@ -203,6 +203,10 @@ and unsupported_operand_kind =
       operator_name: Identifier.t;
       operand: Type.t;
     }
+
+and illegal_annotation_target_kind =
+  | InvalidExpression
+  | Reassignment
 [@@deriving compare, eq, sexp, show, hash]
 
 type invalid_decoration_reason =
@@ -221,7 +225,10 @@ and invalid_decoration = {
 and kind =
   | AnalysisFailure of Type.t
   | ParserFailure of string
-  | IllegalAnnotationTarget of Expression.t
+  | IllegalAnnotationTarget of {
+      target: Expression.t;
+      kind: illegal_annotation_target_kind;
+    }
   | ImpossibleAssertion of {
       expression: Expression.t;
       annotation: Type.t;
