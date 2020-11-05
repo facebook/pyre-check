@@ -3703,10 +3703,11 @@ module State (Context : Context) = struct
                     false
                 | _ ->
                     (not (NamedTuple.is_named_tuple ~global_resolution ~annotation))
-                    && GlobalResolution.less_or_equal
-                         global_resolution
-                         ~left:annotation
-                         ~right:(Type.iterable Type.Top)
+                    && Option.is_some
+                         (GlobalResolution.extract_type_parameters
+                            global_resolution
+                            ~target:"typing.Iterable"
+                            ~source:annotation)
               in
               match target_value with
               | Expression.Name name -> (
