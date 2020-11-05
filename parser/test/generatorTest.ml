@@ -3002,6 +3002,17 @@ let test_comparison _ =
              });
     ];
   assert_parsed_equal
+    "foo is not_bar"
+    [
+      +Statement.Expression
+         (+Expression.ComparisonOperator
+             {
+               ComparisonOperator.left = +Expression.Name (Name.Identifier "foo");
+               operator = ComparisonOperator.Is;
+               right = +Expression.Name (Name.Identifier "not_bar");
+             });
+    ];
+  assert_parsed_equal
     "1 == 1"
     [
       +Statement.Expression

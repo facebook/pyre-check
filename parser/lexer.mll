@@ -237,7 +237,7 @@ and read_without_indent state = parse
       read_without_indent state lexbuf
   }
 
-  | "is" whitespace+ "not" { ISNOT }
+  | "is" whitespace+ "not" whitespace+ { ISNOT }
 
   | identifier as identifier {
       match identifier with
