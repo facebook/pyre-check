@@ -9,8 +9,12 @@ import json
 import sys
 from typing import Any, Dict, List, Type, TypeVar, cast
 
-# pyre-fixme[21]: Could not find name `_TypedDictMeta` in `typing_extensions`.
-from typing_extensions import _TypedDictMeta
+if sys.version_info[:2] >= (3, 9):
+    # pyre-fixme[21]: Could not find name `_TypedDictMeta` in `typing`.
+    from typing import _TypedDictMeta
+else:
+    # pyre-fixme[21]: Could not find name `_TypedDictMeta` in `typing_extensions`.
+    from typing_extensions import _TypedDictMeta
 from typing_inspect import get_origin, is_optional_type
 
 
