@@ -864,6 +864,17 @@ let test_check_method_parameters context =
       "Revealed type [-1]: Revealed type for `test.Foo().s` is \
        `List[typing.StaticMethod[typing.Callable(Foo.s)[[], None]]]`.";
     ];
+  assert_type_errors
+    ~include_line_numbers:true
+    {|
+      xs = (1, 2, 3)
+      def foo(x: int, y: int, z: str) -> None: ...
+      foo(*xs)
+    |}
+    [
+      "4: Incompatible parameter type [6]: Expected `str` for 3rd positional only parameter to \
+       call `foo` but got `int`.";
+    ];
   ()
 
 

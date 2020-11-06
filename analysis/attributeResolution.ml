@@ -3741,16 +3741,11 @@ class base class_metadata_environment dependency =
              Argument.WithPosition.resolved = Tuple (Bounded (Concrete tuple_parameters));
              kind = SingleStar;
              position;
-             _;
+             expression;
             } ->
                 let unpacked_arguments =
                   List.map tuple_parameters ~f:(fun resolved ->
-                      {
-                        Argument.WithPosition.expression = None;
-                        kind = Positional;
-                        resolved;
-                        position;
-                      })
+                      { Argument.WithPosition.expression; kind = Positional; resolved; position })
                 in
                 List.concat [List.rev unpacked_arguments; sofar]
             | _ -> argument :: sofar
