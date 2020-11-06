@@ -7,6 +7,10 @@
 
 from django.db.models import CharField, EmailField, TextField
 
+class CIText:
+    def get_internal_type(self) -> str: ...
+    def db_type(self, connection) -> str: ...
+
 CICharField = CharField
 CIEmailField = EmailField
 CITextField = TextField
