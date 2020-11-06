@@ -153,6 +153,17 @@ let test_check_data_class context =
       "Missing attribute annotation [4]: Attribute `x` of class `F` has type `int` but no type is \
        specified.";
     ];
+  assert_type_errors
+    {|
+      from typing import ClassVar
+      from dataclasses import dataclass
+      @dataclass
+      class A:
+        x: ClassVar[int] = 42
+        y: str = "a"
+      A("a")
+    |}
+    [];
   (* Actually a test of descriptors to make sure it doesn't infinitely loop *)
   assert_type_errors
     {|
