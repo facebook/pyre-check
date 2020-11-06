@@ -540,6 +540,59 @@ module ClassDecorators = struct
                   |> Identifier.SerializableMap.bindings
                   |> List.unzip
                   |> snd
+                  |> List.filter ~f:(fun attribute ->
+                         (* ClassVar should be excluded from considerations as field. *)
+                         match Node.value attribute with
+                         | {
+                          Attribute.kind =
+                            Attribute.Simple
+                              {
+                                annotation =
+                                  Some
+                                    {
+                                      Node.value =
+                                        Expression.Call
+                                          {
+                                            callee =
+                                              {
+                                                value =
+                                                  Name
+                                                    (Name.Attribute
+                                                      {
+                                                        attribute = "__getitem__";
+                                                        base =
+                                                          {
+                                                            Node.value =
+                                                              Name
+                                                                (Name.Attribute
+                                                                  {
+                                                                    attribute = "ClassVar";
+                                                                    base =
+                                                                      {
+                                                                        Node.value =
+                                                                          Name
+                                                                            (Name.Identifier
+                                                                              "typing");
+                                                                        _;
+                                                                      };
+                                                                    _;
+                                                                  });
+                                                            _;
+                                                          };
+                                                        _;
+                                                      });
+                                                _;
+                                              };
+                                            arguments = [_];
+                                          };
+                                      _;
+                                    };
+                                _;
+                              };
+                          _;
+                         } ->
+                             false
+                         | _ -> true)
                   |> List.sort ~compare:compare_by_location
                   |> List.map ~f:create
                 in
