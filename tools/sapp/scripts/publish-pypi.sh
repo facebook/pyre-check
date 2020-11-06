@@ -15,6 +15,6 @@ cd "$(dirname "$0")/.." || exit 1
 
 (cd sapp/ui/frontend && npm run build)
 
-rm -rf sdist
+rm -rf dist
 python setup.py sdist bdist_wheel
 python -m twine upload dist/*

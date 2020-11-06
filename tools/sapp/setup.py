@@ -3,7 +3,6 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-import glob
 import json
 
 from pathlib import Path
@@ -16,24 +15,9 @@ def _requirements():
         return data["sapp"]
 
 
-def _data_files():
-    return [
-        (
-            "build",
-            [
-                path
-                for path in glob.glob("sapp/ui/frontend/build/*")
-                if not Path(path).is_dir()
-            ],
-        ),
-        ("build/static/css", glob.glob("sapp/ui/frontend/build/static/css/*")),
-        ("build/static/js", glob.glob("sapp/ui/frontend/build/static/js/*")),
-    ]
-
-
 setup(
     name="fb-sapp",
-    version="0.2.6",
+    version="0.2.7",
     description="Static Analysis Post-Processor for processing taint analysis results.",
     long_description=Path("README.md").read_text(),
     long_description_content_type="text/markdown",
@@ -43,5 +27,11 @@ setup(
     url="https://pyre-check.org/",
     author="Facebook",
     maintainer_email="pyre@fb.com",
-    data_files=_data_files(),
+    package_data={
+        "sapp.ui": [
+            "frontend/build/*",
+            "frontend/build/static/css/*",
+            "frontend/build/static/js/*",
+        ],
+    },
 )
