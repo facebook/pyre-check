@@ -146,7 +146,7 @@ def add_local_mode(filename: str, mode: LocalMode) -> None:
 
 def remove_non_pyre_ignores(subdirectory: Path) -> None:
     python_files = [
-        str(subdirectory / path)
+        subdirectory / path
         for path in get_filesystem().list(str(subdirectory), patterns=[r"**/*.py"])
     ]
     if python_files:
@@ -155,7 +155,7 @@ def remove_non_pyre_ignores(subdirectory: Path) -> None:
             "sed",
             "-i",
             r"s/\s*# \?type: \?ignore$//g",
-        ] + python_files
+        ] + [str(file) for file in python_files if file.exists()]
         subprocess.check_output(remove_type_ignore_command)
 
 
