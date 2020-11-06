@@ -344,6 +344,7 @@
 %left AMPERSAND
 %left PLUS MINUS
 %left ASTERIKS PERCENT SLASH
+%left AWAIT
 %left TILDE
 %left AT
 %left DOT

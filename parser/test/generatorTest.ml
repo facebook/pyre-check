@@ -209,7 +209,43 @@ let test_number _ =
 
 
 let test_await _ =
-  assert_parsed_equal "await 1" [+Statement.Expression (+Expression.Await (+Expression.Integer 1))]
+  assert_parsed_equal "await 1" [+Statement.Expression (+Expression.Await (+Expression.Integer 1))];
+  assert_parsed_equal
+    "await foo() + 1"
+    [
+      +Statement.Expression
+         (+Expression.Call
+             {
+               callee =
+                 +Expression.Name
+                    (Name.Attribute
+                       {
+                         base =
+                           +Expression.Await (+Expression.Call { callee = !"foo"; arguments = [] });
+                         attribute = "__add__";
+                         special = true;
+                       });
+               arguments = [{ Call.Argument.name = None; value = +Expression.Integer 1 }];
+             });
+    ];
+  assert_parsed_equal
+    "await foo() * 2"
+    [
+      +Statement.Expression
+         (+Expression.Call
+             {
+               callee =
+                 +Expression.Name
+                    (Name.Attribute
+                       {
+                         base =
+                           +Expression.Await (+Expression.Call { callee = !"foo"; arguments = [] });
+                         attribute = "__mul__";
+                         special = true;
+                       });
+               arguments = [{ Call.Argument.name = None; value = +Expression.Integer 2 }];
+             });
+    ]
 
 
 let test_name _ =
