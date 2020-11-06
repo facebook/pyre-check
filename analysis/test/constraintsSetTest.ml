@@ -616,10 +616,13 @@ let test_add_constraint context =
   assert_add ~attributes ~left:"HasBoundMethodCall" ~right:"typing.Callable[[int], bool]" [];
 
   (* Multiple options *)
+  assert_add ~left:"int" ~right:"typing.Union[T1, T2]" [["T1", "int"]; ["T2", "int"]];
+  assert_add ~left:"int" ~right:"typing.Union[T1, T2, int]" [[]];
   assert_add
     ~left:"typing.List[int]"
     ~right:"typing.Union[typing.List[T1], T1]"
     [["T1", "int"]; ["T1", "typing.List[int]"]];
+  assert_add ~left:"typing.List[int]" ~right:"typing.Union[typing.List[int], T1]" [[]];
   assert_add
     ~left:"typing.Tuple[typing.List[int], typing.List[int]]"
     ~right:"typing.Tuple[typing.Union[typing.List[T1], T1], T1]"

@@ -512,6 +512,15 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
             [constraints]
           else
             impossible
+        else if
+          Type.Variable.all_variables_are_resolved left
+          && List.exists
+               ~f:(fun right ->
+                 Type.Variable.all_variables_are_resolved right
+                 && solve_less_or_equal order ~constraints ~left ~right |> List.is_empty |> not)
+               rights
+        then (* If X <= Union[Y, Z] with X and Y already resolved and X <= Y *)
+          [constraints]
         else
           List.concat_map rights ~f:(fun right ->
               solve_less_or_equal order ~constraints ~left ~right)
