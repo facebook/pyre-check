@@ -164,6 +164,7 @@ class StrictCountCollector(StatisticsCollector):
         self.strict_by_default: bool = strict_by_default
         self.unsafe_regex: Pattern[str] = compile(r"# pyre-unsafe")
         self.strict_regex: Pattern[str] = compile(r"# pyre-strict")
+        self.ignore_all_regex: Pattern[str] = compile(r"# pyre-ignore-all-errors")
 
     def is_unsafe_module(self) -> bool:
         if self.is_unsafe:
@@ -181,7 +182,8 @@ class StrictCountCollector(StatisticsCollector):
         if strict_match:
             self.is_strict = True
         unsafe_match = self.unsafe_regex.match(node.value)
-        if unsafe_match:
+        ignore_all_match = self.ignore_all_regex.match(node.value)
+        if unsafe_match or ignore_all_match:
             self.is_unsafe = True
 
     def leave_Module(self, original_node: cst.Module) -> None:

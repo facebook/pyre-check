@@ -470,3 +470,12 @@ class StrictCountCollectorTest(unittest.TestCase):
             {"strict_count": 1, "unsafe_count": 0},
             True,
         )
+        self.assert_counts(
+            """
+            # pyre-ignore-all-errors
+            def foo():
+                return 1
+            """,
+            {"strict_count": 0, "unsafe_count": 1},
+            True,
+        )
