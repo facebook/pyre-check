@@ -68,6 +68,7 @@ module T = struct
       | NameConstraint of string
       | ReturnConstraint of annotation_constraint
       | AnyParameterConstraint of parameter_constraint
+      | AnyOf of model_constraint list
     [@@deriving compare, show]
 
     type kind =
@@ -812,7 +813,7 @@ let parse_where_clause ({ Node.value; _ } as expression) =
              "Unsupported constraint kind for parameters: `%s`"
              parameter_constraint_kind)
   in
-  let parse_constraint ({ Node.value; _ } as constraint_expression) =
+  let rec parse_constraint ({ Node.value; _ } as constraint_expression) =
     match value with
     | Expression.Call
         {
@@ -890,6 +891,14 @@ let parse_where_clause ({ Node.value; _ } as expression) =
           ~parameter_constraint
           ~parameter_constraint_arguments
         >>= fun parameter_constraint -> Ok (ModelQuery.AnyParameterConstraint parameter_constraint)
+    | Expression.Call
+        {
+          Call.callee = { Node.value = Expression.Name (Name.Identifier "AnyOf"); _ };
+          arguments = constraints;
+        } ->
+        List.map constraints ~f:(fun { Call.Argument.value; _ } -> parse_constraint value)
+        |> Core.Result.all
+        >>| fun constraints -> ModelQuery.AnyOf constraints
     | Expression.Call { Call.callee; arguments = _ } ->
         Error (Format.sprintf "Unsupported callee: %s" (Expression.show callee))
     | _ ->

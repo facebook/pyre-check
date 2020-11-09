@@ -15,7 +15,7 @@ open Pyre
 
 let matches_pattern ~pattern name = Re2.matches (Re2.create_exn pattern) name
 
-let matches_constraint query_constraint ~resolution ~callable =
+let rec matches_constraint query_constraint ~resolution ~callable =
   let get_callable_type =
     Memo.unit (fun () -> Callable.get_module_and_definition ~resolution callable >>| snd)
   in
@@ -65,6 +65,8 @@ let matches_constraint query_constraint ~resolution ~callable =
                     ~annotation:(GlobalResolution.parse_annotation resolution annotation)
               | None -> false)
       | _ -> false )
+  | ModelQuery.AnyOf constraints ->
+      List.exists constraints ~f:(matches_constraint ~resolution ~callable)
 
 
 let apply_productions ~resolution ~productions ~callable =
