@@ -76,17 +76,19 @@ module T = struct
       | MethodModel
     [@@deriving show, compare]
 
+    type produced_taint = TaintAnnotation of taint_annotation [@@deriving show, compare]
+
     type production =
-      | AllParametersTaint of taint_annotation list
+      | AllParametersTaint of produced_taint list
       | ParameterTaint of {
           name: string;
-          taint: taint_annotation list;
+          taint: produced_taint list;
         }
       | PositionalParameterTaint of {
           index: int;
-          taint: taint_annotation list;
+          taint: produced_taint list;
         }
-      | ReturnTaint of taint_annotation list
+      | ReturnTaint of produced_taint list
     [@@deriving show, compare]
 
     type rule = {
@@ -918,8 +920,12 @@ let parse_model_clause ~configuration ({ Node.value; _ } as expression) =
         | Expression.List taint_annotations ->
             List.concat_map taint_annotations ~f:(fun annotation ->
                 parse_annotations ~configuration ~parameters:[] (Some annotation))
+            |> List.map ~f:(fun taint -> ModelQuery.TaintAnnotation taint)
             |> return
-        | _ -> Ok (parse_annotations ~configuration ~parameters:[] (Some taint_expression))
+        | _ ->
+            parse_annotations ~configuration ~parameters:[] (Some taint_expression)
+            |> List.map ~f:(fun taint -> ModelQuery.TaintAnnotation taint)
+            |> return
       with
       | Failure failure -> Core.Result.Error failure
     in

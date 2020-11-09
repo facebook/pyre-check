@@ -44,7 +44,7 @@ let test_apply_rule context =
       {
         name = None;
         query = [NameConstraint "foo"];
-        productions = [ReturnTaint [source "Test"]];
+        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
       }
     ~callable:(`Function "test.foo")
@@ -60,7 +60,7 @@ let test_apply_rule context =
       {
         name = None;
         query = [NameConstraint "foo"; NameConstraint "bar"];
-        productions = [ReturnTaint [source "Test"]];
+        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
       }
     ~callable:(`Function "test.barfoo")
@@ -74,7 +74,7 @@ let test_apply_rule context =
       {
         name = None;
         query = [NameConstraint "foo"; NameConstraint "bar"];
-        productions = [ReturnTaint [source "Test"]];
+        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
       }
     ~callable:(`Function "test.foo")
@@ -90,7 +90,7 @@ let test_apply_rule context =
       {
         name = None;
         query = [NameConstraint "foo"];
-        productions = [ReturnTaint [source "Test"]];
+        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
       }
     ~callable:(`Method { Interprocedural.Callable.class_name = "test.C"; method_name = "foo" })
@@ -105,7 +105,7 @@ let test_apply_rule context =
       {
         name = None;
         query = [NameConstraint "foo"];
-        productions = [ReturnTaint [source "Test"]];
+        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = MethodModel;
       }
     ~callable:(`Method { Interprocedural.Callable.class_name = "test.C"; method_name = "foo" })
@@ -122,7 +122,10 @@ let test_apply_rule context =
         name = None;
         query = [NameConstraint "foo"];
         productions =
-          [ReturnTaint [source "Test"]; ParameterTaint { name = "x"; taint = [source "Test"] }];
+          [
+            ReturnTaint [TaintAnnotation (source "Test")];
+            ParameterTaint { name = "x"; taint = [TaintAnnotation (source "Test")] };
+          ];
         rule_kind = MethodModel;
       }
     ~callable:(`Method { Interprocedural.Callable.class_name = "test.C"; method_name = "foo" })
@@ -144,7 +147,7 @@ let test_apply_rule context =
       {
         name = None;
         query = [NameConstraint "foo"];
-        productions = [AllParametersTaint [source "Test"]];
+        productions = [AllParametersTaint [TaintAnnotation (source "Test")]];
         rule_kind = MethodModel;
       }
     ~callable:(`Method { Interprocedural.Callable.class_name = "test.C"; method_name = "foo" })
@@ -170,7 +173,7 @@ let test_apply_rule context =
       {
         name = None;
         query = [ReturnConstraint IsAnnotatedTypeConstraint];
-        productions = [ReturnTaint [source "Test"]];
+        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
       }
     ~callable:(`Function "test.foo")
@@ -183,7 +186,7 @@ let test_apply_rule context =
       {
         name = None;
         query = [ReturnConstraint IsAnnotatedTypeConstraint];
-        productions = [ReturnTaint [source "Test"]];
+        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
       }
     ~callable:(`Function "test.foo")
@@ -196,7 +199,7 @@ let test_apply_rule context =
       {
         name = None;
         query = [ReturnConstraint IsAnnotatedTypeConstraint];
-        productions = [ReturnTaint [source "Test"]];
+        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
       }
     ~callable:(`Function "test.foo")
@@ -209,7 +212,7 @@ let test_apply_rule context =
       {
         name = None;
         query = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
-        productions = [ReturnTaint [source "Test"]];
+        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
       }
     ~callable:(`Function "test.foo")
@@ -222,7 +225,7 @@ let test_apply_rule context =
       {
         name = None;
         query = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
-        productions = [ReturnTaint [source "Test"]];
+        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
       }
     ~callable:(`Function "test.foo")
@@ -244,7 +247,7 @@ let test_apply_rule context =
                 ReturnConstraint IsAnnotatedTypeConstraint;
               ];
           ];
-        productions = [ReturnTaint [source "Test"]];
+        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
       }
     ~callable:(`Function "test.foo")
@@ -264,7 +267,7 @@ let test_apply_rule context =
                 ReturnConstraint IsAnnotatedTypeConstraint;
               ];
           ];
-        productions = [ReturnTaint [source "Test"]];
+        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
       }
     ~callable:(`Function "test.foo")

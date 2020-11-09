@@ -83,7 +83,9 @@ let apply_productions ~resolution ~productions ~callable =
       let normalized_parameters = AccessPath.Root.normalize_parameters parameters in
       let apply_production = function
         | ModelQuery.ReturnTaint returned_annotations ->
-            List.map returned_annotations ~f:(fun returned_annotation ->
+            List.map
+              returned_annotations
+              ~f:(fun (ModelQuery.TaintAnnotation returned_annotation) ->
                 ReturnAnnotation, returned_annotation)
         | ModelQuery.ParameterTaint { name; taint } -> (
             let parameter =
@@ -92,7 +94,8 @@ let apply_productions ~resolution ~productions ~callable =
             in
             match parameter with
             | Some parameter ->
-                List.map taint ~f:(fun taint -> ParameterAnnotation parameter, taint)
+                List.map taint ~f:(fun (ModelQuery.TaintAnnotation taint) ->
+                    ParameterAnnotation parameter, taint)
             | None -> [] )
         | ModelQuery.PositionalParameterTaint { index; taint } -> (
             let parameter =
@@ -104,13 +107,15 @@ let apply_productions ~resolution ~productions ~callable =
             in
             match parameter with
             | Some parameter ->
-                List.map taint ~f:(fun taint -> ParameterAnnotation parameter, taint)
+                List.map taint ~f:(fun (ModelQuery.TaintAnnotation taint) ->
+                    ParameterAnnotation parameter, taint)
             | None -> [] )
         | ModelQuery.AllParametersTaint taint ->
-            let roots =
-              List.map normalized_parameters ~f:(fun (root, _, _) -> ParameterAnnotation root)
+            let apply_parameter_production ((root, _, _), ModelQuery.TaintAnnotation taint) =
+              ParameterAnnotation root, taint
             in
-            List.cartesian_product roots taint
+            List.cartesian_product normalized_parameters taint
+            |> List.map ~f:apply_parameter_production
       in
       List.concat_map productions ~f:apply_production
 

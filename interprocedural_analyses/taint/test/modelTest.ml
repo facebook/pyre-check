@@ -1496,13 +1496,14 @@ let test_query_parsing context =
             [
               ReturnTaint
                 [
-                  Model.Source
-                    {
-                      source = Sources.NamedSource "Test";
-                      breadcrumbs = [];
-                      path = [];
-                      leaf_name_provided = false;
-                    };
+                  TaintAnnotation
+                    (Model.Source
+                       {
+                         source = Sources.NamedSource "Test";
+                         breadcrumbs = [];
+                         path = [];
+                         leaf_name_provided = false;
+                       });
                 ];
             ];
         };
@@ -1528,13 +1529,14 @@ let test_query_parsing context =
             [
               ReturnTaint
                 [
-                  Model.Source
-                    {
-                      source = Sources.NamedSource "Test";
-                      breadcrumbs = [];
-                      path = [];
-                      leaf_name_provided = false;
-                    };
+                  TaintAnnotation
+                    (Model.Source
+                       {
+                         source = Sources.NamedSource "Test";
+                         breadcrumbs = [];
+                         path = [];
+                         leaf_name_provided = false;
+                       });
                 ];
             ];
         };
@@ -1560,13 +1562,14 @@ let test_query_parsing context =
             [
               ReturnTaint
                 [
-                  Model.Source
-                    {
-                      source = Sources.NamedSource "Test";
-                      breadcrumbs = [];
-                      path = [];
-                      leaf_name_provided = false;
-                    };
+                  TaintAnnotation
+                    (Model.Source
+                       {
+                         source = Sources.NamedSource "Test";
+                         breadcrumbs = [];
+                         path = [];
+                         leaf_name_provided = false;
+                       });
                 ];
             ];
         };
@@ -1592,20 +1595,22 @@ let test_query_parsing context =
             [
               ReturnTaint
                 [
-                  Model.Source
-                    {
-                      source = Sources.NamedSource "Test";
-                      breadcrumbs = [];
-                      path = [];
-                      leaf_name_provided = false;
-                    };
-                  Model.Sink
-                    {
-                      sink = Sinks.NamedSink "Test";
-                      breadcrumbs = [];
-                      path = [];
-                      leaf_name_provided = false;
-                    };
+                  TaintAnnotation
+                    (Model.Source
+                       {
+                         source = Sources.NamedSource "Test";
+                         breadcrumbs = [];
+                         path = [];
+                         leaf_name_provided = false;
+                       });
+                  TaintAnnotation
+                    (Model.Sink
+                       {
+                         sink = Sinks.NamedSink "Test";
+                         breadcrumbs = [];
+                         path = [];
+                         leaf_name_provided = false;
+                       });
                 ];
             ];
         };
@@ -1632,20 +1637,22 @@ let test_query_parsing context =
             [
               ReturnTaint
                 [
-                  Model.Source
-                    {
-                      source = Sources.NamedSource "Test";
-                      breadcrumbs = [];
-                      path = [];
-                      leaf_name_provided = false;
-                    };
-                  Model.Sink
-                    {
-                      sink = Sinks.NamedSink "Test";
-                      breadcrumbs = [];
-                      path = [];
-                      leaf_name_provided = false;
-                    };
+                  TaintAnnotation
+                    (Model.Source
+                       {
+                         source = Sources.NamedSource "Test";
+                         breadcrumbs = [];
+                         path = [];
+                         leaf_name_provided = false;
+                       });
+                  TaintAnnotation
+                    (Model.Sink
+                       {
+                         sink = Sinks.NamedSink "Test";
+                         breadcrumbs = [];
+                         path = [];
+                         leaf_name_provided = false;
+                       });
                 ];
             ];
         };
@@ -1672,13 +1679,14 @@ let test_query_parsing context =
             [
               ReturnTaint
                 [
-                  Model.Source
-                    {
-                      source = Sources.NamedSource "Test";
-                      breadcrumbs = [];
-                      path = [];
-                      leaf_name_provided = false;
-                    };
+                  TaintAnnotation
+                    (Model.Source
+                       {
+                         source = Sources.NamedSource "Test";
+                         breadcrumbs = [];
+                         path = [];
+                         leaf_name_provided = false;
+                       });
                 ];
             ];
         };
@@ -1705,13 +1713,14 @@ let test_query_parsing context =
             [
               ReturnTaint
                 [
-                  Model.Source
-                    {
-                      source = Sources.NamedSource "Test";
-                      breadcrumbs = [];
-                      path = [];
-                      leaf_name_provided = false;
-                    };
+                  TaintAnnotation
+                    (Model.Source
+                       {
+                         source = Sources.NamedSource "Test";
+                         breadcrumbs = [];
+                         path = [];
+                         leaf_name_provided = false;
+                       });
                 ];
             ];
         };
@@ -1748,13 +1757,14 @@ let test_query_parsing context =
             [
               ReturnTaint
                 [
-                  Model.Source
-                    {
-                      source = Sources.NamedSource "Test";
-                      breadcrumbs = [];
-                      path = [];
-                      leaf_name_provided = false;
-                    };
+                  TaintAnnotation
+                    (Model.Source
+                       {
+                         source = Sources.NamedSource "Test";
+                         breadcrumbs = [];
+                         path = [];
+                         leaf_name_provided = false;
+                       });
                 ];
             ];
         };
