@@ -9,6 +9,7 @@ open OUnit2
 open Core
 open Test
 open Taint
+open Model.ModelQuery
 
 type query_rule_element = Taint.Model.annotation_kind * Taint.Model.taint_annotation
 [@@deriving show, compare]
@@ -41,10 +42,10 @@ let test_apply_rule context =
       |}
     ~rule:
       {
-        Model.ModelQuery.name = None;
-        query = [Model.ModelQuery.NameConstraint "foo"];
-        productions = [Model.ModelQuery.ReturnTaint [source "Test"]];
-        rule_kind = Model.ModelQuery.FunctionModel;
+        name = None;
+        query = [NameConstraint "foo"];
+        productions = [ReturnTaint [source "Test"]];
+        rule_kind = FunctionModel;
       }
     ~callable:(`Function "test.foo")
     ~expected:[Taint.Model.ReturnAnnotation, source "Test"];
@@ -57,10 +58,10 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        Model.ModelQuery.name = None;
-        query = [Model.ModelQuery.NameConstraint "foo"; Model.ModelQuery.NameConstraint "bar"];
-        productions = [Model.ModelQuery.ReturnTaint [source "Test"]];
-        rule_kind = Model.ModelQuery.FunctionModel;
+        name = None;
+        query = [NameConstraint "foo"; NameConstraint "bar"];
+        productions = [ReturnTaint [source "Test"]];
+        rule_kind = FunctionModel;
       }
     ~callable:(`Function "test.barfoo")
     ~expected:[Taint.Model.ReturnAnnotation, source "Test"];
@@ -71,10 +72,10 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        Model.ModelQuery.name = None;
-        query = [Model.ModelQuery.NameConstraint "foo"; Model.ModelQuery.NameConstraint "bar"];
-        productions = [Model.ModelQuery.ReturnTaint [source "Test"]];
-        rule_kind = Model.ModelQuery.FunctionModel;
+        name = None;
+        query = [NameConstraint "foo"; NameConstraint "bar"];
+        productions = [ReturnTaint [source "Test"]];
+        rule_kind = FunctionModel;
       }
     ~callable:(`Function "test.foo")
     ~expected:[];
@@ -87,10 +88,10 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        Model.ModelQuery.name = None;
-        query = [Model.ModelQuery.NameConstraint "foo"];
-        productions = [Model.ModelQuery.ReturnTaint [source "Test"]];
-        rule_kind = Model.ModelQuery.FunctionModel;
+        name = None;
+        query = [NameConstraint "foo"];
+        productions = [ReturnTaint [source "Test"]];
+        rule_kind = FunctionModel;
       }
     ~callable:(`Method { Interprocedural.Callable.class_name = "test.C"; method_name = "foo" })
     ~expected:[];
@@ -102,10 +103,10 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        Model.ModelQuery.name = None;
-        query = [Model.ModelQuery.NameConstraint "foo"];
-        productions = [Model.ModelQuery.ReturnTaint [source "Test"]];
-        rule_kind = Model.ModelQuery.MethodModel;
+        name = None;
+        query = [NameConstraint "foo"];
+        productions = [ReturnTaint [source "Test"]];
+        rule_kind = MethodModel;
       }
     ~callable:(`Method { Interprocedural.Callable.class_name = "test.C"; method_name = "foo" })
     ~expected:[Taint.Model.ReturnAnnotation, source "Test"];
@@ -118,14 +119,11 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        Model.ModelQuery.name = None;
-        query = [Model.ModelQuery.NameConstraint "foo"];
+        name = None;
+        query = [NameConstraint "foo"];
         productions =
-          [
-            Model.ModelQuery.ReturnTaint [source "Test"];
-            Model.ModelQuery.ParameterTaint { name = "x"; taint = [source "Test"] };
-          ];
-        rule_kind = Model.ModelQuery.MethodModel;
+          [ReturnTaint [source "Test"]; ParameterTaint { name = "x"; taint = [source "Test"] }];
+        rule_kind = MethodModel;
       }
     ~callable:(`Method { Interprocedural.Callable.class_name = "test.C"; method_name = "foo" })
     ~expected:
@@ -144,10 +142,10 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        Model.ModelQuery.name = None;
-        query = [Model.ModelQuery.NameConstraint "foo"];
-        productions = [Model.ModelQuery.AllParametersTaint [source "Test"]];
-        rule_kind = Model.ModelQuery.MethodModel;
+        name = None;
+        query = [NameConstraint "foo"];
+        productions = [AllParametersTaint [source "Test"]];
+        rule_kind = MethodModel;
       }
     ~callable:(`Method { Interprocedural.Callable.class_name = "test.C"; method_name = "foo" })
     ~expected:
@@ -170,10 +168,10 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        Model.ModelQuery.name = None;
-        query = [Model.ModelQuery.ReturnConstraint Model.ModelQuery.IsAnnotatedTypeConstraint];
-        productions = [Model.ModelQuery.ReturnTaint [source "Test"]];
-        rule_kind = Model.ModelQuery.FunctionModel;
+        name = None;
+        query = [ReturnConstraint IsAnnotatedTypeConstraint];
+        productions = [ReturnTaint [source "Test"]];
+        rule_kind = FunctionModel;
       }
     ~callable:(`Function "test.foo")
     ~expected:[Taint.Model.ReturnAnnotation, source "Test"];
@@ -183,10 +181,10 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        Model.ModelQuery.name = None;
-        query = [Model.ModelQuery.ReturnConstraint Model.ModelQuery.IsAnnotatedTypeConstraint];
-        productions = [Model.ModelQuery.ReturnTaint [source "Test"]];
-        rule_kind = Model.ModelQuery.FunctionModel;
+        name = None;
+        query = [ReturnConstraint IsAnnotatedTypeConstraint];
+        productions = [ReturnTaint [source "Test"]];
+        rule_kind = FunctionModel;
       }
     ~callable:(`Function "test.foo")
     ~expected:[];
@@ -196,10 +194,10 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        Model.ModelQuery.name = None;
-        query = [Model.ModelQuery.ReturnConstraint Model.ModelQuery.IsAnnotatedTypeConstraint];
-        productions = [Model.ModelQuery.ReturnTaint [source "Test"]];
-        rule_kind = Model.ModelQuery.FunctionModel;
+        name = None;
+        query = [ReturnConstraint IsAnnotatedTypeConstraint];
+        productions = [ReturnTaint [source "Test"]];
+        rule_kind = FunctionModel;
       }
     ~callable:(`Function "test.foo")
     ~expected:[];
@@ -209,14 +207,10 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        Model.ModelQuery.name = None;
-        query =
-          [
-            Model.ModelQuery.AnyParameterConstraint
-              (Model.ModelQuery.AnnotationConstraint Model.ModelQuery.IsAnnotatedTypeConstraint);
-          ];
-        productions = [Model.ModelQuery.ReturnTaint [source "Test"]];
-        rule_kind = Model.ModelQuery.FunctionModel;
+        name = None;
+        query = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
+        productions = [ReturnTaint [source "Test"]];
+        rule_kind = FunctionModel;
       }
     ~callable:(`Function "test.foo")
     ~expected:[Taint.Model.ReturnAnnotation, source "Test"];
@@ -226,14 +220,10 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        Model.ModelQuery.name = None;
-        query =
-          [
-            Model.ModelQuery.AnyParameterConstraint
-              (Model.ModelQuery.AnnotationConstraint Model.ModelQuery.IsAnnotatedTypeConstraint);
-          ];
-        productions = [Model.ModelQuery.ReturnTaint [source "Test"]];
-        rule_kind = Model.ModelQuery.FunctionModel;
+        name = None;
+        query = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
+        productions = [ReturnTaint [source "Test"]];
+        rule_kind = FunctionModel;
       }
     ~callable:(`Function "test.foo")
     ~expected:[Taint.Model.ReturnAnnotation, source "Test"];
@@ -245,18 +235,17 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        Model.ModelQuery.name = None;
+        name = None;
         query =
           [
-            Model.ModelQuery.AnyOf
+            AnyOf
               [
-                Model.ModelQuery.AnyParameterConstraint
-                  (Model.ModelQuery.AnnotationConstraint Model.ModelQuery.IsAnnotatedTypeConstraint);
-                Model.ModelQuery.ReturnConstraint Model.ModelQuery.IsAnnotatedTypeConstraint;
+                AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint);
+                ReturnConstraint IsAnnotatedTypeConstraint;
               ];
           ];
-        productions = [Model.ModelQuery.ReturnTaint [source "Test"]];
-        rule_kind = Model.ModelQuery.FunctionModel;
+        productions = [ReturnTaint [source "Test"]];
+        rule_kind = FunctionModel;
       }
     ~callable:(`Function "test.foo")
     ~expected:[Taint.Model.ReturnAnnotation, source "Test"];
@@ -266,18 +255,17 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        Model.ModelQuery.name = None;
+        name = None;
         query =
           [
-            Model.ModelQuery.AnyOf
+            AnyOf
               [
-                Model.ModelQuery.AnyParameterConstraint
-                  (Model.ModelQuery.AnnotationConstraint Model.ModelQuery.IsAnnotatedTypeConstraint);
-                Model.ModelQuery.ReturnConstraint Model.ModelQuery.IsAnnotatedTypeConstraint;
+                AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint);
+                ReturnConstraint IsAnnotatedTypeConstraint;
               ];
           ];
-        productions = [Model.ModelQuery.ReturnTaint [source "Test"]];
-        rule_kind = Model.ModelQuery.FunctionModel;
+        productions = [ReturnTaint [source "Test"]];
+        rule_kind = FunctionModel;
       }
     ~callable:(`Function "test.foo")
     ~expected:[Taint.Model.ReturnAnnotation, source "Test"];
