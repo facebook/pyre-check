@@ -76,7 +76,13 @@ module T = struct
       | MethodModel
     [@@deriving show, compare]
 
-    type produced_taint = TaintAnnotation of taint_annotation [@@deriving show, compare]
+    type produced_taint =
+      | TaintAnnotation of taint_annotation
+      | ParametricSourceFromAnnotation of {
+          source_pattern: string;
+          kind: string;
+        }
+    [@@deriving show, compare]
 
     type production =
       | AllParametersTaint of produced_taint list
@@ -915,17 +921,38 @@ let parse_model_clause ~configuration ({ Node.value; _ } as expression) =
   let open Core.Result in
   let parse_model ({ Node.value; _ } as model_expression) =
     let parse_taint taint_expression =
+      let parse_produced_taint expression =
+        match Node.value expression with
+        | Expression.Call
+            {
+              Call.callee =
+                {
+                  Node.value = Expression.Name (Name.Identifier "ParametricSourceFromAnnotation");
+                  _;
+                };
+              arguments =
+                [
+                  {
+                    Call.Argument.name = Some { Node.value = "pattern"; _ };
+                    value = { Node.value = Expression.Name (Name.Identifier source_pattern); _ };
+                  };
+                  {
+                    Call.Argument.name = Some { Node.value = "kind"; _ };
+                    value = { Node.value = Expression.Name (Name.Identifier kind); _ };
+                  };
+                ];
+            } ->
+            [ModelQuery.ParametricSourceFromAnnotation { source_pattern; kind }]
+        | _ ->
+            parse_annotations ~configuration ~parameters:[] (Some expression)
+            |> List.map ~f:(fun taint -> ModelQuery.TaintAnnotation taint)
+      in
+
       try
         match Node.value taint_expression with
         | Expression.List taint_annotations ->
-            List.concat_map taint_annotations ~f:(fun annotation ->
-                parse_annotations ~configuration ~parameters:[] (Some annotation))
-            |> List.map ~f:(fun taint -> ModelQuery.TaintAnnotation taint)
-            |> return
-        | _ ->
-            parse_annotations ~configuration ~parameters:[] (Some taint_expression)
-            |> List.map ~f:(fun taint -> ModelQuery.TaintAnnotation taint)
-            |> return
+            List.concat_map taint_annotations ~f:parse_produced_taint |> return
+        | _ -> parse_produced_taint taint_expression |> return
       with
       | Failure failure -> Core.Result.Error failure
     in

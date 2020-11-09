@@ -67,7 +67,13 @@ module T : sig
       | MethodModel
     [@@deriving show, compare]
 
-    type produced_taint = TaintAnnotation of taint_annotation [@@deriving show, compare]
+    type produced_taint =
+      | TaintAnnotation of taint_annotation
+      | ParametricSourceFromAnnotation of {
+          source_pattern: string;
+          kind: string;
+        }
+    [@@deriving show, compare]
 
     type production =
       | AllParametersTaint of produced_taint list

@@ -77,45 +77,122 @@ let apply_productions ~resolution ~productions ~callable =
       ( _,
         {
           Node.value =
-            { Statement.Define.signature = { Statement.Define.Signature.parameters; _ }; _ };
+            {
+              Statement.Define.signature =
+                { Statement.Define.Signature.parameters; return_annotation; _ };
+              _;
+            };
           _;
         } ) ->
+      let production_to_taint ~annotation ~production =
+        let open Expression in
+        match production with
+        | ModelQuery.TaintAnnotation taint_annotation -> Some taint_annotation
+        | ModelQuery.ParametricSourceFromAnnotation { source_pattern; kind } -> (
+            let get_annotation_of_type annotation =
+              match annotation >>| Node.value with
+              | Some (Expression.Call { Call.callee = { Node.value = callee; _ }; arguments }) -> (
+                  match callee with
+                  | Name
+                      (Name.Attribute
+                        {
+                          base =
+                            { Node.value = Name (Name.Attribute { attribute = "Annotated"; _ }); _ };
+                          _;
+                        }) -> (
+                      match arguments with
+                      | [
+                       {
+                         Call.Argument.value = { Node.value = Expression.Tuple [_; annotation]; _ };
+                         _;
+                       };
+                      ] ->
+                          Some annotation
+                      | _ -> None )
+                  | _ -> None )
+              | _ -> None
+            in
+            match get_annotation_of_type annotation with
+            | Some
+                {
+                  Node.value =
+                    Expression.Call
+                      {
+                        Call.callee = { Node.value = Name (Name.Identifier callee_name); _ };
+                        arguments =
+                          [
+                            {
+                              Call.Argument.value =
+                                { Node.value = Name (Name.Identifier subkind); _ };
+                              _;
+                            };
+                          ];
+                      };
+                  _;
+                } ->
+                if String.equal callee_name source_pattern then
+                  Some
+                    (Source
+                       {
+                         source = Sources.ParametricSource { source_name = kind; subkind };
+                         breadcrumbs = [];
+                         path = [];
+                         leaf_name_provided = false;
+                       })
+                else
+                  None
+            | _ -> None )
+      in
       let normalized_parameters = AccessPath.Root.normalize_parameters parameters in
       let apply_production = function
-        | ModelQuery.ReturnTaint returned_annotations ->
-            List.map
-              returned_annotations
-              ~f:(fun (ModelQuery.TaintAnnotation returned_annotation) ->
-                ReturnAnnotation, returned_annotation)
-        | ModelQuery.ParameterTaint { name; taint } -> (
+        | ModelQuery.ReturnTaint productions ->
+            List.filter_map productions ~f:(fun production ->
+                production_to_taint ~annotation:return_annotation ~production
+                >>| fun taint -> ReturnAnnotation, taint)
+        | ModelQuery.ParameterTaint { name; taint = productions } -> (
             let parameter =
-              List.find_map normalized_parameters ~f:(fun (root, parameter_name, _) ->
-                  if Identifier.equal_sanitized parameter_name name then Some root else None)
+              List.find_map
+                normalized_parameters
+                ~f:(fun ( root,
+                          parameter_name,
+                          { Node.value = { Expression.Parameter.annotation; _ }; _ } )
+                        ->
+                  if Identifier.equal_sanitized parameter_name name then
+                    Some (root, annotation)
+                  else
+                    None)
             in
             match parameter with
-            | Some parameter ->
-                List.map taint ~f:(fun (ModelQuery.TaintAnnotation taint) ->
-                    ParameterAnnotation parameter, taint)
+            | Some (parameter, annotation) ->
+                List.filter_map productions ~f:(fun production ->
+                    production_to_taint ~annotation ~production
+                    >>| fun taint -> ParameterAnnotation parameter, taint)
             | None -> [] )
-        | ModelQuery.PositionalParameterTaint { index; taint } -> (
+        | ModelQuery.PositionalParameterTaint { index; taint = productions } -> (
             let parameter =
-              List.find_map normalized_parameters ~f:(fun (root, _, _) ->
+              List.find_map
+                normalized_parameters
+                ~f:(fun (root, _, { Node.value = { Expression.Parameter.annotation; _ }; _ }) ->
                   match root with
                   | AccessPath.Root.PositionalParameter { position; _ } when position = index ->
-                      Some root
+                      Some (root, annotation)
                   | _ -> None)
             in
             match parameter with
-            | Some parameter ->
-                List.map taint ~f:(fun (ModelQuery.TaintAnnotation taint) ->
-                    ParameterAnnotation parameter, taint)
+            | Some (parameter, annotation) ->
+                List.filter_map productions ~f:(fun production ->
+                    production_to_taint ~annotation ~production
+                    >>| fun taint -> ParameterAnnotation parameter, taint)
             | None -> [] )
         | ModelQuery.AllParametersTaint taint ->
-            let apply_parameter_production ((root, _, _), ModelQuery.TaintAnnotation taint) =
-              ParameterAnnotation root, taint
+            let apply_parameter_production
+                ((root, _, { Node.value = { Expression.Parameter.annotation; _ }; _ }), production)
+              =
+              production_to_taint ~annotation ~production
+              >>| fun taint -> ParameterAnnotation root, taint
             in
             List.cartesian_product normalized_parameters taint
-            |> List.map ~f:apply_parameter_production
+            |> List.filter_map ~f:apply_parameter_production
       in
       List.concat_map productions ~f:apply_production
 

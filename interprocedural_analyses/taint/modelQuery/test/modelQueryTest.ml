@@ -15,9 +15,13 @@ type query_rule_element = Taint.Model.annotation_kind * Taint.Model.taint_annota
 [@@deriving show, compare]
 
 let test_apply_rule context =
-  let source name =
-    Model.Source
-      { source = Sources.NamedSource name; breadcrumbs = []; path = []; leaf_name_provided = false }
+  let source ?subkind name =
+    let source =
+      match subkind with
+      | None -> Sources.NamedSource name
+      | Some subkind -> Sources.ParametricSource { source_name = name; subkind }
+    in
+    Model.Source { source; breadcrumbs = []; path = []; leaf_name_provided = false }
   in
   let assert_applied_rules ~source ~rule ~callable ~expected =
     let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
@@ -230,7 +234,6 @@ let test_apply_rule context =
       }
     ~callable:(`Function "test.foo")
     ~expected:[Taint.Model.ReturnAnnotation, source "Test"];
-  ();
   (* Any of. *)
   assert_applied_rules
     ~source:{|
@@ -272,6 +275,139 @@ let test_apply_rule context =
       }
     ~callable:(`Function "test.foo")
     ~expected:[Taint.Model.ReturnAnnotation, source "Test"];
+  assert_applied_rules
+    ~source:{|
+       def foo(a, b: typing.Annotated[int, DynamicSource(A)], c: str): ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
+        productions =
+          [
+            PositionalParameterTaint
+              {
+                index = 1;
+                taint =
+                  [
+                    ParametricSourceFromAnnotation
+                      { source_pattern = "DynamicSource"; kind = "Dynamic" };
+                  ];
+              };
+          ];
+        rule_kind = FunctionModel;
+      }
+    ~callable:(`Function "test.foo")
+    ~expected:
+      [
+        ( Taint.Model.ParameterAnnotation
+            (AccessPath.Root.PositionalParameter
+               { position = 1; name = "b"; positional_only = false }),
+          source ~subkind:"A" "Dynamic" );
+      ];
+  (* Case where we don't match. *)
+  assert_applied_rules
+    ~source:{|
+       def foo(a, b: typing.Annotated[int, DynamicSource(A)], c: str): ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
+        productions =
+          [
+            PositionalParameterTaint
+              {
+                index = 0;
+                taint =
+                  [
+                    ParametricSourceFromAnnotation
+                      { source_pattern = "DynamicSource"; kind = "Dynamic" };
+                  ];
+              };
+          ];
+        rule_kind = FunctionModel;
+      }
+    ~callable:(`Function "test.foo")
+    ~expected:[];
+  (* Named parameters + parametric sources from annotation. *)
+  assert_applied_rules
+    ~source:{|
+       def foo(a, b: typing.Annotated[int, DynamicSource(A)], c: str): ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
+        productions =
+          [
+            ParameterTaint
+              {
+                name = "b";
+                taint =
+                  [
+                    ParametricSourceFromAnnotation
+                      { source_pattern = "DynamicSource"; kind = "Dynamic" };
+                  ];
+              };
+          ];
+        rule_kind = FunctionModel;
+      }
+    ~callable:(`Function "test.foo")
+    ~expected:
+      [
+        ( Taint.Model.ParameterAnnotation
+            (AccessPath.Root.PositionalParameter
+               { position = 1; name = "b"; positional_only = false }),
+          source ~subkind:"A" "Dynamic" );
+      ];
+  (* All parameters taint + parametric source from annotation. *)
+  assert_applied_rules
+    ~source:{|
+       def foo(a, b: typing.Annotated[int, DynamicSource(A)], c: str): ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
+        productions =
+          [
+            AllParametersTaint
+              [
+                ParametricSourceFromAnnotation { source_pattern = "DynamicSource"; kind = "Dynamic" };
+              ];
+          ];
+        rule_kind = FunctionModel;
+      }
+    ~callable:(`Function "test.foo")
+    ~expected:
+      [
+        ( Taint.Model.ParameterAnnotation
+            (AccessPath.Root.PositionalParameter
+               { position = 1; name = "b"; positional_only = false }),
+          source ~subkind:"A" "Dynamic" );
+      ];
+  (* Returned taint + parametric source from annotation. *)
+  assert_applied_rules
+    ~source:{|
+       def foo(a) -> typing.Annotated[int, DynamicSource(B)]: ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query = [ReturnConstraint IsAnnotatedTypeConstraint];
+        productions =
+          [
+            ReturnTaint
+              [
+                ParametricSourceFromAnnotation { source_pattern = "DynamicSource"; kind = "Dynamic" };
+              ];
+          ];
+        rule_kind = FunctionModel;
+      }
+    ~callable:(`Function "test.foo")
+    ~expected:[Taint.Model.ReturnAnnotation, source ~subkind:"B" "Dynamic"];
+
   ()
 
 
