@@ -86,62 +86,75 @@ let apply_productions ~resolution ~productions ~callable =
         } ) ->
       let production_to_taint ~annotation ~production =
         let open Expression in
+        let get_subkind_from_annotation ~pattern annotation =
+          let get_annotation_of_type annotation =
+            match annotation >>| Node.value with
+            | Some (Expression.Call { Call.callee = { Node.value = callee; _ }; arguments }) -> (
+                match callee with
+                | Name
+                    (Name.Attribute
+                      {
+                        base =
+                          { Node.value = Name (Name.Attribute { attribute = "Annotated"; _ }); _ };
+                        _;
+                      }) -> (
+                    match arguments with
+                    | [
+                     {
+                       Call.Argument.value = { Node.value = Expression.Tuple [_; annotation]; _ };
+                       _;
+                     };
+                    ] ->
+                        Some annotation
+                    | _ -> None )
+                | _ -> None )
+            | _ -> None
+          in
+          match get_annotation_of_type annotation with
+          | Some
+              {
+                Node.value =
+                  Expression.Call
+                    {
+                      Call.callee = { Node.value = Name (Name.Identifier callee_name); _ };
+                      arguments =
+                        [
+                          {
+                            Call.Argument.value = { Node.value = Name (Name.Identifier subkind); _ };
+                            _;
+                          };
+                        ];
+                    };
+                _;
+              } ->
+              if String.equal callee_name pattern then
+                Some subkind
+              else
+                None
+          | _ -> None
+        in
         match production with
         | ModelQuery.TaintAnnotation taint_annotation -> Some taint_annotation
-        | ModelQuery.ParametricSourceFromAnnotation { source_pattern; kind } -> (
-            let get_annotation_of_type annotation =
-              match annotation >>| Node.value with
-              | Some (Expression.Call { Call.callee = { Node.value = callee; _ }; arguments }) -> (
-                  match callee with
-                  | Name
-                      (Name.Attribute
-                        {
-                          base =
-                            { Node.value = Name (Name.Attribute { attribute = "Annotated"; _ }); _ };
-                          _;
-                        }) -> (
-                      match arguments with
-                      | [
-                       {
-                         Call.Argument.value = { Node.value = Expression.Tuple [_; annotation]; _ };
-                         _;
-                       };
-                      ] ->
-                          Some annotation
-                      | _ -> None )
-                  | _ -> None )
-              | _ -> None
-            in
-            match get_annotation_of_type annotation with
-            | Some
-                {
-                  Node.value =
-                    Expression.Call
-                      {
-                        Call.callee = { Node.value = Name (Name.Identifier callee_name); _ };
-                        arguments =
-                          [
-                            {
-                              Call.Argument.value =
-                                { Node.value = Name (Name.Identifier subkind); _ };
-                              _;
-                            };
-                          ];
-                      };
-                  _;
-                } ->
-                if String.equal callee_name source_pattern then
-                  Some
-                    (Source
-                       {
-                         source = Sources.ParametricSource { source_name = kind; subkind };
-                         breadcrumbs = [];
-                         path = [];
-                         leaf_name_provided = false;
-                       })
-                else
-                  None
-            | _ -> None )
+        | ModelQuery.ParametricSourceFromAnnotation { source_pattern; kind } ->
+            get_subkind_from_annotation ~pattern:source_pattern annotation
+            >>| fun subkind ->
+            Source
+              {
+                source = Sources.ParametricSource { source_name = kind; subkind };
+                breadcrumbs = [];
+                path = [];
+                leaf_name_provided = false;
+              }
+        | ModelQuery.ParametricSinkFromAnnotation { sink_pattern; kind } ->
+            get_subkind_from_annotation ~pattern:sink_pattern annotation
+            >>| fun subkind ->
+            Sink
+              {
+                sink = Sinks.ParametricSink { sink_name = kind; subkind };
+                breadcrumbs = [];
+                path = [];
+                leaf_name_provided = false;
+              }
       in
       let normalized_parameters = AccessPath.Root.normalize_parameters parameters in
       let apply_production = function

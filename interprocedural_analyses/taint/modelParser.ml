@@ -82,6 +82,10 @@ module T = struct
           source_pattern: string;
           kind: string;
         }
+      | ParametricSinkFromAnnotation of {
+          sink_pattern: string;
+          kind: string;
+        }
     [@@deriving show, compare]
 
     type production =
@@ -927,22 +931,32 @@ let parse_model_clause ~configuration ({ Node.value; _ } as expression) =
             {
               Call.callee =
                 {
-                  Node.value = Expression.Name (Name.Identifier "ParametricSourceFromAnnotation");
+                  Node.value =
+                    Expression.Name
+                      (Name.Identifier
+                        ( ("ParametricSourceFromAnnotation" | "ParametricSinkFromAnnotation") as
+                        parametric_annotation ));
                   _;
                 };
               arguments =
                 [
                   {
                     Call.Argument.name = Some { Node.value = "pattern"; _ };
-                    value = { Node.value = Expression.Name (Name.Identifier source_pattern); _ };
+                    value = { Node.value = Expression.Name (Name.Identifier pattern); _ };
                   };
                   {
                     Call.Argument.name = Some { Node.value = "kind"; _ };
                     value = { Node.value = Expression.Name (Name.Identifier kind); _ };
                   };
                 ];
-            } ->
-            [ModelQuery.ParametricSourceFromAnnotation { source_pattern; kind }]
+            } -> (
+            match parametric_annotation with
+            | "ParametricSourceFromAnnotation" ->
+                [ModelQuery.ParametricSourceFromAnnotation { source_pattern = pattern; kind }]
+            | "ParametricSinkFromAnnotation" ->
+                [ModelQuery.ParametricSinkFromAnnotation { sink_pattern = pattern; kind }]
+            | _ ->
+                failwith (Format.sprintf "Unexpected taint annotation `%s`" parametric_annotation) )
         | _ ->
             parse_annotations ~configuration ~parameters:[] (Some expression)
             |> List.map ~f:(fun taint -> ModelQuery.TaintAnnotation taint)

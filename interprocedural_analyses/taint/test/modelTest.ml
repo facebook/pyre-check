@@ -1837,6 +1837,35 @@ let test_query_parsing context =
         };
       ]
     ();
+  assert_queries
+    ~context
+    ~model_source:
+      {|
+    ModelQuery(
+       name = "foo_finders",
+       find = "functions",
+       where = any_parameter.annotation.is_annotated_type(),
+       model = [
+         AllParameters(
+           ParametricSinkFromAnnotation(pattern=DynamicSink, kind=Dynamic)
+         )
+       ]
+    )
+    |}
+    ~expect:
+      [
+        {
+          name = Some "foo_finders";
+          query = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
+          rule_kind = FunctionModel;
+          productions =
+            [
+              AllParametersTaint
+                [ParametricSinkFromAnnotation { sink_pattern = "DynamicSink"; kind = "Dynamic" }];
+            ];
+        };
+      ]
+    ();
   ()
 
 

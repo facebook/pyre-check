@@ -407,7 +407,40 @@ let test_apply_rule context =
       }
     ~callable:(`Function "test.foo")
     ~expected:[Taint.Model.ReturnAnnotation, source ~subkind:"B" "Dynamic"];
-
+  (* Named parameters + parametric sinks from annotation. *)
+  assert_applied_rules
+    ~source:{|
+       def foo(a, b: typing.Annotated[int, DynamicSink(BSink)], c: str): ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
+        productions =
+          [
+            ParameterTaint
+              {
+                name = "b";
+                taint =
+                  [ParametricSinkFromAnnotation { sink_pattern = "DynamicSink"; kind = "Dynamic" }];
+              };
+          ];
+        rule_kind = FunctionModel;
+      }
+    ~callable:(`Function "test.foo")
+    ~expected:
+      [
+        ( Taint.Model.ParameterAnnotation
+            (AccessPath.Root.PositionalParameter
+               { position = 1; name = "b"; positional_only = false }),
+          Model.Sink
+            {
+              sink = Sinks.ParametricSink { sink_name = "Dynamic"; subkind = "BSink" };
+              breadcrumbs = [];
+              path = [];
+              leaf_name_provided = false;
+            } );
+      ];
   ()
 
 

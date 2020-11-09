@@ -73,6 +73,10 @@ module T : sig
           source_pattern: string;
           kind: string;
         }
+      | ParametricSinkFromAnnotation of {
+          sink_pattern: string;
+          kind: string;
+        }
     [@@deriving show, compare]
 
     type production =
