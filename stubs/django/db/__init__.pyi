@@ -8,7 +8,18 @@
 from typing import Any
 
 from django.db.backends.base.base import BaseDatabaseWrapper
-from django.db.utils import ConnectionHandler
+from django.db.utils import (
+    ConnectionHandler,
+    DatabaseError as DatabaseError,
+    DataError as DataError,
+    Error as Error,
+    IntegrityError as IntegrityError,
+    InterfaceError as InterfaceError,
+    InternalError as InternalError,
+    NotSupportedError as NotSupportedError,
+    OperationalError as OperationalError,
+    ProgrammingError as ProgrammingError,
+)
 
 def close_old_connections(**kwargs: Any) -> None: ...
 def reset_queries(**kwargs: Any) -> None: ...
@@ -18,5 +29,3 @@ transaction: Any
 connections: ConnectionHandler
 
 connection: BaseDatabaseWrapper
-
-class OperationalError(Exception): ...
