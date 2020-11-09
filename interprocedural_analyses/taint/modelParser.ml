@@ -962,6 +962,12 @@ let parse_model_clause ~configuration ({ Node.value; _ } as expression) =
             ];
         } ->
         parse_taint taint >>| fun taint -> ModelQuery.PositionalParameterTaint { index; taint }
+    | Expression.Call
+        {
+          Call.callee = { Node.value = Name (Name.Identifier "AllParameters"); _ };
+          arguments = [{ Call.Argument.value = taint; _ }];
+        } ->
+        parse_taint taint >>| fun taint -> ModelQuery.AllParametersTaint taint
     | _ ->
         Error
           (Format.sprintf "Unexpected model expression: `%s`" (Expression.show model_expression))

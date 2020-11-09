@@ -1769,7 +1769,43 @@ let test_query_parsing context =
             ];
         };
       ]
-    ()
+    ();
+  (* All parameters. *)
+  assert_queries
+    ~context
+    ~model_source:
+      {|
+    ModelQuery(
+     name = "foo_finders",
+     find = "functions",
+     where = name.matches("foo"),
+     model = [AllParameters(TaintSource[Test])]
+    )
+  |}
+    ~expect:
+      [
+        {
+          name = Some "foo_finders";
+          query = [NameConstraint "foo"];
+          rule_kind = FunctionModel;
+          productions =
+            [
+              AllParametersTaint
+                [
+                  TaintAnnotation
+                    (Model.Source
+                       {
+                         source = Sources.NamedSource "Test";
+                         breadcrumbs = [];
+                         path = [];
+                         leaf_name_provided = false;
+                       });
+                ];
+            ];
+        };
+      ]
+    ();
+  ()
 
 
 let () =
