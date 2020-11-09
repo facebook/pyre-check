@@ -12,6 +12,7 @@ open Test
 open TestHelper
 module Callable = Interprocedural.Callable
 open Taint
+open Model.ModelQuery
 
 let set_up_environment ?source ?rules ~context ~model_source () =
   let source =
@@ -112,8 +113,8 @@ let assert_queries ?source ?rules ~context ~model_source ~expect () =
     set_up_environment ?source ?rules ~context ~model_source ()
   in
   assert_equal
-    ~cmp:(List.equal (fun left right -> Taint.Model.ModelQuery.compare_rule left right = 0))
-    ~printer:(List.to_string ~f:Taint.Model.ModelQuery.show_rule)
+    ~cmp:(List.equal (fun left right -> compare_rule left right = 0))
+    ~printer:(List.to_string ~f:show_rule)
     queries
     expect
 
@@ -1488,12 +1489,12 @@ let test_query_parsing context =
     ~expect:
       [
         {
-          Model.ModelQuery.name = None;
-          query = [Taint.Model.ModelQuery.NameConstraint "foo"];
-          rule_kind = Model.ModelQuery.FunctionModel;
+          name = None;
+          query = [NameConstraint "foo"];
+          rule_kind = FunctionModel;
           productions =
             [
-              Model.ModelQuery.ReturnTaint
+              ReturnTaint
                 [
                   Model.Source
                     {
@@ -1520,12 +1521,12 @@ let test_query_parsing context =
     ~expect:
       [
         {
-          Model.ModelQuery.name = None;
-          query = [Taint.Model.ModelQuery.NameConstraint "foo"];
-          rule_kind = Model.ModelQuery.FunctionModel;
+          name = None;
+          query = [NameConstraint "foo"];
+          rule_kind = FunctionModel;
           productions =
             [
-              Model.ModelQuery.ReturnTaint
+              ReturnTaint
                 [
                   Model.Source
                     {
@@ -1552,16 +1553,12 @@ let test_query_parsing context =
     ~expect:
       [
         {
-          Model.ModelQuery.name = None;
-          query =
-            [
-              Taint.Model.ModelQuery.NameConstraint "foo";
-              Taint.Model.ModelQuery.NameConstraint "bar";
-            ];
-          rule_kind = Model.ModelQuery.FunctionModel;
+          name = None;
+          query = [NameConstraint "foo"; NameConstraint "bar"];
+          rule_kind = FunctionModel;
           productions =
             [
-              Model.ModelQuery.ReturnTaint
+              ReturnTaint
                 [
                   Model.Source
                     {
@@ -1588,12 +1585,12 @@ let test_query_parsing context =
     ~expect:
       [
         {
-          Model.ModelQuery.name = None;
-          query = [Taint.Model.ModelQuery.NameConstraint "foo"];
-          rule_kind = Model.ModelQuery.FunctionModel;
+          name = None;
+          query = [NameConstraint "foo"];
+          rule_kind = FunctionModel;
           productions =
             [
-              Model.ModelQuery.ReturnTaint
+              ReturnTaint
                 [
                   Model.Source
                     {
@@ -1628,12 +1625,12 @@ let test_query_parsing context =
     ~expect:
       [
         {
-          Model.ModelQuery.name = Some "foo_finders";
-          query = [Taint.Model.ModelQuery.NameConstraint "foo"];
-          rule_kind = Model.ModelQuery.FunctionModel;
+          name = Some "foo_finders";
+          query = [NameConstraint "foo"];
+          rule_kind = FunctionModel;
           productions =
             [
-              Model.ModelQuery.ReturnTaint
+              ReturnTaint
                 [
                   Model.Source
                     {
@@ -1668,16 +1665,12 @@ let test_query_parsing context =
     ~expect:
       [
         {
-          Model.ModelQuery.name = Some "foo_finders";
-          query =
-            [
-              Taint.Model.ModelQuery.ReturnConstraint
-                Taint.Model.ModelQuery.IsAnnotatedTypeConstraint;
-            ];
-          rule_kind = Model.ModelQuery.FunctionModel;
+          name = Some "foo_finders";
+          query = [ReturnConstraint IsAnnotatedTypeConstraint];
+          rule_kind = FunctionModel;
           productions =
             [
-              Model.ModelQuery.ReturnTaint
+              ReturnTaint
                 [
                   Model.Source
                     {
@@ -1705,17 +1698,12 @@ let test_query_parsing context =
     ~expect:
       [
         {
-          Model.ModelQuery.name = Some "foo_finders";
-          query =
-            [
-              Taint.Model.ModelQuery.AnyParameterConstraint
-                (Taint.Model.ModelQuery.AnnotationConstraint
-                   Taint.Model.ModelQuery.IsAnnotatedTypeConstraint);
-            ];
-          rule_kind = Model.ModelQuery.FunctionModel;
+          name = Some "foo_finders";
+          query = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
+          rule_kind = FunctionModel;
           productions =
             [
-              Model.ModelQuery.ReturnTaint
+              ReturnTaint
                 [
                   Model.Source
                     {
@@ -1746,22 +1734,19 @@ let test_query_parsing context =
     ~expect:
       [
         {
-          Model.ModelQuery.name = Some "foo_finders";
+          name = Some "foo_finders";
           query =
             [
-              Taint.Model.ModelQuery.AnyOf
+              AnyOf
                 [
-                  Taint.Model.ModelQuery.AnyParameterConstraint
-                    (Taint.Model.ModelQuery.AnnotationConstraint
-                       Taint.Model.ModelQuery.IsAnnotatedTypeConstraint);
-                  Taint.Model.ModelQuery.ReturnConstraint
-                    Taint.Model.ModelQuery.IsAnnotatedTypeConstraint;
+                  AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint);
+                  ReturnConstraint IsAnnotatedTypeConstraint;
                 ];
             ];
-          rule_kind = Model.ModelQuery.FunctionModel;
+          rule_kind = FunctionModel;
           productions =
             [
-              Model.ModelQuery.ReturnTaint
+              ReturnTaint
                 [
                   Model.Source
                     {
