@@ -160,7 +160,49 @@ let test_apply_rule context =
             (AccessPath.Root.PositionalParameter
                { position = 0; name = "x"; positional_only = false }),
           source "Test" );
-      ]
+      ];
+  (* Annotated returns. *)
+  assert_applied_rules
+    ~source:
+      {|
+       from typing import Annotated
+       def foo(x: int, y: str) -> Annotated[int, "annotation"]: ...
+     |}
+    ~rule:
+      {
+        Model.ModelQuery.name = None;
+        query = [Model.ModelQuery.ReturnConstraint Model.ModelQuery.IsAnnotatedTypeConstraint];
+        productions = [Model.ModelQuery.ReturnTaint [source "Test"]];
+        rule_kind = Model.ModelQuery.FunctionModel;
+      }
+    ~callable:(`Function "test.foo")
+    ~expected:[Taint.Model.ReturnAnnotation, source "Test"];
+  assert_applied_rules
+    ~source:{|
+       def foo(x: int, y: str) -> int: ...
+     |}
+    ~rule:
+      {
+        Model.ModelQuery.name = None;
+        query = [Model.ModelQuery.ReturnConstraint Model.ModelQuery.IsAnnotatedTypeConstraint];
+        productions = [Model.ModelQuery.ReturnTaint [source "Test"]];
+        rule_kind = Model.ModelQuery.FunctionModel;
+      }
+    ~callable:(`Function "test.foo")
+    ~expected:[];
+  assert_applied_rules
+    ~source:{|
+       def foo(x: int, y: str): ...
+     |}
+    ~rule:
+      {
+        Model.ModelQuery.name = None;
+        query = [Model.ModelQuery.ReturnConstraint Model.ModelQuery.IsAnnotatedTypeConstraint];
+        productions = [Model.ModelQuery.ReturnTaint [source "Test"]];
+        rule_kind = Model.ModelQuery.FunctionModel;
+      }
+    ~callable:(`Function "test.foo")
+    ~expected:[]
 
 
 let () = "modelQuery" >::: ["apply_rule" >:: test_apply_rule] |> Test.run

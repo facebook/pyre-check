@@ -59,7 +59,12 @@ module T = struct
   [@@deriving show, compare]
 
   module ModelQuery = struct
-    type model_constraint = NameConstraint of string [@@deriving compare, show]
+    type annotation_constraint = IsAnnotatedTypeConstraint [@@deriving compare, show]
+
+    type model_constraint =
+      | NameConstraint of string
+      | ReturnConstraint of annotation_constraint
+    [@@deriving compare, show]
 
     type kind =
       | FunctionModel
@@ -776,6 +781,16 @@ let parse_find_clause ({ Node.value; _ } as expression) =
 
 let parse_where_clause ({ Node.value; _ } as expression) =
   let open Core.Result in
+  let parse_annotation_constraint ~name ~arguments =
+    match name, arguments with
+    | "is_annotated_type", [] -> Ok ModelQuery.IsAnnotatedTypeConstraint
+    | _ ->
+        Error
+          (Format.sprintf
+             "`%s(%s)` does not correspond to an annotation constraint."
+             name
+             (List.to_string arguments ~f:Call.Argument.show))
+  in
   let parse_constraint ({ Node.value; _ } as constraint_expression) =
     match value with
     | Expression.Call
@@ -802,6 +817,26 @@ let parse_where_clause ({ Node.value; _ } as expression) =
             ];
         } ->
         Ok (ModelQuery.NameConstraint name_constraint)
+    | Expression.Call
+        {
+          Call.callee =
+            {
+              Node.value =
+                Expression.Name
+                  (Name.Attribute
+                    {
+                      base = { Node.value = Name (Name.Identifier "return_annotation"); _ };
+                      attribute = annotation_constraint_name;
+                      _;
+                    });
+              _;
+            };
+          arguments = annotation_constraint_arguments;
+        } ->
+        parse_annotation_constraint
+          ~name:annotation_constraint_name
+          ~arguments:annotation_constraint_arguments
+        >>= fun annotation_constraint -> Ok (ModelQuery.ReturnConstraint annotation_constraint)
     | Expression.Call { Call.callee; arguments = _ } ->
         Error (Format.sprintf "Unsupported callee: %s" (Expression.show callee))
     | _ ->

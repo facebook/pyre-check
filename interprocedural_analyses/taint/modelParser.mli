@@ -50,7 +50,12 @@ module T : sig
   [@@deriving show, compare]
 
   module ModelQuery : sig
-    type model_constraint = NameConstraint of string [@@deriving show, compare]
+    type annotation_constraint = IsAnnotatedTypeConstraint [@@deriving compare, show]
+
+    type model_constraint =
+      | NameConstraint of string
+      | ReturnConstraint of annotation_constraint
+    [@@deriving compare, show]
 
     type kind =
       | FunctionModel

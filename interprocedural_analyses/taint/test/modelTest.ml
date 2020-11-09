@@ -1653,6 +1653,43 @@ let test_query_parsing context =
             ];
         };
       ]
+    ();
+  assert_queries
+    ~context
+    ~model_source:
+      {|
+    ModelQuery(
+       name = "foo_finders",
+       find = "functions",
+       where = return_annotation.is_annotated_type(),
+       model = [Returns([TaintSource[Test]])]
+    )
+    |}
+    ~expect:
+      [
+        {
+          Model.ModelQuery.name = Some "foo_finders";
+          query =
+            [
+              Taint.Model.ModelQuery.ReturnConstraint
+                Taint.Model.ModelQuery.IsAnnotatedTypeConstraint;
+            ];
+          rule_kind = Model.ModelQuery.FunctionModel;
+          productions =
+            [
+              Model.ModelQuery.ReturnTaint
+                [
+                  Model.Source
+                    {
+                      source = Sources.NamedSource "Test";
+                      breadcrumbs = [];
+                      path = [];
+                      leaf_name_provided = false;
+                    };
+                ];
+            ];
+        };
+      ]
     ()
 
 

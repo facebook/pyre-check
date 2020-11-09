@@ -11,13 +11,41 @@ open Analysis
 open Interprocedural
 open Taint
 open Model
+open Pyre
 
 let matches_pattern ~pattern name = Re2.matches (Re2.create_exn pattern) name
 
-let matches_constraint query_constraint ~callable =
+let matches_constraint query_constraint ~resolution ~callable =
+  let get_callable_type =
+    Memo.unit (fun () -> Callable.get_module_and_definition ~resolution callable >>| snd)
+  in
+  let matches_annotation_constraint ~annotation_constraint ~annotation =
+    match annotation_constraint with
+    | ModelQuery.IsAnnotatedTypeConstraint -> (
+        match annotation with
+        | Type.Annotated _ -> true
+        | _ -> false )
+  in
   match query_constraint with
   | ModelQuery.NameConstraint pattern ->
       matches_pattern ~pattern (Callable.external_target_name callable)
+  | ModelQuery.ReturnConstraint annotation_constraint -> (
+      let callable_type = get_callable_type () in
+      match callable_type with
+      | Some
+          {
+            Node.value =
+              {
+                Statement.Define.signature =
+                  { Statement.Define.Signature.return_annotation = Some annotation; _ };
+                _;
+              };
+            _;
+          } ->
+          matches_annotation_constraint
+            ~annotation_constraint
+            ~annotation:(GlobalResolution.parse_annotation resolution annotation)
+      | _ -> false )
 
 
 let apply_productions ~resolution ~productions ~callable =
@@ -80,7 +108,7 @@ let apply_query_rule
     | _ -> false
   in
 
-  if kind_matches && List.for_all ~f:(matches_constraint ~callable) query then begin
+  if kind_matches && List.for_all ~f:(matches_constraint ~resolution ~callable) query then begin
     if verbose then
       Log.info
         "Callable `%a` matches all constraints for the model query rule%s."
