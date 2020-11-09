@@ -23,14 +23,14 @@ class CustomPrompt(Prompts, Magics):
         self, cli: Optional[CommandLineInterface] = None
     ) -> List[Tuple[_TokenType, str]]:
         user_ns = self.shell.user_ns
-        interactive = user_ns[Interactive.SELF_SCOPE_KEY]
+        interactive: Interactive = user_ns[Interactive.SELF_SCOPE_KEY]
         tokens = []
 
-        if interactive.current_run_id > 0:
+        if interactive._current_run_id > 0:
             tokens.extend(
                 [
                     (Token.Punctuation, "[ "),
-                    (Token, f"run {interactive.current_run_id} "),
+                    (Token, f"run {interactive._current_run_id} "),
                 ]
             )
 
