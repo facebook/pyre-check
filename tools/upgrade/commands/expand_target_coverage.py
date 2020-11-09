@@ -109,7 +109,7 @@ class ExpandTargetCoverage(ErrorSuppressingCommand):
 
         self._repository.commit_changes(
             commit=(not self._no_commit),
-            title=f"Expand target type coverage in {local_configuration}",
+            title=f"Expand target type coverage in {subdirectory}",
             summary="Expanding type coverage of targets in configuration.",
             set_dependencies=False,
         )
