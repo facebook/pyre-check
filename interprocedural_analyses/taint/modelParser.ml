@@ -61,9 +61,13 @@ module T = struct
   module ModelQuery = struct
     type annotation_constraint = IsAnnotatedTypeConstraint [@@deriving compare, show]
 
+    type parameter_constraint = AnnotationConstraint of annotation_constraint
+    [@@deriving compare, show]
+
     type model_constraint =
       | NameConstraint of string
       | ReturnConstraint of annotation_constraint
+      | AnyParameterConstraint of parameter_constraint
     [@@deriving compare, show]
 
     type kind =
@@ -791,6 +795,23 @@ let parse_where_clause ({ Node.value; _ } as expression) =
              name
              (List.to_string arguments ~f:Call.Argument.show))
   in
+  let parse_parameter_constraint
+      ~parameter_constraint_kind
+      ~parameter_constraint
+      ~parameter_constraint_arguments
+    =
+    match parameter_constraint_kind with
+    | "annotation" ->
+        parse_annotation_constraint
+          ~name:parameter_constraint
+          ~arguments:parameter_constraint_arguments
+        >>| fun annotation_constraint -> ModelQuery.AnnotationConstraint annotation_constraint
+    | _ ->
+        Error
+          (Format.sprintf
+             "Unsupported constraint kind for parameters: `%s`"
+             parameter_constraint_kind)
+  in
   let parse_constraint ({ Node.value; _ } as constraint_expression) =
     match value with
     | Expression.Call
@@ -837,6 +858,38 @@ let parse_where_clause ({ Node.value; _ } as expression) =
           ~name:annotation_constraint_name
           ~arguments:annotation_constraint_arguments
         >>= fun annotation_constraint -> Ok (ModelQuery.ReturnConstraint annotation_constraint)
+    | Expression.Call
+        {
+          Call.callee =
+            {
+              Node.value =
+                Expression.Name
+                  (Name.Attribute
+                    {
+                      base =
+                        {
+                          Node.value =
+                            Name
+                              (Name.Attribute
+                                {
+                                  base = { Node.value = Name (Name.Identifier "any_parameter"); _ };
+                                  attribute = parameter_constraint_kind;
+                                  _;
+                                });
+                          _;
+                        };
+                      attribute = parameter_constraint;
+                      _;
+                    });
+              _;
+            };
+          arguments = parameter_constraint_arguments;
+        } ->
+        parse_parameter_constraint
+          ~parameter_constraint_kind
+          ~parameter_constraint
+          ~parameter_constraint_arguments
+        >>= fun parameter_constraint -> Ok (ModelQuery.AnyParameterConstraint parameter_constraint)
     | Expression.Call { Call.callee; arguments = _ } ->
         Error (Format.sprintf "Unsupported callee: %s" (Expression.show callee))
     | _ ->

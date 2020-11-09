@@ -52,9 +52,13 @@ module T : sig
   module ModelQuery : sig
     type annotation_constraint = IsAnnotatedTypeConstraint [@@deriving compare, show]
 
+    type parameter_constraint = AnnotationConstraint of annotation_constraint
+    [@@deriving compare, show]
+
     type model_constraint =
       | NameConstraint of string
       | ReturnConstraint of annotation_constraint
+      | AnyParameterConstraint of parameter_constraint
     [@@deriving compare, show]
 
     type kind =

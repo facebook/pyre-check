@@ -202,7 +202,42 @@ let test_apply_rule context =
         rule_kind = Model.ModelQuery.FunctionModel;
       }
     ~callable:(`Function "test.foo")
-    ~expected:[]
+    ~expected:[];
+  assert_applied_rules
+    ~source:{|
+       def foo(x: typing.Annotated[int, "annotation"], y: str): ...
+     |}
+    ~rule:
+      {
+        Model.ModelQuery.name = None;
+        query =
+          [
+            Model.ModelQuery.AnyParameterConstraint
+              (Model.ModelQuery.AnnotationConstraint Model.ModelQuery.IsAnnotatedTypeConstraint);
+          ];
+        productions = [Model.ModelQuery.ReturnTaint [source "Test"]];
+        rule_kind = Model.ModelQuery.FunctionModel;
+      }
+    ~callable:(`Function "test.foo")
+    ~expected:[Taint.Model.ReturnAnnotation, source "Test"];
+  assert_applied_rules
+    ~source:{|
+       def foo(a, b: typing.Annotated[int, "annotation"], c: str): ...
+     |}
+    ~rule:
+      {
+        Model.ModelQuery.name = None;
+        query =
+          [
+            Model.ModelQuery.AnyParameterConstraint
+              (Model.ModelQuery.AnnotationConstraint Model.ModelQuery.IsAnnotatedTypeConstraint);
+          ];
+        productions = [Model.ModelQuery.ReturnTaint [source "Test"]];
+        rule_kind = Model.ModelQuery.FunctionModel;
+      }
+    ~callable:(`Function "test.foo")
+    ~expected:[Taint.Model.ReturnAnnotation, source "Test"];
+  ()
 
 
 let () = "modelQuery" >::: ["apply_rule" >:: test_apply_rule] |> Test.run

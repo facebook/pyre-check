@@ -46,6 +46,25 @@ let matches_constraint query_constraint ~resolution ~callable =
             ~annotation_constraint
             ~annotation:(GlobalResolution.parse_annotation resolution annotation)
       | _ -> false )
+  | ModelQuery.AnyParameterConstraint (ModelQuery.AnnotationConstraint annotation_constraint) -> (
+      let callable_type = get_callable_type () in
+      match callable_type with
+      | Some
+          {
+            Node.value =
+              { Statement.Define.signature = { Statement.Define.Signature.parameters; _ }; _ };
+            _;
+          } ->
+          List.exists
+            parameters
+            ~f:(fun { Node.value = { Expression.Parameter.annotation; _ }; _ } ->
+              match annotation with
+              | Some annotation ->
+                  matches_annotation_constraint
+                    ~annotation_constraint
+                    ~annotation:(GlobalResolution.parse_annotation resolution annotation)
+              | None -> false)
+      | _ -> false )
 
 
 let apply_productions ~resolution ~productions ~callable =
