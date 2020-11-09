@@ -140,7 +140,7 @@ let test_check_async context =
     {|
       import typing
       async def foo() -> typing.AsyncGenerator[bool, None]:
-        yield
+        yield True
 
       reveal_type(foo())
       def bar() -> None:
@@ -161,7 +161,7 @@ let test_check_async context =
       import typing
       class C:
           async def foo(self) -> typing.AsyncGenerator[bool, None]:
-              yield
+              yield True
 
       reveal_type(C().foo())
       def bar(c: C) -> None:
@@ -233,6 +233,7 @@ let test_check_async context =
       "Incompatible async generator return type [57]: Expected return annotation to be"
       ^ " AsyncGenerator or a superclass "
       ^ "but got `Iterable[str]`.";
+      "Incompatible return type [7]: Expected `Iterable[str]` but got `AsyncGenerator[str, None]`.";
     ];
   assert_type_errors
     {|
@@ -247,7 +248,10 @@ let test_check_async context =
       async def foo() -> AsyncGenerator[str, str]:
         yield "a"
     |}
-    [];
+    [
+      "Incompatible return type [7]: Expected `AsyncGenerator[str, str]` but got \
+       `AsyncGenerator[str, None]`.";
+    ];
   assert_type_errors
     {|
       from typing import Iterable, AsyncGenerator
@@ -267,7 +271,26 @@ let test_check_async context =
       "Incompatible async generator return type [57]: Expected return annotation to be"
       ^ " AsyncGenerator or a superclass "
       ^ "but got `MyExtendedAsyncGenerator`.";
-    ]
+      "Incompatible return type [7]: Expected `MyExtendedAsyncGenerator` but got \
+       `AsyncGenerator[str, None]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import AsyncIterator
+      async def foo() -> AsyncIterator[str]:
+        yield 1
+    |}
+    [
+      "Incompatible return type [7]: Expected `AsyncIterator[str]` but got \
+       `typing.AsyncGenerator[int, None]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import AsyncIterator
+      async def foo() -> AsyncIterator[str]:
+        yield ""
+    |}
+    []
 
 
 let () = "async" >::: ["check_async" >:: test_check_async] |> Test.run

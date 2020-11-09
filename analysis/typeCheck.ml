@@ -705,7 +705,7 @@ module State (Context : Context) = struct
             let parser = GlobalResolution.annotation_parser global_resolution in
             Annotated.Callable.return_annotation_without_applying_decorators ~signature ~parser
           in
-          if async then
+          if async && not generator then
             Type.coroutine_value annotation |> Option.value ~default:Type.Top
           else
             annotation
@@ -3423,7 +3423,7 @@ module State (Context : Context) = struct
           let parser = GlobalResolution.annotation_parser global_resolution in
           Annotated.Callable.return_annotation_without_applying_decorators ~signature ~parser
         in
-        if async then
+        if async && not generator then
           Type.coroutine_value annotation |> Option.value ~default:Type.Top
         else
           annotation
