@@ -35,6 +35,7 @@ class CommandArguments:
     force_format_unsuppressed: bool
     lint: bool
     no_commit: bool
+    should_clean: bool
 
     @staticmethod
     def from_arguments(arguments: argparse.Namespace) -> "CommandArguments":
@@ -48,6 +49,7 @@ class CommandArguments:
             ),
             lint=arguments.lint,
             no_commit=arguments.no_commit,
+            should_clean=arguments.should_clean,
         )
 
 
@@ -78,6 +80,7 @@ class ErrorSuppressingCommand(Command):
         )
         self._lint: bool = command_arguments.lint
         self._no_commit: bool = command_arguments.no_commit
+        self._should_clean: bool = command_arguments.should_clean
 
     @staticmethod
     def add_arguments(parser: argparse.ArgumentParser) -> None:
@@ -110,6 +113,13 @@ class ErrorSuppressingCommand(Command):
             Doubles the runtime of pyre-ugprade.",
         )
         parser.add_argument("--no-commit", action="store_true", help=argparse.SUPPRESS)
+        parser.add_argument(
+            "--do-not-run-buck-clean",
+            action="store_false",
+            dest="should_clean",
+            default=True,
+            help=argparse.SUPPRESS,
+        )
 
     def _apply_suppressions(self, errors: Errors) -> None:
         try:
@@ -143,7 +153,9 @@ class ErrorSuppressingCommand(Command):
         errors = (
             Errors.from_stdin(only_fix_error_code)
             if error_source == ErrorSource.STDIN and not upgrade_version
-            else configuration.get_errors(only_fix_error_code)
+            else configuration.get_errors(
+                only_fix_error_code, should_clean=self._should_clean
+            )
         )
         if len(errors) > 0:
             self._apply_suppressions(errors)

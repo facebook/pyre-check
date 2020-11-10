@@ -96,6 +96,7 @@ class GlobalVersionUpdate(Command):
                 force_format_unsuppressed=False,
                 lint=True,
                 no_commit=True,
+                should_clean=True,
             )
             fixme_command = Fixme(
                 command_arguments,

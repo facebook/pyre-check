@@ -260,6 +260,7 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
                     force_format_unsuppressed=self._force_format_unsuppressed,
                     lint=self._lint,
                     no_commit=True,
+                    should_clean=True,
                 ),
                 repository=self._repository,
                 local_configuration=directory,
