@@ -320,6 +320,48 @@ let test_sanitize context =
             (Mode.Sanitize { Mode.sources = Some Mode.AllSources; sinks = None; tito = true })
           "test.taint";
       ]
+    ();
+  assert_model
+    ~model_source:{|
+      @Sanitize(TaintSource[Test])
+      def test.taint(x): ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~analysis_mode:
+            (Mode.Sanitize
+               {
+                 Mode.sources = Some (Mode.SpecificSources [Sources.NamedSource "Test"]);
+                 sinks = None;
+                 tito = false;
+               })
+          "test.taint";
+      ]
+    ();
+  assert_model
+    ~model_source:
+      {|
+      @Sanitize(TaintSource[Test, UserControlled])
+      def test.taint(x): ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~analysis_mode:
+            (Mode.Sanitize
+               {
+                 Mode.sources =
+                   Some
+                     (Mode.SpecificSources
+                        [Sources.NamedSource "UserControlled"; Sources.NamedSource "Test"]);
+                 sinks = None;
+                 tito = false;
+               })
+          "test.taint";
+      ]
     ()
 
 

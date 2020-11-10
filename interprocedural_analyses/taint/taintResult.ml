@@ -116,7 +116,10 @@ module Backward = struct
 end
 
 module Mode = struct
-  type sanitize_sources = AllSources [@@deriving show, compare, eq]
+  type sanitize_sources =
+    | AllSources
+    | SpecificSources of Sources.t list
+  [@@deriving show, compare, eq]
 
   type sanitize_sinks = AllSinks [@@deriving show, compare, eq]
 
@@ -139,9 +142,22 @@ module Mode = struct
     | SkipAnalysis, _ -> SkipAnalysis
     | _, SkipAnalysis -> SkipAnalysis
     | Sanitize left, Sanitize right ->
+        let sources =
+          match left.sources, right.sources with
+          | None, Some _ -> right.sources
+          | Some _, None -> left.sources
+          | Some AllSources, _
+          | _, Some AllSources ->
+              Some AllSources
+          | Some (SpecificSources left_sources), Some (SpecificSources right_sources) ->
+              Some
+                (SpecificSources
+                   (List.dedup_and_sort ~compare:Sources.compare (left_sources @ right_sources)))
+          | None, None -> None
+        in
         Sanitize
           {
-            sources = (if Option.is_some left.sources then left.sources else right.sources);
+            sources;
             sinks = (if Option.is_some left.sinks then left.sinks else right.sinks);
             tito = left.tito || right.tito;
           }

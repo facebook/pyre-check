@@ -2,6 +2,34 @@
 {
   "kind": "model",
   "data": {
+    "callable": "sanitize.a_source",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "TestA" } ] } ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize.b_source",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "TestB" } ] } ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "sanitize.sanitize_sinks",
     "sources": [
       {
@@ -78,6 +106,66 @@
         ]
       }
     ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize.sanitize_test_a_source",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "sanitize.py",
+              "line": 70,
+              "start": 12,
+              "end": 22
+            },
+            "leaves": [
+              {
+                "kind": "TestB",
+                "name": "sanitize.b_source",
+                "on_all_flows": true
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize.sanitize_test_b_source",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "sanitize.py",
+              "line": 76,
+              "start": 12,
+              "end": 22
+            },
+            "leaves": [
+              {
+                "kind": "TestA",
+                "name": "sanitize.a_source",
+                "on_all_flows": true
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
   }
 }
 {

@@ -155,12 +155,27 @@ include Taint.Result.Register (struct
         ~triggered_sinks
     in
     let model =
+      let open Domains in
       match mode with
       | Mode.Normal -> { forward; backward; mode }
       | Sanitize { sources = sanitize_sources; sinks = sanitize_sinks; tito = sanitize_tito } ->
           let forward =
             match sanitize_sources with
             | Some Mode.AllSources -> empty_model.forward
+            | Some (Mode.SpecificSources sanitized_sources) ->
+                let { Forward.source_taint } = forward in
+                ForwardState.partition
+                  ForwardTaint.leaf
+                  ~f:(fun source ->
+                    Option.some_if
+                      (not (List.mem ~equal:Sources.equal sanitized_sources source))
+                      source)
+                  source_taint
+                |> Core.Map.Poly.fold
+                     ~init:ForwardState.bottom
+                     ~f:(fun ~key:_ ~data:source_state state ->
+                       ForwardState.join source_state state)
+                |> fun source_taint -> { Forward.source_taint }
             | None -> forward
           in
           let taint_in_taint_out =

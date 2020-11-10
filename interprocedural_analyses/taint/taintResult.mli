@@ -24,7 +24,9 @@ module Forward : sig
 end
 
 module Mode : sig
-  type sanitize_sources = AllSources
+  type sanitize_sources =
+    | AllSources
+    | SpecificSources of Sources.t list
 
   type sanitize_sinks = AllSinks
 

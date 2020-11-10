@@ -53,3 +53,35 @@ def sanitize_sinks(x):
 def sanitize_tito(x):
     __test_sink(x)
     return source_with_tito(x)
+
+
+def a_source():
+    ...
+
+
+def b_source():
+    ...
+
+
+def sanitize_test_a_source():
+    if 1 > 2:
+        x = a_source()
+    else:
+        x = b_source()
+    return x
+
+
+def sanitize_test_b_source():
+    if 1 > 2:
+        x = a_source()
+    else:
+        x = b_source()
+    return x
+
+
+def sanitize_a_and_b_source():
+    if 1 > 2:
+        x = a_source()
+    else:
+        x = b_source()
+    return x

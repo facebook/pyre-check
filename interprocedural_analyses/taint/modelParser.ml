@@ -1705,7 +1705,21 @@ let create ~resolution ?path ~configuration ~rule_filter source =
                             | "TaintSink" -> { sanitize with Mode.sinks = Some AllSinks }
                             | "TaintInTaintOut" -> { sanitize with Mode.tito = true }
                             | _ -> sanitize )
-                        | _ -> sanitize
+                        | _ ->
+                            let add_annotation { Mode.sources; sinks; tito } = function
+                              | Source { source; _ } ->
+                                  let sources =
+                                    match sources with
+                                    | None -> Some (Mode.SpecificSources [source])
+                                    | Some (Mode.SpecificSources sources) ->
+                                        Some (Mode.SpecificSources (source :: sources))
+                                    | Some Mode.AllSources -> Some Mode.AllSources
+                                  in
+                                  { Mode.sources; sinks; tito }
+                              | _ -> { Mode.sources; sinks; tito }
+                            in
+                            parse_annotations ~configuration ~parameters:[] (Some value)
+                            |> List.fold ~init:sanitize ~f:add_annotation
                       in
                       List.fold
                         arguments
