@@ -10,14 +10,14 @@ import unittest
 from typing import Callable
 from unittest.mock import patch
 
-from graphql2.type import (
+from graphql.type import (
     GraphQLBoolean,
     GraphQLField,
     GraphQLID,
     GraphQLNonNull,
     GraphQLObjectType,
 )
-from graphql2.type.definition import GraphQLType
+from graphql.type.definition import GraphQLType
 from tools.pyre.tools.generate_taint_models import get_graphql_sources
 from tools.pyre.tools.generate_taint_models.get_graphql_sources import (
     GraphQLSourceGenerator,

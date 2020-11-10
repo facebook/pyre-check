@@ -9,7 +9,7 @@ import unittest
 from dataclasses import dataclass
 from typing import Optional
 
-from graphql2 import (
+from graphql import (
     GraphQLBoolean,
     GraphQLField,
     GraphQLID,
