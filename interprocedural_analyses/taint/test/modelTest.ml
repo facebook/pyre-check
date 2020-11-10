@@ -232,6 +232,7 @@ let test_source_models context =
 
 
 let test_sanitize context =
+  let open Taint.Result in
   let assert_model = assert_model ~context in
   assert_model
     ~model_source:{|
@@ -242,7 +243,9 @@ let test_sanitize context =
       [
         outcome
           ~kind:`Function
-          ~analysis_mode:(Taint.Result.Sanitize [Taint.Result.SanitizeAll])
+          ~analysis_mode:
+            (Mode.Sanitize
+               { Mode.sources = Some Mode.AllSources; sinks = Some Mode.AllSinks; tito = true })
           "test.taint";
       ]
     ();
@@ -255,7 +258,8 @@ let test_sanitize context =
       [
         outcome
           ~kind:`Function
-          ~analysis_mode:(Taint.Result.Sanitize [Taint.Result.SanitizeSources])
+          ~analysis_mode:
+            (Mode.Sanitize { Mode.sources = Some Mode.AllSources; sinks = None; tito = false })
           "test.taint";
       ]
     ();
@@ -268,7 +272,8 @@ let test_sanitize context =
       [
         outcome
           ~kind:`Function
-          ~analysis_mode:(Taint.Result.Sanitize [Taint.Result.SanitizeSinks])
+          ~analysis_mode:
+            (Mode.Sanitize { Mode.sources = None; sinks = Some Mode.AllSinks; tito = false })
           "test.taint";
       ]
     ();
@@ -281,7 +286,7 @@ let test_sanitize context =
       [
         outcome
           ~kind:`Function
-          ~analysis_mode:(Taint.Result.Sanitize [Taint.Result.SanitizeTITO])
+          ~analysis_mode:(Mode.Sanitize { Mode.sources = None; sinks = None; tito = true })
           "test.taint";
       ]
     ();
@@ -297,7 +302,7 @@ let test_sanitize context =
         outcome
           ~kind:`Function
           ~analysis_mode:
-            (Taint.Result.Sanitize [Taint.Result.SanitizeSources; Taint.Result.SanitizeTITO])
+            (Mode.Sanitize { Mode.sources = Some Mode.AllSources; sinks = None; tito = true })
           "test.taint";
       ]
     ();
@@ -312,7 +317,7 @@ let test_sanitize context =
         outcome
           ~kind:`Function
           ~analysis_mode:
-            (Taint.Result.Sanitize [Taint.Result.SanitizeSources; Taint.Result.SanitizeTITO])
+            (Mode.Sanitize { Mode.sources = Some Mode.AllSources; sinks = None; tito = true })
           "test.taint";
       ]
     ()
@@ -695,10 +700,10 @@ let test_class_models context =
     ~model_source:"class test.SkipMe(SkipAnalysis): ..."
     ~expect:
       [
-        outcome ~kind:`Method ~analysis_mode:Taint.Result.SkipAnalysis "test.SkipMe.method";
+        outcome ~kind:`Method ~analysis_mode:Taint.Result.Mode.SkipAnalysis "test.SkipMe.method";
         outcome
           ~kind:`Method
-          ~analysis_mode:Taint.Result.SkipAnalysis
+          ~analysis_mode:Taint.Result.Mode.SkipAnalysis
           "test.SkipMe.method_with_multiple_parameters";
       ]
     ();
@@ -745,7 +750,7 @@ let test_skip_analysis context =
       @SkipAnalysis
       def test.taint(x): ...
     |}
-    ~expect:[outcome ~kind:`Function ~analysis_mode:Taint.Result.SkipAnalysis "test.taint"]
+    ~expect:[outcome ~kind:`Function ~analysis_mode:Taint.Result.Mode.SkipAnalysis "test.taint"]
     ()
 
 

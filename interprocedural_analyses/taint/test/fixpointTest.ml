@@ -334,7 +334,7 @@ let test_skipped_analysis context =
               ~kind:`Function
               ~sink_parameters:[{ name = "y"; sinks = [Sinks.NamedSink "Demo"] }]
               ~tito_parameters:["z"]
-              ~analysis_mode:Taint.Result.SkipAnalysis
+              ~analysis_mode:Taint.Result.Mode.SkipAnalysis
               "qualifier.skipped_model";
           ];
         iterations = 1;
@@ -342,6 +342,7 @@ let test_skipped_analysis context =
 
 
 let test_sanitized_analysis context =
+  let open Taint.Result in
   assert_fixpoint
     ~context
     ~models:
@@ -365,7 +366,9 @@ let test_sanitized_analysis context =
               ~sink_parameters:[{ name = "y"; sinks = [Sinks.NamedSink "Demo"] }]
               ~tito_parameters:["z"]
               ~errors:[{ code = 5001; pattern = ".*" }]
-              ~analysis_mode:(Taint.Result.Sanitize [Taint.Result.SanitizeAll])
+              ~analysis_mode:
+                (Mode.Sanitize
+                   { Mode.sources = Some Mode.AllSources; sinks = Some Mode.AllSinks; tito = true })
               "qualifier.sanitized_model";
           ];
         iterations = 1;

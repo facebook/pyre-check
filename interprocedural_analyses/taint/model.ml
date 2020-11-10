@@ -234,7 +234,13 @@ let get_global_tito_model ~resolution ~expression =
 let global_is_sanitized ~resolution ~expression =
   let is_sanitized (_, { model = { TaintResult.mode; _ }; _ }) =
     match mode with
-    | TaintResult.Sanitize [TaintResult.SanitizeAll] -> true
+    | TaintResult.Mode.Sanitize
+        {
+          sources = Some TaintResult.Mode.AllSources;
+          sinks = Some TaintResult.Mode.AllSinks;
+          tito = true;
+        } ->
+        true
     | _ -> false
   in
   get_global_model ~resolution ~expression >>| is_sanitized |> Option.value ~default:false

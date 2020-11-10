@@ -156,47 +156,23 @@ include Taint.Result.Register (struct
     in
     let model =
       match mode with
-      | Normal -> { forward; backward; mode }
-      | Sanitize sanitize_kinds ->
+      | Mode.Normal -> { forward; backward; mode }
+      | Sanitize { sources = sanitize_sources; sinks = sanitize_sinks; tito = sanitize_tito } ->
           let forward =
-            let sanitize_sources =
-              List.exists sanitize_kinds ~f:(function
-                  | Taint.Result.SanitizeAll
-                  | Taint.Result.SanitizeSources ->
-                      true
-                  | _ -> false)
-            in
-            if sanitize_sources then
-              empty_model.forward
-            else
-              forward
+            match sanitize_sources with
+            | Some Mode.AllSources -> empty_model.forward
+            | None -> forward
           in
           let taint_in_taint_out =
-            let sanitize_tito =
-              List.exists sanitize_kinds ~f:(function
-                  | Taint.Result.SanitizeAll
-                  | Taint.Result.SanitizeTITO ->
-                      true
-                  | _ -> false)
-            in
             if sanitize_tito then
               empty_model.backward.taint_in_taint_out
             else
               backward.taint_in_taint_out
           in
           let sink_taint =
-            let sanitize_sinks =
-              List.exists sanitize_kinds ~f:(function
-                  | Taint.Result.SanitizeAll
-                  | Taint.Result.SanitizeSinks ->
-                      true
-                  | _ -> false)
-            in
-
-            if sanitize_sinks then
-              empty_model.backward.sink_taint
-            else
-              backward.sink_taint
+            match sanitize_sinks with
+            | Some Mode.AllSinks -> empty_model.backward.sink_taint
+            | None -> backward.sink_taint
           in
           { forward; backward = { sink_taint; taint_in_taint_out }; mode }
       | SkipAnalysis -> { empty_model with mode }

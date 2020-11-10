@@ -115,23 +115,46 @@ module Backward = struct
     BackwardState.to_external_json ~filename_lookup taint_in_taint_out
 end
 
-type sanitize_kind =
-  | SanitizeSources
-  | SanitizeSinks
-  | SanitizeTITO
-  | SanitizeAll
-[@@deriving show, compare, eq]
+module Mode = struct
+  type sanitize_sources = AllSources [@@deriving show, compare, eq]
 
-type mode =
-  | SkipAnalysis (* Don't analyze at all *)
-  | Sanitize of sanitize_kind list (* Analyze, but throw away inferred model *)
-  | Normal
-[@@deriving show, eq]
+  type sanitize_sinks = AllSinks [@@deriving show, compare, eq]
+
+  type sanitize = {
+    sources: sanitize_sources option;
+    sinks: sanitize_sinks option;
+    tito: bool;
+  }
+  [@@deriving show, eq]
+
+  type t =
+    | SkipAnalysis (* Don't analyze at all *)
+    | Sanitize of sanitize
+    (* Analyze, but throw away inferred model *)
+    | Normal
+  [@@deriving show, eq]
+
+  let join left right =
+    match left, right with
+    | SkipAnalysis, _ -> SkipAnalysis
+    | _, SkipAnalysis -> SkipAnalysis
+    | Sanitize left, Sanitize right ->
+        Sanitize
+          {
+            sources = (if Option.is_some left.sources then left.sources else right.sources);
+            sinks = (if Option.is_some left.sinks then left.sinks else right.sinks);
+            tito = left.tito || right.tito;
+          }
+    | Sanitize _, _ -> left
+    | _, Sanitize _ -> right
+    | Normal, Normal -> Normal
+    [@@deriving show, eq]
+end
 
 type call_model = {
   forward: Forward.model;
   backward: Backward.model;
-  mode: mode;
+  mode: Mode.t;
 }
 
 let pp_call_model formatter { forward; backward; mode } =
@@ -142,7 +165,7 @@ let pp_call_model formatter { forward; backward; mode } =
     forward
     Backward.pp_model
     backward
-    pp_mode
+    Mode.pp
     mode
 
 
@@ -169,22 +192,11 @@ module ResultArgument = struct
 
   let is_empty { forward; backward; _ } = Forward.is_empty forward && Backward.is_empty backward
 
-  let join_modes left right =
-    match left, right with
-    | SkipAnalysis, _ -> SkipAnalysis
-    | _, SkipAnalysis -> SkipAnalysis
-    | Sanitize left, Sanitize right ->
-        Sanitize (List.dedup_and_sort ~compare:compare_sanitize_kind (left @ right))
-    | Sanitize _, _ -> left
-    | _, Sanitize _ -> right
-    | Normal, Normal -> Normal
-
-
   let join ~iteration:_ left right =
     {
       forward = Forward.join left.forward right.forward;
       backward = Backward.join left.backward right.backward;
-      mode = join_modes left.mode right.mode;
+      mode = Mode.join left.mode right.mode;
     }
 
 
@@ -192,7 +204,7 @@ module ResultArgument = struct
     {
       forward = Forward.widen ~iteration ~previous:previous.forward ~next:next.forward;
       backward = Backward.widen ~iteration ~previous:previous.backward ~next:next.backward;
-      mode = join_modes previous.mode next.mode;
+      mode = Mode.join previous.mode next.mode;
     }
 
 

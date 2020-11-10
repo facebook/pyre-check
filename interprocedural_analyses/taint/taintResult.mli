@@ -23,23 +23,32 @@ module Forward : sig
   val empty : model
 end
 
-type sanitize_kind =
-  | SanitizeSources
-  | SanitizeSinks
-  | SanitizeTITO
-  | SanitizeAll
-[@@deriving show, compare, eq]
+module Mode : sig
+  type sanitize_sources = AllSources
 
-type mode =
-  | SkipAnalysis (* Don't analyze at all *)
-  | Sanitize of sanitize_kind list (* Analyze, but throw away inferred model *)
-  | Normal
-[@@deriving show, eq]
+  type sanitize_sinks = AllSinks
+
+  type sanitize = {
+    sources: sanitize_sources option;
+    sinks: sanitize_sinks option;
+    tito: bool;
+  }
+  [@@deriving show, eq]
+
+  type t =
+    | SkipAnalysis (* Don't analyze at all *)
+    | Sanitize of sanitize
+    (* Analyze, but throw away inferred model *)
+    | Normal
+  [@@deriving show, eq]
+
+  val join : t -> t -> t
+end
 
 type call_model = {
   forward: Forward.model;
   backward: Backward.model;
-  mode: mode;
+  mode: Mode.t;
 }
 
 val empty_skip_model : call_model (* Skips analysis *)

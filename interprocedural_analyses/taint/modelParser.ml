@@ -1692,28 +1692,28 @@ let create ~resolution ?path ~configuration ~rule_filter source =
               { Decorator.name = { Node.value = name; _ }; arguments }
             =
             match Reference.show name with
-            | "Sanitize" -> (
-                let new_sanitize_kinds =
+            | "Sanitize" ->
+                let sanitize_kind =
                   match arguments with
-                  | None -> [SanitizeAll]
+                  | None -> { Mode.sources = Some AllSources; sinks = Some AllSinks; tito = true }
                   | Some arguments ->
-                      let to_sanitize_kind { Call.Argument.value; _ } =
+                      let to_sanitize_kind sanitize { Call.Argument.value; _ } =
                         match Node.value value with
                         | Expression.Name (Name.Identifier name) -> (
                             match name with
-                            | "TaintSource" -> Some SanitizeSources
-                            | "TaintSink" -> Some SanitizeSinks
-                            | "TaintInTaintOut" -> Some SanitizeTITO
-                            | _ -> None )
-                        | _ -> None
+                            | "TaintSource" -> { sanitize with Mode.sources = Some AllSources }
+                            | "TaintSink" -> { sanitize with Mode.sinks = Some AllSinks }
+                            | "TaintInTaintOut" -> { sanitize with Mode.tito = true }
+                            | _ -> sanitize )
+                        | _ -> sanitize
                       in
-                      List.filter_map arguments ~f:to_sanitize_kind
+                      List.fold
+                        arguments
+                        ~f:to_sanitize_kind
+                        ~init:{ Mode.sources = None; sinks = None; tito = false }
                 in
-                match mode with
-                | TaintResult.Sanitize kinds ->
-                    TaintResult.Sanitize (kinds @ new_sanitize_kinds), skipped_override
-                | _ -> TaintResult.Sanitize new_sanitize_kinds, skipped_override )
-            | "SkipAnalysis" -> TaintResult.SkipAnalysis, skipped_override
+                TaintResult.Mode.join mode (Mode.Sanitize sanitize_kind), skipped_override
+            | "SkipAnalysis" -> TaintResult.Mode.SkipAnalysis, skipped_override
             | "SkipOverrides" -> mode, Some define_name
             | _ -> mode, skipped_override
           in
@@ -1753,7 +1753,7 @@ let parse ~resolution ?path ?rule_filter ~source ~configuration models =
       ~init:([], [])
   in
   let is_empty_model model =
-    equal_mode model.mode Normal
+    Mode.equal model.mode Mode.Normal
     && ForwardState.is_bottom model.forward.source_taint
     && BackwardState.is_bottom model.backward.sink_taint
     && BackwardState.is_bottom model.backward.taint_in_taint_out
