@@ -9,7 +9,7 @@ import json
 import unittest
 from io import BytesIO
 
-from ..json_rpc import Request, read_request
+from ..json_rpc import Request, read_request, write_lsp_request
 
 
 class JsonRPCTest(unittest.TestCase):
@@ -117,7 +117,7 @@ class JsonRPCTest(unittest.TestCase):
         message = Request(
             method="textDocument/hover", id="123abc", parameters={"a": "b"}
         )
-        self.assertTrue(message.write(file))
+        self.assertTrue(write_lsp_request(file, message))
         file.seek(0)
         self.assertEqual(file.readline(), b"Content-Length: 88\r\n")
         self.assertEqual(file.readline(), b"\r\n")
@@ -132,7 +132,7 @@ class JsonRPCTest(unittest.TestCase):
         )
 
         file.close()
-        self.assertFalse(message.write(file))
+        self.assertFalse(write_lsp_request(file, message))
 
     def test_read_write(self) -> None:
         file = BytesIO()
@@ -142,7 +142,7 @@ class JsonRPCTest(unittest.TestCase):
             parameters={"a": "b", "c": "d"},
         )
 
-        message.write(file)
+        write_lsp_request(file, message)
         file.seek(0)
         parsed_message = read_request(file)
 

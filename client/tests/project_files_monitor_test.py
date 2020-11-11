@@ -123,7 +123,7 @@ class MonitorTest(unittest.TestCase):
                 request = Request(
                     method="handshake/server", parameters={"version": "123"}
                 )
-                request.write(outfile)
+                json_rpc.write_lsp_request(outfile, request)
 
                 response = read_request(infile)
                 if not response or response.method != "handshake/client":
@@ -131,7 +131,7 @@ class MonitorTest(unittest.TestCase):
                     return
 
                 request = Request(method="handshake/socket_added")
-                request.write(outfile)
+                json_rpc.write_lsp_request(outfile, request)
 
                 updated_message = read_request(infile)
                 if (

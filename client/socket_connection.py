@@ -49,7 +49,7 @@ class SocketConnection(object):
             )
 
     def send(self, request: json_rpc.Request) -> None:
-        if not request.write(self.output):
+        if not json_rpc.write_lsp_request(self.output, request):
             LOG.info("Failed to communicate with server. Shutting down.")
             raise SocketException
 

@@ -30,21 +30,6 @@ class JSONRPC(object):
     def json(self) -> str:
         pass
 
-    def format(self) -> bytes:
-        payload = self.json()
-        length = len(payload.encode("utf-8"))
-
-        response = ("Content-Length: {}\r\n\r\n{}").format(length, payload)
-        return response.encode("utf-8")
-
-    def write(self, file: BinaryIO) -> bool:
-        try:
-            file.write(self.format())
-            file.flush()
-            return True
-        except (ValueError, OSError):
-            return False
-
 
 class Request(JSONRPC):
     def __init__(
@@ -104,6 +89,18 @@ class Response(JSONRPC):
         result = json["result"] if "result" in response_keys else None
         error = json["error"] if "error" in response_keys else None
         return Response(result=result, id=id, error=error)
+
+
+def write_lsp_request(file: BinaryIO, request: Request) -> bool:
+    request_json = request.json()
+    length = len(request_json.encode("utf-8"))
+    payload = f"Content-Length: {length}\r\n\r\n{request_json}".encode("utf-8")
+    try:
+        file.write(payload)
+        file.flush()
+        return True
+    except (ValueError, OSError):
+        return False
 
 
 def parse_content_length(line: bytes) -> Optional[int]:
@@ -173,7 +170,7 @@ def perform_handshake(
             client_handshake = Request(
                 method="handshake/client", parameters={"send_confirmation": True}
             )
-            client_handshake.write(output_file)
+            write_lsp_request(output_file, client_handshake)
             request = read_request(input_file)
             if not (request and request.method == "handshake/socket_added"):
                 raise ValueError("Handshake was not successful.")

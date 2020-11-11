@@ -18,7 +18,7 @@ from typing import Any, Dict, List, Optional, Union
 
 from ..client.commands.persistent import Persistent
 from ..client.find_directories import find_global_and_local_root
-from ..client.json_rpc import JSON, JSONRPC, Request, Response
+from ..client.json_rpc import JSON, Request, write_lsp_request
 from ..client.resources import get_configuration_value, log_directory
 from ..client.socket_connection import SocketConnection
 
@@ -87,7 +87,7 @@ class Notifications:
             parameters={"message": message, "type": 1, "actions": actions or []},
             id=str(random.randrange(1000)),
         )
-        request.write(sys.stdout.buffer)
+        write_lsp_request(sys.stdout.buffer, request)
 
     @classmethod
     def prompt_restart(cls) -> None:
@@ -134,7 +134,7 @@ class AdapterProtocol(asyncio.Protocol):
                 raise AdapterException
             else:
                 request = Request.from_json(json_body)
-                self.socket.output.write(request.format())
+                write_lsp_request(self.socket.output, request)
                 self.socket.output.flush()
 
 

@@ -27,7 +27,7 @@ class IncrementalTest(unittest.TestCase):
         "_convert_json_response_to_result",
         return_value=command.Result(output="{}", code=0),
     )
-    @patch.object(json_rpc.Request, "write")
+    @patch.object(json_rpc, "write_lsp_request")
     @patch.object(json_rpc, "read_response")
     @patch.object(SocketConnection, "connect")
     @patch.object(SocketConnection, "perform_handshake")

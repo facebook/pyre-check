@@ -126,7 +126,7 @@ class ProjectFilesMonitor(Subscriber):
                     "invalidated": updated_paths.deleted_paths,
                 },
             )
-            if not message.write(self.socket_connection.output):
+            if not json_rpc.write_lsp_request(self.socket_connection.output, message):
                 LOG.info("Failed to communicate with server. Shutting down.")
                 self._alive = False  # terminate daemon
                 self.socket_connection.close()
