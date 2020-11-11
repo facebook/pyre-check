@@ -8,7 +8,6 @@ import json
 import logging
 import os
 import shutil
-import site
 import sys
 import time
 import traceback
@@ -227,40 +226,12 @@ def _run_default_command(arguments: command_arguments.CommandArguments) -> ExitC
         return _run_check_command(arguments)
 
 
-def _configuration_for_virtual_environment(
-    arguments: command_arguments.CommandArguments, base_directory: Path
-) -> configuration_module.Configuration:
-    typeshed = str(Path(sys.prefix) / "lib" / "pyre_check" / "typeshed")
-    exclude = [
-        str(path.resolve()) + "/.*" for path in Path('.').iterdir()
-        if not (path.is_dir() and path.name.startswith('_'))
-    ]
-    return configuration_module.create_configuration(
-        replace(
-            arguments,
-            source_directories=["."],
-            typeshed=typeshed,
-            search_path=site.getsitepackages(),
-            exclude=exclude,
-        ),
-        base_directory,
-    )
-
-
 def _create_configuration_with_retry(
     arguments: command_arguments.CommandArguments, base_directory: Path
 ) -> configuration_module.Configuration:
     configuration = configuration_module.create_configuration(arguments, base_directory)
     if len(configuration.source_directories) > 0 or len(configuration.targets) > 0:
         return configuration
-
-    if sys.prefix != sys.base_prefix:
-        # We're in a virtual environment.
-        LOG.warning(
-            "No configuration found. Attempting to gather information from virtual environment."
-            "Run `pyre init` for fully reproducible results."
-        )
-        return _configuration_for_virtual_environment(arguments, base_directory)
 
     # Heuristic: If neither `source_directories` nor `targets` is specified,
     # and if there exists recently-used local configurations, we guess that

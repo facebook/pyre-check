@@ -221,6 +221,10 @@ def assert_readable_directory_in_configuration(
         raise InvalidConfiguration(str(error))
 
 
+def _in_virtual_environment() -> bool:
+    return sys.prefix != sys.base_prefix
+
+
 @dataclass(frozen=True)
 class PartialConfiguration:
     autocomplete: Optional[bool] = None
@@ -618,7 +622,7 @@ class Configuration:
     other_critical_files: Sequence[str] = field(default_factory=list)
     relative_local_root: Optional[str] = None
     search_path: Sequence[SearchPathElement] = field(default_factory=list)
-    source_directories: Sequence[str] = field(default_factory=list)
+    _source_directories: Sequence[str] = field(default_factory=list)
     strict: bool = False
     taint_models_path: Sequence[str] = field(default_factory=list)
     targets: Sequence[str] = field(default_factory=list)
@@ -633,6 +637,17 @@ class Configuration:
         relative_local_root: Optional[str],
         partial_configuration: PartialConfiguration,
     ) -> "Configuration":
+        if (
+            len(partial_configuration.source_directories or []) == 0
+            and len(partial_configuration.targets or []) == 0
+            and _in_virtual_environment()
+        ):
+            LOG.warning(
+                "No configured source directory or target found. Running on "
+                "source directory `.`. Run `pyre init` for fully reproducible "
+                "results."
+            )
+
         return Configuration(
             project_root=str(project_root),
             dot_pyre_directory=_get_optional_value(
@@ -660,7 +675,7 @@ class Configuration:
                 path.expand_global_root(str(project_root))
                 for path in partial_configuration.search_path
             ],
-            source_directories=_get_optional_value(
+            _source_directories=_get_optional_value(
                 partial_configuration.source_directories, default=[]
             ),
             strict=_get_optional_value(partial_configuration.strict, default=False),
@@ -687,6 +702,13 @@ class Configuration:
         if self.relative_local_root is None:
             return None
         return os.path.join(self.project_root, self.relative_local_root)
+
+    @property
+    def source_directories(self) -> Sequence[str]:
+        if len(self._source_directories) == 0 and _in_virtual_environment():
+            return ["."]
+
+        return self._source_directories
 
     def get_existent_search_paths(self) -> List[SearchPathElement]:
         existent_paths = []
