@@ -53,6 +53,8 @@ val pretty_print : Format.formatter -> [< t ] -> unit
 
 val external_target_name : [< t ] -> string
 
+val class_name : [< t ] -> string option
+
 val compare : ([< t ] as 'a) -> 'a -> int
 
 type target_with_result = real_target

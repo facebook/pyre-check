@@ -2,6 +2,30 @@
 {
   "kind": "model",
   "data": {
+    "callable": "model_query.Base.foo",
+    "sources": [
+      {
+        "port": "formal(self)",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+      },
+      {
+        "port": "result",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "Test" } ],
+            "features": [ { "always-via": "string_concat_rhs" } ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "model_query.C.foo",
     "sources": [
       {
@@ -37,6 +61,26 @@
       {
         "port": "formal(self)",
         "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "model_query.NotBase.foo",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "Test" } ],
+            "features": [ { "always-via": "string_concat_rhs" } ]
+          }
+        ]
       }
     ],
     "sinks": [],

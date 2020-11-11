@@ -41,3 +41,11 @@ ModelQuery(
     PositionalParameter(index=1, taint = TaintSource[Test, Via[string_concat_lhs]]),
   ]
 )
+
+ModelQuery(
+  find = "methods",
+  where = [parent.equals("model_query.Base")],
+  model = [
+    PositionalParameter(index=0, taint = TaintSource[Test]),
+  ]
+)

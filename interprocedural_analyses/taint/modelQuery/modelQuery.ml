@@ -67,6 +67,8 @@ let rec matches_constraint query_constraint ~resolution ~callable =
       | _ -> false )
   | ModelQuery.AnyOf constraints ->
       List.exists constraints ~f:(matches_constraint ~resolution ~callable)
+  | ModelQuery.ParentConstraint (Equals class_name) ->
+      Callable.class_name callable >>| String.equal class_name |> Option.value ~default:false
 
 
 let apply_productions ~resolution ~productions ~callable =

@@ -64,11 +64,14 @@ module T = struct
     type parameter_constraint = AnnotationConstraint of annotation_constraint
     [@@deriving compare, show]
 
+    type class_constraint = Equals of string [@@deriving compare, show]
+
     type model_constraint =
       | NameConstraint of string
       | ReturnConstraint of annotation_constraint
       | AnyParameterConstraint of parameter_constraint
       | AnyOf of model_constraint list
+      | ParentConstraint of class_constraint
     [@@deriving compare, show]
 
     type kind =
@@ -911,6 +914,35 @@ let parse_where_clause ({ Node.value; _ } as expression) =
         List.map constraints ~f:(fun { Call.Argument.value; _ } -> parse_constraint value)
         |> Core.Result.all
         >>| fun constraints -> ModelQuery.AnyOf constraints
+    | Expression.Call
+        {
+          Call.callee =
+            {
+              Node.value =
+                Expression.Name
+                  (Name.Attribute
+                    {
+                      base = { Node.value = Name (Name.Identifier "parent"); _ };
+                      attribute = "equals" as attribute;
+                      _;
+                    });
+              _;
+            };
+          arguments =
+            [
+              {
+                Call.Argument.value =
+                  { Node.value = Expression.String { StringLiteral.value = class_name; _ }; _ };
+                _;
+              };
+            ];
+        } ->
+        let constraint_type =
+          match attribute with
+          | "equals" -> ModelQuery.Equals class_name
+          | _ -> failwith "impossible case"
+        in
+        Ok (ModelQuery.ParentConstraint constraint_type)
     | Expression.Call { Call.callee; arguments = _ } ->
         Error (Format.sprintf "Unsupported callee: %s" (Expression.show callee))
     | _ ->

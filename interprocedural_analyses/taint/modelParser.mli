@@ -55,11 +55,14 @@ module T : sig
     type parameter_constraint = AnnotationConstraint of annotation_constraint
     [@@deriving compare, show]
 
+    type class_constraint = Equals of string [@@deriving compare, show]
+
     type model_constraint =
       | NameConstraint of string
       | ReturnConstraint of annotation_constraint
       | AnyParameterConstraint of parameter_constraint
       | AnyOf of model_constraint list
+      | ParentConstraint of class_constraint
     [@@deriving compare, show]
 
     type kind =

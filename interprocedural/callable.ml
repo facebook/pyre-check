@@ -264,6 +264,14 @@ let external_target_name = function
   | `Object name -> Format.sprintf "Obj{%s}" name
 
 
+let class_name = function
+  | `Method { class_name; _ } -> Some class_name
+  | `Function _
+  | `OverrideTarget _
+  | `Object _ ->
+      None
+
+
 let get_short_name = function
   | `Function target -> target
   | `Method { method_name; _ }

@@ -34,3 +34,13 @@ def positional_a(x):
 
 def positional_b(y):
     return 0
+
+
+class Base:
+    def foo(self, x):
+        return 0
+
+
+class NotBase:
+    def foo(self, x):
+        return 0
