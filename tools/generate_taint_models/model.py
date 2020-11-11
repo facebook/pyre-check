@@ -5,12 +5,11 @@
 
 # pyre-strict
 
+import _ast
 import abc
 import ast
 import logging
 from typing import Callable, Iterable, List, Optional, Set, Union
-
-import _ast
 
 from ...api import query
 from .generator_specifications import (

@@ -70,6 +70,7 @@ class BasicTestCase(unittest.TestCase):
     def test_generic(self) -> None:
         try:
             from typing import TypeVar
+
             from .. import Generic, ListVariadic
             from ..type_variable_operators import Concatenate
 

@@ -6,15 +6,14 @@
 
 from __future__ import annotations
 
-from typing import NoReturn
-from pathlib import Path
-
 import argparse
 import logging
+import os
 import subprocess
 import sys
 import venv
-import os
+from pathlib import Path
+from typing import NoReturn
 
 LOG = logging.getLogger(__name__)
 

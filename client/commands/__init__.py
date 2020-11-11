@@ -7,6 +7,14 @@ from typing import List, Type
 
 from .analyze import Analyze as Analyze
 from .check import Check as Check
+from .command import (  # noqa; noqa; noqa
+    ClientException as ClientException,
+    Command as Command,
+    CommandParser as CommandParser,
+    ExitCode as ExitCode,
+    ProfileOutput as ProfileOutput,
+    IncrementalStyle as IncrementalStyle,
+)
 from .deobfuscate import Deobfuscate as Deobfuscate
 from .incremental import Incremental as Incremental
 from .infer import Infer as Infer
@@ -22,16 +30,6 @@ from .servers import Servers as Servers
 from .start import Start
 from .statistics import Statistics as Statistics
 from .stop import Stop as Stop
-
-
-from .command import (  # noqa; noqa; noqa
-    ClientException as ClientException,
-    Command as Command,
-    CommandParser as CommandParser,
-    ExitCode as ExitCode,
-    ProfileOutput as ProfileOutput,
-    IncrementalStyle as IncrementalStyle,
-)
 
 COMMANDS: List[Type[CommandParser]] = [
     Analyze,

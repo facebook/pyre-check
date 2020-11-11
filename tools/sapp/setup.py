@@ -4,8 +4,8 @@
 # LICENSE file in the root directory of this source tree.
 
 import json
-
 from pathlib import Path
+
 from setuptools import find_packages, setup
 
 
