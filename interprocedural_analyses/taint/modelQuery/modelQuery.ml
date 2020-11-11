@@ -69,6 +69,11 @@ let rec matches_constraint query_constraint ~resolution ~callable =
       List.exists constraints ~f:(matches_constraint ~resolution ~callable)
   | ModelQuery.ParentConstraint (Equals class_name) ->
       Callable.class_name callable >>| String.equal class_name |> Option.value ~default:false
+  | ModelQuery.ParentConstraint (Extends class_name) ->
+      Callable.class_name callable
+      >>| GlobalResolution.immediate_parents ~resolution
+      >>| (fun parents -> List.mem parents class_name ~equal:String.equal)
+      |> Option.value ~default:false
 
 
 let apply_productions ~resolution ~productions ~callable =

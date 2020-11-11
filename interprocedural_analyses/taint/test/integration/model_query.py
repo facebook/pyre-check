@@ -44,3 +44,13 @@ class Base:
 class NotBase:
     def foo(self, x):
         return 0
+
+
+class Child(Base):
+    def bar(self, y):
+        return 0
+
+
+class GrandChild(Child):
+    def baz(self, z):
+        return 0

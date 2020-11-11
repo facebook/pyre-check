@@ -49,3 +49,11 @@ ModelQuery(
     PositionalParameter(index=0, taint = TaintSource[Test]),
   ]
 )
+
+ModelQuery(
+  find = "methods",
+  where = [parent.extends("model_query.Base")],
+  model = [
+    PositionalParameter(index=1, taint = TaintSource[Test]),
+  ]
+)

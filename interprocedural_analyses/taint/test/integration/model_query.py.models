@@ -70,6 +70,20 @@
 {
   "kind": "model",
   "data": {
+    "callable": "model_query.Child.bar",
+    "sources": [
+      {
+        "port": "formal(y)",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "model_query.NotBase.foo",
     "sources": [
       {

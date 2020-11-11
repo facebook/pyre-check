@@ -55,7 +55,10 @@ module T : sig
     type parameter_constraint = AnnotationConstraint of annotation_constraint
     [@@deriving compare, show]
 
-    type class_constraint = Equals of string [@@deriving compare, show]
+    type class_constraint =
+      | Equals of string
+      | Extends of string
+    [@@deriving compare, show]
 
     type model_constraint =
       | NameConstraint of string

@@ -64,7 +64,10 @@ module T = struct
     type parameter_constraint = AnnotationConstraint of annotation_constraint
     [@@deriving compare, show]
 
-    type class_constraint = Equals of string [@@deriving compare, show]
+    type class_constraint =
+      | Equals of string
+      | Extends of string
+    [@@deriving compare, show]
 
     type model_constraint =
       | NameConstraint of string
@@ -923,7 +926,7 @@ let parse_where_clause ({ Node.value; _ } as expression) =
                   (Name.Attribute
                     {
                       base = { Node.value = Name (Name.Identifier "parent"); _ };
-                      attribute = "equals" as attribute;
+                      attribute = ("equals" | "extends") as attribute;
                       _;
                     });
               _;
@@ -940,6 +943,7 @@ let parse_where_clause ({ Node.value; _ } as expression) =
         let constraint_type =
           match attribute with
           | "equals" -> ModelQuery.Equals class_name
+          | "extends" -> Extends class_name
           | _ -> failwith "impossible case"
         in
         Ok (ModelQuery.ParentConstraint constraint_type)
