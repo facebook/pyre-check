@@ -647,7 +647,7 @@ class ConfigurationTest(testslide.TestCase):
             root_path = Path(root)
             ensure_directories_exists(root_path, ["a", "b/c"])
 
-            self.assertListEqual(
+            self.assertCountEqual(
                 Configuration(
                     project_root=str(root_path),
                     dot_pyre_directory=Path(".pyre"),
@@ -666,7 +666,7 @@ class ConfigurationTest(testslide.TestCase):
             root_path = Path(root)
             ensure_directories_exists(root_path, ["a", "b/c"])
 
-            self.assertListEqual(
+            self.assertCountEqual(
                 Configuration(
                     project_root=str(root_path),
                     dot_pyre_directory=Path(".pyre"),
@@ -685,7 +685,7 @@ class ConfigurationTest(testslide.TestCase):
             root_path = Path(root)
             ensure_directories_exists(root_path, ["a", "b/c", "b/d"])
 
-            self.assertListEqual(
+            self.assertCountEqual(
                 Configuration(
                     project_root=str(root_path),
                     dot_pyre_directory=Path(".pyre"),
