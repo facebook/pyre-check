@@ -234,6 +234,20 @@ def module.sanitize_sink(argument): ...
 def module.sanitize_tito(argument): ...
 ```
 
+For source and sink sanitizers, Pysa also supports only sanitizing specific kinds of
+taint to ensure that the sanitizers used for a rule don't have adverse effects on other
+rules. The syntax used is identical to how taint sources and sinks are specified normally:
+
+```python
+# Sanitizes only the `UserControlled` source kind.
+@Sanitize(TaintSource[UserControlled])
+def module.return_not_user_controlled(): ...
+
+# Sanitizes both the `SQL` and `Logging` sinks.
+@Sanitize(TaintSink[SQL, Logging])
+def module.sanitizes_sql_and_logging_sinks(flows_to_sql, logged_parameter): ...
+```
+
 Attributes can also be marked as sanitizers to remove all taint passing through
 them:
 
