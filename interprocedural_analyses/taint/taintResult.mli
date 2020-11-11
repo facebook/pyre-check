@@ -28,7 +28,9 @@ module Mode : sig
     | AllSources
     | SpecificSources of Sources.t list
 
-  type sanitize_sinks = AllSinks
+  type sanitize_sinks =
+    | AllSinks
+    | SpecificSinks of Sinks.t list
 
   type sanitize = {
     sources: sanitize_sources option;

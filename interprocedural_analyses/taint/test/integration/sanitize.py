@@ -85,3 +85,32 @@ def sanitize_a_and_b_source():
     else:
         x = b_source()
     return x
+
+
+def a_sink(x):
+    ...
+
+
+def b_sink(x):
+    ...
+
+
+def sanitize_a_sink(x):
+    if 1 > 2:
+        a_sink(x)
+    else:
+        b_sink(x)
+
+
+def sanitize_b_sink(x):
+    if 1 > 2:
+        a_sink(x)
+    else:
+        b_sink(x)
+
+
+def sanitize_a_and_b_sinks(x):
+    if 1 > 2:
+        a_sink(x)
+    else:
+        b_sink(x)

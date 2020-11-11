@@ -1716,6 +1716,15 @@ let create ~resolution ?path ~configuration ~rule_filter source =
                                     | Some Mode.AllSources -> Some Mode.AllSources
                                   in
                                   { Mode.sources; sinks; tito }
+                              | Sink { sink; _ } ->
+                                  let sinks =
+                                    match sinks with
+                                    | None -> Some (Mode.SpecificSinks [sink])
+                                    | Some (Mode.SpecificSinks sinks) ->
+                                        Some (Mode.SpecificSinks (sink :: sinks))
+                                    | Some Mode.AllSinks -> Some Mode.AllSinks
+                                  in
+                                  { Mode.sources; sinks; tito }
                               | _ -> { Mode.sources; sinks; tito }
                             in
                             parse_annotations ~configuration ~parameters:[] (Some value)

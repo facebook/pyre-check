@@ -2,6 +2,20 @@
 {
   "kind": "model",
   "data": {
+    "callable": "sanitize.a_sink",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(x)",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "TestA" } ] } ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "sanitize.a_source",
     "sources": [
       {
@@ -16,6 +30,20 @@
 {
   "kind": "model",
   "data": {
+    "callable": "sanitize.b_sink",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(x)",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "TestB" } ] } ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "sanitize.b_source",
     "sources": [
       {
@@ -24,6 +52,66 @@
       }
     ],
     "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize.sanitize_a_sink",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "root": {
+              "filename": "sanitize.py",
+              "line": 102,
+              "start": 15,
+              "end": 16
+            },
+            "leaves": [
+              {
+                "kind": "TestB",
+                "name": "sanitize.b_sink",
+                "on_all_flows": true
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize.sanitize_b_sink",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "root": {
+              "filename": "sanitize.py",
+              "line": 107,
+              "start": 15,
+              "end": 16
+            },
+            "leaves": [
+              {
+                "kind": "TestA",
+                "name": "sanitize.a_sink",
+                "on_all_flows": true
+              }
+            ]
+          }
+        ]
+      }
+    ],
     "tito": []
   }
 }

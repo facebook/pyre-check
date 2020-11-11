@@ -121,7 +121,10 @@ module Mode = struct
     | SpecificSources of Sources.t list
   [@@deriving show, compare, eq]
 
-  type sanitize_sinks = AllSinks [@@deriving show, compare, eq]
+  type sanitize_sinks =
+    | AllSinks
+    | SpecificSinks of Sinks.t list
+  [@@deriving show, compare, eq]
 
   type sanitize = {
     sources: sanitize_sources option;
@@ -155,12 +158,20 @@ module Mode = struct
                    (List.dedup_and_sort ~compare:Sources.compare (left_sources @ right_sources)))
           | None, None -> None
         in
-        Sanitize
-          {
-            sources;
-            sinks = (if Option.is_some left.sinks then left.sinks else right.sinks);
-            tito = left.tito || right.tito;
-          }
+        let sinks =
+          match left.sinks, right.sinks with
+          | None, Some _ -> right.sinks
+          | Some _, None -> left.sinks
+          | Some AllSinks, _
+          | _, Some AllSinks ->
+              Some AllSinks
+          | Some (SpecificSinks left_sinks), Some (SpecificSinks right_sinks) ->
+              Some
+                (SpecificSinks
+                   (List.dedup_and_sort ~compare:Sinks.compare (left_sinks @ right_sinks)))
+          | None, None -> None
+        in
+        Sanitize { sources; sinks; tito = left.tito || right.tito }
     | Sanitize _, _ -> left
     | _, Sanitize _ -> right
     | Normal, Normal -> Normal

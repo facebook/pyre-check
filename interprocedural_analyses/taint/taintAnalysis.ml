@@ -187,6 +187,17 @@ include Taint.Result.Register (struct
           let sink_taint =
             match sanitize_sinks with
             | Some Mode.AllSinks -> empty_model.backward.sink_taint
+            | Some (Mode.SpecificSinks sanitized_sinks) ->
+                let { Backward.sink_taint; _ } = backward in
+                BackwardState.partition
+                  BackwardTaint.leaf
+                  ~f:(fun source ->
+                    Option.some_if (not (List.mem ~equal:Sinks.equal sanitized_sinks source)) source)
+                  sink_taint
+                |> Core.Map.Poly.fold
+                     ~init:BackwardState.bottom
+                     ~f:(fun ~key:_ ~data:source_state state ->
+                       BackwardState.join source_state state)
             | None -> backward.sink_taint
           in
           { forward; backward = { sink_taint; taint_in_taint_out }; mode }
