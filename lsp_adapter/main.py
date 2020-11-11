@@ -133,7 +133,7 @@ class AdapterProtocol(asyncio.Protocol):
                     transport.close()
                 raise AdapterException
             else:
-                request = JSONRPC.from_json(json_body)
+                request = Request.from_json(json_body)
                 self.socket.output.write(request.format())
                 self.socket.output.flush()
 

@@ -45,13 +45,6 @@ class JSONRPC(object):
         except (ValueError, OSError):
             return False
 
-    @classmethod
-    def from_json(cls, json_body: JSON) -> "JSONRPC":
-        if "params" in json_body.keys():
-            return Request.from_json(json_body)
-        else:
-            return Response.from_json(json_body)
-
 
 class Request(JSONRPC):
     def __init__(
