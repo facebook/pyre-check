@@ -15,14 +15,12 @@ from ..json_rpc import Request, read_request, write_lsp_request
 class JsonRPCTest(unittest.TestCase):
     def test_json(self) -> None:
         self.assertDictEqual(
-            json.loads(Request(method="textDocument/publishDiagnostics").json()),
+            Request(method="textDocument/publishDiagnostics").json(),
             {"jsonrpc": "2.0", "method": "textDocument/publishDiagnostics"},
         )
 
         self.assertDictEqual(
-            json.loads(
-                Request(method="textDocument/publishDiagnostics", id="123abc").json()
-            ),
+            Request(method="textDocument/publishDiagnostics", id="123abc").json(),
             {
                 "jsonrpc": "2.0",
                 "id": "123abc",
@@ -31,11 +29,9 @@ class JsonRPCTest(unittest.TestCase):
         )
 
         self.assertDictEqual(
-            json.loads(
-                Request(
-                    method="textDocument/publishDiagnostics", parameters={"a": "b"}
-                ).json()
-            ),
+            Request(
+                method="textDocument/publishDiagnostics", parameters={"a": "b"}
+            ).json(),
             {
                 "jsonrpc": "2.0",
                 "method": "textDocument/publishDiagnostics",
@@ -44,13 +40,11 @@ class JsonRPCTest(unittest.TestCase):
         )
 
         self.assertDictEqual(
-            json.loads(
-                Request(
-                    method="textDocument/publishDiagnostics",
-                    id="123abc",
-                    parameters={"a": "b"},
-                ).json()
-            ),
+            Request(
+                method="textDocument/publishDiagnostics",
+                id="123abc",
+                parameters={"a": "b"},
+            ).json(),
             {
                 "jsonrpc": "2.0",
                 "id": "123abc",

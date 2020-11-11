@@ -25,10 +25,13 @@ class JSONRPCException(Exception):
     pass
 
 
-class JSONRPC(object):
+class JSONRPC:
     @abstractmethod
-    def json(self) -> str:
-        pass
+    def json(self) -> JSON:
+        raise NotImplementedError
+
+    def serialize(self) -> str:
+        return json.dumps(self.json())
 
 
 class Request(JSONRPC):
@@ -39,13 +42,13 @@ class Request(JSONRPC):
         self.id = id
         self.parameters = parameters
 
-    def json(self) -> str:
+    def json(self) -> JSON:
         json_object: Dict[str, Any] = {"jsonrpc": "2.0", "method": self.method}
         if self.id is not None:
             json_object["id"] = self.id
         if self.parameters is not None:
             json_object["params"] = self.parameters
-        return json.dumps(json_object)
+        return json_object
 
     @classmethod
     def from_json(cls, json: JSON) -> "Request":
@@ -79,8 +82,8 @@ class Response(JSONRPC):
             and "error" in payload
         )
 
-    def json(self) -> str:
-        return json.dumps({"jsonrpc": "2.0", "id": self.id, "result": self.result})
+    def json(self) -> JSON:
+        return {"jsonrpc": "2.0", "id": self.id, "result": self.result}
 
     @classmethod
     def from_json(cls, json: JSON) -> "Response":
@@ -92,9 +95,9 @@ class Response(JSONRPC):
 
 
 def write_lsp_request(file: BinaryIO, request: Request) -> bool:
-    request_json = request.json()
-    length = len(request_json.encode("utf-8"))
-    payload = f"Content-Length: {length}\r\n\r\n{request_json}".encode("utf-8")
+    request_string = request.serialize()
+    length = len(request_string.encode("utf-8"))
+    payload = f"Content-Length: {length}\r\n\r\n{request_string}".encode("utf-8")
     try:
         file.write(payload)
         file.flush()
