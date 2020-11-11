@@ -228,7 +228,7 @@ class Command(CommandParser, ABC):
         if self._show_error_traces:
             flags.append("-show-error-traces")
         logging_sections = self._logging_sections
-        if not self._capable_terminal:
+        if not self._capable_terminal or self._noninteractive:
             # Disable progress reporting for non-capable terminals.
             # This helps in reducing clutter.
             if logging_sections:
