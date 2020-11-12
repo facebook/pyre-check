@@ -294,7 +294,7 @@ let test_literal_none context =
     |}
     [
       "Revealed type [-1]: Revealed type for `x2` is \
-       `typing.Optional[typing_extensions.Literal[42]]`.";
+       `typing.Optional[typing_extensions.Literal[42]]` (inferred: `None`).";
     ];
   ()
 

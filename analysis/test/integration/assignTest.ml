@@ -341,6 +341,55 @@ let test_check_assign context =
       (* TODO(T64156088): This should be accepted *)
       "Undefined attribute [16]: `G` has no attribute `foo`.";
     ];
+  assert_type_errors
+    {|
+    from typing import Union
+
+    def f() -> int:
+      x: Union[int, str] = 42
+      reveal_type(x)
+      return x
+
+  |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `Union[int, str]` (inferred: \
+       `typing_extensions.Literal[42]`).";
+    ];
+  assert_type_errors
+    {|
+    from typing import Union
+
+    def f() -> int:
+      x: Union[int, str]
+      reveal_type(x)
+      x = 42
+      reveal_type(x)
+      return x
+
+  |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `Union[int, str]`.";
+      "Revealed type [-1]: Revealed type for `x` is `Union[int, str]` (inferred: \
+       `typing_extensions.Literal[42]`).";
+    ];
+  assert_type_errors
+    {|
+    from typing import Union
+
+    def f() -> int:
+      x: Union[int, str] = "hello"
+      reveal_type(x)
+      x = 42
+      reveal_type(x)
+      return x
+
+  |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `Union[int, str]` (inferred: \
+       `typing_extensions.Literal['hello']`).";
+      "Revealed type [-1]: Revealed type for `x` is `Union[int, str]` (inferred: \
+       `typing_extensions.Literal[42]`).";
+    ];
   ()
 
 

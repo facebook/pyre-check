@@ -3606,7 +3606,7 @@ module State (Context : Context) = struct
             )
         | _ ->
             (* Processing actual value assignments. *)
-            let resolution, errors, resolved =
+            let resolution, errors, resolved_value =
               let { Resolved.resolution; errors = new_errors; resolved; _ } =
                 forward_expression ~resolution ~expression:value
               in
@@ -3616,7 +3616,7 @@ module State (Context : Context) = struct
               (* This is the annotation determining how we recursively break up the assignment. *)
               match original_annotation with
               | Some annotation when not (Type.contains_unknown annotation) -> annotation
-              | _ -> resolved
+              | _ -> resolved_value
             in
             let explicit = Option.is_some annotation in
             let rec forward_assign
@@ -3624,7 +3624,7 @@ module State (Context : Context) = struct
                 ~errors
                 ~target:({ Node.location; value = target_value } as target)
                 ~guide
-                ~resolved
+                ~resolved_value
                 ~expression
               =
               let uniform_sequence_parameter annotation =
@@ -3782,14 +3782,6 @@ module State (Context : Context) = struct
                     | _, target_annotation when Annotation.is_immutable target_annotation ->
                         Annotation.original target_annotation, true
                     | _ -> Type.Top, false
-                  in
-                  let resolved =
-                    GlobalResolution.resolve_mutable_literals
-                      global_resolution
-                      ~resolve:(resolve_expression_type ~resolution)
-                      ~expression
-                      ~resolved
-                      ~expected
                   in
                   let is_undefined_attribute parent =
                     (* TODO(T64156088): This ought to be done in a much more principled way, by
@@ -4072,7 +4064,6 @@ module State (Context : Context) = struct
                         |> check_previously_annotated
                     | _ -> errors
                   in
-
                   let check_for_missing_annotations errors resolved =
                     let insufficiently_annotated, thrown_at_source =
                       let is_reassignment =
@@ -4317,7 +4308,7 @@ module State (Context : Context) = struct
                         else
                           errors, true
                   in
-                  let propagate_annotations ~errors ~is_valid_annotation ~resolved =
+                  let propagate_annotations ~errors ~is_valid_annotation ~resolved_value_weakened =
                     if is_global && not (Define.is_toplevel Context.define.value) then
                       resolution, errors
                     else
@@ -4328,15 +4319,13 @@ module State (Context : Context) = struct
                         (* Do not refine targets explicitly annotated as 'Any' to allow for escape
                            hatch *)
                         if explicit && is_valid_annotation then
-                          let annotation = Annotation.create_immutable ~final:is_final guide in
-                          if
-                            Type.is_concrete resolved
-                            && (not (Type.is_ellipsis resolved))
-                            && not (Type.is_any (Annotation.annotation annotation))
-                          then
-                            refine_annotation annotation resolved
+                          let guide_annotation =
+                            Annotation.create_immutable ~final:is_final guide
+                          in
+                          if Type.is_concrete resolved_value && not (Type.is_any guide) then
+                            refine_annotation guide_annotation resolved_value
                           else
-                            annotation
+                            guide_annotation
                         else if is_immutable then
                           if Type.is_any (Annotation.original target_annotation) then
                             target_annotation
@@ -4355,7 +4344,7 @@ module State (Context : Context) = struct
                             Error.IncompleteType
                               {
                                 target = { Node.location; value = target_value };
-                                annotation = resolved;
+                                annotation = resolved_value_weakened;
                                 attempted_action = Naming;
                               }
                           in
@@ -4387,18 +4376,26 @@ module State (Context : Context) = struct
                       in
                       resolution, errors
                   in
-                  match resolved with
-                  | { resolved; typed_dictionary_errors = [] } ->
-                      let errors = check_errors errors resolved in
+                  let resolved_value_weakened =
+                    GlobalResolution.resolve_mutable_literals
+                      global_resolution
+                      ~resolve:(resolve_expression_type ~resolution)
+                      ~expression
+                      ~resolved:resolved_value
+                      ~expected
+                  in
+                  match resolved_value_weakened with
+                  | { resolved = resolved_value_weakened; typed_dictionary_errors = [] } ->
+                      let errors = check_errors errors resolved_value_weakened in
                       let errors, is_valid_annotation =
-                        check_for_missing_annotations errors resolved
+                        check_for_missing_annotations errors resolved_value_weakened
                       in
-                      propagate_annotations ~errors ~is_valid_annotation ~resolved
+                      propagate_annotations ~errors ~is_valid_annotation ~resolved_value_weakened
                   | { typed_dictionary_errors; _ } ->
                       propagate_annotations
                         ~errors:(emit_typed_dictionary_errors ~errors typed_dictionary_errors)
                         ~is_valid_annotation:false
-                        ~resolved:Type.Top )
+                        ~resolved_value_weakened:Type.Top )
               | List elements
               | Tuple elements
                 when is_uniform_sequence guide ->
@@ -4406,17 +4403,25 @@ module State (Context : Context) = struct
                     match Node.value element with
                     | Expression.Starred (Starred.Once target) ->
                         let guide = uniform_sequence_parameter guide |> Type.list in
-                        let resolved = uniform_sequence_parameter resolved |> Type.list in
-                        forward_assign ~resolution ~errors ~target ~guide ~resolved ~expression:None
+                        let resolved_value =
+                          uniform_sequence_parameter resolved_value |> Type.list
+                        in
+                        forward_assign
+                          ~resolution
+                          ~errors
+                          ~target
+                          ~guide
+                          ~resolved_value
+                          ~expression:None
                     | _ ->
                         let guide = uniform_sequence_parameter guide in
-                        let resolved = uniform_sequence_parameter resolved in
+                        let resolved_value = uniform_sequence_parameter resolved_value in
                         forward_assign
                           ~resolution
                           ~errors
                           ~target:element
                           ~guide
-                          ~resolved
+                          ~resolved_value
                           ~expression:None
                   in
                   List.fold elements ~init:(resolution, errors) ~f:propagate
@@ -4511,7 +4516,7 @@ module State (Context : Context) = struct
                            ~errors
                            ~target
                            ~guide
-                           ~resolved:guide
+                           ~resolved_value:guide
                            ~expression:None)
               | _ ->
                   if Option.is_some annotation then
@@ -4524,7 +4529,13 @@ module State (Context : Context) = struct
                     resolution, errors
             in
             let resolution, errors =
-              forward_assign ~resolution ~errors ~target ~guide ~resolved ~expression:(Some value)
+              forward_assign
+                ~resolution
+                ~errors
+                ~target
+                ~guide
+                ~resolved_value
+                ~expression:(Some value)
             in
             Some resolution, errors )
     | Assert { Assert.test; origin; _ } ->
