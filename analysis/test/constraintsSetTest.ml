@@ -250,10 +250,10 @@ let test_add_constraint context =
               in
               let parse_ordered_types ordered =
                 if String.equal ordered "" then
-                  Type.OrderedTypes.Concrete []
+                  Type.OrderedTypes.Group (Concrete [])
                 else
                   match parse_annotation (Printf.sprintf "typing.Tuple[%s]" ordered) with
-                  | Type.Tuple (Bounded ordered) -> ordered
+                  | Type.Tuple (Bounded ordered) -> Group ordered
                   | _ -> failwith "impossible"
               in
               let global_resolution =
@@ -1114,7 +1114,7 @@ let test_instantiate_protocol_parameters context =
     ~protocols:["VariadicCol", ["prop", "typing.Tuple[Ts]"]]
     ~candidate:"A"
     ~protocol:"VariadicCol"
-    (Some [Group (Concrete [Type.integer; Type.string])]);
+    (Some [VariadicExpression (Group (Concrete [Type.integer; Type.string]))]);
   assert_instantiate_protocol_parameters
     ~source:
       {|
@@ -1125,7 +1125,7 @@ let test_instantiate_protocol_parameters context =
     ~protocols:["VariadicCol", ["method", "typing.Callable[Ts, bool]"]]
     ~candidate:"A"
     ~protocol:"VariadicCol"
-    (Some [Group (Concrete [Type.integer; Type.string])]);
+    (Some [VariadicExpression (Group (Concrete [Type.integer; Type.string]))]);
   ()
 
 

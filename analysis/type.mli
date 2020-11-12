@@ -61,9 +61,14 @@ module Record : sig
     [@@deriving compare, eq, sexp, show, hash]
   end
 
-  module OrderedTypes : sig
+  module rec OrderedTypes : sig
     module RecordConcatenate : sig
       module Middle : sig
+        type 'annotation variable =
+          | Variadic of 'annotation Variable.RecordVariadic.RecordList.record
+          | Expression of 'annotation OrderedTypes.variadic_expression
+        [@@deriving compare, eq, sexp, show, hash]
+
         type 'annotation t [@@deriving compare, eq, sexp, show, hash]
       end
 
@@ -76,7 +81,18 @@ module Record : sig
       | Concatenation of ('annotation RecordConcatenate.Middle.t, 'annotation) RecordConcatenate.t
     [@@deriving compare, eq, sexp, show, hash]
 
+    type 'annotation variadic_expression =
+      | Group of 'annotation record
+      | Broadcast of 'annotation variadic_expression * 'annotation variadic_expression
+    [@@deriving compare, eq, sexp, show, hash]
+
     val pp_concise
+      :  Format.formatter ->
+      'a variadic_expression ->
+      pp_type:(Format.formatter -> 'a -> unit) ->
+      unit
+
+    val pp_concise_record
       :  Format.formatter ->
       'a record ->
       pp_type:(Format.formatter -> 'a -> unit) ->
@@ -144,8 +160,9 @@ module Record : sig
   module Parameter : sig
     type 'annotation record =
       | Single of 'annotation
-      | Group of 'annotation OrderedTypes.record
+      | VariadicExpression of 'annotation OrderedTypes.variadic_expression
       | CallableParameters of 'annotation Callable.record_parameters
+    [@@deriving compare, eq, sexp, show, hash]
   end
 
   module TypedDictionary : sig
@@ -602,11 +619,15 @@ module OrderedTypes : sig
     include Record.OrderedTypes
   end
 
-  type t = type_t record [@@deriving compare, eq, sexp, show, hash]
+  type t = type_t variadic_expression [@@deriving compare, eq, sexp, show, hash]
+
+  type record_t = type_t record [@@deriving compare, eq, sexp, show, hash]
 
   type ordered_types_t = t
 
   val pp_concise : Format.formatter -> t -> unit
+
+  val pp_concise_record : Format.formatter -> record_t -> unit
 
   module Concatenation : sig
     include module type of struct
@@ -618,16 +639,11 @@ module OrderedTypes : sig
         include Record.OrderedTypes.RecordConcatenate.Middle
       end
 
-      val unwrap_if_bare
-        :  type_t t ->
-        type_t Record.Variable.RecordVariadic.RecordList.record option
+      val unwrap_if_bare : type_t t -> type_t variable option
 
-      val create_bare : type_t Record.Variable.RecordVariadic.RecordList.record -> type_t t
+      val create_bare : type_t variable -> type_t t
 
-      val create
-        :  variable:type_t Record.Variable.RecordVariadic.RecordList.record ->
-        mappers:Identifier.t list ->
-        type_t t
+      val create : variable:type_t variable -> mappers:Identifier.t list -> type_t t
 
       val singleton_replace_variable : type_t t -> replacement:type_t -> type_t
     end
@@ -643,6 +659,7 @@ module OrderedTypes : sig
       :  (type_t Middle.t, type_t) t ->
       replacement:
         (type_t Record.Variable.RecordVariadic.RecordList.record -> ordered_types_t option) ->
+      replace_variadic:(type_t variadic_expression -> type_t variadic_expression) ->
       ordered_types_t option
 
     val head : ('middle, 'outer) t -> 'outer list
@@ -653,9 +670,7 @@ module OrderedTypes : sig
 
     val unwrap_if_only_middle : ('middle, 'outer) t -> 'middle option
 
-    val variable
-      :  (type_t Middle.t, 'outer) t ->
-      type_t Record.Variable.RecordVariadic.RecordList.record
+    val variable : (type_t Middle.t, 'outer) t -> type_t Middle.variable
 
     val expression : (type_t Middle.t, type_t) t -> Expression.t
 
@@ -680,6 +695,13 @@ module OrderedTypes : sig
 
   (* Concatenation is only defined for certain members *)
   val concatenate : left:t -> right:t -> t option
+
+  val concatenate_record : left:record_t -> right:record_t -> record_t option
+
+  val transform_variadic_expression
+    :  'a variadic_expression ->
+    f:('a record -> 'a variadic_expression) ->
+    'a variadic_expression
 end
 
 val split : t -> t * Parameter.t list

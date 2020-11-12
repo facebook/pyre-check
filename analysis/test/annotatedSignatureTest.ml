@@ -782,10 +782,8 @@ let test_unresolved_select context =
           (SignatureSelectionTypes.MismatchWithListVariadicTypeVariable
              {
                variable =
-                 Concatenation
-                   (Type.OrderedTypes.Concatenation.create
-                      (Type.OrderedTypes.Concatenation.Middle.create_bare
-                         (Type.Variable.Variadic.List.create "test.Ts")));
+                 Type.Variable.Variadic.List.self_reference
+                   (Type.Variable.Variadic.List.create "test.Ts");
                mismatch =
                  NotDefiniteTuple
                    {
@@ -803,11 +801,9 @@ let test_unresolved_select context =
           (SignatureSelectionTypes.MismatchWithListVariadicTypeVariable
              {
                variable =
-                 Concatenation
-                   (Type.OrderedTypes.Concatenation.create
-                      (Type.OrderedTypes.Concatenation.Middle.create_bare
-                         (Type.Variable.Variadic.List.create "test.Ts")));
-               mismatch = ConstraintFailure (Concrete [Type.float]);
+                 Type.Variable.Variadic.List.self_reference
+                   (Type.Variable.Variadic.List.create "test.Ts");
+               mismatch = ConstraintFailure (Group (Concrete [Type.float]));
              }) ));
   assert_select
     "[pyre_extensions.type_variable_operators.Map[typing.List, Ts], int]"

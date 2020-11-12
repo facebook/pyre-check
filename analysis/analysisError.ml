@@ -1228,8 +1228,10 @@ let rec messages ~concise ~signature location kind =
       in
       let actual =
         match actual with
-        | Group actual ->
-            Format.asprintf "type parameter group `[%a]`" Type.OrderedTypes.pp_concise actual
+        | VariadicExpression (Group actual) ->
+            Format.asprintf "type parameter group `[%a]`" Type.OrderedTypes.pp_concise_record actual
+        | VariadicExpression expression ->
+            Format.asprintf "type parameter group `%a`" Type.OrderedTypes.pp_concise expression
         | Single actual -> Format.asprintf "single type `%a`" Type.pp actual
         | CallableParameters actual ->
             Format.asprintf "callable parameters `%a`" Type.Callable.pp_parameters actual

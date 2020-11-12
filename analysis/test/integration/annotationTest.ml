@@ -2561,6 +2561,292 @@ let test_check_typevar_division_simplify context =
     ]
 
 
+let test_check_broadcast_outside_concatenation context =
+  let assert_type_errors = assert_type_errors ~context in
+  assert_type_errors
+    {|
+      from typing import Generic
+      from typing_extensions import Literal as L
+      from pyre_extensions import Broadcast as BC, ListVariadic
+
+      Ts0 = ListVariadic("Ts0")
+      Ts1 = ListVariadic("Ts1")
+
+      class Tensor(Generic[Ts0]): ...
+
+      def f(x : Tensor[Ts0], y : Tensor[Ts1]) -> Tensor[BC[Ts0,Ts1]]: ...
+
+      def foo() -> None:
+        x1 : Tensor[L[2],L[3]]
+        y1 : Tensor[L[2],L[3]]
+        z1 = f(x1,y1)
+
+        x2 : Tensor[L[1],L[3]]
+        y2 : Tensor[L[2],L[1]]
+        z2 = f(x2,y2)
+
+        x3 : Tensor[L[4],L[5],L[1],L[3]]
+        y3 : Tensor[L[2],L[1]]
+        z3 = f(x3,y3)
+
+        reveal_type(z1)
+        reveal_type(z2)
+        reveal_type(z3)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `z1` is `Tensor[typing_extensions.Literal[2], \
+       typing_extensions.Literal[3]]`.";
+      "Revealed type [-1]: Revealed type for `z2` is `Tensor[typing_extensions.Literal[2], \
+       typing_extensions.Literal[3]]`.";
+      "Revealed type [-1]: Revealed type for `z3` is `Tensor[typing_extensions.Literal[4], \
+       typing_extensions.Literal[5], typing_extensions.Literal[2], typing_extensions.Literal[3]]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Generic
+      from typing_extensions import Literal as L
+      from pyre_extensions import Broadcast as BC, ListVariadic
+
+      Ts0 = ListVariadic("Ts0")
+      Ts1 = ListVariadic("Ts1")
+
+      class Tensor(Generic[Ts0]): ...
+
+      def f(x : Tensor[Ts0], y : Tensor[Ts1]) -> Tensor[BC[Ts0,Ts1]]: ...
+
+      def foo() -> None:
+        x1 : Tensor[L[2],L[4]]
+        y1 : Tensor[L[2],L[3]]
+        z1 = f(x1,y1)
+
+        x2 : Tensor[L[2],int]
+        y2 : Tensor[L[2],L[3]]
+        z2 = f(x2,y2)
+
+        x3 : Tensor[L[2],str]
+        y3 : Tensor[L[2],L[3]]
+        z3 = f(x3,y3)
+
+        reveal_type(z1)
+        reveal_type(z2)
+        reveal_type(z3)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `z1` is `Tensor[typing_extensions.Literal[2], \
+       typing.Any]`.";
+      "Revealed type [-1]: Revealed type for `z2` is `Tensor[typing_extensions.Literal[2], int]`.";
+      "Revealed type [-1]: Revealed type for `z3` is `Tensor[typing_extensions.Literal[2], \
+       typing.Any]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import  Generic
+      from typing_extensions import Literal as L
+      from pyre_extensions import Broadcast as BC, ListVariadic
+
+      Ts0 = ListVariadic("Ts0")
+      Ts1 = ListVariadic("Ts1")
+      Ts2 = ListVariadic("Ts2")
+
+      class Tensor(Generic[Ts0]): ...
+
+      def f(x : Tensor[Ts0], y : Tensor[Ts1], z : Tensor[Ts2]) -> Tensor[BC[Ts0,BC[Ts1,Ts2]]]: ...
+
+      def foo() -> None:
+        x1 : Tensor[L[2],L[3]]
+        y1 : Tensor[L[2],L[3]]
+        z1 : Tensor[L[2],L[3]]
+        v1 = f(x1,y1,z1)
+
+        x2 : Tensor[L[3],L[2],L[1]]
+        y2 : Tensor[L[1],L[2],L[1]]
+        z2 : Tensor[L[1],L[2],L[4]]
+        v2 = f(x2,y2,z2)
+
+        reveal_type(v1)
+        reveal_type(v2)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `v1` is `Tensor[typing_extensions.Literal[2], \
+       typing_extensions.Literal[3]]`.";
+      "Revealed type [-1]: Revealed type for `v2` is `Tensor[typing_extensions.Literal[3], \
+       typing_extensions.Literal[2], typing_extensions.Literal[4]]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import  Generic
+      from typing_extensions import Literal as L
+      from pyre_extensions import Broadcast as BC, ListVariadic
+
+      Ts = ListVariadic("Ts")
+
+      class Tensor(Generic[Ts]): ...
+
+      def f(x : Tensor[Ts]) -> Tensor[BC[[L[1],L[3]],Ts]]: ...
+
+      def foo() -> None:
+        x1 : Tensor[L[2],L[3]]
+        y1 = f(x1)
+        reveal_type(y1)
+
+        x2 : Tensor[L[2],L[4]]
+        y2 = f(x2)
+        reveal_type(y2)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `y1` is `Tensor[typing_extensions.Literal[2], \
+       typing_extensions.Literal[3]]`.";
+      "Revealed type [-1]: Revealed type for `y2` is `Tensor[typing_extensions.Literal[2], \
+       typing.Any]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import TypeVar, Generic
+      from typing_extensions import Literal as L
+      from pyre_extensions import Broadcast as BC, ListVariadic
+      from pyre_extensions.type_variable_operators import Concatenate as Cat
+
+      A = TypeVar("A",bound=int)
+      Ts = ListVariadic("Ts")
+      Ts1 = ListVariadic("Ts1")
+
+      class Tensor(Generic[Ts]): ...
+
+      def f(x : Tensor[Cat[A,Ts]], y : Tensor[Ts1]) -> Tensor[BC[Cat[A,Ts],Ts1]]: ...
+
+      def foo() -> None:
+        x1 : Tensor[L[1],L[3]]
+        x2 : Tensor[L[2],L[1]]
+        y1 = f(x1,x2)
+        reveal_type(y1)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `y1` is `Tensor[typing_extensions.Literal[2], \
+       typing_extensions.Literal[3]]`.";
+    ]
+
+
+let test_check_broadcast_inside_concatenation context =
+  let assert_type_errors = assert_type_errors ~context in
+  assert_type_errors
+    {|
+      from typing import Generic, TypeVar
+      from typing_extensions import Literal as L
+      from pyre_extensions import Broadcast as BC, ListVariadic
+      from pyre_extensions.type_variable_operators import Concatenate as Cat
+
+
+      Ts = ListVariadic("Ts")
+      Ts1 = ListVariadic("Ts1")
+      Ts2 = ListVariadic("Ts2")
+      A = TypeVar("A",bound=int)
+
+      class Tensor(Generic[Ts]): ...
+
+      def g(x : Tensor[Ts], a: A) -> Tensor[Cat[Ts,A]]: ...
+
+      def h(x : Tensor[Ts1], y : Tensor[Ts2]) -> Tensor[BC[Ts1,Ts2]]: ...
+
+      def f(t1 : Tensor[Ts1], t2 : Tensor[Ts2]) -> Tensor[Cat[BC[Ts1,Ts2],L[3]]]:
+        x = h(t1,t2)
+        y = g(x,3)
+        return y
+
+      def foo() -> None:
+        t1 : Tensor[L[2],L[4]]
+        t2 : Tensor[L[2],L[1]]
+        result = f(t1,t2)
+        reveal_type(result)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `result` is `Tensor[typing_extensions.Literal[2], \
+       typing_extensions.Literal[4], typing_extensions.Literal[3]]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Generic, TypeVar
+      from typing_extensions import Literal as L
+      from pyre_extensions import Broadcast as BC, ListVariadic
+      from pyre_extensions.type_variable_operators import Concatenate as Cat
+
+      Ts1 = ListVariadic("Ts1")
+      Ts2 = ListVariadic("Ts2")
+      A = TypeVar("A",bound=int)
+      B = TypeVar("B",bound=int)
+      C = TypeVar("C",bound=int)
+
+      class Tensor(Generic[Ts1]): ...
+
+      def matmul(x: Tensor[Cat[Ts1,A,B]], y: Tensor[Cat[Ts2,B,C]]) -> Tensor[Cat[BC[Ts1,Ts2],A,C]]: ...
+
+      def foo() -> None:
+        t1 : Tensor[L[5],L[2],L[4]]
+        t2 : Tensor[L[7],L[1],L[4],L[3]]
+        x = matmul(t1,t2)
+        reveal_type(x)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `Tensor[typing_extensions.Literal[7], \
+       typing_extensions.Literal[5], typing_extensions.Literal[2], typing_extensions.Literal[3]]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Generic
+      from typing_extensions import Literal as L
+      from pyre_extensions import Broadcast as BC, ListVariadic
+      from pyre_extensions.type_variable_operators import Concatenate as Cat
+
+      Ts1 = ListVariadic("Ts1")
+      Ts2 = ListVariadic("Ts2")
+
+      class Tensor(Generic[Ts1]): ...
+
+      def f(x : Tensor[Ts1], y : Tensor[Ts2]) -> Tensor[
+          BC[
+              Cat[BC[Ts2,Ts1],L[1]],
+              Cat[BC[Ts1,Ts2],L[1]]
+            ]
+          ]: ...
+
+      def foo() -> None:
+        t1 : Tensor[L[2],L[4]]
+        t2 : Tensor[L[1],L[4]]
+        x = f(t1,t2)
+        reveal_type(x)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `Tensor[typing_extensions.Literal[2], \
+       typing_extensions.Literal[4], typing_extensions.Literal[1]]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Generic
+      from typing_extensions import Literal as L
+      from pyre_extensions import Broadcast as BC, ListVariadic
+      from pyre_extensions.type_variable_operators import Concatenate as Cat
+
+      Ts1 = ListVariadic("Ts1")
+      Ts2 = ListVariadic("Ts2")
+
+      class Tensor(Generic[Ts1]): ...
+
+      def f(t: Tensor[BC[Ts1,Ts2]]) -> Tensor[Ts1]: ...
+
+      def foo() -> None:
+        t1 : Tensor[L[5],L[2],L[4]]
+        x = f(t1)
+        reveal_type(x)
+    |}
+    [
+      "Incomplete type [37]: Type `Tensor[test.Ts1]` inferred for `x` is incomplete, add an \
+       explicit annotation.";
+      "Incompatible parameter type [6]: Expected \
+       `Tensor[pyre_extensions.Broadcast[test.Ts1,test.Ts2]]` for 1st positional only parameter to \
+       call `f` but got `Tensor[int, int, int]`.";
+      "Revealed type [-1]: Revealed type for `x` is `Tensor[...]`.";
+    ]
+
+
 let () =
   "annotation"
   >::: [
@@ -2585,5 +2871,7 @@ let () =
          "check_variadic_arithmetic" >:: test_check_variadic_arithmetic;
          "check_typevar_division" >:: test_check_typevar_division;
          "check_typevar_division_simplify" >:: test_check_typevar_division_simplify;
+         "check_broadcast_outside_concatenation" >:: test_check_broadcast_outside_concatenation;
+         "check_broadcast_inside_concatenation" >:: test_check_broadcast_inside_concatenation;
        ]
   |> Test.run

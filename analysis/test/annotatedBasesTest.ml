@@ -129,7 +129,7 @@ let test_inferred_generic_base context =
             (Type.parametric
                "typing.Generic"
                [
-                 Type.Parameter.Group
+                 Type.Parameter.VariadicExpression
                    (Type.Variable.Variadic.List.self_reference
                       (Type.Variable.Variadic.List.create "test.Ts"));
                ]);

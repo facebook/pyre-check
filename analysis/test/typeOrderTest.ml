@@ -657,9 +657,14 @@ let test_less_or_equal context =
        ~left:(Type.tuple [Type.integer; Type.float])
        ~right:(Type.Tuple (Type.Unbounded Type.float)));
   let list_variadic =
-    Type.Variable.Variadic.List.create "Ts"
-    |> Type.Variable.Variadic.List.mark_as_bound
-    |> Type.Variable.Variadic.List.self_reference
+    let variadic =
+      Type.Variable.Variadic.List.create "Ts" |> Type.Variable.Variadic.List.mark_as_bound
+    in
+    let middle =
+      Type.OrderedTypes.Concatenation.Middle.Variadic variadic
+      |> Type.OrderedTypes.Concatenation.Middle.create_bare
+    in
+    Type.OrderedTypes.Concatenation (Type.OrderedTypes.Concatenation.create middle)
   in
   assert_false
     (less_or_equal
