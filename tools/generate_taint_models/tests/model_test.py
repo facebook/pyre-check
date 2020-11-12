@@ -111,6 +111,7 @@ class ModelTest(unittest.TestCase):
     ) -> None:
         parsed_function = ast.parse(textwrap.dedent(source)).body[0]
 
+        # pyre-fixme[35]: Target cannot be annotated.
         parsed_function: model.FunctionDefinition
 
         self.assertEqual(

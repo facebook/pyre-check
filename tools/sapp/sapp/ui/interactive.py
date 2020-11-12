@@ -785,6 +785,7 @@ details              show additional information about the current trace frame
             for (_, name) in query:
                 leaves[name] += 1
 
+        # pyre-fixme[35]: Target cannot be annotated.
         query: Iterable[Tuple[str, int]]
         if order_by == LeafOrderBy.name:
             query = sorted(leaves.items(), key=lambda leaf: leaf[0])

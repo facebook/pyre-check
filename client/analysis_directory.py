@@ -493,6 +493,7 @@ class SharedAnalysisDirectory(AnalysisDirectory):
         LOG.info("Updating shared directory `%s`", self.get_root())
 
         self.rebuild()
+        # pyre-fixme[35]: Target cannot be annotated.
         new_paths: Set[str] = set(self._symbolic_links.keys())
 
         buck.clear_buck_query_cache()
