@@ -1103,11 +1103,7 @@ let test_check_refinement context =
         l = [1]
         l.append('asdf')
     |}
-    [
-      "Prohibited any [33]: Explicit annotation for `l` cannot contain `Any`.";
-      "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter to call \
-       `list.append` but got `str`.";
-    ];
+    ["Prohibited any [33]: Explicit annotation for `l` cannot contain `Any`."];
   assert_type_errors
     {|
       import typing

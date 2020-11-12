@@ -4318,16 +4318,31 @@ module State (Context : Context) = struct
                       let annotation =
                         (* Do not refine targets explicitly annotated as 'Any' to allow for escape
                            hatch *)
+                        (* Do not refine targets with invariance mismatch as we cannot keep the
+                           inferred type up to date for mutable containers *)
+                        let invariance_mismatch =
+                          GlobalResolution.is_invariance_mismatch
+                            global_resolution
+                            ~right:expected
+                            ~left:resolved_value
+                        in
                         if explicit && is_valid_annotation then
                           let guide_annotation =
                             Annotation.create_immutable ~final:is_final guide
                           in
-                          if Type.is_concrete resolved_value && not (Type.is_any guide) then
+                          if
+                            Type.is_concrete resolved_value
+                            && (not (Type.is_any guide))
+                            && not invariance_mismatch
+                          then
                             refine_annotation guide_annotation resolved_value
                           else
                             guide_annotation
                         else if is_immutable then
-                          if Type.is_any (Annotation.original target_annotation) then
+                          if
+                            Type.is_any (Annotation.original target_annotation)
+                            || invariance_mismatch
+                          then
                             target_annotation
                           else
                             refine_annotation target_annotation guide

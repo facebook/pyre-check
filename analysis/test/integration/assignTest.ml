@@ -390,6 +390,70 @@ let test_check_assign context =
       "Revealed type [-1]: Revealed type for `x` is `Union[int, str]` (inferred: \
        `typing_extensions.Literal[42]`).";
     ];
+  assert_default_type_errors
+    {|
+    from typing import Dict, Any
+
+    def foo(p: Dict[str, bool]) -> None:
+      x: Dict[str, Any] = {"field": "value"}
+      reveal_type(x)
+      x.update(p)
+      reveal_type(x)
+  |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `Dict[str, typing.Any]`.";
+      "Revealed type [-1]: Revealed type for `x` is `Dict[str, typing.Any]`.";
+    ];
+  assert_default_type_errors
+    {|
+    from typing import Dict, Any
+
+    def foo(p: Dict[str, bool]) -> None:
+      x: Dict[str, Any]
+      x = {"field": "value"}
+      reveal_type(x)
+      x.update(p)
+      reveal_type(x)
+      bar(x)
+
+    def bar(f: Dict[str,str]) -> None:
+      return
+  |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `Dict[str, typing.Any]`.";
+      "Revealed type [-1]: Revealed type for `x` is `Dict[str, typing.Any]`.";
+    ];
+  assert_default_type_errors
+    {|
+    from typing import List, Any
+
+    def foo(p: bool) -> None:
+      x: List[Any] = ["str"]
+      x.append(p)
+      reveal_type(x)
+
+  |}
+    ["Revealed type [-1]: Revealed type for `x` is `List[typing.Any]`."];
+  assert_default_type_errors
+    {|
+  from typing import List
+
+  def foo() -> None:
+    x = []
+    x.append("hello")
+    reveal_type(x)
+    x.append(True)
+  |}
+    ["Revealed type [-1]: Revealed type for `x` is `List[typing.Any]`."];
+  assert_default_type_errors
+    {|
+    from typing import List, Any
+
+    def foo() -> None:
+      x: List[int] = [1]
+      reveal_type(x)
+  |}
+    ["Revealed type [-1]: Revealed type for `x` is `List[int]`."];
   ()
 
 
