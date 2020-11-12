@@ -400,16 +400,18 @@ class SharedAnalysisDirectory(AnalysisDirectory):
             message_type = json_rpc.LanguageServerMessageType.INFORMATION.value
         show_status_message = json_rpc.Request(
             method="window/showStatus",
-            parameters={
-                "message": message,
-                "shortMessage": short_message,
-                "type": message_type,
-                "actions": [],
-                "progress": {
-                    "numerator": DONT_CARE_PROGRESS_VALUE,
-                    "denominator": DONT_CARE_PROGRESS_VALUE,
-                },
-            },
+            parameters=json_rpc.ByNameParameters(
+                {
+                    "message": message,
+                    "shortMessage": short_message,
+                    "type": message_type,
+                    "actions": [],
+                    "progress": {
+                        "numerator": DONT_CARE_PROGRESS_VALUE,
+                        "denominator": DONT_CARE_PROGRESS_VALUE,
+                    },
+                }
+            ),
         )
         try:
             with SocketConnection(configuration.log_directory) as socket_connection:

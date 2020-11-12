@@ -121,7 +121,8 @@ class MonitorTest(unittest.TestCase):
                 outfile = connection.makefile(mode="wb")
                 infile = connection.makefile(mode="rb")
                 request = Request(
-                    method="handshake/server", parameters={"version": "123"}
+                    method="handshake/server",
+                    parameters=json_rpc.ByNameParameters({"version": "123"}),
                 )
                 json_rpc.write_lsp_request(outfile, request)
 

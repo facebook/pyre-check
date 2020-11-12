@@ -115,7 +115,8 @@ class Incremental(Reporting):
 
         with self._analysis_directory.acquire_shared_reader_lock():
             request = json_rpc.Request(
-                method="displayTypeErrors", parameters={"files": []}
+                method="displayTypeErrors",
+                parameters=json_rpc.ByNameParameters({"files": []}),
             )
             self._send_and_handle_socket_request(request, self._version_hash)
 

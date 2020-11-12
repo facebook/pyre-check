@@ -9,11 +9,19 @@ import json
 import unittest
 from io import BytesIO
 
-from ..json_rpc import Request, read_request, write_lsp_request
+from ..json_rpc import (
+    Request,
+    read_request,
+    write_lsp_request,
+    ByNameParameters,
+    ByPositionParameters,
+    JSONRPCException,
+    JSON,
+)
 
 
 class JsonRPCTest(unittest.TestCase):
-    def test_json(self) -> None:
+    def test_request_serialize(self) -> None:
         self.assertDictEqual(
             Request(method="textDocument/publishDiagnostics").json(),
             {"jsonrpc": "2.0", "method": "textDocument/publishDiagnostics"},
@@ -30,7 +38,8 @@ class JsonRPCTest(unittest.TestCase):
 
         self.assertDictEqual(
             Request(
-                method="textDocument/publishDiagnostics", parameters={"a": "b"}
+                method="textDocument/publishDiagnostics",
+                parameters=ByNameParameters({"a": "b"}),
             ).json(),
             {
                 "jsonrpc": "2.0",
@@ -43,7 +52,7 @@ class JsonRPCTest(unittest.TestCase):
             Request(
                 method="textDocument/publishDiagnostics",
                 id="123abc",
-                parameters={"a": "b"},
+                parameters=ByNameParameters({"a": "b"}),
             ).json(),
             {
                 "jsonrpc": "2.0",
@@ -51,6 +60,62 @@ class JsonRPCTest(unittest.TestCase):
                 "method": "textDocument/publishDiagnostics",
                 "params": {"a": "b"},
             },
+        )
+
+    def test_request_parsing(self) -> None:
+        def assert_not_parsed(input: str) -> None:
+            with self.assertRaises(JSONRPCException):
+                Request.from_string(input)
+
+        def assert_parsed(input: JSON, expected: Request) -> None:
+            self.assertEqual(Request.from_json(input), expected)
+
+        assert_not_parsed("")
+        assert_not_parsed("derp")
+        assert_not_parsed(json.dumps({"no_version": 42}))
+        assert_not_parsed(json.dumps({"jsonrpc": "2.0"}))
+        assert_not_parsed(json.dumps({"jsonrpc": "2.0", "method": 42}))
+        assert_not_parsed(json.dumps({"jsonrpc": "2.0", "method": "foo", "id": []}))
+        assert_not_parsed(json.dumps({"jsonrpc": "2.0", "method": "foo", "params": 42}))
+        assert_parsed({"jsonrpc": "2.0", "method": "foo"}, Request(method="foo"))
+        assert_parsed(
+            {"jsonrpc": "2.0", "method": "foo", "id": None}, Request(method="foo")
+        )
+        assert_parsed(
+            {"jsonrpc": "2.0", "method": "foo", "id": 42}, Request(method="foo", id=42)
+        )
+        assert_parsed(
+            {"jsonrpc": "2.0", "method": "foo", "id": "derp"},
+            Request(method="foo", id="derp"),
+        )
+        assert_parsed(
+            {"jsonrpc": "2.0", "method": "foo", "id": "derp", "params": None},
+            Request(method="foo", id="derp"),
+        )
+        assert_parsed(
+            {"jsonrpc": "2.0", "method": "foo", "id": 42, "params": []},
+            Request(method="foo", id=42, parameters=ByPositionParameters()),
+        )
+        assert_parsed(
+            {"jsonrpc": "2.0", "method": "foo", "id": 42, "params": [1, "bar"]},
+            Request(method="foo", id=42, parameters=ByPositionParameters([1, "bar"])),
+        )
+        assert_parsed(
+            {"jsonrpc": "2.0", "method": "foo", "id": 42, "params": {}},
+            Request(method="foo", id=42, parameters=ByNameParameters()),
+        )
+        assert_parsed(
+            {
+                "jsonrpc": "2.0",
+                "method": "foo",
+                "id": 42,
+                "params": {"bar": 42, "baz": False},
+            },
+            Request(
+                method="foo",
+                id=42,
+                parameters=ByNameParameters({"bar": 42, "baz": False}),
+            ),
         )
 
     def test_read_message(self) -> None:
@@ -67,13 +132,13 @@ class JsonRPCTest(unittest.TestCase):
 
         result = read_request(file)
 
-        self.assertNotEqual(result, None)
-        # pyre-fixme[16]: Optional type has no attribute `id`.
+        self.assertIsNotNone(result)
         self.assertEqual(result.id, "123abc")
-        # pyre-fixme[16]: Optional type has no attribute `method`.
         self.assertEqual(result.method, "textDocument/didSave")
-        # pyre-fixme[16]: Optional type has no attribute `parameters`.
-        self.assertDictEqual(result.parameters, {"a": 123, "b": ["c", "d"]})
+
+        parameters = result.parameters
+        self.assertIsNotNone(parameters)
+        self.assertEqual(parameters.values, {"a": 123, "b": ["c", "d"]})
 
         # end of file
         file = BytesIO()
@@ -90,7 +155,7 @@ class JsonRPCTest(unittest.TestCase):
 
         result = read_request(file)
 
-        self.assertEqual(result, None)
+        self.assertIsNone(result)
 
         # missing json-rpc fields
         file = BytesIO()
@@ -104,12 +169,14 @@ class JsonRPCTest(unittest.TestCase):
 
         result = read_request(file)
 
-        self.assertEqual(result, None)
+        self.assertIsNone(result)
 
     def test_write_message(self) -> None:
         file = BytesIO()
         message = Request(
-            method="textDocument/hover", id="123abc", parameters={"a": "b"}
+            method="textDocument/hover",
+            id="123abc",
+            parameters=ByNameParameters({"a": "b"}),
         )
         self.assertTrue(write_lsp_request(file, message))
         file.seek(0)
@@ -133,19 +200,11 @@ class JsonRPCTest(unittest.TestCase):
         message = Request(
             method="textDocument/definition",
             id="123abc",
-            parameters={"a": "b", "c": "d"},
+            parameters=ByNameParameters({"a": "b", "c": "d"}),
         )
 
         write_lsp_request(file, message)
         file.seek(0)
         parsed_message = read_request(file)
 
-        self.assertNotEqual(parsed_message, None)
-        # pyre-fixme[16]: Optional type has no attribute `id`.
-        self.assertEqual(message.id, parsed_message.id)
-        # pyre-fixme[16]: Optional type has no attribute `method`.
-        self.assertEqual(message.method, parsed_message.method)
-        # pyre-fixme[6]: Expected `Dict[Any, Any]` for 1st param but got
-        #  `Optional[Dict[str, Any]]`.
-        # pyre-fixme[16]: Optional type has no attribute `parameters`.
-        self.assertDictEqual(message.parameters, parsed_message.parameters)
+        self.assertEquals(message, parsed_message)

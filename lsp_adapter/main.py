@@ -18,7 +18,7 @@ from typing import Any, Dict, List, Optional, Union
 
 from ..client.commands.persistent import Persistent
 from ..client.find_directories import find_global_and_local_root
-from ..client.json_rpc import JSON, Request, write_lsp_request
+from ..client.json_rpc import JSON, Request, write_lsp_request, ByNameParameters
 from ..client.resources import get_configuration_value, log_directory
 from ..client.socket_connection import SocketConnection
 
@@ -84,7 +84,9 @@ class Notifications:
     ) -> None:
         request = Request(
             method=method,
-            parameters={"message": message, "type": 1, "actions": actions or []},
+            parameters=ByNameParameters(
+                {"message": message, "type": 1, "actions": actions or []}
+            ),
             id=str(random.randrange(1000)),
         )
         write_lsp_request(sys.stdout.buffer, request)

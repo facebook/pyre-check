@@ -71,7 +71,8 @@ class Query(Command):
         LOG.info("Waiting for server...")
         with self._analysis_directory.acquire_shared_reader_lock():
             request = json_rpc.Request(
-                method="typeQuery", parameters={"query": self.query}
+                method="typeQuery",
+                parameters=json_rpc.ByNameParameters({"query": self.query}),
             )
             self._send_and_handle_socket_request(request, self._version_hash)
 

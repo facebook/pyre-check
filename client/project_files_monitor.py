@@ -121,10 +121,12 @@ class ProjectFilesMonitor(Subscriber):
 
             message = json_rpc.Request(
                 method="updateFiles",
-                parameters={
-                    "files": updated_paths.updated_paths,
-                    "invalidated": updated_paths.deleted_paths,
-                },
+                parameters=json_rpc.ByNameParameters(
+                    {
+                        "files": updated_paths.updated_paths,
+                        "invalidated": updated_paths.deleted_paths,
+                    }
+                ),
             )
             if not json_rpc.write_lsp_request(self.socket_connection.output, message):
                 LOG.info("Failed to communicate with server. Shutting down.")
