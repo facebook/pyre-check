@@ -9,7 +9,6 @@ from unittest.mock import MagicMock, patch
 
 from ... import commands
 from ...analysis_directory import AnalysisDirectory
-from ...json_rpc import read_response
 from ...socket_connection import SocketConnection
 from .command_test import mock_arguments, mock_configuration
 
@@ -28,10 +27,6 @@ class QueryTest(unittest.TestCase):
         arguments = mock_arguments(dot_pyre_directory=Path("/tmp/foo"))
         configuration = mock_configuration()
 
-        result = MagicMock()
-        result.output = "{}"
-        # pyre-fixme[16]: Callable `read_response` has no attribute `return_value`.
-        read_response.return_value = result
         state.return_value = commands.command.State.RUNNING
 
         query_command = commands.Query(

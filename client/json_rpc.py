@@ -288,7 +288,7 @@ def _read_payload(file: BinaryIO) -> Optional[JSON]:
         return None
 
 
-def read_request(file: BinaryIO) -> Optional[Request]:
+def read_lsp_request(file: BinaryIO) -> Optional[Request]:
     payload = _read_payload(file)
     if payload is None:
         return None
@@ -298,7 +298,7 @@ def read_request(file: BinaryIO) -> Optional[Request]:
         return None
 
 
-def read_response(file: BinaryIO) -> Response:
+def read_lsp_response(file: BinaryIO) -> Response:
     payload = _read_payload(file)
     if not payload:
         raise JSONRPCException("Received empty response.")
@@ -308,7 +308,7 @@ def read_response(file: BinaryIO) -> Response:
 def perform_handshake(
     input_file: BinaryIO, output_file: BinaryIO, client_version: str
 ) -> None:
-    server_handshake = read_request(input_file)
+    server_handshake = read_lsp_request(input_file)
     if server_handshake and server_handshake.method == "handshake/server":
         server_handshake_parameters = server_handshake.parameters
         if isinstance(server_handshake_parameters, ByNameParameters):
@@ -325,7 +325,7 @@ def perform_handshake(
                 parameters=ByNameParameters({"send_confirmation": True}),
             )
             write_lsp_request(output_file, client_handshake)
-            request = read_request(input_file)
+            request = read_lsp_request(input_file)
             if not (request and request.method == "handshake/socket_added"):
                 raise ValueError("Handshake was not successful.")
         else:

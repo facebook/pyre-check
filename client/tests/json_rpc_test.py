@@ -14,7 +14,7 @@ from ..json_rpc import (
     Response,
     SuccessResponse,
     ErrorResponse,
-    read_request,
+    read_lsp_request,
     write_lsp_request,
     ByNameParameters,
     ByPositionParameters,
@@ -188,7 +188,7 @@ class JsonRPCTest(unittest.TestCase):
         )
         file.seek(0)
 
-        result = read_request(file)
+        result = read_lsp_request(file)
 
         self.assertIsNotNone(result)
         self.assertEqual(result.id, "123abc")
@@ -202,7 +202,7 @@ class JsonRPCTest(unittest.TestCase):
         file = BytesIO()
         file.close()
 
-        result = read_request(file)
+        result = read_lsp_request(file)
 
         self.assertEqual(result, None)
 
@@ -211,7 +211,7 @@ class JsonRPCTest(unittest.TestCase):
         file.write(b"Content-Length: 123abc\r\n\r\n{}")
         file.seek(0)
 
-        result = read_request(file)
+        result = read_lsp_request(file)
 
         self.assertIsNone(result)
 
@@ -225,7 +225,7 @@ class JsonRPCTest(unittest.TestCase):
         )
         file.seek(0)
 
-        result = read_request(file)
+        result = read_lsp_request(file)
 
         self.assertIsNone(result)
 
@@ -263,6 +263,6 @@ class JsonRPCTest(unittest.TestCase):
 
         write_lsp_request(file, message)
         file.seek(0)
-        parsed_message = read_request(file)
+        parsed_message = read_lsp_request(file)
 
         self.assertEquals(message, parsed_message)

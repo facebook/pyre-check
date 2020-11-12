@@ -14,7 +14,7 @@ from unittest.mock import MagicMock, patch
 
 from .. import json_rpc, project_files_monitor
 from ..analysis_directory import UpdatedPaths
-from ..json_rpc import Request, read_request
+from ..json_rpc import Request, read_lsp_request
 from ..project_files_monitor import MonitorException, ProjectFilesMonitor
 from ..socket_connection import SocketConnection, SocketException
 from ..tests.mocks import mock_configuration
@@ -126,7 +126,7 @@ class MonitorTest(unittest.TestCase):
                 )
                 json_rpc.write_lsp_request(outfile, request)
 
-                response = read_request(infile)
+                response = read_lsp_request(infile)
                 if not response or response.method != "handshake/client":
                     errors.append("Client handshake malformed")
                     return
@@ -134,7 +134,7 @@ class MonitorTest(unittest.TestCase):
                 request = Request(method="handshake/socket_added")
                 json_rpc.write_lsp_request(outfile, request)
 
-                updated_message = read_request(infile)
+                updated_message = read_lsp_request(infile)
                 if (
                     not updated_message
                     or updated_message.method != "updateFiles"

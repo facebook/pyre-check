@@ -54,7 +54,7 @@ class SocketConnection(object):
             raise SocketException
 
     def read(self) -> json_rpc.Response:
-        return json_rpc.read_response(self.input)
+        return json_rpc.read_lsp_response(self.input)
 
     def _socket_path(self) -> str:
         return os.path.join(self.root, "server", self.socket_name)
