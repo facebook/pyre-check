@@ -93,16 +93,14 @@ class Result:
 
 
 def _convert_json_response_to_result(response: json_rpc.Response) -> Result:
-    error = response.error
-    error_message = None
-    if error:
-        error_code = ExitCode.FAILURE
-        error_message = json.dumps(error)
+    if isinstance(response, json_rpc.ErrorResponse):
+        return Result(output="", code=ExitCode.FAILURE, error=response.serialize())
+    elif isinstance(response, json_rpc.SuccessResponse):
+        return Result(
+            output=json.dumps(response.result), code=ExitCode.SUCCESS, error=None
+        )
     else:
-        error_code = ExitCode.SUCCESS
-    return Result(
-        output=json.dumps(response.result), code=error_code, error=error_message
-    )
+        raise RuntimeError("Response should be either success or error.")
 
 
 def executable_file(file_path: str) -> str:

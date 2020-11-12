@@ -11,6 +11,9 @@ from io import BytesIO
 
 from ..json_rpc import (
     Request,
+    Response,
+    SuccessResponse,
+    ErrorResponse,
     read_request,
     write_lsp_request,
     ByNameParameters,
@@ -116,6 +119,61 @@ class JsonRPCTest(unittest.TestCase):
                 id=42,
                 parameters=ByNameParameters({"bar": 42, "baz": False}),
             ),
+        )
+
+    def test_response_parsing(self) -> None:
+        def assert_not_parsed(input: str) -> None:
+            with self.assertRaises(JSONRPCException):
+                Response.from_string(input)
+
+        def assert_parsed(input: JSON, expected: Response) -> None:
+            self.assertEqual(Response.from_json(input), expected)
+
+        assert_not_parsed("")
+        assert_not_parsed("derp")
+        assert_not_parsed(json.dumps({"no_version": 42}))
+        assert_not_parsed(json.dumps({"jsonrpc": "2.0"}))
+        assert_not_parsed(json.dumps({"jsonrpc": "2.0", "id": False}))
+        assert_not_parsed(json.dumps({"jsonrpc": "2.0", "id": "foo"}))
+        assert_not_parsed(json.dumps({"jsonrpc": "2.0", "id": None, "error": 42}))
+        assert_not_parsed(
+            json.dumps({"jsonrpc": "2.0", "id": None, "error": {"no_code": 42}})
+        )
+        assert_not_parsed(
+            json.dumps({"jsonrpc": "2.0", "id": None, "error": {"code": "derp"}})
+        )
+        assert_not_parsed(
+            json.dumps(
+                {"jsonrpc": "2.0", "id": None, "error": {"code": 42, "message": []}}
+            )
+        )
+        assert_parsed(
+            {"jsonrpc": "2.0", "id": None, "result": 42},
+            SuccessResponse(id=None, result=42),
+        )
+        assert_parsed(
+            {"jsonrpc": "2.0", "id": 0, "result": 42},
+            SuccessResponse(id=0, result=42),
+        )
+        assert_parsed(
+            {"jsonrpc": "2.0", "id": "derp", "result": 42},
+            SuccessResponse(id="derp", result=42),
+        )
+        assert_parsed(
+            {"jsonrpc": "2.0", "id": 0, "error": {"code": 42}},
+            ErrorResponse(id=0, code=42),
+        )
+        assert_parsed(
+            {"jsonrpc": "2.0", "id": 0, "error": {"code": 42, "message": "foo"}},
+            ErrorResponse(id=0, code=42, message="foo"),
+        )
+        assert_parsed(
+            {
+                "jsonrpc": "2.0",
+                "id": 0,
+                "error": {"code": 42, "message": "foo", "data": [1, True]},
+            },
+            ErrorResponse(id=0, code=42, message="foo", data=[1, True]),
         )
 
     def test_read_message(self) -> None:
