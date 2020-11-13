@@ -2258,6 +2258,24 @@ let test_check_static context =
       ^ "Expected `int` for 1st positional only parameter to call `Foo.foo` but got `str`.";
     ];
 
+  (* Static methods throw override errors *)
+  assert_type_errors
+    {|
+      class Foo:
+        @staticmethod
+        def foo(input: int) -> int:
+          return 1
+
+      class Bar(Foo):
+        @staticmethod
+        def foo(input: str) -> int:
+          return 1
+    |}
+    [
+      "Inconsistent override [14]: `test.Bar.foo` overrides method defined in `Foo` inconsistently. "
+      ^ "Parameter of type `str` is not a supertype of the overridden parameter `int`.";
+    ];
+
   (* Class method calls are properly resolved. *)
   assert_type_errors
     {|

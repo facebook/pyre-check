@@ -1406,8 +1406,7 @@ module State (Context : Context) = struct
                 in
                 (* Check strengthening of postcondition. *)
                 match Annotation.annotation (Attribute.annotation overridden_attribute) with
-                | Type.Callable { Type.Callable.implementation; _ }
-                  when not (StatementDefine.is_static_method define) ->
+                | Type.Callable { Type.Callable.implementation; _ } ->
                     let original_implementation =
                       resolve_reference_type ~resolution (Node.value name)
                       |> function
