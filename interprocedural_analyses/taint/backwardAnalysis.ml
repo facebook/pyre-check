@@ -696,6 +696,12 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       } ->
           let taint = BackwardState.Tree.prepend [Abstract.TreeDomain.Label.Any] taint in
           analyze_expression ~resolution ~taint ~state ~expression:base
+      (* Special case `x.__iter__()` as preserving taint. *)
+      | {
+       callee = { Node.value = Name (Name.Attribute { base; attribute = "__iter__"; _ }); _ };
+       arguments = [];
+      } ->
+          analyze_expression ~resolution ~taint ~state ~expression:base
       (* We special object.__setattr__, which is sometimes used in order to work around dataclasses
          being frozen post-initialization. *)
       | {
@@ -751,6 +757,19 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             analyze_expression ~resolution ~state ~expression:attribute_expression ~taint
           in
           analyze_expression ~resolution ~state ~expression:default ~taint
+      (* `zip(a, b, ...)` creates a taint object whose first index has a's taint, second index has
+         b's taint, etc. *)
+      | { callee = { Node.value = Name (Name.Identifier "zip"); _ }; arguments = lists } ->
+          let taint = BackwardState.Tree.read [Abstract.TreeDomain.Label.Any] taint in
+          let analyze_zipped_list index state { Call.Argument.value; _ } =
+            let index_name = Abstract.TreeDomain.Label.Field (string_of_int index) in
+            let taint =
+              BackwardState.Tree.read [index_name] taint
+              |> BackwardState.Tree.prepend [Abstract.TreeDomain.Label.Any]
+            in
+            analyze_expression ~resolution ~state ~taint ~expression:value
+          in
+          List.foldi lists ~init:state ~f:analyze_zipped_list
       (* dictionary .keys() and .values() functions are special, as they require handling of
          DictionaryKeys taint. *)
       | { callee = { Node.value = Name (Name.Attribute { base; attribute = "values"; _ }); _ }; _ }

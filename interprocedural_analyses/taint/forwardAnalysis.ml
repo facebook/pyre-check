@@ -802,6 +802,18 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           in
           let default_taint, state = analyze_expression ~resolution ~state ~expression:default in
           ForwardState.Tree.join attribute_taint default_taint, state
+      (* `zip(a, b, ...)` creates a taint object which, when iterated on, has first index equal to
+         a[*]'s taint, second index with b[*]'s taint, etc. *)
+      | { callee = { Node.value = Name (Name.Identifier "zip"); _ }; arguments = lists } ->
+          let add_list_to_taint index (taint, state) { Call.Argument.value; _ } =
+            let index_name = Abstract.TreeDomain.Label.Field (string_of_int index) in
+            analyze_expression ~resolution ~state ~expression:value
+            |>> ForwardState.Tree.read [Abstract.TreeDomain.Label.Any]
+            |>> ForwardState.Tree.prepend [index_name]
+            |>> ForwardState.Tree.join taint
+          in
+          List.foldi lists ~init:(ForwardState.Tree.bottom, state) ~f:add_list_to_taint
+          |>> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.Any]
       | {
        Call.callee =
          {
