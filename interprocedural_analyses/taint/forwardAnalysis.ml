@@ -703,14 +703,29 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           |>> ForwardState.Tree.transform
                 ForwardTaint.first_indices
                 Abstract.Domain.(Map (add_first_index index))
-      (* Special case x.__next__() as being a random index access (this pattern is the desugaring of
-         `for element in x`). *)
+      (* We read the taint at the `__iter__` call to be able to properly reference key taint as
+         appropriate. *)
       | {
        callee = { Node.value = Name (Name.Attribute { base; attribute = "__next__"; _ }); _ };
        arguments = [];
       } ->
           analyze_expression ~resolution ~state ~expression:base
-          |>> ForwardState.Tree.read [Abstract.TreeDomain.Label.Any]
+      | {
+       callee =
+         { Node.value = Name (Name.Attribute { base; attribute = "__iter__"; special = true }); _ };
+       arguments = [];
+      } ->
+          let taint, state = analyze_expression ~resolution ~state ~expression:base in
+          let label =
+            (* For dictionaries, the default iterator is keys. *)
+            if
+              Resolution.resolve_expression_to_type resolution base |> Type.is_dictionary_or_mapping
+            then
+              Abstract.TreeDomain.Label.DictionaryKeys
+            else
+              Abstract.TreeDomain.Label.Any
+          in
+          ForwardState.Tree.read [label] taint, state
       (* x[0] = value is converted to x.__setitem__(0, value). in parsing. *)
       | {
        callee =

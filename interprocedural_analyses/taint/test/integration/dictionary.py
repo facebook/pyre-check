@@ -167,7 +167,6 @@ def test_keys_and_values():
     # Shouldn't be an issue.
     __test_sink(tainted_values.keys())
     for item in tainted_values.values():
-        # TODO(T61722447) we need to make iteration read [*][1] here.
         __test_sink(item[0])
 
     tainted_keys = {__test_source(): ""}
