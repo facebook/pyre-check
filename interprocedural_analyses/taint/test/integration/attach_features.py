@@ -57,3 +57,8 @@ def modeled_sink_with_optionals(a: int = 0, b: int = 1) -> None:
 class HasMethods:
     def method_with_optionals(self, a: int = 0, b: int = 1) -> None:
         __test_sink(b)
+
+
+def attach_to_returned_sink():
+    x = __test_source()
+    return x

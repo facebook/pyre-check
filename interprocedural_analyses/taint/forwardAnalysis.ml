@@ -1546,14 +1546,28 @@ let run ~environment ~qualifier ~define ~call_graph_of_define ~existing_model =
         | Some node -> node.Node.location
         | None -> define.Node.location
       in
-      BackwardState.read
-        ~root:AccessPath.Root.LocalResult
-        ~path:[]
-        existing_model.TaintResult.backward.sink_taint
-      |> BackwardState.Tree.apply_call
-           (Location.with_module ~qualifier return_location)
-           ~callees:[]
-           ~port:AccessPath.Root.LocalResult
+      let taint =
+        BackwardState.read
+          ~root:AccessPath.Root.LocalResult
+          ~path:[]
+          existing_model.TaintResult.backward.sink_taint
+        |> BackwardState.Tree.apply_call
+             (Location.with_module ~qualifier return_location)
+             ~callees:[]
+             ~port:AccessPath.Root.LocalResult
+      in
+      let features_to_attach =
+        BackwardState.compute_features_to_attach
+          ~root:AccessPath.Root.LocalResult
+          existing_model.TaintResult.backward.sink_taint
+      in
+      if not (Features.SimpleSet.is_bottom features_to_attach) then
+        BackwardState.Tree.transform
+          Features.SimpleSet.Self
+          Abstract.Domain.(Add features_to_attach)
+          taint
+      else
+        taint
 
 
     let triggered_sinks = Location.Table.create ()

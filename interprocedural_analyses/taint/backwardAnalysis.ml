@@ -1231,19 +1231,11 @@ let extract_tito_and_sink_models define ~is_constructor ~resolution ~existing_ba
       BackwardState.read ~root:(Root.Variable name) ~path:[] entry_taint
       |> BackwardState.Tree.partition BackwardTaint.leaf ~f:Option.some
     in
-    let compute_features_to_attach taint =
-      BackwardState.read ~root:parameter ~path:[] taint
-      |> BackwardState.Tree.collapse
-      |> BackwardTaint.partition BackwardTaint.leaf ~f:(fun sink ->
-             if Sinks.equal Sinks.Attach sink then Some true else None)
-      |> (fun map -> Map.Poly.find map true)
-      >>| BackwardTaint.fold BackwardTaint.simple_feature_set ~f:List.rev_append ~init:[]
-      |> Option.value ~default:[]
-      |> Features.SimpleSet.of_approximation
-    in
     let taint_in_taint_out =
       let features_to_attach =
-        compute_features_to_attach existing_backward.TaintResult.Backward.taint_in_taint_out
+        BackwardState.compute_features_to_attach
+          ~root:parameter
+          existing_backward.TaintResult.Backward.taint_in_taint_out
       in
       let candidate_tree =
         Map.Poly.find partition Sinks.LocalReturn
@@ -1285,7 +1277,9 @@ let extract_tito_and_sink_models define ~is_constructor ~resolution ~existing_ba
     in
     let sink_taint =
       let features_to_attach =
-        compute_features_to_attach existing_backward.TaintResult.Backward.sink_taint
+        BackwardState.compute_features_to_attach
+          ~root:parameter
+          existing_backward.TaintResult.Backward.sink_taint
       in
       if not (Features.SimpleSet.is_bottom features_to_attach) then
         BackwardState.Tree.transform

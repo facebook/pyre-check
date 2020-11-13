@@ -1,6 +1,7 @@
 @generated
 Call dependencies
 attach_features.HasMethods::method_with_optionals (method) -> [__test_sink (fun)]
+attach_features.attach_to_returned_sink (fun) -> [__test_source (fun)]
 attach_features.attach_without_tito (fun) -> []
 attach_features.inferred_is_propagated (fun) -> [attach_features.source_with_inferred (fun)]
 attach_features.inferred_sink (fun) -> [__test_sink (fun)]

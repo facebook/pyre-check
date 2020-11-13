@@ -7,6 +7,7 @@
 
 open Core
 open Ast
+open Pyre
 
 module type TAINT_SET = sig
   include Abstract.Domain.S
@@ -672,9 +673,21 @@ end
 module ForwardState = MakeTaintEnvironment (ForwardTaint) ()
 (** Used to infer which sources reach the exit points of a function. *)
 
-module BackwardState = MakeTaintEnvironment (BackwardTaint) ()
 (** Used to infer which sinks are reached from parameters, as well as the taint-in-taint-out (TITO)
     using the special LocalReturn sink. *)
+module BackwardState = struct
+  include MakeTaintEnvironment (BackwardTaint) ()
+
+  let compute_features_to_attach ~root taint =
+    read ~root ~path:[] taint
+    |> Tree.collapse
+    |> BackwardTaint.partition BackwardTaint.leaf ~f:(fun sink ->
+           if Sinks.equal Sinks.Attach sink then Some true else None)
+    |> (fun map -> Map.Poly.find map true)
+    >>| BackwardTaint.fold BackwardTaint.simple_feature_set ~f:List.rev_append ~init:[]
+    |> Option.value ~default:[]
+    |> Features.SimpleSet.of_approximation
+end
 
 (* Special sink as it needs the return access path *)
 let local_return_taint =
