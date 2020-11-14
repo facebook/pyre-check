@@ -121,19 +121,31 @@ let exists_in_bounds { unaries; callable_parameters; list_variadics; _ } ~variab
     | _ -> false
   in
   let exists_in_list_variadic_interval_bounds interval =
-    let exists = function
+    let exists_in_record = function
       | Type.OrderedTypes.Concrete types -> List.exists types ~f:contains_variable
       | Concatenation concatenation ->
           let contains = List.exists ~f:contains_variable in
           let in_head () = Type.OrderedTypes.Concatenation.head concatenation |> contains in
           let in_middle () =
-            Type.OrderedTypes.Concatenation.variable concatenation
-            |> (fun variable -> Type.Variable.ListVariadic variable)
-            |> List.mem variables ~equal:Type.Variable.equal
+            let variadics =
+              Type.Variable.GlobalTransforms.ListVariadic.collect_all
+                (Type.Parametric
+                   {
+                     name = "";
+                     parameters =
+                       [Type.Parameter.VariadicExpression (Group (Concatenation concatenation))];
+                   })
+            in
+            List.exists variadics ~f:(fun x ->
+                List.mem variables (Type.Variable.ListVariadic x) ~equal:Type.Variable.equal)
           in
           let in_tail () = Type.OrderedTypes.Concatenation.tail concatenation |> contains in
           in_head () || in_middle () || in_tail ()
       | _ -> false
+    in
+    let rec exists = function
+      | Type.OrderedTypes.Group variadic -> exists_in_record variadic
+      | Type.OrderedTypes.Broadcast (left, right) -> exists left || exists right
     in
     match interval with
     | NoBounds -> false
@@ -232,18 +244,31 @@ module Solution = struct
     ParameterVariable.Map.find callable_parameters
 
 
-  let instantiate_ordered_types solution = function
-    | Type.OrderedTypes.Concrete concretes ->
-        List.map concretes ~f:(instantiate solution)
-        |> fun concretes -> Type.OrderedTypes.Concrete concretes
-    | Any -> Any
-    | Concatenation concatenation ->
-        let mapped =
-          Type.OrderedTypes.Concatenation.map_head_and_tail concatenation ~f:(instantiate solution)
-        in
-        let replacement = instantiate_single_list_variadic_variable solution in
-        Type.OrderedTypes.Concatenation.replace_variable mapped ~replacement
-        |> Option.value ~default:(Type.OrderedTypes.Concatenation mapped)
+  let instantiate_ordered_types solution ordered =
+    let rec instantiate_variadic expression =
+      match expression with
+      | Type.OrderedTypes.Concrete concretes ->
+          let concretes =
+            List.map concretes ~f:(instantiate solution)
+            |> fun concretes -> Type.OrderedTypes.Concrete concretes
+          in
+          Type.OrderedTypes.Group concretes
+      | Any -> Type.OrderedTypes.Group Any
+      | Concatenation concatenation ->
+          let record =
+            let mapped =
+              Type.OrderedTypes.Concatenation.map_head_and_tail
+                concatenation
+                ~f:(instantiate solution)
+            in
+            let replacement = instantiate_single_list_variadic_variable solution in
+            Type.OrderedTypes.Concatenation.replace_variable mapped ~replacement ~replace_variadic
+          in
+          record |> Option.value ~default:(Type.OrderedTypes.Group expression)
+    and replace_variadic =
+      Type.OrderedTypes.transform_variadic_expression ~f:instantiate_variadic
+    in
+    replace_variadic ordered
 
 
   let instantiate_callable_parameters solution parameters =
@@ -557,22 +582,32 @@ module OrderedConstraints (Order : OrderType) = struct
 
 
     let less_or_equal order ~left ~right =
+      let less_or_equal_record left right =
+        if Type.OrderedTypes.equal_record_t left right then
+          true
+        else
+          match left, right with
+          | _, Any
+          | Any, _ ->
+              true
+          | Concatenation _, _
+          | _, Concatenation _ ->
+              false
+          | Concrete upper_bounds, Concrete lower_bounds -> (
+              match List.zip upper_bounds lower_bounds with
+              | Ok bounds ->
+                  List.for_all bounds ~f:(fun (left, right) ->
+                      Order.always_less_or_equal order ~left ~right)
+              | _ -> false )
+      in
       if Type.OrderedTypes.equal left right then
         true
       else
         match left, right with
-        | _, Any
-        | Any, _ ->
-            true
-        | Concatenation _, _
-        | _, Concatenation _ ->
+        | Type.OrderedTypes.Group left, Group right -> less_or_equal_record left right
+        | Broadcast _, _
+        | _, Broadcast _ ->
             false
-        | Concrete upper_bounds, Concrete lower_bounds -> (
-            match List.zip upper_bounds lower_bounds with
-            | Ok bounds ->
-                List.for_all bounds ~f:(fun (left, right) ->
-                    Order.always_less_or_equal order ~left ~right)
-            | _ -> false )
 
 
     let narrowest_valid_value interval ~order ~variable:_ =
@@ -595,11 +630,12 @@ module OrderedConstraints (Order : OrderType) = struct
           Some right
         else
           match left, right with
-          | Concrete left, Concrete right -> (
+          | Group (Concrete left), Group (Concrete right) -> (
               match List.zip left right with
               | Ok zipped ->
                   List.map zipped ~f:(fun (left, right) -> Order.meet order left right)
-                  |> fun concrete_list -> Some (Type.OrderedTypes.Concrete concrete_list)
+                  |> fun concrete_list ->
+                  Some (Type.OrderedTypes.Group (Type.OrderedTypes.Concrete concrete_list))
               | _ -> None )
           | _ -> None
       in
@@ -612,11 +648,12 @@ module OrderedConstraints (Order : OrderType) = struct
           Some left
         else
           match left, right with
-          | Concrete left, Concrete right -> (
+          | Group (Concrete left), Group (Concrete right) -> (
               match List.zip left right with
               | Ok zipped ->
                   List.map zipped ~f:(fun (left, right) -> Order.join order left right)
-                  |> fun concrete_list -> Some (Type.OrderedTypes.Concrete concrete_list)
+                  |> fun concrete_list ->
+                  Some (Type.OrderedTypes.Group (Type.OrderedTypes.Concrete concrete_list))
               | _ -> None )
           | _ -> None
       in
@@ -679,20 +716,23 @@ module OrderedConstraints (Order : OrderType) = struct
         | OnlyLowerBound lower -> [lower]
         | BothBounds { upper; lower } -> [upper; lower]
       in
-      let extract = function
-        | Type.OrderedTypes.Any -> []
-        | Concrete types -> List.concat_map types ~f:Type.Variable.all_free_variables
-        | Concatenation concatenation ->
+      let rec extract = function
+        | Type.OrderedTypes.Broadcast (left, right) -> extract left @ extract right
+        | Type.OrderedTypes.Group Any -> []
+        | Type.OrderedTypes.Group (Concrete types) ->
+            List.concat_map types ~f:Type.Variable.all_free_variables
+        | Type.OrderedTypes.Group (Concatenation concatenation) -> (
             let outer =
               Type.OrderedTypes.Concatenation.head concatenation
               @ Type.OrderedTypes.Concatenation.tail concatenation
               |> List.concat_map ~f:Type.Variable.all_free_variables
             in
             let inner = Type.OrderedTypes.Concatenation.variable concatenation in
-            if Type.Variable.Variadic.List.is_free inner then
-              ListVariadic inner :: outer
-            else
-              outer
+            match inner with
+            | Variadic variadic when Type.Variable.Variadic.List.is_free variadic ->
+                ListVariadic variadic :: outer
+            | Expression expression -> extract expression
+            | _ -> outer )
       in
       List.concat_map bounds ~f:extract
   end
@@ -767,7 +807,7 @@ module OrderedConstraints (Order : OrderType) = struct
       | Type.Variable.ListVariadic variable ->
           {
             solution with
-            list_variadics = optional_add list_variadics variable Type.OrderedTypes.Any;
+            list_variadics = optional_add list_variadics variable (Type.OrderedTypes.Group Any);
           }
     in
     Set.to_list have_fallbacks |> List.fold ~init:solution ~f:add_fallback

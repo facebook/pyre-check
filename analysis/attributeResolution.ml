@@ -887,22 +887,22 @@ class base class_metadata_environment dependency =
                         else
                           Type.Parameter.Single given, None
                     | Unary _, CallableParameters _
-                    | Unary _, Type.Parameter.Group _ ->
+                    | Unary _, Type.Parameter.VariadicExpression (Group _) ->
                         ( Single Any,
                           Some
                             { name; kind = UnexpectedKind { expected = generic; actual = given } } )
                     | ListVariadic _, CallableParameters _
                     | ListVariadic _, Single _ ->
-                        ( Group Any,
+                        ( VariadicExpression (Group Any),
                           Some
                             { name; kind = UnexpectedKind { expected = generic; actual = given } } )
                     | ParameterVariadic _, Single _
-                    | ParameterVariadic _, Group _ ->
+                    | ParameterVariadic _, VariadicExpression (Group _) ->
                         ( CallableParameters Undefined,
                           Some
                             { name; kind = UnexpectedKind { expected = generic; actual = given } } )
                     | ParameterVariadic _, CallableParameters _
-                    | ListVariadic _, Group _ ->
+                    | _, VariadicExpression _ ->
                         (* TODO(T47346673): accept w/ new kind of validation *)
                         given, None
                   in
@@ -920,7 +920,7 @@ class base class_metadata_environment dependency =
                             name
                             (List.map generics ~f:(function
                                 | Type.Variable.Unary _ -> Type.Parameter.Single Type.Any
-                                | ListVariadic _ -> Group Any
+                                | ListVariadic _ -> VariadicExpression (Group Any)
                                 | ParameterVariadic _ -> CallableParameters Undefined)),
                           false )
                   in
@@ -1740,6 +1740,7 @@ class base class_metadata_environment dependency =
                     match generics with
                     | [ListVariadic variable] ->
                         let meta_generics =
+                          let variable = Type.OrderedTypes.Concatenation.Middle.Variadic variable in
                           Type.OrderedTypes.Concatenation.Middle.create ~variable ~mappers:["type"]
                           |> Type.OrderedTypes.Concatenation.create
                         in
@@ -1764,7 +1765,7 @@ class base class_metadata_environment dependency =
                               (* TODO:(T60536033) We'd really like to take FiniteList[Ts], but
                                  without that we can't actually return the correct metatype, which
                                  is a bummer *)
-                              Type.Parameter.Group Any, Type.Any
+                              Type.Parameter.VariadicExpression (Group Any), Type.Any
                           | ParameterVariadic _ ->
                               (* TODO:(T60536033) We'd really like to take FiniteList[Ts], but
                                  without that we can't actually return the correct metatype, which
@@ -3155,10 +3156,12 @@ class base class_metadata_environment dependency =
                   match kind with
                   | SingleStar -> (
                       match resolved with
-                      | Type.Tuple (Bounded ordered_types) -> Either.First ordered_types
+                      | Type.Tuple (Bounded ordered_types) ->
+                          Either.First (Type.OrderedTypes.Group ordered_types)
                       (* We don't support expanding indefinite containers into ListVariadics *)
                       | annotation -> Either.Second { expression; annotation } )
-                  | _ -> Either.First (Type.OrderedTypes.Concrete [resolved])
+                  | _ ->
+                      Either.First (Type.OrderedTypes.Group (Type.OrderedTypes.Concrete [resolved]))
                 in
                 List.rev arguments |> List.partition_map ~f:extract
               in
@@ -3172,7 +3175,7 @@ class base class_metadata_environment dependency =
             let concatenate extracted =
               let concatenated =
                 match extracted with
-                | [] -> Some (Type.OrderedTypes.Concrete [])
+                | [] -> Some (Type.OrderedTypes.Group (Type.OrderedTypes.Concrete []))
                 | head :: tail ->
                     let concatenate sofar next =
                       sofar >>= fun left -> Type.OrderedTypes.concatenate ~left ~right:next
@@ -3212,7 +3215,7 @@ class base class_metadata_environment dependency =
           match key, data with
           | Parameter.Variable (Concatenation concatenation), arguments ->
               bind_arguments_to_variadic
-                ~expected:(Type.OrderedTypes.Concatenation concatenation)
+                ~expected:(Type.OrderedTypes.Group (Type.OrderedTypes.Concatenation concatenation))
                 ~arguments
           | Parameter.Variable _, []
           | Parameter.Keywords _, [] ->

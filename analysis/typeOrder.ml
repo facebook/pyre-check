@@ -209,8 +209,8 @@ module OrderImplementation = struct
                 let variables = variables target in
                 let join_parameters (left, right, variable) =
                   match left, right, variable with
-                  | Type.Parameter.Group _, _, _
-                  | _, Type.Parameter.Group _, _
+                  | Type.Parameter.VariadicExpression _, _, _
+                  | _, Type.Parameter.VariadicExpression _, _
                   | _, _, Type.Variable.ListVariadic _
                   | CallableParameters _, _, _
                   | _, CallableParameters _, _

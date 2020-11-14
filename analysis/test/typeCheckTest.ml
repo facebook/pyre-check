@@ -846,7 +846,8 @@ let test_forward_expression context =
       pass
   |}
     "test.MyVariadic[int]"
-    (Type.meta (Type.parametric "test.MyVariadic" [Group (Concrete [Type.integer])]));
+    (Type.meta
+       (Type.parametric "test.MyVariadic" [VariadicExpression (Group (Concrete [Type.integer]))]));
   assert_forward
     ~environment:
       {|
@@ -856,7 +857,10 @@ let test_forward_expression context =
       pass
   |}
     "test.MyVariadic[int, str]"
-    (Type.meta (Type.parametric "test.MyVariadic" [Group (Concrete [Type.integer; Type.string])]));
+    (Type.meta
+       (Type.parametric
+          "test.MyVariadic"
+          [VariadicExpression (Group (Concrete [Type.integer; Type.string]))]));
   (* We'd like for this to return typing.Type[MyVariadic[int, [bool, float]]], but we lose track of
      the inner types of the lists, since they're not tuples. *)
   assert_forward
@@ -869,7 +873,8 @@ let test_forward_expression context =
       pass
   |}
     "test.MyVariadic[int, [bool, float]]"
-    (Type.meta (Type.parametric "test.MyVariadic" [Single Type.integer; Group Any]));
+    (Type.meta
+       (Type.parametric "test.MyVariadic" [Single Type.integer; VariadicExpression (Group Any)]));
 
   (* Resolved annotation field. *)
   let assert_annotation ?(precondition = []) ?(environment = "") expression annotation =

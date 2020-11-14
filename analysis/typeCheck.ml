@@ -525,14 +525,8 @@ module State (Context : Context) = struct
     | Some [] ->
         parent_type
     | Some variables ->
-        let variables =
-          List.map variables ~f:(function
-              | Unary variable -> Type.Parameter.Single (Type.Variable variable)
-              | ListVariadic variadic -> Group (Type.Variable.Variadic.List.self_reference variadic)
-              | ParameterVariadic parameters ->
-                  CallableParameters (Type.Variable.Variadic.Parameters.self_reference parameters))
-        in
-        Type.parametric parent_name variables
+        let variables = List.map variables ~f:Type.Variable.to_parameter in
+        Type.Parametric { name = parent_name; parameters = variables }
     | exception _ -> parent_type
 
 

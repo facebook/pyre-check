@@ -174,17 +174,17 @@ let immediate_parents (module Handler : Handler) class_name =
 
 
 let clean not_clean =
-  let open Type.OrderedTypes.Concatenation in
   List.map not_clean ~f:(function
-      | Type.Parameter.Single (Type.Variable variable) -> Some (Type.Variable.Unary variable)
-      | Group (Type.OrderedTypes.Concatenation concatenation) ->
-          unwrap_if_only_middle concatenation
-          >>= Middle.unwrap_if_bare
-          >>| fun variable -> Type.Variable.ListVariadic variable
+      | Type.Parameter.Single (Type.Variable variable) -> [Type.Variable.Unary variable]
+      | VariadicExpression expression ->
+          Type.Variable.GlobalTransforms.ListVariadic.collect_all
+            (Type.Parametric { name = ""; parameters = [VariadicExpression expression] })
+          |> List.map ~f:(fun variable -> Type.Variable.ListVariadic variable)
       | CallableParameters (ParameterVariadicTypeVariable { head = []; variable }) ->
-          Some (ParameterVariadic variable)
-      | _ -> None)
-  |> Option.all
+          [ParameterVariadic variable]
+      | _ -> [])
+  |> List.concat
+  |> Option.some
 
 
 let variables ?(default = None) (module Handler : Handler) = function
@@ -303,7 +303,7 @@ let instantiate_successors_parameters ((module Handler : Handler) as handler) ~s
   | Type.Bottom ->
       let to_any = function
         | Type.Variable.Unary _ -> Type.Parameter.Single Type.Any
-        | ListVariadic _ -> Group Any
+        | ListVariadic _ -> VariadicExpression (Group Any)
         | ParameterVariadic _ -> CallableParameters Undefined
       in
       index_of target
@@ -315,12 +315,13 @@ let instantiate_successors_parameters ((module Handler : Handler) as handler) ~s
       let split =
         match Type.split source with
         | Primitive primitive, _ when not (contains handler primitive) -> None
-        | Primitive "tuple", [Type.Parameter.Group parameters] ->
+        | Primitive "tuple", [Type.Parameter.VariadicExpression (Group parameters)] ->
             Some
               ( "tuple",
                 [
                   Type.Parameter.Single
-                    (Type.weaken_literals (Type.OrderedTypes.union_upper_bound parameters));
+                    (Type.weaken_literals
+                       (Type.OrderedTypes.union_upper_bound (Type.OrderedTypes.Group parameters)));
                 ] )
         | Primitive "tuple", [Type.Parameter.Single parameter] ->
             Some ("tuple", [Type.Parameter.Single (Type.weaken_literals parameter)])
@@ -351,24 +352,25 @@ let instantiate_successors_parameters ((module Handler : Handler) as handler) ~s
                     | Type.Parameter.Single parameter, Type.Variable.Unary variable ->
                         Type.Variable.UnaryPair (variable, parameter)
                     | CallableParameters _, Unary variable
-                    | Group _, Unary variable ->
+                    | VariadicExpression _, Unary variable ->
                         Type.Variable.UnaryPair (variable, Type.Any)
-                    | Group parameter, ListVariadic variable ->
-                        Type.Variable.ListVariadicPair (variable, parameter)
+                    | VariadicExpression variadic_expression, ListVariadic variable ->
+                        Type.Variable.ListVariadicPair (variable, variadic_expression)
                     | CallableParameters _, ListVariadic variable
                     | Single _, ListVariadic variable ->
-                        Type.Variable.ListVariadicPair (variable, Any)
+                        Type.Variable.ListVariadicPair (variable, Type.OrderedTypes.Group Any)
                     | CallableParameters parameters, ParameterVariadic variable ->
                         Type.Variable.ParameterVariadicPair (variable, parameters)
                     | Single _, ParameterVariadic variable
-                    | Group _, ParameterVariadic variable ->
+                    | VariadicExpression _, ParameterVariadic variable ->
                         Type.Variable.ParameterVariadicPair (variable, Undefined)
                   in
                   let replacement =
                     let to_any = function
                       | Type.Variable.Unary variable -> Type.Variable.UnaryPair (variable, Type.Any)
                       | ListVariadic variable ->
-                          Type.Variable.ListVariadicPair (variable, Type.OrderedTypes.Any)
+                          Type.Variable.ListVariadicPair
+                            (variable, Type.OrderedTypes.Group Type.OrderedTypes.Any)
                       | ParameterVariadic variable ->
                           Type.Variable.ParameterVariadicPair (variable, Undefined)
                     in
@@ -385,9 +387,16 @@ let instantiate_successors_parameters ((module Handler : Handler) as handler) ~s
                       | Type.Parameter.Single single ->
                           Type.Parameter.Single
                             (TypeConstraints.Solution.instantiate replacement single)
-                      | Group group ->
-                          Group
-                            (TypeConstraints.Solution.instantiate_ordered_types replacement group)
+                      | VariadicExpression expression ->
+                          let instantiated_expression =
+                            Type.OrderedTypes.transform_variadic_expression
+                              expression
+                              ~f:(fun group ->
+                                TypeConstraints.Solution.instantiate_ordered_types
+                                  replacement
+                                  (Type.OrderedTypes.Group group))
+                          in
+                          VariadicExpression instantiated_expression
                       | CallableParameters parameters ->
                           CallableParameters
                             (TypeConstraints.Solution.instantiate_callable_parameters

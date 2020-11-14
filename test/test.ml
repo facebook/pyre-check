@@ -1396,8 +1396,10 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         class Multiply(Generic[_A, _B], int): pass
         class Divide(Generic[_A, _B], int): pass
         _Ts = ListVariadic("_Ts")
+        _Ts1 = ListVariadic("_Ts1")
         class Length(Generic[_Ts], int): pass
         class Product(Generic[_Ts], int): pass
+        class Broadcast(Generic[_Ts, _Ts1], object): pass
         |}
     );
     ( "pyre_extensions/type_variable_operators.pyi",
