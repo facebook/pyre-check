@@ -178,19 +178,16 @@ class JsonRPCTest(unittest.TestCase):
 
     def test_read_message(self) -> None:
         # well-formed message
-        file = BytesIO()
-        file.write(
-            b"Content-Length: 104\r\n"
-            b"Content-Type: application/vscode-jsonrpc; charset=utf8\r\n"
-            b"\r\n"
-            b'{"jsonrpc":"2.0", "id": "123abc", "method":"textDocument/didSave",'
-            b'"params": {"a": 123, "b": ["c", "d"]}}'
+        result = read_lsp_request(
+            BytesIO(
+                b"Content-Length: 104\r\n"
+                b"Content-Type: application/vscode-jsonrpc; charset=utf8\r\n"
+                b"\r\n"
+                b'{"jsonrpc":"2.0", "id": "123abc", "method":"textDocument/didSave",'
+                b'"params": {"a": 123, "b": ["c", "d"]}}'
+            )
         )
-        file.seek(0)
 
-        result = read_lsp_request(file)
-
-        self.assertIsNotNone(result)
         self.assertEqual(result.id, "123abc")
         self.assertEqual(result.method, "textDocument/didSave")
 
@@ -199,35 +196,23 @@ class JsonRPCTest(unittest.TestCase):
         self.assertEqual(parameters.values, {"a": 123, "b": ["c", "d"]})
 
         # end of file
-        file = BytesIO()
-        file.close()
-
-        result = read_lsp_request(file)
-
-        self.assertEqual(result, None)
+        with self.assertRaises(JSONRPCException):
+            result = read_lsp_request(BytesIO())
 
         # broken header
-        file = BytesIO()
-        file.write(b"Content-Length: 123abc\r\n\r\n{}")
-        file.seek(0)
-
-        result = read_lsp_request(file)
-
-        self.assertIsNone(result)
+        with self.assertRaises(JSONRPCException):
+            result = read_lsp_request(BytesIO(b"Content-Length: 123abc\r\n\r\n{}"))
 
         # missing json-rpc fields
-        file = BytesIO()
-        file.write(
-            b"Content-Length: 87\r\n"
-            b"\r\n"
-            b'{"id": "123abc", "method":"textDocument/didSave",'
-            b'"params": {"a": 123, "b": ["c", "d"]}}'
-        )
-        file.seek(0)
-
-        result = read_lsp_request(file)
-
-        self.assertIsNone(result)
+        with self.assertRaises(JSONRPCException):
+            result = read_lsp_request(
+                BytesIO(
+                    b"Content-Length: 87\r\n"
+                    b"\r\n"
+                    b'{"id": "123abc", "method":"textDocument/didSave",'
+                    b'"params": {"a": 123, "b": ["c", "d"]}}'
+                )
+            )
 
     def test_write_message(self) -> None:
         file = BytesIO()

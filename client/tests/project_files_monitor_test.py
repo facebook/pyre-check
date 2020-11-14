@@ -127,7 +127,7 @@ class MonitorTest(unittest.TestCase):
                 json_rpc.write_lsp_request(outfile, request)
 
                 response = read_lsp_request(infile)
-                if not response or response.method != "handshake/client":
+                if response.method != "handshake/client":
                     errors.append("Client handshake malformed")
                     return
 
@@ -136,8 +136,7 @@ class MonitorTest(unittest.TestCase):
 
                 updated_message = read_lsp_request(infile)
                 if (
-                    not updated_message
-                    or updated_message.method != "updateFiles"
+                    updated_message.method != "updateFiles"
                     or not updated_message.parameters
                     or updated_message.parameters.get("files")
                     != ["/ANALYSIS/a.py", "/ANALYSIS/subdir/b.py"]

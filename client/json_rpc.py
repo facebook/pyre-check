@@ -288,14 +288,11 @@ def _read_payload(file: BinaryIO) -> Optional[JSON]:
         return None
 
 
-def read_lsp_request(file: BinaryIO) -> Optional[Request]:
+def read_lsp_request(file: BinaryIO) -> Request:
     payload = _read_payload(file)
     if payload is None:
-        return None
-    try:
-        return Request.from_json(payload)
-    except JSONRPCException:
-        return None
+        raise JSONRPCException("Payload reading failed.")
+    return Request.from_json(payload)
 
 
 def read_lsp_response(file: BinaryIO) -> Response:
@@ -309,7 +306,7 @@ def perform_handshake(
     input_file: BinaryIO, output_file: BinaryIO, client_version: str
 ) -> None:
     server_handshake = read_lsp_request(input_file)
-    if server_handshake and server_handshake.method == "handshake/server":
+    if server_handshake.method == "handshake/server":
         server_handshake_parameters = server_handshake.parameters
         if isinstance(server_handshake_parameters, ByNameParameters):
             server_version = server_handshake_parameters.values.get("version")
@@ -326,7 +323,7 @@ def perform_handshake(
             )
             write_lsp_request(output_file, client_handshake)
             request = read_lsp_request(input_file)
-            if not (request and request.method == "handshake/socket_added"):
+            if not request.method == "handshake/socket_added":
                 raise ValueError("Handshake was not successful.")
         else:
             raise ValueError("Handshake parameters from server not found.")
