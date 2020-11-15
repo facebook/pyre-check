@@ -556,7 +556,68 @@ module OrderedConstraints (Order : OrderType) = struct
       | Some upper, Some lower -> BothBounds { upper; lower }
 
 
-    let less_or_equal order ~left ~right =
+    let rec less_or_equal order ~left ~right =
+      let compare_concretes ~left ~right =
+        match List.zip left right with
+        | Ok bounds ->
+            List.for_all bounds ~f:(fun (left, right) ->
+                Order.always_less_or_equal order ~left ~right)
+        | _ -> false
+      in
+      let concrete_less_concatenation
+          ~inverse
+          ~concretes
+          ~concatenation:
+            {
+              Type.OrderedTypes.RecordConcatenate.middle =
+                { Type.OrderedTypes.RecordConcatenate.Middle.variable = { constraints; _ }; _ };
+              wrapping = { head; tail };
+            }
+        =
+        let valid = List.length head + List.length tail <= List.length concretes in
+        let left_concrete, right_concrete =
+          List.take concretes (List.length head), List.take (List.rev concretes) (List.length tail)
+        in
+        let middle_concretes =
+          List.drop concretes (List.length head)
+          |> List.rev
+          |> fun x -> List.drop x (List.length tail) |> List.rev
+        in
+        match constraints with
+        | Bound upper_bound ->
+            let middle_as_concrete =
+              Type.OrderedTypes.Concrete (List.map middle_concretes ~f:(fun _ -> upper_bound))
+            in
+            if inverse then
+              valid
+              && compare_concretes ~left:head ~right:left_concrete
+              && compare_concretes ~left:tail ~right:right_concrete
+              && less_or_equal
+                   order
+                   ~left:middle_as_concrete
+                   ~right:(Type.OrderedTypes.Concrete concretes)
+            else
+              valid
+              && compare_concretes ~right:head ~left:left_concrete
+              && compare_concretes ~right:tail ~left:right_concrete
+              && less_or_equal
+                   order
+                   ~left:(Type.OrderedTypes.Concrete concretes)
+                   ~right:middle_as_concrete
+        | Explicit explicits ->
+            List.for_all explicits ~f:(fun concrete ->
+                List.exists concretes ~f:(Type.equal concrete))
+        | _ -> true
+      in
+      let is_free_concatenation
+          {
+            Type.OrderedTypes.RecordConcatenate.middle =
+              { Type.OrderedTypes.RecordConcatenate.Middle.variable; _ };
+            _;
+          }
+        =
+        Type.Variable.Variadic.List.is_free variable
+      in
       if Type.OrderedTypes.equal left right then
         true
       else
@@ -564,25 +625,66 @@ module OrderedConstraints (Order : OrderType) = struct
         | _, Any
         | Any, _ ->
             true
-        | Concatenation _, _
-        | _, Concatenation _ ->
-            false
-        | Concrete upper_bounds, Concrete lower_bounds -> (
-            match List.zip upper_bounds lower_bounds with
-            | Ok bounds ->
-                List.for_all bounds ~f:(fun (left, right) ->
-                    Order.always_less_or_equal order ~left ~right)
-            | _ -> false )
-
-
-    let narrowest_valid_value interval ~order ~variable:_ =
-      match interval with
-      | NoBounds -> None
-      | OnlyLowerBound bound
-      | OnlyUpperBound bound ->
-          Some bound
-      | BothBounds { upper; lower } ->
-          Option.some_if (less_or_equal order ~left:lower ~right:upper) lower
+        | Concatenation concatenation, Concrete concretes
+        | Concrete concretes, Concatenation concatenation
+          when is_free_concatenation concatenation ->
+            concrete_less_concatenation ~concretes ~concatenation ~inverse:false
+        | Concrete left, Concrete right -> compare_concretes ~left ~right
+        | ( Concatenation
+              ( {
+                  Type.OrderedTypes.RecordConcatenate.middle =
+                    { variable = { constraints = constraints_left; _ }; mappers = [] };
+                  wrapping = { head = head_left; tail = tail_left };
+                } as concatenation_left ),
+            Concatenation
+              ( {
+                  Type.OrderedTypes.RecordConcatenate.middle =
+                    { variable = { constraints = constraints_right; _ }; mappers = [] };
+                  wrapping = { head = head_right; tail = tail_right };
+                } as concatenation_right ) )
+          when is_free_concatenation concatenation_left && is_free_concatenation concatenation_right
+          ->
+            (* Example [A1,B1,Ts1,C1] <: [A2,Ts2,C2] [A1] <: [A2] && [C1] <: [C2] && [B1, Ts1] <:
+               [Ts2] *)
+            let drop_head = min (List.length head_left) (List.length head_right) in
+            let drop_tail = min (List.length tail_left) (List.length tail_right) in
+            let (prefix_head_left, head_left), (prefix_head_right, head_right) =
+              List.split_n head_left drop_head, List.split_n head_right drop_head
+            in
+            let (prefix_tail_left, tail_left), (prefix_tail_right, tail_right) =
+              List.split_n tail_left drop_tail, List.split_n tail_right drop_tail
+            in
+            let valid =
+              compare_concretes ~left:prefix_head_left ~right:prefix_head_right
+              && compare_concretes ~left:prefix_tail_left ~right:prefix_tail_right
+            in
+            let valid =
+              valid
+              &&
+              match constraints_left, constraints_right with
+              | Bound left, Bound right -> Order.always_less_or_equal order ~left ~right
+              | Explicit lefts, Bound bound ->
+                  List.for_all lefts ~f:(fun left ->
+                      Order.always_less_or_equal order ~left ~right:bound)
+              | Bound _, Explicit _ -> false
+              | Explicit lefts, Explicit rights ->
+                  List.for_all lefts ~f:(List.mem rights ~equal:Type.equal)
+              | _, Unconstrained -> true
+              | Unconstrained, _ -> false
+              | _, _ -> false
+            in
+            let valid =
+              valid
+              &&
+              match head_left @ tail_left, head_right @ tail_right with
+              (* [A,B,Ts1, C] <: [Ts2] *)
+              | head_tail_left, [] -> less_or_equal order ~left:(Concrete head_tail_left) ~right
+              | [], head_tail_right -> less_or_equal order ~left ~right:(Concrete head_tail_right)
+              | _, _ -> false
+            in
+            valid
+        | Concatenation _, _ -> false
+        | _, Concatenation _ -> false
 
 
     let intersection left right ~order =
@@ -641,6 +743,30 @@ module OrderedConstraints (Order : OrderType) = struct
           match meet left.upper right.upper, join left.lower right.lower with
           | Some upper, Some lower -> Some (BothBounds { upper; lower })
           | _ -> None )
+
+
+    let narrowest_valid_value interval ~order ~(variable : Type.Variable.list_variadic_t) =
+      let { Type.Variable.RecordVariadic.RecordList.constraints = exogenous_constraint; _ } =
+        variable
+      in
+      let prune_interval interval =
+        match interval with
+        | NoBounds -> None
+        | OnlyLowerBound bound
+        | OnlyUpperBound bound ->
+            Some bound
+        | BothBounds { upper; lower } ->
+            Option.some_if (less_or_equal order ~left:lower ~right:upper) lower
+      in
+      let variable = ListVariadic.self_reference variable in
+      let intersected_interval =
+        match exogenous_constraint with
+        | Bound _ -> intersection interval (create ~upper_bound:variable ()) ~order
+        | Explicit _ ->
+            intersection interval (create ~upper_bound:variable ~lower_bound:variable ()) ~order
+        | _ -> Some interval
+      in
+      intersected_interval >>= prune_interval
 
 
     let merge_solution_in interval ~variable ~solution =

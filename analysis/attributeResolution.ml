@@ -169,6 +169,10 @@ module TypeParameterValidationTypes = struct
         actual: Type.t;
         expected: Type.Variable.Unary.t;
       }
+    | ViolateConstraintsVariadic of {
+        actual: Type.OrderedTypes.t;
+        expected: Type.Variable.Variadic.List.t;
+      }
     | UnexpectedKind of {
         actual: Type.Parameter.t;
         expected: Type.Variable.t;
@@ -874,7 +878,7 @@ class base class_metadata_environment dependency =
                             TypeConstraints.empty
                             ~order
                             ~pair
-                          >>| TypeOrder.OrderedConstraints.add_upper_bound ~order ~pair
+                          >>= TypeOrder.OrderedConstraints.add_upper_bound ~order ~pair
                           |> Option.is_none
                         in
                         if invalid then
@@ -901,10 +905,29 @@ class base class_metadata_environment dependency =
                         ( CallableParameters Undefined,
                           Some
                             { name; kind = UnexpectedKind { expected = generic; actual = given } } )
-                    | ParameterVariadic _, CallableParameters _
-                    | ListVariadic _, Group _ ->
+                    | ParameterVariadic _, CallableParameters _ -> given, None
+                    | ListVariadic generic, Group given ->
                         (* TODO(T47346673): accept w/ new kind of validation *)
-                        given, None
+                        let invalid =
+                          let order = self#full_order ~assumptions in
+                          let pair = Type.Variable.ListVariadicPair (generic, given) in
+                          TypeOrder.OrderedConstraints.add_lower_bound
+                            TypeConstraints.empty
+                            ~order
+                            ~pair
+                          >>= TypeOrder.OrderedConstraints.add_upper_bound ~order ~pair
+                          |> Option.is_none
+                        in
+                        if invalid then
+                          ( Type.Parameter.Group Any,
+                            Some
+                              {
+                                name;
+                                kind =
+                                  ViolateConstraintsVariadic { actual = given; expected = generic };
+                              } )
+                        else
+                          Type.Parameter.Group given, None
                   in
                   List.map paired ~f:check_parameter
                   |> List.unzip

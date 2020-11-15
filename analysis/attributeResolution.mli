@@ -34,6 +34,10 @@ type generic_type_problems =
       actual: Type.t;
       expected: Type.Variable.Unary.t;
     }
+  | ViolateConstraintsVariadic of {
+      actual: Type.OrderedTypes.t;
+      expected: Type.Variable.Variadic.List.t;
+    }
   | UnexpectedKind of {
       actual: Type.Parameter.t;
       expected: Type.Variable.t;

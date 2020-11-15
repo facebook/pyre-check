@@ -50,7 +50,16 @@ module Record : sig
       end
 
       module RecordList : sig
-        type 'annotation record [@@deriving compare, eq, sexp, show, hash]
+        type 'annotation record = {
+          name: Identifier.t;
+          constraints: 'annotation constraints;
+          variance: variance;
+          state: state;
+          namespace: RecordNamespace.t;
+        }
+        [@@deriving compare, eq, sexp, show, hash]
+
+        val name : 'a record -> string
       end
     end
 
@@ -64,10 +73,24 @@ module Record : sig
   module OrderedTypes : sig
     module RecordConcatenate : sig
       module Middle : sig
-        type 'annotation t [@@deriving compare, eq, sexp, show, hash]
+        type 'annotation t = {
+          variable: 'annotation Variable.RecordVariadic.RecordList.record;
+          mappers: Identifier.t list;
+        }
+        [@@deriving compare, eq, sexp, show, hash]
       end
 
-      type ('middle, 'outer) t [@@deriving compare, eq, sexp, show, hash]
+      type 'annotation wrapping = {
+        head: 'annotation list;
+        tail: 'annotation list;
+      }
+      [@@deriving compare, eq, sexp, show, hash]
+
+      type ('middle, 'annotation) t = {
+        middle: 'middle;
+        wrapping: 'annotation wrapping;
+      }
+      [@@deriving compare, eq, sexp, show, hash]
     end
 
     type 'annotation record =

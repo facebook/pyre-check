@@ -2741,12 +2741,10 @@ let rec create_logic ~aliases ~variable_aliases { Node.value = expression; _ } =
             in
             List.find_map ~f:bound arguments
           in
-          if not (List.is_empty explicits) then
-            Record.Variable.Explicit explicits
-          else if Option.is_some bound then
-            Bound (Option.value_exn bound)
-          else
-            Unconstrained
+          match explicits, bound with
+          | [], Some bound -> Record.Variable.Bound bound
+          | explicits, _ when List.length explicits > 0 -> Explicit explicits
+          | _ -> Unconstrained
         in
         let variance =
           let variance_definition = function
@@ -4101,28 +4099,48 @@ end = struct
 
 
       let parse_declaration value ~target =
-        match value with
-        | {
-         Node.value =
-           Expression.Call
-             {
-               callee =
-                 {
-                   Node.value =
-                     Name
-                       (Name.Attribute
-                         {
-                           base = { Node.value = Name (Name.Identifier "pyre_extensions"); _ };
-                           attribute = "ListVariadic";
-                           special = false;
-                         });
-                   _;
-                 };
-               arguments = [{ Call.Argument.value = { Node.value = String _; _ }; _ }];
-             };
-         _;
-        } ->
+        match Node.value value with
+        | Expression.Call { callee; arguments = [{ value = { Node.value = String _; _ }; _ }] }
+          when name_is ~name:"pyre_extensions.ListVariadic" callee ->
             Some (create (Reference.show target))
+        | Call
+            {
+              callee;
+              arguments = { Call.Argument.value = { Node.value = String _; _ }; _ } :: arguments;
+            }
+          when name_is ~name:"pyre_extensions.ListVariadic" callee ->
+            let constraints =
+              let explicits =
+                let explicit = function
+                  | {
+                      Call.Argument.name = None;
+                      value = { Node.value = Name (Name.Identifier identifier); _ };
+                    } ->
+                      let identifier = Identifier.sanitized identifier in
+                      Some (Primitive identifier)
+                  | _ -> None
+                in
+                List.filter_map ~f:explicit arguments
+              in
+              let bound =
+                let bound = function
+                  | {
+                      Call.Argument.value = { Node.value = Name (Name.Identifier identifier); _ };
+                      name = Some { Node.value = bound; _ };
+                    }
+                    when String.equal (Identifier.sanitized bound) "bound" ->
+                      let identifier = Identifier.sanitized identifier in
+                      Some (Primitive identifier)
+                  | _ -> None
+                in
+                List.find_map ~f:bound arguments
+              in
+              match explicits, bound with
+              | [], Some bound -> Record.Variable.Bound bound
+              | explicits, _ when List.length explicits > 0 -> Explicit explicits
+              | _ -> Unconstrained
+            in
+            Some (create (Reference.show target) ~constraints)
         | _ -> None
     end
   end
