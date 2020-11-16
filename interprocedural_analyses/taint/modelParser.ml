@@ -1743,7 +1743,13 @@ let create ~resolution ?path ~configuration ~rule_filter source =
                             | _ -> sanitize )
                         | _ ->
                             let add_annotation { Mode.sources; sinks; tito } = function
-                              | Source { source; _ } ->
+                              | Source
+                                  {
+                                    source;
+                                    breadcrumbs = [];
+                                    leaf_name_provided = false;
+                                    path = [];
+                                  } ->
                                   let sources =
                                     match sources with
                                     | None -> Some (Mode.SpecificSources [source])
@@ -1752,7 +1758,9 @@ let create ~resolution ?path ~configuration ~rule_filter source =
                                     | Some Mode.AllSources -> Some Mode.AllSources
                                   in
                                   { Mode.sources; sinks; tito }
-                              | Sink { sink; _ } ->
+                              | Sink
+                                  { sink; breadcrumbs = []; leaf_name_provided = false; path = [] }
+                                ->
                                   let sinks =
                                     match sinks with
                                     | None -> Some (Mode.SpecificSinks [sink])
@@ -1761,7 +1769,12 @@ let create ~resolution ?path ~configuration ~rule_filter source =
                                     | Some Mode.AllSinks -> Some Mode.AllSinks
                                   in
                                   { Mode.sources; sinks; tito }
-                              | _ -> { Mode.sources; sinks; tito }
+                              | taint_annotation ->
+                                  raise
+                                    (Model.InvalidModel
+                                       (Format.sprintf
+                                          "`%s` is not a supported taint annotation for sanitizers."
+                                          (show_taint_annotation taint_annotation)))
                             in
                             parse_annotations ~configuration ~parameters:[] (Some value)
                             |> List.fold ~init:sanitize ~f:add_annotation

@@ -1410,6 +1410,45 @@ let test_invalid_models context =
     |}
     ~model_source:"def test.foo(x: TaintSink[X[Subkind]]): ..."
     ~expect:"Invalid model for `test.foo`: Unsupported taint sink `X`"
+    ();
+  assert_invalid_model
+    ~source:{|
+      def foo(x):
+        ...
+    |}
+    ~model_source:{|
+      @Sanitize(TaintInTaintOut[LocalReturn])
+      def test.foo(x): ...
+    |}
+    ~expect:
+      "Invalid model for `test.foo`: `ModelParser.T.Tito {tito = Sinks.T.LocalReturn; breadcrumbs \
+       = []; path = []}` is not a supported taint annotation for sanitizers."
+    ();
+  assert_valid_model
+    ~source:{|
+      def foo(x):
+        ...
+    |}
+    ~model_source:{|
+      @Sanitize(TaintSource[A])
+      def test.foo(x): ...
+    |}
+    ();
+  assert_invalid_model
+    ~source:{|
+      def foo(x):
+        ...
+    |}
+    ~model_source:
+      {|
+      @Sanitize(TaintSource[A, Via[featureA]])
+      def test.foo(x): ...
+    |}
+    ~expect:
+      {|Invalid model for `test.foo`: `ModelParser.T.Source {source = (Sources.T.NamedSource "A");
+  breadcrumbs =
+  [(Features.Simple.Breadcrumb (Features.Breadcrumb.SimpleVia "featureA"))];
+  path = []; leaf_name_provided = false}` is not a supported taint annotation for sanitizers.|}
     ()
 
 
