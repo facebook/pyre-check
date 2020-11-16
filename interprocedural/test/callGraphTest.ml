@@ -898,6 +898,84 @@ let test_call_graph_of_define context =
                  collapse_tito = true;
                  targets = [`Method { Callable.class_name = "test.C"; method_name = "f" }];
                }) );
+      ];
+  assert_call_graph_of_define
+    ~source:
+      {|
+      class C:
+        @property
+        def foo(self) -> int:
+          ...
+
+      class D:
+        @property
+        def foo(self) -> int:
+          ...
+
+      class E:
+        foo: int = 1
+
+      def uses_foo(c_or_d: C | D, c_or_e: C | E):
+        x = c_or_d.foo
+        y = c_or_e.foo
+    |}
+    ~define_name:"test.uses_foo"
+    ~expected:
+      [
+        ( "16:6-16:16",
+          Callees
+            (CallGraph.RegularTargets
+               {
+                 CallGraph.implicit_self = true;
+                 collapse_tito = true;
+                 targets =
+                   [
+                     `Method { Callable.class_name = "test.C"; method_name = "foo" };
+                     `Method { Callable.class_name = "test.D"; method_name = "foo" };
+                   ];
+               }) );
+        ( "17:6-17:16",
+          Callees
+            (CallGraph.RegularTargets
+               {
+                 CallGraph.implicit_self = true;
+                 collapse_tito = true;
+                 targets = [`Method { Callable.class_name = "test.C"; method_name = "foo" }];
+               }) );
+      ];
+  assert_call_graph_of_define
+    ~source:
+      {|
+      from typing import TypeVar
+      class C:
+        @property
+        def foo(self) -> int:
+          ...
+
+      class D:
+        @property
+        def foo(self) -> int:
+          ...
+
+      TCOrD = TypeVar("TCOrD", C, D)
+      def uses_foo(c_or_d: TCOrD):
+        x = c_or_d.foo
+    |}
+    ~define_name:"test.uses_foo"
+    ~expected:
+      [
+        ( "15:6-15:16",
+          Callees
+            (CallGraph.RegularTargets
+               {
+                 CallGraph.implicit_self = true;
+                 collapse_tito = true;
+                 targets =
+                   [
+                     `Method { Callable.class_name = "test.C"; method_name = "foo" };
+                     `Method { Callable.class_name = "test.D"; method_name = "foo" };
+                   ];
+               }) );
       ]
 
 

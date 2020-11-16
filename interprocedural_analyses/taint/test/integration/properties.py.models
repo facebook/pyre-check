@@ -1201,3 +1201,24 @@
     "tito": []
   }
 }
+{
+  "kind": "model",
+  "data": {
+    "callable": "properties.test_type_variable_properties_are_resolved",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(x)[tainted]",
+        "taint": [
+          {
+            "decl": null,
+            "tito": [ { "line": 143, "start": 11, "end": 12 } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "features": [ { "always-via": "tito" } ]
+          }
+        ]
+      }
+    ]
+  }
+}

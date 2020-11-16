@@ -556,27 +556,35 @@ let resolve_callees ~resolution ~call =
   | _ -> regular_callees
 
 
-let get_property_defining_parent ~resolution ~base ~attribute =
+let get_property_defining_parents ~resolution ~base ~attribute =
   let annotation =
     Resolution.resolve_expression_to_type resolution base |> strip_meta |> strip_optional
   in
-  match defining_attribute ~resolution annotation attribute with
-  | Some property when Annotated.Attribute.property property ->
-      Annotated.Attribute.parent property |> Reference.create |> Option.some
-  | _ -> None
+  let rec get_defining_parents annotation =
+    match annotation with
+    | Type.Union annotations
+    | Type.Variable { Type.Variable.Unary.constraints = Type.Variable.Explicit annotations; _ } ->
+        List.concat_map annotations ~f:get_defining_parents
+    | _ -> (
+        match defining_attribute ~resolution annotation attribute with
+        | Some property when Annotated.Attribute.property property ->
+            [Annotated.Attribute.parent property |> Reference.create]
+        | _ -> [] )
+  in
+  get_defining_parents annotation
 
 
 let resolve_property_targets ~resolution ~base ~attribute ~setter =
-  match get_property_defining_parent ~resolution ~base ~attribute with
-  | None -> None
-  | Some defining_parent ->
-      let targets =
+  match get_property_defining_parents ~resolution ~base ~attribute with
+  | [] -> None
+  | defining_parents ->
+      let target_of_parent parent =
         let targets =
           let receiver_type = resolve_ignoring_optional ~resolution base in
           if Type.is_meta receiver_type then
-            [Callable.create_method (Reference.create ~prefix:defining_parent attribute)]
+            [Callable.create_method (Reference.create ~prefix:parent attribute)]
           else
-            let callee = Reference.create ~prefix:defining_parent attribute in
+            let callee = Reference.create ~prefix:parent attribute in
             compute_indirect_targets ~resolution ~receiver_type callee
         in
         if setter then
@@ -592,6 +600,7 @@ let resolve_property_targets ~resolution ~base ~attribute ~setter =
         else
           targets
       in
+      let targets = List.concat_map defining_parents ~f:target_of_parent in
       Some (RegularTargets { implicit_self = true; targets; collapse_tito = true })
 
 

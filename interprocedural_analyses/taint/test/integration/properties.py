@@ -4,7 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 from builtins import __test_sink, __test_source
-from typing import Optional
+from typing import Optional, TypeVar
 
 from pyre_extensions import classproperty
 
@@ -128,3 +128,16 @@ class ClassProperty:
 
 def test_issue_in_class_property():
     __test_sink(ClassProperty.my_class_property)
+
+
+class Class2:
+    @property
+    def my_property(self) -> str:
+        return ""
+
+
+T = TypeVar("T", Class, Class2)
+
+
+def test_type_variable_properties_are_resolved(x: T):
+    return x.my_property
