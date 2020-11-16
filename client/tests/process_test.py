@@ -77,6 +77,17 @@ class ProcessTest(unittest.TestCase):
     # pyre-fixme[56]: Argument `psutil` to decorator factory
     #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(psutil, "Process")
+    @patch.object(Path, "read_text", return_value="")
+    def test_get_process_file_empty(
+        self, read_text: MagicMock, process_class: MagicMock
+    ) -> None:
+        process = Process.get_process("/root/empty-file.pid")
+        process_class.assert_not_called()
+        self.assertIsNone(process)
+
+    # pyre-fixme[56]: Argument `psutil` to decorator factory
+    #  `unittest.mock.patch.object` could not be resolved in a global scope.
+    @patch.object(psutil, "Process")
     @patch.object(Path, "read_text", return_value="123")
     def test_get_process_error(
         self, read_text: MagicMock, process_class: MagicMock

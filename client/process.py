@@ -39,7 +39,7 @@ class Process:
     def get_process(pid_path: str) -> Optional[psutil.Process]:
         try:
             pid = int(Path(pid_path).resolve().read_text())
-        except FileNotFoundError:
+        except (FileNotFoundError, ValueError):
             return None
 
         try:
