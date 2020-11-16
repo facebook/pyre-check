@@ -615,7 +615,7 @@ let test_dictionary context =
       outcome
         ~kind:`Function
         ~sink_parameters:[]
-        ~tito_parameters:["arg"; "index"]
+        ~tito_parameters:["arg"]
         "qualifier.dictionary_unknown_write_index";
     ];
   assert_taint
@@ -666,6 +666,20 @@ let test_dictionary context =
         ~kind:`Function
         ~sink_parameters:[{ name = "arg"; sinks = [Sinks.NamedSink "Test"] }]
         "qualifier.dictionary_sink";
+    ];
+  assert_taint
+    ~context
+    {|
+      def key_sink(arg1, arg2):
+        d = { arg1: arg2 }
+        for k, v in d.items():
+          __test_sink(k)
+    |}
+    [
+      outcome
+        ~kind:`Function
+        ~sink_parameters:[{ name = "arg1"; sinks = [Sinks.NamedSink "Test"] }]
+        "qualifier.key_sink";
     ]
 
 

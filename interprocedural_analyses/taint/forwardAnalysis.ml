@@ -851,8 +851,8 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                   Expression.Tuple
                     (List.map arguments ~f:(fun argument -> argument.Call.Argument.value));
               }
-      (* dictionary .keys() and .values() functions are special, as they require handling of
-         DictionaryKeys taint. *)
+      (* dictionary .keys(), .values() and .items() functions are special, as they require handling
+         of DictionaryKeys taint. *)
       | { callee = { Node.value = Name (Name.Attribute { base; attribute = "values"; _ }); _ }; _ }
         when Resolution.resolve_expression_to_type resolution base |> Type.is_dictionary_or_mapping
         ->
@@ -865,6 +865,21 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           analyze_expression ~resolution ~state ~expression:base
           |>> ForwardState.Tree.read [Abstract.TreeDomain.Label.DictionaryKeys]
           |>> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.Any]
+      | { callee = { Node.value = Name (Name.Attribute { base; attribute = "items"; _ }); _ }; _ }
+        when Resolution.resolve_expression_to_type resolution base |> Type.is_dictionary_or_mapping
+        ->
+          let taint, state = analyze_expression ~resolution ~state ~expression:base in
+          let taint =
+            let key_taint =
+              ForwardState.Tree.read [Abstract.TreeDomain.Label.DictionaryKeys] taint
+            in
+            let value_taint = ForwardState.Tree.read [Abstract.TreeDomain.Label.Any] taint in
+            ForwardState.Tree.join
+              (ForwardState.Tree.prepend [Abstract.TreeDomain.Label.create_int_field 0] key_taint)
+              (ForwardState.Tree.prepend [Abstract.TreeDomain.Label.create_int_field 1] value_taint)
+            |> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.Any]
+          in
+          taint, state
       (* `locals()` is a dictionary from all local names -> values. *)
       | { callee = { Node.value = Name (Name.Identifier "locals"); _ }; arguments = [] } ->
           let add_root_taint locals_taint root =

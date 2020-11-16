@@ -227,3 +227,39 @@ def tito_with_index(d: Dict[str, str]) -> str:
 def test_index_from_tito():
     d = {"a": __test_source(), "b": __test_source()}
     __test_sink(tito_with_index(d))
+
+
+def test_items():
+    key_is_tainted = {__test_source(): ""}
+    value_is_tainted = {"a": __test_source()}
+    for k, v in key_is_tainted.items():
+        # Should be an issue.
+        __test_sink(k)
+        # Should not be an issue.
+        __test_sink(v)
+
+    for k, v in value_is_tainted.items():
+        # Should not be an issue.
+        __test_sink(k)
+        # Should be an issue.
+        __test_sink(v)
+
+
+def test_items_backward_keys(x, y):
+    key_is_tainted = {x: "a"}
+    value_is_tainted = {"b": y}
+    for k, v in key_is_tainted.items():
+        __test_sink(k)
+
+    for k, v in value_is_tainted.items():
+        __test_sink(k)
+
+
+def test_items_backward_values(x, y):
+    key_is_tainted = {x: "a"}
+    value_is_tainted = {"b": y}
+    for k, v in key_is_tainted.items():
+        __test_sink(v)
+
+    for k, v in value_is_tainted.items():
+        __test_sink(v)

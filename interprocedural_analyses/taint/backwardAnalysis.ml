@@ -419,7 +419,8 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
 
 
     and analyze_dictionary_entry ~resolution taint state { Dictionary.Entry.key; value } =
-      let state = analyze_expression ~resolution ~taint ~state ~expression:key in
+      let key_taint = read_tree [Abstract.TreeDomain.Label.DictionaryKeys] taint in
+      let state = analyze_expression ~resolution ~taint:key_taint ~state ~expression:key in
       let field_name = AccessPath.get_index key in
       let value_taint = read_tree [field_name] taint in
       analyze_expression ~resolution ~taint:value_taint ~state ~expression:value
@@ -770,8 +771,8 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             analyze_expression ~resolution ~state ~taint ~expression:value
           in
           List.foldi lists ~init:state ~f:analyze_zipped_list
-      (* dictionary .keys() and .values() functions are special, as they require handling of
-         DictionaryKeys taint. *)
+      (* dictionary .keys(), .values() and .items() functions are special, as they require handling
+         of DictionaryKeys taint. *)
       | { callee = { Node.value = Name (Name.Attribute { base; attribute = "values"; _ }); _ }; _ }
         when Resolution.resolve_expression_to_type resolution base |> Type.is_dictionary_or_mapping
         ->
@@ -788,6 +789,25 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             taint
             |> BackwardState.Tree.read [Abstract.TreeDomain.Label.DictionaryKeys]
             |> BackwardState.Tree.prepend [Abstract.TreeDomain.Label.Any]
+          in
+          analyze_expression ~resolution ~taint ~state ~expression:base
+      | { callee = { Node.value = Name (Name.Attribute { base; attribute = "items"; _ }); _ }; _ }
+        when Resolution.resolve_expression_to_type resolution base |> Type.is_dictionary_or_mapping
+        ->
+          (* When we're faced with an assign of the form `k, v = d.items().__iter__().__next__()`,
+             the taint we analyze d.items() under will be {* -> {0 -> k, 1 -> v} }. We want to
+             analyze d itself under the taint of `{* -> v, $keys -> k}`. *)
+          let item_taint = BackwardState.Tree.read [Abstract.TreeDomain.Label.Any] taint in
+          let key_taint =
+            BackwardState.Tree.read [Abstract.TreeDomain.Label.create_int_field 0] item_taint
+          in
+          let value_taint =
+            BackwardState.Tree.read [Abstract.TreeDomain.Label.create_int_field 1] item_taint
+          in
+          let taint =
+            BackwardState.Tree.join
+              (BackwardState.Tree.prepend [Abstract.TreeDomain.Label.DictionaryKeys] key_taint)
+              (BackwardState.Tree.prepend [Abstract.TreeDomain.Label.Any] value_taint)
           in
           analyze_expression ~resolution ~taint ~state ~expression:base
       | {
