@@ -769,16 +769,35 @@ def persistent(context: click.Context, no_watchman: bool) -> int:
     configuration = configuration_module.create_configuration(
         command_argument, Path(".")
     )
-    return run_pyre_command(
-        commands.Persistent(
-            command_argument,
-            original_directory=os.getcwd(),
-            configuration=configuration,
-            no_watchman=no_watchman,
-        ),
-        configuration,
-        True,
-    )
+    if command_argument.use_command_v2:
+        return v2.persistent.run(
+            configuration,
+            command_arguments.StartArguments(
+                changed_files_path=command_argument.changed_files_path,
+                debug=command_argument.debug,
+                load_initial_state_from=command_argument.load_initial_state_from,
+                no_saved_state=command_argument.no_saved_state,
+                no_watchman=no_watchman,
+                save_initial_state_to=command_argument.save_initial_state_to,
+                saved_state_project=command_argument.saved_state_project,
+                sequential=command_argument.sequential,
+                show_error_traces=command_argument.show_error_traces,
+                store_type_check_resolution=False,
+                terminal=False,
+                wait_on_initialization=True,
+            ),
+        )
+    else:
+        return run_pyre_command(
+            commands.Persistent(
+                command_argument,
+                original_directory=os.getcwd(),
+                configuration=configuration,
+                no_watchman=no_watchman,
+            ),
+            configuration,
+            True,
+        )
 
 
 @pyre.command()
