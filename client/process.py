@@ -36,9 +36,9 @@ class Process:
             remove_if_exists(str(absolute_pid_path))
 
     @staticmethod
-    def get_process(pid_path: str) -> Optional[psutil.Process]:
+    def get_process(pid_path: Path) -> Optional[psutil.Process]:
         try:
-            pid = int(Path(pid_path).resolve().read_text())
+            pid = int(pid_path.resolve().read_text())
         except (FileNotFoundError, ValueError):
             return None
 
@@ -68,13 +68,11 @@ class Process:
     @staticmethod
     def get_processes(name: str, log_directory: str) -> List[psutil.Process]:
         process_paths = Path(log_directory, SUBDIRECTORY_NAME).glob(f"{name}-*.pid")
-        return list(
-            filter(None, (Process.get_process(str(path)) for path in process_paths))
-        )
+        return list(filter(None, (Process.get_process(path) for path in process_paths)))
 
     @staticmethod
     def is_alive(pid_path: Path) -> bool:
-        process = Process.get_process(str(pid_path))
+        process = Process.get_process(pid_path)
         if not process:
             return False
         try:
