@@ -5,6 +5,7 @@
 
 # pyre-unsafe
 
+from __future__ import annotations
 
 import enum
 import logging
@@ -94,7 +95,7 @@ class SourceLocation(object):
         return SourceLocation.to_string(self)
 
     @staticmethod
-    def from_string(location_string) -> "SourceLocation":
+    def from_string(location_string) -> SourceLocation:
         location_points = location_string.split("|")
         assert len(location_points) == 3, "Invalid location string %s" % location_string
         return SourceLocation(*location_points)
@@ -282,7 +283,7 @@ class SharedTextKind(enum.Enum):
         return cls.sink_detail
 
     @classmethod
-    def from_string(cls, string: str) -> Optional["SharedTextKind"]:
+    def from_string(cls, string: str) -> Optional[SharedTextKind]:
         return cls.__members__.get(string)
 
 
@@ -400,7 +401,7 @@ class TraceKind(enum.Enum):
         return cls.postcondition
 
     @classmethod
-    def create_from_string(cls, value: str) -> "TraceKind":  # noqa
+    def create_from_string(cls, value: str) -> TraceKind:  # noqa
         if value == "precondition":
             return cls.precondition
         if value == "postcondition":
@@ -438,7 +439,7 @@ class IssueInstance(Base, PrepareMixin, MutableRecordMixin):  # noqa
         uselist=False,
     )
 
-    is_new_issue: "Column[Optional[bool]]" = Column(
+    is_new_issue: Column[Optional[bool]] = Column(
         Boolean,
         index=True,
         default=False,
@@ -493,27 +494,27 @@ class IssueInstance(Base, PrepareMixin, MutableRecordMixin):  # noqa
         ),
     )
 
-    min_trace_length_to_sources: "Column[Optional[int]]" = Column(
+    min_trace_length_to_sources: Column[Optional[int]] = Column(
         Integer, nullable=True, doc="The minimum trace length to sources"
     )
 
-    min_trace_length_to_sinks: "Column[Optional[int]]" = Column(
+    min_trace_length_to_sinks: Column[Optional[int]] = Column(
         Integer, nullable=True, doc="The minimum trace length to sinks"
     )
 
-    rank: "Column[Optional[int]]" = Column(
+    rank: Column[Optional[int]] = Column(
         Integer,
         server_default="0",
         doc="The higher the rank, the higher the priority for this issue",
     )
 
-    callable_count: "Column[Optional[int]]" = Column(
+    callable_count: Column[Optional[int]] = Column(
         Integer,
         server_default="0",
         doc="Number of issues in this callable for this run",
     )
 
-    min_trace_length_to_entrypoints: "Column[Optional[int]]" = Column(
+    min_trace_length_to_entrypoints: Column[Optional[int]] = Column(
         Integer, nullable=True, doc="The minimum trace length to entrypoints"
     )
 
@@ -590,7 +591,7 @@ class Issue(Base, PrepareMixin, MutableRecordMixin):  # noqa
     # pyre-fixme[8]: Attribute has type `IssueDBID`; used as `Column[typing.Any]`.
     id: IssueDBID = Column(IssueBIGDBIDType, primary_key=True, nullable=False)
 
-    handle: "Column[str]" = Column(
+    handle: Column[str] = Column(
         String(length=HANDLE_LENGTH),
         nullable=False,
         unique=True,
@@ -598,7 +599,7 @@ class Issue(Base, PrepareMixin, MutableRecordMixin):  # noqa
         + "different code revisions",
     )
 
-    code: "Column[int]" = Column(
+    code: Column[int] = Column(
         Integer, doc="Code identifiying the issue type", nullable=False, index=True
     )
 
@@ -606,14 +607,14 @@ class Issue(Base, PrepareMixin, MutableRecordMixin):  # noqa
         "IssueInstance", primaryjoin="Issue.id == foreign(IssueInstance.issue_id)"
     )
 
-    first_seen: "Column[datetime]" = Column(
+    first_seen: Column[datetime] = Column(
         DateTime,
         doc="time of the first run that found this issue",
         nullable=False,
         index=True,
     )
 
-    status: "Column[str]" = Column(
+    status: Column[str] = Column(
         Enum(IssueStatus),
         doc="Shows the issue status from the latest run",
         server_default="uncategorized",
@@ -621,21 +622,21 @@ class Issue(Base, PrepareMixin, MutableRecordMixin):  # noqa
         index=True,
     )
 
-    task_number: "Column[Optional[int]]" = Column(
+    task_number: Column[Optional[int]] = Column(
         Integer, doc="Task number (not fbid) that is tracking this issue"
     )
 
-    triage_history_fbid: "Column[Optional[int]]" = Column(
+    triage_history_fbid: Column[Optional[int]] = Column(
         BIGINT(unsigned=True),
         nullable=True,
         doc="FBID for EntZoncolanIssueTriageHistory",
     )
 
-    feedback_fbid: "Column[Optional[int]]" = Column(
+    feedback_fbid: Column[Optional[int]] = Column(
         BIGINT(unsigned=True), nullable=True, doc="FBID for EntZoncolanFeedback"
     )
 
-    json: "Column[Optional[str]]" = Column(
+    json: Column[Optional[str]] = Column(
         types.TEXT, doc="Raw JSON of original issue", nullable=True
     )
 
@@ -689,35 +690,35 @@ class Run(Base):  # noqa
 
     id = Column(BIGDBIDType, primary_key=True)
 
-    job_id: "Column[Optional[str]]" = Column(String(length=255), index=True)
+    job_id: Column[Optional[str]] = Column(String(length=255), index=True)
 
-    date: "Column[datetime]" = Column(
+    date: Column[datetime] = Column(
         DateTime, doc="The date/time the analysis was run", nullable=False
     )
 
-    commit_hash: "Column[Optional[str]]" = Column(
+    commit_hash: Column[Optional[str]] = Column(
         String(length=255),
         doc="The commit hash of the codebase",
         nullable=True,
         index=True,
     )
 
-    revision_id: "Column[Optional[int]]" = Column(
+    revision_id: Column[Optional[int]] = Column(
         Integer, doc="Differential revision (DXXXXXX)", nullable=True, index=True
     )
 
-    differential_id: "Column[Optional[int]]" = Column(
+    differential_id: Column[Optional[int]] = Column(
         Integer,
         doc="Differential diff (instance of revision)",
         nullable=True,
         index=True,
     )
 
-    hh_version: "Column[Optional[str]]" = Column(
+    hh_version: Column[Optional[str]] = Column(
         String(length=255), doc="The output of hh_server --version"
     )
 
-    branch: "Column[Optional[str]]" = Column(
+    branch: Column[Optional[str]] = Column(
         String(length=255),
         doc="Branch the commit is based on",
         nullable=True,
@@ -730,15 +731,15 @@ class Run(Base):  # noqa
         backref="run",
     )
 
-    status: "Column[str]" = Column(
+    status: Column[str] = Column(
         Enum(RunStatus), server_default="finished", nullable=False, index=True
     )
 
-    status_description: "Column[Optional[str]]" = Column(
+    status_description: Column[Optional[str]] = Column(
         String(length=255), doc="The reason why a run didn't finish", nullable=True
     )
 
-    kind: "Column[Optional[str]]" = Column(
+    kind: Column[Optional[str]] = Column(
         String(length=255),
         doc=(
             "Specify different kinds of runs, e.g. MASTER vs. TEST., GKFORXXX, etc. "
@@ -748,13 +749,13 @@ class Run(Base):  # noqa
         index=True,
     )
 
-    repository: "Column[Optional[str]]" = Column(
+    repository: Column[Optional[str]] = Column(
         String(length=255),
         doc=("The repository that static analysis was run on."),
         nullable=True,
     )
 
-    db_version: "Column[int]" = Column(
+    db_version: Column[int] = Column(
         Integer,
         doc="Tracks under which DB version this was written (for migrations)",
         nullable=False,
@@ -762,7 +763,7 @@ class Run(Base):  # noqa
         server_default="0",
     )
 
-    def get_summary(self, **kwargs) -> "RunSummary":
+    def get_summary(self, **kwargs) -> RunSummary:
         session = Session.object_session(self)
 
         return RunSummary(
@@ -820,18 +821,18 @@ class MetaRun(Base):  # noqa
 
     # This is the moral equivalent of job_id, but named in a more intuitive manner.
     # Allows determining the latest meta run for each custom run separately.
-    custom_run_name: "Column[Optional[str]]" = Column(String(length=255), nullable=True)
+    custom_run_name: Column[Optional[str]] = Column(String(length=255), nullable=True)
 
-    date: "Column[datetime]" = Column(
+    date: Column[datetime] = Column(
         DateTime, doc="The date/time the meta-run was generated", nullable=False
     )
 
     # We want to be able to filter meta-runs by completion. Towards that end, we plan on
     # using the information of number of total runs vs. the number of runs written in
     # the database.
-    expected_run_count: "Column[Optional[int]]" = Column(Integer, nullable=True)
+    expected_run_count: Column[Optional[int]] = Column(Integer, nullable=True)
 
-    kind: "Column[Optional[str]]" = Column(
+    kind: Column[Optional[str]] = Column(
         String(length=255),
         doc=(
             "Specify different kinds of runs, e.g. MASTER vs. TEST., GKFORXXX, etc. "
@@ -841,7 +842,7 @@ class MetaRun(Base):  # noqa
         index=True,
     )
 
-    db_version: "Column[int]" = Column(
+    db_version: Column[int] = Column(
         Integer,
         doc="Tracks under which DB version this was written (for migrations)",
         nullable=False,
@@ -916,7 +917,7 @@ class TraceFrameLeafAssoc(Base, PrepareMixin, RecordMixin):  # noqa
     # The minimum trace length unfortunately can be off and actually lead to
     # loops. This is a known problem and any code generating traces should
     # additionally have cycle detection.
-    trace_length: "Column[Optional[int]]" = Column(
+    trace_length: Column[Optional[int]] = Column(
         Integer, doc="minimum trace length to the given leaf", nullable=True
     )
 
@@ -943,7 +944,7 @@ class IssueInstanceFixInfo(Base, PrepareMixin, RecordMixin):  # noqa
     # pyre-fixme[8]: Attribute has type `DBID`; used as `Column[typing.Any]`.
     id: DBID = Column(BIGDBIDType, nullable=False, primary_key=True)
 
-    fix_info: "Column[str]" = Column(
+    fix_info: Column[str] = Column(
         String(length=INNODB_MAX_INDEX_LENGTH), nullable=False
     )
 
@@ -968,7 +969,7 @@ class TraceFrame(Base, PrepareMixin, RecordMixin):  # noqa
     # pyre-fixme[8]: Attribute has type `DBID`; used as `Column[typing.Any]`.
     id: DBID = Column(BIGDBIDType, nullable=False, primary_key=True)
 
-    kind: "Column[str]" = Column(Enum(TraceKind), nullable=False, index=False)
+    kind: Column[str] = Column(Enum(TraceKind), nullable=False, index=False)
 
     caller_id = Column(BIGDBIDType, nullable=False, server_default="0", default=0)
 
@@ -1012,11 +1013,11 @@ class TraceFrame(Base, PrepareMixin, RecordMixin):  # noqa
 
     run_id = Column("run_id", BIGDBIDType, nullable=False, index=False)
 
-    type_interval_lower: "Column[Optional[int]]" = Column(
+    type_interval_lower: Column[Optional[int]] = Column(
         Integer, nullable=True, doc="Class interval lower-bound (inclusive)"
     )
 
-    type_interval_upper: "Column[Optional[int]]" = Column(
+    type_interval_upper: Column[Optional[int]] = Column(
         Integer, nullable=True, doc="Class interval upper-bound (inclusive)"
     )
 
@@ -1031,7 +1032,7 @@ class TraceFrame(Base, PrepareMixin, RecordMixin):  # noqa
         ),
     )
 
-    preserves_type_context: "Column[bool]" = Column(
+    preserves_type_context: Column[bool] = Column(
         Boolean,
         default=False,
         server_default="0",
@@ -1087,9 +1088,7 @@ class TraceFrameAnnotation(Base, PrepareMixin, RecordMixin):  # noqa
         SourceLocationType, nullable=False, doc="The location for the message"
     )
 
-    kind: "Column[Optional[str]]" = Column(
-        String(length=255), nullable=True, index=True
-    )
+    kind: Column[Optional[str]] = Column(String(length=255), nullable=True, index=True)
 
     # pyre-fixme[8]: Attribute has type `str`; used as `Column[str]`.
     message: str = Column(
@@ -1186,9 +1185,9 @@ class TraceFrameAnnotationTraceFrameAssoc(Base, PrepareMixin, RecordMixin):  # n
 class WarningMessage(Base):  # noqa
     __tablename__ = "warning_messages"
 
-    code: "Column[int]" = Column(Integer, autoincrement=False, primary_key=True)
+    code: Column[int] = Column(Integer, autoincrement=False, primary_key=True)
 
-    message: "Column[str]" = Column(String(length=4096), nullable=False)
+    message: Column[str] = Column(String(length=4096), nullable=False)
 
 
 class WarningCodeCategory(enum.Enum):
@@ -1213,7 +1212,7 @@ class WarningCodeProperties(Base):  # noqa
 
     __tablename__ = "warning_code_properties"
 
-    code: "Column[int]" = Column(
+    code: Column[int] = Column(
         Integer,
         autoincrement=False,
         nullable=False,
@@ -1221,7 +1220,7 @@ class WarningCodeProperties(Base):  # noqa
         doc="Code identifiying the issue type",
     )
 
-    category: "Column[Optional[str]]" = Column(
+    category: Column[Optional[str]] = Column(
         Enum(WarningCodeCategory),
         nullable=True,
         index=False,
@@ -1232,25 +1231,25 @@ class WarningCodeProperties(Base):  # noqa
         ),
     )
 
-    new_issue_rate: "Column[Optional[Decimal]]" = Column(
+    new_issue_rate: Column[Optional[Decimal]] = Column(
         Float,
         nullable=True,
         index=False,
         doc="Average number of new issues per day (computed column)",
     )
 
-    bug_count: "Column[Optional[int]]" = Column(
+    bug_count: Column[Optional[int]] = Column(
         Integer,
         nullable=True,
         index=False,
         doc="Number of issues in this category (computed column)",
     )
 
-    avg_trace_len: "Column[Optional[Decimal]]" = Column(
+    avg_trace_len: Column[Optional[Decimal]] = Column(
         Float, nullable=True, index=False, doc="Deprecated. See avg_fwd/bwd_trace_len"
     )
 
-    avg_fwd_trace_len: "Column[Optional[Decimal]]" = Column(
+    avg_fwd_trace_len: Column[Optional[Decimal]] = Column(
         Float,
         nullable=True,
         index=False,
@@ -1261,7 +1260,7 @@ class WarningCodeProperties(Base):  # noqa
         ),
     )
 
-    avg_bwd_trace_len: "Column[Optional[Decimal]]" = Column(
+    avg_bwd_trace_len: Column[Optional[Decimal]] = Column(
         Float,
         nullable=True,
         index=False,
@@ -1272,7 +1271,7 @@ class WarningCodeProperties(Base):  # noqa
         ),
     )
 
-    snr: "Column[Optional[Decimal]]" = Column(
+    snr: Column[Optional[Decimal]] = Column(
         Float,
         nullable=True,
         index=False,
@@ -1282,7 +1281,7 @@ class WarningCodeProperties(Base):  # noqa
         ),
     )
 
-    is_snr_significant: "Column[Optional[bool]]" = Column(
+    is_snr_significant: Column[Optional[bool]] = Column(
         Boolean,
         nullable=True,
         index=False,
@@ -1292,14 +1291,14 @@ class WarningCodeProperties(Base):  # noqa
         ),
     )
 
-    discoverable: "Column[Optional[bool]]" = Column(
+    discoverable: Column[Optional[bool]] = Column(
         Boolean,
         nullable=True,
         index=False,
         doc="True if an attacker can discover the issue",
     )
 
-    health_score: "Column[Optional[Decimal]]" = Column(
+    health_score: Column[Optional[Decimal]] = Column(
         Float,
         nullable=True,
         index=False,
@@ -1309,7 +1308,7 @@ class WarningCodeProperties(Base):  # noqa
         ),
     )
 
-    notes: "Column[Optional[str]]" = Column(
+    notes: Column[Optional[str]] = Column(
         String(length=4096),
         nullable=True,
         index=False,

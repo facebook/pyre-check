@@ -3,7 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-# from __future__ import annotations
+from __future__ import annotations
 
 import builtins
 import enum
@@ -1227,10 +1227,10 @@ details              show additional information about the current trace frame
     def _add_list_or_string_filter_to_query(
         self,
         filter: Union[str, List[str]],
-        query: "RawQuery[T]",
+        query: RawQuery[T],
         column: InstrumentedAttribute,
         argument_name: str,
-    ) -> "RawQuery[T]":
+    ) -> RawQuery[T]:
         # pyre-fixme[7]: Expected `RawQuery[Variable[T]]` but got `RawQuery[str]`.
         return self._add_list_or_element_filter_to_query(
             filter,
@@ -1245,10 +1245,10 @@ details              show additional information about the current trace frame
     def _add_list_or_int_filter_to_query(
         self,
         filter: Union[int, List[int]],
-        query: "RawQuery[T]",
+        query: RawQuery[T],
         column: InstrumentedAttribute,
         argument_name: str,
-    ) -> "RawQuery[T]":
+    ) -> RawQuery[T]:
         # pyre-fixme[7]: Expected `RawQuery[Variable[T]]` but got `RawQuery[int]`.
         return self._add_list_or_element_filter_to_query(
             filter,
@@ -1263,11 +1263,11 @@ details              show additional information about the current trace frame
     def _add_list_or_element_filter_to_query(
         self,
         filter: Union[T, List[T]],
-        query: "RawQuery[T]",
+        query: RawQuery[T],
         column: InstrumentedAttribute,
         argument_name: str,
         element_type: Type[Union[str, int]],
-    ) -> "RawQuery[T]":
+    ) -> RawQuery[T]:
         if isinstance(filter, element_type):
             return query.filter(column.like(filter))
         if isinstance(filter, list):
@@ -1282,10 +1282,10 @@ details              show additional information about the current trace frame
     def _add_max_int_filter_to_query(
         self,
         filter: int,
-        query: "RawQuery[T]",
+        query: RawQuery[T],
         column: InstrumentedAttribute,
         argument_name: str,
-    ) -> "RawQuery[T]":
+    ) -> RawQuery[T]:
         if isinstance(filter, int):
             return query.filter(column <= filter)
         raise UserError(f"'{argument_name}' should be int.")
