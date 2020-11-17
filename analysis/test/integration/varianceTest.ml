@@ -313,7 +313,7 @@ let test_check_literal_variance context =
       "Incompatible parameter type [6]: Expected `typing.List[float]` "
       ^ "for 1st positional only parameter to call `foo` but got `typing.List[int]`. "
       ^ "This call might modify the type of the parameter. See https://pyre-check.org/docs/"
-      ^ "error-types.html#list-and-dictionary-mismatches-with-subclassing "
+      ^ "errors.html#list-and-dictionary-mismatches-with-subclassing "
       ^ "for mutable container errors.";
     ];
   assert_type_errors
