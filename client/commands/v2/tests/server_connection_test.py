@@ -29,9 +29,13 @@ class SocketTest(testslide.TestCase):
 
 class EchoServerRequestHandler(socketserver.StreamRequestHandler):
     def handle(self) -> None:
-        data = self.rfile.readline()
-        self.wfile.write(data)
-        self.wfile.flush()
+        try:
+            while True:
+                data = self.rfile.readline()
+                self.wfile.write(data)
+                self.wfile.flush()
+        except BrokenPipeError:
+            pass
 
 
 class ConnectionTest(testslide.TestCase):
