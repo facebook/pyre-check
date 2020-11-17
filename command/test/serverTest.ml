@@ -233,7 +233,7 @@ let test_query context =
     serialized
     |> (fun literal -> Expression.String (StringLiteral.create literal))
     |> Node.create_with_default_location
-    |> Type.create ~aliases:(fun _ -> None)
+    |> Type.create ~aliases:Type.empty_aliases
   in
   let create_location start_line start_column stop_line stop_column =
     let start = { Location.line = start_line; column = start_column } in

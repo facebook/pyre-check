@@ -825,7 +825,10 @@ class base class_metadata_environment dependency =
         metaclass;
       }
 
-    method check_invalid_type_parameters ~assumptions annotation =
+    method check_invalid_type_parameters
+        ?(replace_unbound_parameters_with_any = true)
+        ~assumptions
+        annotation =
       let open TypeParameterValidationTypes in
       let module InvalidTypeParametersTransform = Type.Transform.Make (struct
         type state = type_parameters_mismatch list
@@ -910,6 +913,8 @@ class base class_metadata_environment dependency =
                   |> List.unzip
                   |> fun (parameters, errors) ->
                   Type.parametric name parameters, List.filter_map errors ~f:Fn.id @ sofar
+              | None when not replace_unbound_parameters_with_any ->
+                  Type.parametric name (List.map generics ~f:Type.Variable.to_parameter), sofar
               | None ->
                   let annotation, can_accept_more_parameters =
                     match name with
@@ -990,9 +995,12 @@ class base class_metadata_environment dependency =
         ~assumptions
         ?(validation = SharedMemoryKeys.ParseAnnotationKey.ValidatePrimitivesAndTypeParameters)
         expression =
-      let modify_aliases = function
+      let modify_aliases ?replace_unbound_parameters_with_any = function
         | Type.TypeAlias alias ->
-            self#check_invalid_type_parameters alias ~assumptions
+            self#check_invalid_type_parameters
+              ?replace_unbound_parameters_with_any
+              alias
+              ~assumptions
             |> snd
             |> fun alias -> Type.TypeAlias alias
         | result -> result
@@ -4385,7 +4393,8 @@ module ReadOnly = struct
   let attribute_names = add_all_caches_and_empty_assumptions (fun o -> o#attribute_names)
 
   let check_invalid_type_parameters =
-    add_all_caches_and_empty_assumptions (fun o -> o#check_invalid_type_parameters)
+    add_all_caches_and_empty_assumptions (fun o ->
+        o#check_invalid_type_parameters ~replace_unbound_parameters_with_any:true)
 
 
   let parse_annotation read_only ?dependency =

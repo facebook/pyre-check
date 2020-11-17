@@ -131,7 +131,7 @@ let test_add_constraint context =
   let resolution = AnnotatedGlobalEnvironment.read_only environment |> GlobalResolution.create in
   let default_postprocess annotation = Type.Variable.mark_all_variables_as_bound annotation in
   let prep annotation =
-    let aliases a =
+    let aliases ?replace_unbound_parameters_with_any:_ a =
       let s =
         [
           "C";

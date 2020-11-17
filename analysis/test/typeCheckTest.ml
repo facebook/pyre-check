@@ -421,7 +421,7 @@ let test_object_callables context =
         );
       ]
       expression
-      (Type.create ~aliases:(fun _ -> None) (parse_single_expression annotation))
+      (Type.create ~aliases:Type.empty_aliases (parse_single_expression annotation))
   in
   assert_resolved "module.call" "module.Call[int, str]";
   assert_resolved "module.call.attribute" "int";
@@ -438,7 +438,7 @@ let test_callable_selection context =
       ~context
       ["test.py", source]
       expression
-      (Type.create ~aliases:(fun _ -> None) (parse_single_expression annotation))
+      (Type.create ~aliases:Type.empty_aliases (parse_single_expression annotation))
   in
   assert_resolved "call: typing.Callable[[], int]" "test.call()" "int";
   assert_resolved "call: typing.Callable[[int], int]" "test.call()" "int"

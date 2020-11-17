@@ -184,7 +184,7 @@ let test_unresolved_select context =
     in
     let closest_return_annotation = implementation_annotation callable in
     let parse_return return =
-      replace_specials return |> parse_single_expression |> Type.create ~aliases:(fun _ -> None)
+      replace_specials return |> parse_single_expression |> Type.create ~aliases:Type.empty_aliases
     in
     let expected =
       let open SignatureSelectionTypes in

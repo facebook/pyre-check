@@ -17,12 +17,12 @@ val inferred_generic_base
 
 val base_is_from_placeholder_stub
   :  Expression.Call.Argument.t ->
-  aliases:(Type.Primitive.t -> Type.alias option) ->
+  aliases:(?replace_unbound_parameters_with_any:bool -> Type.Primitive.t -> Type.alias option) ->
   from_empty_stub:(Reference.t -> bool) ->
   bool
 
 val extends_placeholder_stub_class
   :  ClassSummary.t Node.t ->
-  aliases:(Type.Primitive.t -> Type.alias option) ->
+  aliases:(?replace_unbound_parameters_with_any:bool -> Type.Primitive.t -> Type.alias option) ->
   from_empty_stub:(Reference.t -> bool) ->
   bool

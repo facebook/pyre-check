@@ -97,7 +97,11 @@ val empty_stub_environment : t -> EmptyStubEnvironment.ReadOnly.t
 
 val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.ReadOnly.t
 
-val aliases : t -> Type.Primitive.t -> Type.alias option
+val aliases
+  :  t ->
+  ?replace_unbound_parameters_with_any:bool ->
+  Type.Primitive.t ->
+  Type.alias option
 
 val base_is_from_placeholder_stub : t -> Expression.Call.Argument.t -> bool
 

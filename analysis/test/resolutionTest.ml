@@ -18,7 +18,7 @@ let test_set_local context =
   let assert_local ~resolution ~name ~expected =
     assert_equal
       ~cmp:(Option.equal Type.equal)
-      (expected >>| parse_single_expression >>| Type.create ~aliases:(fun _ -> None))
+      (expected >>| parse_single_expression >>| Type.create ~aliases:Type.empty_aliases)
       (Resolution.get_local resolution ~reference:!&name >>| Annotation.annotation)
   in
   let resolution = ScratchProject.setup ~context [] |> ScratchProject.build_resolution in
@@ -40,7 +40,7 @@ let test_set_local_with_attributes context =
   let assert_local_with_attributes ?(global_fallback = true) ~resolution ~name ~expected () =
     assert_equal
       ~cmp:(Option.equal Type.equal)
-      (expected >>| parse_single_expression >>| Type.create ~aliases:(fun _ -> None))
+      (expected >>| parse_single_expression >>| Type.create ~aliases:Type.empty_aliases)
       ( Resolution.get_local_with_attributes
           ~global_fallback
           ~name:(Expression.create_name ~location:Location.any name)
@@ -72,7 +72,7 @@ let test_parse_annotation context =
     assert_equal
       ~cmp:Type.equal
       ~printer:Type.show
-      (parse_single_expression expected |> Type.create ~aliases:(fun _ -> None))
+      (parse_single_expression expected |> Type.create ~aliases:Type.empty_aliases)
       ( parse_single_expression expression
       |> GlobalResolution.parse_annotation ~validation resolution )
   in

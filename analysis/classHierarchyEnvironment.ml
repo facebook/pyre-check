@@ -127,7 +127,7 @@ let get_parents alias_environment name ~dependency =
       let has_placeholder_stub_parent =
         AnnotatedBases.extends_placeholder_stub_class
           class_summary
-          ~aliases:(AliasEnvironment.ReadOnly.get_alias alias_environment)
+          ~aliases:(AliasEnvironment.ReadOnly.get_alias alias_environment ?dependency)
           ~from_empty_stub:
             (EmptyStubEnvironment.ReadOnly.from_empty_stub
                (empty_stub_environment alias_environment))

@@ -2385,6 +2385,8 @@ type alias =
   | VariableAlias of t Record.Variable.record
 [@@deriving compare, eq, sexp, show, hash]
 
+let empty_aliases ?replace_unbound_parameters_with_any:_ _ = None
+
 let rec create_logic ~aliases ~variable_aliases { Node.value = expression; _ } =
   let substitute_ordered_types = function
     | Primitive "..." -> Some Record.OrderedTypes.Any
@@ -2953,22 +2955,6 @@ let rec create_logic ~aliases ~variable_aliases { Node.value = expression; _ } =
   | _ -> result
 
 
-let create ~aliases =
-  let variable_aliases name =
-    match aliases name with
-    | Some (VariableAlias variable) -> Some variable
-    | _ -> None
-  in
-  let aliases = function
-    | Primitive name -> (
-        match aliases name with
-        | Some (TypeAlias alias) -> Some alias
-        | _ -> None )
-    | _ -> None
-  in
-  create_logic ~aliases ~variable_aliases
-
-
 (* Check if there is a literal Any provided, not including type aliases to Any. *)
 let expression_contains_any expression =
   let primitives_with_any_map =
@@ -3151,6 +3137,35 @@ let instantiate ?(widen = false) ?(visit_children_before = false) annotation ~co
   snd (InstantiateTransform.visit () annotation)
 
 
+let create ~aliases =
+  let variable_aliases name =
+    match aliases ?replace_unbound_parameters_with_any:(Some false) name with
+    | Some (VariableAlias variable) -> Some variable
+    | _ -> None
+  in
+  let aliases = function
+    | Primitive name -> (
+        match aliases ?replace_unbound_parameters_with_any:(Some true) name with
+        | Some (TypeAlias alias) -> Some alias
+        | _ -> None )
+    | Parametric { name; parameters = [Single parameter] } -> (
+        (* Don't replace unbound generic parameters with Any. Otherwise, a generic alias Foo (or an
+           import alias for a generic alias) will become Foo[Any] instead of Foo[T]. We will not
+           find any free type variables in Foo[Any] and simply resolve it as Foo[Any]. *)
+        match aliases ?replace_unbound_parameters_with_any:(Some false) name with
+        | Some (TypeAlias alias) ->
+            Some
+              (instantiate
+                 ~constraints:(function
+                   | Variable _ -> Some parameter
+                   | _ -> None)
+                 alias)
+        | _ -> None )
+    | _ -> None
+  in
+  create_logic ~aliases ~variable_aliases
+
+
 let weaken_literals annotation =
   let constraints = function
     | Literal (Integer _) -> Some integer
@@ -3216,7 +3231,7 @@ module OrderedTypes = struct
 
     let parse expression ~aliases =
       let variable_aliases name =
-        match aliases name with
+        match aliases ?replace_unbound_parameters_with_any:(Some false) name with
         | Some (VariableAlias variable) -> Some variable
         | _ -> None
       in
@@ -3474,7 +3489,7 @@ module Variable : sig
       val parse_instance_annotation
         :  variable_parameter_annotation:Expression.t ->
         keywords_parameter_annotation:Expression.t ->
-        aliases:(Primitive.t -> alias option) ->
+        aliases:(?replace_unbound_parameters_with_any:bool -> Primitive.t -> alias option) ->
         t option
 
       module Components : sig
@@ -3865,7 +3880,7 @@ end = struct
           ~aliases
         =
         let get_variable name =
-          match aliases name with
+          match aliases ?replace_unbound_parameters_with_any:(Some false) name with
           | Some (VariableAlias (ParameterVariadic variable)) -> Some variable
           | _ -> None
         in

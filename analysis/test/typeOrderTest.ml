@@ -1854,7 +1854,7 @@ let test_less_or_equal_variance _ =
 
 
 let test_join context =
-  let assert_join ?(order = default) ?(aliases = fun _ -> None) left right expected =
+  let assert_join ?(order = default) ?(aliases = Type.empty_aliases) left right expected =
     let parse_annotation source =
       let integer =
         try
@@ -1931,7 +1931,8 @@ let test_join context =
     Type.Variable.Variadic.List.create "Ts" |> Type.Variable.Variadic.List.mark_as_bound
   in
   assert_join
-    ~aliases:(function
+    ~aliases:(fun ?replace_unbound_parameters_with_any:_ name ->
+      match name with
       | "Ts" -> Some (Type.VariableAlias (ListVariadic bound_list_variadic))
       | _ -> None)
     "typing.Tuple[Ts]"
@@ -2391,7 +2392,7 @@ let test_join context =
 
 
 let test_meet _ =
-  let assert_meet ?(order = default) ?(aliases = fun _ -> None) left right expected =
+  let assert_meet ?(order = default) ?(aliases = Type.empty_aliases) left right expected =
     let parse_annotation source =
       let integer =
         try

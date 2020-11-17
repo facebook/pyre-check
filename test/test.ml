@@ -170,7 +170,7 @@ let parse_single_call ?(preprocess = false) source =
   | _ -> failwith "Could not parse single call"
 
 
-let parse_callable ?name ?(aliases = fun _ -> None) callable =
+let parse_callable ?name ?(aliases = Type.empty_aliases) callable =
   let callable = parse_single_expression callable |> Type.create ~aliases in
   match name, callable with
   | Some name, Type.Callable callable ->
@@ -939,8 +939,8 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         Annotated = TypeAlias(object)
         List = TypeAlias(object)
         Dict = TypeAlias(object)
-        Optional = TypeAlias(object)
-        Union = TypeAlias(object)
+        Optional: _SpecialForm = ...
+        Union: _SpecialForm = ...
         Any = object()
         overload = object()
         if sys.version_info >= (3, 8):
@@ -2550,7 +2550,9 @@ let mock_define =
 
 
 let create_type_alias_table type_aliases =
-  let aliases primitive = type_aliases primitive >>| fun alias -> Type.TypeAlias alias in
+  let aliases ?replace_unbound_parameters_with_any:_ primitive =
+    type_aliases primitive >>| fun alias -> Type.TypeAlias alias
+  in
   aliases
 
 

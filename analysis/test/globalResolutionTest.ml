@@ -936,7 +936,7 @@ let test_invalid_type_parameters context =
       parse_single_expression ~preprocess:true annotation
       (* Avoid `GlobalResolution.parse_annotation` because that calls
          `check_invalid_type_parameters`. *)
-      |> Type.create ~aliases:(fun _ -> None)
+      |> Type.create ~aliases:Type.empty_aliases
     in
     let global_resolution =
       let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =

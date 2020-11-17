@@ -642,6 +642,113 @@ let test_check_variable_bindings context =
         pass
     |}
     ["Invalid type parameters [24]: Generic type `G` expects 1 type parameter."];
+  (* Test for a common misuse of variable bounds. *)
+  assert_type_errors
+    {|
+      from typing import TypeVar, Generic
+      TSelf = TypeVar("TSelf", bound="G")
+      T = TypeVar("T")
+
+      class G(Generic[T]):
+        # This method restricts the inputs to be less than `G[Any]` but does
+        # not enforce that the two inputs are of the same type.
+        def expect_self(self: TSelf, other: TSelf) -> TSelf: ...
+
+      x: G[int]
+
+      y: G[str]
+      x.expect_self(y)
+      reveal_type(x.expect_self(y))
+
+      z: bool
+      x.expect_self(z)
+    |}
+    [
+      "Invalid type parameters [24]: Generic type `G` expects 1 type parameter.";
+      "Revealed type [-1]: Revealed type for `x.expect_self(y)` is `typing.Union[G[int], G[str]]`.";
+      "Incompatible parameter type [6]: Expected `Variable[TSelf (bound to G[typing.Any])]` for \
+       1st positional only parameter to call `G.expect_self` but got `bool`.";
+    ];
+  (* Same test as above but without an explicit type for `self`. *)
+  assert_type_errors
+    {|
+      from typing import TypeVar, Generic
+      TSelf = TypeVar("TSelf", bound="G")
+      T = TypeVar("T")
+      class G(Generic[T]):
+        # This method restricts the inputs to be less than `G[Any]` but does
+        # not enforce that the two inputs are of the same type.
+        def expect_self(self, other: TSelf) -> TSelf: ...
+
+      x: G[int]
+
+      y: G[str]
+      x.expect_self(y)
+      reveal_type(x.expect_self(y))
+
+      z: bool
+      x.expect_self(z)
+    |}
+    [
+      "Invalid type parameters [24]: Generic type `G` expects 1 type parameter.";
+      "Revealed type [-1]: Revealed type for `x.expect_self(y)` is `G[str]`.";
+      "Incompatible parameter type [6]: Expected `Variable[TSelf (bound to G[typing.Any])]` for \
+       1st positional only parameter to call `G.expect_self` but got `bool`.";
+    ];
+  (* This actually requires the input to be of the same type as `self`. *)
+  assert_type_errors
+    {|
+      from typing import TypeVar, Generic
+      TSelf = TypeVar("TSelf", bound="G")
+      T = TypeVar("T")
+      class G(Generic[T]):
+        def expect_same_type(self: G[T], other: G[T]) -> G[T]: ...
+
+      x: G[int]
+
+      y: G[str]
+      x.expect_same_type(y)
+      reveal_type(x.expect_same_type(y))
+
+      z: bool
+      x.expect_same_type(z)
+    |}
+    [
+      "Invalid type parameters [24]: Generic type `G` expects 1 type parameter.";
+      "Incompatible parameter type [6]: Expected `G[int]` for 1st positional only parameter to \
+       call `G.expect_same_type` but got `G[str]`.";
+      "Revealed type [-1]: Revealed type for `x.expect_same_type(y)` is `G[int]`.";
+      "Incompatible parameter type [6]: Expected `G[int]` for 1st positional only parameter to \
+       call `G.expect_same_type` but got `bool`.";
+    ];
+  (* Setting the bound as a parameter-less generic class `INode` replaces the parameters with Any.
+     This is equivalent to writing `bound=INode[Any]`. *)
+  assert_type_errors
+    {|
+      from typing import Generic, Tuple, TypeVar
+
+      T = TypeVar("T")
+
+      class INode(Generic[T]): ...
+
+      TBoundToINode = TypeVar("TNodeGetResult", bound=INode)
+
+      TResult = TypeVar("TResult")
+
+      class Query(Generic[TResult]):
+        def get_result(self) -> TResult: ...
+
+      class NodeGetQuery(Query[TBoundToINode]): ...
+
+      y: NodeGetQuery[int]
+      z: NodeGetQuery[INode[str]]
+      z3: NodeGetQuery[INode[int]]
+    |}
+    [
+      "Invalid type parameters [24]: Generic type `INode` expects 1 type parameter.";
+      "Invalid type parameters [24]: Type parameter `int` violates constraints on \
+       `Variable[TBoundToINode (bound to test.INode)]` in generic type `NodeGetQuery`.";
+    ];
   ()
 
 
@@ -2512,6 +2619,265 @@ let test_duplicate_type_variables context =
   ()
 
 
+let test_generic_aliases context =
+  let assert_type_errors = assert_type_errors ~context in
+  assert_type_errors
+    {|
+      from typing import List
+
+      MyList = List[int]
+
+      x: MyList
+      reveal_type(x)
+      reveal_type(x[0])
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `List[int]`.";
+      "Revealed type [-1]: Revealed type for `x[0]` is `int`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Tuple, TypeVar
+      T = TypeVar("T")
+
+      Pair = Tuple[T, T]
+
+      x: Pair[str]
+      reveal_type(x)
+      reveal_type(x[0])
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `Tuple[str, str]`.";
+      "Revealed type [-1]: Revealed type for `x[0]` is `str`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import TypeVar, Union
+      T = TypeVar("T")
+
+      UnionWithInt = Union[T, int]
+
+      x: UnionWithInt[str]
+      reveal_type(x)
+    |}
+    ["Revealed type [-1]: Revealed type for `x` is `Union[int, str]`."];
+  assert_type_errors
+    {|
+      from typing import List, Tuple, TypeVar, Union
+      T = TypeVar("T")
+
+      Alias1 = Union[T, int]
+      Alias2 = Tuple[T, Alias1[T]]
+      Alias3 = List[Alias2[T]]
+
+      x: Alias3[str]
+      reveal_type(x)
+    |}
+    ["Revealed type [-1]: Revealed type for `x` is `List[Tuple[str, Union[int, str]]]`."];
+  (* `Optional` is imported as `foo.bar.baz.Optional`, which is an alias we resolve to
+     `typing.Optional`. *)
+  assert_type_errors
+    ~update_environment_with:
+      [
+        {
+          handle = "foo.py";
+          source =
+            {|
+            from typing import Generic, TypeVar
+            T= TypeVar("T")
+            class SomeGenericClass(Generic[T]): ...
+          |};
+        };
+        {
+          handle = "baz.py";
+          source =
+            {|
+            from typing import Generic, Iterable, Optional, Sequence, Union, TypeVar
+            from foo import SomeGenericClass
+          |};
+        };
+      ]
+    {|
+      from baz import *
+      from typing import List as MyList, TypeVar
+
+      x: Optional[int]
+      y: Union[int]
+      z: MyList[int]
+      z2: Iterable[int]
+      z3: SomeGenericClass[int]
+      reveal_type(Optional)
+      reveal_type(Union)
+      reveal_type(MyList)
+      reveal_type(Iterable)
+      reveal_type(SomeGenericClass)
+
+      reveal_type(x)
+      reveal_type(y)
+      reveal_type(z)
+      reveal_type(z2)
+      reveal_type(z3)
+      z = ["hello"]
+      z2 = ["hello"]
+      z3 = ["hello"]
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `baz.Optional` is `typing.Type[typing.Optional]`.";
+      "Revealed type [-1]: Revealed type for `baz.Union` is `typing.Type[typing.Union]`.";
+      "Revealed type [-1]: Revealed type for `typing.List` is `typing.Type[list]`.";
+      "Revealed type [-1]: Revealed type for `baz.Iterable` is `typing.Type[typing.Iterable]`.";
+      "Revealed type [-1]: Revealed type for `baz.SomeGenericClass` is \
+       `typing.Type[foo.SomeGenericClass]`.";
+      "Revealed type [-1]: Revealed type for `x` is `typing.Optional[int]`.";
+      "Revealed type [-1]: Revealed type for `y` is `int`.";
+      "Revealed type [-1]: Revealed type for `z` is `MyList[int]`.";
+      "Revealed type [-1]: Revealed type for `z2` is `typing.Iterable[int]`.";
+      "Revealed type [-1]: Revealed type for `z3` is `foo.SomeGenericClass[int]`.";
+      "Incompatible variable type [9]: z is declared to have type `MyList[int]` but is used as \
+       type `MyList[str]`.";
+      "Incompatible variable type [9]: z2 is declared to have type `typing.Iterable[int]` but is \
+       used as type `typing.Iterable[str]`.";
+      "Incompatible variable type [9]: z3 is declared to have type `foo.SomeGenericClass[int]` but \
+       is used as type `MyList[str]`.";
+    ];
+  (* Generic alias for a class respects variance. *)
+  assert_type_errors
+    {|
+      from typing import TypeVar, Iterable as MyIterable, List as MyList
+      T = TypeVar("T")
+
+      class Base: ...
+      class Child(Base): ...
+
+      xs: MyIterable[Child]
+      # No error, since Iterable is covariant.
+      ys: MyIterable[Base] = xs
+
+      xs: MyList[Child]
+      # Error because List is invariant.
+      ys: MyList[Base] = xs
+    |}
+    [
+      "Incompatible variable type [9]: ys is declared to have type `MyList[Base]` but is used as \
+       type `MyList[Child]`.";
+    ];
+  (* Error messages. *)
+  (* Zero type parameters provided. *)
+  assert_type_errors
+    {|
+      from typing import Tuple, TypeVar
+      T = TypeVar("T")
+
+      Pair = Tuple[T, T]
+
+      y: Pair
+      reveal_type(y)
+    |}
+    [
+      (* TODO(T78935633): Raise clearer error. This happens because `y: Pair` resolves to `y:
+         Tuple[T, T]`. *)
+      "Invalid type variable [34]: The type variable `Variable[T]` can only be used to annotate \
+       generic classes or functions.";
+      "Revealed type [-1]: Revealed type for `y` is `typing.Any`.";
+    ];
+  (* Extra type parameters provided. *)
+  assert_type_errors
+    {|
+      from typing import Tuple, TypeVar
+      T = TypeVar("T")
+
+      Pair = Tuple[T, T]
+
+      y: Pair[int, str]
+      reveal_type(y)
+    |}
+    [
+      (* TODO(T78935633): Raise clearer error. *)
+      "Undefined or invalid type [11]: Annotation `Pair` is not defined as a type.";
+      "Revealed type [-1]: Revealed type for `y` is `typing.Any`.";
+    ];
+  (* More than one free variable in the alias body. Choosing to error on this because otherwise the
+     order of the type parameters can be hard to figure out. *)
+  assert_type_errors
+    {|
+      from typing import Tuple, TypeVar
+      T1 = TypeVar("T1")
+      T2 = TypeVar("T2")
+
+      Pair = Tuple[T1, T2]
+
+      y: Pair[int]
+      reveal_type(y)
+      y: Pair[int, str]
+      reveal_type(y)
+    |}
+    [
+      (* TODO(T78935633): Raise error about the extra free variable. *)
+      "Revealed type [-1]: Revealed type for `y` is `Tuple[int, int]`.";
+      (* TODO(T78935633): Raise clearer error. *)
+      "Undefined or invalid type [11]: Annotation `Pair` is not defined as a type.";
+      "Revealed type [-1]: Revealed type for `y` is `typing.Any`.";
+    ];
+  (* No free variables in the alias body. *)
+  assert_type_errors
+    {|
+      from typing import Any, Tuple, TypeVar
+      T = TypeVar("T")
+
+      Pair = Tuple[str, int]
+
+      y: Pair
+      reveal_type(y)
+      y: Pair[str]
+      reveal_type(y)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `y` is `Tuple[str, int]`.";
+      (* TODO(T78935633): Raise error about extra parameter. *)
+      "Revealed type [-1]: Revealed type for `y` is `Tuple[str, int]`.";
+    ];
+  (* TODO(T78935633): We should error on the naked Foo and treat it as Foo[Any]. *)
+  assert_type_errors
+    {|
+      from typing import *
+
+      T = TypeVar("T")
+
+      MyList = List[T]
+
+      def foo(x: T, y: MyList) -> MyList:
+        return y
+
+      foo(1, ['hello'])
+      foo('some', ['hello'])
+      reveal_type(foo(1, ['hello']))
+    |}
+    [
+      "Incompatible parameter type [6]: Expected `typing.List[Variable[T]]` for 2nd positional \
+       only parameter to call `foo` but got `typing.List[str]`.";
+      "Revealed type [-1]: Revealed type for `test.foo(1, [\"hello\"])` is \
+       `typing.List[typing_extensions.Literal[1]]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import *
+
+      MyList = List
+
+      def foo(x: MyList) -> MyList: ...
+      reveal_type(foo)
+      reveal_type(foo(['hello']))
+    |}
+    [
+      "Invalid type parameters [24]: Generic type `list` expects 1 type parameter, use \
+       `typing.List` to avoid runtime subscripting errors.";
+      "Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable(foo)[[Named(x, \
+       typing.List[typing.Any])], typing.List[typing.Any]]`.";
+      "Revealed type [-1]: Revealed type for `test.foo([\"hello\"])` is `typing.List[typing.Any]`.";
+    ];
+  ()
+
+
 let () =
   "typeVariable"
   >::: [
@@ -2530,5 +2896,6 @@ let () =
          "concatenation" >:: test_concatenation_operator;
          "user_defined_parameter_variadics" >:: test_user_defined_parameter_specification_classes;
          "duplicate_type_variables" >:: test_duplicate_type_variables;
+         "generic_aliases" >:: test_generic_aliases;
        ]
   |> Test.run

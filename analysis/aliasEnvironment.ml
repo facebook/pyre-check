@@ -30,7 +30,11 @@ module UnresolvedAlias = struct
   }
 
   let unchecked_resolve ~unparsed ~target map =
-    match Type.create ~aliases:(Map.find map) unparsed with
+    match
+      Type.create
+        ~aliases:(fun ?replace_unbound_parameters_with_any:_ name -> Map.find map name)
+        unparsed
+    with
     | Type.Variable variable ->
         if Type.Variable.Unary.contains_subvariable variable then
           Type.Any
@@ -112,7 +116,7 @@ let extract_alias unannotated_global_environment name ~dependency =
   let extract_alias = function
     | UnannotatedGlobal.SimpleAssign { explicit_annotation; value; _ } -> (
         let target_annotation =
-          Type.create ~aliases:(fun _ -> None) (from_reference ~location:Location.any name)
+          Type.create ~aliases:Type.empty_aliases (from_reference ~location:Location.any name)
         in
         match Node.value value, explicit_annotation with
         | ( _,
@@ -228,7 +232,7 @@ let extract_alias unannotated_global_environment name ~dependency =
         | Call _, None
         | Name _, None -> (
             let value = delocalize value in
-            let value_annotation = Type.create ~aliases:(fun _ -> None) value in
+            let value_annotation = Type.create ~aliases:Type.empty_aliases value in
             match Type.Variable.parse_declaration value ~target:name with
             | Some variable -> Some (VariableAlias variable)
             | _ ->
@@ -359,7 +363,9 @@ include Aliases
 module ReadOnly = struct
   include Aliases.ReadOnly
 
-  let get_alias = get
+  let get_alias environment ?dependency ?replace_unbound_parameters_with_any:_ name =
+    get environment ?dependency name
+
 
   let empty_stub_environment = upstream_environment
 
@@ -374,10 +380,15 @@ module ReadOnly = struct
       ?(allow_untracked = false)
       expression
     =
-    let modify_aliases = Option.value modify_aliases ~default:Fn.id in
+    let modify_aliases =
+      Option.value modify_aliases ~default:(fun ?replace_unbound_parameters_with_any:_ name -> name)
+    in
     let parsed =
       let expression = delocalize expression in
-      let aliases name = get_alias environment ?dependency name >>| modify_aliases in
+      let aliases ?replace_unbound_parameters_with_any name =
+        get_alias environment ?dependency name
+        >>| modify_aliases ?replace_unbound_parameters_with_any
+      in
       Type.create ~aliases expression
     in
     let annotation =
@@ -411,7 +422,9 @@ module ReadOnly = struct
 
   let parse_as_concatenation environment ?dependency expression =
     delocalize expression
-    |> Type.OrderedTypes.Concatenation.parse ~aliases:(get_alias environment ?dependency)
+    |> Type.OrderedTypes.Concatenation.parse
+         ~aliases:(fun ?replace_unbound_parameters_with_any:_ name ->
+           get_alias environment ?dependency name)
 
 
   let parse_as_parameter_specification_instance_annotation
@@ -424,7 +437,8 @@ module ReadOnly = struct
       delocalize variable_parameter_annotation, delocalize keywords_parameter_annotation
     in
     Type.Variable.Variadic.Parameters.parse_instance_annotation
-      ~aliases:(get_alias environment ?dependency)
+      ~aliases:(fun ?replace_unbound_parameters_with_any:_ name ->
+        get_alias environment ?dependency name)
       ~variable_parameter_annotation
       ~keywords_parameter_annotation
 end

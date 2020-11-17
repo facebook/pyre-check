@@ -491,7 +491,12 @@ type alias =
   | VariableAlias of t Record.Variable.record
 [@@deriving compare, eq, sexp, show, hash]
 
-val create : aliases:(Primitive.t -> alias option) -> Expression.t -> t
+val create
+  :  aliases:(?replace_unbound_parameters_with_any:bool -> Primitive.t -> alias option) ->
+  Expression.t ->
+  t
+
+val empty_aliases : ?replace_unbound_parameters_with_any:bool -> Primitive.t -> alias option
 
 val contains_callable : t -> bool
 
@@ -661,7 +666,7 @@ module OrderedTypes : sig
 
     val parse
       :  Expression.t ->
-      aliases:(Primitive.t -> alias option) ->
+      aliases:(?replace_unbound_parameters_with_any:bool -> Primitive.t -> alias option) ->
       (type_t Middle.t, type_t) t option
 
     val create : ?head:'outer list -> ?tail:'outer list -> 'middle -> ('middle, 'outer) t
@@ -799,7 +804,7 @@ module Variable : sig
       val parse_instance_annotation
         :  variable_parameter_annotation:Expression.t ->
         keywords_parameter_annotation:Expression.t ->
-        aliases:(Primitive.t -> alias option) ->
+        aliases:(?replace_unbound_parameters_with_any:bool -> Primitive.t -> alias option) ->
         t option
 
       module Components : sig

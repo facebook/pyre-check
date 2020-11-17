@@ -32,7 +32,9 @@ let test_create _ =
       ~printer:Type.show
       ~cmp:Type.equal
       annotation
-      (Type.create ~aliases (parse_single_expression ~preprocess:true source))
+      (Type.create
+         ~aliases:(fun ?replace_unbound_parameters_with_any:_ -> aliases)
+         (parse_single_expression ~preprocess:true source))
   in
   assert_create "foo" (Type.Primitive "foo");
   assert_create "foo.bar" (Type.Primitive "foo.bar");
@@ -223,10 +225,10 @@ let test_create _ =
   assert_alias "Parametric[Alias]" (Type.parametric "Parametric" ![Type.Primitive "Aliased"]);
   assert_alias "Alias[int]" (Type.parametric "Aliased" ![Type.integer]);
 
-  (* TODO(T44787675): Implement actual generic aliases *)
   assert_alias
     "_Future[int]"
-    (Type.union [Type.parametric "Future" ![Type.integer]; Type.awaitable Type.integer]);
+    (Type.union
+       [Type.parametric "Future" ![Type.integer; Type.integer]; Type.awaitable Type.integer]);
 
   (* String literals. *)
   assert_create "'foo'" (Type.Primitive "foo");
@@ -1140,7 +1142,7 @@ let test_dequalify _ =
 
 
 let test_from_overloads _ =
-  let assert_create ?(aliases = fun _ -> None) sources expected =
+  let assert_create ?(aliases = Type.empty_aliases) sources expected =
     let merged =
       let parse_callable source =
         match Type.create ~aliases (parse_single_expression source) with
@@ -1182,14 +1184,14 @@ let test_from_overloads _ =
 let test_with_return_annotation _ =
   let assert_with_return_annotation annotation callable expected =
     let callable =
-      match Type.create ~aliases:(fun _ -> None) (parse_single_expression callable) with
+      match Type.create ~aliases:Type.empty_aliases (parse_single_expression callable) with
       | Type.Callable callable -> callable
       | _ -> failwith ("Could not extract callable from " ^ callable)
     in
     assert_equal
       ~cmp:Type.equal
       ~printer:Type.show
-      (Type.create ~aliases:(fun _ -> None) (parse_single_expression expected))
+      (Type.create ~aliases:Type.empty_aliases (parse_single_expression expected))
       (Type.Callable (Type.Callable.with_return_annotation ~annotation callable))
   in
   assert_with_return_annotation
@@ -1205,7 +1207,7 @@ let test_with_return_annotation _ =
 let test_overload_parameters _ =
   let assert_parameters callable expected =
     let { Type.Callable.overloads; _ } =
-      Type.create ~aliases:(fun _ -> None) (parse_single_expression callable)
+      Type.create ~aliases:Type.empty_aliases (parse_single_expression callable)
       |> function
       | Type.Callable callable -> callable
       | _ -> failwith ("Could not extract callable from " ^ callable)
@@ -1277,7 +1279,7 @@ let test_lambda _ =
 
 
 let test_visit _ =
-  let create source = Type.create ~aliases:(fun _ -> None) (parse_single_expression source) in
+  let create source = Type.create ~aliases:Type.empty_aliases (parse_single_expression source) in
   let assert_types_equal annotation expected =
     assert_equal ~printer:Type.show ~cmp:Type.equal expected annotation
   in

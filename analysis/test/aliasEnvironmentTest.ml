@@ -82,7 +82,7 @@ let test_harder_registrations context =
   in
   let parsed_assert_registers =
     let parser expression =
-      parse_single_expression expression |> Type.create ~aliases:(fun _ -> None)
+      parse_single_expression expression |> Type.create ~aliases:Type.empty_aliases
     in
     assert_registers ~parser
   in
@@ -160,7 +160,7 @@ let test_updates context =
       let expectation =
         expectation
         >>| parse_single_expression
-        >>| Type.create ~aliases:(fun _ -> None)
+        >>| Type.create ~aliases:Type.empty_aliases
         >>| fun alias -> Type.TypeAlias alias
       in
       AliasEnvironment.ReadOnly.get_alias read_only ~dependency alias_name
