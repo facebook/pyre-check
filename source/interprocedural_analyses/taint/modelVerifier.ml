@@ -163,8 +163,9 @@ let verify_signature ~normalized_model_parameters ~name callable_annotation =
             else
               Some
                 (Format.asprintf
-                   "Model signature parameters do not match implementation `%s`. Reason(s): %s."
+                   "Model signature parameters do not match implementation `%s`. Reason%s: %s."
                    (Type.show_for_hover (Type.Callable callable))
+                   (if List.length model_compatibility_errors > 1 then "s" else "")
                    (String.concat model_compatibility_errors ~sep:"; "))
       in
       match error with

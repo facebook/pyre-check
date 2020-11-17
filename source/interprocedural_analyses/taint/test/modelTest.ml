@@ -1047,7 +1047,7 @@ let test_invalid_models context =
     ~expect:
       "Invalid model for `test.sink_with_optional`: Model signature parameters do not match \
        implementation `def sink_with_optional(parameter: unknown, firstOptional: unknown = ..., \
-       secondOptional: unknown = ...) -> None: ...`. Reason(s): unexpected named parameter: \
+       secondOptional: unknown = ...) -> None: ...`. Reason: unexpected named parameter: \
        `thirdOptional`."
     ();
   assert_invalid_model
@@ -1055,7 +1055,7 @@ let test_invalid_models context =
     ~expect:
       "Invalid model for `test.sink_with_optional`: Model signature parameters do not match \
        implementation `def sink_with_optional(parameter: unknown, firstOptional: unknown = ..., \
-       secondOptional: unknown = ...) -> None: ...`. Reason(s): unexpected named parameter: \
+       secondOptional: unknown = ...) -> None: ...`. Reasons: unexpected named parameter: \
        `firstBad`; unexpected named parameter: `secondBad`."
     ();
   assert_invalid_model
@@ -1063,22 +1063,22 @@ let test_invalid_models context =
     ~expect:
       "Invalid model for `test.sink_with_optional`: Model signature parameters do not match \
        implementation `def sink_with_optional(parameter: unknown, firstOptional: unknown = ..., \
-       secondOptional: unknown = ...) -> None: ...`. Reason(s): unexpected star parameter."
+       secondOptional: unknown = ...) -> None: ...`. Reason: unexpected star parameter."
     ();
   assert_invalid_model
     ~model_source:"def test.sink_with_optional(parameter, **kwargs): ..."
     ~expect:
       "Invalid model for `test.sink_with_optional`: Model signature parameters do not match \
        implementation `def sink_with_optional(parameter: unknown, firstOptional: unknown = ..., \
-       secondOptional: unknown = ...) -> None: ...`. Reason(s): unexpected star star parameter."
+       secondOptional: unknown = ...) -> None: ...`. Reason: unexpected star star parameter."
     ();
   assert_invalid_model
     ~model_source:"def test.sink_with_optional(__parameter): ..."
     ~expect:
       "Invalid model for `test.sink_with_optional`: Model signature parameters do not match \
        implementation `def sink_with_optional(parameter: unknown, firstOptional: unknown = ..., \
-       secondOptional: unknown = ...) -> None: ...`. Reason(s): unexpected positional only \
-       parameter: `__parameter`."
+       secondOptional: unknown = ...) -> None: ...`. Reason: unexpected positional only parameter: \
+       `__parameter`."
     ();
   assert_valid_model
     ~model_source:"def test.function_with_args(normal_arg, __random_name, named_arg, *args): ..."
@@ -1203,7 +1203,7 @@ let test_invalid_models context =
     |}
     ~expect:
       "Invalid model for `test.C.foo`: Model signature parameters do not match implementation \
-       `(self: C) -> int`. Reason(s): unexpected named parameter: `value`."
+       `(self: C) -> int`. Reason: unexpected named parameter: `value`."
     ();
   assert_valid_model
     ~source:

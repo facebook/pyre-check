@@ -35,3 +35,8 @@ def zipped_element_not_flowing_to_sink(x):
 
     for x, y in zip(l1, l2):
         __test_sink(y)
+
+
+class Woot:
+    def taint_self(self, item):
+        ...
