@@ -89,8 +89,8 @@ class Runner(NamedTuple):
                 build_type = BuildType.FACEBOOK
             else:
                 build_type = BuildType.EXTERNAL
-        with open(pyre_directory / "dune.in") as dune_in:
-            with open(pyre_directory / "dune", "w") as dune:
+        with open(pyre_directory / "source" / "dune.in") as dune_in:
+            with open(pyre_directory / "source" / "dune", "w") as dune:
                 dune_data = dune_in.read()
                 dune.write(dune_data.replace("%VERSION%", build_type.value))
 
@@ -188,7 +188,7 @@ class Runner(NamedTuple):
         if run_clean:
             self.run(
                 ["dune", "clean"],
-                pyre_directory,
+                pyre_directory / "source",
                 add_environment_variables=opam_environment_variables,
             )
 
@@ -196,13 +196,13 @@ class Runner(NamedTuple):
 
         if run_tests:
             self.run(
-                ["make", "--jobs", jobs, "test"],
+                ["make", "--jobs", jobs, "test", "--directory", "source"],
                 pyre_directory,
                 add_environment_variables=opam_environment_variables,
             )
 
         self.run(
-            ["make", self.make_arguments, "--jobs", jobs],
+            ["make", self.make_arguments, "--jobs", jobs, "--directory", "source"],
             pyre_directory,
             add_environment_variables=opam_environment_variables,
         )

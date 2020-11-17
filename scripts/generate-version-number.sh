@@ -39,7 +39,7 @@ else
 fi
 
 # Add version information to the file.
-cat > "${SCRIPTS_DIRECTORY}/../version.ml" <<EOF
+cat > "${SCRIPTS_DIRECTORY}/../source/version.ml" <<EOF
 open Core
 
 let build_info () =

@@ -6,6 +6,9 @@
 
 set -e
 
+SCRIPTS_DIRECTORY="$(dirname "$("${READLINK}" -f "$0")")"
+cd "${SCRIPTS_DIRECTORY}/.."
+
 # Prefer a python3.6 interpreter to maintain full backward compatibility.
 if command -v python3.6 &>/dev/null; then
   PYTHON_INTERPRETER=$(command -v python3.6)

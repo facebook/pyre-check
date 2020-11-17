@@ -164,12 +164,12 @@ def patch_version(version: str, build_root: Path) -> None:
 
 
 def binary_exists(pyre_directory: Path) -> bool:
-    return (pyre_directory / "_build/default/main.exe").is_file()
+    return (pyre_directory / "source" / "_build/default/main.exe").is_file()
 
 
 def sync_binary(pyre_directory: Path, build_root: Path) -> None:
     (build_root / "bin").mkdir()
-    shutil.copy(pyre_directory / "_build/default/main.exe", build_root / "bin/pyre.bin")
+    shutil.copy(pyre_directory / "source" / "_build/default/main.exe", build_root / "bin/pyre.bin")
 
 
 def sync_documentation_files(pyre_directory: Path, build_root: Path) -> None:
