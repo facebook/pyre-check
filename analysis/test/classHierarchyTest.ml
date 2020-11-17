@@ -452,7 +452,9 @@ let variadic_order =
         Group
           (Concatenation
              (Type.OrderedTypes.Concatenation.create
-                (Type.OrderedTypes.Concatenation.Middle.create ~mappers:["list"] ~variable:variadic)));
+                (Type.OrderedTypes.Concatenation.Middle.create
+                   ~mappers:[Type.Record.OrderedTypes.RecordConcatenate.Middle.ClassMapper "list"]
+                   ~variable:variadic)));
       ];
   insert order "DTypedTensor";
   connect

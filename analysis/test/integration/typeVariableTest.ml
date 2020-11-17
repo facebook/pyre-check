@@ -2105,6 +2105,136 @@ let test_map context =
        parameter group `[Map[list, test.Ts]]` was given for generic type list.";
       "Revealed type [-1]: Revealed type for `x` is `List[typing.Any]`.";
     ];
+  assert_type_errors
+    {|
+      from typing import Tuple, TypeVar, Union
+      from pyre_extensions import ListVariadic
+      from pyre_extensions.type_variable_operators import Map
+
+      Ts = ListVariadic("Ts")
+      T = TypeVar("T")
+
+      UnionWithInt = Union[T, int]
+
+      def foo(xs: Tuple[Ts]) -> Tuple[Map[UnionWithInt, Ts]]: ...
+
+      x: Tuple[Union[bool, int], Union[str, int]] = foo((True, "hello"))
+      x2: Tuple[bool, str] = foo((True, "hello"))
+    |}
+    [
+      "Incompatible variable type [9]: x2 is declared to have type `Tuple[bool, str]` but is used \
+       as type `Tuple[Union[bool, int], Union[str, int]]`.";
+    ];
+  assert_type_errors
+    {|
+    from typing import Tuple, List, Generic, TypeVar, Union
+    from pyre_extensions import ListVariadic
+    from pyre_extensions.type_variable_operators import Map
+
+    Ts = ListVariadic("Ts")
+    T = TypeVar("T")
+
+    Pair = Tuple[T, T]
+
+    def unwrap(x: Tuple[Map[Pair, Ts]]) -> Tuple[Ts]: ...
+
+    def foo(x: Tuple[int, int], y: Tuple[bool, bool], z: int) -> None:
+      result1 = unwrap((x, y))
+      reveal_type(result1)
+
+      result2 = unwrap((x, z))
+      reveal_type(result2)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `result1` is `Tuple[int, bool]`.";
+      "Incomplete type [37]: Type `typing.Tuple[test.Ts]` inferred for `result2` is incomplete, \
+       add an explicit annotation.";
+      "Incompatible parameter type [6]: Expected `typing.Tuple[Map[typing.Tuple[Variable[test.T], \
+       Variable[test.T]], test.Ts]]` for 1st positional only parameter to call `unwrap` but got \
+       `Tuple[Tuple[int, int], int]`.";
+      "Revealed type [-1]: Revealed type for `result2` is `typing.Tuple[...]`.";
+    ];
+  (* Note that it is legal to pass an inlined generic type as the `Map` operand.
+
+     TODO(T78935633): We should error on a `Map` operand with two free variables. Currently, it just
+     replaces all free variables with the same concrete type. *)
+  assert_type_errors
+    {|
+      from typing import List, Tuple, TypeVar, Union
+      from pyre_extensions import ListVariadic
+      from pyre_extensions.type_variable_operators import Map
+
+      Ts = ListVariadic("Ts")
+      T = TypeVar("T")
+      T2 = TypeVar("T2")
+
+      def foo(xs: Tuple[Ts]) -> Tuple[Map[Union[T, int], Ts]]: ...
+      def foo2(xs: Tuple[Ts]) -> Tuple[Map[Union[T, T2], Ts]]: ...
+
+      # An operand with no free variables ignores the concrete type parameter.
+      def foo3(xs: Tuple[Ts]) -> Tuple[Map[List[int], Ts]]: ...
+
+      x: Tuple[Union[bool, int], Union[str, int]] = foo((True, "hello"))
+      x2: Tuple[bool, str] = foo2((True, "hello"))
+      x3: Tuple[List[int], List[int]] = foo3((True, "hello"))
+    |}
+    [];
+  (* Test cases where `T` is bound.
+
+     We do not instantiate variables within the operand of `Map`. So, the operand remains as
+     `Union[T, int]` even when T is bound to int.
+
+     Ideally, we'd use a syntax like `forall T . Union[T, int]` to make it explicit that this is a
+     new scope for T. *)
+  assert_type_errors
+    {|
+      from typing import List, Tuple, TypeVar, Union
+      from pyre_extensions import ListVariadic
+      from pyre_extensions.type_variable_operators import Map
+
+      Ts = ListVariadic("Ts")
+      T = TypeVar("T")
+
+      class Foo: ...
+
+      UnionWithInt = Union[T, int]
+
+      def binding_for_T(xs: Tuple[Ts], y: T) -> Tuple[Map[UnionWithInt, Ts]]: ...
+      def binding_for_T2(xs: Tuple[Ts], y: T) -> Tuple[Map[Union[T, int], Ts]]: ...
+
+      reveal_type(binding_for_T((True, "hello"), Foo()))
+      reveal_type(binding_for_T2((True, "hello"), Foo()))
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `test.binding_for_T((True, \"hello\"), test.Foo())` \
+       is `Tuple[Union[typing_extensions.Literal[True], int], \
+       Union[typing_extensions.Literal['hello'], int]]`.";
+      "Revealed type [-1]: Revealed type for `test.binding_for_T2((True, \"hello\"), test.Foo())` \
+       is `Tuple[Union[typing_extensions.Literal[True], int], \
+       Union[typing_extensions.Literal['hello'], int]]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Generic, List, Tuple, TypeVar, Union
+      from pyre_extensions import ListVariadic
+      from pyre_extensions.type_variable_operators import Map
+
+      Ts = ListVariadic("Ts")
+      T = TypeVar("T")
+
+      class Foo: ...
+
+      class G(Generic[T]):
+        def binding_for_T(self, xs: Tuple[Ts], y: T) -> Tuple[Map[Union[T, int], Ts]]: ...
+
+      x: G[int]
+      reveal_type(x.binding_for_T((True, "hello"), Foo()))
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x.binding_for_T((True, \"hello\"), test.Foo())` is \
+       `Tuple[Union[typing_extensions.Literal[True], int], \
+       Union[typing_extensions.Literal['hello'], int]]`.";
+    ];
 
   ()
 

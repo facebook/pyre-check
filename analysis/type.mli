@@ -65,6 +65,11 @@ module Record : sig
     module RecordConcatenate : sig
       module Middle : sig
         type 'annotation t [@@deriving compare, eq, sexp, show, hash]
+
+        type 'annotation mapper =
+          | ClassMapper of Identifier.t
+          | GenericAliasMapper of 'annotation
+        [@@deriving compare, eq, sexp, show, hash]
       end
 
       type ('middle, 'outer) t [@@deriving compare, eq, sexp, show, hash]
@@ -631,6 +636,11 @@ module OrderedTypes : sig
 
       val create
         :  variable:type_t Record.Variable.RecordVariadic.RecordList.record ->
+        mappers:type_t mapper list ->
+        type_t t
+
+      val create_from_class_mappers
+        :  variable:type_t Record.Variable.RecordVariadic.RecordList.record ->
         mappers:Identifier.t list ->
         type_t t
 
@@ -677,7 +687,7 @@ module OrderedTypes : sig
        mapper] *)
     val apply_mapping
       :  (type_t Middle.t, type_t) t ->
-      mapper:Primitive.t ->
+      mapper:type_t Middle.mapper ->
       (type_t Middle.t, type_t) t
   end
 

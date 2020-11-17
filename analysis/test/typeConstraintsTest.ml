@@ -505,7 +505,11 @@ let test_multiple_variable_solution _ =
       [
         `Lower
           (ListVariadicPair
-             (list_variadic_a, Concatenation (create_concatenation ~mappers:["Foo"] list_variadic_b)));
+             ( list_variadic_a,
+               Concatenation
+                 (create_concatenation
+                    ~mappers:[Type.Record.OrderedTypes.RecordConcatenate.Middle.ClassMapper "Foo"]
+                    list_variadic_b) ));
         `Lower
           (ListVariadicPair (list_variadic_b, Type.OrderedTypes.Concrete [Type.integer; Type.string]));
       ]

@@ -23,7 +23,28 @@ let create_concatenation ?head ?tail ?mappers variable
   Type.OrderedTypes.Concatenation.create
     ?head
     ?tail
-    (Type.OrderedTypes.Concatenation.Middle.create ~mappers ~variable)
+    (Type.OrderedTypes.Concatenation.Middle.create
+       ~mappers:
+         (List.map
+            ~f:(fun name -> Type.Record.OrderedTypes.RecordConcatenate.Middle.ClassMapper name)
+            mappers)
+       ~variable)
+
+
+let create_concatenation_with_generic_alias_mapper ?head ?tail ?mappers variable
+    : (Type.t Type.OrderedTypes.Concatenation.Middle.t, Type.t) Type.OrderedTypes.Concatenation.t
+  =
+  let mappers = Option.value mappers ~default:[] in
+  Type.OrderedTypes.Concatenation.create
+    ?head
+    ?tail
+    (Type.OrderedTypes.Concatenation.Middle.create
+       ~mappers:
+         (List.map
+            ~f:(fun annotation ->
+              Type.Record.OrderedTypes.RecordConcatenate.Middle.GenericAliasMapper annotation)
+            mappers)
+       ~variable)
 
 
 let test_create _ =
@@ -46,6 +67,7 @@ let test_create _ =
     "foo[bar, baz]"
     (Type.parametric "foo" ![Type.Primitive "bar"; Type.Primitive "baz"]);
   let variadic = Type.Variable.Variadic.List.create "Ts" in
+  let unary_variable = Type.Variable.Unary.create "T" in
   assert_create
     ~aliases:(function
       | "Ts" -> Some (VariableAlias (Type.Variable.ListVariadic variadic))
@@ -60,6 +82,21 @@ let test_create _ =
     (Type.parametric
        "foo"
        [Group (Concatenation (create_concatenation ~mappers:["list"] variadic))]);
+  assert_create
+    ~aliases:(function
+      | "Ts" -> Some (VariableAlias (Type.Variable.ListVariadic variadic))
+      | "T" -> Some (TypeAlias (Type.Variable unary_variable))
+      | _ -> None)
+    "foo[pyre_extensions.type_variable_operators.Map[typing.Union[T, int], Ts]]"
+    (Type.parametric
+       "foo"
+       [
+         Group
+           (Concatenation
+              (create_concatenation_with_generic_alias_mapper
+                 ~mappers:[Type.union [Type.Variable unary_variable; Type.integer]]
+                 variadic));
+       ]);
   assert_create
     ~aliases:(function
       | "Ts" -> Some (VariableAlias (Type.Variable.ListVariadic variadic))
@@ -530,6 +567,18 @@ let test_expression _ =
               (create_concatenation ~mappers:["Foo"] (Type.Variable.Variadic.List.create "Ts")));
        ])
     "foo.Variadic.__getitem__(pyre_extensions.type_variable_operators.Map.__getitem__((Foo, Ts)))";
+  assert_expression
+    (Type.parametric
+       "foo.SomeVariadic"
+       [
+         Group
+           (Concatenation
+              (create_concatenation_with_generic_alias_mapper
+                 ~mappers:[Type.list (Type.Variable (Type.Variable.Unary.create "T"))]
+                 (Type.Variable.Variadic.List.create "Ts")));
+       ])
+    "foo.SomeVariadic.__getitem__(pyre_extensions.type_variable_operators.Map.__getitem__((typing.List.__getitem__((T)), \
+     Ts)))";
 
   (* Callables. *)
   let open Type.Callable in
@@ -2091,25 +2140,75 @@ let test_parse_type_variable_declarations _ =
 let test_middle_singleton_replace_variable _ =
   let assert_replaces_into ~middle ~replacement expected =
     assert_equal
+      ~printer:Type.show
       (Type.OrderedTypes.Concatenation.Middle.singleton_replace_variable middle ~replacement)
       expected
   in
   let variable = Type.Variable.Variadic.List.create "Ts" in
+  let unary_variable = Type.Variable.Unary.create "T" in
   assert_replaces_into
-    ~middle:(Type.OrderedTypes.Concatenation.Middle.create ~mappers:["Foo"; "Bar"] ~variable)
+    ~middle:
+      (Type.OrderedTypes.Concatenation.Middle.create
+         ~mappers:
+           [
+             Type.Record.OrderedTypes.RecordConcatenate.Middle.ClassMapper "Foo";
+             Type.Record.OrderedTypes.RecordConcatenate.Middle.ClassMapper "Bar";
+           ]
+         ~variable)
     ~replacement:Type.integer
     (Type.parametric
        "Foo"
        [Single (Parametric { name = "Bar"; parameters = [Single Type.integer] })]);
+  assert_replaces_into
+    ~middle:
+      (Type.OrderedTypes.Concatenation.Middle.create
+         ~mappers:
+           [
+             Type.Record.OrderedTypes.RecordConcatenate.Middle.GenericAliasMapper
+               (Type.union [Type.Variable unary_variable; Type.integer]);
+             Type.Record.OrderedTypes.RecordConcatenate.Middle.GenericAliasMapper
+               (Type.Tuple
+                  (Type.Bounded
+                     (Concrete [Type.Variable unary_variable; Type.Variable unary_variable])));
+           ]
+         ~variable)
+    ~replacement:Type.string
+    (Type.union [Type.integer; Type.Tuple (Type.Bounded (Concrete [Type.string; Type.string]))]);
 
   (* This approach is used to solve concretes against maps *)
-  let unary_variable = Type.Variable.Unary.create "T" in
   assert_replaces_into
-    ~middle:(Type.OrderedTypes.Concatenation.Middle.create ~mappers:["Foo"; "Bar"] ~variable)
+    ~middle:
+      (Type.OrderedTypes.Concatenation.Middle.create
+         ~mappers:
+           [
+             Type.Record.OrderedTypes.RecordConcatenate.Middle.ClassMapper "Foo";
+             Type.Record.OrderedTypes.RecordConcatenate.Middle.ClassMapper "Bar";
+           ]
+         ~variable)
     ~replacement:(Type.Variable unary_variable)
     (Type.parametric
        "Foo"
        [Single (Parametric { name = "Bar"; parameters = [Single (Type.Variable unary_variable)] })]);
+  assert_replaces_into
+    ~middle:
+      (Type.OrderedTypes.Concatenation.Middle.create
+         ~mappers:
+           [
+             Type.Record.OrderedTypes.RecordConcatenate.Middle.GenericAliasMapper
+               (Type.union [Type.Variable unary_variable; Type.integer]);
+             Type.Record.OrderedTypes.RecordConcatenate.Middle.GenericAliasMapper
+               (Type.Tuple
+                  (Type.Bounded
+                     (Concrete [Type.Variable unary_variable; Type.Variable unary_variable])));
+           ]
+         ~variable)
+    ~replacement:(Type.Variable unary_variable)
+    (Type.union
+       [
+         Type.integer;
+         Type.Tuple
+           (Type.Bounded (Concrete [Type.Variable unary_variable; Type.Variable unary_variable]));
+       ]);
   ()
 
 
@@ -2162,7 +2261,10 @@ let test_concatenation_operator_replace_variable _ =
   in
   let variable = Type.Variable.Variadic.List.create "Ts" in
   assert_replaces_into
-    ~middle:(Type.OrderedTypes.Concatenation.Middle.create ~mappers:["Foo"; "Bar"] ~variable)
+    ~middle:
+      (Type.OrderedTypes.Concatenation.Middle.create_from_class_mappers
+         ~mappers:["Foo"; "Bar"]
+         ~variable)
     ~replacement:(fun _ -> Some (Concrete [Type.integer]))
     (Some
        (Concrete
@@ -2175,7 +2277,10 @@ let test_concatenation_operator_replace_variable _ =
               };
           ]));
   assert_replaces_into
-    ~middle:(Type.OrderedTypes.Concatenation.Middle.create ~mappers:["Foo"; "Bar"] ~variable)
+    ~middle:
+      (Type.OrderedTypes.Concatenation.Middle.create_from_class_mappers
+         ~mappers:["Foo"; "Bar"]
+         ~variable)
     ~replacement:(fun _ -> Some (Concrete [Type.integer; Type.string]))
     (Some
        (Concrete
@@ -2189,22 +2294,32 @@ let test_concatenation_operator_replace_variable _ =
             Parametric { name = "Foo"; parameters = ![Type.parametric "Bar" ![Type.string]] };
           ]));
   assert_replaces_into
-    ~middle:(Type.OrderedTypes.Concatenation.Middle.create ~mappers:["Foo"] ~variable)
+    ~middle:
+      (Type.OrderedTypes.Concatenation.Middle.create_from_class_mappers ~mappers:["Foo"] ~variable)
     ~replacement:(fun _ -> Some (Concatenation (create_concatenation ~mappers:["Bar"] variable)))
     (Some (Concatenation (create_concatenation ~mappers:["Foo"; "Bar"] variable)));
   let other_variable = Type.Variable.Variadic.List.create "Ts2" in
   assert_replaces_into
-    ~middle:(Type.OrderedTypes.Concatenation.Middle.create ~mappers:["Foo"; "Bar"] ~variable)
+    ~middle:
+      (Type.OrderedTypes.Concatenation.Middle.create_from_class_mappers
+         ~mappers:["Foo"; "Bar"]
+         ~variable)
     ~replacement:(function
       | _ -> Some (Concatenation (create_concatenation other_variable)))
     (Some (Concatenation (create_concatenation ~mappers:["Foo"; "Bar"] other_variable)));
   assert_replaces_into
-    ~middle:(Type.OrderedTypes.Concatenation.Middle.create ~mappers:["Foo"; "Bar"] ~variable)
+    ~middle:
+      (Type.OrderedTypes.Concatenation.Middle.create_from_class_mappers
+         ~mappers:["Foo"; "Bar"]
+         ~variable)
     ~replacement:(function
       | _ -> Some Any)
     (Some Any);
   assert_replaces_into
-    ~middle:(Type.OrderedTypes.Concatenation.Middle.create ~mappers:["Foo"; "Bar"] ~variable)
+    ~middle:
+      (Type.OrderedTypes.Concatenation.Middle.create_from_class_mappers
+         ~mappers:["Foo"; "Bar"]
+         ~variable)
     ~replacement:(function
       | _ -> None)
     None;

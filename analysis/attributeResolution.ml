@@ -1748,7 +1748,9 @@ class base class_metadata_environment dependency =
                     match generics with
                     | [ListVariadic variable] ->
                         let meta_generics =
-                          Type.OrderedTypes.Concatenation.Middle.create ~variable ~mappers:["type"]
+                          Type.OrderedTypes.Concatenation.Middle.create
+                            ~variable
+                            ~mappers:[Type.OrderedTypes.Concatenation.Middle.ClassMapper "type"]
                           |> Type.OrderedTypes.Concatenation.create
                         in
                         let single_type_case =
