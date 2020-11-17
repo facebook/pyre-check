@@ -343,17 +343,18 @@ will use the signatures from those files, rather than the actual signature from
 the function definition in your or your dependencies' code. See the [Gradual
 Typing page](gradual_typing.md) for more info about these `.pyi` stubs.
 
-This matching signature requirement means that all required parameters
-(parameters without a default arugment), must be present in your model and named
-identically to the parameters in the corresponding code or `.pyi` file.
-Parameters with default arguments, `*args`, and `**kwargs` may be included, but
+This matching signature requirement means that all parameters being modelled must
+be named identically to the parameters in the corresponding code or `.pyi` file.
+Unmodelled parameters, `*args`, and `**kwargs` may be included, but
 are not required. When copying parameters to your model, all type information
 must be removed, and all default values must be elided (see below).
 
 If a function includes an `*` that indicates [keyword only
 parameters](https://www.python.org/dev/peps/pep-3102/), or a `/` that indicates
 [positional-only parameters](https://www.python.org/dev/peps/pep-0570/), then
-that may be included in your model.
+that may be included in your model. Note that unlike when modeling named parameters,
+you need to include all positional only parameters the model so that Pysa knows what
+position is being tainted.
 
 For example, `urllib.request.urlopen` has the following signature:
 
@@ -379,7 +380,7 @@ function, so you know exactly how to write your model.
 
 #### Eliding
 
-As you can see from the above examples, defaulted values and function bodies can
+As you can see from the above examples, unmodelled parameters and function bodies can
 both be elided with `...`. Additionally, type annotations *must* be entirely
 omitted (not replaced with `...`), even when present on the declaration of the
 function. This is done to make parsing taint annotations unambiguous.

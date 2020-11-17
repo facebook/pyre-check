@@ -1651,8 +1651,8 @@ let create ~resolution ?path ~configuration ~rule_filter source =
       in
       let normalized_model_parameters =
         let parameters = AccessPath.Root.normalize_parameters parameters in
-        (* If there were optional parameters omitted from the model, the positioning will be off in
-           the access path conversion. Let's fix the positions after the fact to make sure that our
+        (* If there were parameters omitted from the model, the positioning will be off in the
+           access path conversion. Let's fix the positions after the fact to make sure that our
            models aren't off. *)
         let callable_parameter_names_to_positions =
           match callable_annotation with
