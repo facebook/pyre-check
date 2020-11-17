@@ -5,6 +5,7 @@
 
 import ast
 import logging
+import re
 from collections import defaultdict
 from typing import Callable, Dict, Iterable, List, Optional, Set, Union
 
@@ -27,8 +28,10 @@ class AnnotatedFreeFunctionWithDecoratorGenerator(
         root: str,
         annotation_specifications: List[DecoratorAnnotationSpecification],
         paths: Optional[List[str]] = None,
+        exclude_paths: Optional[List[re.Pattern]] = None,
     ) -> None:
         self._paths: Optional[List[str]] = paths
+        self.exclude_paths: List[re.Pattern] = exclude_paths or []
         self.root = root
         self.annotation_specifications: List[
             DecoratorAnnotationSpecification
@@ -40,7 +43,11 @@ class AnnotatedFreeFunctionWithDecoratorGenerator(
         if paths is None:
             paths = list(find_all_paths(self.root))
             self._paths = paths
-        return paths
+        return [
+            path
+            for path in paths
+            if all(not exclude.search(path) for exclude in self.exclude_paths)
+        ]
 
     def _annotate_functions(self, path: str) -> Iterable[FunctionDefinitionModel]:
 

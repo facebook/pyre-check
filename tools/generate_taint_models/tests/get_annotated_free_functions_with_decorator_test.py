@@ -4,11 +4,13 @@
 # LICENSE file in the root directory of this source tree.
 
 import os  # noqa
+import re
 import textwrap
 import unittest
 from typing import List, Set
-from unittest.mock import mock_open, patch
+from unittest.mock import MagicMock, mock_open, patch
 
+from .. import get_annotated_free_functions_with_decorator
 from ..generator_specifications import (
     AllParametersAnnotation,
     AnnotationSpecification,
@@ -495,4 +497,44 @@ class AnnotatedFreeFunctionWithDecoratorGeneratorTest(unittest.TestCase):
                 "def module.decorated_async(arg1, arg2, arg3: Arg, arg4"
                 ") -> Return: ..."
             },
+        )
+
+    # pyre-ignore[56]: Pyre was not able to infer the type of argument
+    # `get_annotated_free_functions_with_decorator`
+    @patch.object(
+        get_annotated_free_functions_with_decorator,
+        "find_all_paths",
+        return_value=["/root/one.py", "/root/two.py", "/root/three.py"],
+    )
+    def test_path_selection(self, find_paths_mock: MagicMock) -> None:
+        unused_specification = [DecoratorAnnotationSpecification(decorator="unused")]
+
+        # Using user-provided paths
+        self.assertListEqual(
+            AnnotatedFreeFunctionWithDecoratorGenerator(
+                root="/root",
+                annotation_specifications=unused_specification,
+                paths=["/custom/one.py", "/custom/two.py"],
+            ).paths,
+            ["/custom/one.py", "/custom/two.py"],
+        )
+        find_paths_mock.assert_not_called()
+
+        # Extracting paths from root
+        self.assertListEqual(
+            AnnotatedFreeFunctionWithDecoratorGenerator(
+                root="/root", annotation_specifications=unused_specification
+            ).paths,
+            ["/root/one.py", "/root/two.py", "/root/three.py"],
+        )
+        find_paths_mock.assert_called_with("/root")
+
+        # Filtering paths with excluded
+        self.assertListEqual(
+            AnnotatedFreeFunctionWithDecoratorGenerator(
+                root="/root",
+                annotation_specifications=unused_specification,
+                exclude_paths=[re.compile(r"one\.py"), re.compile(r"two\.py")],
+            ).paths,
+            ["/root/three.py"],
         )
