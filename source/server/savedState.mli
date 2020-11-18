@@ -20,13 +20,6 @@ val restore_symbolic_links
   get_old_link_path:(Path.t -> Path.t option) ->
   Path.t list
 
-val compute_locally_changed_paths
-  :  scheduler:Scheduler.t ->
-  configuration:Configuration.Analysis.t ->
-  module_tracker:Analysis.ModuleTracker.t ->
-  ast_environment:Analysis.AstEnvironment.ReadOnly.t ->
-  Path.t list
-
 val load : server_configuration:Configuration.Server.t -> connections:State.connections -> State.t
 
 val save : configuration:Configuration.Analysis.t -> saved_state_path:string -> State.t -> unit
