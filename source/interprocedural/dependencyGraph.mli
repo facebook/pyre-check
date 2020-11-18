@@ -12,7 +12,7 @@ type t = Callable.t list Callable.Map.t
 
 type callgraph = Callable.t list Callable.RealMap.t
 
-module SharedMemory : sig
+module CallGraphSharedMemory : sig
   val store : Callable.t list Callable.RealMap.Tree.t -> unit
 
   val load : unit -> Callable.t list Callable.RealMap.Tree.t
@@ -20,6 +20,12 @@ end
 
 (* Maps method names to closest sub-types that override them next *)
 type overrides = Reference.t list Reference.Map.t
+
+module OverridesSharedMemory : sig
+  val store : Reference.t list Reference.Map.Tree.t -> unit
+
+  val load : unit -> Reference.t list Reference.Map.Tree.t
+end
 
 val empty : t
 

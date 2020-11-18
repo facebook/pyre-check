@@ -12,6 +12,30 @@ open Interprocedural
 open Statement
 open Pyre
 
+type initial_callables = {
+  callables_with_dependency_information: (Callable.target_with_result * bool) list;
+  stubs: Callable.target_with_result list;
+  filtered_callables: Callable.Set.t;
+}
+
+module InitialCallablesSharedMemory = Memory.Serializer (struct
+  type t = initial_callables
+
+  module Serialized = struct
+    type t = initial_callables
+
+    let prefix = Prefix.make ()
+
+    let description = "Initial callables to analyze"
+
+    let unmarshall value = Marshal.from_string value 0
+  end
+
+  let serialize = Fn.id
+
+  let deserialize = Fn.id
+end)
+
 module Cache : sig
   val load_environment : configuration:Configuration.Analysis.t -> TypeEnvironment.t option
 
@@ -20,13 +44,30 @@ module Cache : sig
     environment:TypeEnvironment.t ->
     unit
 
-  val load_call_graph
-    :  configuration:Configuration.Analysis.t ->
-    Interprocedural.Callable.t list Interprocedural.Callable.RealMap.t option
+  val load_call_graph : configuration:Configuration.Analysis.t -> DependencyGraph.callgraph option
 
   val save_call_graph
     :  configuration:Configuration.Analysis.t ->
-    callgraph:Interprocedural.Callable.t list Interprocedural.Callable.RealMap.t ->
+    callgraph:DependencyGraph.callgraph ->
+    unit
+
+  val load_initial_callables
+    :  configuration:Configuration.Analysis.t ->
+    ((Callable.target_with_result * bool) list * Callable.target_with_result list * Callable.Set.t)
+    option
+
+  val save_initial_callables
+    :  configuration:Configuration.Analysis.t ->
+    callables_with_dependency_information:(Callable.target_with_result * bool) list ->
+    stubs:Callable.target_with_result list ->
+    filtered_callables:Callable.Set.t ->
+    unit
+
+  val load_overrides : configuration:Configuration.Analysis.t -> DependencyGraph.overrides option
+
+  val save_overrides
+    :  configuration:Configuration.Analysis.t ->
+    overrides:DependencyGraph.overrides ->
     unit
 
   val save_cache : configuration:Configuration.Analysis.t -> unit
@@ -95,7 +136,7 @@ end = struct
   let load_call_graph ~configuration =
     let path = get_cache_path ~configuration in
     try
-      let callgraph = DependencyGraph.SharedMemory.load () |> Callable.RealMap.of_tree in
+      let callgraph = DependencyGraph.CallGraphSharedMemory.load () |> Callable.RealMap.of_tree in
       Log.info "Loaded call graph from cache shared memory.";
       Some callgraph
     with
@@ -109,11 +150,71 @@ end = struct
     let path = get_cache_path ~configuration in
     try
       Memory.SharedMemory.collect `aggressive;
-      Callable.RealMap.to_tree callgraph |> DependencyGraph.SharedMemory.store;
+      Callable.RealMap.to_tree callgraph |> DependencyGraph.CallGraphSharedMemory.store;
       Log.info "Saved call graph to cache shared memory."
     with
     | error when not (Path.file_exists path) ->
         Log.error "Error saving call graph to cache shared memory: %s" (Exn.to_string error)
+    | _ -> ()
+
+
+  let load_initial_callables ~configuration =
+    let path = get_cache_path ~configuration in
+    try
+      let { callables_with_dependency_information; stubs; filtered_callables } =
+        InitialCallablesSharedMemory.load ()
+      in
+      Log.info "Loaded initial callables from cache shared memory.";
+      Some (callables_with_dependency_information, stubs, filtered_callables)
+    with
+    | error when Path.file_exists path ->
+        Log.error
+          "Error loading cached initial callables from shared memory: %s"
+          (Exn.to_string error);
+        None
+    | _ -> None
+
+
+  let save_initial_callables
+      ~configuration
+      ~callables_with_dependency_information
+      ~stubs
+      ~filtered_callables
+    =
+    let path = get_cache_path ~configuration in
+    try
+      Memory.SharedMemory.collect `aggressive;
+      InitialCallablesSharedMemory.store
+        { callables_with_dependency_information; stubs; filtered_callables };
+      Log.info "Saved initial callables to cache shared memory."
+    with
+    | error when not (Path.file_exists path) ->
+        Log.error "Error saving initial callables to cache shared memory: %s" (Exn.to_string error)
+    | _ -> ()
+
+
+  let load_overrides ~configuration =
+    let path = get_cache_path ~configuration in
+    try
+      let overrides = DependencyGraph.OverridesSharedMemory.load () |> Reference.Map.of_tree in
+      Log.info "Loaded overrides from cache shared memory.";
+      Some overrides
+    with
+    | error when Path.file_exists path ->
+        Log.error "Error loading cached overrides from shared memory: %s" (Exn.to_string error);
+        None
+    | _ -> None
+
+
+  let save_overrides ~configuration ~overrides =
+    let path = get_cache_path ~configuration in
+    try
+      Memory.SharedMemory.collect `aggressive;
+      Reference.Map.to_tree overrides |> DependencyGraph.OverridesSharedMemory.store;
+      Log.info "Saved overrides to cache shared memory."
+    with
+    | error when not (Path.file_exists path) ->
+        Log.error "Error saving overrides to cache shared memory: %s" (Exn.to_string error)
     | _ -> ()
 
 
@@ -327,13 +428,30 @@ let analyze
   let pre_fixpoint_timer = Timer.start () in
   let get_source = get_source ~environment in
 
-  let timer = Timer.start () in
-  Log.info "Fetching initial callables to analyze...";
+  let cached_initial_callables =
+    if use_cache then Cache.load_initial_callables ~configuration else None
+  in
   let callables_with_dependency_information, stubs, filtered_callables =
-    fetch_callables_to_analyze ~scheduler ~environment ~configuration ~qualifiers
+    match cached_initial_callables with
+    | Some (cached_callables, cached_stubs, cached_filtered_callables) ->
+        Log.warning "Using cached results for initial callables to analyze.";
+        cached_callables, cached_stubs, cached_filtered_callables
+    | _ ->
+        let timer = Timer.start () in
+        Log.info "No cached initial callables loaded, fetching initial callables to analyze...";
+        let new_callables, new_stubs, new_filtered_callables =
+          fetch_callables_to_analyze ~scheduler ~environment ~configuration ~qualifiers
+        in
+        if use_cache then
+          Cache.save_initial_callables
+            ~configuration
+            ~callables_with_dependency_information:new_callables
+            ~stubs:new_stubs
+            ~filtered_callables:new_filtered_callables;
+        Statistics.performance ~name:"Fetched initial callables to analyze" ~timer ();
+        new_callables, new_stubs, new_filtered_callables
   in
   let stubs = (stubs :> Callable.t list) in
-  Statistics.performance ~name:"Fetched initial callables to analyze" ~timer ();
   let analyses = [analysis_kind] in
   let timer = Timer.start () in
   Log.info "Initializing analysis...";
@@ -383,14 +501,23 @@ let analyze
     skip_overrides
   in
   Statistics.performance ~name:"Computed initial analysis state" ~timer ();
-  Log.info "Recording overrides...";
-  let timer = Timer.start () in
-  let overrides =
-    record_overrides_for_qualifiers ~scheduler ~environment ~skip_overrides ~qualifiers
+  let cached_overrides = if use_cache then Cache.load_overrides ~configuration else None in
+  let override_dependencies =
+    match cached_overrides with
+    | Some overrides ->
+        Log.warning "Using cached overrides.";
+        overrides |> DependencyGraph.from_overrides
+    | _ ->
+        Log.info "No cached overrides loaded, recording overrides...";
+        let timer = Timer.start () in
+        let new_overrides =
+          record_overrides_for_qualifiers ~scheduler ~environment ~skip_overrides ~qualifiers
+        in
+        if use_cache then Cache.save_overrides ~configuration ~overrides:new_overrides;
+        let new_override_dependencies = DependencyGraph.from_overrides new_overrides in
+        Statistics.performance ~name:"Overrides recorded" ~timer ();
+        new_override_dependencies
   in
-  let override_dependencies = DependencyGraph.from_overrides overrides in
-  Statistics.performance ~name:"Overrides recorded" ~timer ();
-
   (* It's imperative that the call graph is built after the overrides are, due to a hidden global
      state dependency. We rely on shared memory to tell us which methods are overridden to
      accurately model the call graph's overrides. Without it, we'll underanalyze and have an

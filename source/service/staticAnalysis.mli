@@ -18,13 +18,18 @@ module Cache : sig
     environment:TypeEnvironment.t ->
     unit
 
-  val load_call_graph
-    :  configuration:Configuration.Analysis.t ->
-    Interprocedural.Callable.t list Interprocedural.Callable.RealMap.t option
+  val load_call_graph : configuration:Configuration.Analysis.t -> DependencyGraph.callgraph option
 
   val save_call_graph
     :  configuration:Configuration.Analysis.t ->
-    callgraph:Interprocedural.Callable.t list Interprocedural.Callable.RealMap.t ->
+    callgraph:DependencyGraph.callgraph ->
+    unit
+
+  val load_overrides : configuration:Configuration.Analysis.t -> DependencyGraph.overrides option
+
+  val save_overrides
+    :  configuration:Configuration.Analysis.t ->
+    overrides:DependencyGraph.overrides ->
     unit
 
   val save_cache : configuration:Configuration.Analysis.t -> unit

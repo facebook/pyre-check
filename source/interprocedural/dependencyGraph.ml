@@ -15,7 +15,7 @@ type t = Callable.t list Callable.Map.t
 
 type callgraph = Callable.t list Callable.RealMap.t
 
-module SharedMemory = Memory.Serializer (struct
+module CallGraphSharedMemory = Memory.Serializer (struct
   type t = Callable.t list Callable.RealMap.Tree.t
 
   module Serialized = struct
@@ -23,7 +23,7 @@ module SharedMemory = Memory.Serializer (struct
 
     let prefix = Prefix.make ()
 
-    let description = "Dependency graph"
+    let description = "Call graph"
 
     let unmarshall value = Marshal.from_string value 0
   end
@@ -34,6 +34,24 @@ module SharedMemory = Memory.Serializer (struct
 end)
 
 type overrides = Reference.t list Reference.Map.t
+
+module OverridesSharedMemory = Memory.Serializer (struct
+  type t = Reference.t list Reference.Map.Tree.t
+
+  module Serialized = struct
+    type t = Reference.t list Reference.Map.Tree.t
+
+    let prefix = Prefix.make ()
+
+    let description = "Overrides"
+
+    let unmarshall value = Marshal.from_string value 0
+  end
+
+  let serialize = Fn.id
+
+  let deserialize = Fn.id
+end)
 
 let empty = Callable.Map.empty
 
