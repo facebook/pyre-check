@@ -17,6 +17,7 @@ import testslide
 from .. import command_arguments, find_directories
 from ..configuration import (
     Configuration,
+    ExtensionElement,
     InvalidConfiguration,
     PartialConfiguration,
     SimpleSearchPathElement,
@@ -129,7 +130,33 @@ class PartialConfigurationTest(unittest.TestCase):
                     json.dumps({"extensions": [".foo", ".bar"]})
                 ).extensions
             ),
-            [".foo", ".bar"],
+            [ExtensionElement(".foo", False), ExtensionElement(".bar", False)],
+        )
+        self.assertListEqual(
+            list(
+                PartialConfiguration.from_string(
+                    json.dumps(
+                        {
+                            "extensions": [
+                                ".foo",
+                                {
+                                    "suffix": ".bar",
+                                    "include_suffix_in_module_qualifier": True,
+                                },
+                                {
+                                    "suffix": ".baz",
+                                    "include_suffix_in_module_qualifier": False,
+                                },
+                            ]
+                        }
+                    )
+                ).extensions
+            ),
+            [
+                ExtensionElement(".foo", False),
+                ExtensionElement(".bar", True),
+                ExtensionElement(".baz", False),
+            ],
         )
         self.assertEqual(
             PartialConfiguration.from_string(
@@ -264,7 +291,7 @@ class PartialConfigurationTest(unittest.TestCase):
         assert_raises(json.dumps({"do_not_ignore_errors_in": "abc"}))
         assert_raises(json.dumps({"dot_pyre_directory": {}}))
         assert_raises(json.dumps({"exclude": 42}))
-        assert_raises(json.dumps({"extensions": {"derp": 42}}))
+        assert_raises(json.dumps({"extensions": 42}))
         assert_raises(json.dumps({"formatter": 4.2}))
         assert_raises(json.dumps({"ignore_all_errors": [1, 2, 3]}))
         assert_raises(json.dumps({"ignore_infer": [False, "bc"]}))
@@ -487,7 +514,7 @@ class ConfigurationTest(testslide.TestCase):
                 do_not_ignore_all_errors_in=["foo"],
                 dot_pyre_directory=None,
                 excludes=["exclude"],
-                extensions=[".ext"],
+                extensions=[ExtensionElement(".ext", False)],
                 file_hash="abc",
                 formatter="formatter",
                 ignore_all_errors=["bar"],
@@ -515,7 +542,7 @@ class ConfigurationTest(testslide.TestCase):
         self.assertListEqual(list(configuration.do_not_ignore_all_errors_in), ["foo"])
         self.assertEqual(configuration.dot_pyre_directory, Path("root/.pyre"))
         self.assertListEqual(list(configuration.excludes), ["exclude"])
-        self.assertEqual(configuration.extensions, [".ext"])
+        self.assertEqual(configuration.extensions, [ExtensionElement(".ext", False)])
         self.assertEqual(configuration.file_hash, "abc")
         self.assertEqual(configuration.formatter, "formatter")
         self.assertListEqual(list(configuration.ignore_all_errors), ["bar"])
@@ -890,7 +917,10 @@ class ConfigurationTest(testslide.TestCase):
             Configuration(
                 project_root="irrelevant",
                 dot_pyre_directory=Path(".pyre"),
-                extensions=[".foo", ".bar"],
+                extensions=[
+                    ExtensionElement(".foo", False),
+                    ExtensionElement(".bar", False),
+                ],
             ).get_valid_extensions(),
             [".foo", ".bar"],
         )
@@ -898,7 +928,11 @@ class ConfigurationTest(testslide.TestCase):
             Configuration(
                 project_root="irrelevant",
                 dot_pyre_directory=Path(".pyre"),
-                extensions=["foo", ".bar", "baz"],
+                extensions=[
+                    ExtensionElement("foo", False),
+                    ExtensionElement(".bar", False),
+                    ExtensionElement("baz", False),
+                ],
             ).get_valid_extensions(),
             [".bar"],
         )

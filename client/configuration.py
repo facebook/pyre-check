@@ -175,6 +175,40 @@ class SitePackageSearchPathElement(SearchPathElement):
         return self
 
 
+@dataclasses.dataclass
+class ExtensionElement:
+    suffix: str
+    include_suffix_in_module_qualifier: bool
+
+    def command_line_argument(self) -> str:
+        options = ""
+        if self.include_suffix_in_module_qualifier:
+            options = "$" + "include_suffix_in_module_qualifier"
+        return self.suffix + options
+
+    @staticmethod
+    def from_json(json: Union[str, Dict[str, Union[str, bool]]]) -> "ExtensionElement":
+        if isinstance(json, str):
+            return ExtensionElement(
+                suffix=json, include_suffix_in_module_qualifier=False
+            )
+        elif isinstance(json, dict):
+            include_suffix_in_module_qualifier = False
+            if "include_suffix_in_module_qualifier" in json:
+                value = json["include_suffix_in_module_qualifier"]
+                if isinstance(value, bool):
+                    include_suffix_in_module_qualifier = value
+            if "suffix" in json:
+                suffix = json["suffix"]
+                if isinstance(suffix, str):
+                    return ExtensionElement(
+                        suffix=suffix,
+                        include_suffix_in_module_qualifier=include_suffix_in_module_qualifier,
+                    )
+
+        raise InvalidConfiguration(f"Invalid extension element: {json}")
+
+
 def _get_site_roots() -> List[str]:
     try:
         return site.getsitepackages()
@@ -230,7 +264,7 @@ class PartialConfiguration:
     do_not_ignore_all_errors_in: Sequence[str] = field(default_factory=list)
     dot_pyre_directory: Optional[Path] = None
     excludes: Sequence[str] = field(default_factory=list)
-    extensions: Sequence[str] = field(default_factory=list)
+    extensions: Sequence[ExtensionElement] = field(default_factory=list)
     file_hash: Optional[str] = None
     formatter: Optional[str] = None
     ignore_all_errors: Sequence[str] = field(default_factory=list)
@@ -309,6 +343,11 @@ class PartialConfiguration:
 
     @staticmethod
     def from_string(contents: str) -> "PartialConfiguration":
+        def is_list_of_string(elements: object) -> bool:
+            return isinstance(elements, list) and all(
+                isinstance(element, str) for element in elements
+            )
+
         def ensure_option_type(
             json: Dict[str, Any], name: str, expected_type: Type[T]
         ) -> Optional[T]:
@@ -320,11 +359,6 @@ class PartialConfiguration:
             raise InvalidConfiguration(
                 f"Configuration `{name}` is expected to have type "
                 f"{expected_type} but got: `{json}`."
-            )
-
-        def is_list_of_string(elements: object) -> bool:
-            return isinstance(elements, list) and all(
-                isinstance(element, str) for element in elements
             )
 
         def ensure_optional_string_list(
@@ -351,6 +385,14 @@ class PartialConfiguration:
             raise InvalidConfiguration(
                 f"Configuration `{name}` is expected to be a list of "
                 f"strings but got `{json}`."
+            )
+
+        def ensure_list(json: Dict[str, Any], name: str) -> List[Any]:
+            result = json.pop(name, [])
+            if isinstance(result, list):
+                return result
+            raise InvalidConfiguration(
+                f"Configuration `{name}` is expected to be a list but got `{json}`."
             )
 
         try:
@@ -397,7 +439,10 @@ class PartialConfiguration:
                 excludes=ensure_string_list(
                     configuration_json, "exclude", allow_single_string=True
                 ),
-                extensions=ensure_string_list(configuration_json, "extensions"),
+                extensions=[
+                    ExtensionElement.from_json(json)
+                    for json in ensure_list(configuration_json, "extensions")
+                ],
                 file_hash=file_hash,
                 formatter=ensure_option_type(configuration_json, "formatter", str),
                 ignore_all_errors=ensure_string_list(
@@ -607,7 +652,7 @@ class Configuration:
     disabled: bool = False
     do_not_ignore_all_errors_in: Sequence[str] = field(default_factory=list)
     excludes: Sequence[str] = field(default_factory=list)
-    extensions: Sequence[str] = field(default_factory=list)
+    extensions: Sequence[ExtensionElement] = field(default_factory=list)
     file_hash: Optional[str] = None
     formatter: Optional[str] = None
     ignore_all_errors: Sequence[str] = field(default_factory=list)
@@ -819,13 +864,13 @@ class Configuration:
     def get_valid_extensions(self) -> List[str]:
         vaild_extensions = []
         for extension in self.extensions:
-            if not extension.startswith("."):
+            if not extension.suffix.startswith("."):
                 LOG.warning(
                     "Filtering out extension which does not start with `.`: "
-                    f"`{extension}`"
+                    f"`{extension.suffix}`"
                 )
             else:
-                vaild_extensions.append(extension)
+                vaild_extensions.append(extension.suffix)
         return vaild_extensions
 
     def get_isolation_prefix_respecting_override(self) -> Optional[str]:
