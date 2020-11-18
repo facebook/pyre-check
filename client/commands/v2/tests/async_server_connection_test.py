@@ -3,13 +3,57 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import asyncio
 from pathlib import Path
 
 import testslide
 
 from ....tests import setup
-from ..async_server_connection import connect, connect_in_text_mode
+from ..async_server_connection import (
+    connect,
+    connect_in_text_mode,
+    MemoryBytesReader,
+    MemoryBytesWriter,
+)
 from .server_connection_test import EchoServerRequestHandler
+
+
+class MemoryIOTest(testslide.TestCase):
+    @setup.async_test
+    async def test_memory_read(self) -> None:
+        reader = MemoryBytesReader(b"abcdefghijk")
+        result = await reader.read_until(b"de")
+        self.assertEqual(result, b"abcde")
+        result = await reader.read_exactly(4)
+        self.assertEqual(result, b"fghi")
+        result = await reader.readline()
+        self.assertEqual(result, b"jk")
+
+        reader.reset()
+        result = await reader.read_exactly(0)
+        self.assertEqual(result, b"")
+        result = await reader.read_exactly(11)
+        self.assertEqual(result, b"abcdefghijk")
+        result = await reader.readline()
+        self.assertEqual(result, b"")
+
+        try:
+            await MemoryBytesReader(b"abc").read_until(b"d")
+        except asyncio.IncompleteReadError as error:
+            self.assertEqual(error.partial, b"abc")
+
+        try:
+            await MemoryBytesReader(b"abc").read_exactly(4)
+        except asyncio.IncompleteReadError as error:
+            self.assertEqual(error.partial, b"abc")
+
+    @setup.async_test
+    async def test_memory_write(self) -> None:
+        writer = MemoryBytesWriter()
+        await writer.write(b"foo")
+        await writer.write(b"bar")
+        await writer.write(b"baz")
+        self.assertListEqual(writer.items(), [b"foo", b"bar", b"baz"])
 
 
 class AsyncConnectionTest(testslide.TestCase):

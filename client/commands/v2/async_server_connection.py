@@ -8,7 +8,7 @@ import asyncio
 import contextlib
 import sys
 from pathlib import Path
-from typing import AsyncIterator, Tuple, Optional
+from typing import AsyncIterator, Tuple, Optional, List
 
 
 class BytesReader(abc.ABC):
@@ -113,6 +113,63 @@ class TextWriter:
     async def write(self, data: str) -> None:
         data_bytes = data.encode(self.encoding)
         await self.bytes_writer.write(data_bytes)
+
+
+class MemoryBytesReader(BytesReader):
+    """
+    An implementation of `BytesReader` based on a given in-memory byte string.
+    """
+
+    _data: bytes
+    _cursor: int
+
+    def __init__(self, data: bytes) -> None:
+        self._data = data
+        self._cursor = 0
+
+    async def read_until(self, separator: bytes = b"\n") -> bytes:
+        result = bytearray()
+        start_index = self._cursor
+        end_index = len(self._data)
+        for index in range(start_index, end_index):
+            byte = self._data[index]
+            result.append(byte)
+            if result.endswith(separator):
+                self._cursor = index + 1
+                return bytes(result)
+
+        self._cursor = end_index
+        raise asyncio.IncompleteReadError(bytes(result), None)
+
+    async def read_exactly(self, count: int) -> bytes:
+        old_cursor = self._cursor
+        new_cursor = self._cursor + count
+        data_size = len(self._data)
+        if new_cursor <= data_size:
+            self._cursor = new_cursor
+            return self._data[old_cursor:new_cursor]
+        else:
+            self._cursor = data_size
+            raise asyncio.IncompleteReadError(self._data[old_cursor:], count)
+
+    def reset(self) -> None:
+        self._cursor = 0
+
+
+class MemoryBytesWriter(BytesWriter):
+    _items: List[bytes]
+
+    def __init__(self) -> None:
+        self._items = []
+
+    async def write(self, data: bytes) -> None:
+        self._items.append(data)
+
+    async def close(self) -> None:
+        pass
+
+    def items(self) -> List[bytes]:
+        return self._items
 
 
 class _StreamBytesReader(BytesReader):
