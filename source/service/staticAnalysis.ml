@@ -6,8 +6,8 @@
  *)
 
 open Core
-open Analysis
 open Ast
+open Analysis
 open Interprocedural
 open Statement
 open Pyre
@@ -88,7 +88,7 @@ end = struct
         Memory.load_shared_memory ~path:(Path.absolute path) ~configuration;
         is_initialized := true;
         Log.warning
-          "Using cached state from file: %s. Please try deleting this file and running Pysa again \
+          "Loaded cached state from file: %s. Please try deleting this file and running Pysa again \
            if unexpected results occur."
           (Path.absolute path)
       with
@@ -101,15 +101,30 @@ end = struct
     let path = get_cache_path ~configuration in
     try
       init_shared_memory ~configuration;
+      let module_tracker = ModuleTracker.SharedMemory.load () in
+      let ast_environment = AstEnvironment.load module_tracker in
       let environment =
-        ModuleTracker.SharedMemory.load ()
-        |> AstEnvironment.load
-        |> AnnotatedGlobalEnvironment.create
-        |> TypeEnvironment.create
+        AnnotatedGlobalEnvironment.create ast_environment |> TypeEnvironment.create
       in
-      SharedMemoryKeys.DependencyKey.Registry.load ();
-      Log.info "Loaded type environment from cache shared memory.";
-      Some environment
+      let scheduler = Scheduler.create ~configuration () in
+      let changed_paths =
+        Log.info "Determining if source files have changed since cache file was created.";
+        ChangedPaths.compute_locally_changed_paths
+          ~scheduler
+          ~configuration
+          ~module_tracker
+          ~ast_environment:(AstEnvironment.read_only ast_environment)
+      in
+      match changed_paths with
+      | [] ->
+          SharedMemoryKeys.DependencyKey.Registry.load ();
+          Log.info "Loaded type environment from cache shared memory.";
+          Some environment
+      | _ ->
+          Log.info "Changes to source files detected, existing cache file has been invalidated.";
+          Memory.reset_shared_memory ();
+          Path.remove path;
+          None
     with
     | error when Path.file_exists path ->
         Log.error
