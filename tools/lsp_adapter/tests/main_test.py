@@ -9,8 +9,8 @@ import unittest
 from unittest import mock
 from unittest.mock import MagicMock, patch
 
-from ...client.commands.persistent import Persistent
-from ...client.socket_connection import SocketConnection
+from ....client.commands.persistent import Persistent
+from ....client.socket_connection import SocketConnection
 from .. import main as lsp_main
 from ..main import AdapterException, AdapterProtocol, _parse_json_rpc, main
 
