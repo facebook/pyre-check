@@ -279,7 +279,7 @@ let get_watchman_subscriber
             |> fun set -> Set.add set ".pyre_configuration.local" |> Set.to_list
           in
           let suffixes =
-            String.Set.of_list extensions
+            String.Set.of_list (List.map ~f:Configuration.Extension.suffix extensions)
             |> fun set -> Set.add set "py" |> fun set -> Set.add set "pyi" |> Set.to_list
           in
           { Watchman.Filter.base_names; suffixes }

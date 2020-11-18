@@ -143,7 +143,8 @@ let test_creation context =
         ~excludes:[".*/thereisnospoon.py"]
         ~search_path:[SearchPath.Root external_root]
         ~filter_directories:[local_root]
-        ~extensions:[".first"; ".second"; ".third"]
+        ~extensions:
+          (List.map ~f:Configuration.Extension.create_extension [".first"; ".second"; ".third"])
         ()
     in
     let create_exn = create_source_path_exn ~configuration in

@@ -43,7 +43,7 @@ type t = {
   excludes: string list;
   checked_directory_allowlist: Path.t list;
   checked_directory_blocklist: Path.t list;
-  extensions: string list;
+  extensions: Configuration.Extension.t list;
   (* Auxiliary paths *)
   log_path: Path.t;
   global_root: Path.t;

@@ -98,7 +98,10 @@ let test_json_parsing context =
         "excludes", `List [`String "/excludes"];
         "checked_directory_allowlist", `List [`String "/allows"];
         "checked_directory_blocklist", `List [`String "/blocks"];
-        "extensions", `List [`String ".typsy"];
+        ( "extensions",
+          `List
+            [`Assoc ["suffix", `String ".typsy"; "include_suffix_in_module_qualifier", `Bool false]]
+        );
         "taint_model_paths", `List [`String "/taint/model"];
       ];
   assert_parsed

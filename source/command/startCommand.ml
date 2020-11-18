@@ -663,7 +663,7 @@ let run_start_command
       ~search_path:(List.map search_path ~f:SearchPath.create_normalized)
       ~taint_model_paths:(List.map taint_model_paths ~f:Path.create_absolute)
       ~excludes
-      ~extensions
+      ~extensions:(List.map ~f:Configuration.Extension.create_extension extensions)
       ~local_root
       ~source_path:(List.map source_path ~f:Path.create_absolute)
       ~store_type_check_resolution

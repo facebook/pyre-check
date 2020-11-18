@@ -138,7 +138,7 @@ type t = {
   excludes: string list;
   checked_directory_allowlist: Path.t list;
   checked_directory_blocklist: Path.t list;
-  extensions: string list;
+  extensions: Configuration.Extension.t list;
   (* Auxiliary paths *)
   log_path: Path.t;
   global_root: Path.t;
@@ -210,7 +210,11 @@ let of_yojson json =
     let checked_directory_blocklist =
       json |> path_list_member "checked_directory_blocklist" ~default:[]
     in
-    let extensions = json |> string_list_member "extensions" ~default:[] in
+    let extensions =
+      json
+      |> string_list_member "extensions" ~default:[]
+      |> List.map ~f:Configuration.Extension.create_extension
+    in
     let log_path = json |> path_member "log_path" in
     let global_root = json |> path_member "global_root" in
     let local_root = json |> optional_path_member "local_root" in
@@ -293,7 +297,7 @@ let to_yojson
         [%to_yojson: string list] (List.map checked_directory_allowlist ~f:Path.absolute) );
       ( "checked_directory_blocklist",
         [%to_yojson: string list] (List.map checked_directory_blocklist ~f:Path.absolute) );
-      "extensions", [%to_yojson: string list] extensions;
+      "extensions", [%to_yojson: Configuration.Extension.t list] extensions;
       "log_path", [%to_yojson: string] (Path.absolute log_path);
       "global_root", [%to_yojson: string] (Path.absolute global_root);
       "taint_model_paths", [%to_yojson: string list] (List.map taint_model_paths ~f:Path.absolute);

@@ -69,7 +69,7 @@ let run_check
         ~number_of_workers
         ~search_path:(List.map search_path ~f:SearchPath.create_normalized)
         ~excludes
-        ~extensions
+        ~extensions:(List.map ~f:Configuration.Extension.create_extension extensions)
         ?log_directory
         ~local_root
         ~source_path:(List.map source_path ~f:Path.create_absolute)

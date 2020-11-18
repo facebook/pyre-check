@@ -70,7 +70,7 @@ let run_infer
         ~number_of_workers
         ~search_path:(List.map search_path ~f:SearchPath.create_normalized)
         ~excludes
-        ~extensions
+        ~extensions:(List.map ~f:Configuration.Extension.create_extension extensions)
         ?log_directory
         ?ignore_infer
         ~local_root

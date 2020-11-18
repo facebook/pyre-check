@@ -42,6 +42,46 @@ module Features = struct
     |> Option.value ~default
 end
 
+module Extension = struct
+  type t = {
+    suffix: string;
+    include_suffix_in_module_qualifier: bool;
+  }
+  [@@deriving show, eq, sexp, compare, hash]
+
+  let to_yojson { suffix; include_suffix_in_module_qualifier } =
+    `Assoc
+      [
+        "suffix", `String suffix;
+        "include_suffix_in_module_qualifier", `Bool include_suffix_in_module_qualifier;
+      ]
+
+
+  let of_yojson = function
+    | `Assoc
+        [
+          ("suffix", `String suffix);
+          ("include_suffix_in_module_qualifier", `Bool include_suffix_in_module_qualifier);
+        ] ->
+        Result.Ok { suffix; include_suffix_in_module_qualifier }
+    | _ as json ->
+        let message =
+          Format.sprintf "Malformed critical file JSON: %s" (Yojson.Safe.to_string json)
+        in
+        Result.Error message
+
+
+  let create_extension serialized =
+    match String.split serialized ~on:'$' with
+    | [suffix] -> { suffix; include_suffix_in_module_qualifier = false }
+    | [suffix; options] when String.equal options "include_suffix_in_module_qualifier" ->
+        { suffix; include_suffix_in_module_qualifier = true }
+    | _ -> failwith (Format.asprintf "Unable to parse extension from %s" serialized)
+
+
+  let suffix { suffix; _ } = suffix
+end
+
 module Analysis = struct
   type incremental_style =
     | Shallow
@@ -66,7 +106,7 @@ module Analysis = struct
     strict: bool;
     show_error_traces: bool;
     excludes: Str.regexp list; [@opaque]
-    extensions: string list;
+    extensions: Extension.t list;
     store_type_check_resolution: bool;
     incremental_style: incremental_style;
     include_hints: bool;
@@ -156,6 +196,8 @@ module Analysis = struct
      * local_root due to the possibility of having a subdirectory of the root in the search path. *)
     search_path @ List.map source_path ~f:(fun path -> SearchPath.Root path)
 
+
+  let extension_suffixes { extensions; _ } = List.map ~f:Extension.suffix extensions
 
   let features { features; _ } = features
 end

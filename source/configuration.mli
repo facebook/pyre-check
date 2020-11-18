@@ -20,6 +20,18 @@ module Features : sig
   val default : t
 end
 
+module Extension : sig
+  type t = {
+    suffix: string;
+    include_suffix_in_module_qualifier: bool;
+  }
+  [@@deriving show, eq, sexp, compare, hash, yojson]
+
+  val create_extension : string -> t
+
+  val suffix : t -> string
+end
+
 module Analysis : sig
   type incremental_style =
     | Shallow
@@ -44,7 +56,7 @@ module Analysis : sig
     strict: bool;
     show_error_traces: bool;
     excludes: Str.regexp list;
-    extensions: string list;
+    extensions: Extension.t list;
     store_type_check_resolution: bool;
     incremental_style: incremental_style;
     include_hints: bool;
@@ -72,7 +84,7 @@ module Analysis : sig
     ?debug:bool ->
     ?show_error_traces:bool ->
     ?excludes:string list ->
-    ?extensions:string list ->
+    ?extensions:Extension.t list ->
     ?store_type_check_resolution:bool ->
     ?incremental_style:incremental_style ->
     ?include_hints:bool ->
@@ -87,6 +99,8 @@ module Analysis : sig
   val log_directory : t -> Path.t
 
   val search_path : t -> SearchPath.t list
+
+  val extension_suffixes : t -> string list
 
   val features : t -> Features.t
 end

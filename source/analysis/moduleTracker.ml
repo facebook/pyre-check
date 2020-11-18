@@ -72,10 +72,10 @@ let remove_source_path ~configuration ~removed existing_files =
   remove [] existing_files
 
 
-let find_files { Configuration.Analysis.source_path; search_path; excludes; extensions; _ } =
+let find_files ({ Configuration.Analysis.source_path; search_path; excludes; _ } as configuration) =
   let visited_directories = String.Hash_set.create () in
   let visited_files = String.Hash_set.create () in
-  let valid_suffixes = ".py" :: ".pyi" :: extensions in
+  let valid_suffixes = ".py" :: ".pyi" :: Configuration.Analysis.extension_suffixes configuration in
   let mark_visited set path =
     match Hash_set.strict_add set path with
     | Result.Ok () -> false

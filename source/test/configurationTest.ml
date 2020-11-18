@@ -81,5 +81,27 @@ let test_search_path _ =
   ()
 
 
+let test_extensions _ =
+  let assert_extensions ~extensions expected =
+    let extensions = List.map ~f:Configuration.Extension.create_extension extensions in
+    assert_equal
+      ~cmp:(List.equal Configuration.Extension.equal)
+      ~printer:(List.to_string ~f:Configuration.Extension.show)
+      expected
+      extensions
+  in
+  assert_extensions
+    ~extensions:[".extension"]
+    [{ Configuration.Extension.suffix = ".extension"; include_suffix_in_module_qualifier = false }];
+  assert_extensions
+    ~extensions:[".extension$include_suffix_in_module_qualifier"]
+    [{ Configuration.Extension.suffix = ".extension"; include_suffix_in_module_qualifier = true }];
+  ()
+
+
 let () =
-  "configuration" >::: ["equal" >:: test_equal; "search_path" >:: test_search_path] |> Test.run
+  "configuration"
+  >::: [
+         "equal" >:: test_equal; "search_path" >:: test_search_path; "extensions" >:: test_extensions;
+       ]
+  |> Test.run

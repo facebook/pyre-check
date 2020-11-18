@@ -94,14 +94,17 @@ let should_type_check
   analyze_external_sources || is_internal_path ~configuration path
 
 
-let create ~configuration:({ Configuration.Analysis.excludes; extensions; _ } as configuration) path
-  =
+let create ~configuration:({ Configuration.Analysis.excludes; _ } as configuration) path =
   let has_valid_extensions ~extensions path =
     let valid_suffixes = ".py" :: ".pyi" :: extensions in
     List.exists valid_suffixes ~f:(fun suffix -> String.is_suffix ~suffix path)
   in
   let absolute_path = Path.absolute path in
-  match has_valid_extensions ~extensions absolute_path with
+  match
+    has_valid_extensions
+      ~extensions:(Configuration.Analysis.extension_suffixes configuration)
+      absolute_path
+  with
   | false -> None
   | true -> (
       match List.exists excludes ~f:(fun regexp -> Str.string_match regexp absolute_path 0) with
@@ -130,7 +133,7 @@ let full_path ~configuration { relative; priority; _ } =
 (* NOTE: This comparator is expected to operate on SourceFiles that are mapped to the same module
    only. Do NOT use it on aribitrary SourceFiles. *)
 let same_module_compare
-    ~configuration:{ Configuration.Analysis.extensions; _ }
+    ~configuration
     {
       priority = left_priority;
       is_stub = left_is_stub;
@@ -146,6 +149,7 @@ let same_module_compare
       _;
     }
   =
+  let extensions = Configuration.Analysis.extension_suffixes configuration in
   let extension_priority _ =
     (* If all else, equal, prioritize extensions in the order listed in the configuration. *)
     let find_extension_index path =
