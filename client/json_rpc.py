@@ -4,9 +4,9 @@
 # LICENSE file in the root directory of this source tree.
 
 
+import abc
 import dataclasses
 import json
-from abc import abstractmethod
 from enum import Enum
 from json.decoder import JSONDecodeError
 from typing import Any, BinaryIO, Dict, Optional, Union, Sequence, Mapping
@@ -22,12 +22,64 @@ class LanguageServerMessageType(Enum):
     INFORMATION = 3
 
 
-class JSONRPCException(Exception):
-    pass
+class JSONRPCException(Exception, metaclass=abc.ABCMeta):
+    """
+    Base class of all jsonrpc related errors.
+    """
+
+    @abc.abstractmethod
+    def error_code(self) -> int:
+        raise NotImplementedError
 
 
-class JSONRPC:
-    @abstractmethod
+class ParseError(JSONRPCException):
+    """
+    An error occurred on the server while parsing the JSON text.
+    """
+
+    def error_code(self) -> int:
+        return -32700
+
+
+class InvalidRequestError(JSONRPCException):
+    """
+    The JSON received is not a valid Request object.
+    Internally we also raise it when the JSON sent is not a valid Response object.
+    """
+
+    def error_code(self) -> int:
+        return -32600
+
+
+class MethodNotFoundError(JSONRPCException):
+    """
+    The method does not exist / is not available.
+    """
+
+    def error_code(self) -> int:
+        return -32601
+
+
+class InvalidParameterError(JSONRPCException):
+    """
+    Invalid method parameter(s).
+    """
+
+    def error_code(self) -> int:
+        return -32602
+
+
+class InternalError(JSONRPCException):
+    """
+    Internal JSON-RPC error.
+    """
+
+    def error_code(self) -> int:
+        return -32603
+
+
+class JSONRPC(abc.ABC):
+    @abc.abstractmethod
     def json(self) -> JSON:
         raise NotImplementedError
 
@@ -38,9 +90,9 @@ class JSONRPC:
 def _verify_json_rpc_version(json: JSON) -> None:
     json_rpc_version = json.get("jsonrpc")
     if json_rpc_version is None:
-        raise JSONRPCException(f"Required field `jsonrpc` is missing: {json}")
+        raise InvalidRequestError(f"Required field `jsonrpc` is missing: {json}")
     if json_rpc_version != "2.0":
-        raise JSONRPCException(
+        raise InvalidRequestError(
             f"`jsonrpc` is expected to be '2.0' but got '{json_rpc_version}'"
         )
 
@@ -48,7 +100,7 @@ def _verify_json_rpc_version(json: JSON) -> None:
 def _parse_json_rpc_id(json: JSON) -> Union[int, str, None]:
     id = json.get("id")
     if id is not None and not isinstance(id, int) and not isinstance(id, str):
-        raise JSONRPCException(
+        raise InvalidRequestError(
             f"Request ID must be either an integer or string but got {id}"
         )
     return id
@@ -83,17 +135,18 @@ class Request(JSONRPC):
     def from_json(request_json: JSON) -> "Request":
         """
         Parse a given JSON into a JSON-RPC request.
-        Raises JSONRPCException if the JSON body is malformed.
+        Raises `InvalidRequestError` and `InvalidParameterError` if the JSON
+        body is malformed.
         """
         _verify_json_rpc_version(request_json)
 
         method = request_json.get("method")
         if method is None:
-            raise JSONRPCException(
+            raise InvalidRequestError(
                 f"Required field `method` is missing: {request_json}"
             )
         if not isinstance(method, str):
-            raise JSONRPCException(
+            raise InvalidRequestError(
                 f"`method` is expected to be a string but got {method}"
             )
 
@@ -105,7 +158,7 @@ class Request(JSONRPC):
         elif isinstance(raw_parameters, dict):
             parameters = ByNameParameters(raw_parameters)
         else:
-            raise JSONRPCException(
+            raise InvalidParameterError(
                 f"Cannot parse request parameter JSON: {raw_parameters}"
             )
 
@@ -116,14 +169,15 @@ class Request(JSONRPC):
     def from_string(request_string: str) -> "Request":
         """
         Parse a given string into a JSON-RPC request.
-        Raises JSONRPCException if the parsing fails.
+        Raises `ParseError` if the parsing fails. Raises `InvalidRequestError`
+        and `InvalidParameterError` if the JSON body is malformed.
         """
         try:
             request_json = json.loads(request_string)
             return Request.from_json(request_json)
         except JSONDecodeError as error:
             message = f"Cannot parse string into JSON: {error}"
-            raise JSONRPCException(message) from error
+            raise ParseError(message) from error
 
 
 @dataclasses.dataclass(frozen=True)
@@ -134,14 +188,14 @@ class Response(JSONRPC):
     def from_json(response_json: JSON) -> "Response":
         """
         Parse a given JSON into a JSON-RPC response.
-        Raises JSONRPCException if the JSON body is malformed.
+        Raises `InvalidRequestError` if the JSON body is malformed.
         """
         if "result" in response_json:
             return SuccessResponse.from_json(response_json)
         elif "error" in response_json:
             return ErrorResponse.from_json(response_json)
         else:
-            raise JSONRPCException(
+            raise InvalidRequestError(
                 "Either `result` or `error` must be presented in JSON-RPC "
                 f"responses. Got {response_json}."
             )
@@ -150,14 +204,15 @@ class Response(JSONRPC):
     def from_string(response_string: str) -> "Response":
         """
         Parse a given string into a JSON-RPC response.
-        Raises JSONRPCException if the parsing fails.
+        Raises `ParseError` if the parsing fails. Raises `InvalidRequestError`
+        if the JSON body is malformed.
         """
         try:
             response_json = json.loads(response_string)
             return Response.from_json(response_json)
         except JSONDecodeError as error:
             message = f"Cannot parse string into JSON: {error}"
-            raise JSONRPCException(message) from error
+            raise ParseError(message) from error
 
 
 @dataclasses.dataclass(frozen=True)
@@ -175,13 +230,13 @@ class SuccessResponse(Response):
     def from_json(response_json: JSON) -> "SuccessResponse":
         """
         Parse a given JSON into a JSON-RPC success response.
-        Raises JSONRPCException if the JSON body is malformed.
+        Raises `InvalidRequestError` if the JSON body is malformed.
         """
         _verify_json_rpc_version(response_json)
 
         result = response_json.get("result")
         if result is None:
-            raise JSONRPCException(
+            raise InvalidRequestError(
                 f"Required field `result` is missing: {response_json}"
             )
 
@@ -213,31 +268,31 @@ class ErrorResponse(Response):
     def from_json(response_json: JSON) -> "ErrorResponse":
         """
         Parse a given JSON into a JSON-RPC error response.
-        Raises JSONRPCException if the JSON body is malformed.
+        Raises `InvalidRequestError` if the JSON body is malformed.
         """
         _verify_json_rpc_version(response_json)
 
         error = response_json.get("error")
         if error is None:
-            raise JSONRPCException(
+            raise InvalidRequestError(
                 f"Required field `error` is missing: {response_json}"
             )
         if not isinstance(error, dict):
-            raise JSONRPCException(f"`error` must be a dict but got {error}")
+            raise InvalidRequestError(f"`error` must be a dict but got {error}")
 
         code = error.get("code")
         if code is None:
-            raise JSONRPCException(
+            raise InvalidRequestError(
                 f"Required field `error.code` is missing: {response_json}"
             )
         if not isinstance(code, int):
-            raise JSONRPCException(
+            raise InvalidRequestError(
                 f"`error.code` is expected to be an int but got {code}"
             )
 
         message = error.get("message", "")
         if not isinstance(message, str):
-            raise JSONRPCException(
+            raise InvalidRequestError(
                 f"`error.message` is expected to be a string but got {message}"
             )
 
@@ -261,7 +316,7 @@ def write_lsp_request(file: BinaryIO, request: Request) -> bool:
         return False
 
 
-def parse_content_length(line: bytes) -> Optional[int]:
+def _parse_content_length(line: bytes) -> Optional[int]:
     if line.startswith(b"Content-Length:"):
         length = line.split(b"Content-Length:")[1].strip()
         try:
@@ -271,12 +326,12 @@ def parse_content_length(line: bytes) -> Optional[int]:
     return None
 
 
-def _read_payload(file: BinaryIO) -> Optional[JSON]:
+def _read_payload(file: BinaryIO) -> JSON:
     try:
         line = file.readline()
-        length = parse_content_length(line)
+        length = _parse_content_length(line)
         if not length:
-            return None
+            raise ParseError("Header reading failed")
 
         # Read header lines until the empty line
         while line.strip():
@@ -285,21 +340,15 @@ def _read_payload(file: BinaryIO) -> Optional[JSON]:
         body = file.read(length)
         return json.loads(body.decode("utf-8"))
     except (ValueError, OSError, JSONDecodeError):
-        return None
+        raise ParseError("Payload reading failed")
 
 
 def read_lsp_request(file: BinaryIO) -> Request:
-    payload = _read_payload(file)
-    if payload is None:
-        raise JSONRPCException("Payload reading failed.")
-    return Request.from_json(payload)
+    return Request.from_json(_read_payload(file))
 
 
 def read_lsp_response(file: BinaryIO) -> Response:
-    payload = _read_payload(file)
-    if not payload:
-        raise JSONRPCException("Received empty response.")
-    return Response.from_json(payload)
+    return Response.from_json(_read_payload(file))
 
 
 def perform_handshake(

@@ -8,6 +8,7 @@
 import json
 import unittest
 from io import BytesIO
+from typing import Type
 
 from ..json_rpc import (
     Request,
@@ -20,6 +21,9 @@ from ..json_rpc import (
     ByPositionParameters,
     JSONRPCException,
     JSON,
+    ParseError,
+    InvalidRequestError,
+    InvalidParameterError,
 )
 
 
@@ -66,20 +70,30 @@ class JsonRPCTest(unittest.TestCase):
         )
 
     def test_request_parsing(self) -> None:
-        def assert_not_parsed(input: str) -> None:
-            with self.assertRaises(JSONRPCException):
+        def assert_not_parsed(
+            input: str, exception: Type[JSONRPCException] = JSONRPCException
+        ) -> None:
+            with self.assertRaises(exception):
                 Request.from_string(input)
 
         def assert_parsed(input: JSON, expected: Request) -> None:
             self.assertEqual(Request.from_json(input), expected)
 
-        assert_not_parsed("")
-        assert_not_parsed("derp")
-        assert_not_parsed(json.dumps({"no_version": 42}))
-        assert_not_parsed(json.dumps({"jsonrpc": "2.0"}))
-        assert_not_parsed(json.dumps({"jsonrpc": "2.0", "method": 42}))
-        assert_not_parsed(json.dumps({"jsonrpc": "2.0", "method": "foo", "id": []}))
-        assert_not_parsed(json.dumps({"jsonrpc": "2.0", "method": "foo", "params": 42}))
+        assert_not_parsed("", ParseError)
+        assert_not_parsed("derp", ParseError)
+        assert_not_parsed(json.dumps({"no_version": 42}), InvalidRequestError)
+        assert_not_parsed(json.dumps({"jsonrpc": "2.0"}), InvalidRequestError)
+        assert_not_parsed(
+            json.dumps({"jsonrpc": "2.0", "method": 42}), InvalidRequestError
+        )
+        assert_not_parsed(
+            json.dumps({"jsonrpc": "2.0", "method": "foo", "id": []}),
+            InvalidRequestError,
+        )
+        assert_not_parsed(
+            json.dumps({"jsonrpc": "2.0", "method": "foo", "params": 42}),
+            InvalidParameterError,
+        )
         assert_parsed({"jsonrpc": "2.0", "method": "foo"}, Request(method="foo"))
         assert_parsed(
             {"jsonrpc": "2.0", "method": "foo", "id": None}, Request(method="foo")
@@ -122,30 +136,41 @@ class JsonRPCTest(unittest.TestCase):
         )
 
     def test_response_parsing(self) -> None:
-        def assert_not_parsed(input: str) -> None:
-            with self.assertRaises(JSONRPCException):
+        def assert_not_parsed(
+            input: str, exception: Type[JSONRPCException] = JSONRPCException
+        ) -> None:
+            with self.assertRaises(exception):
                 Response.from_string(input)
 
         def assert_parsed(input: JSON, expected: Response) -> None:
             self.assertEqual(Response.from_json(input), expected)
 
-        assert_not_parsed("")
-        assert_not_parsed("derp")
-        assert_not_parsed(json.dumps({"no_version": 42}))
-        assert_not_parsed(json.dumps({"jsonrpc": "2.0"}))
-        assert_not_parsed(json.dumps({"jsonrpc": "2.0", "id": False}))
-        assert_not_parsed(json.dumps({"jsonrpc": "2.0", "id": "foo"}))
-        assert_not_parsed(json.dumps({"jsonrpc": "2.0", "id": None, "error": 42}))
+        assert_not_parsed("", ParseError)
+        assert_not_parsed("derp", ParseError)
+        assert_not_parsed(json.dumps({"no_version": 42}), InvalidRequestError)
+        assert_not_parsed(json.dumps({"jsonrpc": "2.0"}), InvalidRequestError)
         assert_not_parsed(
-            json.dumps({"jsonrpc": "2.0", "id": None, "error": {"no_code": 42}})
+            json.dumps({"jsonrpc": "2.0", "id": False}), InvalidRequestError
         )
         assert_not_parsed(
-            json.dumps({"jsonrpc": "2.0", "id": None, "error": {"code": "derp"}})
+            json.dumps({"jsonrpc": "2.0", "id": "foo"}), InvalidRequestError
+        )
+        assert_not_parsed(
+            json.dumps({"jsonrpc": "2.0", "id": None, "error": 42}), InvalidRequestError
+        )
+        assert_not_parsed(
+            json.dumps({"jsonrpc": "2.0", "id": None, "error": {"no_code": 42}}),
+            InvalidRequestError,
+        )
+        assert_not_parsed(
+            json.dumps({"jsonrpc": "2.0", "id": None, "error": {"code": "derp"}}),
+            InvalidRequestError,
         )
         assert_not_parsed(
             json.dumps(
                 {"jsonrpc": "2.0", "id": None, "error": {"code": 42, "message": []}}
-            )
+            ),
+            InvalidRequestError,
         )
         assert_parsed(
             {"jsonrpc": "2.0", "id": None, "result": 42},
