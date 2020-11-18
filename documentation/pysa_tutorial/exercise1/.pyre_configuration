@@ -6,7 +6,7 @@
     "."
   ],
   "search_path": [
-    "../../stubs/"
+    "../../../stubs/"
   ],
   "exclude": [
     ".*/integration_test/.*"

@@ -32,9 +32,9 @@ project.
 
       *For supported OS* -
       ```
-      cd pysa_tutorial
+      cd documentation/pysa_tutorial
 
-      # STOP! Make sure you're in pyre-check/pysa_tutorial
+      # STOP! Make sure you're in pyre-check/documentation/pysa_tutorial
 
       python3 -m venv tutorial
       source tutorial/bin/activate
@@ -48,11 +48,11 @@ project.
       on https://docs.docker.com/engine/install/ and then enter the following in
       your terminal.
       ```
-      docker build -f pysa_tutorial/Dockerfile -t pyre-check-docker .
+      docker build -f documentation/pysa_tutorial/Dockerfile -t pyre-check-docker .
       docker run --rm --name pyre-check -it pyre-check-docker /bin/bash
 
       # You will now be inside the docker container you just created
-      cd pysa_tutorial
+      cd documentation/pysa_tutorial
       ```
 
 3. If doing this tutorial with an accompanying lecture, wait for the

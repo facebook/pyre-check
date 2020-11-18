@@ -3,11 +3,11 @@
     "."
   ],
   "taint_models_path": [
-    "../../stubs/taint/",
+    "../../../stubs/taint/",
     "."
   ],
   "search_path": [
-    "../../stubs/"
+    "../../../stubs/"
   ],
   "exclude": [
     ".*/integration_test/.*"
