@@ -7,13 +7,4 @@
 
 open Core
 
-module Cache : sig
-  val load : configuration:Configuration.Analysis.t -> Analysis.TypeEnvironment.t option
-
-  val save
-    :  configuration:Configuration.Analysis.t ->
-    environment:Analysis.TypeEnvironment.t ->
-    unit
-end
-
 val command : Command.t

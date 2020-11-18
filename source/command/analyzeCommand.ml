@@ -8,58 +8,6 @@
 open Core
 open Pyre
 
-module Cache = struct
-  let cache_filename : string = "pysa.cache"
-
-  let load ~configuration =
-    let path =
-      Path.create_relative
-        ~root:(Configuration.Analysis.log_directory configuration)
-        ~relative:cache_filename
-    in
-    if Path.file_exists path then (
-      try
-        Log.info "Found existing cache file: %s" (Path.absolute path);
-        Log.warning
-          "Getting type information from the cache file at %s. Please try deleting this file and \
-           running again if unexpected results occur."
-          (Path.absolute path);
-        Memory.load_shared_memory ~path:(Path.absolute path) ~configuration;
-        let module_tracker = Analysis.ModuleTracker.SharedMemory.load () in
-        let ast_environment = Analysis.AstEnvironment.load module_tracker in
-        let environment =
-          Analysis.AnnotatedGlobalEnvironment.create ast_environment
-          |> Analysis.TypeEnvironment.create
-        in
-        Analysis.SharedMemoryKeys.DependencyKey.Registry.load ();
-        Log.info "Loaded state from cache file: %s" (Path.absolute path);
-        Some environment
-      with
-      | error ->
-          Log.error
-            "Error loading cached state from %s: %s The existing cache file will be discarded."
-            (Path.absolute path)
-            (Exn.to_string error);
-          None )
-    else
-      None
-
-
-  let save ~configuration ~environment =
-    let path =
-      Path.create_relative
-        ~root:(Configuration.Analysis.log_directory configuration)
-        ~relative:cache_filename
-    in
-    Path.remove path;
-    Memory.SharedMemory.collect `aggressive;
-    Analysis.TypeEnvironment.module_tracker environment |> Analysis.ModuleTracker.SharedMemory.store;
-    Analysis.TypeEnvironment.ast_environment environment |> Analysis.AstEnvironment.store;
-    Analysis.SharedMemoryKeys.DependencyKey.Registry.store ();
-    Memory.save_shared_memory ~path:(Path.absolute path) ~configuration;
-    Log.info "Saved state to cache file: %s" (Path.absolute path)
-end
-
 let get_analysis_kind = function
   | "taint" -> TaintAnalysis.abstract_kind
   | "liveness" -> DeadStore.Analysis.abstract_kind
@@ -146,7 +94,6 @@ let run_analysis
         ~source_path:(List.map source_path ~f:Path.create_absolute)
         ()
     in
-    let _ = Memory.get_heap_handle configuration in
     let result_json_path = result_json_path >>| Path.create_absolute ~follow_symbolic_links:false in
     let () =
       match result_json_path with
@@ -155,7 +102,6 @@ let run_analysis
           failwith "bad argument"
       | _ -> ()
     in
-    let cached_environment = if use_cache then Cache.load ~configuration else None in
     (fun () ->
       let timer = Timer.start () in
       (* In order to save time, sanity check models before starting the analysis. *)
@@ -167,10 +113,13 @@ let run_analysis
         ~paths:configuration.Configuration.Analysis.taint_model_paths
       |> ignore;
       Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->
+          let cached_environment =
+            if use_cache then Service.StaticAnalysis.Cache.load_environment ~configuration else None
+          in
           let environment =
             match cached_environment with
             | Some loaded_environment ->
-                Log.info "Using existing cached environment.";
+                Log.warning "Using cached type environment.";
                 loaded_environment
             | _ ->
                 let configuration =
@@ -178,13 +127,14 @@ let run_analysis
                      that we schedule a type check for external files. *)
                   { configuration with analyze_external_sources = true }
                 in
-                Log.info "No cached environment loaded, starting a clean run.";
+                Log.info "No cached type environment loaded, starting a clean run.";
                 Service.Check.check
                   ~scheduler
                   ~configuration
                   ~call_graph_builder:(module Analysis.Callgraph.NullBuilder)
                 |> fun { environment; _ } ->
-                if use_cache then Cache.save ~configuration ~environment;
+                if use_cache then
+                  Service.StaticAnalysis.Cache.save_environment ~configuration ~environment;
                 environment
           in
 
@@ -224,6 +174,7 @@ let run_analysis
                   rule_filter;
                   find_missing_flows;
                   dump_model_query_results;
+                  use_cache;
                 }
               ~filename_lookup
               ~environment:(Analysis.TypeEnvironment.read_only environment)
@@ -241,7 +192,7 @@ let run_analysis
                 "gc_compactions", compactions;
               ]
             ();
-
+          if use_cache then Service.StaticAnalysis.Cache.save_cache ~configuration;
           (* Print results. *)
           List.map errors ~f:(fun error ->
               Interprocedural.Error.instantiate ~show_error_traces ~lookup:filename_lookup error

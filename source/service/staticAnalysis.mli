@@ -10,6 +10,26 @@ open Ast
 open Statement
 open Interprocedural
 
+module Cache : sig
+  val load_environment : configuration:Configuration.Analysis.t -> TypeEnvironment.t option
+
+  val save_environment
+    :  configuration:Configuration.Analysis.t ->
+    environment:TypeEnvironment.t ->
+    unit
+
+  val load_call_graph
+    :  configuration:Configuration.Analysis.t ->
+    Interprocedural.Callable.t list Interprocedural.Callable.RealMap.t option
+
+  val save_call_graph
+    :  configuration:Configuration.Analysis.t ->
+    callgraph:Interprocedural.Callable.t list Interprocedural.Callable.RealMap.t ->
+    unit
+
+  val save_cache : configuration:Configuration.Analysis.t -> unit
+end
+
 val record_and_merge_call_graph
   :  environment:TypeEnvironment.ReadOnly.t ->
   call_graph:DependencyGraph.callgraph ->

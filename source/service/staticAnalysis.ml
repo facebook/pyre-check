@@ -12,6 +12,123 @@ open Interprocedural
 open Statement
 open Pyre
 
+module Cache : sig
+  val load_environment : configuration:Configuration.Analysis.t -> TypeEnvironment.t option
+
+  val save_environment
+    :  configuration:Configuration.Analysis.t ->
+    environment:TypeEnvironment.t ->
+    unit
+
+  val load_call_graph
+    :  configuration:Configuration.Analysis.t ->
+    Interprocedural.Callable.t list Interprocedural.Callable.RealMap.t option
+
+  val save_call_graph
+    :  configuration:Configuration.Analysis.t ->
+    callgraph:Interprocedural.Callable.t list Interprocedural.Callable.RealMap.t ->
+    unit
+
+  val save_cache : configuration:Configuration.Analysis.t -> unit
+end = struct
+  let is_initialized = ref false
+
+  let get_cache_path ~configuration =
+    Path.create_relative
+      ~root:(Configuration.Analysis.log_directory configuration)
+      ~relative:"pysa.cache"
+
+
+  let init_shared_memory ~configuration =
+    if not !is_initialized then (
+      let path = get_cache_path ~configuration in
+      try
+        let _ = Memory.get_heap_handle configuration in
+        Memory.load_shared_memory ~path:(Path.absolute path) ~configuration;
+        is_initialized := true;
+        Log.warning
+          "Using cached state from file: %s. Please try deleting this file and running Pysa again \
+           if unexpected results occur."
+          (Path.absolute path)
+      with
+      | error ->
+          is_initialized := false;
+          raise error )
+
+
+  let load_environment ~configuration =
+    let path = get_cache_path ~configuration in
+    try
+      init_shared_memory ~configuration;
+      let environment =
+        ModuleTracker.SharedMemory.load ()
+        |> AstEnvironment.load
+        |> AnnotatedGlobalEnvironment.create
+        |> TypeEnvironment.create
+      in
+      SharedMemoryKeys.DependencyKey.Registry.load ();
+      Log.info "Loaded type environment from cache shared memory.";
+      Some environment
+    with
+    | error when Path.file_exists path ->
+        Log.error
+          "Error loading cached type environment from shared memory: %s"
+          (Exn.to_string error);
+        None
+    | _ -> None
+
+
+  let save_environment ~configuration ~environment =
+    let path = get_cache_path ~configuration in
+    try
+      Memory.SharedMemory.collect `aggressive;
+      TypeEnvironment.module_tracker environment |> ModuleTracker.SharedMemory.store;
+      TypeEnvironment.ast_environment environment |> AstEnvironment.store;
+      SharedMemoryKeys.DependencyKey.Registry.store ();
+      Log.info "Saved type environment to cache shared memory."
+    with
+    | error when not (Path.file_exists path) ->
+        Log.error "Error saving type environment to cache shared memory: %s" (Exn.to_string error)
+    | _ -> ()
+
+
+  let load_call_graph ~configuration =
+    let path = get_cache_path ~configuration in
+    try
+      let callgraph = DependencyGraph.SharedMemory.load () |> Callable.RealMap.of_tree in
+      Log.info "Loaded call graph from cache shared memory.";
+      Some callgraph
+    with
+    | error when Path.file_exists path ->
+        Log.error "Error loading cached call graph from shared memory: %s" (Exn.to_string error);
+        None
+    | _ -> None
+
+
+  let save_call_graph ~configuration ~callgraph =
+    let path = get_cache_path ~configuration in
+    try
+      Memory.SharedMemory.collect `aggressive;
+      Callable.RealMap.to_tree callgraph |> DependencyGraph.SharedMemory.store;
+      Log.info "Saved call graph to cache shared memory."
+    with
+    | error when not (Path.file_exists path) ->
+        Log.error "Error saving call graph to cache shared memory: %s" (Exn.to_string error)
+    | _ -> ()
+
+
+  let save_cache ~configuration =
+    let path = get_cache_path ~configuration in
+    try
+      Log.info "Saving state to cache file...";
+      Memory.save_shared_memory ~path:(Path.absolute path) ~configuration;
+      Log.info "Saved state to cache file: %s" (Path.absolute path)
+    with
+    | error when not (Path.file_exists path) ->
+        Log.error "Error saving cached state to file: %s" (Exn.to_string error)
+    | _ -> ()
+end
+
 let record_and_merge_call_graph ~environment ~call_graph ~source =
   let record_and_merge_call_graph map call_graph =
     Map.merge_skewed map call_graph ~combine:(fun ~key:_ left _ -> left)
@@ -199,6 +316,7 @@ let analyze
           rule_filter;
           find_missing_flows;
           dump_model_query_results;
+          use_cache;
           _;
         } as analysis_configuration )
     ~filename_lookup
@@ -277,39 +395,48 @@ let analyze
      state dependency. We rely on shared memory to tell us which methods are overridden to
      accurately model the call graph's overrides. Without it, we'll underanalyze and have an
      inconsistent fixpoint. *)
-  Log.info "Building call graph...";
-  let timer = Timer.start () in
+  let cached_callgraph = if use_cache then Cache.load_call_graph ~configuration else None in
   let callgraph =
-    let build_call_graph call_graph qualifier =
-      try
-        get_source qualifier
-        >>| (fun source -> record_and_merge_call_graph ~environment ~call_graph ~source)
-        |> Option.value ~default:call_graph
-      with
-      | ClassHierarchy.Untracked untracked_type ->
-          Log.info
-            "Error building call graph in path %a for untracked type %a"
-            Reference.pp
-            qualifier
-            Type.pp
-            untracked_type;
-          call_graph
-    in
-    Scheduler.map_reduce
-      scheduler
-      ~policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
-      ~initial:Callable.RealMap.empty
-      ~map:(fun _ qualifiers ->
-        List.fold qualifiers ~init:Callable.RealMap.empty ~f:build_call_graph)
-      ~reduce:(Map.merge_skewed ~combine:(fun ~key:_ left _ -> left))
-      ~inputs:qualifiers
-      ()
+    match cached_callgraph with
+    | Some cached_callgraph ->
+        Log.warning "Using cached call graph.";
+        cached_callgraph
+    | _ ->
+        Log.info "No cached call graph loaded, building call graph...";
+        let timer = Timer.start () in
+        let new_callgraph =
+          let build_call_graph call_graph qualifier =
+            try
+              get_source qualifier
+              >>| (fun source -> record_and_merge_call_graph ~environment ~call_graph ~source)
+              |> Option.value ~default:call_graph
+            with
+            | ClassHierarchy.Untracked untracked_type ->
+                Log.info
+                  "Error building call graph in path %a for untracked type %a"
+                  Reference.pp
+                  qualifier
+                  Type.pp
+                  untracked_type;
+                call_graph
+          in
+          Scheduler.map_reduce
+            scheduler
+            ~policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
+            ~initial:Callable.RealMap.empty
+            ~map:(fun _ qualifiers ->
+              List.fold qualifiers ~init:Callable.RealMap.empty ~f:build_call_graph)
+            ~reduce:(Map.merge_skewed ~combine:(fun ~key:_ left _ -> left))
+            ~inputs:qualifiers
+            ()
+        in
+        Statistics.performance ~name:"Call graph built" ~timer ();
+        Log.info "Call graph edges: %d" (Callable.RealMap.length new_callgraph);
+        if use_cache then Cache.save_call_graph ~configuration ~callgraph:new_callgraph;
+        if dump_call_graph then
+          DependencyGraph.from_callgraph new_callgraph |> DependencyGraph.dump ~configuration;
+        new_callgraph
   in
-  Statistics.performance ~name:"Call graph built" ~timer ();
-  Log.info "Call graph edges: %d" (Callable.RealMap.length callgraph);
-  if dump_call_graph then
-    DependencyGraph.from_callgraph callgraph |> DependencyGraph.dump ~configuration;
-
   let timer = Timer.start () in
   Log.info "Computing overrides...";
   let override_targets = (Callable.Map.keys override_dependencies :> Callable.t list) in

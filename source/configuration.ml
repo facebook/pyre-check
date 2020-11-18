@@ -214,5 +214,6 @@ module StaticAnalysis = struct
     rule_filter: int list option;
     find_missing_flows: string option;
     dump_model_query_results: bool;
+    use_cache: bool;
   }
 end
