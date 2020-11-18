@@ -258,7 +258,19 @@ to iterate more quickly with Pysa are:
    outlined above, put in way more debug statments than you think you need,
    dumping type info and taint for anything remotely related to the flow you're
    looking at. This will reduce the odds that you need to do a second run to
-   figure out what's going wrong
+   figure out what's going wrong.
+1. **Enable the `--use-cache` flag.** All Pysa runs require some information
+   from Pyre, such as the typechecking environment, dependencies, etc.
+   Computing this information can be time-consuming on larger projects.
+   However, if you're only editing taint models and not the project source,
+   this information isn't expected to change between Pysa runs. By enabling
+   this flag, you can tell Pysa to save this information to a file
+   (located at .pyre/pysa.cache) and load from this file in subsequent runs,
+   rather than computing it from scratch each time. The cache file will be
+   invalidated if any of the project source files change, in which case
+   Pysa will fall back to doing a clean run and then saving the computed
+   artifacts in a new cache file.
+
 
 ### File Types
 
