@@ -169,7 +169,10 @@ def binary_exists(pyre_directory: Path) -> bool:
 
 def sync_binary(pyre_directory: Path, build_root: Path) -> None:
     (build_root / "bin").mkdir()
-    shutil.copy(pyre_directory / "source" / "_build/default/main.exe", build_root / "bin/pyre.bin")
+    shutil.copy(
+        pyre_directory / "source" / "_build/default/main.exe",
+        build_root / "bin/pyre.bin",
+    )
 
 
 def sync_documentation_files(pyre_directory: Path, build_root: Path) -> None:
