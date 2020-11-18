@@ -904,13 +904,13 @@ class ConfigurationTest(testslide.TestCase):
                 "abc",
             )
 
-    def test_get_valid_extensions(self) -> None:
+    def test_get_valid_extension_suffixes(self) -> None:
         self.assertListEqual(
             Configuration(
                 project_root="irrelevant",
                 dot_pyre_directory=Path(".pyre"),
                 extensions=[],
-            ).get_valid_extensions(),
+            ).get_valid_extension_suffixes(),
             [],
         )
         self.assertListEqual(
@@ -921,7 +921,7 @@ class ConfigurationTest(testslide.TestCase):
                     ExtensionElement(".foo", False),
                     ExtensionElement(".bar", False),
                 ],
-            ).get_valid_extensions(),
+            ).get_valid_extension_suffixes(),
             [".foo", ".bar"],
         )
         self.assertListEqual(
@@ -933,7 +933,7 @@ class ConfigurationTest(testslide.TestCase):
                     ExtensionElement(".bar", False),
                     ExtensionElement("baz", False),
                 ],
-            ).get_valid_extensions(),
+            ).get_valid_extension_suffixes(),
             [".bar"],
         )
 

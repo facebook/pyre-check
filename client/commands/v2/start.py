@@ -267,7 +267,7 @@ def create_server_arguments(
         critical_files=get_critical_files(configuration),
         debug=start_arguments.debug,
         excludes=configuration.excludes,
-        extensions=configuration.get_valid_extensions(),
+        extensions=configuration.get_valid_extension_suffixes(),
         local_root=configuration.local_root,
         number_of_workers=configuration.get_number_of_workers(),
         parallel=not start_arguments.sequential,

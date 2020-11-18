@@ -861,7 +861,7 @@ class Configuration:
         )
         return default_number_of_workers
 
-    def get_valid_extensions(self) -> List[str]:
+    def get_valid_extension_suffixes(self) -> List[str]:
         vaild_extensions = []
         for extension in self.extensions:
             if not extension.suffix.startswith("."):

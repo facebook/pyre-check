@@ -147,7 +147,7 @@ class Incremental(Reporting):
         for exclude in excludes:
             flags.extend(["-exclude", exclude])
 
-        extensions = self._configuration.get_valid_extensions()
+        extensions = self._configuration.get_valid_extension_suffixes()
         for extension in extensions:
             flags.extend(["-extension", extension])
 

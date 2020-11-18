@@ -864,7 +864,7 @@ def resolve_analysis_directory(
             project_root=project_root,
             filter_paths=filter_paths,
             local_configuration_root=local_configuration_root,
-            extensions=configuration.get_valid_extensions(),
+            extensions=configuration.get_valid_extension_suffixes(),
             search_path=[
                 search_path.path()
                 for search_path in configuration.get_existent_search_paths()

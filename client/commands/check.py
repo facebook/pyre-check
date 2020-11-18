@@ -71,7 +71,7 @@ class Check(Reporting):
         excludes = self._configuration.excludes
         for exclude in excludes:
             flags.extend(["-exclude", exclude])
-        extensions = self._configuration.get_valid_extensions()
+        extensions = self._configuration.get_valid_extension_suffixes()
         for extension in extensions:
             flags.extend(["-extension", extension])
         return flags
