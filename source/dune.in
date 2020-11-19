@@ -61,15 +61,6 @@
  (libraries core pyrelib.ast pyrelib.type))
 
 (library
- (name projectSpecificPreprocessing)
- (modules projectSpecificPreprocessing)
- (public_name pyrelib.projectSpecificPreprocessing)
- (preprocess
-  (pps ppx_deriving.eq ppx_deriving.show ppx_deriving_yojson ppx_hash
-    ppx_compare ppx_sexp_conv))
- (libraries pyrelib.ast pyrePath pyre core yojson))
-
-(library
  (name fetchSavedState)
  (modules fetchSavedState)
  (public_name pyrelib.fetchSavedState)
@@ -185,18 +176,16 @@
  (names
    decoratorsTest
    fetchSavedStateTest
-   projectSpecificPreprocessingTest
    specialCallResolutionTest)
  (modules
    decoratorsTest
    fetchSavedStateTest
-   projectSpecificPreprocessingTest
    specialCallResolutionTest)
  (preprocess
   (pps ppx_deriving.eq ppx_deriving.show ppx_deriving_yojson ppx_hash
     ppx_compare ppx_sexp_conv))
  (libraries pyrelib pyrelib.integrationTest pyrelib.fetchSavedState
-   pyrelib.projectSpecificPreprocessing oUnit test))
+   oUnit test))
 
 (executable
  (name main)
