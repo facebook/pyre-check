@@ -55,5 +55,8 @@ async def read_json_rpc(
 async def write_json_rpc(
     output_channel: async_server_connection.TextWriter, response: json_rpc.Response
 ) -> None:
+    """
+    Asynchronously write a JSON-RPC response to the given output channel.
+    """
     payload = response.serialize()
     await output_channel.write(f"Content-Length: {len(payload)}\r\n\r\n{payload}")
