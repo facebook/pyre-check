@@ -112,6 +112,7 @@ def run_pyre_command(
     try:
         configuration_module.check_nested_local_configuration(configuration)
         log.start_logging_to_directory(noninteractive, configuration.log_directory)
+        LOG.debug(f"Running cli command `{' '.join(sys.argv)}`...")
         exit_code = command.run().exit_code()
     except (buck.BuckException, EnvironmentException) as error:
         client_exception_message = str(error)
