@@ -21,11 +21,15 @@ python_tests:
 
 .PHONY: server_integration_test
 server_integration_test: all
-	PYRE_BINARY="$(shell pwd)/_build/default/main.exe" ../scripts/run_server_integration_test.py command/test/integration/fake_repository/
+	PYRE_BINARY="$(shell pwd)/_build/default/main.exe" ../scripts/run_server_integration_test.py ../command/test/integration/fake_repository/
 
 .PHONY: stubs_integration_test
 stubs_integration_test: all
-	PYRE_BINARY="$(shell pwd)/_build/default/main.exe" make -C stubs/integration_test
+	PYRE_BINARY="$(shell pwd)/_build/default/main.exe" make -C ../stubs/integration_test
+
+.PHONY: pysa_cache_test
+pysa_cache_test: all
+	PYRE_BINARY="$(shell pwd)/_build/default/main.exe" ../stubs/integration_test/run_cache_test.py
 
 .PHONY: fbtest
 fbtest: all
