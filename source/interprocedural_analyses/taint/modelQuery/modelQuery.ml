@@ -13,6 +13,28 @@ open Taint
 open Model
 open Pyre
 
+module DumpModelQueryResults : sig
+  val dump : path:Path.t -> models:Taint.Result.call_model Callable.Map.t -> unit
+end = struct
+  let dump ~path ~models =
+    Log.warning "Emitting the model query results to `%s`" (Path.absolute path);
+    let content =
+      let to_json (callable, model) =
+        `Assoc
+          [
+            "callable", `String (Callable.external_target_name callable);
+            ( "model",
+              `List (Taint.Result.externalize ~filename_lookup:(fun _ -> None) callable None model)
+            );
+          ]
+      in
+      models
+      |> Map.to_alist
+      |> fun models -> `List (List.map models ~f:to_json) |> Yojson.Safe.pretty_to_string
+    in
+    path |> File.create ~content |> File.write
+end
+
 let matches_pattern ~pattern name = Re2.matches (Re2.create_exn pattern) name
 
 let rec matches_constraint query_constraint ~resolution ~callable =
@@ -246,7 +268,7 @@ let apply_query_rule
 
 let apply_all_rules ~resolution ~scheduler ~configuration ~rule_filter ~rules ~callables ~models =
   let global_resolution = Resolution.global_resolution resolution in
-  if List.length rules > 0 then
+  if List.length rules > 0 then (
     let sources_to_keep, sinks_to_keep =
       ModelParser.compute_sources_and_sinks_to_keep ~configuration ~rule_filter
     in
@@ -254,7 +276,7 @@ let apply_all_rules ~resolution ~scheduler ~configuration ~rule_filter ~rules ~c
       let taint_to_model =
         List.concat_map rules ~f:(fun rule ->
             apply_query_rule
-              ~verbose:configuration.dump_model_query_results
+              ~verbose:(Option.is_some configuration.dump_model_query_results_path)
               ~resolution:global_resolution
               ~rule
               ~callable)
@@ -308,6 +330,11 @@ let apply_all_rules ~resolution ~scheduler ~configuration ~rule_filter ~rules ~c
         ~inputs:callables
         ()
     in
-    merge_models new_models models
+    begin
+      match configuration.dump_model_query_results_path with
+      | Some path -> DumpModelQueryResults.dump ~path ~models:new_models
+      | None -> ()
+    end;
+    merge_models new_models models )
   else
     models

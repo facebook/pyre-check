@@ -81,7 +81,7 @@ type t = {
   partial_sink_converter: partial_sink_converter;
   partial_sink_labels: string list String.Map.Tree.t;
   find_missing_flows: missing_flows_kind option;
-  dump_model_query_results: bool;
+  dump_model_query_results_path: Path.t option;
   analysis_model_constraints: analysis_model_constraints;
 }
 
@@ -96,7 +96,7 @@ let empty =
     implicit_sources = empty_implicit_sources;
     partial_sink_labels = String.Map.Tree.empty;
     find_missing_flows = None;
-    dump_model_query_results = false;
+    dump_model_query_results_path = None;
     analysis_model_constraints = default_analysis_model_constraints;
   }
 
@@ -409,7 +409,7 @@ let parse source_jsons =
     implicit_sources;
     partial_sink_labels;
     find_missing_flows = None;
-    dump_model_query_results = false;
+    dump_model_query_results_path = None;
     analysis_model_constraints =
       { default_analysis_model_constraints with maximum_overrides_to_analyze };
   }
@@ -545,7 +545,7 @@ let default =
     implicit_sinks = empty_implicit_sinks;
     implicit_sources = empty_implicit_sources;
     find_missing_flows = None;
-    dump_model_query_results = false;
+    dump_model_query_results_path = None;
     analysis_model_constraints = default_analysis_model_constraints;
   }
 
@@ -596,7 +596,7 @@ let get () =
   | Some configuration -> configuration
 
 
-let create ~rule_filter ~find_missing_flows ~dump_model_query_results ~paths =
+let create ~rule_filter ~find_missing_flows ~dump_model_query_results_path ~paths =
   let file_paths = Path.get_matching_files_recursively ~suffix:".config" ~paths in
   let parse_configuration config_file =
     if not (Path.file_exists config_file) then
@@ -626,7 +626,7 @@ let create ~rule_filter ~find_missing_flows ~dump_model_query_results ~paths =
     | Some Type -> missing_type_flows_configuration configuration
     | None -> configuration
   in
-  let configuration = { configuration with dump_model_query_results } in
+  let configuration = { configuration with dump_model_query_results_path } in
   match rule_filter with
   | None -> configuration
   | Some rule_filter ->

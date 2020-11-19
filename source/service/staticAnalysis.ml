@@ -489,6 +489,16 @@ let analyze
         | Some missing_flow -> ["find_missing_flows", `String missing_flow]
         | None -> []
       in
+      let dump_model_query_results_path =
+        if dump_model_query_results then
+          Path.create_relative
+            ~root:configuration.Configuration.Analysis.log_directory
+            ~relative:"model_query_results.pysa"
+          |> Path.absolute
+          |> fun path -> `String path
+        else
+          `Null
+      in
       `Assoc
         [
           ( "taint",
@@ -496,7 +506,7 @@ let analyze
               ( [
                   "model_paths", `List taint_model_paths;
                   "verify_models", `Bool verify_models;
-                  "dump_model_query_results", `Bool dump_model_query_results;
+                  "dump_model_query_results_path", dump_model_query_results_path;
                 ]
               @ rule_settings
               @ find_missing_flows_settings ) );

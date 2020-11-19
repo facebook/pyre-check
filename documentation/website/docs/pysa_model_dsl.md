@@ -35,6 +35,15 @@ Things to note in this example:
 1. The `where` clause is how you filter down the callables you're modeling - in this example, we're filtering functionos by names.
 1. The `model` clause is a list of models to attach to the functions. Here, the syntax means that we model `foo` as returning `TaintSource[Test]`.
 
+When invoking Pysa, if you add the `--dump-model-query-results` flag to your invocation, the generated models will be written to a file in JSON format.
+
+```
+$ pyre analyze --dump-model-query-results
+...
+> Emitting the model query results to `/my/home/dir/.pyre/model_query_results.pysa`
+```
+
+You can then view this file to see the generated models.
 
 ## Find clauses
 

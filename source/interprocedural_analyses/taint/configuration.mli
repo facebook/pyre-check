@@ -61,7 +61,7 @@ type t = {
   partial_sink_converter: partial_sink_converter;
   partial_sink_labels: string list Core.String.Map.Tree.t;
   find_missing_flows: missing_flows_kind option;
-  dump_model_query_results: bool;
+  dump_model_query_results_path: Path.t option;
   analysis_model_constraints: analysis_model_constraints;
 }
 
@@ -84,7 +84,7 @@ val default : t
 val create
   :  rule_filter:int list option ->
   find_missing_flows:missing_flows_kind option ->
-  dump_model_query_results:bool ->
+  dump_model_query_results_path:Path.t option ->
   paths:Path.t list ->
   t
 

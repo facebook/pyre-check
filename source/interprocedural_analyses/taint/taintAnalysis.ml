@@ -33,8 +33,10 @@ include Taint.Result.Register (struct
       |> Yojson.Safe.Util.to_string_option
       >>= TaintConfiguration.missing_flows_kind_from_string
     in
-    let dump_model_query_results =
-      json_bool_member "dump_model_query_results" taint ~default:false
+    let dump_model_query_results_path =
+      Yojson.Safe.Util.member "dump_model_query_results_path" taint
+      |> Yojson.Safe.Util.to_string_option
+      >>| Path.create_absolute ~follow_symbolic_links:false
     in
     let rule_filter =
       if List.mem ~equal:String.equal (Yojson.Safe.Util.keys taint) "rule_filter" then
@@ -92,7 +94,7 @@ include Taint.Result.Register (struct
               TaintConfiguration.create
                 ~rule_filter
                 ~find_missing_flows
-                ~dump_model_query_results
+                ~dump_model_query_results_path
                 ~paths
             in
             TaintConfiguration.register configuration;
