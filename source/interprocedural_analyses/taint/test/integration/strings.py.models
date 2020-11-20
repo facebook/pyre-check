@@ -485,3 +485,92 @@
     ]
   }
 }
+{
+  "kind": "model",
+  "data": {
+    "callable": "strings.format_sink",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "root": {
+              "filename": "strings.py",
+              "line": 69,
+              "start": 16,
+              "end": 17
+            },
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
+            "features": [
+              { "always-via": "special_sink" },
+              { "always-via": "obscure" },
+              { "always-via": "format-string" }
+            ]
+          }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "strings.format_source",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "strings.py",
+              "line": 63,
+              "start": 8,
+              "end": 23
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [
+              { "always-via": "special_source" },
+              { "always-via": "obscure" },
+              { "always-via": "format-string" }
+            ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "strings.format_tito",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "features": [
+              { "always-via": "obscure" },
+              { "always-via": "format-string" }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

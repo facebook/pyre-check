@@ -53,3 +53,17 @@ def through_iadd():
     b = ""
     b += a
     __test_sink(b)
+
+
+def format_tito(x):
+    return "a {}".format(x)
+
+
+def format_source():
+    x = __test_source()
+    return "a {}".format(x)
+
+
+def format_sink(x):
+    y = "a {}".format(x)
+    __test_sink(y)

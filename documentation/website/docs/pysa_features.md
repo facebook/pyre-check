@@ -166,7 +166,7 @@ through code that Pysa does not have access to analyze, and thus some taint flow
 assumptions were made. This can be a useful to filter out flows that may be more
 noisy. `via:format-string` means that a flow passed through a [python
 f-string](https://www.python.org/dev/peps/pep-0498/) (`f"Variable:
-{variable_name}"`). Tito stands for taint-in-taint-out which refers to taint
+{variable_name}"`) or a `str.format`. Tito stands for taint-in-taint-out which refers to taint
 flows that enter a function via a parameter and then exit it in some form via
 the return value. The `via:tito` feature is attached automatically to all such
 flows.

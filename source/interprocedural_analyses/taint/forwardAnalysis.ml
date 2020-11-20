@@ -904,83 +904,102 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
               ~f:add_root_taint
           in
           taint, state
-      | _ -> (
+      | _ ->
           let call = { Call.callee; arguments } in
           let { Call.callee; arguments } =
             Interprocedural.CallGraph.redirect_special_calls ~resolution call
           in
-          match
-            FunctionContext.get_callees
-              ~location:(Location.strip_module location)
-              ~call:{ Call.callee; arguments }
-          with
-          | Some (RegularTargets targets) ->
-              analyze_regular_targets ~state ~callee ~arguments targets
-          | Some
-              (HigherOrderTargets
-                { higher_order_function; callable_argument = index, callable_argument }) -> (
-              let lambda_argument = index, List.nth arguments index in
-              match lambda_argument with
-              | index, Some lambda_argument ->
-                  let non_lambda_arguments =
-                    List.mapi ~f:(fun index value -> index, value) (List.take arguments index)
-                    @ List.mapi
-                        ~f:(fun relative_index value -> index + 1 + relative_index, value)
-                        (List.drop arguments (index + 1))
-                  in
-                  analyze_lambda_call
-                    ~callee
-                    ~lambda_argument:(index, lambda_argument)
-                    ~non_lambda_arguments
-                    ~higher_order_function
-                    ~callable_argument
-              | _ -> analyze_regular_targets ~state ~callee ~arguments higher_order_function )
-          | Some (ConstructorTargets { new_targets; init_targets }) ->
-              analyze_constructor_call
-                ~resolution
-                ~callee
-                ~arguments
-                ~new_targets
-                ~init_targets
-                ~location
-                ~state
-          | None ->
-              (* No target, treat call as obscure *)
-              (* reveal_taint(). *)
-              begin
-                match Node.value callee, arguments with
-                | ( Expression.Name (Name.Identifier "reveal_taint"),
-                    [{ Call.Argument.value = expression; _ }] ) ->
-                    let taint, _ = analyze_expression ~resolution ~state ~expression in
-                    let location =
-                      Node.location callee
-                      |> Location.with_module ~qualifier:FunctionContext.qualifier
+          let taint, state =
+            match
+              FunctionContext.get_callees
+                ~location:(Location.strip_module location)
+                ~call:{ Call.callee; arguments }
+            with
+            | Some (RegularTargets targets) ->
+                analyze_regular_targets ~state ~callee ~arguments targets
+            | Some
+                (HigherOrderTargets
+                  { higher_order_function; callable_argument = index, callable_argument }) -> (
+                let lambda_argument = index, List.nth arguments index in
+                match lambda_argument with
+                | index, Some lambda_argument ->
+                    let non_lambda_arguments =
+                      List.mapi ~f:(fun index value -> index, value) (List.take arguments index)
+                      @ List.mapi
+                          ~f:(fun relative_index value -> index + 1 + relative_index, value)
+                          (List.drop arguments (index + 1))
                     in
-                    Log.dump
-                      "%a: Revealed forward taint for `%s`: %s"
-                      Location.WithModule.pp
-                      location
-                      (Ast.Transform.sanitize_expression expression |> Expression.show)
-                      (ForwardState.Tree.show taint)
-                | ( Expression.Name (Name.Identifier "reveal_type"),
-                    [{ Call.Argument.value = expression; _ }] ) ->
-                    let location =
-                      Node.location callee
-                      |> Location.with_module ~qualifier:FunctionContext.qualifier
-                    in
-                    Log.dump
-                      "%a: Revealed type for %s: %s"
-                      Location.WithModule.pp
-                      location
-                      (Ast.Transform.sanitize_expression expression |> Expression.show)
-                      (Resolution.resolve_expression_to_type resolution expression |> Type.show)
-                | _ -> ()
-              end;
-              let callee_taint, state = analyze_expression ~resolution ~state ~expression:callee in
-              List.fold_left arguments ~f:(analyze_argument ~resolution) ~init:(callee_taint, state)
-              |>> ForwardState.Tree.transform
-                    ForwardTaint.simple_feature
-                    Abstract.Domain.(Add Features.obscure) )
+                    analyze_lambda_call
+                      ~callee
+                      ~lambda_argument:(index, lambda_argument)
+                      ~non_lambda_arguments
+                      ~higher_order_function
+                      ~callable_argument
+                | _ -> analyze_regular_targets ~state ~callee ~arguments higher_order_function )
+            | Some (ConstructorTargets { new_targets; init_targets }) ->
+                analyze_constructor_call
+                  ~resolution
+                  ~callee
+                  ~arguments
+                  ~new_targets
+                  ~init_targets
+                  ~location
+                  ~state
+            | None ->
+                (* No target, treat call as obscure *)
+                (* reveal_taint(). *)
+                begin
+                  match Node.value callee, arguments with
+                  | ( Expression.Name (Name.Identifier "reveal_taint"),
+                      [{ Call.Argument.value = expression; _ }] ) ->
+                      let taint, _ = analyze_expression ~resolution ~state ~expression in
+                      let location =
+                        Node.location callee
+                        |> Location.with_module ~qualifier:FunctionContext.qualifier
+                      in
+                      Log.dump
+                        "%a: Revealed forward taint for `%s`: %s"
+                        Location.WithModule.pp
+                        location
+                        (Ast.Transform.sanitize_expression expression |> Expression.show)
+                        (ForwardState.Tree.show taint)
+                  | ( Expression.Name (Name.Identifier "reveal_type"),
+                      [{ Call.Argument.value = expression; _ }] ) ->
+                      let location =
+                        Node.location callee
+                        |> Location.with_module ~qualifier:FunctionContext.qualifier
+                      in
+                      Log.dump
+                        "%a: Revealed type for %s: %s"
+                        Location.WithModule.pp
+                        location
+                        (Ast.Transform.sanitize_expression expression |> Expression.show)
+                        (Resolution.resolve_expression_to_type resolution expression |> Type.show)
+                  | _ -> ()
+                end;
+                let callee_taint, state =
+                  analyze_expression ~resolution ~state ~expression:callee
+                in
+                List.fold_left
+                  arguments
+                  ~f:(analyze_argument ~resolution)
+                  ~init:(callee_taint, state)
+                |>> ForwardState.Tree.transform
+                      ForwardTaint.simple_feature
+                      Abstract.Domain.(Add Features.obscure)
+          in
+          let taint =
+            match Node.value callee with
+            | Name
+                (Name.Attribute
+                  { base = { Node.value = Expression.String _; _ }; attribute = "format"; _ }) ->
+                ForwardState.Tree.transform
+                  ForwardTaint.simple_feature
+                  Abstract.Domain.(Add Domains.format_string_feature)
+                  taint
+            | _ -> taint
+          in
+          taint, state
 
 
     and analyze_attribute_access ~resolution ~state ~location base attribute =

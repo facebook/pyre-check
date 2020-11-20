@@ -856,6 +856,17 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
               | Some root -> store_weak_taint ~root ~path:[] taint state
               | None -> state ) )
       | _ -> (
+          let taint =
+            match Node.value callee with
+            | Name
+                (Name.Attribute
+                  { base = { Node.value = Expression.String _; _ }; attribute = "format"; _ }) ->
+                BackwardState.Tree.transform
+                  BackwardTaint.simple_feature
+                  Abstract.Domain.(Add Domains.format_string_feature)
+                  taint
+            | _ -> taint
+          in
           match FunctionContext.get_callees ~location ~call:{ Call.callee; arguments } with
           | Some (RegularTargets targets) ->
               analyze_regular_targets ~state ~callee ~arguments ~taint (Some targets)
