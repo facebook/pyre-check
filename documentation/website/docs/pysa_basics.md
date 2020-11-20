@@ -2,6 +2,7 @@
 id: pysa-basics
 title: Overview
 sidebar_label: Overview
+custom_edit_url: https://www.internalfb.com/intern/diffusion/FBS/browse/master/fbcode/tools/pyre/documentation/website/docs/pysa_basics.md
 ---
 
 Pyre has applications beyond type checking python code: it can also run static

@@ -2,6 +2,7 @@
 id: static-analysis-post-processor
 title: Static Analysis Post Processor
 sidebar_label: Static Analysis Processor
+custom_edit_url: https://www.internalfb.com/intern/diffusion/FBS/browse/master/fbcode/tools/pyre/documentation/website/docs/static_analysis_post_processor.md
 ---
 
 The `pyre analyze` command runs static analysis and outputs the result as JSON.

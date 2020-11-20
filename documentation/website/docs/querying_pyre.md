@@ -2,6 +2,7 @@
 id: querying-pyre
 title: Querying Pyre
 sidebar_label: Querying Pyre
+custom_edit_url: https://www.internalfb.com/intern/diffusion/FBS/browse/master/fbcode/tools/pyre/documentation/website/docs/querying_pyre.md
 ---
 
 Pyre has a subcommand called `query` allows you to hook into a Pyre server and get type-related

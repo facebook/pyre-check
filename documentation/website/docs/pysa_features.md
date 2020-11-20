@@ -2,6 +2,7 @@
 id: pysa-features
 title: Feature Annotations
 sidebar_label: Feature Annotations
+custom_edit_url: https://www.internalfb.com/intern/diffusion/FBS/browse/master/fbcode/tools/pyre/documentation/website/docs/pysa_features.md
 ---
 
 Features (sometimes called breadcrumbs) are additional metadata that are

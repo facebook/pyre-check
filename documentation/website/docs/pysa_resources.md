@@ -2,6 +2,7 @@
 id: pysa-additional-resources
 title: Additional Resources
 sidebar_label: Additional Resources
+custom_edit_url: https://www.internalfb.com/intern/diffusion/FBS/browse/master/fbcode/tools/pyre/documentation/website/docs/pysa_resources.md
 ---
 
 ## Public Talks

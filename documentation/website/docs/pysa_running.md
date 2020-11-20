@@ -2,6 +2,7 @@
 id: pysa-running
 title: Running Pysa
 sidebar_label: Running Pysa
+custom_edit_url: https://www.internalfb.com/intern/diffusion/FBS/browse/master/fbcode/tools/pyre/documentation/website/docs/pysa_running.md
 ---
 
 This page walks you through the basics of running Pysa. If you want exercises to
