@@ -187,6 +187,7 @@ class MonitorTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as root:
             configuration = mock_configuration()
             configuration.extensions = []
+            configuration.log_directory = root + ".pyre"
             analysis_directory = MagicMock()
             analysis_directory.get_root.return_value = root
 
