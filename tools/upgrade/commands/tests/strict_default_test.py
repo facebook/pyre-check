@@ -167,7 +167,7 @@ class GetConfigurationPathTest(unittest.TestCase):
                 root_path / expected if expected is not None else None,
             )
 
-    def test_get_configuration_path(self):
+    def test_get_configuration_path(self) -> None:
         self.assert_configuration_path(files=[], local_root=None, expected=None)
         self.assert_configuration_path(
             files=[".pyre_configuration"],

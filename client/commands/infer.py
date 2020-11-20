@@ -374,8 +374,8 @@ def annotate_path(stub_path: str, file_path: str, debug_infer: bool) -> None:
 def annotate_paths(
     root,
     formatter: Optional[str],
-    stubs,
-    type_directory,
+    stubs: Sequence[StubFile],
+    type_directory: Path,
     in_place: Sequence[str],
     debug_infer: bool,
 ) -> None:

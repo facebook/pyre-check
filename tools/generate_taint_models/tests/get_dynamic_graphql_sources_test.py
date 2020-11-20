@@ -26,19 +26,19 @@ from tools.pyre.tools.generate_taint_models.get_dynamic_graphql_sources import (
 from .test_functions import __name__ as qualifier, all_functions
 
 
-def function1(foo):
+def function1(foo) -> bool:
     return True
 
 
-def function2(foo, *bar):
+def function2(foo, *bar) -> bool:
     return True
 
 
 class TestClass(object):
-    def method1(self, foo):
+    def method1(self, foo) -> bool:
         return True
 
-    def method2(self, foo, *bar):
+    def method2(self, foo, *bar) -> bool:
         return True
 
 

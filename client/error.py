@@ -8,7 +8,7 @@ import dataclasses
 import json
 import logging
 import sys
-from typing import Any, Dict, Sequence
+from typing import Any, Dict, Sequence, Union
 
 import click
 
@@ -70,20 +70,6 @@ class Error:
         line = click.style(str(self.line), fg="yellow")
         column = click.style(str(self.column), fg="yellow")
         return f"{path}:{line}:{column} {self.description}"
-
-
-def print_errors(errors: Sequence[Error], output: str) -> None:
-    length = len(errors)
-    if length != 0:
-        suffix = "s" if length > 1 else ""
-        LOG.error(f"Found {length} type error{suffix}!")
-    else:
-        LOG.log(log.SUCCESS, "No type errors found")
-
-    if output == command_arguments.TEXT:
-        log.stdout.write("\n".join([error.to_text() for error in errors]))
-    else:
-        log.stdout.write(json.dumps([error.to_json() for error in errors]))
 
 
 class LegacyError:
@@ -161,3 +147,31 @@ class LegacyError:
 
     def is_ignored(self) -> bool:
         return self.ignore_error
+
+    def to_json(self) -> Dict[str, Any]:
+        error_mapping = self.error.to_json()
+        error_mapping["inference"] = self.inference
+        error_mapping["ignore_error"] = self.ignore_error
+        return error_mapping
+
+    def to_text(self) -> str:
+        path = click.style(self.error.path, fg="red")
+        line = click.style(str(self.error.line), fg="yellow")
+        column = click.style(str(self.error.column), fg="yellow")
+        return f"{path}:{line}:{column} {self.error.description}"
+
+
+def print_errors(
+    errors: Union[Sequence[Error], Sequence[LegacyError]], output: str
+) -> None:
+    length = len(errors)
+    if length != 0:
+        suffix = "s" if length > 1 else ""
+        LOG.error(f"Found {length} type error{suffix}!")
+    else:
+        LOG.log(log.SUCCESS, "No type errors found")
+
+    if output == command_arguments.TEXT:
+        log.stdout.write("\n".join([error.to_text() for error in errors]))
+    else:
+        log.stdout.write(json.dumps([error.to_json() for error in errors]))

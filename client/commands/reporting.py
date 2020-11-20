@@ -34,7 +34,7 @@ class Reporting(Command):
         )
 
     def _print(self, errors: Sequence[LegacyError]) -> None:
-        print_errors([error.error for error in errors], output=self._output)
+        print_errors(errors, output=self._output)
 
     def _get_directories_to_analyze(self) -> Set[str]:
         return self._analysis_directory.get_filter_roots()

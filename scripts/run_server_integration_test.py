@@ -177,7 +177,7 @@ class Repository:
 
         return self._current_commit
 
-    def _copy_commit(self, original_path, destination_path) -> None:
+    def _copy_commit(self, original_path: str, destination_path: str) -> None:
         """
         Copies the next commit at original_path to destination path. Can be
         overridden by child classes to change copying logic.

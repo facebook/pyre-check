@@ -10,7 +10,7 @@ import sys
 import textwrap
 import unittest
 from pathlib import Path
-from typing import Dict, Union
+from typing import Any, Dict, Union
 from unittest.mock import MagicMock, Mock, patch
 
 import libcst as cst
@@ -79,7 +79,7 @@ class HelperTest(unittest.TestCase):
             ["function"],
         )
 
-    def test_existing_annotations_to_stubs(self):
+    def test_existing_annotations_to_stubs(self) -> None:
         def assert_stub_equal(file_content, expected) -> None:
             module = cst.parse_module(textwrap.dedent(file_content))
             expected_stub = textwrap.dedent(expected.rstrip()) + "\n"
@@ -155,7 +155,7 @@ class HelperTest(unittest.TestCase):
 
 
 class PyreTest(unittest.TestCase):
-    def assert_imports(self, error_json, expected_imports) -> None:
+    def assert_imports(self, error_json: Dict[str, Any], expected_imports) -> None:
         error = LegacyError.create(error_json)
         stub = None
         if FunctionStub.is_instance(error.inference):
