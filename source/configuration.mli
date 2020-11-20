@@ -102,6 +102,8 @@ module Analysis : sig
 
   val extension_suffixes : t -> string list
 
+  val find_extension : t -> Path.t -> Extension.t option
+
   val features : t -> Features.t
 end
 

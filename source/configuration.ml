@@ -199,6 +199,11 @@ module Analysis = struct
 
   let extension_suffixes { extensions; _ } = List.map ~f:Extension.suffix extensions
 
+  let find_extension { extensions; _ } path =
+    List.find extensions ~f:(fun extension ->
+        String.is_suffix ~suffix:(Extension.suffix extension) (Path.absolute path))
+
+
   let features { features; _ } = features
 end
 

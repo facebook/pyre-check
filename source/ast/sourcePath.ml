@@ -65,10 +65,17 @@ let qualifier_of_relative relative =
       Reference.create_from_list qualifier
 
 
-let create_from_search_path ~is_external ~search_paths path =
+let create_from_search_path ~is_external ~search_paths ?extension path =
   SearchPath.search_for_path ~search_paths path
   >>= fun SearchPath.{ relative_path; priority } ->
-  let relative = Path.RelativePath.relative relative_path in
+  let relative =
+    match extension with
+    | Some { Configuration.Extension.include_suffix_in_module_qualifier; _ }
+      when include_suffix_in_module_qualifier ->
+        (* Ensure extension is not stripped when creating qualifier *)
+        Path.RelativePath.relative relative_path ^ ".py"
+    | _ -> Path.RelativePath.relative relative_path
+  in
   let qualifier = qualifier_of_relative relative in
   let is_stub = Path.is_path_python_stub relative in
   let is_init = Path.is_path_python_init relative in
@@ -95,24 +102,22 @@ let should_type_check
 
 
 let create ~configuration:({ Configuration.Analysis.excludes; _ } as configuration) path =
-  let has_valid_extensions ~extensions path =
-    let valid_suffixes = ".py" :: ".pyi" :: extensions in
-    List.exists valid_suffixes ~f:(fun suffix -> String.is_suffix ~suffix path)
-  in
   let absolute_path = Path.absolute path in
-  match
-    has_valid_extensions
-      ~extensions:(Configuration.Analysis.extension_suffixes configuration)
-      absolute_path
-  with
-  | false -> None
-  | true -> (
-      match List.exists excludes ~f:(fun regexp -> Str.string_match regexp absolute_path 0) with
-      | true -> None
-      | false ->
-          let search_paths = Configuration.Analysis.search_path configuration in
-          let is_external = not (should_type_check ~configuration path) in
-          create_from_search_path ~is_external ~search_paths path )
+  let create ?extension path =
+    let search_paths = Configuration.Analysis.search_path configuration in
+    let is_external = not (should_type_check ~configuration path) in
+    create_from_search_path ~is_external ~search_paths ?extension path
+  in
+  let is_excluded =
+    List.exists excludes ~f:(fun regexp -> Str.string_match regexp absolute_path 0)
+  in
+  let extension = Configuration.Analysis.find_extension configuration path in
+  match is_excluded, extension with
+  | true, _ -> None
+  | _, Some extension -> create ~extension path
+  | _, None when String.is_suffix ~suffix:".py" absolute_path -> create path
+  | _, None when String.is_suffix ~suffix:".pyi" absolute_path -> create path
+  | _ -> None
 
 
 let create_for_testing ~relative ~is_external ~priority =
