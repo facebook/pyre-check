@@ -137,15 +137,18 @@ Sinks are where tainted data terminates. They are declared in your
 ```
 
 Models that indicate what is a sink are then defined in `.pysa` files. Sinks can
-be added to the same files as sources. Like sources, sinks are declared with
-the same syntax as [type annotations in Python
-3](https://docs.python.org/3/library/typing.html). Function parameters and even
-whole classes can be declared as sinks by adding `TaintSink[SINK_NAME]` where
-you would add a python type:
+be added to the same files as sources. Like sources, sinks are declared with the
+same syntax as [type annotations in Python
+3](https://docs.python.org/3/library/typing.html). Function parameters, class
+attributes, and even whole classes can be declared as sinks by adding
+`TaintSink[SINK_NAME]` where you would add a python type:
 
 ```python
 # Function parameter sink
 def sqlite3.dbapi2.Cursor.execute(self, sql: TaintSink[SQL], parameters): ...
+
+# Attribute sink
+file_name.ClassName.attribute_name: TaintSink[RemoteCodeExecution] = ...
 ```
 
 When tainting an entire class, any flow into a method or attribute of the class
