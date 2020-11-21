@@ -3,7 +3,6 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-import errno
 import logging
 import os
 from logging import Logger
@@ -171,7 +170,10 @@ class Start(Reporting):
         for exclude in excludes:
             flags.extend(["-exclude", exclude])
 
-        extensions = self._configuration.get_valid_extension_suffixes()
+        extensions = [
+            extension.command_line_argument()
+            for extension in self._configuration.extensions
+        ]
         for extension in extensions:
             flags.extend(["-extension", extension])
 
