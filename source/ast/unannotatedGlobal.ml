@@ -173,6 +173,7 @@ module Collector = struct
           in
           let globals = List.fold ~init:globals ~f:(visit_statement ~qualifier) orelse in
           List.fold ~init:globals ~f:(visit_statement ~qualifier) finally
+      | With { With.body; _ } -> List.fold ~init:globals ~f:(visit_statement ~qualifier) body
       | _ -> globals
     in
     List.fold ~init:[] ~f:(visit_statement ~qualifier) statements |> List.rev

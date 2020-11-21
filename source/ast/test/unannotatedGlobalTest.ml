@@ -80,6 +80,13 @@ let test_collection context =
          y = 3
     |}
     ~expected:["x"; "z"; "y"];
+  assert_collected_names
+    {|
+       with derp():
+         x = 1
+         import y
+    |}
+    ~expected:["x"; "y"];
   ()
 
 

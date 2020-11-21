@@ -787,7 +787,7 @@ let test_query context =
                  [
                    2, 5, 2, 11, Type.Any;
                    2, 15, 2, 16, Type.Any;
-                   3, 1, 3, 2, Type.literal_integer 2;
+                   3, 1, 3, 2, Type.integer;
                    3, 5, 3, 6, Type.literal_integer 2;
                  ]
                  |> create_types_at_locations;
