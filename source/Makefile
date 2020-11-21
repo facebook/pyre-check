@@ -15,10 +15,6 @@ dev:
 test: all
 	@OUNIT_SHARDS="1" dune runtest -j auto --profile dev
 
-.PHONY: python_tests
-python_tests:
-	../scripts/run-python-tests.sh
-
 .PHONY: server_integration_test
 server_integration_test: all
 	PYRE_BINARY="$(shell pwd)/_build/default/main.exe" ../scripts/run_server_integration_test.py ../command/test/integration/fake_repository/
@@ -50,7 +46,3 @@ configure: dune;
 
 dune: dune.in
 	../scripts/setup.sh --configure
-
-.PHONY: lint
-lint:
-	find -name "*.ml" | grep -v build | grep -v hack | xargs ocp-indent -i
