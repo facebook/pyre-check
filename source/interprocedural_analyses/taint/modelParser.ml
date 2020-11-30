@@ -1171,6 +1171,7 @@ type model_or_query =
   | Query of ModelQuery.rule
 
 let callable_annotation
+    ~verify_decorators
     ~resolution
     ({ Define.Signature.name = { Node.value = name; _ }; decorators; _ } as define)
   =
@@ -1220,8 +1221,10 @@ let callable_annotation
     get_matching_method ~predicate:is_property
   else if Define.Signature.is_property_setter define then
     get_matching_method ~predicate:Define.is_property_setter
-  else if not (List.is_empty decorators) then
-    (* Ensure that models don't declare decorators that our taint analyses doesn't understand. *)
+  else if (not (List.is_empty decorators)) && verify_decorators then
+    (* Ensure that models don't declare decorators that our taint analyses doesn't understand. We
+       check for the verify_decorators flag, as defines originating from
+       `create_model_from_annotation` are not user-specified models that we're parsing. *)
     raise_invalid_model
       (Format.sprintf
          "Unexpected decorators found when parsing model: `%s`"
@@ -1626,7 +1629,7 @@ let create ~resolution ?path ~configuration ~rule_filter source =
     in
     (* Make sure we know about what we model. *)
     try
-      let callable_annotation = callable_annotation ~resolution define in
+      let callable_annotation = callable_annotation ~verify_decorators:true ~resolution define in
       let call_target = (call_target :> Callable.t) in
       let () =
         if
@@ -1857,7 +1860,7 @@ let create_model_from_annotations ~resolution ~callable ~sources_to_keep ~sinks_
   | None -> None
   | Some (_, { Node.value = { Define.signature = define; _ }; _ }) ->
       let callable_annotation =
-        callable_annotation ~resolution define
+        callable_annotation ~resolution ~verify_decorators:false define
         |> Annotation.annotation
         |> function
         | Type.Callable t -> Some t

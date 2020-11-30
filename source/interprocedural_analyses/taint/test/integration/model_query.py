@@ -3,6 +3,8 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+from functools import lru_cache
+
 
 def foo(x):
     return 0
@@ -54,3 +56,8 @@ class Child(Base):
 class GrandChild(Child):
     def baz(self, z):
         return 0
+
+
+@lru_cache(maxsize=1)
+def positional_decorated(x, y) -> int:
+    ...
