@@ -1360,11 +1360,7 @@ module State (Context : Context) = struct
         String.Set.mem whitelist (Define.unqualified_name define)
       in
       try
-        if
-          Define.is_constructor define
-          || Define.is_class_method define
-          || is_whitelisted_dunder_method define
-        then
+        if Define.is_constructor define || is_whitelisted_dunder_method define then
           errors
         else
           let open Annotated in
@@ -1406,12 +1402,26 @@ module State (Context : Context) = struct
                 in
                 (* Check strengthening of postcondition. *)
                 match Annotation.annotation (Attribute.annotation overridden_attribute) with
+                | Type.Parametric
+                    {
+                      name = "BoundMethod";
+                      parameters = [Single (Type.Callable { implementation; _ }); _];
+                    }
                 | Type.Callable { Type.Callable.implementation; _ } ->
                     let original_implementation =
                       resolve_reference_type ~resolution (Node.value name)
                       |> function
                       | Type.Callable { Type.Callable.implementation = original_implementation; _ }
-                        ->
+                      | Type.Parametric
+                          {
+                            parameters =
+                              [
+                                Single
+                                  (Type.Callable { implementation = original_implementation; _ });
+                                _;
+                              ];
+                            _;
+                          } ->
                           original_implementation
                       | annotation -> raise (ClassHierarchy.Untracked annotation)
                     in

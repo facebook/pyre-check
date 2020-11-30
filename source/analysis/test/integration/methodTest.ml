@@ -1092,6 +1092,19 @@ let test_check_behavioral_subtyping context =
   assert_type_errors
     {|
       class Foo():
+        @classmethod
+        def foo(cls, a: float) -> None: ...
+      class Bar(Foo):
+        @classmethod
+        def foo(cls, a: int) -> None: pass
+      |}
+    [
+      "Inconsistent override [14]: `test.Bar.foo` overrides method defined in `Foo` inconsistently. "
+      ^ "Parameter of type `int` is not a supertype of the overridden parameter `float`.";
+    ];
+  assert_type_errors
+    {|
+      class Foo():
         def foo(self, a: float) -> None: ...
       class Bar(Foo):
         def foo(self, a: int) -> None: pass
@@ -1274,23 +1287,13 @@ let test_check_behavioral_subtyping context =
       ^ "inconsistently. Could not find parameter `_y` in overriding signature.";
     ];
 
-  (* Don't warn on constructors or class methods. *)
+  (* Don't warn on constructors. *)
   assert_type_errors
     {|
       class Foo():
         def __init__(self, a: float) -> None: ...
       class Bar(Foo):
         def __init__(self, a: int) -> None: pass
-    |}
-    [];
-  assert_type_errors
-    {|
-      class Foo():
-        @classmethod
-        def foo(cls, a: float) -> None: ...
-      class Bar(Foo):
-        @classmethod
-        def foo(cls, a: int) -> None: pass
     |}
     [];
 
