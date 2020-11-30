@@ -122,6 +122,18 @@ def applies_to_index.only_applies_to_nested() -> AppliesTo[0, AppliesTo[1, Taint
 def applies_to_index.only_applies_to_a_key() -> AppliesTo["a", TaintSource[Test]]: ...
 ```
 
+Note that `AppliesTo` syntax can also be applied to fields of classes and globals,
+which can be particularly helpful when annotating dictionaries.
+
+```python
+# Source file: a.py
+class C:
+    dictionary_field = {"text": "will_be_tainted"}
+
+# Model file: models.pysa
+a.C.dictionary_field: AppliesTo["text", TaintSource[Test]] = ...
+```
+
 ## Sinks
 
 Sinks are where tainted data terminates. They are declared in your

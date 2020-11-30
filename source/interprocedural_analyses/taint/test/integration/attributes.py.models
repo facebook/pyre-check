@@ -573,6 +573,68 @@
 {
   "kind": "model",
   "data": {
+    "callable": "attributes.test_issue_with_text_key_of_dictionary",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(c)[dictionary][text]",
+        "taint": [
+          {
+            "root": {
+              "filename": "attributes.py",
+              "line": 90,
+              "start": 16,
+              "end": 36
+            },
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
+            "features": [
+              { "has": "first-index" },
+              { "first-index": "text" },
+              { "always-via": "special_sink" }
+            ]
+          }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "attributes.test_no_issue_with_other_key_of_dictionary",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(c)[dictionary][other]",
+        "taint": [
+          {
+            "root": {
+              "filename": "attributes.py",
+              "line": 94,
+              "start": 16,
+              "end": 37
+            },
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
+            "features": [
+              { "has": "first-index" },
+              { "first-index": "other" },
+              { "always-via": "special_sink" }
+            ]
+          }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "attributes.test_via_non_optional",
     "sources": [
       {

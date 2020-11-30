@@ -80,3 +80,15 @@ def test_attribute_union(t: Union[Token, Untainted]):
         __test_sink(t.token)
     elif isinstance(t, Untainted):
         __test_sink(t.token)
+
+
+class C:
+    dictionary = {"text": "modelled as tainted", "other": "benign"}
+
+
+def test_issue_with_text_key_of_dictionary(c: C):
+    __test_sink(c.dictionary["text"])
+
+
+def test_no_issue_with_other_key_of_dictionary(c: C):
+    __test_sink(c.dictionary["other"])
