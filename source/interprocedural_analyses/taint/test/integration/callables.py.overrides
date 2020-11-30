@@ -1,0 +1,9 @@
+@generated
+Overrides
+callables.AbstractEventProcessor::__init__ (override) -> [callables.AbstractEventProcessor::__init__ (method)]
+callables.AbstractEventProcessor::async_call_tainted (override) -> [callables.AbstractEventProcessor::async_call_tainted (method) callables.ConcreteEventProcessor::async_call_tainted (override)]
+callables.AbstractEventProcessor::async_run (override) -> [callables.AbstractEventProcessor::async_run (method) callables.ConcreteEventProcessor::async_run (override)]
+callables.ConcreteEventProcessor::async_call_tainted (override) -> [callables.ConcreteEventProcessor::async_call_tainted (method)]
+callables.ConcreteEventProcessor::async_run (override) -> [callables.ConcreteEventProcessor::async_run (method)]
+callables.ProcessorInfo::__init__ (override) -> [callables.ProcessorInfo::__init__ (method)]
+type::__init__ (override) -> [callables.AbstractEventProcessor::__init__ (override) callables.ProcessorInfo::__init__ (override) type::__init__ (method)]
