@@ -144,7 +144,9 @@ let test_creation context =
         ~search_path:[SearchPath.Root external_root]
         ~filter_directories:[local_root]
         ~extensions:
-          (List.map ~f:Configuration.Extension.create_extension [".first"; ".second"; ".third"])
+          (List.map
+             ~f:Configuration.Extension.create_extension
+             [".first"; ".second"; ".third"; ".special$include_suffix_in_module_qualifier"])
         ()
     in
     let create_exn = create_source_path_exn ~configuration in
@@ -205,6 +207,14 @@ let test_creation context =
       local_e
       ~search_root:local_root
       ~relative:"e.py"
+      ~is_stub:false
+      ~is_external:false
+      ~is_init:false;
+    let local_f = create_exn local_root "f.special" in
+    assert_source_path
+      local_f
+      ~search_root:local_root
+      ~relative:"f.special"
       ~is_stub:false
       ~is_external:false
       ~is_init:false;

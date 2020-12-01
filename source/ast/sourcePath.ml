@@ -68,15 +68,15 @@ let qualifier_of_relative relative =
 let create_from_search_path ~is_external ~search_paths ?extension path =
   SearchPath.search_for_path ~search_paths path
   >>= fun SearchPath.{ relative_path; priority } ->
-  let relative =
+  let relative = Path.RelativePath.relative relative_path in
+  let qualifier =
     match extension with
     | Some { Configuration.Extension.include_suffix_in_module_qualifier; _ }
       when include_suffix_in_module_qualifier ->
         (* Ensure extension is not stripped when creating qualifier *)
-        Path.RelativePath.relative relative_path ^ ".py"
-    | _ -> Path.RelativePath.relative relative_path
+        qualifier_of_relative (relative ^ ".py")
+    | _ -> qualifier_of_relative relative
   in
-  let qualifier = qualifier_of_relative relative in
   let is_stub = Path.is_path_python_stub relative in
   let is_init = Path.is_path_python_init relative in
   Some { relative; qualifier; priority; is_stub; is_external; is_init }
