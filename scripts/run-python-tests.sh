@@ -6,20 +6,8 @@
 
 set -e
 
-SCRIPTS_DIRECTORY="$(dirname "$("${READLINK}" -f "$0")")"
+SCRIPTS_DIRECTORY="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 cd "${SCRIPTS_DIRECTORY}/.."
-
-# Prefer a python3.6 interpreter to maintain full backward compatibility.
-if command -v python3.6 &>/dev/null; then
-  PYTHON_INTERPRETER=$(command -v python3.6)
-elif command -v python3 &>/dev/null; then
-  PYTHON_INTERPRETER=$(command -v python3)
-else
-  echo 'Could not find a suitable python interpreter to run tests.'
-  exit 2
-fi
-
-echo "  Using interpreter at ${PYTHON_INTERPRETER} with version: $(${PYTHON_INTERPRETER} --version)"
 
 echo '  Enumerating test files:'
 files=$(find client -name '*_test.py')
@@ -30,4 +18,4 @@ if [[ -z "${files}" ]]; then
 fi
 
 echo '  Running all tests:'
-echo "${files}" | sed 's/.py$//' | sed 's:/:.:g' | xargs "${PYTHON_INTERPRETER}" -m unittest -v
+echo "${files}" | sed 's/.py$//' | sed 's:/:.:g' | xargs python -m unittest -v
