@@ -1043,7 +1043,10 @@ let qualify
                   else if name_is ~name:"typing_extensions.Literal.__getitem__" callee then
                     false
                   else
-                    qualify_strings
+                    match callee with
+                    | { value = Name (Name.Attribute { attribute = "__getitem__"; _ }); _ } ->
+                        qualify_strings
+                    | _ -> false
                 in
                 List.map ~f:(qualify_argument ~qualify_strings ~scope) arguments
           in

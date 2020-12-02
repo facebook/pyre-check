@@ -1519,6 +1519,41 @@ let test_qualify _ =
 
       class qualifier.Bar(typing.List["qualifier.Bar"]): ...
     |};
+  assert_qualify
+    {|
+      from typing import Annotated
+
+      class Foo:
+        def __init__(self, x: str) -> None: ...
+
+      hello: int = 1
+      foo: Annotated["int", Foo("hello")]
+    |}
+    {|
+      from typing import Annotated
+
+      class qualifier.Foo:
+        def qualifier.Foo.__init__($parameter$self, $parameter$x: str) -> None: ...
+
+      $local_qualifier$hello: int = 1
+      $local_qualifier$foo: typing.Annotated["int", qualifier.Foo("hello")]
+    |};
+  (* Don't qualify x within d["x"]. *)
+  assert_qualify
+    {|
+      import typing
+
+      def foo(x: int) -> None:
+        d: typing.Dict[str, int]
+        d["x"]
+    |}
+    {|
+      import typing
+
+      def qualifier.foo($parameter$x: int) -> None:
+        $local_qualifier?foo$d: typing.Dict[str, int]
+        $local_qualifier?foo$d["x"]
+    |};
   ()
 
 
