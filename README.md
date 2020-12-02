@@ -1,4 +1,5 @@
 ![lint](https://github.com/facebook/pyre-check/workflows/lint/badge.svg)
+![tests](https://github.com/facebook/pyre-check/workflows/tests/badge.svg)
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/facebook/pyre-check/master/logo.png">
