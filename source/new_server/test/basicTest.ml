@@ -134,6 +134,33 @@ let test_basic context =
   |> ScratchProject.test_server_with ~f:test_basic
 
 
+let test_subscription context =
+  let input_channel, output_channel = Lwt_io.pipe () in
+  let subscription = Subscription.create ~name:"foo" ~output_channel () in
+  assert_equal
+    ~ctxt:context
+    ~cmp:String.equal
+    ~printer:Fn.id
+    "foo"
+    (Subscription.name_of subscription);
+
+  Subscription.send ~response:Response.Ok subscription
+  >>= fun () ->
+  Lwt_io.read_line input_channel
+  >>= fun raw_response ->
+  let actual_response =
+    Yojson.Safe.from_string raw_response |> Subscription.Response.of_yojson |> Result.ok_or_failwith
+  in
+  assert_equal
+    ~ctxt:context
+    ~cmp:[%compare.equal: Subscription.Response.t]
+    ~printer:(fun response ->
+      Format.asprintf "%a" Sexp.pp_hum (Subscription.Response.sexp_of_t response))
+    { Subscription.Response.name = "foo"; body = Response.Ok }
+    actual_response;
+  Lwt.return_unit
+
+
 let watchman_version = "fake_watchman_version"
 
 let watchman_initial_clock = "fake:clock:0"
@@ -314,6 +341,7 @@ let () =
   "basic_test"
   >::: [
          "basic" >:: OUnitLwt.lwt_wrapper test_basic;
+         "subscription" >:: OUnitLwt.lwt_wrapper test_subscription;
          "watchman_integration" >:: OUnitLwt.lwt_wrapper test_watchman_integration;
          "watchman_failure" >:: OUnitLwt.lwt_wrapper test_watchman_failure;
          "on_server_socket_ready" >:: OUnitLwt.lwt_wrapper test_on_server_socket_ready;
