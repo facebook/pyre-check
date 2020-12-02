@@ -231,11 +231,13 @@ let extract_alias unannotated_global_environment name ~dependency =
               } )
         | Call _, None
         | Name _, None -> (
-            let value = delocalize value in
-            let value_annotation = Type.create ~aliases:Type.empty_aliases value in
-            match Type.Variable.parse_declaration value ~target:name with
+            match Type.Variable.parse_declaration (delocalize value) ~target:name with
             | Some variable -> Some (VariableAlias variable)
             | _ ->
+                let value =
+                  Preprocessing.expand_strings_in_annotation_expression value |> delocalize
+                in
+                let value_annotation = Type.create ~aliases:Type.empty_aliases value in
                 if
                   not
                     ( Type.contains_unknown target_annotation
@@ -384,7 +386,9 @@ module ReadOnly = struct
       Option.value modify_aliases ~default:(fun ?replace_unbound_parameters_with_any:_ name -> name)
     in
     let parsed =
-      let expression = delocalize expression in
+      let expression =
+        Preprocessing.expand_strings_in_annotation_expression expression |> delocalize
+      in
       let aliases ?replace_unbound_parameters_with_any name =
         get_alias environment ?dependency name
         >>| modify_aliases ?replace_unbound_parameters_with_any

@@ -198,6 +198,64 @@ let test_expand_string_annotations _ =
   ()
 
 
+let test_expand_type_alias_body _ =
+  let assert_expand expression expected =
+    assert_equal
+      ~printer:Expression.show
+      ~cmp:(fun left right -> Expression.location_insensitive_compare left right = 0)
+      (parse_single_expression expected)
+      (Preprocessing.expand_strings_in_annotation_expression (parse_single_expression expression))
+  in
+  assert_expand {|
+      SomeGeneric["A", int]
+    |} {|
+      SomeGeneric[A, int]
+    |};
+  assert_expand
+    {|
+      typing_extensions.Literal["A"]
+    |}
+    {|
+      typing_extensions.Literal["A"]
+    |};
+  (* Type variable definitions are treated as aliases. We should not unquote the "T". *)
+  assert_expand {|
+      typing.TypeVar("T")
+    |} {|
+      typing.TypeVar("T")
+    |};
+  assert_expand
+    {|
+      typing_extensions.IntVar("N")
+    |}
+    {|
+      typing_extensions.IntVar("N")
+    |};
+  assert_expand
+    {|
+      typing.TypeVar("T", bound=Union[int, "A"])
+    |}
+    {|
+      typing.TypeVar("T", bound=Union[int, A])
+    |};
+  assert_expand
+    {|
+      typing.TypeVar("T", int, "A")
+    |}
+    {|
+      typing.TypeVar("T", int, A)
+    |};
+  (* Type variables for builtins like `Mapping` are locally qualified in `typing`. *)
+  assert_expand
+    {|
+      $local_typing$TypeVar("_KT")
+    |}
+    {|
+      $local_typing$TypeVar("_KT")
+    |};
+  ()
+
+
 let test_expand_format_string _ =
   let assert_format_string source value expressions =
     let handle = "test.py" in
@@ -4894,6 +4952,7 @@ let () =
   >::: [
          "expand_relative_imports" >:: test_expand_relative_imports;
          "expand_string_annotations" >:: test_expand_string_annotations;
+         "expand_type_alias_body" >:: test_expand_type_alias_body;
          "expand_format_string" >:: test_expand_format_string;
          "qualify" >:: test_qualify;
          "replace_version_specific_code" >:: test_replace_version_specific_code;

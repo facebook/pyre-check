@@ -1409,7 +1409,21 @@ let test_check_aliases context =
       import typing
       MyAlias: typing.TypeAlias = typing.Union[int, 3]
     |}
-    []
+    [];
+  (* Handle quoted references to aliases. *)
+  assert_type_errors
+    {|
+      from typing import Mapping
+
+      Bar = int
+      AliasWithStringAnnotation = Mapping[str, "Bar"]
+      x: AliasWithStringAnnotation = 7
+    |}
+    [
+      "Incompatible variable type [9]: x is declared to have type `Mapping[str, int]` but is used \
+       as type `int`.";
+    ];
+  ()
 
 
 let test_final_type context =

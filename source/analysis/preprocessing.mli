@@ -11,6 +11,8 @@ val expand_relative_imports : Source.t -> Source.t
 
 val expand_string_annotations : Source.t -> Source.t
 
+val expand_strings_in_annotation_expression : Expression.t -> Expression.t
+
 val expand_format_string : Source.t -> Source.t
 
 (* Resolve imports and fully qualify names. *)

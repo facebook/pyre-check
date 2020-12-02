@@ -34,6 +34,76 @@ let expand_relative_imports
   Transform.transform qualifier source |> Transform.source
 
 
+let transform_string_annotation_expression ~relative =
+  let rec transform_expression
+      ( {
+          Node.location =
+            { Location.start = { Location.line = start_line; column = start_column }; _ } as
+            location;
+          value;
+        } as expression )
+    =
+    let transform_argument ({ Call.Argument.value; _ } as argument) =
+      { argument with Call.Argument.value = transform_expression value }
+    in
+    let value =
+      match value with
+      | Expression.Name (Name.Attribute ({ base; _ } as name)) ->
+          Expression.Name (Name.Attribute { name with base = transform_expression base })
+      | Call
+          {
+            callee =
+              { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ };
+            _;
+          }
+        when name_is ~name:"typing_extensions.Literal" base ->
+          (* Don't transform arguments in Literals. *)
+          value
+      | Expression.Call { callee; arguments = variable_name :: remaining_arguments }
+        when name_is ~name:"typing.TypeVar" callee
+             || name_is ~name:"$local_typing$TypeVar" callee
+             || name_is ~name:"typing_extensions.IntVar" callee ->
+          Expression.Call
+            {
+              callee;
+              arguments = variable_name :: List.map ~f:transform_argument remaining_arguments;
+            }
+      | Call { callee; arguments } ->
+          Call
+            {
+              callee = transform_expression callee;
+              arguments = List.map ~f:transform_argument arguments;
+            }
+      | String { StringLiteral.value = string_value; _ } -> (
+          try
+            let parsed =
+              (* Start at column + 1 since parsing begins after the opening quote of the string
+                 literal. *)
+              Parser.parse
+                ~start_line
+                ~start_column:(start_column + 1)
+                [string_value ^ "\n"]
+                ~relative
+            in
+            match parsed with
+            | [{ Node.value = Expression { Node.value = Name _ as expression; _ }; _ }]
+            | [{ Node.value = Expression { Node.value = Call _ as expression; _ }; _ }] ->
+                expression
+            | _ -> failwith "Invalid annotation"
+          with
+          | Parser.Error _
+          | Failure _ ->
+              Log.debug "Invalid string annotation `%s` at %a" string_value Location.pp location;
+              (* TODO(T76231928): replace this silent ignore with something typeCheck.ml can use *)
+              value )
+      | Tuple elements -> Tuple (List.map elements ~f:transform_expression)
+      | _ -> value
+    in
+    { expression with Node.value }
+  in
+  transform_expression
+
+
 let expand_string_annotations ({ Source.source_path = { SourcePath.relative; _ }; _ } as source) =
   let module Transform = Transform.Make (struct
     type t = unit
@@ -42,72 +112,11 @@ let expand_string_annotations ({ Source.source_path = { SourcePath.relative; _ }
 
     let transform_children _ _ = true
 
-    let transform_string_annotation_expression relative =
-      let rec transform_expression
-          ( {
-              Node.location =
-                { Location.start = { Location.line = start_line; column = start_column }; _ } as
-                location;
-              value;
-            } as expression )
-        =
-        let value =
-          match value with
-          | Expression.Name (Name.Attribute ({ base; _ } as name)) ->
-              Expression.Name (Name.Attribute { name with base = transform_expression base })
-          | Call
-              {
-                callee =
-                  { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ };
-                _;
-              }
-            when name_is ~name:"typing_extensions.Literal" base ->
-              (* Don't transform arguments in Literals. *)
-              value
-          | Call { callee; arguments } ->
-              let transform_argument ({ Call.Argument.value; _ } as argument) =
-                { argument with Call.Argument.value = transform_expression value }
-              in
-              Call
-                {
-                  callee = transform_expression callee;
-                  arguments = List.map ~f:transform_argument arguments;
-                }
-          | String { StringLiteral.value = string_value; _ } -> (
-              try
-                let parsed =
-                  (* Start at column + 1 since parsing begins after the opening quote of the string
-                     literal. *)
-                  Parser.parse
-                    ~start_line
-                    ~start_column:(start_column + 1)
-                    [string_value ^ "\n"]
-                    ~relative
-                in
-                match parsed with
-                | [{ Node.value = Expression { Node.value = Name _ as expression; _ }; _ }]
-                | [{ Node.value = Expression { Node.value = Call _ as expression; _ }; _ }] ->
-                    expression
-                | _ -> failwith "Invalid annotation"
-              with
-              | Parser.Error _
-              | Failure _ ->
-                  Log.debug "Invalid string annotation `%s` at %a" string_value Location.pp location;
-                  (* TODO(T76231928): replace this silent ignore with something typeCheck.ml can use *)
-                  value )
-          | Tuple elements -> Tuple (List.map elements ~f:transform_expression)
-          | _ -> value
-        in
-        { expression with Node.value }
-      in
-      transform_expression
-
-
     let statement _ ({ Node.value; _ } as statement) =
       let transform_assign ~assign:({ Assign.annotation; _ } as assign) =
         {
           assign with
-          Assign.annotation = annotation >>| transform_string_annotation_expression relative;
+          Assign.annotation = annotation >>| transform_string_annotation_expression ~relative;
         }
       in
       let transform_define
@@ -120,7 +129,7 @@ let expand_string_annotations ({ Source.source_path = { SourcePath.relative; _ }
               {
                 parameter with
                 Parameter.annotation =
-                  annotation >>| transform_string_annotation_expression relative;
+                  annotation >>| transform_string_annotation_expression ~relative;
               };
           }
         in
@@ -129,7 +138,7 @@ let expand_string_annotations ({ Source.source_path = { SourcePath.relative; _ }
             define.signature with
             parameters = List.map parameters ~f:parameter;
             return_annotation =
-              return_annotation >>| transform_string_annotation_expression relative;
+              return_annotation >>| transform_string_annotation_expression ~relative;
           }
         in
         { define with signature }
@@ -139,7 +148,7 @@ let expand_string_annotations ({ Source.source_path = { SourcePath.relative; _ }
           let value =
             match value with
             | { Node.value = Expression.String _; _ } -> value
-            | _ -> transform_string_annotation_expression relative value
+            | _ -> transform_string_annotation_expression ~relative value
           in
           { base with value }
         in
@@ -165,7 +174,7 @@ let expand_string_annotations ({ Source.source_path = { SourcePath.relative; _ }
             type_argument );
             value_argument;
           ] ->
-            let annotation = transform_string_annotation_expression relative value in
+            let annotation = transform_string_annotation_expression ~relative value in
             [{ type_argument with value = annotation }; value_argument]
         | arguments -> arguments
       in
@@ -183,6 +192,10 @@ let expand_string_annotations ({ Source.source_path = { SourcePath.relative; _ }
   end)
   in
   Transform.transform () source |> Transform.source
+
+
+let expand_strings_in_annotation_expression =
+  transform_string_annotation_expression ~relative:"$some_path"
 
 
 let expand_format_string ({ Source.source_path = { SourcePath.relative; _ }; _ } as source) =
