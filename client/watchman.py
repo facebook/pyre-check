@@ -190,6 +190,9 @@ class Subscriber(object):
                 except Exception as exception:
                     LOG.info(f"Not running {self._name} due to {exception}")
                     os._exit(1)
+                finally:
+                    LOG.info(f"Not running {self._name} due to system exception")
+                    os._exit(1)
             else:
                 os._exit(0)
 
