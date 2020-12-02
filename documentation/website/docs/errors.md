@@ -2,7 +2,6 @@
 id: errors
 title: Errors
 sidebar_label: Errors
-custom_edit_url: https://www.internalfb.com/intern/diffusion/FBS/browse/master/fbcode/tools/pyre/documentation/website/docs/errors.md
 ---
 
 ## Common Issues

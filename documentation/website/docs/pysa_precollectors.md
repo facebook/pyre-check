@@ -2,7 +2,6 @@
 id: pysa-model-generators
 title: Dynamically Generating Models
 sidebar_label: Dynamically Generating Models
-custom_edit_url: https://www.internalfb.com/intern/diffusion/FBS/browse/master/fbcode/tools/pyre/documentation/website/docs/pysa_precollectors.md
 ---
 
 Some sources and sinks may be too numerous or too rapidly changing for defining

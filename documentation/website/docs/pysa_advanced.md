@@ -2,7 +2,6 @@
 id: pysa-advanced
 title: Advanced Topics
 sidebar_label: Advanced Topics
-custom_edit_url: https://www.internalfb.com/intern/diffusion/FBS/browse/master/fbcode/tools/pyre/documentation/website/docs/pysa_advanced.md
 ---
 
 This page documents less straightforward bits of Pysa.

@@ -48,6 +48,8 @@ module.exports = {
           path: 'docs',
           // Sidebars file relative to website dir.
           sidebarPath: require.resolve('./sidebars.js'),
+          // Where to point users when they click "Edit this page"
+          editUrl: 'https://github.com/facebook/pyre-check/tree/master/documentation/website',
         },
         theme: {
           customCss: require.resolve('./src/css/custom.css'),

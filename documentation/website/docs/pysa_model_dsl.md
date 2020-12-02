@@ -2,7 +2,6 @@
 id: pysa-model-dsl
 title: Model Domain Specific Language (DSL)
 sidebar_label: Model DSL
-custom_edit_url: https://www.internalfb.com/intern/diffusion/FBS/browse/master/fbcode/tools/pyre/documentation/website/docs/pysa_model_dsl.md
 ---
 
 We have started developing a model Domain Specific Language (DSL) that can be

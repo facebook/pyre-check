@@ -2,7 +2,6 @@
 id: installation
 title: Installation
 sidebar_label: Installation
-custom_edit_url: https://www.internalfb.com/intern/diffusion/FBS/browse/master/fbcode/tools/pyre/documentation/website/docs/installation.md
 ---
 
 We recommend that you use our binary distribution through [pypi](https://pypi.org/) inside of a virtual environment, which supports both *MacOs* and *Linux*. On *Windows* we have successfully gotten `pyre` to work through [WSL](https://en.wikipedia.org/wiki/Windows_Subsystem_for_Linux), but do not officially support it.

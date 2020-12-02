@@ -2,7 +2,6 @@
 id: pysa-tips
 title: Development Tips
 sidebar_label: Development Tips
-custom_edit_url: https://www.internalfb.com/intern/diffusion/FBS/browse/master/fbcode/tools/pyre/documentation/website/docs/pysa_tips.md
 ---
 
 ## Features/Limitations

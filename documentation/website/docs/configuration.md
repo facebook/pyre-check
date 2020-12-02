@@ -2,7 +2,6 @@
 id: configuration
 title: Configuration
 sidebar_label: Configuration
-custom_edit_url: https://www.internalfb.com/intern/diffusion/FBS/browse/master/fbcode/tools/pyre/documentation/website/docs/configuration.md
 ---
 
 Pyre can be run without a configuration (see [Command Line Arguments](configuration#command-line-arguments)) but we do recommend that you create a configuration (see [Getting Started](getting-started)) and commit that to your version control system to make sure everyone working on your project is using the same settings.

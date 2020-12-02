@@ -2,7 +2,6 @@
 id: getting-started
 title: Getting Started
 sidebar_label: Getting Started
-custom_edit_url: https://www.internalfb.com/intern/diffusion/FBS/browse/master/fbcode/tools/pyre/documentation/website/docs/getting_started.md
 ---
 
 Welcome to the wonderful world of static typing! This guide will get you from zero to a simple project that is type checked with Pyre.
