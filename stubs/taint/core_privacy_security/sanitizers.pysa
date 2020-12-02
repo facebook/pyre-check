@@ -1,0 +1,10 @@
+# General sanitzers
+
+@Sanitize
+def len(__s): ...
+
+@Sanitize
+def type.__init__(self, o): ...
+
+@Sanitize
+def type.__new__(self, o): ...
