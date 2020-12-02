@@ -10,7 +10,7 @@ SCRIPTS_DIRECTORY="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && p
 cd "${SCRIPTS_DIRECTORY}/.."
 
 echo '  Enumerating test files:'
-files=$(find client -name '*_test.py')
+files=$(find client -name '*_test.py' ! -name 'watchman_test.py')
 echo "${files}"
 if [[ -z "${files}" ]]; then
   echo 'No test files found, exiting.'

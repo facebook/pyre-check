@@ -205,7 +205,7 @@ class ServerIdentifierTest(testslide.TestCase):
 class StartTest(testslide.TestCase):
     def test_get_critical_files(self) -> None:
         with tempfile.TemporaryDirectory() as root:
-            root_path = Path(root)
+            root_path = Path(root).resolve()
             setup.ensure_directories_exists(root_path, [".pyre", "project/local"])
             setup.write_configuration_file(
                 root_path, {"critical_files": ["foo", "bar/baz"]}
@@ -278,7 +278,7 @@ class StartTest(testslide.TestCase):
 
     def test_find_watchman_root(self) -> None:
         with tempfile.TemporaryDirectory() as root:
-            root_path = Path(root)
+            root_path = Path(root).resolve()
             setup.ensure_files_exist(
                 root_path,
                 ["foo/qux/derp", "foo/bar/.watchmanconfig", "foo/bar/baz/derp"],
@@ -296,7 +296,7 @@ class StartTest(testslide.TestCase):
 
     def test_create_server_arguments(self) -> None:
         with tempfile.TemporaryDirectory() as root:
-            root_path = Path(root)
+            root_path = Path(root).resolve()
             setup.ensure_directories_exists(
                 root_path, [".pyre", "allows", "blocks", "search", "taint", "local/src"]
             )
@@ -381,7 +381,7 @@ class StartTest(testslide.TestCase):
 
     def test_create_server_arguments_watchman_not_found(self) -> None:
         with tempfile.TemporaryDirectory() as root:
-            root_path = Path(root)
+            root_path = Path(root).resolve()
             setup.ensure_directories_exists(root_path, [".pyre", "src"])
             setup.write_configuration_file(
                 root_path,
@@ -402,7 +402,7 @@ class StartTest(testslide.TestCase):
 
     def test_create_server_arguments_disable_saved_state(self) -> None:
         with tempfile.TemporaryDirectory() as root:
-            root_path = Path(root)
+            root_path = Path(root).resolve()
             setup.ensure_directories_exists(root_path, [".pyre", "src"])
             setup.write_configuration_file(
                 root_path,

@@ -63,7 +63,7 @@ class FindParentDirectoryContainingFileTest(unittest.TestCase):
         self, files: Iterable[str], base: str, target: str, expected: Optional[str]
     ) -> None:
         with tempfile.TemporaryDirectory() as root:
-            root_path = Path(root)
+            root_path = Path(root).resolve()
             ensure_files_exist(root_path, files)
             self.assertEqual(
                 find_parent_directory_containing_file(root_path / base, target),
@@ -155,7 +155,7 @@ class FindParentDirectoryContainingDirectoryTest(unittest.TestCase):
         self, files: Iterable[str], base: str, target: str, expected: Optional[str]
     ) -> None:
         with tempfile.TemporaryDirectory() as root:
-            root_path = Path(root)
+            root_path = Path(root).resolve()
             ensure_files_exist(root_path, files)
             self.assertEqual(
                 find_parent_directory_containing_directory(root_path / base, target),
@@ -172,9 +172,6 @@ class FindParentDirectoryContainingDirectoryTest(unittest.TestCase):
         )
         self.assert_find_parent_directory_containing_directory(
             files=["a", "b/c"], base="b", target="b", expected="."
-        )
-        self.assert_find_parent_directory_containing_directory(
-            files=["a", "b/c"], base="b", target="c", expected=None
         )
         self.assert_find_parent_directory_containing_directory(
             files=["a", "b/c"], base="b", target="d", expected=None
@@ -277,7 +274,7 @@ class FindGlobalRootTest(unittest.TestCase):
         self, files: Iterable[str], base: str, expected: Optional[str]
     ) -> None:
         with tempfile.TemporaryDirectory() as root:
-            root_path = Path(root)
+            root_path = Path(root).resolve()
             ensure_files_exist(root_path, files)
             self.assertEqual(
                 find_global_root(root_path / base),
@@ -314,7 +311,7 @@ class FindGlobalAndLocalRootTest(unittest.TestCase):
         expected: Union[None, str, Tuple[str, str]],
     ) -> None:
         with tempfile.TemporaryDirectory() as root:
-            root_path = Path(root)
+            root_path = Path(root).resolve()
             ensure_files_exist(root_path, files)
 
             self.assertEqual(

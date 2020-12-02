@@ -67,9 +67,9 @@ class PyreTest(unittest.TestCase):
 
 
 class CreateConfigurationWithRetryTest(testslide.TestCase):
-    def test_create_configuration_with_retry__no_retry(self) -> None:
+    def test_create_configuration_with_retry_no_retry(self) -> None:
         with tempfile.TemporaryDirectory() as root:
-            root_path = Path(root)
+            root_path = Path(root).resolve()
             ensure_directories_exists(root_path, [".pyre", "local"])
             write_configuration_file(root_path, {})
 
@@ -88,7 +88,7 @@ class CreateConfigurationWithRetryTest(testslide.TestCase):
 
     def test_create_configuration_with_retry__no_recent_configuration(self) -> None:
         with tempfile.TemporaryDirectory() as root:
-            root_path = Path(root)
+            root_path = Path(root).resolve()
             ensure_directories_exists(root_path, [".pyre", "local"])
             write_configuration_file(root_path, {})
 
@@ -109,7 +109,7 @@ class CreateConfigurationWithRetryTest(testslide.TestCase):
         ).to_return_value("local").and_assert_called_once()
 
         with tempfile.TemporaryDirectory() as root:
-            root_path = Path(root)
+            root_path = Path(root).resolve()
             ensure_directories_exists(root_path, [".pyre", "local"])
             write_configuration_file(root_path, {})
             write_configuration_file(
@@ -136,7 +136,7 @@ class CreateConfigurationWithRetryTest(testslide.TestCase):
         ).to_return_value("local2").and_assert_called_once()
 
         with tempfile.TemporaryDirectory() as root:
-            root_path = Path(root)
+            root_path = Path(root).resolve()
             ensure_directories_exists(root_path, [".pyre", "local", "local2"])
             write_configuration_file(root_path, {})
             write_configuration_file(
@@ -161,7 +161,7 @@ class CreateConfigurationWithRetryTest(testslide.TestCase):
         ).to_return_value(None).and_assert_called_once()
 
         with tempfile.TemporaryDirectory() as root:
-            root_path = Path(root)
+            root_path = Path(root).resolve()
             ensure_directories_exists(root_path, [".pyre", "local"])
             write_configuration_file(root_path, {})
             write_configuration_file(

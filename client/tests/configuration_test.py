@@ -610,7 +610,7 @@ class ConfigurationTest(testslide.TestCase):
 
     def test_existent_search_path(self) -> None:
         with tempfile.TemporaryDirectory() as root:
-            root_path = Path(root)
+            root_path = Path(root).resolve()
             ensure_directories_exists(root_path, ["a", "b/c", "d/e/f"])
 
             self.assertListEqual(
@@ -671,7 +671,7 @@ class ConfigurationTest(testslide.TestCase):
 
     def test_existent_ignore_infer(self) -> None:
         with tempfile.TemporaryDirectory() as root:
-            root_path = Path(root)
+            root_path = Path(root).resolve()
             ensure_directories_exists(root_path, ["a", "b/c"])
 
             self.assertCountEqual(
@@ -690,7 +690,7 @@ class ConfigurationTest(testslide.TestCase):
 
     def test_existent_do_not_ignore_errors(self) -> None:
         with tempfile.TemporaryDirectory() as root:
-            root_path = Path(root)
+            root_path = Path(root).resolve()
             ensure_directories_exists(root_path, ["a", "b/c"])
 
             self.assertCountEqual(
@@ -709,7 +709,7 @@ class ConfigurationTest(testslide.TestCase):
 
     def test_existent_ignore_all_errors(self) -> None:
         with tempfile.TemporaryDirectory() as root:
-            root_path = Path(root)
+            root_path = Path(root).resolve()
             ensure_directories_exists(root_path, ["a", "b/c", "b/d"])
 
             self.assertCountEqual(
@@ -731,13 +731,6 @@ class ConfigurationTest(testslide.TestCase):
                     str(root_path / "b/d"),
                 ],
             )
-
-    def test_get_binary_version_unset(self) -> None:
-        self.assertIsNone(
-            Configuration(
-                project_root="irrelevant", dot_pyre_directory=Path(".pyre"), binary=None
-            ).get_binary_version()
-        )
 
     def test_get_binary_version_ok(self) -> None:
         binary_path = "foo"
@@ -941,7 +934,7 @@ class ConfigurationTest(testslide.TestCase):
         # We assume there does not exist a `.pyre_configuration` file that
         # covers this temporary directory.
         with tempfile.TemporaryDirectory() as root:
-            root_path = Path(root)
+            root_path = Path(root).resolve()
             with switch_working_directory(root_path):
                 configuration = create_configuration(
                     command_arguments.CommandArguments(
@@ -955,7 +948,7 @@ class ConfigurationTest(testslide.TestCase):
 
     def test_create_from_global_configuration(self) -> None:
         with tempfile.TemporaryDirectory() as root:
-            root_path = Path(root)
+            root_path = Path(root).resolve()
             write_configuration_file(root_path, {"strict": False})
 
             with switch_working_directory(root_path):
@@ -974,7 +967,7 @@ class ConfigurationTest(testslide.TestCase):
 
     def test_create_from_local_configuration(self) -> None:
         with tempfile.TemporaryDirectory() as root:
-            root_path = Path(root)
+            root_path = Path(root).resolve()
             ensure_directories_exists(root_path, ["foo", "bar", "baz"])
             write_configuration_file(
                 root_path, {"strict": False, "search_path": ["foo"]}
@@ -1009,7 +1002,7 @@ class ConfigurationTest(testslide.TestCase):
 
     def test_check_nested_local_configuration_no_nesting(self) -> None:
         with tempfile.TemporaryDirectory() as root:
-            root_path = Path(root)
+            root_path = Path(root).resolve()
             write_configuration_file(root_path, {})
             write_configuration_file(root_path, {}, relative="local")
 
@@ -1026,7 +1019,7 @@ class ConfigurationTest(testslide.TestCase):
 
     def test_check_nested_local_configuration_not_excluded(self) -> None:
         with tempfile.TemporaryDirectory() as root:
-            root_path = Path(root)
+            root_path = Path(root).resolve()
             write_configuration_file(root_path, {})
             write_configuration_file(root_path, {}, relative="nest")
             write_configuration_file(root_path, {}, relative="nest/local")
@@ -1042,7 +1035,7 @@ class ConfigurationTest(testslide.TestCase):
 
     def test_check_nested_local_configuration_excluded(self) -> None:
         with tempfile.TemporaryDirectory() as root:
-            root_path = Path(root)
+            root_path = Path(root).resolve()
             write_configuration_file(root_path, {})
             write_configuration_file(
                 root_path,
@@ -1064,7 +1057,7 @@ class ConfigurationTest(testslide.TestCase):
 
     def test_check_nested_local_configuration_excluded_parent(self) -> None:
         with tempfile.TemporaryDirectory() as root:
-            root_path = Path(root)
+            root_path = Path(root).resolve()
             write_configuration_file(root_path, {})
             write_configuration_file(
                 root_path,
@@ -1086,7 +1079,7 @@ class ConfigurationTest(testslide.TestCase):
 
     def test_check_nested_local_configuration_not_all_nesting_excluded(self) -> None:
         with tempfile.TemporaryDirectory() as root:
-            root_path = Path(root)
+            root_path = Path(root).resolve()
             write_configuration_file(root_path, {})
             write_configuration_file(root_path, {}, relative="nest0")
             write_configuration_file(
@@ -1107,7 +1100,7 @@ class ConfigurationTest(testslide.TestCase):
 
     def test_check_nested_local_configuration_all_nesting_excluded(self) -> None:
         with tempfile.TemporaryDirectory() as root:
-            root_path = Path(root)
+            root_path = Path(root).resolve()
             write_configuration_file(root_path, {})
             write_configuration_file(
                 root_path,
@@ -1134,7 +1127,7 @@ class ConfigurationTest(testslide.TestCase):
 
     def test_check_nested_local_configuration_expand_global_root(self) -> None:
         with tempfile.TemporaryDirectory() as root:
-            root_path = Path(root)
+            root_path = Path(root).resolve()
             write_configuration_file(root_path, {})
             write_configuration_file(
                 root_path,
@@ -1161,7 +1154,7 @@ class ConfigurationTest(testslide.TestCase):
 
     def test_check_nested_local_configuration_expand_relative_root(self) -> None:
         with tempfile.TemporaryDirectory() as root:
-            root_path = Path(root)
+            root_path = Path(root).resolve()
             write_configuration_file(root_path, {})
             write_configuration_file(
                 root_path, {"ignore_all_errors": ["nest1/local"]}, relative="nest0"
