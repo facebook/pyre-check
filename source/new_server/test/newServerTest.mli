@@ -17,6 +17,14 @@ module Client : sig
   val send_request : t -> Request.t -> (Response.t, string) Core.Result.t Lwt.t
 
   val assert_response : request:Request.t -> expected:Response.t -> t -> unit Lwt.t
+
+  val subscribe
+    :  subscription:Subscription.Request.t ->
+    expected_response:Response.t ->
+    t ->
+    unit Lwt.t
+
+  val close : t -> unit Lwt.t
 end
 
 module ScratchProject : sig

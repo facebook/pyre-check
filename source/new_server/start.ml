@@ -46,15 +46,25 @@ let socket_path_of log_path =
     ~relative:(Format.sprintf "pyre_server_%s.sock" log_path_digest)
 
 
-let request_from_string request_string =
-  try
-    let json = Yojson.Safe.from_string request_string in
-    match Request.of_yojson json with
-    | Result.Error _ -> Result.Error "Malformed JSON request"
-    | Result.Ok request -> Result.Ok request
-  with
-  | Yojson.Json_error message -> Result.Error message
+module ClientRequest = struct
+  type t =
+    | Request of Request.t
+    | Subscription of Subscription.Request.t
+    | Error of string
+  [@@deriving sexp, compare, hash]
 
+  let of_string input_string =
+    try
+      let json = Yojson.Safe.from_string input_string in
+      match Subscription.Request.of_yojson json with
+      | Result.Ok subscription -> Subscription subscription
+      | Result.Error _ -> (
+          match Request.of_yojson json with
+          | Result.Ok request -> Request request
+          | Result.Error _ -> Error "Malformed JSON request" )
+    with
+    | Yojson.Json_error message -> Error message
+end
 
 let handle_request ~server_state request =
   let open Lwt.Infix in
@@ -78,29 +88,78 @@ let handle_request ~server_state request =
   Lwt.return response
 
 
+let handle_subscription ~server_state ~output_channel request =
+  let open Lwt.Infix in
+  Lazy.force server_state
+  >>= fun server_state ->
+  match request with
+  | Subscription.Request.SubscribeToTypeErrors subscriber_name ->
+      let subscription = Subscription.create ~name:subscriber_name ~output_channel () in
+      ServerState.add_subscription !server_state ~name:subscriber_name ~subscription;
+      Lwt.return subscription
+
+
+module ConnectionState = struct
+  (* Keep track of the subscriptions created from each connection, so when it is closed we could
+     remove those subscriptions from the server state automatically. *)
+  type t = { subscription_names: string list }
+
+  let create () = { subscription_names = [] }
+
+  let add_subscription ~name { subscription_names } =
+    Log.info "Subscription added: %s" name;
+    { subscription_names = name :: subscription_names }
+
+
+  let cleanup ~server_state { subscription_names } =
+    let open Lwt.Infix in
+    if Lazy.is_val server_state then
+      Lazy.force server_state
+      >|= fun server_state ->
+      List.iter subscription_names ~f:(fun name ->
+          Log.info "Subscription removed: %s" name;
+          ServerState.remove_subscription ~name !server_state)
+    else
+      Lwt.return_unit
+end
+
 let handle_connection ~server_state _client_address (input_channel, output_channel) =
   let open Lwt.Infix in
   (* Raw request messages are processed line-by-line. *)
-  let rec handle_line () =
+  let rec handle_line connection_state =
     Lwt_io.read_line_opt input_channel
     >>= function
     | None ->
         Log.info "Connection closed";
-        Lwt.return_unit
+        ConnectionState.cleanup ~server_state connection_state
     | Some message ->
-        let response =
-          match request_from_string message with
-          | Result.Error message -> Lwt.return (Response.Error message)
-          | Result.Ok request -> handle_request ~server_state request
+        let result =
+          match ClientRequest.of_string message with
+          | ClientRequest.Error message -> Lwt.return (connection_state, Response.Error message)
+          | ClientRequest.Request request ->
+              handle_request ~server_state request
+              >>= fun response -> Lwt.return (connection_state, response)
+          | ClientRequest.Subscription subscription ->
+              handle_subscription ~server_state ~output_channel subscription
+              >>= fun subscription ->
+              (* We send back the initial set of type errors when a subscription first gets
+                 established. *)
+              handle_request ~server_state (Request.DisplayTypeError [])
+              >>= fun response ->
+              Lwt.return
+                ( ConnectionState.add_subscription
+                    ~name:(Subscription.name_of subscription)
+                    connection_state,
+                  response )
         in
-        response
-        >>= fun response ->
+        result
+        >>= fun (new_connection_state, response) ->
         Response.to_yojson response
         |> Yojson.Safe.to_string
         |> Lwt_io.write_line output_channel
-        >>= handle_line
+        >>= fun () -> handle_line new_connection_state
   in
-  handle_line ()
+  ConnectionState.create () |> handle_line
 
 
 let initialize_server_state
@@ -134,6 +193,7 @@ let initialize_server_state
       configuration;
       type_environment = environment;
       error_table;
+      subscriptions = String.Table.create ();
     }
   in
   let fetch_saved_state_from_files ~shared_memory_path ~changed_files_path () =
@@ -228,6 +288,7 @@ let initialize_server_state
             configuration;
             type_environment;
             error_table;
+            subscriptions = String.Table.create ();
           }
         in
         let open Lwt.Infix in

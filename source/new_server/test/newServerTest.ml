@@ -25,18 +25,30 @@ module Client = struct
     Lwt_io.write_line output_channel raw_request >>= fun _ -> Lwt_io.read_line input_channel
 
 
+  let parse_raw_response ~f raw_response =
+    try
+      match f (Yojson.Safe.from_string raw_response) with
+      | Ok response -> Result.Ok response
+      | Error _ -> Result.Error raw_response
+    with
+    | _ -> Result.Error raw_response
+
+
   let send_request client request =
     let open Lwt in
     Request.to_yojson request
     |> Yojson.Safe.to_string
     |> send_raw_request client
-    >>= fun raw_response ->
-    try
-      match Response.of_yojson (Yojson.Safe.from_string raw_response) with
-      | Ok response -> return (Result.Ok response)
-      | Error _ -> return (Result.Error raw_response)
-    with
-    | _ -> return (Result.Error raw_response)
+    >>= fun raw_response -> return (parse_raw_response ~f:Response.of_yojson raw_response)
+
+
+  let assert_response_equal ~context expected actual =
+    assert_equal
+      ~ctxt:context
+      ~cmp:[%compare.equal: Response.t]
+      ~printer:(fun response -> Format.asprintf "%a" Sexp.pp_hum (Response.sexp_of_t response))
+      expected
+      actual
 
 
   let assert_response ~request ~expected ({ context; _ } as client) =
@@ -49,13 +61,30 @@ module Client = struct
         in
         assert_failure message
     | Result.Ok actual ->
-        assert_equal
-          ~ctxt:context
-          ~cmp:[%compare.equal: Response.t]
-          ~printer:(fun response -> Format.asprintf "%a" Sexp.pp_hum (Response.sexp_of_t response))
-          expected
-          actual;
+        assert_response_equal ~context expected actual;
         return_unit
+
+
+  let subscribe ~subscription ~expected_response ({ context; _ } as client) =
+    let open Lwt in
+    send_raw_request client (Subscription.Request.to_yojson subscription |> Yojson.Safe.to_string)
+    >>= fun raw_response ->
+    match parse_raw_response ~f:Response.of_yojson raw_response with
+    | Result.Error raw_response ->
+        let message =
+          Format.sprintf
+            "Cannot decode the initial subscription response JSON from server: %s"
+            raw_response
+        in
+        assert_failure message
+    | Result.Ok actual_response ->
+        assert_response_equal ~context expected_response actual_response;
+        return_unit
+
+
+  let close { input_channel; output_channel; _ } =
+    let open Lwt in
+    Lwt_io.close input_channel >>= fun () -> Lwt_io.close output_channel
 end
 
 module ScratchProject = struct

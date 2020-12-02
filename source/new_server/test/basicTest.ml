@@ -337,11 +337,64 @@ let test_on_server_socket_ready context =
          Lwt.return_unit)
 
 
+let test_subscription_responses client =
+  let error =
+    Analysis.AnalysisError.Instantiated.of_yojson
+      (`Assoc
+        [
+          "line", `Int 3;
+          "column", `Int 2;
+          "stop_line", `Int 3;
+          "stop_column", `Int 14;
+          "path", `String "test.py";
+          "code", `Int 7;
+          "name", `String "Incompatible return type";
+          "description", `String "Incompatible return type [7]: Expected `str` but got `int`.";
+          ( "long_description",
+            `String
+              "Incompatible return type [7]: Expected `str` but got `int`.\n\
+               Type `str` expected on line 3, specified on line 2." );
+          ( "concise_description",
+            `String "Incompatible return type [7]: Expected `str` but got `int`." );
+          "inference", `Assoc [];
+          "define", `String "test.foo";
+        ])
+    |> Result.ok_or_failwith
+  in
+  Client.subscribe
+    client
+    ~subscription:(Subscription.Request.SubscribeToTypeErrors "foo")
+    ~expected_response:(Response.TypeErrors [error])
+  >>= fun () ->
+  let { ServerState.subscriptions; _ } = Client.current_server_state client in
+  (* Verifies that we've managed to record the subscription in the server state. *)
+  assert_bool "Subscription `foo` recorded" (Hashtbl.mem subscriptions "foo");
+
+  (* Verifies that the subscription goes away after the connection is closed. *)
+  Client.close client
+  >>= fun () ->
+  let { ServerState.subscriptions; _ } = Client.current_server_state client in
+  assert_bool "Subscription `foo` removed" (not (Hashtbl.mem subscriptions "foo"));
+  Lwt.return_unit
+
+
+let test_subscription_responses context =
+  ScratchProject.setup
+    ~context
+    ~include_helper_builtins:false
+    ["test.py", {|
+          def foo(x: int) -> str:
+            return x + 1
+        |}]
+  |> ScratchProject.test_server_with ~f:test_subscription_responses
+
+
 let () =
   "basic_test"
   >::: [
          "basic" >:: OUnitLwt.lwt_wrapper test_basic;
          "subscription" >:: OUnitLwt.lwt_wrapper test_subscription;
+         "subscription_response" >:: OUnitLwt.lwt_wrapper test_subscription_responses;
          "watchman_integration" >:: OUnitLwt.lwt_wrapper test_watchman_integration;
          "watchman_failure" >:: OUnitLwt.lwt_wrapper test_watchman_failure;
          "on_server_socket_ready" >:: OUnitLwt.lwt_wrapper test_on_server_socket_ready;

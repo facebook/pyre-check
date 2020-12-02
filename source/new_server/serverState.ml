@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+open Core
 open Pyre
 
 type t = {
@@ -13,4 +14,11 @@ type t = {
   configuration: Configuration.Analysis.t;
   type_environment: Analysis.TypeEnvironment.t;
   error_table: Analysis.AnalysisError.t list Ast.Reference.Table.t;
+  subscriptions: Subscription.t String.Table.t;
 }
+
+let add_subscription ~name ~subscription { subscriptions; _ } =
+  Hashtbl.set subscriptions ~key:name ~data:subscription
+
+
+let remove_subscription ~name { subscriptions; _ } = Hashtbl.remove subscriptions name
