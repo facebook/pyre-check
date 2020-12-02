@@ -703,7 +703,7 @@ let qualify
         let qualify_base ({ Call.Argument.value; _ } as argument) =
           {
             argument with
-            Call.Argument.value = qualify_expression ~qualify_strings:false ~scope value;
+            Call.Argument.value = qualify_expression ~qualify_strings:true ~scope value;
           }
         in
         let decorators = List.map decorators ~f:(qualify_decorator ~qualify_strings:false ~scope) in
@@ -1038,16 +1038,29 @@ let qualify
             }
       | Call { callee; arguments } ->
           let callee = qualify_expression ~qualify_strings ~scope callee in
-          let qualify_strings =
-            if name_is ~name:"typing.TypeVar" callee then
-              true
-            else if name_is ~name:"typing_extensions.Literal.__getitem__" callee then
-              false
-            else
-              qualify_strings
+          let arguments =
+            match arguments with
+            | [type_argument; value_argument]
+              when name_is ~name:"pyre_extensions.safe_cast" callee
+                   || name_is ~name:"typing.cast" callee
+                   || name_is ~name:"cast" callee
+                   || name_is ~name:"safe_cast" callee ->
+                [
+                  qualify_argument ~qualify_strings:true ~scope type_argument;
+                  qualify_argument ~qualify_strings ~scope value_argument;
+                ]
+            | arguments ->
+                let qualify_strings =
+                  if name_is ~name:"typing.TypeVar" callee then
+                    true
+                  else if name_is ~name:"typing_extensions.Literal.__getitem__" callee then
+                    false
+                  else
+                    qualify_strings
+                in
+                List.map ~f:(qualify_argument ~qualify_strings ~scope) arguments
           in
-          Call
-            { callee; arguments = List.map ~f:(qualify_argument ~qualify_strings ~scope) arguments }
+          Expression.Call { callee; arguments }
       | ComparisonOperator { ComparisonOperator.left; operator; right } ->
           ComparisonOperator
             {
@@ -3251,7 +3264,6 @@ let preprocess_phase0 source =
   |> replace_platform_specific_code
   |> replace_version_specific_code
   |> expand_type_checking_imports
-  |> expand_string_annotations
   |> expand_format_string
   |> expand_implicit_returns
 
@@ -3261,6 +3273,7 @@ let preprocess_phase1 source =
   |> populate_unbound_names
   |> qualify
   |> replace_lazy_import
+  |> expand_string_annotations
   |> replace_mypy_extensions_stub
   |> expand_typed_dictionary_declarations
   |> expand_sqlalchemy_declarative_base

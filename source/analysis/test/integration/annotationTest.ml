@@ -153,7 +153,7 @@ let test_check_undefined_type context =
       def foo() -> typing.Optional["Herp"]:
         return None
     |}
-    ["Unbound name [10]: Name `Herp` is used but not defined in the current scope."];
+    ["Undefined or invalid type [11]: Annotation `Herp` is not defined as a type."];
   assert_strict_type_errors
     {|
       import typing
@@ -166,7 +166,7 @@ let test_check_undefined_type context =
     [
       "Missing return annotation [3]: Return type must be specified as type other than `Any`.";
       "Missing parameter annotation [2]: Parameter `other` has no type specified.";
-      "Unbound name [10]: Name `Herp` is used but not defined in the current scope.";
+      "Undefined or invalid type [11]: Annotation `Herp` is not defined as a type.";
     ];
 
   assert_strict_type_errors
@@ -2557,6 +2557,24 @@ let test_check_typevar_division_simplify context =
     ]
 
 
+let test_check_annotated context =
+  let assert_type_errors = assert_type_errors ~context in
+  assert_type_errors
+    {|
+      from typing import Annotated
+
+      def foo(x: str) -> str: ...
+
+      class Foo:
+        def __init__(self, x: str) -> None: ...
+
+      valid_string_literal: Annotated["int", foo("hello")]
+      valid_string_literal2: Annotated["int", Foo("hello")]
+    |}
+    [];
+  ()
+
+
 let () =
   "annotation"
   >::: [
@@ -2581,5 +2599,6 @@ let () =
          "check_variadic_arithmetic" >:: test_check_variadic_arithmetic;
          "check_typevar_division" >:: test_check_typevar_division;
          "check_typevar_division_simplify" >:: test_check_typevar_division_simplify;
+         "check_annotated" >:: test_check_annotated;
        ]
   |> Test.run

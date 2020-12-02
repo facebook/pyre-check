@@ -177,6 +177,32 @@ let test_check_imports context =
         expects_str(StoryEvent.USERNAME)
     |}
     [];
+  let source = { Test.handle = "existing_module.py"; source = {| class Foo: ... |} } in
+  assert_type_errors
+    ~update_environment_with:[source]
+    {|
+      from typing import Optional
+
+      class Bar(int):
+        def __init__(
+          self,
+          foo: Optional[existing_module.Foo],
+        ) -> None: ...
+    |}
+    ["Unbound name [10]: Name `existing_module` is used but not defined in the current scope."];
+  (* TODO(T80454071): This should raise an error about `existing_module` since it was not imported. *)
+  assert_type_errors
+    ~update_environment_with:[source]
+    {|
+      from typing import Optional
+
+      class Bar(int):
+        def __init__(
+          self,
+          foo: Optional["existing_module.Foo"],
+        ) -> None: ...
+    |}
+    [];
   ()
 
 

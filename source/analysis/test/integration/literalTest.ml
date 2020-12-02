@@ -299,6 +299,49 @@ let test_literal_none context =
   ()
 
 
+let test_literal_alias context =
+  let assert_type_errors = assert_type_errors ~context in
+  assert_type_errors
+    {|
+      from typing import *
+      from typing_extensions import Literal as MyLiteral
+      import typing_extensions
+
+      x: int = 7
+      valid_string_literal: MyLiteral["x"]
+
+      class Foo:
+        x: int = 7
+        def treats_x_as_string_literal(self, a: MyLiteral["x"]) -> int: ...
+    |}
+    [];
+  assert_type_errors
+    {|
+      from typing import Generic, TypeVar
+
+      T = TypeVar("T")
+      class NotLiteral(Generic[T]): ...
+
+      x: int = 7
+      treats_x_as_annotation: NotLiteral["x"]
+    |}
+    ["Undefined or invalid type [11]: Annotation `x` is not defined as a type."];
+  assert_type_errors
+    {|
+      from typing import Generic, TypeVar
+
+      T = TypeVar("T")
+      class NotLiteral(Generic[T]): ...
+
+      class Foo:
+        x: int = 7
+
+        def treats_x_as_attribute(self, a: NotLiteral["x"]) -> int: ...
+    |}
+    ["Undefined or invalid type [11]: Annotation `Foo.x` is not defined as a type."];
+  ()
+
+
 let () =
   "literal"
   >::: [
@@ -307,5 +350,6 @@ let () =
          "ternary_with_literals" >:: test_ternary_with_literals;
          "bytes_literals" >:: test_bytes_literals;
          "literal_none" >:: test_literal_none;
+         "literal_alias" >:: test_literal_alias;
        ]
   |> Test.run

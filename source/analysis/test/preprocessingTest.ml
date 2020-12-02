@@ -677,6 +677,99 @@ let test_qualify _ =
         qualifier.C.T = "C"
         qualifier.C.TSelf = typing.TypeVar("TSelf", "qualifier.C", qualifier.X, "qualifier.A")
     |};
+  (* Don't qualify strings within `Literal` even if it is aliased. *)
+  assert_qualify
+    {|
+      from typing_extensions import Literal as MyLiteral
+
+      x: int = 7
+      valid_string_literal: MyLiteral["x"]
+    |}
+    {|
+      from typing_extensions import Literal as MyLiteral
+
+      $local_qualifier$x: int = 7
+      $local_qualifier$valid_string_literal: typing_extensions.Literal["x"]
+    |};
+  assert_qualify
+    {|
+      from typing import Generic, TypeVar
+
+      T = TypeVar("T")
+      class NotLiteral(Generic[T]): ...
+
+      x: int = 8
+      treats_x_as_annotation: NotLiteral["x"]
+    |}
+    {|
+      from typing import Generic, TypeVar
+
+      $local_qualifier$T = typing.TypeVar("T")
+      class qualifier.NotLiteral(typing.Generic[$local_qualifier$T]): ...
+
+      $local_qualifier$x: int = 8
+      $local_qualifier$treats_x_as_annotation: qualifier.NotLiteral["$local_qualifier$x"]
+    |};
+  assert_qualify
+    {|
+      from typing_extensions import Literal as MyLiteral
+
+      class Foo:
+        x: int = 7
+        def treats_x_as_string_literal(self, a: MyLiteral["x"]) -> int: ...
+    |}
+    {|
+      from typing_extensions import Literal as MyLiteral
+
+      class qualifier.Foo():
+        qualifier.Foo.x: int = 7
+        def qualifier.Foo.treats_x_as_string_literal(
+          $parameter$self,
+          $parameter$a: typing_extensions.Literal["x"]
+        ) -> int: ...
+    |};
+  assert_qualify
+    {|
+      from typing import Generic, TypeVar
+
+      T = TypeVar("T")
+      class NotLiteral(Generic[T]): ...
+
+      class Foo:
+        x: int = 7
+        def treats_x_as_attribute(self, a: NotLiteral["x"]) -> int: ...
+    |}
+    {|
+      from typing import Generic, TypeVar
+
+      $local_qualifier$T = typing.TypeVar("T")
+      class qualifier.NotLiteral(typing.Generic[$local_qualifier$T]): ...
+
+      class qualifier.Foo:
+        qualifier.Foo.x: int = 7
+        def qualifier.Foo.treats_x_as_attribute(
+          $parameter$self,
+          $parameter$a: qualifier.NotLiteral["qualifier.Foo.x"],
+        ) -> int: ...
+    |};
+  (* TODO(T80454483): The alias case might be hard to handle within preprocessing. *)
+  assert_qualify
+    {|
+      from typing_extensions import Literal
+
+      LiteralAlias = Literal
+
+      x: int = 7
+      valid_string_literal: LiteralAlias["x"]
+    |}
+    {|
+      from typing_extensions import Literal
+
+      $local_qualifier$LiteralAlias = typing_extensions.Literal
+
+      $local_qualifier$x: int = 7
+      $local_qualifier$valid_string_literal: $local_qualifier$LiteralAlias["$local_qualifier$x"] = ...
+    |};
 
   (* Qualify parameters *)
   assert_qualify
@@ -1356,7 +1449,73 @@ let test_qualify _ =
         @f.setter
         def qualifier.A.f($parameter$self, $parameter$f):
             pass
+    |};
+
+  (* Qualify the type argument to `cast`. *)
+  assert_qualify
+    {|
+      from typing import cast, Dict, List
+      cast("List[Dict[str, object]]", 1)
     |}
+    {|
+      from typing import cast, Dict, List
+      typing.cast("typing.List[typing.Dict[(str, object)]]", 1)
+    |};
+  assert_qualify
+    {|
+      from typing import cast, Dict, List
+      cast(List["Dict[str, object]"], 1)
+    |}
+    {|
+      from typing import cast, Dict, List
+      typing.cast(typing.List["typing.Dict[(str, object)]"], 1)
+    |};
+  assert_qualify
+    {|
+      from typing import cast
+      import pyre_extensions
+      class A: ...
+      class B(A): ...
+
+      def foo(o: object) -> B:
+        return cast('B', safe_cast('A', pyre_extensions.safe_cast('B', o)))
+    |}
+    {|
+      from typing import cast
+      import pyre_extensions
+      class qualifier.A: ...
+      class qualifier.B(qualifier.A): ...
+
+      def qualifier.foo($parameter$o: object) -> qualifier.B:
+        return typing.cast('qualifier.B', safe_cast('qualifier.A',
+          pyre_extensions.safe_cast('qualifier.B', $parameter$o)))
+    |};
+  (* Treat the second argument to `cast` as a regular string. *)
+  assert_qualify
+    {|
+      from typing import cast
+      class A: ...
+      cast('A', 'A')
+    |}
+    {|
+      from typing import cast
+      class qualifier.A: ...
+      typing.cast('qualifier.A', 'A')
+    |};
+  (* Qualify quoted base classes. This is an edge case where the base class accepts the current
+     class as a parameter. *)
+  assert_qualify
+    {|
+      from typing import List
+
+      class Bar(List["Bar"]): ...
+    |}
+    {|
+      from typing import List
+
+      class qualifier.Bar(typing.List["qualifier.Bar"]): ...
+    |};
+  ()
 
 
 let test_replace_version_specific_code _ =
@@ -4526,6 +4685,17 @@ let test_populate_unbound_names _ =
         derp
     |}
     ~expected:[!&"foo", ["derp", location (4, 2) (4, 6)]];
+  (* TODO(T80454071): This should raise an error about `nonexistent_inside_quotes`. *)
+  assert_unbound_names
+    {|
+      from typing import Optional
+      def foo(
+        self,
+        request: "nonexistent_inside_quotes.Foo",
+        request2: nonexistent_outside_quotes.Foo,
+      ) -> None: ...
+    |}
+    ~expected:[toplevel_name, ["nonexistent_outside_quotes", location (6, 12) (6, 38)]];
   ()
 
 

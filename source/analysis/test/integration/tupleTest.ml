@@ -251,7 +251,6 @@ let test_check_tuple context =
        `typing.Any` but is never initialized.";
       "Uninitialized attribute [13]: Attribute `b` is declared in class `C` to have type \
        `typing.Any` but is never initialized.";
-      "Unbound name [10]: Name `T` is used but not defined in the current scope.";
       "Too many arguments [19]: Call `C.__new__` expects 1 positional argument, 2 were provided.";
     ];
   assert_type_errors
