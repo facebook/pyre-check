@@ -51,6 +51,16 @@ module Client = struct
       actual
 
 
+  let assert_subscription_response_equal ~context expected actual =
+    assert_equal
+      ~ctxt:context
+      ~cmp:[%compare.equal: Subscription.Response.t]
+      ~printer:(fun response ->
+        Format.asprintf "%a" Sexp.pp_hum (Subscription.Response.sexp_of_t response))
+      expected
+      actual
+
+
   let assert_response ~request ~expected ({ context; _ } as client) =
     let open Lwt in
     send_request client request
@@ -79,6 +89,23 @@ module Client = struct
         assert_failure message
     | Result.Ok actual_response ->
         assert_response_equal ~context expected_response actual_response;
+        return_unit
+
+
+  let assert_subscription_response ~expected { context; input_channel; _ } =
+    let open Lwt in
+    Lwt_io.read_line input_channel
+    >>= fun raw_response ->
+    match parse_raw_response ~f:Subscription.Response.of_yojson raw_response with
+    | Result.Error raw_response ->
+        let message =
+          Format.sprintf
+            "Cannot decode the followup subscription response JSON from server: %s"
+            raw_response
+        in
+        assert_failure message
+    | Result.Ok actual_response ->
+        assert_subscription_response_equal ~context expected actual_response;
         return_unit
 
 

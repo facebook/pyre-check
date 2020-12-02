@@ -22,3 +22,5 @@ let add_subscription ~name ~subscription { subscriptions; _ } =
 
 
 let remove_subscription ~name { subscriptions; _ } = Hashtbl.remove subscriptions name
+
+let get_subscriptions { subscriptions; _ } = Hashtbl.data subscriptions

@@ -366,10 +366,37 @@ let test_subscription_responses client =
     ~subscription:(Subscription.Request.SubscribeToTypeErrors "foo")
     ~expected_response:(Response.TypeErrors [error])
   >>= fun () ->
-  let { ServerState.subscriptions; _ } = Client.current_server_state client in
+  let {
+    ServerState.subscriptions;
+    socket_path;
+    server_configuration = { ServerConfiguration.global_root; _ };
+    _;
+  }
+    =
+    Client.current_server_state client
+  in
   (* Verifies that we've managed to record the subscription in the server state. *)
   assert_bool "Subscription `foo` recorded" (Hashtbl.mem subscriptions "foo");
 
+  (* Open another connection to the started server and send an incremental update message -- we
+     can't reuse the connection from `client` for this update message since that connection has
+     already been used to receive subscriptions. *)
+  let socket_address = Lwt_unix.ADDR_UNIX (Pyre.Path.absolute socket_path) in
+  let send_incremental_update (_, output_channel) =
+    let test_path = Path.create_relative ~root:global_root ~relative:"test.py" in
+    Request.IncrementalUpdate [Path.absolute test_path]
+    |> Request.to_yojson
+    |> Yojson.Safe.to_string
+    |> Lwt_io.write_line output_channel
+  in
+  Lwt_io.with_connection socket_address send_incremental_update
+  >>= fun () ->
+  (* After the incremental update message gets processed, the client should be able to receive a
+     notification from the subscription. *)
+  Client.assert_subscription_response
+    client
+    ~expected:{ Subscription.Response.name = "foo"; body = Response.TypeErrors [error] }
+  >>= fun () ->
   (* Verifies that the subscription goes away after the connection is closed. *)
   Client.close client
   >>= fun () ->

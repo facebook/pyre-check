@@ -27,6 +27,10 @@ let instantiate_error
     error
 
 
+let instantiate_errors ~configuration ~ast_environment errors =
+  List.map errors ~f:(instantiate_error ~configuration ~ast_environment)
+
+
 let find_critical_file ~server_configuration:{ ServerConfiguration.critical_files; _ } paths =
   ServerConfiguration.CriticalFile.find critical_files ~within:paths
 
@@ -43,6 +47,7 @@ let process_request
         } as state )
     request
   =
+  let open Lwt.Infix in
   match request with
   | Request.GetInfo ->
       let response =
@@ -72,16 +77,14 @@ let process_request
         in
         List.concat_map modules ~f:get_type_error |> List.sort ~compare:AnalysisError.compare
       in
-      let instantiated_errors =
-        List.map
-          errors
-          ~f:
-            (instantiate_error
-               ~configuration
-               ~ast_environment:
-                 (TypeEnvironment.ast_environment type_environment |> AstEnvironment.read_only))
+      let response =
+        Response.TypeErrors
+          (instantiate_errors
+             errors
+             ~configuration
+             ~ast_environment:
+               (TypeEnvironment.ast_environment type_environment |> AstEnvironment.read_only))
       in
-      let response = Response.TypeErrors instantiated_errors in
       Lwt.return (state, response)
   | Request.IncrementalUpdate paths -> (
       let paths = List.map paths ~f:(Path.create_absolute ~follow_symbolic_links:false) in
@@ -93,7 +96,7 @@ let process_request
             path
           |> StartupNotification.produce_for_configuration ~server_configuration;
           Stop.stop_waiting_server ()
-      | None ->
+      | None -> (
           let _ =
             Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->
                 Server.IncrementalCheck.recheck
@@ -103,5 +106,24 @@ let process_request
                   ~errors:error_table
                   paths)
           in
-          Lwt.return (state, Response.Ok) )
+          match ServerState.get_subscriptions state with
+          | [] -> Lwt.return (state, Response.Ok)
+          | _ as subscriptions ->
+              let response =
+                let errors =
+                  Hashtbl.data error_table
+                  |> List.concat_no_order
+                  |> List.sort ~compare:AnalysisError.compare
+                in
+                Response.TypeErrors
+                  (instantiate_errors
+                     errors
+                     ~configuration
+                     ~ast_environment:
+                       (TypeEnvironment.ast_environment type_environment |> AstEnvironment.read_only))
+              in
+              List.map subscriptions ~f:(fun subscription ->
+                  Subscription.send ~response subscription)
+              |> Lwt.join
+              >>= fun () -> Lwt.return (state, Response.Ok) ) )
   | Request.Stop -> Stop.stop_waiting_server ()
