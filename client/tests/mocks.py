@@ -44,7 +44,7 @@ def mock_arguments(
         output=output,
         enable_profiling=enable_profiling,
         enable_memory_profiling=enable_memory_profiling,
-        noninteractive=False,
+        noninteractive=True,
         logging_sections=None,
         log_identifier=log_identifier,
         logger=None,

@@ -129,11 +129,11 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
     ) -> None:
         self.assertEqual(
             os.path.realpath(os.path.join(scratch_directory, relative_path)),
-            os.path.join(project_directory, relative_path),
+            os.path.realpath(os.path.join(project_directory, relative_path)),
         )
         self.assertEqual(
             shared_analysis_directory._symbolic_links[
-                os.path.join(project_directory, relative_path)
+                os.path.realpath(os.path.join(project_directory, relative_path))
             ],
             os.path.join(scratch_directory, relative_path),
         )
