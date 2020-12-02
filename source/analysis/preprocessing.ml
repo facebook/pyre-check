@@ -53,12 +53,15 @@ let transform_string_annotation_expression ~relative =
       | Call
           {
             callee =
-              { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ };
-            _;
-          }
-        when name_is ~name:"typing_extensions.Literal" base ->
-          (* Don't transform arguments in Literals. *)
-          value
+              { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ } as
+              callee;
+            arguments;
+          } ->
+          if name_is ~name:"typing_extensions.Literal" base then
+            (* Don't transform arguments in Literals. *)
+            value
+          else
+            Call { callee; arguments = List.map ~f:transform_argument arguments }
       | Expression.Call { callee; arguments = variable_name :: remaining_arguments }
         when name_is ~name:"typing.TypeVar" callee
              || name_is ~name:"$local_typing$TypeVar" callee
@@ -67,12 +70,6 @@ let transform_string_annotation_expression ~relative =
             {
               callee;
               arguments = variable_name :: List.map ~f:transform_argument remaining_arguments;
-            }
-      | Call { callee; arguments } ->
-          Call
-            {
-              callee = transform_expression callee;
-              arguments = List.map ~f:transform_argument arguments;
             }
       | String { StringLiteral.value = string_value; _ } -> (
           try

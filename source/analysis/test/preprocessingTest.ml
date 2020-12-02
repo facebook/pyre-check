@@ -195,6 +195,20 @@ let test_expand_string_annotations _ =
       def foo(x: "int,"):
         return x
     |};
+  assert_expand
+    {|
+      valid_string_literal: typing.Annotated["int", test.Foo["hello"]]
+    |}
+    {|
+      valid_string_literal: typing.Annotated[int, test.Foo[hello]]
+    |};
+  assert_expand
+    {|
+      valid_string_literal: typing.Annotated["int", test.Foo("hello")]
+    |}
+    {|
+      valid_string_literal: typing.Annotated[int, test.Foo("hello")]
+    |};
   ()
 
 
