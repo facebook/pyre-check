@@ -2,3 +2,4 @@ click
 typing_extensions
 psutil
 libcst
+testslide
