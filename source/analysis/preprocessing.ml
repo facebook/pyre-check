@@ -52,30 +52,17 @@ let expand_string_annotations ({ Source.source_path = { SourcePath.relative; _ }
             } as expression )
         =
         let value =
-          let ends_with_literal = function
-            | Name.Identifier "Literal" -> true
-            | Name.Attribute { attribute = "Literal"; _ } -> true
-            | _ -> false
-          in
           match value with
           | Expression.Name (Name.Attribute ({ base; _ } as name)) ->
               Expression.Name (Name.Attribute { name with base = transform_expression base })
           | Call
               {
                 callee =
-                  {
-                    Node.value =
-                      Name
-                        (Name.Attribute
-                          { base = { Node.value = Name base; _ }; attribute = "__getitem__"; _ });
-                    _;
-                  };
+                  { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ };
                 _;
               }
-            when ends_with_literal base ->
-              (* Don't transform arguments in Literals. This will hit any generic type named
-                 Literal, but otherwise `from ... import Literal` wouldn't work as this has to be
-                 before qualification. *)
+            when name_is ~name:"typing_extensions.Literal" base ->
+              (* Don't transform arguments in Literals. *)
               value
           | Call { callee; arguments } ->
               let transform_argument ({ Call.Argument.value; _ } as argument) =

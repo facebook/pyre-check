@@ -159,14 +159,18 @@ let test_expand_string_annotations _ =
         y = typing.cast(typing.List[Foo], x)
         z = typing.cast(typing.Dict[str, Foo], x)
     |};
-  assert_expand "def foo(f: Literal['A']): ..." "def foo(f: Literal['A']): ...";
+
+  (* `expand_string_annotations` is called after `qualify`. So, we should exempt only the qualified
+     `Literal` types. *)
   assert_expand
     "def foo(f: typing_extensions.Literal['A']): ..."
     "def foo(f: typing_extensions.Literal['A']): ...";
   assert_expand
     "def foo(f: typing_extensions.Literal['A', 'B']): ..."
     "def foo(f: typing_extensions.Literal['A', 'B']): ...";
-  assert_expand "def foo(f: te.Literal['A', 'B']): ..." "def foo(f: te.Literal['A', 'B']): ...";
+  assert_expand "def foo(f: Literal['A']): ..." "def foo(f: Literal[A]): ...";
+  assert_expand "def foo(f: te.Literal['A', 'B']): ..." "def foo(f: te.Literal[A, B]): ...";
+
   assert_expand "class Foo(typing.List['str']): ..." "class Foo(typing.List[str]): ...";
   assert_expand "class Foo('str'): ..." "class Foo('str'): ...";
   assert_expand
