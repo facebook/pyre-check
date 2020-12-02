@@ -2804,52 +2804,40 @@ let test_generic_aliases context =
       reveal_type(x)
     |}
     ["Revealed type [-1]: Revealed type for `x` is `List[Tuple[str, Union[int, str]]]`."];
-  (* `Optional` is imported as `foo.bar.baz.Optional`, which is an alias we resolve to
-     `typing.Optional`. *)
-  assert_type_errors
-    ~update_environment_with:
-      [
-        {
-          handle = "foo.py";
-          source =
-            {|
+  let sources_exporting_generic_classes =
+    [
+      {
+        Test.handle = "foo.py";
+        source =
+          {|
             from typing import Generic, TypeVar
             T= TypeVar("T")
             class SomeGenericClass(Generic[T]): ...
           |};
-        };
-        {
-          handle = "baz.py";
-          source =
-            {|
-            from typing import Generic, Iterable, Optional, Sequence, Union, TypeVar
+      };
+      {
+        handle = "baz.py";
+        source =
+          {|
+            from typing import Dict, Generic, Iterable, Optional, Sequence, Union, TypeVar
             from foo import SomeGenericClass
           |};
-        };
-      ]
+      };
+    ]
+  in
+  (* `Optional` is imported as `foo.bar.baz.Optional`, which is an alias we resolve to
+     `typing.Optional`. *)
+  assert_type_errors
+    ~update_environment_with:sources_exporting_generic_classes
     {|
       from baz import *
-      from typing import List as MyList, TypeVar
+      from typing import List as MyList
 
-      x: Optional[int]
-      y: Union[int]
-      z: MyList[int]
-      z2: Iterable[int]
-      z3: SomeGenericClass[int]
       reveal_type(Optional)
       reveal_type(Union)
       reveal_type(MyList)
       reveal_type(Iterable)
       reveal_type(SomeGenericClass)
-
-      reveal_type(x)
-      reveal_type(y)
-      reveal_type(z)
-      reveal_type(z2)
-      reveal_type(z3)
-      z = ["hello"]
-      z2 = ["hello"]
-      z3 = ["hello"]
     |}
     [
       "Revealed type [-1]: Revealed type for `baz.Optional` is `typing.Type[typing.Optional]`.";
@@ -2858,11 +2846,18 @@ let test_generic_aliases context =
       "Revealed type [-1]: Revealed type for `baz.Iterable` is `typing.Type[typing.Iterable]`.";
       "Revealed type [-1]: Revealed type for `baz.SomeGenericClass` is \
        `typing.Type[foo.SomeGenericClass]`.";
-      "Revealed type [-1]: Revealed type for `x` is `typing.Optional[int]`.";
-      "Revealed type [-1]: Revealed type for `y` is `int`.";
-      "Revealed type [-1]: Revealed type for `z` is `MyList[int]`.";
-      "Revealed type [-1]: Revealed type for `z2` is `typing.Iterable[int]`.";
-      "Revealed type [-1]: Revealed type for `z3` is `foo.SomeGenericClass[int]`.";
+    ];
+  assert_type_errors
+    ~update_environment_with:sources_exporting_generic_classes
+    {|
+      from baz import *
+      from typing import List as MyList, TypeVar
+
+      z: MyList[int] = ["hello"]
+      z2: Iterable[int] = ["hello"]
+      z3: SomeGenericClass[int] = ["hello"]
+    |}
+    [
       "Incompatible variable type [9]: z is declared to have type `MyList[int]` but is used as \
        type `MyList[str]`.";
       "Incompatible variable type [9]: z2 is declared to have type `typing.Iterable[int]` but is \
@@ -2870,6 +2865,16 @@ let test_generic_aliases context =
       "Incompatible variable type [9]: z3 is declared to have type `foo.SomeGenericClass[int]` but \
        is used as type `MyList[str]`.";
     ];
+  (* We should correctly resolve nested generic aliases like `baz.Dict`. *)
+  assert_type_errors
+    ~update_environment_with:sources_exporting_generic_classes
+    {|
+      from baz import *
+
+      x: Optional[Dict[str, int]]
+      reveal_type(x)
+    |}
+    ["Revealed type [-1]: Revealed type for `x` is `typing.Optional[typing.Dict[str, int]]`."];
   (* Generic alias for a class respects variance. *)
   assert_type_errors
     {|
