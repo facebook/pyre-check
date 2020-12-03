@@ -3,9 +3,11 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import asyncio
+import contextlib
 import dataclasses
 import logging
-from typing import Union
+from typing import Union, Optional, AsyncIterator
 
 from ... import (
     json_rpc,
@@ -14,7 +16,11 @@ from ... import (
     commands,
     configuration as configuration_module,
 )
-from . import language_server_protocol as lsp, async_server_connection as connection
+from . import (
+    language_server_protocol as lsp,
+    async_server_connection as connection,
+    start,
+)
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -47,7 +53,7 @@ class InitializationSuccess:
 
 @dataclasses.dataclass(frozen=True)
 class InitializationFailure:
-    pass
+    exception: Optional[json_rpc.JSONRPCException] = None
 
 
 @dataclasses.dataclass(frozen=True)
@@ -75,6 +81,8 @@ async def try_initialize(
     """
     try:
         request = await lsp.read_json_rpc(input_channel)
+        LOG.debug(f"Received pre-initialization LSP request: {request}")
+
         request_id = request.id
         if request_id is None:
             return (
@@ -113,12 +121,108 @@ async def try_initialize(
                 data={"retry": False},
             ),
         )
-        return InitializationFailure()
+        return InitializationFailure(exception=json_rpc_error)
+
+
+@contextlib.asynccontextmanager
+async def _read_lsp_request(
+    input_channel: connection.TextReader, output_channel: connection.TextWriter
+) -> AsyncIterator[json_rpc.Request]:
+    try:
+        message = await lsp.read_json_rpc(input_channel)
+        yield message
+    except json_rpc.JSONRPCException as json_rpc_error:
+        await lsp.write_json_rpc(
+            output_channel,
+            json_rpc.ErrorResponse(
+                id=message.id,
+                code=json_rpc_error.error_code(),
+                message=str(json_rpc_error),
+            ),
+        )
+
+
+class Server:
+    input_channel: connection.TextReader
+    output_channel: connection.TextWriter
+    client_capabilities: lsp.ClientCapabilities
+    pyre_arguments: start.Arguments
+
+    def __init__(
+        self,
+        input_channel: connection.TextReader,
+        output_channel: connection.TextWriter,
+        client_capabilities: lsp.ClientCapabilities,
+        pyre_arguments: start.Arguments,
+    ) -> None:
+        self.input_channel = input_channel
+        self.output_channel = output_channel
+        self.client_capabilities = client_capabilities
+        self.pyre_arguments = pyre_arguments
+
+    async def wait_for_exit(self) -> int:
+        while True:
+            async with _read_lsp_request(
+                self.input_channel, self.output_channel
+            ) as request:
+                LOG.debug(f"Received post-shutdown request: {request}")
+
+                if request.method == "exit":
+                    return 0
+                else:
+                    raise json_rpc.InvalidRequestError("LSP server has been shut down")
+
+    async def run(self) -> int:
+        while True:
+            async with _read_lsp_request(
+                self.input_channel, self.output_channel
+            ) as request:
+                LOG.debug(f"Received LSP request: {request}")
+
+                if request.method == "exit":
+                    return commands.ExitCode.FAILURE
+                elif request.method == "shutdown":
+                    lsp.write_json_rpc(
+                        self.output_channel,
+                        json_rpc.SuccessResponse(id=request.id, result=None),
+                    )
+                    return await self.wait_for_exit()
+                elif request.id is not None:
+                    raise lsp.RequestCancelledError("Request not supported yet")
+
+
+async def run_persistent(pyre_arguments: start.Arguments) -> int:
+    stdin, stdout = await connection.create_async_stdin_stdout()
+    while True:
+        initialize_result = await try_initialize(stdin, stdout)
+        if isinstance(initialize_result, InitializationExit):
+            LOG.info("Received exit request before initialization.")
+            return 0
+        elif isinstance(initialize_result, InitializationSuccess):
+            client_capabilities = initialize_result.client_capabilities
+            LOG.info("Initialization successful.")
+            LOG.debug(f"Client capabilities: {client_capabilities}")
+            server = Server(
+                input_channel=stdin,
+                output_channel=stdout,
+                client_capabilities=client_capabilities,
+                pyre_arguments=pyre_arguments,
+            )
+            return await server.run()
+        elif isinstance(initialize_result, InitializationFailure):
+            exception = initialize_result.exception
+            message = (
+                str(exception) if exception is not None else "ignoring notification"
+            )
+            LOG.info(f"Initialization failed: {message}")
+            # Loop until we get either InitializeExit or InitializeSuccess
+        else:
+            raise RuntimeError("Cannot determine the type of initialize_result")
 
 
 def run(
     configuration: configuration_module.Configuration,
     start_arguments: command_arguments.StartArguments,
-) -> commands.ExitCode:
-    LOG.warning("The best is yet to come...")
-    return commands.ExitCode.SUCCESS
+) -> int:
+    pyre_arguments = start.create_server_arguments(configuration, start_arguments)
+    return asyncio.get_event_loop().run_until_complete(run_persistent(pyre_arguments))

@@ -19,6 +19,11 @@ class ServerNotInitializedError(json_rpc.JSONRPCException):
         return -32002
 
 
+class RequestCancelledError(json_rpc.JSONRPCException):
+    def error_code(self) -> int:
+        return -32800
+
+
 async def _read_headers(input_channel: async_server_connection.TextReader) -> List[str]:
     headers = []
     header = await input_channel.read_until("\r\n")

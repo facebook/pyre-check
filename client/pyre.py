@@ -771,6 +771,9 @@ def persistent(context: click.Context, no_watchman: bool) -> int:
         command_argument, Path(".")
     )
     if command_argument.use_command_v2:
+        log.start_logging_to_directory(
+            command_argument.noninteractive, configuration.log_directory
+        )
         return v2.persistent.run(
             configuration,
             command_arguments.StartArguments(
