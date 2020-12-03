@@ -3,3 +3,4 @@ typing_extensions
 psutil
 libcst
 testslide
+dataclasses-json

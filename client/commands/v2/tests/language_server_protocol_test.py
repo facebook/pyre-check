@@ -4,34 +4,41 @@
 # LICENSE file in the root directory of this source tree.
 
 import json
+from typing import Mapping
 
 import testslide
 
 from .... import json_rpc
 from ....tests import setup
 from ..async_server_connection import (
-    TextReader,
     TextWriter,
-    MemoryBytesReader,
     MemoryBytesWriter,
+    create_memory_text_reader,
 )
-from ..language_server_protocol import read_json_rpc, write_json_rpc
+from ..language_server_protocol import (
+    read_json_rpc,
+    write_json_rpc,
+    InitializeParameters,
+    Info,
+    ClientCapabilities,
+    TextDocumentClientCapabilities,
+    TextDocumentSyncClientCapabilities,
+    PublishDiagnosticsClientCapabilities,
+    PublishDiagnosticsClientTagSupport,
+    DiagnosticTag,
+)
 
 
 class LSPInputOutputTest(testslide.TestCase):
     @setup.async_test
     async def test_read_lsp(self) -> None:
         async def assert_parses(input: str, expected: json_rpc.Request) -> None:
-            actual = await read_json_rpc(
-                TextReader(MemoryBytesReader(input.encode("utf-8")))
-            )
+            actual = await read_json_rpc(create_memory_text_reader(input))
             self.assertEqual(actual, expected)
 
         async def assert_not_parsed(input: str) -> None:
             with self.assertRaises(json_rpc.ParseError):
-                await read_json_rpc(
-                    TextReader(MemoryBytesReader(input.encode("utf-8")))
-                )
+                await read_json_rpc(create_memory_text_reader(input))
 
         await assert_not_parsed("")
         await assert_not_parsed("derp")
@@ -92,5 +99,93 @@ class LSPInputOutputTest(testslide.TestCase):
                         "error": {"code": 42, "message": "derp"},
                     }
                 )
+            ),
+        )
+
+
+class LSPParsingTest(testslide.TestCase):
+    def test_parse_initialize(self) -> None:
+        def assert_parsed(
+            parameters: Mapping[str, object], expected: InitializeParameters
+        ) -> None:
+            self.assertEqual(
+                InitializeParameters.from_json_rpc_parameters(
+                    json_rpc.ByNameParameters(parameters)
+                ),
+                expected,
+            )
+
+        def assert_not_parsed(parameters: Mapping[str, object]) -> None:
+            with self.assertRaises(json_rpc.InvalidRequestError):
+                InitializeParameters.from_json_rpc_parameters(
+                    json_rpc.ByNameParameters(parameters)
+                )
+
+        assert_not_parsed({})
+        assert_not_parsed({"no_capabilities": 42})
+        assert_not_parsed({"capabilities": True})
+        assert_not_parsed({"processId": "derp"})
+        assert_not_parsed({"capabilities": {"textDocument": "foo"}})
+        assert_not_parsed(
+            {
+                "capabilities": {
+                    "textDocument": {
+                        "publishDiagnostics": {
+                            "tagSupport": {"valueSet": [42]},
+                        }
+                    }
+                }
+            }
+        )
+
+        assert_parsed(
+            {
+                "processId": 42,
+                "clientInfo": {"name": "foo", "version": "v0"},
+                "rootUri": "file:///not_relevant",
+                "initializationOptions": "not_relevant",
+                "capabilities": {
+                    "workspace": {},
+                    "textDocument": {
+                        "publishDiagnostics": {
+                            "relatedInformation": True,
+                            "versionSupport": False,
+                            "tagSupport": {"valueSet": [1, 2]},
+                        },
+                        "synchronization": {
+                            "dynamicRegistration": True,
+                            "willSave": True,
+                            "willSaveWaitUntil": True,
+                            "didSave": True,
+                        },
+                        "completion": {},
+                        "hover": {},
+                    },
+                },
+                "trace": "off",
+                "workspaceFolders": [
+                    {"uri": "file:///workspalce_folder", "name": "foo"}
+                ],
+            },
+            InitializeParameters(
+                process_id=42,
+                client_info=Info(name="foo", version="v0"),
+                capabilities=ClientCapabilities(
+                    text_document=TextDocumentClientCapabilities(
+                        synchronization=TextDocumentSyncClientCapabilities(
+                            did_save=True
+                        ),
+                        publish_diagnostics=PublishDiagnosticsClientCapabilities(
+                            related_information=True,
+                            tag_support=PublishDiagnosticsClientTagSupport(
+                                value_set=[
+                                    DiagnosticTag.UNNECESSARY,
+                                    DiagnosticTag.DEPRECATED,
+                                ]
+                            ),
+                            version_support=False,
+                        ),
+                    )
+                ),
             ),
         )

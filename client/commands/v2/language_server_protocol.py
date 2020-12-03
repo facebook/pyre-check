@@ -4,10 +4,19 @@
 # LICENSE file in the root directory of this source tree.
 
 import asyncio
-from typing import List, Iterable
+import dataclasses
+import enum
+from typing import List, Iterable, Optional
+
+import dataclasses_json
 
 from ... import json_rpc
 from . import async_server_connection
+
+
+class ServerNotInitializedError(json_rpc.JSONRPCException):
+    def error_code(self) -> int:
+        return -32002
 
 
 async def _read_headers(input_channel: async_server_connection.TextReader) -> List[str]:
@@ -53,10 +62,148 @@ async def read_json_rpc(
 
 
 async def write_json_rpc(
-    output_channel: async_server_connection.TextWriter, response: json_rpc.Response
+    output_channel: async_server_connection.TextWriter, response: json_rpc.JSONRPC
 ) -> None:
     """
     Asynchronously write a JSON-RPC response to the given output channel.
     """
     payload = response.serialize()
     await output_channel.write(f"Content-Length: {len(payload)}\r\n\r\n{payload}")
+
+
+class SerializationSafeIntEnum(enum.IntEnum):
+    def __repr(self) -> str:
+        return str(self.value)
+
+
+class DiagnosticTag(SerializationSafeIntEnum):
+    UNNECESSARY = 1
+    DEPRECATED = 2
+
+
+class TextDocumentSyncKind(SerializationSafeIntEnum):
+    NONE = 0
+    FULL = 1
+    INCREMENTAL = 2
+
+
+@dataclasses_json.dataclass_json(
+    letter_case=dataclasses_json.LetterCase.CAMEL,
+    undefined=dataclasses_json.Undefined.EXCLUDE,
+)
+@dataclasses.dataclass(frozen=True)
+class Info:
+    name: str
+    version: Optional[str] = None
+
+
+@dataclasses_json.dataclass_json(
+    letter_case=dataclasses_json.LetterCase.CAMEL,
+    undefined=dataclasses_json.Undefined.EXCLUDE,
+)
+@dataclasses.dataclass(frozen=True)
+class TextDocumentSyncClientCapabilities:
+    did_save: bool = False
+
+
+@dataclasses_json.dataclass_json(
+    letter_case=dataclasses_json.LetterCase.CAMEL,
+    undefined=dataclasses_json.Undefined.EXCLUDE,
+)
+@dataclasses.dataclass(frozen=True)
+class PublishDiagnosticsClientTagSupport:
+    value_set: List[DiagnosticTag] = dataclasses.field(default_factory=list)
+
+
+@dataclasses_json.dataclass_json(
+    letter_case=dataclasses_json.LetterCase.CAMEL,
+    undefined=dataclasses_json.Undefined.EXCLUDE,
+)
+@dataclasses.dataclass(frozen=True)
+class PublishDiagnosticsClientCapabilities:
+    related_information: bool = False
+    tag_support: Optional[PublishDiagnosticsClientTagSupport] = None
+    version_support: bool = False
+
+
+@dataclasses_json.dataclass_json(
+    letter_case=dataclasses_json.LetterCase.CAMEL,
+    undefined=dataclasses_json.Undefined.EXCLUDE,
+)
+@dataclasses.dataclass(frozen=True)
+class TextDocumentClientCapabilities:
+    synchronization: Optional[TextDocumentSyncClientCapabilities] = None
+    publish_diagnostics: Optional[PublishDiagnosticsClientCapabilities] = None
+
+
+@dataclasses_json.dataclass_json(
+    letter_case=dataclasses_json.LetterCase.CAMEL,
+    undefined=dataclasses_json.Undefined.EXCLUDE,
+)
+@dataclasses.dataclass(frozen=True)
+class ClientCapabilities:
+    text_document: Optional[TextDocumentClientCapabilities] = None
+
+
+@dataclasses_json.dataclass_json(
+    letter_case=dataclasses_json.LetterCase.CAMEL,
+    undefined=dataclasses_json.Undefined.EXCLUDE,
+)
+@dataclasses.dataclass(frozen=True)
+class SaveOptions:
+    include_text: Optional[bool] = None
+
+
+@dataclasses_json.dataclass_json(
+    letter_case=dataclasses_json.LetterCase.CAMEL,
+    undefined=dataclasses_json.Undefined.EXCLUDE,
+)
+@dataclasses.dataclass(frozen=True)
+class TextDocumentSyncOptions:
+    open_close: bool = False
+    change: TextDocumentSyncKind = TextDocumentSyncKind.NONE
+    save: Optional[SaveOptions] = None
+
+
+@dataclasses_json.dataclass_json(
+    letter_case=dataclasses_json.LetterCase.CAMEL,
+    undefined=dataclasses_json.Undefined.EXCLUDE,
+)
+@dataclasses.dataclass(frozen=True)
+class ServerCapabilities:
+    text_document_sync: Optional[TextDocumentSyncOptions] = None
+
+
+@dataclasses_json.dataclass_json(
+    letter_case=dataclasses_json.LetterCase.CAMEL,
+    undefined=dataclasses_json.Undefined.EXCLUDE,
+)
+@dataclasses.dataclass(frozen=True)
+class InitializeParameters:
+    capabilities: ClientCapabilities
+    process_id: Optional[int] = None
+    client_info: Optional[Info] = None
+
+    @staticmethod
+    def from_json_rpc_parameters(
+        parameters: json_rpc.Parameters,
+    ) -> "InitializeParameters":
+        if not isinstance(parameters, json_rpc.ByNameParameters):
+            raise json_rpc.InvalidRequestError(
+                "Parameters for initialize request must be passed by name"
+            )
+        try:
+            # pyre-fixme[16]: Pyre doesn't understand `dataclasses_json`
+            return InitializeParameters.schema().load(parameters.values)
+        except (KeyError, ValueError, dataclasses_json.mm.ValidationError) as error:
+            raise json_rpc.InvalidRequestError(str(error)) from error
+
+
+@dataclasses_json.dataclass_json(
+    letter_case=dataclasses_json.LetterCase.CAMEL,
+    undefined=dataclasses_json.Undefined.EXCLUDE,
+)
+@dataclasses.dataclass(frozen=True)
+class InitializeResult:
+    capabilities: ServerCapabilities
+    server_info: Optional[Info] = None

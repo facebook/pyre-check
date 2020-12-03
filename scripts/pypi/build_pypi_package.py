@@ -24,6 +24,7 @@ MODULE_NAME = "pyre_check"
 RUNTIME_DEPENDENCIES = [
     "click",
     "dataclasses",
+    "dataclasses-json",
     "pywatchman",
     "psutil",
     "libcst>=0.3.6",

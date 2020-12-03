@@ -116,11 +116,14 @@ class ByNameParameters:
     values: Mapping[str, object] = dataclasses.field(default_factory=dict)
 
 
+Parameters = Union[ByPositionParameters, ByNameParameters]
+
+
 @dataclasses.dataclass(frozen=True)
 class Request(JSONRPC):
     method: str
     id: Union[int, str, None] = None
-    parameters: Union[ByPositionParameters, ByNameParameters, None] = None
+    parameters: Optional[Parameters] = None
 
     def json(self) -> JSON:
         parameters = self.parameters

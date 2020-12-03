@@ -156,6 +156,10 @@ class MemoryBytesReader(BytesReader):
         self._cursor = 0
 
 
+def create_memory_text_reader(data: str, encoding: str = "utf-8") -> TextReader:
+    return TextReader(MemoryBytesReader(data.encode(encoding)), encoding)
+
+
 class MemoryBytesWriter(BytesWriter):
     _items: List[bytes]
 
@@ -170,6 +174,10 @@ class MemoryBytesWriter(BytesWriter):
 
     def items(self) -> List[bytes]:
         return self._items
+
+
+def create_memory_text_writer(encoding: str = "utf-8") -> TextWriter:
+    return TextWriter(MemoryBytesWriter())
 
 
 class _StreamBytesReader(BytesReader):
