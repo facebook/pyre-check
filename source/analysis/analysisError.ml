@@ -656,8 +656,8 @@ let rec messages ~concise ~signature location kind =
     string_of_int number ^ suffix
   in
   let invariance_message =
-    "See https://pyre-check.org/docs/errors.html#list-and-dictionary-mismatches"
-    ^ "-with-subclassing for mutable container errors."
+    "See https://pyre-check.org/docs/errors#covariance-and-contravariance"
+    ^ " for mutable container errors."
   in
   let pp_type = if concise then Type.pp_concise else Type.pp in
   let pp_reference format reference =
@@ -1311,10 +1311,7 @@ let rec messages ~concise ~signature location kind =
               pp_type
               parent
       in
-      [
-        formatted;
-        "See `https://pyre-check.org/docs/errors.html#35-invalid-type-variance` for details.";
-      ]
+      [formatted; "See `https://pyre-check.org/docs/errors#35-invalid-type-variance` for details."]
   | InvalidInheritance invalid_inheritance -> (
       match invalid_inheritance with
       | ClassName class_name ->
@@ -2071,7 +2068,7 @@ let rec messages ~concise ~signature location kind =
           Reference.pp_sanitized
           reference;
         "For common reasons, see \
-         https://pyre-check.org/docs/errors.html#pyre-errors-1821-undefined-name-undefined-import";
+         https://pyre-check.org/docs/errors/#1821-undefined-name-undefined-import";
       ]
   | UndefinedImport (UndefinedName { from; name }) ->
       [
@@ -2082,7 +2079,7 @@ let rec messages ~concise ~signature location kind =
           Reference.pp_sanitized
           from;
         "For common reasons, see \
-         https://pyre-check.org/docs/errors.html#pyre-errors-1821-undefined-name-undefined-import";
+         https://pyre-check.org/docs/errors/#1821-undefined-name-undefined-import";
       ]
   | UndefinedType annotation ->
       [Format.asprintf "Annotation `%a` is not defined as a type." pp_type annotation]
