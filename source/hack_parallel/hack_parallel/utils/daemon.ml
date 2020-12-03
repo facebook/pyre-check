@@ -1,12 +1,9 @@
-(**
- * Copyright (c) 2015, Facebook, Inc.
- * All rights reserved.
+(*
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the "hack" directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
- *
-*)
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *)
 
 type 'a in_channel = Timeout.in_channel
 type 'a out_channel = Pervasives.out_channel
@@ -297,7 +294,18 @@ let kill h =
 
 let kill_and_wait h =
   kill h;
-  Unix.waitpid [] h.pid |> ignore
+  let rec ensure_waitpid pid =
+    (* `waitpid` may be interrupted by other signals. 
+     * When this happens, we will get an EINTR error in which case the wait
+     * operation needs to be retried.
+     * For some reason, the EINTR issue happens more frequently on MacOS than
+     * on Linux... *)
+    try
+      Unix.waitpid [] pid |> ignore
+    with Unix.Unix_error (Unix.EINTR, _, _) ->
+      ensure_waitpid pid
+  in
+  ensure_waitpid h.pid
 
 let close_out = close_out
 let output_string = output_string
