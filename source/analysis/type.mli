@@ -496,6 +496,11 @@ type alias =
   | VariableAlias of t Record.Variable.record
 [@@deriving compare, eq, sexp, show, hash]
 
+val resolve_aliases
+  :  aliases:(?replace_unbound_parameters_with_any:bool -> string -> alias option) ->
+  t ->
+  t
+
 val create
   :  aliases:(?replace_unbound_parameters_with_any:bool -> Primitive.t -> alias option) ->
   Expression.t ->

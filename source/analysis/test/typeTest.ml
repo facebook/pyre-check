@@ -244,6 +244,7 @@ let test_create _ =
       Identifier.Table.of_alist_exn
         [
           "Alias", Type.Primitive "Aliased";
+          "IntList", Type.list Type.integer;
           ( "_Future",
             Type.union
               [
@@ -261,6 +262,9 @@ let test_create _ =
   assert_alias "typing.Optional[Alias]" (Type.optional (Type.Primitive "Aliased"));
   assert_alias "Parametric[Alias]" (Type.parametric "Parametric" ![Type.Primitive "Aliased"]);
   assert_alias "Alias[int]" (Type.parametric "Aliased" ![Type.integer]);
+
+  assert_alias "IntList" (Type.list Type.integer);
+  assert_alias "IntList[str]" (Type.list Type.integer);
 
   assert_alias
     "_Future[int]"
@@ -511,6 +515,44 @@ let test_create _ =
   assert_create "typing_extensions.Literal[ONE]" Type.Top;
   assert_create "typing_extensions.Literal[None]" Type.none;
   assert_create "_NotImplementedType" Type.Any;
+  ()
+
+
+let test_resolve_aliases _ =
+  let assert_resolved ~aliases annotation expected =
+    let aliases ?replace_unbound_parameters_with_any:_ = aliases in
+    assert_equal
+      ~printer:Type.show
+      ~cmp:Type.equal
+      expected
+      (Type.resolve_aliases ~aliases annotation)
+  in
+  let aliases = function
+    | "MyInt" -> Some (Type.TypeAlias Type.integer)
+    | "IntList" -> Some (Type.TypeAlias (Type.list Type.integer))
+    | _ -> None
+  in
+  assert_resolved ~aliases (Type.Primitive "NotAlias") (Type.Primitive "NotAlias");
+  assert_resolved ~aliases (Type.Primitive "MyInt") Type.integer;
+  assert_resolved ~aliases (Type.Primitive "IntList") (Type.list Type.integer);
+  (* `IntList` resolves to `List[int]`. So, it ignores the `str` argument. *)
+  assert_resolved ~aliases (Type.parametric "IntList" [Single Type.string]) (Type.list Type.integer);
+
+  let variable_t = Type.Variable (Type.Variable.Unary.create "T") in
+  let variable_k = Type.Variable (Type.Variable.Unary.create "K") in
+  let variable_v = Type.Variable (Type.Variable.Unary.create "V") in
+  let aliases = function
+    | "IntList" -> Some (Type.TypeAlias (Type.list Type.integer))
+    | "foo.Optional" -> Some (Type.TypeAlias (Type.optional variable_t))
+    | "foo.Dict" -> Some (Type.TypeAlias (Type.dictionary ~key:variable_k ~value:variable_v))
+    | _ -> None
+  in
+  assert_resolved
+    ~aliases
+    (Type.parametric
+       "foo.Optional"
+       [Single (Type.parametric "foo.Dict" [Single Type.string; Single Type.integer])])
+    (Type.optional (Type.dictionary ~key:Type.string ~value:Type.integer));
   ()
 
 
@@ -2655,6 +2697,7 @@ let () =
   "type"
   >::: [
          "create" >:: test_create;
+         "resolve_aliases" >:: test_resolve_aliases;
          "instantiate" >:: test_instantiate;
          "expression" >:: test_expression;
          "concise" >:: test_concise;

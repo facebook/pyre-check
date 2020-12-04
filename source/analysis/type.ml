@@ -2077,6 +2077,29 @@ let exists annotation ~predicate =
   fst (ExistsTransform.visit false annotation)
 
 
+let instantiate ?(widen = false) ?(visit_children_before = false) annotation ~constraints =
+  let module InstantiateTransform = Transform.Make (struct
+    type state = unit
+
+    let visit_children_before _ annotation =
+      visit_children_before || constraints annotation |> Option.is_none
+
+
+    let visit_children_after = false
+
+    let visit _ annotation =
+      let transformed_annotation =
+        match constraints annotation with
+        | Some Bottom when widen -> Top
+        | Some replacement -> replacement
+        | None -> annotation
+      in
+      { Transform.transformed_annotation; new_state = () }
+  end)
+  in
+  snd (InstantiateTransform.visit () annotation)
+
+
 let contains_callable annotation = exists annotation ~predicate:is_callable
 
 let contains_any annotation = exists annotation ~predicate:is_any
@@ -2415,6 +2438,27 @@ type alias =
 let empty_aliases ?replace_unbound_parameters_with_any:_ _ = None
 
 let resolve_aliases ~aliases annotation =
+  let aliases x =
+    match x with
+    | Primitive name -> (
+        match aliases ?replace_unbound_parameters_with_any:(Some true) name with
+        | Some (TypeAlias alias) -> Some alias
+        | _ -> None )
+    | Parametric { name; parameters = [Single parameter] } -> (
+        (* Don't replace unbound generic parameters with Any. Otherwise, a generic alias Foo (or an
+           import alias for a generic alias) will become Foo[Any] instead of Foo[T]. We will not
+           find any free type variables in Foo[Any] and simply resolve it as Foo[Any]. *)
+        match aliases ?replace_unbound_parameters_with_any:(Some false) name with
+        | Some (TypeAlias alias) ->
+            Some
+              (instantiate
+                 ~constraints:(function
+                   | Variable _ -> Some parameter
+                   | _ -> None)
+                 alias)
+        | _ -> None )
+    | _ -> None
+  in
   let visited = Hash_set.create () in
   let module ResolveTransform = Transform.Make (struct
     type state = unit
@@ -3143,53 +3187,10 @@ let single_parameter = function
   | _ -> failwith "Type does not have single parameter"
 
 
-let instantiate ?(widen = false) ?(visit_children_before = false) annotation ~constraints =
-  let module InstantiateTransform = Transform.Make (struct
-    type state = unit
-
-    let visit_children_before _ annotation =
-      visit_children_before || constraints annotation |> Option.is_none
-
-
-    let visit_children_after = false
-
-    let visit _ annotation =
-      let transformed_annotation =
-        match constraints annotation with
-        | Some Bottom when widen -> Top
-        | Some replacement -> replacement
-        | None -> annotation
-      in
-      { Transform.transformed_annotation; new_state = () }
-  end)
-  in
-  snd (InstantiateTransform.visit () annotation)
-
-
 let create ~aliases =
   let variable_aliases name =
     match aliases ?replace_unbound_parameters_with_any:(Some false) name with
     | Some (VariableAlias variable) -> Some variable
-    | _ -> None
-  in
-  let aliases = function
-    | Primitive name -> (
-        match aliases ?replace_unbound_parameters_with_any:(Some true) name with
-        | Some (TypeAlias alias) -> Some alias
-        | _ -> None )
-    | Parametric { name; parameters = [Single parameter] } -> (
-        (* Don't replace unbound generic parameters with Any. Otherwise, a generic alias Foo (or an
-           import alias for a generic alias) will become Foo[Any] instead of Foo[T]. We will not
-           find any free type variables in Foo[Any] and simply resolve it as Foo[Any]. *)
-        match aliases ?replace_unbound_parameters_with_any:(Some false) name with
-        | Some (TypeAlias alias) ->
-            Some
-              (instantiate
-                 ~constraints:(function
-                   | Variable _ -> Some parameter
-                   | _ -> None)
-                 alias)
-        | _ -> None )
     | _ -> None
   in
   create_logic ~aliases ~variable_aliases
