@@ -278,15 +278,6 @@ let test_create _ =
   assert_create "'Type[str]'" (Type.parametric "Type" ![Type.Primitive "str"]);
   assert_create "'Type[[[]str]'" (Type.Primitive "Type[[[]str]");
 
-  (* Recursive aliasing. *)
-  let aliases = function
-    | "A" -> Some (Type.Primitive "B")
-    | "B" -> Some (Type.Primitive "C")
-    | _ -> None
-  in
-  let aliases = create_type_alias_table aliases in
-  assert_create ~aliases "A" (Type.Primitive "C");
-
   (* Recursion with loop. *)
   let aliases = function
     | "A" -> Some (Type.Primitive "A")

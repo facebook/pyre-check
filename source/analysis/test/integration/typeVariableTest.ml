@@ -2804,6 +2804,20 @@ let test_generic_aliases context =
       reveal_type(x)
     |}
     ["Revealed type [-1]: Revealed type for `x` is `List[Tuple[str, Union[int, str]]]`."];
+  (* `MyList3` resolves to `List[int]`. So, it ignores the extra `str` argument. *)
+  assert_type_errors
+    {|
+      from typing import *
+
+      T = TypeVar("T")
+      MyList1 = List[T]
+      MyList2 = MyList1[int]
+      MyList3 = MyList2
+
+      xs: MyList3[str]
+      reveal_type(xs)
+    |}
+    ["Revealed type [-1]: Revealed type for `xs` is `typing.List[int]`."];
   let sources_exporting_generic_classes =
     [
       {

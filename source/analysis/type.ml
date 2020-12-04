@@ -2447,24 +2447,22 @@ let resolve_aliases ~aliases annotation =
     let visit_children_after = true
 
     let visit _ annotation =
-      let rec resolve annotation =
+      let resolve annotation =
         if Core.Hash_set.mem visited annotation then
           annotation
         else (
           Core.Hash_set.add visited annotation;
           match annotation with
           | Primitive name -> (
-              let result = aliases ?replace_unbound_parameters_with_any:(Some true) name in
-              match result with
-              | Some (TypeAlias alias) -> resolve alias
+              match aliases ?replace_unbound_parameters_with_any:(Some true) name with
+              | Some (TypeAlias alias) -> alias
               | _ -> annotation )
           | Parametric { name; parameters = [Single parameter] } -> (
               (* Don't replace unbound generic parameters with Any. Otherwise, a generic alias Foo
                  (or an import alias for a generic alias) will become Foo[Any] instead of Foo[T]. We
                  will not find any free type variables in Foo[Any] and simply resolve it as
                  Foo[Any]. *)
-              let result = aliases ?replace_unbound_parameters_with_any:(Some false) name in
-              match result with
+              match aliases ?replace_unbound_parameters_with_any:(Some false) name with
               | Some (TypeAlias alias) ->
                   instantiate
                     ~constraints:(function
