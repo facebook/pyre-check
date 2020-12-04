@@ -2438,27 +2438,6 @@ type alias =
 let empty_aliases ?replace_unbound_parameters_with_any:_ _ = None
 
 let resolve_aliases ~aliases annotation =
-  let aliases x =
-    match x with
-    | Primitive name -> (
-        match aliases ?replace_unbound_parameters_with_any:(Some true) name with
-        | Some (TypeAlias alias) -> Some alias
-        | _ -> None )
-    | Parametric { name; parameters = [Single parameter] } -> (
-        (* Don't replace unbound generic parameters with Any. Otherwise, a generic alias Foo (or an
-           import alias for a generic alias) will become Foo[Any] instead of Foo[T]. We will not
-           find any free type variables in Foo[Any] and simply resolve it as Foo[Any]. *)
-        match aliases ?replace_unbound_parameters_with_any:(Some false) name with
-        | Some (TypeAlias alias) ->
-            Some
-              (instantiate
-                 ~constraints:(function
-                   | Variable _ -> Some parameter
-                   | _ -> None)
-                 alias)
-        | _ -> None )
-    | _ -> None
-  in
   let visited = Hash_set.create () in
   let module ResolveTransform = Transform.Make (struct
     type state = unit
@@ -2473,28 +2452,34 @@ let resolve_aliases ~aliases annotation =
           annotation
         else (
           Core.Hash_set.add visited annotation;
-          match aliases annotation, annotation with
-          | Some aliased, _ ->
-              (* We need to fully resolve aliases to aliases before we go on to resolve the aliases
-                 those may contain *)
-              resolve aliased
-          | None, Parametric { name; parameters } -> (
-              let annotation = resolve (Primitive name) in
-              match annotation with
-              | Primitive name -> parametric name parameters
-              | Parametric { name; _ } ->
-                  (* TODO(T44787675): Implement actual generic aliases *)
-                  parametric name parameters
-              | Union elements ->
-                  (* TODO(T44787675): Implement actual generic aliases *)
-                  let replace_parameters = function
-                    | Parametric { name; _ } -> parametric name parameters
-                    | annotation -> annotation
-                  in
-                  Union (List.map elements ~f:replace_parameters)
-              | _ ->
-                  (* This should probably error or something *)
-                  parametric name parameters )
+          match annotation with
+          | Primitive name -> (
+              let result = aliases ?replace_unbound_parameters_with_any:(Some true) name in
+              match result with
+              | Some (TypeAlias alias) -> resolve alias
+              | _ -> annotation )
+          | Parametric { name; parameters = [Single parameter] } -> (
+              (* Don't replace unbound generic parameters with Any. Otherwise, a generic alias Foo
+                 (or an import alias for a generic alias) will become Foo[Any] instead of Foo[T]. We
+                 will not find any free type variables in Foo[Any] and simply resolve it as
+                 Foo[Any]. *)
+              let result = aliases ?replace_unbound_parameters_with_any:(Some false) name in
+              match result with
+              | Some (TypeAlias alias) ->
+                  instantiate
+                    ~constraints:(function
+                      | Variable _ -> Some parameter
+                      | _ -> None)
+                    alias
+              | _ -> annotation )
+          | Parametric { name = alias_name; parameters = alias_parameters } -> (
+              match aliases ?replace_unbound_parameters_with_any:(Some false) alias_name with
+              | Some
+                  (TypeAlias
+                    (Parametric { name = resolved_name; parameters = resolved_parameters }))
+                when List.length resolved_parameters = List.length alias_parameters ->
+                  Parametric { name = resolved_name; parameters = alias_parameters }
+              | _ -> annotation )
           | _ -> annotation )
       in
       let transformed_annotation = resolve annotation in
