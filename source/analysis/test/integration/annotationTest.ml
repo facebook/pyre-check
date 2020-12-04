@@ -2589,6 +2589,29 @@ let test_check_annotated context =
   ()
 
 
+let test_check_union_shorthand context =
+  let assert_type_errors = assert_type_errors ~context in
+  (* String annotations should work correctly with the union shorthand. *)
+  assert_type_errors
+    {|
+      class Foo: ...
+
+      x: int | "Foo"
+      reveal_type(x)
+    |}
+    ["Revealed type [-1]: Revealed type for `x` is `typing.Union[Foo, int]`."];
+  assert_type_errors
+    {|
+      from typing import List
+      class Foo: ...
+
+      x: int | List["Foo"]
+      reveal_type(x)
+    |}
+    ["Revealed type [-1]: Revealed type for `x` is `typing.Union[List[Foo], int]`."];
+  ()
+
+
 let () =
   "annotation"
   >::: [
@@ -2614,5 +2637,6 @@ let () =
          "check_typevar_division" >:: test_check_typevar_division;
          "check_typevar_division_simplify" >:: test_check_typevar_division_simplify;
          "check_annotated" >:: test_check_annotated;
+         "check_union_shorthand" >:: test_check_union_shorthand;
        ]
   |> Test.run

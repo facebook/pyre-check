@@ -3271,6 +3271,7 @@ let preprocess_phase0 source =
 let preprocess_phase1 source =
   source
   |> populate_unbound_names
+  |> replace_union_shorthand
   |> qualify
   |> replace_lazy_import
   |> expand_string_annotations
@@ -3279,7 +3280,6 @@ let preprocess_phase1 source =
   |> expand_sqlalchemy_declarative_base
   |> expand_named_tuples
   |> expand_new_types
-  |> replace_union_shorthand
   |> populate_nesting_defines
   |> populate_captures
 
