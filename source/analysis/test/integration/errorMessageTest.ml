@@ -184,8 +184,7 @@ let test_show_error_traces context =
     [
       "Incompatible variable type [9]: a is declared to have type `typing.List[float]` but is used \
        as type `typing.List[int]`. Redeclare `a` on line 6 if you wish to override the previously \
-       declared type. See \
-       https://pyre-check.org/docs/errors.html#list-and-dictionary-mismatches-with-subclassing for \
+       declared type. See https://pyre-check.org/docs/errors#covariance-and-contravariance for \
        mutable container errors.";
     ];
   assert_type_errors
@@ -198,8 +197,8 @@ let test_show_error_traces context =
     [
       "Incompatible return type [7]: Expected `typing.List[float]` but got `typing.List[int]`. \
        Type `typing.List[float]` expected on line 5, specified on line 3. See \
-       https://pyre-check.org/docs/errors.html#list-and-dictionary-mismatches-with-subclassing for \
-       mutable container errors.";
+       https://pyre-check.org/docs/errors#covariance-and-contravariance for mutable container \
+       errors.";
     ];
   assert_type_errors
     {|
