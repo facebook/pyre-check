@@ -2414,6 +2414,52 @@ type alias =
 
 let empty_aliases ?replace_unbound_parameters_with_any:_ _ = None
 
+let resolve_aliases ~aliases annotation =
+  let visited = Hash_set.create () in
+  let module ResolveTransform = Transform.Make (struct
+    type state = unit
+
+    let visit_children_before _ _ = false
+
+    let visit_children_after = true
+
+    let visit _ annotation =
+      let rec resolve annotation =
+        if Core.Hash_set.mem visited annotation then
+          annotation
+        else (
+          Core.Hash_set.add visited annotation;
+          match aliases annotation, annotation with
+          | Some aliased, _ ->
+              (* We need to fully resolve aliases to aliases before we go on to resolve the aliases
+                 those may contain *)
+              resolve aliased
+          | None, Parametric { name; parameters } -> (
+              let annotation = resolve (Primitive name) in
+              match annotation with
+              | Primitive name -> parametric name parameters
+              | Parametric { name; _ } ->
+                  (* TODO(T44787675): Implement actual generic aliases *)
+                  parametric name parameters
+              | Union elements ->
+                  (* TODO(T44787675): Implement actual generic aliases *)
+                  let replace_parameters = function
+                    | Parametric { name; _ } -> parametric name parameters
+                    | annotation -> annotation
+                  in
+                  Union (List.map elements ~f:replace_parameters)
+              | _ ->
+                  (* This should probably error or something *)
+                  parametric name parameters )
+          | _ -> annotation )
+      in
+      let transformed_annotation = resolve annotation in
+      { Transform.transformed_annotation; new_state = () }
+  end)
+  in
+  snd (ResolveTransform.visit () annotation)
+
+
 let rec create_logic ~aliases ~variable_aliases { Node.value = expression; _ } =
   let substitute_ordered_types = function
     | Primitive "..." -> Some Record.OrderedTypes.Any
@@ -2440,51 +2486,7 @@ let rec create_logic ~aliases ~variable_aliases { Node.value = expression; _ } =
 
   let result =
     let create_logic = create_logic ~aliases ~variable_aliases in
-    let resolve_aliases annotation =
-      let visited = Hash_set.create () in
-      let module ResolveTransform = Transform.Make (struct
-        type state = unit
-
-        let visit_children_before _ _ = false
-
-        let visit_children_after = true
-
-        let visit _ annotation =
-          let rec resolve annotation =
-            if Core.Hash_set.mem visited annotation then
-              annotation
-            else (
-              Core.Hash_set.add visited annotation;
-              match aliases annotation, annotation with
-              | Some aliased, _ ->
-                  (* We need to fully resolve aliases to aliases before we go on to resolve the
-                     aliases those may contain *)
-                  resolve aliased
-              | None, Parametric { name; parameters } -> (
-                  let annotation = resolve (Primitive name) in
-                  match annotation with
-                  | Primitive name -> parametric name parameters
-                  | Parametric { name; _ } ->
-                      (* TODO(T44787675): Implement actual generic aliases *)
-                      parametric name parameters
-                  | Union elements ->
-                      (* TODO(T44787675): Implement actual generic aliases *)
-                      let replace_parameters = function
-                        | Parametric { name; _ } -> parametric name parameters
-                        | annotation -> annotation
-                      in
-                      Union (List.map elements ~f:replace_parameters)
-                  | _ ->
-                      (* This should probably error or something *)
-                      parametric name parameters )
-              | _ -> annotation )
-          in
-          let transformed_annotation = resolve annotation in
-          { Transform.transformed_annotation; new_state = () }
-      end)
-      in
-      snd (ResolveTransform.visit () annotation)
-    in
+    let resolve_aliases = resolve_aliases ~aliases in
     let rec is_typing_callable = function
       | Expression.Name
           (Name.Attribute
