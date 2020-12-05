@@ -3,6 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import dataclasses
 import json
 import logging
 from pathlib import Path
@@ -49,6 +50,11 @@ def parse_type_error_response(response: str) -> List[error.Error]:
         raise InvalidServerResponse(message) from parsing_error
 
 
+def _relativize_error_path(error: error.Error) -> error.Error:
+    relativized_path = error.path.relative_to(Path.cwd())
+    return dataclasses.replace(error, path=relativized_path)
+
+
 def _display_type_errors(socket_path: Path) -> None:
     with server_connection.connect_in_text_mode(socket_path) as (
         input_channel,
@@ -57,7 +63,9 @@ def _display_type_errors(socket_path: Path) -> None:
         # The empty list argument means we want all type errors from the server.
         output_channel.write('["DisplayTypeError", []]\n')
         type_errors = parse_type_error_response(input_channel.readline())
-        error.print_errors(type_errors, output="text")
+        error.print_errors(
+            [_relativize_error_path(error) for error in type_errors], output="text"
+        )
 
 
 def _show_progress_and_display_type_errors(log_path: Path, socket_path: Path) -> None:
