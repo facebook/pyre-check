@@ -13,6 +13,12 @@ open NewServerTest
 module Path = Pyre.Path
 
 let test_basic client =
+  let test_path, test2_path =
+    Client.current_server_state client
+    |> fun { ServerState.server_configuration = { ServerConfiguration.global_root; _ }; _ } ->
+    ( Path.create_relative ~root:global_root ~relative:"test.py",
+      Path.create_relative ~root:global_root ~relative:"test2.py" )
+  in
   (* Test if the `GetInfo` request works properly. *)
   let request = Request.GetInfo in
   RequestHandler.process_request ~state:(Client.current_server_state client) request
@@ -28,7 +34,7 @@ let test_basic client =
           "column", `Int 2;
           "stop_line", `Int 3;
           "stop_column", `Int 14;
-          "path", `String "test.py";
+          "path", `String (Path.absolute test_path);
           "code", `Int 7;
           "name", `String "Incompatible return type";
           "description", `String "Incompatible return type [7]: Expected `str` but got `int`.";
@@ -51,7 +57,7 @@ let test_basic client =
           "column", `Int 0;
           "stop_line", `Int 2;
           "stop_column", `Int 3;
-          "path", `String "test2.py";
+          "path", `String (Path.absolute test2_path);
           "code", `Int 9;
           "name", `String "Incompatible variable type";
           ( "description",
@@ -77,11 +83,6 @@ let test_basic client =
     ~expected:(Response.TypeErrors [error_in_test; error_in_test2])
   >>= fun () ->
   (* Query type errors for `test.py`. *)
-  let test_path =
-    Client.current_server_state client
-    |> fun { ServerState.server_configuration = { ServerConfiguration.global_root; _ }; _ } ->
-    Path.create_relative ~root:global_root ~relative:"test.py"
-  in
   Client.assert_response
     client
     ~request:(Request.DisplayTypeError [Path.absolute test_path])
@@ -179,6 +180,12 @@ let watchman_update_response ~root file_names =
 
 let test_watchman_integration ~watchman_mailbox client =
   (* Test if we can get the initial type errors. *)
+  let global_root =
+    Client.current_server_state client
+    |> fun { ServerState.server_configuration = { ServerConfiguration.global_root; _ }; _ } ->
+    global_root
+  in
+  let test_path = Path.create_relative ~root:global_root ~relative:"test.py" in
   let initial_error =
     Analysis.AnalysisError.Instantiated.of_yojson
       (`Assoc
@@ -187,7 +194,7 @@ let test_watchman_integration ~watchman_mailbox client =
           "column", `Int 2;
           "stop_line", `Int 3;
           "stop_column", `Int 14;
-          "path", `String "test.py";
+          "path", `String (Path.absolute test_path);
           "code", `Int 7;
           "name", `String "Incompatible return type";
           "description", `String "Incompatible return type [7]: Expected `str` but got `int`.";
@@ -208,12 +215,6 @@ let test_watchman_integration ~watchman_mailbox client =
     ~expected:(Response.TypeErrors [initial_error])
   >>= fun () ->
   (* Update an existing file and send a watchman response. *)
-  let global_root =
-    Client.current_server_state client
-    |> fun { ServerState.server_configuration = { ServerConfiguration.global_root; _ }; _ } ->
-    global_root
-  in
-  let test_path = Path.create_relative ~root:global_root ~relative:"test.py" in
   let new_test_content =
     Test.trim_extra_indentation {|
        def foo(x: int) -> int:
@@ -248,7 +249,7 @@ let test_watchman_integration ~watchman_mailbox client =
           "column", `Int 0;
           "stop_line", `Int 1;
           "stop_column", `Int 3;
-          "path", `String "test2.py";
+          "path", `String (Path.absolute test2_path);
           "code", `Int 9;
           "name", `String "Incompatible variable type";
           ( "description",
@@ -338,6 +339,16 @@ let test_on_server_socket_ready context =
 
 
 let test_subscription_responses client =
+  let {
+    ServerState.subscriptions;
+    socket_path;
+    server_configuration = { ServerConfiguration.global_root; _ };
+    _;
+  }
+    =
+    Client.current_server_state client
+  in
+  let test_path = Path.create_relative ~root:global_root ~relative:"test.py" in
   let error =
     Analysis.AnalysisError.Instantiated.of_yojson
       (`Assoc
@@ -346,7 +357,7 @@ let test_subscription_responses client =
           "column", `Int 2;
           "stop_line", `Int 3;
           "stop_column", `Int 14;
-          "path", `String "test.py";
+          "path", `String (Path.absolute test_path);
           "code", `Int 7;
           "name", `String "Incompatible return type";
           "description", `String "Incompatible return type [7]: Expected `str` but got `int`.";
@@ -366,15 +377,6 @@ let test_subscription_responses client =
     ~subscription:(Subscription.Request.SubscribeToTypeErrors "foo")
     ~expected_response:(Response.TypeErrors [error])
   >>= fun () ->
-  let {
-    ServerState.subscriptions;
-    socket_path;
-    server_configuration = { ServerConfiguration.global_root; _ };
-    _;
-  }
-    =
-    Client.current_server_state client
-  in
   (* Verifies that we've managed to record the subscription in the server state. *)
   assert_bool "Subscription `foo` recorded" (Hashtbl.mem subscriptions "foo");
 
@@ -383,7 +385,6 @@ let test_subscription_responses client =
      already been used to receive subscriptions. *)
   let socket_address = Lwt_unix.ADDR_UNIX (Pyre.Path.absolute socket_path) in
   let send_incremental_update (_, output_channel) =
-    let test_path = Path.create_relative ~root:global_root ~relative:"test.py" in
     Request.IncrementalUpdate [Path.absolute test_path]
     |> Request.to_yojson
     |> Yojson.Safe.to_string

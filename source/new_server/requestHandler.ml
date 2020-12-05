@@ -21,10 +21,11 @@ let instantiate_error
     ~ast_environment
     error
   =
-  AnalysisError.instantiate
-    ~show_error_traces
-    ~lookup:(AstEnvironment.ReadOnly.get_real_path_relative ~configuration ast_environment)
-    error
+  let lookup qualifier =
+    AstEnvironment.ReadOnly.get_real_path ~configuration ast_environment qualifier
+    |> Option.map ~f:Path.absolute
+  in
+  AnalysisError.instantiate ~show_error_traces ~lookup error
 
 
 let instantiate_errors ~configuration ~ast_environment errors =
