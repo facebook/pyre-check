@@ -8,6 +8,7 @@ import dataclasses
 import json
 import logging
 import sys
+from pathlib import Path
 from typing import Any, Dict, Sequence, Union
 
 import click
@@ -27,7 +28,7 @@ class ErrorParsingFailure(Exception):
 class Error:
     line: int
     column: int
-    path: str
+    path: Path
     code: int
     name: str
     description: str
@@ -40,7 +41,7 @@ class Error:
             return Error(
                 line=error_json["line"],
                 column=error_json["column"],
-                path=error_json["path"],
+                path=Path(error_json["path"]),
                 code=error_json["code"],
                 name=error_json["name"],
                 description=error_json["description"],
@@ -66,7 +67,7 @@ class Error:
         return dataclasses.asdict(self)
 
     def to_text(self) -> str:
-        path = click.style(self.path, fg="red")
+        path = click.style(str(self.path), fg="red")
         line = click.style(str(self.line), fg="yellow")
         column = click.style(str(self.column), fg="yellow")
         return f"{path}:{line}:{column} {self.description}"
@@ -113,14 +114,12 @@ class LegacyError:
         return key + " " + self.error.description
 
     def __key(self) -> str:
-        return (
-            self.error.path + ":" + str(self.error.line) + ":" + str(self.error.column)
-        )
+        return f"{self.error.path}:{self.error.line}:{self.error.column}"
 
     def _key_with_color(self) -> str:
         return (
             Color.RED
-            + self.error.path
+            + str(self.error.path)
             + Format.CLEAR
             + ":"
             + Color.YELLOW
@@ -155,7 +154,7 @@ class LegacyError:
         return error_mapping
 
     def to_text(self) -> str:
-        path = click.style(self.error.path, fg="red")
+        path = click.style(str(self.error.path), fg="red")
         line = click.style(str(self.error.line), fg="yellow")
         column = click.style(str(self.error.column), fg="yellow")
         return f"{path}:{line}:{column} {self.error.description}"

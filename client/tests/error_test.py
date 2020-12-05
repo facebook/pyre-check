@@ -6,6 +6,7 @@
 # pyre-unsafe
 
 import unittest
+from pathlib import Path
 from typing import Any, Dict
 from unittest.mock import patch
 
@@ -50,7 +51,7 @@ class ErrorTest(unittest.TestCase):
             expected=Error(
                 line=1,
                 column=1,
-                path="test.py",
+                path=Path("test.py"),
                 code=1,
                 name="Some name",
                 description="Some description",
@@ -60,7 +61,7 @@ class ErrorTest(unittest.TestCase):
             {
                 "line": 2,
                 "column": 2,
-                "path": "test.py",
+                "path": Path("test.py"),
                 "code": 2,
                 "name": "Some name",
                 "description": "Some description",
@@ -69,7 +70,7 @@ class ErrorTest(unittest.TestCase):
             expected=Error(
                 line=2,
                 column=2,
-                path="test.py",
+                path=Path("test.py"),
                 code=2,
                 name="Some name",
                 description="Some description",
@@ -80,7 +81,7 @@ class ErrorTest(unittest.TestCase):
             {
                 "line": 3,
                 "column": 3,
-                "path": "test.py",
+                "path": Path("test.py"),
                 "code": 3,
                 "name": "Some name",
                 "description": "Some description",
@@ -89,7 +90,7 @@ class ErrorTest(unittest.TestCase):
             expected=Error(
                 line=3,
                 column=3,
-                path="test.py",
+                path=Path("test.py"),
                 code=3,
                 name="Some name",
                 description="Some description",

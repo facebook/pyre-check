@@ -4,6 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import json
+from pathlib import Path
 from typing import Iterable
 
 import testslide
@@ -62,7 +63,7 @@ class IncrementalTest(testslide.TestCase):
                 Error(
                     line=1,
                     column=1,
-                    path="test.py",
+                    path=Path("test.py"),
                     code=42,
                     name="Fake name",
                     description="Fake description",
@@ -70,7 +71,7 @@ class IncrementalTest(testslide.TestCase):
                 Error(
                     line=2,
                     column=2,
-                    path="test.py",
+                    path=Path("test.py"),
                     code=43,
                     name="Fake name 2",
                     description="Fake description 2",
