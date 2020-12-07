@@ -6,4 +6,4 @@
 .PHONY: all
 all:
 	# Pysa integration test.
-	PYRE_BINARY="$(shell pwd)/../../_build/default/main.exe" ./run.py
+	PYRE_BINARY="$(shell pwd)/../../source/_build/default/main.exe" ./run.py

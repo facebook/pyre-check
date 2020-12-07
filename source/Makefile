@@ -21,7 +21,7 @@ server_integration_test: all
 
 .PHONY: stubs_integration_test
 stubs_integration_test: all
-	PYRE_BINARY="$(shell pwd)/_build/default/main.exe" make -C ../stubs/integration_test
+	make -C ../stubs/integration_test
 
 .PHONY: pysa_cache_test
 pysa_cache_test: all
