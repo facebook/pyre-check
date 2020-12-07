@@ -161,8 +161,49 @@
         ]
       }
     ],
-    "sinks": [],
+    "sinks": [
+      {
+        "port": "formal(another)",
+        "taint": [
+          {
+            "root": {
+              "filename": "builtins.pyi",
+              "line": -1,
+              "start": -1,
+              "end": -1
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "dataclass_taint.WeirdDataClass.bad_sink",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-type": "scalar" } ]
+          }
+        ]
+      }
+    ],
     "tito": [
+      {
+        "port": "formal(another)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "[bad_sink]" } ],
+            "features": [ { "always-type": "scalar" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(bad_sink)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "[bad_sink]" } ]
+          }
+        ]
+      },
       {
         "port": "formal(bad)",
         "taint": [
@@ -179,6 +220,15 @@
           {
             "decl": null,
             "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(bad)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "[bad]" } ]
           }
         ]
       }
@@ -224,6 +274,27 @@
     ],
     "sinks": [
       {
+        "port": "formal(another)",
+        "taint": [
+          {
+            "root": {
+              "filename": "builtins.pyi",
+              "line": -1,
+              "start": -1,
+              "end": -1
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "dataclass_taint.WeirdDataClass.bad_sink",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-type": "scalar" } ]
+          }
+        ]
+      },
+      {
         "port": "formal(bad)",
         "taint": [
           {
@@ -245,6 +316,25 @@
       }
     ],
     "tito": [
+      {
+        "port": "formal(another)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "[bad_sink]" } ],
+            "features": [ { "always-type": "scalar" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(bad_sink)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "[bad_sink]" } ]
+          }
+        ]
+      },
       {
         "port": "formal(bad)",
         "taint": [
@@ -356,7 +446,7 @@
           {
             "root": {
               "filename": "dataclass_taint.py",
-              "line": 43,
+              "line": 49,
               "start": 23,
               "end": 26
             },
@@ -372,8 +462,49 @@
         ]
       }
     ],
-    "sinks": [],
+    "sinks": [
+      {
+        "port": "formal(another)",
+        "taint": [
+          {
+            "root": {
+              "filename": "dataclass_taint.py",
+              "line": 51,
+              "start": 8,
+              "end": 26
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "dataclass_taint.WeirdDataClass.bad_sink",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-type": "scalar" } ]
+          }
+        ]
+      }
+    ],
     "tito": [
+      {
+        "port": "formal(another)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "[bad_sink]" } ],
+            "features": [ { "always-type": "scalar" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(bad_sink)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "[bad_sink]" } ]
+          }
+        ]
+      },
       {
         "port": "formal(bad)",
         "taint": [
@@ -390,6 +521,15 @@
           {
             "decl": null,
             "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(bad)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "[bad]" } ]
           }
         ]
       }
@@ -540,9 +680,9 @@
             "call": {
               "position": {
                 "filename": "dataclass_taint.py",
-                "line": 48,
+                "line": 55,
                 "start": 11,
-                "end": 32
+                "end": 43
               },
               "resolves_to": [ "dataclass_taint.WeirdDataClass.__init__" ],
               "port": "result[bad]",

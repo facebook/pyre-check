@@ -39,10 +39,17 @@ def issue_in_dataclass_constructor() -> None:
 
 
 @dataclass
+# pyre-ignore[13]: Uninitialized attributes.
 class WeirdDataClass:
-    def __init__(self, bad: int) -> None:
+    # Declare the attributes because Pysa complains when specifying an
+    # attribute as a sink.
+    bad: int
+    bad_sink: int
+
+    def __init__(self, bad: int, another: int) -> None:
         object.__setattr__(self, "bad", bad)
+        object.__setattr__(self, "bad_sink", another)
 
 
 def test_weird_dataclass_taint() -> WeirdDataClass:
-    return WeirdDataClass(bad=1)
+    return WeirdDataClass(bad=1, another=2)

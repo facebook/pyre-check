@@ -703,8 +703,8 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
        arguments = [];
       } ->
           analyze_expression ~resolution ~taint ~state ~expression:base
-      (* We special object.__setattr__, which is sometimes used in order to work around dataclasses
-         being frozen post-initialization. *)
+      (* We special-case object.__setattr__, which is sometimes used in order to work around
+         dataclasses being frozen post-initialization. *)
       | {
        callee =
          {
@@ -716,13 +716,14 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                    attribute = "__setattr__";
                    _;
                  });
-           _;
+           location;
          };
        arguments =
          [
            { Call.Argument.value = self; name = None };
            {
-             Call.Argument.value = { Node.value = Expression.String _; _ } as attribute;
+             Call.Argument.value =
+               { Node.value = Expression.String { value = attribute; kind = String }; _ };
              name = None;
            };
            { Call.Argument.value; name = None };
@@ -730,8 +731,11 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       } ->
           analyze_assignment
             ~resolution
-            ~target:self
-            ~fields:[AccessPath.get_index attribute]
+            ~target:
+              {
+                Node.value = Name (Name.Attribute { base = self; attribute; special = true });
+                location;
+              }
             ~value
             state
       (* `getattr(a, "field", default)` should evaluate to the join of `a.field` and `default`. *)
