@@ -253,7 +253,7 @@ def _create_configuration_with_retry(
             "Cannot determine which recent local root to rerun. "
         )
 
-    LOG.warning(f"Restarting pyre under local root `{local_root_for_rerun}`...")
+    LOG.warning(f"Running pyre under local root `{local_root_for_rerun}`...")
     LOG.warning(
         f"Hint: To avoid this prompt, run `pyre -l {local_root_for_rerun}` "
         f"or `cd {local_root_for_rerun} && pyre`."
