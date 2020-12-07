@@ -42,7 +42,7 @@ class ExpandTargetCoverageTest(unittest.TestCase):
         open_mock,
     ) -> None:
         arguments = MagicMock()
-        arguments.subdirectory = "subdirectory"
+        arguments.local_configuration = "subdirectory"
         arguments.lint = False
         arguments.fixme_threshold = None
         arguments.no_commit = False
