@@ -16,7 +16,6 @@
   --ifm-hero-text-color: #ffffff;
   --ifm-font-color-base-inverse: rgb(40,29,29);
   --ifm-footer-color: #c25725;
-  --ifm-footer-padding-vertical: -10px;
   --ifm-navbar-background-color: rgb(40, 29, 29);
   --ifm-footer-color:rgb(40, 29, 29);
   --ifm-footer-background-color:rgb(40, 29, 29);
@@ -27,11 +26,6 @@
   --ifm-menu-color-background-active:rgba(0, 0, 0, 0.05);
   --ifm-footer-color:#5e5e5e;
   --ifm-container-width: 1300px;
-}
-
-.footer {
-  height: 110px;
-  width: 100%;
 }
 
 .navbar__link--active {

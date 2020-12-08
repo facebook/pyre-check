@@ -49,7 +49,8 @@ module.exports = {
           // Sidebars file relative to website dir.
           sidebarPath: require.resolve('./sidebars.js'),
           // Where to point users when they click "Edit this page"
-          editUrl: 'https://github.com/facebook/pyre-check/tree/master/documentation/website',
+          editUrl:
+            'https://github.com/facebook/pyre-check/tree/master/documentation/website',
         },
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
@@ -92,6 +93,26 @@ module.exports = {
         src: 'https://docusaurus.io/img/oss_logo.png',
         href: 'https://opensource.facebook.com/',
       },
+      links: [
+        {
+          title: 'Legal',
+          // Please do not remove the privacy and terms, it's a legal requirement.
+          items: [
+            {
+              label: 'Privacy',
+              href: 'https://opensource.facebook.com/legal/privacy/',
+              target: '_blank',
+              rel: 'noreferrer noopener',
+            },
+            {
+              label: 'Terms',
+              href: 'https://opensource.facebook.com/legal/terms/',
+              target: '_blank',
+              rel: 'noreferrer noopener',
+            },
+          ],
+        },
+      ],
       copyright: `Copyright &#169; ${new Date().getFullYear()} Facebook, Inc.`,
     },
     image: 'img/docusaurus.png',
