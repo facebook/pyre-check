@@ -34,7 +34,11 @@ if __name__ == "__main__":
     # Extract typeshed
     with tempfile.TemporaryDirectory() as directory:
         logging.info(f"Extracting typeshed into `{directory}`...")
-        subprocess.check_call(["unzip", "../typeshed/typeshed.zip", "-d", directory])
+        subprocess.check_call(
+            ["unzip", "../typeshed/typeshed.zip", "-d", directory],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
 
         logging.info("Running `pyre analyze`")
         output = subprocess.check_output(
