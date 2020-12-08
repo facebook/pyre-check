@@ -80,6 +80,11 @@ end = struct
       ~relative:"pysa.cache"
 
 
+  let invalidate_cache_file ~path =
+    Memory.reset_shared_memory ();
+    Path.remove path
+
+
   let is_pysa_model path = String.is_suffix ~suffix:".pysa" (Path.get_suffix_path path)
 
   let is_taint_config path = String.is_suffix ~suffix:"taint.config" (Path.absolute path)
@@ -127,14 +132,17 @@ end = struct
           Some environment
       | _ ->
           Log.info "Changes to source files detected, existing cache file has been invalidated.";
-          Memory.reset_shared_memory ();
-          Path.remove path;
+          invalidate_cache_file ~path;
           None
     with
     | error when Path.file_exists path ->
         Log.error
           "Error loading cached type environment from shared memory: %s"
           (Exn.to_string error);
+        (* Special case to deal with instances where the type environment doesn't load successfully
+           but the cached callables and overrides do, leading to odd behavior. If the type
+           environment doesn't load, we should invalidate the entire cache file. *)
+        invalidate_cache_file ~path;
         None
     | _ -> None
 
