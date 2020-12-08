@@ -19,7 +19,7 @@ jobs:
       run: |
         cd documentation/website
         yarn install
-        yatn run build
+        yarn run build
       id: build
     - name: Get output time
       run: echo "The time was ${{ steps.build.outputs.time }}"
