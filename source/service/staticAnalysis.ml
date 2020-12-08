@@ -80,6 +80,10 @@ end = struct
       ~relative:"pysa.cache"
 
 
+  let is_pysa_model path = String.is_suffix ~suffix:".pysa" (Path.get_suffix_path path)
+
+  let is_taint_config path = String.is_suffix ~suffix:"taint.config" (Path.absolute path)
+
   let init_shared_memory ~configuration =
     if not !is_initialized then (
       let path = get_cache_path ~configuration in
@@ -114,6 +118,7 @@ end = struct
           ~configuration
           ~module_tracker
           ~ast_environment:(AstEnvironment.read_only ast_environment)
+        |> List.filter ~f:(fun path -> not (is_pysa_model path || is_taint_config path))
       in
       match changed_paths with
       | [] ->
