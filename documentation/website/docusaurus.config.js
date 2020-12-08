@@ -31,7 +31,6 @@ module.exports = {
   favicon: 'img/favicon.ico',
   scripts: ['https://buttons.github.io/buttons.js'],
   plugins: [
-    require.resolve('docusaurus-plugin-internaldocs-fb'),
     [
       '@docusaurus/plugin-client-redirects',
       {
@@ -41,7 +40,7 @@ module.exports = {
   ],
   presets: [
     [
-      '@docusaurus/preset-classic',
+      require.resolve('docusaurus-plugin-internaldocs-fb/docusaurus-preset'),
       {
         docs: {
           // Docs folder path relative to website dir.
