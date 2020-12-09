@@ -258,7 +258,8 @@ let initialize_server_state
           let detailed_message =
             match exn with
             | Watchman.ConnectionError message
-            | Watchman.QueryError message ->
+            | Watchman.QueryError message
+            | SavedState.SavedStateQueryFailure message ->
                 message
             | _ -> Exn.to_string exn
           in

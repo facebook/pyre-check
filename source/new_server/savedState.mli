@@ -20,6 +20,8 @@ module Setting : sig
   }
 end
 
+exception SavedStateQueryFailure of string
+
 module Queried : sig
   type t = {
     bucket: string;
