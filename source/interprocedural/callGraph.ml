@@ -776,13 +776,33 @@ let call_graph_of_define
               ~state:(ref { DefineFixpoint.resolution; assignment_target = None })
               value))
   in
+  let deduplicate callees =
+    let deduplicate_targets targets = List.dedup_and_sort ~compare:Callable.compare targets in
+    let deduplicate_regular_targets { targets; implicit_self; collapse_tito } =
+      { targets = deduplicate_targets targets; implicit_self; collapse_tito }
+    in
+    match callees with
+    | RegularTargets regular_targets -> RegularTargets (deduplicate_regular_targets regular_targets)
+    | ConstructorTargets { new_targets; init_targets } ->
+        ConstructorTargets
+          {
+            new_targets = deduplicate_targets new_targets;
+            init_targets = deduplicate_targets init_targets;
+          }
+    | HigherOrderTargets { higher_order_function; callable_argument = index, callable_argument } ->
+        HigherOrderTargets
+          {
+            higher_order_function = deduplicate_regular_targets higher_order_function;
+            callable_argument = index, deduplicate_regular_targets callable_argument;
+          }
+  in
 
   DefineFixpoint.forward ~cfg:(Cfg.create define) ~initial:() |> ignore;
   Location.Table.to_alist callees_at_location
   |> List.map ~f:(fun (key, value) ->
          match value with
-         | Synthetic map -> key, SyntheticCallees map
-         | Named { callees; _ } -> key, Callees callees)
+         | Synthetic map -> key, SyntheticCallees (Core.String.Map.Tree.map ~f:deduplicate map)
+         | Named { callees; _ } -> key, Callees (deduplicate callees))
   |> Location.Map.of_alist_exn
 
 

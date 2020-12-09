@@ -976,6 +976,40 @@ let test_call_graph_of_define context =
                      `Method { Callable.class_name = "test.D"; method_name = "foo" };
                    ];
                }) );
+      ];
+  assert_call_graph_of_define
+    ~source:
+      {|
+        class C:
+          @classmethod
+          def foo(cls):
+            pass
+        d = {
+          "a": C,
+          "b": C,
+        }
+        def calls_d_method(s: str):
+          d[s].foo()
+      |}
+    ~define_name:"test.calls_d_method"
+    ~expected:
+      [
+        ( "11:2-11:6",
+          Callees
+            (CallGraph.RegularTargets
+               {
+                 CallGraph.implicit_self = true;
+                 collapse_tito = true;
+                 targets = [`Method { Callable.class_name = "dict"; method_name = "__getitem__" }];
+               }) );
+        ( "11:2-11:12",
+          Callees
+            (CallGraph.RegularTargets
+               {
+                 CallGraph.implicit_self = true;
+                 collapse_tito = true;
+                 targets = [`Method { Callable.class_name = "test.C"; method_name = "foo" }];
+               }) );
       ]
 
 
