@@ -258,7 +258,11 @@ let test_sanitize context =
           ~kind:`Function
           ~analysis_mode:
             (Mode.Sanitize
-               { Mode.sources = Some Mode.AllSources; sinks = Some Mode.AllSinks; tito = true })
+               {
+                 Mode.sources = Some Mode.AllSources;
+                 sinks = Some Mode.AllSinks;
+                 tito = Some AllTito;
+               })
           "test.taint";
       ]
     ();
@@ -272,7 +276,7 @@ let test_sanitize context =
         outcome
           ~kind:`Function
           ~analysis_mode:
-            (Mode.Sanitize { Mode.sources = Some Mode.AllSources; sinks = None; tito = false })
+            (Mode.Sanitize { Mode.sources = Some Mode.AllSources; sinks = None; tito = None })
           "test.taint";
       ]
     ();
@@ -286,7 +290,7 @@ let test_sanitize context =
         outcome
           ~kind:`Function
           ~analysis_mode:
-            (Mode.Sanitize { Mode.sources = None; sinks = Some Mode.AllSinks; tito = false })
+            (Mode.Sanitize { Mode.sources = None; sinks = Some Mode.AllSinks; tito = None })
           "test.taint";
       ]
     ();
@@ -299,7 +303,7 @@ let test_sanitize context =
       [
         outcome
           ~kind:`Function
-          ~analysis_mode:(Mode.Sanitize { Mode.sources = None; sinks = None; tito = true })
+          ~analysis_mode:(Mode.Sanitize { Mode.sources = None; sinks = None; tito = Some AllTito })
           "test.taint";
       ]
     ();
@@ -315,7 +319,8 @@ let test_sanitize context =
         outcome
           ~kind:`Function
           ~analysis_mode:
-            (Mode.Sanitize { Mode.sources = Some Mode.AllSources; sinks = None; tito = true })
+            (Mode.Sanitize
+               { Mode.sources = Some Mode.AllSources; sinks = None; tito = Some AllTito })
           "test.taint";
       ]
     ();
@@ -330,7 +335,8 @@ let test_sanitize context =
         outcome
           ~kind:`Function
           ~analysis_mode:
-            (Mode.Sanitize { Mode.sources = Some Mode.AllSources; sinks = None; tito = true })
+            (Mode.Sanitize
+               { Mode.sources = Some Mode.AllSources; sinks = None; tito = Some AllTito })
           "test.taint";
       ]
     ();
@@ -348,7 +354,7 @@ let test_sanitize context =
                {
                  Mode.sources = Some (Mode.SpecificSources [Sources.NamedSource "Test"]);
                  sinks = None;
-                 tito = false;
+                 tito = None;
                })
           "test.taint";
       ]
@@ -371,7 +377,59 @@ let test_sanitize context =
                      (Mode.SpecificSources
                         [Sources.NamedSource "UserControlled"; Sources.NamedSource "Test"]);
                  sinks = None;
-                 tito = false;
+                 tito = None;
+               })
+          "test.taint";
+      ]
+    ();
+  assert_model
+    ~model_source:
+      {|
+      @Sanitize(TaintInTaintOut[TaintSource[Test]])
+      def test.taint(x): ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~analysis_mode:
+            (Mode.Sanitize
+               {
+                 Mode.sources = None;
+                 sinks = None;
+                 tito =
+                   Some
+                     (Mode.SpecificTito
+                        {
+                          sanitized_tito_sources = [Sources.NamedSource "Test"];
+                          sanitized_tito_sinks = [];
+                        });
+               })
+          "test.taint";
+      ]
+    ();
+  assert_model
+    ~model_source:
+      {|
+      @Sanitize(TaintInTaintOut[TaintSink[Test]])
+      def test.taint(x): ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~analysis_mode:
+            (Mode.Sanitize
+               {
+                 Mode.sources = None;
+                 sinks = None;
+                 tito =
+                   Some
+                     (Mode.SpecificTito
+                        {
+                          sanitized_tito_sources = [];
+                          sanitized_tito_sinks = [Sinks.NamedSink "Test"];
+                        });
                })
           "test.taint";
       ]
@@ -1415,9 +1473,31 @@ let test_invalid_models context =
       @Sanitize(TaintInTaintOut[LocalReturn])
       def test.foo(x): ...
     |}
-    ~expect:
-      "Invalid model for `test.foo`: `ModelParser.T.Tito {tito = Sinks.T.LocalReturn; breadcrumbs \
-       = []; path = []}` is not a supported taint annotation for sanitizers."
+    ~expect:"Invalid model for `test.foo`: Unrecognized taint annotation `LocalReturn`"
+    ();
+
+  (* Test source- and sink- specific tito parsing. *)
+  assert_valid_model
+    ~source:{|
+      def foo(x):
+        ...
+    |}
+    ~model_source:
+      {|
+      @Sanitize(TaintInTaintOut[TaintSource[A]])
+      def test.foo(x): ...
+    |}
+    ();
+  assert_valid_model
+    ~source:{|
+      def foo(x):
+        ...
+    |}
+    ~model_source:
+      {|
+      @Sanitize(TaintInTaintOut[TaintSink[Test]])
+      def test.foo(x): ...
+    |}
     ();
   assert_valid_model
     ~source:{|

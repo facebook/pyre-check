@@ -238,7 +238,7 @@ let global_is_sanitized ~resolution ~expression =
         {
           sources = Some TaintResult.Mode.AllSources;
           sinks = Some TaintResult.Mode.AllSinks;
-          tito = true;
+          tito = Some AllTito;
         } ->
         true
     | _ -> false

@@ -88,6 +88,25 @@
 {
   "kind": "model",
   "data": {
+    "callable": "sanitize.sanitize_a_tito",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "sanitize.sanitize_b_sink",
     "sources": [],
     "sinks": [

@@ -189,6 +189,18 @@ let signature_is_property signature =
   String.Set.exists decorators ~f:(Define.Signature.has_decorator signature)
 
 
+let base_name expression =
+  match expression with
+  | {
+   Node.value =
+     Expression.Name
+       (Name.Attribute { base = { Node.value = Name (Name.Identifier identifier); _ }; _ });
+   _;
+  } ->
+      Some identifier
+  | _ -> None
+
+
 let rec parse_annotations ~configuration ~parameters annotation =
   let get_parameter_position name =
     let matches_parameter_name index { Node.value = parameter; _ } =
@@ -218,17 +230,6 @@ let rec parse_annotations ~configuration ~parameters annotation =
     | Expression.Name (Name.Identifier subkind) -> Some subkind
     | _ -> None
   in
-  let base_name = function
-    | {
-        Node.value =
-          Expression.Name
-            (Name.Attribute { base = { Node.value = Name (Name.Identifier identifier); _ }; _ });
-        _;
-      } ->
-        Some identifier
-    | _ -> None
-  in
-
   let rec extract_via_positions expression =
     match expression.Node.value with
     | Expression.Name (Name.Identifier name) -> [get_parameter_position name]
@@ -1734,7 +1735,8 @@ let create ~resolution ?path ~configuration ~rule_filter source =
             | "Sanitize" ->
                 let sanitize_kind =
                   match arguments with
-                  | None -> { Mode.sources = Some AllSources; sinks = Some AllSinks; tito = true }
+                  | None ->
+                      { Mode.sources = Some AllSources; sinks = Some AllSinks; tito = Some AllTito }
                   | Some arguments ->
                       let to_sanitize_kind sanitize { Call.Argument.value; _ } =
                         match Node.value value with
@@ -1742,8 +1744,41 @@ let create ~resolution ?path ~configuration ~rule_filter source =
                             match name with
                             | "TaintSource" -> { sanitize with Mode.sources = Some AllSources }
                             | "TaintSink" -> { sanitize with Mode.sinks = Some AllSinks }
-                            | "TaintInTaintOut" -> { sanitize with Mode.tito = true }
+                            | "TaintInTaintOut" -> { sanitize with Mode.tito = Some AllTito }
                             | _ -> sanitize )
+                        | Expression.Call { Call.callee; arguments = [{ Call.Argument.value; _ }] }
+                          when Option.equal String.equal (base_name callee) (Some "TaintInTaintOut")
+                          -> (
+                            let add_tito_annotation (sanitized_tito_sources, sanitized_tito_sinks)
+                              = function
+                              | Source
+                                  {
+                                    source;
+                                    breadcrumbs = [];
+                                    leaf_name_provided = false;
+                                    path = [];
+                                  } ->
+                                  source :: sanitized_tito_sources, sanitized_tito_sinks
+                              | Sink
+                                  { sink; breadcrumbs = []; leaf_name_provided = false; path = [] }
+                                ->
+                                  sanitized_tito_sources, sink :: sanitized_tito_sinks
+                              | taint_annotation ->
+                                  raise
+                                    (Model.InvalidModel
+                                       (Format.sprintf
+                                          "`%s` is not a supported TITO sanitizer."
+                                          (show_taint_annotation taint_annotation)))
+                            in
+                            let sanitize_tito =
+                              parse_annotations ~configuration ~parameters:[] (Some value)
+                              |> List.fold ~init:([], []) ~f:add_tito_annotation
+                              |> fun (sanitized_tito_sources, sanitized_tito_sinks) ->
+                              Mode.SpecificTito { sanitized_tito_sources; sanitized_tito_sinks }
+                            in
+                            match sanitize.tito with
+                            | Some AllTito -> sanitize
+                            | _ -> { sanitize with tito = Some sanitize_tito } )
                         | _ ->
                             let add_annotation { Mode.sources; sinks; tito } = function
                               | Source
@@ -1785,7 +1820,7 @@ let create ~resolution ?path ~configuration ~rule_filter source =
                       List.fold
                         arguments
                         ~f:to_sanitize_kind
-                        ~init:{ Mode.sources = None; sinks = None; tito = false }
+                        ~init:{ Mode.sources = None; sinks = None; tito = None }
                 in
                 TaintResult.Mode.join mode (Mode.Sanitize sanitize_kind), skipped_override
             | "SkipAnalysis" -> TaintResult.Mode.SkipAnalysis, skipped_override

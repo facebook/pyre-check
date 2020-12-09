@@ -368,7 +368,11 @@ let test_sanitized_analysis context =
               ~errors:[{ code = 5001; pattern = ".*" }]
               ~analysis_mode:
                 (Mode.Sanitize
-                   { Mode.sources = Some Mode.AllSources; sinks = Some Mode.AllSinks; tito = true })
+                   {
+                     Mode.sources = Some Mode.AllSources;
+                     sinks = Some Mode.AllSinks;
+                     tito = Some AllTito;
+                   })
               "qualifier.sanitized_model";
           ];
         iterations = 1;

@@ -181,10 +181,9 @@ include Taint.Result.Register (struct
             | None -> forward
           in
           let taint_in_taint_out =
-            if sanitize_tito then
-              empty_model.backward.taint_in_taint_out
-            else
-              backward.taint_in_taint_out
+            match sanitize_tito with
+            | Some AllTito -> empty_model.backward.taint_in_taint_out
+            | _ -> backward.taint_in_taint_out
           in
           let sink_taint =
             match sanitize_sinks with

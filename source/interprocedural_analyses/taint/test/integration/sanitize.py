@@ -114,3 +114,7 @@ def sanitize_a_and_b_sinks(x):
         a_sink(x)
     else:
         b_sink(x)
+
+
+def sanitize_a_tito(x):
+    return x

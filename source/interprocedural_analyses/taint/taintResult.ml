@@ -126,10 +126,18 @@ module Mode = struct
     | SpecificSinks of Sinks.t list
   [@@deriving show, compare, eq]
 
+  type sanitize_tito =
+    | AllTito
+    | SpecificTito of {
+        sanitized_tito_sources: Sources.t list;
+        sanitized_tito_sinks: Sinks.t list;
+      }
+  [@@deriving show, compare, eq]
+
   type sanitize = {
     sources: sanitize_sources option;
     sinks: sanitize_sinks option;
-    tito: bool;
+    tito: sanitize_tito option;
   }
   [@@deriving show, eq]
 
@@ -171,7 +179,32 @@ module Mode = struct
                    (List.dedup_and_sort ~compare:Sinks.compare (left_sinks @ right_sinks)))
           | None, None -> None
         in
-        Sanitize { sources; sinks; tito = left.tito || right.tito }
+        let tito =
+          match left.tito, right.tito with
+          | None, Some tito
+          | Some tito, None ->
+              Some tito
+          | Some AllTito, _
+          | _, Some AllTito ->
+              Some AllTito
+          | ( Some
+                (SpecificTito
+                  { sanitized_tito_sources = left_sources; sanitized_tito_sinks = left_sinks }),
+              Some
+                (SpecificTito
+                  { sanitized_tito_sources = right_sources; sanitized_tito_sinks = right_sinks }) )
+            ->
+              Some
+                (SpecificTito
+                   {
+                     sanitized_tito_sources =
+                       List.dedup_and_sort ~compare:Sources.compare (left_sources @ right_sources);
+                     sanitized_tito_sinks =
+                       List.dedup_and_sort ~compare:Sinks.compare (left_sinks @ right_sinks);
+                   })
+          | None, None -> None
+        in
+        Sanitize { sources; sinks; tito }
     | Sanitize _, _ -> left
     | _, Sanitize _ -> right
     | Normal, Normal -> Normal

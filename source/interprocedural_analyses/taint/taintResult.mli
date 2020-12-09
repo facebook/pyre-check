@@ -32,10 +32,18 @@ module Mode : sig
     | AllSinks
     | SpecificSinks of Sinks.t list
 
+  type sanitize_tito =
+    | AllTito
+    | SpecificTito of {
+        sanitized_tito_sources: Sources.t list;
+        sanitized_tito_sinks: Sinks.t list;
+      }
+  [@@deriving show, compare, eq]
+
   type sanitize = {
     sources: sanitize_sources option;
     sinks: sanitize_sinks option;
-    tito: bool;
+    tito: sanitize_tito option;
   }
   [@@deriving show, eq]
 
