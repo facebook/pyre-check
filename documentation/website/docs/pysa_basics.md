@@ -278,14 +278,18 @@ tainted data. One such example could be `hmac.digest(key, msg, digest)`, which
 returns sufficiently unpredictable data that the output should no longer be
 considered attacker-controlled after passing through.
 
-Note that sanitizers are currently universal, meaning that they remove all taint
-and can't be restricted to a specific rule or individual source to sink flows.
-This means you need to ensure you aren't potentially affecting other flows when
-you add a sanitizer for a flow you care about. For this reason, the above
-sanitizer examples might not be a good idea to use. If you are trying to track
-flows where SQL injection occurs, the `escape` sanitizer would prevent you
-from seeing any flows where data going into your SQL query happened to be HTML
-escaped.
+Note that sanitizers come with the risk of losing legitimate taint flows.
+They remove all taint and aren't restricted to a specific rule or
+individual source to sink flows. This means you need to ensure you aren't
+potentially affecting other flows when you add a sanitizer for a flow you care
+about. For this reason, the above sanitizer examples might not be a good idea
+to use. If you are trying to track flows where SQL injection occurs, the `escape`
+sanitizer would prevent you from seeing any flows where data going into your
+SQL query happened to be HTML escaped.
+
+The best practice with sanitizers, then, is to make them as specific as possible.
+It's recommended to sanitize specific sources and sinks over using the general
+@Sanitize annotation.
 
 ## Taint Propagation
 
