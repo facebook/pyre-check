@@ -58,6 +58,38 @@
 {
   "kind": "model",
   "data": {
+    "callable": "sanitize.propagation_of_b_with_sanitize_a_tito",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "sanitize.py",
+              "line": 130,
+              "start": 8,
+              "end": 18
+            },
+            "tito": [ { "line": 131, "start": 27, "end": 28 } ],
+            "leaves": [
+              {
+                "kind": "TestB",
+                "name": "sanitize.b_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-via": "tito" } ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "sanitize.sanitize_a_sink",
     "sources": [],
     "sinks": [

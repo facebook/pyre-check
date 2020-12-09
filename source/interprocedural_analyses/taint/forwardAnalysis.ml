@@ -166,8 +166,9 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
          sinks at the end. *)
       let triggered_sinks = String.Hash_set.create () in
       let apply_call_target state argument_taint call_target =
-        let taint_model = Model.get_callsite_model ~resolution ~call_target ~arguments in
-        let { TaintResult.forward; backward; _ } = taint_model.model in
+        let ({ Model.model = { TaintResult.forward; backward; mode }; _ } as taint_model) =
+          Model.get_callsite_model ~resolution ~call_target ~arguments
+        in
         let sink_argument_matches =
           BackwardState.roots backward.sink_taint |> AccessPath.match_actuals_to_formals arguments
         in
@@ -202,6 +203,22 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             (tito_effects, state)
             (argument_taint, ((argument, sink_matches), (_dup, tito_matches)))
           =
+          let argument_taint =
+            match mode with
+            | Sanitize { tito = Some (SpecificTito { sanitized_tito_sources; _ }); _ } ->
+                ForwardState.Tree.partition
+                  ForwardTaint.leaf
+                  ~f:(fun source ->
+                    Option.some_if
+                      (not (List.mem ~equal:Sources.equal sanitized_tito_sources source))
+                      source)
+                  argument_taint
+                |> Core.Map.Poly.fold
+                     ~init:ForwardState.Tree.bottom
+                     ~f:(fun ~key:_ ~data:source_state state ->
+                       ForwardState.Tree.join source_state state)
+            | _ -> argument_taint
+          in
           let location =
             Location.with_module ~qualifier:FunctionContext.qualifier argument.Node.location
           in

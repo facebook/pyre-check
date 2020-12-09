@@ -118,3 +118,15 @@ def sanitize_a_and_b_sinks(x):
 
 def sanitize_a_tito(x):
     return x
+
+
+def no_propagation_with_sanitize_a_tito():
+    a = a_source()
+    b = sanitize_a_tito(a)
+    return b
+
+
+def propagation_of_b_with_sanitize_a_tito():
+    b = b_source()
+    tito = sanitize_a_tito(b)
+    return tito
