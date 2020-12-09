@@ -2,6 +2,7 @@
 Call dependencies
 features.async_issue_bools (fun) -> [__test_sink (fun) features.async_tuple_of_bools (fun)]
 features.async_tuple_of_bools (fun) -> [__test_source (fun)]
+features.dynamic_feature_tito (fun) -> []
 features.issue_from_tuple (fun) -> [__test_sink (fun) features.return_tuple_of_bools (fun)]
 features.issue_via_bool (fun) -> [__test_sink (fun) __test_source (fun) object::__init__ (method) object::__new__ (method)]
 features.issue_via_equality (fun) -> [__test_sink (fun) features.returns_tainted_object (fun) object::__eq__ (method)]

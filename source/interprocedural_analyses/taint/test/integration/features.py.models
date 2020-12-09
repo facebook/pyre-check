@@ -333,6 +333,26 @@
 {
   "kind": "model",
   "data": {
+    "callable": "features.dynamic_feature_tito",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "features": [ { "via": "dynamic_feature" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "features.len",
     "sources": [],
     "sinks": [],

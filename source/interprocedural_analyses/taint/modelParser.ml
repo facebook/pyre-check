@@ -213,12 +213,18 @@ let rec parse_annotations ~configuration ~parameters annotation =
     | Some index -> index
     | None -> raise_invalid_model (Format.sprintf "No such parameter `%s`" name)
   in
-  let rec extract_breadcrumbs expression =
+  let rec extract_breadcrumbs ?(is_dynamic = false) expression =
     let open Configuration in
     match expression.Node.value with
     | Expression.Name (Name.Identifier breadcrumb) ->
-        [Features.simple_via ~allowed:configuration.features breadcrumb]
-    | Tuple expressions -> List.concat_map ~f:extract_breadcrumbs expressions
+        let feature =
+          if is_dynamic then
+            Features.Simple.Breadcrumb (Features.Breadcrumb.SimpleVia breadcrumb)
+          else
+            Features.simple_via ~allowed:configuration.features breadcrumb
+        in
+        [feature]
+    | Tuple expressions -> List.concat_map ~f:(extract_breadcrumbs ~is_dynamic) expressions
     | _ ->
         Format.sprintf
           "Invalid expression for breadcrumb: %s"
@@ -280,6 +286,8 @@ let rec parse_annotations ~configuration ~parameters annotation =
     | Call { callee; arguments = { Call.Argument.value = expression; _ } :: _ } -> (
         match base_name callee with
         | Some "Via" -> [Breadcrumbs (extract_breadcrumbs expression)]
+        | Some "ViaDynamicFeature" ->
+            [Breadcrumbs (extract_breadcrumbs ~is_dynamic:true expression)]
         | Some "ViaValueOf" ->
             let tag = extract_via_tag expression in
             [

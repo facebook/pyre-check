@@ -910,6 +910,12 @@ let test_source_breadcrumbs context =
     ~context
     ~model_source:"def test.source() -> TaintSource[Test, Via[special]]: ..."
     ~expect:[outcome ~kind:`Function ~returns:[Sources.NamedSource "Test"] "test.source"]
+    ();
+  assert_model
+    ~context
+    ~model_source:
+      "def test.source() -> TaintSource[Test, ViaDynamicFeature[NotSpecifiedInConfig]]: ..."
+    ~expect:[outcome ~kind:`Function ~returns:[Sources.NamedSource "Test"] "test.source"]
     ()
 
 

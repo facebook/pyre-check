@@ -93,3 +93,7 @@ async def async_tuple_of_bools() -> Tuple[bool, bool]:
 async def async_issue_bools() -> None:
     x, y = await async_tuple_of_bools()
     __test_sink(x)
+
+
+def dynamic_feature_tito(x):
+    return x

@@ -154,6 +154,23 @@ def subprocess.run(
 ): ...
 ```
 
+### Supporting Features Dynamically Using `ViaDynamicFeature[]`
+
+In general, Pysa requires you to specify the list of features that are allowed. This encourages features
+to be documented, and help avoid typos when writing features so that the features propagating in the analysis are
+consistent with filters you might have on issues.
+
+However, there might be very specific cases where you want to dynamically generate features, depending on artifacts
+of the code. Most cases here can be handled by `via-type` and `via-value` features, however, you might be dealing with
+dynamic code or metadata that the system can't detect. In these cases, Pysa allows skipping validation on features
+by the use of `ViaDynamicFeature`. This syntax has identical behavior to `Via[]` except the lack of validation. Here's an example:
+
+```python
+def subprocess.run(
+  args: TaintSink[RemoteCodeExecution, ViaDynamicFeature[subprocess_run_execution]]
+): ...
+```
+
 ## Automatic Features
 
 ### `via` Feature
