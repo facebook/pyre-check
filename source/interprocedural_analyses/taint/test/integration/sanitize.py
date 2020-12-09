@@ -130,3 +130,17 @@ def propagation_of_b_with_sanitize_a_tito():
     b = b_source()
     tito = sanitize_a_tito(b)
     return tito
+
+
+def sanitize_a_sink_tito(x):
+    return x
+
+
+def no_propagation_of_a_sink(x):
+    y = sanitize_a_sink_tito(x)
+    a_sink(y)
+
+
+def propagation_of_b_sink(x):
+    y = sanitize_a_sink_tito(x)
+    b_sink(y)

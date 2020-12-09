@@ -58,6 +58,38 @@
 {
   "kind": "model",
   "data": {
+    "callable": "sanitize.propagation_of_b_sink",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "root": {
+              "filename": "sanitize.py",
+              "line": 146,
+              "start": 11,
+              "end": 12
+            },
+            "tito": [ { "line": 145, "start": 29, "end": 30 } ],
+            "leaves": [
+              {
+                "kind": "TestB",
+                "name": "sanitize.b_sink",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-via": "tito" } ]
+          }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "sanitize.propagation_of_b_with_sanitize_a_tito",
     "sources": [
       {
@@ -115,6 +147,25 @@
       }
     ],
     "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize.sanitize_a_sink_tito",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
+        ]
+      }
+    ]
   }
 }
 {
