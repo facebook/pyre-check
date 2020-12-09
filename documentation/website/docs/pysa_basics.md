@@ -263,6 +263,18 @@ def module.return_not_user_controlled(): ...
 def module.sanitizes_sql_and_logging_sinks(flows_to_sql, logged_parameter): ...
 ```
 
+For TITO sanitizers, Pysa supports only sanitizing specific sources and sinks through TITO:
+
+```python
+# With this annotation, whenever `escape(data)` is called, the UserControlled taint of `data`
+# will be sanitized, whereas other taint that might be present on `data` will be preserved.
+@Sanitize(TaintInTaintOut[TaintSource[UserControlled]])
+def django.utils.html.escape(text: TaintInTaintOut): ...
+
+@Sanitize(TaintInTaintOut[TaintSink[Logging]])
+def module.sanitize_for_logging(): ...
+```
+
 Attributes can also be marked as sanitizers to remove all taint passing through
 them:
 
