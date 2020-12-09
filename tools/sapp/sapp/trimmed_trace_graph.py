@@ -141,7 +141,11 @@ class TrimmedTraceGraph(TraceGraph):
         for tf_id in first_hop_tf_ids:
             leaf_depths = self._trace_frame_leaf_assoc[tf_id]
             for (leaf_id, depth) in leaf_depths:
-                if leaf_id in leaf_ids and (min_depth is None or depth < min_depth):
+                if (
+                    leaf_id in leaf_ids
+                    and depth is not None
+                    and (min_depth is None or depth < min_depth)
+                ):
                     min_depth = depth
         if min_depth is not None:
             return min_depth

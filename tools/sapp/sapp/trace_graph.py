@@ -67,7 +67,7 @@ class TraceGraph(object):
         ) = defaultdict(dict)
 
         self._trace_frame_leaf_assoc: DefaultDict[
-            int, Set[Tuple[int, int]]
+            int, Set[Tuple[int, Optional[int]]]
         ] = defaultdict(set)
 
         self._trace_frame_issue_instance_assoc: DefaultDict[
@@ -228,14 +228,14 @@ class TraceGraph(object):
         return shared_text
 
     def add_trace_frame_leaf_assoc(
-        self, trace_frame: TraceFrame, leaf: SharedText, depth: int
+        self, trace_frame: TraceFrame, leaf: SharedText, depth: Optional[int]
     ) -> None:
         self._trace_frame_leaf_assoc[trace_frame.id.local_id].add(
             (leaf.id.local_id, depth)
         )
 
     def add_trace_frame_leaf_by_local_id_assoc(
-        self, trace_frame: TraceFrame, leaf_id: int, depth: int
+        self, trace_frame: TraceFrame, leaf_id: int, depth: Optional[int]
     ) -> None:
         self._trace_frame_leaf_assoc[trace_frame.id.local_id].add((leaf_id, depth))
 
@@ -256,7 +256,7 @@ class TraceGraph(object):
 
     def get_trace_frame_leaf_ids_with_depths(
         self, trace_frame: TraceFrame
-    ) -> Set[Tuple[int, int]]:
+    ) -> Set[Tuple[int, Optional[int]]]:
         return self._trace_frame_leaf_assoc[trace_frame.id.local_id]
 
     def add_issue_instance_trace_frame_assoc(
@@ -367,8 +367,10 @@ class TraceGraph(object):
             valid_frame_leaf_ids = self._compute_valid_frame_leaves(frame)
             for (leaf_id, depth) in leaf_ids:
                 leaf_text = self._shared_texts[leaf_id]
-                if leaf_id in valid_frame_leaf_ids or self._is_opposite_leaf(
-                    frame, leaf_text
+                if (
+                    leaf_text.kind == SharedTextKind.FEATURE
+                    or leaf_id in valid_frame_leaf_ids
+                    or self._is_opposite_leaf(frame, leaf_text)
                 ):
                     bulk_saver.add_trace_frame_leaf_assoc(leaf_text, frame, depth)
                 else:

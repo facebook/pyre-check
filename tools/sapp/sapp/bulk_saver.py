@@ -124,11 +124,9 @@ class BulkSaver:
                 session.bulk_insert_mappings(cls, group, render_nulls=True)
                 session.commit()
 
-    # pyre-fixme[3]: Return type must be annotated.
-    # pyre-fixme[2]: Parameter must be annotated.
-    # pyre-fixme[2]: Parameter must be annotated.
-    # pyre-fixme[2]: Parameter must be annotated.
-    def add_trace_frame_leaf_assoc(self, message, trace_frame, depth):
+    def add_trace_frame_leaf_assoc(
+        self, message: SharedText, trace_frame: TraceFrame, depth: Optional[int]
+    ) -> None:
         self.add(
             TraceFrameLeafAssoc.Record(
                 trace_frame_id=trace_frame.id, leaf_id=message.id, trace_length=depth

@@ -12,7 +12,7 @@ import logging
 from datetime import datetime
 from decimal import Decimal
 from itertools import islice
-from typing import Any, Dict, Optional, Set, Type
+from typing import Any, Dict, Optional, List, Set, Type
 
 from graphene_sqlalchemy.converter import (
     convert_column_to_int_or_id,
@@ -518,7 +518,7 @@ class IssueInstance(Base, PrepareMixin, MutableRecordMixin):  # noqa
         Integer, nullable=True, doc="The minimum trace length to entrypoints"
     )
 
-    def get_shared_texts_by_kind(self, kind: SharedTextKind):
+    def get_shared_texts_by_kind(self, kind: SharedTextKind) -> List[SharedText]:
         return [text for text in self.shared_texts if text.kind == kind]
 
     def get_trace_frames_by_kind(self, kind: TraceKind):
