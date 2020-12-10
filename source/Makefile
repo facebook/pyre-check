@@ -25,7 +25,7 @@ stubs_integration_test: all
 
 .PHONY: pysa_cache_test
 pysa_cache_test: all
-	PYRE_BINARY="$(shell pwd)/source/_build/default/main.exe" ../stubs/integration_test/run_cache_test.py
+	PYRE_BINARY="$(shell pwd)/_build/default/main.exe" ../stubs/integration_test/run_cache_test.py
 
 .PHONY: fbtest
 fbtest: all
