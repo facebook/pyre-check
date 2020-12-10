@@ -81,7 +81,7 @@ module.exports = {
         fbContent({
           internal: {
             to: 'docs/fb/development-getting-started',
-            label: 'Development @ FB',
+            label: 'Internal',
             position: 'left',
           },
           external: {},
