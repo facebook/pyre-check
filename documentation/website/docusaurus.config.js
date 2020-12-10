@@ -70,7 +70,14 @@ module.exports = {
         src: 'img/integrated_logo_light.png',
       },
       items: [
-        {to: 'docs/getting-started', label: 'Documentation', position: 'left'},
+        {
+          to: fbContent({
+            internal: 'docs/fb/getting-started',
+            external: 'docs/getting-started',
+          }),
+          label: 'Documentation',
+          position: 'left',
+        },
         fbContent({
           internal: {
             to: 'docs/fb/development-getting-started',

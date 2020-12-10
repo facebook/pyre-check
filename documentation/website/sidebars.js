@@ -7,13 +7,15 @@
  * @format
  */
 
-const {fbInternalOnly} = require('internaldocs-fb-helpers');
+const {fbContent, fbInternalOnly} = require('internaldocs-fb-helpers');
 
 module.exports = {
   documentation: {
     Pyre: [
-      ...fbInternalOnly(['fb/getting-started']),
-      'getting-started',
+      ...fbContent({
+        internal: ['fb/getting-started'],
+        external: ['getting-started'],
+      }),
       'installation',
       'configuration',
       'types-in-python',
