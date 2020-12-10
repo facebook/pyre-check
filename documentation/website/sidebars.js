@@ -16,7 +16,9 @@ module.exports = {
         internal: ['fb/getting-started'],
         external: ['getting-started'],
       }),
-      'installation',
+      ...fbContent({
+        external: ['installation'],
+      }),
       'configuration',
       'types-in-python',
       ...fbInternalOnly(['fb/increasing-type-coverage']),
