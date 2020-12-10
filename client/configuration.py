@@ -292,10 +292,11 @@ class PartialConfiguration:
         return {
             "buck_mode",
             "differential",
-            "stable_client",
-            "unstable_client",
+            "oncall",
             "saved_state",
+            "stable_client",
             "taint_models_path",
+            "unstable_client",
         }
 
     @staticmethod
