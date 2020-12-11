@@ -2476,7 +2476,7 @@ module State (Context : Context) = struct
                 let target, dynamic = target_and_dynamic inner_resolved_callee in
                 forward_callable
                   ~resolution
-                  ~errors
+                  ~errors:[]
                   ~target
                   ~dynamic
                   ~callee
