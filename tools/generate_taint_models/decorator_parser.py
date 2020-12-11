@@ -22,9 +22,6 @@ class Decorator:
     arguments: Final[Optional[Set[str]]] = None
     keywords: Final[Optional[Set[Tuple[Optional[str], str]]]] = None
 
-    def has_attributes(self) -> bool:
-        return bool(self.arguments or self.keywords)
-
 
 class DecoratorParser:
     def __init__(self, unparsed_target_decorators: str) -> None:
@@ -46,21 +43,61 @@ class DecoratorParser:
         ## filtering on multiple decorators.
         target_decorator: Decorator = self.target_decorators[0]
         for decorator in node.decorator_list:
+            node_decorator = self._parse_decorator(
+                cast(Union[ast.Name, ast.Call, ast.Attribute], decorator)
+            )
+            # if the target decorator has args / kwargs, the node decorator
+            # must also have them
             if (
-                isinstance(decorator, ast.Name)
-                and decorator.id == target_decorator.name
-                and not target_decorator.has_attributes()
+                target_decorator.name == node_decorator.name
+                and (
+                    not target_decorator.arguments
+                    or (
+                        node_decorator.arguments
+                        and target_decorator.arguments.issubset(
+                            node_decorator.arguments
+                        )
+                    )
+                )
+                and (
+                    not target_decorator.keywords
+                    or (
+                        node_decorator.keywords
+                        and target_decorator.keywords.issubset(node_decorator.keywords)
+                    )
+                )
             ):
                 return True
-            elif isinstance(decorator, ast.Call):
-                callable = decorator.func
-                if (
-                    isinstance(callable, ast.Name)
-                    and callable.id == target_decorator.name
-                    and self._are_attributes_matching(decorator, target_decorator)
-                ):
-                    return True
         return False
+
+    def _resolve_decorator_func_name(self, func: ast.expr) -> str:
+        if isinstance(func, ast.Name):
+            return func.id
+        func = cast(ast.Attribute, func)
+        return self._resolve_decorator_func_name(func.value) + "." + func.attr
+
+    def _parse_decorator(
+        self, decorator: Union[ast.Name, ast.Call, ast.Attribute]
+    ) -> Decorator:
+        # decorator does not have args or kwargs
+        if isinstance(decorator, ast.Name) or isinstance(decorator, ast.Attribute):
+            return Decorator(self._resolve_decorator_func_name(decorator), set(), set())
+        # decorator does have args and / or kwargs
+        decorator_name = self._resolve_decorator_func_name(decorator.func)
+        decorator_arguments = {
+            argument.s for argument in decorator.args if isinstance(argument, ast.Str)
+        }
+        decorator_keywords = {
+            (keyword.arg, cast(ast.Str, keyword.value).s)
+            for keyword in decorator.keywords
+            if isinstance(keyword.value, ast.Str)
+        }
+
+        return Decorator(
+            decorator_name,
+            decorator_arguments,
+            decorator_keywords,
+        )
 
     def _parse_target_decorators(self, target_decorator: str) -> List[Decorator]:
         """
@@ -76,7 +113,6 @@ class DecoratorParser:
             LOG.error(f"Can't parse `{well_formed_decorator}`.")
             raise error
 
-        target_decorator_list = []
         function_definition = parsed_ast.body[0]
         if not isinstance(function_definition, ast.FunctionDef):
             return []
@@ -85,50 +121,9 @@ class DecoratorParser:
             LOG.error("No target decorators were specified.")
             raise Exception("No target decorators were specified.")
 
-        for decorator in decorator_list:
-            if isinstance(decorator, ast.Call):
-                target_decorator_name = cast(ast.Name, decorator.func).id
-                target_decorator_arguments = {
-                    argument.s
-                    for argument in decorator.args
-                    if isinstance(argument, ast.Str)
-                }
-                target_decorator_keywords = {
-                    (keyword.arg, cast(ast.Str, keyword.value).s)
-                    for keyword in decorator.keywords
-                    if isinstance(keyword.value, ast.Str)
-                }
-                target_decorator_list.append(
-                    Decorator(
-                        target_decorator_name,
-                        target_decorator_arguments,
-                        target_decorator_keywords,
-                    )
-                )
-            else:
-                target_decorator_list.append(
-                    Decorator(cast(ast.Name, decorator).id, set(), set())
-                )
-        return target_decorator_list
-
-    def _are_attributes_matching(
-        self, decorator: ast.Call, target_decorator: Decorator
-    ) -> bool:
-        # Handle unnamed attributes.
-        decorator_arguments_set = {
-            argument.s for argument in decorator.args if isinstance(argument, ast.Str)
-        }
-        arguments = target_decorator.arguments
-        if arguments and not arguments.issubset(decorator_arguments_set):
-            return False
-
-        # Handle named attributes.
-        decorator_keywords_set = {
-            (keyword.arg, cast(ast.Str, keyword.value).s)
-            for keyword in decorator.keywords
-            if isinstance(keyword.value, ast.Str)
-        }
-        keywords = target_decorator.keywords
-        if keywords and not keywords.issubset(decorator_keywords_set):
-            return False
-        return True
+        return [
+            self._parse_decorator(
+                cast(Union[ast.Name, ast.Call, ast.Attribute], decorator)
+            )
+            for decorator in decorator_list
+        ]

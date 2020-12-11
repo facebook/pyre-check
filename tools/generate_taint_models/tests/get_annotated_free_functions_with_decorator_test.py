@@ -499,6 +499,67 @@ class AnnotatedFreeFunctionWithDecoratorGeneratorTest(unittest.TestCase):
             },
         )
 
+        # Test function attribute decorator
+        self.assert_expected_annotations(
+            """
+            @target.decorator
+            def decorated(arg1: str, arg2: int):
+                pass
+            """,
+            [
+                DecoratorAnnotationSpecification(
+                    decorator="@target.decorator",
+                    annotations=AnnotationSpecification(
+                        parameter_annotation=AllParametersAnnotation(arg="Arg"),
+                        returns="Return",
+                    ),
+                )
+            ],
+            {"def module.decorated(arg1: Arg, arg2: Arg) -> Return: ..."},
+        )
+
+        # Test function attribute decorator with args
+        self.assert_expected_annotations(
+            """
+            @target.decorator(darg, foo, kwdarg=val, blarg=val)
+            def decorated(arg1: str, arg2: int):
+                pass
+            """,
+            [
+                DecoratorAnnotationSpecification(
+                    decorator="@target.decorator(darg, kwdarg=val)",
+                    annotations=AnnotationSpecification(
+                        parameter_annotation=AllParametersAnnotation(arg="Arg"),
+                        returns="Return",
+                    ),
+                )
+            ],
+            {"def module.decorated(arg1: Arg, arg2: Arg) -> Return: ..."},
+        )
+
+        # negative match for attribute decorator
+        self.assert_expected_annotations(
+            """
+            @target.shmecorator(darg, foo, kwdarg=val, blarg=val)
+            def decorated(arg1: str, arg2: int):
+                pass
+
+            @shmarget.decorator(darg, foo, kwdarg=val, blarg=val)
+            def decorated(arg1: str, arg2: int):
+                pass
+            """,
+            [
+                DecoratorAnnotationSpecification(
+                    decorator="@target.decorator(darg, kwdarg=val)",
+                    annotations=AnnotationSpecification(
+                        parameter_annotation=AllParametersAnnotation(arg="Arg"),
+                        returns="Return",
+                    ),
+                )
+            ],
+            set(),
+        )
+
     # pyre-ignore[56]: Pyre was not able to infer the type of argument
     # `get_annotated_free_functions_with_decorator`
     @patch.object(
