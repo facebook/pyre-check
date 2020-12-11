@@ -113,6 +113,13 @@ class TextDocumentSyncKind(SerializationSafeIntEnum):
     INCREMENTAL = 2
 
 
+class MessageType(SerializationSafeIntEnum):
+    ERROR = 1
+    WARNING = 2
+    INFO = 3
+    LOG = 4
+
+
 @dataclasses.dataclass(frozen=True)
 class DocumentUri:
     scheme: str

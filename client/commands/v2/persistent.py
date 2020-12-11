@@ -276,6 +276,19 @@ class PyreServerHandler(connection.BackgroundTask):
         self.client_output_channel = client_output_channel
         self.server_state = server_state
 
+    async def show_message_to_client(
+        self, message: str, level: lsp.MessageType = lsp.MessageType.INFO
+    ) -> None:
+        await lsp.write_json_rpc(
+            self.client_output_channel,
+            json_rpc.Request(
+                method="window/showMessage",
+                parameters=json_rpc.ByNameParameters(
+                    {"type": int(level), "message": message}
+                ),
+            ),
+        )
+
     async def run(self) -> None:
         LOG.warning("Not implemented yet")
         await asyncio.Event().wait()
