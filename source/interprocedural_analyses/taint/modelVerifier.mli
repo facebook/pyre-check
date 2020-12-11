@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+open Core
 open Ast
 open Analysis
 
@@ -17,10 +18,17 @@ val verify_signature
   Type.Callable.t option ->
   unit
 
-exception
-  GlobalVerificationError of {
-    name: string;
-    message: string;
-  }
+type verification_error =
+  | GlobalVerificationError of {
+      name: string;
+      message: string;
+    }
 
-val verify_global : resolution:Resolution.t -> name:Reference.t -> unit
+val display_verification_error
+  :  path:Pyre.Path.t option ->
+  location:Location.t ->
+  name:string ->
+  verification_error ->
+  string
+
+val verify_global : resolution:Resolution.t -> name:Reference.t -> (unit, verification_error) result

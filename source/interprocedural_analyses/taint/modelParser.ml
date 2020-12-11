@@ -1298,316 +1298,344 @@ let create ~resolution ?path ~configuration ~rule_filter source =
 
   let signatures_and_queries, errors =
     let filter_define_signature signature =
-      try
-        match signature with
-        | {
-         Node.value =
-           Statement.Define { signature = { name = { Node.value = name; _ }; _ } as signature; _ };
-         location;
-        } ->
-            let class_candidate =
-              Reference.prefix name
-              >>| GlobalResolution.parse_reference global_resolution
-              >>= GlobalResolution.class_definition global_resolution
+      match signature with
+      | {
+       Node.value =
+         Statement.Define { signature = { name = { Node.value = name; _ }; _ } as signature; _ };
+       location;
+      } ->
+          let class_candidate =
+            Reference.prefix name
+            >>| GlobalResolution.parse_reference global_resolution
+            >>= GlobalResolution.class_definition global_resolution
+          in
+          let call_target =
+            match class_candidate with
+            | Some _ when Define.Signature.is_property_setter signature ->
+                Callable.create_property_setter name
+            | Some _ -> Callable.create_method name
+            | None -> Callable.create_function name
+          in
+          Core.Result.Ok [ParsedSignature (signature, location, call_target)]
+      | {
+       Node.value =
+         Class
+           {
+             Class.name = { Node.value = name; _ };
+             bases;
+             body =
+               [{ Node.value = Statement.Expression { Node.value = Expression.Ellipsis; _ }; _ }];
+             _;
+           };
+       _;
+      } ->
+          let sink_annotations =
+            let class_sink_base { Call.Argument.value; _ } =
+              if Expression.show value |> String.is_prefix ~prefix:"TaintSink[" then
+                Some value
+              else
+                None
             in
-            let call_target =
-              match class_candidate with
-              | Some _ when Define.Signature.is_property_setter signature ->
-                  Callable.create_property_setter name
-              | Some _ -> Callable.create_method name
-              | None -> Callable.create_function name
+            List.filter_map bases ~f:class_sink_base
+          in
+          let source_annotations, extra_decorators =
+            let decorator_with_name name =
+              {
+                Decorator.name = Node.create_with_default_location (Reference.create name);
+                arguments = None;
+              }
             in
-            Core.Result.Ok [ParsedSignature (signature, location, call_target)]
-        | {
-         Node.value =
-           Class
-             {
-               Class.name = { Node.value = name; _ };
-               bases;
-               body =
-                 [{ Node.value = Statement.Expression { Node.value = Expression.Ellipsis; _ }; _ }];
-               _;
-             };
-         _;
-        } ->
-            let sink_annotations =
-              let class_sink_base { Call.Argument.value; _ } =
-                if Expression.show value |> String.is_prefix ~prefix:"TaintSink[" then
-                  Some value
-                else
-                  None
-              in
-              List.filter_map bases ~f:class_sink_base
+            let class_source_base { Call.Argument.value; _ } =
+              let name = Expression.show value in
+              if String.is_prefix name ~prefix:"TaintSource[" then
+                Some (Either.First value)
+              else if String.equal name "SkipAnalysis" then
+                Some (Either.Second (decorator_with_name "SkipAnalysis"))
+              else if String.equal name "SkipOverrides" then
+                Some (Either.Second (decorator_with_name "SkipOverrides"))
+              else
+                None
             in
-            let source_annotations, extra_decorators =
-              let decorator_with_name name =
-                {
-                  Decorator.name = Node.create_with_default_location (Reference.create name);
-                  arguments = None;
-                }
-              in
-              let class_source_base { Call.Argument.value; _ } =
-                let name = Expression.show value in
-                if String.is_prefix name ~prefix:"TaintSource[" then
-                  Some (Either.First value)
-                else if String.equal name "SkipAnalysis" then
-                  Some (Either.Second (decorator_with_name "SkipAnalysis"))
-                else if String.equal name "SkipOverrides" then
-                  Some (Either.Second (decorator_with_name "SkipOverrides"))
-                else
-                  None
-              in
-              List.filter_map bases ~f:class_source_base
-              |> List.fold ~init:([], []) ~f:(fun (source_annotations, decorators) ->
-                   function
-                   | Either.First source_annotation ->
-                       source_annotation :: source_annotations, decorators
-                   | Either.Second decorator -> source_annotations, decorator :: decorators)
-            in
-            if
-              (not (List.is_empty sink_annotations))
-              || (not (List.is_empty source_annotations))
-              || not (List.is_empty extra_decorators)
-            then
-              class_definitions global_resolution name
-              >>= List.hd
-              >>| (fun { Node.value = { Class.body; _ }; _ } ->
-                    let signature { Node.value; location } =
-                      match value with
-                      | Statement.Define
-                          {
-                            Define.signature =
-                              {
-                                Define.Signature.name = { Node.value = name; _ };
-                                parameters;
-                                decorators;
-                                _;
-                              } as signature;
-                            _;
-                          } ->
-                          let signature ~extra_decorators ~source_annotation ~sink_annotation =
-                            let parameters =
-                              let sink_parameter parameter =
-                                let update_annotation { Parameter.name; value; _ } =
-                                  let value =
-                                    match value with
-                                    | None -> None
-                                    | Some _ ->
-                                        Some (Node.create_with_default_location Expression.Ellipsis)
-                                  in
-                                  { Parameter.name; annotation = sink_annotation; value }
+            List.filter_map bases ~f:class_source_base
+            |> List.fold ~init:([], []) ~f:(fun (source_annotations, decorators) ->
+                 function
+                 | Either.First source_annotation ->
+                     source_annotation :: source_annotations, decorators
+                 | Either.Second decorator -> source_annotations, decorator :: decorators)
+          in
+          if
+            (not (List.is_empty sink_annotations))
+            || (not (List.is_empty source_annotations))
+            || not (List.is_empty extra_decorators)
+          then
+            class_definitions global_resolution name
+            >>= List.hd
+            >>| (fun { Node.value = { Class.body; _ }; _ } ->
+                  let signature { Node.value; location } =
+                    match value with
+                    | Statement.Define
+                        {
+                          Define.signature =
+                            {
+                              Define.Signature.name = { Node.value = name; _ };
+                              parameters;
+                              decorators;
+                              _;
+                            } as signature;
+                          _;
+                        } ->
+                        let signature ~extra_decorators ~source_annotation ~sink_annotation =
+                          let parameters =
+                            let sink_parameter parameter =
+                              let update_annotation { Parameter.name; value; _ } =
+                                let value =
+                                  match value with
+                                  | None -> None
+                                  | Some _ ->
+                                      Some (Node.create_with_default_location Expression.Ellipsis)
                                 in
-                                Node.map parameter ~f:update_annotation
+                                { Parameter.name; annotation = sink_annotation; value }
                               in
-                              List.map parameters ~f:sink_parameter
+                              Node.map parameter ~f:update_annotation
                             in
-                            let decorators =
-                              if
-                                signature_is_property signature
-                                || Define.Signature.is_property_setter signature
-                              then
-                                decorators
-                              else
-                                []
-                            in
-                            let decorators = List.rev_append extra_decorators decorators in
-                            ParsedSignature
-                              ( {
-                                  signature with
-                                  Define.Signature.parameters;
-                                  return_annotation = source_annotation;
-                                  decorators;
-                                },
-                                location,
-                                Callable.create_method name )
+                            List.map parameters ~f:sink_parameter
                           in
-                          let sources =
-                            List.map source_annotations ~f:(fun source_annotation ->
-                                signature
-                                  ~extra_decorators:[]
-                                  ~source_annotation:(Some source_annotation)
-                                  ~sink_annotation:None)
-                          in
-                          let sinks =
-                            List.map sink_annotations ~f:(fun sink_annotation ->
-                                signature
-                                  ~extra_decorators:[]
-                                  ~source_annotation:None
-                                  ~sink_annotation:(Some sink_annotation))
-                          in
-                          let skip_analysis_or_overrides_defines =
-                            if not (List.is_empty extra_decorators) then
-                              [
-                                signature
-                                  ~extra_decorators
-                                  ~source_annotation:None
-                                  ~sink_annotation:None;
-                              ]
+                          let decorators =
+                            if
+                              signature_is_property signature
+                              || Define.Signature.is_property_setter signature
+                            then
+                              decorators
                             else
                               []
                           in
-                          skip_analysis_or_overrides_defines @ sources @ sinks
-                      | _ -> []
-                    in
+                          let decorators = List.rev_append extra_decorators decorators in
+                          ParsedSignature
+                            ( {
+                                signature with
+                                Define.Signature.parameters;
+                                return_annotation = source_annotation;
+                                decorators;
+                              },
+                              location,
+                              Callable.create_method name )
+                        in
+                        let sources =
+                          List.map source_annotations ~f:(fun source_annotation ->
+                              signature
+                                ~extra_decorators:[]
+                                ~source_annotation:(Some source_annotation)
+                                ~sink_annotation:None)
+                        in
+                        let sinks =
+                          List.map sink_annotations ~f:(fun sink_annotation ->
+                              signature
+                                ~extra_decorators:[]
+                                ~source_annotation:None
+                                ~sink_annotation:(Some sink_annotation))
+                        in
+                        let skip_analysis_or_overrides_defines =
+                          if not (List.is_empty extra_decorators) then
+                            [
+                              signature
+                                ~extra_decorators
+                                ~source_annotation:None
+                                ~sink_annotation:None;
+                            ]
+                          else
+                            []
+                        in
+                        skip_analysis_or_overrides_defines @ sources @ sinks
+                    | _ -> []
+                  in
 
-                    List.concat_map body ~f:signature)
-              |> Option.value ~default:[]
-              |> Core.Result.return
-            else
-              Core.Result.Ok []
-        | { Node.value = Class { Class.name = { Node.value = name; _ }; _ }; location } ->
-            invalid_model_error
-              ~location
-              ~name:(Reference.show name)
-              "Class model must have a body of `...`."
-        | {
-         Node.value =
-           Assign
+                  List.concat_map body ~f:signature)
+            |> Option.value ~default:[]
+            |> Core.Result.return
+          else
+            Core.Result.Ok []
+      | { Node.value = Class { Class.name = { Node.value = name; _ }; _ }; location } ->
+          invalid_model_error
+            ~location
+            ~name:(Reference.show name)
+            "Class model must have a body of `...`."
+      | {
+       Node.value =
+         Assign
+           {
+             Assign.target = { Node.value = Name name; location = name_location };
+             annotation = Some annotation;
+             _;
+           };
+       location;
+      }
+        when is_simple_name name
+             && Expression.show annotation |> String.is_prefix ~prefix:"TaintSource[" -> (
+          let name = name_to_reference_exn name in
+          match ModelVerifier.verify_global ~resolution ~name with
+          | Core.Result.Error error ->
+              let error =
+                ModelVerifier.display_verification_error
+                  ~path
+                  ~location
+                  ~name:(Reference.show name)
+                  error
+              in
+              Log.error "%s" error;
+              Core.Result.Error error
+          | Core.Result.Ok () ->
+              let signature =
+                {
+                  Define.Signature.name = Node.create ~location:name_location name;
+                  parameters = [];
+                  decorators = [];
+                  return_annotation = Some annotation;
+                  async = false;
+                  generator = false;
+                  parent = None;
+                  nesting_define = None;
+                }
+              in
+              Core.Result.Ok [ParsedSignature (signature, location, Callable.create_object name)] )
+      | {
+       Node.value =
+         Assign
+           {
+             Assign.target = { Node.value = Name name; location = name_location };
+             annotation = Some annotation;
+             _;
+           };
+       location;
+      }
+        when is_simple_name name
+             && Expression.show annotation |> String.is_prefix ~prefix:"TaintSink["
+             || Expression.show annotation |> String.is_prefix ~prefix:"TaintInTaintOut[" -> (
+          let name = name_to_reference_exn name in
+          match ModelVerifier.verify_global ~resolution ~name with
+          | Core.Result.Error error ->
+              let error =
+                ModelVerifier.display_verification_error
+                  ~path
+                  ~location
+                  ~name:(Reference.show name)
+                  error
+              in
+              Log.error "%s" error;
+              Core.Result.Error error
+          | Core.Result.Ok () ->
+              let signature =
+                {
+                  Define.Signature.name = Node.create ~location:name_location name;
+                  parameters =
+                    [Parameter.create ~location:Location.any ~annotation ~name:"$global" ()];
+                  decorators = [];
+                  return_annotation = None;
+                  async = false;
+                  generator = false;
+                  parent = None;
+                  nesting_define = None;
+                }
+              in
+              Core.Result.Ok [ParsedSignature (signature, location, Callable.create_object name)] )
+      | {
+       Node.value =
+         Assign
+           {
+             Assign.target = { Node.value = Name name; location = name_location };
+             annotation = Some annotation;
+             _;
+           };
+       location;
+      }
+        when is_simple_name name && Expression.show annotation |> String.equal "Sanitize" -> (
+          let name = name_to_reference_exn name in
+          match ModelVerifier.verify_global ~resolution ~name with
+          | Core.Result.Error error ->
+              let error =
+                ModelVerifier.display_verification_error
+                  ~path
+                  ~location:signature.location
+                  ~name:(Reference.show name)
+                  error
+              in
+              Log.error "%s" error;
+              Core.Result.Error error
+          | Core.Result.Ok () ->
+              let signature =
+                {
+                  Define.Signature.name = Node.create ~location:name_location name;
+                  parameters = [Parameter.create ~location:Location.any ~name:"$global" ()];
+                  decorators =
+                    [
+                      {
+                        Decorator.name =
+                          Node.create_with_default_location (Reference.create "Sanitize");
+                        arguments = None;
+                      };
+                    ];
+                  return_annotation = None;
+                  async = false;
+                  generator = false;
+                  parent = None;
+                  nesting_define = None;
+                }
+              in
+              Core.Result.Ok [ParsedSignature (signature, location, Callable.create_object name)] )
+      | {
+       Node.value =
+         Expression
+           {
+             Node.value =
+               Expression.Call
+                 {
+                   Call.callee = { Node.value = Expression.Name (Name.Identifier "ModelQuery"); _ };
+                   arguments;
+                 };
+             _;
+           };
+       _;
+      } ->
+          let clauses =
+            match arguments with
+            | [
+             { Call.Argument.name = Some { Node.value = "find"; _ }; value = find_clause };
+             { Call.Argument.name = Some { Node.value = "where"; _ }; value = where_clause };
+             { Call.Argument.name = Some { Node.value = "model"; _ }; value = model_clause };
+            ] ->
+                Core.Result.Ok
+                  ( None,
+                    parse_find_clause find_clause,
+                    parse_where_clause where_clause,
+                    parse_model_clause ~configuration model_clause )
+            | [
              {
-               Assign.target = { Node.value = Name name; location = name_location };
-               annotation = Some annotation;
-               _;
+               Call.Argument.name = Some { Node.value = "name"; _ };
+               value = { Node.value = Expression.String { StringLiteral.value = name; _ }; _ };
              };
-         location;
-        }
-          when is_simple_name name
-               && Expression.show annotation |> String.is_prefix ~prefix:"TaintSource[" ->
-            let name = name_to_reference_exn name in
-            ModelVerifier.verify_global ~resolution ~name;
-            let signature =
-              {
-                Define.Signature.name = Node.create ~location:name_location name;
-                parameters = [];
-                decorators = [];
-                return_annotation = Some annotation;
-                async = false;
-                generator = false;
-                parent = None;
-                nesting_define = None;
-              }
-            in
-            Core.Result.Ok [ParsedSignature (signature, location, Callable.create_object name)]
-        | {
-         Node.value =
-           Assign
-             {
-               Assign.target = { Node.value = Name name; location = name_location };
-               annotation = Some annotation;
-               _;
-             };
-         location;
-        }
-          when is_simple_name name
-               && Expression.show annotation |> String.is_prefix ~prefix:"TaintSink["
-               || Expression.show annotation |> String.is_prefix ~prefix:"TaintInTaintOut[" ->
-            let name = name_to_reference_exn name in
-            ModelVerifier.verify_global ~resolution ~name;
-            let signature =
-              {
-                Define.Signature.name = Node.create ~location:name_location name;
-                parameters =
-                  [Parameter.create ~location:Location.any ~annotation ~name:"$global" ()];
-                decorators = [];
-                return_annotation = None;
-                async = false;
-                generator = false;
-                parent = None;
-                nesting_define = None;
-              }
-            in
-            Core.Result.Ok [ParsedSignature (signature, location, Callable.create_object name)]
-        | {
-         Node.value =
-           Assign
-             {
-               Assign.target = { Node.value = Name name; location = name_location };
-               annotation = Some annotation;
-               _;
-             };
-         location;
-        }
-          when is_simple_name name && Expression.show annotation |> String.equal "Sanitize" ->
-            let name = name_to_reference_exn name in
-            ModelVerifier.verify_global ~resolution ~name;
-            let signature =
-              {
-                Define.Signature.name = Node.create ~location:name_location name;
-                parameters = [Parameter.create ~location:Location.any ~name:"$global" ()];
-                decorators =
-                  [
-                    {
-                      Decorator.name =
-                        Node.create_with_default_location (Reference.create "Sanitize");
-                      arguments = None;
-                    };
-                  ];
-                return_annotation = None;
-                async = false;
-                generator = false;
-                parent = None;
-                nesting_define = None;
-              }
-            in
-            Core.Result.Ok [ParsedSignature (signature, location, Callable.create_object name)]
-        | {
-         Node.value =
-           Expression
-             {
-               Node.value =
-                 Expression.Call
-                   {
-                     Call.callee =
-                       { Node.value = Expression.Name (Name.Identifier "ModelQuery"); _ };
-                     arguments;
-                   };
-               _;
-             };
-         _;
-        } ->
-            let clauses =
-              match arguments with
-              | [
-               { Call.Argument.name = Some { Node.value = "find"; _ }; value = find_clause };
-               { Call.Argument.name = Some { Node.value = "where"; _ }; value = where_clause };
-               { Call.Argument.name = Some { Node.value = "model"; _ }; value = model_clause };
-              ] ->
-                  Core.Result.Ok
-                    ( None,
-                      parse_find_clause find_clause,
-                      parse_where_clause where_clause,
-                      parse_model_clause ~configuration model_clause )
-              | [
-               {
-                 Call.Argument.name = Some { Node.value = "name"; _ };
-                 value = { Node.value = Expression.String { StringLiteral.value = name; _ }; _ };
-               };
-               { Call.Argument.name = Some { Node.value = "find"; _ }; value = find_clause };
-               { Call.Argument.name = Some { Node.value = "where"; _ }; value = where_clause };
-               { Call.Argument.name = Some { Node.value = "model"; _ }; value = model_clause };
-              ] ->
-                  Core.Result.Ok
-                    ( Some name,
-                      parse_find_clause find_clause,
-                      parse_where_clause where_clause,
-                      parse_model_clause ~configuration model_clause )
-              | _ ->
-                  Core.Result.Error
-                    "Malformed model query arguments: expected a find, where and model clause."
-            in
+             { Call.Argument.name = Some { Node.value = "find"; _ }; value = find_clause };
+             { Call.Argument.name = Some { Node.value = "where"; _ }; value = where_clause };
+             { Call.Argument.name = Some { Node.value = "model"; _ }; value = model_clause };
+            ] ->
+                Core.Result.Ok
+                  ( Some name,
+                    parse_find_clause find_clause,
+                    parse_where_clause where_clause,
+                    parse_model_clause ~configuration model_clause )
+            | _ ->
+                Core.Result.Error
+                  "Malformed model query arguments: expected a find, where and model clause."
+          in
 
-            let open Core.Result in
-            clauses
-            >>= fun (name, find_clause, where_clause, model_clause) ->
-            find_clause
-            >>= fun rule_kind ->
-            where_clause
-            >>= fun query ->
-            model_clause
-            >>| fun productions -> [ParsedQuery { ModelQuery.rule_kind; query; productions; name }]
-        | _ -> Core.Result.Ok []
-      with
-      | ModelVerifier.GlobalVerificationError { name; message } ->
-          invalid_model_error ~location:signature.location ~name message
+          let open Core.Result in
+          clauses
+          >>= fun (name, find_clause, where_clause, model_clause) ->
+          find_clause
+          >>= fun rule_kind ->
+          where_clause
+          >>= fun query ->
+          model_clause
+          >>| fun productions -> [ParsedQuery { ModelQuery.rule_kind; query; productions; name }]
+      | _ -> Core.Result.Ok []
     in
     String.split ~on:'\n' source
     |> Parser.parse

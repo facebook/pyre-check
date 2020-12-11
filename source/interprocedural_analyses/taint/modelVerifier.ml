@@ -176,18 +176,33 @@ let verify_signature ~normalized_model_parameters ~name callable_annotation =
   | _ -> ()
 
 
-exception
-  GlobalVerificationError of {
-    name: string;
-    message: string;
-  }
+type verification_error =
+  | GlobalVerificationError of {
+      name: string;
+      message: string;
+    }
+
+let display_verification_error ~path ~location ~name error =
+  let model_origin =
+    match path with
+    | None -> ""
+    | Some path ->
+        Format.sprintf
+          " defined in `%s:%d`"
+          (Path.absolute path)
+          location.Location.start.Location.line
+  in
+  match error with
+  | GlobalVerificationError { message; _ } ->
+      Format.asprintf "Invalid model for `%s`%s: %s" name model_origin message
+
 
 let verify_global ~resolution ~name =
   let name = demangle_class_attribute (Reference.show name) |> Reference.create in
   let global_resolution = Resolution.global_resolution resolution in
   let global = GlobalResolution.global global_resolution name in
   if Option.is_some global then
-    ()
+    Result.Ok ()
   else
     let class_summary, attribute_name =
       ( Reference.as_list name
@@ -209,7 +224,7 @@ let verify_global ~resolution ~name =
           Identifier.SerializableMap.mem attribute_name attributes
           || Identifier.SerializableMap.mem attribute_name constructor_attributes
         then
-          ()
+          Result.Ok ()
         else
           let error =
             Format.sprintf
@@ -217,13 +232,11 @@ let verify_global ~resolution ~name =
               (Reference.show class_name)
               attribute_name
           in
-          Log.error "%s" error;
-          raise (GlobalVerificationError { name = Reference.show name; message = error })
+          Result.Error (GlobalVerificationError { name = Reference.show name; message = error })
     | _ ->
         let error =
           Format.sprintf
             "`%s` does not correspond to a class's attribute or a global."
             (Reference.show name)
         in
-        Log.error "%s" error;
-        raise (GlobalVerificationError { name = Reference.show name; message = error })
+        Result.Error (GlobalVerificationError { name = Reference.show name; message = error })
