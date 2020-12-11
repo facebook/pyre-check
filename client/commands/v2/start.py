@@ -416,6 +416,15 @@ def _run_in_background(
         raise commands.ClientException("Interrupted by user. No server is spawned.")
 
 
+@contextlib.contextmanager
+def server_argument_file(server_arguments: Arguments) -> Iterator[Path]:
+    with tempfile.NamedTemporaryFile(
+        mode="w", prefix="pyre_arguments_", suffix=".json"
+    ) as argument_file:
+        _write_argument_file(argument_file, server_arguments)
+        yield Path(argument_file.name)
+
+
 def run(
     configuration: configuration_module.Configuration,
     start_arguments: command_arguments.StartArguments,
@@ -436,12 +445,8 @@ def run(
         )
 
     LOG.info(f"Starting server at `{get_server_identifier(configuration)}`...")
-    with tempfile.NamedTemporaryFile(
-        mode="w", prefix="pyre_arguments_", suffix=".json"
-    ) as argument_file:
-        _write_argument_file(argument_file, server_arguments)
-
-        server_command = [binary_location, "newserver", argument_file.name]
+    with server_argument_file(server_arguments) as argument_file_path:
+        server_command = [binary_location, "newserver", str(argument_file_path)]
         server_environment = {
             **os.environ,
             # This is to make sure that backend server shares the socket root
