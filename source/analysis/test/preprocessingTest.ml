@@ -723,6 +723,20 @@ let test_qualify _ =
         $local_qualifier?foo$x = 'arg'
         return {'arg': $local_qualifier?foo$x}
     |};
+  (* Don't qualify the TypeVar name argument. *)
+  assert_qualify
+    {|
+      from typing import TypeVar
+
+      T: int = 3
+      T2 = TypeVar("T")
+    |}
+    {|
+      from typing import TypeVar
+
+      $local_qualifier$T: int = 3
+      $local_qualifier$T2 = typing.TypeVar("T")
+    |};
   assert_qualify
     {|
       from typing import TypeVar as TV
@@ -1625,6 +1639,19 @@ let test_qualify _ =
       def qualifier.foo($parameter$x: int) -> None:
         $local_qualifier?foo$d: typing.Dict[str, int]
         $local_qualifier?foo$d["x"]
+    |};
+  (* Recursive alias definition. *)
+  assert_qualify
+    {|
+      from typing import List, Tuple, Union
+
+      Tree = Union[int, Tuple["Tree", "Tree"]]
+    |}
+    {|
+      from typing import List, Tuple, Union
+
+      $local_qualifier$Tree = typing.Union[int, \
+        typing.Tuple["$local_qualifier$Tree", "$local_qualifier$Tree"]]
     |};
   ()
 
@@ -4570,7 +4597,6 @@ let test_populate_unbound_names _ =
     List.iter expected ~f:(fun (name, unbound_names) -> assert_unbound_names name unbound_names)
   in
   let toplevel_name = !&"test.$toplevel" in
-
   assert_unbound_names "derp" ~expected:[toplevel_name, ["derp", location (1, 0) (1, 4)]];
   assert_unbound_names
     {|
@@ -4807,6 +4833,13 @@ let test_populate_unbound_names _ =
       ) -> None: ...
     |}
     ~expected:[toplevel_name, ["nonexistent_outside_quotes", location (6, 12) (6, 38)]];
+  (* Recursive alias reference should not be considered unbound. *)
+  assert_unbound_names
+    {|
+       from typing import Tuple, Union
+       Tree = Union[int, Tuple["Tree", "Tree"]]
+    |}
+    ~expected:[];
   ()
 
 

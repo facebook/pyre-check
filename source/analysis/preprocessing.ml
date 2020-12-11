@@ -495,20 +495,20 @@ let qualify
     let scope, value =
       let local_alias ~qualifier ~name = { name; qualifier; is_forward_reference = false } in
       let qualify_assign { Assign.target; annotation; value; parent } =
-        let value =
-          match value with
-          | { Node.value = String _; _ } ->
+        let qualify_value ~scope = function
+          | { Node.value = Expression.String _; _ } ->
               (* String literal assignments might be type aliases. *)
               qualify_expression ~qualify_strings:is_top_level value ~scope
           | {
-           Node.value =
-             Call
-               {
-                 callee = { Node.value = Name (Name.Attribute { attribute = "__getitem__"; _ }); _ };
-                 _;
-               };
-           _;
-          } ->
+              Node.value =
+                Call
+                  {
+                    callee =
+                      { Node.value = Name (Name.Attribute { attribute = "__getitem__"; _ }); _ };
+                    _;
+                  };
+              _;
+            } ->
               qualify_expression ~qualify_strings:is_top_level value ~scope
           | _ -> qualify_expression ~qualify_strings:false value ~scope
         in
@@ -634,7 +634,7 @@ let qualify
             Assign.target;
             annotation = annotation >>| qualify_expression ~qualify_strings:true ~scope;
             (* Assignments can be type aliases. *)
-            value;
+            value = qualify_value ~scope:target_scope value;
             parent = (parent >>| fun parent -> qualify_reference ~scope parent);
           } )
       in
@@ -1046,11 +1046,12 @@ let qualify
                   qualify_argument ~qualify_strings:true ~scope type_argument;
                   qualify_argument ~qualify_strings ~scope value_argument;
                 ]
+            | variable_name :: remaining_arguments when name_is ~name:"typing.TypeVar" callee ->
+                variable_name
+                :: List.map ~f:(qualify_argument ~qualify_strings:true ~scope) remaining_arguments
             | arguments ->
                 let qualify_strings =
-                  if name_is ~name:"typing.TypeVar" callee then
-                    true
-                  else if name_is ~name:"typing_extensions.Literal.__getitem__" callee then
+                  if name_is ~name:"typing_extensions.Literal.__getitem__" callee then
                     false
                   else
                     match callee with
