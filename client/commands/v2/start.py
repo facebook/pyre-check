@@ -15,9 +15,10 @@ import tempfile
 from pathlib import Path
 from typing import (
     IO,
+    TextIO,
     Any,
     Dict,
-    Generator,
+    Iterator,
     List,
     Mapping,
     Optional,
@@ -332,7 +333,7 @@ def _run_in_foreground(
 
 
 @contextlib.contextmanager
-def background_logging(log_file: Path) -> Generator[None, None, None]:
+def background_logging(log_file: Path) -> Iterator[None]:
     with log.file_tailer(log_file) as log_stream:
         with log.StreamLogger(log_stream) as logger:
             yield
@@ -347,6 +348,20 @@ def _create_symbolic_link(source: Path, target: Path) -> None:
     source.symlink_to(target)
 
 
+@contextlib.contextmanager
+def background_server_log_file(log_directory: Path) -> Iterator[TextIO]:
+    new_server_log_directory = log_directory / "new_server"
+    new_server_log_directory.mkdir(parents=True, exist_ok=True)
+    log_file_path = new_server_log_directory / datetime.datetime.now().strftime(
+        "server.stderr.%Y_%m_%d_%H_%M_%S_%f"
+    )
+    with open(str(log_file_path), "a") as log_file:
+        yield log_file
+    # Symlink the log file to a known location for subsequent `pyre incremental`
+    # to find.
+    _create_symbolic_link(new_server_log_directory / "server.stderr", log_file_path)
+
+
 def _run_in_background(
     command: Sequence[str],
     environment: Mapping[str, str],
@@ -359,12 +374,8 @@ def _run_in_background(
     # Server stderr will be forwarded to dedicated log files.
     # Server stdout will be used as additional communication channel for status
     # updates.
-    log_file = (
-        log_directory
-        / "new_server"
-        / datetime.datetime.now().strftime("server.stderr.%Y_%m_%d_%H_%M_%S_%f")
-    )
-    with open(str(log_file), "a") as server_stderr:
+    with background_server_log_file(log_directory) as server_stderr:
+        log_file = Path(server_stderr.name)
         server_process = subprocess.Popen(
             command,
             stdout=subprocess.PIPE,
@@ -384,13 +395,6 @@ def _run_in_background(
         with background_logging(log_file):
             event_waiter.wait_on(server_stdout)
             server_stdout.close()
-
-            # Symlink the log file to a known location for subsequent `pyre incremental`
-            # to find.
-            _create_symbolic_link(
-                log_directory / "new_server" / "server.stderr", log_file
-            )
-
             return commands.ExitCode.SUCCESS
     except KeyboardInterrupt:
         LOG.info("SIGINT received. Terminating background server...")
@@ -423,7 +427,6 @@ def run(
         )
 
     log_directory = Path(configuration.log_directory)
-    (log_directory / "new_server").mkdir(parents=True, exist_ok=True)
 
     server_arguments = create_server_arguments(configuration, start_arguments)
     if not start_arguments.no_watchman and server_arguments.watchman_root is None:

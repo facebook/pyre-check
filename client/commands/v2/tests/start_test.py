@@ -22,6 +22,7 @@ from ..start import (
     get_critical_files,
     get_saved_state_action,
     get_server_identifier,
+    background_server_log_file,
 )
 
 
@@ -417,3 +418,13 @@ class StartTest(testslide.TestCase):
                 ),
             )
             self.assertIsNone(arguments.saved_state_action)
+
+    def test_background_server_log_placement(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root).resolve()
+            with background_server_log_file(root_path) as log_file:
+                print("foo", file=log_file)
+            # Make sure that the log content can be read from a known location.
+            self.assertEqual(
+                (root_path / "new_server" / "server.stderr").read_text().strip(), "foo"
+            )
