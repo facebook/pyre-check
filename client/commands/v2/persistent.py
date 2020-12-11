@@ -143,6 +143,13 @@ async def _read_lsp_request(
         )
 
 
+class ServerState:
+    opened_documents: Set[Path]
+
+    def __init__(self, opened_documents: Optional[Set[Path]] = None) -> None:
+        self.opened_documents = opened_documents or set()
+
+
 class Server:
     # I/O Channels
     input_channel: connection.TextReader
@@ -150,23 +157,24 @@ class Server:
 
     # Immutable States
     client_capabilities: lsp.ClientCapabilities
-    pyre_arguments: start.Arguments
 
     # Mutable States
-    opened_documents: Set[Path]
+    state: ServerState
+    pyre_manager: connection.BackgroundTaskManager
 
     def __init__(
         self,
         input_channel: connection.TextReader,
         output_channel: connection.TextWriter,
         client_capabilities: lsp.ClientCapabilities,
-        pyre_arguments: start.Arguments,
+        state: ServerState,
+        pyre_manager: connection.BackgroundTaskManager,
     ) -> None:
         self.input_channel = input_channel
         self.output_channel = output_channel
         self.client_capabilities = client_capabilities
-        self.pyre_arguments = pyre_arguments
-        self.opened_documents = set()
+        self.state = state
+        self.pyre_manager = pyre_manager
 
     async def wait_for_exit(self) -> int:
         while True:
@@ -188,7 +196,7 @@ class Server:
             raise json_rpc.InvalidRequestError(
                 f"Document URI is not a file: {parameters.text_document.uri}"
             )
-        self.opened_documents.add(document_path)
+        self.state.opened_documents.add(document_path)
         LOG.info(f"File opened: {document_path}")
 
     def process_close_request(
@@ -200,12 +208,12 @@ class Server:
                 f"Document URI is not a file: {parameters.text_document.uri}"
             )
         try:
-            self.opened_documents.remove(document_path)
+            self.state.opened_documents.remove(document_path)
             LOG.info(f"File closed: {document_path}")
         except KeyError:
             LOG.warning(f"Trying to close an un-opened file: {document_path}")
 
-    async def run(self) -> int:
+    async def _run(self) -> int:
         while True:
             async with _read_lsp_request(
                 self.input_channel, self.output_channel
@@ -245,6 +253,33 @@ class Server:
                 elif request.id is not None:
                     raise lsp.RequestCancelledError("Request not supported yet")
 
+    async def run(self) -> int:
+        try:
+            await self.pyre_manager.ensure_task_running()
+            return await self._run()
+        finally:
+            await self.pyre_manager.ensure_task_stop()
+
+
+class PyreServerHandler(connection.BackgroundTask):
+    pyre_arguments: start.Arguments
+    client_output_channel: connection.TextWriter
+    server_state: ServerState
+
+    def __init__(
+        self,
+        pyre_arguments: start.Arguments,
+        client_output_channel: connection.TextWriter,
+        server_state: ServerState,
+    ) -> None:
+        self.pyre_arguments = pyre_arguments
+        self.client_output_channel = client_output_channel
+        self.server_state = server_state
+
+    async def run(self) -> None:
+        LOG.warning("Not implemented yet")
+        await asyncio.Event().wait()
+
 
 async def run_persistent(pyre_arguments: start.Arguments) -> int:
     stdin, stdout = await connection.create_async_stdin_stdout()
@@ -257,11 +292,19 @@ async def run_persistent(pyre_arguments: start.Arguments) -> int:
             client_capabilities = initialize_result.client_capabilities
             LOG.info("Initialization successful.")
             LOG.debug(f"Client capabilities: {client_capabilities}")
+            initial_server_state = ServerState()
             server = Server(
                 input_channel=stdin,
                 output_channel=stdout,
                 client_capabilities=client_capabilities,
-                pyre_arguments=pyre_arguments,
+                state=initial_server_state,
+                pyre_manager=connection.BackgroundTaskManager(
+                    PyreServerHandler(
+                        pyre_arguments=pyre_arguments,
+                        client_output_channel=stdout,
+                        server_state=initial_server_state,
+                    )
+                ),
             )
             return await server.run()
         elif isinstance(initialize_result, InitializationFailure):

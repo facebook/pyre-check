@@ -9,7 +9,7 @@ import testslide
 
 from .... import json_rpc
 from ....tests import setup
-from .. import language_server_protocol as lsp, start
+from .. import language_server_protocol as lsp
 from ..async_server_connection import (
     TextReader,
     TextWriter,
@@ -17,6 +17,8 @@ from ..async_server_connection import (
     MemoryBytesWriter,
     create_memory_text_writer,
     create_memory_text_reader,
+    BackgroundTask,
+    BackgroundTaskManager,
 )
 from ..persistent import (
     try_initialize,
@@ -24,6 +26,7 @@ from ..persistent import (
     InitializationFailure,
     InitializationExit,
     Server,
+    ServerState,
 )
 
 
@@ -31,6 +34,11 @@ async def _create_input_channel_with_request(request: json_rpc.Request) -> TextR
     bytes_writer = MemoryBytesWriter()
     await lsp.write_json_rpc(TextWriter(bytes_writer), request)
     return TextReader(MemoryBytesReader(bytes_writer.items()[0]))
+
+
+class NoOpBackgroundTask(BackgroundTask):
+    async def run(self) -> None:
+        pass
 
 
 class PersistentTest(testslide.TestCase):
@@ -88,13 +96,13 @@ class PersistentTest(testslide.TestCase):
         self.assertIsInstance(result, InitializationExit)
 
     def test_open_close(self) -> None:
+        server_state = ServerState()
         server = Server(
             input_channel=create_memory_text_reader(""),
             output_channel=create_memory_text_writer(),
             client_capabilities=lsp.ClientCapabilities(),
-            pyre_arguments=start.Arguments(
-                log_path="/not/relevant", global_root="/not/relevant"
-            ),
+            state=server_state,
+            pyre_manager=BackgroundTaskManager(NoOpBackgroundTask()),
         )
         test_path0 = Path("/foo/bar")
         test_path1 = Path("/foo/baz")
@@ -109,7 +117,7 @@ class PersistentTest(testslide.TestCase):
                 )
             )
         )
-        self.assertIn(test_path0, server.opened_documents)
+        self.assertIn(test_path0, server_state.opened_documents)
 
         server.process_open_request(
             lsp.DidOpenTextDocumentParameters(
@@ -121,7 +129,7 @@ class PersistentTest(testslide.TestCase):
                 )
             )
         )
-        self.assertIn(test_path1, server.opened_documents)
+        self.assertIn(test_path1, server_state.opened_documents)
 
         server.process_close_request(
             lsp.DidCloseTextDocumentParameters(
@@ -130,4 +138,4 @@ class PersistentTest(testslide.TestCase):
                 )
             )
         )
-        self.assertNotIn(test_path0, server.opened_documents)
+        self.assertNotIn(test_path0, server_state.opened_documents)
