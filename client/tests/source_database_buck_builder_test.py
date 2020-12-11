@@ -17,10 +17,10 @@ class SourceDatabaseBuckBuilderTest(unittest.TestCase):
         self._query_arguments = [
             "query",
             "--json",
-            'kind("python_binary|python_library|python_test", "%s") '
-            "- attrfilter(labels, generated, '%s') "
-            "+ attrfilter(labels, unittest-library, '%s') "
-            "- attrfilter(labels, no_pyre, '%s')",
+            'kind("python_binary|python_library|python_test", %s) '
+            "- attrfilter(labels, generated, %s) "
+            "+ attrfilter(labels, unittest-library, %s) "
+            "- attrfilter(labels, no_pyre, %s)",
             "//foo/bar/...",
             "//bar:baz",
         ]
@@ -41,10 +41,10 @@ class SourceDatabaseBuckBuilderTest(unittest.TestCase):
                 "query",
                 "--json",
                 "@mode/foo",
-                'kind("python_binary|python_library|python_test", "%s") '
-                "- attrfilter(labels, generated, '%s') "
-                "+ attrfilter(labels, unittest-library, '%s') "
-                "- attrfilter(labels, no_pyre, '%s')",
+                'kind("python_binary|python_library|python_test", %s) '
+                "- attrfilter(labels, generated, %s) "
+                "+ attrfilter(labels, unittest-library, %s) "
+                "- attrfilter(labels, no_pyre, %s)",
                 "//foo/bar/...",
                 "//bar:baz",
             ],
