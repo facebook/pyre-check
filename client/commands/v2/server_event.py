@@ -6,7 +6,9 @@
 import dataclasses
 import json
 from pathlib import Path
-from typing import List, Optional, Union
+from typing import List, Optional, Union, IO
+
+from . import async_server_connection
 
 
 @dataclasses.dataclass
@@ -50,3 +52,81 @@ def create_from_string(input_string: str) -> Optional[Event]:
             return None
     except json.JSONDecodeError:
         return None
+
+
+class EventParsingException(Exception):
+    pass
+
+
+def _parse_server_event(event_string: str) -> Event:
+    event = create_from_string(event_string)
+    if event is None:
+        raise EventParsingException(
+            f"Unrecognized status update from server: {event_string}"
+        )
+    elif isinstance(event, ServerException):
+        raise EventParsingException(f"Failed to start server: {event.message}")
+    return event
+
+
+class Waiter:
+    wait_on_initialization: bool
+
+    def __init__(self, wait_on_initialization: bool) -> None:
+        self.wait_on_initialization = wait_on_initialization
+
+    def wait_on(self, event_stream: IO[str]) -> None:
+        """
+        Read from the given input channel, expecting server events there.
+        If `self.wait_on_initialization` is false, block until server socket
+        creation and returns.
+        Otherwise, block until server initialization has finished and returns.
+        If data obtained from the input channel does not conform to the server
+        event format, or if an error event is received, raise
+        `EventParsingException`.
+        """
+        # The first event is expected to be socket creation
+        initial_event = _parse_server_event(event_stream.readline().strip())
+        if isinstance(initial_event, SocketCreated):
+            if not self.wait_on_initialization:
+                return
+
+            # The second event is expected to be server initialization
+            second_event = _parse_server_event(event_stream.readline().strip())
+            if isinstance(second_event, ServerInitialized):
+                return
+
+            raise EventParsingException(
+                f"Unexpected second server status update: {second_event}"
+            )
+
+        raise EventParsingException(
+            f"Unexpected initial server status update: {initial_event}"
+        )
+
+    # This method does the same thing as `wait_on` except it operates on asyncio
+    # streams rather than synchronoized streams.
+    # NOTE: Any changes inside `wait_on` need to be applied here as well.
+    async def async_wait_on(
+        self, event_stream: async_server_connection.TextReader
+    ) -> None:
+        """
+        This method is the same as `wait_on`, except it operates on async input
+        channels instead of synchronous ones.
+        """
+        initial_event = _parse_server_event((await event_stream.readline()).strip())
+        if isinstance(initial_event, SocketCreated):
+            if not self.wait_on_initialization:
+                return
+
+            second_event = _parse_server_event((await event_stream.readline()).strip())
+            if isinstance(second_event, ServerInitialized):
+                return
+
+            raise EventParsingException(
+                f"Unexpected second server status update: {second_event}"
+            )
+
+        raise EventParsingException(
+            f"Unexpected initial server status update: {initial_event}"
+        )

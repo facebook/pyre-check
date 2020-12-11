@@ -331,44 +331,6 @@ def _run_in_foreground(
         return commands.ExitCode.FAILURE
 
 
-class EventParsingException(Exception):
-    pass
-
-
-def parse_server_event(event_string: str) -> server_event.Event:
-    event = server_event.create_from_string(event_string)
-    if event is None:
-        raise EventParsingException(
-            f"Unrecognized status update from server: {event_string}"
-        )
-    elif isinstance(event, server_event.ServerException):
-        raise EventParsingException(f"Failed to start server: {event.message}")
-    return event
-
-
-class BackgroundEventWaiter:
-    wait_on_initialization: bool
-
-    def __init__(self, wait_on_initialization: bool) -> None:
-        self.wait_on_initialization = wait_on_initialization
-
-    def wait_on(self, event_stream: IO[str]) -> None:
-        # The first event is expected to be socket creation
-        initial_event = parse_server_event(event_stream.readline().strip())
-        if isinstance(initial_event, server_event.SocketCreated):
-            if not self.wait_on_initialization:
-                return
-
-            # The second event is expected to be server initialization
-            second_event = parse_server_event(event_stream.readline().strip())
-            if isinstance(second_event, server_event.ServerInitialized):
-                return
-
-        raise EventParsingException(
-            f"Unexpected initial server status update: {initial_event}"
-        )
-
-
 @contextlib.contextmanager
 def background_logging(log_file: Path) -> Generator[None, None, None]:
     with log.file_tailer(log_file) as log_stream:
@@ -389,7 +351,7 @@ def _run_in_background(
     command: Sequence[str],
     environment: Mapping[str, str],
     log_directory: Path,
-    event_waiter: BackgroundEventWaiter,
+    event_waiter: server_event.Waiter,
 ) -> commands.ExitCode:
     # In background mode, we asynchronously start the server with `Popen` and
     # detach it from the current process immediately with `start_new_session`.
@@ -492,7 +454,7 @@ def run(
                 server_command,
                 server_environment,
                 log_directory,
-                BackgroundEventWaiter(
+                server_event.Waiter(
                     wait_on_initialization=start_arguments.wait_on_initialization
                 ),
             )

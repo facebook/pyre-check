@@ -3,7 +3,6 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-import io
 import tempfile
 from pathlib import Path
 from typing import Iterable, Tuple
@@ -14,9 +13,7 @@ from .... import command_arguments, commands, configuration
 from ....tests import setup
 from ..start import (
     Arguments,
-    BackgroundEventWaiter,
     CriticalFile,
-    EventParsingException,
     LoadSavedStateFromFile,
     LoadSavedStateFromProject,
     MatchPolicy,
@@ -420,41 +417,3 @@ class StartTest(testslide.TestCase):
                 ),
             )
             self.assertIsNone(arguments.saved_state_action)
-
-    def test_background_waiter_socket_create(self) -> None:
-        def assert_ok(event_output: str, wait_on_initialization: bool) -> None:
-            BackgroundEventWaiter(
-                wait_on_initialization=wait_on_initialization
-            ).wait_on(io.StringIO(event_output))
-
-        def assert_raises(event_output: str, wait_on_initialization: bool) -> None:
-            with self.assertRaises(EventParsingException):
-                BackgroundEventWaiter(
-                    wait_on_initialization=wait_on_initialization
-                ).wait_on(io.StringIO(event_output))
-
-        assert_raises("garbage", wait_on_initialization=False)
-        assert_raises("[]", wait_on_initialization=False)
-        assert_ok('["SocketCreated", "/path/to/socket"]', wait_on_initialization=False)
-        assert_raises('["ServerInitialized"]', wait_on_initialization=False)
-        assert_raises('["ServerException", "message"]', wait_on_initialization=False)
-
-        assert_raises("garbage", wait_on_initialization=True)
-        assert_raises("[]", wait_on_initialization=True)
-        assert_raises(
-            '["SocketCreated", "/path/to/socket"]', wait_on_initialization=True
-        )
-        assert_raises('["ServerException", "message"]', wait_on_initialization=True)
-        assert_raises(
-            '["SocketCreated", "/path/to/socket"]\n' + '["ServerException", "message"]',
-            wait_on_initialization=True,
-        )
-        assert_raises(
-            '["SocketCreated", "/path/to/socket"]\n'
-            + '["SocketCreated", "/path/to/socket"]',
-            wait_on_initialization=True,
-        )
-        assert_ok(
-            '["SocketCreated", "/path/to/socket"]\n' + '["ServerInitialized"]',
-            wait_on_initialization=True,
-        )
