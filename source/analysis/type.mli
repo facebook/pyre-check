@@ -167,6 +167,14 @@ module Record : sig
     }
     [@@deriving compare, eq, sexp, show, hash]
   end
+
+  module RecursiveType : sig
+    type 'annotation record = {
+      name: Identifier.t;
+      body: 'annotation;
+    }
+    [@@deriving compare, eq, sexp, show, hash]
+  end
 end
 
 module Monomial : sig
@@ -264,6 +272,7 @@ and t =
     }
   | ParameterVariadicComponent of Record.Variable.RecordVariadic.RecordParameters.RecordComponents.t
   | Primitive of Primitive.t
+  | RecursiveType of t Record.RecursiveType.record
   | Top
   | Tuple of tuple
   | Union of t list

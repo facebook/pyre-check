@@ -281,6 +281,9 @@ module OrderImplementation = struct
             (* Handle cases like `Tuple[int, int]` <= `Iterator[int]`. *)
             let parameter = List.fold ~init:Type.Bottom ~f:(join order) parameters in
             join order (Type.parametric "tuple" [Single parameter]) annotation
+        | Type.RecursiveType _, _
+        | _, Type.RecursiveType _ ->
+            Type.Top
         | Type.Tuple _, _
         | _, Type.Tuple _ ->
             Type.union [left; right]
@@ -412,6 +415,9 @@ module OrderImplementation = struct
               right
             else
               Type.Bottom
+        | Type.RecursiveType _, _
+        | _, Type.RecursiveType _ ->
+            Type.Bottom
         | ( Type.Callable ({ Callable.kind = Callable.Anonymous; _ } as left),
             Type.Callable ({ Callable.kind = Callable.Anonymous; _ } as right) ) ->
             join_implementations

@@ -684,6 +684,8 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
           ~right
     | Type.Primitive name, Type.Tuple _ ->
         if Type.Primitive.equal name "tuple" then [constraints] else impossible
+    | Type.RecursiveType _, _
+    | _, Type.RecursiveType _
     | Type.Tuple _, _
     | _, Type.Tuple _ ->
         impossible

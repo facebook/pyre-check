@@ -544,6 +544,26 @@ let test_resolve_aliases _ =
        "foo.Optional"
        [Single (Type.parametric "foo.Dict" [Single Type.string; Single Type.integer])])
     (Type.optional (Type.dictionary ~key:Type.string ~value:Type.integer));
+
+  let tree_body = Type.union [Type.integer; Type.list (Type.Primitive "Tree")] in
+  let aliases ?replace_unbound_parameters_with_any:_ name =
+    match name with
+    | "Tree" -> Some (Type.TypeAlias (Type.RecursiveType { name = "Tree"; body = tree_body }))
+    | _ -> None
+  in
+  assert_resolved
+    ~aliases
+    (Type.Primitive "Tree")
+    (Type.RecursiveType { name = "Tree"; body = tree_body });
+  (* Don't resolve the `Tree` reference within the body. *)
+  assert_resolved
+    ~aliases
+    (Type.RecursiveType { name = "Tree"; body = tree_body })
+    (Type.RecursiveType { name = "Tree"; body = tree_body });
+  assert_resolved
+    ~aliases
+    (Type.list (Type.Primitive "Tree"))
+    (Type.list (Type.RecursiveType { name = "Tree"; body = tree_body }));
   ()
 
 
@@ -899,6 +919,11 @@ let test_elements _ =
   assert_equal [] (Type.elements Type.Bottom);
   assert_equal ["int"] (Type.elements Type.integer);
   assert_equal [] (Type.elements Type.Any);
+  assert_equal
+    ["int"; "tuple"]
+    (Type.elements
+       (Type.RecursiveType
+          { name = "Tree"; body = Type.tuple [Type.integer; Type.Primitive "Tree"] }));
   ()
 
 

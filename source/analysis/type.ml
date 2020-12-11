@@ -410,6 +410,14 @@ module Record = struct
     }
     [@@deriving compare, eq, sexp, show, hash]
   end
+
+  module RecursiveType = struct
+    type 'annotation record = {
+      name: Identifier.t;
+      body: 'annotation;
+    }
+    [@@deriving compare, eq, sexp, show, hash]
+  end
 end
 
 module rec Monomial : sig
@@ -947,6 +955,7 @@ module T = struct
     | ParameterVariadicComponent of
         Record.Variable.RecordVariadic.RecordParameters.RecordComponents.t
     | Primitive of Primitive.t
+    | RecursiveType of t Record.RecursiveType.record
     | Top
     | Tuple of tuple
     | Union of t list
@@ -1340,6 +1349,7 @@ let rec pp format annotation =
   | ParameterVariadicComponent component ->
       Record.Variable.RecordVariadic.RecordParameters.RecordComponents.pp_concise format component
   | Primitive name -> Format.fprintf format "%a" String.pp name
+  | RecursiveType { name; body } -> Format.fprintf format "%s (resolves to %a)" name pp body
   | Top -> Format.fprintf format "unknown"
   | Tuple tuple ->
       let parameters =
@@ -1431,6 +1441,7 @@ and pp_concise format annotation =
   | ParameterVariadicComponent component ->
       Record.Variable.RecordVariadic.RecordParameters.RecordComponents.pp_concise format component
   | Primitive name -> Format.fprintf format "%s" (strip_qualification name)
+  | RecursiveType { name; _ } -> Format.fprintf format "%s" name
   | Top -> Format.fprintf format "unknown"
   | Tuple (Bounded parameters) ->
       Format.fprintf
@@ -1786,6 +1797,7 @@ let rec expression annotation =
         Expression.Name
           (Attribute { base = expression (Primitive variable_name); attribute; special = false })
     | Primitive name -> create_name name
+    | RecursiveType { name; _ } -> create_name name
     | Top -> create_name "$unknown"
     | Tuple (Bounded (Concrete [])) ->
         get_item_call "typing.Tuple" [Node.create ~location (Expression.Tuple [])]
@@ -2012,6 +2024,8 @@ module Transform = struct
               | CallableParameters parameters -> CallableParameters (visit_parameters parameters)
             in
             Parametric { name; parameters = List.map parameters ~f:visit }
+        | RecursiveType { name; body } ->
+            RecursiveType { name; body = visit_annotation ~state body }
         | Tuple (Bounded ordered) -> Tuple (Bounded (visit_ordered_types ordered))
         | Tuple (Unbounded annotation) -> Tuple (Unbounded (visit_annotation annotation ~state))
         | Union annotations -> union (List.map annotations ~f:(visit_annotation ~state))
@@ -2478,6 +2492,10 @@ let resolve_aliases ~aliases annotation =
                 when List.length resolved_parameters = List.length alias_parameters ->
                   Parametric { name = resolved_name; parameters = alias_parameters }
               | _ -> annotation )
+          | RecursiveType { name; _ } ->
+              (* Don't resolve the inner reference to the type. *)
+              Core.Hash_set.add visited (Primitive name);
+              annotation
           | _ -> annotation )
       in
       let transformed_annotation = resolve annotation in
@@ -3070,27 +3088,33 @@ let typed_dictionary_class_name ~total =
     "NonTotalTypedDictionary"
 
 
+type elements_state = {
+  elements: Primitive.t list;
+  recursive_type_names: Primitive.t list;
+}
+
 let elements annotation =
   let module CollectorTransform = Transform.Make (struct
-    type state = Primitive.t list
+    type state = elements_state
 
     let visit_children_before _ _ = true
 
     let visit_children_after = false
 
-    let visit sofar annotation =
-      let new_state =
+    let visit { elements = sofar; recursive_type_names } annotation =
+      let elements, recursive_type_names =
         match annotation with
-        | Annotated _ -> "typing.Annotated" :: sofar
-        | Callable _ -> "typing.Callable" :: sofar
-        | Literal _ -> "typing_extensions.Literal" :: sofar
+        | Annotated _ -> "typing.Annotated" :: sofar, recursive_type_names
+        | Callable _ -> "typing.Callable" :: sofar, recursive_type_names
+        | Literal _ -> "typing_extensions.Literal" :: sofar, recursive_type_names
         | Union [NoneType; _]
         | Union [_; NoneType] ->
-            "typing.Optional" :: sofar
-        | Parametric { name; _ } -> name :: sofar
-        | Primitive annotation -> annotation :: sofar
-        | Tuple _ -> "tuple" :: sofar
-        | Union _ -> "typing.Union" :: sofar
+            "typing.Optional" :: sofar, recursive_type_names
+        | Parametric { name; _ } -> name :: sofar, recursive_type_names
+        | Primitive annotation -> annotation :: sofar, recursive_type_names
+        | Tuple _ -> "tuple" :: sofar, recursive_type_names
+        | Union _ -> "typing.Union" :: sofar, recursive_type_names
+        | RecursiveType { name; _ } -> sofar, name :: recursive_type_names
         | ParameterVariadicComponent _
         | Bottom
         | Any
@@ -3098,12 +3122,21 @@ let elements annotation =
         | NoneType
         | Variable _
         | IntExpression _ ->
-            sofar
+            sofar, recursive_type_names
       in
-      { Transform.transformed_annotation = annotation; new_state }
+      {
+        Transform.transformed_annotation = annotation;
+        new_state = { elements; recursive_type_names };
+      }
   end)
   in
-  fst (CollectorTransform.visit [] annotation) |> List.rev
+  let { elements; recursive_type_names } =
+    fst (CollectorTransform.visit { elements = []; recursive_type_names = [] } annotation)
+  in
+  let name_set = Identifier.Set.of_list recursive_type_names in
+  (* The recursive alias name is untracked, which would lead to spurious "Annotation is not defined"
+     errors. So, filter out any references to it. consider the name as an "element". *)
+  List.filter elements ~f:(fun element -> not (Identifier.Set.mem name_set element)) |> List.rev
 
 
 let is_untyped = function
