@@ -7,7 +7,8 @@ import asyncio
 import contextlib
 import dataclasses
 import logging
-from typing import Union, Optional, AsyncIterator
+from pathlib import Path
+from typing import Union, Optional, AsyncIterator, Set
 
 from ... import (
     json_rpc,
@@ -143,10 +144,16 @@ async def _read_lsp_request(
 
 
 class Server:
+    # I/O Channels
     input_channel: connection.TextReader
     output_channel: connection.TextWriter
+
+    # Immutable States
     client_capabilities: lsp.ClientCapabilities
     pyre_arguments: start.Arguments
+
+    # Mutable States
+    opened_documents: Set[Path]
 
     def __init__(
         self,
@@ -159,6 +166,7 @@ class Server:
         self.output_channel = output_channel
         self.client_capabilities = client_capabilities
         self.pyre_arguments = pyre_arguments
+        self.opened_documents = set()
 
     async def wait_for_exit(self) -> int:
         while True:
@@ -171,6 +179,31 @@ class Server:
                     return 0
                 else:
                     raise json_rpc.InvalidRequestError("LSP server has been shut down")
+
+    def process_open_request(
+        self, parameters: lsp.DidOpenTextDocumentParameters
+    ) -> None:
+        document_path = parameters.text_document.document_uri().to_file_path()
+        if document_path is None:
+            raise json_rpc.InvalidRequestError(
+                f"Document URI is not a file: {parameters.text_document.uri}"
+            )
+        self.opened_documents.add(document_path)
+        LOG.info(f"File opened: {document_path}")
+
+    def process_close_request(
+        self, parameters: lsp.DidCloseTextDocumentParameters
+    ) -> None:
+        document_path = parameters.text_document.document_uri().to_file_path()
+        if document_path is None:
+            raise json_rpc.InvalidRequestError(
+                f"Document URI is not a file: {parameters.text_document.uri}"
+            )
+        try:
+            self.opened_documents.remove(document_path)
+            LOG.info(f"File closed: {document_path}")
+        except KeyError:
+            LOG.warning(f"Trying to close an un-opened file: {document_path}")
 
     async def run(self) -> int:
         while True:
@@ -187,6 +220,28 @@ class Server:
                         json_rpc.SuccessResponse(id=request.id, result=None),
                     )
                     return await self.wait_for_exit()
+                elif request.method == "textDocument/didOpen":
+                    parameters = request.parameters
+                    if parameters is None:
+                        raise json_rpc.InvalidRequestError(
+                            "Missing parameters for didOpen method"
+                        )
+                    self.process_open_request(
+                        lsp.DidOpenTextDocumentParameters.from_json_rpc_parameters(
+                            parameters
+                        )
+                    )
+                elif request.method == "textDocument/didClose":
+                    parameters = request.parameters
+                    if parameters is None:
+                        raise json_rpc.InvalidRequestError(
+                            "Missing parameters for didClose method"
+                        )
+                    self.process_close_request(
+                        lsp.DidCloseTextDocumentParameters.from_json_rpc_parameters(
+                            parameters
+                        )
+                    )
                 elif request.id is not None:
                     raise lsp.RequestCancelledError("Request not supported yet")
 

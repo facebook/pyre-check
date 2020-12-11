@@ -3,23 +3,27 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+from pathlib import Path
+
 import testslide
 
 from .... import json_rpc
 from ....tests import setup
-from .. import language_server_protocol as lsp
+from .. import language_server_protocol as lsp, start
 from ..async_server_connection import (
     TextReader,
     TextWriter,
     MemoryBytesReader,
     MemoryBytesWriter,
     create_memory_text_writer,
+    create_memory_text_reader,
 )
 from ..persistent import (
     try_initialize,
     InitializationSuccess,
     InitializationFailure,
     InitializationExit,
+    Server,
 )
 
 
@@ -82,3 +86,48 @@ class PersistentTest(testslide.TestCase):
         output_channel = create_memory_text_writer()
         result = await try_initialize(input_channel, output_channel)
         self.assertIsInstance(result, InitializationExit)
+
+    def test_open_close(self) -> None:
+        server = Server(
+            input_channel=create_memory_text_reader(""),
+            output_channel=create_memory_text_writer(),
+            client_capabilities=lsp.ClientCapabilities(),
+            pyre_arguments=start.Arguments(
+                log_path="/not/relevant", global_root="/not/relevant"
+            ),
+        )
+        test_path0 = Path("/foo/bar")
+        test_path1 = Path("/foo/baz")
+
+        server.process_open_request(
+            lsp.DidOpenTextDocumentParameters(
+                text_document=lsp.TextDocumentItem(
+                    language_id="python",
+                    text="",
+                    uri=lsp.DocumentUri.from_file_path(test_path0).unparse(),
+                    version=0,
+                )
+            )
+        )
+        self.assertIn(test_path0, server.opened_documents)
+
+        server.process_open_request(
+            lsp.DidOpenTextDocumentParameters(
+                text_document=lsp.TextDocumentItem(
+                    language_id="python",
+                    text="",
+                    uri=lsp.DocumentUri.from_file_path(test_path1).unparse(),
+                    version=0,
+                )
+            )
+        )
+        self.assertIn(test_path1, server.opened_documents)
+
+        server.process_close_request(
+            lsp.DidCloseTextDocumentParameters(
+                text_document=lsp.TextDocumentIdentifier(
+                    uri=lsp.DocumentUri.from_file_path(test_path0).unparse()
+                )
+            )
+        )
+        self.assertNotIn(test_path0, server.opened_documents)

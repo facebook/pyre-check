@@ -6,12 +6,17 @@
 import asyncio
 import dataclasses
 import enum
-from typing import List, Iterable, Optional
+import urllib
+from pathlib import Path
+from typing import List, Iterable, Optional, Type, TypeVar
 
 import dataclasses_json
 
 from ... import json_rpc
 from . import async_server_connection
+
+
+T = TypeVar("T")
 
 
 class ServerNotInitializedError(json_rpc.JSONRPCException):
@@ -76,6 +81,22 @@ async def write_json_rpc(
     await output_channel.write(f"Content-Length: {len(payload)}\r\n\r\n{payload}")
 
 
+def _parse_parameters(parameters: json_rpc.Parameters, target: Type[T]) -> T:
+    """
+    Parse the given JSON-RPC parameters into specified LSP parameters.
+    Raise `json_rpc.InvalidRequestError`on parsing failure.
+    """
+    if not isinstance(parameters, json_rpc.ByNameParameters):
+        raise json_rpc.InvalidRequestError(
+            "Parameters for LSP requests must be passed by name"
+        )
+    try:
+        # pyre-fixme[16]: Pyre doesn't understand `dataclasses_json`
+        return target.schema().load(parameters.values)
+    except (KeyError, ValueError, dataclasses_json.mm.ValidationError) as error:
+        raise json_rpc.InvalidRequestError(str(error)) from error
+
+
 class SerializationSafeIntEnum(enum.IntEnum):
     def __repr(self) -> str:
         return str(self.value)
@@ -90,6 +111,49 @@ class TextDocumentSyncKind(SerializationSafeIntEnum):
     NONE = 0
     FULL = 1
     INCREMENTAL = 2
+
+
+@dataclasses.dataclass(frozen=True)
+class DocumentUri:
+    scheme: str
+    authority: str
+    path: str
+    query: str
+    fragment: str
+
+    def to_file_path(self) -> Optional[Path]:
+        if self.scheme == "file":
+            return Path(self.path)
+        return None
+
+    def unparse(self) -> str:
+        return urllib.parse.urlunparse(
+            (
+                urllib.parse.quote(self.scheme),
+                urllib.parse.quote(self.authority),
+                urllib.parse.quote(self.path),
+                "",
+                urllib.parse.quote(self.query),
+                urllib.parse.quote(self.fragment),
+            )
+        )
+
+    @staticmethod
+    def parse(uri: str) -> "DocumentUri":
+        parsed_uri = urllib.parse.urlparse(uri)
+        return DocumentUri(
+            scheme=urllib.parse.unquote(parsed_uri.scheme),
+            authority=urllib.parse.unquote(parsed_uri.netloc),
+            path=urllib.parse.unquote(parsed_uri.path),
+            query=urllib.parse.unquote(parsed_uri.query),
+            fragment=urllib.parse.unquote(parsed_uri.fragment),
+        )
+
+    @staticmethod
+    def from_file_path(file_path: Path) -> "DocumentUri":
+        return DocumentUri(
+            scheme="file", authority="", path=str(file_path), query="", fragment=""
+        )
 
 
 @dataclasses_json.dataclass_json(
@@ -193,15 +257,7 @@ class InitializeParameters:
     def from_json_rpc_parameters(
         parameters: json_rpc.Parameters,
     ) -> "InitializeParameters":
-        if not isinstance(parameters, json_rpc.ByNameParameters):
-            raise json_rpc.InvalidRequestError(
-                "Parameters for initialize request must be passed by name"
-            )
-        try:
-            # pyre-fixme[16]: Pyre doesn't understand `dataclasses_json`
-            return InitializeParameters.schema().load(parameters.values)
-        except (KeyError, ValueError, dataclasses_json.mm.ValidationError) as error:
-            raise json_rpc.InvalidRequestError(str(error)) from error
+        return _parse_parameters(parameters, target=InitializeParameters)
 
 
 @dataclasses_json.dataclass_json(
@@ -212,3 +268,60 @@ class InitializeParameters:
 class InitializeResult:
     capabilities: ServerCapabilities
     server_info: Optional[Info] = None
+
+
+@dataclasses_json.dataclass_json(
+    letter_case=dataclasses_json.LetterCase.CAMEL,
+    undefined=dataclasses_json.Undefined.EXCLUDE,
+)
+@dataclasses.dataclass(frozen=True)
+class TextDocumentIdentifier:
+    uri: str
+
+    def document_uri(self) -> DocumentUri:
+        return DocumentUri.parse(self.uri)
+
+
+@dataclasses_json.dataclass_json(
+    letter_case=dataclasses_json.LetterCase.CAMEL,
+    undefined=dataclasses_json.Undefined.EXCLUDE,
+)
+@dataclasses.dataclass(frozen=True)
+class TextDocumentItem:
+    uri: str
+    language_id: str
+    version: int
+    text: str
+
+    def document_uri(self) -> DocumentUri:
+        return DocumentUri.parse(self.uri)
+
+
+@dataclasses_json.dataclass_json(
+    letter_case=dataclasses_json.LetterCase.CAMEL,
+    undefined=dataclasses_json.Undefined.EXCLUDE,
+)
+@dataclasses.dataclass(frozen=True)
+class DidOpenTextDocumentParameters:
+    text_document: TextDocumentItem
+
+    @staticmethod
+    def from_json_rpc_parameters(
+        parameters: json_rpc.Parameters,
+    ) -> "DidOpenTextDocumentParameters":
+        return _parse_parameters(parameters, target=DidOpenTextDocumentParameters)
+
+
+@dataclasses_json.dataclass_json(
+    letter_case=dataclasses_json.LetterCase.CAMEL,
+    undefined=dataclasses_json.Undefined.EXCLUDE,
+)
+@dataclasses.dataclass(frozen=True)
+class DidCloseTextDocumentParameters:
+    text_document: TextDocumentIdentifier
+
+    @staticmethod
+    def from_json_rpc_parameters(
+        parameters: json_rpc.Parameters,
+    ) -> "DidCloseTextDocumentParameters":
+        return _parse_parameters(parameters, target=DidCloseTextDocumentParameters)

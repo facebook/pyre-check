@@ -3,8 +3,10 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import functools
 import json
-from typing import Mapping
+from pathlib import Path
+from typing import Mapping, Optional, TypeVar, Callable
 
 import testslide
 
@@ -26,7 +28,39 @@ from ..language_server_protocol import (
     PublishDiagnosticsClientCapabilities,
     PublishDiagnosticsClientTagSupport,
     DiagnosticTag,
+    DocumentUri,
+    DidOpenTextDocumentParameters,
+    TextDocumentItem,
+    DidCloseTextDocumentParameters,
+    TextDocumentIdentifier,
 )
+
+T = TypeVar("T")
+
+
+class DocumentUriTest(testslide.TestCase):
+    def test_to_file_path(self) -> None:
+        def assert_file_path(uri: str, expected: Optional[Path]) -> None:
+            self.assertEqual(DocumentUri.parse(uri).to_file_path(), expected)
+
+        assert_file_path("file:///foo/bar", expected=Path("/foo/bar"))
+        assert_file_path("file:///foo/space%20%3Fbar", expected=Path("/foo/space ?bar"))
+        assert_file_path("file:///foo/bar#frag", expected=Path("/foo/bar"))
+        assert_file_path("file://localhost/etc/fstab", expected=Path("/etc/fstab"))
+        assert_file_path(
+            "file://hostname/path/to/the%20file.txt",
+            expected=Path("/path/to/the file.txt"),
+        )
+        assert_file_path("https://pyre-check.org/", expected=None)
+        assert_file_path("nfs://server//a/b/c", expected=None)
+        assert_file_path("ssh://foo@192.168.1.1", expected=None)
+
+    def test_from_file_path(self) -> None:
+        def assert_file_path(path: Path, expected: str) -> None:
+            self.assertEqual(DocumentUri.from_file_path(path).unparse(), expected)
+
+        assert_file_path(Path("/foo/bar"), expected="file:///foo/bar")
+        assert_file_path(Path("/foo/space ?bar"), expected="file:///foo/space%20%3Fbar")
 
 
 class LSPInputOutputTest(testslide.TestCase):
@@ -104,22 +138,32 @@ class LSPInputOutputTest(testslide.TestCase):
 
 
 class LSPParsingTest(testslide.TestCase):
-    def test_parse_initialize(self) -> None:
-        def assert_parsed(
-            parameters: Mapping[str, object], expected: InitializeParameters
-        ) -> None:
-            self.assertEqual(
-                InitializeParameters.from_json_rpc_parameters(
-                    json_rpc.ByNameParameters(parameters)
-                ),
-                expected,
-            )
+    def assert_parsed(
+        self,
+        parser: Callable[[json_rpc.Parameters], T],
+        parameters: Mapping[str, object],
+        expected: T,
+    ) -> None:
+        self.assertEqual(
+            parser(json_rpc.ByNameParameters(parameters)),
+            expected,
+        )
 
-        def assert_not_parsed(parameters: Mapping[str, object]) -> None:
-            with self.assertRaises(json_rpc.InvalidRequestError):
-                InitializeParameters.from_json_rpc_parameters(
-                    json_rpc.ByNameParameters(parameters)
-                )
+    def assert_not_parsed(
+        self,
+        parser: Callable[[json_rpc.Parameters], T],
+        parameters: Mapping[str, object],
+    ) -> None:
+        with self.assertRaises(json_rpc.InvalidRequestError):
+            parser(json_rpc.ByNameParameters(parameters))
+
+    def test_parse_initialize(self) -> None:
+        assert_parsed = functools.partial(
+            self.assert_parsed, InitializeParameters.from_json_rpc_parameters
+        )
+        assert_not_parsed = functools.partial(
+            self.assert_not_parsed, InitializeParameters.from_json_rpc_parameters
+        )
 
         assert_not_parsed({})
         assert_not_parsed({"no_capabilities": 42})
@@ -187,5 +231,65 @@ class LSPParsingTest(testslide.TestCase):
                         ),
                     )
                 ),
+            ),
+        )
+
+    def test_parse_did_open(self) -> None:
+        assert_parsed = functools.partial(
+            self.assert_parsed, DidOpenTextDocumentParameters.from_json_rpc_parameters
+        )
+        assert_not_parsed = functools.partial(
+            self.assert_not_parsed,
+            DidOpenTextDocumentParameters.from_json_rpc_parameters,
+        )
+
+        assert_not_parsed({})
+        assert_not_parsed({"no_text_document": 42})
+        assert_not_parsed({"textDocument": "derp"})
+        assert_not_parsed(
+            {"textDocument": {"missing_uri": "foo", "version": 0, "text": ""}}
+        )
+        assert_parsed(
+            {
+                "textDocument": {
+                    "languageId": "python",
+                    "text": "foo",
+                    "uri": "file:///home/user/test.py",
+                    "version": 0,
+                }
+            },
+            expected=DidOpenTextDocumentParameters(
+                text_document=TextDocumentItem(
+                    language_id="python",
+                    text="foo",
+                    uri="file:///home/user/test.py",
+                    version=0,
+                )
+            ),
+        )
+
+    def test_parse_did_close(self) -> None:
+        assert_parsed = functools.partial(
+            self.assert_parsed, DidCloseTextDocumentParameters.from_json_rpc_parameters
+        )
+        assert_not_parsed = functools.partial(
+            self.assert_not_parsed,
+            DidCloseTextDocumentParameters.from_json_rpc_parameters,
+        )
+
+        assert_not_parsed({})
+        assert_not_parsed({"no_text_document": 42})
+        assert_not_parsed({"textDocument": "derp"})
+        assert_not_parsed({"textDocument": {"missing_uri": "foo"}})
+        assert_parsed(
+            {
+                "textDocument": {
+                    "uri": "file:///home/user/test.py",
+                }
+            },
+            expected=DidCloseTextDocumentParameters(
+                text_document=TextDocumentIdentifier(
+                    uri="file:///home/user/test.py",
+                )
             ),
         )
