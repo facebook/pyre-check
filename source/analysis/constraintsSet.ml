@@ -902,14 +902,27 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
         | _ -> impossible )
 
 
-  and instantiate_protocol_parameters
+  (* Find parameters to instantiate `protocol` such that `candidate <: protocol[parameters]`, where
+     `<:` is `solve_candidate_less_or_equal_protocol`.
+
+     This can handle recursive instances of (candidate <: protocol). The first time it sees a
+     candidate-protocol pair, it stores an assumed set of parameters. The next time it sees the same
+     pair, it returns the assumed parameters. When the protocol is not generic, the solution if it
+     exists will be [].
+
+     We need this because Python protocols can refer to themselves. So, the subtyping relation for
+     protocols is the one for equirecursive types. See section 21.9 of Types and Programming
+     Languages for the subtyping algorithm.
+
+     Note that classes that refer to themselves don't suffer from this since subtyping for two
+     classes just follows from the class hierarchy. *)
+  and instantiate_protocol_parameters_with_solve
       ( {
-          all_attributes;
-          attribute;
           class_hierarchy = { variables; _ };
           assumptions = { protocol_assumptions; _ } as assumptions;
           _;
         } as order )
+      ~solve_candidate_less_or_equal_protocol
       ~candidate
       ~protocol
       : Type.Parameter.t list option
@@ -930,7 +943,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
         in
         match assumed_protocol_parameters with
         | Some result -> Some result
-        | None -> (
+        | None ->
             let protocol_generics = variables protocol in
             let protocol_generic_parameters =
               protocol_generics
@@ -953,18 +966,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
                 ~protocol_parameters:(Option.value protocol_generic_parameters ~default:[])
             in
             let assumptions = { assumptions with protocol_assumptions = new_assumptions } in
-            let protocol_attributes =
-              let is_not_object_or_generic_method attribute =
-                let parent = AnnotatedAttribute.parent attribute in
-                (not (Type.is_object (Primitive parent)))
-                && not (Type.is_generic_primitive (Primitive parent))
-              in
-              protocol_generic_parameters
-              >>| Type.parametric protocol
-              |> Option.value ~default:(Type.Primitive protocol)
-              |> all_attributes ~assumptions
-              >>| List.filter ~f:is_not_object_or_generic_method
-            in
+            let order_with_new_assumption = { order with assumptions } in
             let candidate, desanitize_map =
               match candidate with
               | Type.Callable _ -> candidate, []
@@ -1002,97 +1004,114 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
                   in
                   sanitized_candidate, desanitize_map
             in
-            match protocol_attributes with
-            | Some all_protocol_attributes ->
-                let order_with_new_assumption = { order with assumptions } in
-                let attribute_implements constraints_set protocol_attribute =
-                  match constraints_set with
-                  | [] -> []
-                  | _ ->
-                      let attribute_annotation attribute =
-                        AnnotatedAttribute.annotation attribute |> Annotation.annotation
-                      in
-                      attribute
-                        ~assumptions
-                        candidate
-                        ~name:(AnnotatedAttribute.name protocol_attribute)
-                      >>| attribute_annotation
-                      >>| (fun left ->
-                            let right =
-                              match attribute_annotation protocol_attribute with
-                              | Type.Parametric { name = "BoundMethod"; _ } as bound_method ->
-                                  attribute ~assumptions bound_method ~name:"__call__"
-                                  >>| attribute_annotation
-                                  |> Option.value ~default:Type.object_primitive
-                              | annotation -> annotation
-                            in
-
-                            List.concat_map constraints_set ~f:(fun constraints ->
-                                solve_less_or_equal
-                                  order_with_new_assumption
-                                  ~left
-                                  ~right
-                                  ~constraints))
-                      |> Option.value ~default:[]
+            let instantiate_protocol_generics solution =
+              let desanitize =
+                let desanitization_solution = TypeConstraints.Solution.create desanitize_map in
+                let instantiate = function
+                  | Type.Parameter.Single single ->
+                      Type.Parameter.Single
+                        (TypeConstraints.Solution.instantiate desanitization_solution single)
+                  | Group group ->
+                      Group
+                        (TypeConstraints.Solution.instantiate_ordered_types
+                           desanitization_solution
+                           group)
+                  | CallableParameters parameters ->
+                      CallableParameters
+                        (TypeConstraints.Solution.instantiate_callable_parameters
+                           desanitization_solution
+                           parameters)
                 in
-                let instantiate_protocol_generics solution =
-                  let desanitize =
-                    let desanitization_solution = TypeConstraints.Solution.create desanitize_map in
-                    let instantiate = function
-                      | Type.Parameter.Single single ->
-                          Type.Parameter.Single
-                            (TypeConstraints.Solution.instantiate desanitization_solution single)
-                      | Group group ->
-                          Group
-                            (TypeConstraints.Solution.instantiate_ordered_types
-                               desanitization_solution
-                               group)
-                      | CallableParameters parameters ->
-                          CallableParameters
-                            (TypeConstraints.Solution.instantiate_callable_parameters
-                               desanitization_solution
-                               parameters)
+                List.map ~f:instantiate
+              in
+              let instantiate = function
+                | Type.Variable.Unary variable ->
+                    TypeConstraints.Solution.instantiate_single_variable solution variable
+                    |> Option.value ~default:(Type.Variable variable)
+                    |> fun instantiated -> Type.Parameter.Single instantiated
+                | ListVariadic variable ->
+                    let default =
+                      Type.OrderedTypes.Concatenation
+                        ( Type.OrderedTypes.Concatenation.Middle.create_bare variable
+                        |> Type.OrderedTypes.Concatenation.create )
                     in
-                    List.map ~f:instantiate
+                    TypeConstraints.Solution.instantiate_single_list_variadic_variable
+                      solution
+                      variable
+                    |> Option.value ~default
+                    |> fun instantiated -> Type.Parameter.Group instantiated
+                | ParameterVariadic variable ->
+                    TypeConstraints.Solution.instantiate_single_parameter_variadic solution variable
+                    |> Option.value
+                         ~default:
+                           (Type.Callable.ParameterVariadicTypeVariable { head = []; variable })
+                    |> fun instantiated -> Type.Parameter.CallableParameters instantiated
+              in
+              protocol_generics
+              >>| List.map ~f:instantiate
+              >>| desanitize
+              |> Option.value ~default:[]
+            in
+            let protocol_annotation =
+              protocol_generic_parameters
+              >>| Type.parametric protocol
+              |> Option.value ~default:(Type.Primitive protocol)
+            in
+            solve_candidate_less_or_equal_protocol
+              order_with_new_assumption
+              ~candidate
+              ~protocol_annotation
+            >>| instantiate_protocol_generics )
+
+
+  and instantiate_protocol_parameters
+      : order -> candidate:Type.t -> protocol:Ast.Identifier.t -> Type.Parameter.t list option
+    =
+    (* A candidate is less-or-equal to a protocol if candidate.x <: protocol.x for each attribute
+       `x` in the protocol. *)
+    let solve_all_protocol_attributes_less_or_equal
+        ({ attribute; all_attributes; assumptions; _ } as order)
+        ~candidate
+        ~protocol_annotation
+      =
+      let attribute_implements constraints_set protocol_attribute =
+        match constraints_set with
+        | [] -> []
+        | _ ->
+            let attribute_annotation attribute =
+              AnnotatedAttribute.annotation attribute |> Annotation.annotation
+            in
+            attribute ~assumptions candidate ~name:(AnnotatedAttribute.name protocol_attribute)
+            >>| attribute_annotation
+            >>| (fun left ->
+                  let right =
+                    match attribute_annotation protocol_attribute with
+                    | Type.Parametric { name = "BoundMethod"; _ } as bound_method ->
+                        attribute ~assumptions bound_method ~name:"__call__"
+                        >>| attribute_annotation
+                        |> Option.value ~default:Type.object_primitive
+                    | annotation -> annotation
                   in
-                  let instantiate = function
-                    | Type.Variable.Unary variable ->
-                        TypeConstraints.Solution.instantiate_single_variable solution variable
-                        |> Option.value ~default:(Type.Variable variable)
-                        |> fun instantiated -> Type.Parameter.Single instantiated
-                    | ListVariadic variable ->
-                        let default =
-                          Type.OrderedTypes.Concatenation
-                            ( Type.OrderedTypes.Concatenation.Middle.create_bare variable
-                            |> Type.OrderedTypes.Concatenation.create )
-                        in
-                        TypeConstraints.Solution.instantiate_single_list_variadic_variable
-                          solution
-                          variable
-                        |> Option.value ~default
-                        |> fun instantiated -> Type.Parameter.Group instantiated
-                    | ParameterVariadic variable ->
-                        TypeConstraints.Solution.instantiate_single_parameter_variadic
-                          solution
-                          variable
-                        |> Option.value
-                             ~default:
-                               (Type.Callable.ParameterVariadicTypeVariable { head = []; variable })
-                        |> fun instantiated -> Type.Parameter.CallableParameters instantiated
-                  in
-                  protocol_generics
-                  >>| List.map ~f:instantiate
-                  >>| desanitize
-                  |> Option.value ~default:[]
-                in
-                List.fold
-                  ~init:[TypeConstraints.empty]
-                  ~f:attribute_implements
-                  all_protocol_attributes
-                |> List.filter_map ~f:(OrderedConstraints.solve ~order:order_with_new_assumption)
-                |> List.hd
-                >>| instantiate_protocol_generics
-            | _ -> None ) )
+                  List.concat_map constraints_set ~f:(fun constraints ->
+                      solve_less_or_equal order ~left ~right ~constraints))
+            |> Option.value ~default:[]
+      in
+      let protocol_attributes =
+        let is_not_object_or_generic_method attribute =
+          let parent = AnnotatedAttribute.parent attribute in
+          (not (Type.is_object (Primitive parent)))
+          && not (Type.is_generic_primitive (Primitive parent))
+        in
+        all_attributes ~assumptions protocol_annotation
+        >>| List.filter ~f:is_not_object_or_generic_method
+      in
+      protocol_attributes
+      >>| List.fold ~init:[TypeConstraints.empty] ~f:attribute_implements
+      >>| List.filter_map ~f:(OrderedConstraints.solve ~order)
+      >>= List.hd
+    in
+    instantiate_protocol_parameters_with_solve
+      ~solve_candidate_less_or_equal_protocol:solve_all_protocol_attributes_less_or_equal
 
 
   let add existing_constraints ~new_constraint ~order =
