@@ -298,7 +298,9 @@ let produce_alias empty_stub_environment global_name ~dependency =
                   get_aliased_type_for (Reference.create dependency) ~visited
                   >>| fun solution -> dependency, solution
                 in
-                List.map dependencies ~f:solve_pair
+                List.filter dependencies ~f:(fun dependency ->
+                    not (Reference.equal (Reference.create dependency) current))
+                |> List.map ~f:solve_pair
                 |> Option.all
                 >>| String.Map.of_alist_exn
                 >>| UnresolvedAlias.unchecked_resolve ~target:current ~unparsed
@@ -314,7 +316,17 @@ let produce_alias empty_stub_environment global_name ~dependency =
     (* TODO(T76821797): We should fix upstream `typeshed` instead of doing special-case like this. *)
     None
   else
-    get_aliased_type_for global_name ~visited:Reference.Set.empty
+    let resolved_alias = get_aliased_type_for global_name ~visited:Reference.Set.empty in
+    match resolved_alias with
+    | Some (Type.TypeAlias annotation)
+      when (not (Identifier.equal (Reference.show global_name) "typing"))
+           && Type.RecursiveType.is_recursive_alias_reference
+                ~alias_name:(Reference.show global_name)
+                annotation ->
+        Some
+          (Type.TypeAlias
+             (Type.RecursiveType { name = Reference.show global_name; body = annotation }))
+    | _ -> resolved_alias
 
 
 module Aliases = Environment.EnvironmentTable.NoCache (struct

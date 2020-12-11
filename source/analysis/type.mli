@@ -517,6 +517,10 @@ val create
 
 val empty_aliases : ?replace_unbound_parameters_with_any:bool -> Primitive.t -> alias option
 
+module RecursiveType : sig
+  val is_recursive_alias_reference : alias_name:Primitive.t -> t -> bool
+end
+
 val contains_callable : t -> bool
 
 val is_any : t -> bool

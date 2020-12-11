@@ -62,7 +62,7 @@ let test_simple_registration context =
 
 
 let test_harder_registrations context =
-  let assert_registers source name ~parser expected =
+  let assert_registers ~expected_alias source name =
     let project = ScratchProject.setup ["test.py", source] ~context in
     let ast_environment = ScratchProject.build_ast_environment project in
     let alias_environment = AliasEnvironment.create ast_environment in
@@ -74,19 +74,22 @@ let test_harder_registrations context =
         ColdStart
     in
     let read_only = AliasEnvironment.UpdateResult.read_only update_result in
-    let expected = expected >>| parser >>| fun alias -> Type.TypeAlias alias in
     let printer alias =
       alias >>| Type.sexp_of_alias >>| Sexp.to_string_hum |> Option.value ~default:"none"
     in
-    assert_equal ~printer expected (AliasEnvironment.ReadOnly.get_alias read_only name)
+    assert_equal ~printer expected_alias (AliasEnvironment.ReadOnly.get_alias read_only name)
   in
-  let parsed_assert_registers =
+  let parsed_assert_registers source name expected =
     let parser expression =
       parse_single_expression expression |> Type.create ~aliases:Type.empty_aliases
     in
-    assert_registers ~parser
+    let expected_alias = expected >>| parser >>| fun alias -> Type.TypeAlias alias in
+    assert_registers ~expected_alias source name
   in
-  let unparsed_assert_registers = assert_registers ~parser:Fn.id in
+  let unparsed_assert_registers source name expected =
+    let expected_alias = expected >>| fun alias -> Type.TypeAlias alias in
+    assert_registers ~expected_alias source name
+  in
   parsed_assert_registers {|
     X = int
   |} "test.X" (Some "int");
@@ -120,7 +123,30 @@ let test_harder_registrations context =
   parsed_assert_registers {|
     class Foo: ...
     X = Foo[unknown.get("key")]
-  |} "test.X" None
+  |} "test.X" None;
+
+  (* Recursive alias. *)
+  assert_registers
+    {|
+      from typing import Tuple, Union
+
+      Tree = Union[int, Tuple["Tree", "Tree"]]
+    |}
+    "test.Tree"
+    ~expected_alias:
+      (Some
+         (Type.TypeAlias
+            (Type.RecursiveType
+               {
+                 name = "test.Tree";
+                 body =
+                   Type.union
+                     [
+                       Type.integer;
+                       Type.tuple [Type.Primitive "test.Tree"; Type.Primitive "test.Tree"];
+                     ];
+               })));
+  ()
 
 
 let test_updates context =

@@ -3027,6 +3027,23 @@ let test_generic_aliases context =
   ()
 
 
+let test_recursive_aliases context =
+  let assert_type_errors = assert_type_errors ~context in
+  assert_type_errors
+    {|
+      from typing import Tuple, Union
+
+      Tree = Union[int, Tuple["Tree", "Tree"]]
+      x: Tree
+      reveal_type(x)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `test.Tree (resolves to Union[Tuple[Tree, \
+       Tree], int])`.";
+    ];
+  ()
+
+
 let () =
   "typeVariable"
   >::: [
@@ -3046,5 +3063,6 @@ let () =
          "user_defined_parameter_variadics" >:: test_user_defined_parameter_specification_classes;
          "duplicate_type_variables" >:: test_duplicate_type_variables;
          "generic_aliases" >:: test_generic_aliases;
+         "recursive_aliases" >:: test_recursive_aliases;
        ]
   |> Test.run

@@ -2451,6 +2451,16 @@ type alias =
 
 let empty_aliases ?replace_unbound_parameters_with_any:_ _ = None
 
+module RecursiveType = struct
+  let is_recursive_alias_reference ~alias_name =
+    exists ~predicate:(function
+        | Primitive name
+        | Parametric { name; _ }
+          when Identifier.equal name alias_name ->
+            true
+        | _ -> false)
+end
+
 let resolve_aliases ~aliases annotation =
   let visited = Hash_set.create () in
   let module ResolveTransform = Transform.Make (struct
