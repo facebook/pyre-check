@@ -29,6 +29,7 @@ class PersistentTest(unittest.TestCase):
     ) -> None:
         original_directory = "/original/directory"
         configuration = mock_configuration(version_hash="hash")
+        configuration.project_root = "project_root"
 
         # Check start without watchman.
         with patch.object(commands.Command, "_call_client") as call_client:
@@ -51,6 +52,8 @@ class PersistentTest(unittest.TestCase):
                     '"."',
                     "-expected-binary-version",
                     "hash",
+                    "-project-root",
+                    "project_root",
                     "-log-directory",
                     ".pyre",
                     "-features",

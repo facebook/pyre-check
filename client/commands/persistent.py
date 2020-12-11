@@ -77,7 +77,7 @@ class Persistent(Command):
         ]
         if self._configuration.autocomplete:
             flags.append("-autocomplete")
-
+        flags.extend(["-project-root", self._configuration.project_root])
         flags.extend(["-log-directory", self._configuration.log_directory])
         flags += self._feature_flags()
         return flags
