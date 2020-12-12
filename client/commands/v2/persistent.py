@@ -12,7 +12,7 @@ import os
 import subprocess
 import tempfile
 from pathlib import Path
-from typing import Union, Optional, AsyncIterator, Set, List, Sequence
+from typing import Union, Optional, AsyncIterator, Set, List, Sequence, Dict
 
 from ... import (
     json_rpc,
@@ -151,11 +151,12 @@ async def _read_lsp_request(
         )
 
 
+@dataclasses.dataclass
 class ServerState:
-    opened_documents: Set[Path]
-
-    def __init__(self, opened_documents: Optional[Set[Path]] = None) -> None:
-        self.opened_documents = opened_documents or set()
+    opened_documents: Set[Path] = dataclasses.field(default_factory=set)
+    diagnostics: Dict[Path, List[lsp.Diagnostic]] = dataclasses.field(
+        default_factory=dict
+    )
 
 
 class Server:
@@ -339,6 +340,32 @@ def parse_subscription_response(response: str) -> SubscriptionResponse:
         raise incremental.InvalidServerResponse(message) from decode_error
 
 
+def type_error_to_diagnostic(type_error: error.Error) -> lsp.Diagnostic:
+    return lsp.Diagnostic(
+        range=lsp.Range(
+            start=lsp.Position(line=type_error.line - 1, character=type_error.column),
+            end=lsp.Position(
+                line=type_error.stop_line - 1, character=type_error.stop_column
+            ),
+        ),
+        message=type_error.description,
+        severity=lsp.DiagnosticSeverity.ERROR,
+        code=None,
+        source="Pyre",
+    )
+
+
+def type_errors_to_diagnostics(
+    type_errors: Sequence[error.Error],
+) -> Dict[Path, List[lsp.Diagnostic]]:
+    result: Dict[Path, List[lsp.Diagnostic]] = {}
+    for type_error in type_errors:
+        result.setdefault(type_error.path, []).append(
+            type_error_to_diagnostic(type_error)
+        )
+    return result
+
+
 class PyreServerHandler(connection.BackgroundTask):
     binary_location: str
     server_identifier: str
@@ -387,8 +414,11 @@ class PyreServerHandler(connection.BackgroundTask):
         await self.show_message_to_client(message, level)
 
     def update_type_errors(self, type_errors: Sequence[error.Error]) -> None:
-        LOG.info(f"Received {len(type_errors)} type errors from Pyre server.")
-        LOG.warning("Not implemented yet")
+        LOG.info(
+            "Refereshing type errors received from Pyre server. "
+            f"Total number of type errors is {len(type_errors)}."
+        )
+        self.server_state.diagnostics = type_errors_to_diagnostics(type_errors)
 
     @contextlib.asynccontextmanager
     async def _read_server_response(

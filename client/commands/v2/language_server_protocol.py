@@ -107,6 +107,13 @@ class DiagnosticTag(SerializationSafeIntEnum):
     DEPRECATED = 2
 
 
+class DiagnosticSeverity(SerializationSafeIntEnum):
+    ERROR = 1
+    WARNING = 2
+    INFORMATION = 3
+    HINT = 4
+
+
 class TextDocumentSyncKind(SerializationSafeIntEnum):
     NONE = 0
     FULL = 1
@@ -161,6 +168,39 @@ class DocumentUri:
         return DocumentUri(
             scheme="file", authority="", path=str(file_path), query="", fragment=""
         )
+
+
+@dataclasses_json.dataclass_json(
+    letter_case=dataclasses_json.LetterCase.CAMEL,
+    undefined=dataclasses_json.Undefined.EXCLUDE,
+)
+@dataclasses.dataclass(frozen=True)
+class Position:
+    line: int
+    character: int
+
+
+@dataclasses_json.dataclass_json(
+    letter_case=dataclasses_json.LetterCase.CAMEL,
+    undefined=dataclasses_json.Undefined.EXCLUDE,
+)
+@dataclasses.dataclass(frozen=True)
+class Range:
+    start: Position
+    end: Position
+
+
+@dataclasses_json.dataclass_json(
+    letter_case=dataclasses_json.LetterCase.CAMEL,
+    undefined=dataclasses_json.Undefined.EXCLUDE,
+)
+@dataclasses.dataclass(frozen=True)
+class Diagnostic:
+    range: Range
+    message: str
+    severity: Optional[DiagnosticSeverity] = None
+    code: Optional[int] = None
+    source: Optional[str] = None
 
 
 @dataclasses_json.dataclass_json(

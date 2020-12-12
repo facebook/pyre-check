@@ -31,6 +31,8 @@ from ..persistent import (
     ServerState,
     parse_subscription_response,
     SubscriptionResponse,
+    type_error_to_diagnostic,
+    type_errors_to_diagnostics,
 )
 
 
@@ -203,3 +205,101 @@ class PersistentTest(testslide.TestCase):
             )
         )
         self.assertNotIn(test_path0, server_state.opened_documents)
+
+    def test_diagnostics(self) -> None:
+        self.assertEqual(
+            type_error_to_diagnostic(
+                error.Error(
+                    line=1,
+                    column=1,
+                    stop_line=2,
+                    stop_column=2,
+                    path=Path("/derp.py"),
+                    code=42,
+                    name="name",
+                    description="description",
+                )
+            ),
+            lsp.Diagnostic(
+                range=lsp.Range(
+                    start=lsp.Position(line=0, character=1),
+                    end=lsp.Position(line=1, character=2),
+                ),
+                message="description",
+                severity=lsp.DiagnosticSeverity.ERROR,
+                code=None,
+                source="Pyre",
+            ),
+        )
+        self.assertDictEqual(
+            type_errors_to_diagnostics(
+                [
+                    error.Error(
+                        line=1,
+                        column=1,
+                        stop_line=2,
+                        stop_column=2,
+                        path=Path("/foo.py"),
+                        code=42,
+                        name="foo_name",
+                        description="foo_description",
+                    ),
+                    error.Error(
+                        line=2,
+                        column=2,
+                        stop_line=3,
+                        stop_column=3,
+                        path=Path("/foo.py"),
+                        code=43,
+                        name="foo_name2",
+                        description="foo_description2",
+                    ),
+                    error.Error(
+                        line=4,
+                        column=4,
+                        stop_line=5,
+                        stop_column=5,
+                        path=Path("/bar.py"),
+                        code=44,
+                        name="bar_name",
+                        description="bar_description",
+                    ),
+                ]
+            ),
+            {
+                Path("/foo.py"): [
+                    lsp.Diagnostic(
+                        range=lsp.Range(
+                            start=lsp.Position(line=0, character=1),
+                            end=lsp.Position(line=1, character=2),
+                        ),
+                        message="foo_description",
+                        severity=lsp.DiagnosticSeverity.ERROR,
+                        code=None,
+                        source="Pyre",
+                    ),
+                    lsp.Diagnostic(
+                        range=lsp.Range(
+                            start=lsp.Position(line=1, character=2),
+                            end=lsp.Position(line=2, character=3),
+                        ),
+                        message="foo_description2",
+                        severity=lsp.DiagnosticSeverity.ERROR,
+                        code=None,
+                        source="Pyre",
+                    ),
+                ],
+                Path("/bar.py"): [
+                    lsp.Diagnostic(
+                        range=lsp.Range(
+                            start=lsp.Position(line=3, character=4),
+                            end=lsp.Position(line=4, character=5),
+                        ),
+                        message="bar_description",
+                        severity=lsp.DiagnosticSeverity.ERROR,
+                        code=None,
+                        source="Pyre",
+                    )
+                ],
+            },
+        )
