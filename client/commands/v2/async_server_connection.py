@@ -183,7 +183,7 @@ def create_memory_text_writer(encoding: str = "utf-8") -> TextWriter:
     return TextWriter(MemoryBytesWriter())
 
 
-class _StreamBytesReader(BytesReader):
+class StreamBytesReader(BytesReader):
     """
     An implementation of `BytesReader` based on `asyncio.StreamReader`.
     """
@@ -200,7 +200,7 @@ class _StreamBytesReader(BytesReader):
         return await self.stream_reader.readexactly(count)
 
 
-class _StreamBytesWriter(BytesWriter):
+class StreamBytesWriter(BytesWriter):
     """
     An implementation of `BytesWriter` based on `asyncio.StreamWriter`.
     """
@@ -241,8 +241,8 @@ async def connect(socket_path: Path) -> AsyncIterator[Tuple[BytesReader, BytesWr
         stream_reader, stream_writer = await asyncio.open_unix_connection(
             str(socket_path)
         )
-        reader = _StreamBytesReader(stream_reader)
-        writer = _StreamBytesWriter(stream_writer)
+        reader = StreamBytesReader(stream_reader)
+        writer = StreamBytesWriter(stream_writer)
         yield reader, writer
     finally:
         if writer is not None:
@@ -291,8 +291,8 @@ async def create_async_stdin_stdout() -> Tuple[TextReader, TextWriter]:
     )
     stream_writer = asyncio.StreamWriter(w_transport, w_protocol, stream_reader, loop)
     return (
-        TextReader(_StreamBytesReader(stream_reader)),
-        TextWriter(_StreamBytesWriter(stream_writer)),
+        TextReader(StreamBytesReader(stream_reader)),
+        TextWriter(StreamBytesWriter(stream_writer)),
     )
 
 

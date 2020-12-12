@@ -7,6 +7,9 @@ import asyncio
 import contextlib
 import dataclasses
 import logging
+import os
+import subprocess
+import tempfile
 from pathlib import Path
 from typing import Union, Optional, AsyncIterator, Set
 
@@ -19,8 +22,10 @@ from ... import (
 )
 from . import (
     language_server_protocol as lsp,
+    server_connection,
     async_server_connection as connection,
     start,
+    server_event,
 )
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -261,17 +266,67 @@ class Server:
             await self.pyre_manager.ensure_task_stop()
 
 
+async def _start_pyre_server(
+    binary_location: str, pyre_arguments: start.Arguments
+) -> bool:
+    try:
+        with start.server_argument_file(pyre_arguments) as argument_file_path:
+            server_environment = {
+                **os.environ,
+                # This is to make sure that backend server shares the socket root
+                # directory with the client.
+                # TODO(T77556312): It might be cleaner to turn this into a
+                # configuration option instead.
+                "TMPDIR": tempfile.gettempdir(),
+            }
+
+            with start.background_server_log_file(
+                Path(pyre_arguments.log_path)
+            ) as server_stderr:
+                server_process = await asyncio.create_subprocess_exec(
+                    binary_location,
+                    "newserver",
+                    str(argument_file_path),
+                    stdout=subprocess.PIPE,
+                    stderr=server_stderr,
+                    env=server_environment,
+                    start_new_session=True,
+                )
+
+            server_stdout = server_process.stdout
+            if server_stdout is None:
+                raise RuntimeError(
+                    "asyncio.create_subprocess_exec failed to set up a pipe for "
+                    "server stdout"
+                )
+
+            await server_event.Waiter(wait_on_initialization=True).async_wait_on(
+                connection.TextReader(connection.StreamBytesReader(server_stdout))
+            )
+
+        return True
+    except Exception as error:
+        LOG.error(f"Exception occured during server start: {error}")
+        return False
+
+
 class PyreServerHandler(connection.BackgroundTask):
+    binary_location: str
+    server_identifier: str
     pyre_arguments: start.Arguments
     client_output_channel: connection.TextWriter
     server_state: ServerState
 
     def __init__(
         self,
+        binary_location: str,
+        server_identifier: str,
         pyre_arguments: start.Arguments,
         client_output_channel: connection.TextWriter,
         server_state: ServerState,
     ) -> None:
+        self.binary_location = binary_location
+        self.server_identifier = server_identifier
         self.pyre_arguments = pyre_arguments
         self.client_output_channel = client_output_channel
         self.server_state = server_state
@@ -289,12 +344,67 @@ class PyreServerHandler(connection.BackgroundTask):
             ),
         )
 
-    async def run(self) -> None:
+    async def log_and_show_message_to_client(
+        self, message: str, level: lsp.MessageType = lsp.MessageType.INFO
+    ) -> None:
+        if level == lsp.MessageType.ERROR:
+            LOG.error(message)
+        elif level == lsp.MessageType.WARNING:
+            LOG.warning(message)
+        elif level == lsp.MessageType.INFO:
+            LOG.info(message)
+        else:
+            LOG.debug(message)
+        await self.show_message_to_client(message, level)
+
+    async def subscribe_to_type_error(
+        self,
+        server_input_channel: connection.TextReader,
+        server_output_channel: connection.TextWriter,
+    ) -> None:
         LOG.warning("Not implemented yet")
         await asyncio.Event().wait()
 
+    async def run(self) -> None:
+        socket_path = server_connection.get_default_socket_path(
+            log_directory=Path(self.pyre_arguments.log_path)
+        )
+        try:
+            async with connection.connect_in_text_mode(socket_path) as (
+                input_channel,
+                output_channel,
+            ):
+                await self.log_and_show_message_to_client(
+                    "Established connection with existing pyre server at "
+                    f"`{self.server_identifier}`."
+                )
+                await self.subscribe_to_type_error(input_channel, output_channel)
+        except OSError:
+            self.log_and_show_message_to_client(
+                f"Starting a new Pyre server at `{self.server_identifier}` in "
+                "the background..."
+            )
 
-async def run_persistent(pyre_arguments: start.Arguments) -> int:
+            if await _start_pyre_server(self.binary_location, self.pyre_arguments):
+                await self.log_and_show_message_to_client(
+                    f"Pyre server at `{self.server_identifier}` has been initialized."
+                )
+
+                async with connection.connect_in_text_mode(socket_path) as (
+                    input_channel,
+                    output_channel,
+                ):
+                    await self.subscribe_to_type_error(input_channel, output_channel)
+            else:
+                await self.show_message_to_client(
+                    f"Cannot start a new Pyre server at `{self.server_identifier}`.",
+                    level=lsp.MessageType.ERROR,
+                )
+
+
+async def run_persistent(
+    binary_location: str, server_identifier: str, pyre_arguments: start.Arguments
+) -> int:
     stdin, stdout = await connection.create_async_stdin_stdout()
     while True:
         initialize_result = await try_initialize(stdin, stdout)
@@ -313,6 +423,8 @@ async def run_persistent(pyre_arguments: start.Arguments) -> int:
                 state=initial_server_state,
                 pyre_manager=connection.BackgroundTaskManager(
                     PyreServerHandler(
+                        binary_location=binary_location,
+                        server_identifier=server_identifier,
                         pyre_arguments=pyre_arguments,
                         client_output_channel=stdout,
                         server_state=initial_server_state,
@@ -335,5 +447,14 @@ def run(
     configuration: configuration_module.Configuration,
     start_arguments: command_arguments.StartArguments,
 ) -> int:
+    binary_location = configuration.get_binary_respecting_override()
+    if binary_location is None:
+        raise configuration_module.InvalidConfiguration(
+            "Cannot locate a Pyre binary to run."
+        )
+
+    server_identifier = start.get_server_identifier(configuration)
     pyre_arguments = start.create_server_arguments(configuration, start_arguments)
-    return asyncio.get_event_loop().run_until_complete(run_persistent(pyre_arguments))
+    return asyncio.get_event_loop().run_until_complete(
+        run_persistent(binary_location, server_identifier, pyre_arguments)
+    )
