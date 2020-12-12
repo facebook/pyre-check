@@ -6,15 +6,17 @@
 import asyncio
 import contextlib
 import dataclasses
+import json
 import logging
 import os
 import subprocess
 import tempfile
 from pathlib import Path
-from typing import Union, Optional, AsyncIterator, Set
+from typing import Union, Optional, AsyncIterator, Set, List, Sequence
 
 from ... import (
     json_rpc,
+    error,
     version,
     command_arguments,
     commands,
@@ -25,6 +27,7 @@ from . import (
     server_connection,
     async_server_connection as connection,
     start,
+    incremental,
     server_event,
 )
 
@@ -310,6 +313,32 @@ async def _start_pyre_server(
         return False
 
 
+@dataclasses.dataclass(frozen=True)
+class SubscriptionResponse:
+    name: str
+    body: List[error.Error] = dataclasses.field(default_factory=list)
+
+
+def parse_subscription_response(response: str) -> SubscriptionResponse:
+    try:
+        response_json = json.loads(response)
+        # The response JSON is expected to have the following form:
+        # `{"name": "foo", "body": ["TypeErrors", [error_json, ...]]}`
+        if isinstance(response_json, dict):
+            name = response_json.get("name", None)
+            body = response_json.get("body", None)
+            if name is not None and body is not None:
+                return SubscriptionResponse(
+                    name=name, body=incremental.parse_type_error_response_json(body)
+                )
+        raise incremental.InvalidServerResponse(
+            f"Unexpected JSON subscription from server: {response_json}"
+        )
+    except json.JSONDecodeError as decode_error:
+        message = f"Cannot parse subscription as JSON: {decode_error}"
+        raise incremental.InvalidServerResponse(message) from decode_error
+
+
 class PyreServerHandler(connection.BackgroundTask):
     binary_location: str
     server_identifier: str
@@ -357,13 +386,43 @@ class PyreServerHandler(connection.BackgroundTask):
             LOG.debug(message)
         await self.show_message_to_client(message, level)
 
+    def update_type_errors(self, type_errors: Sequence[error.Error]) -> None:
+        LOG.info(f"Received {len(type_errors)} type errors from Pyre server.")
+        LOG.warning("Not implemented yet")
+
+    @contextlib.asynccontextmanager
+    async def _read_server_response(
+        self, server_input_channel: connection.TextReader
+    ) -> AsyncIterator[str]:
+        try:
+            raw_response = await server_input_channel.readline()
+            yield raw_response
+        except incremental.InvalidServerResponse as error:
+            LOG.error(f"Pyre server returns invalid response: {error}")
+
     async def subscribe_to_type_error(
         self,
         server_input_channel: connection.TextReader,
         server_output_channel: connection.TextWriter,
     ) -> None:
-        LOG.warning("Not implemented yet")
-        await asyncio.Event().wait()
+        subscription_name = f"persistent_{os.getpid()}"
+        await server_output_channel.write(
+            f'["SubscribeToTypeErrors", "{subscription_name}"]\n'
+        )
+
+        async with self._read_server_response(server_input_channel) as first_response:
+            initial_type_errors = incremental.parse_type_error_response(first_response)
+            self.update_type_errors(initial_type_errors)
+
+        while True:
+            async with self._read_server_response(
+                server_input_channel
+            ) as raw_subscription_response:
+                subscription_response = parse_subscription_response(
+                    raw_subscription_response
+                )
+                if subscription_name == subscription_response.name:
+                    self.update_type_errors(subscription_response.body)
 
     async def run(self) -> None:
         socket_path = server_connection.get_default_socket_path(

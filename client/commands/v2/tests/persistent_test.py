@@ -3,11 +3,12 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import json
 from pathlib import Path
 
 import testslide
 
-from .... import json_rpc
+from .... import json_rpc, error
 from ....tests import setup
 from .. import language_server_protocol as lsp
 from ..async_server_connection import (
@@ -20,6 +21,7 @@ from ..async_server_connection import (
     BackgroundTask,
     BackgroundTaskManager,
 )
+from ..incremental import InvalidServerResponse
 from ..persistent import (
     try_initialize,
     InitializationSuccess,
@@ -27,6 +29,8 @@ from ..persistent import (
     InitializationExit,
     Server,
     ServerState,
+    parse_subscription_response,
+    SubscriptionResponse,
 )
 
 
@@ -94,6 +98,62 @@ class PersistentTest(testslide.TestCase):
         output_channel = create_memory_text_writer()
         result = await try_initialize(input_channel, output_channel)
         self.assertIsInstance(result, InitializationExit)
+
+    def test_parse_subscription(self) -> None:
+        def assert_parsed(response: str, expected: SubscriptionResponse) -> None:
+            self.assertEqual(
+                parse_subscription_response(response),
+                expected,
+            )
+
+        def assert_not_parsed(response: str) -> None:
+            with self.assertRaises(InvalidServerResponse):
+                parse_subscription_response(response)
+
+        assert_not_parsed("derp")
+        assert_not_parsed("{}")
+        assert_not_parsed("[]")
+        assert_not_parsed('["Error"]')
+        assert_not_parsed('{"name": "foo", "no_body": []}')
+        assert_not_parsed('{"body": [], "no_name": "foo"}')
+
+        assert_parsed(
+            json.dumps({"name": "foo", "body": ["TypeErrors", []]}),
+            expected=SubscriptionResponse(name="foo"),
+        )
+        assert_parsed(
+            json.dumps(
+                {
+                    "name": "foo",
+                    "body": [
+                        "TypeErrors",
+                        [
+                            {
+                                "line": 1,
+                                "column": 1,
+                                "path": "test.py",
+                                "code": 42,
+                                "name": "Fake name",
+                                "description": "Fake description",
+                            },
+                        ],
+                    ],
+                }
+            ),
+            expected=SubscriptionResponse(
+                name="foo",
+                body=[
+                    error.Error(
+                        line=1,
+                        column=1,
+                        path=Path("test.py"),
+                        code=42,
+                        name="Fake name",
+                        description="Fake description",
+                    ),
+                ],
+            ),
+        )
 
     def test_open_close(self) -> None:
         server_state = ServerState()

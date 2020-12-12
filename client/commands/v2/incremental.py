@@ -25,9 +25,8 @@ class InvalidServerResponse(Exception):
     pass
 
 
-def parse_type_error_response(response: str) -> List[error.Error]:
+def parse_type_error_response_json(response_json: object) -> List[error.Error]:
     try:
-        response_json = json.loads(response)
         # The response JSON is expected to have the following form:
         # `["TypeErrors", [error_json0, error_json1, ...]]`
         if (
@@ -42,12 +41,18 @@ def parse_type_error_response(response: str) -> List[error.Error]:
         raise InvalidServerResponse(
             f"Unexpected JSON response from server: {response_json}"
         )
-    except json.JSONDecodeError as decode_error:
-        message = f"Cannot parse response as JSON: {decode_error}"
-        raise InvalidServerResponse(message) from decode_error
     except error.ErrorParsingFailure as parsing_error:
         message = f"Unexpected error JSON from server: {parsing_error}"
         raise InvalidServerResponse(message) from parsing_error
+
+
+def parse_type_error_response(response: str) -> List[error.Error]:
+    try:
+        response_json = json.loads(response)
+        return parse_type_error_response_json(response_json)
+    except json.JSONDecodeError as decode_error:
+        message = f"Cannot parse response as JSON: {decode_error}"
+        raise InvalidServerResponse(message) from decode_error
 
 
 def _relativize_error_path(error: error.Error) -> error.Error:
