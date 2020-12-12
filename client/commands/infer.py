@@ -436,6 +436,8 @@ def _existing_annotations_as_errors(
                         "inference": stub,
                         "line": 0,
                         "column": 0,
+                        "stop_line": 0,
+                        "stop_column": 0,
                         "code": 0,
                         "name": "example_string",
                         "description": "example description",

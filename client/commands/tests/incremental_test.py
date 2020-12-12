@@ -272,6 +272,8 @@ class IncrementalTest(unittest.TestCase):
                     {
                         "line": 4,
                         "column": 11,
+                        "stop_line": 4,
+                        "stop_column": 21,
                         "path": "test/path.py",
                         "code": -1,
                         "name": "Revealed type",

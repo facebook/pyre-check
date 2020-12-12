@@ -43,6 +43,8 @@ class ReportingTest(unittest.TestCase):
                 {
                     "line": 1,
                     "column": 2,
+                    "stop_line": 3,
+                    "stop_column": 4,
                     "path": "test/path.py",
                     "code": 3,
                     "name": "Error",

@@ -41,6 +41,8 @@ class IncrementalTest(testslide.TestCase):
                         {
                             "line": 1,
                             "column": 1,
+                            "stop_line": 3,
+                            "stop_column": 3,
                             "path": "test.py",
                             "code": 42,
                             "name": "Fake name",
@@ -49,6 +51,8 @@ class IncrementalTest(testslide.TestCase):
                         {
                             "line": 2,
                             "column": 2,
+                            "stop_line": 4,
+                            "stop_column": 4,
                             "path": "test.py",
                             "code": 43,
                             "name": "Fake name 2",
@@ -63,6 +67,8 @@ class IncrementalTest(testslide.TestCase):
                 Error(
                     line=1,
                     column=1,
+                    stop_line=3,
+                    stop_column=3,
                     path=Path("test.py"),
                     code=42,
                     name="Fake name",
@@ -71,6 +77,8 @@ class IncrementalTest(testslide.TestCase):
                 Error(
                     line=2,
                     column=2,
+                    stop_line=4,
+                    stop_column=4,
                     path=Path("test.py"),
                     code=43,
                     name="Fake name 2",

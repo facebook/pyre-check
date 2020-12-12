@@ -18,6 +18,8 @@ class ErrorTest(unittest.TestCase):
     fake_error = {
         "line": 4,
         "column": 11,
+        "stop_line": 4,
+        "stop_column": 21,
         "path": "c.py",
         "code": -1,
         "name": "Revealed type",
@@ -43,6 +45,8 @@ class ErrorTest(unittest.TestCase):
             {
                 "line": 1,
                 "column": 1,
+                "stop_line": 2,
+                "stop_column": 2,
                 "path": "test.py",
                 "code": 1,
                 "name": "Some name",
@@ -51,6 +55,8 @@ class ErrorTest(unittest.TestCase):
             expected=Error(
                 line=1,
                 column=1,
+                stop_line=2,
+                stop_column=2,
                 path=Path("test.py"),
                 code=1,
                 name="Some name",
@@ -61,6 +67,8 @@ class ErrorTest(unittest.TestCase):
             {
                 "line": 2,
                 "column": 2,
+                "stop_line": 3,
+                "stop_column": 3,
                 "path": Path("test.py"),
                 "code": 2,
                 "name": "Some name",
@@ -70,6 +78,8 @@ class ErrorTest(unittest.TestCase):
             expected=Error(
                 line=2,
                 column=2,
+                stop_line=3,
+                stop_column=3,
                 path=Path("test.py"),
                 code=2,
                 name="Some name",
@@ -81,6 +91,8 @@ class ErrorTest(unittest.TestCase):
             {
                 "line": 3,
                 "column": 3,
+                "stop_line": 4,
+                "stop_column": 4,
                 "path": Path("test.py"),
                 "code": 3,
                 "name": "Some name",
@@ -90,6 +102,8 @@ class ErrorTest(unittest.TestCase):
             expected=Error(
                 line=3,
                 column=3,
+                stop_line=4,
+                stop_column=4,
                 path=Path("test.py"),
                 code=3,
                 name="Some name",

@@ -131,6 +131,8 @@ class PersistentTest(testslide.TestCase):
                             {
                                 "line": 1,
                                 "column": 1,
+                                "stop_line": 2,
+                                "stop_column": 2,
                                 "path": "test.py",
                                 "code": 42,
                                 "name": "Fake name",
@@ -146,6 +148,8 @@ class PersistentTest(testslide.TestCase):
                     error.Error(
                         line=1,
                         column=1,
+                        stop_line=2,
+                        stop_column=2,
                         path=Path("test.py"),
                         code=42,
                         name="Fake name",

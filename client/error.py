@@ -28,6 +28,8 @@ class ErrorParsingFailure(Exception):
 class Error:
     line: int
     column: int
+    stop_line: int
+    stop_column: int
     path: Path
     code: int
     name: str
@@ -41,6 +43,8 @@ class Error:
             return Error(
                 line=error_json["line"],
                 column=error_json["column"],
+                stop_line=error_json["stop_line"],
+                stop_column=error_json["stop_column"],
                 path=Path(error_json["path"]),
                 code=error_json["code"],
                 name=error_json["name"],

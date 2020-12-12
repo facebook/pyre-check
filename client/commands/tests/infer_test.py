@@ -39,6 +39,8 @@ def build_json(inference) -> Dict[str, Union[int, str]]:
     return {
         "line": 0,
         "column": 0,
+        "stop_line": 1,
+        "stop_column": 1,
         "code": 0,
         "name": "name",
         "path": "test.py",
