@@ -161,7 +161,8 @@ class PersistentTest(testslide.TestCase):
             ),
         )
 
-    def test_open_close(self) -> None:
+    @setup.async_test
+    async def test_open_close(self) -> None:
         server_state = ServerState()
         server = Server(
             input_channel=create_memory_text_reader(""),
@@ -173,7 +174,7 @@ class PersistentTest(testslide.TestCase):
         test_path0 = Path("/foo/bar")
         test_path1 = Path("/foo/baz")
 
-        server.process_open_request(
+        await server.process_open_request(
             lsp.DidOpenTextDocumentParameters(
                 text_document=lsp.TextDocumentItem(
                     language_id="python",
@@ -185,7 +186,7 @@ class PersistentTest(testslide.TestCase):
         )
         self.assertIn(test_path0, server_state.opened_documents)
 
-        server.process_open_request(
+        await server.process_open_request(
             lsp.DidOpenTextDocumentParameters(
                 text_document=lsp.TextDocumentItem(
                     language_id="python",
@@ -197,7 +198,7 @@ class PersistentTest(testslide.TestCase):
         )
         self.assertIn(test_path1, server_state.opened_documents)
 
-        server.process_close_request(
+        await server.process_close_request(
             lsp.DidCloseTextDocumentParameters(
                 text_document=lsp.TextDocumentIdentifier(
                     uri=lsp.DocumentUri.from_file_path(test_path0).unparse()
@@ -205,6 +206,57 @@ class PersistentTest(testslide.TestCase):
             )
         )
         self.assertNotIn(test_path0, server_state.opened_documents)
+
+    @setup.async_test
+    async def test_open_close_with_diagnostics(self) -> None:
+        test_path = Path("/foo.py")
+        server_state = ServerState(
+            diagnostics={
+                test_path: [
+                    lsp.Diagnostic(
+                        range=lsp.Range(
+                            start=lsp.Position(line=0, character=1),
+                            end=lsp.Position(line=1, character=2),
+                        ),
+                        message="description",
+                        severity=lsp.DiagnosticSeverity.ERROR,
+                        code=None,
+                        source="Pyre",
+                    ),
+                ]
+            }
+        )
+        bytes_writer = MemoryBytesWriter()
+        server = Server(
+            input_channel=create_memory_text_reader(""),
+            output_channel=TextWriter(bytes_writer),
+            client_capabilities=lsp.ClientCapabilities(),
+            state=server_state,
+            pyre_manager=BackgroundTaskManager(NoOpBackgroundTask()),
+        )
+
+        await server.process_open_request(
+            lsp.DidOpenTextDocumentParameters(
+                text_document=lsp.TextDocumentItem(
+                    language_id="python",
+                    text="",
+                    uri=lsp.DocumentUri.from_file_path(test_path).unparse(),
+                    version=0,
+                )
+            )
+        )
+        # A diagnostic update is sent via the output channel
+        self.assertEqual(len(bytes_writer.items()), 1)
+
+        await server.process_close_request(
+            lsp.DidCloseTextDocumentParameters(
+                text_document=lsp.TextDocumentIdentifier(
+                    uri=lsp.DocumentUri.from_file_path(test_path).unparse()
+                )
+            )
+        )
+        # Another diagnostic update is sent via the output channel
+        self.assertEqual(len(bytes_writer.items()), 2)
 
     def test_diagnostics(self) -> None:
         self.assertEqual(

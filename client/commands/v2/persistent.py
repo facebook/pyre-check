@@ -151,6 +151,30 @@ async def _read_lsp_request(
         )
 
 
+async def _publish_diagnostics(
+    output_channel: connection.TextWriter,
+    path: Path,
+    diagnostics: Sequence[lsp.Diagnostic],
+) -> None:
+    LOG.debug(f"Publish diagnostics for {path}: {diagnostics}")
+    await lsp.write_json_rpc(
+        output_channel,
+        json_rpc.Request(
+            method="textDocument/publishDiagnostics",
+            parameters=json_rpc.ByNameParameters(
+                {
+                    "uri": lsp.DocumentUri.from_file_path(path).unparse(),
+                    "diagnostics": [
+                        # pyre-fixme[16]: Pyre doesn't understand `dataclasses_json`
+                        diagnostic.to_dict()
+                        for diagnostic in diagnostics
+                    ],
+                }
+            ),
+        ),
+    )
+
+
 @dataclasses.dataclass
 class ServerState:
     opened_documents: Set[Path] = dataclasses.field(default_factory=set)
@@ -197,7 +221,7 @@ class Server:
                 else:
                     raise json_rpc.InvalidRequestError("LSP server has been shut down")
 
-    def process_open_request(
+    async def process_open_request(
         self, parameters: lsp.DidOpenTextDocumentParameters
     ) -> None:
         document_path = parameters.text_document.document_uri().to_file_path()
@@ -208,7 +232,14 @@ class Server:
         self.state.opened_documents.add(document_path)
         LOG.info(f"File opened: {document_path}")
 
-    def process_close_request(
+        document_diagnostics = self.state.diagnostics.get(document_path, None)
+        if document_diagnostics is not None:
+            LOG.info(f"Update diagnostics for {document_path}")
+            await _publish_diagnostics(
+                self.output_channel, document_path, document_diagnostics
+            )
+
+    async def process_close_request(
         self, parameters: lsp.DidCloseTextDocumentParameters
     ) -> None:
         document_path = parameters.text_document.document_uri().to_file_path()
@@ -219,6 +250,10 @@ class Server:
         try:
             self.state.opened_documents.remove(document_path)
             LOG.info(f"File closed: {document_path}")
+
+            if document_path in self.state.diagnostics:
+                LOG.info(f"Clear diagnostics for {document_path}")
+                await _publish_diagnostics(self.output_channel, document_path, [])
         except KeyError:
             LOG.warning(f"Trying to close an un-opened file: {document_path}")
 
@@ -243,7 +278,7 @@ class Server:
                         raise json_rpc.InvalidRequestError(
                             "Missing parameters for didOpen method"
                         )
-                    self.process_open_request(
+                    await self.process_open_request(
                         lsp.DidOpenTextDocumentParameters.from_json_rpc_parameters(
                             parameters
                         )
@@ -254,7 +289,7 @@ class Server:
                         raise json_rpc.InvalidRequestError(
                             "Missing parameters for didClose method"
                         )
-                    self.process_close_request(
+                    await self.process_close_request(
                         lsp.DidCloseTextDocumentParameters.from_json_rpc_parameters(
                             parameters
                         )
@@ -420,6 +455,15 @@ class PyreServerHandler(connection.BackgroundTask):
         )
         self.server_state.diagnostics = type_errors_to_diagnostics(type_errors)
 
+    async def show_type_errors_to_client(self) -> None:
+        for path in self.server_state.opened_documents:
+            await _publish_diagnostics(self.client_output_channel, path, [])
+            diagnostics = self.server_state.diagnostics.get(path, None)
+            if diagnostics is not None:
+                await _publish_diagnostics(
+                    self.client_output_channel, path, diagnostics
+                )
+
     @contextlib.asynccontextmanager
     async def _read_server_response(
         self, server_input_channel: connection.TextReader
@@ -443,6 +487,7 @@ class PyreServerHandler(connection.BackgroundTask):
         async with self._read_server_response(server_input_channel) as first_response:
             initial_type_errors = incremental.parse_type_error_response(first_response)
             self.update_type_errors(initial_type_errors)
+            await self.show_type_errors_to_client()
 
         while True:
             async with self._read_server_response(
@@ -453,6 +498,7 @@ class PyreServerHandler(connection.BackgroundTask):
                 )
                 if subscription_name == subscription_response.name:
                     self.update_type_errors(subscription_response.body)
+                    await self.show_type_errors_to_client()
 
     async def run(self) -> None:
         socket_path = server_connection.get_default_socket_path(
