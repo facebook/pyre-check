@@ -60,7 +60,7 @@ def _relativize_error_path(error: error.Error) -> error.Error:
     return dataclasses.replace(error, path=relativized_path)
 
 
-def _display_type_errors(socket_path: Path) -> None:
+def _display_type_errors(socket_path: Path, output: str) -> None:
     with server_connection.connect_in_text_mode(socket_path) as (
         input_channel,
         output_channel,
@@ -69,14 +69,16 @@ def _display_type_errors(socket_path: Path) -> None:
         output_channel.write('["DisplayTypeError", []]\n')
         type_errors = parse_type_error_response(input_channel.readline())
         error.print_errors(
-            [_relativize_error_path(error) for error in type_errors], output="text"
+            [_relativize_error_path(error) for error in type_errors], output=output
         )
 
 
-def _show_progress_and_display_type_errors(log_path: Path, socket_path: Path) -> None:
+def _show_progress_and_display_type_errors(
+    log_path: Path, socket_path: Path, output: str
+) -> None:
     LOG.info("Waiting for server...")
     with start.background_logging(log_path):
-        _display_type_errors(socket_path)
+        _display_type_errors(socket_path, output)
 
 
 def run_incremental(
@@ -88,8 +90,9 @@ def run_incremental(
     )
     # Need to be consistent with the log symlink location in start command
     log_path = Path(configuration.log_directory) / "new_server" / "server.stderr"
+    output = incremental_arguments.output
     try:
-        _show_progress_and_display_type_errors(log_path, socket_path)
+        _show_progress_and_display_type_errors(log_path, socket_path, output)
     except OSError:
         if incremental_arguments.no_start:
             raise commands.ClientException("Cannot find a running Pyre server.")
@@ -100,7 +103,7 @@ def run_incremental(
             raise commands.ClientException(
                 f"`pyre start` failed with non-zero exit code: {start_status}"
             )
-        _show_progress_and_display_type_errors(log_path, socket_path)
+        _show_progress_and_display_type_errors(log_path, socket_path, output)
 
 
 def run(

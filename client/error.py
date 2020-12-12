@@ -68,7 +68,18 @@ class Error:
             raise ErrorParsingFailure(message) from decode_error
 
     def to_json(self) -> Dict[str, Any]:
-        return dataclasses.asdict(self)
+        return {
+            "line": self.line,
+            "column": self.column,
+            "stop_line": self.stop_line,
+            "stop_column": self.stop_column,
+            "path": str(self.path),
+            "code": self.code,
+            "name": self.name,
+            "description": self.description,
+            "long_description": self.long_description,
+            "concise_description": self.concise_description,
+        }
 
     def to_text(self) -> str:
         path = click.style(str(self.path), fg="red")
