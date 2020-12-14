@@ -216,6 +216,10 @@ type invalid_decoration_reason =
   | NonCallableDecorator of Type.t
   | DecoratorFactoryFailedToApply of kind option
   | ApplicationFailed of kind option
+  | SetterNameMismatch of {
+      actual: string;
+      expected: string;
+    }
 
 and invalid_decoration = {
   decorator: Statement.Decorator.t;

@@ -677,7 +677,29 @@ module State (Context : Context) = struct
           || is_attr_validator decorator
         in
         if is_whitelisted decorator then
-          errors
+          let { Ast.Statement.Decorator.name = { Node.value = decorator_name; _ }; _ } =
+            decorator
+          in
+          match Reference.as_list decorator_name |> List.rev with
+          | "setter" :: decorated_property_name :: _ ->
+              if String.equal (Reference.last (Node.value name)) decorated_property_name then
+                errors
+              else
+                emit_error
+                  ~errors
+                  ~location
+                  ~kind:
+                    (Error.InvalidDecoration
+                       {
+                         decorator;
+                         reason =
+                           Error.SetterNameMismatch
+                             {
+                               actual = decorated_property_name;
+                               expected = Reference.last (Node.value name);
+                             };
+                       })
+          | _ -> errors
         else
           let { Resolved.errors = decorator_errors; _ } =
             forward_expression

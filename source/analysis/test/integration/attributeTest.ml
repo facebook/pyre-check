@@ -740,7 +740,22 @@ let test_attribute_decorators context =
     [
       "Missing global annotation [5]: Globally accessible variable `__property__` "
       ^ "must be specified as type other than `Any`.";
-    ]
+    ];
+  assert_type_errors
+    {|
+      class Foo:
+        @property
+        def y(self) -> int: ...
+        @property
+        def x(self) -> int: ...
+        @y.setter
+        def x(self, value: int) -> None: ...
+    |}
+    [
+      "Invalid decoration [56]: Invalid property setter `y.setter`: `y` does not match decorated \
+       method `x`.";
+    ];
+  ()
 
 
 let test_attribute_strict context =
