@@ -23,14 +23,21 @@ type verification_error =
       message: string;
     }
   | InvalidDefaultValue of {
+      callable_name: string;
       name: string;
       expression: Expression.t;
     }
   | IncompatibleModelError of {
+      name: string;
       callable_type: Type.Callable.t;
       reasons: incompatible_model_error_reason list;
     }
-  | ImportedFunctionModel of Reference.t
+  | ImportedFunctionModel of {
+      name: Reference.t;
+      actual_name: Reference.t;
+    }
+  (* TODO(T81363867): Remove this variant. *)
+  | UnclassifiedError of string
 
 let display_verification_error ~path ~location error =
   let model_origin =
@@ -42,12 +49,15 @@ let display_verification_error ~path ~location error =
   match error with
   | GlobalVerificationError { name; message } ->
       Format.asprintf "Invalid model for `%s`%s: %s" name model_origin message
-  | InvalidDefaultValue { name; expression } ->
+  | InvalidDefaultValue { callable_name; name; expression } ->
       Format.sprintf
-        "Default values of parameters must be `...`. Did you mean to write `%s: %s`?"
+        "Invalid model for `%s`%s: Default values of parameters must be `...`. Did you mean to \
+         write `%s: %s`?"
+        callable_name
+        model_origin
         name
         (Expression.show expression)
-  | IncompatibleModelError { callable_type; reasons } ->
+  | IncompatibleModelError { name; callable_type; reasons } ->
       let reasons =
         List.map reasons ~f:(function
             | UnexpectedPositionalOnlyParameter name ->
@@ -58,15 +68,23 @@ let display_verification_error ~path ~location error =
             | UnexpectedDoubleStarredParameter -> "unexpected star star parameter")
       in
       Format.asprintf
-        "Model signature parameters do not match implementation `%s`. Reason%s: %s."
+        "Invalid model for `%s`%s: Model signature parameters do not match implementation `%s`. \
+         Reason%s: %s."
+        name
+        model_origin
         (Type.show_for_hover (Type.Callable callable_type))
         (if List.length reasons > 1 then "s" else "")
         (String.concat reasons ~sep:"; ")
-  | ImportedFunctionModel actual_name ->
+  | ImportedFunctionModel { name; actual_name } ->
       Format.asprintf
-        "The modelled function is an imported function `%a`, please model it directly."
+        "Invalid model for `%a`%s: The modelled function is an imported function `%a`, please \
+         model it directly."
+        Reference.pp
+        name
+        model_origin
         Reference.pp
         actual_name
+  | UnclassifiedError error -> error
 
 
 type parameter_requirements = {
@@ -114,7 +132,7 @@ let demangle_class_attribute name =
     name
 
 
-let model_compatible ~callable_type ~type_parameters ~normalized_model_parameters =
+let model_compatible ~callable_name ~callable_type ~type_parameters ~normalized_model_parameters =
   let open Result in
   let parameter_requirements = create_parameters_requirements ~type_parameters in
   (* Once a requirement has been satisfied, it is removed from requirement object. At the end, we
@@ -126,7 +144,7 @@ let model_compatible ~callable_type ~type_parameters ~normalized_model_parameter
       match Node.value original with
       | { Parameter.value = Some expression; name; _ } ->
           if not (Expression.equal_expression (Node.value expression) Expression.Ellipsis) then
-            Error (InvalidDefaultValue { name; expression })
+            Error (InvalidDefaultValue { callable_name; name; expression })
           else
             errors_and_requirements
       | _ -> errors_and_requirements
@@ -192,7 +210,7 @@ let model_compatible ~callable_type ~type_parameters ~normalized_model_parameter
   if List.is_empty errors then
     Result.Ok ()
   else
-    Result.Error (IncompatibleModelError { callable_type; reasons = errors })
+    Result.Error (IncompatibleModelError { name = callable_name; callable_type; reasons = errors })
 
 
 let verify_signature ~normalized_model_parameters ~name callable_annotation =
@@ -206,9 +224,10 @@ let verify_signature ~normalized_model_parameters ~name callable_annotation =
         } as callable ) -> (
       match kind with
       | Type.Callable.Named actual_name when not (Reference.equal name actual_name) ->
-          Error (ImportedFunctionModel actual_name)
+          Error (ImportedFunctionModel { name; actual_name })
       | _ ->
           model_compatible
+            ~callable_name:(Reference.show name)
             ~callable_type:callable
             ~type_parameters:implementation_parameters
             ~normalized_model_parameters )

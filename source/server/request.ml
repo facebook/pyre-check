@@ -842,7 +842,8 @@ let rec process_type_query_request
                     "Models in `%s` are valid."
                     (paths |> List.map ~f:Path.show |> String.concat ~sep:", ")))
           else
-            TypeQuery.Error (String.concat errors ~sep:"\n")
+            List.map errors ~f:(Taint.Model.display_verification_error ~path ~location:Location.any)
+            |> fun errors -> TypeQuery.Error (String.concat errors ~sep:"\n")
         with
         | error -> TypeQuery.Error (Exn.to_string error) )
   in

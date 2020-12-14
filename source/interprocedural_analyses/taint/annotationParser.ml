@@ -6,6 +6,7 @@
  *)
 
 open Core
+open Result
 
 type taint_kind =
   | Named
@@ -22,26 +23,26 @@ let parse_source ~allowed ?subkind name =
   with
   (* In order to support parsing parametric sources and sinks for rules, we allow matching
      parametric source kinds with no subkind. *)
-  | Some _, None -> Sources.NamedSource name
+  | Some _, None -> Ok (Sources.NamedSource name)
   | Some { kind = Parametric; _ }, Some subkind ->
-      Sources.ParametricSource { source_name = name; subkind }
-  | _ -> failwith (Format.sprintf "Unsupported taint source `%s`" name)
+      Ok (Sources.ParametricSource { source_name = name; subkind })
+  | _ -> Error (Format.sprintf "Unsupported taint source `%s`" name)
 
 
 let parse_sink ~allowed ?subkind name =
   let create = function
-    | "LocalReturn" -> Sinks.LocalReturn
+    | "LocalReturn" -> Ok Sinks.LocalReturn
     | update when String.is_prefix update ~prefix:"ParameterUpdate" ->
         let index = String.chop_prefix_exn update ~prefix:"ParameterUpdate" in
-        ParameterUpdate (Int.of_string index)
-    | name -> failwith (Format.sprintf "Unsupported taint sink `%s`" name)
+        Ok (ParameterUpdate (Int.of_string index))
+    | name -> Error (Format.sprintf "Unsupported taint sink `%s`" name)
   in
   match
     List.find allowed ~f:(fun { name = sink_name; _ } -> String.equal sink_name name), subkind
   with
   (* In order to support parsing parametric sources and sinks for rules, we allow matching
      parametric source kinds with no subkind. *)
-  | Some _, None -> Sinks.NamedSink name
+  | Some _, None -> Ok (Sinks.NamedSink name)
   | Some { kind = Parametric; _ }, Some subkind ->
-      Sinks.ParametricSink { sink_name = name; subkind }
+      Ok (Sinks.ParametricSink { sink_name = name; subkind })
   | _ -> create name

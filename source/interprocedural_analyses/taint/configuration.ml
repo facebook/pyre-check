@@ -205,11 +205,15 @@ let parse source_jsons =
         Json.Util.member "sources" json
         |> parse_string_list
         |> List.map ~f:(AnnotationParser.parse_source ~allowed:allowed_sources)
+        |> Core.Result.all
+        |> Core.Result.ok_or_failwith
       in
       let sinks =
         Json.Util.member "sinks" json
         |> parse_string_list
         |> List.map ~f:(AnnotationParser.parse_sink ~allowed:allowed_sinks)
+        |> Core.Result.all
+        |> Core.Result.ok_or_failwith
       in
       let name = Json.Util.member "name" json |> Json.Util.to_string in
       let message_format = Json.Util.member "message_format" json |> Json.Util.to_string in
@@ -237,8 +241,18 @@ let parse source_jsons =
                 |> List.map ~f:(AnnotationParser.parse_source ~allowed:allowed_sources)
             | _ -> failwith "Expected a string or list of strings for combined rule sources."
           in
-          let first_sources = Json.Util.member first sources |> parse_sources in
-          let second_sources = Json.Util.member second sources |> parse_sources in
+          let first_sources =
+            Json.Util.member first sources
+            |> parse_sources
+            |> Core.Result.all
+            |> Core.Result.ok_or_failwith
+          in
+          let second_sources =
+            Json.Util.member second sources
+            |> parse_sources
+            |> Core.Result.all
+            |> Core.Result.ok_or_failwith
+          in
 
           let sinks, partial_sink_labels =
             let partial_sink = Json.Util.member "partial_sink" json |> Json.Util.to_string in
@@ -312,7 +326,9 @@ let parse source_jsons =
           | conditional_test ->
               Json.Util.to_list conditional_test
               |> List.map ~f:(fun json ->
-                     Json.Util.to_string json |> AnnotationParser.parse_sink ~allowed:allowed_sinks)
+                     Json.Util.to_string json
+                     |> AnnotationParser.parse_sink ~allowed:allowed_sinks
+                     |> Core.Result.ok_or_failwith)
         in
         let literal_string_sinks =
           match member "literal_strings" implicit_sinks with
@@ -324,6 +340,7 @@ let parse source_jsons =
                        Json.Util.member "kind" json
                        |> Json.Util.to_string
                        |> AnnotationParser.parse_sink ~allowed:allowed_sinks
+                       |> Core.Result.ok_or_failwith
                      in
                      let pattern =
                        Json.Util.member "regexp" json |> Json.Util.to_string |> Re2.create_exn
@@ -343,6 +360,7 @@ let parse source_jsons =
                    Json.Util.member "kind" json
                    |> Json.Util.to_string
                    |> AnnotationParser.parse_source ~allowed:allowed_sources
+                   |> Core.Result.ok_or_failwith
                  in
                  let pattern =
                    Json.Util.member "regexp" json |> Json.Util.to_string |> Re2.create_exn

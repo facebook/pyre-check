@@ -73,7 +73,11 @@ let set_up_environment ?source ?rules ~context ~model_source () =
     Taint.Model.parse ~resolution ?rule_filter ~source ~configuration Callable.Map.empty
   in
   assert_bool
-    (Format.sprintf "Models have parsing errors: %s" (List.to_string errors ~f:ident))
+    (Format.sprintf
+       "Models have parsing errors: %s"
+       (List.to_string
+          errors
+          ~f:(Taint.Model.display_verification_error ~path:None ~location:Ast.Location.any)))
     (List.is_empty errors);
 
   let environment =
@@ -1024,7 +1028,10 @@ let test_invalid_models context =
         ?path
         ~source:(Test.trim_extra_indentation model_source)
         Callable.Map.empty
-      |> fun { Taint.Model.errors; _ } -> List.hd errors |> Option.value ~default:"no failure"
+      |> fun { Taint.Model.errors; _ } ->
+      List.hd errors
+      >>| Taint.Model.display_verification_error ~path ~location:Ast.Location.any
+      |> Option.value ~default:"no failure"
     in
     assert_equal ~printer:ident expect error_message
   in

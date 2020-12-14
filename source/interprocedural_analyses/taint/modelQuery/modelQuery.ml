@@ -301,7 +301,9 @@ let apply_all_rules ~resolution ~scheduler ~configuration ~rule_filter ~rules ~c
             in
             models
         | Error error ->
-            Log.error "Error while executing model query: %s" error;
+            Log.error
+              "Error while executing model query: %s"
+              (Model.display_verification_error ~path:None ~location:Location.any error);
             models )
       else
         models

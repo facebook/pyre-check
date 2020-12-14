@@ -14,6 +14,14 @@ type source_or_sink = {
   kind: taint_kind;
 }
 
-val parse_source : allowed:source_or_sink list -> ?subkind:string -> string -> Sources.t
+val parse_source
+  :  allowed:source_or_sink list ->
+  ?subkind:string ->
+  string ->
+  (Sources.t, string) result
 
-val parse_sink : allowed:source_or_sink list -> ?subkind:string -> string -> Sinks.t
+val parse_sink
+  :  allowed:source_or_sink list ->
+  ?subkind:string ->
+  string ->
+  (Sinks.t, string) result

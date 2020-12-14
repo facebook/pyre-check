@@ -356,7 +356,9 @@ let run_with_taint_models tests ~name =
     assert_bool
       (Format.sprintf
          "The models shouldn't have any parsing errors: %s."
-         (List.to_string errors ~f:ident))
+         (List.to_string
+            errors
+            ~f:(Taint.Model.display_verification_error ~path:None ~location:Location.any)))
       (List.is_empty errors);
     Callable.Map.map models ~f:(Interprocedural.Result.make_model Taint.Result.kind)
     |> Interprocedural.Analysis.record_initial_models ~functions:[] ~stubs:[]
@@ -459,7 +461,9 @@ let initialize
         assert_bool
           (Format.sprintf
              "The models shouldn't have any parsing errors: %s."
-             (List.to_string errors ~f:ident))
+             (List.to_string
+                errors
+                ~f:(Taint.Model.display_verification_error ~path:None ~location:Location.any)))
           (List.is_empty errors);
 
         ( TaintModelQuery.ModelQuery.apply_all_rules

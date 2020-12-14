@@ -120,11 +120,13 @@ module T = struct
     models: TaintResult.call_model Interprocedural.Callable.Map.t;
     queries: ModelQuery.rule list;
     skip_overrides: Reference.Set.t;
-    errors: string list;
+    errors: ModelVerifier.verification_error list;
   }
 end
 
 include T
+
+exception ClassifiedInvalidModel of ModelVerifier.verification_error
 
 let raise_invalid_model message = raise (Model.InvalidModel message)
 
@@ -138,8 +140,8 @@ let invalid_model_error ~path ~location ~name message =
           (Path.absolute path)
           location.Location.start.Location.line
   in
-  let message = Format.asprintf "Invalid model for `%s`%s: %s" name model_origin message in
-  Core.Result.Error message
+  ModelVerifier.UnclassifiedError
+    (Format.asprintf "Invalid model for `%s`%s: %s" name model_origin message)
 
 
 let add_breadcrumbs breadcrumbs init = List.rev_append breadcrumbs init
@@ -358,43 +360,32 @@ let rec parse_annotations ~configuration ~parameters annotation =
   let get_source_kinds expression =
     let open Configuration in
     extract_leafs expression
-    >>| fun (kinds, breadcrumbs) ->
+    >>= fun (kinds, breadcrumbs) ->
     List.map kinds ~f:(fun (kind, subkind) ->
-        Source
-          {
-            source = AnnotationParser.parse_source ~allowed:configuration.sources ?subkind kind;
-            breadcrumbs;
-            path = [];
-            leaf_name_provided = false;
-          })
+        AnnotationParser.parse_source ~allowed:configuration.sources ?subkind kind
+        >>| fun source -> Source { source; breadcrumbs; path = []; leaf_name_provided = false })
+    |> Core.Result.all
   in
   let get_sink_kinds expression =
     let open Configuration in
     extract_leafs expression
-    >>| fun (kinds, breadcrumbs) ->
+    >>= fun (kinds, breadcrumbs) ->
     List.map kinds ~f:(fun (kind, subkind) ->
-        Sink
-          {
-            sink = AnnotationParser.parse_sink ~allowed:configuration.sinks ?subkind kind;
-            breadcrumbs;
-            path = [];
-            leaf_name_provided = false;
-          })
+        AnnotationParser.parse_sink ~allowed:configuration.sinks ?subkind kind
+        >>| fun sink -> Sink { sink; breadcrumbs; path = []; leaf_name_provided = false })
+    |> Core.Result.all
   in
   let get_taint_in_taint_out expression =
     let open Configuration in
     extract_leafs expression
-    >>| fun (kinds, breadcrumbs) ->
+    >>= fun (kinds, breadcrumbs) ->
     match kinds with
-    | [] -> [Tito { tito = Sinks.LocalReturn; breadcrumbs; path = [] }]
+    | [] -> Ok [Tito { tito = Sinks.LocalReturn; breadcrumbs; path = [] }]
     | _ ->
         List.map kinds ~f:(fun (kind, _) ->
-            Tito
-              {
-                tito = AnnotationParser.parse_sink ~allowed:configuration.sinks kind;
-                breadcrumbs;
-                path = [];
-              })
+            AnnotationParser.parse_sink ~allowed:configuration.sinks kind
+            >>| fun sink -> Tito { tito = sink; breadcrumbs; path = [] })
+        |> Core.Result.all
   in
   let extract_attach_features ~name expression =
     let keep_features = function
@@ -517,7 +508,7 @@ let rec parse_annotations ~configuration ~parameters annotation =
                 parse_annotation taint
                 |> Core.Result.map ~f:(List.map ~f:add_cross_repository_information)
             | _ ->
-                raise_invalid_model
+                Error
                   "Cross repository taint must be of the form CrossRepositoryTaint[taint, \
                    canonical_name, canonical_port, producer_id]." )
         | Call { callee; arguments }
@@ -577,7 +568,7 @@ let rec parse_annotations ~configuration ~parameters annotation =
                 parse_annotation taint
                 |> Core.Result.map ~f:(List.map ~f:add_cross_repository_information)
             | _ ->
-                raise_invalid_model
+                Error
                   "Cross repository taint anchor must be of the form \
                    CrossRepositoryTaintAnchor[taint, canonical_name, canonical_port]." )
         | Call
@@ -639,19 +630,20 @@ let rec parse_annotations ~configuration ~parameters annotation =
                           :: _;
                       } ->
                       if not (String.Map.Tree.mem configuration.partial_sink_labels kind) then
-                        raise_invalid_model (Format.asprintf "Unrecognized partial sink `%s`." kind);
-                      let label_options =
-                        String.Map.Tree.find_exn configuration.partial_sink_labels kind
-                      in
-                      if not (List.mem label_options label ~equal:String.equal) then
-                        Format.asprintf
-                          "Unrecognized label `%s` for partial sink `%s` (choices: `%s`)"
-                          label
-                          kind
-                          (String.concat label_options ~sep:", ")
-                        |> raise_invalid_model
+                        Error (Format.asprintf "Unrecognized partial sink `%s`." kind)
                       else
-                        Ok (Sinks.PartialSink { kind; label })
+                        let label_options =
+                          String.Map.Tree.find_exn configuration.partial_sink_labels kind
+                        in
+                        if not (List.mem label_options label ~equal:String.equal) then
+                          Error
+                            (Format.sprintf
+                               "Unrecognized label `%s` for partial sink `%s` (choices: `%s`)"
+                               label
+                               kind
+                               (String.concat label_options ~sep:", "))
+                        else
+                          Ok (Sinks.PartialSink { kind; label })
                   | _ -> invalid_annotation_error ()
                 in
                 partial_sink
@@ -814,30 +806,43 @@ let introduce_source_taint
     Ok taint
 
 
-let parse_find_clause ({ Node.value; _ } as expression) =
+let parse_find_clause ~path ({ Node.value; location } as expression) =
   match value with
   | Expression.String { StringLiteral.value; _ } -> (
       match value with
       | "functions" -> Core.Result.Ok ModelQuery.FunctionModel
       | "methods" -> Core.Result.Ok ModelQuery.MethodModel
-      | unsupported -> Core.Result.Error (Format.sprintf "Unsupported find clause `%s`" unsupported)
-      )
+      | unsupported ->
+          Core.Result.Error
+            (invalid_model_error
+               ~path
+               ~location
+               ~name:"model query"
+               (Format.sprintf "Unsupported find clause `%s`" unsupported)) )
   | _ ->
       Core.Result.Error
-        (Format.sprintf "Find clauses must be strings, got: `%s`" (Expression.show expression))
+        (invalid_model_error
+           ~path
+           ~location
+           ~name:"model query"
+           (Format.sprintf "Find clauses must be strings, got: `%s`" (Expression.show expression)))
 
 
-let parse_where_clause ({ Node.value; _ } as expression) =
+let parse_where_clause ~path ({ Node.value; location } as expression) =
   let open Core.Result in
   let parse_annotation_constraint ~name ~arguments =
     match name, arguments with
     | "is_annotated_type", [] -> Ok ModelQuery.IsAnnotatedTypeConstraint
     | _ ->
         Error
-          (Format.sprintf
-             "`%s(%s)` does not correspond to an annotation constraint."
-             name
-             (List.to_string arguments ~f:Call.Argument.show))
+          (invalid_model_error
+             ~path
+             ~location
+             ~name:"model query"
+             (Format.sprintf
+                "`%s(%s)` does not correspond to an annotation constraint."
+                name
+                (List.to_string arguments ~f:Call.Argument.show)))
   in
   let parse_parameter_constraint
       ~parameter_constraint_kind
@@ -852,9 +857,13 @@ let parse_where_clause ({ Node.value; _ } as expression) =
         >>| fun annotation_constraint -> ModelQuery.AnnotationConstraint annotation_constraint
     | _ ->
         Error
-          (Format.sprintf
-             "Unsupported constraint kind for parameters: `%s`"
-             parameter_constraint_kind)
+          (invalid_model_error
+             ~path
+             ~location
+             ~name:"model query"
+             (Format.sprintf
+                "Unsupported constraint kind for parameters: `%s`"
+                parameter_constraint_kind))
   in
   let rec parse_constraint ({ Node.value; _ } as constraint_expression) =
     match value with
@@ -973,16 +982,26 @@ let parse_where_clause ({ Node.value; _ } as expression) =
         in
         Ok (ModelQuery.ParentConstraint constraint_type)
     | Expression.Call { Call.callee; arguments = _ } ->
-        Error (Format.sprintf "Unsupported callee: %s" (Expression.show callee))
+        Error
+          (invalid_model_error
+             ~path
+             ~location
+             ~name:"model query"
+             (Format.sprintf "Unsupported callee: %s" (Expression.show callee)))
     | _ ->
-        Error (Format.sprintf "Unsupported constraint: %s" (Expression.show constraint_expression))
+        Error
+          (invalid_model_error
+             ~path
+             ~location
+             ~name:"model query"
+             (Format.sprintf "Unsupported constraint: %s" (Expression.show constraint_expression)))
   in
   match value with
   | Expression.List items -> List.map items ~f:parse_constraint |> all
   | _ -> parse_constraint expression >>| List.return
 
 
-let parse_model_clause ~configuration ({ Node.value; _ } as expression) =
+let parse_model_clause ~path ~configuration ({ Node.value; location } as expression) =
   let open Core.Result in
   let parse_model ({ Node.value; _ } as model_expression) =
     let parse_taint taint_expression =
@@ -1016,9 +1035,17 @@ let parse_model_clause ~configuration ({ Node.value; _ } as expression) =
                 Ok [ModelQuery.ParametricSourceFromAnnotation { source_pattern = pattern; kind }]
             | "ParametricSinkFromAnnotation" ->
                 Ok [ModelQuery.ParametricSinkFromAnnotation { sink_pattern = pattern; kind }]
-            | _ -> Error (Format.sprintf "Unexpected taint annotation `%s`" parametric_annotation) )
+            | _ ->
+                Error
+                  (invalid_model_error
+                     ~path
+                     ~location
+                     ~name:"model query"
+                     (Format.sprintf "Unexpected taint annotation `%s`" parametric_annotation)) )
         | _ ->
             parse_annotations ~configuration ~parameters:[] (Some expression)
+            |> Core.Result.map_error ~f:(fun error ->
+                   invalid_model_error ~path ~location ~name:"model query" error)
             >>| List.map ~f:(fun taint -> ModelQuery.TaintAnnotation taint)
       in
 
@@ -1028,7 +1055,8 @@ let parse_model_clause ~configuration ({ Node.value; _ } as expression) =
             List.map taint_annotations ~f:parse_produced_taint |> Core.Result.all >>| List.concat
         | _ -> parse_produced_taint taint_expression
       with
-      | Failure failure -> Core.Result.Error failure
+      | Failure failure ->
+          Core.Result.Error (invalid_model_error ~path ~location ~name:"model query" failure)
     in
     match value with
     | Expression.Call
@@ -1071,7 +1099,11 @@ let parse_model_clause ~configuration ({ Node.value; _ } as expression) =
         parse_taint taint >>| fun taint -> ModelQuery.AllParametersTaint taint
     | _ ->
         Error
-          (Format.sprintf "Unexpected model expression: `%s`" (Expression.show model_expression))
+          (invalid_model_error
+             ~path
+             ~location
+             ~name:"model query"
+             (Format.sprintf "Unexpected model expression: `%s`" (Expression.show model_expression)))
   in
   match value with
   | Expression.List items -> List.map items ~f:parse_model |> all
@@ -1147,9 +1179,8 @@ let add_taint_annotation_to_model
           List.map ~f:Features.SimpleSet.inject breadcrumbs
           |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
           |> introduce_source_taint ~root ~path ~leaf_name_provided ~sources_to_keep model source
-      | Tito _ -> raise_invalid_model "Invalid return annotation: TaintInTaintOut"
-      | AddFeatureToArgument _ ->
-          raise_invalid_model "Invalid return annotation: AddFeatureToArgument" )
+      | Tito _ -> Error "Invalid return annotation: TaintInTaintOut"
+      | AddFeatureToArgument _ -> Error "Invalid return annotation: AddFeatureToArgument" )
   | ParameterAnnotation root -> (
       match annotation with
       | Sink { sink; breadcrumbs; path; leaf_name_provided } ->
@@ -1195,6 +1226,7 @@ type model_or_query =
   | Query of ModelQuery.rule
 
 let callable_annotation
+    ~location
     ~verify_decorators
     ~resolution
     ({ Define.Signature.name = { Node.value = name; _ }; decorators; _ } as define)
@@ -1242,24 +1274,35 @@ let callable_annotation
     | None -> global_type ()
   in
   if signature_is_property define then
-    get_matching_method ~predicate:is_property
+    Ok (get_matching_method ~predicate:is_property)
   else if Define.Signature.is_property_setter define then
-    get_matching_method ~predicate:Define.is_property_setter
+    Ok (get_matching_method ~predicate:Define.is_property_setter)
   else if (not (List.is_empty decorators)) && verify_decorators then
     (* Ensure that models don't declare decorators that our taint analyses doesn't understand. We
        check for the verify_decorators flag, as defines originating from
        `create_model_from_annotation` are not user-specified models that we're parsing. *)
-    raise_invalid_model
-      (Format.sprintf
-         "Unexpected decorators found when parsing model: `%s`"
-         ( List.map decorators ~f:Decorator.to_expression
-         |> List.map ~f:Expression.show
-         |> String.concat ~sep:", " ))
+    Error
+      (invalid_model_error
+         ~path:None
+         ~location
+         ~name:(Reference.show name)
+         (Format.sprintf
+            "Unexpected decorators found when parsing model: `%s`"
+            ( List.map decorators ~f:Decorator.to_expression
+            |> List.map ~f:Expression.show
+            |> String.concat ~sep:", " )))
   else
-    global_type ()
+    Ok (global_type ())
 
 
-let adjust_mode_and_skipped_overrides ~define_name ~configuration ~top_level_decorators model =
+let adjust_mode_and_skipped_overrides
+    ~path
+    ~location
+    ~define_name
+    ~configuration
+    ~top_level_decorators
+    model
+  =
   (* Adjust analysis mode and whether we skip overrides by applying top-level decorators. *)
   let open Core.Result in
   let mode_and_skipped_override =
@@ -1302,6 +1345,12 @@ let adjust_mode_and_skipped_overrides ~define_name ~configuration ~top_level_dec
                       in
                       let sanitize_tito =
                         parse_annotations ~configuration ~parameters:[] (Some value)
+                        |> Core.Result.map_error ~f:(fun error ->
+                               invalid_model_error
+                                 ~path
+                                 ~location
+                                 ~name:(Reference.show define_name)
+                                 error)
                         >>| List.fold ~init:([], []) ~f:add_tito_annotation
                         >>| fun (sanitized_tito_sources, sanitized_tito_sinks) ->
                         Mode.SpecificTito { sanitized_tito_sources; sanitized_tito_sinks }
@@ -1342,6 +1391,12 @@ let adjust_mode_and_skipped_overrides ~define_name ~configuration ~top_level_dec
                                     (show_taint_annotation taint_annotation)))
                       in
                       parse_annotations ~configuration ~parameters:[] (Some value)
+                      |> Core.Result.map_error ~f:(fun error ->
+                             invalid_model_error
+                               ~path
+                               ~location
+                               ~name:(Reference.show define_name)
+                               error)
                       >>= fun annotations ->
                       sanitize
                       >>| fun sanitize -> List.fold ~init:sanitize ~f:add_annotation annotations
@@ -1359,7 +1414,9 @@ let adjust_mode_and_skipped_overrides ~define_name ~configuration ~top_level_dec
       | _ -> Ok (mode, skipped_override)
     in
     try List.fold_result top_level_decorators ~f:adjust_mode ~init:(model.mode, None) with
-    | Model.InvalidModel error -> Core.Result.Error error
+    | Model.InvalidModel error ->
+        Core.Result.Error
+          (invalid_model_error ~path ~location ~name:(Reference.show define_name) error)
   in
   mode_and_skipped_override
   >>| fun (mode, skipped_override) -> { model with mode }, skipped_override
@@ -1563,11 +1620,12 @@ let create ~resolution ?path ~configuration ~rule_filter source =
           else
             Core.Result.Ok []
       | { Node.value = Class { Class.name = { Node.value = name; _ }; _ }; location } ->
-          invalid_model_error
-            ~path
-            ~location
-            ~name:(Reference.show name)
-            "Class model must have a body of `...`."
+          Error
+            (invalid_model_error
+               ~path
+               ~location
+               ~name:(Reference.show name)
+               "Class model must have a body of `...`.")
       | {
        Node.value =
          Assign
@@ -1583,8 +1641,8 @@ let create ~resolution ?path ~configuration ~rule_filter source =
           let name = name_to_reference_exn name in
           match ModelVerifier.verify_global ~resolution ~name with
           | Core.Result.Error error ->
-              let error = ModelVerifier.display_verification_error ~path ~location error in
-              Log.error "%s" error;
+              let error_message = ModelVerifier.display_verification_error ~path ~location error in
+              Log.error "%s" error_message;
               Core.Result.Error error
           | Core.Result.Ok () ->
               let signature =
@@ -1616,8 +1674,8 @@ let create ~resolution ?path ~configuration ~rule_filter source =
           let name = name_to_reference_exn name in
           match ModelVerifier.verify_global ~resolution ~name with
           | Core.Result.Error error ->
-              let error = ModelVerifier.display_verification_error ~path ~location error in
-              Log.error "%s" error;
+              let error_message = ModelVerifier.display_verification_error ~path ~location error in
+              Log.error "%s" error_message;
               Core.Result.Error error
           | Core.Result.Ok () ->
               let signature =
@@ -1648,10 +1706,10 @@ let create ~resolution ?path ~configuration ~rule_filter source =
           let name = name_to_reference_exn name in
           match ModelVerifier.verify_global ~resolution ~name with
           | Core.Result.Error error ->
-              let error =
+              let error_message =
                 ModelVerifier.display_verification_error ~path ~location:signature.location error
               in
-              Log.error "%s" error;
+              Log.error "%s" error_message;
               Core.Result.Error error
           | Core.Result.Ok () ->
               let signature =
@@ -1686,7 +1744,7 @@ let create ~resolution ?path ~configuration ~rule_filter source =
                  };
              _;
            };
-       _;
+       location;
       } ->
           let clauses =
             match arguments with
@@ -1697,9 +1755,9 @@ let create ~resolution ?path ~configuration ~rule_filter source =
             ] ->
                 Core.Result.Ok
                   ( None,
-                    parse_find_clause find_clause,
-                    parse_where_clause where_clause,
-                    parse_model_clause ~configuration model_clause )
+                    parse_find_clause ~path find_clause,
+                    parse_where_clause ~path where_clause,
+                    parse_model_clause ~path ~configuration model_clause )
             | [
              {
                Call.Argument.name = Some { Node.value = "name"; _ };
@@ -1711,12 +1769,16 @@ let create ~resolution ?path ~configuration ~rule_filter source =
             ] ->
                 Core.Result.Ok
                   ( Some name,
-                    parse_find_clause find_clause,
-                    parse_where_clause where_clause,
-                    parse_model_clause ~configuration model_clause )
+                    parse_find_clause ~path find_clause,
+                    parse_where_clause ~path where_clause,
+                    parse_model_clause ~path ~configuration model_clause )
             | _ ->
                 Core.Result.Error
-                  "Malformed model query arguments: expected a find, where and model clause."
+                  (invalid_model_error
+                     ~path
+                     ~location
+                     ~name:"model query"
+                     "Malformed model query arguments: expected a find, where and model clause.")
           in
 
           let open Core.Result in
@@ -1760,9 +1822,13 @@ let create ~resolution ?path ~configuration ~rule_filter source =
     in
     (* Make sure we know about what we model. *)
     try
-      let callable_annotation = callable_annotation ~verify_decorators:true ~resolution define in
+      let callable_annotation =
+        callable_annotation ~location ~verify_decorators:true ~resolution define
+      in
       let call_target = (call_target :> Callable.t) in
-      let () =
+      let callable_annotation =
+        callable_annotation
+        >>= fun callable_annotation ->
         if
           Type.is_top (Annotation.annotation callable_annotation)
           (* FIXME: We are relying on the fact that nonexistent functions&attributes resolve to
@@ -1770,13 +1836,20 @@ let create ~resolution ?path ~configuration ~rule_filter source =
              annotation. This is fragile! *)
           && not (Annotation.is_immutable callable_annotation)
         then
-          raise_invalid_model "Modeled entity is not part of the environment!"
+          Error
+            (invalid_model_error
+               ~path
+               ~location
+               ~name:(Reference.show name)
+               "Modeled entity is not part of the environment!")
+        else
+          Ok callable_annotation
       in
       (* Check model matches callables primary signature. *)
       let callable_annotation =
         callable_annotation
-        |> Annotation.annotation
-        |> function
+        >>| Annotation.annotation
+        >>| function
         | Type.Callable t -> Some t
         | Type.Parametric
             { name = "BoundMethod"; parameters = [Type.Parameter.Single (Type.Callable t); _] } ->
@@ -1790,12 +1863,13 @@ let create ~resolution ?path ~configuration ~rule_filter source =
            models aren't off. *)
         let callable_parameter_names_to_positions =
           match callable_annotation with
-          | Some
-              {
-                Type.Callable.implementation =
-                  { Type.Callable.parameters = Type.Callable.Defined parameters; _ };
-                _;
-              } ->
+          | Ok
+              (Some
+                {
+                  Type.Callable.implementation =
+                    { Type.Callable.parameters = Type.Callable.Defined parameters; _ };
+                  _;
+                }) ->
               let name = function
                 | Type.Callable.Parameter.Named { name; _ }
                 | Type.Callable.Parameter.KeywordOnly { name; _ } ->
@@ -1831,13 +1905,13 @@ let create ~resolution ?path ~configuration ~rule_filter source =
       in
       let () =
         match
-          ModelVerifier.verify_signature ~normalized_model_parameters ~name callable_annotation
+          callable_annotation >>= ModelVerifier.verify_signature ~normalized_model_parameters ~name
         with
         | Core.Result.Ok () -> ()
         | Core.Result.Error error ->
-            let error = ModelVerifier.display_verification_error ~path ~location error in
-            Log.error "%s" error;
-            raise (Model.InvalidModel error)
+            let error_message = ModelVerifier.display_verification_error ~path ~location error in
+            Log.error "%s" error_message;
+            raise (ClassifiedInvalidModel error)
       in
       let annotations =
         List.map normalized_model_parameters ~f:(parse_parameter_taint ~configuration ~parameters)
@@ -1847,8 +1921,15 @@ let create ~resolution ?path ~configuration ~rule_filter source =
         parse_return_taint ~configuration ~parameters return_annotation
         >>| fun return_taint -> List.rev_append parameter_taint return_taint
       in
+      let lift_error =
+        Core.Result.map_error ~f:(fun error ->
+            invalid_model_error ~path ~location ~name:(Reference.show name) error)
+      in
       let model =
+        callable_annotation
+        >>= fun callable_annotation ->
         annotations
+        |> lift_error
         >>= fun annotations ->
         List.fold_result
           annotations
@@ -1862,9 +1943,15 @@ let create ~resolution ?path ~configuration ~rule_filter source =
               ~sinks_to_keep
               accumulator
               annotation)
+        |> lift_error
       in
       model
-      >>= adjust_mode_and_skipped_overrides ~configuration ~top_level_decorators ~define_name:name
+      >>= adjust_mode_and_skipped_overrides
+            ~path
+            ~location
+            ~configuration
+            ~top_level_decorators
+            ~define_name:name
       |> function
       | Error error -> invalid_model_error ~path ~location ~name:(Reference.show name) error
       | Ok (model, skipped_override) ->
@@ -1872,7 +1959,9 @@ let create ~resolution ?path ~configuration ~rule_filter source =
     with
     | Failure message
     | Model.InvalidModel message ->
-        invalid_model_error ~path ~location ~name:(Reference.show name) message
+        Error (invalid_model_error ~path ~location ~name:(Reference.show name) message)
+    (* TODO(T81363867): Clean these up. *)
+    | ClassifiedInvalidModel error -> Error error
   in
   let signatures, queries =
     List.fold signatures_and_queries ~init:([], []) ~f:(fun (signatures, queries) ->
@@ -1927,22 +2016,29 @@ let parse ~resolution ?path ?rule_filter ~source ~configuration models =
 let create_model_from_annotations ~resolution ~callable ~sources_to_keep ~sinks_to_keep annotations =
   let open Core.Result in
   let global_resolution = Resolution.global_resolution resolution in
+  let invalid_model_error message =
+    invalid_model_error ~path:None ~location:Location.any ~name:"Model query" message
+  in
   match
     Interprocedural.Callable.get_module_and_definition ~resolution:global_resolution callable
   with
   | None ->
-      Error (Format.sprintf "No callable corresponding to `%s` found." (Callable.show callable))
+      Error
+        (invalid_model_error
+           (Format.sprintf "No callable corresponding to `%s` found." (Callable.show callable)))
   | Some (_, { Node.value = { Define.signature = define; _ }; _ }) ->
       let callable_annotation =
-        callable_annotation ~resolution ~verify_decorators:false define
-        |> Annotation.annotation
-        |> function
+        callable_annotation ~location:Location.any ~resolution ~verify_decorators:false define
+        >>| Annotation.annotation
+        >>| function
         | Type.Callable t -> Some t
         | Type.Parametric
             { name = "BoundMethod"; parameters = [Type.Parameter.Single (Type.Callable t); _] } ->
             Some t
         | _ -> None
       in
+      callable_annotation
+      >>= fun callable_annotation ->
       List.fold
         annotations
         ~init:(Ok TaintResult.empty_model)
@@ -1957,6 +2053,7 @@ let create_model_from_annotations ~resolution ~callable ~sources_to_keep ~sinks_
             ~sinks_to_keep
             accumulator
             annotation)
+      |> Core.Result.map_error ~f:(fun error -> invalid_model_error error)
 
 
 let verify_model_syntax ~path ~source =

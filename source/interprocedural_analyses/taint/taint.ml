@@ -26,6 +26,8 @@ module Model = struct
 
   let verify_model_syntax = ModelParser.verify_model_syntax
 
+  let display_verification_error = ModelVerifier.display_verification_error
+
   type taint_annotation = ModelParser.T.taint_annotation =
     | Sink of {
         sink: Sinks.t;

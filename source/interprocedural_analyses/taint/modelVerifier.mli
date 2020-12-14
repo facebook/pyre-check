@@ -21,14 +21,21 @@ type verification_error =
       message: string;
     }
   | InvalidDefaultValue of {
+      callable_name: string;
       name: string;
       expression: Expression.t;
     }
   | IncompatibleModelError of {
+      name: string;
       callable_type: Type.Callable.t;
       reasons: incompatible_model_error_reason list;
     }
-  | ImportedFunctionModel of Reference.t
+  | ImportedFunctionModel of {
+      name: Reference.t;
+      actual_name: Reference.t;
+    }
+  | ModelledObjectNotInEnvironment
+  | UnclassifiedError of string
 
 val display_verification_error
   :  path:Pyre.Path.t option ->
