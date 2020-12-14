@@ -281,7 +281,7 @@ let apply_all_rules ~resolution ~scheduler ~configuration ~rule_filter ~rules ~c
               ~rule
               ~callable)
       in
-      if not (List.is_empty taint_to_model) then
+      if not (List.is_empty taint_to_model) then (
         match
           ModelParser.create_model_from_annotations
             ~resolution
@@ -290,7 +290,7 @@ let apply_all_rules ~resolution ~scheduler ~configuration ~rule_filter ~rules ~c
             ~sinks_to_keep
             taint_to_model
         with
-        | Some model ->
+        | Ok model ->
             let models =
               let model =
                 match Callable.Map.find models (callable :> Callable.t) with
@@ -300,7 +300,9 @@ let apply_all_rules ~resolution ~scheduler ~configuration ~rule_filter ~rules ~c
               Callable.Map.set models ~key:(callable :> Callable.t) ~data:model
             in
             models
-        | _ -> models
+        | Error error ->
+            Log.error "Error while executing model query: %s" error;
+            models )
       else
         models
     in

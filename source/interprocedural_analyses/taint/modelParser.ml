@@ -667,6 +667,7 @@ let introduce_sink_taint
     taint_sink_kind
     breadcrumbs
   =
+  let open Core.Result in
   let should_keep_taint =
     match sinks_to_keep with
     | None -> true
@@ -678,7 +679,7 @@ let introduce_sink_taint
         BackwardState.assign ~weak:true ~root ~path taint environment
       in
       match taint_sink_kind with
-      | Sinks.LocalReturn -> raise_invalid_model "Invalid TaintSink annotation `LocalReturn`"
+      | Sinks.LocalReturn -> Error "Invalid TaintSink annotation `LocalReturn`"
       | _ ->
           let transform_trace_information taint =
             if leaf_name_provided then
@@ -702,11 +703,11 @@ let introduce_sink_taint
             |> BackwardState.Tree.create_leaf
           in
           let sink_taint = assign_backward_taint sink_taint leaf_taint in
-          { taint.backward with sink_taint }
+          Ok { taint.backward with sink_taint }
     in
-    { taint with backward }
+    backward >>| fun backward -> { taint with backward }
   else
-    taint
+    Ok taint
 
 
 let introduce_taint_in_taint_out
@@ -716,6 +717,7 @@ let introduce_taint_in_taint_out
     taint_sink_kind
     breadcrumbs
   =
+  let open Core.Result in
   let backward =
     let assign_backward_taint environment taint =
       BackwardState.assign ~weak:true ~root ~path taint environment
@@ -730,9 +732,9 @@ let introduce_taint_in_taint_out
           |> BackwardState.Tree.create_leaf
         in
         let taint_in_taint_out = assign_backward_taint taint_in_taint_out return_taint in
-        { taint.backward with taint_in_taint_out }
+        Ok { taint.backward with taint_in_taint_out }
     | Sinks.Attach when List.is_empty breadcrumbs ->
-        raise_invalid_model "`Attach` must be accompanied by a list of features to attach."
+        Error "`Attach` must be accompanied by a list of features to attach."
     | Sinks.ParameterUpdate _
     | Sinks.Attach ->
         let update_taint =
@@ -743,12 +745,14 @@ let introduce_taint_in_taint_out
           |> BackwardState.Tree.create_leaf
         in
         let taint_in_taint_out = assign_backward_taint taint_in_taint_out update_taint in
-        { taint.backward with taint_in_taint_out }
+        Ok { taint.backward with taint_in_taint_out }
     | _ ->
-        Format.asprintf "Invalid TaintInTaintOut annotation `%s`" (Sinks.show taint_sink_kind)
-        |> raise_invalid_model
+        let error =
+          Format.asprintf "Invalid TaintInTaintOut annotation `%s`" (Sinks.show taint_sink_kind)
+        in
+        Error error
   in
-  { taint with backward }
+  backward >>| fun backward -> { taint with backward }
 
 
 let introduce_source_taint
@@ -760,14 +764,15 @@ let introduce_source_taint
     taint_source_kind
     breadcrumbs
   =
+  let open Core.Result in
   let should_keep_taint =
     match sources_to_keep with
     | None -> true
     | Some sources_to_keep -> Core.Set.mem sources_to_keep taint_source_kind
   in
   if Sources.equal taint_source_kind Sources.Attach && List.is_empty breadcrumbs then
-    raise_invalid_model "`Attach` must be accompanied by a list of features to attach.";
-  if should_keep_taint then
+    Error "`Attach` must be accompanied by a list of features to attach."
+  else if should_keep_taint then
     let source_taint =
       let transform_trace_information taint =
         if leaf_name_provided then
@@ -793,9 +798,9 @@ let introduce_source_taint
       in
       ForwardState.assign ~weak:true ~root ~path leaf_taint source_taint
     in
-    { taint with forward = { source_taint } }
+    Ok { taint with forward = { source_taint } }
   else
-    taint
+    Ok taint
 
 
 let parse_find_clause ({ Node.value; _ } as expression) =
@@ -1244,6 +1249,103 @@ let callable_annotation
     global_type ()
 
 
+let adjust_mode_and_skipped_overrides ~define_name ~configuration ~top_level_decorators model =
+  (* Adjust analysis mode and whether we skip overrides by applying top-level decorators. *)
+  let open Core.Result in
+  let mode_and_skipped_override =
+    let adjust_mode
+        (mode, skipped_override)
+        { Decorator.name = { Node.value = name; _ }; arguments }
+      =
+      match Reference.show name with
+      | "Sanitize" ->
+          let sanitize_kind =
+            match arguments with
+            | None -> { Mode.sources = Some AllSources; sinks = Some AllSinks; tito = Some AllTito }
+            | Some arguments ->
+                let to_sanitize_kind sanitize { Call.Argument.value; _ } =
+                  match Node.value value with
+                  | Expression.Name (Name.Identifier name) -> (
+                      match name with
+                      | "TaintSource" -> { sanitize with Mode.sources = Some AllSources }
+                      | "TaintSink" -> { sanitize with Mode.sinks = Some AllSinks }
+                      | "TaintInTaintOut" -> { sanitize with Mode.tito = Some AllTito }
+                      | _ -> sanitize )
+                  | Expression.Call { Call.callee; arguments = [{ Call.Argument.value; _ }] }
+                    when Option.equal String.equal (base_name callee) (Some "TaintInTaintOut") -> (
+                      let add_tito_annotation (sanitized_tito_sources, sanitized_tito_sinks)
+                        = function
+                        | Source { source; breadcrumbs = []; leaf_name_provided = false; path = [] }
+                          ->
+                            source :: sanitized_tito_sources, sanitized_tito_sinks
+                        | Sink { sink; breadcrumbs = []; leaf_name_provided = false; path = [] } ->
+                            sanitized_tito_sources, sink :: sanitized_tito_sinks
+                        | taint_annotation ->
+                            raise
+                              (Model.InvalidModel
+                                 (Format.sprintf
+                                    "`%s` is not a supported TITO sanitizer."
+                                    (show_taint_annotation taint_annotation)))
+                      in
+                      let sanitize_tito =
+                        parse_annotations ~configuration ~parameters:[] (Some value)
+                        |> List.fold ~init:([], []) ~f:add_tito_annotation
+                        |> fun (sanitized_tito_sources, sanitized_tito_sinks) ->
+                        Mode.SpecificTito { sanitized_tito_sources; sanitized_tito_sinks }
+                      in
+                      match sanitize.tito with
+                      | Some AllTito -> sanitize
+                      | _ -> { sanitize with tito = Some sanitize_tito } )
+                  | _ ->
+                      let add_annotation { Mode.sources; sinks; tito } = function
+                        | Source { source; breadcrumbs = []; leaf_name_provided = false; path = [] }
+                          ->
+                            let sources =
+                              match sources with
+                              | None -> Some (Mode.SpecificSources [source])
+                              | Some (Mode.SpecificSources sources) ->
+                                  Some (Mode.SpecificSources (source :: sources))
+                              | Some Mode.AllSources -> Some Mode.AllSources
+                            in
+                            { Mode.sources; sinks; tito }
+                        | Sink { sink; breadcrumbs = []; leaf_name_provided = false; path = [] } ->
+                            let sinks =
+                              match sinks with
+                              | None -> Some (Mode.SpecificSinks [sink])
+                              | Some (Mode.SpecificSinks sinks) ->
+                                  Some (Mode.SpecificSinks (sink :: sinks))
+                              | Some Mode.AllSinks -> Some Mode.AllSinks
+                            in
+                            { Mode.sources; sinks; tito }
+                        | taint_annotation ->
+                            raise
+                              (Model.InvalidModel
+                                 (Format.sprintf
+                                    "`%s` is not a supported taint annotation for sanitizers."
+                                    (show_taint_annotation taint_annotation)))
+                      in
+                      parse_annotations ~configuration ~parameters:[] (Some value)
+                      |> List.fold ~init:sanitize ~f:add_annotation
+                in
+                List.fold
+                  arguments
+                  ~f:to_sanitize_kind
+                  ~init:{ Mode.sources = None; sinks = None; tito = None }
+          in
+          TaintResult.Mode.join mode (Mode.Sanitize sanitize_kind), skipped_override
+      | "SkipAnalysis" -> TaintResult.Mode.SkipAnalysis, skipped_override
+      | "SkipOverrides" -> mode, Some define_name
+      | _ -> mode, skipped_override
+    in
+    try
+      List.fold top_level_decorators ~f:adjust_mode ~init:(model.mode, None) |> Core.Result.return
+    with
+    | Model.InvalidModel error -> Core.Result.Error error
+  in
+  mode_and_skipped_override
+  >>| fun (mode, skipped_override) -> { model with mode }, skipped_override
+
+
 let compute_sources_and_sinks_to_keep ~configuration ~rule_filter =
   match rule_filter with
   | None -> None, None
@@ -1635,6 +1737,7 @@ let create ~resolution ?path ~configuration ~rule_filter source =
         location,
         call_target )
     =
+    let open Core.Result in
     (* Strip off the decorators only used for taint annotations. *)
     let top_level_decorators, define =
       let is_taint_decorator decorator =
@@ -1739,8 +1842,10 @@ let create ~resolution ?path ~configuration ~rule_filter source =
       let model =
         List.fold
           annotations
-          ~init:TaintResult.empty_model
+          ~init:(Ok TaintResult.empty_model)
           ~f:(fun accumulator (annotation, annotation_kind) ->
+            accumulator
+            >>= fun accumulator ->
             add_taint_annotation_to_model
               ~resolution:(Resolution.global_resolution resolution)
               ~annotation_kind
@@ -1750,115 +1855,12 @@ let create ~resolution ?path ~configuration ~rule_filter source =
               accumulator
               annotation)
       in
-      (* Adjust analysis mode and whether we skip overrides by applying top-level decorators. *)
-      let model, skipped_override =
-        let define_name = name in
-        let mode, skipped_override =
-          let adjust_mode
-              (mode, skipped_override)
-              { Decorator.name = { Node.value = name; _ }; arguments }
-            =
-            match Reference.show name with
-            | "Sanitize" ->
-                let sanitize_kind =
-                  match arguments with
-                  | None ->
-                      { Mode.sources = Some AllSources; sinks = Some AllSinks; tito = Some AllTito }
-                  | Some arguments ->
-                      let to_sanitize_kind sanitize { Call.Argument.value; _ } =
-                        match Node.value value with
-                        | Expression.Name (Name.Identifier name) -> (
-                            match name with
-                            | "TaintSource" -> { sanitize with Mode.sources = Some AllSources }
-                            | "TaintSink" -> { sanitize with Mode.sinks = Some AllSinks }
-                            | "TaintInTaintOut" -> { sanitize with Mode.tito = Some AllTito }
-                            | _ -> sanitize )
-                        | Expression.Call { Call.callee; arguments = [{ Call.Argument.value; _ }] }
-                          when Option.equal String.equal (base_name callee) (Some "TaintInTaintOut")
-                          -> (
-                            let add_tito_annotation (sanitized_tito_sources, sanitized_tito_sinks)
-                              = function
-                              | Source
-                                  {
-                                    source;
-                                    breadcrumbs = [];
-                                    leaf_name_provided = false;
-                                    path = [];
-                                  } ->
-                                  source :: sanitized_tito_sources, sanitized_tito_sinks
-                              | Sink
-                                  { sink; breadcrumbs = []; leaf_name_provided = false; path = [] }
-                                ->
-                                  sanitized_tito_sources, sink :: sanitized_tito_sinks
-                              | taint_annotation ->
-                                  raise
-                                    (Model.InvalidModel
-                                       (Format.sprintf
-                                          "`%s` is not a supported TITO sanitizer."
-                                          (show_taint_annotation taint_annotation)))
-                            in
-                            let sanitize_tito =
-                              parse_annotations ~configuration ~parameters:[] (Some value)
-                              |> List.fold ~init:([], []) ~f:add_tito_annotation
-                              |> fun (sanitized_tito_sources, sanitized_tito_sinks) ->
-                              Mode.SpecificTito { sanitized_tito_sources; sanitized_tito_sinks }
-                            in
-                            match sanitize.tito with
-                            | Some AllTito -> sanitize
-                            | _ -> { sanitize with tito = Some sanitize_tito } )
-                        | _ ->
-                            let add_annotation { Mode.sources; sinks; tito } = function
-                              | Source
-                                  {
-                                    source;
-                                    breadcrumbs = [];
-                                    leaf_name_provided = false;
-                                    path = [];
-                                  } ->
-                                  let sources =
-                                    match sources with
-                                    | None -> Some (Mode.SpecificSources [source])
-                                    | Some (Mode.SpecificSources sources) ->
-                                        Some (Mode.SpecificSources (source :: sources))
-                                    | Some Mode.AllSources -> Some Mode.AllSources
-                                  in
-                                  { Mode.sources; sinks; tito }
-                              | Sink
-                                  { sink; breadcrumbs = []; leaf_name_provided = false; path = [] }
-                                ->
-                                  let sinks =
-                                    match sinks with
-                                    | None -> Some (Mode.SpecificSinks [sink])
-                                    | Some (Mode.SpecificSinks sinks) ->
-                                        Some (Mode.SpecificSinks (sink :: sinks))
-                                    | Some Mode.AllSinks -> Some Mode.AllSinks
-                                  in
-                                  { Mode.sources; sinks; tito }
-                              | taint_annotation ->
-                                  raise
-                                    (Model.InvalidModel
-                                       (Format.sprintf
-                                          "`%s` is not a supported taint annotation for sanitizers."
-                                          (show_taint_annotation taint_annotation)))
-                            in
-                            parse_annotations ~configuration ~parameters:[] (Some value)
-                            |> List.fold ~init:sanitize ~f:add_annotation
-                      in
-                      List.fold
-                        arguments
-                        ~f:to_sanitize_kind
-                        ~init:{ Mode.sources = None; sinks = None; tito = None }
-                in
-                TaintResult.Mode.join mode (Mode.Sanitize sanitize_kind), skipped_override
-            | "SkipAnalysis" -> TaintResult.Mode.SkipAnalysis, skipped_override
-            | "SkipOverrides" -> mode, Some define_name
-            | _ -> mode, skipped_override
-          in
-          List.fold top_level_decorators ~f:adjust_mode ~init:(model.mode, None)
-        in
-        { model with mode }, skipped_override
-      in
-      Core.Result.Ok (Model ({ model; call_target; is_obscure = false }, skipped_override))
+      model
+      >>= adjust_mode_and_skipped_overrides ~configuration ~top_level_decorators ~define_name:name
+      |> function
+      | Error error -> invalid_model_error ~location ~name:(Reference.show name) error
+      | Ok (model, skipped_override) ->
+          Ok (Model ({ model; call_target; is_obscure = false }, skipped_override))
     with
     | Failure message
     | Model.InvalidModel message ->
@@ -1915,11 +1917,13 @@ let parse ~resolution ?path ?rule_filter ~source ~configuration models =
 
 
 let create_model_from_annotations ~resolution ~callable ~sources_to_keep ~sinks_to_keep annotations =
+  let open Core.Result in
   let global_resolution = Resolution.global_resolution resolution in
   match
     Interprocedural.Callable.get_module_and_definition ~resolution:global_resolution callable
   with
-  | None -> None
+  | None ->
+      Error (Format.sprintf "No callable corresponding to `%s` found." (Callable.show callable))
   | Some (_, { Node.value = { Define.signature = define; _ }; _ }) ->
       let callable_annotation =
         callable_annotation ~resolution ~verify_decorators:false define
@@ -1933,8 +1937,10 @@ let create_model_from_annotations ~resolution ~callable ~sources_to_keep ~sinks_
       in
       List.fold
         annotations
-        ~init:TaintResult.empty_model
+        ~init:(Ok TaintResult.empty_model)
         ~f:(fun accumulator (annotation_kind, annotation) ->
+          accumulator
+          >>= fun accumulator ->
           add_taint_annotation_to_model
             ~resolution:global_resolution
             ~annotation_kind
@@ -1943,7 +1949,6 @@ let create_model_from_annotations ~resolution ~callable ~sources_to_keep ~sinks_
             ~sinks_to_keep
             accumulator
             annotation)
-      |> Option.some
 
 
 let verify_model_syntax ~path ~source =

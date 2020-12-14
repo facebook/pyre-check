@@ -137,4 +137,4 @@ val create_model_from_annotations
   sources_to_keep:Sources.Set.t option ->
   sinks_to_keep:Sinks.Set.t option ->
   (T.annotation_kind * T.taint_annotation) list ->
-  TaintResult.call_model option
+  (TaintResult.call_model, string) result
