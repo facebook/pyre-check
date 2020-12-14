@@ -856,6 +856,21 @@ let test_callback_protocols context =
   ()
 
 
+let test_hash_protocol context =
+  let assert_type_errors = assert_type_errors ~context in
+  assert_type_errors
+    {|
+      from typing import Hashable
+
+      def foo(h: Hashable) -> int:
+        return hash(h)
+
+      foo(None)
+    |}
+    [];
+  ()
+
+
 let () =
   "protocol"
   >::: [
@@ -863,5 +878,6 @@ let () =
          "check_generic_implementors" >:: test_check_generic_implementors;
          "check_generic_protocols" >:: test_check_generic_protocols;
          "callback_protocols" >:: test_callback_protocols;
+         "hash_protocol" >:: test_hash_protocol;
        ]
   |> Test.run

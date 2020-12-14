@@ -447,7 +447,8 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
         impossible
     | Type.Bottom, _ -> [constraints]
     | _, Type.NoneType -> impossible
-    | Type.Callable _, Type.Primitive protocol when is_protocol right ~protocol_assumptions ->
+    | (Type.Callable _ | Type.NoneType), Type.Primitive protocol
+      when is_protocol right ~protocol_assumptions ->
         if
           [%compare.equal: Type.Parameter.t list option]
             (instantiate_protocol_parameters order ~protocol ~candidate:left)
@@ -456,7 +457,8 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
           [constraints]
         else
           impossible
-    | Type.Callable _, Type.Parametric { name; _ } when is_protocol right ~protocol_assumptions ->
+    | (Type.Callable _ | Type.NoneType), Type.Parametric { name; _ }
+      when is_protocol right ~protocol_assumptions ->
         instantiate_protocol_parameters order ~protocol:name ~candidate:left
         >>| Type.parametric name
         >>| (fun left -> solve_less_or_equal order ~constraints ~left ~right)
