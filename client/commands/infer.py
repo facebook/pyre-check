@@ -288,7 +288,7 @@ class StubFile:
     def is_empty(self):
         return self._stubs == []
 
-    def path(self, directory):
+    def path(self, directory) -> Path:
         return directory / Path("{}i".format(self._path))
 
     def output_to_file(self, path) -> None:
@@ -315,7 +315,10 @@ def generate_stub_files(
     return stubs
 
 
-def write_stubs_to_disk(stubs, type_directory) -> None:
+def write_stubs_to_disk(
+    stubs,
+    type_directory: Path,
+) -> None:
     if type_directory.exists():
         LOG.log(log.SUCCESS, "Deleting {}".format(type_directory))
         shutil.rmtree(type_directory)
