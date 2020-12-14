@@ -611,6 +611,12 @@ def run(
 
     server_identifier = start.get_server_identifier(configuration)
     pyre_arguments = start.create_server_arguments(configuration, start_arguments)
+    if pyre_arguments.watchman_root is None:
+        raise commands.ClientException(
+            "Cannot locate a `watchman` root. Pyre's server will not function "
+            "properly."
+        )
+
     return asyncio.get_event_loop().run_until_complete(
         run_persistent(binary_location, server_identifier, pyre_arguments)
     )
