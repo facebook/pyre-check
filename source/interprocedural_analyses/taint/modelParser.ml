@@ -1474,13 +1474,7 @@ let create ~resolution ?path ~configuration ~rule_filter source =
           let name = name_to_reference_exn name in
           match ModelVerifier.verify_global ~resolution ~name with
           | Core.Result.Error error ->
-              let error =
-                ModelVerifier.display_verification_error
-                  ~path
-                  ~location
-                  ~name:(Reference.show name)
-                  error
-              in
+              let error = ModelVerifier.display_verification_error ~path ~location error in
               Log.error "%s" error;
               Core.Result.Error error
           | Core.Result.Ok () ->
@@ -1513,13 +1507,7 @@ let create ~resolution ?path ~configuration ~rule_filter source =
           let name = name_to_reference_exn name in
           match ModelVerifier.verify_global ~resolution ~name with
           | Core.Result.Error error ->
-              let error =
-                ModelVerifier.display_verification_error
-                  ~path
-                  ~location
-                  ~name:(Reference.show name)
-                  error
-              in
+              let error = ModelVerifier.display_verification_error ~path ~location error in
               Log.error "%s" error;
               Core.Result.Error error
           | Core.Result.Ok () ->
@@ -1552,11 +1540,7 @@ let create ~resolution ?path ~configuration ~rule_filter source =
           match ModelVerifier.verify_global ~resolution ~name with
           | Core.Result.Error error ->
               let error =
-                ModelVerifier.display_verification_error
-                  ~path
-                  ~location:signature.location
-                  ~name:(Reference.show name)
-                  error
+                ModelVerifier.display_verification_error ~path ~location:signature.location error
               in
               Log.error "%s" error;
               Core.Result.Error error
@@ -1736,7 +1720,14 @@ let create ~resolution ?path ~configuration ~rule_filter source =
         List.map parameters ~f:adjust_position
       in
       let () =
-        ModelVerifier.verify_signature ~normalized_model_parameters ~name callable_annotation
+        match
+          ModelVerifier.verify_signature ~normalized_model_parameters ~name callable_annotation
+        with
+        | Core.Result.Ok () -> ()
+        | Core.Result.Error error ->
+            let error = ModelVerifier.display_verification_error ~path ~location error in
+            Log.error "%s" error;
+            raise (Model.InvalidModel error)
       in
       let annotations =
         List.rev_append
