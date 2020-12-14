@@ -11,6 +11,12 @@ open Ast
 open Analysis
 open Expression
 
+type incompatible_model_error_reason =
+  | UnexpectedPositionalOnlyParameter of string
+  | UnexpectedNamedParameter of string
+  | UnexpectedStarredParameter
+  | UnexpectedDoubleStarredParameter
+
 type verification_error =
   | GlobalVerificationError of {
       name: string;
@@ -22,7 +28,7 @@ type verification_error =
     }
   | IncompatibleModelError of {
       callable_type: Type.Callable.t;
-      reasons: string list;
+      reasons: incompatible_model_error_reason list;
     }
   | ImportedFunctionModel of Reference.t
 
@@ -42,6 +48,15 @@ let display_verification_error ~path ~location error =
         name
         (Expression.show expression)
   | IncompatibleModelError { callable_type; reasons } ->
+      let reasons =
+        List.map reasons ~f:(function
+            | UnexpectedPositionalOnlyParameter name ->
+                Format.sprintf "unexpected positional only parameter: `%s`" name
+            | UnexpectedNamedParameter name ->
+                Format.sprintf "unexpected named parameter: `%s`" name
+            | UnexpectedStarredParameter -> "unexpected star parameter"
+            | UnexpectedDoubleStarredParameter -> "unexpected star star parameter")
+      in
       Format.asprintf
         "Model signature parameters do not match implementation `%s`. Reason%s: %s."
         (Type.show_for_hover (Type.Callable callable_type))
@@ -130,7 +145,7 @@ let model_compatible ~callable_type ~type_parameters ~normalized_model_parameter
         if anonymous_parameters_count >= 1 then
           errors, { requirements with anonymous_parameters_count = anonymous_parameters_count - 1 }
         else
-          Format.sprintf "unexpected positional only parameter: `%s`" name :: errors, requirements
+          UnexpectedPositionalOnlyParameter name :: errors, requirements
     | PositionalParameter { name; _ }
     | NamedParameter { name } ->
         let name = Identifier.sanitized name in
@@ -143,7 +158,7 @@ let model_compatible ~callable_type ~type_parameters ~normalized_model_parameter
             (* If all positional only parameter quota is used, it might be covered by a `*args` *)
             errors, requirements
           else
-            Format.sprintf "unexpected positional only parameter: `%s`" name :: errors, requirements
+            UnexpectedPositionalOnlyParameter name :: errors, requirements
         else
           let { parameter_set; has_star_parameter; has_star_star_parameter; _ } = requirements in
           (* Consume an required or optional named parameter. *)
@@ -154,17 +169,17 @@ let model_compatible ~callable_type ~type_parameters ~normalized_model_parameter
             (* If the name is not found in the set, it might be covered by ``**kwargs` *)
             errors, requirements
           else
-            Format.sprintf "unexpected named parameter: `%s`" name :: errors, requirements
+            UnexpectedNamedParameter name :: errors, requirements
     | StarParameter _ ->
         if requirements.has_star_parameter then
           errors, requirements
         else
-          "unexpected star parameter" :: errors, requirements
+          UnexpectedStarredParameter :: errors, requirements
     | StarStarParameter _ ->
         if requirements.has_star_star_parameter then
           errors, requirements
         else
-          "unexpected star star parameter" :: errors, requirements
+          UnexpectedDoubleStarredParameter :: errors, requirements
   in
   let errors_and_requirements =
     List.fold_left

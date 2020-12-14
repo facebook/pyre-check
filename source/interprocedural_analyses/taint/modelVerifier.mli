@@ -9,6 +9,12 @@ open Core
 open Ast
 open Analysis
 
+type incompatible_model_error_reason =
+  | UnexpectedPositionalOnlyParameter of string
+  | UnexpectedNamedParameter of string
+  | UnexpectedStarredParameter
+  | UnexpectedDoubleStarredParameter
+
 type verification_error =
   | GlobalVerificationError of {
       name: string;
@@ -20,7 +26,7 @@ type verification_error =
     }
   | IncompatibleModelError of {
       callable_type: Type.Callable.t;
-      reasons: string list;
+      reasons: incompatible_model_error_reason list;
     }
   | ImportedFunctionModel of Reference.t
 
