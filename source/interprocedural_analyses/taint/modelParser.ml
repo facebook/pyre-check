@@ -1002,21 +1002,21 @@ let parse_model_clause ~configuration ({ Node.value; _ } as expression) =
             } -> (
             match parametric_annotation with
             | "ParametricSourceFromAnnotation" ->
-                [ModelQuery.ParametricSourceFromAnnotation { source_pattern = pattern; kind }]
+                Ok [ModelQuery.ParametricSourceFromAnnotation { source_pattern = pattern; kind }]
             | "ParametricSinkFromAnnotation" ->
-                [ModelQuery.ParametricSinkFromAnnotation { sink_pattern = pattern; kind }]
-            | _ ->
-                failwith (Format.sprintf "Unexpected taint annotation `%s`" parametric_annotation) )
+                Ok [ModelQuery.ParametricSinkFromAnnotation { sink_pattern = pattern; kind }]
+            | _ -> Error (Format.sprintf "Unexpected taint annotation `%s`" parametric_annotation) )
         | _ ->
             parse_annotations ~configuration ~parameters:[] (Some expression)
             |> List.map ~f:(fun taint -> ModelQuery.TaintAnnotation taint)
+            |> return
       in
 
       try
         match Node.value taint_expression with
         | Expression.List taint_annotations ->
-            List.concat_map taint_annotations ~f:parse_produced_taint |> return
-        | _ -> parse_produced_taint taint_expression |> return
+            List.map taint_annotations ~f:parse_produced_taint |> Core.Result.all >>| List.concat
+        | _ -> parse_produced_taint taint_expression
       with
       | Failure failure -> Core.Result.Error failure
     in
