@@ -49,6 +49,11 @@ class NoOpBackgroundTask(BackgroundTask):
         pass
 
 
+class WaitForeverBackgroundTask(BackgroundTask):
+    async def run(self) -> None:
+        await asyncio.Event().wait()
+
+
 class PersistentTest(testslide.TestCase):
     @setup.async_test
     async def test_try_initialize_success(self) -> None:
@@ -229,13 +234,18 @@ class PersistentTest(testslide.TestCase):
             }
         )
         bytes_writer = MemoryBytesWriter()
+        fake_task_manager = BackgroundTaskManager(WaitForeverBackgroundTask())
         server = Server(
             input_channel=create_memory_text_reader(""),
             output_channel=TextWriter(bytes_writer),
             client_capabilities=lsp.ClientCapabilities(),
             state=server_state,
-            pyre_manager=BackgroundTaskManager(NoOpBackgroundTask()),
+            pyre_manager=fake_task_manager,
         )
+
+        # Ensure the background task is running
+        await fake_task_manager.ensure_task_running()
+        await asyncio.sleep(0)
 
         await server.process_open_request(
             lsp.DidOpenTextDocumentParameters(
@@ -259,6 +269,32 @@ class PersistentTest(testslide.TestCase):
         )
         # Another diagnostic update is sent via the output channel
         self.assertEqual(len(bytes_writer.items()), 2)
+
+    @setup.async_test
+    async def test_open_triggers_pyre_restart(self) -> None:
+        fake_task_manager = BackgroundTaskManager(WaitForeverBackgroundTask())
+        server = Server(
+            input_channel=create_memory_text_reader(""),
+            output_channel=create_memory_text_writer(),
+            client_capabilities=lsp.ClientCapabilities(),
+            state=ServerState(),
+            pyre_manager=fake_task_manager,
+        )
+        self.assertFalse(fake_task_manager.is_task_running())
+
+        test_path = Path("/foo.py")
+        await server.process_open_request(
+            lsp.DidOpenTextDocumentParameters(
+                text_document=lsp.TextDocumentItem(
+                    language_id="python",
+                    text="",
+                    uri=lsp.DocumentUri.from_file_path(test_path).unparse(),
+                    version=0,
+                )
+            )
+        )
+        await asyncio.sleep(0)
+        self.assertTrue(fake_task_manager.is_task_running())
 
     def test_diagnostics(self) -> None:
         self.assertEqual(

@@ -232,12 +232,16 @@ class Server:
         self.state.opened_documents.add(document_path)
         LOG.info(f"File opened: {document_path}")
 
-        document_diagnostics = self.state.diagnostics.get(document_path, None)
-        if document_diagnostics is not None:
-            LOG.info(f"Update diagnostics for {document_path}")
-            await _publish_diagnostics(
-                self.output_channel, document_path, document_diagnostics
-            )
+        # Attempt to trigger a background Pyre server start on each file open
+        if not self.pyre_manager.is_task_running():
+            await self.pyre_manager.ensure_task_running()
+        else:
+            document_diagnostics = self.state.diagnostics.get(document_path, None)
+            if document_diagnostics is not None:
+                LOG.info(f"Update diagnostics for {document_path}")
+                await _publish_diagnostics(
+                    self.output_channel, document_path, document_diagnostics
+                )
 
     async def process_close_request(
         self, parameters: lsp.DidCloseTextDocumentParameters
