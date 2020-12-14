@@ -469,12 +469,12 @@ class PyreServerHandler(connection.BackgroundTask):
         self, server_input_channel: connection.TextReader
     ) -> AsyncIterator[str]:
         try:
-            raw_response = await server_input_channel.readline()
+            raw_response = await server_input_channel.read_until(separator="\n")
             yield raw_response
         except incremental.InvalidServerResponse as error:
             LOG.error(f"Pyre server returns invalid response: {error}")
 
-    async def subscribe_to_type_error(
+    async def _subscribe_to_type_error(
         self,
         server_input_channel: connection.TextReader,
         server_output_channel: connection.TextWriter,
@@ -499,6 +499,23 @@ class PyreServerHandler(connection.BackgroundTask):
                 if subscription_name == subscription_response.name:
                     self.update_type_errors(subscription_response.body)
                     await self.show_type_errors_to_client()
+
+    async def subscribe_to_type_error(
+        self,
+        server_input_channel: connection.TextReader,
+        server_output_channel: connection.TextWriter,
+    ) -> None:
+        try:
+            await self._subscribe_to_type_error(
+                server_input_channel, server_output_channel
+            )
+        finally:
+            LOG.warning(
+                "Lost connection to background Pyre server. "
+                "Clearing out all diagnostics..."
+            )
+            self.server_state.diagnostics = {}
+            await self.show_type_errors_to_client()
 
     async def run(self) -> None:
         socket_path = server_connection.get_default_socket_path(

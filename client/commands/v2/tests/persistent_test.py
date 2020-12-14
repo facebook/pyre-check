@@ -3,6 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import asyncio
 import json
 from pathlib import Path
 
@@ -10,7 +11,7 @@ import testslide
 
 from .... import json_rpc, error
 from ....tests import setup
-from .. import language_server_protocol as lsp
+from .. import language_server_protocol as lsp, start
 from ..async_server_connection import (
     TextReader,
     TextWriter,
@@ -33,6 +34,7 @@ from ..persistent import (
     SubscriptionResponse,
     type_error_to_diagnostic,
     type_errors_to_diagnostics,
+    PyreServerHandler,
 )
 
 
@@ -354,4 +356,43 @@ class PersistentTest(testslide.TestCase):
                     )
                 ],
             },
+        )
+
+    @setup.async_test
+    async def test_server_connection_lost(self) -> None:
+        test_path = Path("/foo.py")
+        server_state = ServerState(
+            opened_documents={test_path},
+        )
+
+        bytes_writer = MemoryBytesWriter()
+        server_handler = PyreServerHandler(
+            binary_location="/bin/pyre",
+            server_identifier="foo",
+            pyre_arguments=start.Arguments(
+                log_path="/log/path",
+                global_root="/global/root",
+            ),
+            client_output_channel=TextWriter(bytes_writer),
+            server_state=server_state,
+        )
+
+        with self.assertRaises(asyncio.IncompleteReadError):
+            await server_handler.subscribe_to_type_error(
+                # Intentionally inject a broken server response
+                create_memory_text_reader("derp"),
+                create_memory_text_writer(),
+            )
+        client_visible_messages = bytes_writer.items()
+        self.assertTrue(len(client_visible_messages) > 0)
+        self.assertEqual(
+            await lsp.read_json_rpc(
+                TextReader(MemoryBytesReader(client_visible_messages[0]))
+            ),
+            json_rpc.Request(
+                method="textDocument/publishDiagnostics",
+                parameters=json_rpc.ByNameParameters(
+                    {"uri": "file:///foo.py", "diagnostics": []}
+                ),
+            ),
         )
