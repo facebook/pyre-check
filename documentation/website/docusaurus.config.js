@@ -71,12 +71,24 @@ module.exports = {
       },
       items: [
         {
-          to: fbContent({
-            internal: 'docs/fb/getting-started',
-            external: 'docs/getting-started',
-          }),
           label: 'Documentation',
           position: 'left',
+          items: [
+            {
+              label: 'Type Checking (Pyre)',
+              to: fbContent({
+                internal: 'docs/fb/getting-started',
+                external: 'docs/getting-started',
+              }),
+            },
+            {
+              label: 'Static Analysis (Pysa)',
+              to: fbContent({
+                internal: 'docs/fb/pysa-basics-internal',
+                external: 'docs/pysa-basics',
+              }),
+            },
+          ],
         },
         fbContent({
           internal: {
