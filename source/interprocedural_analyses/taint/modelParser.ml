@@ -254,9 +254,10 @@ let rec parse_annotations ~configuration ~parameters annotation =
   in
   let rec extract_via_positions expression =
     match expression.Node.value with
-    | Expression.Name (Name.Identifier name) -> [get_parameter_position name]
-    | Tuple expressions -> List.concat_map ~f:extract_via_positions expressions
-    | Call { callee; _ } when Option.equal String.equal (base_name callee) (Some "WithTag") -> []
+    | Expression.Name (Name.Identifier name) ->
+        get_parameter_position name >>| fun position -> [position]
+    | Tuple expressions -> List.map ~f:extract_via_positions expressions |> all >>| List.concat
+    | Call { callee; _ } when Option.equal String.equal (base_name callee) (Some "WithTag") -> Ok []
     | _ ->
         Format.sprintf
           "Invalid expression for ViaValueOf or ViaTypeOf: %s"
@@ -310,13 +311,11 @@ let rec parse_annotations ~configuration ~parameters annotation =
         | Some "ViaValueOf" ->
             let tag = extract_via_tag expression in
             extract_via_positions expression
-            |> all
             >>| List.map ~f:(fun position -> Features.Simple.ViaValueOf { position; tag })
             >>| fun breadcrumbs -> [Breadcrumbs breadcrumbs]
         | Some "ViaTypeOf" ->
             let tag = extract_via_tag expression in
             extract_via_positions expression
-            |> all
             >>| List.map ~f:(fun position -> Features.Simple.ViaTypeOf { position; tag })
             >>| fun breadcrumbs -> [Breadcrumbs breadcrumbs]
         | Some "Updates" ->
