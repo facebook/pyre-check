@@ -391,11 +391,10 @@ let rec parse_annotations ~configuration ~parameters annotation =
     >>| List.map ~f:keep_features
     >>| Option.all
     >>| Option.map ~f:List.concat
-    >>| function
-    | Some features -> features
+    >>= function
+    | Some features -> Ok features
     | None ->
-        raise_invalid_model
-          (Format.sprintf "All parameters to `%s` must be of the form `Via[feature]`." name)
+        Error (Format.sprintf "All parameters to `%s` must be of the form `Via[feature]`." name)
   in
   match annotation with
   | Some ({ Node.value; _ } as expression) ->
