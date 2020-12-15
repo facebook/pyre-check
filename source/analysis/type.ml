@@ -2452,6 +2452,8 @@ type alias =
 let empty_aliases ?replace_unbound_parameters_with_any:_ _ = None
 
 module RecursiveType = struct
+  include Record.RecursiveType
+
   let is_recursive_alias_reference ~alias_name =
     exists ~predicate:(function
         | Primitive name
@@ -2459,6 +2461,17 @@ module RecursiveType = struct
           when Identifier.equal name alias_name ->
             true
         | _ -> false)
+
+
+  (* We assume that recursive alias names are unique. So, we don't need to worry about accidentally
+     renaming a nested recursive type here. *)
+  let unfold_recursive_type { name; body } =
+    instantiate
+      ~constraints:(function
+        | Primitive primitive_name when Identifier.equal primitive_name name ->
+            Some (RecursiveType { name; body })
+        | _ -> None)
+      body
 end
 
 let resolve_aliases ~aliases annotation =

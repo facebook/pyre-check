@@ -3041,6 +3041,128 @@ let test_recursive_aliases context =
       "Revealed type [-1]: Revealed type for `x` is `test.Tree (resolves to Union[Tuple[Tree, \
        Tree], int])`.";
     ];
+  assert_type_errors
+    {|
+      from typing import Tuple, Union
+
+      Tree = Union[int, Tuple["Tree", "Tree"]]
+
+      x: Tree
+
+      some_int: int
+      x = some_int
+
+      tuple_int: Tuple[int, int]
+      x = tuple_int
+
+      tuple_tuple_int: Tuple[Tuple[int, int], int]
+      x = tuple_tuple_int
+    |}
+    [];
+  assert_type_errors
+    {|
+      from typing import Tuple, Union
+
+      Tree = Union[int, Tuple["Tree", "Tree"]]
+
+      x: Tree
+
+      x = 1
+      x = (2, 3)
+      x = ((4, 5), (6, 7))
+    |}
+    [];
+  assert_type_errors
+    {|
+      from typing import Tuple, Union
+
+      Tree = Union[int, Tuple["Tree", "Tree"]]
+
+      x: Tree
+
+      some_str: str
+      x = some_str
+
+      tuple_int_str: Tuple[int, str]
+      x = tuple_int_str
+    |}
+    [
+      "Incompatible variable type [9]: x is declared to have type `test.Tree (resolves to \
+       Union[Tuple[Tree, Tree], int])` but is used as type `str`.";
+      "Incompatible variable type [9]: x is declared to have type `test.Tree (resolves to \
+       Union[Tuple[Tree, Tree], int])` but is used as type `Tuple[int, str]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Tuple, Union
+
+      Tree = Union[int, Tuple["Tree", "Tree"]]
+
+      x: Tree
+      x = "hello"
+      x = (1, "hello")
+      x = ((2, 3), (4, "hello"))
+    |}
+    [
+      "Incompatible variable type [9]: x is declared to have type `test.Tree (resolves to \
+       Union[Tuple[Tree, Tree], int])` but is used as type `str`.";
+      "Incompatible variable type [9]: x is declared to have type `test.Tree (resolves to \
+       Union[Tuple[Tree, Tree], int])` but is used as type `Tuple[int, str]`.";
+      "Incompatible variable type [9]: x is declared to have type `test.Tree (resolves to \
+       Union[Tuple[Tree, Tree], int])` but is used as type `Tuple[Tuple[int, int], Tuple[int, \
+       str]]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Mapping, Union
+
+      StringDict = Union[str, Mapping[str, "StringDict"]]
+
+      valid: StringDict = {"hello": {"world": "from here"}}
+      contains_int: StringDict = {"hello": {"world": 1}}
+    |}
+    [
+      "Incompatible variable type [9]: contains_int is declared to have type `test.StringDict \
+       (resolves to Union[Mapping[str, StringDict], str])` but is used as type `typing.Dict[str, \
+       typing.Dict[str, int]]`.";
+    ];
+  (* TODO(T44784951): Weaken mutable literals against recursive types. *)
+  assert_type_errors
+    {|
+      from typing import List, Tuple
+
+      Tree = Tuple[str, List["Tree"]]
+
+      tree: Tree = ("foo", [])
+    |}
+    [
+      "Incompatible variable type [9]: tree is declared to have type `test.Tree (resolves to \
+       Tuple[str, List[Tree]])` but is used as type `Tuple[str, List[Variable[_T]]]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Mapping, Union
+
+      StringMapping = Union[str, Mapping[str, "StringMapping"]]
+
+      d: Mapping[str, str]
+      d2: StringMapping = d
+    |}
+    [];
+  (* Incompatible because Dict is invariant. *)
+  assert_type_errors
+    {|
+      from typing import Dict, Union
+
+      StringDict = Union[str, Dict[str, "StringDict"]]
+
+      d: Dict[str, str]
+      d2: StringDict = d
+    |}
+    [
+      "Incompatible variable type [9]: d2 is declared to have type `test.StringDict (resolves to \
+       Union[Dict[str, StringDict], str])` but is used as type `Dict[str, str]`.";
+    ];
   ()
 
 

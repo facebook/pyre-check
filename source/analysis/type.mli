@@ -518,7 +518,13 @@ val create
 val empty_aliases : ?replace_unbound_parameters_with_any:bool -> Primitive.t -> alias option
 
 module RecursiveType : sig
+  include module type of struct
+    include Record.RecursiveType
+  end
+
   val is_recursive_alias_reference : alias_name:Primitive.t -> t -> bool
+
+  val unfold_recursive_type : t record -> t
 end
 
 val contains_callable : t -> bool

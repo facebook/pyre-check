@@ -1106,6 +1106,24 @@ let test_is_type_alias _ =
   assert_false (Type.is_type_alias (Type.parametric "typing.TypeAlias" ![Type.Top]))
 
 
+let test_unfold_recursive_type _ =
+  let assert_unfolded recursive_type expected =
+    assert_equal
+      ~cmp:Type.equal
+      ~printer:Type.show
+      expected
+      (Type.RecursiveType.unfold_recursive_type recursive_type)
+  in
+  let tree_name, tree_body =
+    "Tree", Type.union [Type.integer; Type.tuple [Type.Primitive "Foo"; Type.Primitive "Tree"]]
+  in
+  let tree_annotation = Type.RecursiveType { name = tree_name; body = tree_body } in
+  assert_unfolded
+    { name = tree_name; body = tree_body }
+    (Type.union [Type.integer; Type.tuple [Type.Primitive "Foo"; tree_annotation]]);
+  ()
+
+
 let test_contains_unknown _ =
   assert_false (Type.contains_unknown Type.Bottom);
   assert_false (Type.contains_unknown Type.Any);
@@ -2731,6 +2749,7 @@ let () =
          "is_meta" >:: test_is_meta;
          "is_none" >:: test_is_none;
          "is_type_alias" >:: test_is_type_alias;
+         "unfold_recursive_type" >:: test_unfold_recursive_type;
          "contains_unknown" >:: test_contains_unknown;
          "is_resolved" >:: test_is_resolved;
          "is_iterator" >:: test_is_iterator;

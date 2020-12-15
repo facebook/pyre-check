@@ -153,6 +153,9 @@ module OrderImplementation = struct
             union
         | Type.Annotated left, _ -> Type.annotated (join order left right)
         | _, Type.Annotated right -> Type.annotated (join order left right)
+        | Type.RecursiveType _, _
+        | _, Type.RecursiveType _ ->
+            Type.Top
         (* n: A_n = B_n -> Union[A_i] <= Union[B_i]. *)
         | Type.Union left, Type.Union right -> Type.union (left @ right)
         | (Type.Union elements as union), other
@@ -281,9 +284,6 @@ module OrderImplementation = struct
             (* Handle cases like `Tuple[int, int]` <= `Iterator[int]`. *)
             let parameter = List.fold ~init:Type.Bottom ~f:(join order) parameters in
             join order (Type.parametric "tuple" [Single parameter]) annotation
-        | Type.RecursiveType _, _
-        | _, Type.RecursiveType _ ->
-            Type.Top
         | Type.Tuple _, _
         | _, Type.Tuple _ ->
             Type.union [left; right]
