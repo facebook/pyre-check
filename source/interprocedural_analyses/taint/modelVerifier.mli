@@ -34,7 +34,6 @@ type verification_error =
       name: Reference.t;
       actual_name: Reference.t;
     }
-  | ModelledObjectNotInEnvironment
   | UnclassifiedError of string
 
 val display_verification_error
