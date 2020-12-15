@@ -227,8 +227,8 @@ let rec parse_annotations ~configuration ~parameters annotation =
         None
     in
     match List.find_mapi parameters ~f:matches_parameter_name with
-    | Some index -> index
-    | None -> raise_invalid_model (Format.sprintf "No such parameter `%s`" name)
+    | Some index -> Ok index
+    | None -> Error (Format.sprintf "No such parameter `%s`" name)
   in
   let rec extract_breadcrumbs ?(is_dynamic = false) expression =
     let open Configuration in
@@ -311,29 +311,23 @@ let rec parse_annotations ~configuration ~parameters annotation =
             >>| fun breadcrumbs -> [Breadcrumbs breadcrumbs]
         | Some "ViaValueOf" ->
             let tag = extract_via_tag expression in
-            Ok
-              [
-                Breadcrumbs
-                  ( extract_via_positions expression
-                  |> List.map ~f:(fun position -> Features.Simple.ViaValueOf { position; tag }) );
-              ]
+            extract_via_positions expression
+            |> all
+            >>| List.map ~f:(fun position -> Features.Simple.ViaValueOf { position; tag })
+            >>| fun breadcrumbs -> [Breadcrumbs breadcrumbs]
         | Some "ViaTypeOf" ->
             let tag = extract_via_tag expression in
-            Ok
-              [
-                Breadcrumbs
-                  ( extract_via_positions expression
-                  |> List.map ~f:(fun position -> Features.Simple.ViaTypeOf { position; tag }) );
-              ]
+            extract_via_positions expression
+            |> all
+            >>| List.map ~f:(fun position -> Features.Simple.ViaTypeOf { position; tag })
+            >>| fun breadcrumbs -> [Breadcrumbs breadcrumbs]
         | Some "Updates" ->
-            extract_names expression
-            |> List.map ~f:(fun name ->
-                   Leaf
-                     {
-                       name = Format.sprintf "ParameterUpdate%d" (get_parameter_position name);
-                       subkind = None;
-                     })
-            |> return
+            let to_leaf name =
+              get_parameter_position name
+              >>| fun position ->
+              Leaf { name = Format.sprintf "ParameterUpdate%d" position; subkind = None }
+            in
+            extract_names expression |> List.map ~f:to_leaf |> all
         | _ ->
             let subkind = extract_subkind expression in
             extract_kinds callee
@@ -345,10 +339,10 @@ let rec parse_annotations ~configuration ~parameters annotation =
     | Call { callee; _ } -> extract_kinds callee
     | Tuple expressions -> List.map ~f:extract_kinds expressions |> all >>| List.concat
     | _ ->
-        Format.sprintf
-          "Invalid expression for taint kind: %s"
-          (show_expression expression.Node.value)
-        |> failwith
+        Error
+          (Format.sprintf
+             "Invalid expression for taint kind: %s"
+             (show_expression expression.Node.value))
   in
   let extract_leafs expression =
     extract_kinds expression
