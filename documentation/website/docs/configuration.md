@@ -36,9 +36,10 @@ You can extend this configuration to configure Pyre. The following configuration
 - `search_path`: List of paths to Python modules to include in the typing
 environment. **Note**: `search_path` takes precendence over `source_directories` and the order within the search path indicates precedence.
 
-- `exclude`: List of regular expressions for files and directories that should be
-completely ignored by Pyre. The regular expression will be matched against the
-*full* path of files as opposed to their relative path.
+- `exclude`: List of regular expressions such as `".*\/node_modules\/.*"` which
+specify files and directories that should be completely ignored by Pyre. The
+regular expression will be matched against the *full* path of files as opposed
+to their relative path.
 
 - `ignore_all_errors`: A list of paths to omit from type-checking. This may be
 useful for generated files, virtualenv directories, etc.  These should be paths
