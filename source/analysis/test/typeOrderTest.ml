@@ -2376,6 +2376,14 @@ let test_join context =
       (parse_annotation expected_result)
       (GlobalResolution.join resolution left right)
   in
+  let assert_join_direct ?(source = "") ~left ~right expected_annotation =
+    let resolution = resolution ~source context in
+    let parse_annotation annotation =
+      annotation |> parse_single_expression |> GlobalResolution.parse_annotation resolution
+    in
+    let left, right = parse_annotation left, parse_annotation right in
+    assert_type_equal expected_annotation (GlobalResolution.join resolution left right)
+  in
   assert_join
     ~source:
       {|
@@ -2388,6 +2396,71 @@ let test_join context =
     ~left:"NonGenericChild"
     ~right:"GenericBase[int, str]"
     "GenericBase[typing.Any, typing.Any]";
+  let recursive_alias_source =
+    {|
+      from typing import Tuple, Union
+
+      Tree = Union[int, Tuple["Tree", "Tree"]]
+      Tree2 = Union[int, Tuple["Tree2", "Tree2"]]
+      TreeWithStr = Union[str, Tuple["TreeWithStr", "TreeWithStr"]]
+      TreeWithStrAndInt = Union[str, int, Tuple["TreeWithStrAndInt", "TreeWithStrAndInt"]]
+    |}
+  in
+  assert_join ~source:recursive_alias_source ~left:"test.Tree" ~right:"test.Tree" "test.Tree";
+  assert_join ~source:recursive_alias_source ~left:"test.Tree" ~right:"int" "test.Tree";
+  assert_join ~source:recursive_alias_source ~left:"int" ~right:"test.Tree" "test.Tree";
+  assert_join
+    ~source:recursive_alias_source
+    ~left:"test.Tree"
+    ~right:"str"
+    "typing.Union[test.Tree, str]";
+
+  Type.RecursiveType.Namespace.reset ();
+  let fresh_name = Type.RecursiveType.Namespace.create_fresh_name () in
+  Type.RecursiveType.Namespace.reset ();
+  assert_join_direct
+    ~source:recursive_alias_source
+    ~left:"test.Tree"
+    ~right:"test.Tree2"
+    (Type.RecursiveType
+       {
+         name = fresh_name;
+         body =
+           Type.union
+             [Type.integer; Type.tuple [Type.Primitive fresh_name; Type.Primitive fresh_name]];
+       });
+  Type.RecursiveType.Namespace.reset ();
+  assert_join_direct
+    ~source:recursive_alias_source
+    ~left:"test.Tree"
+    ~right:"test.TreeWithStrAndInt"
+    (Type.RecursiveType
+       {
+         name = fresh_name;
+         body =
+           Type.union
+             [
+               Type.integer;
+               Type.string;
+               Type.tuple [Type.Primitive fresh_name; Type.Primitive fresh_name];
+             ];
+       });
+  Type.RecursiveType.Namespace.reset ();
+  assert_join_direct
+    ~source:recursive_alias_source
+    ~left:"test.Tree"
+    ~right:"test.TreeWithStr"
+    (Type.RecursiveType
+       {
+         name = fresh_name;
+         body =
+           Type.union
+             [
+               Type.integer;
+               Type.string;
+               Type.tuple [Type.Primitive fresh_name; Type.Primitive fresh_name];
+             ];
+       });
   ()
 
 

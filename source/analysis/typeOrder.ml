@@ -153,9 +153,26 @@ module OrderImplementation = struct
             union
         | Type.Annotated left, _ -> Type.annotated (join order left right)
         | _, Type.Annotated right -> Type.annotated (join order left right)
+        | Type.RecursiveType left_recursive_type, Type.RecursiveType right_recursive_type ->
+            let new_name = Type.RecursiveType.Namespace.create_fresh_name () in
+            (* Based on https://cstheory.stackexchange.com/a/38415. *)
+            Type.RecursiveType
+              {
+                name = new_name;
+                body =
+                  join
+                    order
+                    (Type.RecursiveType.body_with_replaced_name ~new_name left_recursive_type)
+                    (Type.RecursiveType.body_with_replaced_name ~new_name right_recursive_type);
+              }
         | Type.RecursiveType _, _
         | _, Type.RecursiveType _ ->
-            Type.Top
+            if always_less_or_equal order ~left ~right then
+              right
+            else if always_less_or_equal order ~left:right ~right:left then
+              left
+            else
+              Type.union [left; right]
         (* n: A_n = B_n -> Union[A_i] <= Union[B_i]. *)
         | Type.Union left, Type.Union right -> Type.union (left @ right)
         | (Type.Union elements as union), other

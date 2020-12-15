@@ -2472,6 +2472,30 @@ module RecursiveType = struct
             Some (RecursiveType { name; body })
         | _ -> None)
       body
+
+
+  let body_with_replaced_name ~new_name { name; body } =
+    instantiate
+      ~constraints:(function
+        | Primitive primitive_name when Identifier.equal primitive_name name ->
+            Some (Primitive new_name)
+        | _ -> None)
+      body
+
+
+  module Namespace = struct
+    let fresh = ref 1
+
+    let reset () = fresh := 1
+
+    let create_fresh () =
+      let namespace = !fresh in
+      fresh := namespace + 1;
+      namespace
+
+
+    let create_fresh_name () = Format.asprintf "$RecursiveType%d" (create_fresh ())
+  end
 end
 
 let resolve_aliases ~aliases annotation =

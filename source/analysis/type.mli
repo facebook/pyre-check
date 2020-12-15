@@ -525,6 +525,14 @@ module RecursiveType : sig
   val is_recursive_alias_reference : alias_name:Primitive.t -> t -> bool
 
   val unfold_recursive_type : t record -> t
+
+  val body_with_replaced_name : new_name:Primitive.t -> t record -> t
+
+  module Namespace : sig
+    val reset : unit -> unit
+
+    val create_fresh_name : unit -> string
+  end
 end
 
 val contains_callable : t -> bool

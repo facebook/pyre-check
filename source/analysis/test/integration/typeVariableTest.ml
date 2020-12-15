@@ -3274,6 +3274,83 @@ let test_recursive_aliases context =
       "Incompatible variable type [9]: y is declared to have type `Union[Tuple[int, int], int]` \
        but is used as type `test.X (resolves to Union[Tuple[int, X], int])`.";
     ];
+  (* Fixpoint should not blow up on a loop that constructs a recursive type. *)
+  assert_type_errors
+    {|
+      from typing import Tuple, Union
+
+      X = Union[int, Tuple[int, "X"]]
+
+      def foo(x: X, n: int) -> X:
+        result = x
+
+        for i in range(n):
+          result = (i, result)
+          reveal_type(result)
+
+        reveal_type(result)
+        return result
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `result` is `Tuple[int, test.X (resolves to \
+       Union[Tuple[int, X], int])]`.";
+      "Revealed type [-1]: Revealed type for `result` is `test.X (resolves to Union[Tuple[int, X], \
+       int])`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Tuple, Union
+
+      Tree = Union[int, Tuple["Tree", "Tree"]]
+
+      def foo(tree: Tree, some_bool: bool) -> Tree:
+        if some_bool:
+          x = 42
+        else:
+          x = (1, (2, tree))
+        return x
+    |}
+    [];
+  assert_type_errors
+    {|
+      from typing import Tuple, Union
+
+      Tree = Union[int, Tuple["Tree", "Tree"]]
+      Unrolled = Union[int, Tuple[Union[int, Tuple["Unrolled", "Unrolled"]], "Unrolled"]]
+
+      def foo(some_bool: bool) -> Tree:
+        tree: Tree
+        unrolled_tree: Unrolled
+        if some_bool:
+          x = tree
+        else:
+          x = unrolled_tree
+        return x
+    |}
+    [];
+  Type.RecursiveType.Namespace.reset ();
+  assert_type_errors
+    {|
+      from typing import Tuple, Union
+
+      Tree = Union[int, Tuple["Tree", "Tree"]]
+      # str instead of int.
+      Wrong = Union[int, Tuple[Union[str, Tuple["Wrong", "Wrong"]], "Wrong"]]
+
+      def foo(some_bool: bool) -> Tree:
+        tree: Tree
+        wrong_unrolled_tree: Wrong
+        if some_bool:
+          x = tree
+        else:
+          x = wrong_unrolled_tree
+        return x
+    |}
+    [
+      "Incompatible return type [7]: Expected `test.Tree (resolves to Union[Tuple[Tree, Tree], \
+       int])` but got `$RecursiveType1 (resolves to Union[Tuple[Union[Tuple[$RecursiveType1, \
+       $RecursiveType1], str], $RecursiveType1], Tuple[$RecursiveType1, $RecursiveType1], int])`.";
+    ];
   ()
 
 
