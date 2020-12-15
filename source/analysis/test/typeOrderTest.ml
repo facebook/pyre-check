@@ -2393,9 +2393,9 @@ let test_join context =
       class GenericBase(Generic[T1, T2]): pass
       class NonGenericChild(GenericBase): pass
     |}
-    ~left:"NonGenericChild"
-    ~right:"GenericBase[int, str]"
-    "GenericBase[typing.Any, typing.Any]";
+    ~left:"test.NonGenericChild"
+    ~right:"test.GenericBase[int, str]"
+    "test.GenericBase[int, str]";
   let recursive_alias_source =
     {|
       from typing import Tuple, Union
