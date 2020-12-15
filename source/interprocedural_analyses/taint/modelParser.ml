@@ -128,8 +128,6 @@ include T
 
 exception ClassifiedInvalidModel of ModelVerifier.verification_error
 
-let raise_invalid_model message = raise (Model.InvalidModel message)
-
 let invalid_model_error ~path ~location ~name message =
   let model_origin =
     match path with
@@ -430,13 +428,13 @@ let rec parse_annotations ~configuration ~parameters annotation =
             let extend_path annotation =
               let field =
                 match index with
-                | Expression.Integer index -> Abstract.TreeDomain.Label.create_int_field index
+                | Expression.Integer index -> Ok (Abstract.TreeDomain.Label.create_int_field index)
                 | Expression.String { StringLiteral.value = index; _ } ->
-                    Abstract.TreeDomain.Label.create_name_field index
-                | _ ->
-                    raise_invalid_model
-                      "Expected either integer or string as index in AppliesTo annotation."
+                    Ok (Abstract.TreeDomain.Label.create_name_field index)
+                | _ -> Error "Expected either integer or string as index in AppliesTo annotation."
               in
+              field
+              >>| fun field ->
               match annotation with
               | Sink ({ path; _ } as sink) -> Sink { sink with path = field :: path }
               | Source ({ path; _ } as source) -> Source { source with path = field :: path }
@@ -444,7 +442,8 @@ let rec parse_annotations ~configuration ~parameters annotation =
               | AddFeatureToArgument ({ path; _ } as add_feature_to_argument) ->
                   AddFeatureToArgument { add_feature_to_argument with path = field :: path }
             in
-            parse_annotation expression |> map ~f:(List.map ~f:extend_path)
+            parse_annotation expression
+            >>= fun annotations -> List.map ~f:extend_path annotations |> all
         | Call { callee; arguments }
           when [%compare.equal: string option] (base_name callee) (Some "CrossRepositoryTaint") -> (
             match arguments with
