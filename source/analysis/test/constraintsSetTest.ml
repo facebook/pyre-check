@@ -951,6 +951,23 @@ let test_add_constraint_recursive_type context =
     ~right:tree_annotation
     [];
 
+  assert_add_direct ~left:tree_annotation ~right:Type.integer [];
+  assert_add_direct ~left:tree_annotation ~right:(Type.union [Type.integer; tree_annotation]) [[]];
+  let isomorphic_tree_annotation =
+    Type.RecursiveType
+      {
+        name = "test.IsomorphicTree";
+        body =
+          Type.union
+            [
+              Type.integer;
+              Type.tuple
+                [Type.Primitive "test.IsomorphicTree"; Type.Primitive "test.IsomorphicTree"];
+            ];
+      }
+  in
+  assert_add_direct ~left:tree_annotation ~right:isomorphic_tree_annotation [[]];
+
   let json_annotation =
     Type.RecursiveType
       {

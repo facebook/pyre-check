@@ -447,7 +447,6 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
         impossible
     | Type.Bottom, _ -> [constraints]
     | _, Type.NoneType -> impossible
-    | Type.RecursiveType _, _ -> impossible
     | _, Type.RecursiveType recursive_type ->
         if
           [%compare.equal: Type.Parameter.t list option]
@@ -457,6 +456,12 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
           [constraints]
         else
           impossible
+    | Type.RecursiveType recursive_type, _ ->
+        solve_less_or_equal
+          order
+          ~constraints
+          ~left:(Type.RecursiveType.unfold_recursive_type recursive_type)
+          ~right
     | (Type.Callable _ | Type.NoneType), Type.Primitive protocol
       when is_protocol right ~protocol_assumptions ->
         if

@@ -3163,6 +3163,117 @@ let test_recursive_aliases context =
       "Incompatible variable type [9]: d2 is declared to have type `test.StringDict (resolves to \
        Union[Dict[str, StringDict], str])` but is used as type `Dict[str, str]`.";
     ];
+  assert_type_errors
+    {|
+      from typing import Tuple, Union
+
+      X = Union[int, Tuple[int, "X"]]
+      Y = Union[int, Tuple[int, "Y"]]
+
+      x: X
+      y: Y = x
+
+      y2: Y
+      x2: X = y2
+    |}
+    [];
+  assert_type_errors
+    {|
+      from typing import Tuple, Union
+
+      X = Union[int, Tuple[int, "X"]]
+      NotQuiteIsomorphicToX = Union[int, Tuple[str, "NotQuiteIsomorphicToX"]]
+
+      x: X
+      not_quite_isomorphic: NotQuiteIsomorphicToX = x
+
+      not_quite_isomorphic2: NotQuiteIsomorphicToX
+      x2: X = not_quite_isomorphic2
+    |}
+    [
+      "Incompatible variable type [9]: not_quite_isomorphic is declared to have type \
+       `test.NotQuiteIsomorphicToX (resolves to Union[Tuple[str, NotQuiteIsomorphicToX], int])` \
+       but is used as type `test.X (resolves to Union[Tuple[int, X], int])`.";
+      "Incompatible variable type [9]: x2 is declared to have type `test.X (resolves to \
+       Union[Tuple[int, X], int])` but is used as type `test.NotQuiteIsomorphicToX (resolves to \
+       Union[Tuple[str, NotQuiteIsomorphicToX], int])`.";
+    ];
+  (* Unrolling an equirecursive type still makes it equivalent to the original recursive type. *)
+  assert_type_errors
+    {|
+      from typing import Tuple, Union
+
+      X = Union[int, Tuple[int, "X"]]
+
+      unrolled: Tuple[int, X]
+      x: X = unrolled
+    |}
+    [];
+  assert_type_errors
+    {|
+      from typing import Tuple, Union
+
+      X = Union[int, Tuple[int, "X"]]
+
+      unrolled: Tuple[int, X]
+      unrolled2: Tuple[int, X] = unrolled
+    |}
+    [];
+  assert_type_errors
+    {|
+      from typing import Tuple, Union
+
+      X = Union[int, Tuple[int, "X"]]
+
+      unrolled_union: Union[int, Tuple[int, X]]
+      x: X = unrolled_union
+
+      x2: X
+      unrolled_union2: Union[int, Tuple[int, X]] = x2
+    |}
+    [];
+  assert_type_errors
+    {|
+      from typing import Tuple, Union
+
+      X = Union[int, Tuple[int, "X"]]
+
+      x: X
+      unrolled_multiple_times: Union[int, Tuple[int, Union[int, Tuple[int, X]]]] = x
+
+      unrolled_multiple_times2: Union[int, Tuple[int, Union[int, Tuple[int, X]]]]
+      x2: X = unrolled_multiple_times2
+    |}
+    [];
+  assert_type_errors
+    {|
+      from typing import Tuple, Union
+
+      X = Union[int, Tuple[int, "X"]]
+
+      unrolled_once: Union[int, Tuple[int, X]]
+      unrolled_multiple_times: Union[int, Tuple[int, Union[int, Tuple[int, X]]]]
+      unrolled_once = unrolled_multiple_times
+
+      unrolled_once2: Union[int, Tuple[int, X]]
+      unrolled_multiple_times2: Union[int, Tuple[int, Union[int, Tuple[int, X]]]]
+      unrolled_multiple_times2 = unrolled_once2
+    |}
+    [];
+  (* Cannot assign a recursive type to a concrete type *)
+  assert_type_errors
+    {|
+      from typing import Tuple, Union
+
+      X = Union[int, Tuple[int, "X"]]
+
+      x: X
+      y: Union[int, Tuple[int, int]] = x
+    |}
+    [
+      "Incompatible variable type [9]: y is declared to have type `Union[Tuple[int, int], int]` \
+       but is used as type `test.X (resolves to Union[Tuple[int, X], int])`.";
+    ];
   ()
 
 
