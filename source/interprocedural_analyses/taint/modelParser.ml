@@ -1952,10 +1952,8 @@ let create ~resolution ?path ~configuration ~rule_filter source =
             ~configuration
             ~top_level_decorators
             ~define_name:name
-      |> function
-      | Error error -> invalid_model_error ~path ~location ~name:(Reference.show name) error
-      | Ok (model, skipped_override) ->
-          Ok (Model ({ model; call_target; is_obscure = false }, skipped_override))
+      >>| fun (model, skipped_override) ->
+      Model ({ model; call_target; is_obscure = false }, skipped_override)
     with
     | Failure message
     | Model.InvalidModel message ->
