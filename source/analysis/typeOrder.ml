@@ -434,7 +434,12 @@ module OrderImplementation = struct
               Type.Bottom
         | Type.RecursiveType _, _
         | _, Type.RecursiveType _ ->
-            Type.Bottom
+            if always_less_or_equal order ~left ~right then
+              left
+            else if always_less_or_equal order ~left:right ~right:left then
+              right
+            else
+              Type.Bottom
         | ( Type.Callable ({ Callable.kind = Callable.Anonymous; _ } as left),
             Type.Callable ({ Callable.kind = Callable.Anonymous; _ } as right) ) ->
             join_implementations

@@ -2641,6 +2641,42 @@ let test_meet _ =
     "B[int, str]"
     "A[str]"
     "$bottom";
+
+  let tree_annotation =
+    Type.RecursiveType
+      {
+        name = "Tree";
+        body = Type.union [Type.integer; Type.tuple [Type.Primitive "Tree"; Type.Primitive "Tree"]];
+      }
+  in
+  let tree_annotation2 =
+    Type.RecursiveType
+      {
+        name = "Tree2";
+        body =
+          Type.union [Type.integer; Type.tuple [Type.Primitive "Tree2"; Type.Primitive "Tree2"]];
+      }
+  in
+  let tree_annotation_with_string =
+    Type.RecursiveType
+      {
+        name = "Tree2";
+        body =
+          Type.union
+            [Type.integer; Type.string; Type.tuple [Type.Primitive "Tree2"; Type.Primitive "Tree2"]];
+      }
+  in
+  let non_tree =
+    Type.RecursiveType
+      { name = "NonTree"; body = Type.union [Type.bool; Type.tuple [Type.Primitive "NonTree"]] }
+  in
+  (* Recursive types. *)
+  assert_type_equal tree_annotation (meet default tree_annotation tree_annotation);
+  assert_type_equal tree_annotation (meet default tree_annotation tree_annotation2);
+  assert_type_equal tree_annotation (meet default tree_annotation tree_annotation_with_string);
+  assert_type_equal Type.integer (meet default tree_annotation Type.integer);
+  assert_type_equal Type.Bottom (meet default tree_annotation Type.string);
+  assert_type_equal Type.Bottom (meet default tree_annotation non_tree);
   ()
 
 
