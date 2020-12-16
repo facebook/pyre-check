@@ -9,35 +9,35 @@ def bz2.open(filename: TaintSink[FileSystem_ReadWrite, ViaValueOf[mode, WithTag[
 
 def tarfile.TarFile.open(
     cls,
-    name: TaintSink[FileSystem_ReadWrite, ViaValueOf[mode, WithTag["file-open-mode"]]] = ...,
-    mode = ...,
-    fileobj = ...,
-    bufsize = ...,
-    format = ...,
-    tarinfo = ...,
-    dereference = ...,
-    ignore_zeros = ...,
-    encoding = ...,
-    errors = ...,
-    pax_headers = ...,
-    debug = ...,
-    errorlevel = ...
+    name: TaintSink[FileSystem_ReadWrite, ViaValueOf[mode, WithTag["file-open-mode"]]],
+    mode,
+    fileobj,
+    bufsize,
+    format,
+    tarinfo,
+    dereference,
+    ignore_zeros,
+    encoding,
+    errors,
+    pax_headers,
+    debug,
+    errorlevel
 ): ...
 # tarfile.TarFile
 def tarfile.TarFile.__init__(
     self,
-    name: TaintSink[FileSystem_ReadWrite, ViaValueOf[mode, WithTag["file-open-mode"]]] = ...,
-    mode = ...,
-    format = ...,
+    name: TaintSink[FileSystem_ReadWrite, ViaValueOf[mode, WithTag["file-open-mode"]]],
+    mode,
+    format,
     tarinfo ,
-    dereference = ...,
-    ignore_zeros = ...,
-    encoding = ...,
-    errors = ...,
-    pax_headers = ...,
-    debug = ...,
-    errorlevel = ...,
-    copybufsize = ...
+    dereference,
+    ignore_zeros,
+    encoding,
+    errors,
+    pax_headers,
+    debug,
+    errorlevel,
+    copybufsize
 ): ...
 
 
@@ -48,8 +48,8 @@ def pathlib.PurePath.__truediv__(self, key: TaintSink[FileSystem_ReadWrite]): ..
 def pathlib.PurePath.__rtruediv__(self, key: TaintSink[FileSystem_ReadWrite]): ...
 def pathlib.Path.__new__(cls, *args: TaintSink[FileSystem_ReadWrite], **kwargs): ...
 
-def pathlib.Path.open(self: TaintSink[FileSystem_ReadWrite, ViaValueOf[mode, WithTag["file-open-mode"]]], mode = ..., buffering = ..., encoding = ..., errors = ..., newline = ...): ...
+def pathlib.Path.open(self: TaintSink[FileSystem_ReadWrite, ViaValueOf[mode, WithTag["file-open-mode"]]], mode, buffering, encoding, errors, newline): ...
 def pathlib.Path.read_bytes(self: TaintSink[FileSystem_ReadWrite]): ...
-def pathlib.Path.read_text(self: TaintSink[FileSystem_ReadWrite], encoding = ..., errors = ...): ...
+def pathlib.Path.read_text(self: TaintSink[FileSystem_ReadWrite], encoding, errors): ...
 def pathlib.Path.write_bytes(self: TaintSink[FileSystem_ReadWrite], data): ...
-def pathlib.Path.write_text(self: TaintSink[FileSystem_ReadWrite], data, encoding = ..., errors = ...): ...
+def pathlib.Path.write_text(self: TaintSink[FileSystem_ReadWrite], data, encoding, errors): ...

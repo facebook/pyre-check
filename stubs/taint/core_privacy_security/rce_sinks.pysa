@@ -29,9 +29,9 @@ def pickle.load(
 def pickle.Unpickler.__init__(
     self,
     file: TaintSink[RemoteCodeExecution],
-    fix_imports = ...,
-    encoding = ...,
-    errors = ...
+    fix_imports,
+    encoding,
+    errors
 ): ...
 def yaml.load(
   stream: TaintSink[RemoteCodeExecution],
@@ -149,21 +149,21 @@ def subprocess.Popen.__new__(self, args: TaintSink[RemoteCodeExecution, Via[comm
 async def asyncio.subprocess.create_subprocess_exec(
     program: TaintSink[RemoteCodeExecution, ViaTypeOf[program]],
     *args: TaintSink[RemoteCodeExecution, Via[command_line_args]],
-    stdin = ...,
-    stdout = ...,
-    stderr = ...,
-    loop = ...,
-    limit = ...,
+    stdin,
+    stdout,
+    stderr,
+    loop,
+    limit,
     **kwds
 ): ...
 
 async def asyncio.subprocess.create_subprocess_shell(
     cmd: TaintSink[RemoteCodeExecution],
-    stdin = ...,
-    stdout = ...,
-    stderr = ...,
-    loop = ...,
-    limit = ...,
+    stdin,
+    stdout,
+    stderr,
+    loop,
+    limit,
     **kwds
 ): ...
 
