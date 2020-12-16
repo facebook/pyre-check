@@ -375,13 +375,11 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
         match call_targets with
         | [] when Configuration.is_missing_flow_analysis Type ->
             (* Create a symbolic callable, using the location as the name *)
-            let location_string =
-              Location.WithModule.show
-                (Location.with_module ~qualifier:FunctionContext.qualifier location)
+            let callable =
+              Model.unknown_callee
+                ~location:(Location.with_module ~qualifier:FunctionContext.qualifier location)
+                ~call:call_expression
             in
-            let callable_name = Reference.create location_string in
-            let callable = Interprocedural.Callable.create_function callable_name in
-            let callable = (callable :> Interprocedural.Callable.t) in
             if not (Interprocedural.Fixpoint.has_model callable) then
               Model.register_unknown_callee_model callable;
             [callable]

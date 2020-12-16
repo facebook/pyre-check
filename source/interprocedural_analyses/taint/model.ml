@@ -54,6 +54,17 @@ let add_obscure_sink ~resolution ~call_target model =
           { model with backward = { model.backward with sink_taint } } )
 
 
+let unknown_callee ~location ~call =
+  let callee =
+    match call with
+    | Expression.Call { callee; _ } -> callee
+    | _ -> Node.create ~location:(Location.strip_module location) call
+  in
+  Interprocedural.Callable.create_function
+    (Reference.create
+       (Format.asprintf "%a:%a" Location.WithModule.pp location Expression.pp callee))
+
+
 let register_unknown_callee_model callable =
   (* Add a model with sinks on *args and **kwargs. *)
   let sink_leaf =

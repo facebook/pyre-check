@@ -52,6 +52,9 @@ val add_obscure_sink
   TaintResult.call_model ->
   TaintResult.call_model
 
+(* Create a symbolic callable representing an unknown callee at a call site. *)
+val unknown_callee : location:Location.WithModule.t -> call:Expression.expression -> Callable.t
+
 (* Register a model with sinks on all parameters for a symbolic callable that
  * represents an unknown callee, in order to find missing flows. *)
 val register_unknown_callee_model : [< Callable.t ] -> unit
