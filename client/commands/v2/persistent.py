@@ -514,9 +514,9 @@ class PyreServerHandler(connection.BackgroundTask):
                 server_input_channel, server_output_channel
             )
         finally:
-            LOG.warning(
-                "Lost connection to background Pyre server. "
-                "Clearing out all diagnostics..."
+            await self.show_message_to_client(
+                "Lost connection to background Pyre server.",
+                level=lsp.MessageType.WARNING,
             )
             self.server_state.diagnostics = {}
             await self.show_type_errors_to_client()

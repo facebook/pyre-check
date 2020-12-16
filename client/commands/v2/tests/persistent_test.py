@@ -423,7 +423,14 @@ class PersistentTest(testslide.TestCase):
         self.assertTrue(len(client_visible_messages) > 0)
         self.assertEqual(
             await lsp.read_json_rpc(
-                TextReader(MemoryBytesReader(client_visible_messages[0]))
+                TextReader(
+                    MemoryBytesReader(
+                        # The server may send several status updates but we are
+                        # mostly interested in the last message, which contains
+                        # the diagnostics.
+                        client_visible_messages[-1]
+                    )
+                )
             ),
             json_rpc.Request(
                 method="textDocument/publishDiagnostics",
