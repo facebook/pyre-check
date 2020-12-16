@@ -388,7 +388,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
         | _ -> call_targets
       in
       match call_targets with
-      | [] ->
+      | [] -> (
           (* If we don't have a call target: propagate argument taint. *)
           let obscure_taint =
             BackwardState.Tree.collapse call_taint
@@ -397,7 +397,13 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                  Abstract.Domain.(Add Features.obscure)
             |> BackwardState.Tree.create_leaf
           in
-          List.fold_right ~f:(analyze_argument ~resolution obscure_taint) arguments ~init:state
+          let state =
+            List.fold_right ~f:(analyze_argument ~resolution obscure_taint) arguments ~init:state
+          in
+          match call_expression with
+          | Expression.Call { callee; _ } ->
+              analyze_expression ~resolution ~taint:obscure_taint ~state ~expression:callee
+          | _ -> state )
       | call_targets ->
           List.map call_targets ~f:analyze_call_target
           |> List.fold ~init:(FixpointState.create ()) ~f:FixpointState.join
@@ -520,17 +526,14 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
         match targets with
         | None ->
             (* Obscure. *)
-            let obscure_taint =
-              BackwardState.Tree.collapse taint
-              |> BackwardTaint.transform
-                   BackwardTaint.simple_feature
-                   Abstract.Domain.(Add Features.obscure)
-              |> BackwardState.Tree.create_leaf
-            in
-            let state =
-              List.fold_right arguments ~f:(analyze_argument ~resolution obscure_taint) ~init:state
-            in
-            analyze_expression ~resolution ~taint:obscure_taint ~state ~expression:callee
+            apply_call_targets
+              ~call_expression:(Expression.Call { Call.callee; arguments })
+              ~resolution
+              location
+              arguments
+              state
+              taint
+              []
         | Some { Interprocedural.CallGraph.implicit_self; targets; _ } ->
             let arguments =
               if implicit_self then

@@ -443,10 +443,8 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       match call_targets with
       | [] ->
           (* If we don't have a call target: propagate argument taint. *)
-          List.fold
-            arguments
-            ~init:(ForwardState.Tree.empty, state)
-            ~f:(analyze_argument ~resolution)
+          let callee_taint, state = analyze_expression ~resolution ~state ~expression:callee in
+          List.fold_left arguments ~init:(callee_taint, state) ~f:(analyze_argument ~resolution)
           |>> ForwardState.Tree.transform
                 ForwardTaint.simple_feature
                 Abstract.Domain.(Add Features.obscure)
@@ -994,16 +992,14 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                         (Resolution.resolve_expression_to_type resolution expression |> Type.show)
                   | _ -> ()
                 end;
-                let callee_taint, state =
-                  analyze_expression ~resolution ~state ~expression:callee
-                in
-                List.fold_left
+                apply_call_targets
+                  ~resolution
+                  ~callee
+                  ~collapse_tito:false
+                  location
                   arguments
-                  ~f:(analyze_argument ~resolution)
-                  ~init:(callee_taint, state)
-                |>> ForwardState.Tree.transform
-                      ForwardTaint.simple_feature
-                      Abstract.Domain.(Add Features.obscure)
+                  state
+                  []
           in
           let taint =
             match Node.value callee with
