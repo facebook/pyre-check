@@ -156,44 +156,11 @@ let test_parse_query context =
   assert_fails_to_parse "path_of_module(a.b, b.c)";
   assert_parses "compute_hashes_to_keys()" ComputeHashesToKeys;
   assert_fails_to_parse "compute_hashes_to_keys(foo)";
-  assert_parses "decode_ocaml_values()" (DecodeOcamlValues []);
-  assert_parses
-    "decode_ocaml_values(('first_key', 'first_value'))"
-    (DecodeOcamlValues
-       [
-         TypeQuery.SerializedValue { serialized_key = "first_key"; serialized_value = "first_value" };
-       ]);
-  assert_parses
-    "decode_ocaml_values(('first_key', 'first_value'), ('second_key', 'second_value', \
-     'third_value'))"
-    (DecodeOcamlValues
-       [
-         TypeQuery.SerializedValue { serialized_key = "first_key"; serialized_value = "first_value" };
-         TypeQuery.SerializedPair
-           {
-             serialized_key = "second_key";
-             first_serialized_value = "second_value";
-             second_serialized_value = "third_value";
-           };
-       ]);
-  assert_fails_to_parse "decode_ocaml_values('a', 'b')";
   let path =
     let path = Path.create_relative ~root:local_root ~relative:"decode.me" in
     File.write (File.create path ~content:"key,value\nsecond_key,second_value,third_value");
     path
   in
-  assert_parses
-    (Format.sprintf "decode_ocaml_values_from_file('%s')" (Path.absolute path))
-    (DecodeOcamlValues
-       [
-         TypeQuery.SerializedValue { serialized_key = "key"; serialized_value = "value" };
-         TypeQuery.SerializedPair
-           {
-             serialized_key = "second_key";
-             first_serialized_value = "second_value";
-             second_serialized_value = "third_value";
-           };
-       ]);
   assert_parses "validate_taint_models()" (ValidateTaintModels None);
   assert_parses
     (Format.sprintf "validate_taint_models('%s')" (Path.absolute path))
@@ -215,108 +182,4 @@ let test_parse_query context =
        ])
 
 
-let test_to_yojson _ =
-  let open Server.Protocol in
-  let assert_yojson response json =
-    assert_equal
-      ~printer:Yojson.Safe.pretty_to_string
-      (Yojson.Safe.from_string json)
-      (TypeQuery.response_to_yojson response)
-  in
-  assert_yojson
-    (TypeQuery.Response
-       (TypeQuery.Decoded
-          {
-            decoded =
-              [
-                TypeQuery.DecodedValue
-                  {
-                    serialized_key = "first_encoded";
-                    kind = "Type";
-                    actual_key = "first";
-                    actual_value = Some "int";
-                  };
-                TypeQuery.DecodedValue
-                  {
-                    serialized_key = "first_encoded";
-                    kind = "Type";
-                    actual_key = "first";
-                    actual_value = Some "str";
-                  };
-                TypeQuery.DecodedPair
-                  {
-                    serialized_key = "first_encoded";
-                    kind = "Type";
-                    actual_key = "first";
-                    first_value = Some "str";
-                    second_value = Some "int";
-                    equal = false;
-                  };
-                TypeQuery.DecodedPair
-                  {
-                    serialized_key = "first_encoded";
-                    kind = "Type";
-                    actual_key = "first";
-                    first_value = None;
-                    second_value = Some "int";
-                    equal = false;
-                  };
-                TypeQuery.DecodedPair
-                  {
-                    serialized_key = "first_encoded";
-                    kind = "Type";
-                    actual_key = "first";
-                    first_value = Some "str";
-                    second_value = None;
-                    equal = false;
-                  };
-              ];
-            undecodable_keys = ["no"];
-          }))
-    {|
-      {
-       "response": {
-         "decoded": [
-           {
-             "serialized_key": "first_encoded",
-             "kind": "Type",
-             "key": "first",
-             "value": "int"
-           },
-           {
-             "serialized_key": "first_encoded",
-             "kind": "Type",
-             "key": "first",
-             "value": "str"
-           },
-           {
-             "serialized_key": "first_encoded",
-             "kind": "Type",
-             "key": "first",
-             "equal": false,
-             "first_value": "str",
-             "second_value": "int"
-           },
-           {
-             "serialized_key": "first_encoded",
-             "kind": "Type",
-             "key": "first",
-             "equal": false,
-             "second_value": "int"
-           },
-           {
-             "serialized_key": "first_encoded",
-             "kind": "Type",
-             "key": "first",
-             "equal": false,
-             "first_value": "str"
-           }
-         ],
-         "undecodable_keys": [ "no" ]
-       }
-     }
-   |}
-
-
-let () =
-  "query" >::: ["parse_query" >:: test_parse_query; "to_yojson" >:: test_to_yojson] |> Test.run
+let () = "query" >::: ["parse_query" >:: test_parse_query] |> Test.run

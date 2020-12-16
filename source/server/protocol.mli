@@ -34,25 +34,12 @@ type client =
 [@@deriving eq, show]
 
 module TypeQuery : sig
-  type serialized_ocaml_value =
-    | SerializedValue of {
-        serialized_key: string;
-        serialized_value: string;
-      }
-    | SerializedPair of {
-        serialized_key: string;
-        first_serialized_value: string;
-        second_serialized_value: string;
-      }
-  [@@deriving eq, show, to_yojson]
-
   type request =
     | Attributes of Reference.t
     | Batch of request list
     | Callees of Reference.t
     | CalleesWithLocation of Reference.t
     | ComputeHashesToKeys
-    | DecodeOcamlValues of serialized_ocaml_value list
     | Defines of Reference.t list
     | DumpCallGraph
     | DumpClassHierarchy
@@ -150,29 +137,6 @@ module TypeQuery : sig
   }
   [@@deriving eq, show, to_yojson]
 
-  type decoded_value =
-    | DecodedValue of {
-        serialized_key: string;
-        kind: string;
-        actual_key: string;
-        actual_value: string option;
-      }
-    | DecodedPair of {
-        serialized_key: string;
-        kind: string;
-        actual_key: string;
-        first_value: string option;
-        second_value: string option;
-        equal: bool;
-      }
-  [@@deriving eq, show, to_yojson]
-
-  type decoded = {
-    decoded: decoded_value list;
-    undecodable_keys: string list;
-  }
-  [@@deriving eq, show, to_yojson]
-
   type compatibility = {
     actual: Type.t;
     expected: Type.t;
@@ -226,7 +190,6 @@ module TypeQuery : sig
     | ClassHierarchy of Yojson.Safe.t
     | Compatibility of compatibility
     | CoverageAtLocations of coverage_at_location list
-    | Decoded of decoded
     | Errors of AnalysisError.Instantiated.t list
     | FoundAttributes of attribute list
     | FoundDefines of define list

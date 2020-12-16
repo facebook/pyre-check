@@ -34,25 +34,12 @@ type client =
 [@@deriving eq, show]
 
 module TypeQuery = struct
-  type serialized_ocaml_value =
-    | SerializedValue of {
-        serialized_key: string;
-        serialized_value: string;
-      }
-    | SerializedPair of {
-        serialized_key: string;
-        first_serialized_value: string;
-        second_serialized_value: string;
-      }
-  [@@deriving eq, show, to_yojson]
-
   type request =
     | Attributes of Reference.t
     | Batch of request list
     | Callees of Reference.t
     | CalleesWithLocation of Reference.t
     | ComputeHashesToKeys
-    | DecodeOcamlValues of serialized_ocaml_value list
     | Defines of Reference.t list
     | DumpCallGraph
     | DumpClassHierarchy
@@ -165,29 +152,6 @@ module TypeQuery = struct
   }
   [@@deriving eq, show, to_yojson]
 
-  type decoded_value =
-    | DecodedValue of {
-        serialized_key: string;
-        kind: string;
-        actual_key: string;
-        actual_value: string option;
-      }
-    | DecodedPair of {
-        serialized_key: string;
-        kind: string;
-        actual_key: string;
-        first_value: string option;
-        second_value: string option;
-        equal: bool;
-      }
-  [@@deriving eq, show, to_yojson]
-
-  type decoded = {
-    decoded: decoded_value list;
-    undecodable_keys: string list;
-  }
-  [@@deriving eq, show, to_yojson]
-
   type compatibility = {
     actual: Type.t;
     expected: Type.t;
@@ -237,7 +201,6 @@ module TypeQuery = struct
     | ClassHierarchy of Yojson.Safe.t
     | Compatibility of compatibility
     | CoverageAtLocations of coverage_at_location list
-    | Decoded of decoded
     | Errors of AnalysisError.Instantiated.t list
     | FoundAttributes of attribute list
     | FoundDefines of define list
@@ -283,48 +246,6 @@ module TypeQuery = struct
           ]
     | CoverageAtLocations annotations ->
         `Assoc ["types", `List (List.map annotations ~f:coverage_at_location_to_yojson)]
-    | Decoded { decoded; undecodable_keys } ->
-        let to_json decoded =
-          match decoded with
-          | DecodedValue { serialized_key; kind; actual_key; actual_value } ->
-              let value =
-                match actual_value with
-                | Some actual_value -> ["value", `String actual_value]
-                | None -> []
-              in
-              `Assoc
-                ( [
-                    "serialized_key", `String serialized_key;
-                    "kind", `String kind;
-                    "key", `String actual_key;
-                  ]
-                @ value )
-          | DecodedPair { serialized_key; kind; actual_key; first_value; second_value; equal } ->
-              let first_value =
-                match first_value with
-                | Some first_value -> ["first_value", `String first_value]
-                | None -> []
-              in
-              let second_value =
-                match second_value with
-                | Some second_value -> ["second_value", `String second_value]
-                | None -> []
-              in
-              `Assoc
-                ( [
-                    "serialized_key", `String serialized_key;
-                    "kind", `String kind;
-                    "key", `String actual_key;
-                    "equal", `Bool equal;
-                  ]
-                @ first_value
-                @ second_value )
-        in
-        `Assoc
-          [
-            "decoded", `List (List.map decoded ~f:to_json);
-            "undecodable_keys", `List (List.map undecodable_keys ~f:(fun key -> `String key));
-          ]
     | Errors errors ->
         `Assoc
           [

@@ -40,7 +40,6 @@ let help () =
     | DumpCallGraph ->
         Some "dump_call_graph(): Returns a comprehensive JSON of caller -> list of callees."
     | ComputeHashesToKeys -> None
-    | DecodeOcamlValues _ -> None
     | DumpClassHierarchy ->
         Some
           "dump_class_hierarchy(): Prints out the entire class hierarchy as Pyre understands it, \
@@ -89,7 +88,6 @@ let help () =
       Callees (Reference.create "");
       CalleesWithLocation (Reference.create "");
       ComputeHashesToKeys;
-      DecodeOcamlValues [];
       Defines [Reference.create ""];
       DumpCallGraph;
       DumpClassHierarchy;
@@ -169,58 +167,6 @@ let rec parse_query
       | "defines", names -> Request.TypeQueryRequest (Defines (List.map names ~f:reference))
       | "dump_call_graph", [] -> Request.TypeQueryRequest DumpCallGraph
       | "compute_hashes_to_keys", [] -> Request.TypeQueryRequest ComputeHashesToKeys
-      | "decode_ocaml_values", values ->
-          let parse_values_to_decode = function
-            | {
-                Call.Argument.value = { Node.value = Tuple [serialized_key; serialized_value]; _ };
-                _;
-              } ->
-                SerializedValue
-                  {
-                    serialized_key = string_of_expression serialized_key;
-                    serialized_value = string_of_expression serialized_value;
-                  }
-            | {
-                Call.Argument.value =
-                  { Node.value = Tuple [serialized_key; first_value; second_value]; _ };
-                _;
-              } ->
-                SerializedPair
-                  {
-                    serialized_key = string_of_expression serialized_key;
-                    first_serialized_value = string_of_expression first_value;
-                    second_serialized_value = string_of_expression second_value;
-                  }
-            | { Call.Argument.value; _ } ->
-                raise
-                  (InvalidQuery
-                     (Format.sprintf "expected pair of strings, got `%s`" (Expression.show value)))
-          in
-          Request.TypeQueryRequest (DecodeOcamlValues (List.map values ~f:parse_values_to_decode))
-      | "decode_ocaml_values_from_file", [path] -> (
-          let lines =
-            let format line =
-              line
-              |> String.split ~on:','
-              |> function
-              | [serialized_key; serialized_value] ->
-                  Some (SerializedValue { serialized_key; serialized_value })
-              | [serialized_key; first_serialized_value; second_serialized_value] ->
-                  Some
-                    (SerializedPair
-                       { serialized_key; first_serialized_value; second_serialized_value })
-              | _ -> None
-            in
-            string path
-            |> Path.create_absolute
-            |> File.create
-            |> File.lines
-            >>| List.filter_map ~f:format
-          in
-          match lines with
-          | Some pairs -> Request.TypeQueryRequest (DecodeOcamlValues pairs)
-          | None -> raise (InvalidQuery (Format.sprintf "malformatted file at `%s`" (string path)))
-          )
       | "dump_class_hierarchy", [] -> Request.TypeQueryRequest DumpClassHierarchy
       | "dump_memory_to_sqlite", arguments ->
           let path =
