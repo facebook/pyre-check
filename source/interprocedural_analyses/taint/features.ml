@@ -80,9 +80,9 @@ module Breadcrumb = struct
 
   let simple_via ~allowed name =
     if List.mem allowed name ~equal:String.equal then
-      SimpleVia name
+      Ok (SimpleVia name)
     else
-      Format.sprintf "Unrecognized Via annotation `%s`" name |> failwith
+      Error (Format.sprintf "Unrecognized Via annotation `%s`" name)
 end
 
 (* Simple set of features that are unrelated, thus cheap to maintain *)
@@ -209,7 +209,10 @@ let add_type_breadcrumb ~resolution annotation =
   add
 
 
-let simple_via ~allowed name = Simple.Breadcrumb (Breadcrumb.simple_via ~allowed name)
+let simple_via ~allowed name =
+  let open Core.Result in
+  Breadcrumb.simple_via ~allowed name >>| fun breadcrumb -> Simple.Breadcrumb breadcrumb
+
 
 let gather_breadcrumbs feature breadcrumbs =
   match feature.Abstract.OverUnderSetDomain.element with

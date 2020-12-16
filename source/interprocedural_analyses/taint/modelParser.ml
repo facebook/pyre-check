@@ -234,11 +234,11 @@ let rec parse_annotations ~configuration ~parameters annotation =
     | Expression.Name (Name.Identifier breadcrumb) ->
         let feature =
           if is_dynamic then
-            Features.Simple.Breadcrumb (Features.Breadcrumb.SimpleVia breadcrumb)
+            Ok (Features.Simple.Breadcrumb (Features.Breadcrumb.SimpleVia breadcrumb))
           else
             Features.simple_via ~allowed:configuration.features breadcrumb
         in
-        Ok [feature]
+        feature >>| fun feature -> [feature]
     | Tuple expressions ->
         List.map ~f:(extract_breadcrumbs ~is_dynamic) expressions |> all |> map ~f:List.concat
     | _ ->
@@ -1954,9 +1954,6 @@ let create ~resolution ?path ~configuration ~rule_filter source =
       >>| fun (model, skipped_override) ->
       Model ({ model; call_target; is_obscure = false }, skipped_override)
     with
-    | Failure message
-    | Model.InvalidModel message ->
-        Error (invalid_model_error ~path ~location ~name:(Reference.show name) message)
     (* TODO(T81363867): Clean these up. *)
     | ClassifiedInvalidModel error -> Error error
   in
