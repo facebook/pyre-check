@@ -45,7 +45,6 @@ module.exports = {
     ...fbInternalOnly(['fb/sapp-cli-internal']),
     ...fbInternalOnly(['fb/sapp-ui-internal']),
     'static-analysis-post-processor',
-    ...fbInternalOnly(['fb/pysa-additional-resources-internal']),
     'pysa-additional-resources',
   ],
   ...fbInternalOnly(() => require('./fb/sidebars.js')),
