@@ -259,10 +259,10 @@ let rec parse_annotations ~configuration ~parameters annotation =
     | Tuple expressions -> List.map ~f:extract_via_positions expressions |> all >>| List.concat
     | Call { callee; _ } when Option.equal String.equal (base_name callee) (Some "WithTag") -> Ok []
     | _ ->
-        Format.sprintf
-          "Invalid expression for ViaValueOf or ViaTypeOf: %s"
-          (show_expression expression.Node.value)
-        |> failwith
+        Error
+          (Format.sprintf
+             "Invalid expression for ViaValueOf or ViaTypeOf: %s"
+             (show_expression expression.Node.value))
   in
   let rec extract_via_tag expression =
     match expression.Node.value with
