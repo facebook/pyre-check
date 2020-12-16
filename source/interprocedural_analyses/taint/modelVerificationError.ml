@@ -83,7 +83,9 @@ let display { kind = error; path; location } =
     | ImportedFunctionModel { name; actual_name } ->
         ( Reference.show name,
           Format.asprintf
-            "The modelled function is an imported function `%a`, please model it directly."
+            "The modelled function `%a` is an imported function, please model `%a` directly."
+            Reference.pp
+            name
             Reference.pp
             actual_name )
     | UnclassifiedError { model_name; message } -> model_name, message
