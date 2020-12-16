@@ -28,7 +28,6 @@ module.exports = {
   baseUrl: '/',
   organizationName: 'facebook',
   projectName: 'pyre-check',
-  onBrokenLinks: 'warn',
   favicon: 'img/favicon.ico',
   scripts: ['https://buttons.github.io/buttons.js'],
   plugins: [
