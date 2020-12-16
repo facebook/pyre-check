@@ -279,22 +279,21 @@ let rec parse_annotations ~configuration ~parameters annotation =
             ];
         }
       when Option.equal String.equal (base_name callee) (Some "WithTag") ->
-        Some value
+        Ok (Some value)
     | Expression.Call _ ->
-        Format.sprintf
-          "Invalid expression in ViaValueOf or ViaTypeOf declaration: %s"
-          (Expression.show expression)
-        |> failwith
-    | Tuple expressions -> List.find_map expressions ~f:extract_via_tag
-    | _ -> None
+        Error
+          (Format.sprintf
+             "Invalid expression in ViaValueOf or ViaTypeOf declaration: %s"
+             (Expression.show expression))
+    | Tuple expressions -> List.map expressions ~f:extract_via_tag |> all >>| List.find_map ~f:ident
+    | _ -> Ok None
   in
   let rec extract_names expression =
     match expression.Node.value with
-    | Expression.Name (Name.Identifier name) -> [name]
-    | Tuple expressions -> List.concat_map ~f:extract_names expressions
+    | Expression.Name (Name.Identifier name) -> Ok [name]
+    | Tuple expressions -> List.map ~f:extract_names expressions |> all >>| List.concat
     | _ ->
-        Format.sprintf "Invalid expression name: %s" (show_expression expression.Node.value)
-        |> failwith
+        Error (Format.sprintf "Invalid expression name: %s" (show_expression expression.Node.value))
   in
   let rec extract_kinds expression =
     match expression.Node.value with
@@ -309,12 +308,14 @@ let rec parse_annotations ~configuration ~parameters annotation =
             extract_breadcrumbs ~is_dynamic:true expression
             >>| fun breadcrumbs -> [Breadcrumbs breadcrumbs]
         | Some "ViaValueOf" ->
-            let tag = extract_via_tag expression in
+            extract_via_tag expression
+            >>= fun tag ->
             extract_via_positions expression
             >>| List.map ~f:(fun position -> Features.Simple.ViaValueOf { position; tag })
             >>| fun breadcrumbs -> [Breadcrumbs breadcrumbs]
         | Some "ViaTypeOf" ->
-            let tag = extract_via_tag expression in
+            extract_via_tag expression
+            >>= fun tag ->
             extract_via_positions expression
             >>| List.map ~f:(fun position -> Features.Simple.ViaTypeOf { position; tag })
             >>| fun breadcrumbs -> [Breadcrumbs breadcrumbs]
@@ -324,7 +325,7 @@ let rec parse_annotations ~configuration ~parameters annotation =
               >>| fun position ->
               Leaf { name = Format.sprintf "ParameterUpdate%d" position; subkind = None }
             in
-            extract_names expression |> List.map ~f:to_leaf |> all
+            extract_names expression >>= fun names -> List.map ~f:to_leaf names |> all
         | _ ->
             let subkind = extract_subkind expression in
             extract_kinds callee
