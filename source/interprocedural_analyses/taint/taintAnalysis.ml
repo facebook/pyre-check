@@ -106,13 +106,22 @@ include Taint.Result.Register (struct
             let models, errors, skip_overrides, queries =
               Model.get_model_sources ~paths |> create_models ~configuration
             in
-            if not (List.is_empty errors) then
-              Log.error "Found %d model verification errors!" (List.length errors);
-            List.iter errors ~f:(fun error ->
-                Log.error "%s" (Taint.Model.display_verification_error error));
-            if verify && not (List.is_empty errors) then
-              raise
-                (Model.InvalidModel (List.hd_exn errors |> Taint.Model.display_verification_error));
+            let () =
+              if not (List.is_empty errors) then begin
+                (* Exit or log errors, depending on whether models need to be verified. *)
+                Log.error "Found %d model verification errors!" (List.length errors);
+                if not verify then
+                  List.iter errors ~f:(fun error ->
+                      Log.error "%s" (Taint.Model.display_verification_error error))
+                else begin
+                  Yojson.Safe.pretty_to_string
+                    (`Assoc
+                      ["errors", `List (List.map errors ~f:Taint.Model.verification_error_to_json)])
+                  |> Log.print "%s";
+                  exit 0
+                end
+              end
+            in
             let models =
               let callables =
                 List.rev_append stubs functions

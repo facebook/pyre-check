@@ -44,4 +44,6 @@ type t = {
   location: Location.t;
 }
 
+val to_json : t -> Yojson.Safe.t
+
 val display : t -> string
