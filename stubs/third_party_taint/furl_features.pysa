@@ -10,29 +10,29 @@ def furl.furl.__init__(self, url: TaintInTaintOut[Updates[self], Via[furl_url]],
 def furl.furl.load(self: TaintInTaintOut[LocalReturn], url: TaintInTaintOut[Updates[self], Via[furl_url]]): ...
 def furl.furl.add(
     self: TaintInTaintOut[LocalReturn],
-    args: TaintInTaintOut[LocalReturn, Updates[self], Via[furl_query_params]] = ...,
-    path: TaintInTaintOut[LocalReturn, Updates[self], Via[furl_path]] = ...,
-    fragment_path: TaintInTaintOut[LocalReturn, Updates[self], Via[furl_fragment]] = ...,
-    fragment_args: TaintInTaintOut[LocalReturn, Updates[self], Via[furl_fragment]] = ...,
-    query_params: TaintInTaintOut[LocalReturn, Updates[self], Via[furl_query_params]] = ...
+    args: TaintInTaintOut[LocalReturn, Updates[self], Via[furl_query_params]],
+    path: TaintInTaintOut[LocalReturn, Updates[self], Via[furl_path]],
+    fragment_path: TaintInTaintOut[LocalReturn, Updates[self], Via[furl_fragment]],
+    fragment_args: TaintInTaintOut[LocalReturn, Updates[self], Via[furl_fragment]],
+    query_params: TaintInTaintOut[LocalReturn, Updates[self], Via[furl_query_params]]
 ): ...
 def furl.furl.set(
     self: TaintInTaintOut[LocalReturn],
-    args: TaintInTaintOut[LocalReturn, Updates[self], Via[furl_query_params]] = ...,
-    path: TaintInTaintOut[LocalReturn, Updates[self], Via[furl_path]] = ...,
-    fragment: TaintInTaintOut[LocalReturn, Updates[self], Via[furl_fragment]] = ...,
-    scheme: TaintInTaintOut[LocalReturn, Updates[self], Via[furl_scheme]] = ...,
-    netloc: TaintInTaintOut[LocalReturn, Updates[self], Via[furl_netloc]] = ...,
-    origin: TaintInTaintOut[LocalReturn, Updates[self], Via[furl_origin]] = ...,
-    fragment_path: TaintInTaintOut[LocalReturn, Updates[self], Via[furl_fragment]] = ...,
-    fragment_args: TaintInTaintOut[LocalReturn, Updates[self], Via[furl_fragment]] = ...,
-    fragment_separator: TaintInTaintOut[LocalReturn, Updates[self], Via[furl_fragment]] = ...,
-    host: TaintInTaintOut[LocalReturn, Updates[self], Via[furl_host]] = ...,
-    port: TaintInTaintOut[LocalReturn, Updates[self], Via[furl_port]] = ...,
-    query: TaintInTaintOut[LocalReturn, Updates[self], Via[furl_query_params]] = ...,
-    query_params: TaintInTaintOut[LocalReturn, Updates[self], Via[furl_query_params]] = ...,
-    username: TaintInTaintOut[LocalReturn, Updates[self]] = ...,
-    password: TaintInTaintOut[LocalReturn, Updates[self]] = ...
+    args: TaintInTaintOut[LocalReturn, Updates[self], Via[furl_query_params]],
+    path: TaintInTaintOut[LocalReturn, Updates[self], Via[furl_path]],
+    fragment: TaintInTaintOut[LocalReturn, Updates[self], Via[furl_fragment]],
+    scheme: TaintInTaintOut[LocalReturn, Updates[self], Via[furl_scheme]],
+    netloc: TaintInTaintOut[LocalReturn, Updates[self], Via[furl_netloc]],
+    origin: TaintInTaintOut[LocalReturn, Updates[self], Via[furl_origin]],
+    fragment_path: TaintInTaintOut[LocalReturn, Updates[self], Via[furl_fragment]],
+    fragment_args: TaintInTaintOut[LocalReturn, Updates[self], Via[furl_fragment]],
+    fragment_separator: TaintInTaintOut[LocalReturn, Updates[self], Via[furl_fragment]],
+    host: TaintInTaintOut[LocalReturn, Updates[self], Via[furl_host]],
+    port: TaintInTaintOut[LocalReturn, Updates[self], Via[furl_port]],
+    query: TaintInTaintOut[LocalReturn, Updates[self], Via[furl_query_params]],
+    query_params: TaintInTaintOut[LocalReturn, Updates[self], Via[furl_query_params]],
+    username: TaintInTaintOut[LocalReturn, Updates[self]],
+    password: TaintInTaintOut[LocalReturn, Updates[self]]
 ): ...
 
 @scheme.setter

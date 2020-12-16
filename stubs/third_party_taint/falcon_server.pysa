@@ -57,21 +57,21 @@ falcon.response.Response._headers: TaintSink[ResponseHeaderName, ResponseHeaderV
 # Redirects
 def falcon.redirects.HTTPMovedPermanently.__init__(
     location: TaintSink[Redirect, ReturnedToUser],
-    headers: TaintSink[ResponseHeaderName, ResponseHeaderValue, ReturnedToUser] = ...,
+    headers: TaintSink[ResponseHeaderName, ResponseHeaderValue, ReturnedToUser],
 ): ...
 def falcon.redirects.HTTPFound.__init__(
     location: TaintSink[Redirect, ReturnedToUser],
-    headers: TaintSink[ResponseHeaderName, ResponseHeaderValue, ReturnedToUser] = ...,
+    headers: TaintSink[ResponseHeaderName, ResponseHeaderValue, ReturnedToUser],
 ): ...
 def falcon.redirects.HTTPSeeOther.__init__(
     location: TaintSink[Redirect, ReturnedToUser],
-    headers: TaintSink[ResponseHeaderName, ResponseHeaderValue, ReturnedToUser] = ...,
+    headers: TaintSink[ResponseHeaderName, ResponseHeaderValue, ReturnedToUser],
 ): ...
 def falcon.redirects.HTTPTemporaryRedirect.__init__(
     location: TaintSink[Redirect, ReturnedToUser],
-    headers: TaintSink[ResponseHeaderName, ResponseHeaderValue, ReturnedToUser] = ...,
+    headers: TaintSink[ResponseHeaderName, ResponseHeaderValue, ReturnedToUser],
 ): ...
 def falcon.redirects.HTTPPermanentRedirect.__init__(
     location: TaintSink[Redirect, ReturnedToUser],
-    headers: TaintSink[ResponseHeaderName, ResponseHeaderValue, ReturnedToUser] = ...,
+    headers: TaintSink[ResponseHeaderName, ResponseHeaderValue, ReturnedToUser],
 ): ...

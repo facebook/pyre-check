@@ -46,18 +46,18 @@ def aiohttp.web_exceptions._HTTPMove.__init__(
     self,
     location: TaintSink[Redirect, ReturnedToUser],
     *,
-    headers: TaintSink[ResponseHeaderName, ResponseHeaderValue, ReturnedToUser] = ...,
-    reason: TaintSink[ReturnedToUser] = ...,
-    text: TaintSink[ReturnedToUser] = ...,
-    content_type: TaintSink[ReturnedToUser] = ...,
+    headers: TaintSink[ResponseHeaderName, ResponseHeaderValue, ReturnedToUser],
+    reason: TaintSink[ReturnedToUser],
+    text: TaintSink[ReturnedToUser],
+    content_type: TaintSink[ReturnedToUser],
 ): ...
 def aiohttp.web_exceptions.HTTPException.__init__(
     self,
     *,
-    headers: TaintSink[ResponseHeaderName, ResponseHeaderValue, ReturnedToUser] = ...,
-    reason: TaintSink[ReturnedToUser] = ...,
-    text: TaintSink[ReturnedToUser] = ...,
-    content_type: TaintSink[ReturnedToUser] = ...,
+    headers: TaintSink[ResponseHeaderName, ResponseHeaderValue, ReturnedToUser],
+    reason: TaintSink[ReturnedToUser],
+    text: TaintSink[ReturnedToUser],
+    content_type: TaintSink[ReturnedToUser],
 ): ...
 @property
 def aiohttp.web_exceptions.HTTPException.headers(self) -> TaintSource[HeaderData]: ...
@@ -66,46 +66,46 @@ def aiohttp.web_exceptions.HTTPMethodNotAllowed.__init__(
     method: TaintSink[ReturnedToUser],
     allowed_methods: TaintSink[ReturnedToUser],
     *,
-    headers: TaintSink[ResponseHeaderName, ResponseHeaderValue, ReturnedToUser] = ...,
-    reason: TaintSink[ReturnedToUser] = ...,
-    text: TaintSink[ReturnedToUser] = ...,
-    content_type: TaintSink[ReturnedToUser] = ...,
+    headers: TaintSink[ResponseHeaderName, ResponseHeaderValue, ReturnedToUser],
+    reason: TaintSink[ReturnedToUser],
+    text: TaintSink[ReturnedToUser],
+    content_type: TaintSink[ReturnedToUser],
 ): ...
 def aiohttp.web_exceptions.HTTPUnavailableForLegalReasons.__init__(
     self,
     link: TaintSink[ReturnedToUser],
     *,
-    headers: TaintSink[ResponseHeaderName, ResponseHeaderValue, ReturnedToUser] = ...,
-    reason: TaintSink[ReturnedToUser] = ...,
-    text: TaintSink[ReturnedToUser] = ...,
-    content_type: TaintSink[ReturnedToUser] = ...,
+    headers: TaintSink[ResponseHeaderName, ResponseHeaderValue, ReturnedToUser],
+    reason: TaintSink[ReturnedToUser],
+    text: TaintSink[ReturnedToUser],
+    content_type: TaintSink[ReturnedToUser],
 ): ...
 
 def aiohttp.web_response.StreamResponse.__init__(
     self,
     *,
-    status = ...,
-    reason: TaintSink[ReturnedToUser] = ...,
-    headers: TaintSink[ReturnedToUser, ResponseHeaderName, ResponseHeaderValue] = ...,
+    status,
+    reason: TaintSink[ReturnedToUser],
+    headers: TaintSink[ReturnedToUser, ResponseHeaderName, ResponseHeaderValue],
 ): ...
 @property
 def aiohttp.web_response.StreamResponse.headers(self) -> TaintSource[HeaderData]: ...
 @property
 def aiohttp.web_response.StreamResponse.cookies(self) -> TaintSource[Cookies]: ...
-async def aiohttp.web_response.StreamResponse.write_eof(self, data: TaintSink[ReturnedToUser] = ...): ...
+async def aiohttp.web_response.StreamResponse.write_eof(self, data: TaintSink[ReturnedToUser]): ...
 
 def aiohttp.web_response.Response.__init__(
     self,
     *,
-    body: TaintSink[ReturnedToUser] = ...,
-    status = ...,
-    reason: TaintSink[ReturnedToUser] = ...,
-    text: TaintSink[ReturnedToUser] = ...,
-    headers: TaintSink[ResponseHeaderName, ResponseHeaderValue, ReturnedToUser] = ...,
-    content_type: TaintSink[ReturnedToUser] = ...,
-    charset: TaintSink[ReturnedToUser] = ...,
-    zlib_executor_size = ...,
-    zlib_executor = ...,
+    body: TaintSink[ReturnedToUser],
+    status,
+    reason: TaintSink[ReturnedToUser],
+    text: TaintSink[ReturnedToUser],
+    headers: TaintSink[ResponseHeaderName, ResponseHeaderValue, ReturnedToUser],
+    content_type: TaintSink[ReturnedToUser],
+    charset: TaintSink[ReturnedToUser],
+    zlib_executor_size,
+    zlib_executor,
 ): ...
 @body.setter
 def aiohttp.web_response.Response.body(
@@ -116,23 +116,23 @@ def aiohttp.web_response.Response.body(
 def aiohttp.web_response.Response.text(self, text: TaintSink[ReturnedToUser]): ...
 
 def aiohttp.web_response.json_response(
-    data: TaintSink[ReturnedToUser] = ...,
+    data: TaintSink[ReturnedToUser],
     *,
-    text: TaintSink[ReturnedToUser] = ...,
-    body: TaintSink[ReturnedToUser] = ...,
-    status = ...,
-    reason: TaintSink[ReturnedToUser] = ...,
-    headers: TaintSink[ResponseHeaderName, ResponseHeaderValue, ReturnedToUser] = ...,
-    content_type: TaintSink[ReturnedToUser] = ...,
-    dumps = ...,
+    text: TaintSink[ReturnedToUser],
+    body: TaintSink[ReturnedToUser],
+    status,
+    reason: TaintSink[ReturnedToUser],
+    headers: TaintSink[ResponseHeaderName, ResponseHeaderValue, ReturnedToUser],
+    content_type: TaintSink[ReturnedToUser],
+    dumps,
 ): ...
 
-async def aiohttp.web_ws.WebSocketResponse.ping(self, message: TaintSink[ReturnedToUser] = ...): ...
-async def aiohttp.web_ws.WebSocketResponse.pong(self, message: TaintSink[ReturnedToUser] = ...): ...
+async def aiohttp.web_ws.WebSocketResponse.ping(self, message: TaintSink[ReturnedToUser]): ...
+async def aiohttp.web_ws.WebSocketResponse.pong(self, message: TaintSink[ReturnedToUser]): ...
 async def aiohttp.web_ws.WebSocketResponse.send_str(self, data: TaintSink[ReturnedToUser],): ...
 async def aiohttp.web_ws.WebSocketResponse.send_bytes(self, data: TaintSink[ReturnedToUser]): ...
 async def aiohttp.web_ws.WebSocketResponse.send_json(self, data: TaintSink[ReturnedToUser]): ...
-async def aiohttp.web_ws.WebSocketResponse.close(self, *, code = ..., message: TaintSink[ReturnedToUser] = ...): ...
+async def aiohttp.web_ws.WebSocketResponse.close(self, *, code, message: TaintSink[ReturnedToUser]): ...
 async def aiohttp.web_ws.WebSocketResponse.receive(self) -> TaintSource[UserControlled, UserControlled_Payload]: ...
 async def aiohttp.web_ws.WebSocketResponse.receive_str(self,) -> TaintSource[UserControlled, UserControlled_Payload]: ...
 async def aiohttp.web_ws.WebSocketResponse.receive_bytes(self) -> TaintSource[UserControlled, UserControlled_Payload]: ...
