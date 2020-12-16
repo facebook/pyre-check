@@ -1194,6 +1194,9 @@ let parse_parameter_taint
 
 let add_taint_annotation_to_model
     ~resolution
+    ~path
+    ~location
+    ~model_name
     ~annotation_kind
     ~callable_annotation
     ~sources_to_keep
@@ -1201,6 +1204,8 @@ let add_taint_annotation_to_model
     model
     annotation
   =
+  let open Core.Result in
+  let annotation_error = invalid_model_error ~path ~location ~name:model_name in
   match annotation_kind with
   | ReturnAnnotation -> (
       let root = AccessPath.Root.LocalResult in
@@ -1209,22 +1214,27 @@ let add_taint_annotation_to_model
           List.map ~f:Features.SimpleSet.inject breadcrumbs
           |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
           |> introduce_sink_taint ~root ~path ~leaf_name_provided ~sinks_to_keep model sink
+          |> map_error ~f:annotation_error
       | Source { source; breadcrumbs; path; leaf_name_provided } ->
           List.map ~f:Features.SimpleSet.inject breadcrumbs
           |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
           |> introduce_source_taint ~root ~path ~leaf_name_provided ~sources_to_keep model source
-      | Tito _ -> Error "Invalid return annotation: TaintInTaintOut"
-      | AddFeatureToArgument _ -> Error "Invalid return annotation: AddFeatureToArgument" )
+          |> map_error ~f:annotation_error
+      | Tito _ -> Error (annotation_error "Invalid return annotation: TaintInTaintOut")
+      | AddFeatureToArgument _ ->
+          Error (annotation_error "Invalid return annotation: AddFeatureToArgument") )
   | ParameterAnnotation root -> (
       match annotation with
       | Sink { sink; breadcrumbs; path; leaf_name_provided } ->
           List.map ~f:Features.SimpleSet.inject breadcrumbs
           |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
           |> introduce_sink_taint ~root ~path ~leaf_name_provided ~sinks_to_keep model sink
+          |> map_error ~f:annotation_error
       | Source { source; breadcrumbs; path; leaf_name_provided } ->
           List.map ~f:Features.SimpleSet.inject breadcrumbs
           |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
           |> introduce_source_taint ~root ~path ~leaf_name_provided ~sources_to_keep model source
+          |> map_error ~f:annotation_error
       | Tito { tito; breadcrumbs; path } ->
           (* For tito, both the parameter and the return type can provide type based breadcrumbs *)
           List.map ~f:Features.SimpleSet.inject breadcrumbs
@@ -1234,6 +1244,7 @@ let add_taint_annotation_to_model
                AccessPath.Root.LocalResult
                ~callable_annotation
           |> introduce_taint_in_taint_out ~root ~path model tito
+          |> map_error ~f:annotation_error
       | AddFeatureToArgument { breadcrumbs; path } ->
           List.map ~f:Features.SimpleSet.inject breadcrumbs
           |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
@@ -1243,7 +1254,8 @@ let add_taint_annotation_to_model
                ~leaf_name_provided:false
                ~sinks_to_keep
                model
-               Sinks.AddFeatureToArgument )
+               Sinks.AddFeatureToArgument
+          |> map_error ~f:annotation_error )
 
 
 let parse_return_taint ~path ~location ~model_name ~configuration ~parameters expression =
@@ -1975,10 +1987,6 @@ let create ~resolution ?path ~configuration ~rule_filter source =
           return_annotation
         >>| fun return_taint -> List.rev_append parameter_taint return_taint
       in
-      let lift_error =
-        map_error ~f:(fun error ->
-            invalid_model_error ~path ~location ~name:(Reference.show name) error)
-      in
       let model =
         callable_annotation
         >>= fun callable_annotation ->
@@ -1989,6 +1997,9 @@ let create ~resolution ?path ~configuration ~rule_filter source =
           ~init:TaintResult.empty_model
           ~f:(fun accumulator (annotation, annotation_kind) ->
             add_taint_annotation_to_model
+              ~path
+              ~location
+              ~model_name:(Reference.show name)
               ~resolution:(Resolution.global_resolution resolution)
               ~annotation_kind
               ~callable_annotation
@@ -1996,7 +2007,6 @@ let create ~resolution ?path ~configuration ~rule_filter source =
               ~sinks_to_keep
               accumulator
               annotation)
-        |> lift_error
       in
       model
       >>= adjust_mode_and_skipped_overrides
@@ -2094,6 +2104,9 @@ let create_model_from_annotations ~resolution ~callable ~sources_to_keep ~sinks_
           accumulator
           >>= fun accumulator ->
           add_taint_annotation_to_model
+            ~path:None
+            ~location:Location.any
+            ~model_name:"Model query"
             ~resolution:global_resolution
             ~annotation_kind
             ~callable_annotation
@@ -2101,7 +2114,6 @@ let create_model_from_annotations ~resolution ~callable ~sources_to_keep ~sinks_
             ~sinks_to_keep
             accumulator
             annotation)
-      |> map_error ~f:(fun error -> invalid_model_error error)
 
 
 let verify_model_syntax ~path ~source =
