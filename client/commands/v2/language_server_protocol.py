@@ -372,3 +372,19 @@ class DidCloseTextDocumentParameters:
         parameters: json_rpc.Parameters,
     ) -> "DidCloseTextDocumentParameters":
         return _parse_parameters(parameters, target=DidCloseTextDocumentParameters)
+
+
+@dataclasses_json.dataclass_json(
+    letter_case=dataclasses_json.LetterCase.CAMEL,
+    undefined=dataclasses_json.Undefined.EXCLUDE,
+)
+@dataclasses.dataclass(frozen=True)
+class DidSaveTextDocumentParameters:
+    text_document: TextDocumentIdentifier
+    text: Optional[str] = None
+
+    @staticmethod
+    def from_json_rpc_parameters(
+        parameters: json_rpc.Parameters,
+    ) -> "DidSaveTextDocumentParameters":
+        return _parse_parameters(parameters, target=DidSaveTextDocumentParameters)

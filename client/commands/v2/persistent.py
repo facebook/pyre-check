@@ -267,6 +267,22 @@ class Server:
         except KeyError:
             LOG.warning(f"Trying to close an un-opened file: {document_path}")
 
+    async def process_did_save_request(
+        self, parameters: lsp.DidSaveTextDocumentParameters
+    ) -> None:
+        document_path = parameters.text_document.document_uri().to_file_path()
+        if document_path is None:
+            raise json_rpc.InvalidRequestError(
+                f"Document URI is not a file: {parameters.text_document.uri}"
+            )
+
+        # Attempt to trigger a background Pyre server start on each file save
+        if (
+            not self.pyre_manager.is_task_running()
+            and document_path in self.state.opened_documents
+        ):
+            await self.pyre_manager.ensure_task_running()
+
     async def _run(self) -> int:
         while True:
             async with _read_lsp_request(
@@ -301,6 +317,17 @@ class Server:
                         )
                     await self.process_close_request(
                         lsp.DidCloseTextDocumentParameters.from_json_rpc_parameters(
+                            parameters
+                        )
+                    )
+                elif request.method == "textDocument/didSave":
+                    parameters = request.parameters
+                    if parameters is None:
+                        raise json_rpc.InvalidRequestError(
+                            "Missing parameters for didSave method"
+                        )
+                    await self.process_did_save_request(
+                        lsp.DidSaveTextDocumentParameters.from_json_rpc_parameters(
                             parameters
                         )
                     )

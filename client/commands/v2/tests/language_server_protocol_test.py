@@ -33,6 +33,7 @@ from ..language_server_protocol import (
     TextDocumentItem,
     DidCloseTextDocumentParameters,
     TextDocumentIdentifier,
+    DidSaveTextDocumentParameters,
 )
 
 T = TypeVar("T")
@@ -291,5 +292,40 @@ class LSPParsingTest(testslide.TestCase):
                 text_document=TextDocumentIdentifier(
                     uri="file:///home/user/test.py",
                 )
+            ),
+        )
+
+    def test_parse_did_save(self) -> None:
+        assert_parsed = functools.partial(
+            self.assert_parsed, DidSaveTextDocumentParameters.from_json_rpc_parameters
+        )
+        assert_not_parsed = functools.partial(
+            self.assert_not_parsed,
+            DidSaveTextDocumentParameters.from_json_rpc_parameters,
+        )
+
+        assert_not_parsed({})
+        assert_not_parsed({"no_text_document": 42})
+
+        assert_parsed(
+            {
+                "textDocument": {
+                    "uri": "file:///home/user/test.py",
+                }
+            },
+            expected=DidSaveTextDocumentParameters(
+                text_document=TextDocumentIdentifier(uri="file:///home/user/test.py")
+            ),
+        )
+        assert_parsed(
+            {
+                "textDocument": {
+                    "uri": "file:///home/user/test.py",
+                },
+                "text": "foo",
+            },
+            expected=DidSaveTextDocumentParameters(
+                text_document=TextDocumentIdentifier(uri="file:///home/user/test.py"),
+                text="foo",
             ),
         )
