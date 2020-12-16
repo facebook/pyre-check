@@ -181,6 +181,7 @@ let class_definitions resolution reference =
   match ClassDefinitionsCache.get reference with
   | Some result -> result
   | None ->
+      let open Option in
       let result =
         containing_source resolution reference
         >>| Preprocessing.classes
@@ -356,7 +357,7 @@ let rec parse_annotations ~configuration ~parameters annotation =
     List.map kinds ~f:(fun (kind, subkind) ->
         AnnotationParser.parse_source ~allowed:configuration.sources ?subkind kind
         >>| fun source -> Source { source; breadcrumbs; path = []; leaf_name_provided = false })
-    |> Core.Result.all
+    |> all
   in
   let get_sink_kinds expression =
     let open Configuration in
@@ -365,7 +366,7 @@ let rec parse_annotations ~configuration ~parameters annotation =
     List.map kinds ~f:(fun (kind, subkind) ->
         AnnotationParser.parse_sink ~allowed:configuration.sinks ?subkind kind
         >>| fun sink -> Sink { sink; breadcrumbs; path = []; leaf_name_provided = false })
-    |> Core.Result.all
+    |> all
   in
   let get_taint_in_taint_out expression =
     let open Configuration in
@@ -377,7 +378,7 @@ let rec parse_annotations ~configuration ~parameters annotation =
         List.map kinds ~f:(fun (kind, _) ->
             AnnotationParser.parse_sink ~allowed:configuration.sinks kind
             >>| fun sink -> Tito { tito = sink; breadcrumbs; path = [] })
-        |> Core.Result.all
+        |> all
   in
   let extract_attach_features ~name expression =
     let keep_features = function
@@ -497,8 +498,7 @@ let rec parse_annotations ~configuration ~parameters annotation =
                         }
                   | _ -> annotation
                 in
-                parse_annotation taint
-                |> Core.Result.map ~f:(List.map ~f:add_cross_repository_information)
+                parse_annotation taint |> map ~f:(List.map ~f:add_cross_repository_information)
             | _ ->
                 Error
                   "Cross repository taint must be of the form CrossRepositoryTaint[taint, \
@@ -557,8 +557,7 @@ let rec parse_annotations ~configuration ~parameters annotation =
                         }
                   | _ -> annotation
                 in
-                parse_annotation taint
-                |> Core.Result.map ~f:(List.map ~f:add_cross_repository_information)
+                parse_annotation taint |> map ~f:(List.map ~f:add_cross_repository_information)
             | _ ->
                 Error
                   "Cross repository taint anchor must be of the form \
@@ -571,8 +570,8 @@ let rec parse_annotations ~configuration ~parameters annotation =
           when [%compare.equal: string option] (base_name callee) (Some "Union") ->
             List.map expressions ~f:(fun expression ->
                 parse_annotations ~configuration ~parameters (Some expression))
-            |> Core.Result.all
-            |> Core.Result.map ~f:List.concat
+            |> all
+            |> map ~f:List.concat
         | Call { callee; arguments = { Call.Argument.value = expression; _ } :: _ } -> (
             let open Core.Result in
             match base_name callee with
@@ -802,17 +801,17 @@ let parse_find_clause ~path ({ Node.value; location } as expression) =
   match value with
   | Expression.String { StringLiteral.value; _ } -> (
       match value with
-      | "functions" -> Core.Result.Ok ModelQuery.FunctionModel
-      | "methods" -> Core.Result.Ok ModelQuery.MethodModel
+      | "functions" -> Ok ModelQuery.FunctionModel
+      | "methods" -> Ok ModelQuery.MethodModel
       | unsupported ->
-          Core.Result.Error
+          Error
             (invalid_model_error
                ~path
                ~location
                ~name:"model query"
                (Format.sprintf "Unsupported find clause `%s`" unsupported)) )
   | _ ->
-      Core.Result.Error
+      Error
         (invalid_model_error
            ~path
            ~location
@@ -941,7 +940,7 @@ let parse_where_clause ~path ({ Node.value; location } as expression) =
           arguments = constraints;
         } ->
         List.map constraints ~f:(fun { Call.Argument.value; _ } -> parse_constraint value)
-        |> Core.Result.all
+        |> all
         >>| fun constraints -> ModelQuery.AnyOf constraints
     | Expression.Call
         {
@@ -1036,14 +1035,14 @@ let parse_model_clause ~path ~configuration ({ Node.value; location } as express
                      (Format.sprintf "Unexpected taint annotation `%s`" parametric_annotation)) )
         | _ ->
             parse_annotations ~configuration ~parameters:[] (Some expression)
-            |> Core.Result.map_error ~f:(fun error ->
+            |> map_error ~f:(fun error ->
                    invalid_model_error ~path ~location ~name:"model query" error)
             >>| List.map ~f:(fun taint -> ModelQuery.TaintAnnotation taint)
       in
 
       match Node.value taint_expression with
       | Expression.List taint_annotations ->
-          List.map taint_annotations ~f:parse_produced_taint |> Core.Result.all >>| List.concat
+          List.map taint_annotations ~f:parse_produced_taint |> all >>| List.concat
       | _ -> parse_produced_taint taint_expression
     in
     match value with
@@ -1099,7 +1098,7 @@ let parse_model_clause ~path ~configuration ({ Node.value; location } as express
 
 
 let find_positional_parameter_annotation position parameters =
-  List.nth parameters position >>= Type.Record.Callable.RecordParameter.annotation
+  List.nth parameters position |> Option.bind ~f:Type.Record.Callable.RecordParameter.annotation
 
 
 let find_named_parameter_annotation search_name parameters =
@@ -1109,7 +1108,7 @@ let find_named_parameter_annotation search_name parameters =
     | Type.Record.Callable.RecordParameter.Named { name; _ } -> String.equal name search_name
     | _ -> false
   in
-  List.find ~f:has_name parameters >>= Type.Record.Callable.RecordParameter.annotation
+  List.find ~f:has_name parameters |> Option.bind ~f:Type.Record.Callable.RecordParameter.annotation
 
 
 let add_signature_based_breadcrumbs ~resolution root ~callable_annotation breadcrumbs =
@@ -1141,9 +1140,10 @@ let add_signature_based_breadcrumbs ~resolution root ~callable_annotation breadc
 
 
 let parse_parameter_taint ~configuration ~parameters (root, _name, parameter) =
+  let open Core.Result in
   let annotation = parameter.Node.value.Parameter.annotation in
   parse_annotations ~configuration ~parameters annotation
-  |> Core.Result.map ~f:(List.map ~f:(fun annotation -> annotation, ParameterAnnotation root))
+  |> map ~f:(List.map ~f:(fun annotation -> annotation, ParameterAnnotation root))
 
 
 let add_taint_annotation_to_model
@@ -1201,8 +1201,9 @@ let add_taint_annotation_to_model
 
 
 let parse_return_taint ~configuration ~parameters expression =
+  let open Core.Result in
   parse_annotations ~configuration ~parameters expression
-  |> Core.Result.map ~f:(List.map ~f:(fun annotation -> annotation, ReturnAnnotation))
+  |> map ~f:(List.map ~f:(fun annotation -> annotation, ReturnAnnotation))
 
 
 type parsed_signature_or_query =
@@ -1252,6 +1253,7 @@ let callable_annotation
             None
       | _ -> None
     in
+    let open Option in
     class_definitions global_resolution parent
     >>= List.hd
     >>| (fun definition -> definition.Node.value.Class.body)
@@ -1336,7 +1338,7 @@ let adjust_mode_and_skipped_overrides
                       in
                       let sanitize_tito =
                         parse_annotations ~configuration ~parameters:[] (Some value)
-                        |> Core.Result.map_error ~f:(fun error ->
+                        |> map_error ~f:(fun error ->
                                invalid_model_error
                                  ~path
                                  ~location
@@ -1385,7 +1387,7 @@ let adjust_mode_and_skipped_overrides
                                     (show_taint_annotation taint_annotation)))
                       in
                       parse_annotations ~configuration ~parameters:[] (Some value)
-                      |> Core.Result.map_error ~f:(fun error ->
+                      |> map_error ~f:(fun error ->
                              invalid_model_error
                                ~path
                                ~location
@@ -1410,8 +1412,7 @@ let adjust_mode_and_skipped_overrides
     in
     try List.fold_result top_level_decorators ~f:adjust_mode ~init:(model.mode, None) with
     | Model.InvalidModel error ->
-        Core.Result.Error
-          (invalid_model_error ~path ~location ~name:(Reference.show define_name) error)
+        Error (invalid_model_error ~path ~location ~name:(Reference.show define_name) error)
   in
   mode_and_skipped_override
   >>| fun (mode, skipped_override) -> { model with mode }, skipped_override
@@ -1451,6 +1452,7 @@ let compute_sources_and_sinks_to_keep ~configuration ~rule_filter =
 
 
 let create ~resolution ?path ~configuration ~rule_filter source =
+  let open Core.Result in
   let sources_to_keep, sinks_to_keep =
     compute_sources_and_sinks_to_keep ~configuration ~rule_filter
   in
@@ -1466,8 +1468,8 @@ let create ~resolution ?path ~configuration ~rule_filter source =
       } ->
           let class_candidate =
             Reference.prefix name
-            >>| GlobalResolution.parse_reference global_resolution
-            >>= GlobalResolution.class_definition global_resolution
+            |> Option.map ~f:(GlobalResolution.parse_reference global_resolution)
+            |> Option.bind ~f:(GlobalResolution.class_definition global_resolution)
           in
           let call_target =
             match class_candidate with
@@ -1476,7 +1478,7 @@ let create ~resolution ?path ~configuration ~rule_filter source =
             | Some _ -> Callable.create_method name
             | None -> Callable.create_function name
           in
-          Core.Result.Ok [ParsedSignature (signature, location, call_target)]
+          Ok [ParsedSignature (signature, location, call_target)]
       | {
        Node.value =
          Class
@@ -1529,91 +1531,91 @@ let create ~resolution ?path ~configuration ~rule_filter source =
             || not (List.is_empty extra_decorators)
           then
             class_definitions global_resolution name
-            >>= List.hd
-            >>| (fun { Node.value = { Class.body; _ }; _ } ->
-                  let signature { Node.value; location } =
-                    match value with
-                    | Statement.Define
-                        {
-                          Define.signature =
-                            {
-                              Define.Signature.name = { Node.value = name; _ };
-                              parameters;
-                              decorators;
-                              _;
-                            } as signature;
-                          _;
-                        } ->
-                        let signature ~extra_decorators ~source_annotation ~sink_annotation =
-                          let parameters =
-                            let sink_parameter parameter =
-                              let update_annotation { Parameter.name; value; _ } =
-                                let value =
-                                  match value with
-                                  | None -> None
-                                  | Some _ ->
-                                      Some (Node.create_with_default_location Expression.Ellipsis)
-                                in
-                                { Parameter.name; annotation = sink_annotation; value }
-                              in
-                              Node.map parameter ~f:update_annotation
-                            in
-                            List.map parameters ~f:sink_parameter
-                          in
-                          let decorators =
-                            if
-                              signature_is_property signature
-                              || Define.Signature.is_property_setter signature
-                            then
-                              decorators
-                            else
-                              []
-                          in
-                          let decorators = List.rev_append extra_decorators decorators in
-                          ParsedSignature
-                            ( {
-                                signature with
-                                Define.Signature.parameters;
-                                return_annotation = source_annotation;
-                                decorators;
-                              },
-                              location,
-                              Callable.create_method name )
-                        in
-                        let sources =
-                          List.map source_annotations ~f:(fun source_annotation ->
-                              signature
-                                ~extra_decorators:[]
-                                ~source_annotation:(Some source_annotation)
-                                ~sink_annotation:None)
-                        in
-                        let sinks =
-                          List.map sink_annotations ~f:(fun sink_annotation ->
-                              signature
-                                ~extra_decorators:[]
-                                ~source_annotation:None
-                                ~sink_annotation:(Some sink_annotation))
-                        in
-                        let skip_analysis_or_overrides_defines =
-                          if not (List.is_empty extra_decorators) then
-                            [
-                              signature
-                                ~extra_decorators
-                                ~source_annotation:None
-                                ~sink_annotation:None;
-                            ]
-                          else
-                            []
-                        in
-                        skip_analysis_or_overrides_defines @ sources @ sinks
-                    | _ -> []
-                  in
+            |> Option.bind ~f:List.hd
+            |> Option.map ~f:(fun { Node.value = { Class.body; _ }; _ } ->
+                   let signature { Node.value; location } =
+                     match value with
+                     | Statement.Define
+                         {
+                           Define.signature =
+                             {
+                               Define.Signature.name = { Node.value = name; _ };
+                               parameters;
+                               decorators;
+                               _;
+                             } as signature;
+                           _;
+                         } ->
+                         let signature ~extra_decorators ~source_annotation ~sink_annotation =
+                           let parameters =
+                             let sink_parameter parameter =
+                               let update_annotation { Parameter.name; value; _ } =
+                                 let value =
+                                   match value with
+                                   | None -> None
+                                   | Some _ ->
+                                       Some (Node.create_with_default_location Expression.Ellipsis)
+                                 in
+                                 { Parameter.name; annotation = sink_annotation; value }
+                               in
+                               Node.map parameter ~f:update_annotation
+                             in
+                             List.map parameters ~f:sink_parameter
+                           in
+                           let decorators =
+                             if
+                               signature_is_property signature
+                               || Define.Signature.is_property_setter signature
+                             then
+                               decorators
+                             else
+                               []
+                           in
+                           let decorators = List.rev_append extra_decorators decorators in
+                           ParsedSignature
+                             ( {
+                                 signature with
+                                 Define.Signature.parameters;
+                                 return_annotation = source_annotation;
+                                 decorators;
+                               },
+                               location,
+                               Callable.create_method name )
+                         in
+                         let sources =
+                           List.map source_annotations ~f:(fun source_annotation ->
+                               signature
+                                 ~extra_decorators:[]
+                                 ~source_annotation:(Some source_annotation)
+                                 ~sink_annotation:None)
+                         in
+                         let sinks =
+                           List.map sink_annotations ~f:(fun sink_annotation ->
+                               signature
+                                 ~extra_decorators:[]
+                                 ~source_annotation:None
+                                 ~sink_annotation:(Some sink_annotation))
+                         in
+                         let skip_analysis_or_overrides_defines =
+                           if not (List.is_empty extra_decorators) then
+                             [
+                               signature
+                                 ~extra_decorators
+                                 ~source_annotation:None
+                                 ~sink_annotation:None;
+                             ]
+                           else
+                             []
+                         in
+                         skip_analysis_or_overrides_defines @ sources @ sinks
+                     | _ -> []
+                   in
 
-                  List.concat_map body ~f:signature)
+                   List.concat_map body ~f:signature)
             |> Option.value ~default:[]
-            |> Core.Result.return
+            |> return
           else
-            Core.Result.Ok []
+            Ok []
       | { Node.value = Class { Class.name = { Node.value = name; _ }; _ }; location } ->
           Error
             (invalid_model_error
@@ -1635,11 +1637,11 @@ let create ~resolution ?path ~configuration ~rule_filter source =
              && Expression.show annotation |> String.is_prefix ~prefix:"TaintSource[" -> (
           let name = name_to_reference_exn name in
           match ModelVerifier.verify_global ~resolution ~name with
-          | Core.Result.Error error ->
+          | Error error ->
               let error_message = ModelVerifier.display_verification_error ~path ~location error in
               Log.error "%s" error_message;
-              Core.Result.Error error
-          | Core.Result.Ok () ->
+              Error error
+          | Ok () ->
               let signature =
                 {
                   Define.Signature.name = Node.create ~location:name_location name;
@@ -1652,7 +1654,7 @@ let create ~resolution ?path ~configuration ~rule_filter source =
                   nesting_define = None;
                 }
               in
-              Core.Result.Ok [ParsedSignature (signature, location, Callable.create_object name)] )
+              Ok [ParsedSignature (signature, location, Callable.create_object name)] )
       | {
        Node.value =
          Assign
@@ -1668,11 +1670,11 @@ let create ~resolution ?path ~configuration ~rule_filter source =
              || Expression.show annotation |> String.is_prefix ~prefix:"TaintInTaintOut[" -> (
           let name = name_to_reference_exn name in
           match ModelVerifier.verify_global ~resolution ~name with
-          | Core.Result.Error error ->
+          | Error error ->
               let error_message = ModelVerifier.display_verification_error ~path ~location error in
               Log.error "%s" error_message;
-              Core.Result.Error error
-          | Core.Result.Ok () ->
+              Error error
+          | Ok () ->
               let signature =
                 {
                   Define.Signature.name = Node.create ~location:name_location name;
@@ -1686,7 +1688,7 @@ let create ~resolution ?path ~configuration ~rule_filter source =
                   nesting_define = None;
                 }
               in
-              Core.Result.Ok [ParsedSignature (signature, location, Callable.create_object name)] )
+              Ok [ParsedSignature (signature, location, Callable.create_object name)] )
       | {
        Node.value =
          Assign
@@ -1700,13 +1702,13 @@ let create ~resolution ?path ~configuration ~rule_filter source =
         when is_simple_name name && Expression.show annotation |> String.equal "Sanitize" -> (
           let name = name_to_reference_exn name in
           match ModelVerifier.verify_global ~resolution ~name with
-          | Core.Result.Error error ->
+          | Error error ->
               let error_message =
                 ModelVerifier.display_verification_error ~path ~location:signature.location error
               in
               Log.error "%s" error_message;
-              Core.Result.Error error
-          | Core.Result.Ok () ->
+              Error error
+          | Ok () ->
               let signature =
                 {
                   Define.Signature.name = Node.create ~location:name_location name;
@@ -1726,7 +1728,7 @@ let create ~resolution ?path ~configuration ~rule_filter source =
                   nesting_define = None;
                 }
               in
-              Core.Result.Ok [ParsedSignature (signature, location, Callable.create_object name)] )
+              Ok [ParsedSignature (signature, location, Callable.create_object name)] )
       | {
        Node.value =
          Expression
@@ -1748,7 +1750,7 @@ let create ~resolution ?path ~configuration ~rule_filter source =
              { Call.Argument.name = Some { Node.value = "where"; _ }; value = where_clause };
              { Call.Argument.name = Some { Node.value = "model"; _ }; value = model_clause };
             ] ->
-                Core.Result.Ok
+                Ok
                   ( None,
                     parse_find_clause ~path find_clause,
                     parse_where_clause ~path where_clause,
@@ -1762,13 +1764,13 @@ let create ~resolution ?path ~configuration ~rule_filter source =
              { Call.Argument.name = Some { Node.value = "where"; _ }; value = where_clause };
              { Call.Argument.name = Some { Node.value = "model"; _ }; value = model_clause };
             ] ->
-                Core.Result.Ok
+                Ok
                   ( Some name,
                     parse_find_clause ~path find_clause,
                     parse_where_clause ~path where_clause,
                     parse_model_clause ~path ~configuration model_clause )
             | _ ->
-                Core.Result.Error
+                Error
                   (invalid_model_error
                      ~path
                      ~location
@@ -1776,7 +1778,6 @@ let create ~resolution ?path ~configuration ~rule_filter source =
                      "Malformed model query arguments: expected a find, where and model clause.")
           in
 
-          let open Core.Result in
           clauses
           >>= fun (name, find_clause, where_clause, model_clause) ->
           find_clause
@@ -1785,7 +1786,7 @@ let create ~resolution ?path ~configuration ~rule_filter source =
           >>= fun query ->
           model_clause
           >>| fun productions -> [ParsedQuery { ModelQuery.rule_kind; query; productions; name }]
-      | _ -> Core.Result.Ok []
+      | _ -> Ok []
     in
     String.split ~on:'\n' source
     |> Parser.parse
@@ -1801,7 +1802,6 @@ let create ~resolution ?path ~configuration ~rule_filter source =
         location,
         call_target )
     =
-    let open Core.Result in
     (* Strip off the decorators only used for taint annotations. *)
     let top_level_decorators, define =
       let is_taint_decorator decorator =
@@ -1902,8 +1902,8 @@ let create ~resolution ?path ~configuration ~rule_filter source =
         match
           callable_annotation >>= ModelVerifier.verify_signature ~normalized_model_parameters ~name
         with
-        | Core.Result.Ok () -> ()
-        | Core.Result.Error error ->
+        | Ok () -> ()
+        | Error error ->
             let error_message = ModelVerifier.display_verification_error ~path ~location error in
             Log.error "%s" error_message;
             raise (ClassifiedInvalidModel error)
@@ -1917,7 +1917,7 @@ let create ~resolution ?path ~configuration ~rule_filter source =
         >>| fun return_taint -> List.rev_append parameter_taint return_taint
       in
       let lift_error =
-        Core.Result.map_error ~f:(fun error ->
+        map_error ~f:(fun error ->
             invalid_model_error ~path ~location ~name:(Reference.show name) error)
       in
       let model =
@@ -1961,9 +1961,9 @@ let create ~resolution ?path ~configuration ~rule_filter source =
       | ParsedQuery query -> signatures, query :: queries)
   in
   List.rev_append
-    (List.map errors ~f:(fun error -> Core.Result.Error error))
+    (List.map errors ~f:(fun error -> Error error))
     ( List.map signatures ~f:create_model
-    |> List.rev_append (List.map queries ~f:(fun query -> Core.Result.return (Query query))) )
+    |> List.rev_append (List.map queries ~f:(fun query -> return (Query query))) )
 
 
 let parse ~resolution ?path ?rule_filter ~source ~configuration models =
@@ -2043,7 +2043,7 @@ let create_model_from_annotations ~resolution ~callable ~sources_to_keep ~sinks_
             ~sinks_to_keep
             accumulator
             annotation)
-      |> Core.Result.map_error ~f:(fun error -> invalid_model_error error)
+      |> map_error ~f:(fun error -> invalid_model_error error)
 
 
 let verify_model_syntax ~path ~source =
