@@ -75,7 +75,8 @@ let display { kind = error; path; location } =
         in
         ( name,
           Format.asprintf
-            "Model signature parameters do not match implementation `%s`. Reason%s: %s."
+            "Model signature parameters for `%s` do not match implementation `%s`. Reason%s: %s."
+            name
             (Type.show_for_hover (Type.Callable callable_type))
             (if List.length reasons > 1 then "s" else "")
             (String.concat reasons ~sep:"; ") )
