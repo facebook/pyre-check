@@ -28,6 +28,7 @@ module.exports = {
   baseUrl: '/',
   organizationName: 'facebook',
   projectName: 'pyre-check',
+  onBrokenLinks: 'warn',
   favicon: 'img/favicon.ico',
   scripts: ['https://buttons.github.io/buttons.js'],
   plugins: [
@@ -83,10 +84,7 @@ module.exports = {
             },
             {
               label: 'Static Analysis (Pysa)',
-              to: fbContent({
-                internal: 'docs/fb/pysa-basics-internal',
-                external: 'docs/pysa-basics',
-              }),
+              to: 'docs/pysa-basics',
             },
           ],
         },

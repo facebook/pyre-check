@@ -4,10 +4,14 @@ title: Overview
 sidebar_label: Overview
 ---
 
+import Internal from './fb/pysa_basics_internal.md';
+
 Pyre has applications beyond type checking python code: it can also run static
 analysis, more specifically called **Taint Analysis**, to identify potential security issues.
 The Python Static Analyzer feature of Pyre is usually abbreviated to Pysa
 (pronounced like the Leaning Tower of Pisa).
+
+<Internal />
 
 ## Taint Analysis
 
