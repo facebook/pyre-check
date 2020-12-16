@@ -225,14 +225,5 @@ let verify_global ~path ~location ~resolution ~name =
               kind = GlobalVerificationError { name = Reference.show name; message = error };
             }
     | _ ->
-        let error =
-          Format.sprintf
-            "`%s` does not correspond to a class's attribute or a global."
-            (Reference.show name)
-        in
         Result.Error
-          {
-            ModelVerificationError.path;
-            location;
-            kind = GlobalVerificationError { name = Reference.show name; message = error };
-          }
+          { ModelVerificationError.path; location; kind = NotInEnvironment (Reference.show name) }
