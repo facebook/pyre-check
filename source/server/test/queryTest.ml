@@ -154,8 +154,6 @@ let test_parse_query context =
   assert_parses "path_of_module(a.b.c)" (PathOfModule !&"a.b.c");
   assert_fails_to_parse "path_of_module('a.b.c')";
   assert_fails_to_parse "path_of_module(a.b, b.c)";
-  assert_parses "compute_hashes_to_keys()" ComputeHashesToKeys;
-  assert_fails_to_parse "compute_hashes_to_keys(foo)";
   let path =
     let path = Path.create_relative ~root:local_root ~relative:"decode.me" in
     File.write (File.create path ~content:"key,value\nsecond_key,second_value,third_value");

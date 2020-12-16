@@ -227,13 +227,6 @@ let rec process_type_query_request
         raise (ClassHierarchy.Untracked annotation)
     in
     let global_environment = TypeEnvironment.ReadOnly.global_environment read_only_environment in
-    let class_metadata_environment =
-      GlobalResolution.class_metadata_environment global_resolution
-    in
-    let class_hierarchy_environment =
-      GlobalResolution.class_hierarchy_environment global_resolution
-    in
-    let alias_environment = GlobalResolution.alias_environment global_resolution in
     let unannotated_global_environment =
       GlobalResolution.unannotated_global_environment global_resolution
     in
@@ -338,35 +331,6 @@ let rec process_type_query_request
                  { TypeQuery.callee; locations = List.map locations ~f:instantiate })
         in
         TypeQuery.Response (TypeQuery.CalleesWithLocation callees)
-    | TypeQuery.ComputeHashesToKeys ->
-        (* Type order. *)
-        let extend_map map ~new_map =
-          Map.merge_skewed map new_map ~combine:(fun ~key:_ value _ -> value)
-        in
-        let qualifiers = ModuleTracker.tracked_explicit_modules module_tracker in
-        (* Environments *)
-        let map =
-          List.fold
-            [
-              ClassMetadataEnvironment.ReadOnly.hash_to_key_map class_metadata_environment;
-              ClassHierarchyEnvironment.ReadOnly.hash_to_key_map class_hierarchy_environment;
-              AliasEnvironment.ReadOnly.hash_to_key_map alias_environment;
-              UnannotatedGlobalEnvironment.ReadOnly.hash_to_key_map unannotated_global_environment;
-            ]
-            ~f:(fun sofar new_map -> extend_map sofar ~new_map)
-            ~init:(AnnotatedGlobalEnvironment.ReadOnly.hash_to_key_map global_environment)
-        in
-        (* AST shared memory. *)
-        let map =
-          map |> extend_map ~new_map:(AstEnvironment.shared_memory_hash_to_key_map qualifiers)
-        in
-        (* TODO (T56904923): Track the CallGraph table consistency *)
-        map
-        (* TODO (T57043920): Track TypeEnvironment consistency *)
-        |> Map.to_alist
-        |> List.sort ~compare:(fun (left, _) (right, _) -> String.compare left right)
-        |> List.map ~f:(fun (hash, key) -> { TypeQuery.hash; key })
-        |> fun response -> TypeQuery.Response (TypeQuery.FoundKeyMapping response)
     | TypeQuery.Defines module_or_class_names ->
         let ast_environment = TypeEnvironment.ReadOnly.ast_environment read_only_environment in
         let defines_of_module module_or_class_name =

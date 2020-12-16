@@ -39,7 +39,6 @@ let help () =
            given module or class."
     | DumpCallGraph ->
         Some "dump_call_graph(): Returns a comprehensive JSON of caller -> list of callees."
-    | ComputeHashesToKeys -> None
     | DumpClassHierarchy ->
         Some
           "dump_class_hierarchy(): Prints out the entire class hierarchy as Pyre understands it, \
@@ -87,7 +86,6 @@ let help () =
       Attributes (Reference.create "");
       Callees (Reference.create "");
       CalleesWithLocation (Reference.create "");
-      ComputeHashesToKeys;
       Defines [Reference.create ""];
       DumpCallGraph;
       DumpClassHierarchy;
@@ -166,7 +164,6 @@ let rec parse_query
           Request.TypeQueryRequest (CalleesWithLocation (reference name))
       | "defines", names -> Request.TypeQueryRequest (Defines (List.map names ~f:reference))
       | "dump_call_graph", [] -> Request.TypeQueryRequest DumpCallGraph
-      | "compute_hashes_to_keys", [] -> Request.TypeQueryRequest ComputeHashesToKeys
       | "dump_class_hierarchy", [] -> Request.TypeQueryRequest DumpClassHierarchy
       | "dump_memory_to_sqlite", arguments ->
           let path =

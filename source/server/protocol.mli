@@ -39,7 +39,6 @@ module TypeQuery : sig
     | Batch of request list
     | Callees of Reference.t
     | CalleesWithLocation of Reference.t
-    | ComputeHashesToKeys
     | Defines of Reference.t list
     | DumpCallGraph
     | DumpClassHierarchy
