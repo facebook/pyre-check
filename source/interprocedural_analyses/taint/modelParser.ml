@@ -126,8 +126,6 @@ end
 
 include T
 
-exception ClassifiedInvalidModel of ModelVerificationError.t
-
 let invalid_model_error ~path ~location ~name message =
   let model_origin =
     match path with
@@ -1871,154 +1869,146 @@ let create ~resolution ?path ~configuration ~rule_filter source =
       sanitizers, { define with decorators = nonsanitizers }
     in
     (* Make sure we know about what we model. *)
-    try
-      let callable_annotation =
-        callable_annotation ~location ~verify_decorators:true ~resolution define
+    let callable_annotation =
+      callable_annotation ~location ~verify_decorators:true ~resolution define
+    in
+    let call_target = (call_target :> Callable.t) in
+    let callable_annotation =
+      callable_annotation
+      >>= fun callable_annotation ->
+      if
+        Type.is_top (Annotation.annotation callable_annotation)
+        (* FIXME: We are relying on the fact that nonexistent functions&attributes resolve to
+           mutable callable annotation, while existing ones resolve to immutable callable
+           annotation. This is fragile! *)
+        && not (Annotation.is_immutable callable_annotation)
+      then
+        Error
+          (invalid_model_error
+             ~path
+             ~location
+             ~name:(Reference.show name)
+             "Modeled entity is not part of the environment!")
+      else
+        Ok callable_annotation
+    in
+    (* Check model matches callables primary signature. *)
+    let callable_annotation =
+      callable_annotation
+      >>| Annotation.annotation
+      >>| function
+      | Type.Callable t -> Some t
+      | Type.Parametric
+          { name = "BoundMethod"; parameters = [Type.Parameter.Single (Type.Callable t); _] } ->
+          Some t
+      | _ -> None
+    in
+    let normalized_model_parameters =
+      let parameters = AccessPath.Root.normalize_parameters parameters in
+      (* If there were parameters omitted from the model, the positioning will be off in the access
+         path conversion. Let's fix the positions after the fact to make sure that our models aren't
+         off. *)
+      let callable_parameter_names_to_positions =
+        match callable_annotation with
+        | Ok
+            (Some
+              {
+                Type.Callable.implementation =
+                  { Type.Callable.parameters = Type.Callable.Defined parameters; _ };
+                _;
+              }) ->
+            let name = function
+              | Type.Callable.Parameter.Named { name; _ }
+              | Type.Callable.Parameter.KeywordOnly { name; _ } ->
+                  Some name
+              | _ -> None
+            in
+            let add_parameter_to_position position map parameter =
+              match name parameter with
+              | Some name -> Map.set map ~key:(Identifier.sanitized name) ~data:position
+              | None -> map
+            in
+            List.foldi parameters ~f:add_parameter_to_position ~init:String.Map.empty
+        | _ -> String.Map.empty
       in
-      let call_target = (call_target :> Callable.t) in
-      let callable_annotation =
-        callable_annotation
-        >>= fun callable_annotation ->
-        if
-          Type.is_top (Annotation.annotation callable_annotation)
-          (* FIXME: We are relying on the fact that nonexistent functions&attributes resolve to
-             mutable callable annotation, while existing ones resolve to immutable callable
-             annotation. This is fragile! *)
-          && not (Annotation.is_immutable callable_annotation)
-        then
-          Error
-            (invalid_model_error
-               ~path
-               ~location
-               ~name:(Reference.show name)
-               "Modeled entity is not part of the environment!")
-        else
-          Ok callable_annotation
-      in
-      (* Check model matches callables primary signature. *)
-      let callable_annotation =
-        callable_annotation
-        >>| Annotation.annotation
-        >>| function
-        | Type.Callable t -> Some t
-        | Type.Parametric
-            { name = "BoundMethod"; parameters = [Type.Parameter.Single (Type.Callable t); _] } ->
-            Some t
-        | _ -> None
-      in
-      let normalized_model_parameters =
-        let parameters = AccessPath.Root.normalize_parameters parameters in
-        (* If there were parameters omitted from the model, the positioning will be off in the
-           access path conversion. Let's fix the positions after the fact to make sure that our
-           models aren't off. *)
-        let callable_parameter_names_to_positions =
-          match callable_annotation with
-          | Ok
-              (Some
+      let adjust_position (root, name, parameter) =
+        let root =
+          match root with
+          | AccessPath.Root.PositionalParameter { position; name; positional_only } ->
+              AccessPath.Root.PositionalParameter
                 {
-                  Type.Callable.implementation =
-                    { Type.Callable.parameters = Type.Callable.Defined parameters; _ };
-                  _;
-                }) ->
-              let name = function
-                | Type.Callable.Parameter.Named { name; _ }
-                | Type.Callable.Parameter.KeywordOnly { name; _ } ->
-                    Some name
-                | _ -> None
-              in
-              let add_parameter_to_position position map parameter =
-                match name parameter with
-                | Some name -> Map.set map ~key:(Identifier.sanitized name) ~data:position
-                | None -> map
-              in
-              List.foldi parameters ~f:add_parameter_to_position ~init:String.Map.empty
-          | _ -> String.Map.empty
+                  position =
+                    Map.find callable_parameter_names_to_positions name
+                    |> Option.value ~default:position;
+                  name;
+                  positional_only;
+                }
+          | _ -> root
         in
-        let adjust_position (root, name, parameter) =
-          let root =
-            match root with
-            | AccessPath.Root.PositionalParameter { position; name; positional_only } ->
-                AccessPath.Root.PositionalParameter
-                  {
-                    position =
-                      Map.find callable_parameter_names_to_positions name
-                      |> Option.value ~default:position;
-                    name;
-                    positional_only;
-                  }
-            | _ -> root
-          in
 
-          root, name, parameter
-        in
-        List.map parameters ~f:adjust_position
+        root, name, parameter
       in
-      let () =
-        match
-          callable_annotation
-          >>= ModelVerifier.verify_signature ~path ~location ~normalized_model_parameters ~name
-        with
-        | Ok () -> ()
-        | Error error ->
-            let error_message = ModelVerificationError.display error in
-            Log.error "%s" error_message;
-            raise (ClassifiedInvalidModel error)
-      in
-      let annotations =
-        List.map
-          normalized_model_parameters
-          ~f:
-            (parse_parameter_taint
-               ~path
-               ~location
-               ~model_name:(Reference.show name)
-               ~configuration
-               ~parameters)
-        |> all
-        >>| List.concat
-        >>= fun parameter_taint ->
-        parse_return_taint
-          ~path
-          ~location
-          ~model_name:(Reference.show name)
-          ~configuration
-          ~parameters
-          return_annotation
-        >>| fun return_taint -> List.rev_append parameter_taint return_taint
-      in
-      let model =
+      List.map parameters ~f:adjust_position
+    in
+    let annotations () =
+      List.map
+        normalized_model_parameters
+        ~f:
+          (parse_parameter_taint
+             ~path
+             ~location
+             ~model_name:(Reference.show name)
+             ~configuration
+             ~parameters)
+      |> all
+      >>| List.concat
+      >>= fun parameter_taint ->
+      parse_return_taint
+        ~path
+        ~location
+        ~model_name:(Reference.show name)
+        ~configuration
+        ~parameters
+        return_annotation
+      >>| fun return_taint -> List.rev_append parameter_taint return_taint
+    in
+    let model =
+      callable_annotation
+      >>= fun callable_annotation ->
+      ModelVerifier.verify_signature
+        ~path
+        ~location
+        ~normalized_model_parameters
+        ~name
         callable_annotation
-        >>= fun callable_annotation ->
+      >>= fun () ->
+      annotations ()
+      >>= fun annotations ->
+      List.fold_result
         annotations
-        >>= fun annotations ->
-        List.fold_result
-          annotations
-          ~init:TaintResult.empty_model
-          ~f:(fun accumulator (annotation, annotation_kind) ->
-            add_taint_annotation_to_model
-              ~path
-              ~location
-              ~model_name:(Reference.show name)
-              ~resolution:(Resolution.global_resolution resolution)
-              ~annotation_kind
-              ~callable_annotation
-              ~sources_to_keep
-              ~sinks_to_keep
-              accumulator
-              annotation)
-      in
-      model
-      >>= adjust_mode_and_skipped_overrides
+        ~init:TaintResult.empty_model
+        ~f:(fun accumulator (annotation, annotation_kind) ->
+          add_taint_annotation_to_model
             ~path
             ~location
-            ~configuration
-            ~top_level_decorators
-            ~define_name:name
-      >>| fun (model, skipped_override) ->
-      Model ({ model; call_target; is_obscure = false }, skipped_override)
-    with
-    (* TODO(T81363867): Clean these up. *)
-    | ClassifiedInvalidModel error -> Error error
+            ~model_name:(Reference.show name)
+            ~resolution:(Resolution.global_resolution resolution)
+            ~annotation_kind
+            ~callable_annotation
+            ~sources_to_keep
+            ~sinks_to_keep
+            accumulator
+            annotation)
+    in
+    model
+    >>= adjust_mode_and_skipped_overrides
+          ~path
+          ~location
+          ~configuration
+          ~top_level_decorators
+          ~define_name:name
+    >>| fun (model, skipped_override) ->
+    Model ({ model; call_target; is_obscure = false }, skipped_override)
   in
   let signatures, queries =
     List.fold signatures_and_queries ~init:([], []) ~f:(fun (signatures, queries) ->
