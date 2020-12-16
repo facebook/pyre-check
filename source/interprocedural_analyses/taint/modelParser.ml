@@ -1325,12 +1325,15 @@ let adjust_mode_and_skipped_overrides
                         = function
                         | Source { source; breadcrumbs = []; leaf_name_provided = false; path = [] }
                           ->
-                            source :: sanitized_tito_sources, sanitized_tito_sinks
+                            Ok (source :: sanitized_tito_sources, sanitized_tito_sinks)
                         | Sink { sink; breadcrumbs = []; leaf_name_provided = false; path = [] } ->
-                            sanitized_tito_sources, sink :: sanitized_tito_sinks
+                            Ok (sanitized_tito_sources, sink :: sanitized_tito_sinks)
                         | taint_annotation ->
-                            raise
-                              (Model.InvalidModel
+                            Error
+                              (invalid_model_error
+                                 ~path
+                                 ~location
+                                 ~name:(Reference.show define_name)
                                  (Format.sprintf
                                     "`%s` is not a supported TITO sanitizer."
                                     (show_taint_annotation taint_annotation)))
@@ -1343,7 +1346,7 @@ let adjust_mode_and_skipped_overrides
                                  ~location
                                  ~name:(Reference.show define_name)
                                  error)
-                        >>| List.fold ~init:([], []) ~f:add_tito_annotation
+                        >>= List.fold_result ~init:([], []) ~f:add_tito_annotation
                         >>| fun (sanitized_tito_sources, sanitized_tito_sinks) ->
                         Mode.SpecificTito { sanitized_tito_sources; sanitized_tito_sinks }
                       in
