@@ -34,6 +34,7 @@ type kind =
       name: Reference.t;
       actual_name: Reference.t;
     }
+  | NotInEnvironment of string
   (* TODO(T81363867): Remove this variant. *)
   | UnclassifiedError of {
       model_name: string;
@@ -85,6 +86,7 @@ let display { kind = error; path; location } =
             Reference.pp
             actual_name )
     | UnclassifiedError { model_name; message } -> model_name, message
+    | NotInEnvironment name -> name, Format.sprintf "`%s` is not part of the environment!" name
   in
 
   Format.sprintf "Invalid model for `%s`%s: %s" model_name model_origin message

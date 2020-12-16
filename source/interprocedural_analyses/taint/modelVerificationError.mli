@@ -32,6 +32,7 @@ type kind =
       name: Reference.t;
       actual_name: Reference.t;
     }
+  | NotInEnvironment of string
   | UnclassifiedError of {
       model_name: string;
       message: string;

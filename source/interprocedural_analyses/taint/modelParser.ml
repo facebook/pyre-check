@@ -1858,11 +1858,12 @@ let create ~resolution ?path ~configuration ~rule_filter source =
         && not (Annotation.is_immutable callable_annotation)
       then
         Error
-          (invalid_model_error
-             ~path
-             ~location
-             ~name:(Reference.show name)
-             "Modeled entity is not part of the environment!")
+          {
+            ModelVerificationError.kind =
+              ModelVerificationError.NotInEnvironment (Reference.show name);
+            path;
+            location;
+          }
       else
         Ok callable_annotation
     in
