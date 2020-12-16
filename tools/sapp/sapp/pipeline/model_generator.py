@@ -241,6 +241,7 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
         callee = callinfo["callee"]
         callee_port = callinfo["port"]
         titos = self._generate_tito(issue["filename"], callinfo, caller)
+        features = callinfo.get("features", [])
         call_tf, leaf_mapping_ids = self._generate_raw_trace_frame(
             kind,
             run=run,
@@ -254,6 +255,7 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
             type_interval=callinfo["type_interval"],
             titos=titos,
             annotations=callinfo.get("annotations", []),
+            features=features,
         )
         caller_leaf_ids = set()
         callee_leaf_ids = set()
@@ -337,6 +339,7 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
             leaves = (
                 entry["sources"] if kind is TraceKind.POSTCONDITION else entry["sinks"]
             )
+        features = entry.get("features", [])
         return self._generate_raw_trace_frame(
             kind,
             run=run,
@@ -350,6 +353,7 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
             leaves=leaves,
             type_interval=entry["type_interval"],
             annotations=entry.get("annotations", []),
+            features=features,
         )
 
     def _generate_raw_trace_frame(
@@ -366,6 +370,7 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
         leaves,
         type_interval,
         annotations,
+        features: List[str],
     ) -> Tuple[TraceFrame, Set[LeafMapping]]:
         leaf_kind = (
             SharedTextKind.SOURCE
@@ -417,6 +422,19 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
 
         for (leaf_record, depth) in leaf_records:
             self.graph.add_trace_frame_leaf_assoc(trace_frame, leaf_record, depth)
+
+        # Note that the "graph._trace_frame_leaf_assoc" table is really associated with
+        # the xdb table "trace_frame_message_assoc"
+        # Putting the features into this assoc table is the correct thing to do, even though
+        # the function to put it there is a bit odd.
+        # Note that "graph._save_trace_frame_leaf_assoc" which is called by the bulk_saver
+        # using "bulk_saver.add_trace_frame_leaf_assoc()" to drop into this table
+        # as documented in models.py "class TraceFrameLeafAssoc(Base, PrepareMixin, RecordMixin)"
+        for f in features:
+            contents = self._generate_issue_feature_contents(None, f)
+            for c in contents:
+                feature_record = self._get_shared_text(SharedTextKind.FEATURE, c)
+                self.graph.add_trace_frame_leaf_assoc(trace_frame, feature_record, 0)
 
         self.graph.add_trace_frame(trace_frame)
         self._generate_trace_annotations(
@@ -503,6 +521,7 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
             [(annotation["leaf_kind"], annotation["leaf_depth"])],
             annotation["type_interval"],
             [],  # no more annotations for a precond coming from an annotation
+            [],  # no breadcrumbs / features associated with the traces for annotations
         )
         self._generate_transitive_trace_frames(
             run, call_tf, {leaf_map.callee_leaf for leaf_map in leaf_mapping_ids}

@@ -368,7 +368,7 @@ class TraceGraph(object):
             for (leaf_id, depth) in leaf_ids:
                 leaf_text = self._shared_texts[leaf_id]
                 if (
-                    leaf_text.kind == SharedTextKind.FEATURE
+                    leaf_text.kind is SharedTextKind.FEATURE
                     or leaf_id in valid_frame_leaf_ids
                     or self._is_opposite_leaf(frame, leaf_text)
                 ):

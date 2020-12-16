@@ -163,7 +163,7 @@ class BaseParser(PipelineStep[InputFiles, DictEntries]):
             log.info("Parsing previous issue handles")
             for f in previous_issue_handles.file_handles():
                 handles = f.read().splitlines()
-                previous_handles = {handle for handle in handles}
+                previous_handles = set(handles)
         elif previous_inputfile:
             log.info("Parsing previous hh_server output")
             for typ, master_key, e in self._analysis_output_to_parsed_types(
