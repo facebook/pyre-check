@@ -127,19 +127,9 @@ end
 include T
 
 let invalid_model_error ~path ~location ~name message =
-  let model_origin =
-    match path with
-    | None -> ""
-    | Some path ->
-        Format.sprintf
-          " defined in `%s:%d`"
-          (Path.absolute path)
-          location.Location.start.Location.line
-  in
   {
     ModelVerificationError.kind =
-      ModelVerificationError.UnclassifiedError
-        (Format.asprintf "Invalid model for `%s`%s: %s" name model_origin message);
+      ModelVerificationError.UnclassifiedError { model_name = name; message };
     path;
     location;
   }

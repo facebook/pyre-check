@@ -32,7 +32,10 @@ type kind =
       name: Reference.t;
       actual_name: Reference.t;
     }
-  | UnclassifiedError of string
+  | UnclassifiedError of {
+      model_name: string;
+      message: string;
+    }
 
 type t = {
   kind: kind;

@@ -35,7 +35,10 @@ type kind =
       actual_name: Reference.t;
     }
   (* TODO(T81363867): Remove this variant. *)
-  | UnclassifiedError of string
+  | UnclassifiedError of {
+      model_name: string;
+      message: string;
+    }
 
 type t = {
   kind: kind;
@@ -50,42 +53,38 @@ let display { kind = error; path; location } =
     | Some path ->
         Format.sprintf " defined in `%s:%d`" (Path.absolute path) Location.(location.start.line)
   in
-  match error with
-  | GlobalVerificationError { name; message } ->
-      Format.asprintf "Invalid model for `%s`%s: %s" name model_origin message
-  | InvalidDefaultValue { callable_name; name; expression } ->
-      Format.sprintf
-        "Invalid model for `%s`%s: Default values of parameters must be `...`. Did you mean to \
-         write `%s: %s`?"
-        callable_name
-        model_origin
-        name
-        (Expression.show expression)
-  | IncompatibleModelError { name; callable_type; reasons } ->
-      let reasons =
-        List.map reasons ~f:(function
-            | UnexpectedPositionalOnlyParameter name ->
-                Format.sprintf "unexpected positional only parameter: `%s`" name
-            | UnexpectedNamedParameter name ->
-                Format.sprintf "unexpected named parameter: `%s`" name
-            | UnexpectedStarredParameter -> "unexpected star parameter"
-            | UnexpectedDoubleStarredParameter -> "unexpected star star parameter")
-      in
-      Format.asprintf
-        "Invalid model for `%s`%s: Model signature parameters do not match implementation `%s`. \
-         Reason%s: %s."
-        name
-        model_origin
-        (Type.show_for_hover (Type.Callable callable_type))
-        (if List.length reasons > 1 then "s" else "")
-        (String.concat reasons ~sep:"; ")
-  | ImportedFunctionModel { name; actual_name } ->
-      Format.asprintf
-        "Invalid model for `%a`%s: The modelled function is an imported function `%a`, please \
-         model it directly."
-        Reference.pp
-        name
-        model_origin
-        Reference.pp
-        actual_name
-  | UnclassifiedError error -> error
+  let model_name, message =
+    match error with
+    | GlobalVerificationError { name; message } -> name, message
+    | InvalidDefaultValue { callable_name; name; expression } ->
+        ( callable_name,
+          Format.sprintf
+            "Default values of parameters must be `...`. Did you mean to write `%s: %s`?"
+            name
+            (Expression.show expression) )
+    | IncompatibleModelError { name; callable_type; reasons } ->
+        let reasons =
+          List.map reasons ~f:(function
+              | UnexpectedPositionalOnlyParameter name ->
+                  Format.sprintf "unexpected positional only parameter: `%s`" name
+              | UnexpectedNamedParameter name ->
+                  Format.sprintf "unexpected named parameter: `%s`" name
+              | UnexpectedStarredParameter -> "unexpected star parameter"
+              | UnexpectedDoubleStarredParameter -> "unexpected star star parameter")
+        in
+        ( name,
+          Format.asprintf
+            "Model signature parameters do not match implementation `%s`. Reason%s: %s."
+            (Type.show_for_hover (Type.Callable callable_type))
+            (if List.length reasons > 1 then "s" else "")
+            (String.concat reasons ~sep:"; ") )
+    | ImportedFunctionModel { name; actual_name } ->
+        ( Reference.show name,
+          Format.asprintf
+            "The modelled function is an imported function `%a`, please model it directly."
+            Reference.pp
+            actual_name )
+    | UnclassifiedError { model_name; message } -> model_name, message
+  in
+
+  Format.sprintf "Invalid model for `%s`%s: %s" model_name model_origin message
