@@ -759,6 +759,15 @@ let test_add_constraint context =
     ~left:"typing.Callable[Ts, int]"
     ~right:"typing.Callable[[Named(A, int), Named(B, str)], int]"
     [];
+  assert_add ~left:"typing.Callable[..., int]" ~right:"typing.Callable[..., object]" [[]];
+  assert_add
+    ~left:"typing.Callable[..., int]"
+    ~right:"typing.Callable[[Named(a, int), Named(b, str)], int]"
+    [[]];
+  assert_add
+    ~left:"typing.Callable[[Named(a, int), Named(b, str)], int]"
+    ~right:"typing.Callable[[int, str], int]"
+    [[]];
 
   (* Map operator *)
   assert_add

@@ -853,6 +853,44 @@ let test_callback_protocols context =
       "Incompatible variable type [9]: y is declared to have type `ShouldNotMatch` but is used as \
        type `typing.Type[H]`.";
     ];
+
+  (* We should be able to pass a named callable type to a callable protocol that is generic in the
+     callable type.
+
+     This example is adapted from
+     https://github.com/pytest-dev/pytest/blob/5.4.x/src/_pytest/outcomes.py#L91-L158. *)
+  assert_type_errors
+    {|
+      from typing import Any, TypeVar, Callable, Type, Protocol, Optional, NoReturn, cast
+
+      class Exit(BaseException): pass
+
+      _F = TypeVar("_F", bound=Callable[..., object])
+      _ET = TypeVar("_ET", bound="Type[BaseException]")
+
+
+      class _WithException(Protocol[_F, _ET]):
+          Exception: _ET
+          __call__: _F
+
+
+      def _with_exception(exception_type: _ET) -> Callable[[_F], _WithException[_F, _ET]]: ...
+
+      @_with_exception(Exit)
+      def my_exit(msg: str, returncode: Optional[int] = None) -> "NoReturn": ...
+
+      reveal_type(my_exit)
+      my_exit(1)
+    |}
+    [
+      "Invalid type variable [34]: The type variable `Variable[_F (bound to typing.Callable[..., \
+       object])]` isn't present in the function's parameters.";
+      "Revealed type [-1]: Revealed type for `test.my_exit` is \
+       `_WithException[typing.Callable(my_exit)[[Named(msg, str), Named(returncode, Optional[int], \
+       default)], NoReturn], Type[Exit]]`.";
+      "Incompatible parameter type [6]: Expected `str` for 1st positional only parameter to call \
+       `my_exit` but got `int`.";
+    ];
   ()
 
 

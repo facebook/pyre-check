@@ -2680,6 +2680,111 @@ let test_meet _ =
   ()
 
 
+let test_meet_callable _ =
+  let assert_meet ?(order = default) left right expected =
+    assert_type_equal expected (meet order left right)
+  in
+  let named_int_to_int =
+    Type.Callable.create
+      ~name:(Reference.create "name")
+      ~parameters:
+        (Defined
+           [
+             Type.Callable.Parameter.Named { name = "a"; annotation = Type.integer; default = false };
+           ])
+      ~annotation:Type.integer
+      ()
+  in
+  assert_meet named_int_to_int named_int_to_int named_int_to_int;
+  let anonymous_str_to_int =
+    Type.Callable.create
+      ~parameters:
+        (Defined
+           [Type.Callable.Parameter.Named { name = "a"; annotation = Type.string; default = false }])
+      ~annotation:Type.integer
+      ()
+  in
+  let anonymous_positional_only_str_to_int =
+    Type.Callable.create
+      ~parameters:
+        (Defined
+           [
+             Type.Callable.Parameter.PositionalOnly
+               { index = 0; annotation = Type.string; default = false };
+           ])
+      ~annotation:Type.integer
+      ()
+  in
+  let anonymous_int_to_float =
+    Type.Callable.create
+      ~parameters:
+        (Defined
+           [
+             Type.Callable.Parameter.Named { name = "a"; annotation = Type.integer; default = false };
+           ])
+      ~annotation:Type.float
+      ()
+  in
+  let anonymous_union_int_str_to_int =
+    Type.Callable.create
+      ~parameters:
+        (Defined
+           [
+             Type.Callable.Parameter.Named
+               { name = "a"; annotation = Type.union [Type.integer; Type.string]; default = false };
+           ])
+      ~annotation:Type.integer
+      ()
+  in
+  assert_meet anonymous_int_to_float anonymous_str_to_int anonymous_union_int_str_to_int;
+  assert_meet anonymous_positional_only_str_to_int anonymous_str_to_int anonymous_str_to_int;
+
+  let anonymous_undefined_to_object = Type.Callable.create ~annotation:Type.object_primitive () in
+  let anonymous_undefined_to_int = Type.Callable.create ~annotation:Type.integer () in
+  let anonymous_str_named_b_to_int =
+    Type.Callable.create
+      ~parameters:
+        (Defined
+           [Type.Callable.Parameter.Named { name = "b"; annotation = Type.string; default = false }])
+      ~annotation:Type.integer
+      ()
+  in
+  assert_meet anonymous_str_to_int anonymous_str_named_b_to_int anonymous_undefined_to_int;
+  assert_meet
+    anonymous_positional_only_str_to_int
+    anonymous_undefined_to_object
+    anonymous_undefined_to_int;
+  assert_meet anonymous_str_to_int anonymous_undefined_to_object anonymous_undefined_to_int;
+  assert_meet named_int_to_int anonymous_undefined_to_object anonymous_undefined_to_int;
+  assert_meet anonymous_undefined_to_object named_int_to_int anonymous_undefined_to_int;
+  assert_meet named_int_to_int anonymous_str_to_int anonymous_union_int_str_to_int;
+  assert_meet anonymous_str_to_int named_int_to_int anonymous_union_int_str_to_int;
+
+  let overloaded_str_to_int =
+    Type.Callable.create
+      ~parameters:
+        (Defined
+           [Type.Callable.Parameter.Named { name = "a"; annotation = Type.string; default = false }])
+      ~annotation:(Type.union [Type.integer; Type.string])
+      ~overloads:
+        [
+          {
+            parameters =
+              Defined
+                [
+                  Type.Callable.Parameter.Named
+                    { name = "a"; annotation = Type.string; default = false };
+                ];
+            annotation = Type.integer;
+          };
+        ]
+      ()
+  in
+  assert_meet overloaded_str_to_int overloaded_str_to_int overloaded_str_to_int;
+  assert_meet overloaded_str_to_int anonymous_str_to_int Type.Bottom;
+  ()
+
+
 let () =
   "order"
   >::: [
@@ -2688,5 +2793,6 @@ let () =
          "less_or_equal_variance" >:: test_less_or_equal_variance;
          "is_compatible_with" >:: test_is_compatible_with;
          "meet" >:: test_meet;
+         "meet_callable" >:: test_meet_callable;
        ]
   |> Test.run
