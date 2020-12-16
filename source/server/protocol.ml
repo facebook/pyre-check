@@ -42,7 +42,6 @@ module TypeQuery = struct
     | Defines of Reference.t list
     | DumpCallGraph
     | DumpClassHierarchy
-    | DumpMemoryToSqlite of Path.t
     | Help of string
     | IsCompatibleWith of Expression.t * Expression.t
     | Join of Expression.t * Expression.t

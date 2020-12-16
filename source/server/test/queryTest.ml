@@ -133,24 +133,6 @@ let test_parse_query context =
     "save_server_state('state')"
     (SaveServerState (Path.create_absolute ~follow_symbolic_links:false "state"));
   assert_fails_to_parse "save_server_state(state)";
-  assert_parses
-    "dump_memory_to_sqlite()"
-    (DumpMemoryToSqlite (Path.create_relative ~root:local_root ~relative:".pyre/memory.sqlite"));
-  let memory_file, _ = bracket_tmpfile context in
-  assert_parses
-    (Format.sprintf "dump_memory_to_sqlite('%s')" memory_file)
-    (DumpMemoryToSqlite (Path.create_absolute memory_file));
-  assert_parses
-    (Format.sprintf "dump_memory_to_sqlite('a.sqlite')")
-    (DumpMemoryToSqlite
-       (Path.create_relative ~root:(Path.current_working_directory ()) ~relative:"a.sqlite"));
-  assert_parses
-    (Format.sprintf
-       "dump_memory_to_sqlite('%s/%s')"
-       (Path.absolute (Path.current_working_directory ()))
-       "absolute.sqlite")
-    (DumpMemoryToSqlite
-       (Path.create_relative ~root:(Path.current_working_directory ()) ~relative:"absolute.sqlite"));
   assert_parses "path_of_module(a.b.c)" (PathOfModule !&"a.b.c");
   assert_fails_to_parse "path_of_module('a.b.c')";
   assert_fails_to_parse "path_of_module(a.b, b.c)";

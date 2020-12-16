@@ -432,22 +432,6 @@ let rec process_type_query_request
           ClassHierarchy.to_json (GlobalResolution.class_hierarchy resolution) ~indices
         in
         TypeQuery.Response (TypeQuery.ClassHierarchy class_hierarchy_json)
-    | TypeQuery.DumpMemoryToSqlite path ->
-        let path = Path.absolute path in
-        let () =
-          try Unix.unlink path with
-          | Unix.Unix_error _ -> ()
-        in
-        let timer = Timer.start () in
-        (* Normalize the environment for comparison. *)
-        Memory.SharedMemory.save_table_sqlite path |> ignore;
-        let { Memory.SharedMemory.used_slots; _ } = Memory.SharedMemory.hash_stats () in
-        Log.info
-          "Dumped %d slots in %.2f seconds to %s"
-          used_slots
-          (Timer.stop timer |> Time.Span.to_sec)
-          path;
-        TypeQuery.Response (TypeQuery.Path (Path.create_absolute path))
     | TypeQuery.Help help_list -> TypeQuery.Response (TypeQuery.Help help_list)
     | TypeQuery.IsCompatibleWith (left, right) ->
         (* We need a special version of parse_and_validate to handle the "unknown" type that

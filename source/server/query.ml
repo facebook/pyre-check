@@ -43,7 +43,6 @@ let help () =
         Some
           "dump_class_hierarchy(): Prints out the entire class hierarchy as Pyre understands it, \
            elides type variables."
-    | DumpMemoryToSqlite _ -> None
     | IsCompatibleWith _ -> None
     | Join _ -> Some "join(T1, T2): Returns the least common supertype of T1 and T2."
     | LessOrEqual _ -> Some "less_or_equal(T1, T2): Returns whether T1 is a subtype of T2."
@@ -89,7 +88,6 @@ let help () =
       Defines [Reference.create ""];
       DumpCallGraph;
       DumpClassHierarchy;
-      DumpMemoryToSqlite path;
       IsCompatibleWith (empty, empty);
       Join (empty, empty);
       LessOrEqual (empty, empty);
@@ -165,22 +163,6 @@ let rec parse_query
       | "defines", names -> Request.TypeQueryRequest (Defines (List.map names ~f:reference))
       | "dump_call_graph", [] -> Request.TypeQueryRequest DumpCallGraph
       | "dump_class_hierarchy", [] -> Request.TypeQueryRequest DumpClassHierarchy
-      | "dump_memory_to_sqlite", arguments ->
-          let path =
-            match arguments with
-            | [argument] ->
-                let path = string argument in
-                if Filename.is_relative path then
-                  Path.create_relative ~root:(Path.current_working_directory ()) ~relative:path
-                else
-                  Path.create_absolute ~follow_symbolic_links:false path
-            | [] ->
-                Path.create_relative
-                  ~root:(Configuration.Analysis.log_directory configuration)
-                  ~relative:"memory.sqlite"
-            | _ -> raise (InvalidQuery "too many arguments to `dump_memory_to_sqlite`")
-          in
-          Request.TypeQueryRequest (DumpMemoryToSqlite path)
       | "help", _ -> Request.TypeQueryRequest (Help (help ()))
       | "is_compatible_with", [left; right] ->
           Request.TypeQueryRequest (IsCompatibleWith (access left, access right))
