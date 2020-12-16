@@ -120,13 +120,13 @@ module T = struct
     models: TaintResult.call_model Interprocedural.Callable.Map.t;
     queries: ModelQuery.rule list;
     skip_overrides: Reference.Set.t;
-    errors: ModelVerifier.verification_error list;
+    errors: ModelVerificationError.t list;
   }
 end
 
 include T
 
-exception ClassifiedInvalidModel of ModelVerifier.verification_error
+exception ClassifiedInvalidModel of ModelVerificationError.t
 
 let invalid_model_error ~path ~location ~name message =
   let model_origin =
@@ -139,8 +139,8 @@ let invalid_model_error ~path ~location ~name message =
           location.Location.start.Location.line
   in
   {
-    ModelVerifier.kind =
-      ModelVerifier.UnclassifiedError
+    ModelVerificationError.kind =
+      ModelVerificationError.UnclassifiedError
         (Format.asprintf "Invalid model for `%s`%s: %s" name model_origin message);
     path;
     location;
@@ -1695,7 +1695,7 @@ let create ~resolution ?path ~configuration ~rule_filter source =
           let name = name_to_reference_exn name in
           match ModelVerifier.verify_global ~path ~location ~resolution ~name with
           | Error error ->
-              let error_message = ModelVerifier.display_verification_error error in
+              let error_message = ModelVerificationError.display error in
               Log.error "%s" error_message;
               Error error
           | Ok () ->
@@ -1728,7 +1728,7 @@ let create ~resolution ?path ~configuration ~rule_filter source =
           let name = name_to_reference_exn name in
           match ModelVerifier.verify_global ~path ~location ~resolution ~name with
           | Error error ->
-              let error_message = ModelVerifier.display_verification_error error in
+              let error_message = ModelVerificationError.display error in
               Log.error "%s" error_message;
               Error error
           | Ok () ->
@@ -1760,7 +1760,7 @@ let create ~resolution ?path ~configuration ~rule_filter source =
           let name = name_to_reference_exn name in
           match ModelVerifier.verify_global ~path ~location ~resolution ~name with
           | Error error ->
-              let error_message = ModelVerifier.display_verification_error error in
+              let error_message = ModelVerificationError.display error in
               Log.error "%s" error_message;
               Error error
           | Ok () ->
@@ -1960,7 +1960,7 @@ let create ~resolution ?path ~configuration ~rule_filter source =
         with
         | Ok () -> ()
         | Error error ->
-            let error_message = ModelVerifier.display_verification_error error in
+            let error_message = ModelVerificationError.display error in
             Log.error "%s" error_message;
             raise (ClassifiedInvalidModel error)
       in

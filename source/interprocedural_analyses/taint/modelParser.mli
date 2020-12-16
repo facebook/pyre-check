@@ -111,7 +111,7 @@ module T : sig
     models: TaintResult.call_model Interprocedural.Callable.Map.t;
     queries: ModelQuery.rule list;
     skip_overrides: Ast.Reference.Set.t;
-    errors: ModelVerifier.verification_error list;
+    errors: ModelVerificationError.t list;
   }
 end
 
@@ -137,4 +137,4 @@ val create_model_from_annotations
   sources_to_keep:Sources.Set.t option ->
   sinks_to_keep:Sinks.Set.t option ->
   (T.annotation_kind * T.taint_annotation) list ->
-  (TaintResult.call_model, ModelVerifier.verification_error) result
+  (TaintResult.call_model, ModelVerificationError.t) result
