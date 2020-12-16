@@ -1368,7 +1368,7 @@ let adjust_mode_and_skipped_overrides
                                   Some (Mode.SpecificSources (source :: sources))
                               | Some Mode.AllSources -> Some Mode.AllSources
                             in
-                            { Mode.sources; sinks; tito }
+                            Ok { Mode.sources; sinks; tito }
                         | Sink { sink; breadcrumbs = []; leaf_name_provided = false; path = [] } ->
                             let sinks =
                               match sinks with
@@ -1377,10 +1377,13 @@ let adjust_mode_and_skipped_overrides
                                   Some (Mode.SpecificSinks (sink :: sinks))
                               | Some Mode.AllSinks -> Some Mode.AllSinks
                             in
-                            { Mode.sources; sinks; tito }
+                            Ok { Mode.sources; sinks; tito }
                         | taint_annotation ->
-                            raise
-                              (Model.InvalidModel
+                            Error
+                              (invalid_model_error
+                                 ~path
+                                 ~location
+                                 ~name:(Reference.show define_name)
                                  (Format.sprintf
                                     "`%s` is not a supported taint annotation for sanitizers."
                                     (show_taint_annotation taint_annotation)))
@@ -1394,7 +1397,8 @@ let adjust_mode_and_skipped_overrides
                                error)
                       >>= fun annotations ->
                       sanitize
-                      >>| fun sanitize -> List.fold ~init:sanitize ~f:add_annotation annotations
+                      >>= fun sanitize ->
+                      List.fold_result ~init:sanitize ~f:add_annotation annotations
                 in
                 List.fold
                   arguments
