@@ -29,7 +29,7 @@ def tarfile.TarFile.__init__(
     name: TaintSink[FileSystem_ReadWrite, ViaValueOf[mode, WithTag["file-open-mode"]]] = ...,
     mode = ...,
     format = ...,
-    tarinfo =...,
+    tarinfo ,
     dereference = ...,
     ignore_zeros = ...,
     encoding = ...,
@@ -41,7 +41,7 @@ def tarfile.TarFile.__init__(
 ): ...
 
 
-def urllib.request.urlretrieve(url, filename: TaintSink[FileSystem_ReadWrite]=..., reporthook=..., data=...): ...
+def urllib.request.urlretrieve(url, filename: TaintSink[FileSystem_ReadWrite], reporthook, data): ...
 
 def pathlib.PurePath.__new__(cls, *args: TaintSink[FileSystem_ReadWrite]): ...
 def pathlib.PurePath.__truediv__(self, key: TaintSink[FileSystem_ReadWrite]): ...

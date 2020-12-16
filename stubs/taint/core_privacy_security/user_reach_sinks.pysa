@@ -11,18 +11,18 @@ def django.core.mail.send_mail(
 	message: TaintSink[EmailSend],
 	from_email: TaintSink[EmailSend],
 	recipient_list: TaintSink[EmailSend],
-	html_message: TaintSink[EmailSend]=...
+	html_message: TaintSink[EmailSend]
 ): ...
 def django.core.mail.message.EmailMessage.__init__(
 	self, 
 	subject: TaintSink[EmailSend], 
 	body: TaintSink[EmailSend], 
-	from_email: TaintSink[EmailSend]=...,
-	to: TaintSink[EmailSend]=..., 
-	bcc: TaintSink[EmailSend]=..., 
-	attachments: TaintSink[EmailSend]=..., 
-	headers: TaintSink[EmailSend]=..., 
-	cc: TaintSink[EmailSend]=..., 
-	reply_to: TaintSink[EmailSend]=...,
-	connection=...
+	from_email: TaintSink[EmailSend],
+	to: TaintSink[EmailSend], 
+	bcc: TaintSink[EmailSend], 
+	attachments: TaintSink[EmailSend], 
+	headers: TaintSink[EmailSend], 
+	cc: TaintSink[EmailSend], 
+	reply_to: TaintSink[EmailSend],
+	connection
 ): ...
