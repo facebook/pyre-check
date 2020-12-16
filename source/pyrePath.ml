@@ -175,7 +175,7 @@ let list ?(file_filter = fun _ -> true) ?(directory_filter = fun _ -> true) ~roo
 let directory_contains ~directory path =
   let path = absolute path in
   let directory = absolute directory in
-  String.is_prefix ~prefix:directory path
+  String.is_prefix ~prefix:(directory ^ "/") path
 
 
 (* Walk up from the root to try and find a directory/target. *)

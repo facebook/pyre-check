@@ -201,7 +201,12 @@ let test_directory_contains context =
     (Path.directory_contains
        ~directory:root
        (Path.create_relative ~root ~relative:"nonexistent.py"))
-    true
+    true;
+  assert_equal
+    (Path.directory_contains
+       ~directory:(Path.create_relative ~root ~relative:"non")
+       (Path.create_relative ~root ~relative:"nonexistent.py"))
+    false
 
 
 let test_link context =
