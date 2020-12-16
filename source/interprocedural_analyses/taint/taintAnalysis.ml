@@ -48,23 +48,28 @@ include Taint.Result.Register (struct
         None
     in
     let create_models ~configuration sources =
-      List.fold
-        sources
-        ~init:(models, [], Ast.Reference.Set.empty, [])
-        ~f:(fun (models, errors, skip_overrides, queries) (path, source) ->
-          let {
-            ModelParser.T.models;
-            errors = new_errors;
-            skip_overrides = new_skip_overrides;
-            queries = new_queries;
-          }
-            =
-            ModelParser.parse ~resolution ~path ~source ~configuration ?rule_filter models
-          in
-          ( models,
-            List.rev_append new_errors errors,
-            Set.union skip_overrides new_skip_overrides,
-            List.rev_append new_queries queries ))
+      let timer = Timer.start () in
+      let result =
+        List.fold
+          sources
+          ~init:(models, [], Ast.Reference.Set.empty, [])
+          ~f:(fun (models, errors, skip_overrides, queries) (path, source) ->
+            let {
+              ModelParser.T.models;
+              errors = new_errors;
+              skip_overrides = new_skip_overrides;
+              queries = new_queries;
+            }
+              =
+              ModelParser.parse ~resolution ~path ~source ~configuration ?rule_filter models
+            in
+            ( models,
+              List.rev_append new_errors errors,
+              Set.union skip_overrides new_skip_overrides,
+              List.rev_append new_queries queries ))
+      in
+      Statistics.performance ~name:"Parsed taint models" ~timer ();
+      result
     in
     let remove_sinks models = Callable.Map.map ~f:Model.remove_sinks models in
     let add_obscure_sinks models =
