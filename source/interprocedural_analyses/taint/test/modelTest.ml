@@ -1093,15 +1093,11 @@ let test_invalid_models context =
 
   assert_invalid_model
     ~model_source:"def not_in_the_environment(parameter: InvalidTaintDirection[Test]): ..."
-    ~expect:
-      "Invalid model for `not_in_the_environment`: `not_in_the_environment` is not part of the \
-       environment!"
+    ~expect:"`not_in_the_environment` is not part of the environment!"
     ();
   assert_invalid_model
     ~model_source:"def not_in_the_environment.derp(parameter: InvalidTaintDirection[Test]): ..."
-    ~expect:
-      "Invalid model for `not_in_the_environment.derp`: `not_in_the_environment.derp` is not part \
-       of the environment!"
+    ~expect:"`not_in_the_environment.derp` is not part of the environment!"
     ();
 
   assert_valid_model ~model_source:"def test.sink(): ..." ();
@@ -1115,42 +1111,38 @@ let test_invalid_models context =
     ~model_source:
       "def test.sink_with_optional(parameter, firstOptional, secondOptional, thirdOptional): ..."
     ~expect:
-      "Invalid model for `test.sink_with_optional`: Model signature parameters for \
-       `test.sink_with_optional` do not match implementation `def sink_with_optional(parameter: \
-       unknown, firstOptional: unknown = ..., secondOptional: unknown = ...) -> None: ...`. \
-       Reason: unexpected named parameter: `thirdOptional`."
+      "Model signature parameters for `test.sink_with_optional` do not match implementation `def \
+       sink_with_optional(parameter: unknown, firstOptional: unknown = ..., secondOptional: \
+       unknown = ...) -> None: ...`. Reason: unexpected named parameter: `thirdOptional`."
     ();
   assert_invalid_model
     ~model_source:"def test.sink_with_optional(parameter, firstBad, secondBad): ..."
     ~expect:
-      "Invalid model for `test.sink_with_optional`: Model signature parameters for \
-       `test.sink_with_optional` do not match implementation `def sink_with_optional(parameter: \
-       unknown, firstOptional: unknown = ..., secondOptional: unknown = ...) -> None: ...`. \
-       Reasons: unexpected named parameter: `firstBad`; unexpected named parameter: `secondBad`."
+      "Model signature parameters for `test.sink_with_optional` do not match implementation `def \
+       sink_with_optional(parameter: unknown, firstOptional: unknown = ..., secondOptional: \
+       unknown = ...) -> None: ...`. Reasons: unexpected named parameter: `firstBad`; unexpected \
+       named parameter: `secondBad`."
     ();
   assert_invalid_model
     ~model_source:"def test.sink_with_optional(parameter, *args): ..."
     ~expect:
-      "Invalid model for `test.sink_with_optional`: Model signature parameters for \
-       `test.sink_with_optional` do not match implementation `def sink_with_optional(parameter: \
-       unknown, firstOptional: unknown = ..., secondOptional: unknown = ...) -> None: ...`. \
-       Reason: unexpected star parameter."
+      "Model signature parameters for `test.sink_with_optional` do not match implementation `def \
+       sink_with_optional(parameter: unknown, firstOptional: unknown = ..., secondOptional: \
+       unknown = ...) -> None: ...`. Reason: unexpected star parameter."
     ();
   assert_invalid_model
     ~model_source:"def test.sink_with_optional(parameter, **kwargs): ..."
     ~expect:
-      "Invalid model for `test.sink_with_optional`: Model signature parameters for \
-       `test.sink_with_optional` do not match implementation `def sink_with_optional(parameter: \
-       unknown, firstOptional: unknown = ..., secondOptional: unknown = ...) -> None: ...`. \
-       Reason: unexpected star star parameter."
+      "Model signature parameters for `test.sink_with_optional` do not match implementation `def \
+       sink_with_optional(parameter: unknown, firstOptional: unknown = ..., secondOptional: \
+       unknown = ...) -> None: ...`. Reason: unexpected star star parameter."
     ();
   assert_invalid_model
     ~model_source:"def test.sink_with_optional(__parameter): ..."
     ~expect:
-      "Invalid model for `test.sink_with_optional`: Model signature parameters for \
-       `test.sink_with_optional` do not match implementation `def sink_with_optional(parameter: \
-       unknown, firstOptional: unknown = ..., secondOptional: unknown = ...) -> None: ...`. \
-       Reason: unexpected positional only parameter: `__parameter`."
+      "Model signature parameters for `test.sink_with_optional` do not match implementation `def \
+       sink_with_optional(parameter: unknown, firstOptional: unknown = ..., secondOptional: \
+       unknown = ...) -> None: ...`. Reason: unexpected positional only parameter: `__parameter`."
     ();
   assert_valid_model
     ~model_source:"def test.function_with_args(normal_arg, __random_name, named_arg, *args): ..."
@@ -1177,8 +1169,7 @@ let test_invalid_models context =
     ~path:"broken_model.pysa"
     ~model_source:"def test.sink(parameter: Any): ..."
     ~expect:
-      "Invalid model for `test.sink` defined in `broken_model.pysa:1`: Unrecognized taint \
-       annotation `Any`"
+      "broken_model.pysa:1: Invalid model for `test.sink`: Unrecognized taint annotation `Any`"
     ();
   assert_invalid_model
     ~model_source:"def test.sink(parameter: TaintSink[Test, Via[bad_feature]]): ..."
@@ -1191,9 +1182,7 @@ let test_invalid_models context =
   assert_valid_model ~model_source:"test.unannotated_global: TaintSink[Test]" ();
   assert_invalid_model
     ~model_source:"test.missing_global: TaintSink[Test]"
-    ~expect:
-      "Invalid model for `test.missing_global`: `test.missing_global` is not part of the \
-       environment!"
+    ~expect:"`test.missing_global` is not part of the environment!"
     ();
   assert_invalid_model
     ~source:{|
@@ -1201,12 +1190,12 @@ let test_invalid_models context =
         a: int = 1
      |}
     ~model_source:"test.C.b: TaintSink[Test] = ..."
-    ~expect:"Invalid model for `test.C.b`: Class `test.C` has no attribute `b`."
+    ~expect:"Class `test.C` has no attribute `b`."
     ();
   assert_valid_model ~model_source:"test.C.unannotated_class_variable: TaintSink[Test]" ();
   assert_invalid_model
     ~model_source:"test.C.missing: TaintSink[Test]"
-    ~expect:"Invalid model for `test.C.missing`: Class `test.C` has no attribute `missing`."
+    ~expect:"Class `test.C` has no attribute `missing`."
     ();
   assert_invalid_model
     ~model_source:
@@ -1249,14 +1238,14 @@ let test_invalid_models context =
   assert_invalid_model
     ~model_source:"def test.sink(parameter = TaintSink[Test]): ..."
     ~expect:
-      "Invalid model for `test.sink`: Default values of `test.sink`'s parameters must be `...`. \
-       Did you mean to write `parameter: TaintSink[Test]`?"
+      "Default values of `test.sink`'s parameters must be `...`. Did you mean to write `parameter: \
+       TaintSink[Test]`?"
     ();
   assert_invalid_model
     ~model_source:"def test.sink(parameter = 1): ..."
     ~expect:
-      "Invalid model for `test.sink`: Default values of `test.sink`'s parameters must be `...`. \
-       Did you mean to write `parameter: 1`?"
+      "Default values of `test.sink`'s parameters must be `...`. Did you mean to write `parameter: \
+       1`?"
     ();
 
   (* ViaValueOf models must specify existing parameters. *)
@@ -1282,8 +1271,8 @@ let test_invalid_models context =
       def test.C.foo(self, value) -> TaintSource[Test]: ...
     |}
     ~expect:
-      "Invalid model for `test.C.foo`: Model signature parameters for `test.C.foo` do not match \
-       implementation `(self: C) -> int`. Reason: unexpected named parameter: `value`."
+      "Model signature parameters for `test.C.foo` do not match implementation `(self: C) -> int`. \
+       Reason: unexpected named parameter: `value`."
     ();
   assert_valid_model
     ~source:
@@ -1350,9 +1339,8 @@ let test_invalid_models context =
       def unittest.TestCase.assertIsNotNone(self, x: TaintSink[Test]): ...
     |}
     ~expect:
-      "Invalid model for `unittest.TestCase.assertIsNotNone`: The modelled function \
-       `unittest.TestCase.assertIsNotNone` is an imported function, please model \
-       `unittest.case.TestCase.assertIsNotNone` directly."
+      "The modelled function `unittest.TestCase.assertIsNotNone` is an imported function, please \
+       model `unittest.case.TestCase.assertIsNotNone` directly."
     ();
   assert_invalid_model
     ~model_source:
@@ -1439,7 +1427,7 @@ let test_invalid_models context =
         def foo(self) -> int: ...
     |}
     ~model_source:"test.C.foo: TaintSource[A] = ..."
-    ~expect:"Invalid model for `test.C.foo`: Class `test.C` has no attribute `foo`."
+    ~expect:"Class `test.C` has no attribute `foo`."
     ();
   assert_invalid_model
     ~source:{|
@@ -1449,7 +1437,7 @@ let test_invalid_models context =
         pass
     |}
     ~model_source:"test.D.foo: TaintSource[A] = ..."
-    ~expect:"Invalid model for `test.D.foo`: Class `test.D` has no attribute `foo`."
+    ~expect:"Class `test.D` has no attribute `foo`."
     ();
   assert_valid_model
     ~source:{|

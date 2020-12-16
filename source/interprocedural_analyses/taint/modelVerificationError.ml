@@ -51,18 +51,16 @@ let display { kind = error; path; location } =
   let model_origin =
     match path with
     | None -> ""
-    | Some path ->
-        Format.sprintf " defined in `%s:%d`" (Path.absolute path) Location.(location.start.line)
+    | Some path -> Format.sprintf "%s:%d: " (Path.absolute path) Location.(location.start.line)
   in
-  let model_name, message =
+  let message =
     match error with
     | InvalidDefaultValue { callable_name; name; expression } ->
-        ( callable_name,
-          Format.sprintf
-            "Default values of `%s`'s parameters must be `...`. Did you mean to write `%s: %s`?"
-            callable_name
-            name
-            (Expression.show expression) )
+        Format.sprintf
+          "Default values of `%s`'s parameters must be `...`. Did you mean to write `%s: %s`?"
+          callable_name
+          name
+          (Expression.show expression)
     | IncompatibleModelError { name; callable_type; reasons } ->
         let reasons =
           List.map reasons ~f:(function
@@ -73,26 +71,23 @@ let display { kind = error; path; location } =
               | UnexpectedStarredParameter -> "unexpected star parameter"
               | UnexpectedDoubleStarredParameter -> "unexpected star star parameter")
         in
-        ( name,
-          Format.asprintf
-            "Model signature parameters for `%s` do not match implementation `%s`. Reason%s: %s."
-            name
-            (Type.show_for_hover (Type.Callable callable_type))
-            (if List.length reasons > 1 then "s" else "")
-            (String.concat reasons ~sep:"; ") )
+        Format.asprintf
+          "Model signature parameters for `%s` do not match implementation `%s`. Reason%s: %s."
+          name
+          (Type.show_for_hover (Type.Callable callable_type))
+          (if List.length reasons > 1 then "s" else "")
+          (String.concat reasons ~sep:"; ")
     | ImportedFunctionModel { name; actual_name } ->
-        ( Reference.show name,
-          Format.asprintf
-            "The modelled function `%a` is an imported function, please model `%a` directly."
-            Reference.pp
-            name
-            Reference.pp
-            actual_name )
-    | UnclassifiedError { model_name; message } -> model_name, message
+        Format.asprintf
+          "The modelled function `%a` is an imported function, please model `%a` directly."
+          Reference.pp
+          name
+          Reference.pp
+          actual_name
+    | UnclassifiedError { model_name; message } ->
+        Format.sprintf "Invalid model for `%s`: %s" model_name message
     | MissingAttribute { class_name; attribute_name } ->
-        ( Format.sprintf "%s.%s" class_name attribute_name,
-          Format.sprintf "Class `%s` has no attribute `%s`." class_name attribute_name )
-    | NotInEnvironment name -> name, Format.sprintf "`%s` is not part of the environment!" name
+        Format.sprintf "Class `%s` has no attribute `%s`." class_name attribute_name
+    | NotInEnvironment name -> Format.sprintf "`%s` is not part of the environment!" name
   in
-
-  Format.sprintf "Invalid model for `%s`%s: %s" model_name model_origin message
+  Format.sprintf "%s%s" model_origin message
