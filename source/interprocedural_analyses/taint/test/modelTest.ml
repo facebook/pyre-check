@@ -75,9 +75,7 @@ let set_up_environment ?source ?rules ~context ~model_source () =
   assert_bool
     (Format.sprintf
        "Models have parsing errors: %s"
-       (List.to_string
-          errors
-          ~f:(Taint.Model.display_verification_error ~path:None ~location:Ast.Location.any)))
+       (List.to_string errors ~f:Taint.Model.display_verification_error))
     (List.is_empty errors);
 
   let environment =
@@ -1030,7 +1028,7 @@ let test_invalid_models context =
         Callable.Map.empty
       |> fun { Taint.Model.errors; _ } ->
       List.hd errors
-      >>| Taint.Model.display_verification_error ~path ~location:Ast.Location.any
+      >>| Taint.Model.display_verification_error
       |> Option.value ~default:"no failure"
     in
     assert_equal ~printer:ident expect error_message

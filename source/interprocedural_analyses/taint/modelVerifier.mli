@@ -15,7 +15,7 @@ type incompatible_model_error_reason =
   | UnexpectedStarredParameter
   | UnexpectedDoubleStarredParameter
 
-type verification_error =
+type verification_error_kind =
   | GlobalVerificationError of {
       name: string;
       message: string;
@@ -36,19 +36,28 @@ type verification_error =
     }
   | UnclassifiedError of string
 
-val display_verification_error
-  :  path:Pyre.Path.t option ->
-  location:Location.t ->
-  verification_error ->
-  string
+type verification_error = {
+  kind: verification_error_kind;
+  path: Pyre.Path.t option;
+  location: Location.t;
+}
+
+val display_verification_error : verification_error -> string
 
 (* Exposed for testing. *)
 val demangle_class_attribute : string -> string
 
 val verify_signature
-  :  normalized_model_parameters:(AccessPath.Root.t * string * Ast.Expression.Parameter.t) list ->
+  :  path:Pyre.Path.t option ->
+  location:Location.t ->
+  normalized_model_parameters:(AccessPath.Root.t * string * Ast.Expression.Parameter.t) list ->
   name:Reference.t ->
   Type.Callable.t option ->
   (unit, verification_error) result
 
-val verify_global : resolution:Resolution.t -> name:Reference.t -> (unit, verification_error) result
+val verify_global
+  :  path:Pyre.Path.t option ->
+  location:Location.t ->
+  resolution:Resolution.t ->
+  name:Reference.t ->
+  (unit, verification_error) result

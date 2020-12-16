@@ -138,8 +138,13 @@ let invalid_model_error ~path ~location ~name message =
           (Path.absolute path)
           location.Location.start.Location.line
   in
-  ModelVerifier.UnclassifiedError
-    (Format.asprintf "Invalid model for `%s`%s: %s" name model_origin message)
+  {
+    ModelVerifier.kind =
+      ModelVerifier.UnclassifiedError
+        (Format.asprintf "Invalid model for `%s`%s: %s" name model_origin message);
+    path;
+    location;
+  }
 
 
 let add_breadcrumbs breadcrumbs init = List.rev_append breadcrumbs init
@@ -1636,9 +1641,9 @@ let create ~resolution ?path ~configuration ~rule_filter source =
         when is_simple_name name
              && Expression.show annotation |> String.is_prefix ~prefix:"TaintSource[" -> (
           let name = name_to_reference_exn name in
-          match ModelVerifier.verify_global ~resolution ~name with
+          match ModelVerifier.verify_global ~path ~location ~resolution ~name with
           | Error error ->
-              let error_message = ModelVerifier.display_verification_error ~path ~location error in
+              let error_message = ModelVerifier.display_verification_error error in
               Log.error "%s" error_message;
               Error error
           | Ok () ->
@@ -1669,9 +1674,9 @@ let create ~resolution ?path ~configuration ~rule_filter source =
              && Expression.show annotation |> String.is_prefix ~prefix:"TaintSink["
              || Expression.show annotation |> String.is_prefix ~prefix:"TaintInTaintOut[" -> (
           let name = name_to_reference_exn name in
-          match ModelVerifier.verify_global ~resolution ~name with
+          match ModelVerifier.verify_global ~path ~location ~resolution ~name with
           | Error error ->
-              let error_message = ModelVerifier.display_verification_error ~path ~location error in
+              let error_message = ModelVerifier.display_verification_error error in
               Log.error "%s" error_message;
               Error error
           | Ok () ->
@@ -1701,11 +1706,9 @@ let create ~resolution ?path ~configuration ~rule_filter source =
       }
         when is_simple_name name && Expression.show annotation |> String.equal "Sanitize" -> (
           let name = name_to_reference_exn name in
-          match ModelVerifier.verify_global ~resolution ~name with
+          match ModelVerifier.verify_global ~path ~location ~resolution ~name with
           | Error error ->
-              let error_message =
-                ModelVerifier.display_verification_error ~path ~location:signature.location error
-              in
+              let error_message = ModelVerifier.display_verification_error error in
               Log.error "%s" error_message;
               Error error
           | Ok () ->
@@ -1900,11 +1903,12 @@ let create ~resolution ?path ~configuration ~rule_filter source =
       in
       let () =
         match
-          callable_annotation >>= ModelVerifier.verify_signature ~normalized_model_parameters ~name
+          callable_annotation
+          >>= ModelVerifier.verify_signature ~path ~location ~normalized_model_parameters ~name
         with
         | Ok () -> ()
         | Error error ->
-            let error_message = ModelVerifier.display_verification_error ~path ~location error in
+            let error_message = ModelVerifier.display_verification_error error in
             Log.error "%s" error_message;
             raise (ClassifiedInvalidModel error)
       in

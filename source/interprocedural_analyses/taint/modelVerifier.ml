@@ -17,7 +17,7 @@ type incompatible_model_error_reason =
   | UnexpectedStarredParameter
   | UnexpectedDoubleStarredParameter
 
-type verification_error =
+type verification_error_kind =
   | GlobalVerificationError of {
       name: string;
       message: string;
@@ -39,7 +39,13 @@ type verification_error =
   (* TODO(T81363867): Remove this variant. *)
   | UnclassifiedError of string
 
-let display_verification_error ~path ~location error =
+type verification_error = {
+  kind: verification_error_kind;
+  path: Path.t option;
+  location: Location.t;
+}
+
+let display_verification_error { kind = error; path; location } =
   let model_origin =
     match path with
     | None -> ""
@@ -132,7 +138,14 @@ let demangle_class_attribute name =
     name
 
 
-let model_compatible ~callable_name ~callable_type ~type_parameters ~normalized_model_parameters =
+let model_compatible
+    ~path
+    ~location
+    ~callable_name
+    ~callable_type
+    ~type_parameters
+    ~normalized_model_parameters
+  =
   let open Result in
   let parameter_requirements = create_parameters_requirements ~type_parameters in
   (* Once a requirement has been satisfied, it is removed from requirement object. At the end, we
@@ -144,7 +157,7 @@ let model_compatible ~callable_name ~callable_type ~type_parameters ~normalized_
       match Node.value original with
       | { Parameter.value = Some expression; name; _ } ->
           if not (Expression.equal_expression (Node.value expression) Expression.Ellipsis) then
-            Error (InvalidDefaultValue { callable_name; name; expression })
+            Error { path; location; kind = InvalidDefaultValue { callable_name; name; expression } }
           else
             errors_and_requirements
       | _ -> errors_and_requirements
@@ -210,10 +223,15 @@ let model_compatible ~callable_name ~callable_type ~type_parameters ~normalized_
   if List.is_empty errors then
     Result.Ok ()
   else
-    Result.Error (IncompatibleModelError { name = callable_name; callable_type; reasons = errors })
+    Result.Error
+      {
+        path;
+        location;
+        kind = IncompatibleModelError { name = callable_name; callable_type; reasons = errors };
+      }
 
 
-let verify_signature ~normalized_model_parameters ~name callable_annotation =
+let verify_signature ~path ~location ~normalized_model_parameters ~name callable_annotation =
   match callable_annotation with
   | Some
       ( {
@@ -224,9 +242,11 @@ let verify_signature ~normalized_model_parameters ~name callable_annotation =
         } as callable ) -> (
       match kind with
       | Type.Callable.Named actual_name when not (Reference.equal name actual_name) ->
-          Error (ImportedFunctionModel { name; actual_name })
+          Error { location; path; kind = ImportedFunctionModel { name; actual_name } }
       | _ ->
           model_compatible
+            ~path
+            ~location
             ~callable_name:(Reference.show name)
             ~callable_type:callable
             ~type_parameters:implementation_parameters
@@ -234,7 +254,7 @@ let verify_signature ~normalized_model_parameters ~name callable_annotation =
   | _ -> Result.Ok ()
 
 
-let verify_global ~resolution ~name =
+let verify_global ~path ~location ~resolution ~name =
   let name = demangle_class_attribute (Reference.show name) |> Reference.create in
   let global_resolution = Resolution.global_resolution resolution in
   let global = GlobalResolution.global global_resolution name in
@@ -269,11 +289,21 @@ let verify_global ~resolution ~name =
               (Reference.show class_name)
               attribute_name
           in
-          Result.Error (GlobalVerificationError { name = Reference.show name; message = error })
+          Result.Error
+            {
+              path;
+              location;
+              kind = GlobalVerificationError { name = Reference.show name; message = error };
+            }
     | _ ->
         let error =
           Format.sprintf
             "`%s` does not correspond to a class's attribute or a global."
             (Reference.show name)
         in
-        Result.Error (GlobalVerificationError { name = Reference.show name; message = error })
+        Result.Error
+          {
+            path;
+            location;
+            kind = GlobalVerificationError { name = Reference.show name; message = error };
+          }

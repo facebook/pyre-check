@@ -102,18 +102,10 @@ include Taint.Result.Register (struct
               Model.get_model_sources ~paths |> create_models ~configuration
             in
             List.iter errors ~f:(fun error ->
-                Log.error
-                  "%s"
-                  (Taint.Model.display_verification_error
-                     ~path:None
-                     ~location:Ast.Location.any
-                     error));
+                Log.error "%s" (Taint.Model.display_verification_error error));
             if verify && not (List.is_empty errors) then
               raise
-                (Model.InvalidModel
-                   ( List.hd_exn errors
-                   |> Taint.Model.display_verification_error ~path:None ~location:Ast.Location.any
-                   ));
+                (Model.InvalidModel (List.hd_exn errors |> Taint.Model.display_verification_error));
             let models =
               let callables =
                 List.rev_append stubs functions
