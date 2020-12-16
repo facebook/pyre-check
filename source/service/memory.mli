@@ -7,23 +7,7 @@
 
 open Core
 module Set = Caml.Set
-
 module SharedMemory = Hack_parallel.Std.SharedMem
-(** Infrastructure for decoding values from SharedHeap Heap tables registered with this module
-    stores enough information such that an arbitrary (key, value) pair can be decoded back to an
-    OCaml type. The [decode] function takes a pair and returns a value of type decodable if a
-    decoder was found for that key. [NoCache] and [WithCache] are augmented with a [Decoded]
-    constructor that can be used to check if the decodable value come from this table. *)
-
-type decodable = ..
-
-type decoding_error =
-  [ `Malformed_key
-  | `Unknown_type
-  | `Decoder_failure of exn
-  ]
-
-val decode : key:string -> value:string -> (decodable, decoding_error) result
 
 module type KeyType = sig
   include SharedMem.UserKeyType
@@ -44,14 +28,6 @@ module NoCache : sig
     include SharedMemory.NoCache
 
     type key_out
-
-    type decodable += Decoded of key_out * t option
-
-    val serialize_key : key -> string
-
-    val hash_of_key : key -> string
-
-    val compute_hashes_to_keys : keys:key list -> string String.Map.t
   end
 
   module Make (Key : KeyType) (Value : ValueType) : sig
@@ -70,14 +46,6 @@ module WithCache : sig
     include SharedMemory.WithCache
 
     type key_out
-
-    type decodable += Decoded of key_out * t option
-
-    val serialize_key : key -> string
-
-    val hash_of_key : key -> string
-
-    val compute_hashes_to_keys : keys:key list -> string String.Map.t
   end
 
   module Make (Key : KeyType) (Value : ValueType) : sig
@@ -106,8 +74,6 @@ val save_shared_memory : path:string -> configuration:Configuration.Analysis.t -
 val load_shared_memory : path:string -> configuration:Configuration.Analysis.t -> unit
 
 val reset_shared_memory : unit -> unit
-
-val unsafe_little_endian_representation : key:Caml.Digest.t -> Int64.t
 
 module SingletonKey : sig
   include KeyType with type out = int
