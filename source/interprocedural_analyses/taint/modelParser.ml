@@ -221,8 +221,9 @@ let base_name expression =
   | _ -> None
 
 
-let rec parse_annotations ~configuration ~parameters annotation =
+let rec parse_annotations ~path ~location ~model_name ~configuration ~parameters annotation =
   let open Core.Result in
+  let annotation_error error = invalid_model_error ~path ~location ~name:model_name error in
   let get_parameter_position name =
     let matches_parameter_name index { Node.value = parameter; _ } =
       if String.equal parameter.Parameter.name name then
@@ -232,7 +233,7 @@ let rec parse_annotations ~configuration ~parameters annotation =
     in
     match List.find_mapi parameters ~f:matches_parameter_name with
     | Some index -> Ok index
-    | None -> Error (Format.sprintf "No such parameter `%s`" name)
+    | None -> Error (annotation_error (Format.sprintf "No such parameter `%s`" name))
   in
   let rec extract_breadcrumbs ?(is_dynamic = false) expression =
     let open Configuration in
@@ -243,15 +244,17 @@ let rec parse_annotations ~configuration ~parameters annotation =
             Ok (Features.Simple.Breadcrumb (Features.Breadcrumb.SimpleVia breadcrumb))
           else
             Features.simple_via ~allowed:configuration.features breadcrumb
+            |> map_error ~f:annotation_error
         in
         feature >>| fun feature -> [feature]
     | Tuple expressions ->
         List.map ~f:(extract_breadcrumbs ~is_dynamic) expressions |> all |> map ~f:List.concat
     | _ ->
         Error
-          (Format.sprintf
-             "Invalid expression for breadcrumb: %s"
-             (show_expression expression.Node.value))
+          (annotation_error
+             (Format.sprintf
+                "Invalid expression for breadcrumb: %s"
+                (show_expression expression.Node.value)))
   in
   let extract_subkind { Node.value = expression; _ } =
     match expression with
@@ -266,9 +269,10 @@ let rec parse_annotations ~configuration ~parameters annotation =
     | Call { callee; _ } when Option.equal String.equal (base_name callee) (Some "WithTag") -> Ok []
     | _ ->
         Error
-          (Format.sprintf
-             "Invalid expression for ViaValueOf or ViaTypeOf: %s"
-             (show_expression expression.Node.value))
+          (annotation_error
+             (Format.sprintf
+                "Invalid expression for ViaValueOf or ViaTypeOf: %s"
+                (show_expression expression.Node.value)))
   in
   let rec extract_via_tag expression =
     match expression.Node.value with
@@ -299,7 +303,9 @@ let rec parse_annotations ~configuration ~parameters annotation =
     | Expression.Name (Name.Identifier name) -> Ok [name]
     | Tuple expressions -> List.map ~f:extract_names expressions |> all >>| List.concat
     | _ ->
-        Error (Format.sprintf "Invalid expression name: %s" (show_expression expression.Node.value))
+        Error
+          (annotation_error
+             (Format.sprintf "Invalid expression name: %s" (show_expression expression.Node.value)))
   in
   let rec extract_kinds expression =
     match expression.Node.value with
@@ -315,12 +321,14 @@ let rec parse_annotations ~configuration ~parameters annotation =
             >>| fun breadcrumbs -> [Breadcrumbs breadcrumbs]
         | Some "ViaValueOf" ->
             extract_via_tag expression
+            |> map_error ~f:annotation_error
             >>= fun tag ->
             extract_via_positions expression
             >>| List.map ~f:(fun position -> Features.Simple.ViaValueOf { position; tag })
             >>| fun breadcrumbs -> [Breadcrumbs breadcrumbs]
         | Some "ViaTypeOf" ->
             extract_via_tag expression
+            |> map_error ~f:annotation_error
             >>= fun tag ->
             extract_via_positions expression
             >>| List.map ~f:(fun position -> Features.Simple.ViaTypeOf { position; tag })
@@ -344,9 +352,10 @@ let rec parse_annotations ~configuration ~parameters annotation =
     | Tuple expressions -> List.map ~f:extract_kinds expressions |> all >>| List.concat
     | _ ->
         Error
-          (Format.sprintf
-             "Invalid expression for taint kind: %s"
-             (show_expression expression.Node.value))
+          (annotation_error
+             (Format.sprintf
+                "Invalid expression for taint kind: %s"
+                (show_expression expression.Node.value)))
   in
   let extract_leafs expression =
     extract_kinds expression
@@ -363,6 +372,7 @@ let rec parse_annotations ~configuration ~parameters annotation =
         AnnotationParser.parse_source ~allowed:configuration.sources ?subkind kind
         >>| fun source -> Source { source; breadcrumbs; path = []; leaf_name_provided = false })
     |> all
+    |> map_error ~f:annotation_error
   in
   let get_sink_kinds expression =
     let open Configuration in
@@ -372,6 +382,7 @@ let rec parse_annotations ~configuration ~parameters annotation =
         AnnotationParser.parse_sink ~allowed:configuration.sinks ?subkind kind
         >>| fun sink -> Sink { sink; breadcrumbs; path = []; leaf_name_provided = false })
     |> all
+    |> map_error ~f:annotation_error
   in
   let get_taint_in_taint_out expression =
     let open Configuration in
@@ -384,6 +395,7 @@ let rec parse_annotations ~configuration ~parameters annotation =
             AnnotationParser.parse_sink ~allowed:configuration.sinks kind
             >>| fun sink -> Tito { tito = sink; breadcrumbs; path = [] })
         |> all
+        |> map_error ~f:annotation_error
   in
   let extract_attach_features ~name expression =
     let keep_features = function
@@ -398,12 +410,16 @@ let rec parse_annotations ~configuration ~parameters annotation =
     >>= function
     | Some features -> Ok features
     | None ->
-        Error (Format.sprintf "All parameters to `%s` must be of the form `Via[feature]`." name)
+        Error
+          (annotation_error
+             (Format.sprintf "All parameters to `%s` must be of the form `Via[feature]`." name))
   in
   match annotation with
   | Some ({ Node.value; _ } as expression) ->
       let invalid_annotation_error () =
-        Error (Format.asprintf "Unrecognized taint annotation `%s`" (Expression.show expression))
+        Error
+          (annotation_error
+             (Format.asprintf "Unrecognized taint annotation `%s`" (Expression.show expression)))
       in
       let rec parse_annotation = function
         | Expression.Call
@@ -437,7 +453,10 @@ let rec parse_annotations ~configuration ~parameters annotation =
                 | Expression.Integer index -> Ok (Abstract.TreeDomain.Label.create_int_field index)
                 | Expression.String { StringLiteral.value = index; _ } ->
                     Ok (Abstract.TreeDomain.Label.create_name_field index)
-                | _ -> Error "Expected either integer or string as index in AppliesTo annotation."
+                | _ ->
+                    Error
+                      (annotation_error
+                         "Expected either integer or string as index in AppliesTo annotation.")
               in
               field
               >>| fun field ->
@@ -506,8 +525,9 @@ let rec parse_annotations ~configuration ~parameters annotation =
                 parse_annotation taint |> map ~f:(List.map ~f:add_cross_repository_information)
             | _ ->
                 Error
-                  "Cross repository taint must be of the form CrossRepositoryTaint[taint, \
-                   canonical_name, canonical_port, producer_id]." )
+                  (annotation_error
+                     "Cross repository taint must be of the form CrossRepositoryTaint[taint, \
+                      canonical_name, canonical_port, producer_id].") )
         | Call { callee; arguments }
           when [%compare.equal: string option]
                  (base_name callee)
@@ -565,8 +585,9 @@ let rec parse_annotations ~configuration ~parameters annotation =
                 parse_annotation taint |> map ~f:(List.map ~f:add_cross_repository_information)
             | _ ->
                 Error
-                  "Cross repository taint anchor must be of the form \
-                   CrossRepositoryTaintAnchor[taint, canonical_name, canonical_port]." )
+                  (annotation_error
+                     "Cross repository taint anchor must be of the form \
+                      CrossRepositoryTaintAnchor[taint, canonical_name, canonical_port].") )
         | Call
             {
               callee;
@@ -574,7 +595,13 @@ let rec parse_annotations ~configuration ~parameters annotation =
             }
           when [%compare.equal: string option] (base_name callee) (Some "Union") ->
             List.map expressions ~f:(fun expression ->
-                parse_annotations ~configuration ~parameters (Some expression))
+                parse_annotations
+                  ~path
+                  ~location:expression.Node.location
+                  ~model_name
+                  ~configuration
+                  ~parameters
+                  (Some expression))
             |> all
             |> map ~f:List.concat
         | Call { callee; arguments = { Call.Argument.value = expression; _ } :: _ } -> (
@@ -626,18 +653,21 @@ let rec parse_annotations ~configuration ~parameters annotation =
                           :: _;
                       } ->
                       if not (String.Map.Tree.mem configuration.partial_sink_labels kind) then
-                        Error (Format.asprintf "Unrecognized partial sink `%s`." kind)
+                        Error
+                          (annotation_error
+                             (Format.asprintf "Unrecognized partial sink `%s`." kind))
                       else
                         let label_options =
                           String.Map.Tree.find_exn configuration.partial_sink_labels kind
                         in
                         if not (List.mem label_options label ~equal:String.equal) then
                           Error
-                            (Format.sprintf
-                               "Unrecognized label `%s` for partial sink `%s` (choices: `%s`)"
-                               label
-                               kind
-                               (String.concat label_options ~sep:", "))
+                            (annotation_error
+                               (Format.sprintf
+                                  "Unrecognized label `%s` for partial sink `%s` (choices: `%s`)"
+                                  label
+                                  kind
+                                  (String.concat label_options ~sep:", ")))
                         else
                           Ok (Sinks.PartialSink { kind; label })
                   | _ -> invalid_annotation_error ()
@@ -1039,9 +1069,13 @@ let parse_model_clause ~path ~configuration ({ Node.value; location } as express
                      ~name:"model query"
                      (Format.sprintf "Unexpected taint annotation `%s`" parametric_annotation)) )
         | _ ->
-            parse_annotations ~configuration ~parameters:[] (Some expression)
-            |> map_error ~f:(fun error ->
-                   invalid_model_error ~path ~location ~name:"model query" error)
+            parse_annotations
+              ~path
+              ~location
+              ~model_name:"model query"
+              ~configuration
+              ~parameters:[]
+              (Some expression)
             >>| List.map ~f:(fun taint -> ModelQuery.TaintAnnotation taint)
       in
 
@@ -1144,10 +1178,17 @@ let add_signature_based_breadcrumbs ~resolution root ~callable_annotation breadc
   | _ -> breadcrumbs
 
 
-let parse_parameter_taint ~configuration ~parameters (root, _name, parameter) =
+let parse_parameter_taint
+    ~path
+    ~location
+    ~model_name
+    ~configuration
+    ~parameters
+    (root, _name, parameter)
+  =
   let open Core.Result in
   let annotation = parameter.Node.value.Parameter.annotation in
-  parse_annotations ~configuration ~parameters annotation
+  parse_annotations ~path ~location ~model_name ~configuration ~parameters annotation
   |> map ~f:(List.map ~f:(fun annotation -> annotation, ParameterAnnotation root))
 
 
@@ -1205,9 +1246,9 @@ let add_taint_annotation_to_model
                Sinks.AddFeatureToArgument )
 
 
-let parse_return_taint ~configuration ~parameters expression =
+let parse_return_taint ~path ~location ~model_name ~configuration ~parameters expression =
   let open Core.Result in
-  parse_annotations ~configuration ~parameters expression
+  parse_annotations ~path ~location ~model_name ~configuration ~parameters expression
   |> map ~f:(List.map ~f:(fun annotation -> annotation, ReturnAnnotation))
 
 
@@ -1342,13 +1383,13 @@ let adjust_mode_and_skipped_overrides
                                     (show_taint_annotation taint_annotation)))
                       in
                       let sanitize_tito =
-                        parse_annotations ~configuration ~parameters:[] (Some value)
-                        |> map_error ~f:(fun error ->
-                               invalid_model_error
-                                 ~path
-                                 ~location
-                                 ~name:(Reference.show define_name)
-                                 error)
+                        parse_annotations
+                          ~path
+                          ~location
+                          ~model_name:(Reference.show define_name)
+                          ~configuration
+                          ~parameters:[]
+                          (Some value)
                         >>= List.fold_result ~init:([], []) ~f:add_tito_annotation
                         >>| fun (sanitized_tito_sources, sanitized_tito_sinks) ->
                         Mode.SpecificTito { sanitized_tito_sources; sanitized_tito_sinks }
@@ -1391,13 +1432,13 @@ let adjust_mode_and_skipped_overrides
                                     "`%s` is not a supported taint annotation for sanitizers."
                                     (show_taint_annotation taint_annotation)))
                       in
-                      parse_annotations ~configuration ~parameters:[] (Some value)
-                      |> map_error ~f:(fun error ->
-                             invalid_model_error
-                               ~path
-                               ~location
-                               ~name:(Reference.show define_name)
-                               error)
+                      parse_annotations
+                        ~path
+                        ~location
+                        ~model_name:(Reference.show define_name)
+                        ~configuration
+                        ~parameters:[]
+                        (Some value)
                       >>= fun annotations ->
                       sanitize
                       >>= fun sanitize ->
@@ -1913,11 +1954,25 @@ let create ~resolution ?path ~configuration ~rule_filter source =
             raise (ClassifiedInvalidModel error)
       in
       let annotations =
-        List.map normalized_model_parameters ~f:(parse_parameter_taint ~configuration ~parameters)
+        List.map
+          normalized_model_parameters
+          ~f:
+            (parse_parameter_taint
+               ~path
+               ~location
+               ~model_name:(Reference.show name)
+               ~configuration
+               ~parameters)
         |> all
         >>| List.concat
         >>= fun parameter_taint ->
-        parse_return_taint ~configuration ~parameters return_annotation
+        parse_return_taint
+          ~path
+          ~location
+          ~model_name:(Reference.show name)
+          ~configuration
+          ~parameters
+          return_annotation
         >>| fun return_taint -> List.rev_append parameter_taint return_taint
       in
       let lift_error =
@@ -1928,7 +1983,6 @@ let create ~resolution ?path ~configuration ~rule_filter source =
         callable_annotation
         >>= fun callable_annotation ->
         annotations
-        |> lift_error
         >>= fun annotations ->
         List.fold_result
           annotations
