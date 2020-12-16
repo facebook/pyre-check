@@ -26,12 +26,16 @@ module.exports = {
   ],
   pysa: [
     'pysa-basics',
-    ...fbInternalOnly(['fb/pysa-running-internal']),
-    ...fbInternalOnly(['fb/pysa-on-fbcode-internal']),
-    ...fbInternalOnly(['fb/pysa-running-opensource-internal']),
-    ...fbInternalOnly(['fb/pysa-running-common-internal']),
+    ...fbContent({
+      internal: [
+        'fb/pysa-running-internal',
+        'fb/pysa-on-fbcode-internal',
+        'fb/pysa-running-opensource-internal',
+        'fb/pysa-running-common-internal',
+      ],
+      external: ['pysa-running'],
+    }),
     ...fbInternalOnly(['fb/pysa-shipping-rules-models-internal']),
-    'pysa-running',
     'pysa-features',
     'pysa-advanced',
     ...fbInternalOnly(['fb/pysa-model-generators-internal']),
