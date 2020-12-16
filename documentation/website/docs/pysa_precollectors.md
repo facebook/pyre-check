@@ -4,6 +4,8 @@ title: Dynamically Generating Models
 sidebar_label: Dynamically Generating Models
 ---
 
+import InternalModelGenerators from './fb/pysa_model_generators_internal.md';
+
 Some sources and sinks may be too numerous or too rapidly changing for defining
 them statically to be practical. For these scenarios, Pysa has the concept of
 model generators, which can generate taint models by reading the project's source code before static analysis is
@@ -87,3 +89,5 @@ The basic workflow is:
 1. Convert the callables you've collected into models. The [CallableModel](https://github.com/facebook/pyre-check/blob/master/tools/generate_taint_models/model.py) class is a convenience that pretty prints things in the right way - you just need to specify what kind of taint the parameters and return value should have, specify the callable to model, and call generate().
 1. Write unit tests ([example](https://github.com/facebook/pyre-check/blob/922410239404aa436691754402b0c3db68c5a46f/tools/generate_taint_models/tests/get_annotated_free_functions_with_decorator_test.py)).
 1. Import your new class in the `__init__` file ([example](https://github.com/facebook/pyre-check/blob/922410239404aa436691754402b0c3db68c5a46f/tools/generate_taint_models/__init__.py#L7)).
+
+<InternalModelGenerators/>
