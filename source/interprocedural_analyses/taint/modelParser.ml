@@ -292,9 +292,10 @@ let rec parse_annotations ~path ~location ~model_name ~configuration ~parameters
         Ok (Some value)
     | Expression.Call _ ->
         Error
-          (Format.sprintf
-             "Invalid expression in ViaValueOf or ViaTypeOf declaration: %s"
-             (Expression.show expression))
+          (annotation_error
+             (Format.sprintf
+                "Invalid expression in ViaValueOf or ViaTypeOf declaration: %s"
+                (Expression.show expression)))
     | Tuple expressions -> List.map expressions ~f:extract_via_tag |> all >>| List.find_map ~f:ident
     | _ -> Ok None
   in
@@ -321,14 +322,12 @@ let rec parse_annotations ~path ~location ~model_name ~configuration ~parameters
             >>| fun breadcrumbs -> [Breadcrumbs breadcrumbs]
         | Some "ViaValueOf" ->
             extract_via_tag expression
-            |> map_error ~f:annotation_error
             >>= fun tag ->
             extract_via_positions expression
             >>| List.map ~f:(fun position -> Features.Simple.ViaValueOf { position; tag })
             >>| fun breadcrumbs -> [Breadcrumbs breadcrumbs]
         | Some "ViaTypeOf" ->
             extract_via_tag expression
-            |> map_error ~f:annotation_error
             >>= fun tag ->
             extract_via_positions expression
             >>| List.map ~f:(fun position -> Features.Simple.ViaTypeOf { position; tag })
