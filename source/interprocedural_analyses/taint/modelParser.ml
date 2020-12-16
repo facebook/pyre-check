@@ -1677,27 +1677,23 @@ let create ~resolution ?path ~configuration ~rule_filter source =
        location;
       }
         when is_simple_name name
-             && Expression.show annotation |> String.is_prefix ~prefix:"TaintSource[" -> (
+             && Expression.show annotation |> String.is_prefix ~prefix:"TaintSource[" ->
           let name = name_to_reference_exn name in
-          match ModelVerifier.verify_global ~path ~location ~resolution ~name with
-          | Error error ->
-              let error_message = ModelVerificationError.display error in
-              Log.error "%s" error_message;
-              Error error
-          | Ok () ->
-              let signature =
-                {
-                  Define.Signature.name = Node.create ~location:name_location name;
-                  parameters = [];
-                  decorators = [];
-                  return_annotation = Some annotation;
-                  async = false;
-                  generator = false;
-                  parent = None;
-                  nesting_define = None;
-                }
-              in
-              Ok [ParsedSignature (signature, location, Callable.create_object name)] )
+          ModelVerifier.verify_global ~path ~location ~resolution ~name
+          >>| fun () ->
+          let signature =
+            {
+              Define.Signature.name = Node.create ~location:name_location name;
+              parameters = [];
+              decorators = [];
+              return_annotation = Some annotation;
+              async = false;
+              generator = false;
+              parent = None;
+              nesting_define = None;
+            }
+          in
+          [ParsedSignature (signature, location, Callable.create_object name)]
       | {
        Node.value =
          Assign
@@ -1710,28 +1706,23 @@ let create ~resolution ?path ~configuration ~rule_filter source =
       }
         when is_simple_name name
              && Expression.show annotation |> String.is_prefix ~prefix:"TaintSink["
-             || Expression.show annotation |> String.is_prefix ~prefix:"TaintInTaintOut[" -> (
+             || Expression.show annotation |> String.is_prefix ~prefix:"TaintInTaintOut[" ->
           let name = name_to_reference_exn name in
-          match ModelVerifier.verify_global ~path ~location ~resolution ~name with
-          | Error error ->
-              let error_message = ModelVerificationError.display error in
-              Log.error "%s" error_message;
-              Error error
-          | Ok () ->
-              let signature =
-                {
-                  Define.Signature.name = Node.create ~location:name_location name;
-                  parameters =
-                    [Parameter.create ~location:Location.any ~annotation ~name:"$global" ()];
-                  decorators = [];
-                  return_annotation = None;
-                  async = false;
-                  generator = false;
-                  parent = None;
-                  nesting_define = None;
-                }
-              in
-              Ok [ParsedSignature (signature, location, Callable.create_object name)] )
+          ModelVerifier.verify_global ~path ~location ~resolution ~name
+          >>| fun () ->
+          let signature =
+            {
+              Define.Signature.name = Node.create ~location:name_location name;
+              parameters = [Parameter.create ~location:Location.any ~annotation ~name:"$global" ()];
+              decorators = [];
+              return_annotation = None;
+              async = false;
+              generator = false;
+              parent = None;
+              nesting_define = None;
+            }
+          in
+          [ParsedSignature (signature, location, Callable.create_object name)]
       | {
        Node.value =
          Assign
@@ -1742,34 +1733,29 @@ let create ~resolution ?path ~configuration ~rule_filter source =
            };
        location;
       }
-        when is_simple_name name && Expression.show annotation |> String.equal "Sanitize" -> (
+        when is_simple_name name && Expression.show annotation |> String.equal "Sanitize" ->
           let name = name_to_reference_exn name in
-          match ModelVerifier.verify_global ~path ~location ~resolution ~name with
-          | Error error ->
-              let error_message = ModelVerificationError.display error in
-              Log.error "%s" error_message;
-              Error error
-          | Ok () ->
-              let signature =
-                {
-                  Define.Signature.name = Node.create ~location:name_location name;
-                  parameters = [Parameter.create ~location:Location.any ~name:"$global" ()];
-                  decorators =
-                    [
-                      {
-                        Decorator.name =
-                          Node.create_with_default_location (Reference.create "Sanitize");
-                        arguments = None;
-                      };
-                    ];
-                  return_annotation = None;
-                  async = false;
-                  generator = false;
-                  parent = None;
-                  nesting_define = None;
-                }
-              in
-              Ok [ParsedSignature (signature, location, Callable.create_object name)] )
+          ModelVerifier.verify_global ~path ~location ~resolution ~name
+          >>| fun () ->
+          let signature =
+            {
+              Define.Signature.name = Node.create ~location:name_location name;
+              parameters = [Parameter.create ~location:Location.any ~name:"$global" ()];
+              decorators =
+                [
+                  {
+                    Decorator.name = Node.create_with_default_location (Reference.create "Sanitize");
+                    arguments = None;
+                  };
+                ];
+              return_annotation = None;
+              async = false;
+              generator = false;
+              parent = None;
+              nesting_define = None;
+            }
+          in
+          [ParsedSignature (signature, location, Callable.create_object name)]
       | {
        Node.value =
          Expression
