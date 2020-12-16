@@ -50,9 +50,6 @@ module ReadOnly = struct
     get_define_body: ?dependency:DependencyKey.registered -> Reference.t -> Define.t Node.t option;
     get_module_metadata: ?dependency:DependencyKey.registered -> Reference.t -> Module.t option;
     module_exists: ?dependency:SharedMemoryKeys.DependencyKey.registered -> Reference.t -> bool;
-    hash_to_key_map: unit -> string String.Map.t;
-    serialize_decoded: Memory.decodable -> (string * string * string option) option;
-    decoded_equal: Memory.decodable -> Memory.decodable -> bool option;
   }
 
   let ast_environment { ast_environment; _ } = ast_environment
@@ -78,12 +75,6 @@ module ReadOnly = struct
   let get_define_body { get_define_body; _ } = get_define_body
 
   let all_defines_in_module { all_defines_in_module; _ } = all_defines_in_module
-
-  let hash_to_key_map { hash_to_key_map; _ } = hash_to_key_map ()
-
-  let serialize_decoded { serialize_decoded; _ } = serialize_decoded
-
-  let decoded_equal { decoded_equal; _ } = decoded_equal
 
   let primitive_name annotation =
     let primitive, _ = Type.split annotation in
@@ -525,51 +516,6 @@ end = struct
       |> KeyTracker.get_define_body_keys
     in
     let class_exists ?dependency name = ClassDefinitions.mem ?dependency name in
-    let hash_to_key_map () =
-      let extend_map map ~new_map =
-        Map.merge_skewed map new_map ~combine:(fun ~key:_ value _ -> value)
-      in
-      ClassDefinitions.compute_hashes_to_keys ~keys:(all_classes ())
-      |> extend_map
-           ~new_map:(UnannotatedGlobals.compute_hashes_to_keys ~keys:(all_unannotated_globals ()))
-      |> extend_map ~new_map:(FunctionDefinitions.compute_hashes_to_keys ~keys:(all_defines ()))
-      |> extend_map
-           ~new_map:
-             (ModuleMetadata.compute_hashes_to_keys
-                ~keys:(AstEnvironment.ReadOnly.all_explicit_modules ast_environment))
-    in
-    let serialize_decoded = function
-      | ClassDefinitions.Decoded (key, value) ->
-          let value = value >>| Node.value >>| ClassSummary.show in
-          Some (ClassValue.description, key, value)
-      | UnannotatedGlobals.Decoded (key, value) ->
-          let value =
-            value >>| fun value -> Format.asprintf "%a" Sexp.pp (UnannotatedGlobal.sexp_of_t value)
-          in
-          Some (UnannotatedGlobalValue.description, Reference.show key, value)
-      | FunctionDefinitions.Decoded (key, value) ->
-          let value =
-            value >>| fun value -> Sexp.to_string_hum [%message (value : FunctionDefinition.t)]
-          in
-          Some (FunctionDefinitionValue.description, Reference.show key, value)
-      | ModuleMetadata.Decoded (key, value) ->
-          let value = value >>| Module.show in
-          Some (ModuleMetadataValue.description, Reference.show key, value)
-      | _ -> None
-    in
-    let decoded_equal first second =
-      match first, second with
-      | ClassDefinitions.Decoded (_, first), ClassDefinitions.Decoded (_, second) ->
-          Some (Option.equal (Node.equal ClassSummary.equal) first second)
-      | UnannotatedGlobals.Decoded (_, first), UnannotatedGlobals.Decoded (_, second) ->
-          Some (Option.equal [%compare.equal: UnannotatedGlobal.t] first second)
-      | FunctionDefinitions.Decoded (_, first), FunctionDefinitions.Decoded (_, second) ->
-          let node_equal left right = Int.equal 0 (FunctionDefinitionValue.compare left right) in
-          Some (Option.equal node_equal first second)
-      | ModuleMetadata.Decoded (_, first), ModuleMetadata.Decoded (_, second) ->
-          Some (Option.equal Module.equal first second)
-      | _ -> None
-    in
     let get_define = FunctionDefinitions.get in
     let get_define_body ?dependency key =
       FunctionDefinitions.get ?dependency key >>= fun { FunctionDefinition.body; _ } -> body
@@ -616,9 +562,6 @@ end = struct
       all_unannotated_globals;
       get_module_metadata;
       module_exists;
-      hash_to_key_map;
-      serialize_decoded;
-      decoded_equal;
     }
 end
 

@@ -377,26 +377,6 @@ let store _ = ()
 
 let load = create
 
-let shared_memory_hash_to_key_map qualifiers = RawSources.compute_hashes_to_keys ~keys:qualifiers
-
-let serialize_decoded decoded =
-  match decoded with
-  | RawSources.Decoded (key, value) ->
-      let show_value = function
-        | Result.Ok source -> Source.show source
-        | Result.Error error -> Sexp.to_string (ParserError.sexp_of_t error)
-      in
-      Some (RawSourceValue.description, Reference.show key, Option.map value ~f:show_value)
-  | _ -> None
-
-
-let decoded_equal first second =
-  match first, second with
-  | RawSources.Decoded (_, first), RawSources.Decoded (_, second) ->
-      Some ([%compare.equal: (Source.t, ParserError.t) Result.t option] first second)
-  | _ -> None
-
-
 module ReadOnly = struct
   type t = {
     get_processed_source: track_dependency:bool -> Reference.t -> Source.t option;

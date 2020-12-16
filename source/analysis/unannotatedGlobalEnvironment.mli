@@ -8,7 +8,6 @@
 open Ast
 open Statement
 open SharedMemoryKeys
-open Core
 
 module ResolvedReference : sig
   type export =
@@ -33,12 +32,6 @@ end
 
 module ReadOnly : sig
   type t
-
-  val hash_to_key_map : t -> string String.Map.t
-
-  val serialize_decoded : t -> Memory.decodable -> (string * string * string option) option
-
-  val decoded_equal : t -> Memory.decodable -> Memory.decodable -> bool option
 
   val ast_environment : t -> AstEnvironment.ReadOnly.t
 

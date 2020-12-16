@@ -10,12 +10,6 @@ open Core
 module type ReadOnly = sig
   type t
 
-  val hash_to_key_map : t -> string String.Map.t
-
-  val serialize_decoded : t -> Memory.decodable -> (string * string * string option) option
-
-  val decoded_equal : t -> Memory.decodable -> Memory.decodable -> bool option
-
   val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.ReadOnly.t
 end
 
@@ -146,12 +140,6 @@ module EnvironmentTable : sig
       val get : t -> ?dependency:SharedMemoryKeys.DependencyKey.registered -> In.Key.t -> In.Value.t
 
       val upstream_environment : t -> In.PreviousEnvironment.ReadOnly.t
-
-      val hash_to_key_map : t -> string String.Map.t
-
-      val serialize_decoded : t -> Memory.decodable -> (string * string * string option) option
-
-      val decoded_equal : t -> Memory.decodable -> Memory.decodable -> bool option
 
       val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.ReadOnly.t
     end

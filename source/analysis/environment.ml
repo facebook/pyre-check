@@ -11,12 +11,6 @@ open Pyre
 module type ReadOnly = sig
   type t
 
-  val hash_to_key_map : t -> string String.Map.t
-
-  val serialize_decoded : t -> Memory.decodable -> (string * string * string option) option
-
-  val decoded_equal : t -> Memory.decodable -> Memory.decodable -> bool option
-
   val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.ReadOnly.t
 end
 
@@ -179,12 +173,6 @@ module EnvironmentTable = struct
 
       val upstream_environment : t -> In.PreviousEnvironment.ReadOnly.t
 
-      val hash_to_key_map : t -> string String.Map.t
-
-      val serialize_decoded : t -> Memory.decodable -> (string * string * string option) option
-
-      val decoded_equal : t -> Memory.decodable -> Memory.decodable -> bool option
-
       val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.ReadOnly.t
     end
 
@@ -229,29 +217,6 @@ module EnvironmentTable = struct
             let value = In.produce_value upstream_environment trigger ~dependency in
             Table.add key value;
             value
-
-
-      let hash_to_key_map { upstream_environment } =
-        let environment =
-          In.PreviousEnvironment.ReadOnly.unannotated_global_environment upstream_environment
-        in
-        Table.compute_hashes_to_keys ~keys:(In.all_keys environment)
-
-
-      let serialize_decoded _ decoded =
-        match decoded with
-        | Table.Decoded (key, value) ->
-            let value = value >>| In.serialize_value in
-            let key = In.show_key key in
-            Some (In.Value.description, key, value)
-        | _ -> None
-
-
-      let decoded_equal _ first second =
-        match first, second with
-        | Table.Decoded (_, first), Table.Decoded (_, second) ->
-            Some (Option.equal In.equal_value first second)
-        | _ -> None
 
 
       let unannotated_global_environment { upstream_environment } =
