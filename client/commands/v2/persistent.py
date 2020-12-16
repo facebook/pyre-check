@@ -75,7 +75,7 @@ async def try_initialize(
     output_channel: connection.TextWriter,
 ) -> Union[InitializationSuccess, InitializationFailure, InitializationExit]:
     """
-    Read a LSP message from the input channel and try to initialize an LSP
+    Read an LSP message from the input channel and try to initialize an LSP
     server. Also write to the output channel with proper response if the input
     message is a request instead of a notification.
 
@@ -84,7 +84,7 @@ async def try_initialize(
     - If the initialization fails, return `InitializationFailure`. There could
       be many reasons for the failure: The incoming LSP message may not be an
       initiailization request. The incoming LSP request may be malformed. Or the
-      client may not support the right capabilities that we want them to support.
+      client may not complete the handshake by sending back an `initialized` request.
     - If an exit notification is received, return `InitializationExit`. The LSP
       spec allows exiting a server without a preceding initialize request.
     """
@@ -116,6 +116,12 @@ async def try_initialize(
             # pyre-fixme[16]: Pyre doesn't understand `dataclasses_json`
             json_rpc.SuccessResponse(id=request_id, result=result.to_dict()),
         )
+
+        initialized_notification = await lsp.read_json_rpc(input_channel)
+        if initialized_notification.method != "initialized":
+            raise lsp.ServerNotInitializedError(
+                "Failed to receive an `initialized` request from client"
+            )
 
         return InitializationSuccess(
             client_capabilities=initialize_parameters.capabilities
