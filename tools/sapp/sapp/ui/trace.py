@@ -76,10 +76,13 @@ class TraceFrameQueryResult(NamedTuple):
     filename: Optional[str] = None
     trace_length: Optional[int] = None
     titos: Optional[str] = None
+    shared_texts: List[SharedText] = []
 
     @staticmethod
-    # pyre-fixme[2]: Parameter annotation cannot be `Any`.
-    def from_record(record: Any) -> "TraceFrameQueryResult":
+    def from_record(
+        record: Any,  # pyre-fixme[2]: Parameter annotation cannot be `Any`.
+        shared_texts: Optional[List[SharedText]] = None,
+    ) -> "TraceFrameQueryResult":
         return TraceFrameQueryResult(
             id=record.id,
             caller=record.caller,
@@ -93,6 +96,7 @@ class TraceFrameQueryResult(NamedTuple):
             filename=record.filename,
             trace_length=getattr(record, "trace_length", None),
             titos=";".join([str(titos) for titos in getattr(record, "titos", [])]),
+            shared_texts=shared_texts if shared_texts else [],
         )
 
     def is_leaf(self) -> bool:
@@ -163,9 +167,9 @@ def initial_frames(
     issue_id: DBID,
     kind: TraceKind,
 ) -> List[TraceFrameQueryResult]:
-    return [
-        TraceFrameQueryResult.from_record(result)
-        for result in session.query(
+
+    records = list(
+        session.query(
             TraceFrame.id,
             TraceFrame.caller_id,
             CallerText.contents.label("caller"),
@@ -192,7 +196,18 @@ def initial_frames(
         .group_by(TraceFrame.id)
         .order_by(TraceFrameLeafAssoc.trace_length, TraceFrame.callee_location)
         .all()
-    ]
+    )
+
+    frames = []
+    for record in records:
+        shared_texts = list(
+            session.query(SharedText)
+            .join(TraceFrameLeafAssoc, SharedText.id == TraceFrameLeafAssoc.leaf_id)
+            .filter(TraceFrameLeafAssoc.trace_frame_id == record.id)
+            .all()
+        )
+        frames.append(TraceFrameQueryResult.from_record(record, shared_texts))
+    return frames
 
 
 def navigate_trace_frames(
@@ -311,9 +326,19 @@ def next_frames(
                 )
             )
         ):
-            filtered_results.append(frame)
+            shared_texts = list(
+                session.query(SharedText)
+                .join(TraceFrameLeafAssoc, SharedText.id == TraceFrameLeafAssoc.leaf_id)
+                .filter(TraceFrameLeafAssoc.trace_frame_id == frame.id)
+                .all()
+            )
 
-    return [TraceFrameQueryResult.from_record(frame) for frame in filtered_results]
+            filtered_results.append((frame, shared_texts))
+
+    return [
+        TraceFrameQueryResult.from_record(frame, shared_texts)
+        for frame, shared_texts in filtered_results
+    ]
 
 
 def _leaf_lookup(

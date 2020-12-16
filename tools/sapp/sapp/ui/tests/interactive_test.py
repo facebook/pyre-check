@@ -836,6 +836,11 @@ class InteractiveTest(TestCase):
         )
 
     def testOutputTraceTuples(self):
+        features = [
+            SharedText(kind=SharedTextKind.FEATURE, contents="one"),
+            SharedText(kind=SharedTextKind.FEATURE, contents="two"),
+            SharedText(kind=SharedTextKind.FEATURE, contents="three"),
+        ]
         trace_tuples = [
             TraceTuple(
                 trace_frame=TraceFrameQueryResult(
@@ -857,6 +862,7 @@ class InteractiveTest(TestCase):
                     callee_port="result",
                     filename="file2.py",
                     callee_location=SourceLocation(1, 1, 2),
+                    shared_texts=[features[0], features[1]],
                 )
             ),
             TraceTuple(
@@ -879,6 +885,7 @@ class InteractiveTest(TestCase):
                     callee_port="root",
                     filename="file4.py",
                     callee_location=SourceLocation(1, 1, 4),
+                    shared_texts=[features[1], features[2]],
                 )
             ),
             TraceTuple(
@@ -901,6 +908,7 @@ class InteractiveTest(TestCase):
                     callee_port="param1",
                     filename="file5.py",
                     callee_location=SourceLocation(1, 1, 5),
+                    shared_texts=[features[0], features[1], features[2]],
                 )
             ),
             TraceTuple(
@@ -934,6 +942,27 @@ class InteractiveTest(TestCase):
         )
 
         self._clear_stdout()
+        self.interactive._output_trace_tuples(trace_tuples, True)
+        output = self.stdout.getvalue()
+        self.assertEqual(
+            output.split("\n"),
+            [
+                "     # ⎇  [callable] [port] [location]",
+                "     1    leaf       source file1.py:1|1|1",
+                " --> 2    call2      result file2.py:1|1|2",
+                "           --F: ['one', 'two']",
+                "     3    call3      result file3.py:1|1|3",
+                "     4    main       root   file4.py:1|1|4",
+                "           --F: ['two', 'three']",
+                "     5    call4      param0 file4.py:1|1|4",
+                "     6    call5      param1 file5.py:1|1|5",
+                "           --F: ['one', 'two', 'three']",
+                "     7    leaf       sink   file6.py:1|1|6",
+                "",
+            ],
+        )
+
+        self._clear_stdout()
         self.interactive.current_trace_frame_index = 4
         self.interactive._output_trace_tuples(trace_tuples)
         output = self.stdout.getvalue()
@@ -947,6 +976,28 @@ class InteractiveTest(TestCase):
                 "     4    main       root   file4.py:1|1|4",
                 " --> 5    call4      param0 file4.py:1|1|4",
                 "     6    call5      param1 file5.py:1|1|5",
+                "     7    leaf       sink   file6.py:1|1|6",
+                "",
+            ],
+        )
+
+        self._clear_stdout()
+        self.interactive.current_trace_frame_index = 4
+        self.interactive._output_trace_tuples(trace_tuples, True)
+        output = self.stdout.getvalue()
+        self.assertEqual(
+            output.split("\n"),
+            [
+                "     # ⎇  [callable] [port] [location]",
+                "     1    leaf       source file1.py:1|1|1",
+                "     2    call2      result file2.py:1|1|2",
+                "           --F: ['one', 'two']",
+                "     3    call3      result file3.py:1|1|3",
+                "     4    main       root   file4.py:1|1|4",
+                "           --F: ['two', 'three']",
+                " --> 5    call4      param0 file4.py:1|1|4",
+                "     6    call5      param1 file5.py:1|1|5",
+                "           --F: ['one', 'two', 'three']",
                 "     7    leaf       sink   file6.py:1|1|6",
                 "",
             ],

@@ -93,7 +93,7 @@ ScopeVariables = Dict[str, Union[Callable[..., None], TraceKind]]
 
 
 class Interactive:
-    help_message = f"""
+    help_message = """
 Commands =======================================================================
 
 == Information commands ==
@@ -597,7 +597,7 @@ details              show additional information about the current trace frame
         print(f"Found {len(issue_strings)} issues with run_id {self._current_run_id}.")
 
     @catch_user_error()
-    def trace(self) -> None:
+    def trace(self, features: bool = False) -> None:
         """Show a trace for the selected issue or trace frame.
 
         The '-->' token points to the currently active trace frame within the
@@ -620,8 +620,9 @@ details              show additional information about the current trace frame
                 module.helper.process root      module/helper.py:76|5|10
              +3 leaf                  sink      module/main.py:74|1|9
         """
+
         self._verify_entrypoint_selected()
-        self._output_trace_tuples(self.trace_tuples)
+        self._output_trace_tuples(self.trace_tuples, features)
 
     @catch_keyboard_interrupt()
     @catch_user_error()
@@ -1376,7 +1377,9 @@ details              show additional information about the current trace frame
                 "To see more, call 'frames' with the 'limit' argument."
             )
 
-    def _output_trace_tuples(self, trace_tuples: Sequence[TraceTuple]) -> None:
+    def _output_trace_tuples(
+        self, trace_tuples: Sequence[TraceTuple], features: bool = False
+    ) -> None:
         expand = "+"
         max_length_index = len(str(len(trace_tuples) - 1)) + 1
         max_length_split = max(
@@ -1439,6 +1442,15 @@ details              show additional information about the current trace frame
             )
 
             print(output_string)
+            if features:
+                frame_features = [
+                    text.contents
+                    for text in trace_tuple.trace_frame.shared_texts
+                    if text.kind is SharedTextKind.FEATURE
+                ]
+                if frame_features:
+                    prefix = " " * 11 + "--F:"
+                    print(f"{prefix} {frame_features}")
 
     def _create_trace_tuples(
         self, navigation: Iterable[Tuple[TraceFrameQueryResult, int]]
