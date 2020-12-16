@@ -1041,14 +1041,10 @@ let parse_model_clause ~path ~configuration ({ Node.value; location } as express
             >>| List.map ~f:(fun taint -> ModelQuery.TaintAnnotation taint)
       in
 
-      try
-        match Node.value taint_expression with
-        | Expression.List taint_annotations ->
-            List.map taint_annotations ~f:parse_produced_taint |> Core.Result.all >>| List.concat
-        | _ -> parse_produced_taint taint_expression
-      with
-      | Failure failure ->
-          Core.Result.Error (invalid_model_error ~path ~location ~name:"model query" failure)
+      match Node.value taint_expression with
+      | Expression.List taint_annotations ->
+          List.map taint_annotations ~f:parse_produced_taint |> Core.Result.all >>| List.concat
+      | _ -> parse_produced_taint taint_expression
     in
     match value with
     | Expression.Call
