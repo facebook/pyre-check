@@ -4,6 +4,8 @@ title: Static Analysis Post Processor
 sidebar_label: Static Analysis Processor
 ---
 
+import Internal from './fb/sapp_cli_internal.md';
+
 The `pyre analyze` command runs static analysis and outputs the result as JSON.
 The Static Analysis Post Processor (SAPP) tool can process these results and
 allows the user to explore the results.
@@ -203,3 +205,5 @@ In source.convert [source.py:8|17|22]
 `parents`: show the callers of the current trace frame
 
 `details`: additional details about the current trace frame
+
+<Internal />

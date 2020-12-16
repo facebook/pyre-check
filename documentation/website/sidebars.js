@@ -42,8 +42,6 @@ module.exports = {
     'pysa-model-dsl',
     'pysa-tips',
     'pysa-coverage',
-    ...fbInternalOnly(['fb/sapp-cli-internal']),
-    ...fbInternalOnly(['fb/sapp-ui-internal']),
     'static-analysis-post-processor',
     'pysa-additional-resources',
   ],
