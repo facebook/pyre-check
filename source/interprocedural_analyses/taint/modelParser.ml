@@ -1465,9 +1465,7 @@ let adjust_mode_and_skipped_overrides
       | "SkipOverrides" -> Ok (mode, Some define_name)
       | _ -> Ok (mode, skipped_override)
     in
-    try List.fold_result top_level_decorators ~f:adjust_mode ~init:(model.mode, None) with
-    | Model.InvalidModel error ->
-        Error (invalid_model_error ~path ~location ~name:(Reference.show define_name) error)
+    List.fold_result top_level_decorators ~f:adjust_mode ~init:(model.mode, None)
   in
   mode_and_skipped_override
   >>| fun (mode, skipped_override) -> { model with mode }, skipped_override
