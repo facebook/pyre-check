@@ -1241,14 +1241,14 @@ let test_invalid_models context =
   assert_invalid_model
     ~model_source:"def test.sink(parameter = TaintSink[Test]): ..."
     ~expect:
-      "Invalid model for `test.sink`: Default values of parameters must be `...`. Did you mean to \
-       write `parameter: TaintSink[Test]`?"
+      "Invalid model for `test.sink`: Default values of `test.sink`'s parameters must be `...`. \
+       Did you mean to write `parameter: TaintSink[Test]`?"
     ();
   assert_invalid_model
     ~model_source:"def test.sink(parameter = 1): ..."
     ~expect:
-      "Invalid model for `test.sink`: Default values of parameters must be `...`. Did you mean to \
-       write `parameter: 1`?"
+      "Invalid model for `test.sink`: Default values of `test.sink`'s parameters must be `...`. \
+       Did you mean to write `parameter: 1`?"
     ();
 
   (* ViaValueOf models must specify existing parameters. *)

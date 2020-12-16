@@ -60,7 +60,8 @@ let display { kind = error; path; location } =
     | InvalidDefaultValue { callable_name; name; expression } ->
         ( callable_name,
           Format.sprintf
-            "Default values of parameters must be `...`. Did you mean to write `%s: %s`?"
+            "Default values of `%s`'s parameters must be `...`. Did you mean to write `%s: %s`?"
+            callable_name
             name
             (Expression.show expression) )
     | IncompatibleModelError { name; callable_type; reasons } ->
