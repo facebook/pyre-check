@@ -106,6 +106,8 @@ include Taint.Result.Register (struct
             let models, errors, skip_overrides, queries =
               Model.get_model_sources ~paths |> create_models ~configuration
             in
+            if not (List.is_empty errors) then
+              Log.error "Found %d model verification errors!" (List.length errors);
             List.iter errors ~f:(fun error ->
                 Log.error "%s" (Taint.Model.display_verification_error error));
             if verify && not (List.is_empty errors) then
