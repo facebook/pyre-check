@@ -397,16 +397,6 @@ let test_subscription_responses client =
   Client.assert_subscription_response
     client
     ~expected:{ Subscription.Response.name = "foo"; body = Response.TypeErrors [error] }
-  >>= fun () ->
-  Client.close client
-  >>= fun () ->
-  (* Yield control to event loop so server has a chance to respond to the client shutdown. *)
-  Lwt.pause ()
-  >>= fun () ->
-  (* Verifies that the subscription goes away after the connection is closed. *)
-  let { ServerState.subscriptions; _ } = Client.current_server_state client in
-  assert_bool "Subscription `foo` removed" (not (Hashtbl.mem subscriptions "foo"));
-  Lwt.return_unit
 
 
 let test_subscription_responses context =
