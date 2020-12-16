@@ -212,17 +212,11 @@ let verify_global ~path ~location ~resolution ~name =
         then
           Result.Ok ()
         else
-          let error =
-            Format.sprintf
-              "Class `%s` has no attribute `%s`."
-              (Reference.show class_name)
-              attribute_name
-          in
           Result.Error
             {
               ModelVerificationError.path;
               location;
-              kind = GlobalVerificationError { name = Reference.show name; message = error };
+              kind = MissingAttribute { class_name = Reference.show class_name; attribute_name };
             }
     | _ ->
         Result.Error

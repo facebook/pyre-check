@@ -1195,6 +1195,14 @@ let test_invalid_models context =
       "Invalid model for `test.missing_global`: `test.missing_global` is not part of the \
        environment!"
     ();
+  assert_invalid_model
+    ~source:{|
+      class C:
+        a: int = 1
+     |}
+    ~model_source:"test.C.b: TaintSink[Test] = ..."
+    ~expect:"Invalid model for `test.C.b`: Class `test.C` has no attribute `b`."
+    ();
   assert_valid_model ~model_source:"test.C.unannotated_class_variable: TaintSink[Test]" ();
   assert_invalid_model
     ~model_source:"test.C.missing: TaintSink[Test]"

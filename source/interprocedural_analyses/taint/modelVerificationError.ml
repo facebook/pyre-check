@@ -16,10 +16,6 @@ type incompatible_model_error_reason =
   | UnexpectedDoubleStarredParameter
 
 type kind =
-  | GlobalVerificationError of {
-      name: string;
-      message: string;
-    }
   | InvalidDefaultValue of {
       callable_name: string;
       name: string;
@@ -33,6 +29,10 @@ type kind =
   | ImportedFunctionModel of {
       name: Reference.t;
       actual_name: Reference.t;
+    }
+  | MissingAttribute of {
+      class_name: string;
+      attribute_name: string;
     }
   | NotInEnvironment of string
   (* TODO(T81363867): Remove this variant. *)
@@ -56,7 +56,6 @@ let display { kind = error; path; location } =
   in
   let model_name, message =
     match error with
-    | GlobalVerificationError { name; message } -> name, message
     | InvalidDefaultValue { callable_name; name; expression } ->
         ( callable_name,
           Format.sprintf
@@ -90,6 +89,9 @@ let display { kind = error; path; location } =
             Reference.pp
             actual_name )
     | UnclassifiedError { model_name; message } -> model_name, message
+    | MissingAttribute { class_name; attribute_name } ->
+        ( Format.sprintf "%s.%s" class_name attribute_name,
+          Format.sprintf "Class `%s` has no attribute `%s`." class_name attribute_name )
     | NotInEnvironment name -> name, Format.sprintf "`%s` is not part of the environment!" name
   in
 

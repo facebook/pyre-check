@@ -14,10 +14,6 @@ type incompatible_model_error_reason =
   | UnexpectedDoubleStarredParameter
 
 type kind =
-  | GlobalVerificationError of {
-      name: string;
-      message: string;
-    }
   | InvalidDefaultValue of {
       callable_name: string;
       name: string;
@@ -31,6 +27,10 @@ type kind =
   | ImportedFunctionModel of {
       name: Reference.t;
       actual_name: Reference.t;
+    }
+  | MissingAttribute of {
+      class_name: string;
+      attribute_name: string;
     }
   | NotInEnvironment of string
   | UnclassifiedError of {
