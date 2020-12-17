@@ -129,8 +129,8 @@ include T
 
 let invalid_model_error ~path ~location ~name message =
   {
-    ModelVerificationError.kind =
-      ModelVerificationError.UnclassifiedError { model_name = name; message };
+    ModelVerificationError.T.kind =
+      ModelVerificationError.T.UnclassifiedError { model_name = name; message };
     path;
     location;
   }
@@ -1895,8 +1895,8 @@ let create ~resolution ?path ~configuration ~rule_filter source =
       then
         Error
           {
-            ModelVerificationError.kind =
-              ModelVerificationError.NotInEnvironment (Reference.show name);
+            ModelVerificationError.T.kind =
+              ModelVerificationError.T.NotInEnvironment (Reference.show name);
             path;
             location;
           }

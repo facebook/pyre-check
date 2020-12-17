@@ -30,6 +30,8 @@ module Model = struct
 
   let verification_error_to_json = ModelVerificationError.to_json
 
+  module ModelVerificationError = ModelVerificationError.T
+
   type taint_annotation = ModelParser.T.taint_annotation =
     | Sink of {
         sink: Sinks.t;

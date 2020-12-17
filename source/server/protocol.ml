@@ -207,6 +207,7 @@ module TypeQuery = struct
     | FoundPath of string
     | FoundSignature of found_signature list
     | Help of string
+    | ModelVerificationErrors of Taint.Model.ModelVerificationError.t list
     | NamesByPath of qualified_names_at_path list
     | Path of Path.t
     | References of Reference.t list
@@ -325,6 +326,8 @@ module TypeQuery = struct
     | TypeAtLocation annotation -> type_at_location_to_yojson annotation
     | TypesByPath paths_to_annotations ->
         `List (List.map paths_to_annotations ~f:types_at_path_to_yojson)
+    | ModelVerificationErrors errors ->
+        `Assoc ["errors", `List (List.map errors ~f:Taint.Model.verification_error_to_json)]
 
 
   and response_to_yojson = function

@@ -71,14 +71,14 @@ let model_compatible
   let validate_model_parameter errors_and_requirements (model_parameter, _, original) =
     (* Ensure that the parameter's default value is either not present or `...` to catch common
        errors when declaring models. *)
-    let open ModelVerificationError in
+    let open ModelVerificationError.T in
     let errors_and_requirements =
       match Node.value original with
       | { Parameter.value = Some expression; name; _ } ->
           if not (Expression.equal_expression (Node.value expression) Expression.Ellipsis) then
             Error
               {
-                ModelVerificationError.path;
+                ModelVerificationError.T.path;
                 location;
                 kind = InvalidDefaultValue { callable_name; name; expression };
               }
@@ -168,7 +168,7 @@ let verify_signature ~path ~location ~normalized_model_parameters ~name callable
       | Type.Callable.Named actual_name when not (Reference.equal name actual_name) ->
           Error
             {
-              ModelVerificationError.location;
+              ModelVerificationError.T.location;
               path;
               kind = ImportedFunctionModel { name; actual_name };
             }
@@ -214,10 +214,10 @@ let verify_global ~path ~location ~resolution ~name =
         else
           Result.Error
             {
-              ModelVerificationError.path;
+              ModelVerificationError.T.path;
               location;
               kind = MissingAttribute { class_name = Reference.show class_name; attribute_name };
             }
     | _ ->
         Result.Error
-          { ModelVerificationError.path; location; kind = NotInEnvironment (Reference.show name) }
+          { ModelVerificationError.T.path; location; kind = NotInEnvironment (Reference.show name) }

@@ -196,6 +196,7 @@ module TypeQuery : sig
     | FoundPath of string
     | FoundSignature of found_signature list
     | Help of string
+    | ModelVerificationErrors of Taint.Model.ModelVerificationError.t list
     | NamesByPath of qualified_names_at_path list
     | Path of Pyre.Path.t
     | References of Reference.t list

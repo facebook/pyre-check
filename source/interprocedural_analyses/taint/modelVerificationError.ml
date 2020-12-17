@@ -9,43 +9,50 @@ open Core
 open Pyre
 open Ast
 
-type incompatible_model_error_reason =
-  | UnexpectedPositionalOnlyParameter of string
-  | UnexpectedNamedParameter of string
-  | UnexpectedStarredParameter
-  | UnexpectedDoubleStarredParameter
+module T = struct
+  type incompatible_model_error_reason =
+    | UnexpectedPositionalOnlyParameter of string
+    | UnexpectedNamedParameter of string
+    | UnexpectedStarredParameter
+    | UnexpectedDoubleStarredParameter
+  [@@deriving eq, show]
 
-type kind =
-  | InvalidDefaultValue of {
-      callable_name: string;
-      name: string;
-      expression: Expression.t;
-    }
-  | IncompatibleModelError of {
-      name: string;
-      callable_type: Type.Callable.t;
-      reasons: incompatible_model_error_reason list;
-    }
-  | ImportedFunctionModel of {
-      name: Reference.t;
-      actual_name: Reference.t;
-    }
-  | MissingAttribute of {
-      class_name: string;
-      attribute_name: string;
-    }
-  | NotInEnvironment of string
-  (* TODO(T81363867): Remove this variant. *)
-  | UnclassifiedError of {
-      model_name: string;
-      message: string;
-    }
+  type kind =
+    | InvalidDefaultValue of {
+        callable_name: string;
+        name: string;
+        expression: Expression.t;
+      }
+    | IncompatibleModelError of {
+        name: string;
+        callable_type: Type.Callable.t;
+        reasons: incompatible_model_error_reason list;
+      }
+    | ImportedFunctionModel of {
+        name: Reference.t;
+        actual_name: Reference.t;
+      }
+    | MissingAttribute of {
+        class_name: string;
+        attribute_name: string;
+      }
+    | NotInEnvironment of string
+    (* TODO(T81363867): Remove this variant. *)
+    | UnclassifiedError of {
+        model_name: string;
+        message: string;
+      }
+  [@@deriving eq, show]
 
-type t = {
-  kind: kind;
-  path: Path.t option;
-  location: Location.t;
-}
+  type t = {
+    kind: kind;
+    path: Path.t option;
+    location: Location.t;
+  }
+  [@@deriving eq, show]
+end
+
+include T
 
 let description error =
   match error with
