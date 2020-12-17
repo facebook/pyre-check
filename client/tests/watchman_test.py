@@ -27,7 +27,6 @@ def send_sigint_to_self(
 
 class SubscriberTest(unittest.TestCase):
     @patch.object(Process, "register_unique_process")
-    @patch.object(watchman, "remove_if_exists")
     @patch.object(watchman, "acquire_lock")
     @patch.object(os, "_exit")
     @patch.object(os, "close")
@@ -42,7 +41,6 @@ class SubscriberTest(unittest.TestCase):
         close: MagicMock,
         exit: MagicMock,
         acquire_lock: MagicMock,
-        remove_if_exists: MagicMock,
         register_unique_process: MagicMock,
     ) -> None:
         acquire_lock.side_effect = send_sigint_to_self
@@ -66,9 +64,6 @@ class SubscriberTest(unittest.TestCase):
 
         self.assertEqual(fork.call_count, 2)
         register_unique_process.assert_called_once()
-        remove_if_exists.assert_any_call(
-            os.path.join(".pyre", "test", "foo_subscriber.lock")
-        )
 
     # pyre-fixme[56]: Argument `os` to decorator factory
     #  `unittest.mock.patch.object` could not be resolved in a global scope.
