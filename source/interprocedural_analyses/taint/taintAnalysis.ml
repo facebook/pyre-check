@@ -47,12 +47,13 @@ include Taint.Result.Register (struct
       else
         None
     in
+
     let create_models ~configuration sources =
       let timer = Timer.start () in
-      let result =
+      let map state sources =
         List.fold
           sources
-          ~init:(models, [], Ast.Reference.Set.empty, [])
+          ~init:state
           ~f:(fun (models, errors, skip_overrides, queries) (path, source) ->
             let {
               ModelParser.T.models;
@@ -67,6 +68,53 @@ include Taint.Result.Register (struct
               List.rev_append new_errors errors,
               Set.union skip_overrides new_skip_overrides,
               List.rev_append new_queries queries ))
+      in
+      let reduce
+          (models_left, errors_left, skip_overrides_left, queries_left)
+          (models_right, errors_right, skip_overrides_right, queries_right)
+        =
+        let merge_models ~key:_ = function
+          | `Left model
+          | `Right model ->
+              Some model
+          | `Both (left, right) ->
+              Some
+                {
+                  mode = Mode.join left.mode right.mode;
+                  forward =
+                    {
+                      source_taint =
+                        Domains.ForwardState.join
+                          left.forward.source_taint
+                          right.forward.source_taint;
+                    };
+                  backward =
+                    {
+                      sink_taint =
+                        Domains.BackwardState.join
+                          left.backward.sink_taint
+                          right.backward.sink_taint;
+                      taint_in_taint_out =
+                        Domains.BackwardState.join
+                          left.backward.taint_in_taint_out
+                          right.backward.taint_in_taint_out;
+                    };
+                }
+        in
+        ( Callable.Map.merge models_left models_right ~f:merge_models,
+          List.rev_append errors_left errors_right,
+          Set.union skip_overrides_left skip_overrides_right,
+          List.rev_append queries_left queries_right )
+      in
+      let result =
+        Scheduler.map_reduce
+          scheduler
+          ~policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
+          ~initial:(models, [], Ast.Reference.Set.empty, [])
+          ~map
+          ~reduce
+          ~inputs:sources
+          ()
       in
       Statistics.performance ~name:"Parsed taint models" ~timer ();
       result
