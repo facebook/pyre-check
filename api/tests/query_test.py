@@ -401,3 +401,27 @@ class QueryAPITest(unittest.TestCase):
         )
         with self.assertRaises(connection.PyreQueryError):
             query.get_invalid_taint_models(pyre_connection)
+        pyre_connection = MagicMock()
+        pyre_connection.query_server.return_value = {
+            "response": {
+                "errors": [
+                    {
+                        "description": "Invalid model for `first.f`: Unrecognized taint annotation `NotAnAnnotation`",  # noqa: B950
+                        "path": "/path/to/first.py",
+                        "line": 2,
+                        "column": 0,
+                    }
+                ]
+            }
+        }
+        self.assertEqual(
+            query.get_invalid_taint_models(pyre_connection),
+            [
+                query.InvalidModel(
+                    fully_qualified_name="",
+                    path="/path/to/first.py",
+                    line=2,
+                    full_error_message="Invalid model for `first.f`: Unrecognized taint annotation `NotAnAnnotation`",  # noqa: B950
+                ),
+            ],
+        )

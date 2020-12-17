@@ -235,7 +235,18 @@ def get_invalid_taint_models(
 ) -> List[InvalidModel]:
     errors: List[InvalidModel] = []
     try:
-        _ = pyre_connection.query_server("validate_taint_models()")
+        response = pyre_connection.query_server("validate_taint_models()")
+        if "response" in response and "errors" in response["response"]:
+            found_errors = response["response"]["errors"]
+            for error in found_errors:
+                errors.append(
+                    InvalidModel(
+                        full_error_message=error["description"],
+                        path=error["path"],
+                        line=error["line"],
+                        fully_qualified_name="",
+                    )
+                )
     except PyreQueryError as exception:
         message = exception.args[0]
         if "Invalid model for" not in message:
