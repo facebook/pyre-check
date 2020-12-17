@@ -2,49 +2,69 @@
 def requests.api.request(
         method: TaintSink[RequestSend_METADATA],
         url: TaintSink[RequestSend_URI],
+        auth: TaintSink[Authentication],
         **kwargs: TaintSink[RequestSend_DATA]
 ): ...
-def requests.api.get(url: TaintSink[RequestSend_URI],
+def requests.api.get(
+        url: TaintSink[RequestSend_URI],
         params: TaintSink[RequestSend_DATA],
+        auth: TaintSink[Authentication],
         **kwargs: TaintSink[RequestSend_METADATA]
 ): ...
-def requests.api.options(url: TaintSink[RequestSend_URI], **kwargs: TaintSink[RequestSend_METADATA]): ...
-def requests.api.head(url: TaintSink[RequestSend_URI], **kwargs: TaintSink[RequestSend_METADATA]): ...
+def requests.api.options(
+        url: TaintSink[RequestSend_URI],
+        auth: TaintSink[Authentication],
+        **kwargs: TaintSink[RequestSend_METADATA]
+): ...
+def requests.api.head(
+        url: TaintSink[RequestSend_URI],
+        auth: TaintSink[Authentication],
+        **kwargs: TaintSink[RequestSend_METADATA]
+): ...
 def requests.api.post(
         url: TaintSink[RequestSend_URI],
         data: TaintSink[RequestSend_DATA],
         json: TaintSink[RequestSend_DATA],
+        auth: TaintSink[Authentication],
         **kwargs: TaintSink[RequestSend_METADATA]
 ): ...
 def requests.api.put(
         url: TaintSink[RequestSend_URI],
         data: TaintSink[RequestSend_DATA],
         json: TaintSink[RequestSend_DATA],
+        auth: TaintSink[Authentication],
         **kwargs: TaintSink[RequestSend_METADATA]
 ): ...
 def requests.api.patch(
         url: TaintSink[RequestSend_URI],
         data: TaintSink[RequestSend_DATA],
         json: TaintSink[RequestSend_DATA],
+        auth: TaintSink[Authentication],
         **kwargs: TaintSink[RequestSend_METADATA]
 ): ...
 def requests.api.delete(
         url: TaintSink[RequestSend_URI],
+        auth: TaintSink[Authentication],
         **kwargs: TaintSink[RequestSend_METADATA]
 ): ...
 
 # SSRF [requests.Session]
 def requests.sessions.Session.get(
-        self, url: TaintSink[RequestSend_URI],
+        self,
+        url: TaintSink[RequestSend_URI],
+        auth: TaintSink[Authentication],
         **kwargs: TaintSink[RequestSend_METADATA]
 ): ...
 def requests.sessions.Session.options(
         self,
         url: TaintSink[RequestSend_URI],
+        auth: TaintSink[Authentication],
         **kwargs: TaintSink[RequestSend_METADATA]
 ): ...
 def requests.sessions.Session.head(
-        self, url: TaintSink[RequestSend_URI],
+        self,
+        url: TaintSink[RequestSend_URI],
+        auth: TaintSink[Authentication],
         **kwargs: TaintSink[RequestSend_METADATA]
 ): ...
 def requests.sessions.Session.post(
@@ -52,43 +72,52 @@ def requests.sessions.Session.post(
         url: TaintSink[RequestSend_URI],
         data: TaintSink[RequestSend_DATA],
         json: TaintSink[RequestSend_DATA],
+        auth: TaintSink[Authentication],
         **kwargs: TaintSink[RequestSend_METADATA]
 ): ...
 def requests.sessions.Session.put(
         self,
         url: TaintSink[RequestSend_URI],
         data: TaintSink[RequestSend_DATA],
+        auth: TaintSink[Authentication],
         **kwargs: TaintSink[RequestSend_METADATA]
 ): ...
 def requests.sessions.Session.patch(
         self,
         url: TaintSink[RequestSend_URI],
         data: TaintSink[RequestSend_DATA],
+        auth: TaintSink[Authentication],
         **kwargs: TaintSink[RequestSend_METADATA]
 ): ...
 def requests.sessions.Session.delete(
         self,
         url: TaintSink[RequestSend_URI],
+        auth: TaintSink[Authentication],
         **kwargs: TaintSink[RequestSend_METADATA]
 ): ...
 def requests.sessions.Session.request(
-        self, method: TaintSink[RequestSend_METADATA],
+        self,
+        method: TaintSink[RequestSend_METADATA],
         url: TaintSink[RequestSend_URI],
-            params: TaintSink[RequestSend_DATA],
-            data: TaintSink[RequestSend_DATA],
-            headers: TaintSink[RequestSend_METADATA],
-            cookies: TaintSink[RequestSend_METADATA],
-            files,
-            auth: TaintSink[RequestSend_METADATA],
-            timeout: TaintSink[RequestSend_METADATA],
-            allow_redirects,
-            proxies: TaintSink[RequestSend_METADATA],
-            hooks: TaintSink[RequestSend_METADATA],
-            stream: TaintSink[RequestSend_METADATA],
-            verify: TaintSink[RequestSend_METADATA],
-            cert,
-            json: TaintSink[RequestSend_DATA],
+        params: TaintSink[RequestSend_DATA],
+        data: TaintSink[RequestSend_DATA],
+        headers: TaintSink[RequestSend_METADATA],
+        cookies: TaintSink[RequestSend_METADATA],
+        files,
+        auth: TaintSink[RequestSend_METADATA, Authentication],
+        timeout: TaintSink[RequestSend_METADATA],
+        allow_redirects,
+        proxies: TaintSink[RequestSend_METADATA],
+        hooks: TaintSink[RequestSend_METADATA],
+        stream: TaintSink[RequestSend_METADATA],
+        verify: TaintSink[RequestSend_METADATA],
+        cert,
+        json: TaintSink[RequestSend_DATA],
 ): ...
+
+# Authentication sinks
+def requests.models.Request.__init__(auth: TaintSink[Authentication] = ...): ...
+def requests.models.PreparedRequest.prepare(auth: TaintSink[Authentication] = ...): ...
 
 # SSRF [urllib.request]
 def urllib.request.urlopen(url: TaintSink[RequestSend_URI], data: TaintSink[RequestSend_DATA],
