@@ -565,7 +565,7 @@ let run
           in
           Daemon.close handle;
           Log.log ~section:`Server "Forked off daemon with pid %d" pid;
-          Log.info "Server starting in background";
+          Log.info "Starting the server. Please wait...";
           pid )
         else (
           acquire_lock ~server_configuration;
