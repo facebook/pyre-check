@@ -2347,7 +2347,7 @@ module OverUnderStringSet = struct
     assert_equal set_c (transform Self (Add set_c) set_c) ~printer:show ~cmp:compare;
     assert_equal empty (transform Element (Map (fun x -> x)) empty) ~printer:show ~cmp:compare;
     assert_equal
-      (of_approximation [{ element = "a"; in_under = false }])
+      (of_approximation [{ element = "a"; in_under = true }])
       (transform Element (Map (fun _ -> "a")) set_c)
       ~printer:show
       ~cmp:compare

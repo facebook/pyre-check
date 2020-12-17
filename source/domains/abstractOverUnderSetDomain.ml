@@ -113,15 +113,15 @@ module Make (Element : AbstractSetDomain.ELEMENT) = struct
     | Bottom -> BiSet { over; under }
 
 
-  (* Add every element of ~to_add to the existing set. This means that the under approximation comes
-     from to_add, but existing under approximations for other elements come from the existing set. *)
+  (* Add every element of ~to_add to the existing set. The element is present in the under
+     approximation if it is present in either. *)
   let add_set set ~to_add =
     match set, to_add with
     | Bottom, _ -> to_add
     | _, Bottom -> set
     | BiSet { over; under }, BiSet { over = to_add_over; under = to_add_under } ->
         let over = Set.union over to_add_over in
-        let under = Set.union (Set.diff under to_add_over) to_add_under in
+        let under = Set.union under to_add_under in
         make ~old:set ~over ~under
 
 
@@ -201,6 +201,8 @@ module Make (Element : AbstractSetDomain.ELEMENT) = struct
         make ~old:set ~over ~under
 
 
+  (* Logically, this is a union with point-wise meet of whether the element is in the
+     under-approximation *)
   let add_element set { element; in_under } =
     match set with
     | Bottom ->
@@ -218,7 +220,7 @@ module Make (Element : AbstractSetDomain.ELEMENT) = struct
           if in_under then
             Set.add element under
           else
-            Set.remove element under
+            under
         in
         make ~old:set ~over ~under
 
