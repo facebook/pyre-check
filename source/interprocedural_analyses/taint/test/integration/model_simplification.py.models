@@ -38,7 +38,7 @@
             ],
             "features": [
               { "always-via": "tito" },
-              { "via": "object" },
+              { "always-via": "object" },
               { "always-via": "obscure" }
             ]
           },

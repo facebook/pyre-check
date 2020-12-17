@@ -98,7 +98,7 @@
               }
             ],
             "features": [
-              { "via": "tito" },
+              { "always-via": "tito" },
               { "always-via": "string_concat_rhs" },
               { "always-via": "special_source" }
             ]
@@ -124,7 +124,7 @@
       }
     ],
     "features": [
-      { "via": "tito" },
+      { "always-via": "tito" },
       { "always-via": "string_concat_rhs" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
