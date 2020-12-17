@@ -35,7 +35,7 @@ end = struct
     path |> File.create ~content |> File.write
 end
 
-let matches_pattern ~pattern name = Re2.matches (Re2.create_exn pattern) name
+let matches_pattern ~pattern = Re2.matches (Re2.create_exn pattern)
 
 let rec matches_constraint query_constraint ~resolution ~callable =
   let get_callable_type =
@@ -49,6 +49,24 @@ let rec matches_constraint query_constraint ~resolution ~callable =
         | _ -> false )
   in
   match query_constraint with
+  | ModelQuery.DecoratorNameConstraint name -> (
+      let callable_type = get_callable_type () in
+      match callable_type with
+      | Some
+          {
+            Node.value =
+              { Statement.Define.signature = { Statement.Define.Signature.decorators; _ }; _ };
+            _;
+          }
+        when not (List.is_empty decorators) ->
+          let matches_pattern = matches_pattern ~pattern:name in
+          let decorator_name_matches
+              { Statement.Decorator.name = { Node.value = decorator_name; _ }; _ }
+            =
+            matches_pattern (Reference.show decorator_name)
+          in
+          List.exists decorators ~f:decorator_name_matches
+      | _ -> false )
   | ModelQuery.NameConstraint pattern ->
       matches_pattern ~pattern (Callable.external_target_name callable)
   | ModelQuery.ReturnConstraint annotation_constraint -> (

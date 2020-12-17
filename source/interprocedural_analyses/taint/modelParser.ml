@@ -75,6 +75,7 @@ module T = struct
       | AnyParameterConstraint of parameter_constraint
       | AnyOf of model_constraint list
       | ParentConstraint of class_constraint
+      | DecoratorNameConstraint of string
     [@@deriving compare, show]
 
     type kind =
@@ -904,6 +905,41 @@ let parse_where_clause ~path ({ Node.value; location } as expression) =
             ];
         } ->
         Ok (ModelQuery.NameConstraint name_constraint)
+    | Expression.Call
+        {
+          Call.callee =
+            {
+              Node.value =
+                Expression.Name
+                  (Name.Attribute
+                    {
+                      base =
+                        {
+                          Node.value =
+                            Name
+                              (Name.Attribute
+                                {
+                                  base = { Node.value = Name (Name.Identifier "any_decorator"); _ };
+                                  attribute = "name";
+                                  _;
+                                });
+                          _;
+                        };
+                      attribute = "matches";
+                      _;
+                    });
+              _;
+            };
+          arguments =
+            [
+              {
+                Call.Argument.value =
+                  { Node.value = Expression.String { StringLiteral.value = name_constraint; _ }; _ };
+                _;
+              };
+            ];
+        } ->
+        Ok (ModelQuery.DecoratorNameConstraint name_constraint)
     | Expression.Call
         {
           Call.callee =

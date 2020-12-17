@@ -120,6 +120,20 @@ ModelQuery(
 )
 ```
 
+### `any_decorator` clauses
+
+`any_decorator` clauses are used to find functions decorated with decorators that match a pattern.
+Pysa currently only supports matching on the name of any decorator. If you wanted to find all
+functions which are decorated by `@app.route()`, you can write:
+
+```python
+ModelQuery(
+  find = "functions",
+  where = any_decorator.name.matches("app.route"),
+  ...
+)
+```
+
 ## Generated models
 
 The last bit of model queries is actually generating models for all callables that match the provided where clauses. We support generating models for parameters by name or position, as well as generating models for all paramaters. Additionally, we support generating models for the return annotation.

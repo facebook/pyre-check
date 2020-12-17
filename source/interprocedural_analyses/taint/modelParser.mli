@@ -66,6 +66,7 @@ module T : sig
       | AnyParameterConstraint of parameter_constraint
       | AnyOf of model_constraint list
       | ParentConstraint of class_constraint
+      | DecoratorNameConstraint of string
     [@@deriving compare, show]
 
     type kind =

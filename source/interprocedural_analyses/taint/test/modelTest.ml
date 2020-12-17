@@ -2120,6 +2120,39 @@ let test_query_parsing context =
         };
       ]
     ();
+  assert_queries
+    ~context
+    ~model_source:
+      {|
+    ModelQuery(
+     find = "methods",
+     where = any_decorator.name.matches("foo"),
+     model = [Returns([TaintSource[Test]])],
+    )
+  |}
+    ~expect:
+      [
+        {
+          name = None;
+          query = [DecoratorNameConstraint "foo"];
+          rule_kind = MethodModel;
+          productions =
+            [
+              ReturnTaint
+                [
+                  TaintAnnotation
+                    (Model.Source
+                       {
+                         source = Sources.NamedSource "Test";
+                         breadcrumbs = [];
+                         path = [];
+                         leaf_name_provided = false;
+                       });
+                ];
+            ];
+        };
+      ]
+    ();
   ()
 
 
