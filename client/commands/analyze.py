@@ -4,20 +4,20 @@
 # LICENSE file in the root directory of this source tree.
 
 
-import dataclasses
 import enum
 import json
 import os
-from typing import List, Optional, Sequence
+from typing import List, Optional
 
 from typing_extensions import Final
 
 from .. import command_arguments, log
 from ..analysis_directory import AnalysisDirectory, resolve_analysis_directory
 from ..configuration import Configuration
-from ..error import ModelVerificationError, print_errors
+from ..error import print_errors
 from .check import Check
 from .command import ClientException, ExitCode, Result
+from .validate_models import ValidateModels
 
 
 class MissingFlowsKind(str, enum.Enum):
@@ -105,41 +105,21 @@ class Analyze(Check):
             flags.append("-use-cache")
         return flags
 
-    def _relativize_error(
-        self, relative_root: str, error: ModelVerificationError
-    ) -> ModelVerificationError:
-        path = os.path.realpath(os.path.join(relative_root, error.path))
-        # If relative paths don't make sense, keep the absolute path around.
-        if not path.startswith(self._configuration.project_root) or not os.path.exists(
-            path
-        ):
-            return error
-
-        # Relativize path to user's cwd.
-        relative_path = self._relative_path(path)
-        return dataclasses.replace(error, path=relative_path)
-
-    def _parse_errors(self, result: Result) -> Sequence[ModelVerificationError]:
-        try:
-            json_result = json.loads(result.output)
-            if "errors" not in json_result:
-                return []
-            analysis_root = os.path.realpath(self._analysis_directory.get_root())
-            return [
-                self._relativize_error(
-                    analysis_root, ModelVerificationError.from_json(error_json)
-                )
-                for error_json in json_result["errors"]
-            ]
-        except json.JSONDecodeError:
-            raise ClientException(f"Invalid JSON output: `{result.output}`.")
-
     def _run(self, retries: int = 1) -> None:
         self._analysis_directory.prepare()
         result = self._call_client(command=self.NAME)
         result.check()
 
-        errors = self._parse_errors(result)
+        try:
+            errors = ValidateModels.parse_errors(
+                json.loads(result.output),
+                self._configuration,
+                self._analysis_directory,
+                self._original_directory,
+            )
+        except json.JSONDecodeError:
+            raise ClientException(f"Invalid JSON output: `{result.output}`.")
+
         if errors:
             print_errors(errors, output=self._output, error_kind="model verification")
             self._exit_code = ExitCode.FOUND_ERRORS

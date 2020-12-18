@@ -1139,6 +1139,25 @@ def stop(context: click.Context) -> int:
         )
 
 
+@pyre.command()
+@click.pass_context
+def validate_models(context: click.Context) -> int:
+    """
+    Validate the taint models for the given project by querying the Pyre server.
+    """
+    command_argument: command_arguments.CommandArguments = context.obj["arguments"]
+    configuration = _create_configuration_with_retry(command_argument, Path("."))
+    return run_pyre_command(
+        commands.ValidateModels(
+            command_argument,
+            original_directory=os.getcwd(),
+            configuration=configuration,
+        ),
+        configuration,
+        command_argument.noninteractive,
+    )
+
+
 # Need the default argument here since this is our entry point in setup.py
 def main(argv: List[str] = sys.argv[1:]) -> int:
     noninteractive = ("-n" in argv) or ("--noninteractive" in argv)

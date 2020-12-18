@@ -30,6 +30,7 @@ from .servers import Servers as Servers
 from .start import Start
 from .statistics import Statistics as Statistics
 from .stop import Stop as Stop
+from .validate_models import ValidateModels as ValidateModels
 
 COMMANDS: List[Type[CommandParser]] = [
     Analyze,
@@ -49,4 +50,5 @@ COMMANDS: List[Type[CommandParser]] = [
     Start,
     Statistics,
     Stop,
+    ValidateModels,
 ]
