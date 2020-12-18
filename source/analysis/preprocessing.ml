@@ -495,10 +495,10 @@ let qualify
     let scope, value =
       let local_alias ~qualifier ~name = { name; qualifier; is_forward_reference = false } in
       let qualify_assign { Assign.target; annotation; value; parent } =
-        let qualify_value ~scope = function
+        let qualify_value ~is_potential_alias ~scope = function
           | { Node.value = Expression.String _; _ } ->
               (* String literal assignments might be type aliases. *)
-              qualify_expression ~qualify_strings:is_top_level value ~scope
+              qualify_expression ~qualify_strings:is_potential_alias value ~scope
           | {
               Node.value =
                 Call
@@ -509,7 +509,7 @@ let qualify
                   };
               _;
             } ->
-              qualify_expression ~qualify_strings:is_top_level value ~scope
+              qualify_expression ~qualify_strings:is_potential_alias value ~scope
           | _ -> qualify_expression ~qualify_strings:false value ~scope
         in
         let target_scope, target =
@@ -629,12 +629,22 @@ let qualify
           else
             scope, target
         in
+        let qualified_annotation = annotation >>| qualify_expression ~qualify_strings:true ~scope in
+        let qualified_value =
+          let is_potential_alias =
+            match qualified_annotation >>| Expression.show with
+            | Some "typing.TypeAlias"
+            | None ->
+                is_top_level
+            | _ -> false
+          in
+          qualify_value ~scope:target_scope ~is_potential_alias value
+        in
         ( target_scope,
           {
             Assign.target;
-            annotation = annotation >>| qualify_expression ~qualify_strings:true ~scope;
-            (* Assignments can be type aliases. *)
-            value = qualify_value ~scope:target_scope value;
+            annotation = qualified_annotation;
+            value = qualified_value;
             parent = (parent >>| fun parent -> qualify_reference ~scope parent);
           } )
       in

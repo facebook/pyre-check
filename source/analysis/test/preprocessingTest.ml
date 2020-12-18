@@ -723,6 +723,38 @@ let test_qualify _ =
         $local_qualifier?foo$x = 'arg'
         return {'arg': $local_qualifier?foo$x}
     |};
+  (* Don't qualify a string that is assigned to an explicitly-typed variable. *)
+  assert_qualify {|
+      x: str = "x"
+    |} {|
+      $local_qualifier$x: str = "x"
+    |};
+  (* We qualify global string assignments where the string matches an in-scope variable because
+     these are potential aliases. *)
+  assert_qualify
+    {|
+      x = "x"
+      y = 1
+      string_containing_y = "y"
+    |}
+    {|
+      $local_qualifier$x = "$local_qualifier$x"
+      $local_qualifier$y = 1
+      $local_qualifier$string_containing_y = "$local_qualifier$y"
+    |};
+  assert_qualify
+    {|
+      from typing import TypeAlias
+
+      class C: ...
+      my_alias: TypeAlias = "C"
+    |}
+    {|
+      from typing import TypeAlias
+
+      class qualifier.C: ...
+      $local_qualifier$my_alias: typing.TypeAlias = "qualifier.C"
+    |};
   (* Don't qualify the TypeVar name argument. *)
   assert_qualify
     {|
@@ -1643,12 +1675,12 @@ let test_qualify _ =
   (* Recursive alias definition. *)
   assert_qualify
     {|
-      from typing import List, Tuple, Union
+      from typing import Tuple, Union
 
       Tree = Union[int, Tuple["Tree", "Tree"]]
     |}
     {|
-      from typing import List, Tuple, Union
+      from typing import Tuple, Union
 
       $local_qualifier$Tree = typing.Union[int, \
         typing.Tuple["$local_qualifier$Tree", "$local_qualifier$Tree"]]

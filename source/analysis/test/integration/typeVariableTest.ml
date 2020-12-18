@@ -3351,6 +3351,29 @@ let test_recursive_aliases context =
        int])` but got `$RecursiveType1 (resolves to Union[Tuple[Union[Tuple[$RecursiveType1, \
        $RecursiveType1], str], $RecursiveType1], Tuple[$RecursiveType1, $RecursiveType1], int])`.";
     ];
+  assert_type_errors
+    {|
+      from typing import Final
+      from typing_extensions import Literal
+      x: Final[str] = "x"
+      y: Literal["y"] = "y"
+      reveal_type(x)
+      reveal_type(y)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `str` (inferred: \
+       `typing_extensions.Literal['x']`).";
+      "Revealed type [-1]: Revealed type for `y` is `typing_extensions.Literal['y']`.";
+    ];
+  assert_type_errors
+    {|
+      x: str = "x"
+      reveal_type(x)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `str` (inferred: \
+       `typing_extensions.Literal['x']`).";
+    ];
   ()
 
 
