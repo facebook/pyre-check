@@ -11,7 +11,7 @@ from typing import Any, Dict
 from unittest.mock import patch
 
 from .. import __name__ as client
-from ..error import Error, ErrorParsingFailure, LegacyError
+from ..error import Error, ErrorParsingFailure, LegacyError, ModelVerificationError
 
 
 class ErrorTest(unittest.TestCase):
@@ -144,4 +144,34 @@ class ErrorTest(unittest.TestCase):
         self.assertEqual(
             error.error.long_description,
             "Fake error.\nAnd this is why this is an error.",
+        )
+
+    def test_model_verification_error_parsing(self) -> None:
+        def assert_parsed(
+            json: Dict[str, Any], expected: ModelVerificationError
+        ) -> None:
+            self.assertEqual(ModelVerificationError.from_json(json), expected)
+
+        def assert_not_parsed(json: Dict[str, Any]) -> None:
+            with self.assertRaises(ErrorParsingFailure):
+                Error.from_json(json)
+
+        assert_not_parsed({})
+        assert_not_parsed({"derp": 42})
+        assert_not_parsed({"line": "abc", "column": []})
+        assert_not_parsed({"line": 1, "column": 1})
+
+        assert_parsed(
+            {
+                "line": 1,
+                "column": 1,
+                "path": "test.py",
+                "description": "Some description",
+            },
+            expected=ModelVerificationError(
+                line=1,
+                column=1,
+                path=Path("test.py"),
+                description="Some description",
+            ),
         )

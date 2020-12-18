@@ -4,15 +4,20 @@
 # LICENSE file in the root directory of this source tree.
 
 
+import dataclasses
 import enum
-from typing import List, Optional
+import json
+import os
+from typing import List, Optional, Sequence
 
 from typing_extensions import Final
 
 from .. import command_arguments, log
 from ..analysis_directory import AnalysisDirectory, resolve_analysis_directory
 from ..configuration import Configuration
+from ..error import ModelVerificationError, print_errors
 from .check import Check
+from .command import ClientException, ExitCode, Result
 
 
 class MissingFlowsKind(str, enum.Enum):
@@ -100,9 +105,43 @@ class Analyze(Check):
             flags.append("-use-cache")
         return flags
 
+    def _relativize_error(
+        self, relative_root: str, error: ModelVerificationError
+    ) -> ModelVerificationError:
+        path = os.path.realpath(os.path.join(relative_root, error.path))
+        # If relative paths don't make sense, keep the absolute path around.
+        if not path.startswith(self._configuration.project_root) or not os.path.exists(
+            path
+        ):
+            return error
+
+        # Relativize path to user's cwd.
+        relative_path = self._relative_path(path)
+        return dataclasses.replace(error, path=relative_path)
+
+    def _parse_errors(self, result: Result) -> Sequence[ModelVerificationError]:
+        try:
+            json_result = json.loads(result.output)
+            if "errors" not in json_result:
+                return []
+            analysis_root = os.path.realpath(self._analysis_directory.get_root())
+            return [
+                self._relativize_error(
+                    analysis_root, ModelVerificationError.from_json(error_json)
+                )
+                for error_json in json_result["errors"]
+            ]
+        except json.JSONDecodeError:
+            raise ClientException(f"Invalid JSON output: `{result.output}`.")
+
     def _run(self, retries: int = 1) -> None:
         self._analysis_directory.prepare()
         result = self._call_client(command=self.NAME)
         result.check()
-        if self._save_results_to is None:
+
+        errors = self._parse_errors(result)
+        if errors:
+            print_errors(errors, output=self._output, error_kind="model verification")
+            self._exit_code = ExitCode.FOUND_ERRORS
+        elif self._save_results_to is None:
             log.stdout.write(result.output)

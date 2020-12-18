@@ -175,15 +175,65 @@ class LegacyError:
         return f"{path}:{line}:{column} {self.error.description}"
 
 
+@dataclasses.dataclass(frozen=True)
+class ModelVerificationError:
+    line: int
+    column: int
+    path: Path
+    description: str
+
+    @staticmethod
+    def from_json(error_json: Dict[str, Any]) -> "ModelVerificationError":
+        try:
+            return ModelVerificationError(
+                line=error_json["line"],
+                column=error_json["column"],
+                path=Path(error_json["path"]),
+                description=error_json["description"],
+            )
+        except KeyError as key_error:
+            message = f"Missing field from error json: {key_error}"
+            raise ErrorParsingFailure(message) from key_error
+        except TypeError as type_error:
+            message = f"Field type mismatch: {type_error}"
+            raise ErrorParsingFailure(message) from type_error
+
+    @staticmethod
+    def from_string(error_string: str) -> "ModelVerificationError":
+        try:
+            return ModelVerificationError.from_json(json.loads(error_string))
+        except json.JSONDecodeError as decode_error:
+            message = f"Cannot parse JSON: {decode_error}"
+            raise ErrorParsingFailure(message) from decode_error
+
+    def to_json(self) -> Dict[str, Any]:
+        return {
+            "line": self.line,
+            "column": self.column,
+            "path": str(self.path),
+            "description": self.description,
+        }
+
+    def to_text(self) -> str:
+        path = click.style(str(self.path), fg="red")
+        line = click.style(str(self.line), fg="yellow")
+        column = click.style(str(self.column), fg="yellow")
+        return f"{path}:{line}:{column} {self.description}"
+
+
 def print_errors(
-    errors: Union[Sequence[Error], Sequence[LegacyError]], output: str
+    errors: Union[
+        Sequence[Error], Sequence[LegacyError], Sequence[ModelVerificationError]
+    ],
+    output: str,
+    error_kind: str = "type",
 ) -> None:
     length = len(errors)
     if length != 0:
         suffix = "s" if length > 1 else ""
-        LOG.error(f"Found {length} type error{suffix}!")
+        LOG.error(f"Found {length} {error_kind} error{suffix}!")
     else:
-        LOG.log(log.SUCCESS, "No type errors found")
+        LOG.log(log.SUCCESS, f"No {error_kind} errors found")
 
     if output == command_arguments.TEXT:
         log.stdout.write("\n".join([error.to_text() for error in errors]))
