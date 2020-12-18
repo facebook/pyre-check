@@ -98,7 +98,7 @@ let test_process_type_query_request context =
       Request.process_type_query_request ~state ~configuration ~request
       |> function
       | { Request.response = Some (Protocol.TypeQueryResponse response); _ } ->
-          Protocol.TypeQuery.response_to_yojson response |> Yojson.Safe.to_string
+          Query.Response.to_yojson response |> Yojson.Safe.to_string
       | _ -> failwith "Unexpected response."
     in
     let expected_response = expected_response |> Yojson.Safe.from_string |> Yojson.Safe.to_string in

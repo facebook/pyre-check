@@ -301,7 +301,7 @@ let request_handler_thread
     | Query.InvalidQuery message ->
         Connections.write_to_json_socket
           ~socket
-          (TypeQuery.json_socket_response (TypeQuery.Error message))
+          (TypeQuery.json_socket_response (Query.Response.Error message))
     | End_of_file
     | Yojson.Json_error _ ->
         handle_disconnect ()

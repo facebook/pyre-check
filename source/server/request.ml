@@ -246,6 +246,7 @@ let rec process_type_query_request
             (print_reason error_reason))
         errors
     in
+    let open Query.Response in
     match request with
     | Query.Request.RunCheck { check_name; paths } ->
         let source_paths =
@@ -264,7 +265,7 @@ let rec process_type_query_request
             ~source_paths
             ~check:check_name
         in
-        TypeQuery.Response (TypeQuery.Errors errors)
+        Single (Base.Errors errors)
     | Attributes annotation ->
         let to_attribute attribute =
           let name = Annotated.Attribute.name attribute in
@@ -280,12 +281,12 @@ let rec process_type_query_request
           let property = Annotated.Attribute.property attribute in
           let kind =
             if property then
-              TypeQuery.Property
+              Base.Property
             else
-              TypeQuery.Regular
+              Base.Regular
           in
           let final = Annotated.Attribute.is_final instantiated_annotation in
-          { TypeQuery.name; annotation; kind; final }
+          { Base.name; annotation; kind; final }
         in
         parse_and_validate (Expression.from_reference ~location:Location.any annotation)
         |> Type.split
@@ -293,24 +294,24 @@ let rec process_type_query_request
         |> Type.primitive_name
         >>= GlobalResolution.attributes ~resolution:global_resolution
         >>| List.map ~f:to_attribute
-        >>| (fun attributes -> TypeQuery.Response (TypeQuery.FoundAttributes attributes))
+        >>| (fun attributes -> Single (Base.FoundAttributes attributes))
         |> Option.value
              ~default:
-               (TypeQuery.Error
+               (Error
                   (Format.sprintf "No class definition found for %s" (Reference.show annotation)))
     | Batch requests ->
-        TypeQuery.Batch
+        Batch
           (List.map
              ~f:(fun request ->
                let { response; _ } = process_type_query_request ~state ~configuration ~request in
                match response with
                | Some (TypeQueryResponse response) -> response
-               | _ -> TypeQuery.Error "Invalid response for query.")
+               | _ -> Error "Invalid response for query.")
              requests)
     | Callees caller ->
         (* We don't yet support a syntax for fetching property setters. *)
-        TypeQuery.Response
-          (TypeQuery.Callees
+        Single
+          (Base.Callees
              ( Callgraph.get ~caller:(Callgraph.FunctionCaller caller)
              |> List.map ~f:(fun { Callgraph.callee; _ } -> callee) ))
     | CalleesWithLocation caller ->
@@ -325,9 +326,9 @@ let rec process_type_query_request
           (* We don't yet support a syntax for fetching property setters. *)
           Callgraph.get ~caller:(Callgraph.FunctionCaller caller)
           |> List.map ~f:(fun { Callgraph.callee; locations } ->
-                 { TypeQuery.callee; locations = List.map locations ~f:instantiate })
+                 { Base.callee; locations = List.map locations ~f:instantiate })
         in
-        TypeQuery.Response (TypeQuery.CalleesWithLocation callees)
+        Single (Base.CalleesWithLocation callees)
     | Defines module_or_class_names ->
         let ast_environment = TypeEnvironment.ReadOnly.ast_environment read_only_environment in
         let defines_of_module module_or_class_name =
@@ -371,13 +372,10 @@ let rec process_type_query_request
             =
             let represent_parameter { Node.value = { Expression.Parameter.name; annotation; _ }; _ }
               =
-              {
-                TypeQuery.parameter_name = Identifier.sanitized name;
-                parameter_annotation = annotation;
-              }
+              { Base.parameter_name = Identifier.sanitized name; parameter_annotation = annotation }
             in
             {
-              TypeQuery.define_name = Node.value name;
+              Base.define_name = Node.value name;
               parameters = List.map parameters ~f:represent_parameter;
               return_annotation;
             }
@@ -385,7 +383,7 @@ let rec process_type_query_request
           List.map defines ~f:represent
         in
         List.concat_map module_or_class_names ~f:defines_of_module
-        |> fun defines -> TypeQuery.Response (TypeQuery.FoundDefines defines)
+        |> fun defines -> Single (Base.FoundDefines defines)
     | DumpCallGraph ->
         let get_callgraph module_qualifier =
           let callees
@@ -408,8 +406,8 @@ let rec process_type_query_request
             in
             Callgraph.get ~caller:(Callgraph.FunctionCaller caller)
             |> List.map ~f:(fun { Callgraph.callee; locations } ->
-                   { TypeQuery.callee; locations = List.map locations ~f:instantiate })
-            |> fun callees -> { Protocol.TypeQuery.caller; callees }
+                   { Base.callee; locations = List.map locations ~f:instantiate })
+            |> fun callees -> { Base.caller; callees }
           in
           let ast_environment = TypeEnvironment.ReadOnly.ast_environment read_only_environment in
           AstEnvironment.ReadOnly.get_processed_source ast_environment module_qualifier
@@ -418,7 +416,7 @@ let rec process_type_query_request
           |> Option.value ~default:[]
         in
         let qualifiers = ModuleTracker.tracked_explicit_modules module_tracker in
-        TypeQuery.Response (TypeQuery.Callgraph (List.concat_map qualifiers ~f:get_callgraph))
+        Single (Base.Callgraph (List.concat_map qualifiers ~f:get_callgraph))
     | DumpClassHierarchy ->
         let resolution = GlobalResolution.create global_environment in
         let class_hierarchy_json =
@@ -428,8 +426,8 @@ let rec process_type_query_request
           in
           ClassHierarchy.to_json (GlobalResolution.class_hierarchy resolution) ~indices
         in
-        TypeQuery.Response (TypeQuery.ClassHierarchy class_hierarchy_json)
-    | Help help_list -> TypeQuery.Response (TypeQuery.Help help_list)
+        Single (Base.ClassHierarchy class_hierarchy_json)
+    | Help help_list -> Single (Base.Help help_list)
     | IsCompatibleWith (left, right) ->
         (* We need a special version of parse_and_validate to handle the "unknown" type that
            Monkeycheck may send us *)
@@ -441,13 +439,12 @@ let rec process_type_query_request
           | Some unwrapped -> unwrapped
         in
         GlobalResolution.is_compatible_with global_resolution ~left ~right
-        |> fun result ->
-        TypeQuery.Response (TypeQuery.Compatibility { actual = left; expected = right; result })
+        |> fun result -> Single (Base.Compatibility { actual = left; expected = right; result })
     | LessOrEqual (left, right) ->
         let left = parse_and_validate left in
         let right = parse_and_validate right in
         GlobalResolution.less_or_equal global_resolution ~left ~right
-        |> fun response -> TypeQuery.Response (TypeQuery.Boolean response)
+        |> fun response -> Single (Base.Boolean response)
     | Methods annotation ->
         let parsed_annotation =
           parse_and_validate ~fill_missing_type_parameters_with_any:true annotation
@@ -487,7 +484,7 @@ let rec process_type_query_request
                 parameters |> List.filter_map ~f:Type.Callable.Parameter.annotation
               in
               let return_annotation = annotation in
-              Some { TypeQuery.name = Reference.last name; parameters; return_annotation }
+              Some { Base.name = Reference.last name; parameters; return_annotation }
           | _ -> None
         in
         parsed_annotation
@@ -496,25 +493,24 @@ let rec process_type_query_request
         |> Type.primitive_name
         >>= GlobalResolution.attributes ~resolution:global_resolution
         >>| List.filter_map ~f:to_method
-        >>| (fun methods -> TypeQuery.Response (TypeQuery.FoundMethods methods))
+        >>| (fun methods -> Single (Base.FoundMethods methods))
         |> Option.value
              ~default:
-               (TypeQuery.Error
+               (Error
                   (Format.sprintf "No class definition found for %s" (Expression.show annotation)))
     | PathOfModule module_name ->
         ModuleTracker.lookup_source_path module_tracker module_name
         >>= (fun source_path ->
               let path = SourcePath.full_path ~configuration source_path |> Path.absolute in
-              Some (TypeQuery.Response (TypeQuery.FoundPath path)))
+              Some (Single (Base.FoundPath path)))
         |> Option.value
              ~default:
-               (TypeQuery.Error
-                  (Format.sprintf "No path found for module `%s`" (Reference.show module_name)))
+               (Error (Format.sprintf "No path found for module `%s`" (Reference.show module_name)))
     | SaveServerState path ->
         let path = Path.absolute path in
         Log.info "Saving server state into `%s`" path;
         Memory.save_shared_memory ~path ~configuration;
-        TypeQuery.Response (TypeQuery.Success (Format.sprintf "Saved state."))
+        Single (Base.Success (Format.sprintf "Saved state."))
     | Superclasses class_names ->
         let get_superclasses class_name =
           let class_type = parse_and_validate class_name in
@@ -526,12 +522,12 @@ let rec process_type_query_request
           >>| List.map ~f:(fun name -> Type.Primitive name)
           >>| (fun classes ->
                 Either.First
-                  { TypeQuery.class_name = Type.class_name class_type; superclasses = classes })
+                  { Base.class_name = Type.class_name class_type; superclasses = classes })
           |> Option.value ~default:(Either.Second class_name)
         in
         let results, errors = List.partition_map ~f:get_superclasses class_names in
         if List.is_empty errors then
-          TypeQuery.Response (TypeQuery.Superclasses results)
+          Single (Superclasses results)
         else
           let bad_annotations =
             List.fold
@@ -545,14 +541,13 @@ let rec process_type_query_request
               errors
           in
           let plural = if List.length errors > 1 then "s" else "" in
-          TypeQuery.Error
-            (Format.asprintf "No class definition%s found for %s" plural bad_annotations)
+          Error (Format.asprintf "No class definition%s found for %s" plural bad_annotations)
     | Type expression ->
         let annotation = Resolution.resolve_expression_to_type resolution expression in
-        TypeQuery.Response (TypeQuery.Type annotation)
+        Single (Type annotation)
     | TypeAtPosition { path; position } ->
         let default =
-          TypeQuery.Error
+          Error
             (Format.asprintf
                "Not able to get lookup at %a:%a"
                Path.pp
@@ -562,22 +557,20 @@ let rec process_type_query_request
         in
         LookupCache.find_annotation ~state ~configuration ~path ~position
         >>| (fun (location, annotation) ->
-              TypeQuery.Response (TypeQuery.TypeAtLocation { TypeQuery.location; annotation }))
+              Single (Base.TypeAtLocation { Base.location; annotation }))
         |> Option.value ~default
     | TypesInFiles paths ->
         let annotations = LookupCache.find_all_annotations_batch ~state ~configuration ~paths in
         let create_result = function
           | { LookupCache.path; types_by_location = Some types; _ } ->
-              Either.First
-                { TypeQuery.path; types = List.map ~f:TypeQuery.create_type_at_location types }
+              Either.First { Base.path; types = List.map ~f:create_type_at_location types }
           | { LookupCache.path; error_reason; _ } -> Either.Second (path, error_reason)
         in
         let results, errors = List.partition_map ~f:create_result annotations in
         if List.is_empty errors then
-          TypeQuery.Response (TypeQuery.TypesByPath results)
+          Single (Base.TypesByPath results)
         else
-          TypeQuery.Error
-            (Format.asprintf "Not able to get lookups in: %s" (get_error_paths errors))
+          Error (Format.asprintf "Not able to get lookups in: %s" (get_error_paths errors))
     | ValidateTaintModels path -> (
         try
           let paths =
@@ -610,15 +603,15 @@ let rec process_type_query_request
           in
           let errors = Taint.Model.get_model_sources ~paths |> get_model_errors in
           if List.is_empty errors then
-            TypeQuery.Response
-              (TypeQuery.Success
+            Single
+              (Base.Success
                  (Format.asprintf
                     "Models in `%s` are valid."
                     (paths |> List.map ~f:Path.show |> String.concat ~sep:", ")))
           else
-            TypeQuery.Response (TypeQuery.ModelVerificationErrors errors)
+            Single (Base.ModelVerificationErrors errors)
         with
-        | error -> TypeQuery.Error (Exn.to_string error) )
+        | error -> Error (Exn.to_string error) )
   in
   let response =
     try process_request () with
@@ -626,12 +619,12 @@ let rec process_type_query_request
         let untracked_response =
           Format.asprintf "Type `%a` was not found in the type order." Type.pp untracked
         in
-        TypeQuery.Error untracked_response
+        Error untracked_response
     | IncorrectParameters untracked ->
         let untracked_response =
           Format.asprintf "Type `%a` has the wrong number of parameters." Type.pp untracked
         in
-        TypeQuery.Error untracked_response
+        Error untracked_response
   in
   { state; response = Some (TypeQueryResponse response) }
 
@@ -736,7 +729,9 @@ let rec process
                 ~scheduler)
       | TypeQueryRequest request -> process_type_query_request ~state ~configuration ~request
       | UnparsableQuery { query; reason } ->
-          let response = TypeQuery.Error (Format.sprintf "Unable to parse %s: %s" query reason) in
+          let response =
+            Query.Response.Error (Format.sprintf "Unable to parse %s: %s" query reason)
+          in
           { state; response = Some (TypeQueryResponse response) }
       | DisplayTypeErrors paths ->
           let configuration = { configuration with include_hints = true } in

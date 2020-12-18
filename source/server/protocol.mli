@@ -34,105 +34,7 @@ type client =
 [@@deriving eq, show]
 
 module TypeQuery : sig
-  type attribute_kind =
-    | Regular
-    | Property
-
-  type attribute = {
-    name: string;
-    annotation: Type.t;
-    kind: attribute_kind;
-    final: bool;
-  }
-  [@@deriving eq, show, to_yojson]
-
-  type method_representation = {
-    name: string;
-    parameters: Type.t list;
-    return_annotation: Type.t;
-  }
-  [@@deriving eq, show, to_yojson]
-
-  type type_at_location = {
-    location: Location.t;
-    annotation: Type.t;
-  }
-  [@@deriving eq, show, to_yojson]
-
-  type types_at_path = {
-    path: PyrePath.t;
-    types: type_at_location list;
-  }
-  [@@deriving eq, show, to_yojson]
-
-  type compatibility = {
-    actual: Type.t;
-    expected: Type.t;
-    result: bool;
-  }
-  [@@derving eq, show]
-
-  type callee_with_instantiated_locations = {
-    callee: Callgraph.callee;
-    locations: Location.WithPath.t list;
-  }
-  [@@deriving eq, show]
-
-  type callees = {
-    caller: Reference.t;
-    callees: callee_with_instantiated_locations list;
-  }
-  [@@deriving eq, show]
-
-  type parameter_representation = {
-    parameter_name: string;
-    parameter_annotation: Expression.t option;
-  }
-  [@@deriving eq, show]
-
-  type define = {
-    define_name: Reference.t;
-    parameters: parameter_representation list;
-    return_annotation: Expression.t option;
-  }
-  [@@deriving eq, show]
-
-  type superclasses_mapping = {
-    class_name: Reference.t;
-    superclasses: Type.t list;
-  }
-  [@@deriving eq, show]
-
-  type base_response =
-    | Boolean of bool
-    | Callees of Callgraph.callee list
-    | CalleesWithLocation of callee_with_instantiated_locations list
-    | Callgraph of callees list
-    | ClassHierarchy of Yojson.Safe.t
-    | Compatibility of compatibility
-    | Errors of AnalysisError.Instantiated.t list
-    | FoundAttributes of attribute list
-    | FoundDefines of define list
-    | FoundMethods of method_representation list
-    | FoundPath of string
-    | Help of string
-    | ModelVerificationErrors of Taint.Model.ModelVerificationError.t list
-    | Success of string
-    | Superclasses of superclasses_mapping list
-    | Type of Type.t
-    | TypeAtLocation of type_at_location
-    | TypesByPath of types_at_path list
-  [@@deriving eq, show, to_yojson]
-
-  and response =
-    | Response of base_response
-    | Batch of response list
-    | Error of string
-  [@@deriving eq, show, to_yojson]
-
-  val create_type_at_location : Location.t * Type.t -> type_at_location
-
-  val json_socket_response : response -> Yojson.Safe.t
+  val json_socket_response : Query.Response.t -> Yojson.Safe.t
 end
 
 module Request : sig
@@ -192,5 +94,5 @@ type response =
   | ServerUuidResponse of string
   | StopResponse
   | TypeCheckResponse of AnalysisError.Instantiated.t list
-  | TypeQueryResponse of TypeQuery.response
+  | TypeQueryResponse of Query.Response.t
 [@@deriving eq, show]

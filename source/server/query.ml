@@ -42,6 +42,216 @@ module Request = struct
   [@@deriving eq, show]
 end
 
+module Response = struct
+  module Base = struct
+    type attribute_kind =
+      | Regular
+      | Property
+    [@@deriving eq, show, to_yojson]
+
+    type attribute = {
+      name: string;
+      annotation: Type.t;
+      kind: attribute_kind;
+      final: bool;
+    }
+    [@@deriving eq, show, to_yojson]
+
+    type method_representation = {
+      name: string;
+      parameters: Type.t list;
+      return_annotation: Type.t;
+    }
+    [@@deriving eq, show, to_yojson]
+
+    type type_at_location = {
+      location: Location.t;
+      annotation: Type.t;
+    }
+    [@@deriving eq, show, to_yojson]
+
+    type types_at_path = {
+      path: PyrePath.t;
+      types: type_at_location list;
+    }
+    [@@deriving eq, show, to_yojson]
+
+    type compatibility = {
+      actual: Type.t;
+      expected: Type.t;
+      result: bool;
+    }
+    [@@deriving eq, show]
+
+    type callee_with_instantiated_locations = {
+      callee: Analysis.Callgraph.callee;
+      locations: Location.WithPath.t list;
+    }
+    [@@deriving eq, show]
+
+    type callees = {
+      caller: Reference.t;
+      callees: callee_with_instantiated_locations list;
+    }
+    [@@deriving eq, show]
+
+    type parameter_representation = {
+      parameter_name: string;
+      parameter_annotation: Expression.t option;
+    }
+    [@@deriving eq, show]
+
+    type define = {
+      define_name: Reference.t;
+      parameters: parameter_representation list;
+      return_annotation: Expression.t option;
+    }
+    [@@deriving eq, show]
+
+    type superclasses_mapping = {
+      class_name: Reference.t;
+      superclasses: Type.t list;
+    }
+    [@@deriving eq, show, to_yojson]
+
+    let _ = show_compatibility (* unused, but pp is *)
+
+    type t =
+      | Boolean of bool
+      | Callees of Analysis.Callgraph.callee list
+      | CalleesWithLocation of callee_with_instantiated_locations list
+      | Callgraph of callees list
+      | ClassHierarchy of Yojson.Safe.t
+      | Compatibility of compatibility
+      | Errors of Analysis.AnalysisError.Instantiated.t list
+      | FoundAttributes of attribute list
+      | FoundDefines of define list
+      | FoundMethods of method_representation list
+      | FoundPath of string
+      | Help of string
+      | ModelVerificationErrors of Taint.Model.ModelVerificationError.t list
+      | Success of string
+      | Superclasses of superclasses_mapping list
+      | Type of Type.t
+      | TypeAtLocation of type_at_location
+      | TypesByPath of types_at_path list
+    [@@deriving eq, show]
+
+    let to_yojson response =
+      let open Analysis in
+      match response with
+      | Boolean boolean -> `Assoc ["boolean", `Bool boolean]
+      | Callees callees ->
+          `Assoc ["callees", `List (List.map callees ~f:Callgraph.callee_to_yojson)]
+      | CalleesWithLocation callees ->
+          let callee_to_yojson { callee; locations } =
+            Callgraph.callee_to_yojson ~locations callee
+          in
+          `Assoc ["callees", `List (List.map callees ~f:callee_to_yojson)]
+      | Callgraph callees ->
+          let callee_to_yojson { callee; locations } =
+            Callgraph.callee_to_yojson ~locations callee
+          in
+          `Assoc
+            (List.map callees ~f:(fun { caller; callees } ->
+                 Reference.show caller, `List (List.map callees ~f:callee_to_yojson)))
+      | ClassHierarchy hierarchy -> hierarchy
+      | Compatibility { actual; expected; result } ->
+          `Assoc
+            [
+              "actual", Type.to_yojson actual;
+              "expected", Type.to_yojson expected;
+              "boolean", `Bool result;
+            ]
+      | Errors errors ->
+          `Assoc
+            [
+              ( "errors",
+                `List (List.map ~f:(fun error -> AnalysisError.Instantiated.to_yojson error) errors)
+              );
+            ]
+      | Help string -> `Assoc ["help", `String string]
+      | ModelVerificationErrors errors ->
+          `Assoc ["errors", `List (List.map errors ~f:Taint.Model.verification_error_to_json)]
+      | FoundAttributes attributes ->
+          let attribute_to_yojson { name; annotation; kind; final } =
+            let kind =
+              match kind with
+              | Regular -> "regular"
+              | Property -> "property"
+            in
+
+            `Assoc
+              [
+                "name", `String name;
+                "annotation", Type.to_yojson annotation;
+                "kind", `String kind;
+                "final", `Bool final;
+              ]
+          in
+          `Assoc ["attributes", `List (List.map attributes ~f:attribute_to_yojson)]
+      | FoundDefines defines ->
+          let define_to_yojson { define_name; parameters; return_annotation } =
+            let annotation_to_yojson = function
+              | None -> `Null
+              | Some annotation ->
+                  Ast.Expression.sanitized annotation
+                  |> Expression.show
+                  |> fun annotation -> `String annotation
+            in
+            let parameter_representation_to_yojson { parameter_name; parameter_annotation } =
+              `Assoc
+                [
+                  "name", `String parameter_name;
+                  "annotation", annotation_to_yojson parameter_annotation;
+                ]
+            in
+            `Assoc
+              [
+                "name", `String (Reference.show define_name);
+                "parameters", `List (List.map parameters ~f:parameter_representation_to_yojson);
+                "return_annotation", annotation_to_yojson return_annotation;
+              ]
+          in
+          `List (List.map defines ~f:define_to_yojson)
+      | FoundMethods methods ->
+          `Assoc ["methods", `List (List.map methods ~f:method_representation_to_yojson)]
+      | FoundPath path -> `Assoc ["path", `String path]
+      | Success message -> `Assoc ["message", `String message]
+      | Superclasses class_to_superclasses_mapping -> (
+          match class_to_superclasses_mapping with
+          | [{ superclasses; _ }] ->
+              `Assoc ["superclasses", `List (List.map superclasses ~f:Type.to_yojson)]
+          | _ ->
+              let superclasses_to_json { class_name; superclasses } =
+                `Assoc
+                  [
+                    "class_name", `String (Reference.show class_name);
+                    "superclasses", `List (List.map superclasses ~f:Type.to_yojson);
+                  ]
+              in
+              `List (List.map class_to_superclasses_mapping ~f:superclasses_to_json) )
+      | Type annotation -> `Assoc ["type", Type.to_yojson annotation]
+      | TypeAtLocation annotation -> type_at_location_to_yojson annotation
+      | TypesByPath paths_to_annotations ->
+          `List (List.map paths_to_annotations ~f:types_at_path_to_yojson)
+  end
+
+  type t =
+    | Single of Base.t
+    | Batch of t list
+    | Error of string
+  [@@deriving eq, show]
+
+  let rec to_yojson = function
+    | Single base_response -> `Assoc ["response", Base.to_yojson base_response]
+    | Batch responses -> `Assoc ["response", `List (List.map ~f:to_yojson responses)]
+    | Error message -> `Assoc ["error", `String message]
+
+
+  let create_type_at_location (location, annotation) = { Base.location; annotation }
+end
+
 let help () =
   let open Request in
   let help = function

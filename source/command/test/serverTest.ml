@@ -224,6 +224,7 @@ let test_protocol_type_check context =
 
 
 let test_query context =
+  let open Query.Response in
   let assert_type_query_response ?handle ~source ~query response =
     let handle = Option.value handle ~default:"test.py" in
     assert_query_response
@@ -245,40 +246,37 @@ let test_query context =
   in
   let create_types_at_locations =
     let convert (start_line, start_column, end_line, end_column, annotation) =
-      {
-        Protocol.TypeQuery.location = create_location start_line start_column end_line end_column;
-        annotation;
-      }
+      { Base.location = create_location start_line start_column end_line end_column; annotation }
     in
     List.map ~f:convert
   in
   assert_type_query_response
     ~source:""
     ~query:"less_or_equal(int, str)"
-    (Protocol.TypeQuery.Response (Protocol.TypeQuery.Boolean false));
+    (Single (Base.Boolean false));
   assert_type_query_response
     ~source:{|
         A = int
       |}
     ~query:"less_or_equal(int, test.A)"
-    (Protocol.TypeQuery.Response (Protocol.TypeQuery.Boolean true));
+    (Single (Base.Boolean true));
   assert_type_query_response
     ~source:""
     ~query:"less_or_equal(int, Unknown)"
-    (Protocol.TypeQuery.Error "Type `Unknown` was not found in the type order.");
+    (Error "Type `Unknown` was not found in the type order.");
   assert_type_query_response
     ~source:"class C(int): ..."
     ~query:"less_or_equal(list[test.C], list[int])"
-    (Protocol.TypeQuery.Response (Protocol.TypeQuery.Boolean false));
+    (Single (Base.Boolean false));
 
   assert_type_query_response
     ~source:"class C(int): ..."
     ~query:"superclasses(test.C)"
-    (Protocol.TypeQuery.Response
-       (Protocol.TypeQuery.Superclasses
+    (Single
+       (Base.Superclasses
           [
             {
-              Protocol.TypeQuery.class_name = !&"test.C";
+              Base.class_name = !&"test.C";
               superclasses =
                 [
                   Type.integer;
@@ -300,37 +298,29 @@ let test_query context =
     class D(C): pass
   |}
     ~query:"superclasses(test.C, test.D)"
-    (Protocol.TypeQuery.Response
-       (Protocol.TypeQuery.Superclasses
+    (Single
+       (Base.Superclasses
           [
-            { Protocol.TypeQuery.class_name = !&"test.C"; superclasses = [Type.object_primitive] };
+            { Base.class_name = !&"test.C"; superclasses = [Type.object_primitive] };
             {
-              Protocol.TypeQuery.class_name = !&"test.D";
+              Base.class_name = !&"test.D";
               superclasses = [Primitive "test.C"; Type.object_primitive];
             };
           ]));
-  assert_type_query_response ~source:"" ~query:"batch()" (Protocol.TypeQuery.Batch []);
+  assert_type_query_response ~source:"" ~query:"batch()" (Batch []);
   assert_type_query_response
     ~source:"class C(int): ..."
     ~query:"batch(less_or_equal(int, str), less_or_equal(int, int))"
-    (Protocol.TypeQuery.Batch
-       [
-         Protocol.TypeQuery.Response (Protocol.TypeQuery.Boolean false);
-         Protocol.TypeQuery.Response (Protocol.TypeQuery.Boolean true);
-       ]);
+    (Batch [Single (Base.Boolean false); Single (Base.Boolean true)]);
   assert_type_query_response
     ~source:""
     ~query:"batch(less_or_equal(int, str), less_or_equal(int, Unknown))"
-    (Protocol.TypeQuery.Batch
-       [
-         Protocol.TypeQuery.Response (Protocol.TypeQuery.Boolean false);
-         Protocol.TypeQuery.Error "Type `Unknown` was not found in the type order.";
-       ]);
+    (Batch [Single (Base.Boolean false); Error "Type `Unknown` was not found in the type order."]);
   let assert_compatibility_response ~source ~query ~actual ~expected result =
     assert_type_query_response
       ~source
       ~query
-      (Protocol.TypeQuery.Response (Protocol.TypeQuery.Compatibility { actual; expected; result }))
+      (Single (Base.Compatibility { actual; expected; result }))
   in
   assert_compatibility_response
     ~source:""
@@ -349,7 +339,7 @@ let test_query context =
   assert_type_query_response
     ~source:""
     ~query:"is_compatible_with(int, Unknown)"
-    (Protocol.TypeQuery.Error "Type `Unknown` was not found in the type order.");
+    (Error "Type `Unknown` was not found in the type order.");
   assert_compatibility_response
     ~source:"class unknown: ..."
     ~query:"is_compatible_with(int, $unknown)"
@@ -409,11 +399,11 @@ let test_query context =
   assert_type_query_response
     ~source:""
     ~query:"superclasses(Unknown)"
-    (Protocol.TypeQuery.Error "Type `Unknown` was not found in the type order.");
+    (Error "Type `Unknown` was not found in the type order.");
   assert_type_query_response
     ~source:""
     ~query:"superclasses(Unknown[int])"
-    (Protocol.TypeQuery.Error "Type `Unknown[int]` was not found in the type order.");
+    (Error "Type `Unknown[int]` was not found in the type order.");
   assert_type_query_response
     ~source:
       {|
@@ -422,16 +412,16 @@ let test_query context =
         def C.bar(self, x: int) -> str: ...
     |}
     ~query:"methods(test.C)"
-    (Protocol.TypeQuery.Response
-       (Protocol.TypeQuery.FoundMethods
+    (Single
+       (Base.FoundMethods
           [
             {
-              Protocol.TypeQuery.name = "bar";
+              Base.name = "bar";
               parameters = [Type.Primitive "test.C"; Type.integer];
               return_annotation = Type.string;
             };
             {
-              Protocol.TypeQuery.name = "foo";
+              Base.name = "foo";
               parameters = [Type.Primitive "test.C"];
               return_annotation = Type.integer;
             };
@@ -439,25 +429,21 @@ let test_query context =
   assert_type_query_response
     ~source:""
     ~query:"methods(Unknown)"
-    (Protocol.TypeQuery.Error "Type `Unknown` was not found in the type order.");
+    (Error "Type `Unknown` was not found in the type order.");
   assert_type_query_response
     ~source:"a = 2"
     ~query:"type_at_position('test.py', 1, 4)"
-    (Protocol.TypeQuery.Response
-       (Protocol.TypeQuery.TypeAtLocation
-          {
-            Protocol.TypeQuery.location = create_location 1 4 1 5;
-            annotation = Type.literal_integer 2;
-          }));
+    (Single
+       (Base.TypeAtLocation
+          { Base.location = create_location 1 4 1 5; annotation = Type.literal_integer 2 }));
   assert_type_query_response
     ~source:{|
       a: int = 1
       a = 2
     |}
     ~query:"type_at_position('test.py', 3, 0)"
-    (Protocol.TypeQuery.Response
-       (Protocol.TypeQuery.TypeAtLocation
-          { Protocol.TypeQuery.location = create_location 3 0 3 1; annotation = Type.integer }));
+    (Single
+       (Base.TypeAtLocation { Base.location = create_location 3 0 3 1; annotation = Type.integer }));
   let assert_type_query_response_with_local_root
       ?(handle = "test.py")
       ~source
@@ -486,33 +472,29 @@ let test_query context =
     ~source:"a = 2"
     ~query:"path_of_module(test)"
     (fun local_root ->
-      Protocol.TypeQuery.Response
-        (Protocol.TypeQuery.FoundPath
-           (Path.create_relative ~root:local_root ~relative:"test.py" |> Path.absolute)));
+      Single
+        (Base.FoundPath (Path.create_relative ~root:local_root ~relative:"test.py" |> Path.absolute)));
   assert_type_query_response_with_local_root
     ~handle:"test.pyi"
     ~source:"a = 2"
     ~query:"path_of_module(test)"
     (fun local_root ->
-      Protocol.TypeQuery.Response
-        (Protocol.TypeQuery.FoundPath
-           (Path.create_relative ~root:local_root ~relative:"test.pyi" |> Path.absolute)));
+      Single
+        (Base.FoundPath (Path.create_relative ~root:local_root ~relative:"test.pyi" |> Path.absolute)));
   assert_type_query_response
     ~source:"a = 2"
     ~query:"path_of_module(notexist)"
-    (Protocol.TypeQuery.Error "No path found for module `notexist`");
+    (Error "No path found for module `notexist`");
   assert_type_query_response_with_local_root
     ~source:"a = 2"
     ~query:"type_at_position('notexist.py', 1, 1)"
     (fun local_root ->
-      Protocol.TypeQuery.Error
-        ("Not able to get lookup at " ^ Path.absolute local_root ^/ "notexist.py:1:1"));
+      Error ("Not able to get lookup at " ^ Path.absolute local_root ^/ "notexist.py:1:1"));
   assert_type_query_response_with_local_root
     ~source:"a = 2"
     ~query:"type_at_position('test.py', 1, 3)"
     (fun local_root ->
-      Protocol.TypeQuery.Error
-        ("Not able to get lookup at " ^ Path.absolute local_root ^/ "test.py:1:3"));
+      Error ("Not able to get lookup at " ^ Path.absolute local_root ^/ "test.py:1:3"));
 
   (* test.py is shadowed by test.pyi *)
   assert_type_query_response_with_local_root
@@ -520,8 +502,7 @@ let test_query context =
     ~source:"a = 2"
     ~query:"type_at_position('test.py', 1, 4)"
     (fun local_root ->
-      Protocol.TypeQuery.Error
-        ("Not able to get lookup at " ^ Path.absolute local_root ^/ "test.py:1:4"));
+      Error ("Not able to get lookup at " ^ Path.absolute local_root ^/ "test.py:1:4"));
   assert_type_query_response_with_local_root
     ~source:{|
       def foo(x: int = 10, y: str = "bar") -> None:
@@ -529,11 +510,11 @@ let test_query context =
     |}
     ~query:"types(path='test.py')"
     (fun local_root ->
-      Protocol.TypeQuery.Response
-        (Protocol.TypeQuery.TypesByPath
+      Single
+        (Base.TypesByPath
            [
              {
-               Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
+               Base.path = Path.create_relative ~root:local_root ~relative:"test.py";
                types =
                  [
                    ( 2,
@@ -578,11 +559,11 @@ let test_query context =
     |}
     ~query:"types(path='test.py')"
     (fun local_root ->
-      Protocol.TypeQuery.Response
-        (Protocol.TypeQuery.TypesByPath
+      Single
+        (Base.TypesByPath
            [
              {
-               Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
+               Base.path = Path.create_relative ~root:local_root ~relative:"test.py";
                types =
                  [
                    ( 2,
@@ -625,11 +606,11 @@ let test_query context =
      |}
     ~query:"types(path='test.py')"
     (fun local_root ->
-      Protocol.TypeQuery.Response
-        (Protocol.TypeQuery.TypesByPath
+      Single
+        (Base.TypesByPath
            [
              {
-               Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
+               Base.path = Path.create_relative ~root:local_root ~relative:"test.py";
                types =
                  [
                    2, 0, 2, 1, Type.integer;
@@ -648,11 +629,11 @@ let test_query context =
     |}
     ~query:"types(path='test.py')"
     (fun local_root ->
-      Protocol.TypeQuery.Response
-        (Protocol.TypeQuery.TypesByPath
+      Single
+        (Base.TypesByPath
            [
              {
-               Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
+               Base.path = Path.create_relative ~root:local_root ~relative:"test.py";
                types =
                  [
                    ( 2,
@@ -685,11 +666,11 @@ let test_query context =
      |}
     ~query:"types(path='test.py')"
     (fun local_root ->
-      Protocol.TypeQuery.Response
-        (Protocol.TypeQuery.TypesByPath
+      Single
+        (Base.TypesByPath
            [
              {
-               Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
+               Base.path = Path.create_relative ~root:local_root ~relative:"test.py";
                types =
                  [
                    ( 2,
@@ -727,11 +708,11 @@ let test_query context =
       |}
     ~query:"types(path='test.py')"
     (fun local_root ->
-      Protocol.TypeQuery.Response
-        (Protocol.TypeQuery.TypesByPath
+      Single
+        (Base.TypesByPath
            [
              {
-               Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
+               Base.path = Path.create_relative ~root:local_root ~relative:"test.py";
                types =
                  [
                    ( 2,
@@ -765,11 +746,11 @@ let test_query context =
     |}
     ~query:"types(path='test.py')"
     (fun local_root ->
-      Protocol.TypeQuery.Response
-        (Protocol.TypeQuery.TypesByPath
+      Single
+        (Base.TypesByPath
            [
              {
-               Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
+               Base.path = Path.create_relative ~root:local_root ~relative:"test.py";
                types =
                  [
                    2, 5, 2, 11, Type.Any;
@@ -787,11 +768,11 @@ let test_query context =
    |}
     ~query:"types(path='test.py')"
     (fun local_root ->
-      Protocol.TypeQuery.Response
-        (Protocol.TypeQuery.TypesByPath
+      Single
+        (Base.TypesByPath
            [
              {
-               Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
+               Base.path = Path.create_relative ~root:local_root ~relative:"test.py";
                types =
                  [
                    2, 6, 2, 15, Type.bool;
@@ -812,11 +793,11 @@ let test_query context =
     |}
     ~query:"types(path='test.py')"
     (fun local_root ->
-      Protocol.TypeQuery.Response
-        (Protocol.TypeQuery.TypesByPath
+      Single
+        (Base.TypesByPath
            [
              {
-               Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
+               Base.path = Path.create_relative ~root:local_root ~relative:"test.py";
                types =
                  [
                    ( 2,
@@ -855,11 +836,11 @@ let test_query context =
     |}
     ~query:"types(path='test.py')"
     (fun local_root ->
-      Protocol.TypeQuery.Response
-        (Protocol.TypeQuery.TypesByPath
+      Single
+        (Base.TypesByPath
            [
              {
-               Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
+               Base.path = Path.create_relative ~root:local_root ~relative:"test.py";
                types =
                  [
                    ( 2,
@@ -900,25 +881,19 @@ let test_query context =
      |}
     ~query:"types('test.py')"
     (fun local_root ->
-      Protocol.TypeQuery.Response
-        (Protocol.TypeQuery.TypesByPath
+      Single
+        (Base.TypesByPath
            [
              {
-               Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
+               Base.path = Path.create_relative ~root:local_root ~relative:"test.py";
                types =
                  [
                    {
-                     Protocol.TypeQuery.location = create_location 2 6 2 9;
+                     Base.location = create_location 2 6 2 9;
                      annotation = parse_annotation "typing.Type[test.Foo]";
                    };
-                   {
-                     Protocol.TypeQuery.location = create_location 3 2 3 3;
-                     annotation = Type.integer;
-                   };
-                   {
-                     Protocol.TypeQuery.location = create_location 3 6 3 7;
-                     annotation = Type.literal_integer 1;
-                   };
+                   { Base.location = create_location 3 2 3 3; annotation = Type.integer };
+                   { Base.location = create_location 3 6 3 7; annotation = Type.literal_integer 1 };
                  ];
              };
            ]));
@@ -931,11 +906,11 @@ let test_query context =
         def foo() -> int: ...
     |}
     ~query:"attributes(test.C)"
-    (Protocol.TypeQuery.Response
-       (Protocol.TypeQuery.FoundAttributes
+    (Single
+       (Base.FoundAttributes
           [
             {
-              Protocol.TypeQuery.name = "foo";
+              Base.name = "foo";
               annotation =
                 Type.parametric
                   "BoundMethod"
@@ -953,21 +928,11 @@ let test_query context =
                          });
                     Single (Primitive "test.C");
                   ];
-              kind = Protocol.TypeQuery.Regular;
+              kind = Base.Regular;
               final = false;
             };
-            {
-              Protocol.TypeQuery.name = "x";
-              annotation = Type.integer;
-              kind = Protocol.TypeQuery.Regular;
-              final = false;
-            };
-            {
-              Protocol.TypeQuery.name = "y";
-              annotation = Type.string;
-              kind = Protocol.TypeQuery.Regular;
-              final = false;
-            };
+            { Base.name = "x"; annotation = Type.integer; kind = Base.Regular; final = false };
+            { Base.name = "y"; annotation = Type.string; kind = Base.Regular; final = false };
           ]));
   ();
   assert_type_query_response
@@ -979,16 +944,9 @@ let test_query context =
           return 0
     |}
     ~query:"attributes(test.C)"
-    (Protocol.TypeQuery.Response
-       (Protocol.TypeQuery.FoundAttributes
-          [
-            {
-              Protocol.TypeQuery.name = "foo";
-              annotation = Type.integer;
-              kind = Protocol.TypeQuery.Property;
-              final = false;
-            };
-          ]));
+    (Single
+       (Base.FoundAttributes
+          [{ Base.name = "foo"; annotation = Type.integer; kind = Base.Property; final = false }]));
   ();
 
   assert_type_query_response
@@ -996,18 +954,18 @@ let test_query context =
       foo: str = "bar"
     |}
     ~query:"type(test.foo)"
-    (Protocol.TypeQuery.Response (Protocol.TypeQuery.Type Type.string));
+    (Single (Base.Type Type.string));
   assert_type_query_response
     ~source:{|
       foo = 7
     |}
     ~query:"type(test.foo)"
-    (Protocol.TypeQuery.Response (Protocol.TypeQuery.Type Type.integer));
+    (Single (Base.Type Type.integer));
   assert_type_query_response
     ~source:{|
     |}
     ~query:"type(8)"
-    (Protocol.TypeQuery.Response (Protocol.TypeQuery.Type (Type.literal_integer 8)));
+    (Single (Base.Type (Type.literal_integer 8)));
   assert_type_query_response
     ~source:{|
       def foo(a: str) -> str:
@@ -1015,7 +973,7 @@ let test_query context =
       bar: str = "baz"
     |}
     ~query:"type(test.foo(test.bar))"
-    (Protocol.TypeQuery.Response (Protocol.TypeQuery.Type Type.string));
+    (Single (Base.Type Type.string));
   (* TODO: Return some sort of error *)
   assert_type_query_response
     ~source:{|
@@ -1024,13 +982,13 @@ let test_query context =
       bar: int = 7
     |}
     ~query:"type(test.foo(test.bar))"
-    (Protocol.TypeQuery.Response (Protocol.TypeQuery.Type Type.string));
+    (Single (Base.Type Type.string));
 
   let temporary_directory = OUnit2.bracket_tmpdir context in
   assert_type_query_response
     ~source:""
     ~query:(Format.sprintf "save_server_state('%s/state')" temporary_directory)
-    (Protocol.TypeQuery.Response (Protocol.TypeQuery.Success "Saved state."));
+    (Single (Base.Success "Saved state."));
   assert_equal `Yes (Sys.is_file (temporary_directory ^/ "state"));
 
   ()
