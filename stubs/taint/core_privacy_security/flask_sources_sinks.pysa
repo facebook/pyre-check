@@ -70,3 +70,25 @@ def flask.templating.render_template_string(
 	source: TaintSink[ReturnedToUser, XSS, ServerSideTemplateInjection],
 	**context: TaintSink[ReturnedToUser]
 ): ...
+
+
+ModelQuery(
+  find = "functions",
+  where = [
+    any_decorator.name.matches("app.route"),
+  ],
+  model = [
+    AllParameters(TaintSource[UserControlled, UserControlled_Parameter]),
+    Returns(TaintSink[ReturnedToUser])
+  ]
+)
+
+ModelQuery(
+  find = "functions",
+  where = [
+    any_decorator.name.matches("app.errorhandler"),
+  ],
+  model = [
+    Returns(TaintSink[ReturnedToUser])
+  ]
+)
