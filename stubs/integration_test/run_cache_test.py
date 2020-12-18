@@ -14,9 +14,7 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 
-def normalized_json_dump(input: Dict[str, Any]):
-    normalized = json.loads(input)
-
+def normalized_json_dump(normalized: List[Dict[str, Any]]):
     normalized = sorted(normalized, key=lambda issue: issue["path"])
     normalized = sorted(normalized, key=lambda issue: issue["line"])
     normalized = sorted(normalized, key=lambda issue: issue["column"])
@@ -26,30 +24,29 @@ def normalized_json_dump(input: Dict[str, Any]):
 
 def run_and_check_output(
     command: List[str],
-    expected: Dict[str, Any],
+    expected: List[Dict[str, Any]],
     output_file_name: str = "result.actual",
 ) -> bool:
-    output = subprocess.check_output(command).decode()
+    output_str = normalized_json_dump(
+        json.loads(subprocess.check_output(command).decode())
+    )
+    expected_str = normalized_json_dump(expected)
 
-    if normalized_json_dump(expected) != normalized_json_dump(output):
+    if output_str != expected_str:
         with open(output_file_name, "w") as file:
-            file.write(normalized_json_dump(output))
+            file.write(output_str)
+        with open("result.expected", "w") as file:
+            file.write(expected_str)
         logging.error("Output differs from expected:")
-        subprocess.run(["diff", "result.json", output_file_name])
+        subprocess.run(["diff", "result.expected", output_file_name])
         return False
     else:
         return True
 
 
-def run_test_clean_run(
-    typeshed_path: str, cache_path: Path, expected: Dict[str, Any]
+def run_test_no_cache(
+    typeshed_path: str, cache_path: Path, expected: List[Dict[str, Any]]
 ) -> None:
-    # Ensure the cache file doesn't already exist for a clean run.
-    try:
-        cache_path.unlink()
-    except FileNotFoundError:
-        pass
-
     # Run Pysa without the cache argument.
     logging.info("Testing with no --use-cache flag:")
     result = run_and_check_output(
@@ -70,8 +67,14 @@ def run_test_clean_run(
 
 
 def run_test_cache_first_and_second_runs(
-    typeshed_path: str, cache_path: Path, expected: Dict[str, Any]
+    typeshed_path: str, cache_path: Path, expected: List[Dict[str, Any]]
 ) -> None:
+    # Ensure the cache file doesn't already exist for a clean run.
+    try:
+        cache_path.unlink()
+    except FileNotFoundError:
+        pass
+
     # Run Pysa with the cache argument for the first time. This should create
     # the cache file and save state to it since the file doesn't exist already.
     logging.info("Testing behavior with --use-cache flag on initial run:")
@@ -114,7 +117,7 @@ def run_test_cache_first_and_second_runs(
 
 
 def run_test_invalid_cache_file(
-    typeshed_path: str, cache_path: Path, expected: Dict[str, Any]
+    typeshed_path: str, cache_path: Path, expected: List[Dict[str, Any]]
 ) -> None:
     # Run Pysa with an empty .pyre/pysa.cache to simulate an invalid/corrupt
     # cache file. Pysa should fall back to doing a clean run.
@@ -145,12 +148,12 @@ def run_test_invalid_cache_file(
         sys.exit(1)
 
 
-def run_test_changed_pysa_models(
-    typeshed_path: str, cache_path: Path, expected: Dict[str, Any]
+def run_test_changed_pysa_file(
+    typeshed_path: str, cache_path: Path, expected: List[Dict[str, Any]]
 ) -> None:
     # Run Pysa after adding a new Pysa model and ensure the cache is not
     # invalidated.
-    logging.info("Testing cache is not invalidated after model files change:")
+    logging.info("Testing cache is not invalidated after .pysa file change:")
 
     test_model_path = Path("test_taint/PYSA_CACHE_TEST__tmp_model.pysa")
     try:
@@ -188,8 +191,8 @@ def run_test_changed_pysa_models(
         sys.exit(1)
 
 
-def run_test_changed_taint_config(
-    typeshed_path: str, cache_path: Path, expected: Dict[str, Any]
+def run_test_changed_taint_config_file(
+    typeshed_path: str, cache_path: Path, expected: List[Dict[str, Any]]
 ) -> None:
     # Run Pysa after adding a new Pysa model and ensure the cache is not
     # invalidated.
@@ -240,8 +243,62 @@ def run_test_changed_taint_config(
         sys.exit(1)
 
 
+def run_test_changed_models(
+    typeshed_path: str, cache_path: Path, expected: List[Dict[str, Any]]
+) -> None:
+    # Run Pysa after adding a new Pysa model and ensure the cache is not
+    # invalidated.
+    logging.info("Testing results after models change:")
+
+    # Remove a test taint file
+    test_model_path = Path("test_taint/sanitize.pysa")
+    original_content = open(test_model_path).read()
+    try:
+        test_model_path.unlink()
+    except FileNotFoundError:
+        logging.warning(f"Could not remove up {test_model_path.absolute()}.")
+        pass
+
+    # Expected should have an additional issue from removing the sanitizer
+    new_issue = {
+        "code": 5001,
+        "column": 9,
+        "concise_description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
+        "define": "integration_test.lru_cache_test.test_cached_sanitizer",
+        "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
+        "inference": None,
+        "line": 20,
+        "long_description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
+        "name": "Possible shell injection",
+        "path": "lru_cache_test.py",
+        "stop_column": 18,
+        "stop_line": 20,
+    }
+
+    result = run_and_check_output(
+        [
+            "pyre",
+            "--typeshed",
+            f"{typeshed_path}",
+            "--noninteractive",
+            "analyze",
+            "--use-cache",
+        ],
+        expected + [new_issue],
+        "result.cache7",
+    )
+
+    # Restore the original model file
+    open(test_model_path, "w").write(original_content)
+
+    if result:
+        logging.info("Run produced expected results\n")
+    else:
+        sys.exit(1)
+
+
 def run_test_changed_source_files(
-    typeshed_path: str, cache_path: Path, expected: Dict[str, Any]
+    typeshed_path: str, cache_path: Path, expected: List[Dict[str, Any]]
 ) -> None:
     # Run Pysa after adding a new file to test cache invalidation.
     # Pysa should detect that the source has chagned and fall back
@@ -302,15 +359,16 @@ def run_tests() -> None:
         subprocess.check_call(["unzip", "../typeshed/typeshed.zip", "-d", directory])
         typeshed_path = f"{directory}/typeshed-master"
 
-        expected = ""
+        expected = None
         with open("result.json") as file:
-            expected = file.read()
+            expected = json.loads(file.read())
 
-            run_test_clean_run(typeshed_path, cache_path, expected)
+            run_test_no_cache(typeshed_path, cache_path, expected)
             run_test_cache_first_and_second_runs(typeshed_path, cache_path, expected)
             run_test_invalid_cache_file(typeshed_path, cache_path, expected)
-            run_test_changed_pysa_models(typeshed_path, cache_path, expected)
-            run_test_changed_taint_config(typeshed_path, cache_path, expected)
+            run_test_changed_pysa_file(typeshed_path, cache_path, expected)
+            run_test_changed_taint_config_file(typeshed_path, cache_path, expected)
+            run_test_changed_models(typeshed_path, cache_path, expected)
             run_test_changed_source_files(typeshed_path, cache_path, expected)
 
         logging.info("All runs produced expected output.")

@@ -192,7 +192,6 @@ let run_analysis
                 "gc_compactions", compactions;
               ]
             ();
-          if use_cache then Service.StaticAnalysis.Cache.save_cache ~configuration;
           (* Print results. *)
           List.map errors ~f:(fun error ->
               Interprocedural.Error.instantiate ~show_error_traces ~lookup:filename_lookup error
