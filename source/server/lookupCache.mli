@@ -48,9 +48,3 @@ val find_definition
   PyrePath.t ->
   Location.position ->
   Location.t option
-
-val find_all_qualified_names
-  :  state:State.t ->
-  configuration:Configuration.Analysis.t ->
-  paths:PyrePath.t list ->
-  qualified_names_by_path list

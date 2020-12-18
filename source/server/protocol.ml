@@ -46,7 +46,6 @@ module TypeQuery = struct
     | IsCompatibleWith of Expression.t * Expression.t
     | LessOrEqual of Expression.t * Expression.t
     | Methods of Expression.t
-    | NamesInFiles of Path.t list
     | PathOfModule of Reference.t
     | RunCheck of {
         check_name: string;
@@ -92,26 +91,6 @@ module TypeQuery = struct
   type types_at_path = {
     path: PyrePath.t;
     types: type_at_location list;
-  }
-  [@@deriving eq, show, to_yojson]
-
-  type qualified_name_at_location = {
-    location: Location.t;
-    qualified_name: Reference.t;
-  }
-  [@@deriving eq, show, to_yojson]
-
-  let qualified_name_at_location_to_yojson { location; qualified_name } =
-    `Assoc
-      [
-        "location", Location.to_yojson location;
-        "qualified_name", `String (Reference.show qualified_name);
-      ]
-
-
-  type qualified_names_at_path = {
-    path: PyrePath.t;
-    qualified_names: qualified_name_at_location list;
   }
   [@@deriving eq, show, to_yojson]
 
@@ -170,7 +149,6 @@ module TypeQuery = struct
     | FoundPath of string
     | Help of string
     | ModelVerificationErrors of Taint.Model.ModelVerificationError.t list
-    | NamesByPath of qualified_names_at_path list
     | Success of string
     | Superclasses of superclasses_mapping list
     | Type of Type.t
@@ -254,8 +232,6 @@ module TypeQuery = struct
     | FoundMethods methods ->
         `Assoc ["methods", `List (List.map methods ~f:method_representation_to_yojson)]
     | FoundPath path -> `Assoc ["path", `String path]
-    | NamesByPath paths_to_qualified_names ->
-        `List (List.map paths_to_qualified_names ~f:qualified_names_at_path_to_yojson)
     | Success message -> `Assoc ["message", `String message]
     | Superclasses class_to_superclasses_mapping -> (
         match class_to_superclasses_mapping with
@@ -284,8 +260,6 @@ module TypeQuery = struct
 
 
   let create_type_at_location (location, annotation) = { location; annotation }
-
-  let create_qualified_name_at_location (location, qualified_name) = { location; qualified_name }
 
   let json_socket_response response =
     `Assoc ["jsonrpc", `String "2.0"; "error", `Null; "result", response_to_yojson response]

@@ -46,10 +46,6 @@ let help () =
     | IsCompatibleWith _ -> None
     | LessOrEqual _ -> Some "less_or_equal(T1, T2): Returns whether T1 is a subtype of T2."
     | Methods _ -> Some "methods(class_name): Evaluates to the list of methods for `class_name`."
-    | NamesInFiles _ ->
-        Some
-          "qualified_names(path='path') or qualified_names('path1', 'path2', ...): Returns a map \
-           from each given path to a list of all qualified names for that path."
     | PathOfModule _ -> Some "path_of_module(module): Gives an absolute path for `module`."
     | SaveServerState _ ->
         Some "save_server_state('path'): Saves Pyre's serialized state into `path`."
@@ -86,7 +82,6 @@ let help () =
       IsCompatibleWith (empty, empty);
       LessOrEqual (empty, empty);
       Methods empty;
-      NamesInFiles [path];
       PathOfModule (Reference.create "");
       SaveServerState path;
       Superclasses [empty];
@@ -162,11 +157,6 @@ let rec parse_query
       | "methods", [name] -> Request.TypeQueryRequest (Methods (expression name))
       | "path_of_module", [module_access] ->
           Request.TypeQueryRequest (PathOfModule (reference module_access))
-      | "qualified_names", paths ->
-          let paths =
-            List.map ~f:(fun path -> Path.create_relative ~root ~relative:(string path)) paths
-          in
-          Request.TypeQueryRequest (NamesInFiles paths)
       | "run_check", check_name :: paths ->
           let check_name = string check_name in
           let paths =

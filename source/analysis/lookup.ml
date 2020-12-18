@@ -15,12 +15,9 @@ type annotation_lookup = Type.t Location.Table.t
 
 type definition_lookup = Location.t Location.Table.t
 
-type qualified_names_lookup = Reference.t Location.Table.t
-
 type t = {
   annotations_lookup: annotation_lookup;
   definitions_lookup: definition_lookup;
-  qualified_names_lookup: qualified_names_lookup;
 }
 
 (** The result state of this visitor is ignored. We need two read-only pieces of information to
@@ -32,19 +29,11 @@ module NodeVisitor = struct
     post_resolution: Resolution.t;
     annotations_lookup: annotation_lookup;
     definitions_lookup: definition_lookup;
-    qualified_names_lookup: qualified_names_lookup;
   }
 
   let node_base
       ~postcondition
-      ( {
-          pre_resolution;
-          post_resolution;
-          annotations_lookup;
-          definitions_lookup;
-          qualified_names_lookup;
-          _;
-        } as state )
+      ({ pre_resolution; post_resolution; annotations_lookup; definitions_lookup; _ } as state)
       node
     =
     let annotate_expression ({ Node.location; value } as expression) =
@@ -86,24 +75,6 @@ module NodeVisitor = struct
                 >>= find_definition )
         | _ -> None
       in
-      let resolve_qualified_name ~expression =
-        match Node.value (delocalize expression) with
-        | Expression.Name (Name.Identifier name) when Identifier.is_sanitized name -> None
-        | Expression.Name name -> (
-            let reference = name_to_reference name in
-            reference
-            >>= GlobalResolution.resolve_exports global_resolution
-            >>= function
-            | UnannotatedGlobalEnvironment.ResolvedReference.Module reference -> Some reference
-            | UnannotatedGlobalEnvironment.ResolvedReference.ModuleAttribute
-                { from; name; remaining = []; _ } ->
-                Some (Reference.combine from (Reference.create name))
-            | UnannotatedGlobalEnvironment.ResolvedReference.PlaceholderStub
-                { stub_module; remaining = []; _ } ->
-                Some stub_module
-            | _ -> reference )
-        | _ -> None
-      in
       let store_lookup ~table ~location ~data =
         if not (Location.equal location Location.any) then
           Hashtbl.set table ~key:location ~data |> ignore
@@ -112,12 +83,8 @@ module NodeVisitor = struct
         store_lookup ~table:annotations_lookup ~location ~data:annotation
       in
       let store_definition location data = store_lookup ~table:definitions_lookup ~location ~data in
-      let store_qualified_name location data =
-        store_lookup ~table:qualified_names_lookup ~location ~data
-      in
       resolve ~resolution ~expression >>| store_annotation location |> ignore;
       resolve_definition ~expression >>| store_definition location |> ignore;
-      resolve_qualified_name ~expression >>| store_qualified_name location |> ignore;
       let store_generator_and_compute_resolution
           resolution
           { Comprehension.Generator.target; iterator; conditions; _ }
@@ -280,7 +247,6 @@ end
 let create_of_module type_environment qualifier =
   let annotations_lookup = Location.Table.create () in
   let definitions_lookup = Location.Table.create () in
-  let qualified_names_lookup = Location.Table.create () in
   let global_resolution = TypeEnvironment.ReadOnly.global_resolution type_environment in
   let walk_define
       ( {
@@ -318,13 +284,7 @@ let create_of_module type_environment qualifier =
           (module TypeCheck.DummyContext)
       in
       Visit.visit
-        {
-          NodeVisitor.pre_resolution;
-          post_resolution;
-          annotations_lookup;
-          definitions_lookup;
-          qualified_names_lookup;
-        }
+        { NodeVisitor.pre_resolution; post_resolution; annotations_lookup; definitions_lookup }
         (Source.create [statement])
       |> ignore
     in
@@ -351,7 +311,7 @@ let create_of_module type_environment qualifier =
          ~f:(UnannotatedGlobalEnvironment.ReadOnly.get_define_body unannotated_global_environment)
   in
   List.iter all_defines ~f:walk_define;
-  { annotations_lookup; definitions_lookup; qualified_names_lookup }
+  { annotations_lookup; definitions_lookup }
 
 
 let get_best_location lookup_table ~position =
@@ -393,5 +353,3 @@ let get_definition { definitions_lookup; _ } ~position =
 let get_all_annotations { annotations_lookup; _ } = Hashtbl.to_alist annotations_lookup
 
 let get_all_definitions { definitions_lookup; _ } = Hashtbl.to_alist definitions_lookup
-
-let get_all_qualified_names { qualified_names_lookup; _ } = Hashtbl.to_alist qualified_names_lookup

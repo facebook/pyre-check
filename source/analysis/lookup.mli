@@ -18,5 +18,3 @@ val get_all_annotations : t -> (Location.t * Type.t) list
 val get_definition : t -> position:Location.position -> Location.t option
 
 val get_all_definitions : t -> (Location.t * Location.t) list
-
-val get_all_qualified_names : t -> (Location.t * Reference.t) list

@@ -46,7 +46,6 @@ module TypeQuery : sig
     | IsCompatibleWith of Expression.t * Expression.t
     | LessOrEqual of Expression.t * Expression.t
     | Methods of Expression.t
-    | NamesInFiles of Path.t list
     | PathOfModule of Reference.t
     | RunCheck of {
         check_name: string;
@@ -91,18 +90,6 @@ module TypeQuery : sig
   type types_at_path = {
     path: PyrePath.t;
     types: type_at_location list;
-  }
-  [@@deriving eq, show, to_yojson]
-
-  type qualified_name_at_location = {
-    location: Location.t;
-    qualified_name: Reference.t;
-  }
-  [@@deriving eq, show, to_yojson]
-
-  type qualified_names_at_path = {
-    path: PyrePath.t;
-    qualified_names: qualified_name_at_location list;
   }
   [@@deriving eq, show, to_yojson]
 
@@ -159,7 +146,6 @@ module TypeQuery : sig
     | FoundPath of string
     | Help of string
     | ModelVerificationErrors of Taint.Model.ModelVerificationError.t list
-    | NamesByPath of qualified_names_at_path list
     | Success of string
     | Superclasses of superclasses_mapping list
     | Type of Type.t
@@ -173,8 +159,6 @@ module TypeQuery : sig
   [@@deriving eq, show, to_yojson]
 
   val create_type_at_location : Location.t * Type.t -> type_at_location
-
-  val create_qualified_name_at_location : Location.t * Reference.t -> qualified_name_at_location
 
   val json_socket_response : response -> Yojson.Safe.t
 end

@@ -502,24 +502,6 @@ let rec process_type_query_request
              ~default:
                (TypeQuery.Error
                   (Format.sprintf "No class definition found for %s" (Expression.show annotation)))
-    | TypeQuery.NamesInFiles paths ->
-        let qualified_names = LookupCache.find_all_qualified_names ~state ~configuration ~paths in
-        let create_result = function
-          | { LookupCache.path; qualified_names_by_location = Some qualified_names; _ } ->
-              Either.First
-                {
-                  TypeQuery.path;
-                  qualified_names =
-                    List.map ~f:TypeQuery.create_qualified_name_at_location qualified_names;
-                }
-          | { LookupCache.path; error_reason; _ } -> Either.Second (path, error_reason)
-        in
-        let results, errors = List.partition_map ~f:create_result qualified_names in
-        if List.is_empty errors then
-          TypeQuery.Response (TypeQuery.NamesByPath results)
-        else
-          TypeQuery.Error
-            (Format.asprintf "Not able to get lookups in: %s" (get_error_paths errors))
     | TypeQuery.PathOfModule module_name ->
         ModuleTracker.lookup_source_path module_tracker module_name
         >>= (fun source_path ->
