@@ -4,10 +4,10 @@
    annotatedGlobalEnvironmentTest annotatedSignatureTest annotationTest
    astEnvironmentTest attrsTest awaitableCheckTest callgraphTest cfgTest
    classHierarchyTest classHierarchyEnvironmentTest
-   classMetadataEnvironmentTest constraintsSetTest coverageTest
-   customAnalysisTest deobfuscationCheckTest dataClassTest environmentTest
-   fixpointTest globalResolutionTest inferenceTest livenessCheckTest
-   lookupTest moduleTrackerTest newTypeTest namedTupleTest preprocessingTest
+   classMetadataEnvironmentTest constraintsSetTest customAnalysisTest
+   deobfuscationCheckTest dataClassTest environmentTest fixpointTest
+   globalResolutionTest inferenceTest livenessCheckTest lookupTest
+   moduleTrackerTest newTypeTest namedTupleTest preprocessingTest
    refinementUnitTest resolutionTest resolvedCallableTest scopeTest
    sqlAlchemyTest typeCheckTest typeConstraintsTest typeOrderTest typeTest
    unannotatedGlobalEnvironmentTest)

@@ -20,7 +20,6 @@ end
 
 type section =
   [ `Check
-  | `Coverage
   | `Debug
   | `Dependencies
   | `DependencyGraph

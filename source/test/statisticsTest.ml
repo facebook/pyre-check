@@ -45,30 +45,10 @@ let test_end_to_end_format _ =
   assert_equal sample expected_sample
 
 
-let test_coverage_sample_format _ =
-  let sample =
-    Statistics.sample
-      ~integers:["strict_coverage", 7; "declare_coverage", 25]
-      ~normals:["root", "/path/to/source"]
-      ~metadata:false
-      ()
-  in
-  let expected_sample =
-    Yojson.Safe.to_string
-      (`Assoc
-        [
-          "int", `Assoc ["strict_coverage", `Int 7; "declare_coverage", `Int 25];
-          "normal", `Assoc ["root", `String "/path/to/source"];
-        ])
-  in
-  assert_equal sample expected_sample
-
-
 let () =
   "performanceLogger"
   >::: [
          "request_sample_format" >:: test_request_sample_format;
          "end_to_end_format" >:: test_end_to_end_format;
-         "coverage_sample_format" >:: test_coverage_sample_format;
        ]
   |> Test.run
