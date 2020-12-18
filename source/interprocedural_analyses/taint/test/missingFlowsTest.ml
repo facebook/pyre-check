@@ -20,6 +20,7 @@ let assert_fixpoint
     ?models
     ~context
     ~missing_flows
+    ~handle
     source
     ~expect:{ iterations = expect_iterations; expect }
   =
@@ -28,7 +29,7 @@ let assert_fixpoint
     TaintConfiguration.apply_missing_flows TaintConfiguration.default missing_flows
   in
   let { all_callables; callgraph; environment; overrides } =
-    initialize ?models ~taint_configuration ~handle:"qualifier.py" ~context source
+    initialize ?models ~taint_configuration ~handle ~context source
   in
   let dependencies =
     DependencyGraph.from_callgraph callgraph
@@ -55,8 +56,9 @@ let test_obscure context =
   assert_fixpoint
     ~context
     ~missing_flows:TaintConfiguration.Obscure
+    ~handle:"test_obscure.py"
     ~models:{|
-      def qualifier.obscure(x): ...
+      def test_obscure.obscure(x): ...
     |}
     {|
       from builtins import __test_source, __test_sink, __user_controlled
@@ -89,15 +91,15 @@ let test_obscure context =
             outcome
               ~kind:`Function
               ~sink_parameters:[{ name = "x"; sinks = [Sinks.NamedSink "Obscure"] }]
-              "qualifier.to_obscure_x";
+              "test_obscure.to_obscure_x";
             outcome
               ~kind:`Function
               ~sink_parameters:[{ name = "y"; sinks = [Sinks.NamedSink "Obscure"] }]
-              "qualifier.to_obscure_y";
+              "test_obscure.to_obscure_y";
             outcome
               ~kind:`Function
               ~sink_parameters:[{ name = "x"; sinks = [Sinks.NamedSink "Obscure"] }]
-              "qualifier.obscure";
+              "test_obscure.obscure";
             outcome
               ~kind:`Function
               ~errors:
@@ -108,7 +110,7 @@ let test_obscure context =
                       ".*Obscure flow.*Data from \\[Test\\] source(s) may reach an obscure model.*";
                   };
                 ]
-              "qualifier.direct_issue";
+              "test_obscure.direct_issue";
             outcome
               ~kind:`Function
               ~errors:
@@ -120,11 +122,82 @@ let test_obscure context =
                        obscure model.*";
                   };
                 ]
-              "qualifier.indirect_issue";
-            outcome ~kind:`Function ~errors:[] "qualifier.non_issue";
+              "test_obscure.indirect_issue";
+            outcome ~kind:`Function ~errors:[] "test_obscure.non_issue";
           ];
         iterations = 2;
       }
 
 
-let () = ["obscure", test_obscure] |> TestHelper.run_with_taint_models ~name:"missingFlows"
+let test_type context =
+  assert_fixpoint
+    ~context
+    ~missing_flows:TaintConfiguration.Type
+    ~handle:"test_type.py"
+    {|
+      from builtins import __test_source, __test_sink, __user_controlled
+
+      def to_unknown_callee_x(x, y, f):
+        f(x)
+
+      def to_unknown_callee_y(x, y, f):
+        f(y)
+
+      def direct_issue(f):
+        f(__test_source())
+
+      def user_controlled():
+        return __user_controlled()
+
+      def indirect_issue(f):
+        to_unknown_callee_x(user_controlled(), 0, f)
+
+      def non_issue(f):
+        to_unknown_callee_y(user_controlled(), 0, f)
+        __test_sink(__test_source())
+    |}
+    ~expect:
+      {
+        expect =
+          [
+            outcome
+              ~kind:`Function
+              ~sink_parameters:[{ name = "x"; sinks = [Sinks.NamedSink "UnknownCallee"] }]
+              "test_type.to_unknown_callee_x";
+            outcome
+              ~kind:`Function
+              ~sink_parameters:[{ name = "y"; sinks = [Sinks.NamedSink "UnknownCallee"] }]
+              "test_type.to_unknown_callee_y";
+            outcome
+              ~kind:`Function
+              ~errors:
+                [
+                  {
+                    code = 6003;
+                    pattern =
+                      ".*Unknown callee flow.*Data from \\[Test\\] source(s) may flow to an \
+                       unknown callee.*";
+                  };
+                ]
+              "test_type.direct_issue";
+            outcome
+              ~kind:`Function
+              ~errors:
+                [
+                  {
+                    code = 6003;
+                    pattern =
+                      ".*Unknown callee flow.*Data from \\[UserControlled\\] source(s) may flow to \
+                       an unknown callee.*";
+                  };
+                ]
+              "test_type.indirect_issue";
+            outcome ~kind:`Function ~errors:[] "test_type.non_issue";
+          ];
+        iterations = 2;
+      }
+
+
+let () =
+  ["obscure", test_obscure; "type", test_type]
+  |> TestHelper.run_with_taint_models ~name:"missingFlows"
