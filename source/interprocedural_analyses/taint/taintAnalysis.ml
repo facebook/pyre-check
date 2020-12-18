@@ -155,12 +155,13 @@ include Taint.Result.Register (struct
               Model.get_model_sources ~paths |> create_models ~configuration
             in
             let () =
-              if not (List.is_empty errors) then begin
+              if not (List.is_empty errors) then
                 (* Exit or log errors, depending on whether models need to be verified. *)
-                Log.error "Found %d model verification errors!" (List.length errors);
-                if not verify then
+                if not verify then begin
+                  Log.error "Found %d model verification errors!" (List.length errors);
                   List.iter errors ~f:(fun error ->
                       Log.error "%s" (Taint.Model.display_verification_error error))
+                end
                 else begin
                   Yojson.Safe.pretty_to_string
                     (`Assoc
@@ -168,7 +169,6 @@ include Taint.Result.Register (struct
                   |> Log.print "%s";
                   exit 0
                 end
-              end
             in
             let models =
               let callables =
