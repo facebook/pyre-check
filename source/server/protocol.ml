@@ -107,7 +107,6 @@ module TypeQuery = struct
   let _ = show_compatibility (* unused, but pp is *)
 
   type base_response =
-    | Batch of response list
     | Boolean of bool
     | Callees of Callgraph.callee list
     | CalleesWithLocation of callee_with_instantiated_locations list
@@ -130,11 +129,11 @@ module TypeQuery = struct
 
   and response =
     | Response of base_response
+    | Batch of response list
     | Error of string
   [@@deriving eq, show]
 
-  let rec base_response_to_yojson = function
-    | Batch responses -> `List (List.map ~f:response_to_yojson responses)
+  let base_response_to_yojson = function
     | Boolean boolean -> `Assoc ["boolean", `Bool boolean]
     | Callees callees -> `Assoc ["callees", `List (List.map callees ~f:Callgraph.callee_to_yojson)]
     | CalleesWithLocation callees ->
@@ -226,8 +225,9 @@ module TypeQuery = struct
         `Assoc ["errors", `List (List.map errors ~f:Taint.Model.verification_error_to_json)]
 
 
-  and response_to_yojson = function
+  let rec response_to_yojson = function
     | Response base_response -> `Assoc ["response", base_response_to_yojson base_response]
+    | Batch responses -> `Assoc ["response", `List (List.map ~f:response_to_yojson responses)]
     | Error message -> `Assoc ["error", `String message]
 
 

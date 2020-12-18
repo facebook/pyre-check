@@ -299,15 +299,14 @@ let rec process_type_query_request
                (TypeQuery.Error
                   (Format.sprintf "No class definition found for %s" (Reference.show annotation)))
     | Batch requests ->
-        TypeQuery.Response
-          (TypeQuery.Batch
-             (List.map
-                ~f:(fun request ->
-                  let { response; _ } = process_type_query_request ~state ~configuration ~request in
-                  match response with
-                  | Some (TypeQueryResponse response) -> response
-                  | _ -> TypeQuery.Error "Invalid response for query.")
-                requests))
+        TypeQuery.Batch
+          (List.map
+             ~f:(fun request ->
+               let { response; _ } = process_type_query_request ~state ~configuration ~request in
+               match response with
+               | Some (TypeQueryResponse response) -> response
+               | _ -> TypeQuery.Error "Invalid response for query.")
+             requests)
     | Callees caller ->
         (* We don't yet support a syntax for fetching property setters. *)
         TypeQuery.Response

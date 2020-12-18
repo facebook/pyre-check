@@ -104,7 +104,6 @@ module TypeQuery : sig
   [@@deriving eq, show]
 
   type base_response =
-    | Batch of response list
     | Boolean of bool
     | Callees of Callgraph.callee list
     | CalleesWithLocation of callee_with_instantiated_locations list
@@ -127,6 +126,7 @@ module TypeQuery : sig
 
   and response =
     | Response of base_response
+    | Batch of response list
     | Error of string
   [@@deriving eq, show, to_yojson]
 

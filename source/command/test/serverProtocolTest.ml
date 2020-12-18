@@ -92,13 +92,10 @@ let test_type_query_json _ =
       }
     |};
   assert_serializes
-    (Response
-       (Batch
-          [
-            Response (Type Analysis.Type.integer);
-            Response (Type Analysis.Type.string);
-            Error "message";
-          ]))
+    (Batch
+       [
+         Response (Type Analysis.Type.integer); Response (Type Analysis.Type.string); Error "message";
+       ])
     {|{"response":[{"response":{"type":"int"}},{"response":{"type":"str"}},{"error":"message"}]}|}
 
 
