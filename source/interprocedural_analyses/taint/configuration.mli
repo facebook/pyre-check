@@ -90,6 +90,8 @@ val create
 
 val validate : t -> unit
 
+val apply_missing_flows : t -> missing_flows_kind -> t
+
 val conditional_test_sinks : unit -> Sinks.t list
 
 val literal_string_sinks : unit -> literal_string_sink list

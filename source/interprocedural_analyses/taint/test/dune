@@ -10,7 +10,7 @@
 (tests
  (names accessPathTest annotationParserTest configurationTest domainTest
    integrationTest featuresTest fixpointTest flowTest forwardAnalysisTest
-   backwardAnalysisTest modelTest)
+   backwardAnalysisTest modelTest missingFlowsTest)
  (modules :standard \ testHelper)
  (preprocess
   (pps ppx_sexp_message))

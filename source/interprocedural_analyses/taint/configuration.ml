@@ -608,6 +608,11 @@ let missing_type_flows_configuration configuration =
   }
 
 
+let apply_missing_flows configuration = function
+  | Obscure -> obscure_flows_configuration configuration
+  | Type -> missing_type_flows_configuration configuration
+
+
 let get () =
   match ConfigurationSharedMemory.get key with
   | None -> default
