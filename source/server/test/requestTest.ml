@@ -107,12 +107,6 @@ let test_process_type_query_request context =
   let { Configuration.Analysis.local_root; _ } = configuration in
   let path relative = Path.create_relative ~root:local_root ~relative in
   assert_response
-    (Protocol.TypeQuery.Join (parse_single_expression "int", parse_single_expression "float"))
-    {|{"response":{"type":"float"}}|};
-  assert_response
-    (Protocol.TypeQuery.NormalizeType (parse_single_expression "yerp"))
-    {|{"error":"Type `yerp` was not found in the type order."}|};
-  assert_response
     (Protocol.TypeQuery.RunCheck { check_name = "awaitable"; paths = [path "test.py"] })
     {|
     {

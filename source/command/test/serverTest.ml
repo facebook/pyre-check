@@ -267,16 +267,6 @@ let test_query context =
     ~source:"class C(int): ..."
     ~query:"less_or_equal(list[test.C], list[int])"
     (Protocol.TypeQuery.Response (Protocol.TypeQuery.Boolean false));
-  assert_type_query_response
-    ~source:"class C(int): ..."
-    ~query:"join(list[test.C], list[int])"
-    (Protocol.TypeQuery.Response
-       (Protocol.TypeQuery.Type
-          (Type.union [Type.list (Type.Primitive "test.C"); Type.list Type.integer])));
-  assert_type_query_response
-    ~source:"class C(int): ..."
-    ~query:"meet(list[test.C], list[int])"
-    (Protocol.TypeQuery.Response (Protocol.TypeQuery.Type Type.Bottom));
 
   assert_type_query_response
     ~source:"class C(int): ..."
@@ -322,12 +312,12 @@ let test_query context =
     (Protocol.TypeQuery.Response (Protocol.TypeQuery.Batch []));
   assert_type_query_response
     ~source:"class C(int): ..."
-    ~query:"batch(less_or_equal(int, str), meet(list[test.C], list[int]))"
+    ~query:"batch(less_or_equal(int, str), less_or_equal(int, int))"
     (Protocol.TypeQuery.Response
        (Protocol.TypeQuery.Batch
           [
             Protocol.TypeQuery.Response (Protocol.TypeQuery.Boolean false);
-            Protocol.TypeQuery.Response (Protocol.TypeQuery.Type Type.Bottom);
+            Protocol.TypeQuery.Response (Protocol.TypeQuery.Boolean true);
           ]));
   assert_type_query_response
     ~source:""
@@ -426,10 +416,6 @@ let test_query context =
     ~source:""
     ~query:"superclasses(Unknown[int])"
     (Protocol.TypeQuery.Error "Type `Unknown[int]` was not found in the type order.");
-  assert_type_query_response
-    ~source:"A = int"
-    ~query:"normalize_type(test.A)"
-    (Protocol.TypeQuery.Response (Protocol.TypeQuery.Type Type.integer));
   assert_type_query_response
     ~source:
       {|
@@ -1003,177 +989,6 @@ let test_query context =
             };
           ]));
   ();
-
-  assert_type_query_response
-    ~source:{|
-      def foo(x: int) -> int:
-        pass
-    |}
-    ~query:"signature(test.foo)"
-    (Protocol.TypeQuery.Response
-       (Protocol.TypeQuery.FoundSignature
-          [
-            {
-              Protocol.TypeQuery.return_type = Some Type.integer;
-              function_name = "test.foo";
-              parameters =
-                [{ Protocol.TypeQuery.parameter_name = "x"; annotation = Some Type.integer }];
-            };
-          ]));
-  assert_type_query_response
-    ~source:{|
-      def foo(x) -> int:
-        pass
-    |}
-    ~query:"signature(test.foo)"
-    (Protocol.TypeQuery.Response
-       (Protocol.TypeQuery.FoundSignature
-          [
-            {
-              Protocol.TypeQuery.return_type = Some Type.integer;
-              function_name = "test.foo";
-              parameters = [{ Protocol.TypeQuery.parameter_name = "x"; annotation = None }];
-            };
-          ]));
-  assert_type_query_response
-    ~source:
-      {|
-      def foo(x: int) -> int:
-        pass
-      def bar(x: int) -> str:
-        pass
-    |}
-    ~query:"signature(test.foo, test.bar)"
-    (Protocol.TypeQuery.Response
-       (Protocol.TypeQuery.FoundSignature
-          [
-            {
-              Protocol.TypeQuery.return_type = Some Type.integer;
-              function_name = "test.foo";
-              parameters =
-                [{ Protocol.TypeQuery.parameter_name = "x"; annotation = Some Type.integer }];
-            };
-            {
-              Protocol.TypeQuery.return_type = Some Type.string;
-              function_name = "test.bar";
-              parameters =
-                [{ Protocol.TypeQuery.parameter_name = "x"; annotation = Some Type.integer }];
-            };
-          ]));
-  assert_type_query_response
-    ~source:{|
-      def foo(x: int) -> int:
-        pass
-    |}
-    ~query:"signature(test.foo, test.nonexistent)"
-    (Protocol.TypeQuery.Error "No signature found for test.nonexistent");
-  assert_type_query_response
-    ~source:{|
-      def foo(x: int) -> int:
-        pass
-    |}
-    ~query:"signature(test.foo, test.nonexistent, test.also_nonexistent)"
-    (Protocol.TypeQuery.Error "No signature found for test.nonexistent");
-
-  assert_type_query_response
-    ~source:{|
-      def foo(x: int):
-        pass
-    |}
-    ~query:"signature(test.foo)"
-    (Protocol.TypeQuery.Response
-       (Protocol.TypeQuery.FoundSignature
-          [
-            {
-              Protocol.TypeQuery.return_type = Some Type.Any;
-              function_name = "test.foo";
-              parameters =
-                [{ Protocol.TypeQuery.parameter_name = "x"; annotation = Some Type.integer }];
-            };
-          ]));
-  assert_type_query_response
-    ~source:{|
-      alias = int
-      def foo(x: alias):
-        pass
-    |}
-    ~query:"signature(test.foo)"
-    (Protocol.TypeQuery.Response
-       (Protocol.TypeQuery.FoundSignature
-          [
-            {
-              Protocol.TypeQuery.return_type = Some Type.Any;
-              function_name = "test.foo";
-              parameters =
-                [{ Protocol.TypeQuery.parameter_name = "x"; annotation = Some Type.integer }];
-            };
-          ]));
-  assert_type_query_response
-    ~source:{|
-      x = 1
-    |}
-    ~query:"signature(test.x)"
-    (Protocol.TypeQuery.Error "No signature found for test.x");
-  assert_type_query_response
-    ~source:""
-    ~query:"signature(unknown)"
-    (Protocol.TypeQuery.Error "No signature found for unknown");
-  assert_type_query_response
-    ~source:{|
-      class C:
-        def foo(self, x: int) -> str:
-          return ""
-    |}
-    ~query:"signature(test.C.foo)"
-    (Protocol.TypeQuery.Response
-       (Protocol.TypeQuery.FoundSignature
-          [
-            {
-              Protocol.TypeQuery.return_type = Some Type.string;
-              function_name = "test.C.foo";
-              parameters =
-                [
-                  {
-                    Protocol.TypeQuery.parameter_name = "self";
-                    annotation = Some (Type.Primitive "test.C");
-                  };
-                  { Protocol.TypeQuery.parameter_name = "x"; annotation = Some Type.integer };
-                ];
-            };
-          ]));
-  (* We ignore overloads for now. *)
-  assert_type_query_response
-    ~source:
-      {|
-      from typing import Union
-      class C:
-        @overload
-        def foo(self, x: int) -> int: ...
-        @overload
-        def foo(self, x: str) -> str: ...
-        def foo(self, x: Union[int, str]) -> Union[int, str]:
-          return x
-    |}
-    ~query:"signature(test.C.foo)"
-    (Protocol.TypeQuery.Response
-       (Protocol.TypeQuery.FoundSignature
-          [
-            {
-              Protocol.TypeQuery.return_type = Some (Type.union [Type.integer; Type.string]);
-              function_name = "test.C.foo";
-              parameters =
-                [
-                  {
-                    Protocol.TypeQuery.parameter_name = "self";
-                    annotation = Some (Type.Primitive "test.C");
-                  };
-                  {
-                    Protocol.TypeQuery.parameter_name = "x";
-                    annotation = Some (Type.union [Type.integer; Type.string]);
-                  };
-                ];
-            };
-          ]));
 
   assert_type_query_response
     ~source:{|

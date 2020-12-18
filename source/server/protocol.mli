@@ -44,19 +44,15 @@ module TypeQuery : sig
     | DumpClassHierarchy
     | Help of string
     | IsCompatibleWith of Expression.t * Expression.t
-    | Join of Expression.t * Expression.t
     | LessOrEqual of Expression.t * Expression.t
-    | Meet of Expression.t * Expression.t
     | Methods of Expression.t
     | NamesInFiles of Path.t list
-    | NormalizeType of Expression.t
     | PathOfModule of Reference.t
     | RunCheck of {
         check_name: string;
         paths: Path.t list;
       }
     | SaveServerState of Path.t
-    | Signature of Reference.t list
     | Superclasses of Expression.t list
     | Type of Expression.t
     | TypeAtPosition of {
@@ -65,12 +61,6 @@ module TypeQuery : sig
       }
     | TypesInFiles of Path.t list
     | ValidateTaintModels of Path.t option
-  [@@deriving eq, show]
-
-  type coverage_level =
-    | Typed
-    | Partial
-    | Untyped
   [@@deriving eq, show]
 
   type attribute_kind =
@@ -89,19 +79,6 @@ module TypeQuery : sig
     name: string;
     parameters: Type.t list;
     return_annotation: Type.t;
-  }
-  [@@deriving eq, show, to_yojson]
-
-  type found_parameter = {
-    parameter_name: string;
-    annotation: Type.t option;
-  }
-  [@@deriving eq, show, to_yojson]
-
-  type found_signature = {
-    function_name: string;
-    return_type: Type.t option;
-    parameters: found_parameter list;
   }
   [@@deriving eq, show, to_yojson]
 
@@ -129,24 +106,12 @@ module TypeQuery : sig
   }
   [@@deriving eq, show, to_yojson]
 
-  type coverage_at_location = {
-    location: Location.t;
-    coverage: coverage_level;
-  }
-  [@@deriving eq, show, to_yojson]
-
   type compatibility = {
     actual: Type.t;
     expected: Type.t;
     result: bool;
   }
   [@@derving eq, show]
-
-  type key_mapping = {
-    hash: string;
-    key: string;
-  }
-  [@@deriving eq, show, to_yojson]
 
   type callee_with_instantiated_locations = {
     callee: Callgraph.callee;
@@ -187,19 +152,14 @@ module TypeQuery : sig
     | Callgraph of callees list
     | ClassHierarchy of Yojson.Safe.t
     | Compatibility of compatibility
-    | CoverageAtLocations of coverage_at_location list
     | Errors of AnalysisError.Instantiated.t list
     | FoundAttributes of attribute list
     | FoundDefines of define list
-    | FoundKeyMapping of key_mapping list
     | FoundMethods of method_representation list
     | FoundPath of string
-    | FoundSignature of found_signature list
     | Help of string
     | ModelVerificationErrors of Taint.Model.ModelVerificationError.t list
     | NamesByPath of qualified_names_at_path list
-    | Path of Pyre.Path.t
-    | References of Reference.t list
     | Success of string
     | Superclasses of superclasses_mapping list
     | Type of Type.t

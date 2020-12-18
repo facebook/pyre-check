@@ -16,8 +16,6 @@ open Pyre
 
 exception IncorrectParameters of Type.t
 
-exception MissingFunction of Reference.t
-
 let errors_of_path ~configuration ~state:{ State.environment; errors; _ } path =
   let module_tracker = TypeEnvironment.module_tracker environment in
   match ModuleTracker.lookup_path ~configuration module_tracker path with
@@ -446,21 +444,11 @@ let rec process_type_query_request
         GlobalResolution.is_compatible_with global_resolution ~left ~right
         |> fun result ->
         TypeQuery.Response (TypeQuery.Compatibility { actual = left; expected = right; result })
-    | TypeQuery.Join (left, right) ->
-        let left = parse_and_validate left in
-        let right = parse_and_validate right in
-        GlobalResolution.join global_resolution left right
-        |> fun annotation -> TypeQuery.Response (TypeQuery.Type annotation)
     | TypeQuery.LessOrEqual (left, right) ->
         let left = parse_and_validate left in
         let right = parse_and_validate right in
         GlobalResolution.less_or_equal global_resolution ~left ~right
         |> fun response -> TypeQuery.Response (TypeQuery.Boolean response)
-    | TypeQuery.Meet (left, right) ->
-        let left = parse_and_validate left in
-        let right = parse_and_validate right in
-        GlobalResolution.meet global_resolution left right
-        |> fun annotation -> TypeQuery.Response (TypeQuery.Type annotation)
     | TypeQuery.Methods annotation ->
         let parsed_annotation =
           parse_and_validate ~fill_missing_type_parameters_with_any:true annotation
@@ -532,9 +520,6 @@ let rec process_type_query_request
         else
           TypeQuery.Error
             (Format.asprintf "Not able to get lookups in: %s" (get_error_paths errors))
-    | TypeQuery.NormalizeType expression ->
-        parse_and_validate expression
-        |> fun annotation -> TypeQuery.Response (TypeQuery.Type annotation)
     | TypeQuery.PathOfModule module_name ->
         ModuleTracker.lookup_source_path module_tracker module_name
         >>= (fun source_path ->
@@ -549,55 +534,6 @@ let rec process_type_query_request
         Log.info "Saving server state into `%s`" path;
         Memory.save_shared_memory ~path ~configuration;
         TypeQuery.Response (TypeQuery.Success (Format.sprintf "Saved state."))
-    | TypeQuery.Signature function_names -> (
-        let get_signatures function_name =
-          let keep_known_annotation annotation =
-            match annotation with
-            | Type.Top -> None
-            | _ -> Some annotation
-          in
-          match
-            UnannotatedGlobalEnvironment.ReadOnly.get_define_body
-              unannotated_global_environment
-              function_name
-          with
-          | Some { value = { Statement.Define.signature; _ }; _ } -> (
-              let parser = GlobalResolution.annotation_parser global_resolution in
-              let variables = GlobalResolution.variables global_resolution in
-              let { Type.Callable.annotation; parameters; _ } =
-                Analysis.Annotated.Callable.create_overload_without_applying_decorators
-                  ~parser
-                  ~variables
-                  signature
-              in
-              match parameters with
-              | Type.Callable.Defined parameters ->
-                  let format parameter =
-                    match parameter with
-                    | Type.Callable.Parameter.Named { name; annotation; _ } ->
-                        let name = Identifier.sanitized name in
-                        Some
-                          {
-                            TypeQuery.parameter_name = name;
-                            annotation = keep_known_annotation annotation;
-                          }
-                    | _ -> None
-                  in
-                  let parameters = List.filter_map ~f:format parameters in
-                  {
-                    TypeQuery.return_type = keep_known_annotation annotation;
-                    parameters;
-                    function_name = Reference.show function_name;
-                  }
-              | _ -> raise (MissingFunction function_name) )
-          | None -> raise (MissingFunction function_name)
-        in
-        try
-          TypeQuery.Response (TypeQuery.FoundSignature (List.map function_names ~f:get_signatures))
-        with
-        | MissingFunction function_name ->
-            TypeQuery.Error
-              (Format.sprintf "No signature found for %s" (Reference.show function_name)) )
     | TypeQuery.Superclasses class_names ->
         let get_superclasses class_name =
           let class_type = parse_and_validate class_name in

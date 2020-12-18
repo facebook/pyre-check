@@ -44,19 +44,15 @@ module TypeQuery = struct
     | DumpClassHierarchy
     | Help of string
     | IsCompatibleWith of Expression.t * Expression.t
-    | Join of Expression.t * Expression.t
     | LessOrEqual of Expression.t * Expression.t
-    | Meet of Expression.t * Expression.t
     | Methods of Expression.t
     | NamesInFiles of Path.t list
-    | NormalizeType of Expression.t
     | PathOfModule of Reference.t
     | RunCheck of {
         check_name: string;
         paths: Path.t list;
       }
     | SaveServerState of Path.t
-    | Signature of Reference.t list
     | Superclasses of Expression.t list
     | Type of Expression.t
     | TypeAtPosition of {
@@ -66,12 +62,6 @@ module TypeQuery = struct
     | TypesInFiles of Path.t list
     | ValidateTaintModels of Path.t option
   [@@deriving eq, show]
-
-  type coverage_level =
-    | Typed
-    | Partial
-    | Untyped
-  [@@deriving eq, show, to_yojson]
 
   type attribute_kind =
     | Regular
@@ -90,19 +80,6 @@ module TypeQuery = struct
     name: string;
     parameters: Type.t list;
     return_annotation: Type.t;
-  }
-  [@@deriving eq, show, to_yojson]
-
-  type found_parameter = {
-    parameter_name: string;
-    annotation: Type.t option;
-  }
-  [@@deriving eq, show, to_yojson]
-
-  type found_signature = {
-    function_name: string;
-    return_type: Type.t option;
-    parameters: found_parameter list;
   }
   [@@deriving eq, show, to_yojson]
 
@@ -135,18 +112,6 @@ module TypeQuery = struct
   type qualified_names_at_path = {
     path: PyrePath.t;
     qualified_names: qualified_name_at_location list;
-  }
-  [@@deriving eq, show, to_yojson]
-
-  type coverage_at_location = {
-    location: Location.t;
-    coverage: coverage_level;
-  }
-  [@@deriving eq, show, to_yojson]
-
-  type key_mapping = {
-    hash: string;
-    key: string;
   }
   [@@deriving eq, show, to_yojson]
 
@@ -198,19 +163,14 @@ module TypeQuery = struct
     | Callgraph of callees list
     | ClassHierarchy of Yojson.Safe.t
     | Compatibility of compatibility
-    | CoverageAtLocations of coverage_at_location list
     | Errors of AnalysisError.Instantiated.t list
     | FoundAttributes of attribute list
     | FoundDefines of define list
-    | FoundKeyMapping of key_mapping list
     | FoundMethods of method_representation list
     | FoundPath of string
-    | FoundSignature of found_signature list
     | Help of string
     | ModelVerificationErrors of Taint.Model.ModelVerificationError.t list
     | NamesByPath of qualified_names_at_path list
-    | Path of Path.t
-    | References of Reference.t list
     | Success of string
     | Superclasses of superclasses_mapping list
     | Type of Type.t
@@ -243,8 +203,6 @@ module TypeQuery = struct
             "expected", Type.to_yojson expected;
             "boolean", `Bool result;
           ]
-    | CoverageAtLocations annotations ->
-        `Assoc ["types", `List (List.map annotations ~f:coverage_at_location_to_yojson)]
     | Errors errors ->
         `Assoc
           [
@@ -252,7 +210,6 @@ module TypeQuery = struct
               `List (List.map ~f:(fun error -> AnalysisError.Instantiated.to_yojson error) errors) );
           ]
     | Help string -> `Assoc ["help", `String string]
-    | Path path -> `Assoc ["path", `String (Path.absolute path)]
     | FoundAttributes attributes ->
         let attribute_to_yojson { name; annotation; kind; final } =
           let kind =
@@ -294,20 +251,11 @@ module TypeQuery = struct
             ]
         in
         `List (List.map defines ~f:define_to_yojson)
-    | FoundKeyMapping associative_list ->
-        `Assoc (List.map associative_list ~f:(fun { hash; key } -> hash, `String key))
     | FoundMethods methods ->
         `Assoc ["methods", `List (List.map methods ~f:method_representation_to_yojson)]
     | FoundPath path -> `Assoc ["path", `String path]
-    | FoundSignature signatures ->
-        `Assoc ["signature", `List (List.map signatures ~f:found_signature_to_yojson)]
     | NamesByPath paths_to_qualified_names ->
         `List (List.map paths_to_qualified_names ~f:qualified_names_at_path_to_yojson)
-    | References references ->
-        let json_references =
-          List.map references ~f:(fun reference -> `String (Reference.show reference))
-        in
-        `Assoc ["references", `List json_references]
     | Success message -> `Assoc ["message", `String message]
     | Superclasses class_to_superclasses_mapping -> (
         match class_to_superclasses_mapping with

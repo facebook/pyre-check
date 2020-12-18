@@ -154,19 +154,6 @@ The command `dump_call_graph()` returns a comprehensive JSON mapping each call t
 
 The command `dump_class_hierarchy()` returns the entire class hierarchy as Pyre understands it; elides type variables.
 
-### Join
-
-The command `join` uses Pyre's type engine to find a common superclass for two types.
-
-```bash
-$ pyre query "join(typing.Iterable[int], typing.Iterable[str])"
-{
-    "response": {
-        "type": "typing.Iterable[typing.Union[int, str]]"
-    }
-}
-```
-
 ### Less or equal
 
 The command `less_or_equal` returns whether the type on the left can be used when the type on the right is expected.
@@ -186,19 +173,6 @@ $ pyre query "less_or_equal(a.D, a.C)"
 
 $ pyre query "less_or_equal(a.C, a.D)"
 {"response":{"boolean":true}}
-```
-
-### Meet
-
-The command `meet` uses Pyre's type engine to find a common subclass for two types.
-
-```bash
-$ pyre query "meet(typing.Iterable[int], typing.Iterable[typing.Union[int, str]])"
-{
-    "response": {
-        "type": "typing.Iterable[int]"
-    }
-}
 ```
 
 ### Methods
@@ -226,25 +200,6 @@ $ pyre query "methods(a.C)"
                 "return_annotation": "str"
             }
         ]
-    }
-}
-```
-
-### Normalize type
-
-The command `normalize_type` resolves type aliases for a given type.
-
-```python
-# a.py
-A = typing.Union[int, str]
-B = typing.Union[A, typing.List[str]]
-```
-
-```bash
-$ pyre query "normalize_type(a.B)"
-{
-    "response": {
-        "type": "typing.Union[typing.List[int], int, str]"
     }
 }
 ```
@@ -353,36 +308,6 @@ $ pyre query "save_server_state('my_saved_state')"
 }
 $ pyre stop
 $ pyre --load-initial-state-from my_saved_state start
-```
-
-### Signature
-
-The command `signature` returns the type signature of a given function.
-
-
-```python
-# a.py
-def foo(x: int) -> str:
-  ...
-```
-
-```bash
-$ pyre query "signature(a.foo)"
-{
-    "response": {
-        "signature": [
-            {
-                "parameters": [
-                    {
-                        "annotation": "int",
-                        "parameter_name": "x"
-                    }
-                ],
-                "return_type": "str"
-            }
-        ]
-    }
-}
 ```
 
 ### Superclasses

@@ -22,13 +22,9 @@ let test_parse_query context =
       match left, right with
       | ( TypeQuery.IsCompatibleWith (left_first, left_second),
           TypeQuery.IsCompatibleWith (right_first, right_second) )
-      | Join (left_first, left_second), Join (right_first, right_second)
-      | LessOrEqual (left_first, left_second), LessOrEqual (right_first, right_second)
-      | Meet (left_first, left_second), Meet (right_first, right_second) ->
+      | LessOrEqual (left_first, left_second), LessOrEqual (right_first, right_second) ->
           expression_equal left_first right_first && expression_equal left_second right_second
-      | Methods left, Methods right
-      | NormalizeType left, NormalizeType right ->
-          expression_equal left right
+      | Methods left, Methods right -> expression_equal left right
       | Superclasses left, Superclasses right ->
           List.for_all2_exn ~f:(fun left right -> expression_equal left right) left right
       | Type left, Type right -> expression_equal left right
@@ -66,7 +62,6 @@ let test_parse_query context =
   assert_parses "is_compatible_with (int, bool)" (IsCompatibleWith (!"int", !"bool"));
   assert_parses "is_compatible_with(  int, int)" (IsCompatibleWith (!"int", !"int"));
   assert_parses "Is_Compatible_With(  int, int)" (IsCompatibleWith (!"int", !"int"));
-  assert_parses "meet(int, bool)" (Meet (!"int", !"bool"));
   assert_parses
     "qualified_names(path='a.py')"
     (NamesInFiles [Path.create_relative ~root:local_root ~relative:"a.py"]);
@@ -81,7 +76,6 @@ let test_parse_query context =
          Path.create_relative ~root:local_root ~relative:"b.py";
        ]);
   assert_fails_to_parse "qualified_names(a.py)";
-  assert_parses "join(int, bool)" (Join (!"int", !"bool"));
   assert_fails_to_parse "less_or_equal()";
   assert_fails_to_parse "less_or_equal(int, int, int)";
   assert_fails_to_parse "less_or_eq(int, bool)";
@@ -94,8 +88,6 @@ let test_parse_query context =
   assert_fails_to_parse "join(int)";
   assert_parses "superclasses(int)" (Superclasses [!"int"]);
   assert_parses "superclasses(int, bool)" (Superclasses [!"int"; !"bool"]);
-  assert_parses "normalize_type(int)" (NormalizeType !"int");
-  assert_fails_to_parse "normalizeType(int, str)";
   assert_parses
     "type_check('derp/fiddle.py')"
     (RunCheck
@@ -127,8 +119,6 @@ let test_parse_query context =
   assert_fails_to_parse "types('a.py', 1, 2)";
   assert_parses "attributes(C)" (Attributes !&"C");
   assert_fails_to_parse "attributes(C, D)";
-  assert_parses "signature(a.b)" (Signature [!&"a.b"]);
-  assert_parses "signature(a.b, a.c)" (Signature [!&"a.b"; !&"a.c"]);
   assert_parses
     "save_server_state('state')"
     (SaveServerState (Path.create_absolute ~follow_symbolic_links:false "state"));

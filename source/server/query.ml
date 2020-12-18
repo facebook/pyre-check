@@ -44,20 +44,15 @@ let help () =
           "dump_class_hierarchy(): Prints out the entire class hierarchy as Pyre understands it, \
            elides type variables."
     | IsCompatibleWith _ -> None
-    | Join _ -> Some "join(T1, T2): Returns the least common supertype of T1 and T2."
     | LessOrEqual _ -> Some "less_or_equal(T1, T2): Returns whether T1 is a subtype of T2."
-    | Meet _ -> Some "meet(T1, T2): Returns the greatest common subtype of T1 and T2."
     | Methods _ -> Some "methods(class_name): Evaluates to the list of methods for `class_name`."
     | NamesInFiles _ ->
         Some
           "qualified_names(path='path') or qualified_names('path1', 'path2', ...): Returns a map \
            from each given path to a list of all qualified names for that path."
-    | NormalizeType _ -> Some "normalize_type(T): Resolves all type aliases for `T`."
     | PathOfModule _ -> Some "path_of_module(module): Gives an absolute path for `module`."
     | SaveServerState _ ->
         Some "save_server_state('path'): Saves Pyre's serialized state into `path`."
-    | Signature _ ->
-        Some "signature(a, b, ...): Gives a human-readable signature for the given function names."
     | Superclasses _ ->
         Some
           "superclasses(class_name1, class_name2, ...): Returns a mapping of class_name to the \
@@ -89,15 +84,11 @@ let help () =
       DumpCallGraph;
       DumpClassHierarchy;
       IsCompatibleWith (empty, empty);
-      Join (empty, empty);
       LessOrEqual (empty, empty);
-      Meet (empty, empty);
       Methods empty;
       NamesInFiles [path];
-      NormalizeType empty;
       PathOfModule (Reference.create "");
       SaveServerState path;
-      Signature [Reference.create ""];
       Superclasses [empty];
       Type (Node.create_with_default_location Expression.True);
       TypeAtPosition { path; position = Location.any_position };
@@ -166,12 +157,9 @@ let rec parse_query
       | "help", _ -> Request.TypeQueryRequest (Help (help ()))
       | "is_compatible_with", [left; right] ->
           Request.TypeQueryRequest (IsCompatibleWith (access left, access right))
-      | "join", [left; right] -> Request.TypeQueryRequest (Join (access left, access right))
       | "less_or_equal", [left; right] ->
           Request.TypeQueryRequest (LessOrEqual (access left, access right))
-      | "meet", [left; right] -> Request.TypeQueryRequest (Meet (access left, access right))
       | "methods", [name] -> Request.TypeQueryRequest (Methods (expression name))
-      | "normalize_type", [name] -> Request.TypeQueryRequest (NormalizeType (access name))
       | "path_of_module", [module_access] ->
           Request.TypeQueryRequest (PathOfModule (reference module_access))
       | "qualified_names", paths ->
@@ -189,7 +177,6 @@ let rec parse_query
       | "save_server_state", [path] ->
           Request.TypeQueryRequest
             (SaveServerState (Path.create_absolute ~follow_symbolic_links:false (string path)))
-      | "signature", names -> Request.TypeQueryRequest (Signature (List.map names ~f:reference))
       | "superclasses", names -> Request.TypeQueryRequest (Superclasses (List.map ~f:access names))
       | "type", [argument] -> Request.TypeQueryRequest (Type (expression argument))
       | ( "type_at_position",
