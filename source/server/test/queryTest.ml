@@ -9,7 +9,6 @@ open OUnit2
 open Core
 open Ast
 open Server
-open Protocol
 open Pyre
 open Test
 
@@ -20,19 +19,19 @@ let test_parse_query context =
     let type_query_request_equal left right =
       let expression_equal left right = Expression.location_insensitive_compare left right = 0 in
       match left, right with
-      | ( TypeQuery.IsCompatibleWith (left_first, left_second),
-          TypeQuery.IsCompatibleWith (right_first, right_second) )
+      | ( Query.Request.IsCompatibleWith (left_first, left_second),
+          Query.Request.IsCompatibleWith (right_first, right_second) )
       | LessOrEqual (left_first, left_second), LessOrEqual (right_first, right_second) ->
           expression_equal left_first right_first && expression_equal left_second right_second
       | Methods left, Methods right -> expression_equal left right
       | Superclasses left, Superclasses right ->
           List.for_all2_exn ~f:(fun left right -> expression_equal left right) left right
       | Type left, Type right -> expression_equal left right
-      | _ -> TypeQuery.equal_request left right
+      | _ -> Query.Request.equal left right
     in
     assert_equal
       ~cmp:type_query_request_equal
-      ~printer:TypeQuery.show_request
+      ~printer:Query.Request.show
       query
       (Query.parse_query ~configuration serialized)
   in

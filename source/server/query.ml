@@ -8,13 +8,42 @@
 open Core
 open Ast
 open Expression
-open Protocol
-open TypeQuery
 open Pyre
 
 exception InvalidQuery of string
 
+module Request = struct
+  type t =
+    | Attributes of Reference.t
+    | Batch of t list
+    | Callees of Reference.t
+    | CalleesWithLocation of Reference.t
+    | Defines of Reference.t list
+    | DumpCallGraph
+    | DumpClassHierarchy
+    | Help of string
+    | IsCompatibleWith of Expression.t * Expression.t
+    | LessOrEqual of Expression.t * Expression.t
+    | Methods of Expression.t
+    | PathOfModule of Reference.t
+    | RunCheck of {
+        check_name: string;
+        paths: Path.t list;
+      }
+    | SaveServerState of Path.t
+    | Superclasses of Expression.t list
+    | Type of Expression.t
+    | TypeAtPosition of {
+        path: Path.t;
+        position: Location.position;
+      }
+    | TypesInFiles of Path.t list
+    | ValidateTaintModels of Path.t option
+  [@@deriving eq, show]
+end
+
 let help () =
+  let open Request in
   let help = function
     | RunCheck _ ->
         Some
@@ -129,11 +158,11 @@ let rec parse_query
       in
       let string argument = argument |> expression |> string_of_expression in
       match String.lowercase name, arguments with
-      | "attributes", [name] -> Attributes (reference name)
+      | "attributes", [name] -> Request.Attributes (reference name)
       | "batch", queries ->
-          let construct_batch batch_queries (query : request) =
+          let construct_batch batch_queries query =
             match query with
-            | Batch _ -> raise (InvalidQuery "cannot nest batch queries")
+            | Request.Batch _ -> raise (InvalidQuery "cannot nest batch queries")
             | query -> query :: batch_queries
           in
           List.map ~f:expression queries
@@ -141,26 +170,26 @@ let rec parse_query
           |> List.map ~f:(parse_query ~configuration)
           |> List.fold ~f:construct_batch ~init:[]
           |> List.rev
-          |> fun query_list -> (Batch query_list : request)
-      | "callees", [name] -> Callees (reference name)
-      | "callees_with_location", [name] -> CalleesWithLocation (reference name)
-      | "defines", names -> Defines (List.map names ~f:reference)
-      | "dump_call_graph", [] -> DumpCallGraph
-      | "dump_class_hierarchy", [] -> DumpClassHierarchy
-      | "help", _ -> Help (help ())
-      | "is_compatible_with", [left; right] -> IsCompatibleWith (access left, access right)
-      | "less_or_equal", [left; right] -> LessOrEqual (access left, access right)
-      | "methods", [name] -> Methods (expression name)
-      | "path_of_module", [module_access] -> PathOfModule (reference module_access)
+          |> fun query_list -> Request.Batch query_list
+      | "callees", [name] -> Request.Callees (reference name)
+      | "callees_with_location", [name] -> Request.CalleesWithLocation (reference name)
+      | "defines", names -> Request.Defines (List.map names ~f:reference)
+      | "dump_call_graph", [] -> Request.DumpCallGraph
+      | "dump_class_hierarchy", [] -> Request.DumpClassHierarchy
+      | "help", _ -> Request.Help (help ())
+      | "is_compatible_with", [left; right] -> Request.IsCompatibleWith (access left, access right)
+      | "less_or_equal", [left; right] -> Request.LessOrEqual (access left, access right)
+      | "methods", [name] -> Request.Methods (expression name)
+      | "path_of_module", [module_access] -> Request.PathOfModule (reference module_access)
       | "run_check", check_name :: paths ->
           let check_name = string check_name in
           let paths =
             List.map paths ~f:(fun path ->
                 Path.create_absolute ~follow_symbolic_links:false (string path))
           in
-          RunCheck { check_name; paths }
+          Request.RunCheck { check_name; paths }
       | "save_server_state", [path] ->
-          SaveServerState (Path.create_absolute ~follow_symbolic_links:false (string path))
+          Request.SaveServerState (Path.create_absolute ~follow_symbolic_links:false (string path))
       | "superclasses", names -> Superclasses (List.map ~f:access names)
       | "type", [argument] -> Type (expression argument)
       | ( "type_at_position",
@@ -171,19 +200,19 @@ let rec parse_query
           ] ) ->
           let path = Path.create_relative ~root ~relative:(string path) in
           let position = { Location.line; column } in
-          TypeAtPosition { path; position }
+          Request.TypeAtPosition { path; position }
       | "types", paths ->
           let paths =
             List.map ~f:(fun path -> Path.create_relative ~root ~relative:(string path)) paths
           in
-          TypesInFiles paths
+          Request.TypesInFiles paths
       | "type_check", arguments ->
           let paths =
             arguments
             |> List.map ~f:string
             |> List.map ~f:(fun relative -> Path.create_relative ~root ~relative)
           in
-          RunCheck { check_name = "typeCheck"; paths }
+          Request.RunCheck { check_name = "typeCheck"; paths }
       | "validate_taint_models", [] -> ValidateTaintModels None
       | "validate_taint_models", [argument] ->
           let path =
@@ -193,7 +222,7 @@ let rec parse_query
             else
               Path.create_relative ~root ~relative:(string argument)
           in
-          ValidateTaintModels (Some path)
+          Request.ValidateTaintModels (Some path)
       | _ -> raise (InvalidQuery "unexpected query") )
   | _ when String.equal query "help" -> Help (help ())
   | _ -> raise (InvalidQuery "unexpected query")

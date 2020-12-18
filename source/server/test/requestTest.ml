@@ -107,7 +107,7 @@ let test_process_type_query_request context =
   let { Configuration.Analysis.local_root; _ } = configuration in
   let path relative = Path.create_relative ~root:local_root ~relative in
   assert_response
-    (Protocol.TypeQuery.RunCheck { check_name = "awaitable"; paths = [path "test.py"] })
+    (Query.Request.RunCheck { check_name = "awaitable"; paths = [path "test.py"] })
     {|
     {
         "response": {"errors": []}
@@ -115,7 +115,7 @@ let test_process_type_query_request context =
     |};
 
   assert_response
-    (Protocol.TypeQuery.RunCheck { check_name = "awaitable"; paths = [path "await.py"] })
+    (Query.Request.RunCheck { check_name = "awaitable"; paths = [path "await.py"] })
     {|
     {
         "response": {
@@ -139,7 +139,7 @@ let test_process_type_query_request context =
     }
     |};
   assert_response
-    (Protocol.TypeQuery.CalleesWithLocation (Reference.create "await.bar"))
+    (Query.Request.CalleesWithLocation (Reference.create "await.bar"))
     {|
     {
         "response": {
@@ -166,7 +166,7 @@ let test_process_type_query_request context =
     }
     |};
   assert_response
-    Protocol.TypeQuery.DumpCallGraph
+    Query.Request.DumpCallGraph
     {|
     {
         "response": {
@@ -203,7 +203,7 @@ let test_process_type_query_request context =
     }
     |};
   assert_response
-    (Protocol.TypeQuery.Defines [Reference.create "test"])
+    (Query.Request.Defines [Reference.create "test"])
     {|
     {
       "response": [
@@ -221,7 +221,7 @@ let test_process_type_query_request context =
     }
     |};
   assert_response
-    (Protocol.TypeQuery.Defines [Reference.create "classy"])
+    (Query.Request.Defines [Reference.create "classy"])
     {|
     {
       "response": [
@@ -248,7 +248,7 @@ let test_process_type_query_request context =
     }
     |};
   assert_response
-    (Protocol.TypeQuery.Defines [Reference.create "classy.C"])
+    (Query.Request.Defines [Reference.create "classy.C"])
     {|
     {
       "response": [
@@ -271,7 +271,7 @@ let test_process_type_query_request context =
     |};
 
   assert_response
-    (Protocol.TypeQuery.Defines [Reference.create "define_test"])
+    (Query.Request.Defines [Reference.create "define_test"])
     {|
     {
       "response": [
@@ -299,14 +299,14 @@ let test_process_type_query_request context =
     }
     |};
   assert_response
-    (Protocol.TypeQuery.Defines [Reference.create "nonexistent"])
+    (Query.Request.Defines [Reference.create "nonexistent"])
     {|
     {
       "response": []
     }
     |};
   assert_response
-    (Protocol.TypeQuery.Defines [Reference.create "test"; Reference.create "classy"])
+    (Query.Request.Defines [Reference.create "test"; Reference.create "classy"])
     {|
     {
       "response": [
@@ -343,7 +343,7 @@ let test_process_type_query_request context =
     }
     |};
   assert_response
-    (Protocol.TypeQuery.Methods (parse_single_expression "classy.C"))
+    (Query.Request.Methods (parse_single_expression "classy.C"))
     {|
     {
       "response": {

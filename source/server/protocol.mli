@@ -34,34 +34,6 @@ type client =
 [@@deriving eq, show]
 
 module TypeQuery : sig
-  type request =
-    | Attributes of Reference.t
-    | Batch of request list
-    | Callees of Reference.t
-    | CalleesWithLocation of Reference.t
-    | Defines of Reference.t list
-    | DumpCallGraph
-    | DumpClassHierarchy
-    | Help of string
-    | IsCompatibleWith of Expression.t * Expression.t
-    | LessOrEqual of Expression.t * Expression.t
-    | Methods of Expression.t
-    | PathOfModule of Reference.t
-    | RunCheck of {
-        check_name: string;
-        paths: Path.t list;
-      }
-    | SaveServerState of Path.t
-    | Superclasses of Expression.t list
-    | Type of Expression.t
-    | TypeAtPosition of {
-        path: Path.t;
-        position: Location.position;
-      }
-    | TypesInFiles of Path.t list
-    | ValidateTaintModels of Path.t option
-  [@@deriving eq, show]
-
   type attribute_kind =
     | Regular
     | Property
@@ -193,7 +165,7 @@ module Request : sig
     | ShowStatusRequest of LanguageServer.Types.ShowStatusParameters.t
     | StopRequest
     | TypeCheckRequest of Path.t list
-    | TypeQueryRequest of TypeQuery.request
+    | TypeQueryRequest of Query.Request.t
     | UnparsableQuery of {
         query: string;
         reason: string;
