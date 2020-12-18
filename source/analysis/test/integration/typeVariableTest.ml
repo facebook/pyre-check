@@ -3374,6 +3374,15 @@ let test_recursive_aliases context =
       "Revealed type [-1]: Revealed type for `x` is `str` (inferred: \
        `typing_extensions.Literal['x']`).";
     ];
+  assert_type_errors
+    {|
+      import typing
+      MyInt = int
+      X: typing.TypeAlias = "MyInt"
+      y: X
+      reveal_type(y)
+    |}
+    ["Revealed type [-1]: Revealed type for `y` is `int`."];
   ()
 
 

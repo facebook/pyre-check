@@ -203,7 +203,7 @@ let extract_alias unannotated_global_environment name ~dependency =
             else
               None
         | Name (Name.Identifier "None"), _ -> None
-        | ( Call _,
+        | ( (Call _ | Name _ | String _),
             Some
               {
                 Node.value =
@@ -216,21 +216,7 @@ let extract_alias unannotated_global_environment name ~dependency =
                       });
                 _;
               } )
-        | ( Name _,
-            Some
-              {
-                Node.value =
-                  Name
-                    (Name.Attribute
-                      {
-                        base = { Node.value = Name (Name.Identifier "typing"); _ };
-                        attribute = "TypeAlias";
-                        _;
-                      });
-                _;
-              } )
-        | Call _, None
-        | Name _, None -> (
+        | (Call _ | Name _), None -> (
             match Type.Variable.parse_declaration (delocalize value) ~target:name with
             | Some variable -> Some (VariableAlias variable)
             | _ ->

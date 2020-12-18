@@ -124,6 +124,20 @@ let test_harder_registrations context =
     class Foo: ...
     X = Foo[unknown.get("key")]
   |} "test.X" None;
+  (* Don't treat a global string assignment as an alias unless it is marked as `TypeAlias`. *)
+  assert_registers {|
+    X = int
+    Y = "X"
+  |} "test.Y" ~expected_alias:None;
+  assert_registers
+    {|
+    import typing
+
+    X = int
+    Y: typing.TypeAlias = "X"
+  |}
+    "test.Y"
+    ~expected_alias:(Some (Type.TypeAlias Type.integer));
 
   (* Recursive alias. *)
   assert_registers
@@ -146,6 +160,9 @@ let test_harder_registrations context =
                        Type.tuple [Type.Primitive "test.Tree"; Type.Primitive "test.Tree"];
                      ];
                })));
+  assert_registers {|
+      Tree = "Tree"
+    |} "test.Tree" ~expected_alias:None;
   ()
 
 
