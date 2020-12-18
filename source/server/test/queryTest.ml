@@ -30,17 +30,10 @@ let test_parse_query context =
       | Type left, Type right -> expression_equal left right
       | _ -> TypeQuery.equal_request left right
     in
-
-    let cmp left right =
-      match left, right with
-      | Request.TypeQueryRequest left, Request.TypeQueryRequest right ->
-          type_query_request_equal left right
-      | _ -> Request.equal left right
-    in
     assert_equal
-      ~cmp
-      ~printer:Request.show
-      (Request.TypeQueryRequest query)
+      ~cmp:type_query_request_equal
+      ~printer:TypeQuery.show_request
+      query
       (Query.parse_query ~configuration serialized)
   in
   let assert_fails_to_parse serialized =

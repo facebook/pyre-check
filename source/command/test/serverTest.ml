@@ -142,7 +142,10 @@ let assert_query_response ~context ~sources ~query expected_response =
   let { ScratchServer.configuration; server_configuration; state; _ } =
     ScratchServer.start ~context sources
   in
-  let request = Query.parse_query ~configuration query in
+  let request =
+    let query = Query.parse_query ~configuration query in
+    Protocol.Request.TypeQueryRequest query
+  in
   let { Request.response; _ } =
     Request.process ~state ~configuration:server_configuration ~request
   in
@@ -469,7 +472,10 @@ let test_query context =
     let { ScratchServer.configuration; server_configuration; state; _ } =
       ScratchServer.start ~context [handle, source]
     in
-    let request = Query.parse_query ~configuration query in
+    let request =
+      let query = Query.parse_query ~configuration query in
+      Protocol.Request.TypeQueryRequest query
+    in
     let { Request.response; _ } =
       Request.process ~state ~configuration:server_configuration ~request
     in

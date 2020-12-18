@@ -129,46 +129,40 @@ let rec parse_query
       in
       let string argument = argument |> expression |> string_of_expression in
       match String.lowercase name, arguments with
-      | "attributes", [name] -> Request.TypeQueryRequest (Attributes (reference name))
+      | "attributes", [name] -> Attributes (reference name)
       | "batch", queries ->
-          let construct_batch batch_queries query =
+          let construct_batch batch_queries (query : request) =
             match query with
-            | Request.TypeQueryRequest (Batch _) -> raise (InvalidQuery "cannot nest batch queries")
-            | Request.TypeQueryRequest query -> query :: batch_queries
-            | _ -> raise (InvalidQuery "unexpected query")
+            | Batch _ -> raise (InvalidQuery "cannot nest batch queries")
+            | query -> query :: batch_queries
           in
           List.map ~f:expression queries
           |> List.map ~f:Expression.show
           |> List.map ~f:(parse_query ~configuration)
           |> List.fold ~f:construct_batch ~init:[]
           |> List.rev
-          |> fun query_list -> Request.TypeQueryRequest (Batch query_list)
-      | "callees", [name] -> Request.TypeQueryRequest (Callees (reference name))
-      | "callees_with_location", [name] ->
-          Request.TypeQueryRequest (CalleesWithLocation (reference name))
-      | "defines", names -> Request.TypeQueryRequest (Defines (List.map names ~f:reference))
-      | "dump_call_graph", [] -> Request.TypeQueryRequest DumpCallGraph
-      | "dump_class_hierarchy", [] -> Request.TypeQueryRequest DumpClassHierarchy
-      | "help", _ -> Request.TypeQueryRequest (Help (help ()))
-      | "is_compatible_with", [left; right] ->
-          Request.TypeQueryRequest (IsCompatibleWith (access left, access right))
-      | "less_or_equal", [left; right] ->
-          Request.TypeQueryRequest (LessOrEqual (access left, access right))
-      | "methods", [name] -> Request.TypeQueryRequest (Methods (expression name))
-      | "path_of_module", [module_access] ->
-          Request.TypeQueryRequest (PathOfModule (reference module_access))
+          |> fun query_list -> (Batch query_list : request)
+      | "callees", [name] -> Callees (reference name)
+      | "callees_with_location", [name] -> CalleesWithLocation (reference name)
+      | "defines", names -> Defines (List.map names ~f:reference)
+      | "dump_call_graph", [] -> DumpCallGraph
+      | "dump_class_hierarchy", [] -> DumpClassHierarchy
+      | "help", _ -> Help (help ())
+      | "is_compatible_with", [left; right] -> IsCompatibleWith (access left, access right)
+      | "less_or_equal", [left; right] -> LessOrEqual (access left, access right)
+      | "methods", [name] -> Methods (expression name)
+      | "path_of_module", [module_access] -> PathOfModule (reference module_access)
       | "run_check", check_name :: paths ->
           let check_name = string check_name in
           let paths =
             List.map paths ~f:(fun path ->
                 Path.create_absolute ~follow_symbolic_links:false (string path))
           in
-          Request.TypeQueryRequest (RunCheck { check_name; paths })
+          RunCheck { check_name; paths }
       | "save_server_state", [path] ->
-          Request.TypeQueryRequest
-            (SaveServerState (Path.create_absolute ~follow_symbolic_links:false (string path)))
-      | "superclasses", names -> Request.TypeQueryRequest (Superclasses (List.map ~f:access names))
-      | "type", [argument] -> Request.TypeQueryRequest (Type (expression argument))
+          SaveServerState (Path.create_absolute ~follow_symbolic_links:false (string path))
+      | "superclasses", names -> Superclasses (List.map ~f:access names)
+      | "type", [argument] -> Type (expression argument)
       | ( "type_at_position",
           [
             path;
@@ -177,20 +171,20 @@ let rec parse_query
           ] ) ->
           let path = Path.create_relative ~root ~relative:(string path) in
           let position = { Location.line; column } in
-          Request.TypeQueryRequest (TypeAtPosition { path; position })
+          TypeAtPosition { path; position }
       | "types", paths ->
           let paths =
             List.map ~f:(fun path -> Path.create_relative ~root ~relative:(string path)) paths
           in
-          Request.TypeQueryRequest (TypesInFiles paths)
+          TypesInFiles paths
       | "type_check", arguments ->
           let paths =
             arguments
             |> List.map ~f:string
             |> List.map ~f:(fun relative -> Path.create_relative ~root ~relative)
           in
-          Request.TypeQueryRequest (RunCheck { check_name = "typeCheck"; paths })
-      | "validate_taint_models", [] -> Request.TypeQueryRequest (ValidateTaintModels None)
+          RunCheck { check_name = "typeCheck"; paths }
+      | "validate_taint_models", [] -> ValidateTaintModels None
       | "validate_taint_models", [argument] ->
           let path =
             let path = string argument in
@@ -199,8 +193,8 @@ let rec parse_query
             else
               Path.create_relative ~root ~relative:(string argument)
           in
-          Request.TypeQueryRequest (ValidateTaintModels (Some path))
+          ValidateTaintModels (Some path)
       | _ -> raise (InvalidQuery "unexpected query") )
-  | _ when String.equal query "help" -> Request.TypeQueryRequest (Help (help ()))
+  | _ when String.equal query "help" -> Help (help ())
   | _ -> raise (InvalidQuery "unexpected query")
   | exception PyreParser.Parser.Error _ -> raise (InvalidQuery "failed to parse query")
