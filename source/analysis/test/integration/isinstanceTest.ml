@@ -220,6 +220,40 @@ let test_check_isinstance context =
           reveal_type(x)
     |}
     ["Revealed type [-1]: Revealed type for `x` is `B`."];
+  assert_type_errors
+    {|
+      from typing import Tuple, Union
+      X = Union[int, Tuple["X", ...]]
+
+      def foo() -> None:
+        x: X
+        if isinstance(x, tuple):
+          reveal_type(x)
+        else:
+          reveal_type(x)
+     |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `typing.Tuple[test.X (resolves to Union[int, \
+       typing.Tuple[X, ...]]), ...]`.";
+      "Revealed type [-1]: Revealed type for `x` is `int`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Tuple, Union
+      X = Union[int, Tuple["X", "X"]]
+
+      def foo() -> None:
+        x: X
+        if not isinstance(x, tuple):
+          reveal_type(x)
+        else:
+          reveal_type(x)
+     |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `int`.";
+      "Revealed type [-1]: Revealed type for `x` is `Tuple[test.X (resolves to Union[Tuple[X, X], \
+       int]), test.X (resolves to Union[Tuple[X, X], int])]`.";
+    ];
   ()
 
 

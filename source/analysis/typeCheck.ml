@@ -4612,11 +4612,17 @@ module State (Context : Context) = struct
           in
           let partition annotation ~boundary =
             let consistent_with_boundary, not_consistent_with_boundary =
+              let unfolded_annotation =
+                match annotation with
+                | Type.RecursiveType recursive_type ->
+                    Type.RecursiveType.unfold_recursive_type recursive_type
+                | _ -> annotation
+              in
               let extract_union_members = function
                 | Type.Union parameters -> parameters
                 | annotation -> [annotation]
               in
-              extract_union_members annotation
+              extract_union_members unfolded_annotation
               |> List.partition_tf ~f:(fun left ->
                      Resolution.is_consistent_with resolution left boundary ~expression:None)
             in
