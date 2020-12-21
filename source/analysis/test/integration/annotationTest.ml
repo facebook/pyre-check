@@ -1459,6 +1459,17 @@ let test_check_invalid_inheritance context =
         pass
     |}
     ["Invalid inheritance [39]: `typing.Any` is not a valid parent class."];
+  assert_type_errors
+    {|
+      from typing import Dict, Union
+      D = Dict[str, Union[str, "D"]]
+
+      class Foo(D): ...
+     |}
+    [
+      "Invalid inheritance [39]: `test.D (resolves to Dict[str, Union[D, str]])` is not a valid \
+       parent class.";
+    ];
   ()
 
 
