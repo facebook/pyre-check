@@ -20,6 +20,45 @@ class ExampleTypedDict(TypedDict):
 
 class BasicTestCase(unittest.TestCase):
     def test_loads(self) -> None:
+        # Primitives.
+        self.assertEqual(safe_json.loads("1", int), 1)
+        self.assertEqual(safe_json.loads("true", bool), True)
+        self.assertEqual(safe_json.loads("1.1", float), 1.1)
+        self.assertEqual(safe_json.loads('"string"', str), "string")
+
+        with self.assertRaises(safe_json.InvalidJson):
+            safe_json.loads("1", bool)
+
+        with self.assertRaises(safe_json.InvalidJson):
+            safe_json.loads("1", float)
+
+        with self.assertRaises(safe_json.InvalidJson):
+            safe_json.loads("1", str)
+
+        with self.assertRaises(safe_json.InvalidJson):
+            safe_json.loads("true", float)
+
+        with self.assertRaises(safe_json.InvalidJson):
+            safe_json.loads("true", str)
+
+        with self.assertRaises(safe_json.InvalidJson):
+            safe_json.loads("1.1", int)
+
+        with self.assertRaises(safe_json.InvalidJson):
+            safe_json.loads("1.1", bool)
+
+        with self.assertRaises(safe_json.InvalidJson):
+            safe_json.loads("1.1", str)
+
+        with self.assertRaises(safe_json.InvalidJson):
+            safe_json.loads("hello", int)
+
+        with self.assertRaises(safe_json.InvalidJson):
+            safe_json.loads("hello", bool)
+
+        with self.assertRaises(safe_json.InvalidJson):
+            safe_json.loads("hello", float)
+
         # Lists.
         self.assertEqual(safe_json.loads("[]", List[int]), [])
         self.assertEqual(safe_json.loads("[1]", List[int]), [1])

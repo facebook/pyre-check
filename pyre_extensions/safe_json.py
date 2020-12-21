@@ -29,6 +29,10 @@ class InvalidJson(json.JSONDecodeError):
         super().__init__(message, "", 0)
 
 
+def _is_primitive(target_type: Type[object]) -> bool:
+    return target_type in (int, float, str, bool)
+
+
 def _is_list(target_type: Type[object]) -> bool:
     return get_origin(target_type) in (List, list)
 
@@ -94,6 +98,11 @@ def _validate_value(value: object, target_type: Type[object]) -> None:
 
 
 def _validate_toplevel(value: object, target_type: Type[object]) -> None:
+    if _is_primitive(target_type):
+        if not isinstance(value, target_type):
+            raise InvalidJson(f"`{value}` is not a {target_type}")
+        else:
+            return
     if _is_list(target_type):
         _validate_list(value, cast(Type[List[object]], target_type))
     elif _is_dictionary(target_type):
