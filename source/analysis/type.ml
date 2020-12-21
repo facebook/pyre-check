@@ -2484,6 +2484,13 @@ module RecursiveType = struct
       body
 
 
+  let replace_references_with_recursive_type ~recursive_type:{ name; body } =
+    instantiate ~constraints:(function
+        | Primitive primitive_name when Identifier.equal primitive_name name ->
+            Some (RecursiveType { name; body })
+        | _ -> None)
+
+
   module Namespace = struct
     let fresh = ref 1
 
@@ -5118,6 +5125,22 @@ let resolve_class annotation =
         |> List.fold ~init:(Some []) ~f:flatten_optional
         >>| List.concat
         >>| List.rev
+    | RecursiveType ({ name; body } as recursive_type) ->
+        extract ~meta body
+        (* Filter out the recursive type name itself since it's not a valid class name.
+
+           Removing the inner occurrences of the recursive type is fine because of induction. If the
+           other classes in a union support an attribute lookup, the recursive type will too. If
+           they don't, then the recursive type won't either. *)
+        >>| List.filter ~f:(fun { class_name; _ } -> not (Identifier.equal class_name name))
+        >>| List.map ~f:(fun ({ instantiated; _ } as class_data) ->
+                {
+                  class_data with
+                  instantiated =
+                    RecursiveType.replace_references_with_recursive_type
+                      ~recursive_type
+                      instantiated;
+                })
     | Annotated annotation -> extract ~meta annotation
     | annotation when is_meta annotation ->
         (* Metaclasses return accessed_through_class=true since they allow looking up only class

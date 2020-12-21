@@ -248,11 +248,58 @@ let test_check_isinstance context =
           reveal_type(x)
         else:
           reveal_type(x)
+          reveal_type(x[0])
      |}
     [
       "Revealed type [-1]: Revealed type for `x` is `int`.";
       "Revealed type [-1]: Revealed type for `x` is `Tuple[test.X (resolves to Union[Tuple[X, X], \
        int]), test.X (resolves to Union[Tuple[X, X], int])]`.";
+      "Revealed type [-1]: Revealed type for `x[0]` is `test.X (resolves to Union[Tuple[X, X], \
+       int])`.";
+    ];
+  (* Ternary operator with isinstance. *)
+  assert_type_errors
+    {|
+      from typing import Tuple, Union
+      X = Union[int, Tuple["X", "X"]]
+
+      def first_int(x: X) -> int:
+        return x if isinstance(x, int) else first_int(x[1])
+    |}
+    [];
+  (* TODO(T80894007): `isinstance` doesn't work correctly with `and`. *)
+  assert_type_errors
+    {|
+      from typing import Tuple, Union
+      NonRecursiveUnion = Union[int, Tuple[int, Union[int, Tuple[int, int]]]]
+
+      def foo(x: NonRecursiveUnion) -> None:
+        if isinstance(x, tuple) and not isinstance(x[1], tuple):
+          reveal_type(x)
+        else:
+          reveal_type(x)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `Tuple[int, Union[Tuple[int, int], int]]`.";
+      "Revealed type [-1]: Revealed type for `x` is `Union[Tuple[int, Union[Tuple[int, int], \
+       int]], int]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Tuple, Union
+      X = Union[int, Tuple[int, "X"]]
+
+      def foo(x: X) -> None:
+        if isinstance(x, tuple) and not isinstance(x[1], tuple):
+          reveal_type(x)
+        else:
+          reveal_type(x)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `Tuple[int, test.X (resolves to \
+       Union[Tuple[int, X], int])]`.";
+      "Revealed type [-1]: Revealed type for `x` is `Union[Tuple[int, test.X (resolves to \
+       Union[Tuple[int, X], int])], int]`.";
     ];
   ()
 

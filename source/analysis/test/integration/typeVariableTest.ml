@@ -3383,6 +3383,41 @@ let test_recursive_aliases context =
       reveal_type(y)
     |}
     ["Revealed type [-1]: Revealed type for `y` is `int`."];
+  assert_type_errors
+    {|
+      from typing import List, Union
+      X = List[Union[int, "X"]]
+
+      def foo() -> None:
+        x: X
+        y = x[0]
+        reveal_type(y)
+     |}
+    [
+      "Revealed type [-1]: Revealed type for `y` is `Union[int, test.X (resolves to List[Union[X, \
+       int]])]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Dict, Union
+      D = Dict[str, Union[str, "D"]]
+
+      def foo(d: D) -> None:
+        y = d["hello"]
+        reveal_type(y)
+        if isinstance(y, str):
+          reveal_type(y)
+        else:
+          z = y["world"]
+          reveal_type(z)
+     |}
+    [
+      "Revealed type [-1]: Revealed type for `y` is `Union[str, test.D (resolves to Dict[str, \
+       Union[D, str]])]`.";
+      "Revealed type [-1]: Revealed type for `y` is `str`.";
+      "Revealed type [-1]: Revealed type for `z` is `Union[str, test.D (resolves to Dict[str, \
+       Union[D, str]])]`.";
+    ];
   ()
 
 

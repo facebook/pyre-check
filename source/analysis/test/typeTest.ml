@@ -2777,6 +2777,49 @@ let test_resolve_class _ =
          };
          { instantiated = Type.Primitive "Foo"; accessed_through_class = false; class_name = "Foo" };
        ]);
+  let tree_annotation =
+    Type.RecursiveType
+      {
+        name = "Tree";
+        body = Type.union [Type.integer; Type.tuple [Type.Primitive "Foo"; Type.Primitive "Tree"]];
+      }
+  in
+  assert_resolved_class
+    tree_annotation
+    (Some
+       [
+         { instantiated = Type.integer; accessed_through_class = false; class_name = "int" };
+         {
+           instantiated = Type.tuple [Type.Primitive "Foo"; tree_annotation];
+           accessed_through_class = false;
+           class_name = "tuple";
+         };
+       ]);
+  let recursive_list =
+    Type.RecursiveType
+      {
+        name = "RecursiveList";
+        body = Type.list (Type.union [Type.integer; Type.Primitive "RecursiveList"]);
+      }
+  in
+  assert_resolved_class
+    recursive_list
+    (Some
+       [
+         {
+           instantiated = Type.list (Type.union [Type.integer; recursive_list]);
+           accessed_through_class = false;
+           class_name = "list";
+         };
+       ]);
+  (* TODO(T44784951): We should forbid defining a directly recursive type like this. This regression
+     test is here just to test we don't go into an infinite loop in case one makes it through. *)
+  let directly_recursive_type =
+    Type.RecursiveType { name = "Tree"; body = Type.union [Type.integer; Type.Primitive "Tree"] }
+  in
+  assert_resolved_class
+    directly_recursive_type
+    (Some [{ instantiated = Type.integer; accessed_through_class = false; class_name = "int" }]);
   ()
 
 
