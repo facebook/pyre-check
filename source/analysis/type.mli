@@ -285,6 +285,7 @@ type class_data = {
   accessed_through_class: bool;
   class_name: Primitive.t;
 }
+[@@deriving sexp]
 
 type type_t = t [@@deriving compare, eq, sexp, show]
 

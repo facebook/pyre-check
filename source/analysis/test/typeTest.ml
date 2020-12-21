@@ -2727,6 +2727,59 @@ let test_multiply_polynomials_with_variadics _ =
   ()
 
 
+let test_resolve_class _ =
+  let assert_resolved_class annotation expected =
+    assert_equal
+      ~printer:(fun x -> [%sexp_of: Type.class_data list option] x |> Sexp.to_string_hum)
+      expected
+      (Type.resolve_class annotation)
+  in
+  assert_resolved_class Type.Any (Some []);
+  assert_resolved_class
+    (Type.meta Type.integer)
+    (Some [{ instantiated = Type.integer; accessed_through_class = true; class_name = "int" }]);
+  assert_resolved_class
+    (Type.optional Type.integer)
+    (Some
+       [
+         {
+           instantiated = Type.optional Type.integer;
+           accessed_through_class = false;
+           class_name = "typing.Optional";
+         };
+       ]);
+  assert_resolved_class
+    (Type.union [Type.integer; Type.string])
+    (Some
+       [
+         { instantiated = Type.integer; accessed_through_class = false; class_name = "int" };
+         { instantiated = Type.string; accessed_through_class = false; class_name = "str" };
+       ]);
+  assert_resolved_class
+    (Type.union [Type.Primitive "Foo"; Type.list Type.integer])
+    (Some
+       [
+         {
+           instantiated = Type.list Type.integer;
+           accessed_through_class = false;
+           class_name = "list";
+         };
+         { instantiated = Type.Primitive "Foo"; accessed_through_class = false; class_name = "Foo" };
+       ]);
+  assert_resolved_class
+    (Type.union [Type.Primitive "Foo"; Type.list Type.integer])
+    (Some
+       [
+         {
+           instantiated = Type.list Type.integer;
+           accessed_through_class = false;
+           class_name = "list";
+         };
+         { instantiated = Type.Primitive "Foo"; accessed_through_class = false; class_name = "Foo" };
+       ]);
+  ()
+
+
 let () =
   "type"
   >::: [
@@ -2789,6 +2842,7 @@ let () =
          "add_polynomials_with_variadics" >:: test_add_polynomials_with_variadics;
          "subtract_polynomials_with_variadics" >:: test_subtract_polynomials_with_variadics;
          "multiply_polynomials_with_variadics" >:: test_multiply_polynomials_with_variadics;
+         "resolve_class" >:: test_resolve_class;
        ]
   |> Test.run;
   "primitive" >::: ["is unit test" >:: test_is_unit_test] |> Test.run;

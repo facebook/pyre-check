@@ -973,6 +973,7 @@ type class_data = {
   accessed_through_class: bool;
   class_name: Primitive.t;
 }
+[@@deriving sexp]
 
 type type_t = t [@@deriving compare, eq, sexp, show, hash]
 
@@ -5075,10 +5076,16 @@ let contains_prohibited_any annotation =
 
 let to_yojson annotation = `String (show annotation)
 
+(* `resolve_class` is used to extract a class name (like "list") from a type (or classes from a
+   union) so that we can get its attributes, global location, etc. It also returns the instantiated
+   type `List[int]` since that is also needed for attribute lookup. *)
 let resolve_class annotation =
   let rec extract ~meta original_annotation =
     let annotation =
       match original_annotation with
+      (* Variables return their upper bound because we need to take the least informative type in
+         their interval. Otherwise, we might access an attribute that doesn't exist on the actual
+         type. *)
       | Variable variable -> Variable.Unary.upper_bound variable
       | _ -> original_annotation
     in
@@ -5100,6 +5107,8 @@ let resolve_class annotation =
             };
           ]
     | Union annotations ->
+        (* Unions return the list of member classes because an attribute lookup has to be supported
+           by all members of the union. *)
         let flatten_optional sofar optional =
           match sofar, optional with
           | Some sofar, Some optional -> Some (optional :: sofar)
@@ -5110,7 +5119,10 @@ let resolve_class annotation =
         >>| List.concat
         >>| List.rev
     | Annotated annotation -> extract ~meta annotation
-    | annotation when is_meta annotation -> single_parameter annotation |> extract ~meta:true
+    | annotation when is_meta annotation ->
+        (* Metaclasses return accessed_through_class=true since they allow looking up only class
+           attribute, etc. *)
+        single_parameter annotation |> extract ~meta:true
     | _ -> (
         match split annotation |> fst |> primitive_name with
         | Some class_name ->
