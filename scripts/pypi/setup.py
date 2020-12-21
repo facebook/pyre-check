@@ -8,7 +8,7 @@ import json
 import os
 import sys
 from pathlib import Path
-from typing import List, Mapping, Tuple
+from typing import List, Tuple
 
 from setuptools import find_packages, setup
 
@@ -61,7 +61,6 @@ def run(
     package_version: str,
     module_name: str,
     runtime_dependencies: List[str],
-    sapp_dependencies: Mapping[str, List[str]],
     long_description: str,
     **kwargs: object
 ) -> None:
@@ -100,12 +99,10 @@ def run(
         + find_taint_stubs(),
         python_requires=">=3.6",
         install_requires=runtime_dependencies,
-        extras_require=sapp_dependencies,
         entry_points=dict(  # noqa we need to do this to make this .format-able
             console_scripts=[
                 "pyre = " + module_name + ".client.pyre:main",
                 "pyre-upgrade = " + module_name + ".tools.upgrade.upgrade:main",
-                "sapp = pyre_check.tools.sapp.sapp.cli:cli [sapp]",
             ]
         ),
         **kwargs
@@ -121,7 +118,6 @@ def main() -> None:
         package_version="{PACKAGE_VERSION}",
         module_name="{MODULE_NAME}",
         runtime_dependencies=json.loads("""{RUNTIME_DEPENDENCIES}"""),
-        sapp_dependencies=json.loads("""{SAPP_DEPENDENCIES}"""),
         long_description=long_description,
     )
 

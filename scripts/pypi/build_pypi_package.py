@@ -25,10 +25,11 @@ RUNTIME_DEPENDENCIES = [
     "click",
     "dataclasses",
     "dataclasses-json",
-    "pywatchman",
-    "psutil",
+    "fb-sapp",
     "libcst>=0.3.6",
+    "psutil",
     "pyre_extensions",
+    "pywatchman",
 ]
 
 
@@ -51,14 +52,6 @@ def validate_version(version: str) -> None:
     pattern = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+$")
     if not pattern.match(version):
         raise ValueError("Invalid version format.")
-
-
-# sapp directory is either beside or inside pyre-check directory
-def sapp_directory(pyre_directory: Path) -> Path:
-    path = pyre_directory / "tools/sapp"
-    if not path.is_dir():
-        path = pyre_directory.parent / "sapp"
-    return path
 
 
 def mkdir_and_init(module_path: Path) -> None:
@@ -104,16 +97,6 @@ def sync_pysa_stubs(pyre_directory: Path, build_root: Path) -> None:
     rsync_files(filters, pyre_directory / "stubs" / "taint", build_root, ["-avm"])
     rsync_files(
         filters, pyre_directory / "stubs" / "third_party_taint", build_root, ["-avm"]
-    )
-
-
-def sync_sapp_files(pyre_directory: Path, build_root: Path) -> None:
-    filters = ["- tests/", "+ */", "+ *.py", "+ *requirements.json", "- *"]
-    rsync_files(
-        filters,
-        sapp_directory(pyre_directory),
-        build_root / MODULE_NAME / "tools",
-        ["-avm"],
     )
 
 
@@ -184,16 +167,12 @@ def sync_documentation_files(pyre_directory: Path, build_root: Path) -> None:
 def generate_setup_py(pyre_directory: Path, version: str) -> str:
     path = pyre_directory / "scripts/pypi/setup.py"
     setup_template = path.read_text()
-    sapp_dependencies = (
-        sapp_directory(pyre_directory) / "requirements.json"
-    ).read_text()
     runtime_dependencies = json.dumps(RUNTIME_DEPENDENCIES)
     return setup_template.format(
         PACKAGE_NAME="pyre-check",
         PACKAGE_VERSION=version,
         MODULE_NAME=MODULE_NAME,
         RUNTIME_DEPENDENCIES=runtime_dependencies,
-        SAPP_DEPENDENCIES=sapp_dependencies,
     )
 
 
@@ -220,9 +199,6 @@ def run_setup_command(
         package_version=version,
         module_name=MODULE_NAME,
         runtime_dependencies=RUNTIME_DEPENDENCIES,
-        sapp_dependencies=json.loads(
-            (sapp_directory(pyre_directory) / "requirements.json").read_text()
-        ),
         long_description=long_description,
         script_name="setup.py",
         script_args=[command],
@@ -286,7 +262,6 @@ def run(pyre_directory: Path, typeshed_path: Path, version: str) -> None:
         sync_python_files(pyre_directory, build_path)
         sync_pysa_stubs(pyre_directory, build_path)
         sync_stubs(pyre_directory, build_path)
-        sync_sapp_files(pyre_directory, build_path)
         sync_typeshed(build_path, typeshed_path)
         sync_binary(pyre_directory, build_path)
         sync_documentation_files(pyre_directory, build_path)
