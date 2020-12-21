@@ -442,15 +442,12 @@ module OrderImplementation = struct
               variable
             else
               Type.Bottom
-        | Type.Union left, Type.Union right ->
-            let union = Set.inter (Type.Set.of_list left) (Type.Set.of_list right) |> Set.to_list in
-            Type.union union
         | (Type.Union elements as union), other
         | other, (Type.Union elements as union) ->
             if always_less_or_equal order ~left:other ~right:union then
               other
             else
-              List.map elements ~f:(meet order other) |> List.fold ~f:(meet order) ~init:Type.Top
+              List.map elements ~f:(meet order other) |> List.fold ~f:(join order) ~init:Type.Bottom
         | Type.Parametric _, Type.Parametric _
         | Type.Primitive _, Type.Primitive _ ->
             if always_less_or_equal order ~left ~right then

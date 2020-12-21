@@ -387,10 +387,12 @@ let default =
   insert order "typing.Generic";
   insert order "int";
   insert order "str";
+  insert order "bytes";
   insert order "bool";
   insert order "float";
   insert order "object";
   connect order ~predecessor:"str" ~successor:"object";
+  connect order ~predecessor:"bytes" ~successor:"object";
   connect order ~predecessor:"int" ~successor:"float";
   connect order ~predecessor:"float" ~successor:"object";
   let type_builtin = "type" in
@@ -2504,6 +2506,10 @@ let test_meet _ =
   (* Unions. *)
   assert_meet "typing.Union[int, str]" "typing.Union[int, bytes]" "int";
   assert_meet "typing.Union[int, str]" "typing.Union[str, int]" "typing.Union[int, str]";
+  assert_meet "typing.Union[int, str]" "float" "int";
+  assert_meet "typing.Union[int, str]" "typing.List[int]" "$bottom";
+  assert_meet "typing.Union[int, str]" "typing.Union[float, bool]" "int";
+  assert_meet "typing.Union[int, str]" "typing.Union[int, bool]" "int";
 
   assert_meet
     "typing.Union[int, str]"
