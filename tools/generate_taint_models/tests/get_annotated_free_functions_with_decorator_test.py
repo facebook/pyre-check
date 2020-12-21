@@ -10,6 +10,7 @@ import unittest
 from typing import List, Set
 from unittest.mock import MagicMock, mock_open, patch
 
+from .. import annotated_function_generator
 from .. import get_annotated_free_functions_with_decorator
 from ..generator_specifications import (
     AllParametersAnnotation,
@@ -563,7 +564,7 @@ class AnnotatedFreeFunctionWithDecoratorGeneratorTest(unittest.TestCase):
     # pyre-ignore[56]: Pyre was not able to infer the type of argument
     # `get_annotated_free_functions_with_decorator`
     @patch.object(
-        get_annotated_free_functions_with_decorator,
+        annotated_function_generator,
         "find_all_paths",
         return_value=["/root/one.py", "/root/two.py", "/root/three.py"],
     )

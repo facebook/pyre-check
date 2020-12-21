@@ -16,6 +16,11 @@ from typing import Any, Dict, List, Optional, Set, Type
 from typing_extensions import Final
 
 from ...client import statistics
+from .annotated_function_generator import (  # noqa
+    AnnotatedFunctionGenerator,
+    FunctionVisitor,
+    FunctionDefinition,
+)
 from .generator_specifications import DecoratorAnnotationSpecification  # noqa
 from .get_annotated_free_functions_with_decorator import (  # noqa
     AnnotatedFreeFunctionWithDecoratorGenerator,
