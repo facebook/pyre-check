@@ -29,10 +29,6 @@ module Request = struct
     | SaveServerState of Path.t
     | Superclasses of Expression.t list
     | Type of Expression.t
-    | TypeAtPosition of {
-        path: Path.t;
-        position: Location.position;
-      }
     | TypesInFiles of Path.t list
     | ValidateTaintModels of Path.t option
   [@@deriving eq, show]
@@ -129,7 +125,6 @@ module Response = struct
       | Success of string
       | Superclasses of superclasses_mapping list
       | Type of Type.t
-      | TypeAtLocation of type_at_location
       | TypesByPath of types_at_path list
     [@@deriving eq, show]
 
@@ -228,7 +223,6 @@ module Response = struct
               in
               `List (List.map class_to_superclasses_mapping ~f:superclasses_to_json) )
       | Type annotation -> `Assoc ["type", Type.to_yojson annotation]
-      | TypeAtLocation annotation -> type_at_location_to_yojson annotation
       | TypesByPath paths_to_annotations ->
           `List (List.map paths_to_annotations ~f:types_at_path_to_yojson)
   end
@@ -285,8 +279,6 @@ let help () =
           "superclasses(class_name1, class_name2, ...): Returns a mapping of class_name to the \
            list of superclasses for `class_name`."
     | Type _ -> Some "type(expression): Evaluates the type of `expression`."
-    | TypeAtPosition _ ->
-        Some "type_at_position('path', line, column): Returns the type for the given cursor."
     | TypesInFiles _ ->
         Some
           "types(path='path') or types('path1', 'path2', ...): Returns a map from each given path \
@@ -316,7 +308,6 @@ let help () =
       SaveServerState path;
       Superclasses [empty];
       Type (Node.create_with_default_location Expression.True);
-      TypeAtPosition { path; position = Location.any_position };
       TypesInFiles [path];
       ValidateTaintModels None;
     ]
@@ -386,15 +377,6 @@ let rec parse_query
           Request.SaveServerState (Path.create_absolute ~follow_symbolic_links:false (string path))
       | "superclasses", names -> Superclasses (List.map ~f:access names)
       | "type", [argument] -> Type (expression argument)
-      | ( "type_at_position",
-          [
-            path;
-            { Call.Argument.value = { Node.value = Integer line; _ }; _ };
-            { Call.Argument.value = { Node.value = Integer column; _ }; _ };
-          ] ) ->
-          let path = Path.create_relative ~root ~relative:(string path) in
-          let position = { Location.line; column } in
-          Request.TypeAtPosition { path; position }
       | "types", paths ->
           let paths =
             List.map ~f:(fun path -> Path.create_relative ~root ~relative:(string path)) paths

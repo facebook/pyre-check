@@ -71,15 +71,6 @@ let test_parse_query context =
   assert_fails_to_parse "type(a.b, c.d)";
   assert_fails_to_parse "typecheck(1+2)";
   assert_parses
-    "type_at_position('a.py', 1, 2)"
-    (TypeAtPosition
-       {
-         path = Path.create_relative ~root:local_root ~relative:"a.py";
-         position = { Ast.Location.line = 1; column = 2 };
-       });
-  assert_fails_to_parse "type_at_position(a.py:1:2)";
-  assert_fails_to_parse "type_at_position('a.py', 1, 2, 3)";
-  assert_parses
     "types(path='a.py')"
     (TypesInFiles [Path.create_relative ~root:local_root ~relative:"a.py"]);
   assert_parses

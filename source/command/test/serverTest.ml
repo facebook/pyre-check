@@ -430,20 +430,6 @@ let test_query context =
     ~source:""
     ~query:"methods(Unknown)"
     (Error "Type `Unknown` was not found in the type order.");
-  assert_type_query_response
-    ~source:"a = 2"
-    ~query:"type_at_position('test.py', 1, 4)"
-    (Single
-       (Base.TypeAtLocation
-          { Base.location = create_location 1 4 1 5; annotation = Type.literal_integer 2 }));
-  assert_type_query_response
-    ~source:{|
-      a: int = 1
-      a = 2
-    |}
-    ~query:"type_at_position('test.py', 3, 0)"
-    (Single
-       (Base.TypeAtLocation { Base.location = create_location 3 0 3 1; annotation = Type.integer }));
   let assert_type_query_response_with_local_root
       ?(handle = "test.py")
       ~source
@@ -485,24 +471,7 @@ let test_query context =
     ~source:"a = 2"
     ~query:"path_of_module(notexist)"
     (Error "No path found for module `notexist`");
-  assert_type_query_response_with_local_root
-    ~source:"a = 2"
-    ~query:"type_at_position('notexist.py', 1, 1)"
-    (fun local_root ->
-      Error ("Not able to get lookup at " ^ Path.absolute local_root ^/ "notexist.py:1:1"));
-  assert_type_query_response_with_local_root
-    ~source:"a = 2"
-    ~query:"type_at_position('test.py', 1, 3)"
-    (fun local_root ->
-      Error ("Not able to get lookup at " ^ Path.absolute local_root ^/ "test.py:1:3"));
 
-  (* test.py is shadowed by test.pyi *)
-  assert_type_query_response_with_local_root
-    ~handle:"test.pyi"
-    ~source:"a = 2"
-    ~query:"type_at_position('test.py', 1, 4)"
-    (fun local_root ->
-      Error ("Not able to get lookup at " ^ Path.absolute local_root ^/ "test.py:1:4"));
   assert_type_query_response_with_local_root
     ~source:{|
       def foo(x: int = 10, y: str = "bar") -> None:

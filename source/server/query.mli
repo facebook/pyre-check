@@ -27,10 +27,6 @@ module Request : sig
     | SaveServerState of Path.t
     | Superclasses of Expression.t list
     | Type of Expression.t
-    | TypeAtPosition of {
-        path: Path.t;
-        position: Location.position;
-      }
     | TypesInFiles of Path.t list
     | ValidateTaintModels of Path.t option
   [@@deriving eq, show]
@@ -124,7 +120,6 @@ module Response : sig
       | Success of string
       | Superclasses of superclasses_mapping list
       | Type of Type.t
-      | TypeAtLocation of type_at_location
       | TypesByPath of types_at_path list
     [@@deriving eq, show, to_yojson]
   end

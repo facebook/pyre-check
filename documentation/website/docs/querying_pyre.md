@@ -269,35 +269,6 @@ $ pyre query "type([1 + 2, ''])"
 ```
 
 
-### Type at position
-
-The command `type_at_position` returns the type of the symbol at the provided position.
-
-```python
-# a.py
-variable = 2
-```
-
-```bash
-$ pyre query "type_at_position('a.py', 1, 2)"
-{
-    "response": {
-        "annotation": "int",
-        "location": {
-            "path": "a.py",
-            "start": {
-                "column": 0,
-                "line": 1
-            },
-            "stop": {
-                "column": 8,
-                "line": 1
-            }
-        }
-    }
-}
-```
-
 ### Types in file
 
 The command `types` returns all the types for a file that Pyre has been able to resolve. It can be called on multiple files at once with

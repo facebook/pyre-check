@@ -527,20 +527,6 @@ let rec process_type_query_request
     | Type expression ->
         let annotation = Resolution.resolve_expression_to_type resolution expression in
         Single (Type annotation)
-    | TypeAtPosition { path; position } ->
-        let default =
-          Error
-            (Format.asprintf
-               "Not able to get lookup at %a:%a"
-               Path.pp
-               path
-               Location.pp_position
-               position)
-        in
-        LookupCache.find_annotation ~state ~configuration ~path ~position
-        >>| (fun (location, annotation) ->
-              Single (Base.TypeAtLocation { Base.location; annotation }))
-        |> Option.value ~default
     | TypesInFiles paths ->
         let annotations = LookupCache.find_all_annotations_batch ~state ~configuration ~paths in
         let create_result = function
