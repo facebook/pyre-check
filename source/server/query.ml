@@ -24,7 +24,6 @@ module Request = struct
     | Help of string
     | IsCompatibleWith of Expression.t * Expression.t
     | LessOrEqual of Expression.t * Expression.t
-    | Methods of Expression.t
     | PathOfModule of Reference.t
     | SaveServerState of Path.t
     | Superclasses of Expression.t list
@@ -46,13 +45,6 @@ module Response = struct
       annotation: Type.t;
       kind: attribute_kind;
       final: bool;
-    }
-    [@@deriving eq, show, to_yojson]
-
-    type method_representation = {
-      name: string;
-      parameters: Type.t list;
-      return_annotation: Type.t;
     }
     [@@deriving eq, show, to_yojson]
 
@@ -118,7 +110,6 @@ module Response = struct
       | Errors of Analysis.AnalysisError.Instantiated.t list
       | FoundAttributes of attribute list
       | FoundDefines of define list
-      | FoundMethods of method_representation list
       | FoundPath of string
       | Help of string
       | ModelVerificationErrors of Taint.Model.ModelVerificationError.t list
@@ -205,8 +196,6 @@ module Response = struct
               ]
           in
           `List (List.map defines ~f:define_to_yojson)
-      | FoundMethods methods ->
-          `Assoc ["methods", `List (List.map methods ~f:method_representation_to_yojson)]
       | FoundPath path -> `Assoc ["path", `String path]
       | Success message -> `Assoc ["message", `String message]
       | Superclasses class_to_superclasses_mapping -> (
@@ -270,7 +259,6 @@ let help () =
            elides type variables."
     | IsCompatibleWith _ -> None
     | LessOrEqual _ -> Some "less_or_equal(T1, T2): Returns whether T1 is a subtype of T2."
-    | Methods _ -> Some "methods(class_name): Evaluates to the list of methods for `class_name`."
     | PathOfModule _ -> Some "path_of_module(module): Gives an absolute path for `module`."
     | SaveServerState _ ->
         Some "save_server_state('path'): Saves Pyre's serialized state into `path`."
@@ -303,7 +291,6 @@ let help () =
       DumpClassHierarchy;
       IsCompatibleWith (empty, empty);
       LessOrEqual (empty, empty);
-      Methods empty;
       PathOfModule (Reference.create "");
       SaveServerState path;
       Superclasses [empty];
@@ -371,7 +358,6 @@ let rec parse_query
       | "help", _ -> Request.Help (help ())
       | "is_compatible_with", [left; right] -> Request.IsCompatibleWith (access left, access right)
       | "less_or_equal", [left; right] -> Request.LessOrEqual (access left, access right)
-      | "methods", [name] -> Request.Methods (expression name)
       | "path_of_module", [module_access] -> Request.PathOfModule (reference module_access)
       | "save_server_state", [path] ->
           Request.SaveServerState (Path.create_absolute ~follow_symbolic_links:false (string path))

@@ -427,59 +427,6 @@ let rec process_type_query_request
         let right = parse_and_validate right in
         GlobalResolution.less_or_equal global_resolution ~left ~right
         |> fun response -> Single (Base.Boolean response)
-    | Methods annotation ->
-        let parsed_annotation =
-          parse_and_validate ~fill_missing_type_parameters_with_any:true annotation
-        in
-        let to_method attribute =
-          match
-            GlobalResolution.instantiate_attribute
-              ~resolution:global_resolution
-              ~instantiated:parsed_annotation
-              ~accessed_through_class:false
-              attribute
-            |> Annotated.Attribute.annotation
-            |> Annotation.annotation
-          with
-          | Type.Parametric
-              {
-                name = "BoundMethod";
-                parameters =
-                  [
-                    Single
-                      (Type.Callable
-                        {
-                          implementation = { annotation; parameters = Defined parameters; _ };
-                          kind = Named name;
-                          _;
-                        });
-                    _;
-                  ];
-              }
-          | Type.Callable
-              {
-                implementation = { annotation; parameters = Defined parameters; _ };
-                kind = Named name;
-                _;
-              } ->
-              let parameters =
-                parameters |> List.filter_map ~f:Type.Callable.Parameter.annotation
-              in
-              let return_annotation = annotation in
-              Some { Base.name = Reference.last name; parameters; return_annotation }
-          | _ -> None
-        in
-        parsed_annotation
-        |> Type.split
-        |> fst
-        |> Type.primitive_name
-        >>= GlobalResolution.attributes ~resolution:global_resolution
-        >>| List.filter_map ~f:to_method
-        >>| (fun methods -> Single (Base.FoundMethods methods))
-        |> Option.value
-             ~default:
-               (Error
-                  (Format.sprintf "No class definition found for %s" (Expression.show annotation)))
     | PathOfModule module_name ->
         ModuleTracker.lookup_source_path module_tracker module_name
         >>= (fun source_path ->

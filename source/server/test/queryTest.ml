@@ -23,7 +23,6 @@ let test_parse_query context =
           Query.Request.IsCompatibleWith (right_first, right_second) )
       | LessOrEqual (left_first, left_second), LessOrEqual (right_first, right_second) ->
           expression_equal left_first right_first && expression_equal left_second right_second
-      | Methods left, Methods right -> expression_equal left right
       | Superclasses left, Superclasses right ->
           List.for_all2_exn ~f:(fun left right -> expression_equal left right) left right
       | Type left, Type right -> expression_equal left right

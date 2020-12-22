@@ -22,7 +22,6 @@ module Request : sig
     | Help of string
     | IsCompatibleWith of Expression.t * Expression.t
     | LessOrEqual of Expression.t * Expression.t
-    | Methods of Expression.t
     | PathOfModule of Reference.t
     | SaveServerState of Path.t
     | Superclasses of Expression.t list
@@ -43,13 +42,6 @@ module Response : sig
       annotation: Type.t;
       kind: attribute_kind;
       final: bool;
-    }
-    [@@deriving eq, show, to_yojson]
-
-    type method_representation = {
-      name: string;
-      parameters: Type.t list;
-      return_annotation: Type.t;
     }
     [@@deriving eq, show, to_yojson]
 
@@ -113,7 +105,6 @@ module Response : sig
       | Errors of Analysis.AnalysisError.Instantiated.t list
       | FoundAttributes of attribute list
       | FoundDefines of define list
-      | FoundMethods of method_representation list
       | FoundPath of string
       | Help of string
       | ModelVerificationErrors of Taint.Model.ModelVerificationError.t list

@@ -28,29 +28,6 @@ let test_type_query_json _ =
        (FoundAttributes
           [{ name = "name"; annotation = Analysis.Type.integer; kind = Property; final = false }]))
     {|{"response": {"attributes": [{"name": "name", "annotation": "int", "kind": "property", "final": false}]}}|};
-  assert_serializes
-    (Single
-       (FoundMethods
-          [
-            {
-              name = "method";
-              parameters = [Analysis.Type.integer];
-              return_annotation = Analysis.Type.string;
-            };
-          ]))
-    {|
-      {
-       "response": {
-         "methods": [
-           {
-             "name": "method",
-             "parameters": ["int"],
-             "return_annotation": "str"
-           }
-         ]
-       }
-      }
-    |};
   assert_serializes (Single (Type Analysis.Type.integer)) {|{"response": {"type": "int"}}|};
   assert_serializes
     (Single

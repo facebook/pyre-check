@@ -175,35 +175,6 @@ $ pyre query "less_or_equal(a.C, a.D)"
 {"response":{"boolean":true}}
 ```
 
-### Methods
-
-The command `methods` returns the list of methods for a type, excluding inherited ones.
-
-```python
-# a.py
-class C:
-  def f(self, x: int) -> str:
-    return ""
-```
-
-```bash
-$ pyre query "methods(a.C)"
-{
-    "response": {
-        "methods": [
-            {
-                "name": "foo",
-                "parameters": [
-                    "self",
-                    "int"
-                ],
-                "return_annotation": "str"
-            }
-        ]
-    }
-}
-```
-
 ### Path of module
 
 The command `path_of_module` returns the full absolute path for a given module.

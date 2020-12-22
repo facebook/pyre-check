@@ -404,32 +404,6 @@ let test_query context =
     ~source:""
     ~query:"superclasses(Unknown[int])"
     (Error "Type `Unknown[int]` was not found in the type order.");
-  assert_type_query_response
-    ~source:
-      {|
-      class C:
-        def C.foo(self) -> int: ...
-        def C.bar(self, x: int) -> str: ...
-    |}
-    ~query:"methods(test.C)"
-    (Single
-       (Base.FoundMethods
-          [
-            {
-              Base.name = "bar";
-              parameters = [Type.Primitive "test.C"; Type.integer];
-              return_annotation = Type.string;
-            };
-            {
-              Base.name = "foo";
-              parameters = [Type.Primitive "test.C"];
-              return_annotation = Type.integer;
-            };
-          ]));
-  assert_type_query_response
-    ~source:""
-    ~query:"methods(Unknown)"
-    (Error "Type `Unknown` was not found in the type order.");
   let assert_type_query_response_with_local_root
       ?(handle = "test.py")
       ~source

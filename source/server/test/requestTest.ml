@@ -308,24 +308,7 @@ let test_process_type_query_request context =
       ]
     }
     |};
-  assert_response
-    (Query.Request.Methods (parse_single_expression "classy.C"))
-    {|
-    {
-      "response": {
-        "methods": [
-          {
-            "name": "foo",
-            "parameters": [
-              "classy.C[typing.Any]",
-              "typing.Any"
-            ],
-            "return_annotation": "None"
-          }
-        ]
-      }
-    }
-    |}
+  ()
 
 
 let assert_errors_equal ~actual_errors ~expected_errors =
