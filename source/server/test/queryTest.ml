@@ -66,13 +66,6 @@ let test_parse_query context =
   assert_fails_to_parse "join(int)";
   assert_parses "superclasses(int)" (Superclasses [!"int"]);
   assert_parses "superclasses(int, bool)" (Superclasses [!"int"; !"bool"]);
-  assert_parses
-    "type_check('derp/fiddle.py')"
-    (RunCheck
-       {
-         check_name = "typeCheck";
-         paths = [Path.create_relative ~root:local_root ~relative:"derp/fiddle.py"];
-       });
   assert_parses "type(C)" (Type !"C");
   assert_parses "type((C,B))" (Type (+Expression.Expression.Tuple [!"C"; !"B"]));
   assert_fails_to_parse "type(a.b, c.d)";
@@ -113,9 +106,6 @@ let test_parse_query context =
   assert_parses
     (Format.sprintf "validate_taint_models('%s')" (Path.absolute path))
     (ValidateTaintModels (Some path));
-  assert_parses
-    (Format.sprintf "run_check('cool_static_analysis', '%s')" (Path.absolute path))
-    (RunCheck { check_name = "cool_static_analysis"; paths = [path] });
   assert_parses "defines(a.b)" (Defines [Reference.create "a.b"]);
   assert_parses "batch()" (Batch []);
   assert_fails_to_parse "batch(batch())";

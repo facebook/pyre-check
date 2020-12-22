@@ -8,9 +8,8 @@
    pyrelib.test pyrelib.ast pyrelib.analysis))
 
 (tests
- (names autoCompleteTest connectionsTest incrementalCheckTest
-   incrementalStaticAnalysisTest jsonrpcTest lookupLocationTest
-   operationsTest queryTest requestTest savedStateTest)
+ (names autoCompleteTest connectionsTest incrementalCheckTest jsonrpcTest
+   lookupLocationTest operationsTest queryTest requestTest savedStateTest)
  (modules :standard \ serverTest)
  (preprocess
   (pps ppx_sexp_conv ppx_compare ppx_deriving_yojson))

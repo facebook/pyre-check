@@ -248,25 +248,7 @@ let rec process_type_query_request
     in
     let open Query.Response in
     match request with
-    | Query.Request.RunCheck { check_name; paths } ->
-        let source_paths =
-          let lookup_path path =
-            ModuleTracker.lookup_path ~configuration module_tracker path
-            |> function
-            | ModuleTracker.PathLookup.Found source_path -> Some source_path
-            | _ -> None
-          in
-          List.filter_map paths ~f:lookup_path
-        in
-        let errors =
-          IncrementalStaticAnalysis.run_additional_check
-            ~configuration
-            ~environment
-            ~source_paths
-            ~check:check_name
-        in
-        Single (Base.Errors errors)
-    | Attributes annotation ->
+    | Query.Request.Attributes annotation ->
         let to_attribute attribute =
           let name = Annotated.Attribute.name attribute in
           let instantiated_annotation =

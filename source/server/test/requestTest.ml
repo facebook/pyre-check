@@ -104,40 +104,6 @@ let test_process_type_query_request context =
     let expected_response = expected_response |> Yojson.Safe.from_string |> Yojson.Safe.to_string in
     assert_equal ~cmp:String.equal ~printer:Fn.id expected_response actual_response
   in
-  let { Configuration.Analysis.local_root; _ } = configuration in
-  let path relative = Path.create_relative ~root:local_root ~relative in
-  assert_response
-    (Query.Request.RunCheck { check_name = "awaitable"; paths = [path "test.py"] })
-    {|
-    {
-        "response": {"errors": []}
-    }
-    |};
-
-  assert_response
-    (Query.Request.RunCheck { check_name = "awaitable"; paths = [path "await.py"] })
-    {|
-    {
-        "response": {
-            "errors": [
-                {
-                    "line": 4,
-                    "column": 2,
-                    "stop_line": 4,
-                    "stop_column": 12,
-                    "path": "await.py",
-                    "code": 1001,
-                    "name": "Unawaited awaitable",
-                    "description": "Unawaited awaitable [1001]: `await.await_me()` is never awaited. `await.await_me()` is defined on line 4",
-                    "long_description": "Unawaited awaitable [1001]: `await.await_me()` is never awaited.\n`await.await_me()` is defined on line 4",
-                    "concise_description": "Unawaited awaitable [1001]: `await.await_me()` is never awaited.\n`await.await_me()` is defined on line 4",
-                    "inference": {},
-                    "define": "await.bar"
-                }
-            ]
-        }
-    }
-    |};
   assert_response
     (Query.Request.CalleesWithLocation (Reference.create "await.bar"))
     {|

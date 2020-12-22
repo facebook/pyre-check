@@ -24,10 +24,6 @@ module Request : sig
     | LessOrEqual of Expression.t * Expression.t
     | Methods of Expression.t
     | PathOfModule of Reference.t
-    | RunCheck of {
-        check_name: string;
-        paths: Path.t list;
-      }
     | SaveServerState of Path.t
     | Superclasses of Expression.t list
     | Type of Expression.t

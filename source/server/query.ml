@@ -26,10 +26,6 @@ module Request = struct
     | LessOrEqual of Expression.t * Expression.t
     | Methods of Expression.t
     | PathOfModule of Reference.t
-    | RunCheck of {
-        check_name: string;
-        paths: Path.t list;
-      }
     | SaveServerState of Path.t
     | Superclasses of Expression.t list
     | Type of Expression.t
@@ -255,10 +251,6 @@ end
 let help () =
   let open Request in
   let help = function
-    | RunCheck _ ->
-        Some
-          "run_check('check_name', 'path1.py', 'path2.py'): Runs the `check_name` static analysis \
-           on the provided list of paths."
     | Batch _ ->
         Some
           "batch(query1(arg), query2(arg)): Runs a batch of queries and returns a map of \
@@ -310,7 +302,6 @@ let help () =
   List.filter_map
     ~f:help
     [
-      RunCheck { check_name = ""; paths = [] };
       Batch [];
       Attributes (Reference.create "");
       Callees (Reference.create "");
@@ -391,13 +382,6 @@ let rec parse_query
       | "less_or_equal", [left; right] -> Request.LessOrEqual (access left, access right)
       | "methods", [name] -> Request.Methods (expression name)
       | "path_of_module", [module_access] -> Request.PathOfModule (reference module_access)
-      | "run_check", check_name :: paths ->
-          let check_name = string check_name in
-          let paths =
-            List.map paths ~f:(fun path ->
-                Path.create_absolute ~follow_symbolic_links:false (string path))
-          in
-          Request.RunCheck { check_name; paths }
       | "save_server_state", [path] ->
           Request.SaveServerState (Path.create_absolute ~follow_symbolic_links:false (string path))
       | "superclasses", names -> Superclasses (List.map ~f:access names)
@@ -416,13 +400,6 @@ let rec parse_query
             List.map ~f:(fun path -> Path.create_relative ~root ~relative:(string path)) paths
           in
           Request.TypesInFiles paths
-      | "type_check", arguments ->
-          let paths =
-            arguments
-            |> List.map ~f:string
-            |> List.map ~f:(fun relative -> Path.create_relative ~root ~relative)
-          in
-          Request.RunCheck { check_name = "typeCheck"; paths }
       | "validate_taint_models", [] -> ValidateTaintModels None
       | "validate_taint_models", [argument] ->
           let path =
