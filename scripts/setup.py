@@ -233,7 +233,7 @@ class Setup(NamedTuple):
             return output
 
 
-def make_opam_root(local: bool, temporary_root: bool, default: Optional[Path]) -> Path:
+def _make_opam_root(local: bool, temporary_root: bool, default: Optional[Path]) -> Path:
     home = Path.home()
     home_opam = home / ".opam"
     if local:
@@ -271,7 +271,7 @@ def setup(runner_type: Type[Setup]) -> None:
     if not pyre_directory:
         pyre_directory = Path(__file__).parent.parent.absolute()
 
-    opam_root = make_opam_root(parsed.local, parsed.temporary_root, parsed.opam_root)
+    opam_root = _make_opam_root(parsed.local, parsed.temporary_root, parsed.opam_root)
 
     runner = runner_type(
         opam_root=opam_root, development=parsed.development, release=parsed.release
