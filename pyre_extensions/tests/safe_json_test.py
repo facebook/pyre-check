@@ -104,6 +104,54 @@ class BasicTestCase(unittest.TestCase):
         # Validation can be turned off.
         self.assertEqual(safe_json.loads("[1]", List[str], validate=False), [1])
 
+    def test_validate(self) -> None:
+        # Lists.
+        parsedListStr = ["1", "2"]
+
+        self.assertEqual(safe_json.validate(parsedListStr, List[str]), parsedListStr)
+        with self.assertRaises(safe_json.InvalidJson):
+            safe_json.validate(parsedListStr, List[int])
+
+        # Dictionaries.
+        parsedDictBasic = {"1": 1}
+
+        self.assertEqual(
+            safe_json.validate(parsedDictBasic, Dict[str, int]), parsedDictBasic
+        )
+        with self.assertRaises(safe_json.InvalidJson):
+            safe_json.validate(parsedDictBasic, List[Any])
+
+        parsedDictNested = {"1": {"2": 3}}
+
+        self.assertEqual(
+            safe_json.validate(parsedDictNested, Dict[str, Dict[str, int]]),
+            parsedDictNested,
+        )
+        with self.assertRaises(safe_json.InvalidJson):
+            safe_json.validate(parsedDictNested, Dict[str, int])
+
+        # Typed dictionaries.
+        parsedDictTyped = {"string": "", "integer": 1}
+        parsedDictTypedFailing = {"string": "", "integer": ""}
+
+        self.assertEqual(
+            safe_json.validate(parsedDictTyped, ExampleTypedDict), parsedDictTyped
+        )
+        with self.assertRaises(safe_json.InvalidJson):
+            safe_json.validate(parsedDictTypedFailing, ExampleTypedDict)
+
+        # Any.
+        parsedAny = [{"1": 1}]
+
+        self.assertEqual(safe_json.validate(parsedAny, List[Any]), parsedAny)
+
+        # Optionals.
+
+        parsedOptionals = [2, None, 4]
+        self.assertEqual(
+            safe_json.validate(parsedOptionals, List[Optional[int]]), parsedOptionals
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

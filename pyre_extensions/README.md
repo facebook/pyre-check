@@ -56,7 +56,7 @@ For trivial JSON structures you can use builtin types:
 # Raises `pyre_extensions.safe_json.InvalidJson`
 ```
 
-For more complicated, nested structures, typed dictionaries are the way to go.
+For more complicated, nested structures, typed dictionaries are the way to go:
 ```python
 >>> from typing import TypedDict
 >>> class Movie(TypedDict):
@@ -67,4 +67,15 @@ For more complicated, nested structures, typed dictionaries are the way to go.
 {'name': 'Blade Runner', 'year': 1982}
 >>> safe_json.loads('{"name": "Blade Runner", "year": "1982" }', Movie)
 # Raises `pyre_extensions.safe_json.InvalidJson`
+```
+
+Validate if data is expected type:
+```python
+>>> from pyre_extensions import safe_json
+>>> from typing import List, Dict
+>>> data = {"foo": 23}
+>>> safe_json.validate(data, Dict[str, str])
+# Raises `pyre_extensions.safe_json.InvalidJson`
+>>> safe_json.validate(data, Dict[str, int])
+{"foo": 23}
 ```

@@ -124,3 +124,8 @@ def loads(input_: str, target: Type[T], *, validate: bool = True) -> T:
         return parsed
     except Exception as exception:
         raise InvalidJson(str(exception))
+
+
+def validate(input: object, target: Type[T]) -> T:
+    _validate_toplevel(input, target)
+    return cast(T, input)
