@@ -52,7 +52,7 @@ class BuildType(Enum):
     FACEBOOK = "facebook"
 
 
-class Runner(NamedTuple):
+class Setup(NamedTuple):
     opam_root: Path
 
     development: bool = False
@@ -247,7 +247,7 @@ def make_opam_root(local: bool, temporary_root: bool, default: Optional[Path]) -
     return default or home_opam
 
 
-def main(runner_type: Type[Runner]) -> None:
+def main(runner_type: Type[Setup]) -> None:
     logging.basicConfig(
         level=logging.INFO, format="[%(asctime)s] [%(levelname)s] %(message)s"
     )
@@ -301,4 +301,4 @@ def main(runner_type: Type[Runner]) -> None:
 
 
 if __name__ == "__main__":
-    main(Runner)
+    main(Setup)
