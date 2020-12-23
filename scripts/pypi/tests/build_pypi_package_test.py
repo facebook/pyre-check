@@ -4,7 +4,6 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -12,19 +11,19 @@ from unittest.mock import Mock, patch
 
 from ..build_pypi_package import (
     MODULE_NAME,
-    add_init_files,
-    patch_version,
-    sync_pysa_stubs,
-    sync_python_files,
-    validate_version,
+    _add_init_files,
+    _patch_version,
+    _sync_pysa_stubs,
+    _sync_python_files,
+    _validate_version,
 )
 
 
 class TestArgumentValidationMethods(unittest.TestCase):
     def test_validate_version(self) -> None:
-        validate_version("0.0.01")
+        _validate_version("0.0.01")
         with self.assertRaises(ValueError):
-            validate_version("x0.0.01")
+            _validate_version("x0.0.01")
 
 
 class TestCreatingWheel(unittest.TestCase):
@@ -34,7 +33,7 @@ class TestCreatingWheel(unittest.TestCase):
     def test_create_init_files(self) -> None:
         with tempfile.TemporaryDirectory() as build_root:
             path = Path(build_root)
-            add_init_files(path)
+            _add_init_files(path)
             # Assert the expected __init__ files are present
             init_files = [str(path) for path in path.glob("**/*.py")]
             self.assertTrue(build_root + "/pyre_check/__init__.py" in init_files)
@@ -47,8 +46,8 @@ class TestCreatingWheel(unittest.TestCase):
     def test_sync_files(self) -> None:
         with tempfile.TemporaryDirectory() as build_root:
             build_path = Path(build_root)
-            add_init_files(build_path)
-            sync_python_files(self.pyre_directory, build_path)
+            _add_init_files(build_path)
+            _sync_python_files(self.pyre_directory, build_path)
             command_directory = build_path / "pyre_check/client/commands"
             self.assertTrue(command_directory.is_dir())
 
@@ -56,8 +55,8 @@ class TestCreatingWheel(unittest.TestCase):
     def test_rsync(self, subprocess_run: Mock) -> None:
         with tempfile.TemporaryDirectory() as build_root:
             build_path = Path(build_root)
-            add_init_files(build_path)
-            sync_pysa_stubs(self.pyre_directory, build_path)
+            _add_init_files(build_path)
+            _sync_pysa_stubs(self.pyre_directory, build_path)
             args, _ = subprocess_run.call_args
             expected_args = [
                 "rsync",
@@ -71,7 +70,7 @@ class TestCreatingWheel(unittest.TestCase):
     def test_patch_version(self) -> None:
         with tempfile.TemporaryDirectory() as build_root:
             build_path = Path(build_root)
-            add_init_files(build_path)
-            patch_version("0.0.21", build_path)
+            _add_init_files(build_path)
+            _patch_version("0.0.21", build_path)
             path = build_path / MODULE_NAME / "client/version.py"
             self.assertTrue(path.is_file())

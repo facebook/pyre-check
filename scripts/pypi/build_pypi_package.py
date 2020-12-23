@@ -33,13 +33,13 @@ RUNTIME_DEPENDENCIES = [
 ]
 
 
-def distribution_platform() -> str:
+def _distribution_platform() -> str:
     if platform.system() == "Linux":
         return "-manylinux1_x86_64"
     return "-macosx_10_11_x86_64"
 
 
-def validate_typeshed(typeshed_path: Path) -> None:
+def _validate_typeshed(typeshed_path: Path) -> None:
     path = typeshed_path.absolute() / "stdlib"
     if not path.is_dir():
         raise ValueError(
@@ -48,28 +48,28 @@ def validate_typeshed(typeshed_path: Path) -> None:
         )
 
 
-def validate_version(version: str) -> None:
+def _validate_version(version: str) -> None:
     pattern = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+$")
     if not pattern.match(version):
         raise ValueError("Invalid version format.")
 
 
-def mkdir_and_init(module_path: Path) -> None:
+def _mkdir_and_init(module_path: Path) -> None:
     module_path.mkdir()
     (module_path / "__init__.py").touch()
 
 
-def add_init_files(build_root: Path) -> None:
+def _add_init_files(build_root: Path) -> None:
     # setup.py sdist will refuse to work for directories without a `__init__.py`.
     module_path = build_root / MODULE_NAME
-    mkdir_and_init(module_path)
-    mkdir_and_init(module_path / "tools")
-    mkdir_and_init(module_path / "tools/upgrade")
-    mkdir_and_init(module_path / "tools/upgrade/commands")
-    mkdir_and_init(module_path / "client")
+    _mkdir_and_init(module_path)
+    _mkdir_and_init(module_path / "tools")
+    _mkdir_and_init(module_path / "tools/upgrade")
+    _mkdir_and_init(module_path / "tools/upgrade/commands")
+    _mkdir_and_init(module_path / "client")
 
 
-def rsync_files(
+def _rsync_files(
     filters: List[str],
     source_directory: Path,
     target_directory: Path,
@@ -83,25 +83,25 @@ def rsync_files(
     subprocess.run(command)
 
 
-def sync_python_files(pyre_directory: Path, build_root: Path) -> None:
+def _sync_python_files(pyre_directory: Path, build_root: Path) -> None:
     target_root = build_root / MODULE_NAME
     filters = ["- tests/", "+ */", "-! *.py"]
-    rsync_files(filters, pyre_directory / "client", target_root, ["-avm"])
-    rsync_files(
+    _rsync_files(filters, pyre_directory / "client", target_root, ["-avm"])
+    _rsync_files(
         filters, pyre_directory / "tools" / "upgrade", target_root / "tools", ["-avm"]
     )
 
 
-def sync_pysa_stubs(pyre_directory: Path, build_root: Path) -> None:
+def _sync_pysa_stubs(pyre_directory: Path, build_root: Path) -> None:
     filters = ["+ */"]
-    rsync_files(filters, pyre_directory / "stubs" / "taint", build_root, ["-avm"])
-    rsync_files(
+    _rsync_files(filters, pyre_directory / "stubs" / "taint", build_root, ["-avm"])
+    _rsync_files(
         filters, pyre_directory / "stubs" / "third_party_taint", build_root, ["-avm"]
     )
 
 
-def sync_stubs(pyre_directory: Path, build_root: Path) -> None:
-    rsync_files(
+def _sync_stubs(pyre_directory: Path, build_root: Path) -> None:
+    _rsync_files(
         [],
         pyre_directory / "stubs",
         build_root,
@@ -117,15 +117,15 @@ def sync_stubs(pyre_directory: Path, build_root: Path) -> None:
     )
 
 
-def sync_typeshed(build_root: Path, typeshed_path: Path) -> None:
+def _sync_typeshed(build_root: Path, typeshed_path: Path) -> None:
     typeshed_target = build_root / "typeshed"
-    rsync_files(
+    _rsync_files(
         ["+ */", "-! *.pyi"], typeshed_path / "stdlib", typeshed_target, ["-avm"]
     )
-    rsync_files(
+    _rsync_files(
         ["+ */", "-! *.pyi"], typeshed_path / "third_party", typeshed_target, ["-avm"]
     )
-    rsync_files(
+    _rsync_files(
         [],
         typeshed_target,
         build_root,
@@ -142,16 +142,16 @@ def sync_typeshed(build_root: Path, typeshed_path: Path) -> None:
     )
 
 
-def patch_version(version: str, build_root: Path) -> None:
+def _patch_version(version: str, build_root: Path) -> None:
     file_contents = "__version__ = {}".format(version)
     (build_root / MODULE_NAME / "client/version.py").write_text(file_contents)
 
 
-def binary_exists(pyre_directory: Path) -> bool:
+def _binary_exists(pyre_directory: Path) -> bool:
     return (pyre_directory / "source" / "_build/default/main.exe").is_file()
 
 
-def sync_binary(pyre_directory: Path, build_root: Path) -> None:
+def _sync_binary(pyre_directory: Path, build_root: Path) -> None:
     (build_root / "bin").mkdir()
     shutil.copy(
         pyre_directory / "source" / "_build/default/main.exe",
@@ -159,12 +159,12 @@ def sync_binary(pyre_directory: Path, build_root: Path) -> None:
     )
 
 
-def sync_documentation_files(pyre_directory: Path, build_root: Path) -> None:
+def _sync_documentation_files(pyre_directory: Path, build_root: Path) -> None:
     shutil.copy(pyre_directory / "README.md", build_root)
     shutil.copy(pyre_directory / "LICENSE", build_root)
 
 
-def generate_setup_py(pyre_directory: Path, version: str) -> str:
+def _generate_setup_py(pyre_directory: Path, version: str) -> str:
     path = pyre_directory / "scripts/pypi/setup.py"
     setup_template = path.read_text()
     runtime_dependencies = json.dumps(RUNTIME_DEPENDENCIES)
@@ -176,18 +176,18 @@ def generate_setup_py(pyre_directory: Path, version: str) -> str:
     )
 
 
-def create_setup_cfg(build_root: Path) -> None:
+def _create_setup_configuration(build_root: Path) -> None:
     setup_cfg = build_root / "setup.cfg"
     setup_cfg.touch()
     setup_cfg.write_text("[metadata]\nlicense_file = LICENSE")
 
 
-def create_setup_py(pyre_directory: Path, version: str, build_root: Path) -> None:
-    setup_contents = generate_setup_py(pyre_directory, version)
+def _create_setup_py(pyre_directory: Path, version: str, build_root: Path) -> None:
+    setup_contents = _generate_setup_py(pyre_directory, version)
     (build_root / "setup.py").write_text(setup_contents)
 
 
-def run_setup_command(
+def _run_setup_command(
     pyre_directory: Path, build_root: Path, version: str, command: str
 ) -> None:
     with open(pyre_directory / "README.md") as f:
@@ -206,19 +206,19 @@ def run_setup_command(
     os.chdir(old_dir)
 
 
-def build_distribution(pyre_directory: Path, build_root: Path, version: str) -> None:
-    run_setup_command(pyre_directory, build_root, version, "sdist")
+def _build_distribution(pyre_directory: Path, build_root: Path, version: str) -> None:
+    _run_setup_command(pyre_directory, build_root, version, "sdist")
 
 
-def build_wheel(pyre_directory: Path, build_root: Path, version: str) -> None:
-    run_setup_command(pyre_directory, build_root, version, "bdist_wheel")
+def _build_wheel(pyre_directory: Path, build_root: Path, version: str) -> None:
+    _run_setup_command(pyre_directory, build_root, version, "bdist_wheel")
 
 
-def create_dist_directory(pyre_directory: Path) -> None:
+def _create_dist_directory(pyre_directory: Path) -> None:
     (pyre_directory / "scripts" / "dist").mkdir(exist_ok=True)
 
 
-def rename_and_move_artifacts(
+def _rename_and_move_artifacts(
     pyre_directory: Path, build_root: Path
 ) -> Tuple[Path, Path]:
     dist_directory = build_root / "dist"
@@ -232,22 +232,22 @@ def rename_and_move_artifacts(
     source_distribution_name = source_distribution.name
     source_distribution_destination = destination_path / (
         source_distribution_name.split(".tar.gz")[0]
-        + distribution_platform()
+        + _distribution_platform()
         + ".tar.gz"
     )
     wheel_name = wheel.name
     wheel_destination = destination_path / wheel_name.replace(
-        "-any", distribution_platform()
+        "-any", _distribution_platform()
     )
     shutil.move(wheel, wheel_destination)
     shutil.move(source_distribution, source_distribution_destination)
     return wheel_destination, source_distribution_destination
 
 
-def run(pyre_directory: Path, typeshed_path: Path, version: str) -> None:
-    validate_typeshed(typeshed_path)
-    validate_version(version)
-    if not binary_exists(pyre_directory):
+def build_pypi_package(pyre_directory: Path, typeshed_path: Path, version: str) -> None:
+    _validate_typeshed(typeshed_path)
+    _validate_version(version)
+    if not _binary_exists(pyre_directory):
         raise ValueError(
             "The binary file does not exist. \
             Have you run 'make' in the toplevel directory?"
@@ -255,25 +255,25 @@ def run(pyre_directory: Path, typeshed_path: Path, version: str) -> None:
 
     with tempfile.TemporaryDirectory() as build_root:
         build_path = Path(build_root)
-        add_init_files(build_path)
-        patch_version(version, build_path)
-        create_setup_py(pyre_directory, version, build_path)
+        _add_init_files(build_path)
+        _patch_version(version, build_path)
+        _create_setup_py(pyre_directory, version, build_path)
 
-        sync_python_files(pyre_directory, build_path)
-        sync_pysa_stubs(pyre_directory, build_path)
-        sync_stubs(pyre_directory, build_path)
-        sync_typeshed(build_path, typeshed_path)
-        sync_binary(pyre_directory, build_path)
-        sync_documentation_files(pyre_directory, build_path)
-        sync_stubs(pyre_directory, build_path)
+        _sync_python_files(pyre_directory, build_path)
+        _sync_pysa_stubs(pyre_directory, build_path)
+        _sync_stubs(pyre_directory, build_path)
+        _sync_typeshed(build_path, typeshed_path)
+        _sync_binary(pyre_directory, build_path)
+        _sync_documentation_files(pyre_directory, build_path)
+        _sync_stubs(pyre_directory, build_path)
 
-        build_distribution(pyre_directory, build_path, version)
-        create_dist_directory(pyre_directory)
-        create_setup_cfg(build_path)
+        _build_distribution(pyre_directory, build_path, version)
+        _create_dist_directory(pyre_directory)
+        _create_setup_configuration(build_path)
         twine_check([path.as_posix() for path in (build_path / "dist").iterdir()])
-        build_wheel(pyre_directory, build_path, version)
+        _build_wheel(pyre_directory, build_path, version)
 
-        wheel_destination, distribution_destination = rename_and_move_artifacts(
+        wheel_destination, distribution_destination = _rename_and_move_artifacts(
             pyre_directory, build_path
         )
         print("\nAll done.")
