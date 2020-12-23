@@ -67,6 +67,21 @@ Stub files have the same structure as implementation files but only contain clas
 def dynamic_function() -> int: ...   # Function body is omitted
 ```
 
+If a `__getattr__` function is defined in the stub file as follows, Pyre will take it as a signal that the stub file is partially complete: accessing attributes whose name is not defined in the stub file will result in `Any` instead of a type error.
+
+```python
+# my_stub.pyi
+from typing import Any
+foo: int = 42
+# Parameter needs to be typed as `str` and return type needs to be `Any`
+def __getattr__(name: str) -> Any: ...
+
+# my_source.py
+import my_stub
+reveal_type(my_stub.foo)        # Reveals `int`
+reveal_type(my_stub.undefined)  # Reveals `Any`
+```
+
 ## Strategies for Increasing Coverage
 Pyre comes with tooling to make it easy to increase type coverage in your project.
 
