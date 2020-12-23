@@ -6,17 +6,19 @@
 import argparse
 from pathlib import Path
 
-from pypi.build_pypi_package import run
+from pypi.build_pypi_package import build_pypi_package
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Build a PyPi Package.")
     parser.add_argument("--typeshed-path", type=Path, required=True)
     parser.add_argument("--version", type=str, required=True)
+    parser.add_argument("--nightly", action="store_true")
 
     arguments = parser.parse_args()
-    run(
+    build_pypi_package(
         pyre_directory=Path(__file__).resolve().parent.parent.parent,
         typeshed_path=arguments.typeshed_path,
         version=arguments.version,
+        nightly=arguments.nightly,
     )
