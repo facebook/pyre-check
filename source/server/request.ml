@@ -451,6 +451,10 @@ let rec process_type_query_request
         let annotation = Resolution.resolve_expression_to_type resolution expression in
         Single (Type annotation)
     | TypesInFiles paths ->
+        let paths =
+          let { Configuration.Analysis.local_root = root; _ } = configuration in
+          List.map ~f:(fun path -> Path.create_relative ~root ~relative:path) paths
+        in
         let annotations = LookupCache.find_all_annotations_batch ~state ~configuration ~paths in
         let create_result = function
           | { LookupCache.path; types_by_location = Some types; _ } ->
@@ -466,7 +470,12 @@ let rec process_type_query_request
         try
           let paths =
             match path with
-            | Some path -> [path]
+            | Some path ->
+                if String.is_prefix ~prefix:"/" path then
+                  [Path.create_absolute path]
+                else
+                  let { Configuration.Analysis.local_root = root; _ } = configuration in
+                  [Path.create_relative ~root ~relative:path]
             | None -> configuration.Configuration.Analysis.taint_model_paths
           in
           let configuration =

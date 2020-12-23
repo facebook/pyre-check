@@ -18,7 +18,7 @@ end
 module Request : sig
   val origin : socket:Unix.file_descr -> Yojson.Safe.t -> Protocol.Request.origin option
 
-  val format_request : configuration:Configuration.Analysis.t -> Yojson.Safe.t -> Protocol.Request.t
+  val format_request : Yojson.Safe.t -> Protocol.Request.t
 end
 
 val handshake_message

@@ -25,8 +25,8 @@ module Request : sig
     | SaveServerState of Path.t
     | Superclasses of Reference.t list
     | Type of Expression.t
-    | TypesInFiles of Path.t list
-    | ValidateTaintModels of Path.t option
+    | TypesInFiles of string list
+    | ValidateTaintModels of string option
   [@@deriving eq, show]
 end
 
@@ -125,4 +125,4 @@ end
 
 val help : unit -> string
 
-val parse_query : configuration:Configuration.Analysis.t -> string -> Request.t
+val parse_query : string -> Request.t

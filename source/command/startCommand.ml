@@ -237,11 +237,8 @@ let computation_thread
 
 
 let request_handler_thread
-    ( ( {
-          Configuration.Server.configuration =
-            { expected_version; local_root; _ } as analysis_configuration;
-          _;
-        } as server_configuration ),
+    ( ( { Configuration.Server.configuration = { expected_version; local_root; _ }; _ } as
+      server_configuration ),
       ({ Server.State.lock; connections = raw_connections } as connections),
       scheduler,
       request_queue )
@@ -291,7 +288,7 @@ let request_handler_thread
       let request = socket |> Unix.in_channel_of_descr |> LanguageServer.Protocol.read_message in
       let origin = request >>| Jsonrpc.Request.origin ~socket |> Option.value ~default:None in
       request
-      >>| Jsonrpc.Request.format_request ~configuration:analysis_configuration
+      >>| Jsonrpc.Request.format_request
       |> function
       | request -> (
           match request, origin with

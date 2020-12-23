@@ -12,7 +12,6 @@ let test_format_request _ =
   let assert_formatted ~expected request =
     Yojson.Safe.from_string request
     |> Server.Jsonrpc.Request.format_request
-         ~configuration:(Configuration.Analysis.create ~source_path:[] ())
     |> assert_equal
          ~cmp:Server.Protocol.Request.equal
          ~printer:Server.Protocol.Request.show

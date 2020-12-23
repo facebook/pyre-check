@@ -27,8 +27,8 @@ module Request = struct
     | SaveServerState of Path.t
     | Superclasses of Reference.t list
     | Type of Expression.t
-    | TypesInFiles of Path.t list
-    | ValidateTaintModels of Path.t option
+    | TypesInFiles of string list
+    | ValidateTaintModels of string option
   [@@deriving eq, show]
 end
 
@@ -282,7 +282,7 @@ let help () =
       SaveServerState path;
       Superclasses [Reference.empty];
       Type (Node.create_with_default_location Expression.True);
-      TypesInFiles [path];
+      TypesInFiles [""];
       ValidateTaintModels None;
     ]
   |> List.sort ~compare:String.compare
@@ -290,10 +290,7 @@ let help () =
   |> Format.sprintf "Possible queries:\n  %s"
 
 
-let rec parse_query
-    ~configuration:({ Configuration.Analysis.local_root = root; _ } as configuration)
-    query
-  =
+let rec parse_query query =
   match PyreParser.Parser.parse [query] with
   | [
    {
@@ -333,7 +330,7 @@ let rec parse_query
           in
           List.map ~f:expression queries
           |> List.map ~f:Expression.show
-          |> List.map ~f:(parse_query ~configuration)
+          |> List.map ~f:parse_query
           |> List.fold ~f:construct_batch ~init:[]
           |> List.rev
           |> fun query_list -> Request.Batch query_list
@@ -350,21 +347,9 @@ let rec parse_query
           Request.SaveServerState (Path.create_absolute ~follow_symbolic_links:false (string path))
       | "superclasses", names -> Superclasses (List.map ~f:reference names)
       | "type", [argument] -> Type (expression argument)
-      | "types", paths ->
-          let paths =
-            List.map ~f:(fun path -> Path.create_relative ~root ~relative:(string path)) paths
-          in
-          Request.TypesInFiles paths
+      | "types", paths -> Request.TypesInFiles (List.map ~f:string paths)
       | "validate_taint_models", [] -> ValidateTaintModels None
-      | "validate_taint_models", [argument] ->
-          let path =
-            let path = string argument in
-            if String.is_prefix ~prefix:"/" path then
-              Path.create_absolute path
-            else
-              Path.create_relative ~root ~relative:(string argument)
-          in
-          Request.ValidateTaintModels (Some path)
+      | "validate_taint_models", [argument] -> Request.ValidateTaintModels (Some (string argument))
       | _ -> raise (InvalidQuery "unexpected query") )
   | _ when String.equal query "help" -> Help (help ())
   | _ -> raise (InvalidQuery "unexpected query")

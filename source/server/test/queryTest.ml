@@ -13,8 +13,6 @@ open Pyre
 open Test
 
 let test_parse_query context =
-  let { ScratchProject.configuration; _ } = ScratchProject.setup ~context [] in
-  let { Configuration.Analysis.local_root; _ } = configuration in
   let assert_parses serialized query =
     let type_query_request_equal left right =
       let expression_equal left right = Expression.location_insensitive_compare left right = 0 in
@@ -29,14 +27,15 @@ let test_parse_query context =
       | _ -> Query.Request.equal left right
     in
     assert_equal
+      ~ctxt:context
       ~cmp:type_query_request_equal
       ~printer:Query.Request.show
       query
-      (Query.parse_query ~configuration serialized)
+      (Query.parse_query serialized)
   in
   let assert_fails_to_parse serialized =
     try
-      Query.parse_query ~configuration serialized |> ignore;
+      Query.parse_query serialized |> ignore;
       assert_unreached ()
     with
     | Query.InvalidQuery _ -> ()
@@ -69,12 +68,8 @@ let test_parse_query context =
   assert_parses "type((C,B))" (Type (+Expression.Expression.Tuple [!"C"; !"B"]));
   assert_fails_to_parse "type(a.b, c.d)";
   assert_fails_to_parse "typecheck(1+2)";
-  assert_parses
-    "types(path='a.py')"
-    (TypesInFiles [Path.create_relative ~root:local_root ~relative:"a.py"]);
-  assert_parses
-    "types('a.py')"
-    (TypesInFiles [Path.create_relative ~root:local_root ~relative:"a.py"]);
+  assert_parses "types(path='a.py')" (TypesInFiles ["a.py"]);
+  assert_parses "types('a.py')" (TypesInFiles ["a.py"]);
   assert_fails_to_parse "types(a.py:1:2)";
   assert_fails_to_parse "types(a.py)";
   assert_fails_to_parse "types('a.py', 1, 2)";
@@ -87,15 +82,8 @@ let test_parse_query context =
   assert_parses "path_of_module(a.b.c)" (PathOfModule !&"a.b.c");
   assert_fails_to_parse "path_of_module('a.b.c')";
   assert_fails_to_parse "path_of_module(a.b, b.c)";
-  let path =
-    let path = Path.create_relative ~root:local_root ~relative:"decode.me" in
-    File.write (File.create path ~content:"key,value\nsecond_key,second_value,third_value");
-    path
-  in
   assert_parses "validate_taint_models()" (ValidateTaintModels None);
-  assert_parses
-    (Format.sprintf "validate_taint_models('%s')" (Path.absolute path))
-    (ValidateTaintModels (Some path));
+  assert_parses "validate_taint_models('foo.py')" (ValidateTaintModels (Some "foo.py"));
   assert_parses "defines(a.b)" (Defines [Reference.create "a.b"]);
   assert_parses "batch()" (Batch []);
   assert_fails_to_parse "batch(batch())";
@@ -103,11 +91,7 @@ let test_parse_query context =
   assert_parses "batch(defines(a.b))" (Batch [Defines [Reference.create "a.b"]]);
   assert_parses
     "batch(defines(a.b), types(path='a.py'))"
-    (Batch
-       [
-         Defines [Reference.create "a.b"];
-         TypesInFiles [Path.create_relative ~root:local_root ~relative:"a.py"];
-       ])
+    (Batch [Defines [Reference.create "a.b"]; TypesInFiles ["a.py"]])
 
 
 let () = "query" >::: ["parse_query" >:: test_parse_query] |> Test.run
