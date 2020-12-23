@@ -153,7 +153,7 @@ def get_class_hierarchy(pyre_connection: PyreConnection) -> ClassHierarchy:
 def get_superclasses(pyre_connection: PyreConnection, class_name: str) -> List[str]:
     query = f"superclasses({class_name})"
     result = pyre_connection.query_server(query)
-    return result["response"]["superclasses"]
+    return result["response"][0][class_name]
 
 
 def _get_batch(

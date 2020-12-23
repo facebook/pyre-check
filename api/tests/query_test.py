@@ -130,7 +130,7 @@ class QueryAPITest(unittest.TestCase):
     def test_get_superclasses(self) -> None:
         pyre_connection = MagicMock()
         pyre_connection.query_server.return_value = {
-            "response": {"superclasses": ["Bike", "Vehicle", "object"]}
+            "response": [{"Scooter": ["Bike", "Vehicle", "object"]}]
         }
         self.assertEqual(
             query.get_superclasses(pyre_connection, "Scooter"),
