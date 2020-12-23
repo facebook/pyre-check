@@ -167,38 +167,41 @@ def _sync_documentation_files(pyre_directory: Path, build_root: Path) -> None:
     shutil.copy(pyre_directory / "LICENSE", build_root)
 
 
-def _generate_setup_py(pyre_directory: Path, version: str) -> str:
-    path = pyre_directory / "scripts/pypi/setup.py"
-    setup_template = path.read_text()
-    runtime_dependencies = json.dumps(RUNTIME_DEPENDENCIES)
-    return setup_template.format(
-        PACKAGE_NAME="pyre-check",
-        PACKAGE_VERSION=version,
-        MODULE_NAME=MODULE_NAME,
-        RUNTIME_DEPENDENCIES=runtime_dependencies,
-    )
-
-
 def _create_setup_configuration(build_root: Path) -> None:
     setup_cfg = build_root / "setup.cfg"
     setup_cfg.touch()
     setup_cfg.write_text("[metadata]\nlicense_file = LICENSE")
 
 
-def _create_setup_py(pyre_directory: Path, version: str, build_root: Path) -> None:
-    setup_contents = _generate_setup_py(pyre_directory, version)
+def _create_setup_py(
+    pyre_directory: Path, version: str, build_root: Path, nightly: bool
+) -> None:
+    path = pyre_directory / "scripts/pypi/setup.py"
+    setup_template = path.read_text()
+    runtime_dependencies = json.dumps(RUNTIME_DEPENDENCIES)
+    setup_contents = setup_template.format(
+        PACKAGE_NAME="pyre-check-nightly" if nightly else "pyre-check",
+        PACKAGE_VERSION=version,
+        MODULE_NAME=MODULE_NAME,
+        RUNTIME_DEPENDENCIES=runtime_dependencies,
+    )
+
     (build_root / "setup.py").write_text(setup_contents)
 
 
 def _run_setup_command(
-    pyre_directory: Path, build_root: Path, version: str, command: str
+    pyre_directory: Path,
+    build_root: Path,
+    version: str,
+    command: str,
+    nightly: bool,
 ) -> None:
     with open(pyre_directory / "README.md") as f:
         long_description = f.read()
     old_dir = os.getcwd()
     os.chdir(build_root)
     run_setup(
-        package_name="pyre-check",
+        package_name="pyre-check-nightly" if nightly else "pyre-check",
         package_version=version,
         module_name=MODULE_NAME,
         runtime_dependencies=RUNTIME_DEPENDENCIES,
@@ -207,14 +210,6 @@ def _run_setup_command(
         script_args=[command],
     )
     os.chdir(old_dir)
-
-
-def _build_distribution(pyre_directory: Path, build_root: Path, version: str) -> None:
-    _run_setup_command(pyre_directory, build_root, version, "sdist")
-
-
-def _build_wheel(pyre_directory: Path, build_root: Path, version: str) -> None:
-    _run_setup_command(pyre_directory, build_root, version, "bdist_wheel")
 
 
 def _create_dist_directory(pyre_directory: Path) -> None:
@@ -247,7 +242,9 @@ def _rename_and_move_artifacts(
     return wheel_destination, source_distribution_destination
 
 
-def build_pypi_package(pyre_directory: Path, typeshed_path: Path, version: str) -> None:
+def build_pypi_package(
+    pyre_directory: Path, typeshed_path: Path, version: str, nightly: bool
+) -> None:
     _validate_typeshed(typeshed_path)
     _validate_version(version)
     if not _binary_exists(pyre_directory):
@@ -260,7 +257,7 @@ def build_pypi_package(pyre_directory: Path, typeshed_path: Path, version: str) 
         build_path = Path(build_root)
         _add_init_files(build_path)
         _patch_version(version, build_path)
-        _create_setup_py(pyre_directory, version, build_path)
+        _create_setup_py(pyre_directory, version, build_path, nightly)
 
         _sync_python_files(pyre_directory, build_path)
         _sync_pysa_stubs(pyre_directory, build_path)
@@ -270,12 +267,12 @@ def build_pypi_package(pyre_directory: Path, typeshed_path: Path, version: str) 
         _sync_documentation_files(pyre_directory, build_path)
         _sync_stubs(pyre_directory, build_path)
 
-        _build_distribution(pyre_directory, build_path, version)
+        _run_setup_command(pyre_directory, build_root, version, "sdist", nightly)
         _create_dist_directory(pyre_directory)
         _create_setup_configuration(build_path)
         twine_check([path.as_posix() for path in (build_path / "dist").iterdir()])
-        _build_wheel(pyre_directory, build_path, version)
 
+        _run_setup_command(pyre_directory, build_root, version, "bdist_wheel", nightly)
         wheel_destination, distribution_destination = _rename_and_move_artifacts(
             pyre_directory, build_path
         )
