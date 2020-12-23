@@ -4,6 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import json
+import logging
 import os
 import platform
 import re
@@ -31,6 +32,8 @@ RUNTIME_DEPENDENCIES = [
     "pyre_extensions",
     "pywatchman",
 ]
+
+LOG: logging.Logger = logging.getLogger(__name__)
 
 
 def _distribution_platform() -> str:
@@ -276,9 +279,9 @@ def build_pypi_package(pyre_directory: Path, typeshed_path: Path, version: str) 
         wheel_destination, distribution_destination = _rename_and_move_artifacts(
             pyre_directory, build_path
         )
-        print("\nAll done.")
-        print("\n Build artifact available at:\n {}\n".format(wheel_destination))
-        print(
+        LOG.info("All done.")
+        LOG.info("\n Build artifact available at:\n {}\n".format(wheel_destination))
+        LOG.info(
             "\n Source distribution available at:\n {}\n".format(
                 distribution_destination
             )
