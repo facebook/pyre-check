@@ -224,7 +224,6 @@ let rec process_type_query_request
       else
         raise (ClassHierarchy.Untracked annotation)
     in
-    let global_environment = TypeEnvironment.ReadOnly.global_environment read_only_environment in
     let unannotated_global_environment =
       GlobalResolution.unannotated_global_environment global_resolution
     in
@@ -399,16 +398,6 @@ let rec process_type_query_request
         in
         let qualifiers = ModuleTracker.tracked_explicit_modules module_tracker in
         Single (Base.Callgraph (List.concat_map qualifiers ~f:get_callgraph))
-    | DumpClassHierarchy ->
-        let resolution = GlobalResolution.create global_environment in
-        let class_hierarchy_json =
-          let indices =
-            Analysis.UnannotatedGlobalEnvironment.ReadOnly.all_indices
-              unannotated_global_environment
-          in
-          ClassHierarchy.to_json (GlobalResolution.class_hierarchy resolution) ~indices
-        in
-        Single (Base.ClassHierarchy class_hierarchy_json)
     | Help help_list -> Single (Base.Help help_list)
     | IsCompatibleWith (left, right) ->
         (* We need a special version of parse_and_validate to handle the "unknown" type that

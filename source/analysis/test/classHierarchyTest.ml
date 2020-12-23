@@ -235,35 +235,6 @@ let test_check_integrity _ =
   assert_raises Cyclic (fun _ -> check_integrity order ~indices)
 
 
-let test_to_json _ =
-  let order, keys =
-    let order = MockClassHierarchyHandler.create () in
-    let open MockClassHierarchyHandler in
-    insert order "0";
-    insert order "1";
-    insert order "2";
-    insert order "object";
-    connect order ~predecessor:"0" ~successor:"2";
-    connect order ~predecessor:"0" ~successor:"1" ~parameters:![Type.string];
-    connect order ~predecessor:"1" ~successor:"object";
-    connect order ~predecessor:"2" ~successor:"object";
-    handler order, Hash_set.to_list order.all_indices
-  in
-  let (module Handler) = order in
-  assert_equal
-    ~printer:Yojson.Safe.pretty_to_string
-    (Yojson.Safe.from_string
-       {|
-        [
-         { "0": [ "1", "2" ] },
-         { "1": [ "object" ] },
-         { "2": [ "object" ] },
-         { "object": [] }
-        ]
-      |})
-    (to_json order ~indices:keys)
-
-
 let test_to_dot _ =
   let order, keys =
     let order = MockClassHierarchyHandler.create () in
@@ -701,7 +672,6 @@ let () =
          "immediate_parents" >:: test_immediate_parents;
          "is_transitive_successor" >:: test_is_transitive_successor;
          "to_dot" >:: test_to_dot;
-         "to_json" >:: test_to_json;
          "variables" >:: test_variables;
          "instantiate_successors_parameters" >:: test_instantiate_successors_parameters;
          "method_resolution_order_linearize" >:: test_method_resolution_order_linearize;

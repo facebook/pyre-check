@@ -18,7 +18,6 @@ module Request : sig
     | CalleesWithLocation of Reference.t
     | Defines of Reference.t list
     | DumpCallGraph
-    | DumpClassHierarchy
     | Help of string
     | IsCompatibleWith of Expression.t * Expression.t
     | LessOrEqual of Expression.t * Expression.t

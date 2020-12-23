@@ -20,7 +20,6 @@ module Request = struct
     | CalleesWithLocation of Reference.t
     | Defines of Reference.t list
     | DumpCallGraph
-    | DumpClassHierarchy
     | Help of string
     | IsCompatibleWith of Expression.t * Expression.t
     | LessOrEqual of Expression.t * Expression.t
@@ -246,10 +245,6 @@ let help () =
            given module or class."
     | DumpCallGraph ->
         Some "dump_call_graph(): Returns a comprehensive JSON of caller -> list of callees."
-    | DumpClassHierarchy ->
-        Some
-          "dump_class_hierarchy(): Prints out the entire class hierarchy as Pyre understands it, \
-           elides type variables."
     | IsCompatibleWith _ -> None
     | LessOrEqual _ -> Some "less_or_equal(T1, T2): Returns whether T1 is a subtype of T2."
     | PathOfModule _ -> Some "path_of_module(module): Gives an absolute path for `module`."
@@ -281,7 +276,6 @@ let help () =
       CalleesWithLocation (Reference.create "");
       Defines [Reference.create ""];
       DumpCallGraph;
-      DumpClassHierarchy;
       IsCompatibleWith (empty, empty);
       LessOrEqual (empty, empty);
       PathOfModule (Reference.create "");
@@ -347,7 +341,7 @@ let rec parse_query
       | "callees_with_location", [name] -> Request.CalleesWithLocation (reference name)
       | "defines", names -> Request.Defines (List.map names ~f:reference)
       | "dump_call_graph", [] -> Request.DumpCallGraph
-      | "dump_class_hierarchy", [] -> Request.DumpClassHierarchy
+      | "dump_class_hierarchy", [] -> Request.Superclasses []
       | "help", _ -> Request.Help (help ())
       | "is_compatible_with", [left; right] -> Request.IsCompatibleWith (access left, access right)
       | "less_or_equal", [left; right] -> Request.LessOrEqual (access left, access right)

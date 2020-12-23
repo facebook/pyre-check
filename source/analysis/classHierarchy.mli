@@ -96,8 +96,6 @@ val least_upper_bound
 
 val check_integrity : (module Handler) -> indices:IndexTracker.t list -> unit
 
-val to_json : (module Handler) -> indices:IndexTracker.t list -> Yojson.Safe.t
-
 val to_dot : (module Handler) -> indices:IndexTracker.t list -> string
 
 val is_transitive_successor
