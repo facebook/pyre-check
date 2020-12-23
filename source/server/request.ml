@@ -448,10 +448,12 @@ let rec process_type_query_request
           |> fst
           |> Type.primitive_name
           >>| GlobalResolution.successors ~resolution:global_resolution
-          >>| List.map ~f:(fun name -> Type.Primitive name)
-          >>| (fun classes ->
+          >>| (fun names ->
                 Either.First
-                  { Base.class_name = Type.class_name class_type; superclasses = classes })
+                  {
+                    Base.class_name = Type.class_name class_type;
+                    superclasses = List.map names ~f:Reference.create;
+                  })
           |> Option.value ~default:(Either.Second class_name)
         in
         let results, errors = List.partition_map ~f:get_superclasses class_names in

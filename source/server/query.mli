@@ -91,7 +91,7 @@ module Response : sig
 
     type superclasses_mapping = {
       class_name: Reference.t;
-      superclasses: Type.t list;
+      superclasses: Reference.t list;
     }
     [@@deriving eq, show]
 

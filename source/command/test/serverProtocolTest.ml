@@ -32,25 +32,14 @@ let test_type_query_json _ =
   assert_serializes
     (Single
        (Superclasses
-          [
-            {
-              Query.Response.Base.class_name = !&"test.C";
-              superclasses = [Analysis.Type.integer; Analysis.Type.string];
-            };
-          ]))
+          [{ Query.Response.Base.class_name = !&"test.C"; superclasses = [!&"int"; !&"str"] }]))
     {|{"response": {"superclasses": ["int", "str"]}}|};
   assert_serializes
     (Single
        (Superclasses
           [
-            {
-              Query.Response.Base.class_name = !&"test.C";
-              superclasses = [Analysis.Type.integer; Analysis.Type.string];
-            };
-            {
-              Query.Response.Base.class_name = !&"test.D";
-              superclasses = [Analysis.Type.integer; Analysis.Type.bool];
-            };
+            { Query.Response.Base.class_name = !&"test.C"; superclasses = [!&"int"; !&"str"] };
+            { Query.Response.Base.class_name = !&"test.D"; superclasses = [!&"int"; !&"bool"] };
           ]))
     {|
       {

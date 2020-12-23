@@ -279,15 +279,15 @@ let test_query context =
               Base.class_name = !&"test.C";
               superclasses =
                 [
-                  Type.integer;
-                  Type.float;
-                  Type.complex;
-                  Primitive "numbers.Integral";
-                  Primitive "numbers.Rational";
-                  Primitive "numbers.Real";
-                  Primitive "numbers.Complex";
-                  Primitive "numbers.Number";
-                  Type.object_primitive;
+                  !&"int";
+                  !&"float";
+                  !&"complex";
+                  !&"numbers.Integral";
+                  !&"numbers.Rational";
+                  !&"numbers.Real";
+                  !&"numbers.Complex";
+                  !&"numbers.Number";
+                  !&"object";
                 ];
             };
           ]));
@@ -301,11 +301,8 @@ let test_query context =
     (Single
        (Base.Superclasses
           [
-            { Base.class_name = !&"test.C"; superclasses = [Type.object_primitive] };
-            {
-              Base.class_name = !&"test.D";
-              superclasses = [Primitive "test.C"; Type.object_primitive];
-            };
+            { Base.class_name = !&"test.C"; superclasses = [!&"object"] };
+            { Base.class_name = !&"test.D"; superclasses = [!&"test.C"; !&"object"] };
           ]));
   assert_type_query_response ~source:"" ~query:"batch()" (Batch []);
   assert_type_query_response
