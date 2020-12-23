@@ -279,14 +279,14 @@ let test_query context =
               Base.class_name = !&"test.C";
               superclasses =
                 [
-                  !&"int";
-                  !&"float";
                   !&"complex";
+                  !&"float";
+                  !&"int";
+                  !&"numbers.Complex";
                   !&"numbers.Integral";
+                  !&"numbers.Number";
                   !&"numbers.Rational";
                   !&"numbers.Real";
-                  !&"numbers.Complex";
-                  !&"numbers.Number";
                   !&"object";
                 ];
             };
@@ -302,7 +302,7 @@ let test_query context =
        (Base.Superclasses
           [
             { Base.class_name = !&"test.C"; superclasses = [!&"object"] };
-            { Base.class_name = !&"test.D"; superclasses = [!&"test.C"; !&"object"] };
+            { Base.class_name = !&"test.D"; superclasses = [!&"object"; !&"test.C"] };
           ]));
   assert_type_query_response ~source:"" ~query:"batch()" (Batch []);
   assert_type_query_response
@@ -396,11 +396,7 @@ let test_query context =
   assert_type_query_response
     ~source:""
     ~query:"superclasses(Unknown)"
-    (Error "Type `Unknown` was not found in the type order.");
-  assert_type_query_response
-    ~source:""
-    ~query:"superclasses(Unknown[int])"
-    (Error "Type `Unknown[int]` was not found in the type order.");
+    (Single (Base.Superclasses []));
   let assert_type_query_response_with_local_root
       ?(handle = "test.py")
       ~source

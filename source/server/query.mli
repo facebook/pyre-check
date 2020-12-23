@@ -24,7 +24,7 @@ module Request : sig
     | LessOrEqual of Expression.t * Expression.t
     | PathOfModule of Reference.t
     | SaveServerState of Path.t
-    | Superclasses of Expression.t list
+    | Superclasses of Reference.t list
     | Type of Expression.t
     | TypesInFiles of Path.t list
     | ValidateTaintModels of Path.t option

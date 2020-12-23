@@ -442,37 +442,22 @@ let rec process_type_query_request
         Single (Base.Success (Format.sprintf "Saved state."))
     | Superclasses class_names ->
         let get_superclasses class_name =
-          let class_type = parse_and_validate class_name in
-          class_type
-          |> Type.split
-          |> fst
-          |> Type.primitive_name
-          >>| GlobalResolution.successors ~resolution:global_resolution
-          >>| (fun names ->
-                Either.First
-                  {
-                    Base.class_name = Type.class_name class_type;
-                    superclasses = List.map names ~f:Reference.create;
-                  })
-          |> Option.value ~default:(Either.Second class_name)
+          Reference.show class_name
+          |> GlobalResolution.successors ~resolution:global_resolution
+          |> List.sort ~compare:String.compare
+          |> List.map ~f:Reference.create
+          |> fun superclasses -> { Base.class_name; superclasses }
         in
-        let results, errors = List.partition_map ~f:get_superclasses class_names in
-        if List.is_empty errors then
-          Single (Superclasses results)
-        else
-          let bad_annotations =
-            List.fold
-              ~init:""
-              ~f:(fun sofar annotation ->
-                Format.asprintf
-                  "%s`%a`"
-                  (if String.equal sofar "" then "" else sofar ^ ", ")
-                  Expression.pp
-                  annotation)
-              errors
-          in
-          let plural = if List.length errors > 1 then "s" else "" in
-          Error (Format.asprintf "No class definition%s found for %s" plural bad_annotations)
+        let class_names =
+          match class_names with
+          | [] ->
+              UnannotatedGlobalEnvironment.ReadOnly.all_classes unannotated_global_environment
+              |> List.map ~f:Reference.create
+          | _ ->
+              List.filter class_names ~f:(fun class_name ->
+                  Reference.show class_name |> GlobalResolution.class_exists global_resolution)
+        in
+        Single (Superclasses (List.map ~f:get_superclasses class_names))
     | Type expression ->
         let annotation = Resolution.resolve_expression_to_type resolution expression in
         Single (Type annotation)

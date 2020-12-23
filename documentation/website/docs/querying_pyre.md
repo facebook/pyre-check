@@ -205,24 +205,40 @@ $ pyre --load-initial-state-from my_saved_state start
 
 ### Superclasses
 
-The command `superclasses` returns the superclasses of a given class name.
+The command `superclasses` returns the superclasses of given class names.
 
 ```bash
-$ pyre query "superclasses(int)"
+$ pyre query "superclasses(int, str)"
 {
-    "response": {
-        "superclasses": [
-            "float",
-            "complex",
-            "numbers.Integral",
-            "numbers.Rational",
-            "numbers.Real",
-            "numbers.Complex",
-            "numbers.Number",
-            "typing.SupportsFloat",
-            "typing.Any"
-        ]
-    }
+    "response": [
+        {
+            "int": [
+                "complex",
+                "float",
+                "numbers.Complex",
+                "numbers.Integral",
+                "numbers.Number",
+                "numbers.Rational",
+                "numbers.Real",
+                "object",
+                "typing.Generic",
+                "typing.Protocol",
+                "typing.SupportsFloat"
+            ]
+        },
+        {
+            "str": [
+                "object",
+                "typing.Collection",
+                "typing.Container",
+                "typing.Generic",
+                "typing.Iterable",
+                "typing.Protocol",
+                "typing.Reversible",
+                "typing.Sequence"
+            ]
+        }
+    ]
 }
 ```
 

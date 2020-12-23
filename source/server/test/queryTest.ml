@@ -24,7 +24,7 @@ let test_parse_query context =
       | LessOrEqual (left_first, left_second), LessOrEqual (right_first, right_second) ->
           expression_equal left_first right_first && expression_equal left_second right_second
       | Superclasses left, Superclasses right ->
-          List.for_all2_exn ~f:(fun left right -> expression_equal left right) left right
+          List.for_all2_exn ~f:(fun left right -> Reference.equal left right) left right
       | Type left, Type right -> expression_equal left right
       | _ -> Query.Request.equal left right
     in
@@ -63,8 +63,8 @@ let test_parse_query context =
   assert_fails_to_parse "meet(int, int, int)";
   assert_fails_to_parse "meet(int)";
   assert_fails_to_parse "join(int)";
-  assert_parses "superclasses(int)" (Superclasses [!"int"]);
-  assert_parses "superclasses(int, bool)" (Superclasses [!"int"; !"bool"]);
+  assert_parses "superclasses(int)" (Superclasses [!&"int"]);
+  assert_parses "superclasses(int, bool)" (Superclasses [!&"int"; !&"bool"]);
   assert_parses "type(C)" (Type !"C");
   assert_parses "type((C,B))" (Type (+Expression.Expression.Tuple [!"C"; !"B"]));
   assert_fails_to_parse "type(a.b, c.d)";

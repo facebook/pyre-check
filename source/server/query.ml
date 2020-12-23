@@ -26,7 +26,7 @@ module Request = struct
     | LessOrEqual of Expression.t * Expression.t
     | PathOfModule of Reference.t
     | SaveServerState of Path.t
-    | Superclasses of Expression.t list
+    | Superclasses of Reference.t list
     | Type of Expression.t
     | TypesInFiles of Path.t list
     | ValidateTaintModels of Path.t option
@@ -286,7 +286,7 @@ let help () =
       LessOrEqual (empty, empty);
       PathOfModule (Reference.create "");
       SaveServerState path;
-      Superclasses [empty];
+      Superclasses [Reference.empty];
       Type (Node.create_with_default_location Expression.True);
       TypesInFiles [path];
       ValidateTaintModels None;
@@ -354,7 +354,7 @@ let rec parse_query
       | "path_of_module", [module_access] -> Request.PathOfModule (reference module_access)
       | "save_server_state", [path] ->
           Request.SaveServerState (Path.create_absolute ~follow_symbolic_links:false (string path))
-      | "superclasses", names -> Superclasses (List.map ~f:access names)
+      | "superclasses", names -> Superclasses (List.map ~f:reference names)
       | "type", [argument] -> Type (expression argument)
       | "types", paths ->
           let paths =
