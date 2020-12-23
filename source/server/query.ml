@@ -198,20 +198,12 @@ module Response = struct
           `List (List.map defines ~f:define_to_yojson)
       | FoundPath path -> `Assoc ["path", `String path]
       | Success message -> `Assoc ["message", `String message]
-      | Superclasses class_to_superclasses_mapping -> (
+      | Superclasses class_to_superclasses_mapping ->
           let reference_to_yojson reference = `String (Reference.show reference) in
-          match class_to_superclasses_mapping with
-          | [{ superclasses; _ }] ->
-              `Assoc ["superclasses", `List (List.map superclasses ~f:reference_to_yojson)]
-          | _ ->
-              let superclasses_to_json { class_name; superclasses } =
-                `Assoc
-                  [
-                    "class_name", `String (Reference.show class_name);
-                    "superclasses", `List (List.map superclasses ~f:reference_to_yojson);
-                  ]
-              in
-              `List (List.map class_to_superclasses_mapping ~f:superclasses_to_json) )
+          let mapping_to_yojson { class_name; superclasses } =
+            `Assoc [Reference.show class_name, `List (List.map superclasses ~f:reference_to_yojson)]
+          in
+          `List (List.map class_to_superclasses_mapping ~f:mapping_to_yojson)
       | Type annotation -> `Assoc ["type", Type.to_yojson annotation]
       | TypesByPath paths_to_annotations ->
           `List (List.map paths_to_annotations ~f:types_at_path_to_yojson)

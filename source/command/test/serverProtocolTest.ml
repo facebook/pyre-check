@@ -33,7 +33,7 @@ let test_type_query_json _ =
     (Single
        (Superclasses
           [{ Query.Response.Base.class_name = !&"test.C"; superclasses = [!&"int"; !&"str"] }]))
-    {|{"response": {"superclasses": ["int", "str"]}}|};
+    {|{"response": [{"test.C": ["int", "str"]}]}|};
   assert_serializes
     (Single
        (Superclasses
@@ -45,12 +45,10 @@ let test_type_query_json _ =
       {
         "response": [
           {
-            "class_name":"test.C",
-            "superclasses":["int","str"]
+            "test.C": ["int","str"]
           },
           {
-            "class_name":"test.D",
-            "superclasses":["int","bool"]
+            "test.D": ["int","bool"]
           }
         ]
       }
