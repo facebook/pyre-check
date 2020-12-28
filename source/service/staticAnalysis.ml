@@ -212,30 +212,7 @@ let unfiltered_callables ~resolution ~source:{ Source.source_path = { SourcePath
     |> List.concat
     |> List.filter ~f:(fun { Node.value = define; _ } -> not (Define.is_overloaded_function define))
   in
-  let record_toplevel_definition
-      ( { Node.value = { Define.signature = { parent; name = { Node.value = name; _ }; _ }; _ }; _ }
-      as define )
-    =
-    (* Warn if we're trying to add a method for a class that doesn't exist. *)
-    begin
-      match parent with
-      | Some class_name ->
-          let class_annotation = Type.Primitive (Reference.show class_name) in
-          let class_exists =
-            GlobalResolution.class_definition resolution class_annotation |> Option.is_some
-          in
-          if not class_exists then
-            Log.warning
-              "Class %a for method %a is not part of the type environment"
-              Reference.pp
-              class_name
-              Reference.pp
-              name
-      | None -> ()
-    end;
-    Callable.create define, define
-  in
-  List.map ~f:record_toplevel_definition defines
+  List.map ~f:(fun define -> Callable.create define, define) defines
 
 
 type found_callable = {
