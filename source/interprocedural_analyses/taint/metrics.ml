@@ -23,6 +23,13 @@ let callable_max_time_in_seconds = 60
 
 let with_alarm name f () =
   let callback _ =
+    Statistics.event
+      ~flush:true
+      ~name:"long taint analysis of callable"
+      ~section:`Performance
+      ~integers:["cutoff time", callable_max_time_in_seconds]
+      ~normals:["callable", Reference.show name]
+      ();
     let pid = Unix.getpid () in
     Log.info
       "The analysis of %a is taking more than %d seconds (pid = %d)"
