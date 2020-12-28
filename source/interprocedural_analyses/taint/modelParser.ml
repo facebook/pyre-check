@@ -127,13 +127,15 @@ end
 
 include T
 
+let model_verification_error ~path ~location kind =
+  { ModelVerificationError.T.kind; path; location }
+
+
 let invalid_model_error ~path ~location ~name message =
-  {
-    ModelVerificationError.T.kind =
-      ModelVerificationError.T.UnclassifiedError { model_name = name; message };
-    path;
-    location;
-  }
+  model_verification_error
+    ~path
+    ~location
+    (ModelVerificationError.T.UnclassifiedError { model_name = name; message })
 
 
 let add_breadcrumbs breadcrumbs init = List.rev_append breadcrumbs init
@@ -1353,15 +1355,10 @@ let callable_annotation
        check for the verify_decorators flag, as defines originating from
        `create_model_from_annotation` are not user-specified models that we're parsing. *)
     Error
-      (invalid_model_error
+      (model_verification_error
          ~path:None
          ~location
-         ~name:(Reference.show name)
-         (Format.sprintf
-            "Unexpected decorators found when parsing model: `%s`"
-            ( List.map decorators ~f:Decorator.to_expression
-            |> List.map ~f:Expression.show
-            |> String.concat ~sep:", " )))
+         (ModelVerificationError.T.UnexpectedDecorators { name; unexpected_decorators = decorators }))
   else
     Ok (global_type ())
 

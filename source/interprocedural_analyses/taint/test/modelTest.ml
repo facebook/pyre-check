@@ -1297,8 +1297,8 @@ let test_invalid_models context =
       def accidental_decorator_passed_in() -> TaintSource[Test]: ...
     |}
     ~expect:
-      "Invalid model for `accidental_decorator_passed_in`: Unexpected decorators found when \
-       parsing model: `decorated`"
+      "Unexpected decorators found when parsing model for `accidental_decorator_passed_in`: \
+       `decorated`"
     ();
   assert_invalid_model
     ~source:
@@ -1314,9 +1314,7 @@ let test_invalid_models context =
       @wrong_name.setter
       def test.C.foo(self, value: TaintSink[Test]): ...
     |}
-    ~expect:
-      "Invalid model for `test.C.foo`: Unexpected decorators found when parsing model: \
-       `wrong_name.setter`"
+    ~expect:"Unexpected decorators found when parsing model for `test.C.foo`: `wrong_name.setter`"
     ();
   assert_valid_model
     ~source:

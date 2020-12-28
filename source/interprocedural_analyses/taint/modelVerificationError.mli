@@ -35,6 +35,10 @@ module T : sig
         attribute_name: string;
       }
     | NotInEnvironment of string
+    | UnexpectedDecorators of {
+        name: Reference.t;
+        unexpected_decorators: Statement.Decorator.t list;
+      }
     | UnclassifiedError of {
         model_name: string;
         message: string;

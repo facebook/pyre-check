@@ -37,6 +37,10 @@ module T = struct
         attribute_name: string;
       }
     | NotInEnvironment of string
+    | UnexpectedDecorators of {
+        name: Reference.t;
+        unexpected_decorators: Statement.Decorator.t list;
+      }
     (* TODO(T81363867): Remove this variant. *)
     | UnclassifiedError of {
         model_name: string;
@@ -85,6 +89,14 @@ let description error =
         name
         Reference.pp
         actual_name
+  | UnexpectedDecorators { name; unexpected_decorators } ->
+      Format.asprintf
+        "Unexpected decorators found when parsing model for `%a`: `%s`"
+        Reference.pp
+        name
+        ( List.map unexpected_decorators ~f:Statement.Decorator.to_expression
+        |> List.map ~f:Expression.show
+        |> String.concat ~sep:", " )
   | UnclassifiedError { model_name; message } ->
       Format.sprintf "Invalid model for `%s`: %s" model_name message
   | MissingAttribute { class_name; attribute_name } ->
