@@ -1298,7 +1298,7 @@ let test_invalid_models context =
     |}
     ~expect:
       "Unexpected decorators found when parsing model for `accidental_decorator_passed_in`: \
-       `decorated`"
+       `decorated`."
     ();
   assert_invalid_model
     ~source:
@@ -1314,8 +1314,20 @@ let test_invalid_models context =
       @wrong_name.setter
       def test.C.foo(self, value: TaintSink[Test]): ...
     |}
-    ~expect:"Unexpected decorators found when parsing model for `test.C.foo`: `wrong_name.setter`"
+    ~expect:"Unexpected decorators found when parsing model for `test.C.foo`: `wrong_name.setter`."
     ();
+  assert_invalid_model
+    ~model_source:
+      {|
+      @custom_property
+      def accidental_decorator_passed_in() -> TaintSource[Test]: ...
+    |}
+    ~expect:
+      "Unexpected decorators found when parsing model for `accidental_decorator_passed_in`: \
+       `custom_property`. If you're looking to model a custom property decorator, use the \
+       @property decorator."
+    ();
+
   assert_valid_model
     ~source:
       {|

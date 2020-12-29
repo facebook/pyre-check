@@ -90,13 +90,22 @@ let description error =
         Reference.pp
         actual_name
   | UnexpectedDecorators { name; unexpected_decorators } ->
+      let decorators =
+        List.map unexpected_decorators ~f:Statement.Decorator.to_expression
+        |> List.map ~f:Expression.show
+      in
+      let property_decorator_message =
+        if List.exists decorators ~f:(String.is_substring ~substring:"property") then
+          " If you're looking to model a custom property decorator, use the @property decorator."
+        else
+          ""
+      in
       Format.asprintf
-        "Unexpected decorators found when parsing model for `%a`: `%s`"
+        "Unexpected decorators found when parsing model for `%a`: `%s`.%s"
         Reference.pp
         name
-        ( List.map unexpected_decorators ~f:Statement.Decorator.to_expression
-        |> List.map ~f:Expression.show
-        |> String.concat ~sep:", " )
+        (String.concat decorators ~sep:", ")
+        property_decorator_message
   | UnclassifiedError { model_name; message } ->
       Format.sprintf "Invalid model for `%s`: %s" model_name message
   | MissingAttribute { class_name; attribute_name } ->
