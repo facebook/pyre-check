@@ -103,67 +103,6 @@ is simply to delete the `django.pyi` file. When deleting that file, you may all
 of a sudden see new typing errors for other types within Django, for which
 you'll need to add new .`pyi` files at the appropriate locations.
 
-### Missing types cause missed flows
-
-Due to optimizations to allow parallelization, Pysa can be blind in some
-scenarios that might be obvious to a human. Pysa needs to know the type of an
-object that is a source/sink *at the point at which it is accessed*, in order
-for it to detect tainted flows. For example, if you have a function that returns
-a wrapper around a source, flows from that source will not be found unless the
-return type of the function is specified. See below how one of the flows in the
-`run` function is missed, simply because the return type on
-`get_wrapper_untyped` is missing:
-
-```python
-from django.http import HttpRequest
-class RequestWrapper:
-    request: HttpRequest
-    def __init__(self, request: HttpRequest):
-        self.request = request
-
-    @property
-    def get_request_data(self):
-        return self.request.GET["data"]
-
-def get_wrapper_untyped(request: HttpRequest):
-    return RequestWrapper(request)
-
-def get_wrapper_typed(request: HttpRequest) -> RequestWrapper:
-    return RequestWrapper(request)
-
-def run(request: HttpRequest):
-    # This flow WILL NOT be found
-    wrapper = get_wrapper_untyped(request)
-    eval(wrapper.get_request_data)
-    # This flow WILL be found
-    wrapper = get_wrapper_typed(request)
-    eval(wrapper.get_request_data)
-```
-
-This illustrates how important typing is for ensuring all flows are caught by
-during static analysis.
-
-### Globals cause missed flows
-
-To allow for parallel processing, Pysa is limited in it's ability to track taint
-flows through global variables. For example, Pysa will not detect an issue in
-the following code:
-
-```python
-user_controlled_data = ""
-
-def load_data(request: HttpRequest) -> None:
-    user_controlled_data = request.GET["data"]
-
-def run_command(request: HttpRequest) -> None:
-    load_data(request)
-    eval(user_controlled_data)
-```
-
-The best workaround is to avoid using globals in your code. If a refactor isn't
-possible, but you do know what globals should be considered tainted, you can
-explicitly declare the global tainted in your `.pysa` files.
-
 ## Helpful Python knowledge
 
 Pretty much all python operators are reduced down to double underbar functions.

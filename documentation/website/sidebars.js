@@ -41,6 +41,7 @@ module.exports = {
     'pysa-model-generators',
     'pysa-model-dsl',
     'pysa-tips',
+    'pysa-false-negatives',
     'pysa-coverage',
     'static-analysis-post-processor',
     'pysa-additional-resources',
