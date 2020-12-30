@@ -4,7 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 from builtins import __test_sink, __test_source
-from typing import List, Tuple
+from typing import Dict, List, Tuple
 
 
 def some_service(id):
@@ -160,3 +160,31 @@ class GetUser(GetQuery):
 def test_explicit_call_to_superclass():
     user = GetUser(__test_source())
     __test_sink(user.arg)
+
+
+def evaluate_lazy(payload: Dict[str, str]):
+    return {key: value for key, value in payload.items()}
+
+
+def test_simplified_evaluator():
+    __test_sink(evaluate_lazy(__test_source()))
+
+
+class ComplexEvaluator:
+    def evaluate_lazy_field(self, field):
+        if callable(field):
+            return field()
+        else:
+            return field
+
+    def evaluate_lazy_payload(self, payload):
+        def _evaluate(field):
+            if isinstance(field, dict):
+                return self.evaluate_lazy_payload(field)
+            return self.evaluate_lazy_field(field)
+
+        return {key: _evaluate(value) for key, value in payload.items()}
+
+
+def test_complex_evaluator(evaluator: ComplexEvaluator):
+    __test_sink(evaluator.evaluate_lazy_payload(__test_source()))

@@ -463,7 +463,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
 
 
     and analyze_generators ~resolution ~state generators =
-      let handle_generator state { Comprehension.Generator.target; iterator; conditions; _ } =
+      let handle_generator state ({ Comprehension.Generator.conditions; _ } as generator) =
         let state =
           List.fold conditions ~init:state ~f:(fun state condition ->
               analyze_expression
@@ -472,30 +472,8 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                 ~state
                 ~expression:condition)
         in
-        let access_path = of_expression ~resolution target in
-        let bound_variable_taint = get_taint access_path state in
-        let iterator_taint =
-          (* If the type is a dict, we special case `DictionaryKeys` as the taint being iterated on. *)
-          let global_resolution = Resolution.global_resolution resolution in
-          let label =
-            let iterator_is_dictionary =
-              match Resolution.resolve_expression_to_type resolution iterator with
-              | Type.Parametric { name; _ } ->
-                  GlobalResolution.is_transitive_successor
-                    global_resolution
-                    ~predecessor:name
-                    ~successor:Type.mapping_primitive
-              | _ -> false
-            in
-            if iterator_is_dictionary then
-              Abstract.TreeDomain.Label.DictionaryKeys
-            else
-              Abstract.TreeDomain.Label.Any
-          in
-          BackwardState.Tree.prepend [label] bound_variable_taint
-        in
-
-        analyze_expression ~resolution ~taint:iterator_taint ~state ~expression:iterator
+        let { Assign.target; value; _ } = Statement.generator_assignment generator in
+        analyze_assignment ~resolution ~target ~value state
       in
       List.fold ~f:handle_generator generators ~init:state
 
@@ -706,19 +684,48 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           in
 
           analyze_expression ~resolution ~taint ~state ~expression:base
-      (* Special case x.__next__() as being a random index access (this pattern is the desugaring of
-         `for element in x`). *)
+      (* Special case x.__iter__().__next__() as being a random index access (this pattern is the
+         desugaring of `for element in x`). Special case dictionary keys appropriately. *)
       | {
-       callee = { Node.value = Name (Name.Attribute { base; attribute = "__next__"; _ }); _ };
+       callee =
+         {
+           Node.value =
+             Name
+               (Name.Attribute
+                 {
+                   base =
+                     {
+                       Node.value =
+                         Call
+                           {
+                             callee =
+                               {
+                                 Node.value =
+                                   Name (Name.Attribute { base; attribute = "__iter__"; _ });
+                                 _;
+                               };
+                             arguments = [];
+                           };
+                       _;
+                     };
+                   attribute = "__next__";
+                   _;
+                 });
+           _;
+         };
        arguments = [];
       } ->
-          let taint = BackwardState.Tree.prepend [Abstract.TreeDomain.Label.Any] taint in
-          analyze_expression ~resolution ~taint ~state ~expression:base
-      (* Special case `x.__iter__()` as preserving taint. *)
-      | {
-       callee = { Node.value = Name (Name.Attribute { base; attribute = "__iter__"; _ }); _ };
-       arguments = [];
-      } ->
+          let label =
+            (* For dictionaries, the default iterator is keys. *)
+            if
+              Resolution.resolve_expression_to_type resolution base |> Type.is_dictionary_or_mapping
+            then
+              Abstract.TreeDomain.Label.DictionaryKeys
+            else
+              Abstract.TreeDomain.Label.Any
+          in
+
+          let taint = BackwardState.Tree.prepend [label] taint in
           analyze_expression ~resolution ~taint ~state ~expression:base
       (* We special-case object.__setattr__, which is sometimes used in order to work around
          dataclasses being frozen post-initialization. *)
