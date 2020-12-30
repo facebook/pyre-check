@@ -497,38 +497,17 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
 
 
     and analyze_comprehension_generators ~resolution ~state generators =
-      let add_binding
-          (state, resolution)
-          ({ Comprehension.Generator.target; iterator; conditions; _ } as generator)
-        =
-        let taint, state =
-          let iterator_is_dictionary =
-            match Resolution.resolve_expression_to_type resolution iterator with
-            | Type.Parametric { name; _ } ->
-                GlobalResolution.is_transitive_successor
-                  (Resolution.global_resolution resolution)
-                  ~predecessor:name
-                  ~successor:Type.mapping_primitive
-            | _ -> false
-          in
-          let label =
-            if iterator_is_dictionary then
-              Abstract.TreeDomain.Label.DictionaryKeys
-            else
-              Abstract.TreeDomain.Label.Any
-          in
-          analyze_expression ~resolution ~state ~expression:iterator
-          |>> ForwardState.Tree.read [label]
+      let add_binding (state, resolution) ({ Comprehension.Generator.conditions; _ } as generator) =
+        let ({ Ast.Statement.Assign.target; value; _ } as assignment) =
+          Ast.Statement.Statement.generator_assignment generator
+        in
+        let assign_value_taint, state = analyze_expression ~resolution ~state ~expression:value in
+        let state =
+          analyze_assignment ~resolution target assign_value_taint assign_value_taint state
         in
         (* Since generators create variables that Pyre sees as scoped within the generator, handle
            them by adding the generator's bindings to the resolution. *)
-        let resolution =
-          Resolution.resolve_assignment
-            resolution
-            (Ast.Statement.Statement.generator_assignment generator)
-        in
-        let access_path = AccessPath.of_expression ~resolution target in
-        let state = store_taint_option access_path taint state in
+        let resolution = Resolution.resolve_assignment resolution assignment in
         (* Analyzing the conditions might have issues and side effects. *)
         let analyze_condition state condiiton =
           analyze_expression ~resolution ~state ~expression:condiiton |> snd

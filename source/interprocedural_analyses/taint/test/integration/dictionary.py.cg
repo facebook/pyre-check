@@ -39,6 +39,7 @@ dictionary.test_keys_and_values (fun) -> [__test_sink (fun) __test_source (fun) 
 dictionary.test_service_with_dict (fun) -> [__test_sink (fun) __test_source (fun) dictionary.Service::async_get_dict (method) object::__init__ (method) object::__new__ (method)]
 dictionary.test_service_with_mapping (fun) -> [__test_sink (fun) __test_source (fun) dictionary.Service::async_get_mapping (method) object::__init__ (method) object::__new__ (method)]
 dictionary.test_with_issue_in_dict_comprehension (fun) -> [__test_sink (fun) __test_source (fun)]
+dictionary.test_with_issue_in_dict_items_comprehension (fun) -> [__test_source (fun) dict::items (method)]
 dictionary.tito_with_index (fun) -> [dict::__getitem__ (method)]
 dictionary.to_map (fun) -> []
 dictionary.update_dictionary_indirectly (fun) -> [dict::update (method)]

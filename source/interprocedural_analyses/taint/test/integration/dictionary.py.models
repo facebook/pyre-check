@@ -1623,6 +1623,37 @@
 {
   "kind": "model",
   "data": {
+    "callable": "dictionary.test_with_issue_in_dict_items_comprehension",
+    "sources": [
+      {
+        "port": "result[*]",
+        "taint": [
+          {
+            "root": {
+              "filename": "dictionary.py",
+              "line": 269,
+              "start": 20,
+              "end": 35
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-via": "special_source" } ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "dictionary.tito_with_index",
     "sources": [],
     "sinks": [],

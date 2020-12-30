@@ -263,3 +263,8 @@ def test_items_backward_values(x, y):
 
     for k, v in value_is_tainted.items():
         __test_sink(v)
+
+
+def test_with_issue_in_dict_items_comprehension():
+    sources = {"k": __test_source()}
+    return {k: v for k, v in sources.items()}
