@@ -38,6 +38,7 @@ module.exports = {
     ...fbInternalOnly(['fb/pysa-shipping-rules-models-internal']),
     'pysa-features',
     'pysa-advanced',
+    'pysa-implementation-details',
     'pysa-model-generators',
     'pysa-model-dsl',
     'pysa-tips',

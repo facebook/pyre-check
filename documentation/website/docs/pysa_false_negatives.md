@@ -113,13 +113,13 @@ explicitly declare the global tainted in your `.pysa` files.
      dump the latest taint information, so **the last instance of `reveal_taint`
      output for a given line will be the most accurate and is the one you should
      look at.**
-   - `reveal_taint` output exposes some of the implementation details of Pysa,
-     by giving you `Revealed forward taint` and `Revealed backward taint`
-     messages. Without going into those details, you should expect to see
-     *either* the source name (eg. `UserControlled`) you care about appearing in
-     the `Revealed forward taint` output, or the sink name (eg.
-     `RemoteCodeExecution`) you care about in the `Revealed backward taint`
-     output.
+   - `reveal_taint` output exposes some of the [implementation
+     details](pysa_implementation_details.md) of Pysa, by giving you `Revealed
+     forward taint` and `Revealed backward taint` messages. Without going into
+     those details, you should expect to see *either* the source name (eg.
+     `UserControlled`) you care about appearing in the `Revealed forward taint`
+     output, or the sink name (eg. `RemoteCodeExecution`) you care about in the
+     `Revealed backward taint` output.
    1. For each `reveal_taint`, following the flow of tainted data from source to
       sink, locate the output in the logs that reveals the taint (eg.
       `integration_test.reveal_taint:20:4-20:16: Revealed forward taint for

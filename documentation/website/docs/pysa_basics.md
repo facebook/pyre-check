@@ -230,8 +230,10 @@ def django.utils.html.escape(text): ...
 ```
 
 Sanitizers can also be scoped to only remove taint sources, sinks, or
-taint-in-taint-oug (TITO), rather than all taint that passes through the
-function:
+taint-in-taint-out (TITO), rather than all taint that passes through the
+function. Understanding Pysa's [implementation
+details](pysa_implementation_details.md) will help you better pick whether to
+sanitize sources, sinks, or TITO :
 
 ```python
 # This will remove any taint sources returned by this function, but allow taint
