@@ -25,25 +25,41 @@ module.exports = {
     'querying-pyre',
   ],
   pysa: [
-    'pysa-basics',
-    ...fbContent({
-      internal: [
-        'fb/pysa-running-internal',
-        'fb/pysa-on-fbcode-internal',
-        'fb/pysa-running-opensource-internal',
-        'fb/pysa-running-common-internal',
+    {
+      'How Pysa Works': [
+        'pysa-basics',
+        'pysa-features',
+        'pysa-advanced',
+        'pysa-implementation-details',
       ],
-      external: ['pysa-running'],
-    }),
+    },
+    {
+      'Running Pysa': [
+        ...fbContent({
+          internal: [
+            'fb/pysa-running-internal',
+            'fb/pysa-on-fbcode-internal',
+            'fb/pysa-running-opensource-internal',
+            'fb/pysa-running-common-internal',
+          ],
+          external: ['pysa-running'],
+        }),
+      ],
+    },
     ...fbInternalOnly(['fb/pysa-shipping-rules-models-internal']),
-    'pysa-features',
-    'pysa-advanced',
-    'pysa-implementation-details',
-    'pysa-model-generators',
-    'pysa-model-dsl',
-    'pysa-tips',
-    'pysa-false-negatives',
-    'pysa-coverage',
+    {
+      'Scaling Beyond Individual Models': [
+        'pysa-model-generators',
+        'pysa-model-dsl',
+      ],
+    },
+    {
+      'Development Tips': [
+        'pysa-false-negatives',
+        'pysa-coverage',
+        'pysa-tips',
+      ],
+    },
     'static-analysis-post-processor',
     'pysa-additional-resources',
   ],

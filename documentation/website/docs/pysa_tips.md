@@ -1,7 +1,7 @@
 ---
 id: pysa-tips
-title: Development Tips
-sidebar_label: Development Tips
+title: General Tips
+sidebar_label: General Tips
 ---
 
 ## Features/Limitations
