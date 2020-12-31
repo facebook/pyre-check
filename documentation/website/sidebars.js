@@ -33,19 +33,20 @@ module.exports = {
         'pysa-implementation-details',
       ],
     },
-    {
-      'Running Pysa': [
-        ...fbContent({
-          internal: [
+
+    ...fbContent({
+      internal: [
+        {
+          'Running Pysa': [
             'fb/pysa-running-internal',
             'fb/pysa-on-fbcode-internal',
             'fb/pysa-running-opensource-internal',
             'fb/pysa-running-common-internal',
           ],
-          external: ['pysa-running'],
-        }),
+        },
       ],
-    },
+      external: ['pysa-running'],
+    }),
     ...fbInternalOnly(['fb/pysa-shipping-rules-models-internal']),
     {
       'Scaling Beyond Individual Models': [
