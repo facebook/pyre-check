@@ -177,7 +177,7 @@ specify where each source needs to flow for the combined source rule. These
 ```python
 def requests.api.get(
   url: PartialSink[UserControlledRequestWithCreds[url]],
-  params: PartialSink[UserControlledRequestWithCreds[creds]] = ...,
+  params: PartialSink[UserControlledRequestWithCreds[creds]],
   **kwargs
 ): ...
 ```

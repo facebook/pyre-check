@@ -104,7 +104,7 @@ def django.http.request.HttpRequest.get_signed_cookie(
 ) -> TaintSource[Cookies]: ...
 
 # Class attribute source:
-django.http.request.HttpRequest.COOKIES: TaintSource[Cookies] = ...
+django.http.request.HttpRequest.COOKIES: TaintSource[Cookies]
 ```
 
 When tainting an entire class, any return from a method or access of an
@@ -134,7 +134,7 @@ class C:
     dictionary_field = {"text": "will_be_tainted"}
 
 # Model file: models.pysa
-a.C.dictionary_field: AppliesTo["text", TaintSource[Test]] = ...
+a.C.dictionary_field: AppliesTo["text", TaintSource[Test]]
 ```
 
 ## Sinks
@@ -163,7 +163,7 @@ attributes, and even whole classes can be declared as sinks by adding
 def sqlite3.dbapi2.Cursor.execute(self, sql: TaintSink[SQL], parameters): ...
 
 # Attribute sink
-file_name.ClassName.attribute_name: TaintSink[RemoteCodeExecution] = ...
+file_name.ClassName.attribute_name: TaintSink[RemoteCodeExecution]
 ```
 
 When tainting an entire class, any flow into a method or attribute of the class
@@ -285,7 +285,7 @@ Attributes can also be marked as sanitizers to remove all taint passing through
 them:
 
 ```python
-django.http.request.HttpRequest.GET: Sanitize = ...
+django.http.request.HttpRequest.GET: Sanitize
 ```
 
 This annotation is useful in the case of explicit sanitizers such as `escape`,
@@ -330,7 +330,7 @@ retrieve a value from a dictionary, Pysa needs a `TaintInTaintOut` annotation
 that indicates `LocalReturn`:
 
 ```python
-def dict.get(self: TaintInTaintOut[LocalReturn], key, default = ...): ...
+def dict.get(self: TaintInTaintOut[LocalReturn], key, default): ...
 ```
 
 ## Features
@@ -349,8 +349,8 @@ cookies are both user controlled and potentially sensitive to log, and Pysa
 allows us apply two different annotations to them:
 
 ```python
-django.http.request.HttpRequest.COOKIES: TaintSource[UserControlled] = ...
-django.http.request.HttpRequest.COOKIES: TaintSource[Cookies] = ...
+django.http.request.HttpRequest.COOKIES: TaintSource[UserControlled]
+django.http.request.HttpRequest.COOKIES: TaintSource[Cookies]
 ```
 
 ### Requirements and Features
@@ -367,7 +367,7 @@ declared, not necessarily where it is imported from. For example, you can import
 you would need to use the module in which it was defined:
 
 ```python
-django.http.request.HttpRequest.GET: TaintSource[UserControlled] = ...
+django.http.request.HttpRequest.GET: TaintSource[UserControlled]
 ```
 
 #### Matching signatures
@@ -403,9 +403,9 @@ def urlopen(url, data=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT, *, cafile=No
 Given that signature, either of the following models are acceptable:
 
 ```python
-def urllib.request.urlopen(url: TaintSink[RequestSend], data = ...,
-                           timeout = ..., *, cafile = ..., capath = ...,
-                           cadefault = ..., context = ...): ...
+def urllib.request.urlopen(url: TaintSink[RequestSend], data,
+                           timeout, *, cafile, capath,
+                           cadefault, context): ...
 def urllib.request.urlopen(url: TaintSink[RequestSend]): ...
 ```
 

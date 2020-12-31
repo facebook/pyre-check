@@ -90,8 +90,8 @@ class HttpRequest(BinaryIO):
 Only at this point can you add `.pysa` files with annotations such as these:
 
 ```
-django.http.request.HttpRequest.COOKIES: TaintSource[UserControlled] = ...
-django.http.request.HttpRequest.GET: TaintSource[UserControlled] = ...
+django.http.request.HttpRequest.COOKIES: TaintSource[UserControlled]
+django.http.request.HttpRequest.GET: TaintSource[UserControlled]
 ```
 
 **There is a huge gotcha here**: If you had both an empty `stubs/django.pyi`
