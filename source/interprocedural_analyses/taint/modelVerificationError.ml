@@ -32,6 +32,7 @@ module T = struct
         name: Reference.t;
         actual_name: Reference.t;
       }
+    | InvalidModelQueryClauses of Expression.Call.Argument.t list
     | MissingAttribute of {
         class_name: string;
         attribute_name: string;
@@ -89,6 +90,10 @@ let description error =
         name
         Reference.pp
         actual_name
+  | InvalidModelQueryClauses clause_list ->
+      Format.asprintf
+        "The model query arguments at `%s` are invalid: expected a find, where and model clause."
+        (List.map clause_list ~f:Expression.Call.Argument.show |> String.concat ~sep:", ")
   | UnexpectedDecorators { name; unexpected_decorators } ->
       let decorators =
         List.map unexpected_decorators ~f:Statement.Decorator.to_expression

@@ -1831,11 +1831,10 @@ let create ~resolution ?path ~configuration ~rule_filter source =
                     parse_model_clause ~path ~configuration model_clause )
             | _ ->
                 Error
-                  (invalid_model_error
+                  (model_verification_error
                      ~path
                      ~location
-                     ~name:"model query"
-                     "Malformed model query arguments: expected a find, where and model clause.")
+                     (ModelVerificationError.T.InvalidModelQueryClauses arguments))
           in
 
           clauses

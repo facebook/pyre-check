@@ -1545,6 +1545,19 @@ let test_invalid_models context =
   breadcrumbs =
   [(Features.Simple.Breadcrumb (Features.Breadcrumb.SimpleVia "featureA"))];
   path = []; leaf_name_provided = false}` is not a supported taint annotation for sanitizers.|}
+    ();
+  assert_invalid_model
+    ~model_source:
+      {|
+      ModelQuery(
+        fnid = "functions",
+        where = name.matches("foo"),
+        model = Returns(TaintSource[Test])
+      )
+    |}
+    ~expect:
+      {|The model query arguments at `{ Expression.Call.Argument.name = (Some fnid); value = "functions" }, { Expression.Call.Argument.name = (Some where); value = name.matches("foo") }, { Expression.Call.Argument.name = (Some model);
+  value = Returns(TaintSource[Test]) }` are invalid: expected a find, where and model clause.|}
     ()
 
 

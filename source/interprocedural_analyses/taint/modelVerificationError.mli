@@ -30,6 +30,7 @@ module T : sig
         name: Reference.t;
         actual_name: Reference.t;
       }
+    | InvalidModelQueryClauses of Expression.Call.Argument.t list
     | MissingAttribute of {
         class_name: string;
         attribute_name: string;
