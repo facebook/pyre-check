@@ -403,15 +403,6 @@ let initialize
       (Reference.create (String.chop_suffix_exn handle ~suffix:".py"))
     |> fun option -> Option.value_exn option
   in
-  let errors =
-    let keep { AnalysisError.kind; _ } =
-      match kind with
-      (* TODO(T47874282): Don't filter these. *)
-      | AnalysisError.NotCallable _ -> false
-      | _ -> true
-    in
-    List.filter errors ~f:keep
-  in
   ( if not (List.is_empty errors) then
       let errors =
         errors
