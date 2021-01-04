@@ -118,6 +118,18 @@ let description error =
   | NotInEnvironment name -> Format.sprintf "`%s` is not part of the environment!" name
 
 
+let code { kind; _ } =
+  match kind with
+  | UnclassifiedError _ -> -1
+  | InvalidDefaultValue _ -> 1
+  | IncompatibleModelError _ -> 2
+  | ImportedFunctionModel _ -> 3
+  | InvalidModelQueryClauses _ -> 4
+  | MissingAttribute _ -> 5
+  | NotInEnvironment _ -> 6
+  | UnexpectedDecorators _ -> 7
+
+
 let display { kind = error; path; location } =
   let model_origin =
     match path with
@@ -127,7 +139,7 @@ let display { kind = error; path; location } =
   Format.sprintf "%s%s" model_origin (description error)
 
 
-let to_json { kind; path; location } =
+let to_json ({ kind; path; location } as error) =
   let path =
     match path with
     | None -> `Null
@@ -139,4 +151,5 @@ let to_json { kind; path; location } =
       "line", `Int Location.(location.start.line);
       "column", `Int Location.(location.start.column);
       "path", path;
+      "code", `Int (code error);
     ]
