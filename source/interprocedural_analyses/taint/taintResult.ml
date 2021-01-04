@@ -311,7 +311,14 @@ module ResultArgument = struct
 
   let metadata () =
     let codes = Flow.code_metadata () in
-    `Assoc ["codes", codes]
+    let model_verification_errors =
+      ModelVerificationError.get () |> List.map ~f:ModelVerificationError.to_json
+    in
+    `Assoc
+      [
+        "codes", codes;
+        "stats", `Assoc ["model_verification_errors", `List model_verification_errors];
+      ]
 
 
   let strip_for_callsite

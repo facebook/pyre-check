@@ -59,3 +59,7 @@ type t = T.t
 val to_json : t -> Yojson.Safe.t
 
 val display : t -> string
+
+val register : t list -> unit
+
+val get : unit -> t list

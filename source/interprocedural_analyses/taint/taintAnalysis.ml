@@ -154,6 +154,7 @@ include Taint.Result.Register (struct
             let models, errors, skip_overrides, queries =
               Model.get_model_sources ~paths |> create_models ~configuration
             in
+            Model.register_verification_errors errors;
             let () =
               if not (List.is_empty errors) then
                 (* Exit or log errors, depending on whether models need to be verified. *)

@@ -153,3 +153,27 @@ let to_json ({ kind; path; location } as error) =
       "path", path;
       "code", `Int (code error);
     ]
+
+
+module SharedMemory =
+  Memory.WithCache.Make
+    (Memory.SingletonKey)
+    (struct
+      type nonrec t = t list
+
+      let prefix = Prefix.make ()
+
+      let description = "Model verification errors"
+
+      let unmarshall value = Marshal.from_string value 0
+    end)
+
+let register errors =
+  let () =
+    if SharedMemory.mem Memory.SingletonKey.key then
+      SharedMemory.remove_batch (SharedMemory.KeySet.singleton Memory.SingletonKey.key)
+  in
+  SharedMemory.add Memory.SingletonKey.key errors
+
+
+let get () = SharedMemory.get Memory.SingletonKey.key |> Option.value ~default:[]
