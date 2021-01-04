@@ -87,6 +87,11 @@ module.exports = {
             },
           ],
         },
+        {
+          label: 'Sandbox',
+          position: 'left',
+          to: 'sandbox',
+        },
         fbContent({
           internal: {
             to: 'docs/fb/development-getting-started',

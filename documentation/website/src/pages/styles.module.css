@@ -46,3 +46,29 @@
   height: 200px;
   width: 200px;
 }
+
+.main {
+  margin: 0 0 0 300px;
+  padding: 33px;
+  border-left: 1px solid lightgrey;
+}
+
+.heading {
+  font-size: 3em;
+}
+
+.spinner {
+  border: 2px solid lightgrey;
+  border-top: 2px solid red;
+  border-radius: 50%;
+  margin: 5px 5px -2px -5px;
+  width: 15px;
+  height: 15px;
+  display: inline-block;
+  animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
