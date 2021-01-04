@@ -160,7 +160,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
         call_location
         arguments
         state
-        (call_targets : Interprocedural.Callable.t list)
+        call_targets
       =
       (* We keep a table of kind -> set of triggered labels across all targets, and merge triggered
          sinks at the end. *)
