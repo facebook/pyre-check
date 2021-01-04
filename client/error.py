@@ -9,7 +9,7 @@ import json
 import logging
 import sys
 from pathlib import Path
-from typing import Any, Dict, Sequence, Union
+from typing import Any, Dict, Sequence, Union, Optional
 
 import click
 
@@ -181,6 +181,7 @@ class ModelVerificationError:
     column: int
     path: Path
     description: str
+    code: Optional[int]
 
     @staticmethod
     def from_json(error_json: Dict[str, Any]) -> "ModelVerificationError":
@@ -190,6 +191,7 @@ class ModelVerificationError:
                 column=error_json["column"],
                 path=Path(error_json["path"]),
                 description=error_json["description"],
+                code=error_json.get("code"),
             )
         except KeyError as key_error:
             message = f"Missing field from error json: {key_error}"
@@ -212,6 +214,7 @@ class ModelVerificationError:
             "column": self.column,
             "path": str(self.path),
             "description": self.description,
+            "code": self.code,
         }
 
     def to_text(self) -> str:

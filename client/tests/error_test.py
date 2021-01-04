@@ -167,11 +167,13 @@ class ErrorTest(unittest.TestCase):
                 "column": 1,
                 "path": "test.py",
                 "description": "Some description",
+                "code": 1001,
             },
             expected=ModelVerificationError(
                 line=1,
                 column=1,
                 path=Path("test.py"),
                 description="Some description",
+                code=1001,
             ),
         )
