@@ -19,5 +19,6 @@
     "internaldocs-fb-helpers": "^1.2.0",
     "react": "^16.10.2",
     "react-dom": "^16.10.2"
-  }
+  },
+  "license": "MIT"
 }
