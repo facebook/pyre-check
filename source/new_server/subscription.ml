@@ -9,8 +9,7 @@ open Core
 module ServerResponse = Response
 
 module Request = struct
-  type t = SubscribeToTypeErrors of string
-  [@@deriving sexp, compare, hash, yojson { strict = false }]
+  type t = SubscribeToTypeErrors of string [@@deriving sexp, compare, yojson { strict = false }]
 end
 
 module Response = struct
@@ -18,7 +17,7 @@ module Response = struct
     name: string;
     body: Response.t;
   }
-  [@@deriving sexp, compare, hash, yojson { strict = false }]
+  [@@deriving sexp, compare, to_yojson { strict = false }]
 end
 
 type t = {

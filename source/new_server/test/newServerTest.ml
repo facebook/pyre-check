@@ -25,88 +25,38 @@ module Client = struct
     Lwt_io.write_line output_channel raw_request >>= fun _ -> Lwt_io.read_line input_channel
 
 
-  let parse_raw_response ~f raw_response =
-    try
-      match f (Yojson.Safe.from_string raw_response) with
-      | Ok response -> Result.Ok response
-      | Error _ -> Result.Error raw_response
-    with
-    | _ -> Result.Error raw_response
-
-
   let send_request client request =
-    let open Lwt in
-    Request.to_yojson request
-    |> Yojson.Safe.to_string
-    |> send_raw_request client
-    >>= fun raw_response -> return (parse_raw_response ~f:Response.of_yojson raw_response)
+    Request.to_yojson request |> Yojson.Safe.to_string |> send_raw_request client
 
 
-  let assert_response_equal ~context expected actual =
-    assert_equal
-      ~ctxt:context
-      ~cmp:[%compare.equal: Response.t]
-      ~printer:(fun response -> Format.asprintf "%a" Sexp.pp_hum (Response.sexp_of_t response))
-      expected
-      actual
+  let assert_response_equal ~expected ~actual { context; _ } =
+    let expected = Response.to_yojson expected |> Yojson.Safe.to_string in
+    assert_equal ~ctxt:context ~cmp:String.equal ~printer:Fn.id expected actual
 
 
-  let assert_subscription_response_equal ~context expected actual =
-    assert_equal
-      ~ctxt:context
-      ~cmp:[%compare.equal: Subscription.Response.t]
-      ~printer:(fun response ->
-        Format.asprintf "%a" Sexp.pp_hum (Subscription.Response.sexp_of_t response))
-      expected
-      actual
-
-
-  let assert_response ~request ~expected ({ context; _ } as client) =
+  let assert_response ~request ~expected client =
     let open Lwt in
     send_request client request
-    >>= function
-    | Result.Error raw_response ->
-        let message =
-          Format.sprintf "Cannot decode the received JSON from server: %s" raw_response
-        in
-        assert_failure message
-    | Result.Ok actual ->
-        assert_response_equal ~context expected actual;
-        return_unit
+    >>= fun actual ->
+    assert_response_equal client ~expected ~actual;
+    return_unit
 
 
-  let subscribe ~subscription ~expected_response ({ context; _ } as client) =
+  let subscribe ~subscription ~expected_response client =
     let open Lwt in
     send_raw_request client (Subscription.Request.to_yojson subscription |> Yojson.Safe.to_string)
-    >>= fun raw_response ->
-    match parse_raw_response ~f:Response.of_yojson raw_response with
-    | Result.Error raw_response ->
-        let message =
-          Format.sprintf
-            "Cannot decode the initial subscription response JSON from server: %s"
-            raw_response
-        in
-        assert_failure message
-    | Result.Ok actual_response ->
-        assert_response_equal ~context expected_response actual_response;
-        return_unit
+    >>= fun actual_response ->
+    assert_response_equal client ~expected:expected_response ~actual:actual_response;
+    return_unit
 
 
   let assert_subscription_response ~expected { context; input_channel; _ } =
     let open Lwt in
     Lwt_io.read_line input_channel
-    >>= fun raw_response ->
-    match parse_raw_response ~f:Subscription.Response.of_yojson raw_response with
-    | Result.Error raw_response ->
-        let message =
-          Format.sprintf
-            "Cannot decode the followup subscription response JSON from server: %s"
-            raw_response
-        in
-        assert_failure message
-    | Result.Ok actual_response ->
-        assert_subscription_response_equal ~context expected actual_response;
-        return_unit
+    >>= fun actual ->
+    let expected = Subscription.Response.to_yojson expected |> Yojson.Safe.to_string in
+    assert_equal ~ctxt:context ~cmp:String.equal ~printer:Fn.id expected actual;
+    return_unit
 
 
   let close { input_channel; output_channel; _ } =

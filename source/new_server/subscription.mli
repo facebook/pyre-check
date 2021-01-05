@@ -8,7 +8,7 @@
 module ServerResponse = Response
 
 module Request : sig
-  type t = SubscribeToTypeErrors of string [@@deriving sexp, compare, hash, yojson]
+  type t = SubscribeToTypeErrors of string [@@deriving sexp, compare, yojson]
 end
 
 module Response : sig
@@ -16,7 +16,7 @@ module Response : sig
     name: string;
     body: Response.t;
   }
-  [@@deriving sexp, compare, hash, yojson]
+  [@@deriving sexp, compare, to_yojson]
 end
 
 type t

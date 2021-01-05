@@ -148,17 +148,11 @@ let test_subscription context =
   Subscription.send ~response:Response.Ok subscription
   >>= fun () ->
   Lwt_io.read_line input_channel
-  >>= fun raw_response ->
-  let actual_response =
-    Yojson.Safe.from_string raw_response |> Subscription.Response.of_yojson |> Result.ok_or_failwith
+  >>= fun actual_response ->
+  let expected_response =
+    Subscription.Response.to_yojson { name = "foo"; body = Response.Ok } |> Yojson.Safe.to_string
   in
-  assert_equal
-    ~ctxt:context
-    ~cmp:[%compare.equal: Subscription.Response.t]
-    ~printer:(fun response ->
-      Format.asprintf "%a" Sexp.pp_hum (Subscription.Response.sexp_of_t response))
-    { Subscription.Response.name = "foo"; body = Response.Ok }
-    actual_response;
+  assert_equal ~ctxt:context ~cmp:String.equal ~printer:Fn.id expected_response actual_response;
   Lwt.return_unit
 
 

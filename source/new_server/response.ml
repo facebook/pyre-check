@@ -17,4 +17,4 @@ type t =
       configuration: ServerConfiguration.t;
     }
   | TypeErrors of Analysis.AnalysisError.Instantiated.t list
-[@@deriving sexp, compare, hash, yojson]
+[@@deriving sexp, compare, to_yojson]
