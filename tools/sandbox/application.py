@@ -3,17 +3,18 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from flask import Flask, request, jsonify
-from flask_cors import CORS
-from pathlib import Path
-from typing import IO, List
-import logging
 import argparse
+import json
+import logging
+import subprocess
 import tempfile
 import textwrap
-import subprocess
 import threading
-import json
+from pathlib import Path
+from typing import IO, List
+
+from flask import Flask, request, jsonify
+from flask_cors import CORS
 
 logging.basicConfig(
     format="%(asctime)s %(levelname)s %(message)s",

@@ -35,6 +35,7 @@ def _changed_paths() -> list[str]:
 def _lint_python(all_paths: list[str]) -> None:
     paths = [path for path in all_paths if path.endswith(".py")]
     LOG.info("Formatting...")
+    subprocess.check_call(["usort", "format", *paths])
     subprocess.check_call(["black", *paths])
 
     LOG.info("Linting...")
