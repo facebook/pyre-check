@@ -29,7 +29,7 @@ let mock_analysis_configuration
     ~parallel:false
     ?expected_version
     ~local_root
-    ~source_path:[local_root]
+    ~source_path:[SearchPath.Root local_root]
     ()
 
 

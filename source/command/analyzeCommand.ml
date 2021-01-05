@@ -53,7 +53,7 @@ let run_analysis
   try
     Log.GlobalState.initialize ~debug ~sections;
     let source_path = Option.value source_path ~default:[local_root] in
-    let local_root = Path.create_absolute local_root in
+    let local_root = SearchPath.create local_root |> SearchPath.get_root in
     Statistics.GlobalState.initialize
       ~log_identifier
       ?logger
@@ -91,7 +91,7 @@ let run_analysis
         ~extensions:(List.map ~f:Configuration.Extension.create_extension extensions)
         ?log_directory
         ~local_root
-        ~source_path:(List.map source_path ~f:Path.create_absolute)
+        ~source_path:(List.map source_path ~f:SearchPath.create_normalized)
         ()
     in
     let result_json_path = result_json_path >>| Path.create_absolute ~follow_symbolic_links:false in

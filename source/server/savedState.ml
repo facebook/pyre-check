@@ -162,7 +162,10 @@ let load
   let changed_paths =
     match changed_paths with
     | Some changed_paths ->
-        restore_symbolic_links ~changed_paths ~source_path ~get_old_link_path:(fun path ->
+        restore_symbolic_links
+          ~changed_paths
+          ~source_path:(List.map source_path ~f:SearchPath.to_path)
+          ~get_old_link_path:(fun path ->
             Hashtbl.find symlink_targets_to_sources (Path.absolute path))
     | None ->
         (* If we're analyzing generated code, Watchman will be blind to any changes to said code. In

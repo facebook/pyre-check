@@ -94,7 +94,8 @@ let run_command
     ()
   =
   try
-    let local_root = Path.create_absolute local_root in
+    let source_path = [SearchPath.create_normalized local_root] in
+    let local_root = SearchPath.create local_root |> SearchPath.get_root in
     Statistics.GlobalState.initialize
       ~log_identifier
       ~project_name:(Path.last local_root)
@@ -103,7 +104,7 @@ let run_command
     let configuration =
       Configuration.Analysis.create
         ~local_root
-        ~source_path:[local_root]
+        ~source_path
         ?log_directory
         ~perform_autocompletion
         ~features:(Configuration.Features.create features)

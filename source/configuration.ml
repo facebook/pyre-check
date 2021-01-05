@@ -99,7 +99,7 @@ module Analysis = struct
     local_root: Path.t;
     debug: bool;
     project_root: Path.t;
-    source_path: Path.t list;
+    source_path: SearchPath.t list;
     search_path: SearchPath.t list;
     taint_model_paths: Path.t list;
     expected_version: string option;
@@ -194,7 +194,7 @@ module Analysis = struct
   let search_path { source_path; search_path; _ } =
     (* Have an ordering of search_path > source_path with the parser. search_path precedes
      * local_root due to the possibility of having a subdirectory of the root in the search path. *)
-    search_path @ List.map source_path ~f:(fun path -> SearchPath.Root path)
+    search_path @ source_path
 
 
   let extension_suffixes { extensions; _ } = List.map ~f:Extension.suffix extensions

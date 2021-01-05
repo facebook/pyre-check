@@ -186,7 +186,7 @@ let test_parse_sources context =
     let configuration =
       Configuration.Analysis.create
         ~local_root
-        ~source_path:[local_root]
+        ~source_path:[SearchPath.Root local_root]
         ~search_path:[SearchPath.Root module_root; SearchPath.Root typeshed_root]
         ~filter_directories:[local_root]
         ()
@@ -228,7 +228,7 @@ let test_parse_sources context =
     let configuration =
       Configuration.Analysis.create
         ~local_root
-        ~source_path:[local_root]
+        ~source_path:[SearchPath.Root local_root]
         ~search_path:[SearchPath.Root stub_root]
         ~filter_directories:[local_root]
         ()

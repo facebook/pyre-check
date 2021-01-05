@@ -38,7 +38,7 @@ end
 
 type t = {
   (* Source file discovery *)
-  source_paths: Path.t list;
+  source_paths: SearchPath.t list;
   search_paths: SearchPath.t list;
   excludes: string list;
   checked_directory_allowlist: Path.t list;

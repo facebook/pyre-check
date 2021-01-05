@@ -38,7 +38,7 @@ let run_infer
   =
   try
     let source_path = Option.value source_path ~default:[local_root] in
-    let local_root = Path.create_absolute local_root in
+    let local_root = SearchPath.create local_root |> SearchPath.get_root in
     Log.GlobalState.initialize ~debug ~sections;
     Statistics.GlobalState.initialize
       ~log_identifier
@@ -74,7 +74,7 @@ let run_infer
         ?log_directory
         ?ignore_infer
         ~local_root
-        ~source_path:(List.map source_path ~f:Path.create_absolute)
+        ~source_path:(List.map source_path ~f:SearchPath.create_normalized)
         ()
     in
     (fun () ->

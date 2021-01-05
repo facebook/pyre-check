@@ -13,7 +13,11 @@ open Path.AppendOperator
 let test_socket_path context =
   let root = bracket_tmpdir context |> Path.create_absolute in
   let configuration =
-    Configuration.Analysis.create ~project_root:root ~local_root:root ~source_path:[root] ()
+    Configuration.Analysis.create
+      ~project_root:root
+      ~local_root:root
+      ~source_path:[SearchPath.Root root]
+      ()
   in
   let socket_link = Service.Constants.Server.root configuration ^| "server.sock" in
   let preexisting = Path.create_relative ~root ~relative:"preexisting.sock" in

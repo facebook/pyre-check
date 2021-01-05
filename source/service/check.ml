@@ -24,7 +24,7 @@ let check
     if not (Path.is_directory directory) then
       raise (Invalid_argument (Format.asprintf "`%a` is not a directory" Path.pp directory))
   in
-  List.iter source_path ~f:check_directory_exists;
+  source_path |> List.map ~f:SearchPath.to_path |> List.iter ~f:check_directory_exists;
   check_directory_exists project_root;
   search_path |> List.map ~f:SearchPath.to_path |> List.iter ~f:check_directory_exists;
   (* Profiling helper *)

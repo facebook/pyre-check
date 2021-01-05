@@ -95,7 +95,11 @@ let find_files ({ Configuration.Analysis.source_path; search_path; excludes; _ }
     in
     List.exists ~f:(String.equal extension) valid_suffixes && not (mark_visited visited_files path)
   in
-  let search_roots = List.append source_path (List.map ~f:SearchPath.to_path search_path) in
+  let search_roots =
+    List.append
+      (List.map ~f:SearchPath.to_path source_path)
+      (List.map ~f:SearchPath.to_path search_path)
+  in
   List.map search_roots ~f:(fun root -> Path.list ~file_filter ~directory_filter ~root ())
   |> List.concat
 

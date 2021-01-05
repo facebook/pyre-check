@@ -2633,7 +2633,7 @@ module ScratchProject = struct
     let configuration =
       Configuration.Analysis.create
         ~local_root
-        ~source_path:[local_root]
+        ~source_path:[SearchPath.Root local_root]
         ~search_path:[SearchPath.Root external_root]
         ~filter_directories:[local_root]
         ~ignore_all_errors:[external_root]
@@ -2672,7 +2672,7 @@ module ScratchProject = struct
                 "Scratch projects should have the external root at the start of their search path."
         else
           match source_path with
-          | root :: _ -> root
+          | SearchPath.Root root :: _ -> root
           | _ -> failwith "Scratch projects should have only one source path."
       in
       Path.create_relative ~root ~relative

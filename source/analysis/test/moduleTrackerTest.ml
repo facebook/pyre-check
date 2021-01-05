@@ -139,7 +139,7 @@ let test_creation context =
     let configuration =
       Configuration.Analysis.create
         ~local_root
-        ~source_path:[local_root]
+        ~source_path:[SearchPath.Root local_root]
         ~excludes:[".*/thereisnospoon.py"]
         ~search_path:[SearchPath.Root external_root]
         ~filter_directories:[local_root]
@@ -347,7 +347,7 @@ let test_creation context =
     let module_tracker =
       Configuration.Analysis.create
         ~local_root
-        ~source_path:[local_root]
+        ~source_path:[SearchPath.Root local_root]
         ~search_path:[SearchPath.Root external_root]
         ~filter_directories:[local_root]
         ()
@@ -403,7 +403,7 @@ let test_creation context =
     let configuration =
       Configuration.Analysis.create
         ~local_root
-        ~source_path:[local_root]
+        ~source_path:[SearchPath.Root local_root]
         ~search_path:[SearchPath.Subdirectory { root = search_root; subdirectory = "sub" }]
         ~filter_directories:[local_root]
         ()
@@ -432,7 +432,7 @@ let test_creation context =
     let configuration =
       Configuration.Analysis.create
         ~local_root
-        ~source_path:[local_root]
+        ~source_path:[SearchPath.Root local_root]
         ~search_path:[SearchPath.Root external_root0; SearchPath.Root external_root1]
         ~filter_directories:[local_root]
         ()
@@ -525,7 +525,7 @@ let test_creation context =
     let configuration =
       Configuration.Analysis.create
         ~local_root
-        ~source_path:[source_root0; source_root1]
+        ~source_path:[SearchPath.Root source_root0; SearchPath.Root source_root1]
         ~filter_directories:[local_root]
         ()
     in
@@ -603,7 +603,7 @@ let test_creation context =
     let configuration =
       Configuration.Analysis.create
         ~local_root
-        ~source_path:[local_root]
+        ~source_path:[SearchPath.Root local_root]
         ~search_path:[SearchPath.Root external_root]
         ~excludes:["${SOURCE_DIRECTORY}/ba.*"]
         ()
@@ -651,7 +651,7 @@ let test_creation context =
     let configuration =
       Configuration.Analysis.create
         ~local_root
-        ~source_path:[local_root]
+        ~source_path:[SearchPath.Root local_root]
         ~search_path:[SearchPath.Root search_root]
         ~filter_directories:[search_root]
         ~ignore_all_errors:[durp]
@@ -695,7 +695,7 @@ let test_creation context =
     let configuration =
       Configuration.Analysis.create
         ~local_root
-        ~source_path:[local_root]
+        ~source_path:[SearchPath.Root local_root]
         ~search_path:[SearchPath.Root search_root]
         ~filter_directories:[local_root]
         ~ignore_all_errors:[search_root; nonexist_root]
@@ -733,7 +733,7 @@ let test_creation context =
     let configuration =
       Configuration.Analysis.create
         ~local_root
-        ~source_path:[local_root]
+        ~source_path:[SearchPath.Root local_root]
         ~search_path:[SearchPath.Root link_search_root; SearchPath.Root link_local_root]
         ~filter_directories:[local_root]
         ~ignore_all_errors:[search_root]
@@ -774,7 +774,7 @@ let test_creation context =
       let configuration =
         Configuration.Analysis.create
           ~local_root
-          ~source_path:[local_root]
+          ~source_path:[SearchPath.Root local_root]
           ~search_path:[SearchPath.Root external_root0; SearchPath.Root external_root1]
           ~filter_directories:[local_root]
           ~ignore_all_errors:[external_root0; external_root1]
@@ -819,7 +819,7 @@ let test_creation context =
       let configuration =
         Configuration.Analysis.create
           ~local_root
-          ~source_path:[local_root]
+          ~source_path:[SearchPath.Root local_root]
           ~search_path:[SearchPath.Root external_root1; SearchPath.Root external_root0]
           ~filter_directories:[local_root]
           ~ignore_all_errors:[external_root0; external_root1]
@@ -862,7 +862,12 @@ let test_creation context =
       let configuration =
         Configuration.Analysis.create
           ~local_root
-          ~source_path:[local_root; external_root0; external_root1]
+          ~source_path:
+            [
+              SearchPath.Root local_root;
+              SearchPath.Root external_root0;
+              SearchPath.Root external_root1;
+            ]
           ~filter_directories:[local_root; external_root0; external_root1]
           ()
       in
@@ -923,7 +928,7 @@ let test_creation context =
     let configuration =
       Configuration.Analysis.create
         ~local_root
-        ~source_path:[local_root]
+        ~source_path:[SearchPath.Root local_root]
         ~search_path:[SearchPath.Root stubs_root; SearchPath.Root venv_root]
         ~filter_directories:[local_root]
         ()
@@ -997,7 +1002,7 @@ let test_creation context =
       touch external_root1 "f.pyi";
       Configuration.Analysis.create
         ~local_root
-        ~source_path:[local_root]
+        ~source_path:[SearchPath.Root local_root]
         ~search_path:[SearchPath.Root external_root0; SearchPath.Root external_root1]
         ~filter_directories:[local_root; external_root0]
         ()

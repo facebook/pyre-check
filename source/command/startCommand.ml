@@ -617,7 +617,7 @@ let run_start_command
     ()
   =
   let source_path = Option.value source_path ~default:[local_root] in
-  let local_root = Path.create_absolute local_root in
+  let local_root = SearchPath.create local_root |> SearchPath.get_root in
   Log.GlobalState.initialize ~debug ~sections;
   Statistics.GlobalState.initialize
     ~log_identifier
@@ -662,7 +662,7 @@ let run_start_command
       ~excludes
       ~extensions:(List.map ~f:Configuration.Extension.create_extension extensions)
       ~local_root
-      ~source_path:(List.map source_path ~f:Path.create_absolute)
+      ~source_path:(List.map source_path ~f:SearchPath.create_normalized)
       ~store_type_check_resolution
       ~incremental_style
       ~perform_autocompletion

@@ -133,7 +133,7 @@ end
 
 type t = {
   (* Source file discovery *)
-  source_paths: Path.t list;
+  source_paths: SearchPath.t list;
   search_paths: SearchPath.t list;
   excludes: string list;
   checked_directory_allowlist: Path.t list;
@@ -195,7 +195,9 @@ let of_yojson json =
     in
 
     (* Parsing logic *)
-    let source_paths = json |> path_list_member "source_paths" in
+    let source_paths =
+      json |> list_member "source_paths" ~f:(fun element -> to_string element |> SearchPath.create)
+    in
     let search_paths =
       json
       |> list_member
@@ -290,7 +292,7 @@ let to_yojson
   =
   let result =
     [
-      "source_paths", [%to_yojson: string list] (List.map source_paths ~f:Path.absolute);
+      "source_paths", [%to_yojson: string list] (List.map source_paths ~f:SearchPath.show);
       "search_paths", [%to_yojson: string list] (List.map search_paths ~f:SearchPath.show);
       "excludes", [%to_yojson: string list] excludes;
       ( "checked_directory_allowlist",
