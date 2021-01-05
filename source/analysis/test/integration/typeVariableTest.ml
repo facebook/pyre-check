@@ -2516,6 +2516,28 @@ let test_concatenation_operator context =
 
 let test_user_defined_parameter_specification_classes context =
   let assert_type_errors = assert_type_errors ~context in
+
+  (* Make sure `typing.ParamSpec` works. *)
+  assert_type_errors
+    {|
+      from typing import Callable, ParamSpec
+      TParams = ParamSpec("TParams")
+      def client(f: Callable[TParams, int]) -> None:
+        def inner( *args: TParams.args, **kwargs: TParams.kwargs) -> int:
+          return f( *args, **kwargs)
+    |}
+    [];
+  (* Make sure `typing_extensions.ParamSpec` works. *)
+  assert_type_errors
+    {|
+      from typing import Callable
+      from typing_extensions import ParamSpec
+      TParams = ParamSpec("TParams")
+      def client(f: Callable[TParams, int]) -> None:
+        def inner( *args: TParams.args, **kwargs: TParams.kwargs) -> int:
+          return f( *args, **kwargs)
+    |}
+    [];
   assert_type_errors
     {|
       from pyre_extensions import ParameterSpecification

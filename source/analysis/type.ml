@@ -3970,25 +3970,50 @@ end = struct
       let parse_declaration value ~target =
         match value with
         | {
-         Node.value =
-           Expression.Call
-             {
-               callee =
-                 {
-                   Node.value =
-                     Name
-                       (Name.Attribute
-                         {
-                           base = { Node.value = Name (Name.Identifier "pyre_extensions"); _ };
-                           attribute = "ParameterSpecification";
-                           special = false;
-                         });
-                   _;
-                 };
-               arguments = [{ Call.Argument.value = { Node.value = String _; _ }; _ }];
-             };
-         _;
-        } ->
+            Node.value =
+              Expression.Call
+                {
+                  callee =
+                    {
+                      Node.value =
+                        Name
+                          (Name.Attribute
+                            {
+                              base = { Node.value = Name (Name.Identifier "pyre_extensions"); _ };
+                              attribute = "ParameterSpecification";
+                              special = false;
+                            });
+                      _;
+                    };
+                  arguments = [{ Call.Argument.value = { Node.value = String _; _ }; _ }];
+                };
+            _;
+          }
+        | {
+            Node.value =
+              Expression.Call
+                {
+                  callee =
+                    {
+                      Node.value =
+                        Name
+                          (Name.Attribute
+                            {
+                              base =
+                                {
+                                  Node.value =
+                                    Name (Name.Identifier ("typing" | "typing_extensions"));
+                                  _;
+                                };
+                              attribute = "ParamSpec";
+                              special = false;
+                            });
+                      _;
+                    };
+                  arguments = [{ Call.Argument.value = { Node.value = String _; _ }; _ }];
+                };
+            _;
+          } ->
             Some (create (Reference.show target))
         | _ -> None
 

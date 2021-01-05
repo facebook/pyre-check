@@ -1089,6 +1089,11 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
 
             def _asdict(self) -> collections.OrderedDict[str, Any]: ...
             def _replace(self: _T, **kwargs: Any) -> _T: ...
+
+        class ParamSpec(list):
+            args = object()
+            kwargs = object()
+            def __init__(self, *args: object, **kwargs: object) -> None: ...
       |}
     );
     "asyncio/coroutines.pyi", {|
@@ -1237,7 +1242,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         |};
     ( "typing_extensions.pyi",
       {|
-        from typing import Final as Final
+        from typing import Final as Final, ParamSpec as ParamSpec
         class _SpecialForm:
             def __getitem__(self, typeargs: Any) -> Any: ...
         Literal: _SpecialForm = ...
