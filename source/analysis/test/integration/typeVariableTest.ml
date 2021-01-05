@@ -3126,7 +3126,6 @@ let test_recursive_aliases context =
        (resolves to Union[Mapping[str, StringDict], str])` but is used as type `typing.Dict[str, \
        typing.Dict[str, int]]`.";
     ];
-  (* TODO(T44784951): Weaken mutable literals against recursive types. *)
   assert_type_errors
     {|
       from typing import List, Tuple
@@ -3134,11 +3133,19 @@ let test_recursive_aliases context =
       Tree = Tuple[str, List["Tree"]]
 
       tree: Tree = ("foo", [])
+      tree2: Tree = ("foo", [("branch1", [("leaf1", [])]), ("leaf2", [])])
     |}
-    [
-      "Incompatible variable type [9]: tree is declared to have type `test.Tree (resolves to \
-       Tuple[str, List[Tree]])` but is used as type `Tuple[str, List[Variable[_T]]]`.";
-    ];
+    [];
+  (* Useless but valid recursive alias. *)
+  assert_type_errors
+    {|
+      from typing import List, Union
+      X = List["X"]
+
+      def foo() -> None:
+        x: X = [[], [[], []], []]
+     |}
+    [];
   assert_type_errors
     {|
       from typing import Mapping, Union

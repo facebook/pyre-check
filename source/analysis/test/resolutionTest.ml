@@ -1106,6 +1106,81 @@ let test_distribute_union_over_parametric _ =
   ()
 
 
+let test_resolve_mutable_literal_to_recursive_type context =
+  let resolution =
+    make_resolution
+      ~context
+      {|
+      from typing import Dict, List, Set, Union
+      Tree = Union[int, List["Tree"]]
+      TreeSet = Union[int, Set["TreeSet"]]
+      JSON = Union[int, str, List["JSON"], Dict[str, "JSON"]]
+    |}
+  in
+  let assert_resolve_mutable_literals ~source ~against expected_output =
+    let parse_annotation annotation =
+      annotation
+      |> parse_single_expression
+      |> GlobalResolution.parse_annotation (Resolution.global_resolution resolution)
+    in
+    let expression =
+      match parse_single_statement source with
+      | { Node.value = Statement.Expression expression; _ } -> expression
+      | _ -> failwith "No Assign to parse"
+    in
+    let resolved = Resolution.resolve_expression_to_type resolution expression in
+    let expression = Some expression in
+    let expected = parse_annotation against in
+    let actual_weakened_type =
+      GlobalResolution.resolve_mutable_literals
+        (Resolution.global_resolution resolution)
+        ~resolve:(Resolution.resolve_expression_to_type resolution)
+        ~expression
+        ~resolved
+        ~expected
+    in
+    let expected_weakened_type =
+      WeakenMutableLiterals.make_weakened_type (parse_annotation expected_output)
+    in
+    assert_equal
+      ~printer:[%show: WeakenMutableLiterals.weakened_type]
+      expected_weakened_type
+      actual_weakened_type
+  in
+  assert_resolve_mutable_literals ~source:"1" ~against:"test.Tree" "test.Tree";
+  assert_resolve_mutable_literals ~source:"[]" ~against:"test.Tree" "test.Tree";
+  assert_resolve_mutable_literals ~source:"[1]" ~against:"test.Tree" "test.Tree";
+  assert_resolve_mutable_literals ~source:"[1, [2]]" ~against:"test.Tree" "test.Tree";
+  assert_resolve_mutable_literals ~source:"[1, *[2]]" ~against:"test.Tree" "test.Tree";
+  assert_resolve_mutable_literals ~source:"[1, [2, [3, 4]]]" ~against:"test.Tree" "test.Tree";
+  assert_resolve_mutable_literals
+    ~source:{| [1, [2, "hello"]] |}
+    ~against:"test.Tree"
+    "typing.List[typing.Union[typing.List[typing.Union[int, str]], int]]";
+
+  assert_resolve_mutable_literals ~source:"{1, {2, {3, 4}}}" ~against:"test.TreeSet" "test.TreeSet";
+  assert_resolve_mutable_literals
+    ~source:"{1, True}"
+    ~against:"test.TreeSet"
+    "typing.Set[typing.Union[int, bool]]";
+
+  assert_resolve_mutable_literals ~source:"{}" ~against:"test.JSON" "test.JSON";
+  assert_resolve_mutable_literals ~source:"[1]" ~against:"test.JSON" "test.JSON";
+  assert_resolve_mutable_literals
+    ~source:{| {"a": 1, **{"b": {"c": 3}}} |}
+    ~against:"test.JSON"
+    "test.JSON";
+  assert_resolve_mutable_literals
+    ~source:{| {"a": 1, "b": [2, "hello"], "c": {"d": {}}} |}
+    ~against:"test.JSON"
+    "test.JSON";
+  assert_resolve_mutable_literals
+    ~source:{| {"a": {"b": True}} |}
+    ~against:"test.JSON"
+    "typing.Dict[str, typing.Dict[str, bool]]";
+  ()
+
+
 let test_get_typed_dictionary context =
   let resolution =
     make_resolution
@@ -1460,6 +1535,8 @@ let () =
          "resolve_mutable_literal_to_complex_type" >:: test_resolve_mutable_literal_to_complex_type;
          "resolve_mutable_literals_typed_dictionary"
          >:: test_resolve_mutable_literals_typed_dictionary;
+         "resolve_mutable_literal_to_recursive_type"
+         >:: test_resolve_mutable_literal_to_recursive_type;
          "distribute_union_over_parametric" >:: test_distribute_union_over_parametric;
          "get_typed_dictionary " >:: test_get_typed_dictionary;
          "function_definitions" >:: test_function_definitions;
