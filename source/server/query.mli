@@ -99,7 +99,6 @@ module Response : sig
       | Callees of Analysis.Callgraph.callee list
       | CalleesWithLocation of callee_with_instantiated_locations list
       | Callgraph of callees list
-      | ClassHierarchy of Yojson.Safe.t
       | Compatibility of compatibility
       | Errors of Analysis.AnalysisError.Instantiated.t list
       | FoundAttributes of attribute list

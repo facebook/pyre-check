@@ -104,7 +104,6 @@ module Response = struct
       | Callees of Analysis.Callgraph.callee list
       | CalleesWithLocation of callee_with_instantiated_locations list
       | Callgraph of callees list
-      | ClassHierarchy of Yojson.Safe.t
       | Compatibility of compatibility
       | Errors of Analysis.AnalysisError.Instantiated.t list
       | FoundAttributes of attribute list
@@ -136,7 +135,6 @@ module Response = struct
           `Assoc
             (List.map callees ~f:(fun { caller; callees } ->
                  Reference.show caller, `List (List.map callees ~f:callee_to_yojson)))
-      | ClassHierarchy hierarchy -> hierarchy
       | Compatibility { actual; expected; result } ->
           `Assoc
             [
