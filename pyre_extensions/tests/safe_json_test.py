@@ -6,6 +6,7 @@
 # pyre-ignore-all-errors
 
 import unittest
+from io import StringIO
 from typing import Any, Dict, List, Optional
 
 from typing_extensions import TypedDict
@@ -151,6 +152,13 @@ class BasicTestCase(unittest.TestCase):
         self.assertEqual(
             safe_json.validate(parsedOptionals, List[Optional[int]]), parsedOptionals
         )
+
+    def test_load(self) -> None:
+        f = StringIO('{"1": {"2": 3}}')
+
+        self.assertEqual(safe_json.load(f, Dict[str, Dict[str, int]]), {"1": {"2": 3}})
+        with self.assertRaises(safe_json.InvalidJson):
+            safe_json.load(f, Dict[int, Dict[int, int]])
 
 
 if __name__ == "__main__":

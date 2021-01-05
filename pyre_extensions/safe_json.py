@@ -7,7 +7,7 @@
 
 import json
 import sys
-from typing import Any, Dict, List, Type, TypeVar, cast
+from typing import Any, Dict, List, Type, TypeVar, cast, IO, Union
 
 if sys.version_info[:2] >= (3, 9):
     # pyre-fixme[21]: Could not find name `_TypedDictMeta` in `typing`.
@@ -116,7 +116,16 @@ def _validate_toplevel(value: object, target_type: Type[object]) -> None:
 T = TypeVar("T")
 
 
-def loads(input_: str, target: Type[T], *, validate: bool = True) -> T:
+def load(
+    input_: Union[IO[str], IO[bytes]],
+    target: Type[T],
+    *,
+    validate: bool = True,
+) -> T:
+    return loads(input_.read(), target, validate=validate)
+
+
+def loads(input_: Union[str, bytes], target: Type[T], *, validate: bool = True) -> T:
     try:
         parsed = json.loads(input_)
         if validate:
