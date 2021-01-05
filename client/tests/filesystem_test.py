@@ -16,7 +16,13 @@ import unittest
 from contextlib import contextmanager
 from unittest.mock import MagicMock, Mock, call, patch
 
-from .. import buck, commands, filesystem, find_directories
+from .. import (
+    buck,
+    commands,
+    filesystem,
+    find_directories,
+    configuration as configuration_module,
+)
 from ..analysis_directory import (
     NotWithinLocalConfigurationException,
     SharedAnalysisDirectory,
@@ -452,7 +458,7 @@ class FilesystemTest(unittest.TestCase):
 
             buck_builder = buck.SimpleBuckBuilder()
             analysis_directory = SharedAnalysisDirectory(
-                ["some_source_directory"],
+                [configuration_module.SimpleSearchPathElement("some_source_directory")],
                 ["configuration_source_directory"],
                 project_root="/root",
                 original_directory="/root",
@@ -464,7 +470,8 @@ class FilesystemTest(unittest.TestCase):
                 ["configuration_source_directory"]
             )
             self.assertEqual(
-                analysis_directory._source_directories, {"some_source_directory"}
+                analysis_directory._source_directories,
+                {configuration_module.SimpleSearchPathElement("some_source_directory")},
             )
 
         with patch.object(
@@ -485,7 +492,11 @@ class FilesystemTest(unittest.TestCase):
             buck_source_directories.assert_called_with(["arguments_target"])
             self.assertEqual(
                 analysis_directory._source_directories,
-                {"realpath(root/arguments_target)"},
+                {
+                    configuration_module.SimpleSearchPathElement(
+                        "realpath(root/arguments_target)"
+                    )
+                },
             )
 
         with patch.object(
@@ -509,7 +520,11 @@ class FilesystemTest(unittest.TestCase):
             buck_source_directories.assert_called_with(["arguments_target"])
             self.assertEqual(
                 analysis_directory._source_directories,
-                {"realpath(root/arguments_target)"},
+                {
+                    configuration_module.SimpleSearchPathElement(
+                        "realpath(root/arguments_target)"
+                    )
+                },
             )
 
         # Restart and start always rebuild buck targets
@@ -569,7 +584,11 @@ class FilesystemTest(unittest.TestCase):
             buck_source_directories.assert_called_with(["configuration_target"])
             self.assertEqual(
                 analysis_directory._source_directories,
-                {"realpath(root/configuration_source_directory)"},
+                {
+                    configuration_module.SimpleSearchPathElement(
+                        "realpath(root/configuration_source_directory)"
+                    )
+                },
             )
 
         # Files are translated relative to project root
@@ -590,7 +609,8 @@ class FilesystemTest(unittest.TestCase):
             analysis_directory._resolve_source_directories()
 
             self.assertEqual(
-                analysis_directory._source_directories, {"realpath(root/.)"}
+                analysis_directory._source_directories,
+                {configuration_module.SimpleSearchPathElement("realpath(root/.)")},
             )
 
     @patch("os.unlink")

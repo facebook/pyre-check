@@ -77,8 +77,16 @@ class ArgumentTest(testslide.TestCase):
                     self.assertEqual(value, serialized[key])
 
         assert_serialized(
-            Arguments(log_path="foo", global_root="bar", source_paths=["source"]),
-            [("log_path", "foo"), ("global_root", "bar"), ("source_paths", ["source"])],
+            Arguments(
+                log_path="foo",
+                global_root="bar",
+                source_paths=[configuration.SimpleSearchPathElement("source")],
+            ),
+            [
+                ("log_path", "foo"),
+                ("global_root", "bar"),
+                ("source_paths", ["source"]),
+            ],
         )
         assert_serialized(
             Arguments(
@@ -369,7 +377,11 @@ class StartTest(testslide.TestCase):
                         configuration.SimpleSearchPathElement(str(root_path / "search"))
                     ],
                     show_error_traces=True,
-                    source_paths=[str(root_path / "local/src")],
+                    source_paths=[
+                        configuration.SimpleSearchPathElement(
+                            str(root_path / "local/src")
+                        )
+                    ],
                     store_type_check_resolution=True,
                     strict=True,
                     taint_models_path=[str(root_path / "taint")],

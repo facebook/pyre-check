@@ -8,7 +8,12 @@
 import unittest
 from unittest.mock import MagicMock, patch
 
-from ... import commands, configuration_monitor, project_files_monitor
+from ... import (
+    commands,
+    configuration_monitor,
+    project_files_monitor,
+    configuration as configuration_module,
+)
 from ...analysis_directory import AnalysisDirectory
 from ...commands import restart
 from ..command import IncrementalStyle
@@ -36,7 +41,9 @@ class RestartTest(unittest.TestCase):
         original_directory = "/original/directory"
         arguments = mock_arguments()
         configuration = mock_configuration()
-        analysis_directory = AnalysisDirectory(".")
+        analysis_directory = AnalysisDirectory(
+            configuration_module.SimpleSearchPathElement(".")
+        )
 
         commands_Stop().run().exit_code.return_value = commands.ExitCode.SUCCESS
 

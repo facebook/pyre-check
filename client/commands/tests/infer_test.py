@@ -15,7 +15,7 @@ from unittest.mock import MagicMock, Mock, patch
 
 import libcst as cst
 
-from ... import commands, find_directories
+from ... import commands, find_directories, configuration as configuration_module
 from ...analysis_directory import AnalysisDirectory
 from ...commands import infer
 from ...commands.infer import (
@@ -695,7 +695,9 @@ class InferTest(unittest.TestCase):
                 arguments,
                 original_directory,
                 configuration=configuration,
-                analysis_directory=AnalysisDirectory("."),
+                analysis_directory=AnalysisDirectory(
+                    configuration_module.SimpleSearchPathElement(".")
+                ),
                 print_errors=True,
                 full_only=True,
                 recursive=False,
@@ -726,7 +728,9 @@ class InferTest(unittest.TestCase):
                 arguments,
                 original_directory,
                 configuration=configuration,
-                analysis_directory=AnalysisDirectory("."),
+                analysis_directory=AnalysisDirectory(
+                    configuration_module.SimpleSearchPathElement(".")
+                ),
                 print_errors=True,
                 full_only=True,
                 recursive=False,
@@ -757,7 +761,9 @@ class InferTest(unittest.TestCase):
                     arguments,
                     original_directory,
                     configuration=configuration,
-                    analysis_directory=AnalysisDirectory("."),
+                    analysis_directory=AnalysisDirectory(
+                        configuration_module.SimpleSearchPathElement(".")
+                    ),
                     print_errors=True,
                     full_only=True,
                     recursive=False,
@@ -788,7 +794,9 @@ class InferTest(unittest.TestCase):
                     arguments,
                     original_directory,
                     configuration=configuration,
-                    analysis_directory=AnalysisDirectory("."),
+                    analysis_directory=AnalysisDirectory(
+                        configuration_module.SimpleSearchPathElement(".")
+                    ),
                     print_errors=True,
                     full_only=True,
                     recursive=False,

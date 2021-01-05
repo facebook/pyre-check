@@ -14,7 +14,11 @@ from unittest.mock import MagicMock, Mock, call, patch
 
 import psutil
 
-from ... import recently_used_configurations, watchman
+from ... import (
+    recently_used_configurations,
+    watchman,
+    configuration as configuration_module,
+)
 from ...analysis_directory import AnalysisDirectory
 from ...configuration import Configuration
 from .. import kill
@@ -40,7 +44,9 @@ class KillTest(unittest.TestCase):
         original_directory = "/original/directory"
         arguments = mock_arguments()
         configuration = mock_configuration()
-        analysis_directory = AnalysisDirectory(".")
+        analysis_directory = AnalysisDirectory(
+            configuration_module.SimpleSearchPathElement(".")
+        )
 
         named_temporary_file.return_value.__enter__.return_value.name = "/tmp/file"
 
@@ -274,7 +280,9 @@ class KillTest(unittest.TestCase):
         original_directory = "/original/directory"
         arguments = mock_arguments()
         configuration = mock_configuration()
-        analysis_directory = AnalysisDirectory(".")
+        analysis_directory = AnalysisDirectory(
+            configuration_module.SimpleSearchPathElement(".")
+        )
 
         kill_command = Kill(
             arguments,
@@ -294,7 +302,9 @@ class KillTest(unittest.TestCase):
         original_directory = "/original/directory"
         arguments = mock_arguments()
         configuration = mock_configuration()
-        analysis_directory = AnalysisDirectory(".")
+        analysis_directory = AnalysisDirectory(
+            configuration_module.SimpleSearchPathElement(".")
+        )
 
         kill_command = Kill(
             arguments,

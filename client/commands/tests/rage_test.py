@@ -9,7 +9,12 @@ import unittest
 from typing import IO, List, Optional
 from unittest.mock import MagicMock, patch
 
-from ... import commands, filesystem, recently_used_configurations
+from ... import (
+    commands,
+    filesystem,
+    recently_used_configurations,
+    configuration as configuration_module,
+)
 from ...analysis_directory import AnalysisDirectory
 from ...commands.command import Result
 from ...commands.rage import Rage
@@ -29,7 +34,9 @@ class RageTest(unittest.TestCase):
         arguments = mock_arguments()
         configuration = mock_configuration()
         original_directory = "/original/directory"
-        analysis_directory = AnalysisDirectory(".")
+        analysis_directory = AnalysisDirectory(
+            configuration_module.SimpleSearchPathElement(".")
+        )
         self.assertEqual(
             Rage(
                 arguments,
@@ -66,7 +73,9 @@ class RageTest(unittest.TestCase):
         arguments = mock_arguments(local_configuration="foo/bar")
         configuration = mock_configuration()
         original_directory = "/original/directory"
-        analysis_directory = AnalysisDirectory(".")
+        analysis_directory = AnalysisDirectory(
+            configuration_module.SimpleSearchPathElement(".")
+        )
 
         Rage(
             arguments,
@@ -98,7 +107,9 @@ class RageTest(unittest.TestCase):
         arguments = mock_arguments(local_configuration="foo/bar")
         configuration = mock_configuration()
         original_directory = "/original/directory"
-        analysis_directory = AnalysisDirectory(".")
+        analysis_directory = AnalysisDirectory(
+            configuration_module.SimpleSearchPathElement(".")
+        )
 
         # We cannot use StringIO directly because .getvalue() fails after the
         # file is closed
@@ -143,7 +154,9 @@ class RageTest(unittest.TestCase):
         arguments = mock_arguments()
         configuration = mock_configuration()
         original_directory = "/original/directory"
-        analysis_directory = AnalysisDirectory(".")
+        analysis_directory = AnalysisDirectory(
+            configuration_module.SimpleSearchPathElement(".")
+        )
         rage_command = Rage(
             arguments,
             original_directory=original_directory,
@@ -169,7 +182,9 @@ class RageTest(unittest.TestCase):
         arguments = mock_arguments()
         configuration = mock_configuration()
         original_directory = "/original/directory"
-        analysis_directory = AnalysisDirectory(".")
+        analysis_directory = AnalysisDirectory(
+            configuration_module.SimpleSearchPathElement(".")
+        )
         rage_command = Rage(
             arguments,
             original_directory=original_directory,
@@ -197,7 +212,9 @@ class RageTest(unittest.TestCase):
         arguments = mock_arguments()
         configuration = mock_configuration()
         original_directory = "/original/directory"
-        analysis_directory = AnalysisDirectory(".")
+        analysis_directory = AnalysisDirectory(
+            configuration_module.SimpleSearchPathElement(".")
+        )
         rage_command = Rage(
             arguments,
             original_directory=original_directory,

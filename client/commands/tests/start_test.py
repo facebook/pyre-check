@@ -16,6 +16,7 @@ from ... import (
     filesystem,
     find_directories,
     project_files_monitor,
+    configuration as configuration_module,
 )
 from ...analysis_directory import AnalysisDirectory
 from ..command import ExitCode
@@ -46,7 +47,9 @@ class StartTest(unittest.TestCase):
         configuration = mock_configuration(version_hash="hash")
 
         # Check start without watchman.
-        analysis_directory = AnalysisDirectory(".")
+        analysis_directory = AnalysisDirectory(
+            configuration_module.SimpleSearchPathElement(".")
+        )
         with patch("builtins.open", mock_open()), patch.object(
             commands.Command, "_call_client"
         ) as call_client, patch.object(
@@ -66,7 +69,9 @@ class StartTest(unittest.TestCase):
             Monitor.assert_not_called()
 
         # Check start with watchman.
-        analysis_directory = AnalysisDirectory(".")
+        analysis_directory = AnalysisDirectory(
+            configuration_module.SimpleSearchPathElement(".")
+        )
         with patch("builtins.open", mock_open()), patch.object(
             commands.Command, "_call_client"
         ) as call_client, patch.object(
@@ -208,7 +213,9 @@ class StartTest(unittest.TestCase):
             use_watchman=False,
             incremental_style=commands.IncrementalStyle.FINE_GRAINED,
             configuration=configuration,
-            analysis_directory=AnalysisDirectory("."),
+            analysis_directory=AnalysisDirectory(
+                configuration_module.SimpleSearchPathElement(".")
+            ),
         )
         self.assertEqual(command._flags(), flags)
 
@@ -222,7 +229,9 @@ class StartTest(unittest.TestCase):
             use_watchman=False,
             incremental_style=commands.IncrementalStyle.FINE_GRAINED,
             configuration=configuration,
-            analysis_directory=AnalysisDirectory("."),
+            analysis_directory=AnalysisDirectory(
+                configuration_module.SimpleSearchPathElement(".")
+            ),
         )
         self.assertEqual(set(command._flags()), {*flags, "-terminal"})
 
@@ -237,7 +246,9 @@ class StartTest(unittest.TestCase):
             use_watchman=False,
             incremental_style=commands.IncrementalStyle.FINE_GRAINED,
             configuration=configuration,
-            analysis_directory=AnalysisDirectory("."),
+            analysis_directory=AnalysisDirectory(
+                configuration_module.SimpleSearchPathElement(".")
+            ),
         )
         with patch.object(command, "_get_directories_to_analyze") as get_directories:
             get_directories.return_value = {"a", "b"}
@@ -256,7 +267,9 @@ class StartTest(unittest.TestCase):
             use_watchman=False,
             incremental_style=commands.IncrementalStyle.FINE_GRAINED,
             configuration=configuration,
-            analysis_directory=AnalysisDirectory("."),
+            analysis_directory=AnalysisDirectory(
+                configuration_module.SimpleSearchPathElement(".")
+            ),
         )
         with patch.object(command, "_get_directories_to_analyze") as get_directories:
             get_directories.return_value = {"a", "b"}
@@ -282,7 +295,9 @@ class StartTest(unittest.TestCase):
             use_watchman=False,
             incremental_style=commands.IncrementalStyle.FINE_GRAINED,
             configuration=configuration,
-            analysis_directory=AnalysisDirectory("."),
+            analysis_directory=AnalysisDirectory(
+                configuration_module.SimpleSearchPathElement(".")
+            ),
         )
         self.assertEqual(
             set(command._flags()), {*flags, "-save-initial-state-to", "/tmp"}
@@ -301,7 +316,9 @@ class StartTest(unittest.TestCase):
             use_watchman=False,
             incremental_style=commands.IncrementalStyle.FINE_GRAINED,
             configuration=configuration,
-            analysis_directory=AnalysisDirectory("."),
+            analysis_directory=AnalysisDirectory(
+                configuration_module.SimpleSearchPathElement(".")
+            ),
         )
         self.assertEqual(
             set(command._flags()),
@@ -323,7 +340,9 @@ class StartTest(unittest.TestCase):
             use_watchman=False,
             incremental_style=commands.IncrementalStyle.FINE_GRAINED,
             configuration=configuration,
-            analysis_directory=AnalysisDirectory("."),
+            analysis_directory=AnalysisDirectory(
+                configuration_module.SimpleSearchPathElement(".")
+            ),
         )
         self.assertEqual(
             set(command._flags()),
@@ -339,7 +358,9 @@ class StartTest(unittest.TestCase):
             use_watchman=False,
             incremental_style=commands.IncrementalStyle.FINE_GRAINED,
             configuration=configuration,
-            analysis_directory=AnalysisDirectory("."),
+            analysis_directory=AnalysisDirectory(
+                configuration_module.SimpleSearchPathElement(".")
+            ),
         )
         self.assertEqual(
             set(command._flags()), {*flags, "-saved-state-project", "pyre/saved_state"}
@@ -359,7 +380,9 @@ class StartTest(unittest.TestCase):
             use_watchman=False,
             incremental_style=commands.IncrementalStyle.FINE_GRAINED,
             configuration=configuration,
-            analysis_directory=AnalysisDirectory("."),
+            analysis_directory=AnalysisDirectory(
+                configuration_module.SimpleSearchPathElement(".")
+            ),
         )
         self.assertEqual(set(command._flags()), {*flags})
 
@@ -374,7 +397,9 @@ class StartTest(unittest.TestCase):
             use_watchman=False,
             incremental_style=commands.IncrementalStyle.FINE_GRAINED,
             configuration=configuration,
-            analysis_directory=AnalysisDirectory("."),
+            analysis_directory=AnalysisDirectory(
+                configuration_module.SimpleSearchPathElement(".")
+            ),
         )
         self.assertEqual(
             set(command._flags()),
@@ -397,7 +422,9 @@ class StartTest(unittest.TestCase):
             use_watchman=False,
             incremental_style=commands.IncrementalStyle.FINE_GRAINED,
             configuration=configuration,
-            analysis_directory=AnalysisDirectory("."),
+            analysis_directory=AnalysisDirectory(
+                configuration_module.SimpleSearchPathElement(".")
+            ),
         )
         self.assertEqual(
             set(command._flags()), {*flags, "-store-type-check-resolution"}
@@ -415,7 +442,9 @@ class StartTest(unittest.TestCase):
             use_watchman=False,
             incremental_style=commands.IncrementalStyle.FINE_GRAINED,
             configuration=configuration,
-            analysis_directory=AnalysisDirectory("."),
+            analysis_directory=AnalysisDirectory(
+                configuration_module.SimpleSearchPathElement(".")
+            ),
         )
         self.assertEqual(set(command._flags()), {*flags, "-autocomplete"})
 
@@ -430,7 +459,9 @@ class StartTest(unittest.TestCase):
             use_watchman=False,
             incremental_style=commands.IncrementalStyle.FINE_GRAINED,
             configuration=configuration,
-            analysis_directory=AnalysisDirectory("."),
+            analysis_directory=AnalysisDirectory(
+                configuration_module.SimpleSearchPathElement(".")
+            ),
         )
         self.assertEqual(
             set(command._flags()), {*flags, "-profiling-output", ".pyre/profiling.log"}
@@ -446,7 +477,9 @@ class StartTest(unittest.TestCase):
             use_watchman=False,
             incremental_style=commands.IncrementalStyle.FINE_GRAINED,
             configuration=configuration,
-            analysis_directory=AnalysisDirectory("."),
+            analysis_directory=AnalysisDirectory(
+                configuration_module.SimpleSearchPathElement(".")
+            ),
         )
         self.assertEqual(
             set(command._flags()),
@@ -493,7 +526,9 @@ class StartTest(unittest.TestCase):
             use_watchman=True,
             incremental_style=commands.IncrementalStyle.FINE_GRAINED,
             configuration=configuration,
-            analysis_directory=AnalysisDirectory("."),
+            analysis_directory=AnalysisDirectory(
+                configuration_module.SimpleSearchPathElement(".")
+            ),
         )
         self.assertEqual(
             set(command._flags()), {*flags, "-ignore-all-errors", "/absolute/a;/root/b"}
@@ -511,7 +546,9 @@ class StartTest(unittest.TestCase):
             use_watchman=True,
             incremental_style=commands.IncrementalStyle.FINE_GRAINED,
             configuration=mock_configuration(version_hash="hash"),
-            analysis_directory=AnalysisDirectory("/root"),
+            analysis_directory=AnalysisDirectory(
+                configuration_module.SimpleSearchPathElement("/root")
+            ),
         )
         start_command._start_configuration_monitor()
         daemonize.assert_called_once()
@@ -528,7 +565,9 @@ class StartTest(unittest.TestCase):
             use_watchman=False,
             incremental_style=commands.IncrementalStyle.FINE_GRAINED,
             configuration=mock_configuration(version_hash="hash"),
-            analysis_directory=AnalysisDirectory("/root"),
+            analysis_directory=AnalysisDirectory(
+                configuration_module.SimpleSearchPathElement("/root")
+            ),
         )
         start_command._start_configuration_monitor()
         daemonize.assert_not_called()

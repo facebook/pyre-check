@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Generator, Optional
 from unittest.mock import MagicMock, call, patch
 
-from .. import configuration_monitor, watchman
+from .. import configuration_monitor, watchman, configuration as configuration_module
 from ..analysis_directory import AnalysisDirectory
 from ..commands import stop
 from ..tests.mocks import mock_arguments, mock_configuration
@@ -30,7 +30,9 @@ class MonitorTest(unittest.TestCase):
         _lock.side_effect = yield_once
         arguments = mock_arguments()
         configuration = mock_configuration()
-        analysis_directory = AnalysisDirectory("/tmp")
+        analysis_directory = AnalysisDirectory(
+            configuration_module.SimpleSearchPathElement("/tmp")
+        )
         project_root = "/"
         original_directory = "/"
         local_configuration_root = None
@@ -59,7 +61,9 @@ class MonitorTest(unittest.TestCase):
     def test_handle_response(self, stop_command: MagicMock) -> None:
         arguments = mock_arguments()
         configuration = mock_configuration()
-        analysis_directory = AnalysisDirectory("/tmp")
+        analysis_directory = AnalysisDirectory(
+            configuration_module.SimpleSearchPathElement("/tmp")
+        )
         project_root = "/"
         original_directory = "/"
         local_configuration_root = None

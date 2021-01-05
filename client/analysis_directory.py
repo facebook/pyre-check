@@ -18,7 +18,7 @@ from typing import ContextManager, Dict, List, NamedTuple, Optional, Set, Tuple
 
 from . import buck, json_rpc, log, statistics
 from .buck import BuckBuilder, find_buck_root
-from .configuration import Configuration
+from .configuration import Configuration, SearchPathElement, SimpleSearchPathElement
 from .exceptions import EnvironmentException
 from .filesystem import (
     _compute_symbolic_link_mapping,
@@ -106,7 +106,7 @@ class UpdatedPaths(NamedTuple):
 class AnalysisDirectory:
     def __init__(
         self,
-        path: str,
+        path: SearchPathElement,
         filter_paths: Optional[Set[str]] = None,
         search_path: Optional[List[str]] = None,
     ) -> None:
@@ -116,8 +116,11 @@ class AnalysisDirectory:
             search_path or []
         )
 
+    def get_command_line_root(self) -> str:
+        return self._path.command_line_argument()
+
     def get_root(self) -> str:
-        return self._path
+        return self._path.path()
 
     def get_filter_roots(self) -> Set[str]:
         current_project_directories = self._filter_paths or {self.get_root()}
@@ -186,7 +189,7 @@ class AnalysisDirectory:
 class SharedAnalysisDirectory(AnalysisDirectory):
     def __init__(
         self,
-        source_directories: List[str],
+        source_directories: List[SearchPathElement],
         targets: List[str],
         project_root: str,
         original_directory: Optional[str] = None,
@@ -199,7 +202,7 @@ class SharedAnalysisDirectory(AnalysisDirectory):
         configuration: Optional[Configuration] = None,
         temporary_directories: Optional[List[str]] = None,
     ) -> None:
-        self._source_directories: Set[str] = set(source_directories)
+        self._source_directories: Set[SearchPathElement] = set(source_directories)
         self._targets: List[str] = targets
         self._original_directory = original_directory
         self._project_root = project_root
@@ -231,12 +234,16 @@ class SharedAnalysisDirectory(AnalysisDirectory):
             return os.path.join(self._project_root, ".pyre")
 
     @functools.lru_cache(1)
-    def get_root(self) -> str:
+    def get_command_line_root(self) -> str:
         path_to_root = self._local_configuration_root or "shared_analysis_directory"
         suffix = "_{}".format(str(os.getpid())) if self._isolate else ""
         return os.path.join(
             self.get_scratch_directory(), "{}{}".format(path_to_root, suffix)
         )
+
+    @functools.lru_cache(1)
+    def get_root(self) -> str:
+        return self.get_command_line_root()
 
     def get_filter_roots(self) -> Set[str]:
         current_project_directories = self._filter_paths or {self._project_root}
@@ -298,7 +305,9 @@ class SharedAnalysisDirectory(AnalysisDirectory):
                     new_source_directories,
                     original_directory,
                 )
-            self._source_directories.update(new_source_directories)
+            self._source_directories.update(
+                (SimpleSearchPathElement(path) for path in new_source_directories)
+            )
 
         if len(self._source_directories) == 0:
             message = """
@@ -351,7 +360,7 @@ class SharedAnalysisDirectory(AnalysisDirectory):
         ):
             all_paths = {}
             for source_directory in self._source_directories:
-                self._merge_into_paths(source_directory, all_paths)
+                self._merge_into_paths(source_directory.path(), all_paths)
             for relative_path, project_path in all_paths.items():
                 scratch_path = os.path.join(root, relative_path)
                 if os.path.realpath(scratch_path) != project_path:
@@ -698,7 +707,7 @@ class SharedAnalysisDirectory(AnalysisDirectory):
 
         all_paths = {}
         for source_directory in self._source_directories:
-            self._merge_into_paths(source_directory, all_paths)
+            self._merge_into_paths(source_directory.path(), all_paths)
         for relative, original in all_paths.items():
             merged = os.path.join(root, relative)
             add_symbolic_link(merged, original)
@@ -819,10 +828,16 @@ def resolve_analysis_directory(
 
     # Only read from the configuration if no explicit targets are passed in.
     if not source_directories and not targets:
-        source_directories = list(configuration.source_directories)
+        source_paths: List[
+            SearchPathElement
+        ] = configuration.get_existent_source_directories()
         targets = list(configuration.targets)
     else:
-        source_directories = source_directories or []
+        source_paths: List[SearchPathElement] = [
+            # TODO: support SubdirectorySearchPathElement here too?
+            SimpleSearchPathElement(path)
+            for path in source_directories
+        ]
         targets = targets or []
         if targets:
             configuration_name = LOCAL_CONFIGURATION_FILE
@@ -842,9 +857,9 @@ def resolve_analysis_directory(
             local_configuration_root, project_root
         )
 
-    if len(source_directories) == 1 and len(targets) == 0:
+    if len(source_paths) == 1 and len(targets) == 0:
         analysis_directory = AnalysisDirectory(
-            source_directories.pop(),
+            source_paths.pop(),
             filter_paths=filter_paths,
             search_path=[
                 search_path.path()
@@ -857,7 +872,7 @@ def resolve_analysis_directory(
         )
 
         analysis_directory = SharedAnalysisDirectory(
-            source_directories=source_directories,
+            source_directories=source_paths,
             targets=targets,
             buck_builder=buck_builder,
             original_directory=original_directory,
@@ -873,4 +888,5 @@ def resolve_analysis_directory(
             configuration=configuration,
             temporary_directories=temporary_directories,
         )
+
     return analysis_directory

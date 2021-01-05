@@ -10,7 +10,7 @@ from typing_extensions import Final
 
 from .. import command_arguments, recently_used_configurations
 from ..analysis_directory import AnalysisDirectory
-from ..configuration import Configuration
+from ..configuration import Configuration, SimpleSearchPathElement
 from ..version import __version__
 from .command import Command
 from .servers import Servers
@@ -67,7 +67,7 @@ class Rage(Command):
             # We need to pass in an analysis directory because the default
             # analysis directory for a project root without a server is an
             # invalid link tree, which means `_call_client` will fail.
-            self._analysis_directory = AnalysisDirectory(".")
+            self._analysis_directory = AnalysisDirectory(SimpleSearchPathElement("."))
             print(
                 f"No server running for {self._original_directory}."
                 " Printing rage for all recently-used servers.",

@@ -98,7 +98,9 @@ class ServersCommandTest(unittest.TestCase):
             ),
             original_directory="/root",
             configuration=mock_configuration(),
-            analysis_directory=AnalysisDirectory("."),
+            analysis_directory=AnalysisDirectory(
+                configuration_module.SimpleSearchPathElement(".")
+            ),
             subcommand="stop",
         )
         servers._stop_servers(
@@ -166,7 +168,9 @@ class ServersCommandTest(unittest.TestCase):
             arguments,
             original_directory="/",
             configuration=mock_configuration(),
-            analysis_directory=AnalysisDirectory("."),
+            analysis_directory=AnalysisDirectory(
+                configuration_module.SimpleSearchPathElement(".")
+            ),
             subcommand=None,
         )
         servers._run()
@@ -178,7 +182,9 @@ class ServersCommandTest(unittest.TestCase):
             arguments,
             original_directory="/",
             configuration=mock_configuration(),
-            analysis_directory=AnalysisDirectory("."),
+            analysis_directory=AnalysisDirectory(
+                configuration_module.SimpleSearchPathElement(".")
+            ),
             subcommand="list",
         )
         servers._run()
@@ -190,7 +196,9 @@ class ServersCommandTest(unittest.TestCase):
             arguments,
             original_directory="/",
             configuration=mock_configuration(),
-            analysis_directory=AnalysisDirectory("."),
+            analysis_directory=AnalysisDirectory(
+                configuration_module.SimpleSearchPathElement(".")
+            ),
             subcommand="stop",
         )
         servers._run()

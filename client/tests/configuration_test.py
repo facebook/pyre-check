@@ -258,7 +258,37 @@ class PartialConfigurationTest(unittest.TestCase):
             json.dumps({"source_directories": ["foo", "bar"]})
         ).source_directories
         self.assertIsNotNone(source_directories)
-        self.assertListEqual(list(source_directories), ["foo", "bar"])
+        self.assertListEqual(
+            list(source_directories),
+            [SimpleSearchPathElement("foo"), SimpleSearchPathElement("bar")],
+        )
+
+        source_directories = PartialConfiguration.from_string(
+            json.dumps({"source_directories": ["foo"]})
+        ).source_directories
+        self.assertIsNotNone(source_directories)
+        self.assertListEqual(
+            list(source_directories),
+            [SimpleSearchPathElement("foo")],
+        )
+        source_directories = PartialConfiguration.from_string(
+            json.dumps(
+                {
+                    "source_directories": [
+                        "foo",
+                        {"root": "bar", "subdirectory": "baz"},
+                    ]
+                }
+            )
+        ).source_directories
+        self.assertIsNotNone(source_directories)
+        self.assertListEqual(
+            list(source_directories),
+            [
+                SimpleSearchPathElement("foo"),
+                SubdirectorySearchPathElement("bar", "baz"),
+            ],
+        )
 
         self.assertIsNone(PartialConfiguration.from_string("{}").targets)
         targets = PartialConfiguration.from_string(
@@ -484,10 +514,18 @@ class PartialConfigurationTest(unittest.TestCase):
             ],
         )
         self.assertEqual(
-            PartialConfiguration(source_directories=["foo", "bar"])
+            PartialConfiguration(
+                source_directories=[
+                    SimpleSearchPathElement("foo"),
+                    SimpleSearchPathElement("bar"),
+                ]
+            )
             .expand_relative_paths("baz")
             .source_directories,
-            ["baz/foo", "baz/bar"],
+            [
+                SimpleSearchPathElement("baz/foo"),
+                SimpleSearchPathElement("baz/bar"),
+            ],
         )
         self.assertEqual(
             PartialConfiguration(taint_models_path=["foo", "bar"])

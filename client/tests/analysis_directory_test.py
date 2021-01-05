@@ -45,7 +45,8 @@ class AnalysisDirectoryTest(unittest.TestCase):
     @patch.object(os.path, "abspath", side_effect=lambda path: path)
     def test_process_updated_files(self, abspath: MagicMock, isfile: MagicMock) -> None:
         analysis_directory = AnalysisDirectory(
-            path="foo/bar", search_path=["baz$hello"]
+            path=configuration_module.SimpleSearchPathElement("foo/bar"),
+            search_path=["baz$hello"],
         )
         isfile.side_effect = lambda path: path != "foo/bar/deleted.py"
         actual = analysis_directory.process_updated_files(
@@ -82,7 +83,9 @@ class AnalysisDirectoryTest(unittest.TestCase):
         configuration.targets = []
         configuration.local_root = None
 
-        expected_analysis_directory = AnalysisDirectory("a/b")
+        expected_analysis_directory = AnalysisDirectory(
+            configuration_module.SimpleSearchPathElement("a/b")
+        )
         analysis_directory = resolve_analysis_directory(
             source_directories=["a/b"],
             targets=[],
@@ -97,7 +100,8 @@ class AnalysisDirectoryTest(unittest.TestCase):
         )
 
         expected_analysis_directory = AnalysisDirectory(
-            "/symlinked/directory", filter_paths={"/real/directory"}
+            configuration_module.SimpleSearchPathElement("/symlinked/directory"),
+            filter_paths={"/real/directory"},
         )
         analysis_directory = resolve_analysis_directory(
             source_directories=["/symlinked/directory"],
@@ -937,7 +941,7 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
         )
 
         expected_analysis_directory = SharedAnalysisDirectory(
-            ["a/b"],
+            [configuration_module.SimpleSearchPathElement("a/b")],
             ["//x:y", "//y:/..."],
             project_root=project_root,
             original_directory="/project",
@@ -1022,7 +1026,7 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
         Path(root, "mypy/another.pyi").symlink_to(Path(root, "mypy/my.py"))
         Path(root, "scipyi/another.py").symlink_to(Path(root, "scipyi/sci.pyi"))
         shared_analysis_directory = SharedAnalysisDirectory(
-            [root], [], project_root=root
+            [configuration_module.SimpleSearchPathElement(root)], [], project_root=root
         )
         all_paths: Dict[str, str] = {}
         shared_analysis_directory._merge_into_paths(root, all_paths)
@@ -1084,7 +1088,14 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
         check_output.side_effect = side_effect
         os_path_realpath.side_effect = lambda x: x
         shared_analysis_directory = SharedAnalysisDirectory(
-            [os.path.join(root, "first"), os.path.join(root, "second")],
+            [
+                configuration_module.SimpleSearchPathElement(
+                    os.path.join(root, "first")
+                ),
+                configuration_module.SimpleSearchPathElement(
+                    os.path.join(root, "second")
+                ),
+            ],
             [],
             project_root=root,
         )

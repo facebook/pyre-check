@@ -289,7 +289,7 @@ class Command(CommandParser, ABC):
             raise InvalidConfiguration("Cannot find any pyre binary.")
         client_command = [binary, command]
         client_command.extend(self._flags())
-        client_command.append(self._analysis_directory.get_root())
+        client_command.append(self._analysis_directory.get_command_line_root())
 
         def limit_memory_usage() -> None:
             try:

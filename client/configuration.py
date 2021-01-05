@@ -110,7 +110,7 @@ class SearchPathElement(abc.ABC):
         raise NotImplementedError
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(frozen=True)
 class SimpleSearchPathElement(SearchPathElement):
     root: str
 
@@ -131,7 +131,7 @@ class SimpleSearchPathElement(SearchPathElement):
         )
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(frozen=True)
 class SubdirectorySearchPathElement(SearchPathElement):
     root: str
     subdirectory: str
@@ -155,7 +155,7 @@ class SubdirectorySearchPathElement(SearchPathElement):
         )
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(frozen=True)
 class SitePackageSearchPathElement(SearchPathElement):
     site_root: str
     package_name: str
@@ -274,7 +274,7 @@ class PartialConfiguration:
     number_of_workers: Optional[int] = None
     other_critical_files: Sequence[str] = field(default_factory=list)
     search_path: Sequence[SearchPathElement] = field(default_factory=list)
-    source_directories: Optional[Sequence[str]] = None
+    source_directories: Optional[Sequence[SearchPathElement]] = None
     strict: Optional[bool] = None
     taint_models_path: Sequence[str] = field(default_factory=list)
     targets: Optional[Sequence[str]] = None
@@ -304,11 +304,9 @@ class PartialConfiguration:
         arguments: command_arguments.CommandArguments,
     ) -> "PartialConfiguration":
         strict: Optional[bool] = True if arguments.strict else None
-        source_directories: Optional[List[str]] = (
-            arguments.source_directories
-            if len(arguments.source_directories) > 0
-            else None
-        )
+        source_directories = [
+            SimpleSearchPathElement(element) for element in arguments.source_directories
+        ] or None
         targets: Optional[List[str]] = (
             arguments.targets if len(arguments.targets) > 0 else None
         )
@@ -422,6 +420,20 @@ class PartialConfiguration:
                     search_path_json, site_roots=_get_site_roots()
                 )
 
+            source_directories_json = ensure_option_type(
+                configuration_json, "source_directories", list
+            )
+            if isinstance(source_directories_json, list):
+                source_directories = [
+                    element
+                    for json in source_directories_json
+                    for element in create_search_paths(
+                        json, site_roots=_get_site_roots()
+                    )
+                ]
+            else:
+                source_directories = None
+
             partial_configuration = PartialConfiguration(
                 autocomplete=ensure_option_type(
                     configuration_json, "autocomplete", bool
@@ -461,9 +473,7 @@ class PartialConfiguration:
                     configuration_json, "critical_files"
                 ),
                 search_path=search_path,
-                source_directories=ensure_optional_string_list(
-                    configuration_json, "source_directories"
-                ),
+                source_directories=source_directories,
                 strict=ensure_option_type(configuration_json, "strict", bool),
                 taint_models_path=ensure_string_list(
                     configuration_json, "taint_models_path", allow_single_string=True
@@ -523,7 +533,7 @@ class PartialConfiguration:
         source_directories = self.source_directories
         if source_directories is not None:
             source_directories = [
-                expand_relative_path(root, path) for path in source_directories
+                path.expand_relative_root(root) for path in source_directories
             ]
         typeshed = self.typeshed
         if typeshed is not None:
@@ -664,7 +674,7 @@ class Configuration:
     other_critical_files: Sequence[str] = field(default_factory=list)
     relative_local_root: Optional[str] = None
     search_path: Sequence[SearchPathElement] = field(default_factory=list)
-    source_directories: Sequence[str] = field(default_factory=list)
+    source_directories: Sequence[SearchPathElement] = field(default_factory=list)
     strict: bool = False
     taint_models_path: Sequence[str] = field(default_factory=list)
     targets: Sequence[str] = field(default_factory=list)
@@ -734,14 +744,11 @@ class Configuration:
             return None
         return os.path.join(self.project_root, self.relative_local_root)
 
+    def get_existent_source_directories(self) -> List[SearchPathElement]:
+        return self._get_existent_paths(self.source_directories)
+
     def get_existent_search_paths(self) -> List[SearchPathElement]:
-        existent_paths = []
-        for search_path_element in self.search_path:
-            search_path = search_path_element.path()
-            if os.path.exists(search_path):
-                existent_paths.append(search_path_element)
-            else:
-                LOG.debug(f"Filtering out nonexistent search path: {search_path}")
+        existent_paths = self._get_existent_paths(self.search_path)
 
         typeshed_root = self.get_typeshed_respecting_override()
         typeshed_paths = (
@@ -755,7 +762,22 @@ class Configuration:
             ]
         )
 
+        # pyre-ignore: Unsupported operand [58]: `+` is not supported for
+        # operand types `List[SearchPathElement]` and `Union[List[typing.Any],
+        # List[SimpleSearchPathElement]]`
         return existent_paths + typeshed_paths
+
+    def _get_existent_paths(
+        self, paths: Sequence[SearchPathElement]
+    ) -> List[SearchPathElement]:
+        existent_paths = []
+        for search_path_element in paths:
+            search_path = search_path_element.path()
+            if os.path.exists(search_path):
+                existent_paths.append(search_path_element)
+            else:
+                LOG.debug(f"Filtering out nonexistent search path: {search_path}")
+        return existent_paths
 
     def get_existent_ignore_infer_paths(self) -> List[str]:
         existent_paths = []

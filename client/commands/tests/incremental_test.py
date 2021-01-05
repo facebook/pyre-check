@@ -12,7 +12,12 @@ import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from ... import commands, find_directories, json_rpc
+from ... import (
+    commands,
+    find_directories,
+    json_rpc,
+    configuration as configuration_module,
+)
 from ...analysis_directory import AnalysisDirectory, SharedAnalysisDirectory
 from ...commands import command, incremental, stop  # noqa
 from ...socket_connection import SocketConnection
@@ -69,7 +74,9 @@ class IncrementalTest(unittest.TestCase):
         arguments = mock_arguments()
 
         configuration = mock_configuration(version_hash="hash")
-        analysis_directory = AnalysisDirectory(".")
+        analysis_directory = AnalysisDirectory(
+            configuration_module.SimpleSearchPathElement(".")
+        )
 
         with patch.object(SocketConnection, "connect") as connect, patch.object(
             json, "loads", return_value=[]
@@ -262,7 +269,9 @@ class IncrementalTest(unittest.TestCase):
             Path("/root")
         )  # project root
         configuration = mock_configuration(version_hash="hash")
-        analysis_directory = AnalysisDirectory("/root")
+        analysis_directory = AnalysisDirectory(
+            configuration_module.SimpleSearchPathElement("/root")
+        )
 
         with patch.object(SocketConnection, "connect") as connect, patch.object(
             json,
@@ -344,7 +353,9 @@ class IncrementalTest(unittest.TestCase):
             mock_arguments(),
             "/original/directory",
             configuration=mock_configuration(version_hash="hash"),
-            analysis_directory=AnalysisDirectory("/root"),
+            analysis_directory=AnalysisDirectory(
+                configuration_module.SimpleSearchPathElement("/root")
+            ),
             nonblocking=False,
             incremental_style=IncrementalStyle.FINE_GRAINED,
             no_start_server=False,
@@ -369,7 +380,9 @@ class IncrementalTest(unittest.TestCase):
             mock_arguments(),
             "/original/directory",
             configuration=mock_configuration(version_hash="hash"),
-            analysis_directory=AnalysisDirectory("/root"),
+            analysis_directory=AnalysisDirectory(
+                configuration_module.SimpleSearchPathElement("/root")
+            ),
             nonblocking=False,
             incremental_style=IncrementalStyle.FINE_GRAINED,
             no_start_server=False,

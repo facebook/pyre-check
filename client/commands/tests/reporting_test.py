@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Any, Dict
 from unittest.mock import MagicMock, mock_open, patch
 
-from ... import commands, find_directories
+from ... import commands, find_directories, configuration as configuration_module
 from ...analysis_directory import AnalysisDirectory, SharedAnalysisDirectory
 from ..command import ClientException
 from .command_test import mock_arguments, mock_configuration
@@ -55,7 +55,12 @@ class ReportingTest(unittest.TestCase):
         }
 
         handler = commands.Reporting(
-            arguments, original_directory, configuration, AnalysisDirectory("/root/f/g")
+            arguments,
+            original_directory,
+            configuration,
+            AnalysisDirectory(
+                configuration_module.SimpleSearchPathElement("/root/f/g")
+            ),
         )
         with patch.object(json, "loads", return_value=copy.deepcopy(json_errors)):
             errors = handler._get_errors(result)
@@ -66,7 +71,12 @@ class ReportingTest(unittest.TestCase):
         arguments = mock_arguments(targets=["//f/g:target"])
         configuration.targets = []
         handler = commands.Reporting(
-            arguments, original_directory, configuration, AnalysisDirectory("/root/f/g")
+            arguments,
+            original_directory,
+            configuration,
+            AnalysisDirectory(
+                configuration_module.SimpleSearchPathElement("/root/f/g")
+            ),
         )
         with patch.object(json, "loads", return_value=copy.deepcopy(json_errors)):
             errors = handler._get_errors(result)
@@ -78,7 +88,12 @@ class ReportingTest(unittest.TestCase):
         arguments = mock_arguments(targets=["//f/g:target"])
         configuration.targets = []
         handler = commands.Reporting(
-            arguments, original_directory, configuration, AnalysisDirectory("/root/h/i")
+            arguments,
+            original_directory,
+            configuration,
+            AnalysisDirectory(
+                configuration_module.SimpleSearchPathElement("/root/h/i")
+            ),
         )
         with patch.object(json, "loads", return_value=copy.deepcopy(json_errors)):
             errors = handler._get_errors(result)
@@ -92,7 +107,10 @@ class ReportingTest(unittest.TestCase):
             Path("/root"), Path("/root/test")
         )  # project root
         handler = commands.Reporting(
-            arguments, original_directory, configuration, AnalysisDirectory("/root")
+            arguments,
+            original_directory,
+            configuration,
+            AnalysisDirectory(configuration_module.SimpleSearchPathElement("/root")),
         )
         with patch.object(json, "loads", return_value=copy.deepcopy(json_errors)):
             errors = handler._get_errors(result)
@@ -109,7 +127,9 @@ class ReportingTest(unittest.TestCase):
             arguments,
             original_directory,
             configuration,
-            AnalysisDirectory("/root/test"),
+            AnalysisDirectory(
+                configuration_module.SimpleSearchPathElement("/root/test")
+            ),
         )
         json_errors = copy.deepcopy(json_errors)
         json_errors["errors"][0]["path"] = "/root/test/path.py"
@@ -127,7 +147,10 @@ class ReportingTest(unittest.TestCase):
         find_global_and_local_root.return_value = find_directories.FoundRoot(Path("/"))
         configuration.ignore_all_errors = ["*/b"]
         handler = commands.Reporting(
-            arguments, original_directory, configuration, AnalysisDirectory("/a")
+            arguments,
+            original_directory,
+            configuration,
+            AnalysisDirectory(configuration_module.SimpleSearchPathElement("/a")),
         )
         json_errors["errors"][0]["path"] = "b/c.py"
         with patch.object(json, "loads", return_value=copy.deepcopy(json_errors)):
@@ -188,7 +211,10 @@ class ReportingTest(unittest.TestCase):
         arguments = mock_arguments(source_directories=["base"])
         configuration = mock_configuration()
         handler = commands.Reporting(
-            arguments, original_directory, configuration, AnalysisDirectory("base")
+            arguments,
+            original_directory,
+            configuration,
+            AnalysisDirectory(configuration_module.SimpleSearchPathElement("base")),
         )
         run.return_value = subprocess.CompletedProcess(
             args=[],
@@ -205,7 +231,10 @@ class ReportingTest(unittest.TestCase):
 
         configuration.local_configuration = "a/b/.pyre_configuration.local"
         handler = commands.Reporting(
-            arguments, original_directory, configuration, AnalysisDirectory("base")
+            arguments,
+            original_directory,
+            configuration,
+            AnalysisDirectory(configuration_module.SimpleSearchPathElement("base")),
         )
         self.assertEqual(handler._get_directories_to_analyze(), {"base"})
 
@@ -215,7 +244,10 @@ class ReportingTest(unittest.TestCase):
             arguments,
             original_directory,
             configuration,
-            AnalysisDirectory("base", filter_paths={"a/b"}),
+            AnalysisDirectory(
+                configuration_module.SimpleSearchPathElement("base"),
+                filter_paths={"a/b"},
+            ),
         )
         self.assertEqual(handler._get_directories_to_analyze(), {"a/b"})
 

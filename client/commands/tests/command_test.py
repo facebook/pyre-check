@@ -23,7 +23,9 @@ class CommandTest(unittest.TestCase):
     def test_relative_path(self, find_global_and_local_root) -> None:
         arguments = mock_arguments()
         configuration = mock_configuration()
-        analysis_directory = AnalysisDirectory(".")
+        analysis_directory = AnalysisDirectory(
+            configuration_module.SimpleSearchPathElement(".")
+        )
         original_directory = "/original/directory"
         self.assertEqual(
             commands.Command(
@@ -42,7 +44,9 @@ class CommandTest(unittest.TestCase):
     def test_state__alive(self, is_alive: MagicMock) -> None:
         arguments = mock_arguments()
         configuration = mock_configuration()
-        analysis_directory = AnalysisDirectory(".")
+        analysis_directory = AnalysisDirectory(
+            configuration_module.SimpleSearchPathElement(".")
+        )
         original_directory = "/original/directory"
         self.assertEqual(
             commands.Command(
@@ -55,7 +59,9 @@ class CommandTest(unittest.TestCase):
     def test_state__dead(self, is_alive: MagicMock) -> None:
         arguments = mock_arguments()
         configuration = mock_configuration()
-        analysis_directory = AnalysisDirectory(".")
+        analysis_directory = AnalysisDirectory(
+            configuration_module.SimpleSearchPathElement(".")
+        )
         original_directory = "/original/directory"
         self.assertEqual(
             commands.Command(
@@ -71,7 +77,9 @@ class CommandTest(unittest.TestCase):
     def test_logger(self, find_global_and_local_root) -> None:
         arguments = mock_arguments()
         configuration = mock_configuration()
-        analysis_directory = AnalysisDirectory(".")
+        analysis_directory = AnalysisDirectory(
+            configuration_module.SimpleSearchPathElement(".")
+        )
         original_directory = "/original/directory"
 
         test_command = commands.Command(

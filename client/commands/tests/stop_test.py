@@ -9,7 +9,7 @@ from io import StringIO
 from typing import List, Optional
 from unittest.mock import MagicMock, Mock, call, patch
 
-from ... import commands, watchman
+from ... import commands, watchman, configuration as configuration_module
 from ...analysis_directory import AnalysisDirectory
 from ..stop import Stop
 from .command_test import mock_arguments, mock_configuration
@@ -32,7 +32,9 @@ class StopTest(unittest.TestCase):
         self.original_directory = "/original/directory"
         self.arguments = mock_arguments()
         self.configuration = mock_configuration()
-        self.analysis_directory = AnalysisDirectory(".")
+        self.analysis_directory = AnalysisDirectory(
+            configuration_module.SimpleSearchPathElement(".")
+        )
 
     def test_stop_running_server(
         self,

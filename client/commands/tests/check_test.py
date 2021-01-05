@@ -10,7 +10,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from ... import commands, find_directories
+from ... import commands, find_directories, configuration as configuration_module
 from ...analysis_directory import AnalysisDirectory
 from .command_test import mock_arguments, mock_configuration
 
@@ -50,7 +50,9 @@ class CheckTest(unittest.TestCase):
                 arguments,
                 original_directory,
                 configuration=configuration,
-                analysis_directory=AnalysisDirectory("."),
+                analysis_directory=AnalysisDirectory(
+                    configuration_module.SimpleSearchPathElement(".")
+                ),
             )
             self.assertEqual(
                 command._flags(),
@@ -114,7 +116,9 @@ class CheckTest(unittest.TestCase):
                 arguments,
                 original_directory,
                 configuration=configuration,
-                analysis_directory=AnalysisDirectory("."),
+                analysis_directory=AnalysisDirectory(
+                    configuration_module.SimpleSearchPathElement(".")
+                ),
             )
             self.assertEqual(
                 command._flags(),
@@ -160,7 +164,9 @@ class CheckTest(unittest.TestCase):
                 arguments,
                 original_directory,
                 configuration=configuration,
-                analysis_directory=AnalysisDirectory("."),
+                analysis_directory=AnalysisDirectory(
+                    configuration_module.SimpleSearchPathElement(".")
+                ),
             )
             self.assertEqual(
                 command._flags(),
@@ -208,7 +214,9 @@ class CheckTest(unittest.TestCase):
                 arguments,
                 original_directory,
                 configuration=configuration,
-                analysis_directory=AnalysisDirectory("."),
+                analysis_directory=AnalysisDirectory(
+                    configuration_module.SimpleSearchPathElement(".")
+                ),
             )
             self.assertEqual(
                 command._flags(),
@@ -255,7 +263,9 @@ class CheckTest(unittest.TestCase):
                 arguments,
                 original_directory,
                 configuration=configuration,
-                analysis_directory=AnalysisDirectory("."),
+                analysis_directory=AnalysisDirectory(
+                    configuration_module.SimpleSearchPathElement(".")
+                ),
             )
             self.assertEqual(
                 command._flags(),

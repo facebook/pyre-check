@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from ... import commands
+from ... import commands, configuration as configuration_module
 from ...analysis_directory import AnalysisDirectory
 from ...socket_connection import SocketConnection
 from .command_test import mock_arguments, mock_configuration
@@ -33,7 +33,9 @@ class QueryTest(unittest.TestCase):
             arguments,
             original_directory,
             configuration=configuration,
-            analysis_directory=AnalysisDirectory("."),
+            analysis_directory=AnalysisDirectory(
+                configuration_module.SimpleSearchPathElement(".")
+            ),
             query="",
         )
         query_command.run()
@@ -44,7 +46,9 @@ class QueryTest(unittest.TestCase):
                 arguments,
                 original_directory,
                 configuration=configuration,
-                analysis_directory=AnalysisDirectory("."),
+                analysis_directory=AnalysisDirectory(
+                    configuration_module.SimpleSearchPathElement(".")
+                ),
                 query="query",
             )._flags(),
             ["query", "-log-directory", ".pyre"],
@@ -58,7 +62,9 @@ class QueryTest(unittest.TestCase):
             arguments,
             original_directory,
             configuration=configuration,
-            analysis_directory=AnalysisDirectory("."),
+            analysis_directory=AnalysisDirectory(
+                configuration_module.SimpleSearchPathElement(".")
+            ),
             query="",
         )
         query_command.run()

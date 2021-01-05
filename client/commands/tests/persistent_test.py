@@ -8,7 +8,12 @@ import json
 import unittest
 from unittest.mock import MagicMock, call, patch
 
-from ... import commands, configuration_monitor, project_files_monitor
+from ... import (
+    commands,
+    configuration_monitor,
+    project_files_monitor,
+    configuration as configuration_module,
+)
 from ...analysis_directory import AnalysisDirectory
 from .command_test import mock_arguments, mock_configuration
 
@@ -42,7 +47,9 @@ class PersistentTest(unittest.TestCase):
                 arguments,
                 original_directory,
                 configuration=configuration,
-                analysis_directory=AnalysisDirectory("."),
+                analysis_directory=AnalysisDirectory(
+                    configuration_module.SimpleSearchPathElement(".")
+                ),
                 no_watchman=True,
             )
             self.assertEqual(
@@ -73,7 +80,9 @@ class PersistentTest(unittest.TestCase):
             mock_arguments(),
             original_directory,
             configuration=configuration,
-            analysis_directory=AnalysisDirectory("."),
+            analysis_directory=AnalysisDirectory(
+                configuration_module.SimpleSearchPathElement(".")
+            ),
             no_watchman=True,
         )
         self.assertEqual(

@@ -122,7 +122,9 @@ class Arguments:
         default_factory=list
     )
     show_error_traces: bool = False
-    source_paths: Sequence[str] = dataclasses.field(default_factory=list)
+    source_paths: Sequence[configuration_module.SearchPathElement] = dataclasses.field(
+        default_factory=list
+    )
     store_type_check_resolution: bool = False
     strict: bool = False
     taint_models_path: Sequence[str] = dataclasses.field(default_factory=list)
@@ -130,7 +132,9 @@ class Arguments:
 
     def serialize(self) -> Dict[str, Any]:
         return {
-            "source_paths": self.source_paths,
+            "source_paths": [
+                element.command_line_argument() for element in self.source_paths
+            ],
             "search_paths": [
                 element.command_line_argument() for element in self.search_paths
             ],
@@ -249,15 +253,16 @@ def create_server_arguments(
     nonexistent directories. It is idempotent though, since it does not alter
     any filesystem state.
     """
-    source_directories: Sequence[str] = configuration.source_directories or []
+    source_directories: Sequence[
+        configuration_module.SearchPathElement
+    ] = configuration.get_existent_source_directories()
     if len(source_directories) == 0:
         raise configuration_module.InvalidConfiguration(
             "New server does not have buck support yet."
         )
-    check_directory_allowlist = (
-        list(source_directories)
-        + configuration.get_existent_do_not_ignore_errors_in_paths()
-    )
+    check_directory_allowlist = [
+        search_path.path() for search_path in source_directories
+    ] + configuration.get_existent_do_not_ignore_errors_in_paths()
     return Arguments(
         log_path=configuration.log_directory,
         global_root=configuration.project_root,

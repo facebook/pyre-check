@@ -92,13 +92,13 @@ def mock_configuration(version_hash=None, file_hash=None) -> MagicMock:
     return configuration
 
 
-def mock_incremental_command(configuration: configuration.Configuration) -> Incremental:
+def mock_incremental_command(cfg: configuration.Configuration) -> Incremental:
     arguments = mock_arguments()
-    analysis_directory = AnalysisDirectory(".")
+    analysis_directory = AnalysisDirectory(configuration.SimpleSearchPathElement("."))
     return Incremental(
         arguments,
         original_directory="/original/directory",
-        configuration=configuration,
+        configuration=cfg,
         analysis_directory=analysis_directory,
         nonblocking=False,
         incremental_style=IncrementalStyle.FINE_GRAINED,

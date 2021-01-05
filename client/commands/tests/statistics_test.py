@@ -13,6 +13,7 @@ from unittest.mock import MagicMock, patch
 from libcst import Module, parse_module
 from libcst.metadata import MetadataWrapper
 
+from ... import configuration as configuration_module
 from ...analysis_directory import AnalysisDirectory
 from ...statistics_collectors import (
     AnnotationCountCollector,
@@ -60,7 +61,9 @@ class StatisticsTest(unittest.TestCase):
     def test_log_results(self, log: MagicMock, _find_paths: MagicMock) -> None:
         arguments = mock_arguments(local_configuration="example/path/client")
         configuration = mock_configuration()
-        analysis_directory = AnalysisDirectory(".")
+        analysis_directory = AnalysisDirectory(
+            configuration_module.SimpleSearchPathElement(".")
+        )
         original_directory = "/original/directory"
 
         Statistics(

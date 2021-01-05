@@ -22,7 +22,7 @@ from .. import (
     watchman,
 )
 from ..analysis_directory import BUCK_BUILDER_CACHE_PREFIX, AnalysisDirectory
-from ..configuration import Configuration
+from ..configuration import Configuration, SimpleSearchPathElement
 from ..find_directories import BINARY_NAME, CLIENT_NAME
 from ..project_files_monitor import ProjectFilesMonitor
 from .command import Command
@@ -91,7 +91,7 @@ class Kill(Command):
         self._with_fire = with_fire
 
     def generate_analysis_directory(self) -> AnalysisDirectory:
-        return AnalysisDirectory(".")
+        return AnalysisDirectory(SimpleSearchPathElement("."))
 
     @staticmethod
     def _delete_linked_path(link_path: Path) -> None:
