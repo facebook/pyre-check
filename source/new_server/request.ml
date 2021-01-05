@@ -11,5 +11,6 @@ type t =
   | GetInfo
   | DisplayTypeError of string list
   | IncrementalUpdate of string list
+  | Query of string
   | Stop
 [@@deriving sexp, compare, hash, yojson { strict = false }]

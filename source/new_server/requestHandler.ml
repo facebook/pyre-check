@@ -36,6 +36,8 @@ let find_critical_file ~server_configuration:{ ServerConfiguration.critical_file
   ServerConfiguration.CriticalFile.find critical_files ~within:paths
 
 
+let process_query ~state:_ _ = raise (Server.Query.InvalidQuery "not implemented yet")
+
 let process_request
     ~state:
       ( {
@@ -127,4 +129,12 @@ let process_request
                   Subscription.send ~response subscription)
               |> Lwt.join
               >>= fun () -> Lwt.return (state, Response.Ok) ) )
+  | Request.Query query_text -> (
+      try
+        let query_request = Server.Query.parse_query query_text in
+        let query_response = process_query ~state query_request in
+        Lwt.return (state, Response.Query query_response)
+      with
+      | Server.Query.InvalidQuery message ->
+          Lwt.return (state, Response.Query (Server.Query.Response.Error message)) )
   | Request.Stop -> Stop.stop_waiting_server ()
