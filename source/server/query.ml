@@ -29,7 +29,7 @@ module Request = struct
     | Type of Expression.t
     | TypesInFiles of string list
     | ValidateTaintModels of string option
-  [@@deriving eq, show]
+  [@@deriving sexp, compare, eq, show]
 end
 
 module Response = struct
@@ -37,7 +37,7 @@ module Response = struct
     type attribute_kind =
       | Regular
       | Property
-    [@@deriving eq, show, to_yojson]
+    [@@deriving sexp, compare, eq, show, to_yojson]
 
     type attribute = {
       name: string;
@@ -45,57 +45,57 @@ module Response = struct
       kind: attribute_kind;
       final: bool;
     }
-    [@@deriving eq, show, to_yojson]
+    [@@deriving sexp, compare, eq, show, to_yojson]
 
     type type_at_location = {
       location: Location.t;
       annotation: Type.t;
     }
-    [@@deriving eq, show, to_yojson]
+    [@@deriving sexp, compare, eq, show, to_yojson]
 
     type types_at_path = {
       path: PyrePath.t;
       types: type_at_location list;
     }
-    [@@deriving eq, show, to_yojson]
+    [@@deriving sexp, compare, eq, show, to_yojson]
 
     type compatibility = {
       actual: Type.t;
       expected: Type.t;
       result: bool;
     }
-    [@@deriving eq, show]
+    [@@deriving sexp, compare, eq, show]
 
     type callee_with_instantiated_locations = {
       callee: Analysis.Callgraph.callee;
       locations: Location.WithPath.t list;
     }
-    [@@deriving eq, show]
+    [@@deriving sexp, compare, eq, show]
 
     type callees = {
       caller: Reference.t;
       callees: callee_with_instantiated_locations list;
     }
-    [@@deriving eq, show]
+    [@@deriving sexp, compare, eq, show]
 
     type parameter_representation = {
       parameter_name: string;
       parameter_annotation: Expression.t option;
     }
-    [@@deriving eq, show]
+    [@@deriving sexp, compare, eq, show]
 
     type define = {
       define_name: Reference.t;
       parameters: parameter_representation list;
       return_annotation: Expression.t option;
     }
-    [@@deriving eq, show]
+    [@@deriving sexp, compare, eq, show]
 
     type superclasses_mapping = {
       class_name: Reference.t;
       superclasses: Reference.t list;
     }
-    [@@deriving eq, show, to_yojson]
+    [@@deriving sexp, compare, eq, show, to_yojson]
 
     let _ = show_compatibility (* unused, but pp is *)
 
@@ -115,7 +115,7 @@ module Response = struct
       | Superclasses of superclasses_mapping list
       | Type of Type.t
       | TypesByPath of types_at_path list
-    [@@deriving eq, show]
+    [@@deriving sexp, compare, eq, show]
 
     let to_yojson response =
       let open Analysis in
@@ -210,7 +210,7 @@ module Response = struct
     | Single of Base.t
     | Batch of t list
     | Error of string
-  [@@deriving eq, show]
+  [@@deriving sexp, compare, eq, show]
 
   let rec to_yojson = function
     | Single base_response -> `Assoc ["response", Base.to_yojson base_response]

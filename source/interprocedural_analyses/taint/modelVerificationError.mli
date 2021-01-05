@@ -13,7 +13,7 @@ module T : sig
     | UnexpectedNamedParameter of string
     | UnexpectedStarredParameter
     | UnexpectedDoubleStarredParameter
-  [@@deriving eq]
+  [@@deriving sexp, compare, eq]
 
   type kind =
     | InvalidDefaultValue of {
@@ -44,14 +44,14 @@ module T : sig
         model_name: string;
         message: string;
       }
-  [@@deriving eq]
+  [@@deriving sexp, compare, eq]
 
   type t = {
     kind: kind;
     path: Pyre.Path.t option;
     location: Location.t;
   }
-  [@@deriving eq, show]
+  [@@deriving sexp, compare, eq, show]
 end
 
 type t = T.t

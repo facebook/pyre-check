@@ -24,7 +24,7 @@ and callee =
       class_name: Type.t;
       direct_target: Reference.t;
     }
-[@@deriving compare, eq, show]
+[@@deriving sexp, compare, eq, show]
 
 type callee_with_locations = {
   callee: callee;

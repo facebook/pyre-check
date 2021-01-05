@@ -15,7 +15,7 @@ module T = struct
     | UnexpectedNamedParameter of string
     | UnexpectedStarredParameter
     | UnexpectedDoubleStarredParameter
-  [@@deriving eq, show]
+  [@@deriving sexp, compare, eq, show]
 
   type kind =
     | InvalidDefaultValue of {
@@ -47,14 +47,14 @@ module T = struct
         model_name: string;
         message: string;
       }
-  [@@deriving eq, show]
+  [@@deriving sexp, compare, eq, show]
 
   type t = {
     kind: kind;
     path: Path.t option;
     location: Location.t;
   }
-  [@@deriving eq, show]
+  [@@deriving sexp, compare, eq, show]
 end
 
 include T

@@ -35,6 +35,7 @@ module Response : sig
     type attribute_kind =
       | Regular
       | Property
+    [@@deriving sexp, compare]
 
     type attribute = {
       name: string;
@@ -42,57 +43,57 @@ module Response : sig
       kind: attribute_kind;
       final: bool;
     }
-    [@@deriving eq, show, to_yojson]
+    [@@deriving sexp, compare, eq, show, to_yojson]
 
     type type_at_location = {
       location: Location.t;
       annotation: Type.t;
     }
-    [@@deriving eq, show, to_yojson]
+    [@@deriving sexp, compare, eq, show, to_yojson]
 
     type types_at_path = {
       path: PyrePath.t;
       types: type_at_location list;
     }
-    [@@deriving eq, show, to_yojson]
+    [@@deriving sexp, compare, eq, show, to_yojson]
 
     type compatibility = {
       actual: Type.t;
       expected: Type.t;
       result: bool;
     }
-    [@@derving eq, show]
+    [@@derving sexp, compare, eq, show]
 
     type callee_with_instantiated_locations = {
       callee: Analysis.Callgraph.callee;
       locations: Location.WithPath.t list;
     }
-    [@@deriving eq, show]
+    [@@deriving sexp, compare, eq, show]
 
     type callees = {
       caller: Reference.t;
       callees: callee_with_instantiated_locations list;
     }
-    [@@deriving eq, show]
+    [@@deriving sexp, compare, eq, show]
 
     type parameter_representation = {
       parameter_name: string;
       parameter_annotation: Expression.t option;
     }
-    [@@deriving eq, show]
+    [@@deriving sexp, compare, eq, show]
 
     type define = {
       define_name: Reference.t;
       parameters: parameter_representation list;
       return_annotation: Expression.t option;
     }
-    [@@deriving eq, show]
+    [@@deriving sexp, compare, eq, show]
 
     type superclasses_mapping = {
       class_name: Reference.t;
       superclasses: Reference.t list;
     }
-    [@@deriving eq, show]
+    [@@deriving sexp, compare, eq, show]
 
     type t =
       | Boolean of bool
@@ -110,14 +111,14 @@ module Response : sig
       | Superclasses of superclasses_mapping list
       | Type of Type.t
       | TypesByPath of types_at_path list
-    [@@deriving eq, show, to_yojson]
+    [@@deriving sexp, compare, eq, show, to_yojson]
   end
 
   type t =
     | Single of Base.t
     | Batch of t list
     | Error of string
-  [@@deriving eq, show, to_yojson]
+  [@@deriving sexp, compare, eq, show, to_yojson]
 
   val create_type_at_location : Location.t * Type.t -> Base.type_at_location
 end
