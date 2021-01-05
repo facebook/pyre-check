@@ -17,6 +17,7 @@ from ..errors import (
     Errors,
     PartialErrorSuppression,
     SkippingGeneratedFileException,
+    SkippingUnparseableFileException,
     _get_unused_ignore_codes,
     _remove_unused_ignores,
     _suppress_errors,
@@ -268,7 +269,13 @@ class ErrorsTest(unittest.TestCase):
             """,
         )
 
-        # We skip generated files.
+        # Skip files with parse errors.
+        with self.assertRaises(SkippingUnparseableFileException):
+            _suppress_errors(
+                "input", {1: [{"code": "404", "description": "description"}]}
+            )
+
+        # Skip generated files.
         with self.assertRaises(SkippingGeneratedFileException):
             _suppress_errors("@" "generated", {})
 

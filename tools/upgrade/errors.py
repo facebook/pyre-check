@@ -239,6 +239,8 @@ class Errors:
                 path.write_text(output)
             except SkippingGeneratedFileException:
                 LOG.warning(f"Skipping generated file at {path_to_suppress}")
+            except SkippingUnparseableFileException:
+                LOG.warning(f"Skipping unparseable file at {path_to_suppress}")
             except (ast.UnstableAST, SyntaxError) as exception:
                 unsuppressed_paths_and_exceptions.append((path_to_suppress, exception))
 
@@ -406,6 +408,10 @@ class SkippingGeneratedFileException(Exception):
     pass
 
 
+class SkippingUnparseableFileException(Exception):
+    pass
+
+
 def _get_unused_ignore_codes(errors: List[Dict[str, str]]) -> List[int]:
     unused_ignore_codes: List[int] = []
     ignore_errors = [error for error in errors if error["code"] == "0"]
@@ -453,7 +459,13 @@ def _suppress_errors(
     if "@" "generated" in input:
         raise SkippingGeneratedFileException()
 
-    lines = input.split("\n")  # type: List[str]
+    lines: List[str] = input.split("\n")
+
+    # Do not suppress parse errors.
+    if any(
+        error["code"] == "404" for error_list in errors.values() for error in error_list
+    ):
+        raise SkippingUnparseableFileException()
 
     # Replace lines in file.
     new_lines = []
