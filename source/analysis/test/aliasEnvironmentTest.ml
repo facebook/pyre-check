@@ -160,9 +160,26 @@ let test_harder_registrations context =
                        Type.tuple [Type.Primitive "test.Tree"; Type.Primitive "test.Tree"];
                      ];
                })));
+  (* Forbid directly-recursive aliases. *)
   assert_registers {|
       Tree = "Tree"
     |} "test.Tree" ~expected_alias:None;
+  assert_registers
+    {|
+      from typing import Union
+
+      X = Union[int, "X"]
+    |}
+    "test.X"
+    ~expected_alias:None;
+  assert_registers
+    {|
+      from typing import Annotated
+
+      X = Annotated["X", int]
+    |}
+    "test.X"
+    ~expected_alias:None;
   ()
 
 

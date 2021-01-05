@@ -309,9 +309,14 @@ let produce_alias empty_stub_environment global_name ~dependency =
            && Type.RecursiveType.is_recursive_alias_reference
                 ~alias_name:(Reference.show global_name)
                 annotation ->
-        Some
-          (Type.TypeAlias
-             (Type.RecursiveType { name = Reference.show global_name; body = annotation }))
+        let alias_name = Reference.show global_name in
+        let is_directly_recursive =
+          Type.resolve_class annotation
+          >>| List.exists ~f:(fun { Type.class_name; _ } -> Identifier.equal class_name alias_name)
+          |> Option.value ~default:true
+        in
+        Type.TypeAlias (Type.RecursiveType { name = alias_name; body = annotation })
+        |> Option.some_if (not is_directly_recursive)
     | _ -> resolved_alias
 
 

@@ -3425,6 +3425,26 @@ let test_recursive_aliases context =
       "Revealed type [-1]: Revealed type for `z` is `Union[str, test.D (resolves to Dict[str, \
        Union[D, str]])]`.";
     ];
+  (* Forbid directly-recursive aliases. *)
+  assert_type_errors
+    {|
+      from typing import Union
+      D = Union[int, "D"]
+      D2 = Union[int, "D2"]
+
+      def foo() -> None:
+        d: D
+        reveal_type(d)
+        d2: D2
+        d = d2
+    |}
+    [
+      "Missing global annotation [5]: Globally accessible variable `D` has no type specified.";
+      "Missing global annotation [5]: Globally accessible variable `D2` has no type specified.";
+      "Undefined or invalid type [11]: Annotation `D` is not defined as a type.";
+      "Revealed type [-1]: Revealed type for `d` is `typing.Any`.";
+      "Undefined or invalid type [11]: Annotation `D2` is not defined as a type.";
+    ];
   ()
 
 
