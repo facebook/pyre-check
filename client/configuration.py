@@ -291,6 +291,7 @@ class PartialConfiguration:
     def _get_extra_keys() -> Set[str]:
         return {
             "buck_mode",
+            "create_open_source_configuration",
             "differential",
             "oncall",
             "saved_state",
