@@ -8,7 +8,6 @@
 open Core
 open Ast
 open Analysis
-open State
 open Pyre
 
 type error_reason =
@@ -32,7 +31,7 @@ type lookup = {
   lookup: (Lookup.t, error_reason) Result.t;
 }
 
-let get_lookups ~configuration ~state:{ environment; _ } paths =
+let get_lookups ~configuration ~environment paths =
   let generate_lookup_for_existent_path (path, ({ SourcePath.qualifier; _ } as source_path)) =
     let lookup = Lookup.create_of_module (TypeEnvironment.read_only environment) qualifier in
     { path; source_path = Some source_path; lookup = Result.Ok lookup }
@@ -67,9 +66,9 @@ let log_lookup ~handle ~position ~timer ~name ?(integers = []) ?(normals = []) (
     ()
 
 
-let find_annotation ~state ~configuration ~path ~position =
+let find_annotation ~environment ~configuration ~path ~position =
   let timer = Timer.start () in
-  let { lookup; source_path; _ } = get_lookups ~configuration ~state [path] |> List.hd_exn in
+  let { lookup; source_path; _ } = get_lookups ~configuration ~environment [path] |> List.hd_exn in
   let annotation = Result.ok lookup >>= Lookup.get_annotation ~position in
   let _ =
     match source_path with
@@ -85,7 +84,7 @@ let find_annotation ~state ~configuration ~path ~position =
   annotation
 
 
-let find_all_annotations_batch ~state ~configuration ~paths =
+let find_all_annotations_batch ~environment ~configuration ~paths =
   let get_annotations { path; lookup; _ } =
     {
       path;
@@ -94,12 +93,12 @@ let find_all_annotations_batch ~state ~configuration ~paths =
             Lookup.get_all_annotations lookup |> List.sort ~compare:[%compare: Location.t * Type.t]);
     }
   in
-  List.map ~f:get_annotations (get_lookups ~configuration ~state paths)
+  List.map ~f:get_annotations (get_lookups ~configuration ~environment paths)
 
 
-let find_definition ~state ~configuration path position =
+let find_definition ~environment ~configuration path position =
   let timer = Timer.start () in
-  let { lookup; source_path; _ } = get_lookups ~configuration ~state [path] |> List.hd_exn in
+  let { lookup; source_path; _ } = get_lookups ~configuration ~environment [path] |> List.hd_exn in
   let definition = Result.ok lookup >>= Lookup.get_definition ~position in
   let _ =
     match source_path with

@@ -23,21 +23,25 @@ type qualified_names_by_path = {
   error_reason: error_reason option;
 }
 
+(* TODO (T82533515): All the `TypeEnvironment.t` arguments should really be typed as
+   `TypeEnvironment.ReadOnly.t`. But we are prevented from doing it at the moment due to the lack of
+   a read-only variant of `ModuleTracker.t`. *)
+
 val find_annotation
-  :  state:State.t ->
+  :  environment:TypeEnvironment.t ->
   configuration:Configuration.Analysis.t ->
   path:PyrePath.t ->
   position:Location.position ->
   (Location.t * Type.t) option
 
 val find_all_annotations_batch
-  :  state:State.t ->
+  :  environment:TypeEnvironment.t ->
   configuration:Configuration.Analysis.t ->
   paths:PyrePath.t list ->
   types_by_path list
 
 val find_definition
-  :  state:State.t ->
+  :  environment:TypeEnvironment.t ->
   configuration:Configuration.Analysis.t ->
   PyrePath.t ->
   Location.position ->

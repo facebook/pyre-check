@@ -198,7 +198,7 @@ let get_completion_items ~state ~configuration ~path ~cursor_position =
             in
             Exn.protect ~f:run ~finally:cleanup
           in
-          let get_items file state =
+          let get_items file { State.environment; _ } =
             (* This is the position of the item before DOT *)
             let item_position = { cursor_position with column = cursor_position.column - 2 } in
             let global_resolution =
@@ -214,7 +214,7 @@ let get_completion_items ~state ~configuration ~path ~cursor_position =
             let global_resolution = Resolution.global_resolution resolution in
             let class_attributes_list =
               LookupCache.find_annotation
-                ~state
+                ~environment
                 ~configuration
                 ~path:(File.path file)
                 ~position:item_position

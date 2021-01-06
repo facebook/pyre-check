@@ -454,7 +454,9 @@ let rec process_type_query_request
           let { Configuration.Analysis.local_root = root; _ } = configuration in
           List.map ~f:(fun path -> Path.create_relative ~root ~relative:path) paths
         in
-        let annotations = LookupCache.find_all_annotations_batch ~state ~configuration ~paths in
+        let annotations =
+          LookupCache.find_all_annotations_batch ~environment ~configuration ~paths
+        in
         let create_result { LookupCache.path; types_by_location } =
           match types_by_location with
           | Result.Ok types ->
@@ -556,7 +558,7 @@ let process_get_definition_request
   let response =
     let open LanguageServer.Protocol in
     let response =
-      match LookupCache.find_definition ~state ~configuration path position with
+      match LookupCache.find_definition ~environment ~configuration path position with
       | None -> TextDocumentDefinitionResponse.create_empty ~id
       | Some { Location.start; stop } -> (
           let module_tracker = TypeEnvironment.module_tracker environment in
@@ -692,7 +694,7 @@ let rec process
           let response =
             let open LanguageServer.Protocol in
             let result =
-              LookupCache.find_annotation ~state ~configuration ~path ~position
+              LookupCache.find_annotation ~environment ~configuration ~path ~position
               >>| fun (location, annotation) ->
               { HoverResponse.location; contents = Type.show_for_hover annotation }
             in
