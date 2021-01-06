@@ -2,6 +2,7 @@
 __pycache__
 /.pyre
 yarn-error.log
+.watchmanconfig
 
 _build
 .merlin
