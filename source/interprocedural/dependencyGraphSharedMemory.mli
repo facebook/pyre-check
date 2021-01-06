@@ -15,9 +15,14 @@ val remove_overriding_types : Reference.t list -> unit
 
 val overrides_exist : Reference.t -> bool
 
-type record_overrides_result = { skipped_overrides: Reference.t list }
+type cap_overrides_result = {
+  overrides: DependencyGraph.overrides;
+  skipped_overrides: Reference.t list;
+}
 
-val record_overrides
+val cap_overrides
   :  ?maximum_overrides_to_analyze:int ->
   DependencyGraph.overrides ->
-  record_overrides_result
+  cap_overrides_result
+
+val record_overrides : DependencyGraph.overrides -> unit

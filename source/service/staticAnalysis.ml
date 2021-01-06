@@ -302,11 +302,6 @@ let fetch_callables_to_analyze ~scheduler ~environment ~configuration ~qualifier
     ()
 
 
-type record_overrides_for_qualifiers_result = {
-  overrides: DependencyGraph.overrides;
-  skipped_overrides: Reference.t list;
-}
-
 let record_overrides_for_qualifiers ~scheduler ~environment ~skip_overrides ~qualifiers =
   let overrides =
     let combine ~key:_ left right = List.rev_append left right in
@@ -348,10 +343,11 @@ let record_overrides_for_qualifiers ~scheduler ~environment ~skip_overrides ~qua
     =
     Taint.TaintConfiguration.get ()
   in
-  let { DependencyGraphSharedMemory.skipped_overrides } =
-    DependencyGraphSharedMemory.record_overrides ?maximum_overrides_to_analyze overrides
+  let ({ DependencyGraphSharedMemory.overrides; _ } as cap_override_result) =
+    DependencyGraphSharedMemory.cap_overrides ?maximum_overrides_to_analyze overrides
   in
-  { overrides; skipped_overrides }
+  DependencyGraphSharedMemory.record_overrides overrides;
+  cap_override_result
 
 
 let analyze
@@ -462,7 +458,7 @@ let analyze
   Statistics.performance ~name:"Computed initial analysis state" ~timer ();
   Log.info "Recording overrides...";
   let timer = Timer.start () in
-  let { overrides; skipped_overrides } =
+  let { DependencyGraphSharedMemory.overrides; skipped_overrides } =
     record_overrides_for_qualifiers ~scheduler ~environment ~skip_overrides ~qualifiers
   in
   let override_dependencies = DependencyGraph.from_overrides overrides in
