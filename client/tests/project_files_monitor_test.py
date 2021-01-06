@@ -171,38 +171,6 @@ class MonitorTest(unittest.TestCase):
 
         self.assertEqual(errors, [])
 
-    @patch.object(SocketConnection, "connect")
-    # pyre-fixme[56]: Argument `tools.pyre.client.json_rpc` to decorator factory
-    #  `unittest.mock.patch.object` could not be resolved in a global scope.
-    @patch.object(json_rpc, "perform_handshake")
-    @patch.object(ProjectFilesMonitor, "_watchman_client")
-    @patch.object(ProjectFilesMonitor, "_find_watchman_path")
-    def test_files_cleaned_up(
-        self,
-        _find_watchman_path,
-        _watchman_client,
-        perform_handshake,
-        _socket_connection,
-    ) -> None:
-        with tempfile.TemporaryDirectory() as root:
-            configuration = mock_configuration()
-            configuration.extensions = []
-            configuration.log_directory = root + ".pyre"
-            analysis_directory = MagicMock()
-            analysis_directory.get_root.return_value = root
-
-            monitor = ProjectFilesMonitor(configuration, ".", analysis_directory)
-            monitor._alive = False  # never enter watchman loop
-            monitor._run()
-
-            monitor_folder = os.path.join(".pyre", "file_monitor")
-            self.assertFalse(
-                os.path.exists(os.path.join(monitor_folder, "file_monitor.lock"))
-            )
-            self.assertFalse(
-                os.path.exists(os.path.join(monitor_folder, "file_monitor.pid"))
-            )
-
     # pyre-fixme[56]: Argument `os.path` to decorator factory
     #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(os.path, "realpath")
