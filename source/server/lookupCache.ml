@@ -34,50 +34,24 @@ type lookup = {
   error_reason: error_reason option;
 }
 
-let get_lookups ~configuration ~state:{ lookups; environment; _ } paths =
-  let paths, nonexistent_paths =
-    let get_source_path path =
-      let module_tracker = TypeEnvironment.module_tracker environment in
-      match ModuleTracker.lookup_path ~configuration module_tracker path with
-      | ModuleTracker.PathLookup.Found source_path -> Either.First (path, source_path)
-      | ModuleTracker.PathLookup.ShadowedBy _ -> Either.Second (path, StubShadowing)
-      | ModuleTracker.PathLookup.NotFound -> Either.Second (path, FileNotFound)
-    in
-    List.partition_map ~f:get_source_path paths
+let get_lookups ~configuration ~state:{ environment; _ } paths =
+  let generate_lookup_for_existent_path (path, ({ SourcePath.qualifier; _ } as source_path)) =
+    let lookup = Lookup.create_of_module (TypeEnvironment.read_only environment) qualifier in
+    { path; source_path = Some source_path; lookup = Some lookup; error_reason = None }
   in
-  let cache_hits, cache_misses =
-    let retrieve_cached (path, ({ SourcePath.qualifier; _ } as source_path)) =
-      let cache_read = String.Table.find lookups (Reference.show qualifier) in
-      match cache_read with
-      | Some lookup ->
-          Either.First
-            { path; source_path = Some source_path; lookup = Some lookup; error_reason = None }
-      | None -> Either.Second (path, source_path)
-    in
-    List.partition_map ~f:retrieve_cached paths
+  let generate_lookup_for_nonexistent_path (path, error_reason) =
+    { path; source_path = None; lookup = None; error_reason = Some error_reason }
   in
-  let generate_lookups paths =
-    let generate_lookup (path, ({ SourcePath.qualifier; _ } as source_path)) =
-      let lookup = Lookup.create_of_module (TypeEnvironment.read_only environment) qualifier in
-      String.Table.set lookups ~key:(Reference.show qualifier) ~data:lookup;
-      { path; source_path = Some source_path; lookup = Some lookup; error_reason = None }
-    in
-    List.map ~f:generate_lookup paths
+  let generate_lookup_for_path path =
+    let module_tracker = TypeEnvironment.module_tracker environment in
+    match ModuleTracker.lookup_path ~configuration module_tracker path with
+    | ModuleTracker.PathLookup.Found source_path ->
+        generate_lookup_for_existent_path (path, source_path)
+    | ModuleTracker.PathLookup.ShadowedBy _ ->
+        generate_lookup_for_nonexistent_path (path, StubShadowing)
+    | ModuleTracker.PathLookup.NotFound -> generate_lookup_for_nonexistent_path (path, FileNotFound)
   in
-  let nonexistents =
-    List.map nonexistent_paths ~f:(fun (path, error_reason) ->
-        { path; source_path = None; lookup = None; error_reason = Some error_reason })
-  in
-  nonexistents @ cache_hits @ generate_lookups cache_misses
-
-
-let evict ~lookups reference = String.Table.remove lookups (Reference.show reference)
-
-let evict_path ~state:{ State.environment; lookups; _ } ~configuration path =
-  let module_tracker = TypeEnvironment.module_tracker environment in
-  match ModuleTracker.lookup_path ~configuration module_tracker path with
-  | ModuleTracker.PathLookup.Found { SourcePath.qualifier; _ } -> evict ~lookups qualifier
-  | _ -> ()
+  List.map paths ~f:generate_lookup_for_path
 
 
 let log_lookup ~handle ~position ~timer ~name ?(integers = []) ?(normals = []) () =

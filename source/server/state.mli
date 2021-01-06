@@ -26,7 +26,6 @@ type connections = {
 type t = {
   environment: Analysis.TypeEnvironment.t;
   errors: Analysis.AnalysisError.t list Ast.Reference.Table.t;
-  lookups: Analysis.Lookup.t String.Table.t;
   symlink_targets_to_sources: PyrePath.t String.Table.t;
   scheduler: Scheduler.t;
   last_integrity_check: float;

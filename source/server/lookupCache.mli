@@ -7,7 +7,6 @@
 
 open Ast
 open Analysis
-open Core
 
 type error_reason =
   | StubShadowing
@@ -24,10 +23,6 @@ type qualified_names_by_path = {
   qualified_names_by_location: (Location.t * Reference.t) list option;
   error_reason: error_reason option;
 }
-
-val evict : lookups:Analysis.Lookup.t String.Table.t -> Reference.t -> unit
-
-val evict_path : state:State.t -> configuration:Configuration.Analysis.t -> PyrePath.t -> unit
 
 val find_annotation
   :  state:State.t ->

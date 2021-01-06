@@ -57,7 +57,6 @@ let initialize_server ?incremental_style ~context ~initial_sources =
     {
       Server.State.connections = connections [];
       environment;
-      lookups = String.Table.create ();
       symlink_targets_to_sources = String.Table.create ();
       last_integrity_check = 0.0;
       last_request_time = 0.0;

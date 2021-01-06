@@ -210,7 +210,7 @@ let recheck
 
 
 let recheck_with_state
-    ~state:{ State.environment; errors; scheduler; connections; lookups; _ }
+    ~state:{ State.environment; errors; scheduler; connections; _ }
     ~configuration
     paths
   =
@@ -218,8 +218,6 @@ let recheck_with_state
     ~message:"Incremental recheck in progress..."
     ~connections
     ~message_type:WarningMessage;
-  let recheck_modules, new_errors = recheck ~configuration ~scheduler ~environment ~errors paths in
-  (* Clean up all lookup data related to updated files. *)
-  List.iter recheck_modules ~f:(LookupCache.evict ~lookups);
+  let _, new_errors = recheck ~configuration ~scheduler ~environment ~errors paths in
   StatusUpdate.write ~message:"Done recheck." ~connections ~message_type:InfoMessage;
   new_errors

@@ -120,7 +120,6 @@ let start_from_scratch ~connections ~configuration () =
     last_request_time = Unix.time ();
     last_integrity_check = Unix.time ();
     connections;
-    lookups = String.Table.create ();
     open_documents = Ast.Reference.Table.create ();
     server_uuid = None;
   }

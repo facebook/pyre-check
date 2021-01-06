@@ -188,7 +188,6 @@ let load
       last_request_time = Unix.time ();
       last_integrity_check = Unix.time ();
       connections;
-      lookups = String.Table.create ();
       open_documents = Reference.Table.create ();
       server_uuid = None;
     }

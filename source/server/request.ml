@@ -792,9 +792,6 @@ let rec process
           in
           { state; response }
       | OpenDocument path ->
-          (* Make sure cache is fresh. We might not have received a close notification. *)
-          LookupCache.evict_path ~state ~configuration path;
-
           (* Make sure the IDE flushes its state about this file, by sending back all the errors for
              this file. *)
           update_open_documents ~state path;
@@ -808,7 +805,6 @@ let rec process
                 Some relative
             | _ -> None
           in
-          LookupCache.evict_path ~state ~configuration path;
           let response =
             relative_path
             >>| (fun path ->
@@ -833,9 +829,6 @@ let rec process
               Telemetry.send_telemetry () ~f:(fun _ ->
                   Telemetry.create_update_message ~local_root ~project_root ~filter_directories) );
 
-          (* On save, evict entries from the lookup cache. The updated source will be picked up at
-             the next lookup (if any). *)
-          LookupCache.evict_path ~state ~configuration path;
           let configuration = { configuration with include_hints = true } in
           process_type_check_request ~state ~configuration [path]
       | ShowStatusRequest { message; type_; _ } ->
