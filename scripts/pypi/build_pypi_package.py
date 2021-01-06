@@ -11,8 +11,9 @@ import re
 import shutil
 import subprocess
 import tempfile
+import textwrap
 from pathlib import Path
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
 # just validate that it's available, but we don't invoke it directly
 import wheel as _wheel  # noqa
@@ -57,15 +58,28 @@ def _validate_version(version: str) -> None:
         raise ValueError("Invalid version format.")
 
 
-def _mkdir_and_init(module_path: Path) -> None:
+def _mkdir_and_init(module_path: Path, version: Optional[str] = None) -> None:
     module_path.mkdir()
-    (module_path / "__init__.py").touch()
+    init_path = module_path / "__init__.py"
+    if version is None:
+        init_path.touch()
+    else:
+        init_path.write_text(
+            f"""\
+# Copyright (c) Facebook, Inc. and its affiliates.
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+
+__version__ = "{version}"
+"""
+        )
 
 
-def _add_init_files(build_root: Path) -> None:
+def _add_init_files(build_root: Path, version: str) -> None:
     # setup.py sdist will refuse to work for directories without a `__init__.py`.
     module_path = build_root / MODULE_NAME
-    _mkdir_and_init(module_path)
+    _mkdir_and_init(module_path, version)
     _mkdir_and_init(module_path / "tools")
     _mkdir_and_init(module_path / "tools/upgrade")
     _mkdir_and_init(module_path / "tools/upgrade/commands")
@@ -255,7 +269,7 @@ def build_pypi_package(
 
     with tempfile.TemporaryDirectory() as build_root:
         build_path = Path(build_root)
-        _add_init_files(build_path)
+        _add_init_files(build_path, version)
         _patch_version(version, build_path)
         _create_setup_py(pyre_directory, version, build_path, nightly)
 

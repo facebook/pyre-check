@@ -33,7 +33,7 @@ class TestCreatingWheel(unittest.TestCase):
     def test_create_init_files(self) -> None:
         with tempfile.TemporaryDirectory() as build_root:
             path = Path(build_root)
-            _add_init_files(path)
+            _add_init_files(path, "version")
             # Assert the expected __init__ files are present
             init_files = [str(path) for path in path.glob("**/*.py")]
             self.assertTrue(build_root + "/pyre_check/__init__.py" in init_files)
@@ -46,7 +46,7 @@ class TestCreatingWheel(unittest.TestCase):
     def test_sync_files(self) -> None:
         with tempfile.TemporaryDirectory() as build_root:
             build_path = Path(build_root)
-            _add_init_files(build_path)
+            _add_init_files(build_path, "version")
             _sync_python_files(self.pyre_directory, build_path)
             command_directory = build_path / "pyre_check/client/commands"
             self.assertTrue(command_directory.is_dir())
@@ -55,7 +55,7 @@ class TestCreatingWheel(unittest.TestCase):
     def test_rsync(self, subprocess_run: Mock) -> None:
         with tempfile.TemporaryDirectory() as build_root:
             build_path = Path(build_root)
-            _add_init_files(build_path)
+            _add_init_files(build_path, "version")
             _sync_pysa_stubs(self.pyre_directory, build_path)
             args, _ = subprocess_run.call_args
             expected_args = [
@@ -70,7 +70,7 @@ class TestCreatingWheel(unittest.TestCase):
     def test_patch_version(self) -> None:
         with tempfile.TemporaryDirectory() as build_root:
             build_path = Path(build_root)
-            _add_init_files(build_path)
+            _add_init_files(build_path, "version")
             _patch_version("0.0.21", build_path)
             path = build_path / MODULE_NAME / "client/version.py"
             self.assertTrue(path.is_file())
