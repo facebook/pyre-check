@@ -12,7 +12,7 @@ Make sure we have an up-to-date package index:
 Install all Python dependencies with:
 ```shell
 [~]$ apt-get install \
- build-essentials \
+ build-essential \
  python3.8 \
  python3.8-venv \
  python3-dev \
