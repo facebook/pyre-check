@@ -60,7 +60,7 @@ let test_process_client_shutdown_request context =
 
 
 let test_process_type_query_request context =
-  let { ScratchServer.configuration; state; _ } =
+  let { ScratchServer.configuration; state = { State.environment; _ }; _ } =
     ScratchServer.start
       ~context
       ~show_error_traces:true
@@ -95,11 +95,9 @@ let test_process_type_query_request context =
   in
   let assert_response request expected_response =
     let actual_response =
-      Request.process_type_query_request ~state ~configuration ~request
-      |> function
-      | { Request.response = Some (Protocol.TypeQueryResponse response); _ } ->
-          Query.Response.to_yojson response |> Yojson.Safe.to_string
-      | _ -> failwith "Unexpected response."
+      Request.process_type_query_request ~environment ~configuration request
+      |> Query.Response.to_yojson
+      |> Yojson.Safe.to_string
     in
     let expected_response = expected_response |> Yojson.Safe.from_string |> Yojson.Safe.to_string in
     assert_equal ~cmp:String.equal ~printer:Fn.id expected_response actual_response

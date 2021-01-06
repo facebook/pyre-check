@@ -30,11 +30,12 @@ val process_client_shutdown_request
   id:LanguageServer.Types.RequestId.t ->
   response
 
+(* TODO (T82533515): `environment` should really be typed as `TypeEnvironment.ReadOnly.t`. *)
 val process_type_query_request
-  :  state:State.t ->
+  :  environment:Analysis.TypeEnvironment.t ->
   configuration:Configuration.Analysis.t ->
-  request:Query.Request.t ->
-  response
+  Query.Request.t ->
+  Query.Response.t
 
 val process_display_type_errors_request
   :  state:State.t ->

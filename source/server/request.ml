@@ -161,11 +161,7 @@ let process_client_shutdown_request ~state ~id =
   { state; response = Some (LanguageServerProtocolResponse response) }
 
 
-let rec process_type_query_request
-    ~state:({ State.environment; _ } as state)
-    ~configuration
-    ~request
-  =
+let rec process_type_query_request ~environment ~configuration request =
   let process_request () =
     let module_tracker = TypeEnvironment.module_tracker environment in
     let read_only_environment = TypeEnvironment.read_only environment in
@@ -280,14 +276,7 @@ let rec process_type_query_request
                (Error
                   (Format.sprintf "No class definition found for %s" (Reference.show annotation)))
     | Batch requests ->
-        Batch
-          (List.map
-             ~f:(fun request ->
-               let { response; _ } = process_type_query_request ~state ~configuration ~request in
-               match response with
-               | Some (TypeQueryResponse response) -> response
-               | _ -> Error "Invalid response for query.")
-             requests)
+        Batch (List.map ~f:(process_type_query_request ~environment ~configuration) requests)
     | Callees caller ->
         (* We don't yet support a syntax for fetching property setters. *)
         Single
@@ -515,20 +504,17 @@ let rec process_type_query_request
         with
         | error -> Error (Exn.to_string error) )
   in
-  let response =
-    try process_request () with
-    | ClassHierarchy.Untracked untracked ->
-        let untracked_response =
-          Format.asprintf "Type `%a` was not found in the type order." Type.pp untracked
-        in
-        Error untracked_response
-    | IncorrectParameters untracked ->
-        let untracked_response =
-          Format.asprintf "Type `%a` has the wrong number of parameters." Type.pp untracked
-        in
-        Error untracked_response
-  in
-  { state; response = Some (TypeQueryResponse response) }
+  try process_request () with
+  | ClassHierarchy.Untracked untracked ->
+      let untracked_response =
+        Format.asprintf "Type `%a` was not found in the type order." Type.pp untracked
+      in
+      Error untracked_response
+  | IncorrectParameters untracked ->
+      let untracked_response =
+        Format.asprintf "Type `%a` has the wrong number of parameters." Type.pp untracked
+      in
+      Error untracked_response
 
 
 let process_type_check_request ~state:({ errors; _ } as state) ~configuration paths =
@@ -629,7 +615,9 @@ let rec process
                 ~reason:"explicit request"
                 ~configuration:server_configuration
                 ~scheduler)
-      | TypeQueryRequest request -> process_type_query_request ~state ~configuration ~request
+      | TypeQueryRequest request ->
+          let response = process_type_query_request ~environment ~configuration request in
+          { state; response = Some (TypeQueryResponse response) }
       | UnparsableQuery { query; reason } ->
           let response =
             Query.Response.Error (Format.sprintf "Unable to parse %s: %s" query reason)
