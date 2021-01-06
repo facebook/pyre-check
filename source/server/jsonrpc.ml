@@ -64,8 +64,9 @@ module Request = struct
     match request_method request with
     | "typeQuery" -> (
         let query = query_parameter request in
-        try Protocol.Request.TypeQueryRequest (Query.parse_request query) with
-        | Query.InvalidQuery reason -> Protocol.Request.UnparsableQuery { query; reason } )
+        match Query.parse_request query with
+        | Result.Ok request -> Protocol.Request.TypeQueryRequest request
+        | Result.Error reason -> Protocol.Request.UnparsableQuery { query; reason } )
     | "stop" -> Protocol.Request.StopRequest
     | _ ->
         request

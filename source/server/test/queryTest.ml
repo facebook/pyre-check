@@ -26,19 +26,32 @@ let test_parse_query context =
       | Type left, Type right -> expression_equal left right
       | _ -> Query.Request.equal left right
     in
-    assert_equal
-      ~ctxt:context
-      ~cmp:type_query_request_equal
-      ~printer:Query.Request.show
-      query
-      (Query.parse_request serialized)
+    match Query.parse_request serialized with
+    | Result.Ok request ->
+        assert_equal
+          ~ctxt:context
+          ~cmp:type_query_request_equal
+          ~printer:Query.Request.show
+          query
+          request
+    | Result.Error reason ->
+        let message =
+          Format.asprintf "Query parsing unexpectedly failed for '%s': %s" serialized reason
+        in
+        assert_failure message
   in
   let assert_fails_to_parse serialized =
-    try
-      Query.parse_request serialized |> ignore;
-      assert_unreached ()
-    with
-    | Query.InvalidQuery _ -> ()
+    match Query.parse_request serialized with
+    | Result.Error _ -> ()
+    | Result.Ok request ->
+        let message =
+          Format.asprintf
+            "Query parsing unexpectedly succeeded for '%s': %a"
+            serialized
+            Sexp.pp_hum
+            (Query.Request.sexp_of_t request)
+        in
+        assert_failure message
   in
   let ( ! ) name =
     let open Expression in
@@ -117,7 +130,10 @@ let test_handle_query_basic context =
       build_configuration_and_environment ~sources:[handle, source]
     in
     let actual_response =
-      Query.process_request ~configuration ~environment (Query.parse_request query)
+      Query.process_request
+        ~configuration
+        ~environment
+        (Query.parse_request query |> Result.ok_or_failwith)
     in
     assert_query_response_equal ~context ~expected:response actual_response
   in
@@ -133,7 +149,10 @@ let test_handle_query_basic context =
       build_configuration_and_environment ~sources:[handle, source]
     in
     let actual_response =
-      Query.process_request ~configuration ~environment (Query.parse_request query)
+      Query.process_request
+        ~configuration
+        ~environment
+        (Query.parse_request query |> Result.ok_or_failwith)
     in
     let expected_response =
       let { Configuration.Analysis.local_root; _ } = configuration in

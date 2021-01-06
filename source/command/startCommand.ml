@@ -295,10 +295,6 @@ let request_handler_thread
           | Some request, Some origin -> queue_request ~origin request
           | _, _ -> Log.log ~section:`Server "Failed to parse LSP message from JSON socket." )
     with
-    | Query.InvalidQuery message ->
-        Connections.write_to_json_socket
-          ~socket
-          (TypeQuery.json_socket_response (Query.Response.Error message))
     | End_of_file
     | Yojson.Json_error _ ->
         handle_disconnect ()

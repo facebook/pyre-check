@@ -8,8 +8,6 @@
 open Ast
 open Pyre
 
-exception InvalidQuery of string
-
 module Request : sig
   type t =
     | Attributes of Reference.t
@@ -27,7 +25,7 @@ module Request : sig
     | Type of Expression.t
     | TypesInFiles of string list
     | ValidateTaintModels of string option
-  [@@deriving eq, show]
+  [@@deriving sexp, compare, eq, show]
 end
 
 module Response : sig
@@ -125,7 +123,7 @@ end
 
 val help : unit -> string
 
-val parse_request : string -> Request.t
+val parse_request : string -> (Request.t, string) Core.Result.t
 
 (* TODO (T82533515): `environment` should really be typed as `TypeEnvironment.ReadOnly.t`. *)
 val process_request

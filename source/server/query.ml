@@ -291,7 +291,7 @@ let help () =
   |> Format.sprintf "Possible queries:\n  %s"
 
 
-let rec parse_request query =
+let rec parse_request_exn query =
   let open Expression in
   match PyreParser.Parser.parse [query] with
   | [
@@ -332,7 +332,7 @@ let rec parse_request query =
           in
           List.map ~f:expression queries
           |> List.map ~f:Expression.show
-          |> List.map ~f:parse_request
+          |> List.map ~f:parse_request_exn
           |> List.fold ~f:construct_batch ~init:[]
           |> List.rev
           |> fun query_list -> Request.Batch query_list
@@ -356,6 +356,11 @@ let rec parse_request query =
   | _ when String.equal query "help" -> Help (help ())
   | _ -> raise (InvalidQuery "unexpected query")
   | exception PyreParser.Parser.Error _ -> raise (InvalidQuery "failed to parse query")
+
+
+let parse_request query =
+  try Result.Ok (parse_request_exn query) with
+  | InvalidQuery reason -> Result.Error reason
 
 
 let rec process_request ~environment ~configuration request =
@@ -714,5 +719,6 @@ let rec process_request ~environment ~configuration request =
 
 
 let parse_and_process_request ~environment ~configuration request =
-  try parse_request request |> process_request ~environment ~configuration with
-  | InvalidQuery message -> Error message
+  match parse_request request with
+  | Result.Error reason -> Response.Error reason
+  | Result.Ok request -> process_request ~environment ~configuration request
