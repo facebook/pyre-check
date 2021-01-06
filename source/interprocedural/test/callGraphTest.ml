@@ -55,7 +55,7 @@ let test_call_graph_of_define context =
         TypeEnvironment.read_only type_environment )
     in
     let overrides = DependencyGraph.create_overrides ~environment ~source:test_source in
-    DependencyGraphSharedMemory.record_overrides overrides;
+    let _ = DependencyGraphSharedMemory.record_overrides overrides in
     assert_equal
       ~cmp:(Location.Map.equal CallGraph.equal_callees)
       ~printer:(fun map ->

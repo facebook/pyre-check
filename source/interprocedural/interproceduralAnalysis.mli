@@ -48,6 +48,7 @@ val save_results
   :  configuration:Configuration.StaticAnalysis.t ->
   filename_lookup:(Ast.Reference.t -> string option) ->
   analyses:AnalysisKind.abstract list ->
+  skipped_overrides:Ast.Reference.t list ->
   Callable.t list ->
   unit
 

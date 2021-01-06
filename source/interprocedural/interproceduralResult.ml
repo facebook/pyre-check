@@ -42,6 +42,8 @@ module type ANALYSIS_PROVIDED = sig
 
   val metadata : unit -> Yojson.Safe.json
 
+  val statistics : unit -> Yojson.Safe.json
+
   (* remove aspects from the model that are not needed at call sites. Just for optimization. *)
   val strip_for_callsite : call_model -> call_model
 end

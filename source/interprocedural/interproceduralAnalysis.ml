@@ -752,7 +752,13 @@ let extract_errors scheduler all_callables =
   |> List.concat_no_order
 
 
-let save_results ~configuration ~filename_lookup ~analyses all_callables =
+let save_results
+    ~configuration:{ Configuration.StaticAnalysis.result_json_path; configuration; _ }
+    ~filename_lookup
+    ~analyses
+    ~skipped_overrides
+    all_callables
+  =
   let emit_json_array_elements out_buffer =
     let seen_element = ref false in
     fun json ->
@@ -763,13 +769,11 @@ let save_results ~configuration ~filename_lookup ~analyses all_callables =
         seen_element := true;
         Json.to_outbuf out_buffer json )
   in
-  match configuration.Configuration.StaticAnalysis.result_json_path with
+  match result_json_path with
   | None -> ()
   | Some directory ->
       let models_path analysis_name = Format.sprintf "%s-output.json" analysis_name in
-      let root =
-        configuration.Configuration.StaticAnalysis.configuration.local_root |> Path.absolute
-      in
+      let root = configuration.local_root |> Path.absolute in
       let save_models (Result.Analysis { Result.analysis; kind }) =
         let kind = Result.Kind.abstract kind in
         let module Analysis = (val analysis) in
@@ -795,6 +799,18 @@ let save_results ~configuration ~filename_lookup ~analyses all_callables =
         let out_channel = open_out (Path.absolute output_path) in
         let out_buffer = Bi_outbuf.create_channel_writer out_channel in
         let filename_spec = models_path Analysis.name in
+        let statistics =
+          let global_statistics =
+            `Assoc
+              [
+                ( "skipped_overrides",
+                  `List
+                    (List.map skipped_overrides ~f:(fun override ->
+                         `String (Reference.show override))) );
+              ]
+          in
+          Json.Util.combine global_statistics (Analysis.statistics ())
+        in
         let toplevel_metadata =
           `Assoc
             [
@@ -802,6 +818,7 @@ let save_results ~configuration ~filename_lookup ~analyses all_callables =
               "root", `String root;
               "tool", `String "pysa";
               "version", `String (Version.version ());
+              "stats", statistics;
             ]
         in
         let analysis_metadata = Analysis.metadata () in

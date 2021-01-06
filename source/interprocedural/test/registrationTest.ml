@@ -32,6 +32,8 @@ module SimpleAnalysis = Interprocedural.Result.Make (struct
 
   let metadata () = `Assoc ["foo", `String "bar"]
 
+  let statistics () = `Assoc ["foos", `Int 1]
+
   let strip_for_callsite model = model
 end)
 

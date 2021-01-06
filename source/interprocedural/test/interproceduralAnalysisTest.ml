@@ -57,6 +57,8 @@ module ResultA = Interprocedural.Result.Make (struct
 
   let metadata () = `Assoc ["codes", `List [`String "A"]]
 
+  let statistics () = `Assoc ["model_verification_errors", `Int 0]
+
   let strip_for_callsite model = model
 end)
 
@@ -105,6 +107,8 @@ module ResultB = Interprocedural.Result.Make (struct
 
 
   let metadata () = `Assoc ["codes", `List [`String "B"]]
+
+  let statistics () = `Assoc ["errors", `Int 1]
 
   let strip_for_callsite model = model
 end)

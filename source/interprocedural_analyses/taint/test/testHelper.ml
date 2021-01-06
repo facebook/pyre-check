@@ -496,7 +496,7 @@ let initialize
       DependencyGraph.create_overrides ~environment ~source
       |> Reference.Map.filter_keys ~f:(fun override -> not (Set.mem skip_overrides override))
     in
-    DependencyGraphSharedMemory.record_overrides overrides;
+    let _ = DependencyGraphSharedMemory.record_overrides overrides in
     DependencyGraph.from_overrides overrides
   in
   let callgraph =

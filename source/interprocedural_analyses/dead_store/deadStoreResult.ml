@@ -46,6 +46,8 @@ module ResultArgument = struct
 
   let metadata () = `Assoc ["codes", `List [`String "A"]]
 
+  let statistics () = `Assoc []
+
   let strip_for_callsite model = model
 end
 

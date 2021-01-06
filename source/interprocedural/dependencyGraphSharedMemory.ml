@@ -28,27 +28,35 @@ let get_overriding_types ~member = Overrides.get member
 
 let overrides_exist member = Overrides.mem member
 
+type record_overrides_result = { skipped_overrides: Reference.t list }
+
 let record_overrides ?maximum_overrides_to_analyze overrides =
-  let record_override_edge ~key:member ~data:subtypes =
+  let record_override_edge ~key:member ~data:subtypes skipped_overrides =
     let number_of_overrides = List.length subtypes in
     match maximum_overrides_to_analyze with
     | Some cap ->
-        if number_of_overrides < cap then
-          add_overriding_types ~member ~subtypes
-        else
+        if number_of_overrides < cap then begin
+          add_overriding_types ~member ~subtypes;
+          skipped_overrides
+        end
+        else begin
           Log.info
             "Omitting overrides for `%s`, as it has %d overrides."
             (Reference.show member)
-            number_of_overrides
+            number_of_overrides;
+          member :: skipped_overrides
+        end
     | None ->
         if number_of_overrides > 50 then
           Log.warning
             "`%s` has %d overrides, this might slow down the analysis considerably."
             (Reference.show member)
             number_of_overrides;
-        add_overriding_types ~member ~subtypes
+        add_overriding_types ~member ~subtypes;
+        skipped_overrides
   in
-  Reference.Map.iteri overrides ~f:record_override_edge
+  Reference.Map.fold overrides ~f:record_override_edge ~init:[]
+  |> fun skipped_overrides -> { skipped_overrides }
 
 
 let remove_overriding_types keys = Overrides.remove_batch (Overrides.KeySet.of_list keys)

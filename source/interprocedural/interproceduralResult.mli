@@ -43,6 +43,9 @@ module type ANALYSIS_PROVIDED = sig
   (* Additional metadata an analysis wants to save, e.g., warning code explanation. *)
   val metadata : unit -> Yojson.Safe.json
 
+  (* Additional statistics an analysis wants to report. *)
+  val statistics : unit -> Yojson.Safe.json
+
   (* remove aspects from the model that are not needed at call sites. Just for optimization. *)
   val strip_for_callsite : call_model -> call_model
 end
