@@ -291,7 +291,7 @@ let help () =
   |> Format.sprintf "Possible queries:\n  %s"
 
 
-let rec parse_query query =
+let rec parse_request query =
   let open Expression in
   match PyreParser.Parser.parse [query] with
   | [
@@ -332,7 +332,7 @@ let rec parse_query query =
           in
           List.map ~f:expression queries
           |> List.map ~f:Expression.show
-          |> List.map ~f:parse_query
+          |> List.map ~f:parse_request
           |> List.fold ~f:construct_batch ~init:[]
           |> List.rev
           |> fun query_list -> Request.Batch query_list
@@ -711,3 +711,8 @@ let rec process_request ~environment ~configuration request =
         Format.asprintf "Type `%a` has the wrong number of parameters." Type.pp untracked
       in
       Error untracked_response
+
+
+let parse_and_process_request ~environment ~configuration request =
+  try parse_request request |> process_request ~environment ~configuration with
+  | InvalidQuery message -> Error message

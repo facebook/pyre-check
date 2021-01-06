@@ -31,11 +31,11 @@ let test_parse_query context =
       ~cmp:type_query_request_equal
       ~printer:Query.Request.show
       query
-      (Query.parse_query serialized)
+      (Query.parse_request serialized)
   in
   let assert_fails_to_parse serialized =
     try
-      Query.parse_query serialized |> ignore;
+      Query.parse_request serialized |> ignore;
       assert_unreached ()
     with
     | Query.InvalidQuery _ -> ()
@@ -117,7 +117,7 @@ let test_handle_query_basic context =
       build_configuration_and_environment ~sources:[handle, source]
     in
     let actual_response =
-      Query.process_request ~configuration ~environment (Query.parse_query query)
+      Query.process_request ~configuration ~environment (Query.parse_request query)
     in
     assert_query_response_equal ~context ~expected:response actual_response
   in
@@ -133,7 +133,7 @@ let test_handle_query_basic context =
       build_configuration_and_environment ~sources:[handle, source]
     in
     let actual_response =
-      Query.process_request ~configuration ~environment (Query.parse_query query)
+      Query.process_request ~configuration ~environment (Query.parse_request query)
     in
     let expected_response =
       let { Configuration.Analysis.local_root; _ } = configuration in
