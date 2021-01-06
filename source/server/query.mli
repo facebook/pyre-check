@@ -126,3 +126,10 @@ end
 val help : unit -> string
 
 val parse_query : string -> Request.t
+
+(* TODO (T82533515): `environment` should really be typed as `TypeEnvironment.ReadOnly.t`. *)
+val process_request
+  :  environment:Analysis.TypeEnvironment.t ->
+  configuration:Configuration.Analysis.t ->
+  Request.t ->
+  Response.t

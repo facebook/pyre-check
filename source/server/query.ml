@@ -7,10 +7,12 @@
 
 open Core
 open Ast
-open Expression
+open Analysis
 open Pyre
 
 exception InvalidQuery of string
+
+exception IncorrectParameters of Type.t
 
 module Request = struct
   type t =
@@ -223,6 +225,7 @@ end
 
 let help () =
   let open Request in
+  let open Expression in
   let help = function
     | Batch _ ->
         Some
@@ -289,6 +292,7 @@ let help () =
 
 
 let rec parse_query query =
+  let open Expression in
   match PyreParser.Parser.parse [query] with
   | [
    {
@@ -352,3 +356,358 @@ let rec parse_query query =
   | _ when String.equal query "help" -> Help (help ())
   | _ -> raise (InvalidQuery "unexpected query")
   | exception PyreParser.Parser.Error _ -> raise (InvalidQuery "failed to parse query")
+
+
+let rec process_request ~environment ~configuration request =
+  let process_request () =
+    let module_tracker = TypeEnvironment.module_tracker environment in
+    let read_only_environment = TypeEnvironment.read_only environment in
+    let global_resolution = TypeEnvironment.ReadOnly.global_resolution read_only_environment in
+    let order = GlobalResolution.class_hierarchy global_resolution in
+    let resolution =
+      TypeCheck.resolution
+        global_resolution
+        (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
+        (module TypeCheck.DummyContext)
+    in
+
+    let parse_and_validate
+        ?(unknown_is_top = false)
+        ?(fill_missing_type_parameters_with_any = false)
+        expression
+      =
+      let annotation =
+        (* Return untracked so we can specifically message the user about them. *)
+        GlobalResolution.parse_annotation ~validation:NoValidation global_resolution expression
+      in
+      let annotation =
+        if unknown_is_top then
+          let constraints = function
+            | Type.Primitive "unknown" -> Some Type.Top
+            | _ -> None
+          in
+          Type.instantiate annotation ~constraints
+        else
+          annotation
+      in
+      let annotation =
+        match fill_missing_type_parameters_with_any, annotation with
+        | true, Type.Primitive annotation -> (
+            let generics = GlobalResolution.variables global_resolution annotation in
+            match generics with
+            | Some generics
+              when (not (List.is_empty generics))
+                   && List.for_all generics ~f:(function
+                          | Type.Variable.Unary _ -> true
+                          | _ -> false) ->
+                Type.parametric
+                  annotation
+                  (List.map generics ~f:(fun _ -> Type.Parameter.Single Type.Any))
+            | _ -> Type.Primitive annotation )
+        | _ -> annotation
+      in
+      if ClassHierarchy.is_instantiated order annotation then
+        let mismatches, _ =
+          GlobalResolution.check_invalid_type_parameters global_resolution annotation
+        in
+        if List.is_empty mismatches then
+          annotation
+        else
+          raise (IncorrectParameters annotation)
+      else
+        raise (ClassHierarchy.Untracked annotation)
+    in
+    let unannotated_global_environment =
+      GlobalResolution.unannotated_global_environment global_resolution
+    in
+    let get_error_paths errors =
+      List.fold
+        ~init:""
+        ~f:(fun sofar (path, error_reason) ->
+          let print_reason = function
+            | LookupProcessor.StubShadowing -> " (file shadowed by .pyi stub file)"
+            | LookupProcessor.FileNotFound -> " (file not found)"
+          in
+          Format.asprintf
+            "%s%s`%a`%s"
+            sofar
+            (if String.is_empty sofar then "" else ", ")
+            PyrePath.pp
+            path
+            (print_reason error_reason))
+        errors
+    in
+    let open Response in
+    match request with
+    | Request.Attributes annotation ->
+        let to_attribute attribute =
+          let name = Annotated.Attribute.name attribute in
+          let instantiated_annotation =
+            GlobalResolution.instantiate_attribute
+              ~resolution:global_resolution
+              ~accessed_through_class:false
+              attribute
+          in
+          let annotation =
+            instantiated_annotation |> Annotated.Attribute.annotation |> Annotation.annotation
+          in
+          let property = Annotated.Attribute.property attribute in
+          let kind =
+            if property then
+              Base.Property
+            else
+              Base.Regular
+          in
+          let final = Annotated.Attribute.is_final instantiated_annotation in
+          { Base.name; annotation; kind; final }
+        in
+        parse_and_validate (Expression.from_reference ~location:Location.any annotation)
+        |> Type.split
+        |> fst
+        |> Type.primitive_name
+        >>= GlobalResolution.attributes ~resolution:global_resolution
+        >>| List.map ~f:to_attribute
+        >>| (fun attributes -> Single (Base.FoundAttributes attributes))
+        |> Option.value
+             ~default:
+               (Error
+                  (Format.sprintf "No class definition found for %s" (Reference.show annotation)))
+    | Batch requests -> Batch (List.map ~f:(process_request ~environment ~configuration) requests)
+    | Callees caller ->
+        (* We don't yet support a syntax for fetching property setters. *)
+        Single
+          (Base.Callees
+             ( Callgraph.get ~caller:(Callgraph.FunctionCaller caller)
+             |> List.map ~f:(fun { Callgraph.callee; _ } -> callee) ))
+    | CalleesWithLocation caller ->
+        let instantiate =
+          Location.WithModule.instantiate
+            ~lookup:
+              (AstEnvironment.ReadOnly.get_real_path_relative
+                 ~configuration
+                 (TypeEnvironment.ReadOnly.ast_environment read_only_environment))
+        in
+        let callees =
+          (* We don't yet support a syntax for fetching property setters. *)
+          Callgraph.get ~caller:(Callgraph.FunctionCaller caller)
+          |> List.map ~f:(fun { Callgraph.callee; locations } ->
+                 { Base.callee; locations = List.map locations ~f:instantiate })
+        in
+        Single (Base.CalleesWithLocation callees)
+    | Defines module_or_class_names ->
+        let ast_environment = TypeEnvironment.ReadOnly.ast_environment read_only_environment in
+        let defines_of_module module_or_class_name =
+          let module_name, filter_define =
+            if AstEnvironment.ReadOnly.is_module ast_environment module_or_class_name then
+              Some module_or_class_name, fun _ -> false
+            else
+              let filter
+                  { Statement.Define.signature = { Statement.Define.Signature.parent; _ }; _ }
+                =
+                not (Option.equal Reference.equal parent (Some module_or_class_name))
+              in
+              let rec find_module_name current_reference =
+                if AstEnvironment.ReadOnly.is_module ast_environment current_reference then
+                  Some current_reference
+                else
+                  Reference.prefix current_reference >>= find_module_name
+              in
+              find_module_name module_or_class_name, filter
+          in
+          let defines =
+            module_name
+            >>= AstEnvironment.ReadOnly.get_processed_source ast_environment
+            >>| Analysis.FunctionDefinition.collect_defines
+            >>| List.map ~f:snd
+            >>| List.concat_map ~f:Analysis.FunctionDefinition.all_bodies
+            >>| List.filter ~f:(fun { Node.value = define; _ } ->
+                    not
+                      ( Statement.Define.is_toplevel define
+                      || Statement.Define.is_class_toplevel define
+                      || Statement.Define.is_overloaded_function define
+                      || filter_define define ))
+            |> Option.value ~default:[]
+          in
+          let represent
+              {
+                Node.value =
+                  { Statement.Define.signature = { name; return_annotation; parameters; _ }; _ };
+                _;
+              }
+            =
+            let represent_parameter { Node.value = { Expression.Parameter.name; annotation; _ }; _ }
+              =
+              { Base.parameter_name = Identifier.sanitized name; parameter_annotation = annotation }
+            in
+            {
+              Base.define_name = Node.value name;
+              parameters = List.map parameters ~f:represent_parameter;
+              return_annotation;
+            }
+          in
+          List.map defines ~f:represent
+        in
+        List.concat_map module_or_class_names ~f:defines_of_module
+        |> fun defines -> Single (Base.FoundDefines defines)
+    | DumpCallGraph ->
+        let get_callgraph module_qualifier =
+          let callees
+              {
+                Node.value =
+                  {
+                    Statement.Define.signature =
+                      { Statement.Define.Signature.name = { Node.value = caller; _ }; _ };
+                    _;
+                  };
+                _;
+              }
+            =
+            let instantiate =
+              Location.WithModule.instantiate
+                ~lookup:
+                  (AstEnvironment.ReadOnly.get_real_path_relative
+                     ~configuration
+                     (TypeEnvironment.ReadOnly.ast_environment read_only_environment))
+            in
+            Callgraph.get ~caller:(Callgraph.FunctionCaller caller)
+            |> List.map ~f:(fun { Callgraph.callee; locations } ->
+                   { Base.callee; locations = List.map locations ~f:instantiate })
+            |> fun callees -> { Base.caller; callees }
+          in
+          let ast_environment = TypeEnvironment.ReadOnly.ast_environment read_only_environment in
+          AstEnvironment.ReadOnly.get_processed_source ast_environment module_qualifier
+          >>| Preprocessing.defines ~include_toplevels:false ~include_stubs:false
+          >>| List.map ~f:callees
+          |> Option.value ~default:[]
+        in
+        let qualifiers = ModuleTracker.tracked_explicit_modules module_tracker in
+        Single (Base.Callgraph (List.concat_map qualifiers ~f:get_callgraph))
+    | Help help_list -> Single (Base.Help help_list)
+    | IsCompatibleWith (left, right) ->
+        (* We need a special version of parse_and_validate to handle the "unknown" type that
+           Monkeycheck may send us *)
+        let left = parse_and_validate ~unknown_is_top:true left in
+        let right = parse_and_validate ~unknown_is_top:true right in
+        let right =
+          match Type.coroutine_value right with
+          | None -> right
+          | Some unwrapped -> unwrapped
+        in
+        GlobalResolution.is_compatible_with global_resolution ~left ~right
+        |> fun result -> Single (Base.Compatibility { actual = left; expected = right; result })
+    | LessOrEqual (left, right) ->
+        let left = parse_and_validate left in
+        let right = parse_and_validate right in
+        GlobalResolution.less_or_equal global_resolution ~left ~right
+        |> fun response -> Single (Base.Boolean response)
+    | PathOfModule module_name ->
+        ModuleTracker.lookup_source_path module_tracker module_name
+        >>= (fun source_path ->
+              let path = SourcePath.full_path ~configuration source_path |> Path.absolute in
+              Some (Single (Base.FoundPath path)))
+        |> Option.value
+             ~default:
+               (Error (Format.sprintf "No path found for module `%s`" (Reference.show module_name)))
+    | SaveServerState path ->
+        let path = Path.absolute path in
+        Log.info "Saving server state into `%s`" path;
+        Memory.save_shared_memory ~path ~configuration;
+        Single (Base.Success (Format.sprintf "Saved state."))
+    | Superclasses class_names ->
+        let get_superclasses class_name =
+          Reference.show class_name
+          |> GlobalResolution.successors ~resolution:global_resolution
+          |> List.sort ~compare:String.compare
+          |> List.map ~f:Reference.create
+          |> fun superclasses -> { Base.class_name; superclasses }
+        in
+        let class_names =
+          match class_names with
+          | [] ->
+              UnannotatedGlobalEnvironment.ReadOnly.all_classes unannotated_global_environment
+              |> List.map ~f:Reference.create
+          | _ ->
+              List.filter class_names ~f:(fun class_name ->
+                  Reference.show class_name |> GlobalResolution.class_exists global_resolution)
+        in
+        Single (Superclasses (List.map ~f:get_superclasses class_names))
+    | Type expression ->
+        let annotation = Resolution.resolve_expression_to_type resolution expression in
+        Single (Type annotation)
+    | TypesInFiles paths ->
+        let paths =
+          let { Configuration.Analysis.local_root = root; _ } = configuration in
+          List.map ~f:(fun path -> Path.create_relative ~root ~relative:path) paths
+        in
+        let annotations =
+          LookupProcessor.find_all_annotations_batch ~environment ~configuration ~paths
+        in
+        let create_result { LookupProcessor.path; types_by_location } =
+          match types_by_location with
+          | Result.Ok types ->
+              Either.First { Base.path; types = List.map ~f:create_type_at_location types }
+          | Result.Error error_reason -> Either.Second (path, error_reason)
+        in
+        let results, errors = List.partition_map ~f:create_result annotations in
+        if List.is_empty errors then
+          Single (Base.TypesByPath results)
+        else
+          Error (Format.asprintf "Not able to get lookups in: %s" (get_error_paths errors))
+    | ValidateTaintModels path -> (
+        try
+          let paths =
+            match path with
+            | Some path ->
+                if String.is_prefix ~prefix:"/" path then
+                  [Path.create_absolute path]
+                else
+                  let { Configuration.Analysis.local_root = root; _ } = configuration in
+                  [Path.create_relative ~root ~relative:path]
+            | None -> configuration.Configuration.Analysis.taint_model_paths
+          in
+          let configuration =
+            Taint.TaintConfiguration.create
+              ~rule_filter:None
+              ~find_missing_flows:None
+              ~dump_model_query_results_path:None
+              ~paths
+          in
+          let get_model_errors sources =
+            let model_errors (path, source) =
+              Taint.Model.parse
+                ~resolution:
+                  (TypeCheck.resolution
+                     global_resolution
+                     (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
+                     (module TypeCheck.DummyContext))
+                ~path
+                ~source
+                ~configuration
+                Interprocedural.Callable.Map.empty
+              |> fun { Taint.Model.errors; _ } -> errors
+            in
+            List.concat_map sources ~f:model_errors
+          in
+          let errors = Taint.Model.get_model_sources ~paths |> get_model_errors in
+          if List.is_empty errors then
+            Single
+              (Base.Success
+                 (Format.asprintf
+                    "Models in `%s` are valid."
+                    (paths |> List.map ~f:Path.show |> String.concat ~sep:", ")))
+          else
+            Single (Base.ModelVerificationErrors errors)
+        with
+        | error -> Error (Exn.to_string error) )
+  in
+  try process_request () with
+  | ClassHierarchy.Untracked untracked ->
+      let untracked_response =
+        Format.asprintf "Type `%a` was not found in the type order." Type.pp untracked
+      in
+      Error untracked_response
+  | IncorrectParameters untracked ->
+      let untracked_response =
+        Format.asprintf "Type `%a` has the wrong number of parameters." Type.pp untracked
+      in
+      Error untracked_response

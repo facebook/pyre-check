@@ -117,7 +117,7 @@ let test_handle_query_basic context =
       build_configuration_and_environment ~sources:[handle, source]
     in
     let actual_response =
-      Request.process_type_query_request ~configuration ~environment (Query.parse_query query)
+      Query.process_request ~configuration ~environment (Query.parse_query query)
     in
     assert_query_response_equal ~context ~expected:response actual_response
   in
@@ -133,7 +133,7 @@ let test_handle_query_basic context =
       build_configuration_and_environment ~sources:[handle, source]
     in
     let actual_response =
-      Request.process_type_query_request ~configuration ~environment (Query.parse_query query)
+      Query.process_request ~configuration ~environment (Query.parse_query query)
     in
     let expected_response =
       let { Configuration.Analysis.local_root; _ } = configuration in
@@ -885,7 +885,7 @@ let test_handle_query_pysa context =
   in
   let assert_response request expected_response =
     let actual_response =
-      Request.process_type_query_request ~environment ~configuration request
+      Query.process_request ~environment ~configuration request
       |> Query.Response.to_yojson
       |> Yojson.Safe.to_string
     in
