@@ -2635,11 +2635,13 @@ module ScratchProject = struct
     (* We assume that there's only one external source directory that acts as the local root as
        well. *)
     let external_root = bracket_tmpdir context |> Path.create_absolute in
+    let log_directory = bracket_tmpdir context in
     let configuration =
       Configuration.Analysis.create
         ~local_root
         ~source_path:[SearchPath.Root local_root]
         ~search_path:[SearchPath.Root external_root]
+        ~log_directory
         ~filter_directories:[local_root]
         ~ignore_all_errors:[external_root]
         ~incremental_style
