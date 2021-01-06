@@ -17,12 +17,6 @@ type types_by_path = {
   types_by_location: ((Location.t * Type.t) list, error_reason) Core.Result.t;
 }
 
-type qualified_names_by_path = {
-  path: PyrePath.t;
-  qualified_names_by_location: (Location.t * Reference.t) list option;
-  error_reason: error_reason option;
-}
-
 (* TODO (T82533515): All the `TypeEnvironment.t` arguments should really be typed as
    `TypeEnvironment.ReadOnly.t`. But we are prevented from doing it at the moment due to the lack of
    a read-only variant of `ModuleTracker.t`. *)
