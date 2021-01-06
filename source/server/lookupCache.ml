@@ -17,8 +17,7 @@ type error_reason =
 
 type types_by_path = {
   path: PyrePath.t;
-  types_by_location: (Location.t * Type.t) list option;
-  error_reason: error_reason option;
+  types_by_location: ((Location.t * Type.t) list, error_reason) Result.t;
 }
 
 type qualified_names_by_path = {
@@ -30,17 +29,16 @@ type qualified_names_by_path = {
 type lookup = {
   path: PyrePath.t;
   source_path: SourcePath.t option;
-  lookup: Lookup.t option;
-  error_reason: error_reason option;
+  lookup: (Lookup.t, error_reason) Result.t;
 }
 
 let get_lookups ~configuration ~state:{ environment; _ } paths =
   let generate_lookup_for_existent_path (path, ({ SourcePath.qualifier; _ } as source_path)) =
     let lookup = Lookup.create_of_module (TypeEnvironment.read_only environment) qualifier in
-    { path; source_path = Some source_path; lookup = Some lookup; error_reason = None }
+    { path; source_path = Some source_path; lookup = Result.Ok lookup }
   in
   let generate_lookup_for_nonexistent_path (path, error_reason) =
-    { path; source_path = None; lookup = None; error_reason = Some error_reason }
+    { path; source_path = None; lookup = Result.Error error_reason }
   in
   let generate_lookup_for_path path =
     let module_tracker = TypeEnvironment.module_tracker environment in
@@ -72,7 +70,7 @@ let log_lookup ~handle ~position ~timer ~name ?(integers = []) ?(normals = []) (
 let find_annotation ~state ~configuration ~path ~position =
   let timer = Timer.start () in
   let { lookup; source_path; _ } = get_lookups ~configuration ~state [path] |> List.hd_exn in
-  let annotation = lookup >>= Lookup.get_annotation ~position in
+  let annotation = Result.ok lookup >>= Lookup.get_annotation ~position in
   let _ =
     match source_path with
     | Some { SourcePath.relative = handle; _ } ->
@@ -88,11 +86,13 @@ let find_annotation ~state ~configuration ~path ~position =
 
 
 let find_all_annotations_batch ~state ~configuration ~paths =
-  let get_annotations { path; lookup; error_reason; _ } =
-    let annotations =
-      lookup >>| Lookup.get_all_annotations >>| List.sort ~compare:[%compare: Location.t * Type.t]
-    in
-    { path; types_by_location = annotations; error_reason }
+  let get_annotations { path; lookup; _ } =
+    {
+      path;
+      types_by_location =
+        Result.map lookup ~f:(fun lookup ->
+            Lookup.get_all_annotations lookup |> List.sort ~compare:[%compare: Location.t * Type.t]);
+    }
   in
   List.map ~f:get_annotations (get_lookups ~configuration ~state paths)
 
@@ -100,7 +100,7 @@ let find_all_annotations_batch ~state ~configuration ~paths =
 let find_definition ~state ~configuration path position =
   let timer = Timer.start () in
   let { lookup; source_path; _ } = get_lookups ~configuration ~state [path] |> List.hd_exn in
-  let definition = lookup >>= Lookup.get_definition ~position in
+  let definition = Result.ok lookup >>= Lookup.get_definition ~position in
   let _ =
     match source_path with
     | Some { SourcePath.relative = handle; _ } ->

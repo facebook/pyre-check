@@ -14,8 +14,7 @@ type error_reason =
 
 type types_by_path = {
   path: PyrePath.t;
-  types_by_location: (Location.t * Type.t) list option;
-  error_reason: error_reason option;
+  types_by_location: ((Location.t * Type.t) list, error_reason) Core.Result.t;
 }
 
 type qualified_names_by_path = {

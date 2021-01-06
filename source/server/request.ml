@@ -232,9 +232,8 @@ let rec process_type_query_request
         ~init:""
         ~f:(fun sofar (path, error_reason) ->
           let print_reason = function
-            | Some LookupCache.StubShadowing -> " (file shadowed by .pyi stub file)"
-            | Some LookupCache.FileNotFound -> " (file not found)"
-            | None -> ""
+            | LookupCache.StubShadowing -> " (file shadowed by .pyi stub file)"
+            | LookupCache.FileNotFound -> " (file not found)"
           in
           Format.asprintf
             "%s%s`%a`%s"
@@ -456,10 +455,11 @@ let rec process_type_query_request
           List.map ~f:(fun path -> Path.create_relative ~root ~relative:path) paths
         in
         let annotations = LookupCache.find_all_annotations_batch ~state ~configuration ~paths in
-        let create_result = function
-          | { LookupCache.path; types_by_location = Some types; _ } ->
+        let create_result { LookupCache.path; types_by_location } =
+          match types_by_location with
+          | Result.Ok types ->
               Either.First { Base.path; types = List.map ~f:create_type_at_location types }
-          | { LookupCache.path; error_reason; _ } -> Either.Second (path, error_reason)
+          | Result.Error error_reason -> Either.Second (path, error_reason)
         in
         let results, errors = List.partition_map ~f:create_result annotations in
         if List.is_empty errors then
