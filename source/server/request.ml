@@ -232,8 +232,8 @@ let rec process_type_query_request
         ~init:""
         ~f:(fun sofar (path, error_reason) ->
           let print_reason = function
-            | LookupCache.StubShadowing -> " (file shadowed by .pyi stub file)"
-            | LookupCache.FileNotFound -> " (file not found)"
+            | LookupProcessor.StubShadowing -> " (file shadowed by .pyi stub file)"
+            | LookupProcessor.FileNotFound -> " (file not found)"
           in
           Format.asprintf
             "%s%s`%a`%s"
@@ -455,9 +455,9 @@ let rec process_type_query_request
           List.map ~f:(fun path -> Path.create_relative ~root ~relative:path) paths
         in
         let annotations =
-          LookupCache.find_all_annotations_batch ~environment ~configuration ~paths
+          LookupProcessor.find_all_annotations_batch ~environment ~configuration ~paths
         in
-        let create_result { LookupCache.path; types_by_location } =
+        let create_result { LookupProcessor.path; types_by_location } =
           match types_by_location with
           | Result.Ok types ->
               Either.First { Base.path; types = List.map ~f:create_type_at_location types }
@@ -558,7 +558,7 @@ let process_get_definition_request
   let response =
     let open LanguageServer.Protocol in
     let response =
-      match LookupCache.find_definition ~environment ~configuration path position with
+      match LookupProcessor.find_definition ~environment ~configuration path position with
       | None -> TextDocumentDefinitionResponse.create_empty ~id
       | Some { Location.start; stop } -> (
           let module_tracker = TypeEnvironment.module_tracker environment in
@@ -694,7 +694,7 @@ let rec process
           let response =
             let open LanguageServer.Protocol in
             let result =
-              LookupCache.find_annotation ~environment ~configuration ~path ~position
+              LookupProcessor.find_annotation ~environment ~configuration ~path ~position
               >>| fun (location, annotation) ->
               { HoverResponse.location; contents = Type.show_for_hover annotation }
             in

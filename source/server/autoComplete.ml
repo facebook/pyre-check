@@ -213,7 +213,7 @@ let get_completion_items ~state ~configuration ~path ~cursor_position =
 
             let global_resolution = Resolution.global_resolution resolution in
             let class_attributes_list =
-              LookupCache.find_annotation
+              LookupProcessor.find_annotation
                 ~environment
                 ~configuration
                 ~path:(File.path file)
