@@ -1,0 +1,10 @@
+{
+  "exclude": [
+    ".*/stubs/.*",
+    ".*/source/.*",
+    ".*/documentation/.*"
+  ],
+  "source_directories": [
+    "."
+  ]
+}
