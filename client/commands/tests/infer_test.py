@@ -25,7 +25,7 @@ from ...commands.infer import (
     StubFile,
     _existing_annotations_as_errors,
     _relativize_access,
-    dequalify,
+    dequalify_and_fix_pathlike,
     generate_stub_files,
 )
 from ...error import LegacyError
@@ -50,10 +50,11 @@ def build_json(inference) -> Dict[str, Union[int, str]]:
 
 
 class HelperTest(unittest.TestCase):
-    def test_dequalify(self) -> None:
-        self.assertEqual(dequalify("typing.List"), "List")
+    def test_dequalify_and_fix_pathlike(self) -> None:
+        self.assertEqual(dequalify_and_fix_pathlike("typing.List"), "List")
         self.assertEqual(
-            dequalify("typing.Union[typing.List[int]]"), "Union[List[int]]"
+            dequalify_and_fix_pathlike("typing.Union[typing.List[int]]"),
+            "Union[List[int]]",
         )
 
     def test__relativize_access(self) -> None:
@@ -522,6 +523,74 @@ class PyreTest(unittest.TestCase):
             ],
             "def with_params(y: int = 7, x: int = 5) -> int: ...",
             full_only=True,
+        )
+
+        self.assert_stub(
+            [
+                build_json(
+                    {
+                        "annotation": "Union[PathLike[bytes],"
+                        + " PathLike[str], bytes, str]",
+                        "function_name": "test.bar",
+                        "parent": None,
+                        "parameters": [{"name": "x", "type": "int", "value": None}],
+                        "decorators": [],
+                        "async": False,
+                    }
+                )
+            ],
+            "def bar(x: int) -> Union['os.PathLike[bytes]',"
+            + " 'os.PathLike[str]', bytes, str]: ...",
+        )
+
+        self.assert_stub(
+            [
+                build_json(
+                    {
+                        "annotation": "PathLike[str]",
+                        "function_name": "test.bar",
+                        "parent": None,
+                        "parameters": [{"name": "x", "type": "int", "value": None}],
+                        "decorators": [],
+                        "async": False,
+                    }
+                )
+            ],
+            "def bar(x: int) -> 'os.PathLike[str]': ...",
+        )
+        self.assert_stub(
+            [
+                build_json(
+                    {
+                        "annotation": "os.PathLike[str]",
+                        "function_name": "test.bar",
+                        "parent": None,
+                        "parameters": [{"name": "x", "type": "int", "value": None}],
+                        "decorators": [],
+                        "async": False,
+                    }
+                )
+            ],
+            "def bar(x: int) -> os.PathLike[str]: ...",
+        )
+        self.assert_stub(
+            [
+                build_json(
+                    {
+                        "annotation": "typing.Union[os.PathLike[str]]",
+                        "function_name": "test.bar",
+                        "parent": None,
+                        "parameters": [{"name": "x", "type": "int", "value": None}],
+                        "decorators": [],
+                        "async": False,
+                    }
+                )
+            ],
+            """\
+            from typing import Union
+
+            def bar(x: int) -> Union[os.PathLike[str]]: ...
+            """,
         )
 
     def test_field_stubs(self) -> None:

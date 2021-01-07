@@ -36,7 +36,35 @@ from .statistics import _get_paths, _parse_paths, parse_path_to_module
 LOG: Logger = logging.getLogger(__name__)
 
 
-def dequalify(annotation):
+class AnnotationFixer(libcst.CSTTransformer):
+    def leave_Subscript(
+        self,
+        original_node: libcst.Subscript,
+        updated_node: Union[libcst.Subscript, libcst.SimpleString],
+    ) -> Union[libcst.Subscript, libcst.SimpleString]:
+        if libcst.matchers.matches(
+            original_node.value, libcst.matchers.Name("PathLike")
+        ):
+            name_node = libcst.Attribute(
+                value=libcst.Name(
+                    value="os",
+                    lpar=[],
+                    rpar=[],
+                ),
+                attr=libcst.Name(value="PathLike"),
+            )
+            node_as_string = libcst.parse_module("").code_for_node(
+                updated_node.with_changes(value=name_node)
+            )
+            updated_node = libcst.SimpleString(f"'{node_as_string}'")
+        return updated_node
+
+
+def dequalify_and_fix_pathlike(annotation: str) -> str:
+    if annotation.find("PathLike") >= 0:
+        tree = libcst.parse_module(annotation)
+        annotation = tree.visit(AnnotationFixer()).code
+
     return annotation.replace("typing.", "")
 
 
@@ -75,7 +103,7 @@ class FunctionStub:
         return self.name.split(".")[-1] if self.name.split(".") else ""
 
     def _get_annotation(self) -> str:
-        return " -> " + dequalify(self.actual) if self.actual else ""
+        return " -> " + dequalify_and_fix_pathlike(self.actual) if self.actual else ""
 
     def _get_parameter_string(self) -> str:
         """Depending on if an argument has a type, the style for default values
@@ -87,7 +115,7 @@ class FunctionStub:
         for parameter in self.parameters:
             name = parameter["name"]
             if parameter["type"]:
-                name += ": " + dequalify(parameter["type"])
+                name += ": " + dequalify_and_fix_pathlike(parameter["type"])
                 if parameter["value"]:
                     name += " = " + parameter["value"]
             elif parameter["value"]:
@@ -156,7 +184,9 @@ class FieldStub:
         return self.name.split(".")[-1] if self.name.split(".") else ""
 
     def to_string(self) -> str:
-        return "{}: {} = ...".format(self._get_name(), dequalify(self.actual))
+        return "{}: {} = ...".format(
+            self._get_name(), dequalify_and_fix_pathlike(self.actual)
+        )
 
     @functools.lru_cache(maxsize=1)
     def get_typing_imports(self):
