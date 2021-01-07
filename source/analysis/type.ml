@@ -2457,7 +2457,17 @@ let empty_aliases ?replace_unbound_parameters_with_any:_ _ = None
 module RecursiveType = struct
   include Record.RecursiveType
 
-  let create ~name ~body = RecursiveType { name; body }
+  let contains_recursive_type_with_name ~name =
+    exists ~predicate:(function
+        | RecursiveType { name = inner_name; _ } -> Identifier.equal inner_name name
+        | _ -> false)
+
+
+  let create ~name ~body =
+    if contains_recursive_type_with_name ~name body then
+      failwith "Body of recursive type contains a recursive type with the same name";
+    RecursiveType { name; body }
+
 
   let is_recursive_alias_reference ~alias_name =
     exists ~predicate:(function

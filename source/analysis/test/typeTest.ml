@@ -1112,6 +1112,18 @@ let test_is_type_alias _ =
   assert_false (Type.is_type_alias (Type.parametric "typing.TypeAlias" ![Type.Top]))
 
 
+let test_create_recursive_type _ =
+  let tree_name, tree_body =
+    "Tree", Type.union [Type.integer; Type.tuple [Type.Primitive "Foo"; Type.Primitive "Tree"]]
+  in
+  (* No error. *)
+  let tree_annotation = Type.RecursiveType.create ~name:tree_name ~body:tree_body in
+  assert_raises
+    (Failure "Body of recursive type contains a recursive type with the same name")
+    (fun () -> Type.RecursiveType.create ~name:tree_name ~body:tree_annotation);
+  ()
+
+
 let test_unfold_recursive_type _ =
   let assert_unfolded recursive_type expected =
     assert_equal
@@ -2851,6 +2863,7 @@ let () =
          "is_meta" >:: test_is_meta;
          "is_none" >:: test_is_none;
          "is_type_alias" >:: test_is_type_alias;
+         "create_recursive_type" >:: test_create_recursive_type;
          "unfold_recursive_type" >:: test_unfold_recursive_type;
          "contains_unknown" >:: test_contains_unknown;
          "is_resolved" >:: test_is_resolved;
