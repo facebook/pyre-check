@@ -14,6 +14,10 @@ from typing import AsyncIterator, Tuple, Optional, List
 LOG: logging.Logger = logging.getLogger(__name__)
 
 
+class ConnectionFailure(Exception):
+    pass
+
+
 class BytesReader(abc.ABC):
     """
     This class defines the basic interface for async I/O input channel.
@@ -234,7 +238,7 @@ async def connect(socket_path: Path) -> AsyncIterator[Tuple[BytesReader, BytesWr
 
     Socket creation, connection, and closure will be automatically handled
     inside this context manager. If any of the socket operations fail, raise
-    `OSError` just like what the underlying socket API would do.
+    `ConnectionFailure`.
     """
     writer: Optional[BytesWriter] = None
     try:
@@ -244,6 +248,8 @@ async def connect(socket_path: Path) -> AsyncIterator[Tuple[BytesReader, BytesWr
         reader = StreamBytesReader(stream_reader)
         writer = StreamBytesWriter(stream_writer)
         yield reader, writer
+    except OSError as error:
+        raise ConnectionFailure() from error
     finally:
         if writer is not None:
             await writer.close()

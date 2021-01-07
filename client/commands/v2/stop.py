@@ -33,6 +33,9 @@ def run(configuration: configuration_module.Configuration) -> commands.ExitCode:
 
         LOG.info(f"Stopped server at `{start.get_server_identifier(configuration)}`\n")
         return commands.ExitCode.SUCCESS
+    except server_connection.ConnectionFailure:
+        LOG.warning("No running Pyre server to stop.")
+        return commands.ExitCode.SERVER_NOT_FOUND
     except Exception as error:
         raise commands.ClientException(
             f"Exception occured during server stop: {error}"

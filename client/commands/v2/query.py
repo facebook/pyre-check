@@ -75,6 +75,12 @@ def run(
         response = query_server(socket_path, query_text)
         log.stdout.write(json.dumps(response.payload))
         return commands.ExitCode.SUCCESS
+    except server_connection.ConnectionFailure:
+        LOG.warning(
+            "A running Pyre server is required for queries to be responded. "
+            "Please run `pyre` first to set up a server."
+        )
+        return commands.ExitCode.SERVER_NOT_FOUND
     except Exception as error:
         raise commands.ClientException(
             f"Exception occured during pyre query: {error}"

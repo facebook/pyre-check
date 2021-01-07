@@ -21,7 +21,7 @@ def _stop_server_if_needed(configuration: configuration_module.Configuration) ->
         LOG.info("Stopping the server if needed...")
         stop.stop_server(socket_path)
         LOG.info(f"Stopped server at `{start.get_server_identifier(configuration)}`")
-    except OSError:
+    except server_connection.ConnectionFailure:
         # This usually means there's no server running
         pass
 

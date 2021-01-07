@@ -12,6 +12,10 @@ from pathlib import Path
 from typing import BinaryIO, Generator, TextIO, Tuple
 
 
+class ConnectionFailure(Exception):
+    pass
+
+
 def get_socket_path(root: Path, log_directory: Path) -> Path:
     """
     Determine where the server socket file is located. We can't directly use
@@ -47,14 +51,17 @@ def connect(socket_path: Path) -> Generator[Tuple[BinaryIO, BinaryIO], None, Non
 
     Socket creation, connection, and closure will be automatically handled
     inside this context manager. If any of the socket operations fail, raise
-    `OSError` just like what the underlying socket API would do.
+    `ConnectionFailure`.
     """
-    with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as client_socket:
-        client_socket.connect(str(socket_path))
-        with client_socket.makefile(mode="rb") as input_channel, client_socket.makefile(
-            mode="wb"
-        ) as output_channel:
-            yield (input_channel, output_channel)
+    try:
+        with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as client_socket:
+            client_socket.connect(str(socket_path))
+            with client_socket.makefile(
+                mode="rb"
+            ) as input_channel, client_socket.makefile(mode="wb") as output_channel:
+                yield (input_channel, output_channel)
+    except OSError as error:
+        raise ConnectionFailure() from error
 
 
 @contextlib.contextmanager

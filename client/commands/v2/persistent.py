@@ -568,7 +568,7 @@ class PyreServerHandler(connection.BackgroundTask):
                     f"`{self.server_identifier}`."
                 )
                 await self.subscribe_to_type_error(input_channel, output_channel)
-        except OSError:
+        except connection.ConnectionFailure:
             await self.log_and_show_message_to_client(
                 f"Starting a new Pyre server at `{self.server_identifier}` in "
                 "the background..."

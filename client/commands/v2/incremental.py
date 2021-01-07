@@ -93,7 +93,7 @@ def run_incremental(
     output = incremental_arguments.output
     try:
         _show_progress_and_display_type_errors(log_path, socket_path, output)
-    except OSError:
+    except server_connection.ConnectionFailure:
         if incremental_arguments.no_start:
             raise commands.ClientException("Cannot find a running Pyre server.")
 
