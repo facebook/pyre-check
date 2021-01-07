@@ -1151,15 +1151,19 @@ def validate_models(context: click.Context) -> int:
     """
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
     configuration = _create_configuration_with_retry(command_argument, Path("."))
-    return run_pyre_command(
-        commands.ValidateModels(
-            command_argument,
-            original_directory=os.getcwd(),
-            configuration=configuration,
-        ),
-        configuration,
-        command_argument.noninteractive,
-    )
+
+    if command_argument.use_command_v2:
+        return v2.validate_models.run(configuration, output=command_argument.output)
+    else:
+        return run_pyre_command(
+            commands.ValidateModels(
+                command_argument,
+                original_directory=os.getcwd(),
+                configuration=configuration,
+            ),
+            configuration,
+            command_argument.noninteractive,
+        )
 
 
 # Need the default argument here since this is our entry point in setup.py
