@@ -3467,6 +3467,20 @@ let test_recursive_aliases context =
       "Revealed type [-1]: Revealed type for `d` is `typing.Any`.";
       "Undefined or invalid type [11]: Annotation `D2` is not defined as a type.";
     ];
+  assert_type_errors
+    {|
+      from typing import List, Union
+
+      NestedList = List[Union[int, "NestedList"]]
+
+      def pass_spurious_parameter(x: NestedList[int]) -> None:
+        reveal_type(x)
+    |}
+    (* TODO(T78935633): We should raise an error on parameters to non-generic recursive alias. *)
+    [
+      "Revealed type [-1]: Revealed type for `x` is `test.NestedList (resolves to \
+       List[Union[NestedList, int]])`.";
+    ];
   ()
 
 

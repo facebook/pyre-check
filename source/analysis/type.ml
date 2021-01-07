@@ -2521,10 +2521,18 @@ let resolve_aliases ~aliases annotation =
           annotation
         else (
           Core.Hash_set.add visited annotation;
+          let mark_recursive_alias_as_visited = function
+            | RecursiveType { name; _ } ->
+                (* Don't resolve the inner reference to the type. *)
+                Core.Hash_set.add visited (Primitive name)
+            | _ -> ()
+          in
           match annotation with
           | Primitive name -> (
               match aliases ?replace_unbound_parameters_with_any:(Some true) name with
-              | Some (TypeAlias alias) -> alias
+              | Some (TypeAlias alias) ->
+                  mark_recursive_alias_as_visited alias;
+                  alias
               | _ -> annotation )
           | Parametric { name; parameters = [Single parameter] } -> (
               (* Don't replace unbound generic parameters with Any. Otherwise, a generic alias Foo
@@ -2533,23 +2541,30 @@ let resolve_aliases ~aliases annotation =
                  Foo[Any]. *)
               match aliases ?replace_unbound_parameters_with_any:(Some false) name with
               | Some (TypeAlias alias) ->
-                  instantiate
-                    ~constraints:(function
-                      | Variable _ -> Some parameter
-                      | _ -> None)
-                    alias
+                  let instantiated_alias =
+                    instantiate
+                      ~constraints:(function
+                        | Variable _ -> Some parameter
+                        | _ -> None)
+                      alias
+                  in
+                  mark_recursive_alias_as_visited instantiated_alias;
+                  instantiated_alias
               | _ -> annotation )
-          | Parametric { name = alias_name; parameters = alias_parameters } -> (
-              match aliases ?replace_unbound_parameters_with_any:(Some false) alias_name with
-              | Some
-                  (TypeAlias
-                    (Parametric { name = resolved_name; parameters = resolved_parameters }))
-                when List.length resolved_parameters = List.length alias_parameters ->
-                  Parametric { name = resolved_name; parameters = alias_parameters }
-              | _ -> annotation )
-          | RecursiveType { name; _ } ->
-              (* Don't resolve the inner reference to the type. *)
-              Core.Hash_set.add visited (Primitive name);
+          | Parametric { name = alias_name; parameters = alias_parameters } ->
+              let resolved =
+                match aliases ?replace_unbound_parameters_with_any:(Some false) alias_name with
+                | Some
+                    (TypeAlias
+                      (Parametric { name = resolved_name; parameters = resolved_parameters }))
+                  when List.length resolved_parameters = List.length alias_parameters ->
+                    Parametric { name = resolved_name; parameters = alias_parameters }
+                | _ -> annotation
+              in
+              mark_recursive_alias_as_visited resolved;
+              resolved
+          | RecursiveType _ ->
+              mark_recursive_alias_as_visited annotation;
               annotation
           | _ -> annotation )
       in

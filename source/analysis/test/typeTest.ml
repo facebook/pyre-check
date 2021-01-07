@@ -564,6 +564,11 @@ let test_resolve_aliases _ =
     ~aliases
     (Type.list (Type.Primitive "Tree"))
     (Type.list (Type.RecursiveType { name = "Tree"; body = tree_body }));
+  (* Ignore spurious parameters to a non-generic recursive alias. *)
+  assert_resolved
+    ~aliases
+    (Type.parametric "Tree" [Single Type.integer])
+    (Type.RecursiveType { name = "Tree"; body = tree_body });
   ()
 
 
