@@ -25,6 +25,10 @@ class Response:
     payload: object
 
 
+def _print_help_message() -> None:
+    log.stdout.write(commands.query.HELP_MESSAGE)
+
+
 def parse_query_response_json(response_json: object) -> Response:
     if (
         isinstance(response_json, list)
@@ -72,6 +76,10 @@ def run(
         log_directory=Path(configuration.log_directory)
     )
     try:
+        if query_text == "help":
+            _print_help_message()
+            return commands.ExitCode.SUCCESS
+
         response = query_server(socket_path, query_text)
         log.stdout.write(json.dumps(response.payload))
         return commands.ExitCode.SUCCESS
