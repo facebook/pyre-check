@@ -180,6 +180,15 @@ let test_harder_registrations context =
     |}
     "test.X"
     ~expected_alias:None;
+  assert_registers
+    {|
+      from typing import Tuple, TypeVar, Union
+
+      T = TypeVar("T")
+      GenericTree = Union[T, Tuple["GenericTree[T]", "GenericTree[T]"]]
+    |}
+    "test.GenericTree"
+    ~expected_alias:None;
   ()
 
 

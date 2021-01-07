@@ -3481,6 +3481,23 @@ let test_recursive_aliases context =
       "Revealed type [-1]: Revealed type for `x` is `test.NestedList (resolves to \
        List[Union[NestedList, int]])`.";
     ];
+  (* TODO(T82613757): Generic recursive aliases are unsupported as of now. *)
+  assert_type_errors
+    {|
+      from typing import Tuple, TypeVar, Union
+
+      T = TypeVar("T")
+      GenericTree = Union[T, Tuple["GenericTree[T]", "GenericTree[T]"]]
+
+      def foo(x: GenericTree[int]) -> None:
+        reveal_type(x)
+    |}
+    [
+      "Missing global annotation [5]: Globally accessible variable `GenericTree` has no type \
+       specified.";
+      "Undefined or invalid type [11]: Annotation `GenericTree` is not defined as a type.";
+      "Revealed type [-1]: Revealed type for `x` is `unknown`.";
+    ];
   ()
 
 
