@@ -7,6 +7,7 @@ import dataclasses
 import hashlib
 import json
 import shutil
+import site
 import subprocess
 import tempfile
 import unittest
@@ -649,7 +650,9 @@ class ConfigurationTest(testslide.TestCase):
     def test_existent_search_path(self) -> None:
         with tempfile.TemporaryDirectory() as root:
             root_path = Path(root).resolve()
-            ensure_directories_exists(root_path, ["a", "b/c", "d/e/f"])
+            ensure_directories_exists(
+                root_path, ["a", "b/c", "d/e/f", "venv/lib/pythonX/site-packages"]
+            )
 
             self.assertListEqual(
                 Configuration(
@@ -671,7 +674,7 @@ class ConfigurationTest(testslide.TestCase):
                             site_root=str(root_path / "u/v"), package_name="w"
                         ),
                     ],
-                ).get_existent_search_paths(),
+                ).get_existent_search_paths(in_virtual_environment=False),
                 [
                     SimpleSearchPathElement(str(root_path / "a")),
                     SubdirectorySearchPathElement(
@@ -680,6 +683,21 @@ class ConfigurationTest(testslide.TestCase):
                     SitePackageSearchPathElement(
                         site_root=str(root_path / "d/e"), package_name="f"
                     ),
+                ],
+            )
+
+            site_packages = str(root_path / "venv/lib/pythonX/site-packages")
+            self.mock_callable(site, "getsitepackages").to_return_value(
+                [site_packages]
+            ).and_assert_called_once()
+            self.assertListEqual(
+                Configuration(
+                    project_root="irrelevant",
+                    dot_pyre_directory=Path(".pyre"),
+                    search_path=[],
+                ).get_existent_search_paths(in_virtual_environment=True),
+                [
+                    SimpleSearchPathElement(site_packages),
                 ],
             )
 

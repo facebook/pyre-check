@@ -255,6 +255,13 @@ def assert_readable_directory_in_configuration(
         raise InvalidConfiguration(str(error))
 
 
+def _in_virtual_environment(override: Optional[bool] = None) -> bool:
+    if override is not None:
+        return override
+
+    return sys.prefix != sys.base_prefix
+
+
 @dataclass(frozen=True)
 class PartialConfiguration:
     autocomplete: Optional[bool] = None
@@ -748,8 +755,16 @@ class Configuration:
     def get_existent_source_directories(self) -> List[SearchPathElement]:
         return self._get_existent_paths(self.source_directories)
 
-    def get_existent_search_paths(self) -> List[SearchPathElement]:
-        existent_paths = self._get_existent_paths(self.search_path)
+    def get_existent_search_paths(
+        self, in_virtual_environment: Optional[bool] = None
+    ) -> List[SearchPathElement]:
+        search_path = self.search_path
+
+        if len(search_path) == 0 and _in_virtual_environment(in_virtual_environment):
+            LOG.warning("Using virtual environment site-packages in search path...")
+            search_path = [SimpleSearchPathElement(root) for root in _get_site_roots()]
+
+        existent_paths = self._get_existent_paths(search_path)
 
         typeshed_root = self.get_typeshed_respecting_override()
         typeshed_paths = (
