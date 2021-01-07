@@ -417,6 +417,8 @@ module Record = struct
       body: 'annotation;
     }
     [@@deriving compare, eq, sexp, show, hash]
+
+    let name { name; _ } = name
   end
 end
 
@@ -2454,6 +2456,8 @@ let empty_aliases ?replace_unbound_parameters_with_any:_ _ = None
 
 module RecursiveType = struct
   include Record.RecursiveType
+
+  let create ~name ~body = RecursiveType { name; body }
 
   let is_recursive_alias_reference ~alias_name =
     exists ~predicate:(function

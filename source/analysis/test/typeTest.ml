@@ -548,27 +548,27 @@ let test_resolve_aliases _ =
   let tree_body = Type.union [Type.integer; Type.list (Type.Primitive "Tree")] in
   let aliases ?replace_unbound_parameters_with_any:_ name =
     match name with
-    | "Tree" -> Some (Type.TypeAlias (Type.RecursiveType { name = "Tree"; body = tree_body }))
+    | "Tree" -> Some (Type.TypeAlias (Type.RecursiveType.create ~name:"Tree" ~body:tree_body))
     | _ -> None
   in
   assert_resolved
     ~aliases
     (Type.Primitive "Tree")
-    (Type.RecursiveType { name = "Tree"; body = tree_body });
+    (Type.RecursiveType.create ~name:"Tree" ~body:tree_body);
   (* Don't resolve the `Tree` reference within the body. *)
   assert_resolved
     ~aliases
-    (Type.RecursiveType { name = "Tree"; body = tree_body })
-    (Type.RecursiveType { name = "Tree"; body = tree_body });
+    (Type.RecursiveType.create ~name:"Tree" ~body:tree_body)
+    (Type.RecursiveType.create ~name:"Tree" ~body:tree_body);
   assert_resolved
     ~aliases
     (Type.list (Type.Primitive "Tree"))
-    (Type.list (Type.RecursiveType { name = "Tree"; body = tree_body }));
+    (Type.list (Type.RecursiveType.create ~name:"Tree" ~body:tree_body));
   (* Ignore spurious parameters to a non-generic recursive alias. *)
   assert_resolved
     ~aliases
     (Type.parametric "Tree" [Single Type.integer])
-    (Type.RecursiveType { name = "Tree"; body = tree_body });
+    (Type.RecursiveType.create ~name:"Tree" ~body:tree_body);
   ()
 
 
@@ -927,8 +927,9 @@ let test_elements _ =
   assert_equal
     ["int"; "tuple"]
     (Type.elements
-       (Type.RecursiveType
-          { name = "Tree"; body = Type.tuple [Type.integer; Type.Primitive "Tree"] }));
+       (Type.RecursiveType.create
+          ~name:"Tree"
+          ~body:(Type.tuple [Type.integer; Type.Primitive "Tree"])));
   ()
 
 
@@ -1117,14 +1118,16 @@ let test_unfold_recursive_type _ =
       ~cmp:Type.equal
       ~printer:Type.show
       expected
-      (Type.RecursiveType.unfold_recursive_type recursive_type)
+      ( match recursive_type with
+      | Type.RecursiveType record -> Type.RecursiveType.unfold_recursive_type record
+      | _ -> failwith "expected RecursiveType" )
   in
   let tree_name, tree_body =
     "Tree", Type.union [Type.integer; Type.tuple [Type.Primitive "Foo"; Type.Primitive "Tree"]]
   in
-  let tree_annotation = Type.RecursiveType { name = tree_name; body = tree_body } in
+  let tree_annotation = Type.RecursiveType.create ~name:tree_name ~body:tree_body in
   assert_unfolded
-    { name = tree_name; body = tree_body }
+    (Type.RecursiveType.create ~name:tree_name ~body:tree_body)
     (Type.union [Type.integer; Type.tuple [Type.Primitive "Foo"; tree_annotation]]);
   ()
 
@@ -2783,12 +2786,11 @@ let test_resolve_class _ =
          { instantiated = Type.Primitive "Foo"; accessed_through_class = false; class_name = "Foo" };
        ]);
   let tree_annotation =
-    Type.RecursiveType
-      {
-        name = "Tree";
-        body = Type.union [Type.integer; Type.tuple [Type.Primitive "Foo"; Type.Primitive "Tree"]];
-      }
+    Type.RecursiveType.create
+      ~name:"Tree"
+      ~body:(Type.union [Type.integer; Type.tuple [Type.Primitive "Foo"; Type.Primitive "Tree"]])
   in
+
   assert_resolved_class
     tree_annotation
     (Some
@@ -2801,12 +2803,11 @@ let test_resolve_class _ =
          };
        ]);
   let recursive_list =
-    Type.RecursiveType
-      {
-        name = "RecursiveList";
-        body = Type.list (Type.union [Type.integer; Type.Primitive "RecursiveList"]);
-      }
+    Type.RecursiveType.create
+      ~name:"RecursiveList"
+      ~body:(Type.list (Type.union [Type.integer; Type.Primitive "RecursiveList"]))
   in
+
   assert_resolved_class
     recursive_list
     (Some
@@ -2820,7 +2821,7 @@ let test_resolve_class _ =
   (* TODO(T44784951): We should forbid defining a directly recursive type like this. This regression
      test is here just to test we don't go into an infinite loop in case one makes it through. *)
   let directly_recursive_type =
-    Type.RecursiveType { name = "Tree"; body = Type.union [Type.integer; Type.Primitive "Tree"] }
+    Type.RecursiveType.create ~name:"Tree" ~body:(Type.union [Type.integer; Type.Primitive "Tree"])
   in
   assert_resolved_class
     directly_recursive_type

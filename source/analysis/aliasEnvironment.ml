@@ -316,7 +316,7 @@ let produce_alias empty_stub_environment global_name ~dependency =
           |> Option.value ~default:true
         in
         let is_generic = Type.contains_variable annotation in
-        Type.TypeAlias (Type.RecursiveType { name = alias_name; body = annotation })
+        Type.TypeAlias (Type.RecursiveType.create ~name:alias_name ~body:annotation)
         |> Option.some_if ((not is_directly_recursive) && not is_generic)
     | _ -> resolved_alias
 

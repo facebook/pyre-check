@@ -934,13 +934,11 @@ let test_add_constraint context =
 let test_add_constraint_recursive_type context =
   let _, assert_add_direct, _, _ = make_assert_functions context in
   let tree_annotation =
-    Type.RecursiveType
-      {
-        name = "test.Tree";
-        body =
-          Type.union
-            [Type.integer; Type.tuple [Type.Primitive "test.Tree"; Type.Primitive "test.Tree"]];
-      }
+    Type.RecursiveType.create
+      ~name:"test.Tree"
+      ~body:
+        (Type.union
+           [Type.integer; Type.tuple [Type.Primitive "test.Tree"; Type.Primitive "test.Tree"]])
   in
   assert_add_direct ~left:tree_annotation ~right:tree_annotation [[]];
   assert_add_direct ~left:Type.integer ~right:tree_annotation [[]];
@@ -963,33 +961,28 @@ let test_add_constraint_recursive_type context =
   assert_add_direct ~left:tree_annotation ~right:Type.integer [];
   assert_add_direct ~left:tree_annotation ~right:(Type.union [Type.integer; tree_annotation]) [[]];
   let isomorphic_tree_annotation =
-    Type.RecursiveType
-      {
-        name = "test.IsomorphicTree";
-        body =
-          Type.union
-            [
-              Type.integer;
-              Type.tuple
-                [Type.Primitive "test.IsomorphicTree"; Type.Primitive "test.IsomorphicTree"];
-            ];
-      }
+    Type.RecursiveType.create
+      ~name:"test.IsomorphicTree"
+      ~body:
+        (Type.union
+           [
+             Type.integer;
+             Type.tuple [Type.Primitive "test.IsomorphicTree"; Type.Primitive "test.IsomorphicTree"];
+           ])
   in
   assert_add_direct ~left:tree_annotation ~right:isomorphic_tree_annotation [[]];
 
   let json_annotation =
-    Type.RecursiveType
-      {
-        name = "test.JSON";
-        body =
-          Type.union
-            [
-              Type.integer;
-              Type.parametric
-                "typing.Mapping"
-                [Single Type.string; Single (Type.Primitive "test.JSON")];
-            ];
-      }
+    Type.RecursiveType.create
+      ~name:"test.JSON"
+      ~body:
+        (Type.union
+           [
+             Type.integer;
+             Type.parametric
+               "typing.Mapping"
+               [Single Type.string; Single (Type.Primitive "test.JSON")];
+           ])
   in
   assert_add_direct ~left:json_annotation ~right:json_annotation [[]];
   assert_add_direct ~left:Type.integer ~right:json_annotation [[]];

@@ -156,15 +156,13 @@ module OrderImplementation = struct
         | Type.RecursiveType left_recursive_type, Type.RecursiveType right_recursive_type ->
             let new_name = Type.RecursiveType.Namespace.create_fresh_name () in
             (* Based on https://cstheory.stackexchange.com/a/38415. *)
-            Type.RecursiveType
-              {
-                name = new_name;
-                body =
-                  join
-                    order
-                    (Type.RecursiveType.body_with_replaced_name ~new_name left_recursive_type)
-                    (Type.RecursiveType.body_with_replaced_name ~new_name right_recursive_type);
-              }
+            Type.RecursiveType.create
+              ~name:new_name
+              ~body:
+                (join
+                   order
+                   (Type.RecursiveType.body_with_replaced_name ~new_name left_recursive_type)
+                   (Type.RecursiveType.body_with_replaced_name ~new_name right_recursive_type))
         | Type.RecursiveType _, _
         | _, Type.RecursiveType _ ->
             if always_less_or_equal order ~left ~right then

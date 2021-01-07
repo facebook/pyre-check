@@ -150,16 +150,14 @@ let test_harder_registrations context =
     ~expected_alias:
       (Some
          (Type.TypeAlias
-            (Type.RecursiveType
-               {
-                 name = "test.Tree";
-                 body =
-                   Type.union
-                     [
-                       Type.integer;
-                       Type.tuple [Type.Primitive "test.Tree"; Type.Primitive "test.Tree"];
-                     ];
-               })));
+            (Type.RecursiveType.create
+               ~name:"test.Tree"
+               ~body:
+                 (Type.union
+                    [
+                      Type.integer;
+                      Type.tuple [Type.Primitive "test.Tree"; Type.Primitive "test.Tree"];
+                    ]))));
   (* Forbid directly-recursive aliases. *)
   assert_registers {|
       Tree = "Tree"

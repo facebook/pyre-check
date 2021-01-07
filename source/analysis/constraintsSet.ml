@@ -1129,10 +1129,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
       ~solve_candidate_less_or_equal_protocol:solve_all_protocol_attributes_less_or_equal
 
 
-  and instantiate_recursive_type_parameters
-      order
-      ~candidate
-      ~recursive_type:({ Type.RecursiveType.name = recursive_type_name; _ } as recursive_type)
+  and instantiate_recursive_type_parameters order ~candidate ~recursive_type
       : Type.Parameter.t list option
     =
     (* TODO(T44784951): Allow passing in the generic parameters for generic recursive types. *)
@@ -1150,7 +1147,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
       order
       ~solve_candidate_less_or_equal_protocol:solve_recursive_type_less_or_equal
       ~candidate
-      ~protocol:recursive_type_name
+      ~protocol:(Type.RecursiveType.name recursive_type)
 
 
   let add existing_constraints ~new_constraint ~order =

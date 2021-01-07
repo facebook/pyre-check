@@ -169,11 +169,9 @@ module Record : sig
   end
 
   module RecursiveType : sig
-    type 'annotation record = {
-      name: Identifier.t;
-      body: 'annotation;
-    }
-    [@@deriving compare, eq, sexp, show, hash]
+    type 'annotation record [@@deriving compare, eq, sexp, show, hash]
+
+    val name : 'annotation record -> Identifier.t
   end
 end
 
@@ -522,6 +520,8 @@ module RecursiveType : sig
   include module type of struct
     include Record.RecursiveType
   end
+
+  val create : name:Primitive.t -> body:t -> t
 
   val is_recursive_alias_reference : alias_name:Primitive.t -> t -> bool
 
