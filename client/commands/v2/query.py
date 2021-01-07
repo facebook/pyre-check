@@ -7,8 +7,9 @@ import dataclasses
 import json
 import logging
 from pathlib import Path
+from typing import TextIO
 
-from ... import commands, configuration as configuration_module
+from ... import commands, configuration as configuration_module, log
 from . import server_connection
 
 
@@ -43,14 +44,36 @@ def parse_query_response(text: str) -> Response:
         raise InvalidQueryResponse(message) from decode_error
 
 
+def _send_query_request(output_channel: TextIO, query_text: str) -> None:
+    query_message = json.dumps(["Query", query_text])
+    LOG.debug(f"Sending `{query_message}`")
+    output_channel.write(f"{query_message}\n")
+
+
+def _receive_query_response(input_channel: TextIO) -> Response:
+    query_message = input_channel.readline().strip()
+    LOG.debug(f"Received `{query_message}`")
+    return parse_query_response(query_message)
+
+
+def query_server(socket_path: Path, query_text: str) -> Response:
+    with server_connection.connect_in_text_mode(socket_path) as (
+        input_channel,
+        output_channel,
+    ):
+        _send_query_request(output_channel, query_text)
+        return _receive_query_response(input_channel)
+
+
 def run(
-    configuration: configuration_module.Configuration, query: str
+    configuration: configuration_module.Configuration, query_text: str
 ) -> commands.ExitCode:
     socket_path = server_connection.get_default_socket_path(
         log_directory=Path(configuration.log_directory)
     )
     try:
-        LOG.warning("Not implemented yet!")
+        response = query_server(socket_path, query_text)
+        log.stdout.write(json.dumps(response.payload))
         return commands.ExitCode.SUCCESS
     except Exception as error:
         raise commands.ClientException(
