@@ -435,6 +435,58 @@ let test_sanitize context =
                })
           "test.taint";
       ]
+    ();
+  assert_model
+    ~model_source:
+      {|
+      @Sanitize(TaintSource[Test], TaintInTaintOut[TaintSink[Test]])
+      def test.taint(x): ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~analysis_mode:
+            (Mode.Sanitize
+               {
+                 Mode.sources = Some (Mode.SpecificSources [Sources.NamedSource "Test"]);
+                 sinks = None;
+                 tito =
+                   Some
+                     (Mode.SpecificTito
+                        {
+                          sanitized_tito_sources = [];
+                          sanitized_tito_sinks = [Sinks.NamedSink "Test"];
+                        });
+               })
+          "test.taint";
+      ]
+    ();
+  assert_model
+    ~model_source:
+      {|
+      @Sanitize(TaintInTaintOut[TaintSource[Test], TaintSink[Test]])
+      def test.taint(x): ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~analysis_mode:
+            (Mode.Sanitize
+               {
+                 Mode.sources = None;
+                 sinks = None;
+                 tito =
+                   Some
+                     (Mode.SpecificTito
+                        {
+                          sanitized_tito_sources = [Sources.NamedSource "Test"];
+                          sanitized_tito_sinks = [Sinks.NamedSink "Test"];
+                        });
+               })
+          "test.taint";
+      ]
     ()
 
 

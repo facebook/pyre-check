@@ -277,8 +277,8 @@ For TITO sanitizers, Pysa supports only sanitizing specific sources and sinks th
 @Sanitize(TaintInTaintOut[TaintSource[UserControlled]])
 def django.utils.html.escape(text: TaintInTaintOut): ...
 
-@Sanitize(TaintInTaintOut[TaintSink[Logging]])
-def module.sanitize_for_logging(): ...
+@Sanitize(TaintInTaintOut[TaintSink[SQL, Logging]])
+def module.sanitize_for_logging_and_sql(): ...
 ```
 
 Attributes can also be marked as sanitizers to remove all taint passing through

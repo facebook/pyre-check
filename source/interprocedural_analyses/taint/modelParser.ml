@@ -671,6 +671,17 @@ let rec parse_annotations ~path ~location ~model_name ~configuration ~parameters
             | _ -> invalid_annotation_error () )
         | Name (Name.Identifier "TaintInTaintOut") ->
             Ok [Tito { tito = Sinks.LocalReturn; breadcrumbs = []; path = [] }]
+        | Expression.Tuple expressions ->
+            List.map expressions ~f:(fun expression ->
+                parse_annotations
+                  ~path
+                  ~location:expression.Node.location
+                  ~model_name
+                  ~configuration
+                  ~parameters
+                  (Some expression))
+            |> all
+            |> map ~f:List.concat
         | _ -> invalid_annotation_error ()
       in
       parse_annotation value
