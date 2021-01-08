@@ -571,6 +571,7 @@ class ConfigurationTest(testslide.TestCase):
                 use_buck_source_database=None,
                 version_hash="abc",
             ),
+            in_virtual_environment=False,
         )
         self.assertEqual(configuration.project_root, "root")
         self.assertEqual(configuration.relative_local_root, "local")
@@ -600,6 +601,31 @@ class ConfigurationTest(testslide.TestCase):
         self.assertEqual(configuration.use_buck_builder, False)
         self.assertEqual(configuration.use_buck_source_database, False)
         self.assertEqual(configuration.version_hash, "abc")
+
+    def test_from_partial_configuration_in_virtual_environment(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root).resolve()
+            ensure_directories_exists(root_path, ["venv/lib/pythonX/site-packages"])
+
+            site_packages = str(root_path / "venv/lib/pythonX/site-packages")
+            self.mock_callable(site, "getsitepackages").to_return_value(
+                [site_packages]
+            ).and_assert_called_once()
+
+            configuration = Configuration.from_partial_configuration(
+                project_root=Path("root"),
+                relative_local_root="local",
+                partial_configuration=PartialConfiguration(
+                    search_path=[],
+                ),
+                in_virtual_environment=True,
+            )
+            self.assertListEqual(
+                list(configuration.search_path),
+                [
+                    SimpleSearchPathElement(site_packages),
+                ],
+            )
 
     def test_derived_attributes(self) -> None:
         self.assertIsNone(
@@ -674,7 +700,7 @@ class ConfigurationTest(testslide.TestCase):
                             site_root=str(root_path / "u/v"), package_name="w"
                         ),
                     ],
-                ).get_existent_search_paths(in_virtual_environment=False),
+                ).get_existent_search_paths(),
                 [
                     SimpleSearchPathElement(str(root_path / "a")),
                     SubdirectorySearchPathElement(
@@ -683,21 +709,6 @@ class ConfigurationTest(testslide.TestCase):
                     SitePackageSearchPathElement(
                         site_root=str(root_path / "d/e"), package_name="f"
                     ),
-                ],
-            )
-
-            site_packages = str(root_path / "venv/lib/pythonX/site-packages")
-            self.mock_callable(site, "getsitepackages").to_return_value(
-                [site_packages]
-            ).and_assert_called_once()
-            self.assertListEqual(
-                Configuration(
-                    project_root="irrelevant",
-                    dot_pyre_directory=Path(".pyre"),
-                    search_path=[],
-                ).get_existent_search_paths(in_virtual_environment=True),
-                [
-                    SimpleSearchPathElement(site_packages),
                 ],
             )
 
