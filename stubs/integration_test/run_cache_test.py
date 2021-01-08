@@ -7,6 +7,7 @@
 import json
 import logging
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -71,7 +72,7 @@ def run_test_cache_first_and_second_runs(
 ) -> None:
     # Ensure the cache file doesn't already exist for a clean run.
     try:
-        cache_path.unlink()
+        shutil.rmtree(cache_path)
     except FileNotFoundError:
         pass
 
@@ -119,15 +120,16 @@ def run_test_cache_first_and_second_runs(
 def run_test_invalid_cache_file(
     typeshed_path: str, cache_path: Path, expected: List[Dict[str, Any]]
 ) -> None:
-    # Run Pysa with an empty .pyre/pysa.cache to simulate an invalid/corrupt
-    # cache file. Pysa should fall back to doing a clean run.
     logging.info("Testing fallback behavior with invalid cache file:")
 
+    # Run Pysa with an empty .pyre/.pysa_cache/sharedmem to simulate an invalid/corrupt
+    # cache file. Pysa should fall back to doing a clean run.
+    cache_file = cache_path / "sharedmem"
     try:
-        cache_path.unlink()
-        cache_path.touch()
+        cache_file.unlink()
     except FileNotFoundError:
-        sys.exit(1)
+        pass
+    (cache_path / "sharedmem").touch()
 
     result = run_and_check_output(
         [
@@ -350,7 +352,7 @@ def run_tests() -> None:
     os.chdir(os.path.dirname(__file__))
     logging.info("Running in `%s`", os.getcwd())
 
-    cache_path = Path(".pyre/pysa.cache")
+    cache_path = Path(".pyre/.pysa_cache")
     logging.info(f"Cache file path: {cache_path.resolve()}")
 
     # Extract typeshed.

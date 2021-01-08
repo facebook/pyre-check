@@ -17,8 +17,6 @@ module Cache : sig
     :  configuration:Configuration.Analysis.t ->
     environment:TypeEnvironment.t ->
     unit
-
-  val save_cache : configuration:Configuration.Analysis.t -> unit
 end
 
 val record_and_merge_call_graph
