@@ -7,7 +7,6 @@
 
 import unittest
 from dataclasses import dataclass
-from typing import Optional
 
 from graphql import (
     GraphQLBoolean,
@@ -17,8 +16,6 @@ from graphql import (
     GraphQLObjectType,
     GraphQLSchema,
 )
-from graphql_server.typemap import TypeMap
-from graphql_server.types import graphql_field, graphql_object
 from tools.pyre.tools.generate_taint_models.get_dynamic_graphql_sources import (
     DynamicGraphQLSourceGenerator,
 )
@@ -52,19 +49,8 @@ class DirectObject:
     lambda_resolver: bool
 
 
-@graphql_object()
-class DirectObjectResult:
-    @graphql_field()
-    def success(self) -> str:
-        return "True"
-
-    @graphql_field()
-    def error_message(self) -> Optional[str]:
-        return "Foo"
-
-
-DirectObjectType = GraphQLObjectType(
-    name="DirectObjectType",
+queryType = GraphQLObjectType(
+    name="queryType",
     description="GraphQLObject directly created at top level",
     fields={
         "no_resolver": GraphQLField(GraphQLNonNull(GraphQLID)),
@@ -76,19 +62,7 @@ DirectObjectType = GraphQLObjectType(
     },
 )
 
-
-@graphql_object()
-class Query:
-    @graphql_field(graphql_core_type=DirectObjectType)
-    def get_object(self) -> DirectObject:
-        return DirectObject(4, True, True, True, True, True)
-
-
-TYPEMAP = TypeMap([Query])
-# pyre-fixme[6]: Expected
-#  `Optional[typing.List[graphql.type.definition.GraphQLNamedType]]` for 2nd param but
-#  got `_OrderedDictValuesView[typing.Any]`.
-SCHEMA = GraphQLSchema(query=TYPEMAP["Query"], types=TYPEMAP.values())
+SCHEMA = GraphQLSchema(query=queryType)
 
 
 class GetDynamicGraphQLSourcesTest(unittest.TestCase):
