@@ -111,6 +111,7 @@ def run_pyre_command(
     exit_code = ExitCode.FAILURE
     try:
         configuration_module.check_nested_local_configuration(configuration)
+        configuration_module.check_open_source_version(configuration)
         log.start_logging_to_directory(noninteractive, configuration.log_directory)
         LOG.debug(f"Running cli command `{' '.join(sys.argv)}`...")
         exit_code = command.run().exit_code()
