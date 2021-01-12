@@ -696,7 +696,13 @@ class Configuration:
         project_root: Path,
         relative_local_root: Optional[str],
         partial_configuration: PartialConfiguration,
+        in_virtual_environment: Optional[bool] = None,
     ) -> "Configuration":
+        search_path = partial_configuration.search_path
+        if len(search_path) == 0 and _in_virtual_environment(in_virtual_environment):
+            LOG.warning("Using virtual environment site-packages in search path...")
+            search_path = [SimpleSearchPathElement(root) for root in _get_site_roots()]
+
         return Configuration(
             project_root=str(project_root),
             dot_pyre_directory=_get_optional_value(
@@ -721,8 +727,7 @@ class Configuration:
             other_critical_files=partial_configuration.other_critical_files,
             relative_local_root=relative_local_root,
             search_path=[
-                path.expand_global_root(str(project_root))
-                for path in partial_configuration.search_path
+                path.expand_global_root(str(project_root)) for path in search_path
             ],
             source_directories=_get_optional_value(
                 partial_configuration.source_directories, default=[]
@@ -755,16 +760,8 @@ class Configuration:
     def get_existent_source_directories(self) -> List[SearchPathElement]:
         return self._get_existent_paths(self.source_directories)
 
-    def get_existent_search_paths(
-        self, in_virtual_environment: Optional[bool] = None
-    ) -> List[SearchPathElement]:
-        search_path = self.search_path
-
-        if len(search_path) == 0 and _in_virtual_environment(in_virtual_environment):
-            LOG.warning("Using virtual environment site-packages in search path...")
-            search_path = [SimpleSearchPathElement(root) for root in _get_site_roots()]
-
-        existent_paths = self._get_existent_paths(search_path)
+    def get_existent_search_paths(self) -> List[SearchPathElement]:
+        existent_paths = self._get_existent_paths(self.search_path)
 
         typeshed_root = self.get_typeshed_respecting_override()
         typeshed_paths = (

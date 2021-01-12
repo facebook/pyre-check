@@ -37,7 +37,7 @@ class ValidateModelsTest(testslide.TestCase):
         assert_parsed({"response": {"errors": []}}, expected=[])
 
         with tempfile.TemporaryDirectory() as root:
-            root_path = Path(root)
+            root_path = Path(root).resolve()
             with setup.switch_working_directory(root_path):
                 assert_parsed(
                     {
