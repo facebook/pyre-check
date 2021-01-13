@@ -1172,6 +1172,42 @@ let test_invalid_decorators context =
   ()
 
 
+let test_six_decorators context =
+  let assert_type_errors = assert_type_errors ~context in
+  assert_type_errors
+    ~update_environment_with:
+      [
+        {
+          handle = "six.py";
+          source = {|
+                def add_metaclass(cls: object) -> object: ...
+            |};
+        };
+      ]
+    {|
+      import six
+
+      class MetaMake(type):
+        def __getattr__(cls, key: str) -> str: ...
+
+      @six.add_metaclass(MetaMake)
+      class Make(object):
+        existent: int = 1
+
+      def foo() -> None:
+        y = Make.existent
+        reveal_type(y)
+
+        z = Make.non_existent
+        reveal_type(z)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `y` is `int`.";
+      "Revealed type [-1]: Revealed type for `z` is `str`.";
+    ];
+  ()
+
+
 let () =
   "decorator"
   >::: [
@@ -1185,5 +1221,6 @@ let () =
          "decorator_factories" >:: test_decorator_factories;
          "general_decorators" >:: test_general_decorators;
          "invalid_decorators" >:: test_invalid_decorators;
+         "six_decorators" >:: test_six_decorators;
        ]
   |> Test.run

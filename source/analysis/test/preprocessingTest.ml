@@ -5026,6 +5026,91 @@ let test_union_shorthand _ =
   ()
 
 
+let test_six_metaclass_decorator _ =
+  let assert_replace ?(handle = "test.py") source expected =
+    let expected = parse ~handle ~coerce_special_methods:true expected |> Preprocessing.qualify in
+    let actual =
+      parse ~handle source |> Preprocessing.qualify |> Preprocessing.inline_six_metaclass
+    in
+    assert_source_equal ~location_insensitive:true expected actual
+  in
+  assert_replace
+    {|
+    import six
+
+    class FooMetaclass(type): ...
+    class Base1: ...
+    class Base2: ...
+
+    @six.add_metaclass(FooMetaclass)
+    class Make(Base1, Base2):
+      existent: int = 1
+  |}
+    {|
+    import six
+
+    class FooMetaclass(type): ...
+    class Base1: ...
+    class Base2: ...
+
+    class Make(Base1, Base2, metaclass=FooMetaclass):
+      existent: int = 1
+  |};
+  (* Leave class unchanged if there are too many arguments to add_metaclass. *)
+  assert_replace
+    {|
+    import six
+
+    class FooMetaclass(type): ...
+    class FooMetaclass2(type): ...
+    class Base1: ...
+    class Base2: ...
+
+    @six.add_metaclass(FooMetaclass, FooMetaclass2)
+    class Make(Base1, Base2):
+      existent: int = 1
+  |}
+    {|
+    import six
+
+    class FooMetaclass(type): ...
+    class FooMetaclass2(type): ...
+    class Base1: ...
+    class Base2: ...
+
+    @six.add_metaclass(FooMetaclass, FooMetaclass2)
+    class Make(Base1, Base2):
+      existent: int = 1
+  |};
+  (* Leave class unchanged if the argument is not a class. *)
+  assert_replace
+    {|
+    import six
+
+    class Base1: ...
+    class Base2: ...
+
+    def foo() -> object: ...
+
+    @six.add_metaclass(foo())
+    class Make(Base1, Base2):
+      existent: int = 1
+  |}
+    {|
+    import six
+
+    class Base1: ...
+    class Base2: ...
+
+    def foo() -> object: ...
+
+    @six.add_metaclass(foo())
+    class Make(Base1, Base2):
+      existent: int = 1
+  |};
+  ()
+
+
 let () =
   "preprocessing"
   >::: [
@@ -5050,5 +5135,6 @@ let () =
          "captures" >:: test_populate_captures;
          "unbound_names" >:: test_populate_unbound_names;
          "union_shorthand" >:: test_union_shorthand;
+         "six_metaclass_decorator" >:: test_six_metaclass_decorator;
        ]
   |> Test.run
