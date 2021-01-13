@@ -86,7 +86,8 @@ val global_resolution : t -> GlobalResolution.t
 
 (* Attribute defined by `__getattr__`. *)
 val fallback_attribute
-  :  resolution:t ->
+  :  ?accessed_through_class:bool ->
+  resolution:t ->
   name:Identifier.t ->
   Type.Primitive.t ->
   AnnotatedAttribute.instantiated option

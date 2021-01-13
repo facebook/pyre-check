@@ -576,7 +576,8 @@ let test_check_attributes context =
     |}
     [
       "Revealed type [-1]: Revealed type for `a` is `typing.Any`.";
-      "Revealed type [-1]: Revealed type for `a` is `typing.Any`.";
+      "Undefined attribute [16]: `Else` has no attribute `class_prop`.";
+      "Revealed type [-1]: Revealed type for `a` is `unknown`.";
       "Revealed type [-1]: Revealed type for `a` is `int`.";
     ];
 
@@ -1617,8 +1618,8 @@ let test_check_getattr context =
 
 
 let test_check_metaclass_attributes context =
+  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
-    ~context
     {|
       class Meta(type):
         def f(cls) -> int:
@@ -1628,7 +1629,132 @@ let test_check_metaclass_attributes context =
       def g() -> str:
         return Instance.f()
     |}
-    ["Incompatible return type [7]: Expected `str` but got `int`."]
+    ["Incompatible return type [7]: Expected `str` but got `int`."];
+  assert_type_errors
+    {|
+      class MetaMake(type):
+        in_metaclass: int = 1
+
+      class Make(object, metaclass=MetaMake):
+        existent: int = 1
+
+      def foo() -> None:
+        y = Make.existent
+        reveal_type(y)
+        z = Make.in_metaclass
+        reveal_type(z)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `y` is `int`.";
+      "Revealed type [-1]: Revealed type for `z` is `int`.";
+    ];
+  assert_type_errors
+    {|
+      class MetaMake(type):
+        in_metaclass: int = 1
+
+      class Make(object, metaclass=MetaMake):
+        existent: int = 1
+
+      def foo() -> None:
+        make_instance: Make
+        y = make_instance.existent
+        reveal_type(y)
+        z = make_instance.in_metaclass
+        reveal_type(z)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `y` is `int`.";
+      "Undefined attribute [16]: `Make` has no attribute `in_metaclass`.";
+      "Revealed type [-1]: Revealed type for `z` is `unknown`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Any
+
+      class MetaMake(type):
+        # pyre-ignore[3]: Return type cannot be Any.
+        def __getattr__(cls, key: str) -> Any: ...
+
+      class Make(object, metaclass=MetaMake):
+        existent: int = 1
+
+      def foo() -> None:
+        y = Make.existent
+        reveal_type(y)
+        z = Make.non_existent
+        reveal_type(z)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `y` is `int`.";
+      "Revealed type [-1]: Revealed type for `z` is `typing.Any`.";
+    ];
+  (* Instances should not use `__getattr__` from the metaclass. *)
+  assert_type_errors
+    {|
+      from typing import Any
+
+      class MetaMake(type):
+        # pyre-ignore[3]: Return type cannot be Any.
+        def __getattr__(cls, key: str) -> Any: ...
+
+      class Make(object, metaclass=MetaMake):
+        existent: int = 1
+
+      def foo() -> None:
+        x: Make
+        y = x.existent
+        reveal_type(y)
+        z = x.non_existent
+        reveal_type(z)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `y` is `int`.";
+      "Undefined attribute [16]: `Make` has no attribute `non_existent`.";
+      "Revealed type [-1]: Revealed type for `z` is `unknown`.";
+    ];
+  (* __getattr__ for class attributes should be looked up on the metaclass. *)
+  assert_type_errors
+    {|
+      from typing import Any
+
+      class MetaMake(type):
+        def __getattr__(cls, key: str) -> str: ...
+
+      class Make(object, metaclass=MetaMake):
+        def __getattr__(cls, key: str) -> int: ...
+        existent: int = 1
+
+      def foo() -> None:
+        y = Make.existent
+        reveal_type(y)
+        z = Make.non_existent
+        reveal_type(z)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `y` is `int`.";
+      "Revealed type [-1]: Revealed type for `z` is `str`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Any
+
+      class Make:
+        def __getattr__(cls, key: str) -> int: ...
+        existent: int = 1
+
+      def foo() -> None:
+        y = Make.existent
+        reveal_type(y)
+        z = Make.non_existent
+        reveal_type(z)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `y` is `int`.";
+      "Undefined attribute [16]: `Make` has no attribute `non_existent`.";
+      "Revealed type [-1]: Revealed type for `z` is `unknown`.";
+    ];
+  ()
 
 
 let test_check_annotated context =

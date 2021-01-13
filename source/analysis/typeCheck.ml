@@ -3014,7 +3014,11 @@ module State (Context : Context) = struct
               | Some attribute ->
                   let attribute =
                     if not (Annotated.Attribute.defined attribute) then
-                      Resolution.fallback_attribute class_name ~resolution ~name
+                      Resolution.fallback_attribute
+                        class_name
+                        ~accessed_through_class
+                        ~resolution
+                        ~name
                       |> Option.value ~default:attribute
                     else
                       attribute
