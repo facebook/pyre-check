@@ -150,6 +150,8 @@ let to_json ({ kind; path; location } as error) =
       "description", `String (description kind);
       "line", `Int Location.(location.start.line);
       "column", `Int Location.(location.start.column);
+      "stop_line", `Int Location.(location.stop.line);
+      "stop_column", `Int Location.(location.stop.column);
       "path", path;
       "code", `Int (code error);
     ]
