@@ -117,7 +117,7 @@ class AnalysisDirectory:
         )
 
     def get_command_line_root(self) -> str:
-        return self._path.command_line_argument()
+        return os.path.abspath(self._path.command_line_argument())
 
     def get_root(self) -> str:
         return self._path.path()
