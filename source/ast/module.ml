@@ -62,7 +62,6 @@ type t =
       exports: ExportMap.t;
       legacy_aliased_exports: legacy_aliased_exports;
       empty_stub: bool;
-      local_mode: Source.local_mode Node.t option;
     }
   | Implicit of { empty_stub: bool }
 [@@deriving eq, sexp, compare]
@@ -91,13 +90,12 @@ let empty_stub = function
       empty_stub
 
 
-let create_for_testing ~local_mode ~stub =
+let create_for_testing ~stub =
   Explicit
     {
       exports = ExportMap.empty;
       legacy_aliased_exports = Reference.Map.empty |> Map.to_tree;
-      empty_stub = stub && Source.Metadata.is_placeholder_stub local_mode;
-      local_mode = None;
+      empty_stub = stub;
     }
 
 
@@ -228,7 +226,6 @@ let create
       exports;
       legacy_aliased_exports;
       empty_stub = is_stub && Source.Metadata.is_placeholder_stub local_mode;
-      local_mode;
     }
 
 
@@ -259,9 +256,4 @@ let legacy_aliased_export considered_module reference =
   | Explicit { legacy_aliased_exports; _ } ->
       let aliased_exports = Reference.Map.of_tree legacy_aliased_exports in
       Map.find aliased_exports reference
-  | Implicit _ -> None
-
-
-let local_mode = function
-  | Explicit { local_mode; _ } -> local_mode
   | Implicit _ -> None

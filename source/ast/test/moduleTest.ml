@@ -11,17 +11,8 @@ open Ast
 open Test
 
 let test_empty_stub _ =
-  assert_true
-    ( Module.create_for_testing
-        ~local_mode:(Some (Node.create_with_default_location Source.PlaceholderStub))
-        ~stub:true
-    |> Module.empty_stub );
-  assert_false
-    ( Module.create_for_testing
-        ~local_mode:(Some (Node.create_with_default_location Source.PlaceholderStub))
-        ~stub:false
-    |> Module.empty_stub );
-  assert_false (Module.create_for_testing ~local_mode:None ~stub:true |> Module.empty_stub)
+  assert_true (Module.create_for_testing ~stub:true |> Module.empty_stub);
+  assert_false (Module.create_for_testing ~stub:false |> Module.empty_stub)
 
 
 let test_aliased_export _ =
