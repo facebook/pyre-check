@@ -16,7 +16,7 @@ from graphql import (
     GraphQLObjectType,
     GraphQLSchema,
 )
-from tools.pyre.tools.generate_taint_models.get_dynamic_graphql_sources import (
+from ...generate_taint_models.get_dynamic_graphql_sources import (
     DynamicGraphQLSourceGenerator,
 )
 
