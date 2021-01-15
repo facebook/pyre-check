@@ -178,6 +178,13 @@ let ignore_lines_test context =
       |}
     [];
 
+  assert_errors
+    {|
+        # pyre-ignore-all-errors
+        # pyre-fixme[1]
+        x: int = 42
+      |}
+    [];
   (* Ignores on source modes. *)
   assert_errors
     {|

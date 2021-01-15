@@ -183,6 +183,18 @@ let run ~scheduler ~configuration ~environment sources =
               ~kind:(AnalysisError.ParserFailure message)
               ~define;
           ]
+      | Some
+          (Result.Ok
+            {
+              Source.metadata =
+                {
+                  Source.Metadata.local_mode = Some { Node.value = Source.Declare; _ };
+                  unused_local_modes = [];
+                  _;
+                };
+              _;
+            }) ->
+          []
       | Some (Result.Ok source) ->
           let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
           let errors_by_define =
