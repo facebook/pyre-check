@@ -43,28 +43,6 @@ class PyreTest(unittest.TestCase):
         self.assertEqual(pyre.main(["persistent"]), 0)
         run_null_server.assert_has_calls([call(timeout=3600 * 12)])
 
-    # pyre-fixme[56]: Argument `tools.pyre.client.statistics` to decorator factory
-    #  `unittest.mock.patch.object` could not be resolved in a global scope.
-    @patch.object(statistics, "log")
-    def test_log_statistics(self, statistics_log: MagicMock) -> None:
-        test_configuration = configuration.Configuration(
-            project_root="irrelevant", dot_pyre_directory=Path(".pyre"), logger="logger"
-        )
-        command = mock_incremental_command(test_configuration)
-        pyre._log_statistics(command, 0.0, "foo", "bar", 42)
-        statistics_log.assert_called_once()
-
-    # pyre-fixme[56]: Argument `tools.pyre.client.statistics` to decorator factory
-    #  `unittest.mock.patch.object` could not be resolved in a global scope.
-    @patch.object(statistics, "log")
-    def test_log_statistics__should_rerun(self, statistics_log: MagicMock) -> None:
-        test_configuration = configuration.Configuration(
-            project_root="irrelevant", dot_pyre_directory=Path(".pyre"), logger="logger"
-        )
-        command = mock_incremental_command(test_configuration)
-        pyre._log_statistics(command, 0.0, "foo", "bar", 42, should_log=False)
-        statistics_log.assert_not_called()
-
 
 class CreateConfigurationWithRetryTest(testslide.TestCase):
     def test_create_configuration_with_retry_no_retry(self) -> None:

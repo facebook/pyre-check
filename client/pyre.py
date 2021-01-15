@@ -42,10 +42,9 @@ def _log_statistics(
     client_exception_message: str,
     error_message: Optional[str],
     exit_code: int,
-    should_log: bool = True,
 ) -> None:
     configuration = command.configuration
-    if should_log and configuration and configuration.logger:
+    if configuration and configuration.logger:
         statistics_module.log_with_configuration(
             category=statistics_module.LoggerCategory.USAGE,
             configuration=configuration,
@@ -106,7 +105,6 @@ def run_pyre_command(
     start_time = time.time()
 
     client_exception_message = ""
-    should_log_statistics = True
     # Having this as a fails-by-default helps flag unexpected exit
     # from exception flows.
     exit_code = ExitCode.FAILURE
@@ -146,7 +144,6 @@ def run_pyre_command(
             client_exception_message,
             error_message,
             exit_code,
-            should_log_statistics,
         )
     return exit_code
 
