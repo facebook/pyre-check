@@ -134,17 +134,10 @@ let test_parse_source context =
       !&"x"
   in
   assert_equal (Option.is_some source) true;
-  let {
-    Source.source_path = { SourcePath.relative; _ };
-    statements;
-    metadata = { Source.Metadata.number_of_lines; _ };
-    _;
-  }
-    =
+  let { Source.source_path = { SourcePath.relative; _ }; statements; _ } =
     Option.value_exn source
   in
   assert_equal relative "x.py";
-  assert_equal number_of_lines 2;
   match statements with
   | [{ Node.value = Define { Statement.Define.signature = { name; _ }; _ }; _ }] ->
       assert_equal
