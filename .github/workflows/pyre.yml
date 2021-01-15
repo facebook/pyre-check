@@ -1,0 +1,30 @@
+name: pyre
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+  workflow_dispatch:
+
+jobs:
+  pyre:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v1
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+          python -m pip install cython
+          python -m pip install flask flask_cors graphql-core typing_inspect
+          VERSION=$(grep "version" .pyre_configuration | sed -n -e 's/.*\(0\.0\.[0-9]*\).*/\1/p')
+          python -m pip install pyre-check-nightly==$VERSION
+
+      - name: Run Pyre
+        run: |
+          pyre check

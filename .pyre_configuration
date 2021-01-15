@@ -1,16 +1,28 @@
 {
   "exclude": [
-    ".*/stubs/.*",
-    ".*/source/.*",
     ".*/documentation/.*",
-    ".*/scripts/.*"
+    ".*/scripts/.*",
+    ".*/source/.*",
+    ".*/stubs/.*"
   ],
   "ignore_all_errors": [
-    "client/configuration.py"
+    "pyre_extensions/safe_json.py"
   ],
   "source_directories": [
     "."
   ],
+  "search_path": [
+    { "site-package": "dataclasses_json" },
+    { "site-package": "flask" },
+    { "site-package": "flask_cors" },
+    { "site-package": "graphql" },
+    { "site-package": "libcst" },
+    { "site-package": "psutil" },
+    { "site-package": "pywatchman" },
+    { "site-package": "testslide" },
+    { "site-package": "typing_extensions" },
+    { "site-package": "typing_inspect" }
+  ],
   "strict": true,
-  "version": "0.0.101610453359"
+  "version": "0.0.101610712576"
 }
