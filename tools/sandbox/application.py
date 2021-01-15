@@ -22,10 +22,10 @@ logging.basicConfig(
     level=logging.DEBUG,
 )
 
-LOG = logging.getLogger(__name__)
+LOG: logging.Logger = logging.getLogger(__name__)
 
 
-def _consume(stream: IO[bytes]) -> str:
+def _consume(stream: IO[str]) -> str:
     buffer: List[str] = []
 
     def _consume() -> None:
@@ -132,7 +132,7 @@ def index() -> str:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--debug", action="store_true")
-    arguments = parser.parse_args()
+    arguments: argparse.Namespace = parser.parse_args()
 
     application.debug = arguments.debug
     application.run()

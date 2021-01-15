@@ -2,10 +2,15 @@
   "exclude": [
     ".*/stubs/.*",
     ".*/source/.*",
-    ".*/documentation/.*"
+    ".*/documentation/.*",
+    ".*/scripts/.*"
+  ],
+  "ignore_all_errors": [
+    "client/configuration.py"
   ],
   "source_directories": [
     "."
   ],
+  "strict": true,
   "version": "0.0.101610453359"
 }
