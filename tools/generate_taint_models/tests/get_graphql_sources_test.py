@@ -8,7 +8,6 @@
 import os  # noqa
 import unittest
 from typing import Callable
-from unittest.mock import patch
 
 from graphql.type import (
     GraphQLBoolean,
@@ -18,11 +17,10 @@ from graphql.type import (
     GraphQLObjectType,
 )
 from graphql.type.definition import GraphQLType
-from tools.pyre.tools.generate_taint_models import get_graphql_sources
-from tools.pyre.tools.generate_taint_models.get_graphql_sources import (
+
+from ...generate_taint_models.get_graphql_sources import (
     GraphQLSourceGenerator,
 )
-
 from .test_functions import __name__ as qualifier, all_functions
 
 
