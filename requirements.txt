@@ -1,6 +1,7 @@
 click
-typing_extensions
-psutil
-libcst
-testslide
 dataclasses-json
+libcst
+psutil
+pywatchman
+testslide
+typing_extensions
