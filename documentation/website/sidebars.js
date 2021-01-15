@@ -61,6 +61,7 @@ module.exports = {
         'pysa-tips',
       ],
     },
+    ...fbInternalOnly(['fb/pysa-deployment']),
     'static-analysis-post-processor',
     'pysa-additional-resources',
   ],

@@ -69,6 +69,10 @@
         "title": "Development Tips",
         "sidebar_label": "Development Tips"
       },
+      "pysa-deployment": {
+        "title": "Pysa Deployment and Monitoring",
+        "sidebar_label": "Pysa Deployment and Monitoring"
+      },
       "querying-pyre": {
         "title": "Querying Pyre",
         "sidebar_label": "Querying Pyre"
