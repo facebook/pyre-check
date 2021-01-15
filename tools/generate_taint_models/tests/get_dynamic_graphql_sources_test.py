@@ -16,10 +16,10 @@ from graphql import (
     GraphQLObjectType,
     GraphQLSchema,
 )
+
 from ...generate_taint_models.get_dynamic_graphql_sources import (
     DynamicGraphQLSourceGenerator,
 )
-
 from .test_functions import __name__ as qualifier, all_functions
 
 
