@@ -87,11 +87,13 @@ let is_internal_path
     path
   =
   let path = Path.follow_symbolic_link path |> Option.value ~default:path in
-  let directory_contains ~path directory = Path.directory_contains ~directory path in
+  let path_is_covered ~path item =
+    Path.equal item path || Path.directory_contains ~directory:item path
+  in
   let filter_directories = Option.value filter_directories ~default:[] in
   let ignore_all_errors = Option.value ignore_all_errors ~default:[] in
-  List.exists filter_directories ~f:(directory_contains ~path)
-  && not (List.exists ignore_all_errors ~f:(directory_contains ~path))
+  List.exists filter_directories ~f:(path_is_covered ~path)
+  && not (List.exists ignore_all_errors ~f:(path_is_covered ~path))
 
 
 let should_type_check

@@ -647,6 +647,7 @@ let test_creation context =
     touch search_root "b.py";
     touch derp "c.py";
     touch durp "d.py";
+    touch local_root "e.py";
 
     let configuration =
       Configuration.Analysis.create
@@ -654,7 +655,7 @@ let test_creation context =
         ~source_path:[SearchPath.Root local_root]
         ~search_path:[SearchPath.Root search_root]
         ~filter_directories:[search_root]
-        ~ignore_all_errors:[durp]
+        ~ignore_all_errors:[durp; Path.create_relative ~root:local_root ~relative:"e.py"]
         ()
     in
     let assert_source_path = assert_source_path ~configuration in
@@ -678,6 +679,11 @@ let test_creation context =
       (create_exn search_root "durp/d.py")
       ~search_root
       ~relative:"durp/d.py"
+      ~is_external:true;
+    assert_source_path
+      (create_exn local_root "e.py")
+      ~search_root:local_root
+      ~relative:"e.py"
       ~is_external:true
   in
   let test_directory_filter2 () =
