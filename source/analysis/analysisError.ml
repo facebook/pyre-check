@@ -2169,7 +2169,6 @@ let rec messages ~concise ~signature location kind =
       ]
   | UnusedLocalMode { unused_mode; actual_mode } ->
       let mode_string = function
-        | { Node.value = Source.Debug; _ } -> "pyre-debug"
         | { Node.value = Source.Strict; _ } -> "pyre-strict"
         | { Node.value = Source.Unsafe; _ } -> "pyre-unsafe"
         | { Node.value = Source.Declare; _ } -> "pyre-ignore-all-errors"

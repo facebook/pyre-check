@@ -45,7 +45,6 @@ let test_parse _ =
   assert_mode " # comment comment pyre-strict" None;
   assert_mode " # pyre-unsafe" (Some (create_mode 1 1 14 Source.Unsafe));
   assert_mode " # pyre-durp" None;
-  assert_mode " # pyre-debug" (Some (create_mode 1 1 13 Source.Debug));
   assert_mode " # pyre-ignore-all-errors[42, 7,   15] " None;
 
   let assert_mode_errors lines expected_mode_errors =
@@ -55,9 +54,7 @@ let test_parse _ =
   assert_mode_errors ["# pyre-strict"; "# derp"] [];
   assert_mode_errors ["# pyre-strict"; "# pyre-unsafe"] [create_mode 2 0 13 Source.Unsafe];
   assert_mode_errors ["# pyre-strict"; "# pyre-strict"] [create_mode 2 0 13 Source.Strict];
-  assert_mode_errors
-    ["# pyre-strict"; "derp"; "# pyre-unsafe"; "# pyre-debug"]
-    [create_mode 3 0 13 Source.Unsafe; create_mode 4 0 12 Source.Debug];
+  assert_mode_errors ["# pyre-strict"; "derp"; "# pyre-unsafe"] [create_mode 3 0 13 Source.Unsafe];
 
   let assert_ignore_codes line expected_codes =
     let { Source.Metadata.ignore_codes; _ } = Source.Metadata.parse ~qualifier [line] in
@@ -191,13 +188,11 @@ let test_mode _ =
   let configuration = Configuration.Analysis.create ~source_path:[] () in
   assert_mode ~configuration None Source.Unsafe;
   assert_mode ~configuration (Some (Node.create_with_default_location Source.Strict)) Source.Strict;
-  assert_mode ~configuration (Some (Node.create_with_default_location Source.Debug)) Source.Debug;
 
   let configuration = Configuration.Analysis.create ~strict:true ~source_path:[] () in
   assert_mode ~configuration None Source.Strict;
   assert_mode ~configuration (Some (Node.create_with_default_location Source.Unsafe)) Source.Unsafe;
   assert_mode ~configuration (Some (Node.create_with_default_location Source.Strict)) Source.Strict;
-  assert_mode ~configuration (Some (Node.create_with_default_location Source.Debug)) Source.Debug;
 
   let configuration = Configuration.Analysis.create ~debug:true ~source_path:[] () in
   assert_mode ~configuration None Source.Debug;

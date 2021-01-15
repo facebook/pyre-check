@@ -14,7 +14,6 @@ type mode =
 [@@deriving compare, eq, show, sexp, hash]
 
 type local_mode =
-  | Debug
   | Strict
   | Unsafe
   | Declare

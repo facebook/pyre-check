@@ -17,7 +17,6 @@ type mode =
 [@@deriving compare, eq, show, sexp, hash]
 
 type local_mode =
-  | Debug
   | Strict
   | Unsafe
   | Declare
@@ -41,7 +40,7 @@ module Metadata = struct
 
 
   let create_for_testing
-      ?(local_mode = Node.create ~location:Location.any Debug)
+      ?(local_mode = Node.create ~location:Location.any Unsafe)
       ?(unused_local_modes = [])
       ?(ignore_codes = [])
       ?(ignore_lines = [])
@@ -65,7 +64,6 @@ module Metadata = struct
 
 
   let parse ~qualifier:_ lines =
-    let is_debug = is_pyre_comment "pyre-debug" in
     let is_strict = is_pyre_comment "pyre-strict" in
     let is_unsafe = is_pyre_comment "pyre-unsafe" in
     (* We do not fall back to declarative mode on a typo when attempting to only suppress certain
@@ -82,9 +80,7 @@ module Metadata = struct
           let stop = { Location.line = index + 1; column = length } in
           { Location.start; stop }
         in
-        if is_debug line then
-          Some (Node.create ~location Debug)
-        else if is_strict line then
+        if is_strict line then
           Some (Node.create ~location Strict)
         else if is_unsafe line then
           Some (Node.create ~location Unsafe)
@@ -234,7 +230,6 @@ let mode ~configuration ~local_mode : mode =
   match local_mode, configuration with
   | _, { Configuration.Analysis.debug = true; _ } -> Debug
   | _, { Configuration.Analysis.infer = true; _ } -> Infer
-  | Some { Node.value = Debug; _ }, _ -> Debug
   | Some { Node.value = Strict; _ }, _ -> Strict
   | Some { Node.value = Unsafe; _ }, _ -> Unsafe
   | Some { Node.value = Declare; _ }, _
