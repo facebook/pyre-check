@@ -42,7 +42,6 @@ def log(
             "int": {**(integers or {}), "time": int(time.time())},
             "normal": {
                 **(normals or {}),
-                "command_line": " ".join(sys.argv),
                 "host": platform.node() or "",
                 "platform": platform.system() or "",
                 "user": os.getenv("USER", ""),

@@ -9,6 +9,7 @@ import argparse
 import json
 import logging
 import os
+import sys
 import time
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Set, Type
@@ -141,7 +142,11 @@ def run_from_parsed_arguments(
             statistics.log(
                 statistics.LoggerCategory.PERFORMANCE,
                 integers={"time": elapsed_time_milliseconds},
-                normals={"name": "model generation", "model kind": mode},
+                normals={
+                    "name": "model generation",
+                    "model kind": mode,
+                    "command_line": " ".join(sys.argv),
+                },
                 logger=logger_executable,
             )
     _report_results(generated_models, arguments.output_directory)

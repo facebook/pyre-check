@@ -9,6 +9,7 @@ import logging
 import os
 import shutil
 import subprocess
+import sys
 import tempfile
 import textwrap
 from itertools import chain
@@ -285,6 +286,7 @@ class SharedAnalysisDirectory(AnalysisDirectory):
                 "number_of_unsupported_files": number_of_unsupported_files,
             },
             normals={
+                "command_line": " ".join(sys.argv),
                 "event_type": event_type.value,
                 "local_root": self._local_configuration_root,
                 "buck_builder_type": str(self._buck_builder),

@@ -58,6 +58,7 @@ def _log_statistics(
                 "root": configuration.relative_local_root,
                 "cwd": os.getcwd(),
                 "client_version": __version__,
+                "command_line": " ".join(sys.argv),
                 "command": command.NAME,
                 "client_exception": client_exception_message,
                 "error_message": error_message,
