@@ -153,6 +153,52 @@ let test_json_parsing context =
        |}
        mandatory_fileds)
     ~expected:["local_root", `String "/project/local"; "watchman_root", `String "/project"];
+  assert_parsed
+    (Format.sprintf
+       {|
+          {
+            %s,
+            "additional_logging_sections": ["foo", "bar"],
+            "profiling_output": "/output0",
+            "memory_profiling_output": "/output1"
+          }
+       |}
+       mandatory_fileds)
+    ~expected:
+      [
+        "additional_logging_sections", `List [`String "foo"; `String "bar"];
+        "profiling_output", `String "/output0";
+        "memory_profiling_output", `String "/output1";
+      ];
+  assert_not_parsed
+    (Format.sprintf
+       {|
+          {
+            %s,
+            "additional_logging_sections": "derp"
+          }
+       |}
+       mandatory_fileds);
+  assert_parsed
+    (Format.sprintf
+       {|
+          {
+            %s,
+            "remote_logging": { "logger": "/bin/logger", "identifier": "foo" }
+          }
+       |}
+       mandatory_fileds)
+    ~expected:
+      ["remote_logging", `Assoc ["logger", `String "/bin/logger"; "identifier", `String "foo"]];
+  assert_not_parsed
+    (Format.sprintf
+       {|
+          {
+            %s,
+            "remote_logging": "derp"
+          }
+       |}
+       mandatory_fileds);
   assert_not_parsed
     (Format.sprintf
        {|

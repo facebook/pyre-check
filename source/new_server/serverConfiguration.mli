@@ -36,6 +36,14 @@ module SavedStateAction : sig
   [@@deriving sexp, compare, hash, yojson]
 end
 
+module RemoteLogging : sig
+  type t = {
+    logger: string;
+    identifier: string;
+  }
+  [@@deriving sexp, compare, hash, yojson]
+end
+
 type t = {
   (* Source file discovery *)
   source_paths: SearchPath.t list;
@@ -60,6 +68,11 @@ type t = {
   (* Parallelism controls *)
   parallel: bool;
   number_of_workers: int;
+  (* Logging controls *)
+  additional_logging_sections: string list;
+  remote_logging: RemoteLogging.t option;
+  profiling_output: string option;
+  memory_profiling_output: string option;
 }
 [@@deriving sexp, compare, hash]
 

@@ -131,6 +131,18 @@ module SavedStateAction = struct
         `List [`String "load_from_project"; `Assoc load_from_project_options]
 end
 
+module RemoteLogging = struct
+  (* This is (for now) required for @default to work. See
+     https://github.com/ocaml-ppx/ppx_deriving_yojson/issues/79 *)
+  let ( = ) = Stdlib.( = )
+
+  type t = {
+    logger: string;
+    identifier: (string[@default ""]);
+  }
+  [@@deriving sexp, compare, hash, yojson]
+end
+
 type t = {
   (* Source file discovery *)
   source_paths: SearchPath.t list;
@@ -155,6 +167,11 @@ type t = {
   (* Parallelism controls *)
   parallel: bool;
   number_of_workers: int;
+  (* Logging controls *)
+  additional_logging_sections: string list;
+  remote_logging: RemoteLogging.t option;
+  profiling_output: string option;
+  memory_profiling_output: string option;
 }
 [@@deriving sexp, compare, hash]
 
@@ -173,6 +190,12 @@ let of_yojson json =
        mandantory. *)
     let bool_member ?default name json = member name json |> to_bool_with_default ?default in
     let int_member ?default name json = member name json |> to_int_with_default ?default in
+    let optional_string_member name json =
+      member name json
+      |> function
+      | `Null -> None
+      | _ as element -> Some (to_string element)
+    in
     let path_member name json = member name json |> to_path in
     let optional_path_member name json =
       member name json
@@ -238,6 +261,18 @@ let of_yojson json =
     in
     let parallel = json |> bool_member "parallel" ~default:false in
     let number_of_workers = json |> int_member "number_of_workers" ~default:1 in
+    let additional_logging_sections =
+      json |> string_list_member "additional_logging_sections" ~default:[]
+    in
+    let remote_logging =
+      json
+      |> member "remote_logging"
+      |> function
+      | `Null -> None
+      | _ as json -> RemoteLogging.of_yojson json |> Result.ok_or_failwith |> Option.some
+    in
+    let profiling_output = json |> optional_string_member "profiling_output" in
+    let memory_profiling_output = json |> optional_string_member "memory_profiling_output" in
     Result.Ok
       {
         source_paths;
@@ -259,6 +294,10 @@ let of_yojson json =
         store_type_check_resolution;
         parallel;
         number_of_workers;
+        additional_logging_sections;
+        remote_logging;
+        profiling_output;
+        memory_profiling_output;
       }
   with
   | Type_error (message, _)
@@ -288,6 +327,10 @@ let to_yojson
       store_type_check_resolution;
       parallel;
       number_of_workers;
+      additional_logging_sections;
+      remote_logging;
+      profiling_output;
+      memory_profiling_output;
     }
   =
   let result =
@@ -310,6 +353,7 @@ let to_yojson
       "store_type_check_resolution", [%to_yojson: bool] store_type_check_resolution;
       "parallel", [%to_yojson: bool] parallel;
       "number_of_workers", [%to_yojson: int] number_of_workers;
+      "additional_logging_sections", [%to_yojson: string list] additional_logging_sections;
     ]
   in
   let result =
@@ -328,6 +372,22 @@ let to_yojson
     | None -> result
     | Some saved_state_action ->
         ("saved_state_action", SavedStateAction.to_yojson saved_state_action) :: result
+  in
+  let result =
+    match remote_logging with
+    | None -> result
+    | Some remote_logging -> ("remote_logging", RemoteLogging.to_yojson remote_logging) :: result
+  in
+  let result =
+    match profiling_output with
+    | None -> result
+    | Some profiling_output -> ("profiling_output", [%to_yojson: string] profiling_output) :: result
+  in
+  let result =
+    match memory_profiling_output with
+    | None -> result
+    | Some memory_profiling_output ->
+        ("memory_profiling_output", [%to_yojson: string] memory_profiling_output) :: result
   in
   `Assoc result
 
@@ -353,6 +413,10 @@ let analysis_configuration_of
       store_type_check_resolution;
       parallel;
       number_of_workers;
+      additional_logging_sections = _;
+      remote_logging = _;
+      profiling_output = _;
+      memory_profiling_output = _;
     }
   =
   Configuration.Analysis.create
