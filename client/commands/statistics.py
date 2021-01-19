@@ -5,6 +5,7 @@
 
 
 import json
+import time
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional, Set, Type, Union
 
@@ -131,6 +132,8 @@ class Statistics(Command):
         }
 
     def _run(self) -> None:
+        log_identifier = self._command_arguments.log_identifier
+        run_id = log_identifier if log_identifier is not None else str(time.time_ns())
         paths = self._find_paths()
         modules = {}
         for path in _parse_paths(paths):
@@ -140,9 +143,9 @@ class Statistics(Command):
         data = self._collect_statistics(modules)
         log.stdout.write(json.dumps(data, indent=4))
         if self._log_results:
-            self._log_to_scuba(data)
+            self._log_to_scuba(run_id, data)
 
-    def _log_to_scuba(self, data: Dict[str, Any]) -> None:
+    def _log_to_scuba(self, run_id: str, data: Dict[str, Any]) -> None:
         if self._configuration and self._configuration.logger:
             root = str(self._configuration.relative_local_root)
             for path, counts in data["annotations"].items():
@@ -150,22 +153,22 @@ class Statistics(Command):
                     statistics.LoggerCategory.ANNOTATION_COUNTS,
                     configuration=self._configuration,
                     integers=counts,
-                    normals={"root": root, "path": path},
+                    normals={"run_id": run_id, "root": root, "path": path},
                 )
             for path, counts in data["fixmes"].items():
-                self._log_fixmes("fixme", counts, root, path)
+                self._log_fixmes(run_id, "fixme", counts, root, path)
             for path, counts in data["ignores"].items():
-                self._log_fixmes("ignore", counts, root, path)
+                self._log_fixmes(run_id, "ignore", counts, root, path)
             for path, counts in data["strict"].items():
                 statistics.log_with_configuration(
                     statistics.LoggerCategory.STRICT_ADOPTION,
                     configuration=self._configuration,
                     integers=counts,
-                    normals={"root": root, "path": path},
+                    normals={"run_id": run_id, "root": root, "path": path},
                 )
 
     def _log_fixmes(
-        self, fixme_type: str, data: Dict[str, int], root: str, path: str
+        self, run_id: str, fixme_type: str, data: Dict[str, int], root: str, path: str
     ) -> None:
         for error_code, count in data.items():
             statistics.log_with_configuration(
@@ -173,6 +176,7 @@ class Statistics(Command):
                 configuration=self._configuration,
                 integers={"count": count},
                 normals={
+                    "run_id": run_id,
                     "root": root,
                     "code": error_code,
                     "type": fixme_type,
