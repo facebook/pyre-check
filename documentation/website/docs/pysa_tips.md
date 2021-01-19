@@ -203,12 +203,12 @@ to iterate more quickly with Pysa are:
    Computing this information can be time-consuming on larger projects.
    However, if you're only editing taint models and not the project source,
    this information isn't expected to change between Pysa runs. By enabling
-   this flag, you can tell Pysa to save this information to a file
-   (located at .pyre/pysa.cache) and load from this file in subsequent runs,
-   rather than computing it from scratch each time. The cache file will be
+   this flag, you can tell Pysa to save this information to cache files
+   (located in .pyre/.pysa_cache) and load from cache in subsequent runs,
+   rather than computing it from scratch each time. The cache will be
    invalidated if any of the project source files change, in which case
    Pysa will fall back to doing a clean run and then saving the computed
-   artifacts in a new cache file.
+   artifacts in new cache files.
 
 
 ### File Types
