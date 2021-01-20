@@ -79,6 +79,8 @@ val search_upwards : target:string -> root:t -> t option
 
 val remove : t -> unit
 
+val remove_if_exists : t -> unit
+
 val readlink : t -> path option
 
 module Map : Map.S with type Key.t = t

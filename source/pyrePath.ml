@@ -194,6 +194,15 @@ let remove path =
   | Sys_error _ -> Log.debug "Unable to remove file at %a" pp path
 
 
+let remove_if_exists path =
+  let path = absolute path in
+  match Sys.file_exists path with
+  | `Yes -> Core.Unix.remove path
+  | `No
+  | `Unknown ->
+      ()
+
+
 let readlink path =
   try Unix.readlink (absolute path) |> Option.some with
   | Unix.Unix_error _ -> None

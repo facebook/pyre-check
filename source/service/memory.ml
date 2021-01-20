@@ -164,15 +164,8 @@ let prepare_saved_state_directory { Configuration.Analysis.log_directory; _ } =
     try Core.Unix.mkdir (Path.absolute root) with
     (* [mkdir] on MacOSX returns [EISDIR] instead of [EEXIST] if the directory already exists. *)
     | Core.Unix.Unix_error ((EEXIST | EISDIR), _, _) ->
-        let remove_if_exists path =
-          match Sys.file_exists path with
-          | `Yes -> Core.Unix.remove path
-          | `No
-          | `Unknown ->
-              ()
-        in
-        remove_if_exists (Path.absolute table_path);
-        remove_if_exists (Path.absolute dependencies_path)
+        Path.remove_if_exists table_path;
+        Path.remove_if_exists dependencies_path
     | e -> raise e
   in
   { directory = root; table_path; dependencies_path }

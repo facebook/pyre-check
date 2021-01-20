@@ -18,8 +18,11 @@ module GlobalState = struct
   let global_state = { profiling_output = None; memory_profiling_output = None }
 
   let initialize ?profiling_output ?memory_profiling_output () =
-    Option.iter profiling_output ~f:(fun output -> global_state.profiling_output <- Some output);
+    Option.iter profiling_output ~f:(fun output ->
+        Path.remove_if_exists (Path.create_absolute ~follow_symbolic_links:false output);
+        global_state.profiling_output <- Some output);
     Option.iter memory_profiling_output ~f:(fun output ->
+        Path.remove_if_exists (Path.create_absolute ~follow_symbolic_links:false output);
         global_state.memory_profiling_output <- Some output);
     ()
 
