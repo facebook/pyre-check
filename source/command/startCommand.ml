@@ -621,7 +621,7 @@ let run_start_command
     ~project_name:(Path.last local_root)
     ~project_root
     ();
-  Profiling.GlobalState.initialize ~profiling_output ~memory_profiling_output ();
+  Profiling.GlobalState.initialize ?profiling_output ?memory_profiling_output ();
   let filter_directories =
     filter_directories
     >>| String.split_on_chars ~on:[';']

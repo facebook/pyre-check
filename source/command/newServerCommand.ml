@@ -58,7 +58,7 @@ let run_server configuration_file =
             ~project_root:(PyrePath.absolute global_root)
             ~project_name:relative_local_root
             ();
-          Profiling.GlobalState.initialize ~profiling_output ~memory_profiling_output ();
+          Profiling.GlobalState.initialize ?profiling_output ?memory_profiling_output ();
 
           (* Show start up notification. *)
           Newserver.StartupNotification.consume ~log_path ()

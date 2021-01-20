@@ -8,11 +8,7 @@
 module GlobalState : sig
   type t
 
-  val initialize
-    :  ?profiling_output:string option ->
-    ?memory_profiling_output:string option ->
-    unit ->
-    unit
+  val initialize : ?profiling_output:string -> ?memory_profiling_output:string -> unit -> unit
 
   val get : unit -> t
 

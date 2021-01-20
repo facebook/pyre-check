@@ -59,7 +59,7 @@ let run_analysis
       ?logger
       ~project_name:(Path.last local_root)
       ();
-    Profiling.GlobalState.initialize ~profiling_output ~memory_profiling_output ();
+    Profiling.GlobalState.initialize ?profiling_output ?memory_profiling_output ();
     let filter_directories =
       filter_directories
       >>| String.split_on_chars ~on:[';']

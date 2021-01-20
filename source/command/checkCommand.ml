@@ -46,7 +46,7 @@ let run_check
       ~project_root
       ~project_name:(Path.last local_root)
       ();
-    Profiling.GlobalState.initialize ~profiling_output ~memory_profiling_output ();
+    Profiling.GlobalState.initialize ?profiling_output ?memory_profiling_output ();
     let argument_to_paths argument =
       argument
       >>| String.split_on_chars ~on:[';']
