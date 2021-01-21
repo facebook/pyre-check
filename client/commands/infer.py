@@ -62,8 +62,11 @@ class AnnotationFixer(libcst.CSTTransformer):
 
 def dequalify_and_fix_pathlike(annotation: str) -> str:
     if annotation.find("PathLike") >= 0:
-        tree = libcst.parse_module(annotation)
-        annotation = tree.visit(AnnotationFixer()).code
+        try:
+            tree = libcst.parse_module(annotation)
+            annotation = tree.visit(AnnotationFixer()).code
+        except libcst._exceptions.ParserSyntaxError:
+            pass
 
     return annotation.replace("typing.", "")
 

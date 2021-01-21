@@ -592,6 +592,26 @@ class PyreTest(unittest.TestCase):
             def bar(x: int) -> Union[os.PathLike[str]]: ...
             """,
         )
+        self.assert_stub(
+            [
+                build_json(
+                    {
+                        "annotation": "PathLike[Variable[typing.AnyStr <:"
+                        + " [str, bytes]]]",
+                        "function_name": "test.bar",
+                        "parent": None,
+                        "parameters": [{"name": "x", "type": "int", "value": None}],
+                        "decorators": [],
+                        "async": False,
+                    }
+                )
+            ],
+            """\
+            from typing import AnyStr
+
+            def bar(x: int) -> PathLike[Variable[AnyStr <: [str, bytes]]]: ...
+            """,
+        )
 
     def test_field_stubs(self) -> None:
         self.assert_stub(
