@@ -6,6 +6,7 @@
 import asyncio
 import contextlib
 import dataclasses
+import enum
 import json
 import logging
 import os
@@ -21,6 +22,8 @@ from ... import (
     command_arguments,
     commands,
     configuration as configuration_module,
+    statistics,
+    version,
 )
 from . import (
     language_server_protocol as lsp,
@@ -32,6 +35,37 @@ from . import (
 )
 
 LOG: logging.Logger = logging.getLogger(__name__)
+
+
+class LSPEvent(enum.Enum):
+    INITIALIZED = "initialized"
+
+
+def _log_lsp_event(
+    remote_logging: Optional[start.RemoteLogging],
+    event: LSPEvent,
+    integers: Optional[Dict[str, int]] = None,
+    normals: Optional[Dict[str, Optional[str]]] = None,
+) -> None:
+    if remote_logging is not None:
+        logger = remote_logging.logger
+        if logger is not None:
+            log_identifier = remote_logging.identifier
+            statistics.log(
+                category=statistics.LoggerCategory.LSP_EVENTS,
+                logger=logger,
+                integers=integers,
+                normals={
+                    **(normals or {}),
+                    "event": event.value,
+                    "pyre client version": version.__version__,
+                    **(
+                        {"identifier": log_identifier}
+                        if log_identifier is not None
+                        else {}
+                    ),
+                },
+            )
 
 
 def process_initialize_request(
@@ -58,6 +92,7 @@ def process_initialize_request(
 @dataclasses.dataclass(frozen=True)
 class InitializationSuccess:
     client_capabilities: lsp.ClientCapabilities
+    client_info: Optional[lsp.Info] = None
 
 
 @dataclasses.dataclass(frozen=True)
@@ -124,7 +159,8 @@ async def try_initialize(
             )
 
         return InitializationSuccess(
-            client_capabilities=initialize_parameters.capabilities
+            client_capabilities=initialize_parameters.capabilities,
+            client_info=initialize_parameters.client_info,
         )
     except json_rpc.JSONRPCException as json_rpc_error:
         await lsp.write_json_rpc(
@@ -601,8 +637,22 @@ async def run_persistent(
             LOG.info("Received exit request before initialization.")
             return 0
         elif isinstance(initialize_result, InitializationSuccess):
-            client_capabilities = initialize_result.client_capabilities
             LOG.info("Initialization successful.")
+            client_info = initialize_result.client_info
+            _log_lsp_event(
+                remote_logging=pyre_arguments.remote_logging,
+                event=LSPEvent.INITIALIZED,
+                normals=(
+                    {}
+                    if client_info is None
+                    else {
+                        "lsp client name": client_info.name,
+                        "lsp client version": client_info.version,
+                    }
+                ),
+            )
+
+            client_capabilities = initialize_result.client_capabilities
             LOG.debug(f"Client capabilities: {client_capabilities}")
             initial_server_state = ServerState()
             server = Server(
