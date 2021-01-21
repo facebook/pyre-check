@@ -108,7 +108,7 @@ module ConnectionState = struct
   let create () = { subscription_names = [] }
 
   let add_subscription ~name { subscription_names } =
-    Log.info "Subscription added: %s" name;
+    Log.log ~section:`Server "Subscription added: %s" name;
     { subscription_names = name :: subscription_names }
 
 
@@ -118,7 +118,7 @@ module ConnectionState = struct
       Lazy.force server_state
       >|= fun server_state ->
       List.iter subscription_names ~f:(fun name ->
-          Log.info "Subscription removed: %s" name;
+          Log.log ~section:`Server "Subscription removed: %s" name;
           let { ServerState.subscriptions; _ } = !server_state in
           ServerState.Subscriptions.remove ~name subscriptions)
     else
@@ -132,7 +132,7 @@ let handle_connection ~server_state _client_address (input_channel, output_chann
     Lwt_io.read_line_opt input_channel
     >>= function
     | None ->
-        Log.info "Connection closed";
+        Log.log ~section:`Server "Connection closed";
         ConnectionState.cleanup ~server_state connection_state
     | Some message ->
         let result =
