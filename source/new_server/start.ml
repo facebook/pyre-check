@@ -300,16 +300,43 @@ let initialize_server_state
   in
   let open Lwt.Infix in
   let get_initial_state () =
+    let with_performance_logging ?(normals = []) ~f =
+      let timer = Timer.start () in
+      f ()
+      >>= fun result ->
+      let normals =
+        let version =
+          (* HACK: Use `Version.version ()` directly when all servers are migrated. *)
+          Format.sprintf "newserver-%s" (Version.version ())
+        in
+        ("binary_version", version) :: normals
+      in
+      Statistics.performance ~name:"initialization" ~timer ~normals ();
+      Lwt.return result
+    in
     match saved_state_action with
-    | None -> Lwt.return (start_from_scratch ())
+    | None ->
+        with_performance_logging ~normals:["initialization method", "cold start"] ~f:(fun _ ->
+            Lwt.return (start_from_scratch ()))
     | Some
         (ServerConfiguration.SavedStateAction.LoadFromFile
           { shared_memory_path; changed_files_path }) ->
-        fetch_saved_state_from_files ~shared_memory_path ~changed_files_path ()
-        >>= load_from_saved_state
+        with_performance_logging ~normals:["initialization method", "saved state"] ~f:(fun _ ->
+            fetch_saved_state_from_files ~shared_memory_path ~changed_files_path ()
+            >>= load_from_saved_state)
     | Some (ServerConfiguration.SavedStateAction.LoadFromProject { project_name; project_metadata })
       ->
-        fetch_saved_state_from_project ~project_name ~project_metadata () >>= load_from_saved_state
+        let normals =
+          let normals =
+            ["initialization method", "saved state"; "saved_state_project", project_name]
+          in
+          match project_metadata with
+          | None -> normals
+          | Some metadata -> ("saved_state_metadata", metadata) :: normals
+        in
+        with_performance_logging ~normals ~f:(fun _ ->
+            fetch_saved_state_from_project ~project_name ~project_metadata ()
+            >>= load_from_saved_state)
   in
   get_initial_state ()
   >>= fun state ->
