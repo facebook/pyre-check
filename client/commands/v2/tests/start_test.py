@@ -23,6 +23,7 @@ from ..start import (
     get_critical_files,
     get_saved_state_action,
     get_server_identifier,
+    get_profiling_log_path,
     background_server_log_file,
 )
 
@@ -458,6 +459,47 @@ class StartTest(testslide.TestCase):
                 ),
             )
             self.assertIsNone(arguments.saved_state_action)
+
+    def test_create_server_arguments_logging(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root).resolve()
+            log_path = root_path / ".pyre"
+            logger_path = root_path / "logger"
+
+            setup.ensure_directories_exists(root_path, [".pyre", "src"])
+            setup.ensure_files_exist(root_path, ["logger"])
+            setup.write_configuration_file(
+                root_path,
+                {"source_directories": ["src"], "logger": str(logger_path)},
+            )
+
+            arguments = create_server_arguments(
+                configuration.create_configuration(
+                    command_arguments.CommandArguments(dot_pyre_directory=log_path),
+                    root_path,
+                ),
+                command_arguments.StartArguments(
+                    logging_sections="foo,bar,-baz",
+                    noninteractive=True,
+                    enable_profiling=True,
+                    enable_memory_profiling=True,
+                    log_identifier="derp",
+                ),
+            )
+            self.assertListEqual(
+                list(arguments.additional_logging_sections),
+                ["foo", "bar", "-baz", "-progress"],
+            )
+            self.assertEqual(
+                arguments.profiling_output, get_profiling_log_path(log_path)
+            )
+            self.assertEqual(
+                arguments.memory_profiling_output, get_profiling_log_path(log_path)
+            )
+            self.assertEqual(
+                arguments.remote_logging,
+                RemoteLogging(logger=str(logger_path), identifier="derp"),
+            )
 
     def test_background_server_log_placement(self) -> None:
         with tempfile.TemporaryDirectory() as root:

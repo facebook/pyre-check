@@ -270,6 +270,10 @@ def find_watchman_root(base: Path) -> Optional[Path]:
     )
 
 
+def get_profiling_log_path(log_directory: Path) -> Path:
+    return log_directory / "profiling.log"
+
+
 def create_server_arguments(
     configuration: configuration_module.Configuration,
     start_arguments: command_arguments.StartArguments,
@@ -289,12 +293,39 @@ def create_server_arguments(
         raise configuration_module.InvalidConfiguration(
             "New server does not have buck support yet."
         )
+
+    logging_sections = start_arguments.logging_sections
+    additional_logging_sections = (
+        [] if logging_sections is None else logging_sections.split(",")
+    )
+    if start_arguments.noninteractive:
+        additional_logging_sections.append("-progress")
+
+    profiling_output = (
+        get_profiling_log_path(Path(configuration.log_directory))
+        if start_arguments.enable_profiling
+        else None
+    )
+    memory_profiling_output = (
+        get_profiling_log_path(Path(configuration.log_directory))
+        if start_arguments.enable_memory_profiling
+        else None
+    )
+
+    logger = configuration.logger
+    remote_logging = (
+        RemoteLogging(logger=logger, identifier=start_arguments.log_identifier or "")
+        if logger is not None
+        else None
+    )
+
     check_directory_allowlist = [
         search_path.path() for search_path in source_directories
     ] + configuration.get_existent_do_not_ignore_errors_in_paths()
     return Arguments(
         log_path=configuration.log_directory,
         global_root=configuration.project_root,
+        additional_logging_sections=additional_logging_sections,
         checked_directory_allowlist=check_directory_allowlist,
         checked_directory_blocklist=(
             configuration.get_existent_ignore_all_errors_paths()
@@ -304,8 +335,11 @@ def create_server_arguments(
         excludes=configuration.excludes,
         extensions=configuration.get_valid_extension_suffixes(),
         local_root=configuration.local_root,
+        memory_profiling_output=memory_profiling_output,
         number_of_workers=configuration.get_number_of_workers(),
         parallel=not start_arguments.sequential,
+        profiling_output=profiling_output,
+        remote_logging=remote_logging,
         saved_state_action=None
         if start_arguments.no_saved_state
         else get_saved_state_action(

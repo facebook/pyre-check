@@ -55,9 +55,14 @@ class CommandArguments:
 class StartArguments:
     changed_files_path: Optional[str] = None
     debug: bool = False
+    enable_memory_profiling: bool = False
+    enable_profiling: bool = False
     load_initial_state_from: Optional[str] = None
+    log_identifier: Optional[str] = None
+    logging_sections: Optional[str] = None
     no_saved_state: bool = False
     no_watchman: bool = False
+    noninteractive: bool = False
     save_initial_state_to: Optional[str] = None
     saved_state_project: Optional[str] = None
     sequential: bool = False
