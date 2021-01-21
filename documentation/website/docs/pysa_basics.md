@@ -83,7 +83,7 @@ Sources are where tainted data originates. They are declared in your
     {
         "name": "Cookies",
         "comment": "used to annotate cookie sources"
-    },
+    }
 ]
 ```
 
