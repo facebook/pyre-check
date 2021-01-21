@@ -212,19 +212,31 @@ let base_name expression =
   | _ -> None
 
 
-let rec parse_annotations ~path ~location ~model_name ~configuration ~parameters annotation =
+let rec parse_annotations
+    ~path
+    ~location
+    ~model_name
+    ~configuration
+    ~parameters
+    ~callable_parameter_names_to_positions
+    annotation
+  =
   let open Core.Result in
   let annotation_error error = invalid_model_error ~path ~location ~name:model_name error in
   let get_parameter_position name =
-    let matches_parameter_name index { Node.value = parameter; _ } =
-      if String.equal parameter.Parameter.name name then
-        Some index
-      else
-        None
-    in
-    match List.find_mapi parameters ~f:matches_parameter_name with
-    | Some index -> Ok index
-    | None -> Error (annotation_error (Format.sprintf "No such parameter `%s`" name))
+    match Map.find callable_parameter_names_to_positions name with
+    | Some position -> Ok position
+    | None -> (
+        (* `callable_parameter_names_to_positions` might be missing the `self` parameter. *)
+        let matches_parameter_name index { Node.value = parameter; _ } =
+          if String.equal parameter.Parameter.name name then
+            Some index
+          else
+            None
+        in
+        match List.find_mapi parameters ~f:matches_parameter_name with
+        | Some index -> Ok index
+        | None -> Error (annotation_error (Format.sprintf "No such parameter `%s`" name)) )
   in
   let rec extract_breadcrumbs ?(is_dynamic = false) expression =
     let open Configuration in
@@ -591,6 +603,7 @@ let rec parse_annotations ~path ~location ~model_name ~configuration ~parameters
                   ~model_name
                   ~configuration
                   ~parameters
+                  ~callable_parameter_names_to_positions
                   (Some expression))
             |> all
             |> map ~f:List.concat
@@ -679,6 +692,7 @@ let rec parse_annotations ~path ~location ~model_name ~configuration ~parameters
                   ~model_name
                   ~configuration
                   ~parameters
+                  ~callable_parameter_names_to_positions
                   (Some expression))
             |> all
             |> map ~f:List.concat
@@ -1111,6 +1125,7 @@ let parse_model_clause ~path ~configuration ({ Node.value; location } as express
               ~model_name:"model query"
               ~configuration
               ~parameters:[]
+              ~callable_parameter_names_to_positions:String.Map.empty
               (Some expression)
             >>| List.map ~f:(fun taint -> ModelQuery.TaintAnnotation taint)
       in
@@ -1220,11 +1235,19 @@ let parse_parameter_taint
     ~model_name
     ~configuration
     ~parameters
+    ~callable_parameter_names_to_positions
     (root, _name, parameter)
   =
   let open Core.Result in
   let annotation = parameter.Node.value.Parameter.annotation in
-  parse_annotations ~path ~location ~model_name ~configuration ~parameters annotation
+  parse_annotations
+    ~path
+    ~location
+    ~model_name
+    ~configuration
+    ~parameters
+    ~callable_parameter_names_to_positions
+    annotation
   |> map ~f:(List.map ~f:(fun annotation -> annotation, ParameterAnnotation root))
 
 
@@ -1294,9 +1317,24 @@ let add_taint_annotation_to_model
           |> map_error ~f:annotation_error )
 
 
-let parse_return_taint ~path ~location ~model_name ~configuration ~parameters expression =
+let parse_return_taint
+    ~path
+    ~location
+    ~model_name
+    ~configuration
+    ~parameters
+    ~callable_parameter_names_to_positions
+    expression
+  =
   let open Core.Result in
-  parse_annotations ~path ~location ~model_name ~configuration ~parameters expression
+  parse_annotations
+    ~path
+    ~location
+    ~model_name
+    ~configuration
+    ~parameters
+    ~callable_parameter_names_to_positions
+    expression
   |> map ~f:(List.map ~f:(fun annotation -> annotation, ReturnAnnotation))
 
 
@@ -1432,6 +1470,7 @@ let adjust_mode_and_skipped_overrides
                           ~model_name:(Reference.show define_name)
                           ~configuration
                           ~parameters:[]
+                          ~callable_parameter_names_to_positions:String.Map.empty
                           (Some value)
                         >>= List.fold_result ~init:([], []) ~f:add_tito_annotation
                         >>| fun (sanitized_tito_sources, sanitized_tito_sinks) ->
@@ -1481,6 +1520,7 @@ let adjust_mode_and_skipped_overrides
                         ~model_name:(Reference.show define_name)
                         ~configuration
                         ~parameters:[]
+                        ~callable_parameter_names_to_positions:String.Map.empty
                         (Some value)
                       >>= fun annotations ->
                       sanitize
@@ -1921,34 +1961,34 @@ let create ~resolution ?path ~configuration ~rule_filter source =
           Some t
       | _ -> None
     in
+    let callable_parameter_names_to_positions =
+      match callable_annotation with
+      | Ok
+          (Some
+            {
+              Type.Callable.implementation =
+                { Type.Callable.parameters = Type.Callable.Defined parameters; _ };
+              _;
+            }) ->
+          let name = function
+            | Type.Callable.Parameter.Named { name; _ }
+            | Type.Callable.Parameter.KeywordOnly { name; _ } ->
+                Some name
+            | _ -> None
+          in
+          let add_parameter_to_position position map parameter =
+            match name parameter with
+            | Some name -> Map.set map ~key:(Identifier.sanitized name) ~data:position
+            | None -> map
+          in
+          List.foldi parameters ~f:add_parameter_to_position ~init:String.Map.empty
+      | _ -> String.Map.empty
+    in
+    (* If there were parameters omitted from the model, the positioning will be off in the access
+       path conversion. Let's fix the positions after the fact to make sure that our models aren't
+       off. *)
     let normalized_model_parameters =
       let parameters = AccessPath.Root.normalize_parameters parameters in
-      (* If there were parameters omitted from the model, the positioning will be off in the access
-         path conversion. Let's fix the positions after the fact to make sure that our models aren't
-         off. *)
-      let callable_parameter_names_to_positions =
-        match callable_annotation with
-        | Ok
-            (Some
-              {
-                Type.Callable.implementation =
-                  { Type.Callable.parameters = Type.Callable.Defined parameters; _ };
-                _;
-              }) ->
-            let name = function
-              | Type.Callable.Parameter.Named { name; _ }
-              | Type.Callable.Parameter.KeywordOnly { name; _ } ->
-                  Some name
-              | _ -> None
-            in
-            let add_parameter_to_position position map parameter =
-              match name parameter with
-              | Some name -> Map.set map ~key:(Identifier.sanitized name) ~data:position
-              | None -> map
-            in
-            List.foldi parameters ~f:add_parameter_to_position ~init:String.Map.empty
-        | _ -> String.Map.empty
-      in
       let adjust_position (root, name, parameter) =
         let root =
           match root with
@@ -1977,7 +2017,8 @@ let create ~resolution ?path ~configuration ~rule_filter source =
              ~location
              ~model_name:(Reference.show name)
              ~configuration
-             ~parameters)
+             ~parameters
+             ~callable_parameter_names_to_positions)
       |> all
       >>| List.concat
       >>= fun parameter_taint ->
@@ -1987,6 +2028,7 @@ let create ~resolution ?path ~configuration ~rule_filter source =
         ~model_name:(Reference.show name)
         ~configuration
         ~parameters
+        ~callable_parameter_names_to_positions
         return_annotation
       >>| fun return_taint -> List.rev_append parameter_taint return_taint
     in

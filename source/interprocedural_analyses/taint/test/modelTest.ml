@@ -162,6 +162,11 @@ let test_source_models context =
     ~expect:[outcome ~kind:`Function ~returns:[Sources.NamedSource "Test"] "test.f"]
     ();
   assert_model
+    ~source:"def f(x: int): ..."
+    ~model_source:"def test.f() -> TaintSource[Test, ViaValueOf[x]]: ..."
+    ~expect:[outcome ~kind:`Function ~returns:[Sources.NamedSource "Test"] "test.f"]
+    ();
+  assert_model
     ~source:
       {|
     class C:
