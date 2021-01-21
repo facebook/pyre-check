@@ -45,6 +45,7 @@ let process_request
           type_environment;
           error_table;
           subscriptions;
+          _;
         } as state )
     request
   =
@@ -96,7 +97,7 @@ let process_request
             Path.pp
             path
           |> StartupNotification.produce_for_configuration ~server_configuration;
-          Stop.stop_waiting_server ()
+          Stop.log_and_stop_waiting_server ~reason:"critical file update" ~state ()
       | None -> (
           let _ =
             Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->
@@ -135,4 +136,4 @@ let process_request
                ~environment:type_environment
                ~configuration
                query_text) )
-  | Request.Stop -> Stop.stop_waiting_server ()
+  | Request.Stop -> Stop.log_and_stop_waiting_server ~reason:"explicit request" ~state ()

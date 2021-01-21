@@ -72,13 +72,15 @@ let handle_request ~server_state request =
   >>= fun server_state ->
   let on_uncaught_server_exception exn =
     Log.info "Uncaught server exception: %s" (Exn.to_string exn);
+    let server_state = !server_state in
     let () =
-      let { ServerState.server_configuration; _ } = !server_state in
+      let { ServerState.server_configuration; _ } = server_state in
       StartupNotification.produce_for_configuration
         ~server_configuration
         "Restarting Pyre server due to unexpected crash"
     in
-    Stop.stop_waiting_server ()
+    Statistics.log_exception exn ~fatal:true ~origin:"server";
+    Stop.log_and_stop_waiting_server ~reason:"uncaught exception" ~state:server_state ()
   in
   Lwt.catch
     (fun () -> RequestHandler.process_request ~state:!server_state request)

@@ -11,3 +11,6 @@
    `Start.start_server_and_wait`. If we just do `Start.start_server` without installing an Lwt
    signal handler for SIGINT, then this function is not going to have any effect. *)
 val stop_waiting_server : unit -> 'a Lwt.t
+
+(* Same as `stop_waiting_server` but attempt to perform additional logging before stopping. *)
+val log_and_stop_waiting_server : reason:string -> state:ServerState.t -> unit -> 'a Lwt.t

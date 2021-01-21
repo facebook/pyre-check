@@ -15,3 +15,17 @@ let stop_waiting_server () =
      dropped. *)
   let wait_forever, _ = Lwt.wait () in
   wait_forever
+
+
+let log_and_stop_waiting_server ~reason ~state:{ ServerState.start_time; _ } () =
+  let version =
+    (* HACK: Use `Version.version ()` directly when all servers are migrated. *)
+    Format.sprintf "newserver-%s" (Version.version ())
+  in
+  Statistics.event
+    ~flush:true
+    ~name:"stop server"
+    ~normals:["reason", reason; "server_version", version]
+    ~integers:["up_time", Timer.stop_in_ms start_time]
+    ();
+  stop_waiting_server ()

@@ -25,6 +25,7 @@ module Subscriptions = struct
 end
 
 type t = {
+  start_time: Timer.t;
   socket_path: Path.t;
   server_configuration: ServerConfiguration.t;
   configuration: Configuration.Analysis.t;
@@ -33,8 +34,17 @@ type t = {
   subscriptions: Subscriptions.t;
 }
 
-let create ?error_table ?subscriptions ~socket_path ~server_configuration ~type_environment () =
+let create
+    ?start_time
+    ?error_table
+    ?subscriptions
+    ~socket_path
+    ~server_configuration
+    ~type_environment
+    ()
+  =
   {
+    start_time = Option.value start_time ~default:(Timer.start ());
     socket_path;
     server_configuration;
     configuration = ServerConfiguration.analysis_configuration_of server_configuration;

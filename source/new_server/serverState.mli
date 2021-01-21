@@ -22,6 +22,7 @@ module Subscriptions : sig
 end
 
 type t = private {
+  start_time: Timer.t;
   socket_path: Path.t;
   server_configuration: ServerConfiguration.t;
   configuration: Configuration.Analysis.t;
@@ -31,7 +32,8 @@ type t = private {
 }
 
 val create
-  :  ?error_table:Analysis.AnalysisError.t list Ast.Reference.Table.t ->
+  :  ?start_time:Timer.t ->
+  ?error_table:Analysis.AnalysisError.t list Ast.Reference.Table.t ->
   ?subscriptions:Subscriptions.t ->
   socket_path:Path.t ->
   server_configuration:ServerConfiguration.t ->
