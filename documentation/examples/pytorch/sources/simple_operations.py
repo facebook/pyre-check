@@ -34,18 +34,17 @@ T1m2: Tensor[int32, [D1, D3]] = mm(T1, T2)
 
 
 def incorrects() -> None:
-    # T1 + T2 is incorrectly typed
-    # pyre-fixme[6]: Expected `Tensor[int, typing_extensions.Literal[42],
-    #  typing_extensions.Literal[16]]` for 1st param but got `Tensor[int,
-    #  typing_extensions.Literal[16], typing_extensions.Literal[64]]`.
+    # T1 + T2 is incorrectly typed, due to different dimensions in the tensors
+    # pyre-fixme[58]: `+` is not supported for operand types `Tensor[int, [int,
+    # int]]` and `Tensor[int, [int, int]]`.
     Err1 = T1 + T2  # noqa
     # T1 * T3 is incorrectly typed
     # pyre-fixme[6]: Expected `Tensor[DType, B, C]` for 2nd param but got
     #  `Tensor[int, T, T]`.
     Err2 = mm(T1, T3)  # noqa
     # T1 + T4 is incorrectly type (dtype)
-    # pyre-fixme[6]: Expected `Tensor[int, typing_extensions.Literal[42],
-    #  typing_extensions.Literal[16]]` for 1st param but got `Tensor[int, T, T]`.
+    # pyre-fixme[58]: `+` is not supported for operand types `Tensor[int, [int,
+    # int]]` and `Tensor[float, [int, int]]`.
     Err3 = T1 + T3  # noqa
 
 
