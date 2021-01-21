@@ -44,7 +44,7 @@ let process_request
           configuration;
           type_environment;
           error_table;
-          _;
+          subscriptions;
         } as state )
     request
   =
@@ -107,7 +107,7 @@ let process_request
                   ~errors:error_table
                   paths)
           in
-          match ServerState.get_subscriptions state with
+          match ServerState.Subscriptions.all subscriptions with
           | [] -> Lwt.return (state, Response.Ok)
           | _ as subscriptions ->
               let response =

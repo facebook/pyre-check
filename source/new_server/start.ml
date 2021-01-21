@@ -95,7 +95,8 @@ let handle_subscription ~server_state ~output_channel request =
   match request with
   | Subscription.Request.SubscribeToTypeErrors subscriber_name ->
       let subscription = Subscription.create ~name:subscriber_name ~output_channel () in
-      ServerState.add_subscription !server_state ~name:subscriber_name ~subscription;
+      let { ServerState.subscriptions; _ } = !server_state in
+      ServerState.Subscriptions.add subscriptions ~name:subscriber_name ~subscription;
       Lwt.return subscription
 
 
@@ -118,7 +119,8 @@ module ConnectionState = struct
       >|= fun server_state ->
       List.iter subscription_names ~f:(fun name ->
           Log.info "Subscription removed: %s" name;
-          ServerState.remove_subscription ~name !server_state)
+          let { ServerState.subscriptions; _ } = !server_state in
+          ServerState.Subscriptions.remove ~name subscriptions)
     else
       Lwt.return_unit
 end
@@ -187,14 +189,12 @@ let initialize_server_state
       List.iter errors ~f:add_error;
       table
     in
-    {
-      ServerState.socket_path = socket_path_of log_path;
-      server_configuration;
-      configuration;
-      type_environment = environment;
-      error_table;
-      subscriptions = String.Table.create ();
-    }
+    ServerState.create
+      ~socket_path:(socket_path_of log_path)
+      ~server_configuration
+      ~type_environment:environment
+      ~error_table
+      ()
   in
   let fetch_saved_state_from_files ~shared_memory_path ~changed_files_path () =
     try
@@ -283,14 +283,12 @@ let initialize_server_state
           in
           Analysis.SharedMemoryKeys.DependencyKey.Registry.load ();
           let error_table = Server.SavedState.ServerErrors.load () in
-          {
-            ServerState.socket_path = socket_path_of log_path;
-            server_configuration;
-            configuration;
-            type_environment;
-            error_table;
-            subscriptions = String.Table.create ();
-          }
+          ServerState.create
+            ~socket_path:(socket_path_of log_path)
+            ~server_configuration
+            ~type_environment
+            ~error_table
+            ()
         in
         let open Lwt.Infix in
         Log.info "Processing recent updates not included in saved state...";

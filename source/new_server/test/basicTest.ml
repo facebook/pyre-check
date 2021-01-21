@@ -372,7 +372,9 @@ let test_subscription_responses client =
     ~expected_response:(Response.TypeErrors [error])
   >>= fun () ->
   (* Verifies that we've managed to record the subscription in the server state. *)
-  assert_bool "Subscription `foo` recorded" (Hashtbl.mem subscriptions "foo");
+  assert_bool
+    "Subscription `foo` recorded"
+    (ServerState.Subscriptions.get subscriptions ~name:"foo" |> Option.is_some);
 
   (* Open another connection to the started server and send an incremental update message -- we
      can't reuse the connection from `client` for this update message since that connection has
