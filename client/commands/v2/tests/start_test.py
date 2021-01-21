@@ -16,6 +16,7 @@ from ..start import (
     CriticalFile,
     LoadSavedStateFromFile,
     LoadSavedStateFromProject,
+    RemoteLogging,
     MatchPolicy,
     create_server_arguments,
     find_watchman_root,
@@ -63,6 +64,16 @@ class ArgumentTest(testslide.TestCase):
                 "load_from_project",
                 {"project_name": "my_project", "project_metadata": "my_metadata"},
             ),
+        )
+
+    def test_serialize_remote_logging(self) -> None:
+        self.assertDictEqual(
+            RemoteLogging(logger="/bin/logger").serialize(),
+            {"logger": "/bin/logger", "identifier": ""},
+        )
+        self.assertDictEqual(
+            RemoteLogging(logger="/bin/logger", identifier="foo").serialize(),
+            {"logger": "/bin/logger", "identifier": "foo"},
         )
 
     def test_serialize_arguments(self) -> None:
@@ -167,6 +178,23 @@ class ArgumentTest(testslide.TestCase):
                         },
                     ),
                 )
+            ],
+        )
+
+        assert_serialized(
+            Arguments(
+                log_path="/log",
+                global_root="/project",
+                additional_logging_sections=["foo", "bar"],
+                remote_logging=RemoteLogging(logger="/logger", identifier="baz"),
+                profiling_output=Path("/derp"),
+                memory_profiling_output=Path("/derp2"),
+            ),
+            [
+                ("additional_logging_sections", ["foo", "bar"]),
+                ("profiling_output", "/derp"),
+                ("remote_logging", {"logger": "/logger", "identifier": "baz"}),
+                ("memory_profiling_output", "/derp2"),
             ],
         )
 

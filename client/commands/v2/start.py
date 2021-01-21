@@ -99,6 +99,15 @@ SavedStateAction = Union[LoadSavedStateFromFile, LoadSavedStateFromProject]
 
 
 @dataclasses.dataclass(frozen=True)
+class RemoteLogging:
+    logger: str
+    identifier: str = ""
+
+    def serialize(self) -> Dict[str, str]:
+        return {"logger": self.logger, "identifier": self.identifier}
+
+
+@dataclasses.dataclass(frozen=True)
 class Arguments:
     """
     Data structure for configuration options the backend server can recognize.
@@ -108,6 +117,7 @@ class Arguments:
     log_path: str
     global_root: str
 
+    additional_logging_sections: Sequence[str] = dataclasses.field(default_factory=list)
     checked_directory_allowlist: Sequence[str] = dataclasses.field(default_factory=list)
     checked_directory_blocklist: Sequence[str] = dataclasses.field(default_factory=list)
     critical_files: Sequence[CriticalFile] = dataclasses.field(default_factory=list)
@@ -115,8 +125,11 @@ class Arguments:
     excludes: Sequence[str] = dataclasses.field(default_factory=list)
     extensions: Sequence[str] = dataclasses.field(default_factory=list)
     local_root: Optional[str] = None
+    memory_profiling_output: Optional[Path] = None
     number_of_workers: int = 1
     parallel: bool = True
+    profiling_output: Optional[Path] = None
+    remote_logging: Optional[RemoteLogging] = None
     saved_state_action: Optional[SavedStateAction] = None
     search_paths: Sequence[configuration_module.SearchPathElement] = dataclasses.field(
         default_factory=list
@@ -165,6 +178,22 @@ class Arguments:
             "store_type_check_resolution": self.store_type_check_resolution,
             "parallel": self.parallel,
             "number_of_workers": self.number_of_workers,
+            "additional_logging_sections": self.additional_logging_sections,
+            **(
+                {}
+                if self.remote_logging is None
+                else {"remote_logging": self.remote_logging.serialize()}
+            ),
+            **(
+                {}
+                if self.profiling_output is None
+                else {"profiling_output": str(self.profiling_output)}
+            ),
+            **(
+                {}
+                if self.memory_profiling_output is None
+                else {"memory_profiling_output": str(self.memory_profiling_output)}
+            ),
         }
 
 
