@@ -109,8 +109,7 @@ def run_pyre_command(
     # from exception flows.
     exit_code = ExitCode.FAILURE
     try:
-        configuration_module.check_nested_local_configuration(configuration)
-        configuration_module.check_open_source_version(configuration)
+        _check_configuration(configuration)
         log.start_logging_to_directory(noninteractive, configuration.log_directory)
         LOG.debug(f"Running cli command `{' '.join(sys.argv)}`...")
         exit_code = command.run().exit_code()
@@ -168,6 +167,10 @@ def _run_incremental_command(
 ) -> ExitCode:
     configuration = _create_configuration_with_retry(arguments, Path("."))
     if arguments.use_command_v2:
+        _check_configuration(configuration)
+        log.start_logging_to_directory(
+            arguments.noninteractive, configuration.log_directory
+        )
         start_arguments = command_arguments.StartArguments(
             changed_files_path=arguments.changed_files_path,
             debug=arguments.debug,
@@ -271,6 +274,11 @@ def _create_configuration_with_retry(
     ):
         return new_configuration
     raise configuration_module.InvalidConfiguration(error_message)
+
+
+def _check_configuration(configuration: configuration_module.Configuration) -> None:
+    configuration_module.check_nested_local_configuration(configuration)
+    configuration_module.check_open_source_version(configuration)
 
 
 @click.group(invoke_without_command=True)
@@ -862,6 +870,9 @@ def query(context: click.Context, query: str) -> int:
     configuration = _create_configuration_with_retry(command_argument, Path("."))
 
     if command_argument.use_command_v2:
+        log.start_logging_to_directory(
+            command_argument.noninteractive, configuration.log_directory
+        )
         return v2.query.run(configuration, query)
     else:
         return run_pyre_command(
@@ -945,6 +956,10 @@ def restart(
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
     configuration = _create_configuration_with_retry(command_argument, Path("."))
     if command_argument.use_command_v2:
+        _check_configuration(configuration)
+        log.start_logging_to_directory(
+            command_argument.noninteractive, configuration.log_directory
+        )
         start_arguments = command_arguments.StartArguments(
             changed_files_path=command_argument.changed_files_path,
             debug=command_argument.debug,
@@ -1067,6 +1082,10 @@ def start(
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
     configuration = _create_configuration_with_retry(command_argument, Path("."))
     if command_argument.use_command_v2:
+        _check_configuration(configuration)
+        log.start_logging_to_directory(
+            command_argument.noninteractive, configuration.log_directory
+        )
         return v2.start.run(
             configuration,
             command_arguments.StartArguments(
@@ -1149,6 +1168,9 @@ def stop(context: click.Context) -> int:
         command_argument, Path(".")
     )
     if command_argument.use_command_v2:
+        log.start_logging_to_directory(
+            command_argument.noninteractive, configuration.log_directory
+        )
         return v2.stop.run(configuration)
     else:
         return run_pyre_command(
@@ -1172,6 +1194,9 @@ def validate_models(context: click.Context) -> int:
     configuration = _create_configuration_with_retry(command_argument, Path("."))
 
     if command_argument.use_command_v2:
+        log.start_logging_to_directory(
+            command_argument.noninteractive, configuration.log_directory
+        )
         return v2.validate_models.run(configuration, output=command_argument.output)
     else:
         return run_pyre_command(
