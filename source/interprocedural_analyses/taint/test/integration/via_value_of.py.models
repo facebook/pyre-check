@@ -152,6 +152,20 @@
 {
   "kind": "model",
   "data": {
+    "callable": "via_value_of.return_via_second_parameter",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "via_value_of.sink_via_value_of",
     "sources": [],
     "sinks": [
@@ -348,6 +362,68 @@
             "features": [
               { "always-via-parameter-value": "parameter_value" }
             ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_value_of.test_return_second_parameter",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "via_value_of.py",
+              "line": 96,
+              "start": 11,
+              "end": 44
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "via_value_of.return_via_second_parameter",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-via-value": "2" } ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_value_of.test_return_second_parameter_keyword",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "via_value_of.py",
+              "line": 100,
+              "start": 11,
+              "end": 57
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "via_value_of.return_via_second_parameter",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-via-value": "2" } ]
           }
         ]
       }

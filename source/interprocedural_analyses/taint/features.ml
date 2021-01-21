@@ -102,26 +102,32 @@ module Simple = struct
     | TitoPosition of Location.WithModule.t
     | Breadcrumb of Breadcrumb.t
     | ViaValueOf of {
-        position: int;
+        parameter: AccessPath.Root.t;
         tag: string option;
       }
     | ViaTypeOf of {
-        position: int;
+        parameter: AccessPath.Root.t;
         tag: string option;
       }
   [@@deriving show, compare]
 
-  let via_value_of_breadcrumb ?tag ~argument:{ Expression.Call.Argument.value; _ } =
+  let via_value_of_breadcrumb ?tag ~argument =
     let feature =
-      Interprocedural.CallResolution.extract_constant_name value
+      argument
+      >>= Interprocedural.CallResolution.extract_constant_name
       |> Option.value ~default:"<unknown>"
     in
     Breadcrumb (Breadcrumb.ViaValue { value = feature; tag })
 
 
-  let via_type_of_breadcrumb ?tag ~resolution ~argument:{ Expression.Call.Argument.value; _ } =
+  let via_type_of_breadcrumb ?tag ~resolution ~argument =
     let feature =
-      Resolution.resolve_expression resolution value |> snd |> Type.weaken_literals |> Type.show
+      argument
+      >>| Resolution.resolve_expression resolution
+      >>| snd
+      >>| Type.weaken_literals
+      |> Option.value ~default:Type.Top
+      |> Type.show
     in
     Breadcrumb (Breadcrumb.ViaType { value = feature; tag })
 end

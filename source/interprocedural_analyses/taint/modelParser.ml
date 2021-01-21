@@ -264,11 +264,13 @@ let rec parse_annotations
     | Expression.Name (Name.Identifier subkind) -> Some subkind
     | _ -> None
   in
-  let rec extract_via_positions expression =
+  let rec extract_via_parameters expression =
     match expression.Node.value with
     | Expression.Name (Name.Identifier name) ->
-        get_parameter_position name >>| fun position -> [position]
-    | Tuple expressions -> List.map ~f:extract_via_positions expressions |> all >>| List.concat
+        get_parameter_position name
+        >>| fun position ->
+        [AccessPath.Root.PositionalParameter { name; position; positional_only = false }]
+    | Tuple expressions -> List.map ~f:extract_via_parameters expressions |> all >>| List.concat
     | Call { callee; _ } when Option.equal String.equal (base_name callee) (Some "WithTag") -> Ok []
     | _ ->
         Error
@@ -326,14 +328,14 @@ let rec parse_annotations
         | Some "ViaValueOf" ->
             extract_via_tag expression
             >>= fun tag ->
-            extract_via_positions expression
-            >>| List.map ~f:(fun position -> Features.Simple.ViaValueOf { position; tag })
+            extract_via_parameters expression
+            >>| List.map ~f:(fun parameter -> Features.Simple.ViaValueOf { parameter; tag })
             >>| fun breadcrumbs -> [Breadcrumbs breadcrumbs]
         | Some "ViaTypeOf" ->
             extract_via_tag expression
             >>= fun tag ->
-            extract_via_positions expression
-            >>| List.map ~f:(fun position -> Features.Simple.ViaTypeOf { position; tag })
+            extract_via_parameters expression
+            >>| List.map ~f:(fun parameter -> Features.Simple.ViaTypeOf { parameter; tag })
             >>| fun breadcrumbs -> [Breadcrumbs breadcrumbs]
         | Some "Updates" ->
             let to_leaf name =

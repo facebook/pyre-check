@@ -117,20 +117,26 @@ let get_callsite_model ~resolution ~call_target ~arguments =
         let expand features =
           let transform feature =
             let open Features in
+            let match_argument_to_parameter parameter =
+              AccessPath.match_actuals_to_formals arguments [parameter]
+              |> List.find ~f:(fun (_, matches) -> not (List.is_empty matches))
+              >>| fst
+            in
             match feature.Abstract.OverUnderSetDomain.element with
-            | Simple.ViaValueOf { position; tag } ->
-                List.nth arguments position
-                >>= fun argument ->
-                Simple.via_value_of_breadcrumb ?tag ~argument |> SimpleSet.inject |> Option.return
-            | Simple.ViaTypeOf { position; tag } ->
-                List.nth arguments position
-                >>= fun argument ->
-                Simple.via_type_of_breadcrumb ?tag ~resolution ~argument
+            | Simple.ViaValueOf { parameter; tag } ->
+                Simple.via_value_of_breadcrumb
+                  ?tag
+                  ~argument:(match_argument_to_parameter parameter)
                 |> SimpleSet.inject
-                |> Option.return
-            | _ -> Some feature
+            | Simple.ViaTypeOf { parameter; tag } ->
+                Simple.via_type_of_breadcrumb
+                  ?tag
+                  ~resolution
+                  ~argument:(match_argument_to_parameter parameter)
+                |> SimpleSet.inject
+            | _ -> feature
           in
-          List.filter_map features ~f:transform
+          List.map features ~f:transform
         in
         let source_taint =
           ForwardState.transform

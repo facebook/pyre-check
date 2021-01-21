@@ -86,3 +86,15 @@ def return_including_name(parameter):
 
 def test_return_including_name():
     return return_including_name("parameter_value")
+
+
+def return_via_second_parameter(first, second):
+    return 0
+
+
+def test_return_second_parameter():
+    return return_via_second_parameter(1, 2)
+
+
+def test_return_second_parameter_keyword():
+    return return_via_second_parameter(second=2, first=1)
