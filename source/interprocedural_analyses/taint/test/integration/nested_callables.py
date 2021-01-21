@@ -25,3 +25,14 @@ def outer(x: int) -> None:
 
 def call_outer() -> None:
     outer(__test_source())
+
+
+def some_sink(x: int) -> None:
+    __test_sink(x)
+
+
+def outer_calling_other_function(x: int) -> None:
+    def inner_calling_other_function(x: int) -> None:
+        some_sink(x)
+
+    inner_calling_other_function(x)

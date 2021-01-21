@@ -880,4 +880,5 @@ let create_callgraph ?(use_shared_memory = false) ~environment ~source =
         |> fun callees ->
         Callable.RealMap.set dependencies ~key:(Callable.create define) ~data:callees
   in
-  Preprocessing.defines source |> List.fold ~init:Callable.RealMap.empty ~f:fold_defines
+  Preprocessing.defines ~include_nested:true source
+  |> List.fold ~init:Callable.RealMap.empty ~f:fold_defines

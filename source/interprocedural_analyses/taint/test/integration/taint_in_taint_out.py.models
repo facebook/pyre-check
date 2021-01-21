@@ -326,6 +326,31 @@
 {
   "kind": "model",
   "data": {
+    "callable":
+      "taint_in_taint_out.ComplexEvaluator.evaluate_lazy_payload._evaluate",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(field)",
+        "taint": [
+          {
+            "decl": null,
+            "tito": [
+              { "line": 184, "start": 44, "end": 49 },
+              { "line": 183, "start": 50, "end": 55 }
+            ],
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "features": [ { "always-via": "tito" }, { "via": "obscure" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "Ovr{object::__init__}",
     "sources": [],
     "sinks": [],
@@ -569,8 +594,9 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "[**keys]" } ],
-            "features": [ { "always-via": "obscure" } ]
+            "tito": [ { "line": 186, "start": 31, "end": 36 } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "features": [ { "via": "tito" }, { "always-via": "obscure" } ]
           }
         ]
       }
