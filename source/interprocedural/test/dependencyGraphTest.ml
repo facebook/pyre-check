@@ -264,7 +264,7 @@ let test_construction context =
           "ASD".format("ASD").lower()
         bar()
     |}
-    ~expected:[`Function "test.foo", []];
+    ~expected:[`Function "test.foo", [`Function "$local_test?foo$bar"]];
   assert_call_graph
     {|
       from typing import Generic, TypeVar

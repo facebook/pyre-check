@@ -1010,7 +1010,51 @@ let test_call_graph_of_define context =
                  collapse_tito = true;
                  targets = [`Method { Callable.class_name = "test.C"; method_name = "foo" }];
                }) );
-      ]
+      ];
+  assert_call_graph_of_define
+    ~source:
+      {|
+      def outer(x: int) -> None:
+        def inner(x: int) -> None:
+          print(x)
+
+        inner(x)
+  |}
+    ~define_name:"test.outer"
+    ~expected:
+      [
+        ( "6:2-6:10",
+          CallGraph.Callees
+            (CallGraph.RegularTargets
+               {
+                 CallGraph.implicit_self = false;
+                 collapse_tito = true;
+                 targets = [`Function "$local_test?outer$inner"];
+               }) );
+      ];
+  assert_call_graph_of_define
+    ~source:
+      {|
+      class Foo:
+        def outer(self, x: int) -> None:
+          def inner(x: int) -> None:
+            pass
+
+          inner(x)
+  |}
+    ~define_name:"test.Foo.outer"
+    ~expected:
+      [
+        ( "7:4-7:12",
+          CallGraph.Callees
+            (CallGraph.RegularTargets
+               {
+                 CallGraph.implicit_self = false;
+                 collapse_tito = true;
+                 targets = [`Function "$local_test?Foo?outer$inner"];
+               }) );
+      ];
+  ()
 
 
 let test_resolve_ignoring_optional context =

@@ -569,7 +569,7 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "[**keys]" } ],
             "features": [ { "always-via": "obscure" } ]
           }
         ]

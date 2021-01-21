@@ -110,6 +110,15 @@ let defining_attribute ~resolution parent_type attribute =
 
 
 let rec resolve_ignoring_optional ~resolution expression =
+  let resolve_expression_to_type expression =
+    match Resolution.resolve_expression_to_type resolution expression, Node.value expression with
+    | ( Type.Callable ({ Type.Callable.kind = Anonymous; _ } as callable),
+        Expression.Name (Name.Identifier function_name) )
+      when function_name |> String.is_prefix ~prefix:"$local_" ->
+        (* Treat nested functions as named callables. *)
+        Type.Callable { callable with kind = Named (Reference.create function_name) }
+    | annotation, _ -> annotation
+  in
   let annotation =
     match Node.value expression with
     | Expression.Name (Name.Attribute { base; attribute; _ }) -> (
@@ -119,9 +128,9 @@ let rec resolve_ignoring_optional ~resolution expression =
         in
         match defining_attribute ~resolution base_type attribute with
         | Some _ -> Resolution.resolve_attribute_access resolution ~base_type ~attribute
-        | None -> Resolution.resolve_expression_to_type resolution expression
+        | None -> resolve_expression_to_type expression
         (* Lookup the base_type for the attribute you were interested in *) )
-    | _ -> Resolution.resolve_expression_to_type resolution expression
+    | _ -> resolve_expression_to_type expression
   in
   Type.optional_value annotation |> Option.value ~default:annotation
 

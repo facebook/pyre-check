@@ -1,3 +1,5 @@
 @generated
 Call dependencies
+nested_callables.call_outer (fun) -> [__test_source (fun) nested_callables.outer (fun)]
 nested_callables.foo (fun) -> []
+nested_callables.outer (fun) -> [$local_nested_callables?outer$inner (fun)]

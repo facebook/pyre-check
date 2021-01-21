@@ -14,3 +14,14 @@ def foo():
 
     def inner_with_model():
         return __test_source()
+
+
+def outer(x: int) -> None:
+    def inner(x: int) -> None:
+        __test_sink(x)
+
+    return inner(x)
+
+
+def call_outer() -> None:
+    outer(__test_source())
