@@ -579,7 +579,7 @@ let obscure_flows_configuration configuration =
               ~f:(fun { name = source; _ } -> Sources.NamedSource source)
               configuration.sources;
           sinks = [Sinks.NamedSink "Obscure"];
-          code = 6002;
+          code = 9001;
           name = "Obscure flow.";
           message_format = "Data from [{$sources}] source(s) may reach an obscure model";
         };
@@ -599,7 +599,7 @@ let missing_type_flows_configuration configuration =
               ~f:(fun { name = source; _ } -> Sources.NamedSource source)
               configuration.sources;
           sinks = [Sinks.NamedSink "UnknownCallee"];
-          code = 6003;
+          code = 9002;
           name = "Unknown callee flow.";
           message_format = "Data from [{$sources}] source(s) may flow to an unknown callee";
         };

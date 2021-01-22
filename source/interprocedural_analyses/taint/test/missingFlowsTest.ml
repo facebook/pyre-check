@@ -105,7 +105,7 @@ let test_obscure context =
               ~errors:
                 [
                   {
-                    code = 6002;
+                    code = 9001;
                     pattern =
                       ".*Obscure flow.*Data from \\[Test\\] source(s) may reach an obscure model.*";
                   };
@@ -116,7 +116,7 @@ let test_obscure context =
               ~errors:
                 [
                   {
-                    code = 6002;
+                    code = 9001;
                     pattern =
                       ".*Obscure flow.*Data from \\[UserControlled\\] source(s) may reach an \
                        obscure model.*";
@@ -173,7 +173,7 @@ let test_type context =
               ~errors:
                 [
                   {
-                    code = 6003;
+                    code = 9002;
                     pattern =
                       ".*Unknown callee flow.*Data from \\[Test\\] source(s) may flow to an \
                        unknown callee.*";
@@ -185,7 +185,7 @@ let test_type context =
               ~errors:
                 [
                   {
-                    code = 6003;
+                    code = 9002;
                     pattern =
                       ".*Unknown callee flow.*Data from \\[UserControlled\\] source(s) may flow to \
                        an unknown callee.*";
