@@ -155,7 +155,7 @@ class ArgumentTest(testslide.TestCase):
             Arguments(
                 log_path="/log",
                 global_root="/project",
-                local_root="/project/local",
+                relative_local_root="local",
                 watchman_root=Path("/project"),
             ),
             [("local_root", "/project/local"), ("watchman_root", "/project")],
@@ -396,7 +396,7 @@ class StartTest(testslide.TestCase):
                     debug=True,
                     excludes=["exclude"],
                     extensions=[".ext"],
-                    local_root=str(root_path / "local"),
+                    relative_local_root="local",
                     number_of_workers=42,
                     parallel=True,
                     saved_state_action=LoadSavedStateFromProject(

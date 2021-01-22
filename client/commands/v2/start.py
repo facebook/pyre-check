@@ -124,7 +124,7 @@ class Arguments:
     debug: bool = False
     excludes: Sequence[str] = dataclasses.field(default_factory=list)
     extensions: Sequence[str] = dataclasses.field(default_factory=list)
-    local_root: Optional[str] = None
+    relative_local_root: Optional[str] = None
     memory_profiling_output: Optional[Path] = None
     number_of_workers: int = 1
     parallel: bool = True
@@ -143,7 +143,14 @@ class Arguments:
     taint_models_path: Sequence[str] = dataclasses.field(default_factory=list)
     watchman_root: Optional[Path] = None
 
+    @property
+    def local_root(self) -> Optional[str]:
+        if self.relative_local_root is None:
+            return None
+        return os.path.join(self.global_root, self.relative_local_root)
+
     def serialize(self) -> Dict[str, Any]:
+        local_root = self.local_root
         return {
             "source_paths": [
                 element.command_line_argument() for element in self.source_paths
@@ -157,7 +164,7 @@ class Arguments:
             "extensions": self.extensions,
             "log_path": self.log_path,
             "global_root": self.global_root,
-            **({} if self.local_root is None else {"local_root": self.local_root}),
+            **({} if local_root is None else {"local_root": local_root}),
             **(
                 {}
                 if self.watchman_root is None
@@ -334,7 +341,7 @@ def create_server_arguments(
         debug=start_arguments.debug,
         excludes=configuration.excludes,
         extensions=configuration.get_valid_extension_suffixes(),
-        local_root=configuration.local_root,
+        relative_local_root=configuration.relative_local_root,
         memory_profiling_output=memory_profiling_output,
         number_of_workers=configuration.get_number_of_workers(),
         parallel=not start_arguments.sequential,

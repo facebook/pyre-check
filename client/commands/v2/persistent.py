@@ -39,6 +39,8 @@ LOG: logging.Logger = logging.getLogger(__name__)
 
 class LSPEvent(enum.Enum):
     INITIALIZED = "initialized"
+    CONNECTED = "connected"
+    NOT_CONNECTED = "not connected"
 
 
 def _log_lsp_event(
@@ -590,6 +592,18 @@ class PyreServerHandler(connection.BackgroundTask):
             self.server_state.diagnostics = {}
             await self.show_type_errors_to_client()
 
+    def _auxiliary_logging_info(self) -> Dict[str, Optional[str]]:
+        return {
+            "binary": self.binary_location,
+            "log_path": self.pyre_arguments.log_path,
+            "global_root": self.pyre_arguments.global_root,
+            **(
+                {}
+                if self.pyre_arguments.local_root is None
+                else {"local_root": self.pyre_arguments.relative_local_root}
+            ),
+        }
+
     async def run(self) -> None:
         socket_path = server_connection.get_default_socket_path(
             log_directory=Path(self.pyre_arguments.log_path)
@@ -600,8 +614,16 @@ class PyreServerHandler(connection.BackgroundTask):
                 output_channel,
             ):
                 await self.log_and_show_message_to_client(
-                    "Established connection with existing pyre server at "
+                    "Established connection with existing Pyre server at "
                     f"`{self.server_identifier}`."
+                )
+                _log_lsp_event(
+                    remote_logging=self.pyre_arguments.remote_logging,
+                    event=LSPEvent.CONNECTED,
+                    normals={
+                        "connected_to": "already_running_server",
+                        **self._auxiliary_logging_info(),
+                    },
                 )
                 await self.subscribe_to_type_error(input_channel, output_channel)
         except connection.ConnectionFailure:
@@ -619,8 +641,21 @@ class PyreServerHandler(connection.BackgroundTask):
                     input_channel,
                     output_channel,
                 ):
+                    _log_lsp_event(
+                        remote_logging=self.pyre_arguments.remote_logging,
+                        event=LSPEvent.CONNECTED,
+                        normals={
+                            "connected_to": "newly_started_server",
+                            **self._auxiliary_logging_info(),
+                        },
+                    )
                     await self.subscribe_to_type_error(input_channel, output_channel)
             else:
+                _log_lsp_event(
+                    remote_logging=self.pyre_arguments.remote_logging,
+                    event=LSPEvent.NOT_CONNECTED,
+                    normals=self._auxiliary_logging_info(),
+                )
                 await self.show_message_to_client(
                     f"Cannot start a new Pyre server at `{self.server_identifier}`.",
                     level=lsp.MessageType.ERROR,
