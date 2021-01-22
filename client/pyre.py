@@ -281,7 +281,10 @@ def _check_configuration(configuration: configuration_module.Configuration) -> N
     configuration_module.check_open_source_version(configuration)
 
 
-@click.group(invoke_without_command=True)
+@click.group(
+    invoke_without_command=True,
+    context_settings={"help_option_names": ["-h", "--help"]},
+)
 @click.pass_context
 @click.option(
     "-l",
