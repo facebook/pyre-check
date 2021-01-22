@@ -784,7 +784,9 @@ def persistent(context: click.Context, no_watchman: bool) -> int:
     )
     if command_argument.use_command_v2:
         log.start_logging_to_directory(
-            command_argument.noninteractive, configuration.log_directory
+            # Always log to file regardless of whether `-n` is given
+            noninteractive=False,
+            log_directory=configuration.log_directory,
         )
         return v2.persistent.run(
             configuration,
