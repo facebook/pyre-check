@@ -930,7 +930,13 @@ let test_elements _ =
        (Type.RecursiveType.create
           ~name:"Tree"
           ~body:(Type.tuple [Type.integer; Type.Primitive "Tree"])));
-  ()
+  ();
+  assert_equal
+    ["typing_extensions.Literal"]
+    (Type.elements
+       (Type.Literal
+          (Type.EnumerationMember
+             { enumeration_type = Type.Primitive "A.B.C.MyEnum"; member_name = "ONE" })))
 
 
 let test_exists _ =

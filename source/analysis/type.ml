@@ -3181,7 +3181,11 @@ let elements annotation =
   let module CollectorTransform = Transform.Make (struct
     type state = elements_state
 
-    let visit_children_before _ _ = true
+    let visit_children_before _ _ =
+      match annotation with
+      | Literal _ -> false
+      | _ -> true
+
 
     let visit_children_after = false
 

@@ -169,6 +169,8 @@ let test_enumeration_literal context =
       "Invalid type [31]: Expression `typing_extensions.Literal[NonExistentClass]` is not a valid \
        type.";
       "Unbound name [10]: Name `NonExistentClass` is used but not defined in the current scope.";
+      "Invalid type [31]: Expression `typing_extensions.Literal[NonExistentClass.ONE]` is not a \
+       valid type.";
       "Invalid type [31]: Expression `typing_extensions.Literal[NotEnum.ONE]` is not a valid type.";
       "Invalid type [31]: Expression `typing_extensions.Literal[NotEnum.ONE]` is not a valid type.";
       "Invalid type [31]: Expression `typing_extensions.Literal[NotEnum.TWO]` is not a valid type.";
