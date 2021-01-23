@@ -241,6 +241,26 @@ let test_check_undefined_type context =
     |}
     ["Unbound name [10]: Name `Derp` is used but not defined in the current scope."];
 
+  (* Literals *)
+  assert_type_errors
+    {|
+      from typing_extensions import Literal
+      x = 1
+      test: Literal[x] = 1
+    |}
+    ["Invalid type [31]: Expression `x` is not a literal value."];
+
+  assert_type_errors
+    {|
+      from typing_extensions import Literal
+
+      def foo() -> None:
+        x = 1
+        test: Literal[x] = 1
+        valid: Literal[1] = 1
+    |}
+    ["Invalid type [31]: Expression `foo.x` is not a literal value."];
+
   (* Assigns *)
   assert_type_errors
     {|

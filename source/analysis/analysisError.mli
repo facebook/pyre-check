@@ -158,6 +158,7 @@ and invalid_type_kind =
   | NestedAlias of Identifier.t
   | NestedTypeVariables of Type.Variable.t
   | SingleExplicit of Type.t
+  | InvalidLiteral of Reference.t
 
 and unawaited_awaitable = {
   references: Reference.t list;
