@@ -69,7 +69,7 @@ A brief summary to get this running on *Ubuntu* please follow:
 ```bash
 $ sudo apt install python3-venv build-essential python3-dev libpython3-dev
 $ python3 -m venv /tmp/tp
-$ /tmp/tp/bin/pip install --update pip setuptools wheel
+$ /tmp/tp/bin/pip install --upgrade pip setuptools wheel
 $ /tmp/tp/bin/pip install pyre-check
 $ source /tmp/tp/bin/activate
 $ cd /mnt/c/path/to/repo
