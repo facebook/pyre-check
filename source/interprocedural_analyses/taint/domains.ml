@@ -89,16 +89,15 @@ module TraceInfo = struct
         location: Location.WithModule.t;
         callees: Interprocedural.Callable.t list;
       }
-  [@@deriving compare, show]
+  [@@deriving compare]
 
-  let _ = show (* shadowed below *)
-
-  let show = function
-    | Declaration _ -> "declaration"
-    | Origin location -> Format.asprintf "@%a" Location.WithModule.pp location
+  let pp formatter = function
+    | Declaration _ -> Format.fprintf formatter "declaration"
+    | Origin location -> Format.fprintf formatter "@%a" Location.WithModule.pp location
     | CallSite { location; callees; port; path } ->
         let port = AccessPath.create port path |> AccessPath.show in
-        Format.asprintf
+        Format.fprintf
+          formatter
           "via call@%a[%s][%s]"
           Location.WithModule.pp
           location
@@ -107,6 +106,8 @@ module TraceInfo = struct
              (List.map ~f:Interprocedural.Callable.external_target_name callees))
           port
 
+
+  let show trace_information = Format.asprintf "%a" pp trace_information
 
   (* Breaks recursion among trace info and overall taint domain. *)
   let has_significant_summary =
