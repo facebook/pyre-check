@@ -116,6 +116,7 @@ module Simple = struct
         match port with
         | None -> Format.fprintf formatter "LeafName(%s)" leaf
         | Some port -> Format.fprintf formatter "LeafName(%s, port=%s)" leaf port )
+    | TitoPosition location -> Format.fprintf formatter "Tito(%a)" Location.WithModule.pp location
     | simple -> pp formatter simple
 
 
