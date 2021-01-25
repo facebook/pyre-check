@@ -232,7 +232,13 @@ type t = {
   root: Root.t;
   path: Abstract.TreeDomain.Label.path;
 }
-[@@deriving show { with_path = false }, eq]
+[@@deriving eq]
+
+let pp formatter { root; path } =
+  Format.fprintf formatter "%a%a" Root.pp root Abstract.TreeDomain.Label.pp_path path
+
+
+let show access_path = Format.asprintf "%a" pp access_path
 
 let create root path = { root; path }
 
