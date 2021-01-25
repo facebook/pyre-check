@@ -111,6 +111,16 @@ module Simple = struct
       }
   [@@deriving show { with_path = false }, compare]
 
+  let pp formatter = function
+    | LeafName { leaf; port } -> (
+        match port with
+        | None -> Format.fprintf formatter "LeafName(%s)" leaf
+        | Some port -> Format.fprintf formatter "LeafName(%s, port=%s)" leaf port )
+    | simple -> pp formatter simple
+
+
+  let show simple = Format.asprintf "%a" pp simple
+
   let via_value_of_breadcrumb ?tag ~argument =
     let feature =
       argument
