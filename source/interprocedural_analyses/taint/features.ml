@@ -109,7 +109,7 @@ module Simple = struct
         parameter: AccessPath.Root.t;
         tag: string option;
       }
-  [@@deriving show, compare]
+  [@@deriving show { with_path = false }, compare]
 
   let via_value_of_breadcrumb ?tag ~argument =
     let feature =
