@@ -298,6 +298,7 @@ class PartialConfiguration:
     @staticmethod
     def _get_extra_keys() -> Set[str]:
         return {
+            "accept_command_v2",
             "buck_mode",
             "create_open_source_configuration",
             "differential",
