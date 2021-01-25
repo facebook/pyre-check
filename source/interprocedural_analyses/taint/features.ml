@@ -58,7 +58,7 @@ module Breadcrumb = struct
     (* Via inferred from ViaTypeOf. *)
     | Tito
     | Type of string (* Type constraint *)
-  [@@deriving show, compare]
+  [@@deriving show { with_path = false }, compare]
 
   let to_json ~on_all_paths breadcrumb =
     let prefix = if on_all_paths then "always-" else "" in
