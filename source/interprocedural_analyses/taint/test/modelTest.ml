@@ -1599,7 +1599,7 @@ let test_invalid_models context =
     |}
     ~expect:
       {|Invalid model for `test.foo`: `ModelParser.T.Source {source = (Sources.T.NamedSource "A");
-  breadcrumbs = [(Breadcrumb (SimpleVia "featureA"))]; path = [];
+  breadcrumbs = [(SimpleVia "featureA")]; path = [];
   leaf_name_provided = false}` is not a supported taint annotation for sanitizers.|}
     ();
   assert_invalid_model

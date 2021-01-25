@@ -117,6 +117,7 @@ module Simple = struct
         | None -> Format.fprintf formatter "LeafName(%s)" leaf
         | Some port -> Format.fprintf formatter "LeafName(%s, port=%s)" leaf port )
     | TitoPosition location -> Format.fprintf formatter "Tito(%a)" Location.WithModule.pp location
+    | Breadcrumb breadcrumb -> Format.fprintf formatter "%a" Breadcrumb.pp breadcrumb
     | simple -> pp formatter simple
 
 
