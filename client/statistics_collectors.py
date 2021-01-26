@@ -168,9 +168,9 @@ class StrictCountCollector(StatisticsCollector):
         self.strict_count: int = 0
         self.unsafe_count: int = 0
         self.strict_by_default: bool = strict_by_default
-        self.unsafe_regex: Pattern[str] = compile(r"# pyre-unsafe")
-        self.strict_regex: Pattern[str] = compile(r"# pyre-strict")
-        self.ignore_all_regex: Pattern[str] = compile(r"# pyre-ignore-all-errors")
+        self.unsafe_regex: Pattern[str] = compile(r" ?#+ *pyre-unsafe")
+        self.strict_regex: Pattern[str] = compile(r" ?#+ *pyre-strict")
+        self.ignore_all_regex: Pattern[str] = compile(r" ?#+ *pyre-ignore-all-errors")
 
     def is_unsafe_module(self) -> bool:
         if self.is_unsafe:

@@ -62,12 +62,12 @@ def _parse_paths(paths: List[Path]) -> List[Path]:
 def _path_wise_counts(
     paths: Mapping[str, Union[cst.Module, cst.MetadataWrapper]],
     collector_class: Type[StatisticsCollector],
-    strict: bool = False,
+    strict_by_default: bool = False,
 ) -> Dict[str, StatisticsCollector]:
     collected_counts = {}
     for path, module in paths.items():
         collector = (
-            StrictCountCollector(strict)
+            StrictCountCollector(strict_by_default)
             if collector_class == StrictCountCollector
             else collector_class()
         )
