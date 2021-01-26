@@ -147,12 +147,12 @@ class CountCollector(StatisticsCollector):
 
 class FixmeCountCollector(CountCollector):
     def __init__(self) -> None:
-        super().__init__(r"# pyre-fixme\[(\d*)\]:")
+        super().__init__(r".*# *pyre-fixme\[(\d*)\]")
 
 
 class IgnoreCountCollector(CountCollector):
     def __init__(self) -> None:
-        super().__init__(r"# pyre-ignore\[(\d*)\]:")
+        super().__init__(r".*# *pyre-ignore\[(\d*)\]")
 
 
 class StrictCountCollector(StatisticsCollector):
