@@ -8,21 +8,41 @@
   "ignore_all_errors": [
     "pyre_extensions/safe_json.py"
   ],
+  "search_path": [
+    {
+      "site-package": "dataclasses_json"
+    },
+    {
+      "site-package": "flask"
+    },
+    {
+      "site-package": "flask_cors"
+    },
+    {
+      "site-package": "graphql"
+    },
+    {
+      "site-package": "libcst"
+    },
+    {
+      "site-package": "psutil"
+    },
+    {
+      "site-package": "pywatchman"
+    },
+    {
+      "site-package": "testslide"
+    },
+    {
+      "site-package": "typing_extensions"
+    },
+    {
+      "site-package": "typing_inspect"
+    }
+  ],
   "source_directories": [
     "."
   ],
-  "search_path": [
-    { "site-package": "dataclasses_json" },
-    { "site-package": "flask" },
-    { "site-package": "flask_cors" },
-    { "site-package": "graphql" },
-    { "site-package": "libcst" },
-    { "site-package": "psutil" },
-    { "site-package": "pywatchman" },
-    { "site-package": "testslide" },
-    { "site-package": "typing_extensions" },
-    { "site-package": "typing_inspect" }
-  ],
   "strict": true,
-  "version": "0.0.101610712576"
+  "version": "0.0.101611663024"
 }
