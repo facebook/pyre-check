@@ -68,3 +68,18 @@ class StatisticsCollectorTest(unittest.TestCase):
             """,
             {"No Code": 1},
         )
+        self.assert_count_equal(
+            """
+            def foo(x: str) -> int:
+                return x # FIXME[7, 8]
+            """,
+            {"7": 1, "8": 1},
+        )
+        self.assert_count_equal(
+            """
+            # FIXME[8]
+            def foo(x: str) -> int:
+                return x # FIXME[7, 8]
+            """,
+            {"7": 1, "8": 2},
+        )
