@@ -139,7 +139,8 @@ class CountCollector(StatisticsCollector):
     def visit_Comment(self, node: cst.Comment) -> None:
         match = self.regex.match(node.value)
         if match:
-            self.counts[match.group(1)] += 1
+            code = match.group(2) or "No Code"
+            self.counts[code] += 1
 
     def build_json(self) -> Dict[str, int]:
         return dict(self.counts)
@@ -147,12 +148,12 @@ class CountCollector(StatisticsCollector):
 
 class FixmeCountCollector(CountCollector):
     def __init__(self) -> None:
-        super().__init__(r".*# *pyre-fixme\[(\d*)\]")
+        super().__init__(r".*# *pyre-fixme(\[(\d*)\])?")
 
 
 class IgnoreCountCollector(CountCollector):
     def __init__(self) -> None:
-        super().__init__(r".*# *pyre-ignore\[(\d*)\]")
+        super().__init__(r".*# *pyre-ignore(\[(\d*)\])?")
 
 
 class StrictCountCollector(StatisticsCollector):
