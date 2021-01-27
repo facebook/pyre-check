@@ -339,64 +339,6 @@ class QueryAPITest(unittest.TestCase):
     def test_get_invalid_taint_models(self) -> None:
         pyre_connection = MagicMock()
         pyre_connection.query_server.side_effect = connection.PyreQueryError(
-            "Invalid model for `path.to.first.model` defined in `/path/to/first.py:11`"
-            + ": Modeled entity is not part of the environment!"
-        )
-        self.assertEqual(
-            query.get_invalid_taint_models(pyre_connection),
-            [
-                query.InvalidModel(
-                    fully_qualified_name="path.to.first.model",
-                    path="/path/to/first.py",
-                    line=11,
-                    full_error_message="Invalid model for `path.to.first.model` "
-                    + "defined in `/path/to/first.py:11`: Modeled entity is "
-                    + "not part of the environment!",
-                )
-            ],
-        )
-
-        pyre_connection = MagicMock()
-        pyre_connection.query_server.side_effect = connection.PyreQueryError(
-            "Invalid model for `path.to.first.model` defined in `/path/to/"
-            + "first.py:11`: Modeled entity is not part of the environment!\n"
-            + "Invalid model for `path.to.second.model` defined in `/path/to/"
-            + "second.py:22`: Modeled entity is not part of the environment!\n"
-            + "Invalid model for `path.to.third.model` defined in `/path/to/"
-            + "third.py:33`: Modeled entity is not part of the environment!"
-        )
-        self.assertEqual(
-            query.get_invalid_taint_models(pyre_connection),
-            [
-                query.InvalidModel(
-                    fully_qualified_name="path.to.first.model",
-                    path="/path/to/first.py",
-                    line=11,
-                    full_error_message="Invalid model for `path.to.first.model` "
-                    + "defined in `/path/to/first.py:11`: Modeled entity is "
-                    + "not part of the environment!",
-                ),
-                query.InvalidModel(
-                    fully_qualified_name="path.to.second.model",
-                    path="/path/to/second.py",
-                    line=22,
-                    full_error_message="Invalid model for `path.to.second.model` "
-                    + "defined in `/path/to/second.py:22`: Modeled entity is "
-                    + "not part of the environment!",
-                ),
-                query.InvalidModel(
-                    fully_qualified_name="path.to.third.model",
-                    path="/path/to/third.py",
-                    line=33,
-                    full_error_message="Invalid model for `path.to.third.model` "
-                    + "defined in `/path/to/third.py:33`: Modeled entity is "
-                    + "not part of the environment!",
-                ),
-            ],
-        )
-
-        pyre_connection = MagicMock()
-        pyre_connection.query_server.side_effect = connection.PyreQueryError(
             "This is an invalid error message"
         )
         with self.assertRaises(connection.PyreQueryError):
@@ -410,6 +352,8 @@ class QueryAPITest(unittest.TestCase):
                         "path": "/path/to/first.py",
                         "line": 2,
                         "column": 0,
+                        "stop_line": 4,
+                        "stop_column": 1,
                     }
                 ]
             }
@@ -421,6 +365,9 @@ class QueryAPITest(unittest.TestCase):
                     fully_qualified_name="",
                     path="/path/to/first.py",
                     line=2,
+                    column=0,
+                    stop_line=4,
+                    stop_column=1,
                     full_error_message="Invalid model for `first.f`: Unrecognized taint annotation `NotAnAnnotation`",  # noqa: B950
                 ),
             ],

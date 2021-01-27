@@ -96,6 +96,9 @@ class InvalidModel(NamedTuple):
     fully_qualified_name: str
     path: str
     line: int
+    column: int
+    stop_line: int
+    stop_column: int
     full_error_message: str
 
 
@@ -234,43 +237,19 @@ def get_invalid_taint_models(
     pyre_connection: PyreConnection,
 ) -> List[InvalidModel]:
     errors: List[InvalidModel] = []
-    try:
-        response = pyre_connection.query_server("validate_taint_models()")
-        if "response" in response and "errors" in response["response"]:
-            found_errors = response["response"]["errors"]
-            for error in found_errors:
-                errors.append(
-                    InvalidModel(
-                        full_error_message=error["description"],
-                        path=error["path"],
-                        line=error["line"],
-                        fully_qualified_name="",
-                    )
-                )
-    except PyreQueryError as exception:
-        message = exception.args[0]
-        if "Invalid model for" not in message:
-            raise exception
-
-        model_extractor = re.compile(
-            r".*`(?P<name>.*)`.*`(?P<path>.*):(?P<line>\d*)`.*"
-        )
-
-        for error in message.split("\n"):
-            extracted = model_extractor.search(error)
-            if not extracted:
-                raise exception
-            fully_qualified_name = extracted.group("name")
-            path = extracted.group("path")
-            line = int(extracted.group("line"))
-
+    response = pyre_connection.query_server("validate_taint_models()")
+    if "response" in response and "errors" in response["response"]:
+        found_errors = response["response"]["errors"]
+        for error in found_errors:
             errors.append(
                 InvalidModel(
-                    fully_qualified_name=fully_qualified_name,
-                    path=path,
-                    line=line,
-                    full_error_message=error,
+                    full_error_message=error["description"],
+                    path=error["path"],
+                    line=error["line"],
+                    column=error["column"],
+                    stop_line=error["stop_line"],
+                    stop_column=error["stop_column"],
+                    fully_qualified_name="",
                 )
             )
-
     return errors
