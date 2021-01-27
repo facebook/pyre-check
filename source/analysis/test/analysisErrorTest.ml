@@ -942,6 +942,42 @@ let test_description _ =
   ()
 
 
+let test_weaken_literals _ =
+  let assert_weakened error expected =
+    assert_equal ~printer:Error.show_kind expected (Error.weaken_literals error)
+  in
+  assert_weakened
+    (Error.IncompatibleVariableType
+       {
+         incompatible_type =
+           {
+             Error.name = !&"";
+             mismatch =
+               {
+                 Error.actual = Type.parametric "Foo" [Single (Type.literal_integer 42)];
+                 expected = Type.parametric "Foo" [Single Type.integer];
+                 due_to_invariance = false;
+               };
+           };
+         declare_location = Location.WithPath.any;
+       })
+    (Error.IncompatibleVariableType
+       {
+         incompatible_type =
+           {
+             Error.name = !&"";
+             mismatch =
+               {
+                 Error.actual = Type.parametric "Foo" [Single (Type.literal_integer 42)];
+                 expected = Type.parametric "Foo" [Single Type.integer];
+                 due_to_invariance = false;
+               };
+           };
+         declare_location = Location.WithPath.any;
+       });
+  ()
+
+
 let () =
   "error"
   >::: [
@@ -952,5 +988,6 @@ let () =
          "suppress" >:: test_suppress;
          "namespace_insensitive_set" >:: test_namespace_insensitive_set;
          "messages" >:: test_description;
+         "weaken_literals" >:: test_weaken_literals;
        ]
   |> Test.run

@@ -539,10 +539,11 @@ let name = function
 let weaken_literals kind =
   let weaken_mismatch { actual; expected; due_to_invariance } =
     let actual =
-      if Type.contains_literal expected then
+      let weakened_actual = Type.weaken_literals actual in
+      if Type.contains_literal expected || Type.equal weakened_actual expected then
         actual
       else
-        Type.weaken_literals actual
+        weakened_actual
     in
     { actual; expected; due_to_invariance }
   in
@@ -895,8 +896,16 @@ let rec messages ~concise ~signature location kind =
           name
           start_line
           (if due_to_invariance then " " ^ invariance_message else "")
+        ::
+        ( if Type.equal (Type.weaken_literals actual) expected then
+            [
+              "Hint: To avoid this error, you may need to use explicit type parameters in your \
+               constructor: e.g., `Foo[str](\"hello\")` instead of `Foo(\"hello\")`.";
+            ]
+        else
+          [] )
       in
-      [message; trace]
+      [message] @ trace
   | InconsistentOverride { parent; override; override_kind; overridden_method } ->
       let kind =
         match override_kind with

@@ -1521,7 +1521,7 @@ let test_check_invalid_generic_inheritance context =
       "Incompatible variable type [9]: x is declared to have type `Child[str]` but is used as type \
        `Child[int]`.";
       "Incompatible variable type [9]: correct is declared to have type `Child[str]` but is used \
-       as type `Child[str]`.";
+       as type `Child[typing_extensions.Literal['bar']]`.";
     ];
   (* Check __new__. *)
   assert_type_errors
@@ -1566,7 +1566,7 @@ let test_check_invalid_generic_inheritance context =
       "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter to call \
        `Base.__init__` but got `str`.";
       "Incompatible variable type [9]: y1 is declared to have type `PartialChild[str]` but is used \
-       as type `PartialChild[str]`.";
+       as type `PartialChild[typing_extensions.Literal['hello']]`.";
       "Incompatible variable type [9]: y2 is declared to have type `PartialChild[str]` but is used \
        as type `PartialChild[int]`.";
       "Incompatible variable type [9]: y3 is declared to have type `PartialChild[str]` but is used \
@@ -1661,11 +1661,11 @@ let test_check_invalid_generic_inheritance context =
       |}
     [
       "Incompatible variable type [9]: y1 is declared to have type `Base[str, int]` but is used as \
-       type `Base[str, int]`.";
+       type `Base[typing_extensions.Literal['hello'], typing_extensions.Literal[1]]`.";
       "Incompatible variable type [9]: y2 is declared to have type `Child[str, int]` but is used \
-       as type `Child[str, int]`.";
+       as type `Child[typing_extensions.Literal['hello'], typing_extensions.Literal[1]]`.";
       "Incompatible variable type [9]: y3 is declared to have type `PartialChild[str]` but is used \
-       as type `PartialChild[str]`.";
+       as type `PartialChild[typing_extensions.Literal['hello']]`.";
       "Incompatible parameter type [6]: Expected `int` for 2nd positional only parameter to call \
        `Base.generic_method` but got `str`.";
       "Incompatible parameter type [6]: Expected `int` for 2nd positional only parameter to call \
@@ -1700,7 +1700,7 @@ let test_check_literal_assignment context =
     |}
     [
       "Incompatible variable type [9]: literal_string is declared to have type `Foo[str]` but is \
-       used as type `Foo[str]`.";
+       used as type `Foo[typing_extensions.Literal['bar']]`.";
     ];
   ()
 

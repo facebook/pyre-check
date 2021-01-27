@@ -3971,11 +3971,6 @@ module State (Context : Context) = struct
                                      ~right:expected))
                             && not is_valid_enumeration_assignment
                           in
-                          let resolved =
-                            match resolved with
-                            | Type.Parametric _ -> Type.weaken_literals resolved
-                            | _ -> resolved
-                          in
                           let open Annotated in
                           match attribute with
                           | Some (attribute, name) when is_incompatible ->
