@@ -179,6 +179,8 @@ class LegacyError:
 class ModelVerificationError:
     line: int
     column: int
+    stop_line: int
+    stop_column: int
     path: Path
     description: str
     code: Optional[int]
@@ -189,6 +191,8 @@ class ModelVerificationError:
             return ModelVerificationError(
                 line=error_json["line"],
                 column=error_json["column"],
+                stop_line=error_json["stop_line"],
+                stop_column=error_json["stop_column"],
                 path=Path(error_json["path"]),
                 description=error_json["description"],
                 code=error_json.get("code"),
@@ -212,6 +216,8 @@ class ModelVerificationError:
         return {
             "line": self.line,
             "column": self.column,
+            "stop_line": self.stop_line,
+            "stop_column": self.stop_column,
             "path": str(self.path),
             "description": self.description,
             "code": self.code,

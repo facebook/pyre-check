@@ -165,6 +165,8 @@ class ErrorTest(unittest.TestCase):
             {
                 "line": 1,
                 "column": 1,
+                "stop_line": 2,
+                "stop_column": 3,
                 "path": "test.py",
                 "description": "Some description",
                 "code": 1001,
@@ -172,6 +174,8 @@ class ErrorTest(unittest.TestCase):
             expected=ModelVerificationError(
                 line=1,
                 column=1,
+                stop_line=2,
+                stop_column=3,
                 path=Path("test.py"),
                 description="Some description",
                 code=1001,
