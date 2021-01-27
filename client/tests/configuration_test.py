@@ -48,6 +48,7 @@ class PartialConfigurationTest(unittest.TestCase):
                 targets=[],
                 use_buck_builder=False,
                 use_buck_source_database=True,
+                use_command_v2=True,
                 source_directories=[],
                 search_path=["x", "y"],
                 binary="binary",
@@ -73,6 +74,7 @@ class PartialConfigurationTest(unittest.TestCase):
         self.assertEqual(configuration.typeshed, "typeshed")
         self.assertEqual(configuration.use_buck_builder, False)
         self.assertEqual(configuration.use_buck_source_database, True)
+        self.assertEqual(configuration.use_command_v2, True)
 
     def test_create_from_string_success(self) -> None:
         self.assertEqual(
@@ -249,6 +251,12 @@ class PartialConfigurationTest(unittest.TestCase):
         )
         self.assertEqual(
             PartialConfiguration.from_string(
+                json.dumps({"use_command_v2": True})
+            ).use_command_v2,
+            True,
+        )
+        self.assertEqual(
+            PartialConfiguration.from_string(
                 json.dumps({"version": "abc"})
             ).version_hash,
             "abc",
@@ -337,6 +345,7 @@ class PartialConfigurationTest(unittest.TestCase):
         assert_raises(json.dumps({"typeshed": ["abc"]}))
         assert_raises(json.dumps({"use_buck_builder": "derp"}))
         assert_raises(json.dumps({"use_buck_source_database": 4.2}))
+        assert_raises(json.dumps({"use_command_v2": 42}))
         assert_raises(json.dumps({"version": 123}))
 
     def test_merge(self) -> None:
@@ -447,6 +456,7 @@ class PartialConfigurationTest(unittest.TestCase):
         assert_overwritten("typeshed")
         assert_overwritten("use_buck_builder")
         assert_overwritten("use_buck_source_database")
+        assert_overwritten("use_command_v2")
         assert_overwritten("version_hash")
 
     def test_expand_relative_paths(self) -> None:
@@ -569,6 +579,7 @@ class ConfigurationTest(testslide.TestCase):
                 typeshed="typeshed",
                 use_buck_builder=None,
                 use_buck_source_database=None,
+                use_command_v2=None,
                 version_hash="abc",
             ),
             in_virtual_environment=False,
@@ -600,6 +611,7 @@ class ConfigurationTest(testslide.TestCase):
         self.assertEqual(configuration.typeshed, "typeshed")
         self.assertEqual(configuration.use_buck_builder, False)
         self.assertEqual(configuration.use_buck_source_database, False)
+        self.assertEqual(configuration.use_command_v2, False)
         self.assertEqual(configuration.version_hash, "abc")
 
     def test_from_partial_configuration_in_virtual_environment(self) -> None:

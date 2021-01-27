@@ -166,7 +166,7 @@ def _run_incremental_command(
     no_watchman: bool,
 ) -> ExitCode:
     configuration = _create_configuration_with_retry(arguments, Path("."))
-    if arguments.use_command_v2:
+    if configuration.use_command_v2:
         _check_configuration(configuration)
         log.start_logging_to_directory(
             arguments.noninteractive, configuration.log_directory
@@ -397,7 +397,7 @@ def _check_configuration(configuration: configuration_module.Configuration) -> N
 @click.option("--changed-files-path", type=str, hidden=True)
 @click.option("--saved-state-project", type=str, hidden=True)
 @click.option("--features", type=str, hidden=True)
-@click.option("--use-command-v2", is_flag=True, default=False, hidden=True)
+@click.option("--use-command-v2", is_flag=True, default=None, hidden=True)
 @click.option("--isolation-prefix", type=str, hidden=True)
 def pyre(
     context: click.Context,
@@ -434,7 +434,7 @@ def pyre(
     changed_files_path: Optional[str],
     saved_state_project: Optional[str],
     features: Optional[str],
-    use_command_v2: bool,
+    use_command_v2: Optional[bool],
     isolation_prefix: Optional[str],
 ) -> int:
     arguments = command_arguments.CommandArguments(
@@ -785,7 +785,7 @@ def persistent(context: click.Context, no_watchman: bool) -> int:
     configuration = configuration_module.create_configuration(
         command_argument, Path(".")
     )
-    if command_argument.use_command_v2:
+    if configuration.use_command_v2:
         log.start_logging_to_directory(
             # Always log to file regardless of whether `-n` is given
             noninteractive=False,
@@ -874,7 +874,7 @@ def query(context: click.Context, query: str) -> int:
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
     configuration = _create_configuration_with_retry(command_argument, Path("."))
 
-    if command_argument.use_command_v2:
+    if configuration.use_command_v2:
         log.start_logging_to_directory(
             command_argument.noninteractive, configuration.log_directory
         )
@@ -960,7 +960,7 @@ def restart(
     """
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
     configuration = _create_configuration_with_retry(command_argument, Path("."))
-    if command_argument.use_command_v2:
+    if configuration.use_command_v2:
         _check_configuration(configuration)
         log.start_logging_to_directory(
             command_argument.noninteractive, configuration.log_directory
@@ -1086,7 +1086,7 @@ def start(
     """
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
     configuration = _create_configuration_with_retry(command_argument, Path("."))
-    if command_argument.use_command_v2:
+    if configuration.use_command_v2:
         _check_configuration(configuration)
         log.start_logging_to_directory(
             command_argument.noninteractive, configuration.log_directory
@@ -1172,7 +1172,7 @@ def stop(context: click.Context) -> int:
     configuration = configuration_module.create_configuration(
         command_argument, Path(".")
     )
-    if command_argument.use_command_v2:
+    if configuration.use_command_v2:
         log.start_logging_to_directory(
             command_argument.noninteractive, configuration.log_directory
         )
@@ -1198,7 +1198,7 @@ def validate_models(context: click.Context) -> int:
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
     configuration = _create_configuration_with_retry(command_argument, Path("."))
 
-    if command_argument.use_command_v2:
+    if configuration.use_command_v2:
         log.start_logging_to_directory(
             command_argument.noninteractive, configuration.log_directory
         )

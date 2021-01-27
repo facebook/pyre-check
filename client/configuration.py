@@ -289,6 +289,7 @@ class PartialConfiguration:
     typeshed: Optional[str] = None
     use_buck_builder: Optional[bool] = None
     use_buck_source_database: Optional[bool] = None
+    use_command_v2: Optional[bool] = None
     version_hash: Optional[str] = None
 
     @staticmethod
@@ -347,6 +348,7 @@ class PartialConfiguration:
             typeshed=arguments.typeshed,
             use_buck_builder=arguments.use_buck_builder,
             use_buck_source_database=arguments.use_buck_source_database,
+            use_command_v2=arguments.use_command_v2,
             version_hash=None,
         )
 
@@ -496,6 +498,9 @@ class PartialConfiguration:
                 use_buck_source_database=ensure_option_type(
                     configuration_json, "use_buck_source_database", bool
                 ),
+                use_command_v2=ensure_option_type(
+                    configuration_json, "use_command_v2", bool
+                ),
                 version_hash=ensure_option_type(configuration_json, "version", str),
             )
 
@@ -584,6 +589,7 @@ class PartialConfiguration:
             typeshed=typeshed,
             use_buck_builder=self.use_buck_builder,
             use_buck_source_database=self.use_buck_source_database,
+            use_command_v2=self.use_command_v2,
             version_hash=self.version_hash,
         )
 
@@ -658,6 +664,7 @@ def merge_partial_configurations(
         use_buck_source_database=overwrite_base(
             base.use_buck_source_database, override.use_buck_source_database
         ),
+        use_command_v2=overwrite_base(base.use_command_v2, override.use_command_v2),
         version_hash=overwrite_base(base.version_hash, override.version_hash),
     )
 
@@ -691,6 +698,7 @@ class Configuration:
     typeshed: Optional[str] = None
     use_buck_builder: bool = False
     use_buck_source_database: bool = False
+    use_command_v2: bool = False
     version_hash: Optional[str] = None
 
     @staticmethod
@@ -743,6 +751,9 @@ class Configuration:
             ),
             use_buck_source_database=_get_optional_value(
                 partial_configuration.use_buck_source_database, default=False
+            ),
+            use_command_v2=_get_optional_value(
+                partial_configuration.use_command_v2, default=False
             ),
             version_hash=partial_configuration.version_hash,
         )

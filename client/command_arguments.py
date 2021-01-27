@@ -47,7 +47,7 @@ class CommandArguments:
     saved_state_project: Optional[str] = None
     dot_pyre_directory: Optional[Path] = None
     features: Optional[str] = None
-    use_command_v2: bool = False
+    use_command_v2: Optional[bool] = None
     isolation_prefix: Optional[str] = None
 
 
