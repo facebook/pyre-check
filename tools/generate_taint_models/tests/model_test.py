@@ -516,3 +516,38 @@ class ModelTest(unittest.TestCase):
         # Checking for 'model_2' despite putting in 'model_1' is deliberate; we
         # are testing the effectiveness of the hash equivalence
         self.assertIn(model_2, test_set)
+
+    def test_property_model(self) -> None:
+        self.assertEqual(
+            str(
+                model.PropertyModel(
+                    class_name="a.C", attribute_name="attr", annotation="TaintSource[A]"
+                )
+            ),
+            "@property\ndef a.C.attr(self) -> TaintSource[A]: ...",
+        )
+
+        self.assertEqual(
+            model.PropertyModel(
+                class_name="a.C", attribute_name="attr", annotation="TaintSource[A]"
+            ),
+            model.PropertyModel(
+                class_name="a.C", attribute_name="attr", annotation="TaintSource[B]"
+            ),
+        )
+        self.assertNotEqual(
+            model.PropertyModel(
+                class_name="a.C", attribute_name="attr", annotation="TaintSource[A]"
+            ),
+            model.PropertyModel(
+                class_name="a.D", attribute_name="attr", annotation="TaintSource[A]"
+            ),
+        )
+        self.assertNotEqual(
+            model.PropertyModel(
+                class_name="a.C", attribute_name="attr1", annotation="TaintSource[A]"
+            ),
+            model.PropertyModel(
+                class_name="a.C", attribute_name="attr2", annotation="TaintSource[A]"
+            ),
+        )

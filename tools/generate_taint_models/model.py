@@ -353,3 +353,24 @@ class ClassModel(Model):
 
     def __hash__(self) -> int:
         return hash(self.class_name)
+
+
+class PropertyModel(Model):
+    def __init__(self, class_name: str, attribute_name: str, annotation: str) -> None:
+        self.class_name = class_name
+        self.attribute_name = attribute_name
+        self.annotation = annotation
+
+    def __str__(self) -> str:
+        return f"@property\ndef {self.class_name}.{self.attribute_name}(self) -> {self.annotation}: ..."  # noqa B950
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, PropertyModel):
+            return False
+        return (
+            self.class_name == other.class_name
+            and self.attribute_name == other.attribute_name
+        )
+
+    def __hash__(self) -> int:
+        return hash((self.class_name, self.attribute_name))
