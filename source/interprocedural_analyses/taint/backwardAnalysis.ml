@@ -105,33 +105,6 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
 
   let read_tree = BackwardState.Tree.read ~transform_non_leaves
 
-  let is_super ~resolution expression =
-    match expression.Node.value with
-    | Expression.Call { callee = { Node.value = Name (Name.Identifier "super"); _ }; _ } -> true
-    | _ ->
-        (* We also support explicit calls to superclass constructors. *)
-        let annotation = Resolution.resolve_expression_to_type resolution expression in
-        if Type.is_meta annotation then
-          let type_parameter = Type.single_parameter annotation in
-          match type_parameter with
-          | Type.Parametric { name = parent_name; _ }
-          | Type.Primitive parent_name ->
-              let class_name =
-                Reference.prefix FunctionContext.definition.Node.value.signature.name.Node.value
-                >>| Reference.show
-              in
-              class_name
-              >>| (fun class_name ->
-                    GlobalResolution.is_transitive_successor
-                      (Resolution.global_resolution resolution)
-                      ~predecessor:class_name
-                      ~successor:parent_name)
-              |> Option.value ~default:false
-          | _ -> false
-        else
-          false
-
-
   module rec FixpointState : FixpointState = struct
     type t = { taint: BackwardState.t } [@@deriving show]
 
@@ -547,7 +520,10 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                   if
                     FunctionContext.is_constructor ()
                     && String.equal attribute "__init__"
-                    && is_super ~resolution base
+                    && Interprocedural.CallResolution.is_super
+                         ~resolution
+                         ~define:FunctionContext.definition
+                         base
                   then
                     (* If the super call is `object.__init__`, this is likely due to a lack of type
                        information for that constructor - we treat that case as obscure to not lose

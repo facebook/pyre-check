@@ -42,6 +42,8 @@ module type FUNCTION_CONTEXT = sig
     attribute:string ->
     Interprocedural.CallGraph.raw_callees option
 
+  val is_constructor : unit -> bool
+
   val global_resolution : GlobalResolution.t
 
   val local_annotations : LocalAnnotationMap.ReadOnly.t option
@@ -617,6 +619,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
         apply_call_targets ~resolution ~callee ~collapse_tito location arguments state targets
         |>> add_index_breadcrumb_if_necessary
       in
+
       let analyze_lambda_call
           ~callee
           ~lambda_argument
@@ -686,224 +689,97 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           ~arguments:higher_order_function_arguments
           higher_order_function
       in
-      match { Call.callee; arguments } with
-      | {
-       callee = { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ };
-       arguments = [{ Call.Argument.value = argument_value; _ }];
-      } ->
-          let index = AccessPath.get_index argument_value in
-          analyze_expression ~resolution ~state ~expression:base
-          |>> ForwardState.Tree.read [index]
-          |>> ForwardState.Tree.transform
-                ForwardTaint.first_indices
-                Abstract.Domain.(Map (add_first_index index))
-      (* We read the taint at the `__iter__` call to be able to properly reference key taint as
-         appropriate. *)
-      | {
-       callee = { Node.value = Name (Name.Attribute { base; attribute = "__next__"; _ }); _ };
-       arguments = [];
-      } ->
-          analyze_expression ~resolution ~state ~expression:base
-      | {
-       callee =
-         { Node.value = Name (Name.Attribute { base; attribute = "__iter__"; special = true }); _ };
-       arguments = [];
-      } ->
-          let taint, state = analyze_expression ~resolution ~state ~expression:base in
-          let label =
-            (* For dictionaries, the default iterator is keys. *)
+      let assign_super_constructor_taint_to_self_if_necessary taint state =
+        match Node.value callee, FunctionContext.definition with
+        | ( Expression.Name (Name.Attribute { base; attribute = "__init__"; _ }),
+            {
+              Node.value =
+                {
+                  Ast.Statement.Define.signature =
+                    {
+                      Ast.Statement.Define.Signature.parameters =
+                        { Node.value = { Parameter.name = self_parameter; _ }; _ } :: _;
+                      _;
+                    };
+                  _;
+                };
+              _;
+            } ) ->
             if
-              Resolution.resolve_expression_to_type resolution base |> Type.is_dictionary_or_mapping
+              FunctionContext.is_constructor ()
+              && Interprocedural.CallResolution.is_super
+                   ~resolution
+                   ~define:FunctionContext.definition
+                   base
             then
-              Abstract.TreeDomain.Label.DictionaryKeys
+              let self = AccessPath.Root.Variable self_parameter in
+              let self_taint =
+                ForwardState.read ~root:self ~path:[] state.taint |> ForwardState.Tree.join taint
+              in
+              taint, { taint = ForwardState.assign ~root:self ~path:[] self_taint state.taint }
             else
-              Abstract.TreeDomain.Label.Any
-          in
-          ForwardState.Tree.read [label] taint, state
-      (* x[0] = value is converted to x.__setitem__(0, value). in parsing. *)
-      | {
-       callee =
-         { Node.value = Name (Name.Attribute { base; attribute = "__setitem__"; _ }); _ } as callee;
-       arguments = [{ Call.Argument.value = index; _ }; { Call.Argument.value; _ }] as arguments;
-      } -> (
-          let taint, state = analyze_expression ~resolution ~state ~expression:value in
-          let state =
-            analyze_assignment
-              ~resolution
-              ~fields:[AccessPath.get_index index]
-              base
-              taint
-              taint
-              state
-          in
-          (* Also make sure we analyze the __setitem__ call in case the __setitem__ function body is
-             tainted. *)
-          match
-            FunctionContext.get_callees
-              ~location:(Location.strip_module location)
-              ~call:{ Call.callee; arguments }
-          with
-          | Some (RegularTargets targets) ->
-              analyze_regular_targets ~state ~callee ~arguments targets
-          | _ -> taint, state )
-      (* We special object.__setattr__, which is sometimes used in order to work around dataclasses
-         being frozen post-initialization. *)
-      | {
-       callee =
-         {
-           Node.value =
-             Name
-               (Name.Attribute
-                 {
-                   base = { Node.value = Name (Name.Identifier "object"); _ };
-                   attribute = "__setattr__";
-                   _;
-                 });
-           _;
-         };
-       arguments =
-         [
-           { Call.Argument.value = self; name = None };
+              taint, state
+        | _ -> taint, state
+      in
+
+      let taint, state =
+        match { Call.callee; arguments } with
+        | {
+         callee = { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ };
+         arguments = [{ Call.Argument.value = argument_value; _ }];
+        } ->
+            let index = AccessPath.get_index argument_value in
+            analyze_expression ~resolution ~state ~expression:base
+            |>> ForwardState.Tree.read [index]
+            |>> ForwardState.Tree.transform
+                  ForwardTaint.first_indices
+                  Abstract.Domain.(Map (add_first_index index))
+        (* We read the taint at the `__iter__` call to be able to properly reference key taint as
+           appropriate. *)
+        | {
+         callee = { Node.value = Name (Name.Attribute { base; attribute = "__next__"; _ }); _ };
+         arguments = [];
+        } ->
+            analyze_expression ~resolution ~state ~expression:base
+        | {
+         callee =
            {
-             Call.Argument.value =
-               { Node.value = Expression.String { StringLiteral.value = attribute; _ }; _ };
-             name = None;
-           };
-           { Call.Argument.value = assigned_value; name = None };
-         ];
-      } ->
-          let taint, state = analyze_expression ~resolution ~state ~expression:assigned_value in
-          let state =
-            analyze_assignment
-              ~resolution
-              {
-                Node.value =
-                  Expression.Name (Name.Attribute { base = self; attribute; special = false });
-                location = { Location.start = location.start; stop = location.stop };
-              }
-              taint
-              taint
-              state
-          in
-          taint, state
-      (* `getattr(a, "field", default)` should evaluate to the join of `a.field` and `default`. *)
-      | {
-       callee = { Node.value = Name (Name.Identifier "getattr"); location };
-       arguments =
-         [
-           { Call.Argument.value = base; _ };
-           {
-             Call.Argument.value =
-               { Node.value = Expression.String { StringLiteral.value = attribute; _ }; _ };
+             Node.value = Name (Name.Attribute { base; attribute = "__iter__"; special = true });
              _;
            };
-           { Call.Argument.value = default; _ };
-         ];
-      } ->
-          let attribute_expression =
-            {
-              Node.location;
-              value = Expression.Name (Name.Attribute { base; attribute; special = false });
-            }
-          in
-          let attribute_taint, state =
-            analyze_expression ~resolution ~state ~expression:attribute_expression
-          in
-          let default_taint, state = analyze_expression ~resolution ~state ~expression:default in
-          ForwardState.Tree.join attribute_taint default_taint, state
-      (* `zip(a, b, ...)` creates a taint object which, when iterated on, has first index equal to
-         a[*]'s taint, second index with b[*]'s taint, etc. *)
-      | { callee = { Node.value = Name (Name.Identifier "zip"); _ }; arguments = lists } ->
-          let add_list_to_taint index (taint, state) { Call.Argument.value; _ } =
-            let index_name = Abstract.TreeDomain.Label.Field (string_of_int index) in
-            analyze_expression ~resolution ~state ~expression:value
-            |>> ForwardState.Tree.read [Abstract.TreeDomain.Label.Any]
-            |>> ForwardState.Tree.prepend [index_name]
-            |>> ForwardState.Tree.join taint
-          in
-          List.foldi lists ~init:(ForwardState.Tree.bottom, state) ~f:add_list_to_taint
-          |>> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.Any]
-      | {
-       Call.callee =
-         {
-           Node.value =
-             Name
-               (Name.Attribute
-                 { base = { Node.value = Expression.Name name; _ }; attribute = "gather"; _ });
-           _;
-         };
-       arguments;
-      }
-        when String.equal "asyncio" (Name.last name) ->
-          analyze_expression
-            ~resolution
-            ~state
-            ~expression:
-              {
-                Node.location = Node.location callee;
-                value =
-                  Expression.Tuple
-                    (List.map arguments ~f:(fun argument -> argument.Call.Argument.value));
-              }
-      (* dictionary .keys(), .values() and .items() functions are special, as they require handling
-         of DictionaryKeys taint. *)
-      | { callee = { Node.value = Name (Name.Attribute { base; attribute = "values"; _ }); _ }; _ }
-        when Resolution.resolve_expression_to_type resolution base |> Type.is_dictionary_or_mapping
-        ->
-          analyze_expression ~resolution ~state ~expression:base
-          |>> ForwardState.Tree.read [Abstract.TreeDomain.Label.Any]
-          |>> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.Any]
-      | { callee = { Node.value = Name (Name.Attribute { base; attribute = "keys"; _ }); _ }; _ }
-        when Resolution.resolve_expression_to_type resolution base |> Type.is_dictionary_or_mapping
-        ->
-          analyze_expression ~resolution ~state ~expression:base
-          |>> ForwardState.Tree.read [Abstract.TreeDomain.Label.DictionaryKeys]
-          |>> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.Any]
-      | { callee = { Node.value = Name (Name.Attribute { base; attribute = "items"; _ }); _ }; _ }
-        when Resolution.resolve_expression_to_type resolution base |> Type.is_dictionary_or_mapping
-        ->
-          let taint, state = analyze_expression ~resolution ~state ~expression:base in
-          let taint =
-            let key_taint =
-              ForwardState.Tree.read [Abstract.TreeDomain.Label.DictionaryKeys] taint
+         arguments = [];
+        } ->
+            let taint, state = analyze_expression ~resolution ~state ~expression:base in
+            let label =
+              (* For dictionaries, the default iterator is keys. *)
+              if
+                Resolution.resolve_expression_to_type resolution base
+                |> Type.is_dictionary_or_mapping
+              then
+                Abstract.TreeDomain.Label.DictionaryKeys
+              else
+                Abstract.TreeDomain.Label.Any
             in
-            let value_taint = ForwardState.Tree.read [Abstract.TreeDomain.Label.Any] taint in
-            ForwardState.Tree.join
-              (ForwardState.Tree.prepend [Abstract.TreeDomain.Label.create_int_field 0] key_taint)
-              (ForwardState.Tree.prepend [Abstract.TreeDomain.Label.create_int_field 1] value_taint)
-            |> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.Any]
-          in
-          taint, state
-      (* `locals()` is a dictionary from all local names -> values. *)
-      | { callee = { Node.value = Name (Name.Identifier "locals"); _ }; arguments = [] } ->
-          let add_root_taint locals_taint root =
-            let path_of_root =
-              match root with
-              | AccessPath.Root.Variable variable ->
-                  [Abstract.TreeDomain.Label.Field (Identifier.sanitized variable)]
-              | NamedParameter { name }
-              | PositionalParameter { name; _ } ->
-                  [Abstract.TreeDomain.Label.Field (Identifier.sanitized name)]
-              | _ -> [Abstract.TreeDomain.Label.Any]
+            ForwardState.Tree.read [label] taint, state
+        (* x[0] = value is converted to x.__setitem__(0, value). in parsing. *)
+        | {
+         callee =
+           { Node.value = Name (Name.Attribute { base; attribute = "__setitem__"; _ }); _ } as
+           callee;
+         arguments = [{ Call.Argument.value = index; _ }; { Call.Argument.value; _ }] as arguments;
+        } -> (
+            let taint, state = analyze_expression ~resolution ~state ~expression:value in
+            let state =
+              analyze_assignment
+                ~resolution
+                ~fields:[AccessPath.get_index index]
+                base
+                taint
+                taint
+                state
             in
-            let root_taint =
-              ForwardState.read ~root ~path:[] state.taint |> ForwardState.Tree.prepend path_of_root
-            in
-            ForwardState.Tree.join locals_taint root_taint
-          in
-          let taint =
-            List.fold
-              (ForwardState.roots state.taint)
-              ~init:ForwardState.Tree.bottom
-              ~f:add_root_taint
-          in
-          taint, state
-      | _ ->
-          let call = { Call.callee; arguments } in
-          let { Call.callee; arguments } =
-            Interprocedural.CallGraph.redirect_special_calls ~resolution call
-          in
-          let taint, state =
+            (* Also make sure we analyze the __setitem__ call in case the __setitem__ function body
+               is tainted. *)
             match
               FunctionContext.get_callees
                 ~location:(Location.strip_module location)
@@ -911,87 +787,262 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             with
             | Some (RegularTargets targets) ->
                 analyze_regular_targets ~state ~callee ~arguments targets
-            | Some
-                (HigherOrderTargets
-                  { higher_order_function; callable_argument = index, callable_argument }) -> (
-                let lambda_argument = index, List.nth arguments index in
-                match lambda_argument with
-                | index, Some lambda_argument ->
-                    let non_lambda_arguments =
-                      List.mapi ~f:(fun index value -> index, value) (List.take arguments index)
-                      @ List.mapi
-                          ~f:(fun relative_index value -> index + 1 + relative_index, value)
-                          (List.drop arguments (index + 1))
-                    in
-                    analyze_lambda_call
-                      ~callee
-                      ~lambda_argument:(index, lambda_argument)
-                      ~non_lambda_arguments
-                      ~higher_order_function
-                      ~callable_argument
-                | _ -> analyze_regular_targets ~state ~callee ~arguments higher_order_function )
-            | Some (ConstructorTargets { new_targets; init_targets }) ->
-                analyze_constructor_call
-                  ~resolution
-                  ~callee
-                  ~arguments
-                  ~new_targets
-                  ~init_targets
-                  ~location
-                  ~state
-            | None ->
-                (* No target, treat call as obscure *)
-                (* reveal_taint(). *)
-                begin
-                  match Node.value callee, arguments with
-                  | ( Expression.Name (Name.Identifier "reveal_taint"),
-                      [{ Call.Argument.value = expression; _ }] ) ->
-                      let taint, _ = analyze_expression ~resolution ~state ~expression in
-                      let location =
-                        Node.location callee
-                        |> Location.with_module ~qualifier:FunctionContext.qualifier
+            | _ -> taint, state )
+        (* We special object.__setattr__, which is sometimes used in order to work around
+           dataclasses being frozen post-initialization. *)
+        | {
+         callee =
+           {
+             Node.value =
+               Name
+                 (Name.Attribute
+                   {
+                     base = { Node.value = Name (Name.Identifier "object"); _ };
+                     attribute = "__setattr__";
+                     _;
+                   });
+             _;
+           };
+         arguments =
+           [
+             { Call.Argument.value = self; name = None };
+             {
+               Call.Argument.value =
+                 { Node.value = Expression.String { StringLiteral.value = attribute; _ }; _ };
+               name = None;
+             };
+             { Call.Argument.value = assigned_value; name = None };
+           ];
+        } ->
+            let taint, state = analyze_expression ~resolution ~state ~expression:assigned_value in
+            let state =
+              analyze_assignment
+                ~resolution
+                {
+                  Node.value =
+                    Expression.Name (Name.Attribute { base = self; attribute; special = false });
+                  location = { Location.start = location.start; stop = location.stop };
+                }
+                taint
+                taint
+                state
+            in
+            taint, state
+        (* `getattr(a, "field", default)` should evaluate to the join of `a.field` and `default`. *)
+        | {
+         callee = { Node.value = Name (Name.Identifier "getattr"); location };
+         arguments =
+           [
+             { Call.Argument.value = base; _ };
+             {
+               Call.Argument.value =
+                 { Node.value = Expression.String { StringLiteral.value = attribute; _ }; _ };
+               _;
+             };
+             { Call.Argument.value = default; _ };
+           ];
+        } ->
+            let attribute_expression =
+              {
+                Node.location;
+                value = Expression.Name (Name.Attribute { base; attribute; special = false });
+              }
+            in
+            let attribute_taint, state =
+              analyze_expression ~resolution ~state ~expression:attribute_expression
+            in
+            let default_taint, state = analyze_expression ~resolution ~state ~expression:default in
+            ForwardState.Tree.join attribute_taint default_taint, state
+        (* `zip(a, b, ...)` creates a taint object which, when iterated on, has first index equal to
+           a[*]'s taint, second index with b[*]'s taint, etc. *)
+        | { callee = { Node.value = Name (Name.Identifier "zip"); _ }; arguments = lists } ->
+            let add_list_to_taint index (taint, state) { Call.Argument.value; _ } =
+              let index_name = Abstract.TreeDomain.Label.Field (string_of_int index) in
+              analyze_expression ~resolution ~state ~expression:value
+              |>> ForwardState.Tree.read [Abstract.TreeDomain.Label.Any]
+              |>> ForwardState.Tree.prepend [index_name]
+              |>> ForwardState.Tree.join taint
+            in
+            List.foldi lists ~init:(ForwardState.Tree.bottom, state) ~f:add_list_to_taint
+            |>> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.Any]
+        | {
+         Call.callee =
+           {
+             Node.value =
+               Name
+                 (Name.Attribute
+                   { base = { Node.value = Expression.Name name; _ }; attribute = "gather"; _ });
+             _;
+           };
+         arguments;
+        }
+          when String.equal "asyncio" (Name.last name) ->
+            analyze_expression
+              ~resolution
+              ~state
+              ~expression:
+                {
+                  Node.location = Node.location callee;
+                  value =
+                    Expression.Tuple
+                      (List.map arguments ~f:(fun argument -> argument.Call.Argument.value));
+                }
+        (* dictionary .keys(), .values() and .items() functions are special, as they require
+           handling of DictionaryKeys taint. *)
+        | {
+         callee = { Node.value = Name (Name.Attribute { base; attribute = "values"; _ }); _ };
+         _;
+        }
+          when Resolution.resolve_expression_to_type resolution base
+               |> Type.is_dictionary_or_mapping ->
+            analyze_expression ~resolution ~state ~expression:base
+            |>> ForwardState.Tree.read [Abstract.TreeDomain.Label.Any]
+            |>> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.Any]
+        | { callee = { Node.value = Name (Name.Attribute { base; attribute = "keys"; _ }); _ }; _ }
+          when Resolution.resolve_expression_to_type resolution base
+               |> Type.is_dictionary_or_mapping ->
+            analyze_expression ~resolution ~state ~expression:base
+            |>> ForwardState.Tree.read [Abstract.TreeDomain.Label.DictionaryKeys]
+            |>> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.Any]
+        | { callee = { Node.value = Name (Name.Attribute { base; attribute = "items"; _ }); _ }; _ }
+          when Resolution.resolve_expression_to_type resolution base
+               |> Type.is_dictionary_or_mapping ->
+            let taint, state = analyze_expression ~resolution ~state ~expression:base in
+            let taint =
+              let key_taint =
+                ForwardState.Tree.read [Abstract.TreeDomain.Label.DictionaryKeys] taint
+              in
+              let value_taint = ForwardState.Tree.read [Abstract.TreeDomain.Label.Any] taint in
+              ForwardState.Tree.join
+                (ForwardState.Tree.prepend [Abstract.TreeDomain.Label.create_int_field 0] key_taint)
+                (ForwardState.Tree.prepend
+                   [Abstract.TreeDomain.Label.create_int_field 1]
+                   value_taint)
+              |> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.Any]
+            in
+            taint, state
+        (* `locals()` is a dictionary from all local names -> values. *)
+        | { callee = { Node.value = Name (Name.Identifier "locals"); _ }; arguments = [] } ->
+            let add_root_taint locals_taint root =
+              let path_of_root =
+                match root with
+                | AccessPath.Root.Variable variable ->
+                    [Abstract.TreeDomain.Label.Field (Identifier.sanitized variable)]
+                | NamedParameter { name }
+                | PositionalParameter { name; _ } ->
+                    [Abstract.TreeDomain.Label.Field (Identifier.sanitized name)]
+                | _ -> [Abstract.TreeDomain.Label.Any]
+              in
+              let root_taint =
+                ForwardState.read ~root ~path:[] state.taint
+                |> ForwardState.Tree.prepend path_of_root
+              in
+              ForwardState.Tree.join locals_taint root_taint
+            in
+            let taint =
+              List.fold
+                (ForwardState.roots state.taint)
+                ~init:ForwardState.Tree.bottom
+                ~f:add_root_taint
+            in
+            taint, state
+        | _ ->
+            let call = { Call.callee; arguments } in
+            let { Call.callee; arguments } =
+              Interprocedural.CallGraph.redirect_special_calls ~resolution call
+            in
+            let taint, state =
+              match
+                FunctionContext.get_callees
+                  ~location:(Location.strip_module location)
+                  ~call:{ Call.callee; arguments }
+              with
+              | Some (RegularTargets targets) ->
+                  analyze_regular_targets ~state ~callee ~arguments targets
+              | Some
+                  (HigherOrderTargets
+                    { higher_order_function; callable_argument = index, callable_argument }) -> (
+                  let lambda_argument = index, List.nth arguments index in
+                  match lambda_argument with
+                  | index, Some lambda_argument ->
+                      let non_lambda_arguments =
+                        List.mapi ~f:(fun index value -> index, value) (List.take arguments index)
+                        @ List.mapi
+                            ~f:(fun relative_index value -> index + 1 + relative_index, value)
+                            (List.drop arguments (index + 1))
                       in
-                      Log.dump
-                        "%a: Revealed forward taint for `%s`: %s"
-                        Location.WithModule.pp
-                        location
-                        (Ast.Transform.sanitize_expression expression |> Expression.show)
-                        (ForwardState.Tree.show taint)
-                  | ( Expression.Name (Name.Identifier "reveal_type"),
-                      [{ Call.Argument.value = expression; _ }] ) ->
-                      let location =
-                        Node.location callee
-                        |> Location.with_module ~qualifier:FunctionContext.qualifier
-                      in
-                      Log.dump
-                        "%a: Revealed type for %s: %s"
-                        Location.WithModule.pp
-                        location
-                        (Ast.Transform.sanitize_expression expression |> Expression.show)
-                        (Resolution.resolve_expression_to_type resolution expression |> Type.show)
-                  | _ -> ()
-                end;
-                apply_call_targets
-                  ~resolution
-                  ~callee
-                  ~collapse_tito:false
-                  location
-                  arguments
-                  state
-                  []
-          in
-          let taint =
-            match Node.value callee with
-            | Name
-                (Name.Attribute
-                  { base = { Node.value = Expression.String _; _ }; attribute = "format"; _ }) ->
-                ForwardState.Tree.transform
-                  ForwardTaint.simple_feature
-                  Abstract.Domain.(Add Domains.format_string_feature)
-                  taint
-            | _ -> taint
-          in
-          taint, state
+                      analyze_lambda_call
+                        ~callee
+                        ~lambda_argument:(index, lambda_argument)
+                        ~non_lambda_arguments
+                        ~higher_order_function
+                        ~callable_argument
+                  | _ -> analyze_regular_targets ~state ~callee ~arguments higher_order_function )
+              | Some (ConstructorTargets { new_targets; init_targets }) ->
+                  analyze_constructor_call
+                    ~resolution
+                    ~callee
+                    ~arguments
+                    ~new_targets
+                    ~init_targets
+                    ~location
+                    ~state
+              | None ->
+                  (* No target, treat call as obscure *)
+                  (* reveal_taint(). *)
+                  begin
+                    match Node.value callee, arguments with
+                    | ( Expression.Name (Name.Identifier "reveal_taint"),
+                        [{ Call.Argument.value = expression; _ }] ) ->
+                        let taint, _ = analyze_expression ~resolution ~state ~expression in
+                        let location =
+                          Node.location callee
+                          |> Location.with_module ~qualifier:FunctionContext.qualifier
+                        in
+                        Log.dump
+                          "%a: Revealed forward taint for `%s`: %s"
+                          Location.WithModule.pp
+                          location
+                          (Ast.Transform.sanitize_expression expression |> Expression.show)
+                          (ForwardState.Tree.show taint)
+                    | ( Expression.Name (Name.Identifier "reveal_type"),
+                        [{ Call.Argument.value = expression; _ }] ) ->
+                        let location =
+                          Node.location callee
+                          |> Location.with_module ~qualifier:FunctionContext.qualifier
+                        in
+                        Log.dump
+                          "%a: Revealed type for %s: %s"
+                          Location.WithModule.pp
+                          location
+                          (Ast.Transform.sanitize_expression expression |> Expression.show)
+                          (Resolution.resolve_expression_to_type resolution expression |> Type.show)
+                    | _ -> ()
+                  end;
+                  apply_call_targets
+                    ~resolution
+                    ~callee
+                    ~collapse_tito:false
+                    location
+                    arguments
+                    state
+                    []
+            in
+            let taint =
+              match Node.value callee with
+              | Name
+                  (Name.Attribute
+                    { base = { Node.value = Expression.String _; _ }; attribute = "format"; _ }) ->
+                  ForwardState.Tree.transform
+                    ForwardTaint.simple_feature
+                    Abstract.Domain.(Add Domains.format_string_feature)
+                    taint
+              | _ -> taint
+            in
+            taint, state
+      in
+
+      assign_super_constructor_taint_to_self_if_necessary taint state
 
 
     and analyze_attribute_access ~resolution ~state ~location base attribute =
@@ -1511,6 +1562,7 @@ let extract_source_model ~define ~resolution ~features_to_attach exit_taint =
     in
     ForwardState.read ~root:return_variable ~path:[] exit_taint |> simplify
   in
+
   ForwardState.assign ~root:AccessPath.Root.LocalResult ~path:[] return_taint ForwardState.empty
   |> attach_features
 
@@ -1546,6 +1598,12 @@ let run ~environment ~qualifier ~define ~call_graph_of_define ~existing_model =
       | Some (Interprocedural.CallGraph.SyntheticCallees name_to_callees) ->
           String.Map.Tree.find name_to_callees attribute
       | None -> None
+
+
+    let is_constructor () =
+      match Reference.last name with
+      | "__init__" -> true
+      | _ -> false
 
 
     let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment

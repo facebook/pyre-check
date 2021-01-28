@@ -5,7 +5,13 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-val is_local : Ast.Identifier.t -> bool
+open Ast
+open Analysis
+
+val is_local : Identifier.t -> bool
 
 (* Evaluates to the representation of literal strings, integers and enums. *)
-val extract_constant_name : Ast.Expression.t -> string option
+val extract_constant_name : Expression.t -> string option
+
+(* Evaluates to whether the provided expression is a superclass of define. *)
+val is_super : resolution:Resolution.t -> define:Statement.Define.t Node.t -> Expression.t -> bool

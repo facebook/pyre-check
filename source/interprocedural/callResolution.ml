@@ -7,6 +7,7 @@
 
 open Core
 open Ast
+open Analysis
 open Expression
 open Pyre
 
@@ -26,3 +27,30 @@ let extract_constant_name { Node.value = expression; _ } =
           Some name
       | _ -> None )
   | _ -> None
+
+
+let is_super ~resolution ~define expression =
+  match expression.Node.value with
+  | Expression.Call { callee = { Node.value = Name (Name.Identifier "super"); _ }; _ } -> true
+  | _ ->
+      (* We also support explicit calls to superclass constructors. *)
+      let annotation = Resolution.resolve_expression_to_type resolution expression in
+      if Type.is_meta annotation then
+        let type_parameter = Type.single_parameter annotation in
+        match type_parameter with
+        | Type.Parametric { name = parent_name; _ }
+        | Type.Primitive parent_name ->
+            let class_name =
+              Reference.prefix define.Node.value.Statement.Define.signature.name.Node.value
+              >>| Reference.show
+            in
+            class_name
+            >>| (fun class_name ->
+                  GlobalResolution.is_transitive_successor
+                    (Resolution.global_resolution resolution)
+                    ~predecessor:class_name
+                    ~successor:parent_name)
+            |> Option.value ~default:false
+        | _ -> false
+      else
+        false

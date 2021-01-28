@@ -71,3 +71,14 @@ class BothNewAndInit:
 
 def test_both_new_and_init_callgraph():
     BothNewAndInit()
+
+
+class BaseConstructor:
+    def __init__(self) -> None:
+        self.x = __test_source()
+
+
+class DerivedConstructor(BaseConstructor):
+    def __init__(self, y: int) -> None:
+        super().__init__()
+        self.y = y

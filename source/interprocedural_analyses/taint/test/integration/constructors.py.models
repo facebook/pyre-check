@@ -132,6 +132,79 @@
 {
   "kind": "model",
   "data": {
+    "callable": "Ovr{constructors.BaseConstructor::__init__}",
+    "sources": [
+      {
+        "port": "result[x]",
+        "taint": [
+          {
+            "root": {
+              "filename": "builtins.pyi",
+              "line": -1,
+              "start": -1,
+              "end": -1
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-via": "special_source" } ]
+          },
+          {
+            "call": {
+              "position": {
+                "filename": "builtins.pyi",
+                "line": -1,
+                "start": -1,
+                "end": -1
+              },
+              "resolves_to": [ "constructors.BaseConstructor.__init__" ],
+              "port": "result[x]",
+              "length": 1
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-via": "special_source" } ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(y)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "[y]" } ],
+            "features": [ { "always-type": "scalar" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "features": [ { "via": "tito" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "Ovr{constructors.BothNewAndInit::__init__}",
     "sources": [],
     "sinks": [],
@@ -180,6 +253,63 @@
             "decl": null,
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
             "features": [ { "always-via": "obscure" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Ovr{constructors.DerivedConstructor::__init__}",
+    "sources": [
+      {
+        "port": "result[x]",
+        "taint": [
+          {
+            "call": {
+              "position": {
+                "filename": "builtins.pyi",
+                "line": -1,
+                "start": -1,
+                "end": -1
+              },
+              "resolves_to": [ "constructors.BaseConstructor.__init__" ],
+              "port": "result[x]",
+              "length": 1
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-via": "special_source" } ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(y)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "[y]" } ],
+            "features": [ { "always-type": "scalar" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "features": [ { "via": "tito" } ]
           }
         ]
       }
@@ -308,6 +438,27 @@
               }
             ],
             "features": [ { "always-via": "special_source" } ]
+          },
+          {
+            "call": {
+              "position": {
+                "filename": "builtins.pyi",
+                "line": -1,
+                "start": -1,
+                "end": -1
+              },
+              "resolves_to": [ "constructors.BaseConstructor.__init__" ],
+              "port": "result[x]",
+              "length": 1
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-via": "special_source" } ]
           }
         ]
       }
@@ -326,6 +477,16 @@
         ]
       },
       {
+        "port": "formal(y)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "[y]" } ],
+            "features": [ { "always-type": "scalar" } ]
+          }
+        ]
+      },
+      {
         "port": "formal(oauth_token)",
         "taint": [
           {
@@ -339,7 +500,8 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "features": [ { "via": "tito" } ]
           }
         ]
       }
@@ -378,6 +540,47 @@
             "decl": null,
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
             "features": [ { "always-via": "obscure" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "constructors.BaseConstructor.__init__",
+    "sources": [
+      {
+        "port": "result[x]",
+        "taint": [
+          {
+            "root": {
+              "filename": "constructors.py",
+              "line": 78,
+              "start": 17,
+              "end": 32
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-via": "special_source" } ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
           }
         ]
       }
@@ -435,6 +638,64 @@
             "decl": null,
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
             "features": [ { "always-via": "obscure" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "constructors.DerivedConstructor.__init__",
+    "sources": [
+      {
+        "port": "result[x]",
+        "taint": [
+          {
+            "call": {
+              "position": {
+                "filename": "constructors.py",
+                "line": 83,
+                "start": 8,
+                "end": 26
+              },
+              "resolves_to": [ "constructors.BaseConstructor.__init__" ],
+              "port": "result[x]",
+              "length": 1
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-via": "special_source" } ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(y)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "[y]" } ],
+            "features": [ { "always-type": "scalar" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "decl": null,
+            "tito": [ { "line": 83, "start": 8, "end": 15 } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "features": [ { "via": "tito" } ]
           }
         ]
       }
