@@ -770,6 +770,62 @@ class Configuration:
             return None
         return os.path.join(self.project_root, self.relative_local_root)
 
+    def to_json(self) -> Dict[str, object]:
+        """
+        This method is for display purpose only. Do *NOT* expect this method
+        to produce JSONs that can be de-serialized back into configurations.
+        """
+        binary = self.binary
+        buck_builder_binary = self.buck_builder_binary
+        formatter = self.formatter
+        isolation_prefix = self.isolation_prefix
+        logger = self.logger
+        number_of_workers = self.number_of_workers
+        relative_local_root = self.relative_local_root
+        typeshed = self.typeshed
+        version_hash = self.version_hash
+        return {
+            "global_root": self.project_root,
+            "dot_pyre_directory": str(self.dot_pyre_directory),
+            "autocomplete": self.autocomplete,
+            **({"binary": binary} if binary is not None else {}),
+            **(
+                {"buck_builder_binary": buck_builder_binary}
+                if buck_builder_binary is not None
+                else {}
+            ),
+            "disabled": self.disabled,
+            "do_not_ignore_all_errors_in": list(self.do_not_ignore_all_errors_in),
+            "excludes": list(self.excludes),
+            "extensions": list(self.extensions),
+            **({"formatter": formatter} if formatter is not None else {}),
+            "ignore_all_errors": list(self.ignore_all_errors),
+            "ignore_infer": list(self.ignore_infer),
+            **(
+                {"isolation_prefix": isolation_prefix}
+                if isolation_prefix is not None
+                else {}
+            ),
+            **({"logger": logger} if logger is not None else {}),
+            **({"workers": number_of_workers} if number_of_workers is not None else {}),
+            "other_critical_files": list(self.other_critical_files),
+            **(
+                {"relative_local_root": relative_local_root}
+                if relative_local_root is not None
+                else {}
+            ),
+            "search_path": [path.path() for path in self.search_path],
+            "source_directories": [path.path() for path in self.source_directories],
+            "strict": self.strict,
+            "taint_models_path": list(self.taint_models_path),
+            "targets": list(self.targets),
+            **({"typeshed": typeshed} if typeshed is not None else {}),
+            "use_buck_builder": self.use_buck_builder,
+            "use_buck_source_database": self.use_buck_source_database,
+            "use_command_v2": self.use_command_v2,
+            **({"version_hash": version_hash} if version_hash is not None else {}),
+        }
+
     def get_existent_source_directories(self) -> List[SearchPathElement]:
         return self._get_existent_paths(self.source_directories)
 
