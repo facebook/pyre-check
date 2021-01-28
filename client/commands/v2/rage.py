@@ -6,8 +6,10 @@
 import dataclasses
 import json
 import logging
+import shutil
+import subprocess
 from pathlib import Path
-from typing import Optional, TextIO
+from typing import Optional, TextIO, Sequence
 
 from ... import commands, configuration as configuration_module, log, version
 
@@ -48,6 +50,33 @@ def _configuration_section(
     )
 
 
+def _get_subprocess_stdout(command: Sequence[str]) -> Optional[str]:
+    result = subprocess.run(
+        command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True
+    )
+    if result.returncode != 0:
+        return None
+    return result.stdout
+
+
+def _mercurial_section(mercurial: str, name: str) -> Optional[Section]:
+    output = _get_subprocess_stdout([mercurial, name])
+    return (
+        None
+        if output is None
+        else Section(name=f"Mercurial {name.capitalize()}", content=output)
+    )
+
+
+def _watchman_section(watchman: str, name: str) -> Optional[Section]:
+    output = _get_subprocess_stdout([watchman, name])
+    return (
+        None
+        if output is None
+        else Section(name=f"Watchman {name.capitalize()}", content=output)
+    )
+
+
 def _print_configuration_sections(
     configuration: configuration_module.Configuration, output: TextIO
 ) -> None:
@@ -56,8 +85,33 @@ def _print_configuration_sections(
     _print_section(_configuration_section(configuration), output)
 
 
+def _print_mercurial_sections(output: TextIO) -> None:
+    LOG.info("Collecting information about mercurial...")
+    mercurial = shutil.which("hg")
+    if mercurial is not None:
+        for section in [
+            _mercurial_section(mercurial, "id"),
+            _mercurial_section(mercurial, "status"),
+            _mercurial_section(mercurial, "diff"),
+            _mercurial_section(mercurial, "reflog"),
+        ]:
+            if section is not None:
+                _print_section(section, output)
+
+
+def _print_watchman_sections(output: TextIO) -> None:
+    LOG.info("Collecting information about watchman...")
+    watchman = shutil.which("watchman")
+    if watchman is not None:
+        for section in [_watchman_section(watchman, "watch-list")]:
+            if section is not None:
+                _print_section(section, output)
+
+
 def run_rage(configuration: configuration_module.Configuration, output: TextIO) -> None:
     _print_configuration_sections(configuration, output)
+    _print_mercurial_sections(output)
+    _print_watchman_sections(output)
     LOG.info("Done\n")
 
 
