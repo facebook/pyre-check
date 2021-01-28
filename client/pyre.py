@@ -899,7 +899,7 @@ def query(context: click.Context, query: str) -> int:
     help="The path to the output file (defaults to stdout)",
 )
 @click.pass_context
-def rage(context: click.Context, output_file: str) -> int:
+def rage(context: click.Context, output_file: Optional[str]) -> int:
     """
     Collects troubleshooting diagnostics for Pyre, and writes this information
     to the terminal or to a file.
@@ -908,16 +908,22 @@ def rage(context: click.Context, output_file: str) -> int:
     configuration = configuration_module.create_configuration(
         command_argument, Path(".")
     )
-    return run_pyre_command(
-        commands.Rage(
-            command_argument,
-            original_directory=os.getcwd(),
-            configuration=configuration,
-            output_path=output_file,
-        ),
-        configuration,
-        command_argument.noninteractive,
-    )
+
+    if configuration.use_command_v2:
+        return v2.rage.run(
+            configuration, Path(output_file) if output_file is not None else None
+        )
+    else:
+        return run_pyre_command(
+            commands.Rage(
+                command_argument,
+                original_directory=os.getcwd(),
+                configuration=configuration,
+                output_path=output_file,
+            ),
+            configuration,
+            command_argument.noninteractive,
+        )
 
 
 @pyre.command()
