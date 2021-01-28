@@ -97,22 +97,6 @@ def _validate_value(value: object, target_type: Type[object]) -> None:
             raise InvalidJson(f"`{value}` is not a {target_type}")
 
 
-def _validate_toplevel(value: object, target_type: Type[object]) -> None:
-    if _is_primitive(target_type):
-        if not isinstance(value, target_type):
-            raise InvalidJson(f"`{value}` is not a {target_type}")
-        else:
-            return
-    if _is_list(target_type):
-        _validate_list(value, cast(Type[List[object]], target_type))
-    elif _is_dictionary(target_type):
-        _validate_dictionary(value, cast(Type[Dict[object, object]], target_type))
-    elif _is_typed_dictionary(target_type):
-        _validate_typed_dictionary(value, target_type)
-    else:
-        raise NotImplementedError(f"Cannot safely parse {value}")
-
-
 T = TypeVar("T")
 
 
@@ -129,12 +113,12 @@ def loads(input_: Union[str, bytes], target: Type[T], *, validate: bool = True) 
     try:
         parsed = json.loads(input_)
         if validate:
-            _validate_toplevel(parsed, target)
+            _validate_value(parsed, target)
         return parsed
     except Exception as exception:
         raise InvalidJson(str(exception))
 
 
 def validate(input: object, target: Type[T]) -> T:
-    _validate_toplevel(input, target)
+    _validate_value(input, target)
     return cast(T, input)
