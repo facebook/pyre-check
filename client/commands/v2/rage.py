@@ -59,6 +59,13 @@ def _get_subprocess_stdout(command: Sequence[str]) -> Optional[str]:
     return result.stdout
 
 
+def _get_file_content(path: Path) -> Optional[str]:
+    try:
+        return path.read_text()
+    except Exception:
+        return None
+
+
 def _mercurial_section(mercurial: str, name: str) -> Optional[Section]:
     output = _get_subprocess_stdout([mercurial, name])
     return (
@@ -75,6 +82,20 @@ def _watchman_section(watchman: str, name: str) -> Optional[Section]:
         if output is None
         else Section(name=f"Watchman {name.capitalize()}", content=output)
     )
+
+
+def _server_log_section(log_directory: Path) -> Optional[Section]:
+    content = _get_file_content(log_directory / "new_server" / "server.stderr")
+    if content is None:
+        return None
+    return Section(name="Server Log", content=content)
+
+
+def _client_log_section(log_directory: Path) -> Optional[Section]:
+    content = _get_file_content(log_directory / "pyre.stderr")
+    if content is None:
+        return None
+    return Section(name="Client Log", content=content)
 
 
 def _print_configuration_sections(
@@ -108,10 +129,21 @@ def _print_watchman_sections(output: TextIO) -> None:
                 _print_section(section, output)
 
 
+def _print_log_file_sections(log_directory: Path, output: TextIO) -> None:
+    LOG.info("Collecting information from Pyre's log files...")
+    for section in [
+        _server_log_section(log_directory),
+        _client_log_section(log_directory),
+    ]:
+        if section is not None:
+            _print_section(section, output)
+
+
 def run_rage(configuration: configuration_module.Configuration, output: TextIO) -> None:
     _print_configuration_sections(configuration, output)
     _print_mercurial_sections(output)
     _print_watchman_sections(output)
+    _print_log_file_sections(Path(configuration.log_directory), output)
     LOG.info("Done\n")
 
 
