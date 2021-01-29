@@ -488,5 +488,5 @@ let start_server_and_wait ?event_channel server_configuration =
             "A Pyre server is already running for the current project."
         | _ -> Exn.to_string exn
       in
-      Log.error "%s" message;
+      Log.info "%s" message;
       write_event (ServerEvent.Exception message) >>= fun () -> return ExitStatus.Error)
