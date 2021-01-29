@@ -36,6 +36,7 @@ from ..persistent import (
     type_error_to_diagnostic,
     type_errors_to_diagnostics,
     PyreServerHandler,
+    CONSECUTIVE_START_ATTEMPT_THRESHOLD,
 )
 
 
@@ -337,6 +338,34 @@ class PersistentTest(testslide.TestCase):
         self.assertTrue(fake_task_manager.is_task_running())
 
     @setup.async_test
+    async def test_open_triggers_pyre_restart__limit_reached(self) -> None:
+        fake_task_manager = BackgroundTaskManager(WaitForeverBackgroundTask())
+        server = Server(
+            input_channel=create_memory_text_reader(""),
+            output_channel=create_memory_text_writer(),
+            client_capabilities=lsp.ClientCapabilities(),
+            state=ServerState(
+                consecutive_start_failure=CONSECUTIVE_START_ATTEMPT_THRESHOLD
+            ),
+            pyre_manager=fake_task_manager,
+        )
+        self.assertFalse(fake_task_manager.is_task_running())
+
+        test_path = Path("/foo.py")
+        await server.process_open_request(
+            lsp.DidOpenTextDocumentParameters(
+                text_document=lsp.TextDocumentItem(
+                    language_id="python",
+                    text="",
+                    uri=lsp.DocumentUri.from_file_path(test_path).unparse(),
+                    version=0,
+                )
+            )
+        )
+        await asyncio.sleep(0)
+        self.assertFalse(fake_task_manager.is_task_running())
+
+    @setup.async_test
     async def test_save_triggers_pyre_restart(self) -> None:
         test_path = Path("/foo.py")
         fake_task_manager = BackgroundTaskManager(WaitForeverBackgroundTask())
@@ -358,6 +387,32 @@ class PersistentTest(testslide.TestCase):
         )
         await asyncio.sleep(0)
         self.assertTrue(fake_task_manager.is_task_running())
+
+    @setup.async_test
+    async def test_save_triggers_pyre_restart__limit_reached(self) -> None:
+        test_path = Path("/foo.py")
+        fake_task_manager = BackgroundTaskManager(WaitForeverBackgroundTask())
+        server = Server(
+            input_channel=create_memory_text_reader(""),
+            output_channel=create_memory_text_writer(),
+            client_capabilities=lsp.ClientCapabilities(),
+            state=ServerState(
+                opened_documents={test_path},
+                consecutive_start_failure=CONSECUTIVE_START_ATTEMPT_THRESHOLD,
+            ),
+            pyre_manager=fake_task_manager,
+        )
+        self.assertFalse(fake_task_manager.is_task_running())
+
+        await server.process_did_save_request(
+            lsp.DidSaveTextDocumentParameters(
+                text_document=lsp.TextDocumentIdentifier(
+                    uri=lsp.DocumentUri.from_file_path(test_path).unparse(),
+                )
+            )
+        )
+        await asyncio.sleep(0)
+        self.assertFalse(fake_task_manager.is_task_running())
 
     def test_diagnostics(self) -> None:
         self.assertEqual(

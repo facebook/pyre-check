@@ -37,6 +37,8 @@ from . import (
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
+CONSECUTIVE_START_ATTEMPT_THRESHOLD: int = 5
+
 
 class LSPEvent(enum.Enum):
     INITIALIZED = "initialized"
@@ -222,6 +224,7 @@ async def _publish_diagnostics(
 
 @dataclasses.dataclass
 class ServerState:
+    consecutive_start_failure: int = 0
     opened_documents: Set[Path] = dataclasses.field(default_factory=set)
     diagnostics: Dict[Path, List[lsp.Diagnostic]] = dataclasses.field(
         default_factory=dict
@@ -266,6 +269,15 @@ class Server:
                 else:
                     raise json_rpc.InvalidRequestError("LSP server has been shut down")
 
+    async def _try_restart_pyre_server(self) -> None:
+        if self.state.consecutive_start_failure < CONSECUTIVE_START_ATTEMPT_THRESHOLD:
+            await self.pyre_manager.ensure_task_running()
+        else:
+            LOG.info(
+                "Not restarting Pyre since failed consecutive start attempt limit"
+                " has been reached."
+            )
+
     async def process_open_request(
         self, parameters: lsp.DidOpenTextDocumentParameters
     ) -> None:
@@ -279,7 +291,7 @@ class Server:
 
         # Attempt to trigger a background Pyre server start on each file open
         if not self.pyre_manager.is_task_running():
-            await self.pyre_manager.ensure_task_running()
+            await self._try_restart_pyre_server()
         else:
             document_diagnostics = self.state.diagnostics.get(document_path, None)
             if document_diagnostics is not None:
@@ -320,7 +332,7 @@ class Server:
             not self.pyre_manager.is_task_running()
             and document_path in self.state.opened_documents
         ):
-            await self.pyre_manager.ensure_task_running()
+            await self._try_restart_pyre_server()
 
     async def _run(self) -> int:
         while True:
@@ -652,6 +664,7 @@ class PyreServerHandler(connection.BackgroundTask):
                     f"Pyre server at `{self.server_identifier}` has been initialized."
                 )
 
+                self.server_state.consecutive_start_failure = 0
                 async with connection.connect_in_text_mode(socket_path) as (
                     input_channel,
                     output_channel,
@@ -666,6 +679,7 @@ class PyreServerHandler(connection.BackgroundTask):
                     )
                     await self.subscribe_to_type_error(input_channel, output_channel)
             elif isinstance(start_status, StartFailure):
+                self.server_state.consecutive_start_failure += 1
                 _log_lsp_event(
                     remote_logging=self.pyre_arguments.remote_logging,
                     event=LSPEvent.NOT_CONNECTED,
