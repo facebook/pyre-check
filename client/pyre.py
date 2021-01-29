@@ -234,6 +234,22 @@ def _run_default_command(arguments: command_arguments.CommandArguments) -> ExitC
         return _run_check_command(arguments)
 
 
+def _run_servers_list_command(
+    arguments: command_arguments.CommandArguments,
+) -> ExitCode:
+    configuration = configuration_module.create_configuration(arguments, Path("."))
+    return run_pyre_command(
+        commands.Servers(
+            arguments,
+            original_directory=os.getcwd(),
+            configuration=configuration,
+            subcommand="list",
+        ),
+        configuration,
+        arguments.noninteractive,
+    )
+
+
 def _create_configuration_with_retry(
     arguments: command_arguments.CommandArguments, base_directory: Path
 ) -> configuration_module.Configuration:
@@ -1016,18 +1032,34 @@ def restart(
         )
 
 
-@pyre.command()
-@click.argument("subcommand", type=click.Choice(["list", "stop"]), default="list")
+@pyre.group(
+    invoke_without_command=True,
+)
 @click.pass_context
-def servers(context: click.Context, subcommand: str) -> int:
+def servers(context: click.Context) -> int:
     """
-    Command to manipulate multiple Pyre servers.
+    Commands to manipulate multiple Pyre servers.
+    """
+    if context.invoked_subcommand is None:
+        return _run_servers_list_command(context.obj["arguments"])
+    # This return value is not used anywhere.
+    return ExitCode.SUCCESS
 
-    Supported subcommands:
 
-    - `list`: List running servers.
+@servers.command(name="list")
+@click.pass_context
+def servers_list(context: click.Context) -> int:
+    """
+    List all running servers.
+    """
+    return _run_servers_list_command(context.obj["arguments"])
 
-    - `stop`: Stop all running servers.
+
+@servers.command(name="stop")
+@click.pass_context
+def servers_stop(context: click.Context) -> int:
+    """
+    Stop all running servers.
     """
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
     configuration = configuration_module.create_configuration(
@@ -1038,7 +1070,7 @@ def servers(context: click.Context, subcommand: str) -> int:
             command_argument,
             original_directory=os.getcwd(),
             configuration=configuration,
-            subcommand=subcommand,
+            subcommand="stop",
         ),
         configuration,
         command_argument.noninteractive,
