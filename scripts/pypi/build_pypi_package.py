@@ -24,6 +24,7 @@ from .setup import run as run_setup
 
 MODULE_NAME = "pyre_check"
 RUNTIME_DEPENDENCIES = [
+    "async-generator",
     "click",
     "dataclasses",
     "dataclasses-json",

@@ -4,7 +4,6 @@
 # LICENSE file in the root directory of this source tree.
 
 import asyncio
-import contextlib
 import dataclasses
 import enum
 import json
@@ -15,6 +14,8 @@ import tempfile
 import traceback
 from pathlib import Path
 from typing import Union, Optional, AsyncIterator, Set, List, Sequence, Dict
+
+import async_generator
 
 from ... import (
     json_rpc,
@@ -180,7 +181,7 @@ async def try_initialize(
         return InitializationFailure(exception=json_rpc_error)
 
 
-@contextlib.asynccontextmanager
+@async_generator.asynccontextmanager
 async def _read_lsp_request(
     input_channel: connection.TextReader, output_channel: connection.TextWriter
 ) -> AsyncIterator[json_rpc.Request]:
@@ -563,7 +564,7 @@ class PyreServerHandler(connection.BackgroundTask):
                     self.client_output_channel, path, diagnostics
                 )
 
-    @contextlib.asynccontextmanager
+    @async_generator.asynccontextmanager
     async def _read_server_response(
         self, server_input_channel: connection.TextReader
     ) -> AsyncIterator[str]:

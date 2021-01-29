@@ -5,11 +5,12 @@
 
 import abc
 import asyncio
-import contextlib
 import logging
 import sys
 from pathlib import Path
 from typing import AsyncIterator, Tuple, Optional, List
+
+import async_generator
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -223,7 +224,7 @@ class StreamBytesWriter(BytesWriter):
         await self.stream_writer.wait_closed()
 
 
-@contextlib.asynccontextmanager
+@async_generator.asynccontextmanager
 async def connect(socket_path: Path) -> AsyncIterator[Tuple[BytesReader, BytesWriter]]:
     """
     Connect to the socket at given path. Once connected, create an input and
@@ -255,7 +256,7 @@ async def connect(socket_path: Path) -> AsyncIterator[Tuple[BytesReader, BytesWr
             await writer.close()
 
 
-@contextlib.asynccontextmanager
+@async_generator.asynccontextmanager
 async def connect_in_text_mode(
     socket_path: Path,
 ) -> AsyncIterator[Tuple[TextReader, TextWriter]]:
