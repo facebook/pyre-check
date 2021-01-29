@@ -7,11 +7,12 @@ import dataclasses
 import json
 import logging
 from pathlib import Path
-from typing import Optional, List, Dict, Iterable
+from typing import Optional, List, Dict, Iterable, Sequence
 
+import tabulate
 from typing_extensions import TypedDict
 
-from ... import commands
+from ... import commands, log
 from . import server_connection
 
 
@@ -113,6 +114,48 @@ def _get_running_server_status(socket_path: Path) -> Optional[RunningServerStatu
         return None
 
 
+def _print_running_server_status(running_status: Sequence[RunningServerStatus]) -> None:
+    if len(running_status) == 0:
+        log.stdout.write("No server is currently running.\n")
+    else:
+        log.stdout.write("Running Servers:\n\n")
+        log.stdout.write(
+            tabulate.tabulate(
+                [
+                    [
+                        status.pid,
+                        status.global_root,
+                        status.local_root or "",
+                        status.version,
+                    ]
+                    for status in running_status
+                ],
+                headers=[
+                    "PID",
+                    "Global Root",
+                    "Local Root",
+                    "Version",
+                ],
+            ),
+        )
+        log.stdout.write("\n")
+    log.stdout.write("\n")
+
+
+def _print_defunct_server_status(defunct_status: Sequence[DefunctServerStatus]) -> None:
+    defunct_count = len(defunct_status)
+    if defunct_count > 0:
+        log.stdout.write(f"Found {defunct_count} defunct server at:\n")
+        for status in defunct_status:
+            log.stdout.write(f" {status.socket_path}\n")
+        log.stdout.write("\n")
+
+
+def _print_server_status(server_status: AllServerStatus) -> None:
+    _print_running_server_status(server_status.running)
+    _print_defunct_server_status(server_status.defunct)
+
+
 def find_all_servers(socket_paths: Iterable[Path]) -> AllServerStatus:
     running_servers = []
     defunct_servers = []
@@ -136,7 +179,10 @@ def find_all_servers_under(socket_root: Path) -> AllServerStatus:
 
 def run_list() -> commands.ExitCode:
     try:
-        LOG.warning("Not implemented yet")
+        server_status = find_all_servers_under(
+            server_connection.get_default_socket_root()
+        )
+        _print_server_status(server_status)
         return commands.ExitCode.SUCCESS
     except Exception as error:
         raise commands.ClientException(

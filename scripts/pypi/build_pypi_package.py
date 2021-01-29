@@ -33,6 +33,7 @@ RUNTIME_DEPENDENCIES = [
     "psutil",
     "pyre_extensions",
     "pywatchman",
+    "tabulate",
 ]
 
 LOG: logging.Logger = logging.getLogger(__name__)

@@ -4,5 +4,6 @@ dataclasses-json
 libcst
 psutil
 pywatchman
+tabulate
 testslide
 typing_extensions

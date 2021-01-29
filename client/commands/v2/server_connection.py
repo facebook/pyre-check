@@ -29,10 +29,14 @@ def get_socket_path(root: Path, log_directory: Path) -> Path:
     return root / f"pyre_server_{log_path_digest}.sock"
 
 
-def get_default_socket_path(log_directory: Path) -> Path:
+def get_default_socket_root() -> Path:
     # TODO(T77556312): It might be cleaner to turn the root dir into a
     # configuration option instead.
-    return get_socket_path(Path(tempfile.gettempdir()), log_directory)
+    return Path(tempfile.gettempdir())
+
+
+def get_default_socket_path(log_directory: Path) -> Path:
+    return get_socket_path(get_default_socket_root(), log_directory)
 
 
 @contextlib.contextmanager
