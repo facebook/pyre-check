@@ -97,19 +97,26 @@ class TestServer(socketserver.ThreadingMixIn, socketserver.UnixStreamServer):
 
 
 @contextlib.contextmanager
+def spawn_unix_stream_server_with_socket(
+    handler: Type[socketserver.BaseRequestHandler], socket_path: Path
+) -> Generator[None, None, None]:
+    # Spawn a test server on another thread
+    server = TestServer(str(socket_path), handler)
+    server_thread = threading.Thread(target=server.serve_forever)
+    try:
+        server_thread.start()
+        yield
+    finally:
+        # Shutdown the server and terminate the test
+        server.shutdown()
+        server.server_close()
+
+
+@contextlib.contextmanager
 def spawn_unix_stream_server(
     handler: Type[socketserver.BaseRequestHandler],
 ) -> Generator[Path, None, None]:
     with tempfile.TemporaryDirectory() as socket_root:
         socket_path = Path(socket_root) / "test.socket"
-        # Spawn a test server on another thread
-        server = TestServer(str(socket_path), handler)
-        server_thread = threading.Thread(target=server.serve_forever)
-        try:
-            server_thread.start()
+        with spawn_unix_stream_server_with_socket(handler, socket_path):
             yield socket_path
-        finally:
-            # Shutdown the server and terminate the test
-            server.shutdown()
-            server.server_close()
-            server_thread.join()
