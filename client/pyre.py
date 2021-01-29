@@ -237,17 +237,20 @@ def _run_default_command(arguments: command_arguments.CommandArguments) -> ExitC
 def _run_servers_list_command(
     arguments: command_arguments.CommandArguments,
 ) -> ExitCode:
-    configuration = configuration_module.create_configuration(arguments, Path("."))
-    return run_pyre_command(
-        commands.Servers(
-            arguments,
-            original_directory=os.getcwd(),
-            configuration=configuration,
-            subcommand="list",
-        ),
-        configuration,
-        arguments.noninteractive,
-    )
+    if arguments.use_command_v2:
+        return v2.servers.run_list()
+    else:
+        configuration = configuration_module.create_configuration(arguments, Path("."))
+        return run_pyre_command(
+            commands.Servers(
+                arguments,
+                original_directory=os.getcwd(),
+                configuration=configuration,
+                subcommand="list",
+            ),
+            configuration,
+            arguments.noninteractive,
+        )
 
 
 def _create_configuration_with_retry(
