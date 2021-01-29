@@ -1065,19 +1065,22 @@ def servers_stop(context: click.Context) -> int:
     Stop all running servers.
     """
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
-    configuration = configuration_module.create_configuration(
-        command_argument, Path(".")
-    )
-    return run_pyre_command(
-        commands.Servers(
-            command_argument,
-            original_directory=os.getcwd(),
-            configuration=configuration,
-            subcommand="stop",
-        ),
-        configuration,
-        command_argument.noninteractive,
-    )
+    if command_argument.use_command_v2:
+        return v2.servers.run_stop()
+    else:
+        configuration = configuration_module.create_configuration(
+            command_argument, Path(".")
+        )
+        return run_pyre_command(
+            commands.Servers(
+                command_argument,
+                original_directory=os.getcwd(),
+                configuration=configuration,
+                subcommand="stop",
+            ),
+            configuration,
+            command_argument.noninteractive,
+        )
 
 
 @pyre.command()
