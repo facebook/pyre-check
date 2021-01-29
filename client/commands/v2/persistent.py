@@ -12,6 +12,7 @@ import logging
 import os
 import subprocess
 import tempfile
+import traceback
 from pathlib import Path
 from typing import Union, Optional, AsyncIterator, Set, List, Sequence, Dict
 
@@ -380,9 +381,19 @@ class Server:
             await self.pyre_manager.ensure_task_stop()
 
 
+@dataclasses.dataclass(frozen=True)
+class StartSuccess:
+    pass
+
+
+@dataclasses.dataclass(frozen=True)
+class StartFailure:
+    detail: str
+
+
 async def _start_pyre_server(
     binary_location: str, pyre_arguments: start.Arguments
-) -> bool:
+) -> Union[StartSuccess, StartFailure]:
     try:
         with start.server_argument_file(pyre_arguments) as argument_file_path:
             server_environment = {
@@ -418,10 +429,11 @@ async def _start_pyre_server(
                 connection.TextReader(connection.StreamBytesReader(server_stdout))
             )
 
-        return True
+        return StartSuccess()
     except Exception as error:
-        LOG.error(f"Exception occured during server start: {error}")
-        return False
+        detail = traceback.format_exc()
+        LOG.error(f"Exception occured during server start. {detail}")
+        return StartFailure(detail)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -632,7 +644,10 @@ class PyreServerHandler(connection.BackgroundTask):
                 "the background..."
             )
 
-            if await _start_pyre_server(self.binary_location, self.pyre_arguments):
+            start_status = await _start_pyre_server(
+                self.binary_location, self.pyre_arguments
+            )
+            if isinstance(start_status, StartSuccess):
                 await self.log_and_show_message_to_client(
                     f"Pyre server at `{self.server_identifier}` has been initialized."
                 )
@@ -650,16 +665,21 @@ class PyreServerHandler(connection.BackgroundTask):
                         },
                     )
                     await self.subscribe_to_type_error(input_channel, output_channel)
-            else:
+            elif isinstance(start_status, StartFailure):
                 _log_lsp_event(
                     remote_logging=self.pyre_arguments.remote_logging,
                     event=LSPEvent.NOT_CONNECTED,
-                    normals=self._auxiliary_logging_info(),
+                    normals={
+                        **self._auxiliary_logging_info(),
+                        "exception": str(start_status.detail),
+                    },
                 )
                 await self.show_message_to_client(
                     f"Cannot start a new Pyre server at `{self.server_identifier}`.",
                     level=lsp.MessageType.ERROR,
                 )
+            else:
+                raise RuntimeError("Impossible type for `start_status`")
 
 
 async def run_persistent(
