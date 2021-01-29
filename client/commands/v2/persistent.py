@@ -45,6 +45,7 @@ class LSPEvent(enum.Enum):
     INITIALIZED = "initialized"
     CONNECTED = "connected"
     NOT_CONNECTED = "not connected"
+    SUSPENDED = "suspended"
 
 
 def _log_lsp_event(
@@ -681,18 +682,34 @@ class PyreServerHandler(connection.BackgroundTask):
                     await self.subscribe_to_type_error(input_channel, output_channel)
             elif isinstance(start_status, StartFailure):
                 self.server_state.consecutive_start_failure += 1
-                _log_lsp_event(
-                    remote_logging=self.pyre_arguments.remote_logging,
-                    event=LSPEvent.NOT_CONNECTED,
-                    normals={
-                        **self._auxiliary_logging_info(),
-                        "exception": str(start_status.detail),
-                    },
-                )
-                await self.show_message_to_client(
-                    f"Cannot start a new Pyre server at `{self.server_identifier}`.",
-                    level=lsp.MessageType.ERROR,
-                )
+                if (
+                    self.server_state.consecutive_start_failure
+                    < CONSECUTIVE_START_ATTEMPT_THRESHOLD
+                ):
+                    _log_lsp_event(
+                        remote_logging=self.pyre_arguments.remote_logging,
+                        event=LSPEvent.NOT_CONNECTED,
+                        normals={
+                            **self._auxiliary_logging_info(),
+                            "exception": str(start_status.detail),
+                        },
+                    )
+                    await self.show_message_to_client(
+                        f"Cannot start a new Pyre server at `{self.server_identifier}`.",
+                        level=lsp.MessageType.ERROR,
+                    )
+                else:
+                    await self.show_message_to_client(
+                        f"Pyre server restart at `{self.server_identifier}` has been "
+                        "failing repeatedly. Disabling The Pyre plugin for now.",
+                        level=lsp.MessageType.ERROR,
+                    )
+                    _log_lsp_event(
+                        remote_logging=self.pyre_arguments.remote_logging,
+                        event=LSPEvent.SUSPENDED,
+                        normals=self._auxiliary_logging_info(),
+                    )
+
             else:
                 raise RuntimeError("Impossible type for `start_status`")
 
