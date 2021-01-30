@@ -307,6 +307,8 @@ def create_server_arguments(
     )
     if start_arguments.noninteractive:
         additional_logging_sections.append("-progress")
+    # Server section is usually useful when Pyre server is involved
+    additional_logging_sections.append("server")
 
     profiling_output = (
         get_profiling_log_path(Path(configuration.log_directory))

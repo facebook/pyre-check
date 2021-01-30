@@ -375,6 +375,7 @@ class StartTest(testslide.TestCase):
                 Arguments(
                     log_path=str(root_path / ".pyre/local"),
                     global_root=str(root_path),
+                    additional_logging_sections=["server"],
                     checked_directory_allowlist=[
                         str(root_path / "local/src"),
                         str(root_path / "allows"),
@@ -488,7 +489,7 @@ class StartTest(testslide.TestCase):
             )
             self.assertListEqual(
                 list(arguments.additional_logging_sections),
-                ["foo", "bar", "-baz", "-progress"],
+                ["foo", "bar", "-baz", "-progress", "server"],
             )
             self.assertEqual(
                 arguments.profiling_output, get_profiling_log_path(log_path)
