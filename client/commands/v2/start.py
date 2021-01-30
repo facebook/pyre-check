@@ -34,7 +34,7 @@ from ... import (
     find_directories,
     log,
 )
-from . import server_connection, server_event
+from . import server_connection, server_event, stop
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -483,10 +483,9 @@ def _run_in_background(
         # Since we abruptly terminate the background server, it may not have the
         # chance to clean up the socket file properly. Make sure the file is
         # removed on our side.
-        try:
-            server_connection.get_default_socket_path(log_directory).unlink()
-        except FileNotFoundError:
-            pass
+        stop.remove_socket_if_exists(
+            server_connection.get_default_socket_path(log_directory)
+        )
 
         raise commands.ClientException("Interrupted by user. No server is spawned.")
 

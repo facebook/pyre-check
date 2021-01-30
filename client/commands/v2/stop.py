@@ -23,6 +23,13 @@ def stop_server(socket_path: Path) -> None:
         input_channel.read()
 
 
+def remove_socket_if_exists(socket_path: Path) -> None:
+    try:
+        socket_path.unlink()
+    except FileNotFoundError:
+        pass
+
+
 def run(configuration: configuration_module.Configuration) -> commands.ExitCode:
     socket_path = server_connection.get_default_socket_path(
         log_directory=Path(configuration.log_directory)
@@ -35,6 +42,7 @@ def run(configuration: configuration_module.Configuration) -> commands.ExitCode:
         return commands.ExitCode.SUCCESS
     except server_connection.ConnectionFailure:
         LOG.warning("No running Pyre server to stop.")
+        remove_socket_if_exists(socket_path)
         return commands.ExitCode.SERVER_NOT_FOUND
     except Exception as error:
         raise commands.ClientException(

@@ -163,12 +163,7 @@ def _stop_server(socket_path: Path) -> None:
         LOG.info(f"Successfully stopped `{socket_path}.`")
     except server_connection.ConnectionFailure:
         LOG.info(f"Failed to connect to `{socket_path}`. Removing it...")
-        try:
-            socket_path.unlink()
-        except FileNotFoundError:
-            pass
-        except Exception as error:
-            LOG.warning(f"Cannot remove {socket_path}: {error}")
+        stop.remove_socket_if_exists(socket_path)
     except Exception as error:
         LOG.warning(
             f"Exception occurred when trying to stop server at `{socket_path}`: {error}"
