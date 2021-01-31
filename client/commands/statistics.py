@@ -5,6 +5,7 @@
 
 
 import json
+import logging
 import time
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional, Set, Type, Union
@@ -24,6 +25,8 @@ from ..statistics_collectors import (
     StrictCountCollector,
 )
 from .command import Command
+
+LOG: logging.Logger = logging.getLogger(__name__)
 
 
 def _get_paths(target_directory: Path) -> List[Path]:
@@ -71,8 +74,11 @@ def _path_wise_counts(
             if collector_class == StrictCountCollector
             else collector_class()
         )
-        module.visit(collector)
-        collected_counts[str(path)] = collector
+        try:
+            module.visit(collector)
+            collected_counts[str(path)] = collector
+        except RecursionError:
+            LOG.warning(f"LibCST encountered recursion error in `{path}`")
     return collected_counts
 
 
