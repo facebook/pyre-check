@@ -1909,8 +1909,13 @@ let create ~resolution ?path ~configuration ~rule_filter source =
     |> fun (results, errors) -> List.concat results, errors
   in
   let create_model
-      ( ( { Define.Signature.name = { Node.value = name; _ }; parameters; return_annotation; _ } as
-        define ),
+      ( ( {
+            Define.Signature.name = { Node.value = name; _ };
+            parameters;
+            return_annotation;
+            decorators;
+            _;
+          } as define ),
         location,
         call_target )
     =
@@ -1942,6 +1947,16 @@ let create ~resolution ?path ~configuration ~rule_filter source =
            annotation. This is fragile! *)
         && not (Annotation.is_immutable callable_annotation)
       then
+        let location =
+          (* To ensure that the start/stop lines can be used for commenting out models, we have the
+             not-in-environment errors also include the earliest decorator location. *)
+          let start =
+            match decorators with
+            | [] -> location.start
+            | first :: _ -> first.name.location.start
+          in
+          { location with start }
+        in
         Error
           {
             ModelVerificationError.T.kind =

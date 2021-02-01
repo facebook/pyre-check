@@ -1614,7 +1614,28 @@ let test_invalid_models context =
     ~expect:
       {|The model query arguments at `{ Expression.Call.Argument.name = (Some fnid); value = "functions" }, { Expression.Call.Argument.name = (Some where); value = name.matches("foo") }, { Expression.Call.Argument.name = (Some model);
   value = Returns(TaintSource[Test]) }` are invalid: expected a find, where and model clause.|}
-    ()
+    ();
+
+  (* We error starting on the first decorator. *)
+  assert_invalid_model
+    ~path:"a.py"
+    ~model_source:{|
+      @Sanitize
+      def a.not_in_environment(self): ...
+    |}
+    ~expect:"a.py:2: `a.not_in_environment` is not part of the environment!"
+    ();
+  assert_invalid_model
+    ~path:"a.py"
+    ~model_source:
+      {|
+      @Sanitize(TaintSink)
+      @Sanitize(TaintSource)
+      def a.not_in_environment(self): ...
+    |}
+    ~expect:"a.py:2: `a.not_in_environment` is not part of the environment!"
+    ();
+  ()
 
 
 let test_demangle_class_attributes _ =
