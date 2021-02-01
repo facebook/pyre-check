@@ -406,7 +406,11 @@ and resolve_constructor_callee ~resolution class_type =
       | _ -> None )
 
 
-let resolve_lru_cache ~resolution ~callee:{ Node.value = callee; _ } ~implementing_class =
+let resolve_callee_from_defining_expression
+    ~resolution
+    ~callee:{ Node.value = callee; _ }
+    ~implementing_class
+  =
   match implementing_class, callee with
   | Type.Top, Expression.Name name when is_all_names callee ->
       (* If implementing_class is unknown, this must be a function rather than a method. We can use
@@ -530,20 +534,19 @@ let resolve_regular_callees ~resolution ~callee =
       Parametric
         {
           name = "BoundMethod";
-          parameters =
-            [
-              Single (Parametric { name = "functools._lru_cache_wrapper"; _ });
-              Single implementing_class;
-            ];
-        } ) ->
-      resolve_lru_cache ~resolution ~callee ~implementing_class
-  | _, Parametric { name = "functools._lru_cache_wrapper"; _ } -> (
+          parameters = [Single (Parametric { name; _ }); Single implementing_class];
+        } )
+    when Set.mem Recognized.allowlisted_callable_class_decorators name ->
+      resolve_callee_from_defining_expression ~resolution ~callee ~implementing_class
+  | _, Parametric { name; _ } when Set.mem Recognized.allowlisted_callable_class_decorators name
+    -> (
       (* Because of the special class, we don't get a bound method & lose the self argument for
          non-classmethod LRU cache wrappers. Reconstruct self in this case. *)
       match Node.value callee with
       | Expression.Name (Name.Attribute { base; _ }) ->
           resolve_ignoring_optional ~resolution base
-          |> fun implementing_class -> resolve_lru_cache ~resolution ~callee ~implementing_class
+          |> fun implementing_class ->
+          resolve_callee_from_defining_expression ~resolution ~callee ~implementing_class
       | _ -> None )
   | _ -> resolve_callees_from_type ~callee_kind ~resolution ~collapse_tito callee_type
 

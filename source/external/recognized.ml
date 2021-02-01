@@ -22,3 +22,5 @@ let assert_functions =
 
 
 let lazy_import_functions = String.Set.of_list ["lazy_import.lazy_import"]
+
+let allowlisted_callable_class_decorators = String.Set.of_list ["functools._lru_cache_wrapper"]
