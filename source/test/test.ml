@@ -911,6 +911,33 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         |} );
     ]
   in
+  let sqlalchemy_1_4_stubs =
+    [
+      "sqlalchemy_1_4/__init__.pyi", {|
+      from ..sqlalchemy import *
+    |};
+      ( "sqlalchemy_1_4/ext/declarative/__init__.pyi",
+        {|
+            from .api import (
+                declarative_base as declarative_base,
+                DeclarativeMeta as DeclarativeMeta,
+            )
+          |}
+      );
+      ( "sqlalchemy_1_4/ext/declarative/api.pyi",
+        {|
+            def declarative_base(bind: Optional[Any] = ..., metadata: Optional[Any] = ...,
+                                 mapper: Optional[Any] = ..., cls: Any = ..., name: str = ...,
+                                 constructor: Any = ..., class_registry: Optional[Any] = ...,
+                                 metaclass: Any = ...): ...
+
+            class DeclarativeMeta(type):
+                def __init__(cls, classname, bases, dict_) -> None: ...
+                def __setattr__(cls, key, value): ...
+        |}
+      );
+    ]
+  in
   [
     ( "sys.py",
       {|
@@ -2535,6 +2562,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         |};
   ]
   @ sqlalchemy_stubs
+  @ sqlalchemy_1_4_stubs
 
 
 let mock_signature =

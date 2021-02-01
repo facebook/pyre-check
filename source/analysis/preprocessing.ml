@@ -2421,7 +2421,7 @@ let expand_new_types ({ Source.statements; source_path = { SourcePath.qualifier;
 let expand_sqlalchemy_declarative_base ({ Source.statements; _ } as source) =
   let expand_declarative_base_instance ({ Node.location; value } as statement) =
     let expanded_declaration =
-      let declarative_base_class_declaration class_name_reference =
+      let declarative_base_class_declaration ~base_module class_name_reference =
         let metaclass =
           {
             Call.Argument.name = Some (Node.create ~location "metaclass");
@@ -2429,18 +2429,19 @@ let expand_sqlalchemy_declarative_base ({ Source.statements; _ } as source) =
               Node.create
                 ~location
                 (Expression.Name
-                   (create_name ~location "sqlalchemy.ext.declarative.DeclarativeMeta"));
+                   (create_name
+                      ~location
+                      (Format.asprintf "%s.ext.declarative.DeclarativeMeta" base_module)));
           }
         in
-        Some
-          (Statement.Class
-             {
-               name = Node.create ~location class_name_reference;
-               bases = [metaclass];
-               decorators = [];
-               body = [Node.create ~location Statement.Pass];
-               top_level_unbound_names = [];
-             })
+        Statement.Class
+          {
+            name = Node.create ~location class_name_reference;
+            bases = [metaclass];
+            decorators = [];
+            body = [Node.create ~location Statement.Pass];
+            top_level_unbound_names = [];
+          }
       in
       match value with
       | Statement.Assign
@@ -2448,13 +2449,16 @@ let expand_sqlalchemy_declarative_base ({ Source.statements; _ } as source) =
             target = { Node.value = Name name; _ };
             value = { Node.value = Call { callee = { Node.value = Name function_name; _ }; _ }; _ };
             _;
-          }
-        when Name.location_insensitive_compare
-               function_name
-               (create_name ~location "sqlalchemy.ext.declarative.declarative_base")
-             = 0 ->
-          let class_name_reference = name_to_reference name >>| Reference.delocalize in
-          class_name_reference >>= declarative_base_class_declaration |> Option.value ~default:value
+          } -> (
+          match
+            ( name_to_reference function_name >>| Reference.show,
+              name_to_reference name >>| Reference.delocalize )
+          with
+          | Some "sqlalchemy.ext.declarative.declarative_base", Some class_name_reference ->
+              declarative_base_class_declaration ~base_module:"sqlalchemy" class_name_reference
+          | Some "sqlalchemy_1_4.ext.declarative.declarative_base", Some class_name_reference ->
+              declarative_base_class_declaration ~base_module:"sqlalchemy_1_4" class_name_reference
+          | _ -> value )
       | _ -> value
     in
     { statement with Node.value = expanded_declaration }
