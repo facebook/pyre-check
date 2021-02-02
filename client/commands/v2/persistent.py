@@ -45,6 +45,7 @@ class LSPEvent(enum.Enum):
     INITIALIZED = "initialized"
     CONNECTED = "connected"
     NOT_CONNECTED = "not connected"
+    DISCONNECTED = "disconnected"
     SUSPENDED = "suspended"
 
 
@@ -630,7 +631,7 @@ class PyreServerHandler(connection.BackgroundTask):
             ),
         }
 
-    async def run(self) -> None:
+    async def _run(self) -> None:
         socket_path = server_connection.get_default_socket_path(
             log_directory=Path(self.pyre_arguments.log_path)
         )
@@ -712,6 +713,20 @@ class PyreServerHandler(connection.BackgroundTask):
 
             else:
                 raise RuntimeError("Impossible type for `start_status`")
+
+    async def run(self) -> None:
+        try:
+            await self._run()
+        except Exception:
+            _log_lsp_event(
+                remote_logging=self.pyre_arguments.remote_logging,
+                event=LSPEvent.DISCONNECTED,
+                normals={
+                    **self._auxiliary_logging_info(),
+                    "exception": traceback.format_exc(),
+                },
+            )
+            raise
 
 
 async def run_persistent(
