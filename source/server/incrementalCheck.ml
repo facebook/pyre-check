@@ -27,11 +27,6 @@ let recheck
   Scheduler.once_per_worker scheduler ~configuration ~f:SharedMem.invalidate_caches;
   SharedMem.invalidate_caches ();
   SharedMem.collect `aggressive;
-  Log.log
-    ~section:`Server
-    "Incremental Module Update %a"
-    Sexp.pp
-    [%message (module_updates : ModuleTracker.IncrementalUpdate.t list)];
   (* Repopulate the environment. *)
   Log.info "Repopulating the environment...";
 
@@ -87,10 +82,6 @@ let recheck
         in
         let recheck_functions_list = Map.to_alist recheck_functions in
         let recheck_function_names = List.map recheck_functions_list ~f:fst in
-        Log.log
-          ~section:`Server
-          "Rechecked functions %s"
-          (List.to_string ~f:Reference.show recheck_function_names);
 
         (* Rerun type checking for triggered functions. *)
         TypeEnvironment.invalidate environment recheck_function_names;
@@ -119,10 +110,6 @@ let recheck
               | Some { FunctionDefinition.qualifier; _ } -> Set.add sofar qualifier)
           |> Set.to_list
         in
-        Log.log
-          ~section:`Server
-          "Repostprocessed modules %s"
-          (List.to_string ~f:Reference.show recheck_modules);
 
         let errors =
           Analysis.Postprocessing.run
@@ -134,11 +121,6 @@ let recheck
 
         recheck_modules, errors, Map.length recheck_functions
     | _ ->
-        Log.log
-          ~section:`Server
-          "(Old) Incremental Environment Builder Update %s"
-          (List.to_string ~f:Reference.show invalidated_modules);
-
         let total_rechecked_functions =
           let unannotated_global_environment_update_result =
             AnnotatedGlobalEnvironment.UpdateResult.unannotated_global_environment_update_result
