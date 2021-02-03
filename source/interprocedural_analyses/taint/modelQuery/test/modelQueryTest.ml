@@ -151,7 +151,8 @@ let test_apply_rule context =
       {
         name = None;
         query = [NameConstraint "foo"];
-        productions = [AllParametersTaint [TaintAnnotation (source "Test")]];
+        productions =
+          [AllParametersTaint { excludes = []; taint = [TaintAnnotation (source "Test")] }];
         rule_kind = MethodModel;
       }
     ~callable:(`Method { Interprocedural.Callable.class_name = "test.C"; method_name = "foo" })
@@ -166,6 +167,49 @@ let test_apply_rule context =
                { position = 0; name = "x"; positional_only = false }),
           source "Test" );
       ];
+  assert_applied_rules
+    ~source:{|
+      class C:
+        def foo(x: int, y: str): ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query = [NameConstraint "foo"];
+        productions =
+          [AllParametersTaint { excludes = ["x"]; taint = [TaintAnnotation (source "Test")] }];
+        rule_kind = MethodModel;
+      }
+    ~callable:(`Method { Interprocedural.Callable.class_name = "test.C"; method_name = "foo" })
+    ~expected:
+      [
+        ( Taint.Model.ParameterAnnotation
+            (AccessPath.Root.PositionalParameter
+               { position = 1; name = "y"; positional_only = false }),
+          source "Test" );
+      ];
+  assert_applied_rules
+    ~source:{|
+      class C:
+        def foo(x: int, y: str): ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query = [NameConstraint "foo"];
+        productions =
+          [AllParametersTaint { excludes = ["y"]; taint = [TaintAnnotation (source "Test")] }];
+        rule_kind = MethodModel;
+      }
+    ~callable:(`Method { Interprocedural.Callable.class_name = "test.C"; method_name = "foo" })
+    ~expected:
+      [
+        ( Taint.Model.ParameterAnnotation
+            (AccessPath.Root.PositionalParameter
+               { position = 0; name = "x"; positional_only = false }),
+          source "Test" );
+      ];
+
   (* Annotated returns. *)
   assert_applied_rules
     ~source:
@@ -373,9 +417,14 @@ let test_apply_rule context =
         productions =
           [
             AllParametersTaint
-              [
-                ParametricSourceFromAnnotation { source_pattern = "DynamicSource"; kind = "Dynamic" };
-              ];
+              {
+                excludes = [];
+                taint =
+                  [
+                    ParametricSourceFromAnnotation
+                      { source_pattern = "DynamicSource"; kind = "Dynamic" };
+                  ];
+              };
           ];
         rule_kind = FunctionModel;
       }

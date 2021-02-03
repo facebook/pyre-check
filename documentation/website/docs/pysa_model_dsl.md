@@ -183,3 +183,23 @@ ModelQuery(
   ]
 )
 ```
+
+You can choose to exclude a single parameter or a list of parameters in order to avoid overtainting.
+
+```python
+ModelQuery(
+  find = "functions",
+  where = ...,
+  model = [
+    AllParameters(TaintSource[Test], exclude="self")
+  ]
+)
+
+ModelQuery(
+  find = "functions",
+  where = ...,
+  model = [
+    AllParameters(TaintSource[Test], exclude=["self", "other"])
+  ]
+)
+```

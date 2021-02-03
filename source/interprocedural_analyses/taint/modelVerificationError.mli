@@ -31,6 +31,7 @@ module T : sig
         actual_name: Reference.t;
       }
     | InvalidModelQueryClauses of Expression.Call.Argument.t list
+    | InvalidParameterExclude of Expression.t
     | MissingAttribute of {
         class_name: string;
         attribute_name: string;

@@ -2063,16 +2063,96 @@ let test_query_parsing context =
           productions =
             [
               AllParametersTaint
-                [
-                  TaintAnnotation
-                    (Model.Source
-                       {
-                         source = Sources.NamedSource "Test";
-                         breadcrumbs = [];
-                         path = [];
-                         leaf_name_provided = false;
-                       });
-                ];
+                {
+                  excludes = [];
+                  taint =
+                    [
+                      TaintAnnotation
+                        (Model.Source
+                           {
+                             source = Sources.NamedSource "Test";
+                             breadcrumbs = [];
+                             path = [];
+                             leaf_name_provided = false;
+                           });
+                    ];
+                };
+            ];
+        };
+      ]
+    ();
+  assert_queries
+    ~context
+    ~model_source:
+      {|
+    ModelQuery(
+     name = "foo_finders",
+     find = "functions",
+     where = name.matches("foo"),
+     model = [AllParameters(TaintSource[Test], exclude="self")]
+    )
+  |}
+    ~expect:
+      [
+        {
+          name = Some "foo_finders";
+          query = [NameConstraint "foo"];
+          rule_kind = FunctionModel;
+          productions =
+            [
+              AllParametersTaint
+                {
+                  excludes = ["self"];
+                  taint =
+                    [
+                      TaintAnnotation
+                        (Model.Source
+                           {
+                             source = Sources.NamedSource "Test";
+                             breadcrumbs = [];
+                             path = [];
+                             leaf_name_provided = false;
+                           });
+                    ];
+                };
+            ];
+        };
+      ]
+    ();
+  assert_queries
+    ~context
+    ~model_source:
+      {|
+    ModelQuery(
+     name = "foo_finders",
+     find = "functions",
+     where = name.matches("foo"),
+     model = [AllParameters(TaintSource[Test], exclude=["self", "other"])]
+    )
+  |}
+    ~expect:
+      [
+        {
+          name = Some "foo_finders";
+          query = [NameConstraint "foo"];
+          rule_kind = FunctionModel;
+          productions =
+            [
+              AllParametersTaint
+                {
+                  excludes = ["self"; "other"];
+                  taint =
+                    [
+                      TaintAnnotation
+                        (Model.Source
+                           {
+                             source = Sources.NamedSource "Test";
+                             breadcrumbs = [];
+                             path = [];
+                             leaf_name_provided = false;
+                           });
+                    ];
+                };
             ];
         };
       ]
@@ -2101,10 +2181,14 @@ let test_query_parsing context =
           productions =
             [
               AllParametersTaint
-                [
-                  ParametricSourceFromAnnotation
-                    { source_pattern = "DynamicSource"; kind = "Dynamic" };
-                ];
+                {
+                  excludes = [];
+                  taint =
+                    [
+                      ParametricSourceFromAnnotation
+                        { source_pattern = "DynamicSource"; kind = "Dynamic" };
+                    ];
+                };
             ];
         };
       ]
@@ -2133,7 +2217,13 @@ let test_query_parsing context =
           productions =
             [
               AllParametersTaint
-                [ParametricSinkFromAnnotation { sink_pattern = "DynamicSink"; kind = "Dynamic" }];
+                {
+                  excludes = [];
+                  taint =
+                    [
+                      ParametricSinkFromAnnotation { sink_pattern = "DynamicSink"; kind = "Dynamic" };
+                    ];
+                };
             ];
         };
       ]

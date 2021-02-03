@@ -244,12 +244,19 @@ let apply_productions ~resolution ~productions ~callable =
                     production_to_taint ~annotation ~production
                     >>| fun taint -> ParameterAnnotation parameter, taint)
             | None -> [] )
-        | ModelQuery.AllParametersTaint taint ->
+        | ModelQuery.AllParametersTaint { excludes; taint } ->
             let apply_parameter_production
-                ((root, _, { Node.value = { Expression.Parameter.annotation; _ }; _ }), production)
+                ( (root, parameter_name, { Node.value = { Expression.Parameter.annotation; _ }; _ }),
+                  production )
               =
-              production_to_taint ~annotation ~production
-              >>| fun taint -> ParameterAnnotation root, taint
+              if
+                (not (List.is_empty excludes))
+                && List.mem excludes ~equal:String.equal (Identifier.sanitized parameter_name)
+              then
+                None
+              else
+                production_to_taint ~annotation ~production
+                >>| fun taint -> ParameterAnnotation root, taint
             in
             List.cartesian_product normalized_parameters taint
             |> List.filter_map ~f:apply_parameter_production

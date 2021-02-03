@@ -87,7 +87,10 @@ module T : sig
     [@@deriving show, compare]
 
     type production =
-      | AllParametersTaint of produced_taint list
+      | AllParametersTaint of {
+          excludes: string list;
+          taint: produced_taint list;
+        }
       | ParameterTaint of {
           name: string;
           taint: produced_taint list;

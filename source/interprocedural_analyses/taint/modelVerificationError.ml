@@ -33,6 +33,7 @@ module T = struct
         actual_name: Reference.t;
       }
     | InvalidModelQueryClauses of Expression.Call.Argument.t list
+    | InvalidParameterExclude of Expression.t
     | MissingAttribute of {
         class_name: string;
         attribute_name: string;
@@ -94,6 +95,10 @@ let description error =
       Format.asprintf
         "The model query arguments at `%s` are invalid: expected a find, where and model clause."
         (List.map clause_list ~f:Expression.Call.Argument.show |> String.concat ~sep:", ")
+  | InvalidParameterExclude expression ->
+      Format.asprintf
+        "The AllParameters exclude must be either a string or a list of strings, got: `%s`."
+        (Expression.show expression)
   | UnexpectedDecorators { name; unexpected_decorators } ->
       let decorators =
         List.map unexpected_decorators ~f:Statement.Decorator.to_expression
@@ -128,6 +133,7 @@ let code { kind; _ } =
   | MissingAttribute _ -> 5
   | NotInEnvironment _ -> 6
   | UnexpectedDecorators _ -> 7
+  | InvalidParameterExclude _ -> 8
 
 
 let display { kind = error; path; location } =

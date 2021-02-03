@@ -96,7 +96,10 @@ module T = struct
     [@@deriving show, compare]
 
     type production =
-      | AllParametersTaint of produced_taint list
+      | AllParametersTaint of {
+          excludes: string list;
+          taint: produced_taint list;
+        }
       | ParameterTaint of {
           name: string;
           taint: produced_taint list;
@@ -1175,7 +1178,37 @@ let parse_model_clause ~path ~configuration ({ Node.value; location } as express
           Call.callee = { Node.value = Name (Name.Identifier "AllParameters"); _ };
           arguments = [{ Call.Argument.value = taint; _ }];
         } ->
-        parse_taint taint >>| fun taint -> ModelQuery.AllParametersTaint taint
+        parse_taint taint >>| fun taint -> ModelQuery.AllParametersTaint { excludes = []; taint }
+    | Expression.Call
+        {
+          Call.callee = { Node.value = Name (Name.Identifier "AllParameters"); _ };
+          arguments =
+            [
+              { Call.Argument.value = taint; _ };
+              { Call.Argument.name = Some { Node.value = "exclude"; _ }; value = excludes };
+            ];
+        } ->
+        let excludes =
+          let parse_string_to_exclude ({ Node.value; location } as exclude) =
+            match value with
+            | Expression.String { StringLiteral.value; _ } -> Core.Result.Ok value
+            | _ ->
+                Error
+                  {
+                    ModelVerificationError.T.kind =
+                      ModelVerificationError.T.InvalidParameterExclude exclude;
+                    path;
+                    location;
+                  }
+          in
+          match Node.value excludes with
+          | Expression.List exclude_strings ->
+              List.map exclude_strings ~f:parse_string_to_exclude |> Core.Result.all
+          | _ -> parse_string_to_exclude excludes >>| fun exclude -> [exclude]
+        in
+        excludes
+        >>= fun excludes ->
+        parse_taint taint >>| fun taint -> ModelQuery.AllParametersTaint { excludes; taint }
     | _ ->
         Error
           (invalid_model_error
