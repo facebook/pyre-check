@@ -13,7 +13,7 @@ from urls import UrlPattern
 # Make sure we're able to import dependencies in 'pyre-check' repo, since they
 # are not currently in the PyPI package for pyre-check
 current_file = Path(__file__).absolute()
-sys.path.append(str(current_file.parents[3]))
+sys.path.append(str(current_file.parents[4]))
 
 # Work around '-' in the name of 'pyre-check'
 generate_taint_models = importlib.import_module(
