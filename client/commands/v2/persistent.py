@@ -32,13 +32,14 @@ from . import (
     server_connection,
     async_server_connection as connection,
     start,
+    stop,
     incremental,
     server_event,
 )
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
-CONSECUTIVE_START_ATTEMPT_THRESHOLD: int = 5
+CONSECUTIVE_START_ATTEMPT_THRESHOLD: int = 6
 
 
 class LSPEvent(enum.Enum):
@@ -699,6 +700,18 @@ class PyreServerHandler(connection.BackgroundTask):
                         f"Cannot start a new Pyre server at `{self.server_identifier}`.",
                         level=lsp.MessageType.ERROR,
                     )
+
+                    if (
+                        self.server_state.consecutive_start_failure
+                        == CONSECUTIVE_START_ATTEMPT_THRESHOLD - 1
+                    ):
+                        # The heuristic here is that if the restart has failed
+                        # this many times, it is highly likely that the restart was
+                        # blocked by a defunct socket file instead of a concurrent
+                        # server start, in which case removing the file could unblock
+                        # the server.
+                        LOG.warning(f"Removing defunct socket file {socket_path}...")
+                        stop.remove_socket_if_exists(socket_path)
                 else:
                     await self.show_message_to_client(
                         f"Pyre server restart at `{self.server_identifier}` has been "
