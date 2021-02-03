@@ -69,7 +69,7 @@ val store : t -> unit
    loading an `AstEnvironment` must be done after loading a `ModuleTracker` *)
 val load : ModuleTracker.t -> t
 
-val create : ModuleTracker.t -> t
+val create : ?additional_preprocessing:(Source.t -> Source.t) -> ModuleTracker.t -> t
 
 module UpdateResult : sig
   type t
@@ -93,3 +93,5 @@ val update
   UpdateResult.t
 
 val read_only : t -> ReadOnly.t
+
+val with_additional_preprocessing : additional_preprocessing:(Source.t -> Source.t) option -> t -> t

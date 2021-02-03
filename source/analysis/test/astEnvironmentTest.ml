@@ -1000,6 +1000,52 @@ let test_parser_update context =
   ()
 
 
+let test_ast_transformer context =
+  let assert_transformed repository ~additional_preprocessing ~expected =
+    let actual =
+      ScratchProject.setup ~context ~include_typeshed_stubs:false repository
+      |> ScratchProject.parse_sources
+      |> fun (ast_environment, ast_environment_update_result) ->
+      let sources =
+        let transformed_ast_environment =
+          AstEnvironment.with_additional_preprocessing ~additional_preprocessing ast_environment
+        in
+        let ast_environment = Analysis.AstEnvironment.read_only transformed_ast_environment in
+        AstEnvironment.UpdateResult.invalidated_modules ast_environment_update_result
+        |> List.filter_map ~f:(AstEnvironment.ReadOnly.get_processed_source ast_environment)
+      in
+      List.map sources ~f:(fun ({ Source.source_path = { SourcePath.relative; _ }; _ } as source) ->
+          relative, source)
+      |> List.sort ~compare:(fun (left_handle, _) (right_handle, _) ->
+             String.compare left_handle right_handle)
+    in
+    let equal
+        (expected_handle, { Ast.Source.statements = expected_source; _ })
+        (handle, { Ast.Source.statements; _ })
+      =
+      let equal left right = Statement.location_insensitive_compare left right = 0 in
+      String.equal expected_handle handle && List.equal equal expected_source statements
+    in
+    let printer (handle, source) = Format.sprintf "%s: %s" handle (Ast.Source.show source) in
+    let expected =
+      List.map expected ~f:(fun (handle, parsed_source) -> handle, Test.parse parsed_source)
+    in
+    assert_equal ~cmp:(List.equal equal) ~printer:(List.to_string ~f:printer) expected actual
+  in
+  assert_transformed
+    ["a.py", "def foo() -> int: ..."]
+    ~additional_preprocessing:None
+    ~expected:["a.py", "def a.foo() -> int: ..."];
+  let remove_first_statement ({ Source.statements; _ } as source) =
+    { source with statements = List.tl_exn statements }
+  in
+  assert_transformed
+    ["a.py", "def a.foo() -> int: ...\na.bar: int = 1\n"]
+    ~additional_preprocessing:(Some remove_first_statement)
+    ~expected:["a.py", "a.bar: int = 1\n"];
+  ()
+
+
 let () =
   "ast_environment"
   >::: [
@@ -1010,5 +1056,6 @@ let () =
          "ast_change" >:: test_ast_change;
          "parse_repository" >:: test_parse_repository;
          "parser_update" >:: test_parser_update;
+         "ast_transformer" >:: test_ast_transformer;
        ]
   |> Test.run

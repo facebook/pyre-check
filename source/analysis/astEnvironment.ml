@@ -10,7 +10,10 @@ open Core
 open Pyre
 open PyreParser
 
-type t = { module_tracker: ModuleTracker.t }
+type t = {
+  module_tracker: ModuleTracker.t;
+  additional_preprocessing: (Source.t -> Source.t) option;
+}
 
 module ParserError = struct
   type t = {
@@ -39,7 +42,7 @@ module RawSources =
     (SharedMemoryKeys.DependencyKey)
     (RawSourceValue)
 
-let create module_tracker = { module_tracker }
+let create ?additional_preprocessing module_tracker = { module_tracker; additional_preprocessing }
 
 let wildcard_exports_of ({ Source.source_path = { SourcePath.is_stub; _ }; _ } as source) =
   let open Expression in
@@ -242,21 +245,29 @@ let expand_wildcard_imports ?dependency ~ast_environment source =
   Transform.transform () source |> Transform.source
 
 
-let get_and_preprocess_source ?dependency ast_environment qualifier =
+let get_and_preprocess_source
+    ?dependency
+    ({ additional_preprocessing; _ } as ast_environment)
+    qualifier
+  =
+  let preprocessing =
+    match additional_preprocessing with
+    | Some additional_preprocessing ->
+        fun source -> Preprocessing.preprocess_phase1 source |> additional_preprocessing
+    | None -> Preprocessing.preprocess_phase1
+  in
   (* Preprocessing a module depends on the module itself is implicitly assumed in `update`. No need
      to explicitly record the dependency. *)
   Raw.get_source ast_environment qualifier ?dependency:None
   >>| function
-  | Result.Ok source ->
-      expand_wildcard_imports ?dependency ~ast_environment source |> Preprocessing.preprocess_phase1
+  | Result.Ok source -> expand_wildcard_imports ?dependency ~ast_environment source |> preprocessing
   | Result.Error
       { ParserError.source_path = { SourcePath.qualifier; relative; _ } as source_path; _ } ->
       (* Files that have parser errors fall back into getattr-any. *)
       let fallback_source = ["import typing"; "def __getattr__(name: str) -> typing.Any: ..."] in
       let metadata = Source.Metadata.parse ~qualifier fallback_source in
       let statements = Parser.parse ~relative fallback_source in
-      Source.create_from_source_path ~metadata ~source_path statements
-      |> Preprocessing.preprocess_phase1
+      Source.create_from_source_path ~metadata ~source_path statements |> preprocessing
 
 
 let parse_sources ~configuration ~scheduler ~ast_environment source_paths =
@@ -288,7 +299,7 @@ type trigger =
 let update
     ~configuration:({ Configuration.Analysis.incremental_style; _ } as configuration)
     ~scheduler
-    ({ module_tracker } as ast_environment)
+    ({ module_tracker; _ } as ast_environment)
   = function
   | Update module_updates -> (
       let reparse_source_paths, removed_modules, updated_submodules =
@@ -368,14 +379,14 @@ let update
       }
 
 
-let get_source_path { module_tracker } = ModuleTracker.lookup_source_path module_tracker
+let get_source_path { module_tracker; _ } = ModuleTracker.lookup_source_path module_tracker
 
 (* Both `load` and `store` are no-ops here since `Sources` and `WildcardExports` are in shared
    memory, and `Memory.load_shared_memory`/`Memory.save_shared_memory` will take care of the
    (de-)serialization for us. *)
 let store _ = ()
 
-let load = create
+let load = create ?additional_preprocessing:None
 
 module ReadOnly = struct
   type t = {
@@ -441,7 +452,7 @@ module ReadOnly = struct
   let all_explicit_modules { all_explicit_modules; _ } = all_explicit_modules ()
 end
 
-let read_only ({ module_tracker } as environment) =
+let read_only ({ module_tracker; _ } as environment) =
   let get_processed_source ~track_dependency qualifier =
     let dependency =
       if track_dependency then
@@ -464,4 +475,7 @@ let read_only ({ module_tracker } as environment) =
   }
 
 
-let module_tracker { module_tracker } = module_tracker
+let module_tracker { module_tracker; _ } = module_tracker
+
+let with_additional_preprocessing ~additional_preprocessing environment =
+  { environment with additional_preprocessing }
