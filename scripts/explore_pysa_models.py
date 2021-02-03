@@ -21,6 +21,7 @@ class FilePosition(NamedTuple):
 __handle: Optional[io.BufferedReader] = None
 __model_index: Dict[str, FilePosition] = {}
 __issue_index: Dict[str, List[FilePosition]] = collections.defaultdict(list)
+__warned_missing_jq: bool = False
 
 
 def _iter_with_offset(lines: Iterable[bytes]) -> Iterable[Tuple[bytes, int]]:
@@ -109,8 +110,14 @@ def _print_json(data: object) -> None:
     try:
         subprocess.run(["jq", "-C"], input=json.dumps(data).encode(), check=True)
     except FileNotFoundError:
-        print("Command `jq` not found.")
-        print("Please install `jq`, see https://stedolan.github.io/jq/")
+        print(json.dumps(data, indent="  "))
+
+        global __warned_missing_jq
+        if not __warned_missing_jq:
+            print(
+                "[HINT] Install `jq` to use syntax highlighting, https://stedolan.github.io/jq/"
+            )
+            __warned_missing_jq = True
 
 
 def print_model(callable: str) -> None:
