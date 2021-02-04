@@ -4,6 +4,8 @@ title: Errors
 sidebar_label: Errors
 ---
 
+import Internal from './fb/errors.md';
+
 ## Common Issues
 ### Covariance and Contravariance
 [Variance](https://en.wikipedia.org/wiki/Covariance_and_contravariance_(computer_science)) is tricky and a common source of confusion for people new to Python's type system.
@@ -108,6 +110,17 @@ def process_data(data: Data) -> None:
   if field:
     process_field(field)
 ```
+
+### Third-Party Libraries
+Not all third-party libraries come with Python code that Pyre can analyze (e.g. `cython` modules), and some libraries contain source code without annotations. This will often show up in the form of undefined attribute errors:
+
+```
+Undefined attribute [16]: Module <library> has no attribute <some attribute>.
+```
+
+Since it is not always possible to annotate code, PEP 484 specifies a format for [stub files](https://www.python.org/dev/peps/pep-0484/#stub-files) with a `.pyi` extension. Pyre will look for stub files in [typeshed](https://github.com/python/typeshed), or next to your source code. You can also provide additional paths to Pyre to look for stubs (see [Configuration](configuration.md)).
+
+<Internal />
 
 
 ## Error Codes
