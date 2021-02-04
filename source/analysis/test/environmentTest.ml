@@ -764,7 +764,7 @@ let test_populate context =
       |}]
       |> ignore
     with
-  | ClassHierarchy.Cyclic -> assert_unreached () );
+  | ClassHierarchy.Cyclic _ -> assert_unreached () );
 
   (* Check meta variables are registered. *)
   let assert_global =

@@ -11,7 +11,7 @@ open Core
 open Ast
 open Pyre
 
-exception Cyclic
+exception Cyclic of String.Hash_set.t
 
 exception Incomplete
 
@@ -145,18 +145,23 @@ let method_resolution_order_linearize ~get_successors class_name =
         let linearized_successors = List.filter_map ~f:(strip_head head) linearized_successors in
         head :: merge linearized_successors
   in
-  let rec linearize class_name =
+  let rec linearize ~visited class_name =
+    if Hash_set.mem visited class_name then (
+      Log.error "Order is cyclic:\nTrace: {%s}" (Hash_set.to_list visited |> String.concat ~sep:", ");
+      raise (Cyclic visited) );
+    let visited = Hash_set.copy visited in
+    Hash_set.add visited class_name;
     let linearized_successors =
       let create_annotation { Target.target = index; _ } = IndexTracker.annotation index in
       index_of class_name
       |> get_successors
       |> Option.value ~default:[]
       |> List.map ~f:create_annotation
-      |> List.map ~f:linearize
+      |> List.map ~f:(linearize ~visited)
     in
     class_name :: merge linearized_successors
   in
-  linearize class_name
+  linearize ~visited:(String.Hash_set.create ()) class_name
 
 
 let successors (module Handler : Handler) annotation =
@@ -433,12 +438,9 @@ let check_integrity (module Handler : Handler) ~(indices : IndexTracker.t list) 
     if not (Set.mem !started_from start) then
       let rec visit reverse_visited index =
         if List.mem ~equal:IndexTracker.equal reverse_visited index then (
-          let trace =
-            List.rev_map ~f:IndexTracker.annotation (index :: reverse_visited)
-            |> String.concat ~sep:" -> "
-          in
-          Log.error "Order is cyclic:\nTrace: %s" (* (Handler.show ()) *) trace;
-          raise Cyclic )
+          let trace = List.rev_map ~f:IndexTracker.annotation (index :: reverse_visited) in
+          Log.error "Order is cyclic:\nTrace: %s" (String.concat ~sep:" -> " trace);
+          raise (Cyclic (String.Hash_set.of_list trace)) )
         else if not (Set.mem !started_from index) then (
           started_from := Set.add !started_from index;
           match Handler.edges index with

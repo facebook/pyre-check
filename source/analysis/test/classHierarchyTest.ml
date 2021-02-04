@@ -200,6 +200,17 @@ let test_least_upper_bound _ =
 
 
 let test_check_integrity _ =
+  let assert_raises_cyclic nodes expression =
+    (* `assert_raises` doesn't work because it uses the polymorphic equality.
+     * We implement our own equality check here. *)
+    try
+      let _ = expression () in
+      assert_failure "expression did not raise an exception"
+    with
+    | Cyclic visited -> assert_equal ~cmp:Hash_set.equal visited (String.Hash_set.of_list nodes)
+    | _ -> assert_failure "expression raised an unexpected exception"
+  in
+
   check_integrity order ~indices:order_indices;
   check_integrity butterfly ~indices:butterfly_indices;
 
@@ -213,7 +224,10 @@ let test_check_integrity _ =
     connect order ~predecessor:"1" ~successor:"0";
     handler order, Hash_set.to_list order.all_indices
   in
-  assert_raises Cyclic (fun _ -> check_integrity order ~indices);
+  assert_raises_cyclic ["0"; "1"] (fun _ -> check_integrity order ~indices);
+  assert_raises_cyclic ["0"; "1"] (fun _ ->
+      let (module Handler : Handler) = order in
+      method_resolution_order_linearize "1" ~get_successors:Handler.edges);
 
   (* 0 -> 1
    * ^    |
@@ -232,7 +246,10 @@ let test_check_integrity _ =
     connect order ~predecessor:"2" ~successor:"3";
     handler order, Hash_set.to_list order.all_indices
   in
-  assert_raises Cyclic (fun _ -> check_integrity order ~indices)
+  assert_raises_cyclic ["0"; "1"; "2"] (fun _ -> check_integrity order ~indices);
+  assert_raises_cyclic ["0"; "1"; "2"] (fun _ ->
+      let (module Handler : Handler) = order in
+      method_resolution_order_linearize "2" ~get_successors:Handler.edges)
 
 
 let test_to_dot _ =

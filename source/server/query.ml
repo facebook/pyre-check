@@ -716,6 +716,11 @@ let rec process_request ~environment ~configuration request =
         Format.asprintf "Type `%a` has the wrong number of parameters." Type.pp untracked
       in
       Error untracked_response
+  | ClassHierarchy.Cyclic trace ->
+      Error
+        (Format.asprintf
+           "Cyclic class hierarchy: {%s}"
+           (Hash_set.to_list trace |> String.concat ~sep:", "))
 
 
 let parse_and_process_request ~environment ~configuration request =
