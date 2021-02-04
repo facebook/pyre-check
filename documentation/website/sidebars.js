@@ -65,6 +65,7 @@ module.exports = {
     'static-analysis-post-processor',
     'pysa-additional-resources',
     ...fbInternalOnly(['fb/pysa-cross-repo-taint-exchange']),
+    'pysa-explore',
   ],
   ...fbInternalOnly(() => require('./fb/sidebars.js')),
 };

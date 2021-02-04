@@ -88,6 +88,10 @@
       "pysa-cross-repo-taint-exchange": {
         "title": "Cross-Repository Taint Exchange User Guide",
         "sidebar_label": "Cross-Repository Taint Exchange User Guide"
+      },
+     "pysa-explore": {
+        "title": "Exploring Taint Models Interactively",
+        "sidebar_label": "Exploring Taint Models Interactively"
       }
     },
     "links": {
