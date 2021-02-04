@@ -13,6 +13,10 @@ module ServerErrors : sig
   val load : unit -> Analysis.TypeEnvironment.Error.t list Ast.Reference.Table.t
 end
 
+module StoredConfiguration : sig
+  val load : unit -> Configuration.Analysis.t
+end
+
 (* Exposed for testing. *)
 val restore_symbolic_links
   :  changed_paths:Path.t list ->

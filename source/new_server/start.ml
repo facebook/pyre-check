@@ -269,34 +269,92 @@ let initialize_server_state
         in
         Lwt.return (Result.Error message))
   in
+  (* Note that this function contains some heuristics: it only attempts to perform cheap checks on
+     what might affect type checking result. Do *NOT* use it as a general-purpose configuration
+     comparator. *)
+  let configuration_equal
+      {
+        Configuration.Analysis.analyze_external_sources = left_analyze_external_sources;
+        filter_directories = left_filter_directories;
+        ignore_all_errors = left_ignore_all_errors;
+        source_path = left_source_path;
+        search_path = left_search_path;
+        taint_model_paths = left_taint_model_paths;
+        strict = left_strict;
+        excludes = left_excludes;
+        extensions = left_extensions;
+        _;
+      }
+      {
+        Configuration.Analysis.analyze_external_sources = right_analyze_external_sources;
+        filter_directories = right_filter_directories;
+        ignore_all_errors = right_ignore_all_errors;
+        source_path = right_source_path;
+        search_path = right_search_path;
+        taint_model_paths = right_taint_model_paths;
+        strict = right_strict;
+        excludes = right_excludes;
+        extensions = right_extensions;
+        _;
+      }
+    =
+    let list_length_equal left right = Int.equal (List.length left) (List.length right) in
+    let optional_list_length_equal left right =
+      match left, right with
+      | None, None -> true
+      | Some left, Some right when list_length_equal left right -> true
+      | _, _ -> false
+    in
+    Bool.equal left_analyze_external_sources right_analyze_external_sources
+    && optional_list_length_equal left_filter_directories right_filter_directories
+    && optional_list_length_equal left_ignore_all_errors right_ignore_all_errors
+    && list_length_equal left_source_path right_source_path
+    && list_length_equal left_search_path right_search_path
+    && list_length_equal left_taint_model_paths right_taint_model_paths
+    && Bool.equal left_strict right_strict
+    && list_length_equal left_excludes right_excludes
+    && list_length_equal left_extensions right_extensions
+  in
   let load_from_saved_state = function
     | Result.Error message ->
         Log.warning "%s" message;
         Lwt.return (start_from_scratch ())
-    | Result.Ok { SavedState.Fetched.path; changed_files } ->
+    | Result.Ok { SavedState.Fetched.path; changed_files } -> (
         Log.info "Restoring environments from saved state...";
-        let loaded_state =
-          Memory.load_shared_memory ~path:(Path.absolute path) ~configuration;
-          let module_tracker = Analysis.ModuleTracker.SharedMemory.load () in
-          let ast_environment = Analysis.AstEnvironment.load module_tracker in
-          let type_environment =
-            Analysis.AnnotatedGlobalEnvironment.create ast_environment
-            |> Analysis.TypeEnvironment.create
-          in
-          Analysis.SharedMemoryKeys.DependencyKey.Registry.load ();
-          let error_table = Server.SavedState.ServerErrors.load () in
-          ServerState.create
-            ~socket_path:(socket_path_of log_path)
-            ~server_configuration
-            ~type_environment
-            ~error_table
-            ()
-        in
-        let open Lwt.Infix in
-        Log.info "Processing recent updates not included in saved state...";
-        Request.IncrementalUpdate (List.map changed_files ~f:Path.absolute)
-        |> RequestHandler.process_request ~state:loaded_state
-        >>= fun (new_state, _) -> Lwt.return new_state
+        Memory.load_shared_memory ~path:(Path.absolute path) ~configuration;
+        match configuration_equal configuration (Server.SavedState.StoredConfiguration.load ()) with
+        | false ->
+            (* Although this is a rare occurrence, it *is* possible for the provided
+               `Configuration.Analysis.t` to be different from what's stored in the saved state even
+               if the configuration file remained the same. If that happens, we cannot reuse the
+               saved state as it may lead to a server crash later. *)
+            Log.warning
+              "Cannot load saved state due to unexpected configuration change. Falling back to \
+               cold start...";
+            Memory.reset_shared_memory ();
+            Lwt.return (start_from_scratch ())
+        | true ->
+            let loaded_state =
+              let module_tracker = Analysis.ModuleTracker.SharedMemory.load () in
+              let ast_environment = Analysis.AstEnvironment.load module_tracker in
+              let type_environment =
+                Analysis.AnnotatedGlobalEnvironment.create ast_environment
+                |> Analysis.TypeEnvironment.create
+              in
+              Analysis.SharedMemoryKeys.DependencyKey.Registry.load ();
+              let error_table = Server.SavedState.ServerErrors.load () in
+              ServerState.create
+                ~socket_path:(socket_path_of log_path)
+                ~server_configuration
+                ~type_environment
+                ~error_table
+                ()
+            in
+            let open Lwt.Infix in
+            Log.info "Processing recent updates not included in saved state...";
+            Request.IncrementalUpdate (List.map changed_files ~f:Path.absolute)
+            |> RequestHandler.process_request ~state:loaded_state
+            >>= fun (new_state, _) -> Lwt.return new_state )
   in
   let open Lwt.Infix in
   let get_initial_state () =
