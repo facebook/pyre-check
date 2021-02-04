@@ -66,8 +66,12 @@ def _get_file_content(path: Path) -> Optional[str]:
         return None
 
 
-def _mercurial_section(mercurial: str, name: str) -> Optional[Section]:
-    output = _get_subprocess_stdout([mercurial, name])
+def _mercurial_section(
+    mercurial: str, name: str, additional_flags: Optional[Sequence[str]] = None
+) -> Optional[Section]:
+    output = _get_subprocess_stdout(
+        [mercurial, name] + ([] if additional_flags is None else list(additional_flags))
+    )
     return (
         None
         if output is None
@@ -114,7 +118,9 @@ def _print_mercurial_sections(output: TextIO) -> None:
             _mercurial_section(mercurial, "id"),
             _mercurial_section(mercurial, "status"),
             _mercurial_section(mercurial, "diff"),
-            _mercurial_section(mercurial, "reflog"),
+            _mercurial_section(
+                mercurial, "reflog", additional_flags=["--limit", "100"]
+            ),
         ]:
             if section is not None:
                 _print_section(section, output)
