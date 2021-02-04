@@ -183,8 +183,8 @@ to iterate more quickly with Pysa are:
       `interprocedural_analyses/taint/test/integration` and can be invoked by
       running `make test` in the root of the repo.
 1. **Skip analysis entirely if you only need to validate taint models**. `pyre
-   query "validate_taint_models()"` can be used to validate taint models without
-   having to run the entire analysis
+   validate-models` can be used to validate taint models without having to run
+   the entire analysis.
 1. **Filter runs with `--rule ####`.** This option will cause Pysa to ignore
    sources and sinks that are not involved in the given rule, saving on analysis
    time. Eg. `pyre analyze --rule 5000`
