@@ -693,7 +693,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
           ~constraints
           ~left:(Type.parametric "tuple" [Single parameter])
           ~right
-    | Type.Tuple (Type.Bounded (Concrete (_ :: _ as members))), Type.Primitive _ ->
+    | Type.Tuple (Type.Bounded (Concrete members)), Type.Primitive _ ->
         solve_less_or_equal
           order
           ~constraints

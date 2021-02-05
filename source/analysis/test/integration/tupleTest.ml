@@ -577,11 +577,27 @@ let test_custom_tuple context =
     ]
 
 
+let test_length context =
+  let assert_type_errors = assert_type_errors ~context in
+  assert_type_errors
+    {|
+      from typing import Tuple
+
+      def foo() -> None:
+        xs: Tuple[()]
+        y = len(xs)
+        reveal_type(y)
+    |}
+    ["Revealed type [-1]: Revealed type for `y` is `int`."];
+  ()
+
+
 let () =
   "tuple"
   >::: [
          "check_tuple" >:: test_check_tuple;
          "literal_access" >:: test_tuple_literal_access;
          "custom_tuple" >:: test_custom_tuple;
+         "length" >:: test_length;
        ]
   |> Test.run
