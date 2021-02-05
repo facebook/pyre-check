@@ -281,6 +281,8 @@ class PartialConfiguration:
     logger: Optional[str] = None
     number_of_workers: Optional[int] = None
     other_critical_files: Sequence[str] = field(default_factory=list)
+    python_major_version: Optional[int] = None
+    python_minor_version: Optional[int] = None
     search_path: Sequence[SearchPathElement] = field(default_factory=list)
     source_directories: Optional[Sequence[SearchPathElement]] = None
     strict: Optional[bool] = None
@@ -338,6 +340,8 @@ class PartialConfiguration:
             logger=arguments.logger,
             number_of_workers=None,
             other_critical_files=[],
+            python_major_version=arguments.python_major_version,
+            python_minor_version=arguments.python_minor_version,
             search_path=[
                 SimpleSearchPathElement(element) for element in arguments.search_path
             ],
@@ -484,6 +488,12 @@ class PartialConfiguration:
                 other_critical_files=ensure_string_list(
                     configuration_json, "critical_files"
                 ),
+                python_major_version=ensure_option_type(
+                    configuration_json, "python_major_version", int
+                ),
+                python_minor_version=ensure_option_type(
+                    configuration_json, "python_minor_version", int
+                ),
                 search_path=search_path,
                 source_directories=source_directories,
                 strict=ensure_option_type(configuration_json, "strict", bool),
@@ -579,6 +589,8 @@ class PartialConfiguration:
             other_critical_files=[
                 expand_relative_path(root, path) for path in self.other_critical_files
             ],
+            python_major_version=self.python_major_version,
+            python_minor_version=self.python_minor_version,
             search_path=[path.expand_relative_root(root) for path in self.search_path],
             source_directories=source_directories,
             strict=self.strict,
@@ -646,6 +658,12 @@ def merge_partial_configurations(
         other_critical_files=prepend_base(
             base.other_critical_files, override.other_critical_files
         ),
+        python_major_version=overwrite_base(
+            base.python_major_version, override.python_major_version
+        ),
+        python_minor_version=overwrite_base(
+            base.python_minor_version, override.python_minor_version
+        ),
         search_path=prepend_base(base.search_path, override.search_path),
         source_directories=raise_when_overridden(
             base.source_directories,
@@ -689,6 +707,8 @@ class Configuration:
     logger: Optional[str] = None
     number_of_workers: Optional[int] = None
     other_critical_files: Sequence[str] = field(default_factory=list)
+    python_major_version: Optional[int] = None
+    python_minor_version: Optional[int] = None
     relative_local_root: Optional[str] = None
     search_path: Sequence[SearchPathElement] = field(default_factory=list)
     source_directories: Sequence[SearchPathElement] = field(default_factory=list)
@@ -735,6 +755,8 @@ class Configuration:
             logger=partial_configuration.logger,
             number_of_workers=partial_configuration.number_of_workers,
             other_critical_files=partial_configuration.other_critical_files,
+            python_major_version=partial_configuration.python_major_version,
+            python_minor_version=partial_configuration.python_minor_version,
             relative_local_root=relative_local_root,
             search_path=[
                 path.expand_global_root(str(project_root)) for path in search_path
@@ -781,6 +803,8 @@ class Configuration:
         isolation_prefix = self.isolation_prefix
         logger = self.logger
         number_of_workers = self.number_of_workers
+        python_major_version = self.python_major_version
+        python_minor_version = self.python_minor_version
         relative_local_root = self.relative_local_root
         typeshed = self.typeshed
         version_hash = self.version_hash
@@ -809,6 +833,16 @@ class Configuration:
             **({"logger": logger} if logger is not None else {}),
             **({"workers": number_of_workers} if number_of_workers is not None else {}),
             "other_critical_files": list(self.other_critical_files),
+            **(
+                {"python_major_version": python_major_version}
+                if python_major_version is not None
+                else {}
+            ),
+            **(
+                {"python_minor_version": python_minor_version}
+                if python_minor_version is not None
+                else {}
+            ),
             **(
                 {"relative_local_root": relative_local_root}
                 if relative_local_root is not None
@@ -986,6 +1020,18 @@ class Configuration:
         With this, we can pass `--isolation-prefix ''` as a CLI argument or
         override `isolation_prefix` as `""` in a local configuration."""
         return None if self.isolation_prefix == "" else self.isolation_prefix
+
+    def get_python_major_version(self) -> int:
+        python_major_version = self.python_major_version
+        if python_major_version is not None:
+            return python_major_version
+        return sys.version_info.major
+
+    def get_python_minor_version(self) -> int:
+        python_minor_version = self.python_minor_version
+        if python_minor_version is not None:
+            return python_minor_version
+        return sys.version_info.minor
 
 
 def create_configuration(

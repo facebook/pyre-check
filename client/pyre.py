@@ -418,6 +418,24 @@ def _check_configuration(configuration: configuration_module.Configuration) -> N
 @click.option("--features", type=str, hidden=True)
 @click.option("--use-command-v2", is_flag=True, default=None, hidden=True)
 @click.option("--isolation-prefix", type=str, hidden=True)
+@click.option(
+    "--python-major-version",
+    type=int,
+    help=(
+        "Specify the major version of Python in which the codebase is written."
+        " By default, the Python version used to run `pyre` itself is used."
+    ),
+    hidden=True,
+)
+@click.option(
+    "--python-minor-version",
+    type=int,
+    help=(
+        "Specify the minor version of Python in which the codebase is written."
+        " By default, the Python version used to run `pyre` itself is used."
+    ),
+    hidden=True,
+)
 def pyre(
     context: click.Context,
     local_configuration: Optional[str],
@@ -455,6 +473,8 @@ def pyre(
     features: Optional[str],
     use_command_v2: Optional[bool],
     isolation_prefix: Optional[str],
+    python_major_version: Optional[int],
+    python_minor_version: Optional[int],
 ) -> int:
     arguments = command_arguments.CommandArguments(
         local_configuration=local_configuration,
@@ -494,6 +514,8 @@ def pyre(
         features=features,
         use_command_v2=use_command_v2,
         isolation_prefix=isolation_prefix,
+        python_major_version=python_major_version,
+        python_minor_version=python_minor_version,
     )
     if arguments.version:
         _show_pyre_version(arguments)
