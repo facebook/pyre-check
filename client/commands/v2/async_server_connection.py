@@ -225,7 +225,9 @@ class StreamBytesWriter(BytesWriter):
 
 
 @async_generator.asynccontextmanager
-async def connect(socket_path: Path) -> AsyncIterator[Tuple[BytesReader, BytesWriter]]:
+async def connect(
+    socket_path: Path, buffer_size: Optional[int] = None
+) -> AsyncIterator[Tuple[BytesReader, BytesWriter]]:
     """
     Connect to the socket at given path. Once connected, create an input and
     an output stream from the socket. Both the input stream and the output
@@ -237,14 +239,19 @@ async def connect(socket_path: Path) -> AsyncIterator[Tuple[BytesReader, BytesWr
         ...
     ```
 
+    The optional `buffer_size` argument determines the size of the input buffer
+    used by the returned reader instance. If not specified, a default value of
+    64kb will be used.
+
     Socket creation, connection, and closure will be automatically handled
     inside this context manager. If any of the socket operations fail, raise
     `ConnectionFailure`.
     """
     writer: Optional[BytesWriter] = None
     try:
+        limit = buffer_size if buffer_size is not None else 2 ** 16
         stream_reader, stream_writer = await asyncio.open_unix_connection(
-            str(socket_path)
+            str(socket_path), limit=limit
         )
         reader = StreamBytesReader(stream_reader)
         writer = StreamBytesWriter(stream_writer)
@@ -258,7 +265,7 @@ async def connect(socket_path: Path) -> AsyncIterator[Tuple[BytesReader, BytesWr
 
 @async_generator.asynccontextmanager
 async def connect_in_text_mode(
-    socket_path: Path,
+    socket_path: Path, buffer_size: Optional[int] = None
 ) -> AsyncIterator[Tuple[TextReader, TextWriter]]:
     """
     This is a line-oriented higher-level API than `connect`. It can be used
@@ -268,7 +275,7 @@ async def connect_in_text_mode(
     operates in text mode. Read/write APIs of the streams uses UTF-8 encoded
     `str` instead of `bytes`.
     """
-    async with connect(socket_path) as (bytes_reader, bytes_writer):
+    async with connect(socket_path, buffer_size) as (bytes_reader, bytes_writer):
         yield (
             TextReader(bytes_reader, encoding="utf-8"),
             TextWriter(bytes_writer, encoding="utf-8"),

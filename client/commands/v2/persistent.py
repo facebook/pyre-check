@@ -637,7 +637,9 @@ class PyreServerHandler(connection.BackgroundTask):
             log_directory=Path(self.pyre_arguments.log_path)
         )
         try:
-            async with connection.connect_in_text_mode(socket_path) as (
+            async with connection.connect_in_text_mode(
+                socket_path, buffer_size=2 ** 20
+            ) as (
                 input_channel,
                 output_channel,
             ):
