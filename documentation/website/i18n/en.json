@@ -92,6 +92,10 @@
      "pysa-explore": {
         "title": "Exploring Taint Models Interactively",
         "sidebar_label": "Exploring Taint Models Interactively"
+      },
+      "pysa-sandcastle-internals": {
+        "title": "Sandcastle Internals",
+        "sidebar_label": "Sandcastle Internals"
       }
     },
     "links": {
