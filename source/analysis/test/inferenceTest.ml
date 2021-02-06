@@ -168,7 +168,7 @@ let test_backward context =
       "x", Type.integer;
     ];
 
-  (* TODO(T25072735): Extend implementation to pass starred and unstarred tests *)
+  (* TODO(T84365830): Extend implementation to pass starred and unstarred tests *)
   assert_backward [] "str_float_to_int(*(x, y))" [];
 
   (* "x", Type.string; "y", Type.float *)
@@ -238,7 +238,30 @@ let test_check_missing_parameter context =
     ~expected:
       [
         "Missing parameter annotation [2]: Parameter `x` has type `int` but type `Any` is specified.";
-      ]
+      ];
+  assert_inference_errors
+    {|
+      def foo(x) -> int:
+        return x
+    |}
+    ~expected:
+      ["Missing parameter annotation [2]: Parameter `x` has type `int` but no type is specified."];
+  assert_inference_errors
+    {|
+      def foo(x) -> None:
+        y = 1
+        x = y
+    |}
+    ~expected:
+      ["Missing parameter annotation [2]: Parameter `x` has type `int` but no type is specified."];
+  assert_inference_errors
+    {|
+      def foo(x) -> int:
+        y = x
+        return y
+    |}
+    ~expected:
+      ["Missing parameter annotation [2]: Parameter `x` has type `int` but no type is specified."]
 
 
 let test_check_missing_return context =
@@ -258,7 +281,118 @@ let test_check_missing_return context =
   assert_inference_errors {|
       def foo() -> int:
         pass
-    |} ~expected:[]
+    |} ~expected:[];
+  assert_inference_errors
+    {|
+      def foo():
+        x = 1
+        return x
+    |}
+    ~expected:["Missing return annotation [3]: Returning `int` but no return type is specified."];
+  assert_inference_errors
+    {|
+      def foo():
+        return
+    |}
+    ~expected:["Missing return annotation [3]: Returning `None` but no return type is specified."];
+  assert_inference_errors
+    {|
+      def foo(b: bool):
+        if b:
+          return "hello"
+        else:
+          return 0
+    |}
+    ~expected:
+      [
+        "Missing return annotation [3]: Returning `typing.Union[int, str]` but no return type is \
+         specified.";
+      ];
+  assert_inference_errors
+    {|
+      def foo() -> int:
+        return 1
+
+      def bar():
+        x = "string"
+        x = foo()
+        return x
+    |}
+    ~expected:["Missing return annotation [3]: Returning `int` but no return type is specified."];
+  assert_inference_errors
+    {|
+      def foo():
+        x = undefined
+    |}
+    ~expected:["Missing return annotation [3]: Returning `None` but no return type is specified."]
+
+
+let test_check_missing_global context =
+  let assert_inference_errors = assert_inference_errors ~context in
+  assert_inference_errors
+    {|
+      x = 1 + 1
+    |}
+    ~expected:
+      [
+        "Missing global annotation [5]: Globally accessible variable `x` has type `int` but no \
+         type is specified.";
+      ];
+  (* TODO(T84365830): Implement support for global inference due to local usage. *)
+  assert_inference_errors
+    {|
+      x = unknown
+      def foo() -> None:
+        global x
+        x = 1
+    |}
+    ~expected:[];
+  assert_inference_errors
+    {|
+      x = unknown
+      def foo() -> int:
+        return x
+    |}
+    ~expected:[]
+
+
+let test_check_missing_attribute context =
+  let assert_inference_errors = assert_inference_errors ~context in
+  assert_inference_errors
+    {|
+      class Foo:
+        x = 1 + 1
+    |}
+    ~expected:
+      [
+        "Missing attribute annotation [4]: Attribute `x` of class `Foo` has type `int` but no type \
+         is specified.";
+      ];
+  assert_inference_errors
+    {|
+      class Foo:
+        def __init__(self) -> None:
+          self.x = 1 + 1
+    |}
+    ~expected:
+      [
+        "Missing attribute annotation [4]: Attribute `x` of class `Foo` has type `int` but no type \
+         is specified.";
+      ];
+  assert_inference_errors
+    {|
+      class Foo:
+        def __init__(self) -> None:
+          self.x = self.foo()
+
+        def foo(self) -> int:
+          return 1
+    |}
+    ~expected:
+      [
+        "Missing attribute annotation [4]: Attribute `x` of class `Foo` has type `int` but no type \
+         is specified.";
+      ]
 
 
 let assert_infer ?(fields = ["description"]) ~context source errors =
@@ -835,6 +969,8 @@ let () =
          "backward" >:: test_backward;
          "missing_parameter" >:: test_check_missing_parameter;
          "missing_return" >:: test_check_missing_return;
+         "missing_global" >:: test_check_missing_global;
+         "missing_attribute" >:: test_check_missing_attribute;
          "infer" >:: test_infer;
          "infer_backward" >:: test_infer_backward;
        ]
