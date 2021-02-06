@@ -249,6 +249,12 @@ let test_check_missing_return context =
         pass
     |}
     ~expected:["Missing return annotation [3]: Returning `None` but no return type is specified."];
+  assert_inference_errors
+    {|
+      def foo(x: int):
+        return x
+    |}
+    ~expected:["Missing return annotation [3]: Returning `int` but no return type is specified."];
   assert_inference_errors {|
       def foo() -> int:
         pass
@@ -286,14 +292,13 @@ let assert_infer ?(fields = ["description"]) ~context source errors =
 
 let test_infer context =
   let assert_infer = assert_infer ~context in
-  (* TODO(T37338460): Unbreak inference of self parameter when it is returned. *)
   assert_infer
     {|
       class Test(object):
           def ret_self(self):
               return self
     |}
-    [];
+    ["\"Missing return annotation [3]: Returning `Test` but no return type is specified.\""];
   assert_infer
     ~fields:["inference.parent"]
     {|
@@ -620,6 +625,7 @@ let test_infer context =
         bar(x)
     |}
     [
+      {|[{"name":"x","type":"Optional[str]","value":null}]|};
       {|[{"name":"x","type":null,"value":"None"}]|};
       {|[{"name":"x","type":"Optional[str]","value":"None"}]|};
     ];

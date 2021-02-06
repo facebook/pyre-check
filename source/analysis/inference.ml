@@ -55,6 +55,8 @@ module type Signature = sig
 
   val initial : resolution:Resolution.t -> t
 
+  val initial_forward : resolution:Resolution.t -> t
+
   val initial_backward : forward:t -> t
 
   include Fixpoint.State with type t := t
@@ -222,9 +224,10 @@ module State (Context : Context) = struct
 
 
   let initial ~resolution =
+    let state = TypeCheckState.initial ~resolution in
+    let resolution = TypeCheckState.resolution state |> Option.value ~default:resolution in
     let errors =
-      TypeCheckState.initial ~resolution
-      |> TypeCheckState.all_errors
+      TypeCheckState.all_errors state
       |> List.fold ~init:ErrorMap.Map.empty ~f:(fun errors error -> ErrorMap.add ~errors error)
     in
     { resolution; errors; bottom = false }
@@ -450,6 +453,50 @@ module State (Context : Context) = struct
 
   let return_reference = Reference.create "$return"
 
+  let initial_forward ~resolution =
+    let { Node.value = { Define.signature = { parameters; parent; _ }; _ } as define; _ } =
+      Context.define
+    in
+    let ({ resolution; _ } as state) = initial ~resolution in
+    let make_parameter_name name =
+      name
+      |> String.filter ~f:(function
+             | '*' -> false
+             | _ -> true)
+      |> Reference.create
+    in
+    let annotation_store =
+      let reset_parameter
+          index
+          annotation_store
+          { Node.value = { Parameter.name; value; annotation }; _ }
+        =
+        match index, parent with
+        | 0, Some _ when Define.is_method define && not (Define.is_static_method define) ->
+            annotation_store
+        | _ -> (
+            match annotation, value with
+            | None, None ->
+                Map.set
+                  annotation_store
+                  ~key:(make_parameter_name name)
+                  ~data:(RefinementUnit.create ~base:(Annotation.create Type.Bottom) ())
+            | Some annotation, None
+              when Type.is_any
+                     (GlobalResolution.parse_annotation
+                        (Resolution.global_resolution resolution)
+                        annotation) ->
+                Map.set
+                  annotation_store
+                  ~key:(make_parameter_name name)
+                  ~data:(RefinementUnit.create ~base:(Annotation.create Type.Bottom) ())
+            | _ -> annotation_store )
+      in
+      List.foldi ~init:(Resolution.annotation_store resolution) ~f:reset_parameter parameters
+    in
+    { state with resolution = Resolution.with_annotation_store resolution ~annotation_store }
+
+
   let initial_backward ~forward:{ resolution; errors; _ } =
     let expected_return =
       let parser = GlobalResolution.annotation_parser (Resolution.global_resolution resolution) in
@@ -522,6 +569,7 @@ module State (Context : Context) = struct
       let add_missing_parameter_error ~given_annotation =
         let reference = Reference.create name in
         Resolution.get_local resolution ~reference
+        >>= (fun actual -> Option.some_if (not (Type.is_any (Annotation.annotation actual))) actual)
         >>| (fun { Annotation.annotation; _ } ->
               let error =
                 Error.create
@@ -802,7 +850,7 @@ let run
       in
       let exit =
         backward_fixpoint
-          ~initial_forward:(State.initial ~resolution)
+          ~initial_forward:(State.initial_forward ~resolution)
           ~initialize_backward:State.initial_backward
         |> Fixpoint.entry
         >>| print_state "Entry"

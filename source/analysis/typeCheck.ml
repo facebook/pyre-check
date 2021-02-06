@@ -54,6 +54,8 @@ module type Signature = sig
 
   val all_errors : t -> Error.t list
 
+  val resolution : t -> Resolution.t option
+
   val initial : resolution:Resolution.t -> t
 
   val parse_and_check_annotation
@@ -438,6 +440,8 @@ module State (Context : Context) = struct
 
 
   let all_errors { error_map; _ } = LocalErrorMap.all_errors error_map
+
+  let resolution { resolution; _ } = resolution
 
   let less_or_equal ~left ~right =
     match left.resolution, right.resolution with

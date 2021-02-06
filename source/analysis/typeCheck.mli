@@ -28,6 +28,8 @@ module type Signature = sig
 
   val all_errors : t -> Error.t list
 
+  val resolution : t -> Resolution.t option
+
   val initial : resolution:Resolution.t -> t
 
   val parse_and_check_annotation
