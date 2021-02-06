@@ -421,11 +421,10 @@ let rec parse_annotations
           (annotation_error
              (Format.sprintf "All parameters to `%s` must be of the form `Via[feature]`." name))
   in
-  let ({ Node.value; _ } as expression) = annotation in
   let invalid_annotation_error () =
     Error
       (annotation_error
-         (Format.asprintf "Unrecognized taint annotation `%s`" (Expression.show expression)))
+         (Format.asprintf "Unrecognized taint annotation `%s`" (Expression.show annotation)))
   in
   let rec parse_annotation = function
     | Expression.Call
@@ -680,7 +679,7 @@ let rec parse_annotations
         |> map ~f:List.concat
     | _ -> invalid_annotation_error ()
   in
-  parse_annotation value
+  parse_annotation (Node.value annotation)
 
 
 let introduce_sink_taint
