@@ -34,6 +34,10 @@ module T = struct
       }
     | InvalidModelQueryClauses of Expression.Call.Argument.t list
     | InvalidParameterExclude of Expression.t
+    | InvalidTaintAnnotation of {
+        taint_annotation: Expression.t;
+        reason: string;
+      }
     | MissingAttribute of {
         class_name: string;
         attribute_name: string;
@@ -99,6 +103,11 @@ let description error =
       Format.asprintf
         "The AllParameters exclude must be either a string or a list of strings, got: `%s`."
         (Expression.show expression)
+  | InvalidTaintAnnotation { taint_annotation; reason } ->
+      Format.asprintf
+        "`%s` is an invalid taint annotation: %s"
+        (Expression.show taint_annotation)
+        reason
   | UnexpectedDecorators { name; unexpected_decorators } ->
       let decorators =
         List.map unexpected_decorators ~f:Statement.Decorator.to_expression
@@ -134,6 +143,7 @@ let code { kind; _ } =
   | NotInEnvironment _ -> 6
   | UnexpectedDecorators _ -> 7
   | InvalidParameterExclude _ -> 8
+  | InvalidTaintAnnotation _ -> 9
 
 
 let display { kind = error; path; location } =

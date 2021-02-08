@@ -1095,15 +1095,20 @@ let test_invalid_models context =
   in
   assert_invalid_model
     ~model_source:"def test.sink(parameter: TaintSink[X, Unsupported]) -> TaintSource[A]: ..."
-    ~expect:"Invalid model for `test.sink`: Unsupported taint sink `Unsupported`"
+    ~expect:
+      "`TaintSink[(X, Unsupported)]` is an invalid taint annotation: Unsupported taint sink \
+       `Unsupported`"
     ();
   assert_invalid_model
     ~model_source:"def test.sink(parameter: TaintSink[UserControlled]): ..."
-    ~expect:"Invalid model for `test.sink`: Unsupported taint sink `UserControlled`"
+    ~expect:
+      "`TaintSink[UserControlled]` is an invalid taint annotation: Unsupported taint sink \
+       `UserControlled`"
     ();
   assert_invalid_model
     ~model_source:"def test.sink(parameter: SkipAnalysis): ..."
-    ~expect:"Invalid model for `test.sink`: Unrecognized taint annotation `SkipAnalysis`"
+    ~expect:
+      "`SkipAnalysis` is an invalid taint annotation: Failed to parse the given taint annotation."
     ();
   assert_invalid_model
     ~model_source:"def test.sink(parameter: TaintSink[X, Y, LocalReturn]): ..."
@@ -1111,7 +1116,8 @@ let test_invalid_models context =
     ();
   assert_invalid_model
     ~model_source:"def test.source() -> TaintSource[Invalid]: ..."
-    ~expect:"Invalid model for `test.source`: Unsupported taint source `Invalid`"
+    ~expect:
+      "`TaintSource[Invalid]` is an invalid taint annotation: Unsupported taint source `Invalid`"
     ();
   assert_invalid_model
     ~model_source:"def test.source() -> TaintInTaintOut: ..."
@@ -1124,24 +1130,25 @@ let test_invalid_models context =
   assert_invalid_model
     ~model_source:"def test.sink(parameter: InvalidTaintDirection[Test]): ..."
     ~expect:
-      "Invalid model for `test.sink`: Unrecognized taint annotation `InvalidTaintDirection[Test]`"
+      "`InvalidTaintDirection[Test]` is an invalid taint annotation: Failed to parse the given \
+       taint annotation."
     ();
   assert_invalid_model
     ~model_source:"def test.partial_sink(x: PartialSink[Test[first]], y: PartialSink[Test[b]]): ..."
     ~expect:
-      "Invalid model for `test.partial_sink`: Unrecognized label `first` for partial sink `Test` \
-       (choices: `a, b`)"
+      "`PartialSink[Test[first]]` is an invalid taint annotation: Unrecognized label `first` for \
+       partial sink `Test` (choices: `a, b`)"
     ();
   assert_invalid_model
     ~model_source:
       "def test.partial_sink(x: PartialSink[Test[a]], y: PartialSink[Test[second]]): ..."
     ~expect:
-      "Invalid model for `test.partial_sink`: Unrecognized label `second` for partial sink `Test` \
-       (choices: `a, b`)"
+      "`PartialSink[Test[second]]` is an invalid taint annotation: Unrecognized label `second` for \
+       partial sink `Test` (choices: `a, b`)"
     ();
   assert_invalid_model
     ~model_source:"def test.partial_sink(x: PartialSink[X[a]], y: PartialSink[X[b]]): ..."
-    ~expect:"Invalid model for `test.partial_sink`: Unrecognized partial sink `X`."
+    ~expect:"`PartialSink[X[b]]` is an invalid taint annotation: Unrecognized partial sink `X`."
     ();
 
   assert_valid_model
@@ -1220,21 +1227,24 @@ let test_invalid_models context =
   assert_valid_model ~model_source:"def test.anonymous_with_optional(__a1, __a2, __a3=...): ..." ();
   assert_invalid_model
     ~model_source:"def test.sink(parameter: Any): ..."
-    ~expect:"Invalid model for `test.sink`: Unrecognized taint annotation `Any`"
+    ~expect:"`Any` is an invalid taint annotation: Failed to parse the given taint annotation."
     ();
   assert_invalid_model
     ~path:"broken_model.pysa"
     ~model_source:"def test.sink(parameter: Any): ..."
     ~expect:
-      "broken_model.pysa:1: Invalid model for `test.sink`: Unrecognized taint annotation `Any`"
+      "broken_model.pysa:1: `Any` is an invalid taint annotation: Failed to parse the given taint \
+       annotation."
     ();
   assert_invalid_model
     ~model_source:"def test.sink(parameter: TaintSink[Test, Via[bad_feature]]): ..."
-    ~expect:"Invalid model for `test.sink`: Unrecognized Via annotation `bad_feature`"
+    ~expect:
+      "`TaintSink[(Test, Via[bad_feature])]` is an invalid taint annotation: Unrecognized Via \
+       annotation `bad_feature`"
     ();
   assert_invalid_model
     ~model_source:"def test.sink(parameter: TaintSink[Updates[self]]): ..."
-    ~expect:"Invalid model for `test.sink`: No such parameter `self`"
+    ~expect:"`TaintSink[Updates[self]]` is an invalid taint annotation: No such parameter `self`"
     ();
   assert_valid_model ~model_source:"test.unannotated_global: TaintSink[Test]" ();
   assert_invalid_model
@@ -1265,25 +1275,26 @@ let test_invalid_models context =
   (* Attach syntax. *)
   assert_invalid_model
     ~model_source:"def test.sink(parameter: AttachToSink): ..."
-    ~expect:"Invalid model for `test.sink`: Unrecognized taint annotation `AttachToSink`"
+    ~expect:
+      "`AttachToSink` is an invalid taint annotation: Failed to parse the given taint annotation."
     ();
   assert_invalid_model
     ~model_source:"def test.sink(parameter: AttachToSink[feature]): ..."
     ~expect:
-      "Invalid model for `test.sink`: All parameters to `AttachToSink` must be of the form \
-       `Via[feature]`."
+      "`AttachToSink[feature]` is an invalid taint annotation: All parameters to `AttachToSink` \
+       must be of the form `Via[feature]`."
     ();
   assert_invalid_model
     ~model_source:"def test.sink(parameter: AttachToTito[feature]): ..."
     ~expect:
-      "Invalid model for `test.sink`: All parameters to `AttachToTito` must be of the form \
-       `Via[feature]`."
+      "`AttachToTito[feature]` is an invalid taint annotation: All parameters to `AttachToTito` \
+       must be of the form `Via[feature]`."
     ();
   assert_invalid_model
     ~model_source:"def test.source() -> AttachToSource[feature]: ..."
     ~expect:
-      "Invalid model for `test.source`: All parameters to `AttachToSource` must be of the form \
-       `Via[feature]`."
+      "`AttachToSource[feature]` is an invalid taint annotation: All parameters to \
+       `AttachToSource` must be of the form `Via[feature]`."
     ();
 
   (* Multiple features. *)
@@ -1309,7 +1320,9 @@ let test_invalid_models context =
   assert_invalid_model
     ~model_source:
       "def test.sink(parameter) -> TaintSource[Test, ViaValueOf[nonexistent_parameter]]: ..."
-    ~expect:"Invalid model for `test.sink`: No such parameter `nonexistent_parameter`"
+    ~expect:
+      "`TaintSource[(Test, ViaValueOf[nonexistent_parameter])]` is an invalid taint annotation: No \
+       such parameter `nonexistent_parameter`"
     ();
   assert_invalid_model
     ~source:
@@ -1416,7 +1429,8 @@ let test_invalid_models context =
           ...
     |}
     ~expect:
-      "Invalid model for `test.sink`: Invalid expression for breadcrumb: (Expression.Expression.Call\n\
+      "`TaintSink[(Test, Via[a.__sub__(feature)])]` is an invalid taint annotation: Invalid \
+       expression for breadcrumb: (Expression.Expression.Call\n\
       \   { Expression.Call.callee = a.__sub__;\n\
       \     arguments = [{ Expression.Call.Argument.name = None; value = feature }]\n\
       \     })"
@@ -1425,14 +1439,17 @@ let test_invalid_models context =
     ~source:"def partial_sink(x, y) -> None: ..."
     ~model_source:
       "def test.partial_sink(x: PartialSink[Nonexistent[a]], y: PartialSink[Nonexistent[b]]): ..."
-    ~expect:"Invalid model for `test.partial_sink`: Unrecognized partial sink `Nonexistent`."
+    ~expect:
+      "`PartialSink[Nonexistent[b]]` is an invalid taint annotation: Unrecognized partial sink \
+       `Nonexistent`."
     ();
   assert_invalid_model
     ~source:"def f(parameter): ..."
     ~model_source:"def test.f(parameter: CrossRepositoryTaint[TaintSource[UserControlled]]): ..."
     ~expect:
-      "Invalid model for `test.f`: Cross repository taint must be of the form \
-       CrossRepositoryTaint[taint, canonical_name, canonical_port, producer_id]."
+      "`CrossRepositoryTaint[TaintSource[UserControlled]]` is an invalid taint annotation: Cross \
+       repository taint must be of the form CrossRepositoryTaint[taint, canonical_name, \
+       canonical_port, producer_id]."
     ();
   assert_invalid_model
     ~source:"def f(parameter): ..."
@@ -1440,7 +1457,8 @@ let test_invalid_models context =
       "def test.f(parameter: CrossRepositoryTaint[TaintSource[UserControlled], \
        some_canonical_name, 'formal(0)', 0]): ..."
     ~expect:
-      "Invalid model for `test.f`: Cross repository taint must be of the form \
+      "`CrossRepositoryTaint[(TaintSource[UserControlled], some_canonical_name, \"formal(0)\", \
+       0)]` is an invalid taint annotation: Cross repository taint must be of the form \
        CrossRepositoryTaint[taint, canonical_name, canonical_port, producer_id]."
     ();
   assert_invalid_model
@@ -1449,7 +1467,8 @@ let test_invalid_models context =
       "def test.f(parameter: CrossRepositoryTaint[TaintSource[UserControlled], \
        'some_canonical_name', 0, 0]): ..."
     ~expect:
-      "Invalid model for `test.f`: Cross repository taint must be of the form \
+      "`CrossRepositoryTaint[(TaintSource[UserControlled], \"some_canonical_name\", 0, 0)]` is an \
+       invalid taint annotation: Cross repository taint must be of the form \
        CrossRepositoryTaint[taint, canonical_name, canonical_port, producer_id]."
     ();
   (* Ensure that we're verifying models against the undecorated signature. *)
@@ -1532,7 +1551,7 @@ let test_invalid_models context =
         ...
     |}
     ~model_source:"def test.foo(x) -> TaintSource[A[Subkind]]: ..."
-    ~expect:"Invalid model for `test.foo`: Unsupported taint source `A`"
+    ~expect:"`TaintSource[A[Subkind]]` is an invalid taint annotation: Unsupported taint source `A`"
     ();
   assert_invalid_model
     ~source:{|
@@ -1540,7 +1559,7 @@ let test_invalid_models context =
         ...
     |}
     ~model_source:"def test.foo(x: TaintSink[X[Subkind]]): ..."
-    ~expect:"Invalid model for `test.foo`: Unsupported taint sink `X`"
+    ~expect:"`TaintSink[X[Subkind]]` is an invalid taint annotation: Unsupported taint sink `X`"
     ();
   assert_invalid_model
     ~source:{|
@@ -1551,7 +1570,8 @@ let test_invalid_models context =
       @Sanitize(TaintInTaintOut[LocalReturn])
       def test.foo(x): ...
     |}
-    ~expect:"Invalid model for `test.foo`: Unrecognized taint annotation `LocalReturn`"
+    ~expect:
+      "`LocalReturn` is an invalid taint annotation: Failed to parse the given taint annotation."
     ();
 
   (* Test source- and sink- specific tito parsing. *)

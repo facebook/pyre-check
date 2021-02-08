@@ -225,7 +225,12 @@ let rec parse_annotations
     annotation
   =
   let open Core.Result in
-  let annotation_error error = invalid_model_error ~path ~location ~name:model_name error in
+  let annotation_error reason =
+    model_verification_error
+      ~path
+      ~location
+      (ModelVerificationError.T.InvalidTaintAnnotation { taint_annotation = annotation; reason })
+  in
   let get_parameter_position name =
     match Map.find callable_parameter_names_to_positions name with
     | Some position -> Ok position
@@ -422,9 +427,7 @@ let rec parse_annotations
              (Format.sprintf "All parameters to `%s` must be of the form `Via[feature]`." name))
   in
   let invalid_annotation_error () =
-    Error
-      (annotation_error
-         (Format.asprintf "Unrecognized taint annotation `%s`" (Expression.show annotation)))
+    Error (annotation_error "Failed to parse the given taint annotation.")
   in
   let rec parse_annotation = function
     | Expression.Call
