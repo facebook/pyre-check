@@ -228,7 +228,7 @@ and invalid_decoration = {
 }
 
 and kind =
-  | AnalysisFailure of Type.t
+  | AnalysisFailure of string
   | ParserFailure of string
   | IllegalAnnotationTarget of {
       target: Expression.t;

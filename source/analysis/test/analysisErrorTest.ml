@@ -565,13 +565,13 @@ let test_join context =
     (error (Error.UndefinedType (Type.Primitive "herp")))
     (error Error.Top);
   assert_join
-    (error (Error.AnalysisFailure (Type.Primitive "derp")))
-    (error (Error.AnalysisFailure (Type.Primitive "derp")))
-    (error (Error.AnalysisFailure (Type.Primitive "derp")));
+    (error (Error.AnalysisFailure "derp"))
+    (error (Error.AnalysisFailure "derp"))
+    (error (Error.AnalysisFailure "derp"));
   assert_join
-    (error (Error.AnalysisFailure (Type.Primitive "derp")))
-    (error (Error.AnalysisFailure (Type.Primitive "herp")))
-    (error (Error.AnalysisFailure (Type.union [Type.Primitive "derp"; Type.Primitive "herp"])));
+    (error (Error.AnalysisFailure "derp"))
+    (error (Error.AnalysisFailure "herp"))
+    (error Error.Top);
   assert_join
     (error (revealed_type "a" (Annotation.create Type.integer)))
     (error (revealed_type "a" (Annotation.create Type.float)))
@@ -768,16 +768,16 @@ let test_suppress _ =
   assert_not_suppressed Source.Debug (missing_return Type.Top);
   assert_not_suppressed Source.Debug (missing_return Type.Any);
   assert_not_suppressed Source.Debug (Error.UndefinedType Type.integer);
-  assert_not_suppressed Source.Debug (Error.AnalysisFailure Type.Top);
+  assert_not_suppressed Source.Debug (Error.AnalysisFailure "derp");
   assert_suppressed Source.Infer (missing_return Type.Top);
   assert_suppressed Source.Infer (missing_return Type.Any);
   assert_not_suppressed Source.Infer (missing_return Type.integer);
   assert_suppressed Source.Infer (Error.UndefinedType Type.integer);
-  assert_suppressed Source.Infer (Error.AnalysisFailure Type.integer);
+  assert_suppressed Source.Infer (Error.AnalysisFailure "int");
   assert_not_suppressed Source.Strict (missing_return Type.Top);
   assert_suppressed Source.Strict (Error.IncompatibleAwaitableType Type.Top);
   assert_not_suppressed Source.Strict (missing_return Type.Any);
-  assert_not_suppressed Source.Strict (Error.AnalysisFailure Type.integer);
+  assert_not_suppressed Source.Strict (Error.AnalysisFailure "int");
   assert_suppressed Source.Unsafe (missing_return Type.Top);
 
   (* Should not be made *)
@@ -787,7 +787,7 @@ let test_suppress _ =
     ~signature:untyped_signature
     Source.Unsafe
     (revealed_type "a" (Annotation.create Type.integer));
-  assert_not_suppressed Source.Unsafe (Error.AnalysisFailure Type.integer);
+  assert_not_suppressed Source.Unsafe (Error.AnalysisFailure "int");
   assert_suppressed
     Source.Unsafe
     (Error.InvalidTypeParameters

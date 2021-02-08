@@ -17,7 +17,7 @@ exception Incomplete
 
 exception InconsistentMethodResolutionOrder of Type.Primitive.t
 
-exception Untracked of Type.t
+exception Untracked of string
 
 module Target = struct
   type t = {
@@ -112,7 +112,7 @@ let is_instantiated (module Handler : Handler) annotation =
 
 let raise_if_untracked order annotation =
   if not (contains order annotation) then
-    raise (Untracked (Type.Primitive annotation))
+    raise (Untracked annotation)
 
 
 let method_resolution_order_linearize ~get_successors class_name =

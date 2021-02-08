@@ -237,7 +237,7 @@ and invalid_decoration_reason =
     }
 
 and kind =
-  | AnalysisFailure of Type.t
+  | AnalysisFailure of string
   | ParserFailure of string
   | IllegalAnnotationTarget of {
       target: Expression.t;
@@ -676,9 +676,9 @@ let rec messages ~concise ~signature location kind =
   let kind = weaken_literals kind in
   match kind with
   | AnalysisFailure annotation when concise ->
-      [Format.asprintf "Terminating analysis - type `%a` not defined." pp_type annotation]
+      [Format.asprintf "Terminating analysis - type `%s` not defined." annotation]
   | AnalysisFailure annotation ->
-      [Format.asprintf "Terminating analysis because type `%a` is not defined." pp_type annotation]
+      [Format.asprintf "Terminating analysis because type `%s` is not defined." annotation]
   | ParserFailure message -> [message]
   | DeadStore name -> [Format.asprintf "Value assigned to `%a` is never used." pp_identifier name]
   | Deobfuscation source -> [Format.asprintf "\n%a" Source.pp source]
@@ -2441,7 +2441,7 @@ let less_or_equal ~resolution left right =
   [%compare.equal: Location.WithModule.t] left.location right.location
   &&
   match left.kind, right.kind with
-  | AnalysisFailure left, AnalysisFailure right -> Type.equal left right
+  | AnalysisFailure left, AnalysisFailure right -> String.equal left right
   | ParserFailure left_message, ParserFailure right_message ->
       String.equal left_message right_message
   | DeadStore left, DeadStore right -> Identifier.equal left right
@@ -2779,7 +2779,8 @@ let join ~resolution left right =
   in
   let kind =
     match left.kind, right.kind with
-    | AnalysisFailure left, AnalysisFailure right -> AnalysisFailure (Type.union [left; right])
+    | AnalysisFailure left, AnalysisFailure right when String.equal left right ->
+        AnalysisFailure left
     | ParserFailure left_message, ParserFailure right_message
       when String.equal left_message right_message ->
         ParserFailure left_message
@@ -3453,7 +3454,7 @@ let suppress ~mode ~ignore_codes error =
     | Source.Declare -> true
   with
   | ClassHierarchy.Untracked annotation ->
-      Log.warning "`%s` not found in the type order." (Type.show annotation);
+      Log.warning "`%s` not found in the type order." annotation;
       false
 
 
@@ -3561,7 +3562,7 @@ let dequalify
   in
   let kind =
     match kind with
-    | AnalysisFailure annotation -> AnalysisFailure (dequalify annotation)
+    | AnalysisFailure annotation -> AnalysisFailure annotation
     | DeadStore name -> DeadStore name
     | Deobfuscation left -> Deobfuscation left
     | IllegalAnnotationTarget { target = left; kind } ->

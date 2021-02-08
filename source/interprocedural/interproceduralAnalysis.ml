@@ -303,10 +303,9 @@ let analyze_define
     | Analysis.ClassHierarchy.Untracked annotation ->
         Log.log
           ~section:`Info
-          "Could not generate model for `%a` due to invalid annotation `%a`"
+          "Could not generate model for `%a` due to invalid annotation `%s`"
           Reference.pp
           (Node.value name)
-          Analysis.Type.pp
           annotation;
         Result.Kind.Map.empty, Result.Kind.Map.empty
     | Sys.Break as exn -> analysis_failed step ~exn ~message:"Hit Ctrl+C" callable

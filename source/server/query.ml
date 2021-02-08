@@ -420,7 +420,7 @@ let rec process_request ~environment ~configuration request =
         else
           raise (IncorrectParameters annotation)
       else
-        raise (ClassHierarchy.Untracked annotation)
+        raise (ClassHierarchy.Untracked (Type.show annotation))
     in
     let unannotated_global_environment =
       GlobalResolution.unannotated_global_environment global_resolution
@@ -708,7 +708,7 @@ let rec process_request ~environment ~configuration request =
   try process_request () with
   | ClassHierarchy.Untracked untracked ->
       let untracked_response =
-        Format.asprintf "Type `%a` was not found in the type order." Type.pp untracked
+        Format.asprintf "Type `%s` was not found in the type order." untracked
       in
       Error untracked_response
   | IncorrectParameters untracked ->

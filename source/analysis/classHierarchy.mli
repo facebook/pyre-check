@@ -11,7 +11,7 @@ exception Cyclic of String.Hash_set.t
 
 exception Incomplete
 
-exception Untracked of Type.t
+exception Untracked of string
 
 module Target : sig
   type t = {

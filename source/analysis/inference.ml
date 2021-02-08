@@ -873,7 +873,7 @@ let run
         Statistics.event
           ~name:"undefined type"
           ~integers:[]
-          ~normals:["handle", relative; "define", Reference.show name; "type", Type.show annotation]
+          ~normals:["handle", relative; "define", Reference.show name; "type", annotation]
           ();
         if configuration.debug then
           [

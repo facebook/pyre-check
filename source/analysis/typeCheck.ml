@@ -1479,7 +1479,7 @@ module State (Context : Context) = struct
                             _;
                           } ->
                           original_implementation
-                      | annotation -> raise (ClassHierarchy.Untracked annotation)
+                      | annotation -> raise (ClassHierarchy.Untracked (Type.show annotation))
                     in
                     let errors =
                       let expected = Type.Callable.Overload.return_annotation implementation in
@@ -6245,16 +6245,10 @@ let check_define
         ~name:"undefined type"
         ~integers:[]
         ~normals:
-          [
-            "module", Reference.show qualifier;
-            "define", Reference.show name;
-            "type", Type.show annotation;
-          ]
+          ["module", Reference.show qualifier; "define", Reference.show name; "type", annotation]
         ();
       if Define.dump define then
-        Log.dump
-          "Analysis crashed because of untracked type `%s`."
-          (Log.Color.red (Type.show annotation));
+        Log.dump "Analysis crashed because of untracked type `%s`." (Log.Color.red annotation);
       let undefined_error =
         Error.create
           ~location:(Location.with_module ~qualifier location)

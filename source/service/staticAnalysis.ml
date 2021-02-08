@@ -433,10 +433,9 @@ let record_overrides_for_qualifiers
           with
           | ClassHierarchy.Untracked untracked_type ->
               Log.warning
-                "Error building overrides in path %a for untracked type %a"
+                "Error building overrides in path %a for untracked type %s"
                 Reference.pp
                 qualifier
-                Type.pp
                 untracked_type;
               overrides
         in
@@ -608,10 +607,9 @@ let analyze
             with
             | ClassHierarchy.Untracked untracked_type ->
                 Log.info
-                  "Error building call graph in path %a for untracked type %a"
+                  "Error building call graph in path %a for untracked type %s"
                   Reference.pp
                   qualifier
-                  Type.pp
                   untracked_type;
                 call_graph
           in

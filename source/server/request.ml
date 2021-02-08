@@ -507,7 +507,7 @@ let rec process
           ~error:(Format.sprintf "Unix error %s: %s(%s)" (Unix.error_message kind) name parameters);
         { state; response = None }
     | Analysis.ClassHierarchy.Untracked annotation ->
-        log_request_error ~error:(Format.sprintf "Untracked %s" (Type.show annotation));
+        log_request_error ~error:(Format.sprintf "Untracked %s" annotation);
         { state; response = None }
     | Worker.Worker_exited_abnormally (pid, status) ->
         Statistics.log_worker_exception ~pid status ~origin:"server";
