@@ -30,11 +30,15 @@ let create ~name ~output_channel () = { name; output_channel }
 let name_of { name; _ } = name
 
 let send ~response { name; output_channel } =
-  if not (Lwt_io.is_closed output_channel) then
+  if not (Lwt_io.is_closed output_channel) then (
+    let open Lwt.Infix in
     { Response.name; body = response }
     |> Response.to_yojson
     |> Yojson.Safe.to_string
     |> Lwt_io.write_line output_channel
+    >>= fun () ->
+    Log.log ~section:`Server "Update sent to subscription `%s`" name;
+    Lwt.return_unit )
   else (
     Log.warning
       "Trying to send updates to subscription `%s` whose output channel is already closed."

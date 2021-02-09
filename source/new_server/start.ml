@@ -83,9 +83,12 @@ let handle_request ~server_state request =
     Stop.log_and_stop_waiting_server ~reason:"uncaught exception" ~state:server_state ()
   in
   Lwt.catch
-    (fun () -> RequestHandler.process_request ~state:!server_state request)
+    (fun () ->
+      Log.log ~section:`Server "Processing request %a..." Sexp.pp (Request.sexp_of_t request);
+      RequestHandler.process_request ~state:!server_state request)
     on_uncaught_server_exception
   >>= fun (new_state, response) ->
+  Log.log ~section:`Server "Request processed";
   server_state := new_state;
   Lwt.return response
 
@@ -129,6 +132,7 @@ end
 
 let handle_connection ~server_state _client_address (input_channel, output_channel) =
   let open Lwt.Infix in
+  Log.log ~section:`Server "Connection established";
   (* Raw request messages are processed line-by-line. *)
   let rec handle_line connection_state =
     Lwt_io.read_line_opt input_channel
