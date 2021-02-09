@@ -13,24 +13,12 @@ from . import incremental, server_connection, start, stop
 LOG: logging.Logger = logging.getLogger(__name__)
 
 
-def _stop_server_if_needed(configuration: configuration_module.Configuration) -> None:
-    try:
-        socket_path = server_connection.get_default_socket_path(
-            log_directory=Path(configuration.log_directory)
-        )
-        LOG.info("Stopping the server if needed...")
-        stop.stop_server(socket_path)
-        LOG.info(f"Stopped server at `{start.get_server_identifier(configuration)}`")
-    except server_connection.ConnectionFailure:
-        stop.remove_socket_if_exists(socket_path)
-
-
 def run(
     configuration: configuration_module.Configuration,
     incremental_arguments: command_arguments.IncrementalArguments,
 ) -> commands.ExitCode:
     try:
-        _stop_server_if_needed(configuration)
+        stop.run_stop(configuration)
         incremental.run_incremental(configuration, incremental_arguments)
         return commands.ExitCode.SUCCESS
     except Exception as error:

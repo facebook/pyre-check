@@ -30,20 +30,24 @@ def remove_socket_if_exists(socket_path: Path) -> None:
         pass
 
 
-def run(configuration: configuration_module.Configuration) -> commands.ExitCode:
+def run_stop(configuration: configuration_module.Configuration) -> commands.ExitCode:
     socket_path = server_connection.get_default_socket_path(
         log_directory=Path(configuration.log_directory)
     )
     try:
-        LOG.info("Stopping the server...")
+        LOG.info("Stopping server...")
         stop_server(socket_path)
-
         LOG.info(f"Stopped server at `{start.get_server_identifier(configuration)}`\n")
         return commands.ExitCode.SUCCESS
     except server_connection.ConnectionFailure:
-        LOG.warning("No running Pyre server to stop.")
+        LOG.info("No running Pyre server to stop.\n")
         remove_socket_if_exists(socket_path)
         return commands.ExitCode.SERVER_NOT_FOUND
+
+
+def run(configuration: configuration_module.Configuration) -> commands.ExitCode:
+    try:
+        return run_stop(configuration)
     except Exception as error:
         raise commands.ClientException(
             f"Exception occured during server stop: {error}"
