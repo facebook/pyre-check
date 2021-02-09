@@ -647,6 +647,7 @@ class PyreServerHandler(connection.BackgroundTask):
                     "Established connection with existing Pyre server at "
                     f"`{self.server_identifier}`."
                 )
+                self.server_state.consecutive_start_failure = 0
                 _log_lsp_event(
                     remote_logging=self.pyre_arguments.remote_logging,
                     event=LSPEvent.CONNECTED,
@@ -670,11 +671,11 @@ class PyreServerHandler(connection.BackgroundTask):
                     f"Pyre server at `{self.server_identifier}` has been initialized."
                 )
 
-                self.server_state.consecutive_start_failure = 0
                 async with connection.connect_in_text_mode(socket_path) as (
                     input_channel,
                     output_channel,
                 ):
+                    self.server_state.consecutive_start_failure = 0
                     _log_lsp_event(
                         remote_logging=self.pyre_arguments.remote_logging,
                         event=LSPEvent.CONNECTED,
