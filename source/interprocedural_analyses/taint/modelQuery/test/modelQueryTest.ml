@@ -580,6 +580,64 @@ let test_apply_rule context =
       }
     ~callable:(`Function "test.foo")
     ~expected:[Taint.Model.ReturnAnnotation, source "Test"];
+  assert_applied_rules
+    ~source:
+      {|
+      class C:
+        def foo(): ...
+      class D:
+        def foo(): ...
+      class DC:
+        def foo(): ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query = [ParentConstraint (Matches (Re2.create_exn "C"))];
+        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
+        rule_kind = MethodModel;
+      }
+    ~callable:(`Method { Interprocedural.Callable.class_name = "test.C"; method_name = "foo" })
+    ~expected:[Taint.Model.ReturnAnnotation, source "Test"];
+  assert_applied_rules
+    ~source:
+      {|
+      class C:
+        def foo(): ...
+      class D:
+        def foo(): ...
+      class DC:
+        def foo(): ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query = [ParentConstraint (Matches (Re2.create_exn "C"))];
+        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
+        rule_kind = MethodModel;
+      }
+    ~callable:(`Method { Interprocedural.Callable.class_name = "test.D"; method_name = "foo" })
+    ~expected:[];
+
+  assert_applied_rules
+    ~source:
+      {|
+      class C:
+        def foo(): ...
+      class D:
+        def foo(): ...
+      class DC:
+        def foo(): ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query = [ParentConstraint (Matches (Re2.create_exn "C"))];
+        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
+        rule_kind = MethodModel;
+      }
+    ~callable:(`Method { Interprocedural.Callable.class_name = "test.DC"; method_name = "foo" })
+    ~expected:[Taint.Model.ReturnAnnotation, source "Test"];
   ()
 
 

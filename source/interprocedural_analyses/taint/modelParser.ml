@@ -67,7 +67,18 @@ module T = struct
     type class_constraint =
       | Equals of string
       | Extends of string
-    [@@deriving compare, show]
+      | Matches of Re2.t
+    [@@deriving compare]
+
+    let pp_class_constraint formatter class_constraint =
+      match class_constraint with
+      | Equals equals -> Format.fprintf formatter "Equals(%s)" equals
+      | Extends extends -> Format.fprintf formatter "Extends(%s)" extends
+      | Matches regular_expression ->
+          Format.fprintf formatter "Matches(%s)" (Re2.to_string regular_expression)
+
+
+    let show_class_constraint = Format.asprintf "%a" pp_class_constraint
 
     type model_constraint =
       | NameConstraint of string
@@ -1019,7 +1030,7 @@ let parse_where_clause ~path ({ Node.value; location } as expression) =
                   (Name.Attribute
                     {
                       base = { Node.value = Name (Name.Identifier "parent"); _ };
-                      attribute = ("equals" | "extends") as attribute;
+                      attribute = ("equals" | "extends" | "matches") as attribute;
                       _;
                     });
               _;
@@ -1037,6 +1048,7 @@ let parse_where_clause ~path ({ Node.value; location } as expression) =
           match attribute with
           | "equals" -> ModelQuery.Equals class_name
           | "extends" -> Extends class_name
+          | "matches" -> Matches (Re2.create_exn class_name)
           | _ -> failwith "impossible case"
         in
         Ok (ModelQuery.ParentConstraint constraint_type)

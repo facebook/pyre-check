@@ -114,6 +114,8 @@ let rec matches_constraint query_constraint ~resolution ~callable =
       >>| GlobalResolution.immediate_parents ~resolution
       >>| (fun parents -> List.mem parents class_name ~equal:String.equal)
       |> Option.value ~default:false
+  | ModelQuery.ParentConstraint (Matches class_pattern) ->
+      Callable.class_name callable >>| Re2.matches class_pattern |> Option.value ~default:false
 
 
 let apply_productions ~resolution ~productions ~callable =

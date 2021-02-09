@@ -58,6 +58,7 @@ module T : sig
     type class_constraint =
       | Equals of string
       | Extends of string
+      | Matches of Re2.t
     [@@deriving compare, show]
 
     type model_constraint =

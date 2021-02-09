@@ -133,6 +133,18 @@ ModelQuery(
   ...
 )
 ```
+### `parent.matches` clause
+
+You may use the `parent.matches` clause to matches methods whose parent's name corresponds to the provided regex.
+
+```python
+ModelQuery(
+  find = "methods",
+  where = parent.matches(".*Foo.*"),
+  ...
+)
+```
+
 
 ## Generated models
 
