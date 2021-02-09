@@ -123,14 +123,20 @@ class ErrorSuppressingCommand(Command):
     def _apply_suppressions(self, errors: Errors) -> None:
         try:
             errors.suppress(
-                self._comment, self._max_line_length, self._truncate, self._unsafe
+                self._comment,
+                self._max_line_length,
+                self._truncate,
+                self._unsafe,
             )
         except PartialErrorSuppression as partial_error_suppression:
             if not self._force_format_unsuppressed:
                 raise partial_error_suppression
             self._repository.force_format(partial_error_suppression.unsuppressed_paths)
             errors.suppress(
-                self._comment, self._max_line_length, self._truncate, self._unsafe
+                self._comment,
+                self._max_line_length,
+                self._truncate,
+                self._unsafe,
             )
 
     def _suppress_errors(

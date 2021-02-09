@@ -279,6 +279,19 @@ class ErrorsTest(unittest.TestCase):
         with self.assertRaises(SkippingGeneratedFileException):
             _suppress_errors("@" "generated", {})
 
+        # Do not check for generated files with --unsafe.
+        try:
+            _suppress_errors(
+                "@" "generated",
+                {},
+                custom_comment=None,
+                max_line_length=None,
+                truncate=False,
+                unsafe=True,
+            )
+        except SkippingGeneratedFileException:
+            self.fail("Unexpected `SkippingGeneratedFileException` exception.")
+
         # Custom message.
         self.assertSuppressErrors(
             {1: [{"code": "1", "description": "description"}]},
