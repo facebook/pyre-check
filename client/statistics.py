@@ -21,15 +21,16 @@ LOG: logging.Logger = logging.getLogger(__name__)
 
 
 class LoggerCategory(Enum):
-    PERFORMANCE = "perfpipe_pyre_performance"
-    USAGE = "perfpipe_pyre_usage"
     ANNOTATION_COUNTS = "perfpipe_pyre_annotation_counts"
-    STRICT_ADOPTION = "perfpipe_pyre_strict_adoption"
+    BUCK_EVENTS = "perfpipe_pyre_buck_events"
+    FBCODE_COVERAGE = "perfpipe_pyre_fbcode_coverage"
     FIXME_COUNTS = "perfpipe_pyre_fixme_counts"
+    LSP_EVENTS = "perfpipe_pyre_lsp_events"
+    PERFORMANCE = "perfpipe_pyre_performance"
     QUALITY_ANALYZER = "perfpipe_pyre_quality_analyzer"
     QUALITY_ANALYZER_ISSUES = "perfpipe_pyre_quality_analyser_issues"
-    BUCK_EVENTS = "perfpipe_pyre_buck_events"
-    LSP_EVENTS = "perfpipe_pyre_lsp_events"
+    STRICT_ADOPTION = "perfpipe_pyre_strict_adoption"
+    USAGE = "perfpipe_pyre_usage"
 
 
 def log(
