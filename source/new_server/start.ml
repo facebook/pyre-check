@@ -490,16 +490,16 @@ let with_server ?watchman ~f ({ ServerConfiguration.log_path; _ } as server_conf
 
 
 (* Create a promise that only gets fulfilled when given unix signals are received. *)
-let wait_on_signals fatal_signals =
+let wait_on_signals ~exit_status signals =
   let open Lwt in
   let waiter, resolver = wait () in
-  List.iter fatal_signals ~f:(fun signal ->
+  List.iter signals ~f:(fun signal ->
       let signal = Signal.to_caml_int signal in
       Lwt_unix.on_signal signal (wakeup resolver) |> ignore);
   waiter
   >>= fun signal ->
   Log.info "Server interrupted with signal %d" signal;
-  return_unit
+  return exit_status
 
 
 let start_server
@@ -538,7 +538,16 @@ let start_server_and_wait ?event_channel server_configuration =
       write_event (ServerEvent.SocketCreated socket_path))
     ~on_started:(fun _ ->
       write_event ServerEvent.ServerInitialized
-      >>= fun () -> wait_on_signals [Signal.int] >>= fun () -> return ExitStatus.Ok)
+      >>= fun () ->
+      choose
+        [
+          (* We rely on SIGINT for normal server shutdown. *)
+          wait_on_signals [Signal.int] ~exit_status:ExitStatus.Ok;
+          (* Getting these signals usually indicates something serious went wrong. *)
+          wait_on_signals
+            [Signal.abrt; Signal.term; Signal.pipe; Signal.quit; Signal.segv]
+            ~exit_status:ExitStatus.Error;
+        ])
     ~on_exception:(fun exn ->
       let message =
         match exn with
