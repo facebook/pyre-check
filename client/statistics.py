@@ -71,6 +71,8 @@ def log_with_configuration(
         integers=integers,
         normals={
             **(normals or {}),
+            "project_root": configuration.project_root,
+            "root": configuration.relative_local_root,
             "version": configuration.get_version_hash_respecting_override()
             or "unversioned",
             "configuration": str(configuration),

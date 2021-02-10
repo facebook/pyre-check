@@ -153,28 +153,27 @@ class Statistics(Command):
 
     def _log_to_scuba(self, run_id: str, data: Dict[str, Any]) -> None:
         if self._configuration and self._configuration.logger:
-            root = str(self._configuration.relative_local_root)
             for path, counts in data["annotations"].items():
                 statistics.log_with_configuration(
                     statistics.LoggerCategory.ANNOTATION_COUNTS,
                     configuration=self._configuration,
                     integers=counts,
-                    normals={"run_id": run_id, "root": root, "path": path},
+                    normals={"run_id": run_id, "path": path},
                 )
             for path, counts in data["fixmes"].items():
-                self._log_fixmes(run_id, "fixme", counts, root, path)
+                self._log_fixmes(run_id, "fixme", counts, path)
             for path, counts in data["ignores"].items():
-                self._log_fixmes(run_id, "ignore", counts, root, path)
+                self._log_fixmes(run_id, "ignore", counts, path)
             for path, counts in data["strict"].items():
                 statistics.log_with_configuration(
                     statistics.LoggerCategory.STRICT_ADOPTION,
                     configuration=self._configuration,
                     integers=counts,
-                    normals={"run_id": run_id, "root": root, "path": path},
+                    normals={"run_id": run_id, "path": path},
                 )
 
     def _log_fixmes(
-        self, run_id: str, fixme_type: str, data: Dict[str, int], root: str, path: str
+        self, run_id: str, fixme_type: str, data: Dict[str, int], path: str
     ) -> None:
         for error_code, count in data.items():
             statistics.log_with_configuration(
@@ -183,7 +182,6 @@ class Statistics(Command):
                 integers={"count": count},
                 normals={
                     "run_id": run_id,
-                    "root": root,
                     "code": error_code,
                     "type": fixme_type,
                     "path": path,

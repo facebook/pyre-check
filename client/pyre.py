@@ -44,7 +44,7 @@ def _log_statistics(
     exit_code: int,
 ) -> None:
     configuration = command.configuration
-    if configuration and configuration.logger:
+    if configuration is not None:
         statistics_module.log_with_configuration(
             category=statistics_module.LoggerCategory.USAGE,
             configuration=configuration,
@@ -53,8 +53,6 @@ def _log_statistics(
                 "runtime": int((time.time() - start_time) * 1000),
             },
             normals={
-                "project_root": configuration.project_root,
-                "root": configuration.relative_local_root,
                 "cwd": os.getcwd(),
                 "client_version": __version__,
                 "command_line": " ".join(sys.argv),
