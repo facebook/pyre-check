@@ -14,8 +14,11 @@ See [commands](#commands) for the available commands in explore mode.
 
 ## Installation
 
-If you have installed pyre version `>= 0.0.22` via `pip install pyre-check`,
-then you already have the `sapp` binary installed.
+SAPP comes as a separate PyPI package and you can install it with
+
+```shell
+[~/static_analysis_example] $ pip install fb-sapp
+```
 
 ## Example
 

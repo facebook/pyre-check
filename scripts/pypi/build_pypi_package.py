@@ -11,7 +11,6 @@ import re
 import shutil
 import subprocess
 import tempfile
-import textwrap
 from pathlib import Path
 from typing import List, Tuple, Optional
 
@@ -28,7 +27,6 @@ RUNTIME_DEPENDENCIES = [
     "click",
     "dataclasses",
     "dataclasses-json",
-    "fb-sapp",
     "libcst>=0.3.6",
     "psutil",
     "pyre_extensions",
