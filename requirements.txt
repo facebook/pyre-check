@@ -3,6 +3,7 @@ click
 dataclasses-json
 libcst
 psutil
+pyre-extensions
 pywatchman
 tabulate
 testslide

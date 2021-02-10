@@ -15,7 +15,7 @@ from ... import (
     configuration as configuration_module,
     error,
 )
-from . import server_connection, start
+from . import server_connection, start, remote_logging
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -106,6 +106,7 @@ def run_incremental(
         _show_progress_and_display_type_errors(log_path, socket_path, output)
 
 
+@remote_logging.log_usage(command_name="incremental")
 def run(
     configuration: configuration_module.Configuration,
     incremental_arguments: command_arguments.IncrementalArguments,

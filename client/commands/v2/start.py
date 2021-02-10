@@ -34,7 +34,7 @@ from ... import (
     find_directories,
     log,
 )
-from . import server_connection, server_event, stop
+from . import server_connection, server_event, stop, remote_logging
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -501,6 +501,7 @@ def server_argument_file(server_arguments: Arguments) -> Iterator[Path]:
         yield Path(argument_file.name)
 
 
+@remote_logging.log_usage(command_name="start")
 def run(
     configuration: configuration_module.Configuration,
     start_arguments: command_arguments.StartArguments,

@@ -7,7 +7,7 @@ import logging
 from pathlib import Path
 
 from ... import commands, configuration as configuration_module
-from . import server_connection, start
+from . import server_connection, start, remote_logging
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -45,6 +45,7 @@ def run_stop(configuration: configuration_module.Configuration) -> commands.Exit
         return commands.ExitCode.SERVER_NOT_FOUND
 
 
+@remote_logging.log_usage(command_name="stop")
 def run(configuration: configuration_module.Configuration) -> commands.ExitCode:
     try:
         return run_stop(configuration)

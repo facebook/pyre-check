@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import TextIO
 
 from ... import commands, configuration as configuration_module, log
-from . import server_connection
+from . import server_connection, remote_logging
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -69,6 +69,7 @@ def query_server(socket_path: Path, query_text: str) -> Response:
         return _receive_query_response(input_channel)
 
 
+@remote_logging.log_usage(command_name="query")
 def run(
     configuration: configuration_module.Configuration, query_text: str
 ) -> commands.ExitCode:

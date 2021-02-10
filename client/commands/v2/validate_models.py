@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import List
 
 from ... import commands, configuration as configuration_module, error as error_module
-from . import query, server_connection
+from . import query, server_connection, remote_logging
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -50,6 +50,7 @@ def parse_validation_errors(
     ]
 
 
+@remote_logging.log_usage(command_name="validate-models")
 def run(
     configuration: configuration_module.Configuration, output: str
 ) -> commands.ExitCode:

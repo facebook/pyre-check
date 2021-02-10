@@ -29,9 +29,10 @@ RUNTIME_DEPENDENCIES = [
     "dataclasses-json",
     "libcst>=0.3.6",
     "psutil",
-    "pyre_extensions",
+    "pyre-extensions",
     "pywatchman",
     "tabulate",
+    "typing-extensions",
 ]
 
 LOG: logging.Logger = logging.getLogger(__name__)

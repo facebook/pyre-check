@@ -7,12 +7,13 @@ import logging
 from pathlib import Path
 
 from ... import command_arguments, commands, configuration as configuration_module
-from . import incremental, server_connection, start, stop
+from . import incremental, stop, remote_logging
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
 
+@remote_logging.log_usage(command_name="restart")
 def run(
     configuration: configuration_module.Configuration,
     incremental_arguments: command_arguments.IncrementalArguments,
