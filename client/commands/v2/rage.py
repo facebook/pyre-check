@@ -20,7 +20,7 @@ from ... import (
     log,
     version,
 )
-from . import start
+from . import start, remote_logging
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -191,6 +191,7 @@ def run_rage(
     LOG.info("Done\n")
 
 
+@remote_logging.log_usage(command_name="rage")
 def run(
     configuration: configuration_module.Configuration,
     arguments: command_arguments.RageArguments,
