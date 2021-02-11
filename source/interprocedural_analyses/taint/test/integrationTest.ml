@@ -30,7 +30,9 @@ let test_integration context =
     (* Shameful things happen here... *)
     Path.current_working_directory ()
     |> Path.show
-    |> String.chop_suffix_exn ~suffix:"_build/default/interprocedural_analyses/taint/test"
+    |> (fun path ->
+         String.chop_suffix ~suffix:"_build/default/interprocedural_analyses/taint/test" path
+         |> Option.value ~default:(path ^ "/source"))
     |> (fun root -> Path.create_absolute root)
     |> (fun root ->
          Path.create_relative ~root ~relative:"interprocedural_analyses/taint/test/integration/")
@@ -172,4 +174,7 @@ let test_integration context =
     assert_bool message false
 
 
-let () = TestHelper.run_with_taint_models ["integration", test_integration] ~name:"taint"
+let () =
+  "taint"
+  >:: (fun _ -> TestHelper.run_with_taint_models ["integration", test_integration] ~name:"taint")
+  |> Test.run
