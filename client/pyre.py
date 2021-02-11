@@ -937,8 +937,16 @@ def query(context: click.Context, query: str) -> int:
     type=os.path.abspath,
     help="The path to the output file (defaults to stdout)",
 )
+@click.option(
+    "--server-log-count",
+    type=int,
+    default=3,
+    help="Number of server logs to include in the diagnositics. Default to 3.",
+)
 @click.pass_context
-def rage(context: click.Context, output_file: Optional[str]) -> int:
+def rage(
+    context: click.Context, output_file: Optional[str], server_log_count: int
+) -> int:
     """
     Collects troubleshooting diagnostics for Pyre, and writes this information
     to the terminal or to a file.
@@ -950,7 +958,11 @@ def rage(context: click.Context, output_file: Optional[str]) -> int:
 
     if configuration.use_command_v2:
         return v2.rage.run(
-            configuration, Path(output_file) if output_file is not None else None
+            configuration,
+            command_arguments.RageArguments(
+                output=Path(output_file) if output_file is not None else None,
+                server_log_count=server_log_count,
+            ),
         )
     else:
         return run_pyre_command(

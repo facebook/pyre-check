@@ -39,6 +39,8 @@ from . import server_connection, server_event, stop, remote_logging
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
+SERVER_LOG_FILE_FORMAT: str = "server.stderr.%Y_%m_%d_%H_%M_%S_%f"
+
 
 class MatchPolicy(enum.Enum):
     BASE_NAME = "base_name"
@@ -430,7 +432,7 @@ def background_server_log_file(log_directory: Path) -> Iterator[TextIO]:
     new_server_log_directory = log_directory / "new_server"
     new_server_log_directory.mkdir(parents=True, exist_ok=True)
     log_file_path = new_server_log_directory / datetime.datetime.now().strftime(
-        "server.stderr.%Y_%m_%d_%H_%M_%S_%f"
+        SERVER_LOG_FILE_FORMAT
     )
     with open(str(log_file_path), "a") as log_file:
         yield log_file

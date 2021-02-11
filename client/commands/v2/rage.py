@@ -4,14 +4,23 @@
 # LICENSE file in the root directory of this source tree.
 
 import dataclasses
+import datetime
+import itertools
 import json
 import logging
 import shutil
 import subprocess
 from pathlib import Path
-from typing import Optional, TextIO, Sequence
+from typing import Optional, TextIO, Sequence, List
 
-from ... import commands, configuration as configuration_module, log, version
+from ... import (
+    commands,
+    command_arguments,
+    configuration as configuration_module,
+    log,
+    version,
+)
+from . import start
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -88,11 +97,30 @@ def _watchman_section(watchman: str, name: str) -> Optional[Section]:
     )
 
 
-def _server_log_section(log_directory: Path) -> Optional[Section]:
-    content = _get_file_content(log_directory / "new_server" / "server.stderr")
-    if content is None:
-        return None
-    return Section(name="Server Log", content=content)
+def _server_log_sections(
+    log_directory: Path, limit: Optional[int] = None
+) -> List[Section]:
+    # Log files are sorted according to server start time: recently started servers
+    # will come first.
+    timestamp_and_paths = sorted(
+        (
+            (datetime.datetime.strptime(path.name, start.SERVER_LOG_FILE_FORMAT), path)
+            for path in (log_directory / "new_server").iterdir()
+            if path.is_file() and not path.is_symlink()
+        ),
+        key=lambda pair: pair[0],
+        reverse=True,
+    )
+
+    sections: List[Section] = []
+    for timestamp, path in timestamp_and_paths:
+        if limit is not None and len(sections) >= limit:
+            break
+        content = _get_file_content(path)
+        if content is None:
+            continue
+        sections.append(Section(name=f"Server Log ({timestamp})", content=content))
+    return sections
 
 
 def _client_log_section(log_directory: Path) -> Optional[Section]:
@@ -135,33 +163,45 @@ def _print_watchman_sections(output: TextIO) -> None:
                 _print_section(section, output)
 
 
-def _print_log_file_sections(log_directory: Path, output: TextIO) -> None:
+def _print_log_file_sections(
+    log_directory: Path, server_log_count: Optional[int], output: TextIO
+) -> None:
     LOG.info("Collecting information from Pyre's log files...")
-    for section in [
-        _server_log_section(log_directory),
-        _client_log_section(log_directory),
-    ]:
+    for section in itertools.chain(
+        _server_log_sections(log_directory, limit=server_log_count),
+        [
+            _client_log_section(log_directory),
+        ],
+    ):
         if section is not None:
             _print_section(section, output)
 
 
-def run_rage(configuration: configuration_module.Configuration, output: TextIO) -> None:
+def run_rage(
+    configuration: configuration_module.Configuration,
+    arguments: command_arguments.RageArguments,
+    output: TextIO,
+) -> None:
     _print_configuration_sections(configuration, output)
     _print_mercurial_sections(output)
     _print_watchman_sections(output)
-    _print_log_file_sections(Path(configuration.log_directory), output)
+    _print_log_file_sections(
+        Path(configuration.log_directory), arguments.server_log_count, output
+    )
     LOG.info("Done\n")
 
 
 def run(
-    configuration: configuration_module.Configuration, output_path: Optional[Path]
+    configuration: configuration_module.Configuration,
+    arguments: command_arguments.RageArguments,
 ) -> commands.ExitCode:
     try:
+        output_path = arguments.output
         if output_path is None:
-            run_rage(configuration, log.stdout)
+            run_rage(configuration, arguments, log.stdout)
         else:
             with open(output_path) as output:
-                run_rage(configuration, output)
+                run_rage(configuration, arguments, output)
         return commands.ExitCode.SUCCESS
     except Exception as error:
         raise commands.ClientException(

@@ -79,3 +79,9 @@ class IncrementalArguments:
     output: str = TEXT
     no_start: bool = False
     start_arguments: StartArguments = field(default_factory=StartArguments)
+
+
+@dataclass(frozen=True)
+class RageArguments:
+    output: Optional[Path] = None
+    server_log_count: Optional[int] = None
