@@ -489,17 +489,18 @@ let with_server ?watchman ~f ({ ServerConfiguration.log_path; _ } as server_conf
     server_destructor
 
 
-(* Create a promise that only gets fulfilled when given unix signals are received. *)
-let wait_on_signals ~exit_status signals =
+(* Invoke `on_caught` when given unix signals are received. *)
+let wait_on_signals ~on_caught signals =
   let open Lwt in
   let waiter, resolver = wait () in
   List.iter signals ~f:(fun signal ->
-      let signal = Signal.to_caml_int signal in
+      let signal = Signal.to_system_int signal in
       Lwt_unix.on_signal signal (wakeup resolver) |> ignore);
   waiter
   >>= fun signal ->
-  Log.info "Server interrupted with signal %d" signal;
-  return exit_status
+  let signal = Signal.of_system_int signal in
+  Log.info "Server interrupted with signal `%s`" (Signal.to_string signal);
+  on_caught signal
 
 
 let start_server
@@ -536,17 +537,19 @@ let start_server_and_wait ?event_channel server_configuration =
     ~on_server_socket_ready:(fun socket_path ->
       (* An empty message signals that server socket has been created. *)
       write_event (ServerEvent.SocketCreated socket_path))
-    ~on_started:(fun _ ->
+    ~on_started:(fun state ->
       write_event ServerEvent.ServerInitialized
       >>= fun () ->
       choose
         [
           (* We rely on SIGINT for normal server shutdown. *)
-          wait_on_signals [Signal.int] ~exit_status:ExitStatus.Ok;
+          wait_on_signals [Signal.int] ~on_caught:(fun _ -> return ExitStatus.Ok);
           (* Getting these signals usually indicates something serious went wrong. *)
           wait_on_signals
             [Signal.abrt; Signal.term; Signal.pipe; Signal.quit; Signal.segv]
-            ~exit_status:ExitStatus.Error;
+            ~on_caught:(fun signal ->
+              Stop.log_stopped_server ~reason:(Signal.to_string signal) ~state:!state ();
+              return ExitStatus.Error);
         ])
     ~on_exception:(fun exn ->
       let message =

@@ -12,5 +12,8 @@
    signal handler for SIGINT, then this function is not going to have any effect. *)
 val stop_waiting_server : unit -> 'a Lwt.t
 
-(* Same as `stop_waiting_server` but attempt to perform additional logging before stopping. *)
+(* Perform logging for a server stop event *)
+val log_stopped_server : reason:string -> state:ServerState.t -> unit -> unit
+
+(* Convenient wrapper around `log_stopped_server` followed by `stop_waiting_server`. *)
 val log_and_stop_waiting_server : reason:string -> state:ServerState.t -> unit -> 'a Lwt.t
