@@ -177,6 +177,18 @@ class Kill(Command):
             configuration_monitor.ConfigurationMonitor.NAME,
         )
 
+        try:
+            isolation_prefix = (
+                self._configuration.get_isolation_prefix_respecting_override()
+            )
+            command = ["buck", "kill"] + (
+                ["--isolation_prefix", isolation_prefix] if isolation_prefix else []
+            )
+            subprocess.run(command)
+            LOG.debug(f"Ran {command}")
+        except Exception as exception:
+            LOG.debug(f"Could not run `{command}`: {exception}")
+
     def _kill_binary_processes(self) -> None:
         # Kills all processes that have the same binary as the one specified
         # in the configuration.
