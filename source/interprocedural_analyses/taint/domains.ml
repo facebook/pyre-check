@@ -9,22 +9,6 @@ open Core
 open Ast
 open Pyre
 
-module type TAINT_SET = sig
-  include Abstract.Domain.S
-
-  type element [@@deriving compare]
-
-  val element : element Abstract.Domain.part
-
-  val add : element -> t -> t
-
-  val of_list : element list -> t
-
-  val to_json : t -> Yojson.Safe.json list
-
-  val singleton : element -> t
-end
-
 module type SET_ARG = sig
   include Abstract.SetDomain.ELEMENT
 
@@ -33,26 +17,6 @@ module type SET_ARG = sig
   val show : t -> string
 
   val ignore_leaf_at_call : t -> bool
-end
-
-module Set (Element : SET_ARG) : TAINT_SET with type element = Element.t = struct
-  module Set = Abstract.SetDomain.Make (Element)
-  include Set
-
-  let element = Set.Element
-
-  type element = Element.t [@@deriving compare]
-
-  let show set =
-    elements set |> List.map ~f:Element.show |> String.concat ~sep:", " |> Format.sprintf "{%s}"
-
-
-  let to_json set =
-    let element_to_json element =
-      let kind = `String (Element.show element) in
-      `Assoc ["kind", kind]
-    in
-    elements set |> List.map ~f:element_to_json
 end
 
 let location_to_json
