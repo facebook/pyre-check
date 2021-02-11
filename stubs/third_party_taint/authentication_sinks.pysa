@@ -1,0 +1,18 @@
+# Amazon S3
+def boto.s3.connection.S3Connection.__init__(
+    aws_access_key_id: TaintSink[Authentication] = ...,
+    aws_secret_access_key: TaintSink[Authentication] = ...,
+): ...
+def boto3.client(
+    aws_access_key_id: TaintSink[Authentication] = ...,
+    aws_secret_access_key: TaintSink[Authentication] = ...,
+): ...
+def s3fs.core.S3FileSystem.__init__(
+    key: TaintSink[Authentication] = ...,
+    secret: TaintSink[Authentication] = ...,
+    token: TaintSink[Authentication] = ...,
+): ...
+def amazon.api.AmazonAPI.__init__(
+    aws_key: TaintSink[Authentication],
+    aws_secret: TaintSink[Authentication],
+): ...
