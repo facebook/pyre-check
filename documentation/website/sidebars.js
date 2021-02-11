@@ -62,12 +62,19 @@ module.exports = {
         'pysa-tips',
       ],
     },
-    ...fbInternalOnly(['fb/pysa-deployment']),
     'static-analysis-post-processor',
     'pysa-additional-resources',
     ...fbInternalOnly(['fb/pysa-cross-repo-taint-exchange']),
     'pysa-explore',
-    ...fbInternalOnly(['fb/pysa-sandcastle-internals']),
+    ...fbInternalOnly([
+      {
+        'Pysa Developer Docs': [
+          'fb/pysa-deployment',
+          'fb/pysa-sandcastle-internals',
+          'fb/pysa-oncall-runbook',
+        ],
+      },
+    ]),
   ],
   ...fbInternalOnly(() => require('./fb/sidebars.js')),
 };
