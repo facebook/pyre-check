@@ -1685,6 +1685,14 @@ let test_qualify _ =
       $local_qualifier$Tree = typing.Union[int, \
         typing.Tuple["$local_qualifier$Tree", "$local_qualifier$Tree"]]
     |};
+  (* Don't qualify a parameter that is already qualified. *)
+  assert_qualify
+    {|
+      def foo($parameter$x: int): ...
+    |}
+    {|
+      def qualifier.foo($parameter$x: int): ...
+    |};
   ()
 
 

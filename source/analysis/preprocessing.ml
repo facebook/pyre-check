@@ -322,6 +322,7 @@ let qualify
         _;
       } as source )
   =
+  let is_qualified = String.is_prefix ~prefix:"$" in
   let prefix_identifier ~scope:({ aliases; immutables; _ } as scope) ~prefix name =
     let stars, name = Identifier.split_star name in
     let renamed = Format.asprintf "$%s$%s" prefix name in
@@ -404,8 +405,7 @@ let qualify
     =
     if is_in_function then
       match Reference.as_list name with
-      | [simple_name]
-        when (not (String.is_prefix simple_name ~prefix:"$")) && not (Set.mem immutables name) ->
+      | [simple_name] when (not (is_qualified simple_name)) && not (Set.mem immutables name) ->
           let alias = qualify_local_identifier simple_name ~qualifier |> name_to_reference_exn in
           ( {
               scope with
@@ -457,18 +457,21 @@ let qualify
         (scope, reversed_parameters)
         ({ Node.value = { Parameter.name; value; annotation }; _ } as parameter)
       =
-      let scope, stars, renamed = prefix_identifier ~scope ~prefix:"parameter" name in
-      ( scope,
-        {
-          parameter with
-          Node.value =
-            {
-              Parameter.name = stars ^ renamed;
-              value = value >>| qualify_expression ~qualify_strings:false ~scope;
-              annotation;
-            };
-        }
-        :: reversed_parameters )
+      if not (is_qualified name) then
+        let scope, stars, renamed = prefix_identifier ~scope ~prefix:"parameter" name in
+        ( scope,
+          {
+            parameter with
+            Node.value =
+              {
+                Parameter.name = stars ^ renamed;
+                value = value >>| qualify_expression ~qualify_strings:false ~scope;
+                annotation;
+              };
+          }
+          :: reversed_parameters )
+      else
+        scope, parameter :: reversed_parameters
     in
     let scope, parameters =
       List.fold
@@ -561,10 +564,9 @@ let qualify
                 | Name (Name.Identifier name) ->
                     (* Incrementally number local variables to avoid shadowing. *)
                     let scope =
-                      let qualified = String.is_prefix name ~prefix:"$" in
                       let reference = Reference.create name in
                       if
-                        (not qualified)
+                        (not (is_qualified name))
                         && (not (Set.mem locals reference))
                         && not (Set.mem immutables reference)
                       then
@@ -893,7 +895,7 @@ let qualify
             let qualify_handler { Try.Handler.kind; name; body } =
               let renamed_scope, name =
                 match name with
-                | Some name ->
+                | Some name when not (is_qualified name) ->
                     let scope, _, renamed = prefix_identifier ~scope ~prefix:"target" name in
                     scope, Some renamed
                 | _ -> scope, name
@@ -955,7 +957,7 @@ let qualify
       | { Node.value = Expression.Tuple elements; _ } ->
           List.fold elements ~init:scope ~f:renamed_scope
       | { Node.value = Name (Name.Identifier name); _ } ->
-          if Set.mem locals (Reference.create name) then
+          if Set.mem locals (Reference.create name) || is_qualified name then
             scope
           else
             let scope, _, _ = prefix_identifier ~scope ~prefix:"target" name in
@@ -975,7 +977,7 @@ let qualify
         match Map.find aliases (Reference.create head) with
         | Some { name; is_forward_reference; qualifier }
           when (not is_forward_reference) || use_forward_references ->
-            if Reference.show name |> String.is_prefix ~prefix:"$" && suppress_synthetics then
+            if Reference.show name |> is_qualified && suppress_synthetics then
               Reference.combine qualifier reference
             else
               Reference.combine name (Reference.create_from_list tail)
@@ -990,7 +992,7 @@ let qualify
         match Map.find aliases (Reference.create identifier) with
         | Some { name; is_forward_reference; qualifier }
           when (not is_forward_reference) || use_forward_references ->
-            if Reference.show name |> String.is_prefix ~prefix:"$" && suppress_synthetics then
+            if Reference.show name |> is_qualified && suppress_synthetics then
               Name
                 (Name.Attribute
                    {
