@@ -94,7 +94,9 @@ class Reporting(Command):
         return sorted_errors
 
     def _get_errors(self, result: Result) -> Sequence[LegacyError]:
-        analysis_root = os.path.realpath(self._analysis_directory.get_root())
+        analysis_root = os.path.realpath(
+            self._analysis_directory.get_root_path().get_root()
+        )
         errors = self._relativize_errors(analysis_root, self._parse_raw_errors(result))
 
         return self._filter_errors(errors)

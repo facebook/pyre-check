@@ -1347,6 +1347,11 @@ class SearchPathElementTest(unittest.TestCase):
         self.assertEqual(SubdirectorySearchPathElement("foo", "bar").path(), "foo/bar")
         self.assertEqual(SitePackageSearchPathElement("foo", "bar").path(), "foo/bar")
 
+    def test_get_root(self) -> None:
+        self.assertEqual(SimpleSearchPathElement("foo").get_root(), "foo")
+        self.assertEqual(SubdirectorySearchPathElement("foo", "bar").get_root(), "foo")
+        self.assertEqual(SitePackageSearchPathElement("foo", "bar").get_root(), "foo")
+
     def test_command_line_argument(self) -> None:
         self.assertEqual(SimpleSearchPathElement("foo").command_line_argument(), "foo")
         self.assertEqual(

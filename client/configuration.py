@@ -99,6 +99,10 @@ class SearchPathElement(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
+    def get_root(self) -> str:
+        raise NotImplementedError
+
+    @abc.abstractmethod
     def command_line_argument(self) -> str:
         raise NotImplementedError
 
@@ -116,6 +120,9 @@ class SimpleSearchPathElement(SearchPathElement):
     root: str
 
     def path(self) -> str:
+        return self.root
+
+    def get_root(self) -> str:
         return self.root
 
     def command_line_argument(self) -> str:
@@ -140,6 +147,9 @@ class SubdirectorySearchPathElement(SearchPathElement):
     def path(self) -> str:
         return os.path.join(self.root, self.subdirectory)
 
+    def get_root(self) -> str:
+        return self.root
+
     def command_line_argument(self) -> str:
         return self.root + "$" + self.subdirectory
 
@@ -163,6 +173,9 @@ class SitePackageSearchPathElement(SearchPathElement):
 
     def path(self) -> str:
         return os.path.join(self.site_root, self.package_name)
+
+    def get_root(self) -> str:
+        return self.site_root
 
     def command_line_argument(self) -> str:
         return self.site_root + "$" + self.package_name

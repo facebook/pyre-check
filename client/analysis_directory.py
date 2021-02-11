@@ -123,6 +123,9 @@ class AnalysisDirectory:
     def get_root(self) -> str:
         return self._path.path()
 
+    def get_root_path(self) -> SearchPathElement:
+        return self._path
+
     def get_filter_roots(self) -> Set[str]:
         current_project_directories = self._filter_paths or {self.get_root()}
         return {
@@ -245,6 +248,9 @@ class SharedAnalysisDirectory(AnalysisDirectory):
     @functools.lru_cache(1)
     def get_root(self) -> str:
         return self.get_command_line_root()
+
+    def get_root_path(self) -> SearchPathElement:
+        return SimpleSearchPathElement(self.get_root())
 
     def get_filter_roots(self) -> Set[str]:
         current_project_directories = self._filter_paths or {self._project_root}
