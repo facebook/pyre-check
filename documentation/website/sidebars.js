@@ -22,6 +22,7 @@ module.exports = {
     'types-in-python',
     ...fbInternalOnly(['fb/increasing-type-coverage']),
     'errors',
+    ...fbInternalOnly(['fb/open-source-setup']),
     'querying-pyre',
   ],
   pysa: [
