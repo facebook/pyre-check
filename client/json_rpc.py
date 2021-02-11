@@ -342,8 +342,8 @@ def _read_payload(file: BinaryIO) -> JSON:
 
         body = file.read(length)
         return json.loads(body.decode("utf-8"))
-    except (ValueError, OSError, JSONDecodeError):
-        raise ParseError("Payload reading failed")
+    except (ValueError, OSError, JSONDecodeError) as exception:
+        raise ParseError(f"Payload reading failed: {exception}")
 
 
 def read_lsp_request(file: BinaryIO) -> Request:
