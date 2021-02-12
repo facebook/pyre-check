@@ -11,8 +11,10 @@ import subprocess
 import sys
 import tempfile
 
+LOG: logging.Logger = logging.getLogger(__name__)
 
-def normalized_json_dump(input):
+
+def normalized_json_dump(input: str) -> str:
     normalized = json.loads(input)
 
     normalized = sorted(normalized, key=lambda issue: issue["path"])
@@ -29,18 +31,18 @@ if __name__ == "__main__":
 
     # Switch to directory of this script.
     os.chdir(os.path.dirname(__file__))
-    logging.info("Running in `%s`", os.getcwd())
+    LOG.info("Running in `%s`", os.getcwd())
 
     # Extract typeshed
     with tempfile.TemporaryDirectory() as directory:
-        logging.info(f"Extracting typeshed into `{directory}`...")
+        LOG.info(f"Extracting typeshed into `{directory}`...")
         subprocess.check_call(
             ["unzip", "../typeshed/typeshed.zip", "-d", directory],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
 
-        logging.info("Running `pyre analyze`")
+        LOG.info("Running `pyre analyze`")
         try:
             output = subprocess.check_output(
                 [
@@ -52,7 +54,7 @@ if __name__ == "__main__":
                 ]
             ).decode()
         except subprocess.CalledProcessError as exception:
-            logging.error(f"`pyre analyze` failed:\n{exception.output.decode()}")
+            LOG.error(f"`pyre analyze` failed:\n{exception.output.decode()}")
             sys.exit(1)
         expected = ""
         with open("result.json") as file:
@@ -61,8 +63,8 @@ if __name__ == "__main__":
         if normalized_json_dump(expected) != normalized_json_dump(output):
             with open("result.actual", "w") as file:
                 file.write(normalized_json_dump(output))
-            logging.error("Output differs from expected:")
+            LOG.error("Output differs from expected:")
             subprocess.run(["diff", "result.json", "result.actual"])
             sys.exit(1)
 
-        logging.info("Run produced expected results")
+        LOG.info("Run produced expected results")
