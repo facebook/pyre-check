@@ -40,6 +40,7 @@ module T : sig
         class_name: string;
         attribute_name: string;
       }
+    | ModelingClassAsDefine of string
     | NotInEnvironment of string
     | UnexpectedDecorators of {
         name: Reference.t;

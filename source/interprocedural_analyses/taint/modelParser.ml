@@ -1986,6 +1986,14 @@ let create ~resolution ?path ~configuration ~rule_filter source =
             path;
             location;
           }
+      else if Type.is_meta (Annotation.annotation callable_annotation) then
+        Error
+          {
+            ModelVerificationError.T.kind =
+              ModelVerificationError.T.ModelingClassAsDefine (Reference.show name);
+            path;
+            location;
+          }
       else
         Ok callable_annotation
     in

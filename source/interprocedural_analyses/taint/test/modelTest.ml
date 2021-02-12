@@ -1655,6 +1655,30 @@ let test_invalid_models context =
     |}
     ~expect:"a.py:2: `a.not_in_environment` is not part of the environment!"
     ();
+  assert_invalid_model
+    ~source:{|
+      class C:
+          def __init__(self, x) -> None:
+              ...
+    |}
+    ~model_source:{|
+      @Sanitize
+      def test.C(): ...
+    |}
+    ~expect:"The class `test.C` is not a valid define - did you mean to model `test.C.__init__()`?"
+    ();
+  (* Class models don't error. *)
+  assert_valid_model
+    ~source:{|
+      class C:
+          def __init__(self, x) -> None:
+              ...
+    |}
+    ~model_source:{|
+      @Sanitize
+      class test.C: ...
+    |}
+    ();
   ()
 
 

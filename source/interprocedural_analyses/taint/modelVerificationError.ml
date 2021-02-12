@@ -42,6 +42,7 @@ module T = struct
         class_name: string;
         attribute_name: string;
       }
+    | ModelingClassAsDefine of string
     | NotInEnvironment of string
     | UnexpectedDecorators of {
         name: Reference.t;
@@ -129,6 +130,11 @@ let description error =
       Format.sprintf "Invalid model for `%s`: %s" model_name message
   | MissingAttribute { class_name; attribute_name } ->
       Format.sprintf "Class `%s` has no attribute `%s`." class_name attribute_name
+  | ModelingClassAsDefine class_name ->
+      Format.sprintf
+        "The class `%s` is not a valid define - did you mean to model `%s.__init__()`?"
+        class_name
+        class_name
   | NotInEnvironment name -> Format.sprintf "`%s` is not part of the environment!" name
 
 
@@ -144,6 +150,7 @@ let code { kind; _ } =
   | UnexpectedDecorators _ -> 7
   | InvalidParameterExclude _ -> 8
   | InvalidTaintAnnotation _ -> 9
+  | ModelingClassAsDefine _ -> 10
 
 
 let display { kind = error; path; location } =
