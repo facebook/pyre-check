@@ -90,7 +90,12 @@ let transform_string_annotation_expression ~relative =
           with
           | Parser.Error _
           | Failure _ ->
-              Log.debug "Invalid string annotation `%s` at %a" string_value Location.pp location;
+              Log.debug
+                "Invalid string annotation `%s` at %s:%a"
+                string_value
+                relative
+                Location.pp
+                location;
               (* TODO(T76231928): replace this silent ignore with something typeCheck.ml can use *)
               value )
       | Tuple elements -> Tuple (List.map elements ~f:transform_expression)
@@ -275,8 +280,9 @@ let expand_format_string ({ Source.source_path = { SourcePath.relative; _ }; _ }
             | Parser.Error _
             | Failure _ ->
                 Log.debug
-                  "Pyre could not parse format string `%s` at %a"
+                  "Pyre could not parse format string `%s` at %s:%a"
                   input_string
+                  relative
                   Location.pp
                   location;
                 []
@@ -1141,7 +1147,12 @@ let qualify
             with
             | Parser.Error _
             | Failure _ ->
-                Log.debug "Invalid string annotation `%s` at %a" value Location.pp location;
+                Log.debug
+                  "Invalid string annotation `%s` at %s:%a"
+                  value
+                  relative
+                  Location.pp
+                  location;
                 String { StringLiteral.value; kind } )
           else
             String { StringLiteral.value; kind }
