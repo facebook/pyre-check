@@ -57,15 +57,18 @@ class ValidateModels(Query):
         if "errors" not in json_result:
             return []
         analysis_root = os.path.realpath(analysis_directory.get_root())
-        return [
-            ValidateModels._relativize_error(
-                configuration,
-                analysis_root,
-                ModelVerificationError.from_json(error_json),
-                original_directory,
-            )
-            for error_json in json_result["errors"]
-        ]
+        return sorted(
+            (
+                ValidateModels._relativize_error(
+                    configuration,
+                    analysis_root,
+                    ModelVerificationError.from_json(error_json),
+                    original_directory,
+                )
+                for error_json in json_result["errors"]
+            ),
+            key=lambda error: (error.path, error.line, error.code),
+        )
 
     def _socket_result_handler(self, result: Result) -> None:
         try:
