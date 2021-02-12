@@ -41,16 +41,19 @@ if __name__ == "__main__":
         )
 
         logging.info("Running `pyre analyze`")
-        output = subprocess.check_output(
-            [
-                "pyre",
-                "--typeshed",
-                f"{directory}/typeshed-master",
-                "--noninteractive",
-                "analyze",
-            ]
-        ).decode()
-
+        try:
+            output = subprocess.check_output(
+                [
+                    "pyre",
+                    "--typeshed",
+                    f"{directory}/typeshed-master",
+                    "--noninteractive",
+                    "analyze",
+                ]
+            ).decode()
+        except subprocess.CalledProcessError as exception:
+            logging.error(f"`pyre analyze` failed:\n{exception.output.decode()}")
+            sys.exit(1)
         expected = ""
         with open("result.json") as file:
             expected = file.read()
