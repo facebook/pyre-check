@@ -178,10 +178,21 @@ let directory_contains ~directory path =
   String.is_prefix ~prefix:(directory ^ "/") path
 
 
+module FileType = struct
+  type t =
+    | File
+    | Directory
+end
+
 (* Walk up from the root to try and find a directory/target. *)
-let search_upwards ~target ~root =
+let search_upwards ~target ~target_type ~root =
+  let exists =
+    match target_type with
+    | FileType.File -> Sys.is_file
+    | Directory -> Sys.is_directory
+  in
   let rec directory_has_target directory =
-    match Sys.is_file (directory ^/ target) with
+    match exists (directory ^/ target) with
     | `Yes -> Some (create_absolute directory)
     | _ when [%compare.equal: path] (Filename.dirname directory) directory -> None
     | _ -> directory_has_target (Filename.dirname directory)

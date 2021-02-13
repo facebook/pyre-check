@@ -131,7 +131,10 @@ let load
         let target_path = Constants.Server.saved_state_path configuration in
         Log.log ~section:`Server "Loading saved state to `%s`..." (Path.absolute target_path);
         let loaded_state =
-          Path.search_upwards ~target:".watchmanconfig" ~root:project_root
+          Path.search_upwards
+            ~target:".watchmanconfig"
+            ~target_type:Path.FileType.File
+            ~root:project_root
           >>= fun watchman_root ->
           FetchSavedState.load
             ~watchman_root

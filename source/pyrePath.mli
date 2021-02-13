@@ -75,7 +75,13 @@ val list
 
 val directory_contains : directory:t -> t -> bool
 
-val search_upwards : target:string -> root:t -> t option
+module FileType : sig
+  type t =
+    | File
+    | Directory
+end
+
+val search_upwards : target:string -> target_type:FileType.t -> root:t -> t option
 
 val remove : t -> unit
 

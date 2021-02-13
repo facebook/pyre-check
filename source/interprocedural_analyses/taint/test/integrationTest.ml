@@ -156,15 +156,14 @@ let test_paths =
     && (not (String.contains name '#'))
     && not (String.contains name '~')
   in
-  (* Shameful things happen here... *)
   Path.current_working_directory ()
-  |> Path.show
   |> (fun path ->
-       String.chop_suffix ~suffix:"_build/default/interprocedural_analyses/taint/test" path
-       |> Option.value ~default:(path ^ "/source"))
-  |> (fun root -> Path.create_absolute root)
+       Path.search_upwards ~target:"source" ~target_type:Path.FileType.Directory ~root:path
+       |> Option.value ~default:path)
   |> (fun root ->
-       Path.create_relative ~root ~relative:"interprocedural_analyses/taint/test/integration/")
+       Path.create_relative
+         ~root
+         ~relative:"source/interprocedural_analyses/taint/test/integration/")
   |> fun root -> Path.list ~file_filter ~root ()
 
 
