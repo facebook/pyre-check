@@ -667,13 +667,14 @@ let compute_fixpoint
         in
         callables_to_dump := Callable.Set.union !callables_to_dump iteration_callables_to_dump;
         Fixpoint.remove_old old_batch;
-        Log.log
-          ~section:`Performance
-          "Expensive callables for iteration %d: %s"
-          iteration
-          ( List.map iteration_expensive_callables ~f:(fun { time_to_analyze_in_ms; callable } ->
-                Format.sprintf "`%s`: %d ms" (Callable.show callable) time_to_analyze_in_ms)
-          |> String.concat ~sep:", " )
+        if not (List.is_empty iteration_expensive_callables) then
+          Log.log
+            ~section:`Performance
+            "Expensive callables for iteration %d: %s"
+            iteration
+            ( List.map iteration_expensive_callables ~f:(fun { time_to_analyze_in_ms; callable } ->
+                  Format.sprintf "`%s`: %d ms" (Callable.show callable) time_to_analyze_in_ms)
+            |> String.concat ~sep:", " )
       in
       let callables_to_analyze =
         compute_callables_to_reanalyze
