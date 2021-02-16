@@ -44,9 +44,7 @@
               { "line": 21, "start": 17, "end": 36 },
               { "line": 29, "start": 21, "end": 40 }
             ],
-            "leaves": [
-              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
             "features": [
               { "always-via": "tito" },
               { "always-via": "string_concat_rhs" },
@@ -85,8 +83,7 @@
               {
                 "kind": "Test",
                 "name":
-                  "always_in_none.ComplicatedService.serve_tainted_request",
-                "on_all_flows": true
+                  "always_in_none.ComplicatedService.serve_tainted_request"
               }
             ]
           },
@@ -101,8 +98,7 @@
               {
                 "kind": "Test",
                 "name":
-                  "always_in_none.ComplicatedService.serve_tainted_request",
-                "on_all_flows": true
+                  "always_in_none.ComplicatedService.serve_tainted_request"
               }
             ]
           }
@@ -118,9 +114,7 @@
               "start": 16,
               "end": 22
             },
-            "leaves": [
-              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]

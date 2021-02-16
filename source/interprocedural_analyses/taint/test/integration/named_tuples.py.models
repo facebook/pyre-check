@@ -26,13 +26,7 @@
               "port": "result[bad]",
               "length": 1
             },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "__test_source",
-                "on_all_flows": true
-              }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [
               { "has": "first-field" },
               { "first-field": "bad" },
@@ -52,9 +46,7 @@
               "start": 16,
               "end": 21
             },
-            "leaves": [
-              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -96,13 +88,7 @@
               "port": "result[bad]",
               "length": 1
             },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "__test_source",
-                "on_all_flows": true
-              }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [
               { "has": "first-field" },
               { "first-field": "bad" },
@@ -122,9 +108,7 @@
               "start": 16,
               "end": 21
             },
-            "leaves": [
-              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -166,13 +150,7 @@
               "port": "result[bad]",
               "length": 1
             },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "__test_source",
-                "on_all_flows": true
-              }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [
               { "has": "first-field" },
               { "first-field": "bad" },
@@ -192,9 +170,7 @@
               "start": 16,
               "end": 21
             },
-            "leaves": [
-              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -503,13 +479,7 @@
               "end": 50
             },
             "tito": [ { "line": 52, "start": 35, "end": 50 } ],
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "__test_source",
-                "on_all_flows": true
-              }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [
               { "always-via": "tito" },
               { "always-via": "special_source" }
@@ -538,13 +508,7 @@
               "end": 50
             },
             "tito": [ { "line": 34, "start": 35, "end": 50 } ],
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "__test_source",
-                "on_all_flows": true
-              }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [
               { "always-via": "tito" },
               { "always-via": "special_source" }
@@ -573,13 +537,7 @@
               "end": 43
             },
             "tito": [ { "line": 17, "start": 28, "end": 43 } ],
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "__test_source",
-                "on_all_flows": true
-              }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [
               { "always-via": "tito" },
               { "always-via": "special_source" }

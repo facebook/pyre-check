@@ -15,13 +15,7 @@
               "start": 15,
               "end": 30
             },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "__test_source",
-                "on_all_flows": true
-              }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -46,13 +40,7 @@
               "start": 15,
               "end": 30
             },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "__test_source",
-                "on_all_flows": true
-              }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]

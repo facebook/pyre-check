@@ -22,13 +22,7 @@
               "end": 38
             },
             "tito": [ { "line": 66, "start": 23, "end": 38 } ],
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "__test_source",
-                "on_all_flows": true
-              }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [
               { "has": "first-index" },
               { "first-index": "a" },
@@ -48,9 +42,7 @@
               "start": 16,
               "end": 33
             },
-            "leaves": [
-              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -88,13 +80,7 @@
               "end": 38
             },
             "tito": [ { "line": 66, "start": 23, "end": 38 } ],
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "__test_source",
-                "on_all_flows": true
-              }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [
               { "always-via": "tito" },
               { "always-via": "special_source" }
@@ -112,9 +98,7 @@
               "start": 16,
               "end": 28
             },
-            "leaves": [
-              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -254,11 +238,7 @@
               "end": 18
             },
             "leaves": [
-              {
-                "kind": "Test",
-                "name": "Obj{attributes.Token.token}",
-                "on_all_flows": true
-              }
+              { "kind": "Test", "name": "Obj{attributes.Token.token}" }
             ]
           }
         ]
@@ -294,9 +274,7 @@
               "start": 16,
               "end": 23
             },
-            "leaves": [
-              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           },
           {
@@ -306,9 +284,7 @@
               "start": 20,
               "end": 27
             },
-            "leaves": [
-              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           },
           {
@@ -318,9 +294,7 @@
               "start": 20,
               "end": 27
             },
-            "leaves": [
-              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -352,11 +326,7 @@
               "end": 23
             },
             "leaves": [
-              {
-                "kind": "Test",
-                "name": "Obj{attributes.Token.token}",
-                "on_all_flows": true
-              }
+              { "kind": "Test", "name": "Obj{attributes.Token.token}" }
             ]
           }
         ]
@@ -371,9 +341,7 @@
               "start": 16,
               "end": 23
             },
-            "leaves": [
-              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -405,11 +373,7 @@
               "end": 27
             },
             "leaves": [
-              {
-                "kind": "Test",
-                "name": "Obj{attributes.Token.token}",
-                "on_all_flows": true
-              }
+              { "kind": "Test", "name": "Obj{attributes.Token.token}" }
             ]
           }
         ]
@@ -424,9 +388,7 @@
               "start": 20,
               "end": 27
             },
-            "leaves": [
-              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -451,9 +413,7 @@
               "start": 16,
               "end": 41
             },
-            "leaves": [
-              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -478,9 +438,7 @@
               "start": 16,
               "end": 42
             },
-            "leaves": [
-              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -504,13 +462,7 @@
               "start": 35,
               "end": 50
             },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "__test_source",
-                "on_all_flows": true
-              }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -546,11 +498,7 @@
               "end": 18
             },
             "leaves": [
-              {
-                "kind": "Test",
-                "name": "Obj{attributes.Token.token}",
-                "on_all_flows": true
-              }
+              { "kind": "Test", "name": "Obj{attributes.Token.token}" }
             ]
           }
         ]
@@ -586,9 +534,7 @@
               "start": 16,
               "end": 36
             },
-            "leaves": [
-              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
             "features": [
               { "has": "first-index" },
               { "first-index": "text" },
@@ -617,9 +563,7 @@
               "start": 16,
               "end": 37
             },
-            "leaves": [
-              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
             "features": [
               { "has": "first-index" },
               { "first-index": "other" },
@@ -648,11 +592,7 @@
               "end": 33
             },
             "leaves": [
-              {
-                "kind": "Test",
-                "name": "Obj{attributes.Token.token}",
-                "on_all_flows": true
-              }
+              { "kind": "Test", "name": "Obj{attributes.Token.token}" }
             ]
           }
         ]
@@ -688,11 +628,7 @@
               "end": 37
             },
             "leaves": [
-              {
-                "kind": "Test",
-                "name": "Obj{attributes.Token.token}",
-                "on_all_flows": true
-              }
+              { "kind": "Test", "name": "Obj{attributes.Token.token}" }
             ]
           }
         ]

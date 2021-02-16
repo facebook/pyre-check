@@ -33,13 +33,7 @@
               "start": 24,
               "end": 39
             },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "__test_source",
-                "on_all_flows": true
-              }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [
               { "always-via": "special_source" },
               { "always-via": "obscure" }

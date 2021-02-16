@@ -26,8 +26,7 @@
               {
                 "port": "producer:1:result",
                 "kind": "UserControlled",
-                "name": "crossRepositorySource",
-                "on_all_flows": true
+                "name": "crossRepositorySource"
               }
             ]
           }
@@ -43,9 +42,7 @@
               "start": 16,
               "end": 17
             },
-            "leaves": [
-              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -76,13 +73,7 @@
               "start": 13,
               "end": 28
             },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "__test_source",
-                "on_all_flows": true
-              }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -101,8 +92,7 @@
               {
                 "port": "anchor:formal(0)",
                 "kind": "Test",
-                "name": "crossRepositoryAnchor",
-                "on_all_flows": true
+                "name": "crossRepositoryAnchor"
               }
             ]
           }
@@ -127,8 +117,7 @@
               {
                 "port": "anchor:formal(0)",
                 "kind": "Test",
-                "name": "crossRepositoryAnchor",
-                "on_all_flows": true
+                "name": "crossRepositoryAnchor"
               }
             ]
           }
@@ -152,8 +141,7 @@
               {
                 "port": "producer:1:formal(0)",
                 "kind": "UserControlled",
-                "name": "crossRepositorySource",
-                "on_all_flows": true
+                "name": "crossRepositorySource"
               }
             ]
           }
@@ -171,9 +159,7 @@
               "start": 16,
               "end": 32
             },
-            "leaves": [
-              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -209,8 +195,7 @@
               {
                 "port": "producer:1:formal(0)",
                 "kind": "UserControlled",
-                "name": "crossRepositorySource",
-                "on_all_flows": true
+                "name": "crossRepositorySource"
               }
             ]
           }
@@ -226,9 +211,7 @@
               "start": 16,
               "end": 32
             },
-            "leaves": [
-              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -251,8 +234,7 @@
               {
                 "port": "producer:1:result",
                 "kind": "UserControlled",
-                "name": "crossRepositorySource",
-                "on_all_flows": true
+                "name": "crossRepositorySource"
               }
             ]
           }

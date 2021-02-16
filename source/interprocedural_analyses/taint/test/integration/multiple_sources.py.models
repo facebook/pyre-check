@@ -24,8 +24,7 @@
             "leaves": [
               {
                 "kind": "PermissiveContext",
-                "name": "multiple_sources.permissive_context",
-                "on_all_flows": true
+                "name": "multiple_sources.permissive_context"
               }
             ]
           }
@@ -76,8 +75,7 @@
             "leaves": [
               {
                 "kind": "PermissiveContext",
-                "name": "multiple_sources.permissive_context",
-                "on_all_flows": true
+                "name": "multiple_sources.permissive_context"
               }
             ]
           }
@@ -128,8 +126,7 @@
             "leaves": [
               {
                 "kind": "PermissiveContext",
-                "name": "multiple_sources.permissive_context",
-                "on_all_flows": true
+                "name": "multiple_sources.permissive_context"
               }
             ]
           }
@@ -180,8 +177,7 @@
             "leaves": [
               {
                 "kind": "PermissiveContext",
-                "name": "multiple_sources.permissive_context",
-                "on_all_flows": true
+                "name": "multiple_sources.permissive_context"
               }
             ]
           }
@@ -207,8 +203,7 @@
             "leaves": [
               {
                 "kind": "TriggeredPartialSink[UserControlledAndVC[vc]]",
-                "name": "multiple_sources.Node.send",
-                "on_all_flows": true
+                "name": "multiple_sources.Node.send"
               }
             ]
           }
@@ -243,8 +238,7 @@
             "leaves": [
               {
                 "kind": "UserControlled",
-                "name": "multiple_sources.user_controlled_input",
-                "on_all_flows": true
+                "name": "multiple_sources.user_controlled_input"
               }
             ]
           }
@@ -270,8 +264,7 @@
             "leaves": [
               {
                 "kind": "TriggeredPartialSink[UserControlledAndVC[id]]",
-                "name": "multiple_sources.Node.send",
-                "on_all_flows": true
+                "name": "multiple_sources.Node.send"
               }
             ],
             "features": [
@@ -509,8 +502,7 @@
             "leaves": [
               {
                 "kind": "TriggeredPartialSink[UserControlledAndVC[vc]]",
-                "name": "multiple_sources.Node.send",
-                "on_all_flows": true
+                "name": "multiple_sources.Node.send"
               }
             ]
           }
@@ -540,8 +532,7 @@
             "leaves": [
               {
                 "kind": "TriggeredPartialSink[UserControlledAndVC[id]]",
-                "name": "multiple_sources.Node.send",
-                "on_all_flows": true
+                "name": "multiple_sources.Node.send"
               }
             ],
             "features": [

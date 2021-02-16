@@ -14,13 +14,7 @@
               "start": 8,
               "end": 23
             },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "__test_source",
-                "on_all_flows": true
-              }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [
               { "has": "first-index" },
               { "first-index": "access_token" },
@@ -49,13 +43,7 @@
               "start": 8,
               "end": 23
             },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "__test_source",
-                "on_all_flows": true
-              }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [
               { "has": "first-index" },
               { "first-index": "<numeric>" },
@@ -84,13 +72,7 @@
               "start": 8,
               "end": 23
             },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "__test_source",
-                "on_all_flows": true
-              }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [
               { "has": "first-index" },
               { "first-index": "<unknown>" },
@@ -123,8 +105,7 @@
             "leaves": [
               {
                 "kind": "UserControlled",
-                "name": "Obj{django.http.Request.GET}",
-                "on_all_flows": true
+                "name": "Obj{django.http.Request.GET}"
               }
             ],
             "features": [
@@ -190,8 +171,7 @@
             "leaves": [
               {
                 "kind": "UserControlled",
-                "name": "Obj{django.http.Request.GET}",
-                "on_all_flows": true
+                "name": "Obj{django.http.Request.GET}"
               }
             ],
             "features": [
@@ -247,13 +227,7 @@
               "start": 9,
               "end": 24
             },
-            "leaves": [
-              {
-                "kind": "RemoteCodeExecution",
-                "name": "eval",
-                "on_all_flows": true
-              }
-            ]
+            "leaves": [ { "kind": "RemoteCodeExecution", "name": "eval" } ]
           }
         ]
       }
@@ -285,11 +259,7 @@
               "end": 28
             },
             "leaves": [
-              {
-                "kind": "UserControlled",
-                "name": "select.view_entry_field",
-                "on_all_flows": true
-              }
+              { "kind": "UserControlled", "name": "select.view_entry_field" }
             ],
             "features": [
               { "has": "first-field" },
@@ -308,13 +278,7 @@
               "start": 9,
               "end": 24
             },
-            "leaves": [
-              {
-                "kind": "RemoteCodeExecution",
-                "name": "eval",
-                "on_all_flows": true
-              }
-            ]
+            "leaves": [ { "kind": "RemoteCodeExecution", "name": "eval" } ]
           }
         ]
       }
@@ -339,13 +303,7 @@
               "end": 46
             },
             "tito": [ { "line": 37, "start": 9, "end": 20 } ],
-            "leaves": [
-              {
-                "kind": "RemoteCodeExecution",
-                "name": "eval",
-                "on_all_flows": true
-              }
-            ],
+            "leaves": [ { "kind": "RemoteCodeExecution", "name": "eval" } ],
             "features": [
               { "has": "first-index" },
               { "first-index": "payload" },
@@ -385,8 +343,7 @@
             "leaves": [
               {
                 "kind": "UserControlled",
-                "name": "Obj{django.http.Request.GET}",
-                "on_all_flows": true
+                "name": "Obj{django.http.Request.GET}"
               }
             ],
             "features": [
@@ -407,13 +364,7 @@
               "start": 9,
               "end": 46
             },
-            "leaves": [
-              {
-                "kind": "RemoteCodeExecution",
-                "name": "eval",
-                "on_all_flows": true
-              }
-            ]
+            "leaves": [ { "kind": "RemoteCodeExecution", "name": "eval" } ]
           }
         ]
       }
@@ -448,13 +399,7 @@
               "start": 9,
               "end": 31
             },
-            "leaves": [
-              {
-                "kind": "RemoteCodeExecution",
-                "name": "eval",
-                "on_all_flows": true
-              }
-            ],
+            "leaves": [ { "kind": "RemoteCodeExecution", "name": "eval" } ],
             "features": [
               { "has": "first-index" },
               { "first-index": "payload" }
@@ -490,11 +435,7 @@
               "end": 28
             },
             "leaves": [
-              {
-                "kind": "UserControlled",
-                "name": "select.view_entry_index",
-                "on_all_flows": true
-              }
+              { "kind": "UserControlled", "name": "select.view_entry_index" }
             ],
             "features": [
               { "has": "first-index" },
@@ -515,13 +456,7 @@
               "start": 9,
               "end": 31
             },
-            "leaves": [
-              {
-                "kind": "RemoteCodeExecution",
-                "name": "eval",
-                "on_all_flows": true
-              }
-            ]
+            "leaves": [ { "kind": "RemoteCodeExecution", "name": "eval" } ]
           }
         ]
       }

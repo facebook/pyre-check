@@ -22,11 +22,7 @@
               "end": 15
             },
             "leaves": [
-              {
-                "kind": "WithSubkind[A]",
-                "name": "parametric_models.f",
-                "on_all_flows": true
-              }
+              { "kind": "WithSubkind[A]", "name": "parametric_models.f" }
             ]
           },
           {
@@ -37,11 +33,7 @@
               "end": 15
             },
             "leaves": [
-              {
-                "kind": "WithSubkind[B]",
-                "name": "parametric_models.g",
-                "on_all_flows": true
-              }
+              { "kind": "WithSubkind[B]", "name": "parametric_models.g" }
             ]
           }
         ]
@@ -57,11 +49,7 @@
               "end": 10
             },
             "leaves": [
-              {
-                "kind": "ExpectsSubkind",
-                "name": "parametric_models.sink",
-                "on_all_flows": true
-              }
+              { "kind": "ExpectsSubkind", "name": "parametric_models.sink" }
             ]
           }
         ]
@@ -93,13 +81,7 @@
               "start": 8,
               "end": 23
             },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "__test_source",
-                "on_all_flows": true
-              }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -122,8 +104,7 @@
             "leaves": [
               {
                 "kind": "SinkWithSubkind[SinkA]",
-                "name": "parametric_models.sink_subkind_a",
-                "on_all_flows": true
+                "name": "parametric_models.sink_subkind_a"
               }
             ]
           },
@@ -142,8 +123,7 @@
             "leaves": [
               {
                 "kind": "SinkWithSubkind[SinkB]",
-                "name": "parametric_models.sink_subkind_b",
-                "on_all_flows": true
+                "name": "parametric_models.sink_subkind_b"
               }
             ]
           }
@@ -204,8 +184,7 @@
             "leaves": [
               {
                 "kind": "SinkWithSubkind[SinkA]",
-                "name": "parametric_models.sink_subkind_a",
-                "on_all_flows": true
+                "name": "parametric_models.sink_subkind_a"
               }
             ]
           },
@@ -219,8 +198,7 @@
             "leaves": [
               {
                 "kind": "SinkWithSubkind[SinkB]",
-                "name": "parametric_models.sink_subkind_b",
-                "on_all_flows": true
+                "name": "parametric_models.sink_subkind_b"
               }
             ]
           }

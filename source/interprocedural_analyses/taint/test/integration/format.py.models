@@ -15,9 +15,7 @@
               "start": 16,
               "end": 24
             },
-            "leaves": [
-              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
             "features": [
               { "always-via": "special_sink" },
               { "always-via": "format-string" }
@@ -44,13 +42,7 @@
               "start": 12,
               "end": 27
             },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "__test_source",
-                "on_all_flows": true
-              }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [
               { "always-via": "special_source" },
               { "always-via": "format-string" }

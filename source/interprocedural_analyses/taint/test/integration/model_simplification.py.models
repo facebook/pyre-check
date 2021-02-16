@@ -15,9 +15,7 @@
               "start": 47,
               "end": 53
             },
-            "leaves": [
-              { "kind": "GetAttr", "name": "getattr", "on_all_flows": true }
-            ],
+            "leaves": [ { "kind": "GetAttr", "name": "getattr" } ],
             "features": [ { "always-via": "obscure" } ]
           },
           {
@@ -33,9 +31,7 @@
               "length": 1
             },
             "tito": [ { "line": 42, "start": 42, "end": 45 } ],
-            "leaves": [
-              { "kind": "GetAttr", "name": "getattr", "on_all_flows": true }
-            ],
+            "leaves": [ { "kind": "GetAttr", "name": "getattr" } ],
             "features": [
               { "always-via": "tito" },
               { "always-via": "object" },
@@ -54,9 +50,7 @@
               "port": "formal(obj)",
               "length": 1
             },
-            "leaves": [
-              { "kind": "GetAttr", "name": "getattr", "on_all_flows": true }
-            ],
+            "leaves": [ { "kind": "GetAttr", "name": "getattr" } ],
             "features": [
               { "via": "tito" },
               { "via": "object" },
@@ -75,9 +69,7 @@
               "port": "formal(obj)",
               "length": 1
             },
-            "leaves": [
-              { "kind": "GetAttr", "name": "getattr", "on_all_flows": true }
-            ],
+            "leaves": [ { "kind": "GetAttr", "name": "getattr" } ],
             "features": [
               { "via": "tito" },
               { "via": "object" },
@@ -96,9 +88,7 @@
               "port": "formal(obj)",
               "length": 1
             },
-            "leaves": [
-              { "kind": "GetAttr", "name": "getattr", "on_all_flows": true }
-            ],
+            "leaves": [ { "kind": "GetAttr", "name": "getattr" } ],
             "features": [
               { "via": "tito" },
               { "via": "object" },
@@ -155,9 +145,7 @@
               "port": "formal(obj)",
               "length": 1
             },
-            "leaves": [
-              { "kind": "GetAttr", "name": "getattr", "on_all_flows": true }
-            ],
+            "leaves": [ { "kind": "GetAttr", "name": "getattr" } ],
             "features": [
               { "via": "tito" },
               { "via": "object" },
@@ -217,9 +205,7 @@
               "port": "formal(obj)",
               "length": 2
             },
-            "leaves": [
-              { "kind": "GetAttr", "name": "getattr", "on_all_flows": true }
-            ],
+            "leaves": [ { "kind": "GetAttr", "name": "getattr" } ],
             "features": [
               { "via": "tito" },
               { "via": "object" },
@@ -259,13 +245,7 @@
               "start": 21,
               "end": 36
             },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "__test_source",
-                "on_all_flows": true
-              }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [
               { "always-via": "special_source" },
               { "always-via": "obscure" }

@@ -25,13 +25,7 @@
               { "line": 118, "start": 10, "end": 25 },
               { "line": 120, "start": 16, "end": 17 }
             ],
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "__test_source",
-                "on_all_flows": true
-              }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [
               { "always-via": "tito" },
               { "always-via": "special_source" }
@@ -49,9 +43,7 @@
               "start": 16,
               "end": 19
             },
-            "leaves": [
-              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -89,8 +81,7 @@
             "leaves": [
               {
                 "kind": "Test",
-                "name": "properties.ClassProperty.my_class_property",
-                "on_all_flows": true
+                "name": "properties.ClassProperty.my_class_property"
               }
             ],
             "features": [ { "always-via": "string_concat_lhs" } ]
@@ -107,9 +98,7 @@
               "start": 16,
               "end": 47
             },
-            "leaves": [
-              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -142,13 +131,7 @@
               "port": "result",
               "length": 1
             },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "__test_source",
-                "on_all_flows": true
-              }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -211,13 +194,7 @@
               "start": -1,
               "end": -1
             },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "__test_source",
-                "on_all_flows": true
-              }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -257,13 +234,7 @@
               "port": "result",
               "length": 1
             },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "__test_source",
-                "on_all_flows": true
-              }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -299,13 +270,7 @@
               "start": -1,
               "end": -1
             },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "__test_source",
-                "on_all_flows": true
-              }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [
               { "always-via": "tito" },
               { "always-via": "special_source" }
@@ -323,13 +288,7 @@
               "port": "result",
               "length": 1
             },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "__test_source",
-                "on_all_flows": true
-              }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -374,13 +333,7 @@
               "start": -1,
               "end": -1
             },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "__test_source",
-                "on_all_flows": true
-              }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [
               { "always-via": "tito" },
               { "always-via": "special_source" }
@@ -409,9 +362,7 @@
               "start": -1,
               "end": -1
             },
-            "leaves": [
-              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -464,13 +415,7 @@
               "start": -1,
               "end": -1
             },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "__test_source",
-                "on_all_flows": true
-              }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -522,8 +467,7 @@
               {
                 "kind": "Test",
                 "name":
-                  "properties.TaintedGetterAndSetter.my_property$setter",
-                "on_all_flows": true
+                  "properties.TaintedGetterAndSetter.my_property$setter"
               }
             ]
           }
@@ -541,9 +485,7 @@
               "start": -1,
               "end": -1
             },
-            "leaves": [
-              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -593,9 +535,7 @@
               "start": -1,
               "end": -1
             },
-            "leaves": [
-              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -662,13 +602,7 @@
               "port": "result",
               "length": 1
             },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "__test_source",
-                "on_all_flows": true
-              }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -706,13 +640,7 @@
               "end": 38
             },
             "tito": [ { "line": 23, "start": 15, "end": 19 } ],
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "__test_source",
-                "on_all_flows": true
-              }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [
               { "always-via": "tito" },
               { "always-via": "special_source" }
@@ -730,13 +658,7 @@
               "port": "result",
               "length": 1
             },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "__test_source",
-                "on_all_flows": true
-              }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -766,13 +688,7 @@
               "port": "result",
               "length": 1
             },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "__test_source",
-                "on_all_flows": true
-              }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -830,13 +746,7 @@
               "end": 38
             },
             "tito": [ { "line": 39, "start": 15, "end": 19 } ],
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "__test_source",
-                "on_all_flows": true
-              }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [
               { "always-via": "tito" },
               { "always-via": "special_source" }
@@ -886,9 +796,7 @@
               "start": 20,
               "end": 25
             },
-            "leaves": [
-              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -941,13 +849,7 @@
               "start": 15,
               "end": 30
             },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "__test_source",
-                "on_all_flows": true
-              }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -977,13 +879,7 @@
               "port": "result",
               "length": 1
             },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "__test_source",
-                "on_all_flows": true
-              }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -1080,9 +976,7 @@
               "start": 20,
               "end": 24
             },
-            "leaves": [
-              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -1114,8 +1008,7 @@
               {
                 "kind": "Test",
                 "name":
-                  "properties.TaintedGetterAndSetter.my_property$setter",
-                "on_all_flows": true
+                  "properties.TaintedGetterAndSetter.my_property$setter"
               }
             ]
           }
@@ -1164,8 +1057,7 @@
             "leaves": [
               {
                 "kind": "Test",
-                "name": "Ovr{properties.TaintedGetterAndSetter::my_property}",
-                "on_all_flows": true
+                "name": "Ovr{properties.TaintedGetterAndSetter::my_property}"
               }
             ]
           }
@@ -1190,9 +1082,7 @@
               "port": "formal(self)",
               "length": 1
             },
-            "leaves": [
-              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]

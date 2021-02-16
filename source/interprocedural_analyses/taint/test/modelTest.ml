@@ -1619,7 +1619,7 @@ let test_invalid_models context =
     |}
     ~expect:
       {|Invalid model for `test.foo`: `ModelParser.T.Source {source = (Sources.T.NamedSource "A");
-  breadcrumbs = [(SimpleVia "featureA")]; path = [];
+  breadcrumbs = [(SimpleVia "featureA")]; path = []; leaf_names = [];
   leaf_name_provided = false}` is not a supported taint annotation for sanitizers.|}
     ();
   assert_invalid_model
@@ -1818,6 +1818,7 @@ let test_query_parsing context =
                          source = Sources.NamedSource "Test";
                          breadcrumbs = [];
                          path = [];
+                         leaf_names = [];
                          leaf_name_provided = false;
                        });
                 ];
@@ -1851,6 +1852,7 @@ let test_query_parsing context =
                          source = Sources.NamedSource "Test";
                          breadcrumbs = [];
                          path = [];
+                         leaf_names = [];
                          leaf_name_provided = false;
                        });
                 ];
@@ -1884,6 +1886,7 @@ let test_query_parsing context =
                          source = Sources.NamedSource "Test";
                          breadcrumbs = [];
                          path = [];
+                         leaf_names = [];
                          leaf_name_provided = false;
                        });
                 ];
@@ -1917,6 +1920,7 @@ let test_query_parsing context =
                          source = Sources.NamedSource "Test";
                          breadcrumbs = [];
                          path = [];
+                         leaf_names = [];
                          leaf_name_provided = false;
                        });
                   TaintAnnotation
@@ -1925,6 +1929,7 @@ let test_query_parsing context =
                          sink = Sinks.NamedSink "Test";
                          breadcrumbs = [];
                          path = [];
+                         leaf_names = [];
                          leaf_name_provided = false;
                        });
                 ];
@@ -1959,6 +1964,7 @@ let test_query_parsing context =
                          source = Sources.NamedSource "Test";
                          breadcrumbs = [];
                          path = [];
+                         leaf_names = [];
                          leaf_name_provided = false;
                        });
                   TaintAnnotation
@@ -1967,6 +1973,7 @@ let test_query_parsing context =
                          sink = Sinks.NamedSink "Test";
                          breadcrumbs = [];
                          path = [];
+                         leaf_names = [];
                          leaf_name_provided = false;
                        });
                 ];
@@ -2001,6 +2008,7 @@ let test_query_parsing context =
                          source = Sources.NamedSource "Test";
                          breadcrumbs = [];
                          path = [];
+                         leaf_names = [];
                          leaf_name_provided = false;
                        });
                 ];
@@ -2035,6 +2043,7 @@ let test_query_parsing context =
                          source = Sources.NamedSource "Test";
                          breadcrumbs = [];
                          path = [];
+                         leaf_names = [];
                          leaf_name_provided = false;
                        });
                 ];
@@ -2079,6 +2088,7 @@ let test_query_parsing context =
                          source = Sources.NamedSource "Test";
                          breadcrumbs = [];
                          path = [];
+                         leaf_names = [];
                          leaf_name_provided = false;
                        });
                 ];
@@ -2117,6 +2127,7 @@ let test_query_parsing context =
                              source = Sources.NamedSource "Test";
                              breadcrumbs = [];
                              path = [];
+                             leaf_names = [];
                              leaf_name_provided = false;
                            });
                     ];
@@ -2155,6 +2166,7 @@ let test_query_parsing context =
                              source = Sources.NamedSource "Test";
                              breadcrumbs = [];
                              path = [];
+                             leaf_names = [];
                              leaf_name_provided = false;
                            });
                     ];
@@ -2193,6 +2205,7 @@ let test_query_parsing context =
                              source = Sources.NamedSource "Test";
                              breadcrumbs = [];
                              path = [];
+                             leaf_names = [];
                              leaf_name_provided = false;
                            });
                     ];
@@ -2298,6 +2311,7 @@ let test_query_parsing context =
                          source = Sources.NamedSource "Test";
                          breadcrumbs = [];
                          path = [];
+                         leaf_names = [];
                          leaf_name_provided = false;
                        });
                   TaintAnnotation
@@ -2306,6 +2320,7 @@ let test_query_parsing context =
                          sink = Sinks.NamedSink "Test";
                          breadcrumbs = [];
                          path = [];
+                         leaf_names = [];
                          leaf_name_provided = false;
                        });
                 ];
@@ -2339,6 +2354,7 @@ let test_query_parsing context =
                          source = Sources.NamedSource "Test";
                          breadcrumbs = [];
                          path = [];
+                         leaf_names = [];
                          leaf_name_provided = false;
                        });
                   TaintAnnotation
@@ -2347,6 +2363,7 @@ let test_query_parsing context =
                          sink = Sinks.NamedSink "Test";
                          breadcrumbs = [];
                          path = [];
+                         leaf_names = [];
                          leaf_name_provided = false;
                        });
                 ];
@@ -2380,6 +2397,7 @@ let test_query_parsing context =
                          source = Sources.NamedSource "Test";
                          breadcrumbs = [];
                          path = [];
+                         leaf_names = [];
                          leaf_name_provided = false;
                        });
                   TaintAnnotation
@@ -2388,6 +2406,7 @@ let test_query_parsing context =
                          sink = Sinks.NamedSink "Test";
                          breadcrumbs = [];
                          path = [];
+                         leaf_names = [];
                          leaf_name_provided = false;
                        });
                 ];
@@ -2422,6 +2441,7 @@ let test_query_parsing context =
                          source = Sources.NamedSource "Test";
                          breadcrumbs = [];
                          path = [];
+                         leaf_names = [];
                          leaf_name_provided = false;
                        });
                 ];

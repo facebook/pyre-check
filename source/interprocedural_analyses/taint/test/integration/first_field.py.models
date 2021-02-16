@@ -14,13 +14,7 @@
               "start": 14,
               "end": 29
             },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "__test_source",
-                "on_all_flows": true
-              }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [
               { "has": "first-index" },
               { "first-index": "a" },
@@ -34,13 +28,7 @@
               "start": 36,
               "end": 51
             },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "__test_source",
-                "on_all_flows": true
-              }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [
               { "has": "first-index" },
               { "first-index": "b" },
@@ -76,13 +64,7 @@
               "start": 14,
               "end": 29
             },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "__test_source",
-                "on_all_flows": true
-              }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [
               { "has": "first-index" },
               { "first-index": "a" },
@@ -96,13 +78,7 @@
               "start": 36,
               "end": 51
             },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "__test_source",
-                "on_all_flows": true
-              }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [
               { "has": "first-index" },
               { "first-index": "b" },
@@ -121,9 +97,7 @@
               "start": 16,
               "end": 17
             },
-            "leaves": [
-              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]

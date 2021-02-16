@@ -39,12 +39,14 @@ module Model = struct
         sink: Sinks.t;
         breadcrumbs: breadcrumbs;
         path: Abstract.TreeDomain.Label.path;
+        leaf_names: Features.LeafName.t list;
         leaf_name_provided: bool;
       }
     | Source of {
         source: Sources.t;
         breadcrumbs: breadcrumbs;
         path: Abstract.TreeDomain.Label.path;
+        leaf_names: Features.LeafName.t list;
         leaf_name_provided: bool;
       }
     | Tito of {

@@ -192,6 +192,7 @@ let apply_productions ~resolution ~productions ~callable =
                 source = Sources.ParametricSource { source_name = kind; subkind };
                 breadcrumbs = [];
                 path = [];
+                leaf_names = [];
                 leaf_name_provided = false;
               }
         | ModelQuery.ParametricSinkFromAnnotation { sink_pattern; kind } ->
@@ -202,6 +203,7 @@ let apply_productions ~resolution ~productions ~callable =
                 sink = Sinks.ParametricSink { sink_name = kind; subkind };
                 breadcrumbs = [];
                 path = [];
+                leaf_names = [];
                 leaf_name_provided = false;
               }
       in

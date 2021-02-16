@@ -34,12 +34,14 @@ module T = struct
         sink: Sinks.t;
         breadcrumbs: breadcrumbs;
         path: Abstract.TreeDomain.Label.path;
+        leaf_names: Features.LeafName.t list;
         leaf_name_provided: bool;
       }
     | Source of {
         source: Sources.t;
         breadcrumbs: breadcrumbs;
         path: Abstract.TreeDomain.Label.path;
+        leaf_names: Features.LeafName.t list;
         leaf_name_provided: bool;
       }
     | Tito of {
@@ -151,6 +153,8 @@ let invalid_model_error ~path ~location ~name message =
     ~location
     (ModelVerificationError.T.UnclassifiedError { model_name = name; message })
 
+
+let add_leaf_names leaf_names init = List.rev_append leaf_names init
 
 let add_breadcrumbs breadcrumbs init = List.rev_append breadcrumbs init
 
@@ -393,7 +397,8 @@ let rec parse_annotations
     >>= fun (kinds, breadcrumbs) ->
     List.map kinds ~f:(fun (kind, subkind) ->
         AnnotationParser.parse_source ~allowed:configuration.sources ?subkind kind
-        >>| fun source -> Source { source; breadcrumbs; path = []; leaf_name_provided = false })
+        >>| fun source ->
+        Source { source; breadcrumbs; path = []; leaf_names = []; leaf_name_provided = false })
     |> all
     |> map_error ~f:annotation_error
   in
@@ -403,7 +408,8 @@ let rec parse_annotations
     >>= fun (kinds, breadcrumbs) ->
     List.map kinds ~f:(fun (kind, subkind) ->
         AnnotationParser.parse_sink ~allowed:configuration.sinks ?subkind kind
-        >>| fun sink -> Sink { sink; breadcrumbs; path = []; leaf_name_provided = false })
+        >>| fun sink ->
+        Sink { sink; breadcrumbs; path = []; leaf_names = []; leaf_name_provided = false })
     |> all
     |> map_error ~f:annotation_error
   in
@@ -516,7 +522,7 @@ let rec parse_annotations
         ] ->
             let add_cross_repository_information annotation =
               let leaf_name =
-                Features.Simple.LeafName
+                Features.LeafName.
                   {
                     leaf = canonical_name;
                     port = Some (Format.sprintf "producer:%d:%s" producer_id canonical_port);
@@ -527,14 +533,14 @@ let rec parse_annotations
                   Source
                     {
                       source with
-                      breadcrumbs = leaf_name :: source.breadcrumbs;
+                      leaf_names = leaf_name :: source.leaf_names;
                       leaf_name_provided = true;
                     }
               | Sink sink ->
                   Sink
                     {
                       sink with
-                      breadcrumbs = leaf_name :: sink.breadcrumbs;
+                      leaf_names = leaf_name :: sink.leaf_names;
                       leaf_name_provided = true;
                     }
               | _ -> annotation
@@ -573,7 +579,7 @@ let rec parse_annotations
         ] ->
             let add_cross_repository_information annotation =
               let leaf_name =
-                Features.Simple.LeafName
+                Features.LeafName.
                   { leaf = canonical_name; port = Some (Format.sprintf "anchor:%s" canonical_port) }
               in
               match annotation with
@@ -581,14 +587,14 @@ let rec parse_annotations
                   Source
                     {
                       source with
-                      breadcrumbs = leaf_name :: source.breadcrumbs;
+                      leaf_names = leaf_name :: source.leaf_names;
                       leaf_name_provided = true;
                     }
               | Sink sink ->
                   Sink
                     {
                       sink with
-                      breadcrumbs = leaf_name :: sink.breadcrumbs;
+                      leaf_names = leaf_name :: sink.leaf_names;
                       leaf_name_provided = true;
                     }
               | _ -> annotation
@@ -625,14 +631,32 @@ let rec parse_annotations
         | Some "AttachToSink" ->
             extract_attach_features ~name:"AttachToSink" expression
             >>| fun breadcrumbs ->
-            [Sink { sink = Sinks.Attach; breadcrumbs; path = []; leaf_name_provided = false }]
+            [
+              Sink
+                {
+                  sink = Sinks.Attach;
+                  breadcrumbs;
+                  path = [];
+                  leaf_names = [];
+                  leaf_name_provided = false;
+                };
+            ]
         | Some "AttachToTito" ->
             extract_attach_features ~name:"AttachToTito" expression
             >>| fun breadcrumbs -> [Tito { tito = Sinks.Attach; breadcrumbs; path = [] }]
         | Some "AttachToSource" ->
             extract_attach_features ~name:"AttachToSource" expression
             >>| fun breadcrumbs ->
-            [Source { source = Sources.Attach; breadcrumbs; path = []; leaf_name_provided = false }]
+            [
+              Source
+                {
+                  source = Sources.Attach;
+                  breadcrumbs;
+                  path = [];
+                  leaf_names = [];
+                  leaf_name_provided = false;
+                };
+            ]
         | Some "PartialSink" ->
             let partial_sink =
               match Node.value expression with
@@ -675,7 +699,16 @@ let rec parse_annotations
             in
             partial_sink
             >>| fun partial_sink ->
-            [Sink { sink = partial_sink; breadcrumbs = []; path = []; leaf_name_provided = false }]
+            [
+              Sink
+                {
+                  sink = partial_sink;
+                  breadcrumbs = [];
+                  path = [];
+                  leaf_names = [];
+                  leaf_name_provided = false;
+                };
+            ]
         | _ -> invalid_annotation_error () )
     | Name (Name.Identifier "TaintInTaintOut") ->
         Ok [Tito { tito = Sinks.LocalReturn; breadcrumbs = []; path = [] }]
@@ -700,6 +733,7 @@ let introduce_sink_taint
     ~root
     ~sinks_to_keep
     ~path
+    ~leaf_names
     ~leaf_name_provided
     ({ TaintResult.backward = { sink_taint; _ }; _ } as taint)
     taint_sink_kind
@@ -734,6 +768,9 @@ let introduce_sink_taint
           in
           let leaf_taint =
             BackwardTaint.singleton taint_sink_kind
+            |> BackwardTaint.transform
+                 BackwardTaint.leaf_name_set
+                 Abstract.Domain.(Map (add_leaf_names leaf_names))
             |> BackwardTaint.transform
                  BackwardTaint.simple_feature_set
                  Abstract.Domain.(Map (add_breadcrumbs breadcrumbs))
@@ -797,6 +834,7 @@ let introduce_source_taint
     ~root
     ~sources_to_keep
     ~path
+    ~leaf_names
     ~leaf_name_provided
     ({ TaintResult.forward = { source_taint }; _ } as taint)
     taint_source_kind
@@ -828,6 +866,9 @@ let introduce_source_taint
 
       let leaf_taint =
         ForwardTaint.singleton taint_source_kind
+        |> ForwardTaint.transform
+             ForwardTaint.leaf_name_set
+             Abstract.Domain.(Map (add_leaf_names leaf_names))
         |> ForwardTaint.transform
              ForwardTaint.simple_feature_set
              Abstract.Domain.(Map (add_breadcrumbs breadcrumbs))
@@ -1293,30 +1334,58 @@ let add_taint_annotation_to_model
   | ReturnAnnotation -> (
       let root = AccessPath.Root.LocalResult in
       match annotation with
-      | Sink { sink; breadcrumbs; path; leaf_name_provided } ->
+      | Sink { sink; breadcrumbs; path; leaf_names; leaf_name_provided } ->
           List.map ~f:Features.SimpleSet.inject breadcrumbs
           |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
-          |> introduce_sink_taint ~root ~path ~leaf_name_provided ~sinks_to_keep model sink
+          |> introduce_sink_taint
+               ~root
+               ~path
+               ~leaf_names
+               ~leaf_name_provided
+               ~sinks_to_keep
+               model
+               sink
           |> map_error ~f:annotation_error
-      | Source { source; breadcrumbs; path; leaf_name_provided } ->
+      | Source { source; breadcrumbs; path; leaf_names; leaf_name_provided } ->
           List.map ~f:Features.SimpleSet.inject breadcrumbs
           |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
-          |> introduce_source_taint ~root ~path ~leaf_name_provided ~sources_to_keep model source
+          |> introduce_source_taint
+               ~root
+               ~path
+               ~leaf_names
+               ~leaf_name_provided
+               ~sources_to_keep
+               model
+               source
           |> map_error ~f:annotation_error
       | Tito _ -> Error (annotation_error "Invalid return annotation: TaintInTaintOut")
       | AddFeatureToArgument _ ->
           Error (annotation_error "Invalid return annotation: AddFeatureToArgument") )
   | ParameterAnnotation root -> (
       match annotation with
-      | Sink { sink; breadcrumbs; path; leaf_name_provided } ->
+      | Sink { sink; breadcrumbs; path; leaf_names; leaf_name_provided } ->
           List.map ~f:Features.SimpleSet.inject breadcrumbs
           |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
-          |> introduce_sink_taint ~root ~path ~leaf_name_provided ~sinks_to_keep model sink
+          |> introduce_sink_taint
+               ~root
+               ~path
+               ~leaf_names
+               ~leaf_name_provided
+               ~sinks_to_keep
+               model
+               sink
           |> map_error ~f:annotation_error
-      | Source { source; breadcrumbs; path; leaf_name_provided } ->
+      | Source { source; breadcrumbs; path; leaf_names; leaf_name_provided } ->
           List.map ~f:Features.SimpleSet.inject breadcrumbs
           |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
-          |> introduce_source_taint ~root ~path ~leaf_name_provided ~sources_to_keep model source
+          |> introduce_source_taint
+               ~root
+               ~path
+               ~leaf_names
+               ~leaf_name_provided
+               ~sources_to_keep
+               model
+               source
           |> map_error ~f:annotation_error
       | Tito { tito; breadcrumbs; path } ->
           (* For tito, both the parameter and the return type can provide type based breadcrumbs *)
@@ -1334,6 +1403,7 @@ let add_taint_annotation_to_model
           |> introduce_sink_taint
                ~root
                ~path
+               ~leaf_names:[]
                ~leaf_name_provided:false
                ~sinks_to_keep
                model
@@ -1472,10 +1542,23 @@ let adjust_mode_and_skipped_overrides
                     when Option.equal String.equal (base_name callee) (Some "TaintInTaintOut") -> (
                       let add_tito_annotation (sanitized_tito_sources, sanitized_tito_sinks)
                         = function
-                        | Source { source; breadcrumbs = []; leaf_name_provided = false; path = [] }
-                          ->
+                        | Source
+                            {
+                              source;
+                              breadcrumbs = [];
+                              leaf_names = [];
+                              leaf_name_provided = false;
+                              path = [];
+                            } ->
                             Ok (source :: sanitized_tito_sources, sanitized_tito_sinks)
-                        | Sink { sink; breadcrumbs = []; leaf_name_provided = false; path = [] } ->
+                        | Sink
+                            {
+                              sink;
+                              breadcrumbs = [];
+                              leaf_names = [];
+                              leaf_name_provided = false;
+                              path = [];
+                            } ->
                             Ok (sanitized_tito_sources, sink :: sanitized_tito_sinks)
                         | taint_annotation ->
                             Error
@@ -1509,8 +1592,14 @@ let adjust_mode_and_skipped_overrides
                       | _ -> { sanitize with tito = Some sanitize_tito } )
                   | _ ->
                       let add_annotation { Mode.sources; sinks; tito } = function
-                        | Source { source; breadcrumbs = []; leaf_name_provided = false; path = [] }
-                          ->
+                        | Source
+                            {
+                              source;
+                              breadcrumbs = [];
+                              leaf_names = [];
+                              leaf_name_provided = false;
+                              path = [];
+                            } ->
                             let sources =
                               match sources with
                               | None -> Some (Mode.SpecificSources [source])
@@ -1519,7 +1608,14 @@ let adjust_mode_and_skipped_overrides
                               | Some Mode.AllSources -> Some Mode.AllSources
                             in
                             Ok { Mode.sources; sinks; tito }
-                        | Sink { sink; breadcrumbs = []; leaf_name_provided = false; path = [] } ->
+                        | Sink
+                            {
+                              sink;
+                              breadcrumbs = [];
+                              leaf_names = [];
+                              leaf_name_provided = false;
+                              path = [];
+                            } ->
                             let sinks =
                               match sinks with
                               | None -> Some (Mode.SpecificSinks [sink])

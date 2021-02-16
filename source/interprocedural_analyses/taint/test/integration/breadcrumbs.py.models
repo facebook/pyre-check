@@ -15,9 +15,7 @@
               "start": 16,
               "end": 17
             },
-            "leaves": [
-              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
             "features": [
               { "always-type": "scalar" },
               { "always-type": "bool" },
@@ -45,13 +43,7 @@
               "start": 11,
               "end": 26
             },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "__test_source",
-                "on_all_flows": true
-              }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [
               { "always-type": "scalar" },
               { "always-type": "bool" },
@@ -81,9 +73,7 @@
               "start": 16,
               "end": 17
             },
-            "leaves": [
-              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
             "features": [
               { "always-type": "scalar" },
               { "always-via": "special_sink" }
@@ -110,13 +100,7 @@
               "start": 11,
               "end": 26
             },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "__test_source",
-                "on_all_flows": true
-              }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [
               { "always-type": "scalar" },
               { "always-via": "special_source" }
@@ -145,9 +129,7 @@
               "start": 16,
               "end": 17
             },
-            "leaves": [
-              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
             "features": [
               { "always-type": "scalar" },
               { "always-via": "special_sink" }
@@ -174,13 +156,7 @@
               "start": 11,
               "end": 26
             },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "__test_source",
-                "on_all_flows": true
-              }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [
               { "always-type": "scalar" },
               { "always-via": "special_source" }

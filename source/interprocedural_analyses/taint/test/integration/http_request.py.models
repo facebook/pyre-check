@@ -15,9 +15,7 @@
               "start": 16,
               "end": 27
             },
-            "leaves": [
-              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -51,8 +49,7 @@
             "leaves": [
               {
                 "kind": "Test",
-                "name": "Obj{django.http.request.HttpRequest.GET}",
-                "on_all_flows": true
+                "name": "Obj{django.http.request.HttpRequest.GET}"
               }
             ]
           }
@@ -68,9 +65,7 @@
               "start": 16,
               "end": 27
             },
-            "leaves": [
-              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -100,9 +95,7 @@
               "port": "formal(request)[GET]",
               "length": 1
             },
-            "leaves": [
-              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -127,9 +120,7 @@
               "start": 16,
               "end": 27
             },
-            "leaves": [
-              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -163,8 +154,7 @@
             "leaves": [
               {
                 "kind": "Test",
-                "name": "Obj{django.http.request.HttpRequest.GET}",
-                "on_all_flows": true
+                "name": "Obj{django.http.request.HttpRequest.GET}"
               }
             ]
           }
@@ -180,9 +170,7 @@
               "start": 16,
               "end": 27
             },
-            "leaves": [
-              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -207,9 +195,7 @@
               "start": 16,
               "end": 27
             },
-            "leaves": [
-              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -243,8 +229,7 @@
             "leaves": [
               {
                 "kind": "Test",
-                "name": "Obj{django.http.request.HttpRequest.GET}",
-                "on_all_flows": true
+                "name": "Obj{django.http.request.HttpRequest.GET}"
               }
             ]
           }
@@ -260,9 +245,7 @@
               "start": 16,
               "end": 27
             },
-            "leaves": [
-              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]

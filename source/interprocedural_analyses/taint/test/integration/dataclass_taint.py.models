@@ -21,13 +21,7 @@
               "start": 26,
               "end": 41
             },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "__test_source",
-                "on_all_flows": true
-              }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -47,9 +41,7 @@
               "port": "formal(bad)",
               "length": 1
             },
-            "leaves": [
-              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
             "features": [
               { "always-type": "scalar" },
               { "always-via": "special_sink" }
@@ -81,9 +73,7 @@
               "start": -1,
               "end": -1
             },
-            "leaves": [
-              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
             "features": [
               { "always-type": "scalar" },
               { "always-via": "special_sink" }
@@ -152,8 +142,7 @@
             "leaves": [
               {
                 "kind": "UserControlled",
-                "name": "dataclass_taint.WeirdDataClass.__init__",
-                "on_all_flows": true
+                "name": "dataclass_taint.WeirdDataClass.__init__"
               }
             ],
             "features": [ { "always-type": "scalar" } ]
@@ -175,8 +164,7 @@
             "leaves": [
               {
                 "kind": "Test",
-                "name": "dataclass_taint.WeirdDataClass.bad_sink",
-                "on_all_flows": true
+                "name": "dataclass_taint.WeirdDataClass.bad_sink"
               }
             ],
             "features": [ { "always-type": "scalar" } ]
@@ -263,8 +251,7 @@
             "leaves": [
               {
                 "kind": "UserControlled",
-                "name": "dataclass_taint.WeirdDataClass.__init__",
-                "on_all_flows": true
+                "name": "dataclass_taint.WeirdDataClass.__init__"
               }
             ],
             "features": [ { "always-type": "scalar" } ]
@@ -286,8 +273,7 @@
             "leaves": [
               {
                 "kind": "Test",
-                "name": "dataclass_taint.WeirdDataClass.bad_sink",
-                "on_all_flows": true
+                "name": "dataclass_taint.WeirdDataClass.bad_sink"
               }
             ],
             "features": [ { "always-type": "scalar" } ]
@@ -304,9 +290,7 @@
               "start": -1,
               "end": -1
             },
-            "leaves": [
-              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
             "features": [
               { "always-type": "scalar" },
               { "always-via": "special_sink" }
@@ -382,9 +366,7 @@
               "start": 20,
               "end": 23
             },
-            "leaves": [
-              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
             "features": [
               { "always-type": "scalar" },
               { "always-via": "special_sink" }
@@ -453,8 +435,7 @@
             "leaves": [
               {
                 "kind": "UserControlled",
-                "name": "dataclass_taint.WeirdDataClass.__init__",
-                "on_all_flows": true
+                "name": "dataclass_taint.WeirdDataClass.__init__"
               }
             ],
             "features": [ { "always-type": "scalar" } ]
@@ -476,8 +457,7 @@
             "leaves": [
               {
                 "kind": "Test",
-                "name": "dataclass_taint.WeirdDataClass.bad_sink",
-                "on_all_flows": true
+                "name": "dataclass_taint.WeirdDataClass.bad_sink"
               }
             ],
             "features": [ { "always-type": "scalar" } ]
@@ -552,13 +532,7 @@
               "end": 43
             },
             "tito": [ { "line": 17, "start": 28, "end": 43 } ],
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "__test_source",
-                "on_all_flows": true
-              }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [
               { "always-via": "tito" },
               { "always-via": "special_source" }
@@ -594,13 +568,7 @@
               "end": 43
             },
             "tito": [ { "line": 17, "start": 28, "end": 43 } ],
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "__test_source",
-                "on_all_flows": true
-              }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [
               { "always-via": "tito" },
               { "always-via": "special_source" }
@@ -618,9 +586,7 @@
               "start": 16,
               "end": 23
             },
-            "leaves": [
-              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -649,13 +615,7 @@
               "end": 43
             },
             "tito": [ { "line": 23, "start": 28, "end": 43 } ],
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "__test_source",
-                "on_all_flows": true
-              }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [
               { "always-via": "tito" },
               { "always-via": "special_source" }
@@ -691,8 +651,7 @@
             "leaves": [
               {
                 "kind": "UserControlled",
-                "name": "dataclass_taint.WeirdDataClass.__init__",
-                "on_all_flows": true
+                "name": "dataclass_taint.WeirdDataClass.__init__"
               }
             ],
             "features": [ { "always-type": "scalar" } ]

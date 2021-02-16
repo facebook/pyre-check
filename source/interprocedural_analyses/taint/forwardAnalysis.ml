@@ -1503,7 +1503,6 @@ let extract_features_to_attach existing_taint =
         | Simple.ViaValueOf _
         | Simple.ViaTypeOf _ ->
             feature :: features
-        | _ -> features
       in
       ForwardTaint.fold ForwardTaint.simple_feature_element ~f:gather_features ~init:[] taint
       |> Features.SimpleSet.of_approximation

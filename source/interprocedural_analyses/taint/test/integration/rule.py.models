@@ -21,13 +21,7 @@
               "start": 8,
               "end": 16
             },
-            "leaves": [
-              {
-                "kind": "MyTestSource",
-                "name": "rule.source",
-                "on_all_flows": true
-              }
-            ]
+            "leaves": [ { "kind": "MyTestSource", "name": "rule.source" } ]
           }
         ]
       },
@@ -41,13 +35,7 @@
               "start": 9,
               "end": 10
             },
-            "leaves": [
-              {
-                "kind": "MyTestSink",
-                "name": "rule.sink",
-                "on_all_flows": true
-              }
-            ]
+            "leaves": [ { "kind": "MyTestSink", "name": "rule.sink" } ]
           }
         ]
       }

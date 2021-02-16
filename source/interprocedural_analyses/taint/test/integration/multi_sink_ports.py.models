@@ -22,11 +22,7 @@
               "end": 16
             },
             "leaves": [
-              {
-                "kind": "Test",
-                "name": "multi_sink_ports.source",
-                "on_all_flows": true
-              }
+              { "kind": "Test", "name": "multi_sink_ports.source" }
             ],
             "features": [ { "always-via": "a_feature" } ]
           }
@@ -48,26 +44,10 @@
               "length": 1
             },
             "leaves": [
-              {
-                "kind": "Test",
-                "name": "multi_sink_ports.sinkD",
-                "on_all_flows": false
-              },
-              {
-                "kind": "Test",
-                "name": "multi_sink_ports.sinkC",
-                "on_all_flows": false
-              },
-              {
-                "kind": "Test",
-                "name": "multi_sink_ports.sinkB",
-                "on_all_flows": false
-              },
-              {
-                "kind": "Test",
-                "name": "multi_sink_ports.sinkA",
-                "on_all_flows": false
-              }
+              { "kind": "Test", "name": "multi_sink_ports.sinkA" },
+              { "kind": "Test", "name": "multi_sink_ports.sinkB" },
+              { "kind": "Test", "name": "multi_sink_ports.sinkC" },
+              { "kind": "Test", "name": "multi_sink_ports.sinkD" }
             ],
             "features": [
               { "via": "tito" },
@@ -115,11 +95,7 @@
             },
             "tito": [ { "line": 82, "start": 27, "end": 32 } ],
             "leaves": [
-              {
-                "kind": "Test",
-                "name": "multi_sink_ports.source",
-                "on_all_flows": true
-              }
+              { "kind": "Test", "name": "multi_sink_ports.source" }
             ],
             "features": [
               { "always-via": "tito" },
@@ -144,26 +120,10 @@
               "length": 2
             },
             "leaves": [
-              {
-                "kind": "Test",
-                "name": "multi_sink_ports.sinkD",
-                "on_all_flows": false
-              },
-              {
-                "kind": "Test",
-                "name": "multi_sink_ports.sinkC",
-                "on_all_flows": false
-              },
-              {
-                "kind": "Test",
-                "name": "multi_sink_ports.sinkB",
-                "on_all_flows": false
-              },
-              {
-                "kind": "Test",
-                "name": "multi_sink_ports.sinkA",
-                "on_all_flows": false
-              }
+              { "kind": "Test", "name": "multi_sink_ports.sinkA" },
+              { "kind": "Test", "name": "multi_sink_ports.sinkB" },
+              { "kind": "Test", "name": "multi_sink_ports.sinkC" },
+              { "kind": "Test", "name": "multi_sink_ports.sinkD" }
             ],
             "features": [
               { "via": "tito" },
@@ -209,11 +169,7 @@
               "length": 2
             },
             "leaves": [
-              {
-                "kind": "Demo",
-                "name": "multi_sink_ports.sinkC",
-                "on_all_flows": true
-              }
+              { "kind": "Demo", "name": "multi_sink_ports.sinkC" }
             ],
             "features": [ { "always-via": "c_feature" } ]
           },
@@ -230,11 +186,7 @@
               "length": 2
             },
             "leaves": [
-              {
-                "kind": "GetAttr",
-                "name": "multi_sink_ports.sinkB",
-                "on_all_flows": true
-              }
+              { "kind": "GetAttr", "name": "multi_sink_ports.sinkB" }
             ],
             "features": [ { "always-via": "b_feature" } ]
           },
@@ -251,21 +203,9 @@
               "length": 2
             },
             "leaves": [
-              {
-                "kind": "Test",
-                "name": "multi_sink_ports.sinkD",
-                "on_all_flows": false
-              },
-              {
-                "kind": "Test",
-                "name": "multi_sink_ports.sinkC",
-                "on_all_flows": false
-              },
-              {
-                "kind": "Test",
-                "name": "multi_sink_ports.sinkB",
-                "on_all_flows": false
-              }
+              { "kind": "Test", "name": "multi_sink_ports.sinkB" },
+              { "kind": "Test", "name": "multi_sink_ports.sinkC" },
+              { "kind": "Test", "name": "multi_sink_ports.sinkD" }
             ],
             "features": [
               { "via": "d_feature" },
@@ -312,11 +252,7 @@
               "length": 2
             },
             "leaves": [
-              {
-                "kind": "Demo",
-                "name": "multi_sink_ports.sinkC",
-                "on_all_flows": true
-              }
+              { "kind": "Demo", "name": "multi_sink_ports.sinkC" }
             ],
             "features": [ { "always-via": "c_feature" } ]
           },
@@ -333,11 +269,7 @@
               "length": 2
             },
             "leaves": [
-              {
-                "kind": "GetAttr",
-                "name": "multi_sink_ports.sinkB",
-                "on_all_flows": true
-              }
+              { "kind": "GetAttr", "name": "multi_sink_ports.sinkB" }
             ],
             "features": [ { "always-via": "b_feature" } ]
           },
@@ -354,21 +286,9 @@
               "length": 2
             },
             "leaves": [
-              {
-                "kind": "Test",
-                "name": "multi_sink_ports.sinkD",
-                "on_all_flows": false
-              },
-              {
-                "kind": "Test",
-                "name": "multi_sink_ports.sinkC",
-                "on_all_flows": false
-              },
-              {
-                "kind": "Test",
-                "name": "multi_sink_ports.sinkB",
-                "on_all_flows": false
-              }
+              { "kind": "Test", "name": "multi_sink_ports.sinkB" },
+              { "kind": "Test", "name": "multi_sink_ports.sinkC" },
+              { "kind": "Test", "name": "multi_sink_ports.sinkD" }
             ],
             "features": [
               { "via": "d_feature" },
@@ -443,11 +363,7 @@
               "length": 2
             },
             "leaves": [
-              {
-                "kind": "Demo",
-                "name": "multi_sink_ports.sinkC",
-                "on_all_flows": true
-              }
+              { "kind": "Demo", "name": "multi_sink_ports.sinkC" }
             ],
             "features": [ { "always-via": "c_feature" } ]
           },
@@ -464,11 +380,7 @@
               "length": 2
             },
             "leaves": [
-              {
-                "kind": "GetAttr",
-                "name": "multi_sink_ports.sinkB",
-                "on_all_flows": true
-              }
+              { "kind": "GetAttr", "name": "multi_sink_ports.sinkB" }
             ],
             "features": [ { "always-via": "b_feature" } ]
           },
@@ -485,21 +397,9 @@
               "length": 2
             },
             "leaves": [
-              {
-                "kind": "Test",
-                "name": "multi_sink_ports.sinkD",
-                "on_all_flows": false
-              },
-              {
-                "kind": "Test",
-                "name": "multi_sink_ports.sinkC",
-                "on_all_flows": false
-              },
-              {
-                "kind": "Test",
-                "name": "multi_sink_ports.sinkB",
-                "on_all_flows": false
-              }
+              { "kind": "Test", "name": "multi_sink_ports.sinkB" },
+              { "kind": "Test", "name": "multi_sink_ports.sinkC" },
+              { "kind": "Test", "name": "multi_sink_ports.sinkD" }
             ],
             "features": [
               { "via": "d_feature" },
@@ -542,11 +442,7 @@
               "end": 18
             },
             "leaves": [
-              {
-                "kind": "Demo",
-                "name": "multi_sink_ports.sinkA",
-                "on_all_flows": true
-              }
+              { "kind": "Demo", "name": "multi_sink_ports.sinkA" }
             ],
             "features": [ { "always-via": "a_feature" } ]
           },
@@ -558,11 +454,7 @@
               "end": 18
             },
             "leaves": [
-              {
-                "kind": "Test",
-                "name": "multi_sink_ports.sinkA",
-                "on_all_flows": true
-              }
+              { "kind": "Test", "name": "multi_sink_ports.sinkA" }
             ],
             "features": [ { "always-via": "a_feature" } ]
           }
@@ -579,11 +471,7 @@
               "end": 16
             },
             "leaves": [
-              {
-                "kind": "Demo",
-                "name": "multi_sink_ports.sinkA",
-                "on_all_flows": true
-              }
+              { "kind": "Demo", "name": "multi_sink_ports.sinkA" }
             ],
             "features": [ { "always-via": "a_feature" } ]
           },
@@ -595,11 +483,7 @@
               "end": 16
             },
             "leaves": [
-              {
-                "kind": "Test",
-                "name": "multi_sink_ports.sinkA",
-                "on_all_flows": true
-              }
+              { "kind": "Test", "name": "multi_sink_ports.sinkA" }
             ],
             "features": [ { "always-via": "a_feature" } ]
           }
@@ -741,11 +625,7 @@
               "end": 11
             },
             "leaves": [
-              {
-                "kind": "GetAttr",
-                "name": "multi_sink_ports.sinkB",
-                "on_all_flows": true
-              }
+              { "kind": "GetAttr", "name": "multi_sink_ports.sinkB" }
             ],
             "features": [ { "always-via": "b_feature" } ]
           },
@@ -757,11 +637,7 @@
               "end": 11
             },
             "leaves": [
-              {
-                "kind": "Test",
-                "name": "multi_sink_ports.sinkB",
-                "on_all_flows": true
-              }
+              { "kind": "Test", "name": "multi_sink_ports.sinkB" }
             ],
             "features": [ { "always-via": "b_feature" } ]
           },
@@ -773,11 +649,7 @@
               "end": 11
             },
             "leaves": [
-              {
-                "kind": "Demo",
-                "name": "multi_sink_ports.sinkC",
-                "on_all_flows": true
-              }
+              { "kind": "Demo", "name": "multi_sink_ports.sinkC" }
             ],
             "features": [ { "always-via": "c_feature" } ]
           },
@@ -789,11 +661,7 @@
               "end": 11
             },
             "leaves": [
-              {
-                "kind": "Test",
-                "name": "multi_sink_ports.sinkC",
-                "on_all_flows": true
-              }
+              { "kind": "Test", "name": "multi_sink_ports.sinkC" }
             ],
             "features": [ { "always-via": "c_feature" } ]
           },
@@ -805,11 +673,7 @@
               "end": 11
             },
             "leaves": [
-              {
-                "kind": "Test",
-                "name": "multi_sink_ports.sinkD",
-                "on_all_flows": true
-              }
+              { "kind": "Test", "name": "multi_sink_ports.sinkD" }
             ],
             "features": [ { "always-via": "d_feature" } ]
           }
@@ -852,11 +716,7 @@
               "length": 1
             },
             "leaves": [
-              {
-                "kind": "Demo",
-                "name": "multi_sink_ports.sinkC",
-                "on_all_flows": true
-              }
+              { "kind": "Demo", "name": "multi_sink_ports.sinkC" }
             ],
             "features": [ { "always-via": "c_feature" } ]
           },
@@ -873,11 +733,7 @@
               "length": 1
             },
             "leaves": [
-              {
-                "kind": "GetAttr",
-                "name": "multi_sink_ports.sinkB",
-                "on_all_flows": true
-              }
+              { "kind": "GetAttr", "name": "multi_sink_ports.sinkB" }
             ],
             "features": [ { "always-via": "b_feature" } ]
           },
@@ -894,21 +750,9 @@
               "length": 1
             },
             "leaves": [
-              {
-                "kind": "Test",
-                "name": "multi_sink_ports.sinkD",
-                "on_all_flows": false
-              },
-              {
-                "kind": "Test",
-                "name": "multi_sink_ports.sinkC",
-                "on_all_flows": false
-              },
-              {
-                "kind": "Test",
-                "name": "multi_sink_ports.sinkB",
-                "on_all_flows": false
-              }
+              { "kind": "Test", "name": "multi_sink_ports.sinkB" },
+              { "kind": "Test", "name": "multi_sink_ports.sinkC" },
+              { "kind": "Test", "name": "multi_sink_ports.sinkD" }
             ],
             "features": [
               { "via": "d_feature" },
@@ -952,11 +796,7 @@
             },
             "tito": [ { "line": 36, "start": 14, "end": 15 } ],
             "leaves": [
-              {
-                "kind": "Demo",
-                "name": "multi_sink_ports.sinkA",
-                "on_all_flows": true
-              }
+              { "kind": "Demo", "name": "multi_sink_ports.sinkA" }
             ],
             "features": [
               { "always-via": "tito" },
@@ -973,11 +813,7 @@
             },
             "tito": [ { "line": 36, "start": 14, "end": 15 } ],
             "leaves": [
-              {
-                "kind": "Test",
-                "name": "multi_sink_ports.sinkA",
-                "on_all_flows": true
-              }
+              { "kind": "Test", "name": "multi_sink_ports.sinkA" }
             ],
             "features": [
               { "always-via": "tito" },
@@ -998,11 +834,7 @@
               "length": 1
             },
             "leaves": [
-              {
-                "kind": "Demo",
-                "name": "multi_sink_ports.sinkC",
-                "on_all_flows": true
-              }
+              { "kind": "Demo", "name": "multi_sink_ports.sinkC" }
             ],
             "features": [ { "always-via": "c_feature" } ]
           },
@@ -1019,21 +851,9 @@
               "length": 1
             },
             "leaves": [
-              {
-                "kind": "Test",
-                "name": "multi_sink_ports.sinkD",
-                "on_all_flows": false
-              },
-              {
-                "kind": "Test",
-                "name": "multi_sink_ports.sinkC",
-                "on_all_flows": false
-              },
-              {
-                "kind": "Test",
-                "name": "multi_sink_ports.sinkB",
-                "on_all_flows": false
-              }
+              { "kind": "Test", "name": "multi_sink_ports.sinkB" },
+              { "kind": "Test", "name": "multi_sink_ports.sinkC" },
+              { "kind": "Test", "name": "multi_sink_ports.sinkD" }
             ],
             "features": [
               { "via": "d_feature" },
@@ -1059,11 +879,7 @@
               "length": 1
             },
             "leaves": [
-              {
-                "kind": "GetAttr",
-                "name": "multi_sink_ports.sinkB",
-                "on_all_flows": true
-              }
+              { "kind": "GetAttr", "name": "multi_sink_ports.sinkB" }
             ],
             "features": [ { "always-via": "b_feature" } ]
           }
@@ -1095,11 +911,7 @@
               "length": 1
             },
             "leaves": [
-              {
-                "kind": "Demo",
-                "name": "multi_sink_ports.sinkA",
-                "on_all_flows": true
-              }
+              { "kind": "Demo", "name": "multi_sink_ports.sinkA" }
             ],
             "features": [ { "always-via": "a_feature" } ]
           },
@@ -1116,11 +928,7 @@
               "length": 1
             },
             "leaves": [
-              {
-                "kind": "Test",
-                "name": "multi_sink_ports.sinkA",
-                "on_all_flows": true
-              }
+              { "kind": "Test", "name": "multi_sink_ports.sinkA" }
             ],
             "features": [ { "always-via": "a_feature" } ]
           },
@@ -1137,11 +945,7 @@
               "length": 3
             },
             "leaves": [
-              {
-                "kind": "Demo",
-                "name": "multi_sink_ports.sinkC",
-                "on_all_flows": true
-              }
+              { "kind": "Demo", "name": "multi_sink_ports.sinkC" }
             ],
             "features": [ { "always-via": "c_feature" } ]
           },
@@ -1158,21 +962,9 @@
               "length": 3
             },
             "leaves": [
-              {
-                "kind": "Test",
-                "name": "multi_sink_ports.sinkD",
-                "on_all_flows": false
-              },
-              {
-                "kind": "Test",
-                "name": "multi_sink_ports.sinkC",
-                "on_all_flows": false
-              },
-              {
-                "kind": "Test",
-                "name": "multi_sink_ports.sinkB",
-                "on_all_flows": false
-              }
+              { "kind": "Test", "name": "multi_sink_ports.sinkB" },
+              { "kind": "Test", "name": "multi_sink_ports.sinkC" },
+              { "kind": "Test", "name": "multi_sink_ports.sinkD" }
             ],
             "features": [
               { "via": "d_feature" },
@@ -1194,11 +986,7 @@
             },
             "tito": [ { "line": 74, "start": 19, "end": 20 } ],
             "leaves": [
-              {
-                "kind": "Demo",
-                "name": "multi_sink_ports.sinkA",
-                "on_all_flows": true
-              }
+              { "kind": "Demo", "name": "multi_sink_ports.sinkA" }
             ],
             "features": [
               { "always-via": "tito" },
@@ -1220,11 +1008,7 @@
             },
             "tito": [ { "line": 74, "start": 19, "end": 20 } ],
             "leaves": [
-              {
-                "kind": "Test",
-                "name": "multi_sink_ports.sinkA",
-                "on_all_flows": true
-              }
+              { "kind": "Test", "name": "multi_sink_ports.sinkA" }
             ],
             "features": [
               { "always-via": "tito" },
@@ -1250,11 +1034,7 @@
               "length": 3
             },
             "leaves": [
-              {
-                "kind": "GetAttr",
-                "name": "multi_sink_ports.sinkB",
-                "on_all_flows": true
-              }
+              { "kind": "GetAttr", "name": "multi_sink_ports.sinkB" }
             ],
             "features": [ { "always-via": "b_feature" } ]
           }

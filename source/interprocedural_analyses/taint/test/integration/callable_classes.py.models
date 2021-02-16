@@ -87,8 +87,7 @@
             "leaves": [
               {
                 "kind": "Test",
-                "name": "callable_classes.CallableProtocol.__call__",
-                "on_all_flows": true
+                "name": "callable_classes.CallableProtocol.__call__"
               }
             ],
             "features": [ { "always-via-value": "b" } ]
@@ -116,11 +115,7 @@
               "end": 17
             },
             "leaves": [
-              {
-                "kind": "Test",
-                "name": "callable_classes.P.__call__",
-                "on_all_flows": true
-              }
+              { "kind": "Test", "name": "callable_classes.P.__call__" }
             ],
             "features": [ { "always-via-value": "a" } ]
           }

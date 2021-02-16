@@ -16,9 +16,7 @@
               "start": 16,
               "end": 25
             },
-            "leaves": [
-              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -43,13 +41,7 @@
               "start": 11,
               "end": 26
             },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "__test_source",
-                "on_all_flows": true
-              }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -77,8 +69,7 @@
             "leaves": [
               {
                 "kind": "Test",
-                "name": "via_value_of.return_via_parameter_name",
-                "on_all_flows": true
+                "name": "via_value_of.return_via_parameter_name"
               }
             ],
             "features": [ { "always-via-value": "<unknown>" } ]
@@ -107,11 +98,7 @@
               "end": 31
             },
             "leaves": [
-              {
-                "kind": "Test",
-                "name": "via_value_of.sink_via_value_of",
-                "on_all_flows": true
-              }
+              { "kind": "Test", "name": "via_value_of.sink_via_value_of" }
             ],
             "features": [ { "always-via-value": "<unknown>" } ]
           }
@@ -198,9 +185,7 @@
               "port": "formal(parameter)",
               "length": 1
             },
-            "leaves": [
-              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
             "features": [
               { "always-via-value": "attached to sink" },
               { "always-via": "special_sink" }
@@ -232,13 +217,7 @@
               "port": "result",
               "length": 1
             },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "__test_source",
-                "on_all_flows": true
-              }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [
               { "always-via-value": "attached to source" },
               { "always-via": "special_source" }
@@ -293,8 +272,7 @@
             "leaves": [
               {
                 "kind": "Test",
-                "name": "via_value_of.return_via_parameter_name",
-                "on_all_flows": true
+                "name": "via_value_of.return_via_parameter_name"
               }
             ],
             "features": [ { "always-via-value": "FOO" } ]
@@ -324,8 +302,7 @@
             "leaves": [
               {
                 "kind": "Test",
-                "name": "via_value_of.return_via_parameter_name",
-                "on_all_flows": true
+                "name": "via_value_of.return_via_parameter_name"
               }
             ],
             "features": [ { "always-via-value": "1" } ]
@@ -355,8 +332,7 @@
             "leaves": [
               {
                 "kind": "Test",
-                "name": "via_value_of.return_including_name",
-                "on_all_flows": true
+                "name": "via_value_of.return_including_name"
               }
             ],
             "features": [
@@ -388,8 +364,7 @@
             "leaves": [
               {
                 "kind": "Test",
-                "name": "via_value_of.return_via_second_parameter",
-                "on_all_flows": true
+                "name": "via_value_of.return_via_second_parameter"
               }
             ],
             "features": [ { "always-via-value": "2" } ]
@@ -419,8 +394,7 @@
             "leaves": [
               {
                 "kind": "Test",
-                "name": "via_value_of.return_via_second_parameter",
-                "on_all_flows": true
+                "name": "via_value_of.return_via_second_parameter"
               }
             ],
             "features": [ { "always-via-value": "2" } ]
@@ -449,11 +423,7 @@
               "end": 36
             },
             "leaves": [
-              {
-                "kind": "Test",
-                "name": "via_value_of.sink_via_value_of",
-                "on_all_flows": true
-              }
+              { "kind": "Test", "name": "via_value_of.sink_via_value_of" }
             ],
             "features": [ { "always-via-value": "second" } ]
           }
@@ -485,11 +455,7 @@
               "length": 1
             },
             "leaves": [
-              {
-                "kind": "Test",
-                "name": "via_value_of.sink_via_value_of",
-                "on_all_flows": true
-              }
+              { "kind": "Test", "name": "via_value_of.sink_via_value_of" }
             ],
             "features": [ { "always-via-value": "<unknown>" } ]
           }
@@ -517,8 +483,7 @@
             "leaves": [
               {
                 "kind": "Test",
-                "name": "via_value_of.return_via_parameter_name",
-                "on_all_flows": true
+                "name": "via_value_of.return_via_parameter_name"
               }
             ],
             "features": [ { "always-via-value": "A" } ]
@@ -546,13 +511,7 @@
               "end": 28
             },
             "tito": [ { "line": 43, "start": 13, "end": 28 } ],
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "__test_source",
-                "on_all_flows": true
-              }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [
               { "always-via": "tito" },
               { "always-via-value": "second" },
@@ -589,8 +548,7 @@
             "leaves": [
               {
                 "kind": "Test",
-                "name": "via_value_of.return_via_parameter_name",
-                "on_all_flows": true
+                "name": "via_value_of.return_via_parameter_name"
               }
             ],
             "features": [ { "always-via-value": "<unknown>" } ]

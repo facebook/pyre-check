@@ -74,13 +74,7 @@
               "start": 20,
               "end": 35
             },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "__test_source",
-                "on_all_flows": true
-              }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [
               { "always-via": "special_source" },
               { "always-via": "obscure" }
@@ -112,8 +106,7 @@
             "leaves": [
               {
                 "kind": "Test",
-                "name": "Ovr{obscure_tito.C::taint_parameter}",
-                "on_all_flows": true
+                "name": "Ovr{obscure_tito.C::taint_parameter}"
               }
             ]
           }
@@ -139,13 +132,7 @@
               "end": 28
             },
             "tito": [ { "line": 27, "start": 13, "end": 28 } ],
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "__test_source",
-                "on_all_flows": true
-              }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [
               { "always-via": "tito" },
               { "always-via": "special_source" }

@@ -63,13 +63,7 @@
               "end": 31
             },
             "tito": [ { "line": 17, "start": 16, "end": 31 } ],
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "__test_source",
-                "on_all_flows": true
-              }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [
               { "always-via": "tito" },
               { "always-via": "special_source" }
@@ -98,13 +92,7 @@
               "end": 34
             },
             "tito": [ { "line": 11, "start": 19, "end": 34 } ],
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "__test_source",
-                "on_all_flows": true
-              }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [
               { "always-via": "tito" },
               { "always-via": "special_source" }
@@ -133,13 +121,7 @@
               "end": 38
             },
             "tito": [ { "line": 23, "start": 23, "end": 38 } ],
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "__test_source",
-                "on_all_flows": true
-              }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [
               { "has": "first-field" },
               { "first-field": "foo" },
@@ -170,13 +152,7 @@
               "end": 28
             },
             "tito": [ { "line": 35, "start": 13, "end": 28 } ],
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "__test_source",
-                "on_all_flows": true
-              }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [
               { "always-via": "tito" },
               { "always-via": "special_source" }
@@ -206,9 +182,7 @@
               "end": 17
             },
             "tito": [ { "line": 49, "start": 19, "end": 20 } ],
-            "leaves": [
-              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
             "features": [
               { "always-via": "tito" },
               { "always-via": "special_sink" }

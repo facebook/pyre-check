@@ -21,13 +21,7 @@
               "start": 15,
               "end": 30
             },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "__test_source",
-                "on_all_flows": true
-              }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [
               { "has": "first-index" },
               { "first-index": "<numeric>" },
@@ -47,9 +41,7 @@
               "start": 16,
               "end": 20
             },
-            "leaves": [
-              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -84,8 +76,7 @@
             "leaves": [
               {
                 "kind": "AddFeatureToArgument",
-                "name": "add_feature_to_argument.add_feature_to_first",
-                "on_all_flows": true
+                "name": "add_feature_to_argument.add_feature_to_first"
               }
             ],
             "features": [ { "always-via": "string_concat_lhs" } ]
@@ -97,9 +88,7 @@
               "start": 16,
               "end": 25
             },
-            "leaves": [
-              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
             "features": [
               { "always-via": "string_concat_lhs" },
               { "always-via": "special_sink" }
@@ -162,13 +151,7 @@
               "start": 8,
               "end": 23
             },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "__test_source",
-                "on_all_flows": true
-              }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [
               { "always-via": "string_concat_lhs" },
               { "always-via": "special_source" }
@@ -200,8 +183,7 @@
             "leaves": [
               {
                 "kind": "AddFeatureToArgument",
-                "name": "add_feature_to_argument.add_feature_to_first",
-                "on_all_flows": true
+                "name": "add_feature_to_argument.add_feature_to_first"
               }
             ],
             "features": [ { "always-via": "string_concat_lhs" } ]
@@ -231,8 +213,7 @@
             "leaves": [
               {
                 "kind": "AddFeatureToArgument",
-                "name": "add_feature_to_argument.add_feature_to_first",
-                "on_all_flows": true
+                "name": "add_feature_to_argument.add_feature_to_first"
               }
             ],
             "features": [ { "always-via": "string_concat_lhs" } ]
@@ -244,9 +225,7 @@
               "start": 16,
               "end": 25
             },
-            "leaves": [
-              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
             "features": [
               { "always-via": "string_concat_lhs" },
               { "always-via": "special_sink" }
@@ -273,13 +252,7 @@
               "start": 8,
               "end": 23
             },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "__test_source",
-                "on_all_flows": true
-              }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [
               { "always-via-value": "second" },
               { "always-via": "special_source" }

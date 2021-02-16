@@ -50,6 +50,32 @@ end
 
 module TitoPositionSet = Abstract.ToppedSetDomain.Make (TitoPosition)
 
+module LeafName = struct
+  let name = "leaf names"
+
+  type t = {
+    leaf: string;
+    port: string option;
+  }
+  [@@deriving show, compare]
+
+  let pp formatter { leaf; port } =
+    match port with
+    | None -> Format.fprintf formatter "LeafName(%s)" leaf
+    | Some port -> Format.fprintf formatter "LeafName(%s, port=%s)" leaf port
+
+
+  let to_json ~leaf_kind_json { leaf; port } =
+    let port_assoc =
+      match port with
+      | Some port -> ["port", `String port]
+      | None -> []
+    in
+    `Assoc (port_assoc @ ["kind", leaf_kind_json; "name", `String leaf])
+end
+
+module LeafNameSet = Abstract.SetDomain.Make (LeafName)
+
 module Breadcrumb = struct
   type t =
     | FormatString (* Via f"{something}" *)
@@ -100,10 +126,6 @@ module Simple = struct
   let name = "simple features"
 
   type t =
-    | LeafName of {
-        leaf: string;
-        port: string option;
-      }
     | Breadcrumb of Breadcrumb.t
     | ViaValueOf of {
         parameter: AccessPath.Root.t;
@@ -116,10 +138,6 @@ module Simple = struct
   [@@deriving show { with_path = false }, compare]
 
   let pp formatter = function
-    | LeafName { leaf; port } -> (
-        match port with
-        | None -> Format.fprintf formatter "LeafName(%s)" leaf
-        | Some port -> Format.fprintf formatter "LeafName(%s, port=%s)" leaf port )
     | Breadcrumb breadcrumb -> Format.fprintf formatter "%a" Breadcrumb.pp breadcrumb
     | simple -> pp formatter simple
 

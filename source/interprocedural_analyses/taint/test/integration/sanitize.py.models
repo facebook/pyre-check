@@ -72,13 +72,7 @@
               "end": 12
             },
             "tito": [ { "line": 145, "start": 29, "end": 30 } ],
-            "leaves": [
-              {
-                "kind": "TestB",
-                "name": "sanitize.b_sink",
-                "on_all_flows": true
-              }
-            ],
+            "leaves": [ { "kind": "TestB", "name": "sanitize.b_sink" } ],
             "features": [ { "always-via": "tito" } ]
           }
         ]
@@ -103,13 +97,7 @@
               "end": 18
             },
             "tito": [ { "line": 131, "start": 27, "end": 28 } ],
-            "leaves": [
-              {
-                "kind": "TestB",
-                "name": "sanitize.b_source",
-                "on_all_flows": true
-              }
-            ],
+            "leaves": [ { "kind": "TestB", "name": "sanitize.b_source" } ],
             "features": [ { "always-via": "tito" } ]
           }
         ]
@@ -135,13 +123,7 @@
               "start": 15,
               "end": 16
             },
-            "leaves": [
-              {
-                "kind": "TestB",
-                "name": "sanitize.b_sink",
-                "on_all_flows": true
-              }
-            ]
+            "leaves": [ { "kind": "TestB", "name": "sanitize.b_sink" } ]
           }
         ]
       }
@@ -203,13 +185,7 @@
               "start": 15,
               "end": 16
             },
-            "leaves": [
-              {
-                "kind": "TestA",
-                "name": "sanitize.a_sink",
-                "on_all_flows": true
-              }
-            ]
+            "leaves": [ { "kind": "TestA", "name": "sanitize.a_sink" } ]
           }
         ]
       }
@@ -233,11 +209,7 @@
               "end": 30
             },
             "leaves": [
-              {
-                "kind": "Test",
-                "name": "sanitize.source_with_tito",
-                "on_all_flows": true
-              }
+              { "kind": "Test", "name": "sanitize.source_with_tito" }
             ]
           }
         ]
@@ -275,9 +247,7 @@
               "start": 16,
               "end": 17
             },
-            "leaves": [
-              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -313,13 +283,7 @@
               "start": 12,
               "end": 22
             },
-            "leaves": [
-              {
-                "kind": "TestB",
-                "name": "sanitize.b_source",
-                "on_all_flows": true
-              }
-            ]
+            "leaves": [ { "kind": "TestB", "name": "sanitize.b_source" } ]
           }
         ]
       }
@@ -343,13 +307,7 @@
               "start": 12,
               "end": 22
             },
-            "leaves": [
-              {
-                "kind": "TestA",
-                "name": "sanitize.a_source",
-                "on_all_flows": true
-              }
-            ]
+            "leaves": [ { "kind": "TestA", "name": "sanitize.a_source" } ]
           }
         ]
       }
@@ -374,11 +332,7 @@
               "end": 30
             },
             "leaves": [
-              {
-                "kind": "Test",
-                "name": "sanitize.source_with_tito",
-                "on_all_flows": true
-              }
+              { "kind": "Test", "name": "sanitize.source_with_tito" }
             ]
           }
         ]
@@ -395,9 +349,7 @@
               "start": 16,
               "end": 17
             },
-            "leaves": [
-              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
-            ],
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]

@@ -22,11 +22,7 @@
               "end": 30
             },
             "leaves": [
-              {
-                "kind": "MySource",
-                "name": "conditional.some_source",
-                "on_all_flows": true
-              }
+              { "kind": "MySource", "name": "conditional.some_source" }
             ],
             "features": [ { "always-via-value": "my-data" } ]
           }
@@ -73,11 +69,7 @@
               "end": 28
             },
             "leaves": [
-              {
-                "kind": "MySource",
-                "name": "conditional.some_source",
-                "on_all_flows": true
-              }
+              { "kind": "MySource", "name": "conditional.some_source" }
             ],
             "features": [ { "always-via-value": "other" } ]
           }
