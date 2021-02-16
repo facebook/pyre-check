@@ -133,7 +133,10 @@ def run_from_parsed_arguments(
     for mode in modes:
         LOG.info("Computing models for `%s`", mode)
         start = time.time()
-        generated_models[mode] = set(generator_options[mode].generate_models())
+        if mode in generator_options.keys():
+            generated_models[mode] = set(generator_options[mode].generate_models())
+        else:
+            continue
         elapsed_time_seconds = time.time() - start
         LOG.info(f"Computed models for `{mode}` in {elapsed_time_seconds:.3f} seconds.")
 
