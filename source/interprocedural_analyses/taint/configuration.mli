@@ -107,3 +107,9 @@ val get_maximum_model_width : unit -> int
 val maximum_return_access_path_width : int
 
 val maximum_return_access_path_depth : int
+
+val maximum_tito_positions : int
+
+val maximum_tree_depth_after_widening : int
+
+val maximum_tito_leaves : int

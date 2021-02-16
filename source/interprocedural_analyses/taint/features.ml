@@ -45,7 +45,7 @@ module TitoPosition = struct
 
   type t = Location.WithModule.t [@@deriving show { with_path = false }, compare]
 
-  let max_count () = 30
+  let max_count () = Configuration.maximum_tito_positions
 end
 
 module TitoPositionSet = Abstract.ToppedSetDomain.Make (TitoPosition)

@@ -693,3 +693,9 @@ let literal_string_sources () =
 let maximum_return_access_path_width = 5
 
 let maximum_return_access_path_depth = 3
+
+let maximum_tito_positions = 30
+
+let maximum_tree_depth_after_widening = 4
+
+let maximum_tito_leaves = 5

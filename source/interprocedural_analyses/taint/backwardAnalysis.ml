@@ -1316,7 +1316,7 @@ let extract_tito_and_sink_models define ~is_constructor ~resolution ~existing_ba
           ~f:(fun _ count -> count + 1)
           candidate_tree
       in
-      if number_of_paths > 5 then
+      if number_of_paths > Configuration.maximum_tito_leaves then
         BackwardState.Tree.collapse_to ~depth:0 candidate_tree
       else
         candidate_tree
