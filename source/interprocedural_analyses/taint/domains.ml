@@ -377,9 +377,6 @@ end = struct
               (* The taint analysis creates breadcrumbs for ViaValueOf and ViaTypeOf features
                  dynamically.*)
               breadcrumbs, leaves
-          | CrossRepositoryTaintInformation _ ->
-              (* TODO(T67571285): Also emit this as a leaf annotation. *)
-              breadcrumbs, leaves
           | Breadcrumb breadcrumb ->
               let breadcrumb_json = Features.Breadcrumb.to_json breadcrumb ~on_all_paths:in_under in
               breadcrumb_json :: breadcrumbs, leaves

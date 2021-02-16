@@ -104,11 +104,6 @@ module Simple = struct
         leaf: string;
         port: string option;
       }
-    | CrossRepositoryTaintInformation of {
-        producer_id: int;
-        canonical_name: string;
-        canonical_port: string;
-      }
     | Breadcrumb of Breadcrumb.t
     | ViaValueOf of {
         parameter: AccessPath.Root.t;
