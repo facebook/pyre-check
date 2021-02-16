@@ -40,6 +40,16 @@ end)
 module FirstIndexSet = Abstract.SetDomain.Make (FirstIndex)
 module FirstFieldSet = Abstract.SetDomain.Make (FirstField)
 
+module TitoPosition = struct
+  let name = "tito positions"
+
+  type t = Location.WithModule.t [@@deriving show { with_path = false }, compare]
+
+  let max_count () = 30
+end
+
+module TitoPositionSet = Abstract.ToppedSetDomain.Make (TitoPosition)
+
 module Breadcrumb = struct
   type t =
     | FormatString (* Via f"{something}" *)
@@ -99,7 +109,6 @@ module Simple = struct
         canonical_name: string;
         canonical_port: string;
       }
-    | TitoPosition of Location.WithModule.t
     | Breadcrumb of Breadcrumb.t
     | ViaValueOf of {
         parameter: AccessPath.Root.t;
@@ -116,7 +125,6 @@ module Simple = struct
         match port with
         | None -> Format.fprintf formatter "LeafName(%s)" leaf
         | Some port -> Format.fprintf formatter "LeafName(%s, port=%s)" leaf port )
-    | TitoPosition location -> Format.fprintf formatter "Tito(%a)" Location.WithModule.pp location
     | Breadcrumb breadcrumb -> Format.fprintf formatter "%a" Breadcrumb.pp breadcrumb
     | simple -> pp formatter simple
 
@@ -145,15 +153,6 @@ module Simple = struct
 end
 
 module SimpleSet = Abstract.OverUnderSetDomain.Make (Simple)
-
-let strip_simple_feature_for_callsite features =
-  let strip feature =
-    match feature.Abstract.OverUnderSetDomain.element with
-    | Simple.TitoPosition _ -> None
-    | _ -> Some feature
-  in
-  List.filter_map ~f:strip features
-
 
 (* Set of complex features, where element can be abstracted and joins are expensive. Should only be
    used for elements that need this kind of joining. *)

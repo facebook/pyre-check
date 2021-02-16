@@ -328,8 +328,8 @@ module ResultArgument = struct
     let source_taint =
       source_taint
       |> ForwardState.transform
-           ForwardTaint.simple_feature_set
-           (Abstract.Domain.Map Features.strip_simple_feature_for_callsite)
+           ForwardTaint.flow_details
+           (Abstract.Domain.Map Domains.FlowDetails.strip_tito_positions)
       |> ForwardState.transform
            ForwardTaint.trace_info
            (Abstract.Domain.Map Domains.TraceInfo.strip_for_callsite)
@@ -337,8 +337,8 @@ module ResultArgument = struct
     let sink_taint =
       sink_taint
       |> BackwardState.transform
-           BackwardTaint.simple_feature_set
-           (Abstract.Domain.Map Features.strip_simple_feature_for_callsite)
+           BackwardTaint.flow_details
+           (Abstract.Domain.Map Domains.FlowDetails.strip_tito_positions)
       |> BackwardState.transform
            BackwardTaint.trace_info
            (Abstract.Domain.Map Domains.TraceInfo.strip_for_callsite)
@@ -346,8 +346,8 @@ module ResultArgument = struct
     let taint_in_taint_out =
       taint_in_taint_out
       |> BackwardState.transform
-           BackwardTaint.simple_feature_set
-           (Abstract.Domain.Map Features.strip_simple_feature_for_callsite)
+           BackwardTaint.flow_details
+           (Abstract.Domain.Map Domains.FlowDetails.strip_tito_positions)
       |> BackwardState.transform
            BackwardTaint.trace_info
            (Abstract.Domain.Map Domains.TraceInfo.strip_for_callsite)

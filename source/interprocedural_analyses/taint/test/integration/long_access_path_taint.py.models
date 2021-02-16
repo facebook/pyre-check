@@ -160,8 +160,8 @@
           {
             "decl": null,
             "tito": [
-              { "line": 16, "start": 22, "end": 28 },
-              { "line": 15, "start": 25, "end": 31 }
+              { "line": 15, "start": 25, "end": 31 },
+              { "line": 16, "start": 22, "end": 28 }
             ],
             "leaves": [
               { "kind": "LocalReturn", "name": "[timestamp]" },
@@ -222,9 +222,9 @@
           {
             "decl": null,
             "tito": [
-              { "line": 31, "start": 37, "end": 44 },
+              { "line": 31, "start": 23, "end": 29 },
               { "line": 31, "start": 31, "end": 35 },
-              { "line": 31, "start": 23, "end": 29 }
+              { "line": 31, "start": 37, "end": 44 }
             ],
             "leaves": [
               { "kind": "LocalReturn", "name": "[timestamp]" },

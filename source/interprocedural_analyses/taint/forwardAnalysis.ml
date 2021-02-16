@@ -235,27 +235,30 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                   BackwardTaint.simple_feature_element
                   return_taint
                   ~f:Features.gather_breadcrumbs
-                  ~init:
-                    Features.
-                      [
-                        SimpleSet.inject (Simple.Breadcrumb Breadcrumb.Tito);
-                        SimpleSet.inject (Simple.TitoPosition location);
-                      ]
+                  ~init:Features.[SimpleSet.inject (Simple.Breadcrumb Breadcrumb.Tito)]
               in
-              let add_features features = List.rev_append breadcrumbs features in
+              let add_features_and_position leaf_taint =
+                leaf_taint
+                |> FlowDetails.transform
+                     FlowDetails.tito_position_element
+                     Abstract.Domain.(Add location)
+                |> FlowDetails.transform
+                     FlowDetails.simple_feature_set
+                     Abstract.Domain.(Map (fun features -> List.rev_append breadcrumbs features))
+              in
               let taint_to_propagate =
                 if collapse_tito then
                   ForwardState.Tree.read path argument_taint
                   |> ForwardState.Tree.collapse
                   |> ForwardTaint.transform
-                       ForwardTaint.simple_feature_set
-                       Abstract.Domain.(Map add_features)
+                       ForwardTaint.flow_details
+                       Abstract.Domain.(Map add_features_and_position)
                   |> ForwardState.Tree.create_leaf
                 else
                   ForwardState.Tree.read path argument_taint
                   |> ForwardState.Tree.transform
-                       ForwardTaint.simple_feature_set
-                       Abstract.Domain.(Map add_features)
+                       ForwardTaint.flow_details
+                       Abstract.Domain.(Map add_features_and_position)
               in
               let return_paths =
                 match kind with

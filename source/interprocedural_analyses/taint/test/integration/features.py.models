@@ -660,8 +660,8 @@
           {
             "decl": null,
             "tito": [
-              { "line": 84, "start": 34, "end": 35 },
-              { "line": 84, "start": 19, "end": 20 }
+              { "line": 84, "start": 19, "end": 20 },
+              { "line": 84, "start": 34, "end": 35 }
             ],
             "leaves": [
               { "kind": "LocalReturn", "name": "[1]" },

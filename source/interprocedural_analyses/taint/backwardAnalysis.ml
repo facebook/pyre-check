@@ -193,11 +193,6 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
               get_taint access_path state
         in
         let combine_tito location taint_tree { AccessPath.root; actual_path; formal_path } =
-          let tito_features =
-            Features.SimpleSet.bottom
-            |> Features.SimpleSet.add (Features.Simple.Breadcrumb Features.Breadcrumb.Tito)
-            |> Features.SimpleSet.add (Features.Simple.TitoPosition location)
-          in
           let translate_tito
               { BackwardState.Tree.path = tito_path; tip = element; _ }
               argument_taint
@@ -253,6 +248,15 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             BackwardTaint.partition BackwardTaint.leaf ~f:Option.some element
             |> Map.Poly.fold ~f:compute_parameter_tito ~init:argument_taint
           in
+          let add_tito_feature_and_position leaf_taint =
+            leaf_taint
+            |> FlowDetails.transform
+                 FlowDetails.tito_position_element
+                 Abstract.Domain.(Add location)
+            |> FlowDetails.transform
+                 FlowDetails.simple_feature
+                 Abstract.Domain.(Add (Features.Simple.Breadcrumb Features.Breadcrumb.Tito))
+          in
           BackwardState.read
             ~transform_non_leaves
             ~root
@@ -263,8 +267,8 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                ~f:translate_tito
                ~init:BackwardState.Tree.bottom
           |> BackwardState.Tree.transform
-               Features.SimpleSet.Self
-               (Abstract.Domain.Add tito_features)
+               FlowDetails.Self
+               (Abstract.Domain.Map add_tito_feature_and_position)
           |> BackwardState.Tree.prepend actual_path
           |> BackwardState.Tree.join taint_tree
         in
