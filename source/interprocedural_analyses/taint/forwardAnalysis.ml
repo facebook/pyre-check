@@ -221,9 +221,6 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                        ForwardState.Tree.join source_state state)
             | _ -> argument_taint
           in
-          let location =
-            Location.with_module ~qualifier:FunctionContext.qualifier argument.Node.location
-          in
           let tito =
             let convert_tito_path
                 kind
@@ -241,7 +238,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                 leaf_taint
                 |> FlowDetails.transform
                      FlowDetails.tito_position_element
-                     Abstract.Domain.(Add location)
+                     Abstract.Domain.(Add argument.Node.location)
                 |> FlowDetails.transform
                      FlowDetails.simple_feature_set
                      Abstract.Domain.(Map (fun features -> List.rev_append breadcrumbs features))
@@ -309,6 +306,9 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
               Map.Poly.set tito ~key:Sinks.LocalReturn ~data:returned_tito
             else
               tito
+          in
+          let location =
+            Location.with_module ~qualifier:FunctionContext.qualifier argument.Node.location
           in
           let sink_tree =
             List.fold sink_matches ~f:(combine_sink_taint location) ~init:BackwardState.Tree.empty

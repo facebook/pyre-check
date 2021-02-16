@@ -43,7 +43,7 @@ module FirstFieldSet = Abstract.SetDomain.Make (FirstField)
 module TitoPosition = struct
   let name = "tito positions"
 
-  type t = Location.WithModule.t [@@deriving show { with_path = false }, compare]
+  type t = Location.t [@@deriving show, compare]
 
   let max_count () = Configuration.maximum_tito_positions
 end

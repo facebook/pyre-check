@@ -19,12 +19,14 @@ module type SET_ARG = sig
   val ignore_leaf_at_call : t -> bool
 end
 
-let location_to_json
-    ?filename_lookup
-    ( { Location.WithModule.start = { line; column }; stop = { column = end_column; _ }; _ } as
-    location_with_module )
+let location_to_json { Location.start = { line; column }; stop = { column = end_column; _ } }
     : Yojson.Safe.json
   =
+  (* Note: this is not correct for multiple line span *)
+  `Assoc ["line", `Int line; "start", `Int column; "end", `Int end_column]
+
+
+let location_with_module_to_json ~filename_lookup location_with_module : Yojson.Safe.json =
   let optionally_add_filename fields =
     match filename_lookup with
     | Some lookup ->
@@ -34,11 +36,9 @@ let location_to_json
         ("filename", `String path) :: fields
     | None -> fields
   in
-  let fields =
-    (* Note: not correct for multiple line span *)
-    ["line", `Int line; "start", `Int column; "end", `Int end_column] |> optionally_add_filename
-  in
-  `Assoc fields
+  match location_to_json (Location.strip_module location_with_module) with
+  | `Assoc fields -> `Assoc (optionally_add_filename fields)
+  | _ -> failwith "unreachable"
 
 
 module TraceInfo = struct
@@ -97,11 +97,11 @@ module TraceInfo = struct
     | _ -> trace
 
 
-  let create_json ~location_to_json ~trace_length trace : string * Yojson.Safe.json =
+  let create_json ~filename_lookup ~trace_length trace : string * Yojson.Safe.json =
     match trace with
     | Declaration _ -> "decl", `Null
     | Origin location ->
-        let location_json = location_to_json location in
+        let location_json = location_with_module_to_json ~filename_lookup location in
         "root", location_json
     | CallSite { location; callees; port; path } ->
         let callee_json =
@@ -109,7 +109,7 @@ module TraceInfo = struct
           |> List.map ~f:(fun callable ->
                  `String (Interprocedural.Callable.external_target_name callable))
         in
-        let location_json = location_to_json location in
+        let location_json = location_with_module_to_json ~filename_lookup location in
         let port_json = AccessPath.create port path |> AccessPath.to_json in
         let call_json =
           `Assoc
@@ -124,11 +124,9 @@ module TraceInfo = struct
 
 
   (* Returns the (dictionary key * json) to emit *)
-  let to_json = create_json ~location_to_json
+  let to_json = create_json ~filename_lookup:None
 
-  let to_external_json ~filename_lookup =
-    create_json ~location_to_json:(location_to_json ~filename_lookup)
-
+  let to_external_json ~filename_lookup = create_json ~filename_lookup:(Some filename_lookup)
 
   let less_or_equal ~left ~right =
     match left, right with

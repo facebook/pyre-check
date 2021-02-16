@@ -281,7 +281,10 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           in
           let taint_in_taint_out =
             let taint_in_taint_out =
-              List.fold tito_matches ~f:(combine_tito location) ~init:BackwardState.Tree.empty
+              List.fold
+                tito_matches
+                ~f:(combine_tito argument.Node.location)
+                ~init:BackwardState.Tree.empty
             in
             match mode with
             | Sanitize { tito = Some (SpecificTito { sanitized_tito_sinks; _ }); _ } ->
