@@ -80,9 +80,9 @@ class Initialize(CommandParser):
                 raise InitializationException(
                     "Unable to locate binary at `{}`.".format(binary_path)
                 )
+            configuration["binary"] = binary_path
         else:
             LOG.info("Binary found at `{}`".format(binary_path))
-        configuration["binary"] = binary_path
 
         typeshed: Optional[Path] = find_typeshed()
         if typeshed is None:
@@ -93,7 +93,7 @@ class Initialize(CommandParser):
                 raise InitializationException(
                     "No typeshed directory found at `{}`.".format(typeshed)
                 )
-        configuration["typeshed"] = str(typeshed)
+            configuration["typeshed"] = str(typeshed)
 
         taint_models_path = find_taint_models_directory()
         if taint_models_path is not None:
