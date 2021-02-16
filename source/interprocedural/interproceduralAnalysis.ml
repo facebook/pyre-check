@@ -685,10 +685,10 @@ let compute_fixpoint
       in
       let () =
         Log.info
-          "Iteration #%n, %d callables, heap size %n took %fs"
+          "Iteration #%n, %d callables, heap size %.3fGB took %.2fs"
           iteration
           number_of_callables
-          (SharedMem.heap_size ())
+          (Int.to_float (SharedMem.heap_size ()) /. 1000000000.0)
           (Timer.stop timer |> Time.Span.to_sec)
       in
       iterate ~iteration:(iteration + 1) callables_to_analyze

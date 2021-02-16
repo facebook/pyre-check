@@ -188,7 +188,7 @@ let performance
         if microseconds > threshold_microseconds then None else randomly_log_every
     | None -> randomly_log_every
   in
-  Log.log ~section "%s: %fs" (String.capitalize name) (Int.to_float microseconds /. 1000000.0);
+  Log.log ~section "%s: %.2fs" (String.capitalize name) (Int.to_float microseconds /. 1000000.0);
   Profiling.log_performance_event (fun () ->
       let tags =
         match phase_name with
