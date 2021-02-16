@@ -154,7 +154,7 @@ module Make (Element : AbstractSetDomain.ELEMENT) = struct
           if Set.is_empty over && Set.equal under remove_under then
             Bottom
           else
-            make ~old:from ~over ~under
+            make ~old:from ~over:(Set.union over under) ~under
 
 
   module CommonArg = struct
