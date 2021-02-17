@@ -77,13 +77,20 @@ type ('a, 'b) equality_witness =
   | Equal : ('a, 'a) equality_witness
   | Distinct : ('a, 'b) equality_witness
 
-let part_id (part : 'a part) : int = Obj.extension_constructor part |> Obj.extension_id
+let part_id (part : 'a part) : int =
+  Obj.Extension_constructor.of_val part |> Obj.Extension_constructor.id
+
 
 let part_name (part : 'a part) =
-  Format.sprintf "%s:%d" (Obj.extension_constructor part |> Obj.extension_name) (part_id part)
+  Format.sprintf
+    "%s:%d"
+    (Obj.Extension_constructor.of_val part |> Obj.Extension_constructor.name)
+    (part_id part)
 
 
-let transform_name (t : 'a transform) = Obj.extension_constructor t |> Obj.extension_name
+let transform_name (t : 'a transform) =
+  Obj.Extension_constructor.of_val t |> Obj.Extension_constructor.name
+
 
 module Common (D : sig
   type t

@@ -275,7 +275,7 @@ module StringSet = struct
                  fold Element ~init:[] ~f:List.cons data |> List.sort ~compare:String.compare
                in
                (key, elements) :: result)
-        |> List.sort ~compare:Pervasives.compare
+        |> List.sort ~compare:Poly.compare
       in
       assert_equal expected actual ~printer:int_string_list_list_printer
     in
@@ -360,7 +360,7 @@ module InvertedStringSet = struct
                  fold Element ~init:[] ~f:List.cons data |> List.sort ~compare:String.compare
                in
                (key, elements) :: result)
-        |> List.sort ~compare:Pervasives.compare
+        |> List.sort ~compare:Poly.compare
       in
       assert_equal expected actual ~printer:int_string_list_list_printer
     in
@@ -627,7 +627,7 @@ module IntToStringSet = struct
         in
         partition part map ~f
         |> MapPoly.fold ~init:[] ~f:extract_keys
-        |> List.sort ~compare:Pervasives.compare
+        |> List.sort ~compare:Poly.compare
       in
       assert_equal expected_keys partition ~printer:string_int_list_list_printer
     in
@@ -797,7 +797,7 @@ module StrictIntToStringSet = struct
                  fold Key ~init:[] ~f:List.cons data |> List.sort ~compare:Int.compare
                in
                (key, elements) :: result)
-        |> List.sort ~compare:Pervasives.compare
+        |> List.sort ~compare:Poly.compare
       in
       assert_equal expected_keys partition ~printer:string_int_list_list_printer
     in
@@ -969,7 +969,7 @@ module PairStringMapIntToString = struct
                  fold right_key ~init:[] ~f:List.cons data |> List.sort ~compare:Int.compare
                in
                (key, elements) :: result)
-        |> List.sort ~compare:Pervasives.compare
+        |> List.sort ~compare:Poly.compare
       in
       assert_equal expected_keys partition ~printer:string_int_list_list_printer
     in
@@ -1050,7 +1050,7 @@ module AbstractElement = struct
 
   let equal = Poly.equal
 
-  let compare = Pervasives.compare
+  let compare = Poly.compare
 
   let less_or_equal ~left ~right =
     equal left right
@@ -1149,7 +1149,7 @@ module AbstractElementSet = struct
                  |> List.sort ~compare:String.compare
                in
                (key, elements) :: result)
-        |> List.sort ~compare:Pervasives.compare
+        |> List.sort ~compare:Poly.compare
       in
       assert_equal expected actual ~printer:int_string_list_list_printer
     in
@@ -1236,7 +1236,7 @@ module AbstractBucketedElement = struct
     | Rest -> "Rest"
 
 
-  let compare_bucket = Pervasives.compare
+  let compare_bucket = Poly.compare
 end
 
 module AbstractBucketedElementSet = struct
@@ -1310,7 +1310,7 @@ module AbstractBucketedElementSet = struct
                  |> List.sort ~compare:String.compare
                in
                (key, elements) :: result)
-        |> List.sort ~compare:Pervasives.compare
+        |> List.sort ~compare:Poly.compare
       in
       assert_equal expected actual ~printer:int_string_list_list_printer
     in
@@ -1460,7 +1460,7 @@ module PairStringString = struct
       let partition =
         partition part map ~f
         |> MapPoly.fold ~init:[] ~f:(fun ~key ~data result -> (key, show data) :: result)
-        |> List.sort ~compare:Pervasives.compare
+        |> List.sort ~compare:Poly.compare
       in
       assert_equal expected partition ~printer:string_pair_list_printer
     in
@@ -1616,7 +1616,7 @@ module ProductDomain = struct
       let partition =
         partition part map ~f
         |> MapPoly.fold ~init:[] ~f:(fun ~key ~data result -> (key, show data) :: result)
-        |> List.sort ~compare:Pervasives.compare
+        |> List.sort ~compare:Poly.compare
       in
       assert_equal expected partition ~printer:string_pair_list_printer
     in
@@ -1810,7 +1810,7 @@ module PathDomain = struct
       let partition =
         partition Self product ~f
         |> MapPoly.fold ~init:[] ~f:(fun ~key ~data result -> (key, show data) :: result)
-        |> List.sort ~compare:Pervasives.compare
+        |> List.sort ~compare:Poly.compare
       in
       assert_equal expected partition ~printer:string_pair_list_printer
     in
@@ -1980,7 +1980,7 @@ module TreeOfStringSets = struct
       let partition =
         partition part map ~f
         |> MapPoly.fold ~init:[] ~f:(fun ~key ~data result -> (key, show data) :: result)
-        |> List.sort ~compare:Pervasives.compare
+        |> List.sort ~compare:Poly.compare
       in
       assert_equal expected partition ~printer:string_pair_list_printer
     in
@@ -2235,7 +2235,7 @@ module OverUnderStringSet = struct
         |> MapPoly.fold ~init:[] ~f:(fun ~key ~data result ->
                let elements = gather_result_elements data in
                (key, elements) :: result)
-        |> List.sort ~compare:Pervasives.compare
+        |> List.sort ~compare:Poly.compare
       in
       assert_equal expected actual ~printer:int_string_list_list_printer
     in
@@ -2246,7 +2246,7 @@ module OverUnderStringSet = struct
         |> MapPoly.fold ~init:[] ~f:(fun ~key ~data result ->
                let elements = gather_result_elements data in
                (key, elements) :: result)
-        |> List.sort ~compare:Pervasives.compare
+        |> List.sort ~compare:Poly.compare
       in
       assert_equal expected actual ~printer:int_string_list_list_printer
     in
@@ -2408,7 +2408,7 @@ module FlatString = struct
                  fold Element ~init:[] ~f:List.cons data |> List.sort ~compare:String.compare
                in
                (key, elements) :: result)
-        |> List.sort ~compare:Pervasives.compare
+        |> List.sort ~compare:Poly.compare
       in
       assert_equal expected actual ~printer:int_string_list_list_printer
     in
