@@ -1697,13 +1697,21 @@ let test_qualify _ =
 
 
 let test_replace_version_specific_code _ =
-  let assert_preprocessed ?(handle = "stub.pyi") source expected =
+  let assert_preprocessed ~major_version ~minor_version ~micro_version source expected =
+    let handle = "test.py" in
     assert_source_equal
       ~location_insensitive:true
       (parse ~handle expected)
-      (Preprocessing.replace_version_specific_code (parse ~handle source))
+      (Preprocessing.replace_version_specific_code
+         ~major_version
+         ~minor_version
+         ~micro_version
+         (parse ~handle source))
   in
   assert_preprocessed
+    ~major_version:2
+    ~minor_version:7
+    ~micro_version:15
     {|
       if sys.version_info < (3, 0):
         class C():
@@ -1720,6 +1728,9 @@ let test_replace_version_specific_code _ =
           ...
     |};
   assert_preprocessed
+    ~major_version:2
+    ~minor_version:7
+    ~micro_version:18
     {|
       if (3,) > sys.version_info:
         class C():
@@ -1736,6 +1747,9 @@ let test_replace_version_specific_code _ =
           ...
     |};
   assert_preprocessed
+    ~major_version:3
+    ~minor_version:4
+    ~micro_version:10
     {|
         if sys.version_info < (3,):
             _encodable = Union[bytes, Text]
@@ -1749,12 +1763,15 @@ let test_replace_version_specific_code _ =
         elif sys.version_info >= (3, 4):
             _encodable = Union[bytes, bytearray, memoryview]
             _decodable = Union[bytes, bytearray, memoryview, str]
-  |}
+    |}
     {|
         _encodable = Union[bytes, bytearray, memoryview]
         _decodable = Union[bytes, bytearray, memoryview, str]
   |};
   assert_preprocessed
+    ~major_version:3
+    ~minor_version:4
+    ~micro_version:10
     {|
       if sys.version_info <= (3, 0):
         class C():
@@ -1771,6 +1788,9 @@ let test_replace_version_specific_code _ =
           ...
     |};
   assert_preprocessed
+    ~major_version:3
+    ~minor_version:4
+    ~micro_version:10
     {|
       if sys.version_info < 3:
         class C():
@@ -1792,6 +1812,9 @@ let test_replace_version_specific_code _ =
             ...
     |};
   assert_preprocessed
+    ~major_version:3
+    ~minor_version:4
+    ~micro_version:10
     {|
        class C():
          if sys.version_info >= (3, ):
@@ -1804,6 +1827,9 @@ let test_replace_version_specific_code _ =
            ...
     |};
   assert_preprocessed
+    ~major_version:3
+    ~minor_version:4
+    ~micro_version:10
     {|
        class C():
          if sys.version_info <= (3, ):
@@ -1815,19 +1841,9 @@ let test_replace_version_specific_code _ =
          pass
     |};
   assert_preprocessed
-    {|
-       class C():
-         if sys.version_info >= (3, ):
-          def compatible()->str:
-            ...
-    |}
-    {|
-       class C():
-         def compatible()->str:
-           ...
-    |};
-  assert_preprocessed
-    ~handle:"file.py"
+    ~major_version:3
+    ~minor_version:6
+    ~micro_version:12
     {|
       if sys.version_info >= (3, 5):
         from A import B
@@ -1838,6 +1854,9 @@ let test_replace_version_specific_code _ =
        from A import B
     |};
   assert_preprocessed
+    ~major_version:3
+    ~minor_version:6
+    ~micro_version:12
     {|
       if sys.version_info[0] >= 3:
         a = 1
@@ -1848,6 +1867,9 @@ let test_replace_version_specific_code _ =
       a = 1
     |};
   assert_preprocessed
+    ~major_version:3
+    ~minor_version:4
+    ~micro_version:10
     {|
       if sys.version_info[0] < 3:
         a = 1

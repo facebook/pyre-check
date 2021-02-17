@@ -144,7 +144,14 @@ let parse_raw_sources ~configuration ~scheduler ~ast_environment source_paths =
   let parse_and_categorize result source_path =
     match parse_source ~configuration source_path with
     | Success ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source) ->
-        let source = Preprocessing.preprocess_phase0 source in
+        let source =
+          Preprocessing.replace_version_specific_code
+            ~major_version:configuration.python_minor_version
+            ~minor_version:configuration.python_minor_version
+            ~micro_version:configuration.python_micro_version
+            source
+          |> Preprocessing.preprocess_phase0
+        in
         Raw.add_parsed_source ast_environment source;
         qualifier :: result
     | Error { message; is_suppressed } ->

@@ -1219,7 +1219,7 @@ let qualify
   { source with Source.statements = qualify_statements ~scope statements |> snd }
 
 
-let replace_version_specific_code source =
+let replace_version_specific_code ~major_version:_ ~minor_version:_ ~micro_version:_ source =
   let module Transform = Transform.MakeStatementTransformer (struct
     include Transform.Identity
 
@@ -3399,7 +3399,6 @@ let preprocess_phase0 source =
   source
   |> expand_relative_imports
   |> replace_platform_specific_code
-  |> replace_version_specific_code
   |> expand_type_checking_imports
   |> expand_format_string
   |> expand_implicit_returns

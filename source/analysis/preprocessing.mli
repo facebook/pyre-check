@@ -19,7 +19,12 @@ val expand_format_string : Source.t -> Source.t
 val qualify : Source.t -> Source.t
 
 (* Resolves sys.version_info related checks at parse time. *)
-val replace_version_specific_code : Source.t -> Source.t
+val replace_version_specific_code
+  :  major_version:int ->
+  minor_version:int ->
+  micro_version:int ->
+  Source.t ->
+  Source.t
 
 (* Uses heuristics to pick platform-specific code at parse time. *)
 val replace_platform_specific_code : Source.t -> Source.t
@@ -71,7 +76,7 @@ val classes : Source.t -> Statement.Class.t Node.t list
 (* Creates a map used for dequalification from imports in the source *)
 val dequalify_map : Source.t -> Reference.t Reference.Map.t
 
-(* Steps that may affect wildcard imports *)
+(* Steps that may affect wildcard imports, excluding version-specific code replacement *)
 val preprocess_phase0 : Source.t -> Source.t
 
 (* Steps that does not affect wildcard imports *)
