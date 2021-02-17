@@ -44,6 +44,17 @@ module RemoteLogging : sig
   [@@deriving sexp, compare, hash, yojson]
 end
 
+module PythonVersion : sig
+  type t = {
+    major: int;
+    minor: int;
+    micro: int;
+  }
+  [@@deriving sexp, compare, hash, yojson]
+
+  val default : t
+end
+
 type t = {
   (* Source file discovery *)
   source_paths: SearchPath.t list;
@@ -61,6 +72,7 @@ type t = {
   (* Type checking controls *)
   debug: bool;
   strict: bool;
+  python_version: PythonVersion.t;
   show_error_traces: bool;
   store_type_check_resolution: bool;
   critical_files: CriticalFile.t list;

@@ -609,6 +609,9 @@ let run_start_command
     excludes
     extensions
     log_directory
+    python_major_version
+    python_minor_version
+    python_micro_version
     local_root
     ()
   =
@@ -664,6 +667,9 @@ let run_start_command
       ~perform_autocompletion
       ~features:(Configuration.Features.create features)
       ?log_directory
+      ?python_major_version
+      ?python_minor_version
+      ?python_micro_version
       ()
   in
   let log_path = log_path >>| Path.create_absolute in

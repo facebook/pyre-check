@@ -8,6 +8,12 @@
 open Core
 open Pyre
 
+let default_python_major_version = 3
+
+let default_python_minor_version = 10
+
+let default_python_micro_version = 10
+
 module Features = struct
   type t = {
     click_to_fix: bool;
@@ -114,6 +120,9 @@ module Analysis = struct
     features: Features.t;
     ignore_infer: Path.t list;
     log_directory: Path.t;
+    python_major_version: int;
+    python_minor_version: int;
+    python_micro_version: int;
   }
   [@@deriving show]
 
@@ -148,6 +157,9 @@ module Analysis = struct
       ?(features = Features.default)
       ?(ignore_infer = [])
       ?log_directory
+      ?(python_major_version = default_python_major_version)
+      ?(python_minor_version = default_python_minor_version)
+      ?(python_micro_version = default_python_micro_version)
       ~source_path
       ()
     =
@@ -186,6 +198,9 @@ module Analysis = struct
         ( match log_directory with
         | Some directory -> Path.create_absolute directory
         | None -> Path.append local_root ~element:".pyre" );
+      python_major_version;
+      python_minor_version;
+      python_micro_version;
     }
 
 

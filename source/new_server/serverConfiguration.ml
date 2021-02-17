@@ -143,6 +143,22 @@ module RemoteLogging = struct
   [@@deriving sexp, compare, hash, yojson]
 end
 
+module PythonVersion = struct
+  type t = {
+    major: int;
+    minor: int;
+    micro: int;
+  }
+  [@@deriving sexp, compare, hash, yojson]
+
+  let default =
+    {
+      major = Configuration.default_python_major_version;
+      minor = Configuration.default_python_minor_version;
+      micro = Configuration.default_python_micro_version;
+    }
+end
+
 type t = {
   (* Source file discovery *)
   source_paths: SearchPath.t list;
@@ -160,6 +176,7 @@ type t = {
   (* Type checking controls *)
   debug: bool;
   strict: bool;
+  python_version: PythonVersion.t;
   show_error_traces: bool;
   store_type_check_resolution: bool;
   critical_files: CriticalFile.t list;
@@ -247,6 +264,13 @@ let of_yojson json =
     let taint_model_paths = json |> path_list_member "taint_model_paths" ~default:[] in
     let debug = json |> bool_member "debug" ~default:false in
     let strict = json |> bool_member "strict" ~default:false in
+    let python_version =
+      json
+      |> member "python_version"
+      |> function
+      | `Null -> PythonVersion.default
+      | _ as json -> PythonVersion.of_yojson json |> Result.ok_or_failwith
+    in
     let show_error_traces = json |> bool_member "show_error_traces" ~default:false in
     let critical_files = json |> critial_file_list_member "critical_files" ~default:[] in
     let saved_state_action =
@@ -288,6 +312,7 @@ let of_yojson json =
         taint_model_paths;
         debug;
         strict;
+        python_version;
         show_error_traces;
         critical_files;
         saved_state_action;
@@ -321,6 +346,7 @@ let to_yojson
       taint_model_paths;
       debug;
       strict;
+      python_version;
       show_error_traces;
       critical_files;
       saved_state_action;
@@ -348,6 +374,7 @@ let to_yojson
       "taint_model_paths", [%to_yojson: string list] (List.map taint_model_paths ~f:Path.absolute);
       "debug", [%to_yojson: bool] debug;
       "strict", [%to_yojson: bool] strict;
+      "python_version", [%to_yojson: PythonVersion.t] python_version;
       "show_error_traces", [%to_yojson: bool] show_error_traces;
       "critical_files", [%to_yojson: CriticalFile.t list] critical_files;
       "store_type_check_resolution", [%to_yojson: bool] store_type_check_resolution;
@@ -407,6 +434,7 @@ let analysis_configuration_of
       taint_model_paths;
       debug;
       strict;
+      python_version = { PythonVersion.major; minor; micro };
       show_error_traces;
       critical_files = _;
       saved_state_action = _;
@@ -440,5 +468,8 @@ let analysis_configuration_of
     ~include_hints:false
     ~perform_autocompletion:false
     ~log_directory:(Path.absolute log_path)
+    ~python_major_version:major
+    ~python_minor_version:minor
+    ~python_micro_version:micro
     ~source_path:source_paths
     ()

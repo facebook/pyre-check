@@ -7,6 +7,12 @@
 
 open Pyre
 
+val default_python_major_version : int
+
+val default_python_minor_version : int
+
+val default_python_micro_version : int
+
 module Features : sig
   type t = {
     click_to_fix: bool;
@@ -64,6 +70,9 @@ module Analysis : sig
     features: Features.t;
     ignore_infer: Path.t list;
     log_directory: Path.t;
+    python_major_version: int;
+    python_minor_version: int;
+    python_micro_version: int;
   }
   [@@deriving show, eq]
 
@@ -92,6 +101,9 @@ module Analysis : sig
     ?features:Features.t ->
     ?ignore_infer:Path.t list ->
     ?log_directory:string ->
+    ?python_major_version:int ->
+    ?python_minor_version:int ->
+    ?python_micro_version:int ->
     source_path:SearchPath.t list ->
     unit ->
     t

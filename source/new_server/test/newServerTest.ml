@@ -115,6 +115,7 @@ module ScratchProject = struct
         taint_model_paths = [];
         debug = false;
         strict = false;
+        python_version = ServerConfiguration.PythonVersion.default;
         show_error_traces = false;
         store_type_check_resolution = false;
         critical_files = [];

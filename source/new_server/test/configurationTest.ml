@@ -111,6 +111,11 @@ let test_json_parsing context =
             %s,
             "debug": true,
             "strict": true,
+            "python_version": {
+              "major": 3,
+              "minor": 7,
+              "micro": 4
+            },
             "show_error_traces": true,
             "store_type_check_resolution": true,
             "critical_files": [
@@ -124,6 +129,7 @@ let test_json_parsing context =
       [
         "debug", `Bool true;
         "strict", `Bool true;
+        "python_version", `Assoc ["major", `Int 3; "minor", `Int 7; "micro", `Int 4];
         "show_error_traces", `Bool true;
         "store_type_check_resolution", `Bool true;
         ( "critical_files",

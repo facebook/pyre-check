@@ -33,6 +33,9 @@ let run_infer
     excludes
     extensions
     log_directory
+    python_major_version
+    python_minor_version
+    python_micro_version
     local_root
     ()
   =
@@ -73,6 +76,9 @@ let run_infer
         ~extensions:(List.map ~f:Configuration.Extension.create_extension extensions)
         ?log_directory
         ?ignore_infer
+        ?python_major_version
+        ?python_minor_version
+        ?python_micro_version
         ~local_root
         ~source_path:(List.map source_path ~f:SearchPath.create_normalized)
         ()

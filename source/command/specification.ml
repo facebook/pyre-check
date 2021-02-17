@@ -79,4 +79,16 @@ let base_command_line_arguments =
          (listed string)
          ~doc:".EXT Consider the given extension as equivalent to `.py` for type checking."
     +> flag "-log-directory" (optional string) ~doc:"Location to write logs and other data"
+    +> flag
+         "-python-major-version"
+         (optional int)
+         ~doc:"Major version of the Python runtime under which code will be analyzed."
+    +> flag
+         "-python-minor-version"
+         (optional int)
+         ~doc:"Minor version of the Python runtime under which code will be analyzed."
+    +> flag
+         "-python-micro-version"
+         (optional int)
+         ~doc:"Micro version of the Python runtime under which code will be analyzed."
     +> anon (maybe_with_default "." ("local-root" %: string)))

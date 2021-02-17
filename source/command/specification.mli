@@ -27,6 +27,9 @@ val base_command_line_arguments
       string list ->
       string list ->
       string option ->
+      int option ->
+      int option ->
+      int option ->
       string ->
       unit ->
       unit,
