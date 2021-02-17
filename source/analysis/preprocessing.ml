@@ -1254,26 +1254,93 @@ let replace_version_specific_code source =
             else
               body
           in
+          let is_system_version_expression = function
+            | {
+                Node.value =
+                  Expression.Name
+                    (Name.Attribute
+                      {
+                        base = { Node.value = Expression.Name (Name.Identifier "sys"); _ };
+                        attribute = "version_info";
+                        _;
+                      });
+                _;
+              } ->
+                true
+            | _ -> false
+          in
+          let is_system_version_tuple_access_expression ?index = function
+            | {
+                Node.value =
+                  Expression.Call
+                    {
+                      Call.callee =
+                        {
+                          Node.value =
+                            Expression.Name
+                              (Name.Attribute
+                                {
+                                  base =
+                                    {
+                                      Node.value =
+                                        Expression.Name
+                                          (Name.Attribute
+                                            {
+                                              base =
+                                                {
+                                                  Node.value =
+                                                    Expression.Name (Name.Identifier "sys");
+                                                  _;
+                                                };
+                                              attribute = "version_info";
+                                              _;
+                                            });
+                                      _;
+                                    };
+                                  attribute = "__getitem__";
+                                  special = true;
+                                });
+                          _;
+                        };
+                      arguments = [argument];
+                    };
+                _;
+              } -> (
+                match index, argument with
+                | None, _ -> true
+                | ( Some expected_index,
+                    { Call.Argument.value = { Node.value = Expression.Integer actual_index; _ }; _ }
+                  )
+                  when Int.equal expected_index actual_index ->
+                    true
+                | _ -> false )
+            | _ -> false
+          in
           match extract_single_comparison test with
           | Comparison
               ( left,
                 { Node.value = Expression.Tuple ({ Node.value = Expression.Integer 3; _ } :: _); _ }
               )
-            when String.equal (Expression.show left) "sys.version_info" ->
+            when is_system_version_expression left ->
               (), add_pass_statement ~location orelse
           | Comparison (left, { Node.value = Expression.Integer 3; _ })
-            when String.equal (Expression.show left) "sys.version_info[0]" ->
+            when is_system_version_tuple_access_expression ~index:0 left ->
               (), add_pass_statement ~location orelse
-          | Comparison ({ Node.value = Expression.Tuple ({ Node.value = major; _ } :: _); _ }, right)
-            when String.equal (Expression.show right) "sys.version_info"
-                 && Expression.equal_expression major (Expression.Integer 3) ->
+          | Comparison
+              ( { Node.value = Expression.Tuple ({ Node.value = Expression.Integer 3; _ } :: _); _ },
+                right )
+            when is_system_version_expression right ->
               (), add_pass_statement ~location body
           | Comparison ({ Node.value = Expression.Integer 3; _ }, right)
-            when String.equal (Expression.show right) "sys.version_info[0]" ->
+            when is_system_version_tuple_access_expression ~index:0 right ->
               (), add_pass_statement ~location body
           | Equality (left, right)
-            when String.is_prefix ~prefix:"sys.version_info" (Expression.show left)
-                 || String.is_prefix ~prefix:"sys.version_info" (Expression.show right) ->
+            when is_system_version_expression left || is_system_version_expression right ->
+              (* Never pin our stubs to a python version. *)
+              (), add_pass_statement ~location orelse
+          | Equality (left, right)
+            when is_system_version_tuple_access_expression left
+                 || is_system_version_tuple_access_expression right ->
               (* Never pin our stubs to a python version. *)
               (), add_pass_statement ~location orelse
           | _ -> (), [statement] )
