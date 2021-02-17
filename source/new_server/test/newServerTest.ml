@@ -102,7 +102,8 @@ module ScratchProject = struct
     let watchman_root = Option.map watchman ~f:(fun _ -> source_root) in
     let server_configuration =
       {
-        ServerConfiguration.source_paths = [SearchPath.Root source_root];
+        ServerConfiguration.source_paths =
+          ServerConfiguration.SourcePaths.Simple [SearchPath.Root source_root];
         search_paths = [SearchPath.Root external_root];
         excludes = [];
         checked_directory_allowlist = [source_root];

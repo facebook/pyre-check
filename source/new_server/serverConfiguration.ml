@@ -8,6 +8,152 @@
 open Core
 open Pyre
 
+module JsonParsing = struct
+  open Yojson.Safe.Util
+
+  let with_default ~extract ~extract_optional ?default json =
+    match default with
+    | None -> extract json
+    | Some default -> extract_optional json |> Option.value ~default
+
+
+  let to_bool_with_default = with_default ~extract:to_bool ~extract_optional:to_bool_option
+
+  let to_int_with_default = with_default ~extract:to_int ~extract_optional:to_int_option
+
+  let to_path json = to_string json |> Path.create_absolute ~follow_symbolic_links:false
+
+  (* The absent of explicit `~default` parameter means that the corresponding JSON field is
+     mandantory. *)
+  let bool_member ?default name json = member name json |> to_bool_with_default ?default
+
+  let int_member ?default name json = member name json |> to_int_with_default ?default
+
+  let optional_string_member name json =
+    member name json
+    |> function
+    | `Null -> None
+    | _ as element -> Some (to_string element)
+
+
+  let path_member name json = member name json |> to_path
+
+  let optional_path_member name json =
+    member name json
+    |> function
+    | `Null -> None
+    | _ as element -> Some (to_path element)
+
+
+  let list_member ?default ~f name json =
+    member name json
+    |> fun element ->
+    match element, default with
+    | `Null, Some default -> default
+    | _, _ -> convert_each f element
+
+
+  let string_list_member = list_member ~f:to_string
+
+  let path_list_member = list_member ~f:to_path
+end
+
+module Buck = struct
+  type t = {
+    (* This is the buck root of the source directory, i.e. output of `buck root`. *)
+    root: Path.t;
+    mode: string option;
+    isolation_prefix: string option;
+    targets: string list;
+    (* This is the root of directory where built artifacts will be placed. *)
+    build_root: Path.t;
+  }
+  [@@deriving sexp, compare, hash]
+
+  let of_yojson json =
+    let open JsonParsing in
+    try
+      let root = path_member "root" json in
+      let mode = optional_string_member "mode" json in
+      let isolation_prefix = optional_string_member "isolation_prefix" json in
+      let targets = string_list_member "targets" json ~default:[] in
+      let build_root = path_member "build_root" json in
+      Result.Ok { root; mode; isolation_prefix; targets; build_root }
+    with
+    | Yojson.Safe.Util.Type_error (message, _)
+    | Yojson.Safe.Util.Undefined (message, _) ->
+        Result.Error message
+    | other_exception -> Result.Error (Exn.to_string other_exception)
+
+
+  let to_yojson { root; mode; isolation_prefix; targets; build_root } =
+    let result =
+      [
+        "root", `String (Path.absolute root);
+        "targets", `List (List.map targets ~f:(fun target -> `String target));
+        "build_root", `String (Path.absolute build_root);
+      ]
+    in
+    let result =
+      match mode with
+      | None -> result
+      | Some mode -> ("mode", `String mode) :: result
+    in
+    let result =
+      match isolation_prefix with
+      | None -> result
+      | Some isolation_prefix -> ("isolation_prefix", `String isolation_prefix) :: result
+    in
+    `Assoc result
+end
+
+module SourcePaths = struct
+  type t =
+    | Simple of SearchPath.t list
+    | Buck of Buck.t
+  [@@deriving sexp, compare, hash]
+
+  let of_yojson json =
+    let open Yojson.Safe.Util in
+    let parsing_failed () =
+      let message = Format.sprintf "Malformed source path JSON: %s" (Yojson.Safe.to_string json) in
+      Result.Error message
+    in
+    let parse_search_path_jsons search_path_jsons =
+      try
+        Result.Ok
+          (Simple (List.map search_path_jsons ~f:(fun json -> to_string json |> SearchPath.create)))
+      with
+      | Type_error _ -> parsing_failed ()
+    in
+    match json with
+    | `List search_path_jsons ->
+        (* Recognize this as a shortcut for simple source paths. *)
+        parse_search_path_jsons search_path_jsons
+    | `Assoc _ -> (
+        match member "kind" json with
+        | `String "simple" -> (
+            match member "paths" json with
+            | `List search_path_jsons -> parse_search_path_jsons search_path_jsons
+            | _ -> parsing_failed () )
+        | `String "buck" -> (
+            match Buck.of_yojson json with
+            | Result.Ok buck -> Result.Ok (Buck buck)
+            | Result.Error error -> Result.Error error )
+        | _ -> parsing_failed () )
+    | _ -> parsing_failed ()
+
+
+  let to_yojson = function
+    | Simple search_paths ->
+        `Assoc
+          [
+            "kind", `String "simple";
+            "paths", [%to_yojson: string list] (List.map search_paths ~f:SearchPath.show);
+          ]
+    | Buck buck -> Buck.to_yojson buck |> Yojson.Safe.Util.combine (`Assoc ["kind", `String "buck"])
+end
+
 module CriticalFile = struct
   type t =
     | BaseName of string
@@ -161,7 +307,7 @@ end
 
 type t = {
   (* Source file discovery *)
-  source_paths: SearchPath.t list;
+  source_paths: SourcePaths.t;
   search_paths: SearchPath.t list;
   excludes: string list;
   checked_directory_allowlist: Path.t list;
@@ -194,41 +340,8 @@ type t = {
 
 let of_yojson json =
   let open Yojson.Safe.Util in
+  let open JsonParsing in
   try
-    let with_default ~extract ~extract_optional ?default json =
-      match default with
-      | None -> extract json
-      | Some default -> extract_optional json |> Option.value ~default
-    in
-    let to_bool_with_default = with_default ~extract:to_bool ~extract_optional:to_bool_option in
-    let to_int_with_default = with_default ~extract:to_int ~extract_optional:to_int_option in
-    let to_path json = to_string json |> Path.create_absolute ~follow_symbolic_links:false in
-    (* The absent of explicit `~default` parameter means that the corresponding JSON field is
-       mandantory. *)
-    let bool_member ?default name json = member name json |> to_bool_with_default ?default in
-    let int_member ?default name json = member name json |> to_int_with_default ?default in
-    let optional_string_member name json =
-      member name json
-      |> function
-      | `Null -> None
-      | _ as element -> Some (to_string element)
-    in
-    let path_member name json = member name json |> to_path in
-    let optional_path_member name json =
-      member name json
-      |> function
-      | `Null -> None
-      | _ as element -> Some (to_path element)
-    in
-    let list_member ?default ~f name json =
-      member name json
-      |> fun element ->
-      match element, default with
-      | `Null, Some default -> default
-      | _, _ -> convert_each f element
-    in
-    let string_list_member = list_member ~f:to_string in
-    let path_list_member = list_member ~f:to_path in
     let critial_file_list_member =
       let to_critical_file json = CriticalFile.of_yojson json |> Result.ok_or_failwith in
       list_member ~f:to_critical_file
@@ -236,7 +349,7 @@ let of_yojson json =
 
     (* Parsing logic *)
     let source_paths =
-      json |> list_member "source_paths" ~f:(fun element -> to_string element |> SearchPath.create)
+      json |> member "source_paths" |> SourcePaths.of_yojson |> Result.ok_or_failwith
     in
     let search_paths =
       json
@@ -361,7 +474,7 @@ let to_yojson
   =
   let result =
     [
-      "source_paths", [%to_yojson: string list] (List.map source_paths ~f:SearchPath.show);
+      "source_paths", [%to_yojson: SourcePaths.t] source_paths;
       "search_paths", [%to_yojson: string list] (List.map search_paths ~f:SearchPath.show);
       "excludes", [%to_yojson: string list] excludes;
       ( "checked_directory_allowlist",
@@ -447,6 +560,11 @@ let analysis_configuration_of
       memory_profiling_output = _;
     }
   =
+  let source_path =
+    match source_paths with
+    | SourcePaths.Simple source_paths -> source_paths
+    | Buck { Buck.build_root; _ } -> [SearchPath.Root build_root]
+  in
   Configuration.Analysis.create
     ~infer:false
     ~parallel
@@ -471,5 +589,5 @@ let analysis_configuration_of
     ~python_major_version:major
     ~python_minor_version:minor
     ~python_micro_version:micro
-    ~source_path:source_paths
+    ~source_path
     ()

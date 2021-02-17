@@ -44,6 +44,8 @@ let test_json_parsing context =
   assert_not_parsed {| { "foo": 42 } |};
   assert_not_parsed {| { "log_path": "/foo/bar" } |};
   assert_not_parsed {| { "source_path": ["/foo/bar"] } |};
+  assert_not_parsed {| { "source_paths": {} } |};
+  assert_not_parsed {| { "source_paths": { "kind": 42 } } |};
   assert_not_parsed {| { "global_root": "/foo/bar" } |};
   assert_not_parsed {| { "log_path": 42, "source_path": ["/foo/bar"], "global_root": "/foo/bar" } |};
   assert_not_parsed
@@ -64,7 +66,7 @@ let test_json_parsing context =
     ~expected:
       [
         "log_path", `String "/log";
-        "source_paths", `List [`String "/source"];
+        "source_paths", `Assoc ["kind", `String "simple"; "paths", `List [`String "/source"]];
         "global_root", `String "/project";
         "excludes", `List [];
         "checked_directory_allowlist", `List [];
@@ -303,6 +305,88 @@ let test_json_parsing context =
               `String "load_from_project";
               `Assoc
                 ["project_name", `String "my_project"; "project_metadata", `String "my_metadata"];
+            ] );
+      ];
+
+  (* Specify source paths with `simple` *)
+  let mandatory_fileds = {|
+    "log_path": "/log",
+    "global_root": "/project"
+  |} in
+  assert_parsed
+    (Format.sprintf
+       {|
+          {
+            %s,
+            "source_paths": {
+              "kind": "simple",
+              "paths": ["/source/path0", "/source/path1"]
+            }
+          }
+       |}
+       mandatory_fileds)
+    ~expected:
+      [
+        ( "source_paths",
+          `Assoc
+            [
+              "kind", `String "simple";
+              "paths", `List [`String "/source/path0"; `String "/source/path1"];
+            ] );
+      ];
+
+  (* Specify source paths with `buck` *)
+  assert_parsed
+    (Format.sprintf
+       {|
+          {
+            %s,
+            "source_paths": {
+              "kind": "buck",
+              "root": "/buck/root",
+              "build_root": "/build/root"
+            }
+          }
+       |}
+       mandatory_fileds)
+    ~expected:
+      [
+        ( "source_paths",
+          `Assoc
+            [
+              "kind", `String "buck";
+              "root", `String "/buck/root";
+              "targets", `List [];
+              "build_root", `String "/build/root";
+            ] );
+      ];
+  assert_parsed
+    (Format.sprintf
+       {|
+          {
+            %s,
+            "source_paths": {
+              "kind": "buck",
+              "root": "/buck/root",
+              "targets": ["//my:target"],
+              "mode": "@mode/opt",
+              "isolation_prefix": "prefix",
+              "build_root": "/build/root"
+            }
+          }
+       |}
+       mandatory_fileds)
+    ~expected:
+      [
+        ( "source_paths",
+          `Assoc
+            [
+              "kind", `String "buck";
+              "root", `String "/buck/root";
+              "targets", `List [`String "//my:target"];
+              "mode", `String "@mode/opt";
+              "isolation_prefix", `String "prefix";
+              "build_root", `String "/build/root";
             ] );
       ];
   ()

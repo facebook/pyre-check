@@ -8,6 +8,26 @@
 open Core
 open Pyre
 
+module Buck : sig
+  type t = {
+    (* This is the buck root of the source directory, i.e. output of `buck root`. *)
+    root: Path.t;
+    mode: string option;
+    isolation_prefix: string option;
+    targets: string list;
+    (* This is the root of directory where built artifacts will be placed. *)
+    build_root: Path.t;
+  }
+  [@@deriving sexp, compare, hash, yojson]
+end
+
+module SourcePaths : sig
+  type t =
+    | Simple of SearchPath.t list
+    | Buck of Buck.t
+  [@@deriving sexp, compare, hash, yojson]
+end
+
 module CriticalFile : sig
   type t =
     | BaseName of string
@@ -57,7 +77,7 @@ end
 
 type t = {
   (* Source file discovery *)
-  source_paths: SearchPath.t list;
+  source_paths: SourcePaths.t;
   search_paths: SearchPath.t list;
   excludes: string list;
   checked_directory_allowlist: Path.t list;
