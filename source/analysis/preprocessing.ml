@@ -1219,41 +1219,85 @@ let qualify
   { source with Source.statements = qualify_statements ~scope statements |> snd }
 
 
-let replace_version_specific_code ~major_version:_ ~minor_version:_ ~micro_version:_ source =
+let replace_version_specific_code ~major_version ~minor_version ~micro_version source =
   let module Transform = Transform.MakeStatementTransformer (struct
     include Transform.Identity
 
     type t = unit
 
-    type operator =
-      | Equality of Expression.t * Expression.t
-      | Comparison of Expression.t * Expression.t
-      | Neither
+    module Comparison = struct
+      type t =
+        | LessThan
+        | LessThanOrEquals
+        | GreaterThan
+        | GreaterThanOrEquals
+        | Equals
+        | NotEquals
+      [@@deriving sexp]
+
+      let inverse = function
+        | LessThan -> GreaterThan
+        | LessThanOrEquals -> GreaterThanOrEquals
+        | GreaterThan -> LessThan
+        | GreaterThanOrEquals -> LessThanOrEquals
+        | Equals -> Equals
+        | NotEquals -> NotEquals
+
+
+      let evaluate ~operator compare_result =
+        match operator with
+        | LessThan -> compare_result < 0
+        | LessThanOrEquals -> compare_result <= 0
+        | GreaterThan -> compare_result > 0
+        | GreaterThanOrEquals -> compare_result >= 0
+        | Equals -> compare_result = 0
+        | NotEquals -> compare_result <> 0
+    end
+
+    let evaluate_one_version ~operator actual_version given_version =
+      [%compare: int] actual_version given_version |> Comparison.evaluate ~operator
+
+
+    let evaluate_two_versions ~operator actual_versions given_versions =
+      [%compare: int * int] actual_versions given_versions |> Comparison.evaluate ~operator
+
+
+    let evaluate_three_versions ~operator actual_versions given_versions =
+      [%compare: int * int * int] actual_versions given_versions |> Comparison.evaluate ~operator
+
 
     let statement _ ({ Node.location; value } as statement) =
       match value with
       | Statement.If { If.test; body; orelse } -> (
-          (* Normalizes a comparison of a < b, a <= b, b >= a or b > a to Some (a, b). *)
-          let extract_single_comparison { Node.value; _ } =
+          let extract_comparison { Node.value; _ } =
             match value with
             | Expression.ComparisonOperator { ComparisonOperator.left; operator; right } -> (
                 match operator with
-                | ComparisonOperator.LessThan
+                | ComparisonOperator.LessThan -> Some (Comparison.LessThan, left, right)
                 | ComparisonOperator.LessThanOrEquals ->
-                    Comparison (left, right)
-                | ComparisonOperator.GreaterThan
+                    Some (Comparison.LessThanOrEquals, left, right)
+                | ComparisonOperator.GreaterThan -> Some (Comparison.GreaterThan, left, right)
                 | ComparisonOperator.GreaterThanOrEquals ->
-                    Comparison (right, left)
-                | ComparisonOperator.Equals -> Equality (left, right)
-                | _ -> Neither )
-            | _ -> Neither
+                    Some (Comparison.GreaterThanOrEquals, left, right)
+                | ComparisonOperator.Equals -> Some (Comparison.Equals, left, right)
+                | ComparisonOperator.NotEquals -> Some (Comparison.NotEquals, left, right)
+                | _ -> None )
+            | _ -> None
           in
+
           let add_pass_statement ~location body =
             if List.is_empty body then
               [Node.create ~location Statement.Pass]
             else
               body
           in
+          let do_replace condition =
+            if condition then
+              (), add_pass_statement ~location body
+            else
+              (), add_pass_statement ~location orelse
+          in
+
           let is_system_version_expression = function
             | {
                 Node.value =
@@ -1316,33 +1360,130 @@ let replace_version_specific_code ~major_version:_ ~minor_version:_ ~micro_versi
                 | _ -> false )
             | _ -> false
           in
-          match extract_single_comparison test with
-          | Comparison
-              ( left,
-                { Node.value = Expression.Tuple ({ Node.value = Expression.Integer 3; _ } :: _); _ }
-              )
+
+          match extract_comparison test with
+          | Some
+              ( operator,
+                left,
+                {
+                  Node.value =
+                    Expression.Tuple
+                      ({ Node.value = Expression.Integer given_major_version; _ }
+                      :: { Node.value = Expression.Integer given_minor_version; _ }
+                         :: { Node.value = Expression.Integer given_micro_version; _ } :: _);
+                  _;
+                } )
             when is_system_version_expression left ->
-              (), add_pass_statement ~location orelse
-          | Comparison (left, { Node.value = Expression.Integer 3; _ })
+              evaluate_three_versions
+                ~operator
+                (major_version, minor_version, micro_version)
+                (given_major_version, given_minor_version, given_micro_version)
+              |> do_replace
+          | Some
+              ( operator,
+                left,
+                {
+                  Node.value =
+                    Expression.Tuple
+                      ({ Node.value = Expression.Integer given_major_version; _ }
+                      :: { Node.value = Expression.Integer given_minor_version; _ } :: _);
+                  _;
+                } )
+            when is_system_version_expression left ->
+              evaluate_two_versions
+                ~operator
+                (major_version, minor_version)
+                (given_major_version, given_minor_version)
+              |> do_replace
+          | Some
+              ( operator,
+                left,
+                {
+                  Node.value =
+                    Expression.Tuple
+                      ({ Node.value = Expression.Integer given_major_version; _ } :: _);
+                  _;
+                } )
+            when is_system_version_expression left ->
+              evaluate_one_version ~operator major_version given_major_version |> do_replace
+          | Some (operator, left, { Node.value = Expression.Integer given_major_version; _ })
             when is_system_version_tuple_access_expression ~index:0 left ->
-              (), add_pass_statement ~location orelse
-          | Comparison
-              ( { Node.value = Expression.Tuple ({ Node.value = Expression.Integer 3; _ } :: _); _ },
+              evaluate_one_version ~operator major_version given_major_version |> do_replace
+          | Some (operator, left, { Node.value = Expression.Integer given_minor_version; _ })
+            when is_system_version_tuple_access_expression ~index:1 left ->
+              evaluate_one_version ~operator minor_version given_minor_version |> do_replace
+          | Some (operator, left, { Node.value = Expression.Integer given_micro_version; _ })
+            when is_system_version_tuple_access_expression ~index:2 left ->
+              evaluate_one_version ~operator micro_version given_micro_version |> do_replace
+          | Some
+              ( operator,
+                {
+                  Node.value =
+                    Expression.Tuple
+                      ({ Node.value = Expression.Integer given_major_version; _ }
+                      :: { Node.value = Expression.Integer given_minor_version; _ }
+                         :: { Node.value = Expression.Integer given_micro_version; _ } :: _);
+                  _;
+                },
                 right )
             when is_system_version_expression right ->
-              (), add_pass_statement ~location body
-          | Comparison ({ Node.value = Expression.Integer 3; _ }, right)
+              evaluate_three_versions
+                ~operator:(Comparison.inverse operator)
+                (major_version, minor_version, micro_version)
+                (given_major_version, given_minor_version, given_micro_version)
+              |> do_replace
+          | Some
+              ( operator,
+                {
+                  Node.value =
+                    Expression.Tuple
+                      ({ Node.value = Expression.Integer given_major_version; _ }
+                      :: { Node.value = Expression.Integer given_minor_version; _ } :: _);
+                  _;
+                },
+                right )
+            when is_system_version_expression right ->
+              evaluate_two_versions
+                ~operator:(Comparison.inverse operator)
+                (major_version, minor_version)
+                (given_major_version, given_minor_version)
+              |> do_replace
+          | Some
+              ( operator,
+                {
+                  Node.value =
+                    Expression.Tuple
+                      ({ Node.value = Expression.Integer given_major_version; _ } :: _);
+                  _;
+                },
+                right )
+            when is_system_version_expression right ->
+              evaluate_one_version
+                ~operator:(Comparison.inverse operator)
+                major_version
+                given_major_version
+              |> do_replace
+          | Some (operator, { Node.value = Expression.Integer given_major_version; _ }, right)
             when is_system_version_tuple_access_expression ~index:0 right ->
-              (), add_pass_statement ~location body
-          | Equality (left, right)
-            when is_system_version_expression left || is_system_version_expression right ->
-              (* Never pin our stubs to a python version. *)
-              (), add_pass_statement ~location orelse
-          | Equality (left, right)
-            when is_system_version_tuple_access_expression left
-                 || is_system_version_tuple_access_expression right ->
-              (* Never pin our stubs to a python version. *)
-              (), add_pass_statement ~location orelse
+              evaluate_one_version
+                ~operator:(Comparison.inverse operator)
+                major_version
+                given_major_version
+              |> do_replace
+          | Some (operator, { Node.value = Expression.Integer given_minor_version; _ }, right)
+            when is_system_version_tuple_access_expression ~index:1 right ->
+              evaluate_one_version
+                ~operator:(Comparison.inverse operator)
+                minor_version
+                given_minor_version
+              |> do_replace
+          | Some (operator, { Node.value = Expression.Integer given_micro_version; _ }, right)
+            when is_system_version_tuple_access_expression ~index:2 right ->
+              evaluate_one_version
+                ~operator:(Comparison.inverse operator)
+                micro_version
+                given_micro_version
+              |> do_replace
           | _ -> (), [statement] )
       | _ -> (), [statement]
   end)

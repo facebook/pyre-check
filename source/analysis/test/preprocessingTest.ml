@@ -1709,6 +1709,25 @@ let test_replace_version_specific_code _ =
          (parse ~handle source))
   in
   assert_preprocessed
+    ~major_version:3
+    ~minor_version:0
+    ~micro_version:1
+    {|
+      if sys.version_info < (3, 0):
+        class C():
+         def incompatible()->int:
+           ...
+      else:
+        class C():
+          def compatible()->str:
+            ...
+    |}
+    {|
+      class C():
+        def compatible()->str:
+          ...
+    |};
+  assert_preprocessed
     ~major_version:2
     ~minor_version:7
     ~micro_version:15
@@ -1717,6 +1736,25 @@ let test_replace_version_specific_code _ =
         class C():
          def incompatible()->int:
            ...
+      else:
+        class C():
+          def compatible()->str:
+            ...
+    |}
+    {|
+      class C():
+        def incompatible()->int:
+          ...
+    |};
+  assert_preprocessed
+    ~major_version:3
+    ~minor_version:4
+    ~micro_version:10
+    {|
+      if (3,) > sys.version_info:
+        class C():
+          def incompatible()->int:
+            ...
       else:
         class C():
           def compatible()->str:
@@ -1743,9 +1781,47 @@ let test_replace_version_specific_code _ =
     |}
     {|
       class C():
-        def compatible()->str:
+        def incompatible()->int:
           ...
     |};
+  assert_preprocessed
+    ~major_version:2
+    ~minor_version:7
+    ~micro_version:18
+    {|
+        if sys.version_info < (3,):
+            _encodable = Union[bytes, Text]
+            _decodable = Union[bytes, Text]
+        elif sys.version_info < (3, 3):
+            _encodable = bytes
+            _decodable = bytes
+        elif sys.version_info >= (3, 4):
+            _encodable = Union[bytes, bytearray, memoryview]
+            _decodable = Union[bytes, bytearray, memoryview, str]
+  |}
+    {|
+        _encodable = Union[bytes, Text]
+        _decodable = Union[bytes, Text]
+  |};
+  assert_preprocessed
+    ~major_version:3
+    ~minor_version:2
+    ~micro_version:10
+    {|
+        if sys.version_info < (3,):
+            _encodable = Union[bytes, Text]
+            _decodable = Union[bytes, Text]
+        elif sys.version_info < (3, 3):
+            _encodable = bytes
+            _decodable = bytes
+        elif sys.version_info >= (3, 4):
+            _encodable = Union[bytes, bytearray, memoryview]
+            _decodable = Union[bytes, bytearray, memoryview, str]
+  |}
+    {|
+        _encodable = bytes
+        _decodable = bytes
+  |};
   assert_preprocessed
     ~major_version:3
     ~minor_version:4
@@ -1757,9 +1833,6 @@ let test_replace_version_specific_code _ =
         elif sys.version_info < (3, 3):
             _encodable = bytes
             _decodable = bytes
-        elif sys.version_info[:2] == (3, 3):
-            _encodable = bytes
-            _decodable = Union[bytes, str]
         elif sys.version_info >= (3, 4):
             _encodable = Union[bytes, bytearray, memoryview]
             _decodable = Union[bytes, bytearray, memoryview, str]
@@ -1768,6 +1841,25 @@ let test_replace_version_specific_code _ =
         _encodable = Union[bytes, bytearray, memoryview]
         _decodable = Union[bytes, bytearray, memoryview, str]
   |};
+  assert_preprocessed
+    ~major_version:3
+    ~minor_version:0
+    ~micro_version:1
+    {|
+      if sys.version_info <= (3, 0):
+        class C():
+          def incompatible()->int:
+            ...
+      else:
+        class C():
+          def compatible()->str:
+            ...
+    |}
+    {|
+      class C():
+        def incompatible()->int:
+          ...
+    |};
   assert_preprocessed
     ~major_version:3
     ~minor_version:4
@@ -1832,7 +1924,7 @@ let test_replace_version_specific_code _ =
     ~micro_version:10
     {|
        class C():
-         if sys.version_info <= (3, ):
+         if sys.version_info < (3, ):
           def incompatible()->int:
             ...
     |}
@@ -1858,6 +1950,45 @@ let test_replace_version_specific_code _ =
     ~minor_version:6
     ~micro_version:12
     {|
+      if (3, 5) >= sys.version_info :
+        from A import B
+      else:
+        from A import C
+    |}
+    {|
+       from A import C
+    |};
+  assert_preprocessed
+    ~major_version:3
+    ~minor_version:6
+    ~micro_version:12
+    {|
+      if sys.version_info >= (3, 6, 9):
+        from A import B
+      else:
+        from A import C
+    |}
+    {|
+       from A import B
+    |};
+  assert_preprocessed
+    ~major_version:3
+    ~minor_version:6
+    ~micro_version:12
+    {|
+      if sys.version_info < (3, 6, 9):
+        from A import B
+      else:
+        from A import C
+    |}
+    {|
+       from A import C
+    |};
+  assert_preprocessed
+    ~major_version:3
+    ~minor_version:6
+    ~micro_version:12
+    {|
       if sys.version_info[0] >= 3:
         a = 1
       else:
@@ -1865,6 +1996,19 @@ let test_replace_version_specific_code _ =
     |}
     {|
       a = 1
+    |};
+  assert_preprocessed
+    ~major_version:3
+    ~minor_version:6
+    ~micro_version:12
+    {|
+      if 6 > sys.version_info[1]:
+        a = 1
+      else:
+        a = 2
+    |}
+    {|
+      a = 2
     |};
   assert_preprocessed
     ~major_version:3
@@ -1878,7 +2022,86 @@ let test_replace_version_specific_code _ =
     |}
     {|
       a = 2
+    |};
+  assert_preprocessed
+    ~major_version:3
+    ~minor_version:4
+    ~micro_version:10
+    {|
+      if 5 <= sys.version_info[1]:
+        a = 1
+      else:
+        a = 2
     |}
+    {|
+      a = 2
+    |};
+  assert_preprocessed
+    ~major_version:3
+    ~minor_version:4
+    ~micro_version:10
+    {|
+      if 10 == sys.version_info[2]:
+        a = 1
+      else:
+        a = 2
+    |}
+    {|
+      a = 1
+    |};
+  assert_preprocessed
+    ~major_version:3
+    ~minor_version:4
+    ~micro_version:10
+    {|
+      if (3, 4) == sys.version_info:
+        a = 1
+      else:
+        a = 2
+    |}
+    {|
+      a = 1
+    |};
+  assert_preprocessed
+    ~major_version:3
+    ~minor_version:4
+    ~micro_version:10
+    {|
+      if sys.version_info != (3, 4):
+        a = 1
+      else:
+        a = 2
+    |}
+    {|
+      a = 2
+    |};
+  assert_preprocessed
+    ~major_version:3
+    ~minor_version:4
+    ~micro_version:10
+    {|
+      if 3 == sys.version_info[0]:
+        a = 1
+      else:
+        a = 2
+    |}
+    {|
+      a = 1
+    |};
+  assert_preprocessed
+    ~major_version:3
+    ~minor_version:4
+    ~micro_version:10
+    {|
+      if sys.version_info[1] != 4:
+        a = 1
+      else:
+        a = 2
+    |}
+    {|
+      a = 2
+    |};
+  ()
 
 
 let test_replace_platform_specific_code _ =
