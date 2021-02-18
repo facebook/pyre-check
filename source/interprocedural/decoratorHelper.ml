@@ -157,7 +157,7 @@ let requalify_define ~old_qualifier ~new_qualifier define =
 
 let create_function_call_to
     ~location
-    { Define.signature = { name = { Node.value = function_name; _ }; parameters; _ }; _ }
+    { Define.signature = { name = { Node.value = function_name; _ }; async; parameters; _ }; _ }
   =
   let parameter_to_argument = function
     | { Node.value = { Parameter.name; value = None; _ }; location } ->
@@ -168,13 +168,16 @@ let create_function_call_to
           }
     | _ -> None
   in
-  Expression.Call
-    {
-      callee =
-        Expression.Name (create_name_from_reference ~location function_name)
-        |> Node.create ~location;
-      arguments = List.filter_map parameters ~f:parameter_to_argument;
-    }
+  let call =
+    Expression.Call
+      {
+        callee =
+          Expression.Name (create_name_from_reference ~location function_name)
+          |> Node.create ~location;
+        arguments = List.filter_map parameters ~f:parameter_to_argument;
+      }
+  in
+  if async then Expression.Await (Node.create ~location call) else call
 
 
 let rename_define ~new_name ({ Define.signature = { name; _ } as signature; _ } as define) =

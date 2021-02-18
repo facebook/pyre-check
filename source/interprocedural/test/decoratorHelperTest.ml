@@ -168,6 +168,51 @@ let test_inline_decorators context =
 
       return __wrapper(y)
   |};
+  (* `async` decorator. *)
+  assert_inlined
+    {|
+    from typing import Awaitable, Callable
+
+    def with_logging_async(f: Callable[[str], Awaitable[int]]) -> Callable[[str], Awaitable[int]]:
+
+      async def inner(y: str) -> int:
+        try:
+          result = await f(y)
+        except Exception:
+          return 42
+
+      return inner
+
+    @with_logging_async
+    async def foo(x: str) -> int:
+      print(x)
+  |}
+    {|
+    from typing import Awaitable, Callable
+
+    def with_logging_async(f: Callable[[str], Awaitable[int]]) -> Callable[[str], Awaitable[int]]:
+
+      async def inner(y: str) -> int:
+        try:
+          result = await f(y)
+        except Exception:
+          return 42
+
+      return inner
+
+    async def foo(y: str) -> int:
+
+      async def __original_function(x: str) -> int:
+        print(x)
+
+      async def __wrapper(y: str) -> int:
+        try:
+          result = await __original_function(y)
+        except Exception:
+          return 42
+
+      return await __wrapper(y)
+  |};
   ()
 
 
