@@ -329,6 +329,12 @@ let qualify
       } as source )
   =
   let is_qualified = String.is_prefix ~prefix:"$" in
+  let qualify_if_needed ~qualifier name =
+    if Reference.is_strict_prefix ~prefix:qualifier name then
+      name
+    else
+      Reference.combine qualifier name
+  in
   let prefix_identifier ~scope:({ aliases; immutables; _ } as scope) ~prefix name =
     let stars, name = Identifier.split_star name in
     let renamed = Format.asprintf "$%s$%s" prefix name in
@@ -599,34 +605,15 @@ let qualify
                         (Expression.Name (Name.Identifier name)) )
                 | Name name ->
                     let name =
-                      let qualified =
+                      if qualify_assign then
+                        qualify_if_needed ~qualifier (name_to_reference_exn name)
+                        |> create_name_from_reference ~location
+                        |> fun name -> Expression.Name name
+                      else
                         match qualify_name ~qualify_strings:false ~location ~scope (Name name) with
                         | Name (Name.Identifier name) ->
                             Expression.Name (Name.Identifier (Identifier.sanitized name))
                         | qualified -> qualified
-                      in
-                      if qualify_assign then
-                        let rec combine qualifier = function
-                          | Expression.Name (Name.Identifier identifier) ->
-                              Expression.Name
-                                (Name.Attribute
-                                   {
-                                     base = Node.create ~location:(Node.location target) qualifier;
-                                     attribute = identifier;
-                                     special = false;
-                                   })
-                          | Name (Name.Attribute ({ base; _ } as name)) ->
-                              let qualified_base =
-                                Node.create
-                                  ~location:(Node.location base)
-                                  (combine qualifier (Node.value base))
-                              in
-                              Name (Name.Attribute { name with base = qualified_base })
-                          | _ -> failwith "Impossible."
-                        in
-                        combine (Name (create_name_from_reference ~location qualifier)) qualified
-                      else
-                        qualified
                     in
                     scope, name
                 | target -> scope, target
@@ -692,7 +679,7 @@ let qualify
         (* Take care to qualify the function name before parameters, as parameters shadow it. *)
         let scope, _ = qualify_function_name ~scope name in
         let scope, parameters = qualify_parameters ~scope parameters in
-        let qualifier = Reference.combine qualifier name in
+        let qualifier = qualify_if_needed ~qualifier name in
         let _, body =
           qualify_statements ~scope:{ scope with qualifier; is_in_function = true } body
         in
@@ -723,7 +710,7 @@ let qualify
         in
         let decorators = List.map decorators ~f:(qualify_decorator ~qualify_strings:false ~scope) in
         let body =
-          let qualifier = Reference.combine qualifier name in
+          let qualifier = qualify_if_needed ~qualifier name in
           let original_scope =
             { scope with qualifier; is_in_function = false; is_in_class = true }
           in
@@ -785,7 +772,7 @@ let qualify
         {
           definition with
           (* Ignore aliases, imports, etc. when declaring a class name. *)
-          Class.name = { Node.location; value = Reference.combine scope.qualifier name };
+          Class.name = { Node.location; value = qualify_if_needed ~qualifier:scope.qualifier name };
           bases = List.map bases ~f:qualify_base;
           body;
           decorators;

@@ -419,7 +419,12 @@ let test_qualify _ =
     assert_source_equal
       ~location_insensitive:true
       (parse expected)
-      (Preprocessing.qualify (parse source))
+      (Preprocessing.qualify (parse source));
+    (* Qualifying twice should not change the source. *)
+    assert_source_equal
+      ~location_insensitive:true
+      (parse expected)
+      (Preprocessing.qualify (Preprocessing.qualify (parse source)))
   in
   (* Base cases for aliasing. *)
   assert_qualify "from a import b; b" "from a import b; a.b";
@@ -1692,6 +1697,12 @@ let test_qualify _ =
     |}
     {|
       def qualifier.foo($parameter$x: int): ...
+    |};
+  (* Class with the same name as the module. *)
+  assert_qualify {|
+      class qualifier: ...
+    |} {|
+      class qualifier.qualifier: ...
     |};
   ()
 
