@@ -15,6 +15,8 @@ val expand_strings_in_annotation_expression : Expression.t -> Expression.t
 
 val expand_format_string : Source.t -> Source.t
 
+val qualify_local_identifier : qualifier:Reference.t -> Identifier.t -> Identifier.t
+
 (* Resolve imports and fully qualify names. *)
 val qualify : Source.t -> Source.t
 

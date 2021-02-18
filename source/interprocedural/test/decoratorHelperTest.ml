@@ -69,4 +69,63 @@ let test_all_decorators context =
   ()
 
 
-let () = "decoratorHelper" >::: ["all_decorators" >:: test_all_decorators] |> Test.run
+let test_inline_decorators context =
+  let assert_inlined ?(additional_sources = []) ?(handle = "test.py") source expected =
+    let source, environment = setup ~additional_sources ~context ~handle source in
+    let decorator_bodies = DecoratorHelper.all_decorator_bodies environment in
+    let actual = DecoratorHelper.inline_decorators ~environment ~decorator_bodies source in
+    (* Using the same setup code instead of `parse` because the SourcePath `priority` is different
+       otherwise. *)
+    let expected =
+      setup ~additional_sources ~context ~handle expected
+      |> fst
+      |> DecoratorHelper.sanitize_defines ~strip_decorators:false
+    in
+    assert_source_equal ~location_insensitive:true expected actual
+  in
+  assert_inlined
+    {|
+    from builtins import __test_sink
+    from typing import Callable
+
+    def with_logging(callable: Callable[[str], None]) -> Callable[[str], None]:
+
+      def inner(y: str) -> None:
+        __test_sink(y)
+        callable(y)
+
+      return inner
+
+    @with_logging
+    def foo(z: str) -> None:
+      print(z)
+  |}
+    {|
+    from builtins import __test_sink
+    from typing import Callable
+
+    def with_logging(callable: Callable[[str], None]) -> Callable[[str], None]:
+
+      def inner(y: str) -> None:
+        __test_sink(y)
+        callable(y)
+
+      return inner
+
+    def foo(y: str) -> None:
+      def __original_function(z: str) -> None:
+        print(z)
+
+      def __wrapper(y: str) -> None:
+        __test_sink(y)
+        __original_function(y)
+
+      return __wrapper(y)
+  |};
+  ()
+
+
+let () =
+  "decoratorHelper"
+  >::: ["all_decorators" >:: test_all_decorators; "inline_decorators" >:: test_inline_decorators]
+  |> Test.run
