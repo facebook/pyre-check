@@ -1698,6 +1698,13 @@ let test_qualify _ =
     {|
       def qualifier.foo($parameter$x: int): ...
     |};
+  assert_qualify
+    {|
+      def foo(*args, **kwargs): ...
+    |}
+    {|
+      def qualifier.foo(*$parameter$args, **$parameter$kwargs): ...
+    |};
   (* Class with the same name as the module. *)
   assert_qualify {|
       class qualifier: ...

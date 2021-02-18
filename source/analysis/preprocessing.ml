@@ -469,7 +469,7 @@ let qualify
         (scope, reversed_parameters)
         ({ Node.value = { Parameter.name; value; annotation }; _ } as parameter)
       =
-      if not (is_qualified name) then
+      if not (is_qualified (snd (Identifier.split_star name))) then
         let scope, stars, renamed = prefix_identifier ~scope ~prefix:"parameter" name in
         ( scope,
           {
