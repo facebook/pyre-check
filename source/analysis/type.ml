@@ -1790,10 +1790,9 @@ let rec expression annotation =
                            {
                              name = "pyre_extensions.Divide";
                              parameters =
-                               [Group (Concrete [IntExpression dividend; IntExpression quotient])];
+                               [Single (IntExpression dividend); Single (IntExpression quotient)];
                            })
                 in
-
                 if degree = 1 then
                   variable
                 else
