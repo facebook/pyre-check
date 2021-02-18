@@ -5463,6 +5463,23 @@ let test_expand_starred_type_variable_tuples _ =
   |} {|
     SomeAlias = Tuple[*Ts]
   |};
+  assert_expand
+    {|
+    def foo() -> Tuple[int, *Tuple[str, bool]]: ...
+  |}
+    {|
+    def foo() -> Tuple[int, pyre_extensions.Unpack[Tuple[str, bool]]]: ...
+  |};
+  assert_expand
+    {|
+    def foo() -> Tuple[int, *Tuple[*Ts, *Ts]]: ...
+  |}
+    {|
+    def foo() -> Tuple[
+      int,
+      pyre_extensions.Unpack[Tuple[pyre_extensions.Unpack[Ts], pyre_extensions.Unpack[Ts]]]
+    ]: ...
+  |};
   ()
 
 

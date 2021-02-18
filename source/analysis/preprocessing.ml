@@ -3570,7 +3570,19 @@ let expand_starred_type_variable_tuple source =
               callee;
               arguments = variable_name :: List.map ~f:transform_argument remaining_arguments;
             }
-      | Starred (Once { Node.value = Name (Name.Identifier variable_name); location }) ->
+      | Starred
+          (Once
+            {
+              Node.value =
+                ( Name (Name.Identifier _)
+                | Call
+                    {
+                      callee =
+                        { Node.value = Name (Name.Attribute { attribute = "__getitem__"; _ }); _ };
+                      _;
+                    } ) as starred_value;
+              location;
+            }) ->
           Expression.Call
             {
               callee =
@@ -3602,7 +3614,10 @@ let expand_starred_type_variable_tuple source =
                 };
               arguments =
                 [
-                  { name = None; value = { Node.location; value = Name (Identifier variable_name) } };
+                  {
+                    name = None;
+                    value = transform_annotation_expression { Node.location; value = starred_value };
+                  };
                 ];
             }
       | Tuple elements -> Tuple (List.map elements ~f:transform_annotation_expression)
