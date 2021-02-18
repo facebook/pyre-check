@@ -188,6 +188,11 @@ module Record = struct
           middle
           (if List.is_empty suffix then "" else ", ")
           (show_type_list ~pp_type suffix)
+
+
+      let extract_sole_variadic = function
+        | { prefix = []; middle = Variadic variadic; suffix = [] } -> Some variadic
+        | _ -> None
     end
 
     type 'annotation record =
@@ -3162,7 +3167,7 @@ module Variable : sig
   type tuple_variadic_t = type_t Record.Variable.RecordVariadic.Tuple.record
   [@@deriving compare, eq, sexp, show, hash]
 
-  type tuple_variadic_domain = type_t
+  type tuple_variadic_domain = type_t OrderedTypes.record
 
   type pair =
     | UnaryPair of unary_t * unary_domain
@@ -3258,7 +3263,7 @@ module Variable : sig
     end
 
     module Tuple : sig
-      include VariableKind with type t = tuple_variadic_t and type domain = type_t
+      include VariableKind with type t = tuple_variadic_t and type domain = tuple_variadic_domain
 
       val name : t -> Identifier.t
 
@@ -3356,7 +3361,7 @@ end = struct
   type tuple_variadic_t = type_t Record.Variable.RecordVariadic.Tuple.record
   [@@deriving compare, eq, sexp, show, hash]
 
-  type tuple_variadic_domain = type_t
+  type tuple_variadic_domain = type_t OrderedTypes.record
 
   type pair =
     | UnaryPair of unary_t * unary_domain
@@ -3708,17 +3713,20 @@ end = struct
 
       type t = type_t record [@@deriving compare, eq, sexp, show, hash]
 
-      type domain = type_t [@@deriving compare, eq, sexp, show, hash]
+      type domain = type_t OrderedTypes.record [@@deriving compare, eq, sexp, show, hash]
 
       module Map = Core.Map.Make (struct
         type t = type_t record [@@deriving compare, sexp]
       end)
 
-      let any = Any
+      (* TODO(T84854853): Add a better Any using unbound tuples. *)
+      let any = OrderedTypes.Concrete [Any]
 
       let name { name; _ } = name
 
-      let self_reference _ = failwith "not yet implemented - T84854853"
+      let self_reference variadic =
+        OrderedTypes.Concatenation (OrderedTypes.Concatenation.create variadic)
+
 
       let pair variable value = TupleVariadicPair (variable, value)
 

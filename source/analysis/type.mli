@@ -78,6 +78,10 @@ module Record : sig
       val create_unpackable
         :  'annotation Variable.RecordVariadic.Tuple.record ->
         'annotation record_unpackable
+
+      val extract_sole_variadic
+        :  'annotation t ->
+        'annotation Variable.RecordVariadic.Tuple.record option
     end
 
     type 'annotation record =
@@ -676,7 +680,7 @@ module Variable : sig
   type tuple_variadic_t = type_t Record.Variable.RecordVariadic.Tuple.record
   [@@deriving compare, eq, sexp, show, hash]
 
-  type tuple_variadic_domain = type_t
+  type tuple_variadic_domain = type_t OrderedTypes.record
 
   type pair =
     | UnaryPair of unary_t * unary_domain
@@ -776,7 +780,7 @@ module Variable : sig
     end
 
     module Tuple : sig
-      include VariableKind with type t = tuple_variadic_t and type domain = type_t
+      include VariableKind with type t = tuple_variadic_t and type domain = tuple_variadic_domain
 
       val name : t -> Identifier.t
 

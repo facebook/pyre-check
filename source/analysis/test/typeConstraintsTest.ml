@@ -126,6 +126,19 @@ let test_add_bound _ =
          ( parameter_variadic,
            Type.Callable.Defined [Named { name = "x"; annotation = Type.integer; default = false }]
          )));
+
+  (* Variadic tuples. *)
+  let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
+  let bound =
+    TupleVariadicPair (variadic, Type.OrderedTypes.Concrete [Type.integer; Type.string])
+  in
+  assert_add_bound_succeeds (`Lower bound);
+  let preconstraints = add_bound (Some empty) (`Lower bound) in
+  (* Adding an equal bound succeeds because the interval is the same as before. *)
+  assert_add_bound_succeeds ~preconstraints (`Lower bound);
+  assert_add_bound_fails
+    ~preconstraints
+    (`Lower (TupleVariadicPair (variadic, Type.OrderedTypes.Concrete [Type.bool; Type.bool])));
   ()
 
 

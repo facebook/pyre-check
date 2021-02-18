@@ -9,6 +9,7 @@ open Core
 open Pyre
 module ParameterVariable = Type.Variable.Variadic.Parameters
 module UnaryVariable = Type.Variable.Unary
+module TupleVariable = Type.Variable.Variadic.Tuple
 
 type unary_interval = {
   upper_bound: Type.t;
@@ -22,9 +23,37 @@ type callable_parameter_interval =
   | Bottom
 [@@deriving show]
 
+(* A variadic tuple Ts must solve to a concrete tuple of known length and dimensions.
+
+   For example:
+
+   def expects_same_types(xs: Tuple[*Ts], ys: Tuple[*Ts]) -> Tuple[*Ts]: ...
+
+   expects_same_types((1, 2), ("hello", "world"))
+
+   This call should raise an error. It should not solve `[int, int] <: *Ts && [str, str] <: *Ts` to
+   get `Ts = Tuple[int | str, int | str]`. Otherwise, it would be unintuitive because users would
+   expect the two arguments to have the same type.
+
+   Similarly, we should not join tuples of different lengths. That is, `[int, int] <: *Ts && [str]
+   <: *Ts` should not be `Ts = Tuple[int, int] | Tuple[str]`. The same goes for unequal lower and
+   upper bound.
+
+   In other words, the type lattice is just Top, Bottom, and individual tuples. The `join` of
+   unequal types is Top and the `meet` of unequal types is Bottom.
+
+   TODO(T84854853): Support unbounded tuples as well. The Top and Bottom should ideally be
+   Tuple[Any, ...]. *)
+type tuple_interval =
+  | TopTuple
+  | BottomTuple
+  | SingletonTuple of Type.t Type.OrderedTypes.record
+[@@deriving show]
+
 type t = {
   unaries: unary_interval UnaryVariable.Map.t;
   callable_parameters: callable_parameter_interval ParameterVariable.Map.t;
+  tuple_variadics: tuple_interval TupleVariable.Map.t;
   have_fallbacks: Type.Variable.Set.t;
 }
 
@@ -38,7 +67,7 @@ let show_map map ~show_key ~show_data ~short_name =
     Map.fold map ~init:[] ~f:show |> String.concat ~sep:"\n" |> Format.sprintf "%s: [%s]" short_name
 
 
-let pp format { unaries; callable_parameters; have_fallbacks } =
+let pp format { unaries; callable_parameters; tuple_variadics; have_fallbacks } =
   let unaries =
     show_map unaries ~show_key:UnaryVariable.show ~show_data:show_unary_interval ~short_name:"un"
   in
@@ -49,12 +78,19 @@ let pp format { unaries; callable_parameters; have_fallbacks } =
       ~show_data:show_callable_parameter_interval
       ~short_name:"cb"
   in
+  let tuple_variadics =
+    show_map
+      tuple_variadics
+      ~show_key:TupleVariable.show
+      ~show_data:show_tuple_interval
+      ~short_name:"variadic_tuple"
+  in
   let have_fallbacks =
     Set.to_list have_fallbacks
     |> List.to_string ~f:Type.Variable.show
     |> Format.sprintf "\nHave Fallbacks to Any: %s"
   in
-  Format.fprintf format "{%s%s%s}" unaries callable_parameters have_fallbacks
+  Format.fprintf format "{%s%s%s%s}" unaries callable_parameters tuple_variadics have_fallbacks
 
 
 let show annotation = Format.asprintf "%a" pp annotation
@@ -63,6 +99,7 @@ let empty =
   {
     unaries = UnaryVariable.Map.empty;
     callable_parameters = ParameterVariable.Map.empty;
+    tuple_variadics = TupleVariable.Map.empty;
     have_fallbacks = Type.Variable.Set.empty;
   }
 
@@ -263,12 +300,12 @@ module OrderedConstraints (Order : OrderType) = struct
 
 
       let partition_independent_dependent container ~with_regards_to =
-        let contains_key { unaries; callable_parameters; have_fallbacks } key =
+        let contains_key { unaries; callable_parameters; tuple_variadics; have_fallbacks } key =
           let has_constraints =
             match key with
             | Type.Variable.Unary unary -> Map.mem unaries unary
             | Type.Variable.ParameterVariadic parameters -> Map.mem callable_parameters parameters
-            | Type.Variable.TupleVariadic _ -> failwith "not yet implemented - T84854853"
+            | Type.Variable.TupleVariadic variadic -> Map.mem tuple_variadics variadic
           in
           has_constraints || Set.mem have_fallbacks key
         in
@@ -458,12 +495,85 @@ module OrderedConstraints (Order : OrderType) = struct
           |> Type.Variable.all_free_variables
   end
 
+  module TupleInterval = struct
+    module Variable = TupleVariable
+
+    type t = tuple_interval
+
+    let create ?upper_bound ?lower_bound () =
+      match lower_bound, upper_bound with
+      | None, None -> BottomTuple
+      | None, Some only
+      | Some only, None ->
+          SingletonTuple only
+      | Some left, Some right when Type.OrderedTypes.equal_record Type.equal left right ->
+          SingletonTuple left
+      | _ -> TopTuple
+
+
+    let intersection left right ~order:_ =
+      match left, right with
+      | TopTuple, _
+      | _, TopTuple ->
+          Some TopTuple
+      | other, BottomTuple
+      | BottomTuple, other ->
+          Some other
+      | SingletonTuple left, SingletonTuple right
+        when Type.OrderedTypes.equal_record Type.equal left right ->
+          Some (SingletonTuple left)
+      | _, _ -> Some TopTuple
+
+
+    let narrowest_valid_value interval ~order:_ ~variable:_ =
+      match interval with
+      | TopTuple
+      | BottomTuple ->
+          None
+      | SingletonTuple ordered_type -> Some ordered_type
+
+
+    let merge_solution_in target ~variable:_ ~solution =
+      match target with
+      | TopTuple
+      | BottomTuple ->
+          target
+      | SingletonTuple ordered_type -> (
+          match Solution.instantiate solution (Type.Tuple (Bounded ordered_type)) with
+          | Type.Tuple (Bounded instantiated_ordered_type) ->
+              SingletonTuple instantiated_ordered_type
+          | _ -> failwith "impossible" )
+
+
+    let is_trivial interval ~variable =
+      match interval with
+      | SingletonTuple (Type.OrderedTypes.Concatenation concatenation) ->
+          Type.OrderedTypes.Concatenation.extract_sole_variadic concatenation
+          >>| (fun variadic -> TupleVariable.equal variadic variable)
+          |> Option.value ~default:false
+      | _ -> (* TODO(T84854853): Should this be true? *) false
+
+
+    let free_variables = function
+      | TopTuple
+      | BottomTuple ->
+          []
+      | SingletonTuple ordered_type ->
+          Type.Variable.all_free_variables (Type.Tuple (Bounded ordered_type))
+  end
+
   module CallableParametersIntervalContainer = IntervalContainer.Make (CallableParametersInterval)
   module UnaryIntervalContainer = IntervalContainer.Make (UnaryTypeInterval)
+  module TupleIntervalContainer = IntervalContainer.Make (TupleInterval)
 
   type order = Order.t
 
-  let add_bound ({ unaries; callable_parameters; _ } as constraints) ~order ~pair ~is_lower_bound =
+  let add_bound
+      ({ unaries; callable_parameters; tuple_variadics; _ } as constraints)
+      ~order
+      ~pair
+      ~is_lower_bound
+    =
     match pair with
     | Type.Variable.UnaryPair (variable, bound) ->
         UnaryIntervalContainer.add_bound unaries ~order ~variable ~bound ~is_lower_bound
@@ -476,7 +586,9 @@ module OrderedConstraints (Order : OrderType) = struct
           ~bound
           ~is_lower_bound
         >>| fun callable_parameters -> { constraints with callable_parameters }
-    | Type.Variable.TupleVariadicPair _ -> failwith "not yet implemented - T84854853"
+    | Type.Variable.TupleVariadicPair (variable, bound) ->
+        TupleIntervalContainer.add_bound tuple_variadics ~order ~variable ~bound ~is_lower_bound
+        >>| fun tuple_variadics -> { constraints with tuple_variadics }
 
 
   let add_lower_bound = add_bound ~is_lower_bound:true
@@ -487,11 +599,12 @@ module OrderedConstraints (Order : OrderType) = struct
     { constraints with have_fallbacks = Set.add have_fallbacks addition }
 
 
-  let merge_solution { unaries; callable_parameters; have_fallbacks } solution =
+  let merge_solution { unaries; callable_parameters; tuple_variadics; have_fallbacks } solution =
     {
       unaries = UnaryIntervalContainer.merge_solution unaries ~solution;
       callable_parameters =
         CallableParametersIntervalContainer.merge_solution callable_parameters ~solution;
+      tuple_variadics = TupleIntervalContainer.merge_solution tuple_variadics ~solution;
       have_fallbacks;
     }
 
@@ -523,6 +636,11 @@ module OrderedConstraints (Order : OrderType) = struct
             remaining_constraints.unaries
             ~with_regards_to:remaining_constraints
         in
+        let independent_tuple_variadics, dependent_tuple_variadics =
+          TupleIntervalContainer.partition_independent_dependent
+            remaining_constraints.tuple_variadics
+            ~with_regards_to:remaining_constraints
+        in
         let independent_parameters, dependent_parameters =
           CallableParametersIntervalContainer.partition_independent_dependent
             remaining_constraints.callable_parameters
@@ -539,18 +657,21 @@ module OrderedConstraints (Order : OrderType) = struct
         ( {
             unaries = independent_unaries;
             callable_parameters = independent_parameters;
+            tuple_variadics = independent_tuple_variadics;
             have_fallbacks = independent_fallbacks;
           },
           {
             unaries = dependent_unaries;
             callable_parameters = dependent_parameters;
+            tuple_variadics = dependent_tuple_variadics;
             have_fallbacks = dependent_fallbacks;
           } )
       in
       let handle_dependent_constraints partial_solution =
-        let is_empty { unaries; callable_parameters; have_fallbacks } =
+        let is_empty { unaries; callable_parameters; tuple_variadics; have_fallbacks } =
           UnaryVariable.Map.is_empty unaries
           && ParameterVariable.Map.is_empty callable_parameters
+          && TupleVariable.Map.is_empty tuple_variadics
           && Set.is_empty have_fallbacks
         in
         if is_empty dependent_constraints then
@@ -565,13 +686,18 @@ module OrderedConstraints (Order : OrderType) = struct
       >>= CallableParametersIntervalContainer.add_solution
             independent_constraints.callable_parameters
             ~order
+      >>= TupleIntervalContainer.add_solution independent_constraints.tuple_variadics ~order
       >>| apply_fallbacks ~have_fallbacks:independent_constraints.have_fallbacks
       >>= handle_dependent_constraints
     in
     build_solution ~remaining_constraints:constraints ~partial_solution:Solution.empty
 
 
-  let extract_partial_solution { unaries; callable_parameters; have_fallbacks } ~order ~variables =
+  let extract_partial_solution
+      { unaries; callable_parameters; tuple_variadics; have_fallbacks }
+      ~order
+      ~variables
+    =
     let extracted_constraints, remaining_constraints =
       let unary_matches ~key ~data:_ =
         List.exists variables ~f:(Type.Variable.equal (Type.Variable.Unary key))
@@ -579,11 +705,17 @@ module OrderedConstraints (Order : OrderType) = struct
       let callable_parameters_matches ~key ~data:_ =
         List.exists variables ~f:(Type.Variable.equal (Type.Variable.ParameterVariadic key))
       in
+      let tuple_variadic_matches ~key ~data:_ =
+        List.exists variables ~f:(Type.Variable.equal (Type.Variable.TupleVariadic key))
+      in
       let extracted_unaries, remaining_unaries =
         UnaryVariable.Map.partitioni_tf unaries ~f:unary_matches
       in
       let extracted_variadics, remaining_variadics =
         ParameterVariable.Map.partitioni_tf callable_parameters ~f:callable_parameters_matches
+      in
+      let extracted_tuple_variadics, remaining_tuple_variadics =
+        TupleVariable.Map.partitioni_tf tuple_variadics ~f:tuple_variadic_matches
       in
       let extracted_fallbacks, remaining_fallbacks =
         let matches = function
@@ -596,11 +728,13 @@ module OrderedConstraints (Order : OrderType) = struct
       ( {
           unaries = extracted_unaries;
           callable_parameters = extracted_variadics;
+          tuple_variadics = extracted_tuple_variadics;
           have_fallbacks = extracted_fallbacks;
         },
         {
           unaries = remaining_unaries;
           callable_parameters = remaining_variadics;
+          tuple_variadics = remaining_tuple_variadics;
           have_fallbacks = remaining_fallbacks;
         } )
     in
