@@ -176,11 +176,6 @@ module Record : sig
 end
 
 module Monomial : sig
-  type variadic_operation =
-    | Length
-    | Product
-  [@@deriving compare, eq, sexp, show, hash]
-
   type 'a variable [@@deriving compare, eq, sexp, show, hash]
 
   type 'a t [@@deriving eq, sexp, compare, hash, show]
@@ -193,24 +188,12 @@ module Polynomial : sig
 
   val show_normal
     :  show_variable:('a Record.Variable.RecordUnary.record -> string) ->
-    show_variadic:
-      (( 'a Record.OrderedTypes.RecordConcatenate.Middle.t,
-         'a )
-       Record.OrderedTypes.RecordConcatenate.t ->
-      string) ->
     'a t ->
     string
 
   val create_from_variable : 'a Record.Variable.RecordUnary.record -> 'a t
 
   val create_from_int : int -> 'a t
-
-  val create_from_variadic
-    :  ( 'a Record.OrderedTypes.RecordConcatenate.Middle.t,
-         'a )
-       Record.OrderedTypes.RecordConcatenate.t ->
-    operation:Monomial.variadic_operation ->
-    'a t
 
   val create_from_variables_list
     :  compare_t:('a -> 'a -> int) ->
@@ -311,12 +294,6 @@ val pp_typed_dictionary_field
   unit
 
 val polynomial_show_variable : type_t Record.Variable.RecordUnary.record -> string
-
-val polynomial_show_variadic
-  :  ( type_t Record.OrderedTypes.RecordConcatenate.Middle.t,
-       type_t )
-     Record.OrderedTypes.RecordConcatenate.t ->
-  string
 
 val pp_concise : Format.formatter -> t -> unit
 

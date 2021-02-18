@@ -423,19 +423,9 @@ module Record = struct
 end
 
 module rec Monomial : sig
-  type variadic_operation =
-    | Length
-    | Product
-  [@@deriving compare, eq, sexp, show, hash]
-
   type 'a variable =
     | Variable of 'a Record.Variable.RecordUnary.record
     | Divide of 'a Polynomial.t * 'a Polynomial.t
-    | Variadic of
-        variadic_operation
-        * ( 'a Record.OrderedTypes.RecordConcatenate.Middle.t,
-            'a )
-          Record.OrderedTypes.RecordConcatenate.t
   [@@deriving compare, eq, sexp, show, hash]
 
   type 'a variable_degree = {
@@ -456,11 +446,6 @@ module rec Monomial : sig
 
   val show_normal
     :  show_variable:('a Record.Variable.RecordUnary.record -> string) ->
-    show_variadic:
-      (( 'a Record.OrderedTypes.RecordConcatenate.Middle.t,
-         'a )
-       Record.OrderedTypes.RecordConcatenate.t ->
-      string) ->
     'a t ->
     string
 
@@ -472,19 +457,9 @@ module rec Monomial : sig
 
   val create_from_list : compare_t:('a -> 'a -> int) -> int * ('a variable * int) list -> 'a t
 end = struct
-  type variadic_operation =
-    | Length
-    | Product
-  [@@deriving compare, eq, sexp, show, hash]
-
   type 'a variable =
     | Variable of 'a Record.Variable.RecordUnary.record
     | Divide of 'a Polynomial.t * 'a Polynomial.t
-    | Variadic of
-        variadic_operation
-        * ( 'a Record.OrderedTypes.RecordConcatenate.Middle.t,
-            'a )
-          Record.OrderedTypes.RecordConcatenate.t
   [@@deriving compare, eq, sexp, show, hash]
 
   type 'a variable_degree = {
@@ -540,18 +515,14 @@ end = struct
     { constant_factor; variables } |> normalize ~compare_t
 
 
-  let show_normal ~show_variable ~show_variadic { constant_factor; variables } =
+  let show_normal ~show_variable { constant_factor; variables } =
     let string_of_variable ~variable ~degree =
       let name =
         match variable with
         | Variable variable -> show_variable variable
-        | Variadic (Length, variadic) -> "Length[" ^ show_variadic variadic ^ "]"
-        | Variadic (Product, variadic) -> "Product[" ^ show_variadic variadic ^ "]"
         | Divide (dividend, quotient) ->
             let show_polynomial polynomial =
-              let polynomial_string =
-                Polynomial.show_normal polynomial ~show_variable ~show_variadic
-              in
+              let polynomial_string = Polynomial.show_normal polynomial ~show_variable in
               if List.length polynomial > 1 then
                 "(" ^ polynomial_string ^ ")"
               else
@@ -626,11 +597,6 @@ and Polynomial : sig
 
   val show_normal
     :  show_variable:('a Record.Variable.RecordUnary.record -> string) ->
-    show_variadic:
-      (( 'a Record.OrderedTypes.RecordConcatenate.Middle.t,
-         'a )
-       Record.OrderedTypes.RecordConcatenate.t ->
-      string) ->
     'a t ->
     string
 
@@ -639,13 +605,6 @@ and Polynomial : sig
   val create_from_variable : 'a Record.Variable.RecordUnary.record -> 'a t
 
   val create_from_int : int -> 'a t
-
-  val create_from_variadic
-    :  ( 'a Record.OrderedTypes.RecordConcatenate.Middle.t,
-         'a )
-       Record.OrderedTypes.RecordConcatenate.t ->
-    operation:Monomial.variadic_operation ->
-    'a t
 
   val create_from_variables_list
     :  compare_t:('a -> 'a -> int) ->
@@ -669,14 +628,11 @@ and Polynomial : sig
 end = struct
   type 'a t = 'a Monomial.t list [@@deriving compare, eq, sexp, hash, show]
 
-  let rec show_normal ~show_variable ~show_variadic polynomial =
+  let rec show_normal ~show_variable polynomial =
     match polynomial with
     | [] -> "0"
-    | [x] -> Monomial.show_normal ~show_variable ~show_variadic x
-    | x :: xs ->
-        Monomial.show_normal ~show_variable ~show_variadic x
-        ^ " + "
-        ^ show_normal ~show_variable ~show_variadic xs
+    | [x] -> Monomial.show_normal ~show_variable x
+    | x :: xs -> Monomial.show_normal ~show_variable x ^ " + " ^ show_normal ~show_variable xs
 
 
   let fold1 l ~f =
@@ -691,15 +647,6 @@ end = struct
 
   let create_from_variable variable =
     [{ Monomial.constant_factor = 1; variables = [{ variable = Variable variable; degree = 1 }] }]
-
-
-  let create_from_variadic variadic ~operation =
-    [
-      {
-        Monomial.constant_factor = 1;
-        variables = [{ variable = Variadic (operation, variadic); degree = 1 }];
-      };
-    ]
 
 
   let is_base_case = function
@@ -1062,7 +1009,7 @@ let merge_int_expressions ?(divide = false) left right ~operation =
   | _ -> Bottom
 
 
-let local_replace_polynomial polynomial ~replace_variable ~replace_concatenation ~replace_recursive =
+let local_replace_polynomial polynomial ~replace_variable ~replace_recursive =
   let collect polynomial =
     List.concat_map polynomial ~f:(fun { Monomial.variables; _ } ->
         List.map variables ~f:(fun { variable; _ } -> variable))
@@ -1072,8 +1019,6 @@ let local_replace_polynomial polynomial ~replace_variable ~replace_concatenation
     match monomial_variable with
     | Monomial.Variable variable ->
         replace_variable variable >>| fun result -> monomial_variable, result
-    | Monomial.Variadic (operation, variadic) ->
-        replace_concatenation variadic ~operation >>| fun result -> monomial_variable, result
     | Monomial.Divide (dividend, quotient) ->
         let replace_polynomial polynomial =
           match replace_recursive (IntExpression polynomial) with
@@ -1377,10 +1322,7 @@ let rec pp format annotation =
       Format.fprintf
         format
         "pyre_extensions.IntExpression[%s]"
-        (Polynomial.show_normal
-           polynomial
-           ~show_variable:polynomial_show_variable
-           ~show_variadic:polynomial_show_variadic)
+        (Polynomial.show_normal polynomial ~show_variable:polynomial_show_variable)
 
 
 and show annotation = Format.asprintf "%a" pp annotation
@@ -1464,22 +1406,12 @@ and pp_concise format annotation =
       Format.fprintf
         format
         "pyre_extensions.IntExpression[%s]"
-        (Polynomial.show_normal
-           polynomial
-           ~show_variable:polynomial_show_variable
-           ~show_variadic:polynomial_show_variadic)
+        (Polynomial.show_normal polynomial ~show_variable:polynomial_show_variable)
 
 
 and show_concise annotation = Format.asprintf "%a" pp_concise annotation
 
 and polynomial_show_variable variable = show_concise (Variable variable)
-
-and polynomial_show_variadic concatenation =
-  Format.asprintf
-    "%a"
-    (Record.OrderedTypes.RecordConcatenate.pp_concatenation ~pp_type:pp_concise)
-    concatenation
-
 
 let show_for_hover annotation =
   match annotation with
@@ -1852,20 +1784,6 @@ let rec expression annotation =
                 let variable =
                   match variable with
                   | Monomial.Variable variable -> convert_annotation (Variable variable)
-                  | Monomial.Variadic (Length, variadic) ->
-                      convert_annotation
-                        (Parametric
-                           {
-                             name = "pyre_extensions.Length";
-                             parameters = [Group (Concatenation variadic)];
-                           })
-                  | Monomial.Variadic (Product, variadic) ->
-                      convert_annotation
-                        (Parametric
-                           {
-                             name = "pyre_extensions.Product";
-                             parameters = [Group (Concatenation variadic)];
-                           })
                   | Monomial.Divide (dividend, quotient) ->
                       convert_annotation
                         (Parametric
@@ -3015,40 +2933,11 @@ let rec create_logic ~aliases ~variable_aliases { Node.value = expression; _ } =
         parse_callable expression
     | Call
         {
-          callee =
-            { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ } as
-            callee;
+          callee = { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ };
           arguments = [{ Call.Argument.name = None; value = argument; _ }];
-        } -> (
-        let operations =
-          if name_is ~name:"pyre_extensions.Length.__getitem__" callee then
-            let length elements =
-              IntExpression (Polynomial.create_from_int (List.length elements))
-            in
-            Some (Monomial.Length, length)
-          else if name_is ~name:"pyre_extensions.Product.__getitem__" callee then
-            let identity_polynomial = Polynomial.create_from_int 1 in
-            let multiply elements =
-              List.fold
-                elements
-                ~init:(IntExpression identity_polynomial)
-                ~f:(merge_int_expressions ~operation:(Polynomial.multiply ~compare_t:T.compare))
-            in
-            Some (Monomial.Product, multiply)
-          else
-            None
-        in
-        match operations, argument with
-        | Some (_, create), { Node.value = Expression.List elements; _ }
-        | Some (_, create), { Node.value = Expression.Tuple elements; _ } ->
-            List.map elements ~f:create_logic |> create
-        | _, _ -> (
-            match operations, create_logic argument |> substitute_ordered_types with
-            | Some (operation, _), Some (Concatenation variadic) ->
-                IntExpression (Polynomial.create_from_variadic variadic ~operation)
-            | Some (_, create), Some (Concrete elements) -> create elements
-            | Some (_, _), Some Any -> Any
-            | _, _ -> create_parametric ~base ~argument ) )
+        } ->
+        (* TODO(T84854853): Add back support for `Length` and `Product`. *)
+        create_parametric ~base ~argument
     | Name (Name.Identifier identifier) ->
         let sanitized = Identifier.sanitized identifier in
         if String.equal sanitized "None" then
@@ -3866,8 +3755,6 @@ end = struct
               List.concat_map variables ~f:(fun { variable; _ } ->
                   match variable with
                   | Variable x -> [x]
-                  | Variadic (_, { wrapping = { head; tail }; _ }) ->
-                      List.concat_map (head @ tail) ~f:local_collect
                   | Divide (dividend, quotient) ->
                       local_collect (IntExpression dividend)
                       @ local_collect (IntExpression quotient)))
@@ -3884,25 +3771,9 @@ end = struct
                 Some (type_to_int_expression replaced_variable |> Option.value ~default:Bottom)
             | _ -> None
           in
-          let replace_concatenation
-              ({ OrderedTypes.RecordConcatenate.wrapping = { head; tail }; _ } as variadic)
-              ~operation
-            =
-            let replace_list =
-              List.map ~f:(fun variable ->
-                  local_replace replacement variable |> Option.value ~default:variable)
-            in
-            let replaced =
-              Polynomial.create_from_variadic
-                ~operation
-                { variadic with wrapping = { head = replace_list head; tail = replace_list tail } }
-            in
-            Some (IntExpression replaced)
-          in
           local_replace_polynomial
             polynomial
             ~replace_variable
-            ~replace_concatenation
             ~replace_recursive:(local_replace replacement)
       | _ -> None
 
@@ -4194,7 +4065,6 @@ end = struct
             List.concat_map polynomial ~f:(fun { variables; _ } ->
                 List.concat_map variables ~f:(fun { variable; _ } ->
                     match variable with
-                    | Variadic (_, variadic) -> [OrderedTypes.Concatenation.variable variadic]
                     | Divide (dividend, quotient) ->
                         local_collect (IntExpression dividend)
                         @ local_collect (IntExpression quotient)
@@ -4258,30 +4128,9 @@ end = struct
             |> (fun callable -> Callable callable)
             |> Option.some
         | IntExpression polynomial ->
-            let replace_concatenation variadic ~operation =
-              let replace_variadic group ~operation =
-                match operation, group with
-                | _, OrderedTypes.Any -> Any
-                | Monomial.Length, Concrete list_types ->
-                    IntExpression (Polynomial.create_from_int (List.length list_types))
-                | Monomial.Product, Concrete list_types ->
-                    let identity_polynomial = Polynomial.create_from_int 1 in
-                    List.fold
-                      list_types
-                      ~init:(IntExpression identity_polynomial)
-                      ~f:
-                        (merge_int_expressions
-                           ~operation:(Polynomial.multiply ~compare_t:T.compare))
-                | _, Concatenation variadic ->
-                    IntExpression (Polynomial.create_from_variadic variadic ~operation)
-              in
-              OrderedTypes.Concatenation.replace_variable variadic ~replacement
-              >>| replace_variadic ~operation
-            in
             local_replace_polynomial
               polynomial
               ~replace_variable:(fun _ -> None)
-              ~replace_concatenation
               ~replace_recursive:(local_replace replacement)
         | _ -> None
 

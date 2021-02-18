@@ -2527,9 +2527,7 @@ let test_is_unit_test _ =
 
 
 let polynomial_show_normal =
-  Type.Polynomial.show_normal
-    ~show_variable:Type.polynomial_show_variable
-    ~show_variadic:Type.polynomial_show_variadic
+  Type.Polynomial.show_normal ~show_variable:Type.polynomial_show_variable
 
 
 let polynomial_add = Type.Polynomial.add ~compare_t:Type.compare
@@ -2667,90 +2665,6 @@ let test_parameter_create _ =
       Type.Callable.Parameter.PositionalOnly
         { index = 0; annotation = Type.integer; default = false };
     ]
-
-
-let test_add_polynomials_with_variadics _ =
-  let assert_add given1 given2 expected =
-    assert_equal ~printer:Fn.id expected (polynomial_show_normal (polynomial_add given1 given2));
-    assert_equal ~printer:Fn.id expected (polynomial_show_normal (polynomial_add given2 given1))
-  in
-  let x = Type.Variable.Unary.create "x" in
-  let ts =
-    Type.Variable.Variadic.List.create "Ts"
-    |> Type.OrderedTypes.Concatenation.Middle.create_bare
-    |> Type.OrderedTypes.Concatenation.create
-  in
-  let shape =
-    Type.Variable.Variadic.List.create "Shape"
-    |> Type.OrderedTypes.Concatenation.Middle.create_bare
-    |> Type.OrderedTypes.Concatenation.create
-  in
-  let polynomial_3_2x = polynomial_create_from_variables_list [3, []; 2, [x, 1]] in
-  let polynomial_ts = Type.Polynomial.create_from_variadic ts ~operation:Type.Monomial.Length in
-  let polynomial_shape =
-    Type.Polynomial.create_from_variadic shape ~operation:Type.Monomial.Product
-  in
-  assert_add
-    (polynomial_add polynomial_3_2x polynomial_ts)
-    (polynomial_add polynomial_ts polynomial_shape)
-    "3 + 2x + 2Length[Ts] + Product[Shape]";
-  ()
-
-
-let test_subtract_polynomials_with_variadics _ =
-  let assert_subtract given1 given2 expected =
-    assert_equal
-      ~printer:Fn.id
-      expected
-      (polynomial_show_normal (polynomial_subtract given1 given2))
-  in
-  let x = Type.Variable.Unary.create "x" in
-  let ts =
-    Type.Variable.Variadic.List.create "Ts"
-    |> Type.OrderedTypes.Concatenation.Middle.create_bare
-    |> Type.OrderedTypes.Concatenation.create
-  in
-  let shape =
-    Type.Variable.Variadic.List.create "Shape"
-    |> Type.OrderedTypes.Concatenation.Middle.create_bare
-    |> Type.OrderedTypes.Concatenation.create
-  in
-  let polynomial_3_2x = polynomial_create_from_variables_list [3, []; 2, [x, 1]] in
-  let polynomial_ts = Type.Polynomial.create_from_variadic ts ~operation:Type.Monomial.Length in
-  let polynomial_shape =
-    Type.Polynomial.create_from_variadic shape ~operation:Type.Monomial.Product
-  in
-  assert_subtract
-    (polynomial_add polynomial_3_2x polynomial_ts)
-    (polynomial_add polynomial_ts polynomial_shape)
-    "3 + 2x + -Product[Shape]";
-  ()
-
-
-let test_multiply_polynomials_with_variadics _ =
-  let assert_multiply given1 given2 expected =
-    assert_equal
-      ~printer:Fn.id
-      expected
-      (polynomial_show_normal (polynomial_multiply given1 given2));
-    assert_equal
-      ~printer:Fn.id
-      expected
-      (polynomial_show_normal (polynomial_multiply given2 given1))
-  in
-  let x = Type.Variable.Unary.create "x" in
-  let ts =
-    Type.Variable.Variadic.List.create "Ts"
-    |> Type.OrderedTypes.Concatenation.Middle.create_bare
-    |> Type.OrderedTypes.Concatenation.create
-  in
-  let polynomial_3_2x = polynomial_create_from_variables_list [3, []; 2, [x, 1]] in
-  let polynomial_ts = Type.Polynomial.create_from_variadic ts ~operation:Type.Monomial.Length in
-  assert_multiply
-    (polynomial_add polynomial_3_2x polynomial_ts)
-    polynomial_ts
-    "3Length[Ts] + 2xLength[Ts] + Length[Ts]^2";
-  ()
 
 
 let test_resolve_class _ =
@@ -2907,9 +2821,6 @@ let () =
          "subtract_polynomials" >:: test_subtract_polynomials;
          "multiply_polynomial" >:: test_multiply_polynomial;
          "divide_polynomial" >:: test_divide_polynomial;
-         "add_polynomials_with_variadics" >:: test_add_polynomials_with_variadics;
-         "subtract_polynomials_with_variadics" >:: test_subtract_polynomials_with_variadics;
-         "multiply_polynomials_with_variadics" >:: test_multiply_polynomials_with_variadics;
          "resolve_class" >:: test_resolve_class;
        ]
   |> Test.run;
