@@ -12,6 +12,60 @@ let test_check_union context =
   let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
+      from typing import Union
+      class A:
+        attr: bool = True
+      class B:
+        attr: str = "q"
+      def foo(y: Union[A,B]) -> None:
+        y.attr = False
+    |}
+    [
+      "Incompatible attribute type [8]: Attribute `attr` declared in class `B` has type `str` but \
+       is used as type `bool`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Union
+      class A:
+        attr: bool = True
+      class B:
+        attr: str = "q"
+      def foo(y: Union[A,B]) -> None:
+        y.attr = 2
+    |}
+    [
+      "Incompatible attribute type [8]: Attribute `attr` declared in class `A` has type `bool` but \
+       is used as type `int`.";
+      "Incompatible attribute type [8]: Attribute `attr` declared in class `B` has type `str` but \
+       is used as type `int`.";
+      "Incompatible variable type [9]: y.attr is declared to have type `Union[bool, str]` but is \
+       used as type `int`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Union
+      class A:
+        attr1: int = 2
+      class B:
+        attr: str = "q"
+      def foo(y: Union[A,B]) -> None:
+        y.attr1 = 3
+    |}
+    ["Undefined attribute [16]: `B` has no attribute `attr1`."];
+  assert_type_errors
+    {|
+      from typing import Union
+      class A:
+        attr: Union[bool, int] = True
+      class B:
+        attr: Union[str, int] = "q"
+      def foo(y: Union[A,B]) -> None:
+        y.attr = 3
+    |}
+    [];
+  assert_type_errors
+    {|
       import typing
       def foo() -> typing.Union[str, int]:
         return 1.0
