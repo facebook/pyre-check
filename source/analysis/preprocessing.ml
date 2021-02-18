@@ -106,6 +106,86 @@ let transform_string_annotation_expression ~relative =
   transform_expression
 
 
+let transform_annotations ~transform_annotation_expression source =
+  let module Transform = Transform.Make (struct
+    type t = unit
+
+    let transform_expression_children _ _ = true
+
+    let transform_children _ _ = true
+
+    let statement _ ({ Node.value; _ } as statement) =
+      let transform_assign ~assign:({ Assign.annotation; _ } as assign) =
+        { assign with Assign.annotation = annotation >>| transform_annotation_expression }
+      in
+      let transform_define ({ Define.signature = { parameters; return_annotation; _ }; _ } as define)
+        =
+        let parameter ({ Node.value = { Parameter.annotation; _ } as parameter; _ } as node) =
+          {
+            node with
+            Node.value =
+              {
+                parameter with
+                Parameter.annotation = annotation >>| transform_annotation_expression;
+              };
+          }
+        in
+        let signature =
+          {
+            define.signature with
+            parameters = List.map parameters ~f:parameter;
+            return_annotation = return_annotation >>| transform_annotation_expression;
+          }
+        in
+        { define with signature }
+      in
+      let transform_class ~class_statement:({ Class.bases; _ } as class_statement) =
+        let transform_base ({ Call.Argument.value; _ } as base) =
+          let value = transform_annotation_expression value in
+          { base with value }
+        in
+        { class_statement with bases = List.map bases ~f:transform_base }
+      in
+      let statement =
+        let value =
+          match value with
+          | Statement.Assign assign -> Statement.Assign (transform_assign ~assign)
+          | Define define -> Define (transform_define define)
+          | Class class_statement -> Class (transform_class ~class_statement)
+          | _ -> value
+        in
+        { statement with Node.value }
+      in
+      (), [statement]
+
+
+    let expression _ expression =
+      let transform_arguments = function
+        | [
+            ( { Call.Argument.name = None; value = { Node.value = String _; _ } as value } as
+            type_argument );
+            value_argument;
+          ] ->
+            let annotation = transform_annotation_expression value in
+            [{ type_argument with value = annotation }; value_argument]
+        | arguments -> arguments
+      in
+      let value =
+        match Node.value expression with
+        | Expression.Call { callee; arguments }
+          when name_is ~name:"pyre_extensions.safe_cast" callee
+               || name_is ~name:"typing.cast" callee
+               || name_is ~name:"cast" callee
+               || name_is ~name:"safe_cast" callee ->
+            Expression.Call { callee; arguments = transform_arguments arguments }
+        | value -> value
+      in
+      { expression with Node.value }
+  end)
+  in
+  Transform.transform () source |> Transform.source
+
+
 let expand_string_annotations ({ Source.source_path = { SourcePath.relative; _ }; _ } as source) =
   let module Transform = Transform.Make (struct
     type t = unit
@@ -3521,6 +3601,102 @@ let inline_six_metaclass ({ Source.statements; _ } as source) =
   { source with Source.statements = List.map ~f:inline_six_metaclass statements }
 
 
+let expand_starred_type_variable_tuple source =
+  let rec transform_annotation_expression ({ Node.value; _ } as expression) =
+    let transform_argument ({ Call.Argument.value; _ } as argument) =
+      { argument with Call.Argument.value = transform_annotation_expression value }
+    in
+    let value =
+      match value with
+      | Call
+          {
+            callee =
+              {
+                Node.value =
+                  Name
+                    (Name.Attribute
+                      {
+                        base =
+                          {
+                            Node.value =
+                              Name
+                                (Name.Attribute
+                                  {
+                                    base =
+                                      { Node.value = Name (Name.Identifier "typing_extensions"); _ };
+                                    attribute = "Literal";
+                                    _;
+                                  });
+                            _;
+                          };
+                        attribute = "__getitem__";
+                        _;
+                      });
+                _;
+              };
+            _;
+          } ->
+          (* Don't transform arguments in Literals. *)
+          value
+      | Call
+          {
+            callee =
+              { Node.value = Name (Name.Attribute { attribute = "__getitem__"; _ }); _ } as callee;
+            arguments;
+          } ->
+          Call { callee; arguments = List.map ~f:transform_argument arguments }
+      | Expression.Call { callee; arguments = variable_name :: remaining_arguments }
+        when name_is ~name:"typing.TypeVar" callee
+             || name_is ~name:"$local_typing$TypeVar" callee
+             || name_is ~name:"typing_extensions.IntVar" callee ->
+          Expression.Call
+            {
+              callee;
+              arguments = variable_name :: List.map ~f:transform_argument remaining_arguments;
+            }
+      | Starred (Once { Node.value = Name (Name.Identifier variable_name); location }) ->
+          Expression.Call
+            {
+              callee =
+                {
+                  Node.location;
+                  value =
+                    Expression.Name
+                      (Attribute
+                         {
+                           base =
+                             {
+                               Node.location;
+                               value =
+                                 Name
+                                   (Name.Attribute
+                                      {
+                                        base =
+                                          {
+                                            Node.location;
+                                            value = Name (Identifier "pyre_extensions");
+                                          };
+                                        attribute = "Unpack";
+                                        special = false;
+                                      });
+                             };
+                           attribute = "__getitem__";
+                           special = true;
+                         });
+                };
+              arguments =
+                [
+                  { name = None; value = { Node.location; value = Name (Identifier variable_name) } };
+                ];
+            }
+      | Tuple elements -> Tuple (List.map elements ~f:transform_annotation_expression)
+      | _ -> value
+    in
+    { expression with Node.value }
+  in
+  transform_annotations ~transform_annotation_expression source
+
+
 let preprocess_phase0 source =
   source
   |> expand_relative_imports
@@ -3534,6 +3710,7 @@ let preprocess_phase1 source =
   source
   |> populate_unbound_names
   |> replace_union_shorthand
+  |> expand_starred_type_variable_tuple
   |> qualify
   |> replace_lazy_import
   |> expand_string_annotations
