@@ -48,37 +48,16 @@ module Record : sig
           type t [@@deriving compare, eq, sexp, show, hash]
         end
       end
-
-      module RecordList : sig
-        type 'annotation record [@@deriving compare, eq, sexp, show, hash]
-      end
     end
 
     type 'annotation record =
       | Unary of 'annotation RecordUnary.record
       | ParameterVariadic of 'annotation RecordVariadic.RecordParameters.record
-      | ListVariadic of 'annotation RecordVariadic.RecordList.record
     [@@deriving compare, eq, sexp, show, hash]
   end
 
   module OrderedTypes : sig
-    module RecordConcatenate : sig
-      module Middle : sig
-        type 'annotation t [@@deriving compare, eq, sexp, show, hash]
-
-        type 'annotation mapper =
-          | ClassMapper of Identifier.t
-          | GenericAliasMapper of 'annotation
-        [@@deriving compare, eq, sexp, show, hash]
-      end
-
-      type ('middle, 'outer) t [@@deriving compare, eq, sexp, show, hash]
-    end
-
-    type 'annotation record =
-      | Concrete of 'annotation list
-      | Any
-      | Concatenation of ('annotation RecordConcatenate.Middle.t, 'annotation) RecordConcatenate.t
+    type 'annotation record = Concrete of 'annotation list
     [@@deriving compare, eq, sexp, show, hash]
 
     val pp_concise
@@ -96,12 +75,7 @@ module Record : sig
         default: bool;
       }
 
-      and 'annotation variable =
-        | Concrete of 'annotation
-        | Concatenation of
-            ( 'annotation OrderedTypes.RecordConcatenate.Middle.t,
-              'annotation )
-            OrderedTypes.RecordConcatenate.t
+      and 'annotation variable = Concrete of 'annotation
 
       and 'annotation t =
         | PositionalOnly of {
@@ -149,7 +123,6 @@ module Record : sig
   module Parameter : sig
     type 'annotation record =
       | Single of 'annotation
-      | Group of 'annotation OrderedTypes.record
       | CallableParameters of 'annotation Callable.record_parameters
   end
 
@@ -628,79 +601,6 @@ module OrderedTypes : sig
 
   val pp_concise : Format.formatter -> t -> unit
 
-  module Concatenation : sig
-    include module type of struct
-      include Record.OrderedTypes.RecordConcatenate
-    end
-
-    module Middle : sig
-      include module type of struct
-        include Record.OrderedTypes.RecordConcatenate.Middle
-      end
-
-      val unwrap_if_bare
-        :  type_t t ->
-        type_t Record.Variable.RecordVariadic.RecordList.record option
-
-      val create_bare : type_t Record.Variable.RecordVariadic.RecordList.record -> type_t t
-
-      val create
-        :  variable:type_t Record.Variable.RecordVariadic.RecordList.record ->
-        mappers:type_t mapper list ->
-        type_t t
-
-      val create_from_class_mappers
-        :  variable:type_t Record.Variable.RecordVariadic.RecordList.record ->
-        mappers:Identifier.t list ->
-        type_t t
-
-      val singleton_replace_variable : type_t t -> replacement:type_t -> type_t
-    end
-
-    val map_head_and_tail
-      :  ('middle, 'outer_a) t ->
-      f:('outer_a -> 'outer_b) ->
-      ('middle, 'outer_b) t
-
-    val map_middle : ('middle_a, 'outer) t -> f:('middle_a -> 'middle_b) -> ('middle_b, 'outer) t
-
-    val replace_variable
-      :  (type_t Middle.t, type_t) t ->
-      replacement:
-        (type_t Record.Variable.RecordVariadic.RecordList.record -> ordered_types_t option) ->
-      ordered_types_t option
-
-    val head : ('middle, 'outer) t -> 'outer list
-
-    val middle : ('middle, 'outer) t -> 'middle
-
-    val tail : ('middle, 'outer) t -> 'outer list
-
-    val unwrap_if_only_middle : ('middle, 'outer) t -> 'middle option
-
-    val variable
-      :  (type_t Middle.t, 'outer) t ->
-      type_t Record.Variable.RecordVariadic.RecordList.record
-
-    val expression : (type_t Middle.t, type_t) t -> Expression.t
-
-    val parse
-      :  Expression.t ->
-      aliases:(?replace_unbound_parameters_with_any:bool -> Primitive.t -> alias option) ->
-      (type_t Middle.t, type_t) t option
-
-    val create : ?head:'outer list -> ?tail:'outer list -> 'middle -> ('middle, 'outer) t
-
-    val zip : ('middle, 'outer) t -> against:'a list -> ('middle * 'a list, 'outer * 'a) t option
-
-    (* apply_mapping C ~mapper is equivalent to replace_variable ~replacement:(V -> O) Map[V,
-       mapper] *)
-    val apply_mapping
-      :  (type_t Middle.t, type_t) t ->
-      mapper:type_t Middle.mapper ->
-      (type_t Middle.t, type_t) t
-  end
-
   val union_upper_bound : t -> type_t
 
   (* Concatenation is only defined for certain members *)
@@ -747,15 +647,9 @@ module Variable : sig
 
   type parameter_variadic_domain = Callable.parameters
 
-  type list_variadic_t = type_t Record.Variable.RecordVariadic.RecordList.record
-  [@@deriving compare, eq, sexp, show, hash]
-
-  type list_variadic_domain = OrderedTypes.t
-
   type pair =
     | UnaryPair of unary_t * unary_domain
     | ParameterVariadicPair of parameter_variadic_t * parameter_variadic_domain
-    | ListVariadicPair of list_variadic_t * list_variadic_domain
 
   type t = type_t Record.Variable.record [@@deriving compare, eq, sexp, show, hash]
 
@@ -848,18 +742,6 @@ module Variable : sig
 
       val decompose : t -> Components.decomposition
     end
-
-    module List : sig
-      include VariableKind with type t = list_variadic_t and type domain = list_variadic_domain
-
-      val name : t -> Identifier.t
-
-      val create
-        :  ?constraints:type_t Record.Variable.constraints ->
-        ?variance:Record.Variable.variance ->
-        string ->
-        t
-    end
   end
 
   module GlobalTransforms : sig
@@ -877,8 +759,6 @@ module Variable : sig
 
     module ParameterVariadic :
       S with type t = parameter_variadic_t and type domain = Callable.parameters
-
-    module ListVariadic : S with type t = list_variadic_t and type domain = list_variadic_domain
   end
 
   include module type of struct

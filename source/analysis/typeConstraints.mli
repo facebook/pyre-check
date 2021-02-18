@@ -21,11 +21,6 @@ module Solution : sig
 
   val instantiate_single_variable : t -> Type.Variable.Unary.t -> Type.t option
 
-  val instantiate_single_list_variadic_variable
-    :  t ->
-    Type.Variable.Variadic.List.t ->
-    Type.OrderedTypes.t option
-
   val instantiate_single_parameter_variadic
     :  t ->
     Type.Variable.Variadic.Parameters.t ->

@@ -1398,20 +1398,6 @@ let test_attribute_type_variable_resolution context =
     ["Revealed type [-1]: Revealed type for `a.property` is `typing.Callable[[int], bool]`."];
   assert_type_errors
     {|
-    import typing
-    import pyre_extensions
-    _T = typing.TypeVar('_T')
-    _Ts = pyre_extensions.ListVariadic('_Ts')
-    class A(typing.Generic[_Ts]):
-      @property
-      def property(self : typing.Callable[[int], _T]) -> typing.Callable[_Ts, _T]: ...
-      def __call__(self, __x: int) -> str: ...
-    def foo(a : A[[bool, float]]) -> None:
-      reveal_type(a.property)
-  |}
-    ["Revealed type [-1]: Revealed type for `a.property` is `typing.Callable[[bool, float], str]`."];
-  assert_type_errors
-    {|
       import typing
       _T = typing.TypeVar('_T')
       _U = typing.TypeVar('_U')

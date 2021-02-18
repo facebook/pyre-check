@@ -179,13 +179,8 @@ let immediate_parents (module Handler : Handler) class_name =
 
 
 let clean not_clean =
-  let open Type.OrderedTypes.Concatenation in
   List.map not_clean ~f:(function
       | Type.Parameter.Single (Type.Variable variable) -> Some (Type.Variable.Unary variable)
-      | Group (Type.OrderedTypes.Concatenation concatenation) ->
-          unwrap_if_only_middle concatenation
-          >>= Middle.unwrap_if_bare
-          >>| fun variable -> Type.Variable.ListVariadic variable
       | CallableParameters (ParameterVariadicTypeVariable { head = []; variable }) ->
           Some (ParameterVariadic variable)
       | _ -> None)
@@ -308,7 +303,6 @@ let instantiate_successors_parameters ((module Handler : Handler) as handler) ~j
   | Type.Bottom ->
       let to_any = function
         | Type.Variable.Unary _ -> Type.Parameter.Single Type.Any
-        | ListVariadic _ -> Group Any
         | ParameterVariadic _ -> CallableParameters Undefined
       in
       index_of target
@@ -320,13 +314,6 @@ let instantiate_successors_parameters ((module Handler : Handler) as handler) ~j
       let split =
         match Type.split source with
         | Primitive primitive, _ when not (contains handler primitive) -> None
-        | Primitive "tuple", [Type.Parameter.Group parameters] ->
-            Some
-              ( "tuple",
-                [
-                  Type.Parameter.Single
-                    (Type.weaken_literals (Type.OrderedTypes.union_upper_bound parameters));
-                ] )
         | Type.Primitive ("tuple" as primitive), parameters -> (
             match Type.Parameter.all_singles parameters with
             | Some singles ->
@@ -364,25 +351,16 @@ let instantiate_successors_parameters ((module Handler : Handler) as handler) ~j
                   let replacement = function
                     | Type.Parameter.Single parameter, Type.Variable.Unary variable ->
                         Type.Variable.UnaryPair (variable, parameter)
-                    | CallableParameters _, Unary variable
-                    | Group _, Unary variable ->
+                    | CallableParameters _, Unary variable ->
                         Type.Variable.UnaryPair (variable, Type.Any)
-                    | Group parameter, ListVariadic variable ->
-                        Type.Variable.ListVariadicPair (variable, parameter)
-                    | CallableParameters _, ListVariadic variable
-                    | Single _, ListVariadic variable ->
-                        Type.Variable.ListVariadicPair (variable, Any)
                     | CallableParameters parameters, ParameterVariadic variable ->
                         Type.Variable.ParameterVariadicPair (variable, parameters)
-                    | Single _, ParameterVariadic variable
-                    | Group _, ParameterVariadic variable ->
+                    | Single _, ParameterVariadic variable ->
                         Type.Variable.ParameterVariadicPair (variable, Undefined)
                   in
                   let replacement =
                     let to_any = function
                       | Type.Variable.Unary variable -> Type.Variable.UnaryPair (variable, Type.Any)
-                      | ListVariadic variable ->
-                          Type.Variable.ListVariadicPair (variable, Type.OrderedTypes.Any)
                       | ParameterVariadic variable ->
                           Type.Variable.ParameterVariadicPair (variable, Undefined)
                     in
@@ -399,9 +377,6 @@ let instantiate_successors_parameters ((module Handler : Handler) as handler) ~j
                       | Type.Parameter.Single single ->
                           Type.Parameter.Single
                             (TypeConstraints.Solution.instantiate replacement single)
-                      | Group group ->
-                          Group
-                            (TypeConstraints.Solution.instantiate_ordered_types replacement group)
                       | CallableParameters parameters ->
                           CallableParameters
                             (TypeConstraints.Solution.instantiate_callable_parameters

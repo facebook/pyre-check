@@ -399,88 +399,8 @@ let parametric_order_base =
 let parametric_order = MockClassHierarchyHandler.handler parametric_order_base
 
 let variadic_order =
-  let variadic = Type.Variable.Variadic.List.create "Ts" in
-  let simple_variadic =
-    [Type.Parameter.Group (Type.Variable.Variadic.List.self_reference variadic)]
-  in
   let order = parametric_order_base in
   let open MockClassHierarchyHandler in
-  insert order "UserTuple";
-  connect order ~predecessor:"UserTuple" ~successor:"typing.Generic" ~parameters:simple_variadic;
-
-  (* Contrived example *)
-  connect
-    order
-    ~predecessor:"UserTuple"
-    ~successor:"list"
-    ~parameters:
-      [
-        Single
-          (Type.Tuple
-             (Bounded
-                (Concatenation
-                   (Type.OrderedTypes.Concatenation.create
-                      (Type.OrderedTypes.Concatenation.Middle.create_bare variadic)))));
-      ];
-  insert order "SimpleTupleChild";
-  connect
-    order
-    ~predecessor:"SimpleTupleChild"
-    ~successor:"typing.Generic"
-    ~parameters:simple_variadic;
-  connect order ~predecessor:"SimpleTupleChild" ~successor:"UserTuple" ~parameters:simple_variadic;
-  insert order "TupleOfLists";
-  connect order ~predecessor:"TupleOfLists" ~successor:"typing.Generic" ~parameters:simple_variadic;
-  connect
-    order
-    ~predecessor:"TupleOfLists"
-    ~successor:"UserTuple"
-    ~parameters:
-      [
-        Group
-          (Concatenation
-             (Type.OrderedTypes.Concatenation.create
-                (Type.OrderedTypes.Concatenation.Middle.create
-                   ~mappers:[Type.Record.OrderedTypes.RecordConcatenate.Middle.ClassMapper "list"]
-                   ~variable:variadic)));
-      ];
-  insert order "DTypedTensor";
-  connect
-    order
-    ~predecessor:"DTypedTensor"
-    ~successor:"typing.Generic"
-    ~parameters:
-      [
-        Single (Type.Variable (Type.Variable.Unary.create "DType"));
-        Group
-          (Concatenation
-             (Type.OrderedTypes.Concatenation.create
-                (Type.OrderedTypes.Concatenation.Middle.create_bare variadic)));
-      ];
-  insert order "IntTensor";
-  connect
-    order
-    ~predecessor:"IntTensor"
-    ~successor:"typing.Generic"
-    ~parameters:
-      [
-        Group
-          (Concatenation
-             (Type.OrderedTypes.Concatenation.create
-                (Type.OrderedTypes.Concatenation.Middle.create_bare variadic)));
-      ];
-  connect
-    order
-    ~predecessor:"IntTensor"
-    ~successor:"DTypedTensor"
-    ~parameters:
-      [
-        Single Type.integer;
-        Group
-          (Concatenation
-             (Type.OrderedTypes.Concatenation.create
-                (Type.OrderedTypes.Concatenation.Middle.create_bare variadic)));
-      ];
   insert order "ClassParametricOnParamSpec";
   connect
     order
@@ -603,64 +523,6 @@ let test_instantiate_successors_parameters _ =
     >>| Format.asprintf "%a" (Type.pp_parameters ~pp_type:Type.pp)
     |> Option.value ~default:"None"
   in
-  assert_equal
-    (instantiate_successors_parameters variadic_order ~source:Type.Bottom ~target:"UserTuple")
-    (Some [Group Any]);
-  assert_equal
-    ~printer
-    (instantiate_successors_parameters
-       variadic_order
-       ~source:(Type.parametric "SimpleTupleChild" ![Type.integer; Type.string; Type.bool])
-       ~target:"UserTuple")
-    (Some [Group (Concrete [Type.integer; Type.string; Type.bool])]);
-  assert_equal
-    ~printer
-    (instantiate_successors_parameters
-       variadic_order
-       ~source:(Type.parametric "SimpleTupleChild" ![Type.integer; Type.string; Type.bool])
-       ~target:"list")
-    (Some ![Type.tuple [Type.integer; Type.string; Type.bool]]);
-  assert_equal
-    ~printer
-    (instantiate_successors_parameters
-       variadic_order
-       ~source:(Type.parametric "TupleOfLists" ![Type.integer; Type.string; Type.bool])
-       ~target:"UserTuple")
-    (Some [Group (Concrete [Type.list Type.integer; Type.list Type.string; Type.list Type.bool])]);
-
-  (* Concatenation *)
-  assert_equal
-    ~printer
-    (instantiate_successors_parameters
-       variadic_order
-       ~source:(Type.parametric "IntTensor" ![Type.literal_integer 4; Type.literal_integer 2])
-       ~target:"DTypedTensor")
-    (Some [Single Type.integer; Group (Concrete [Type.literal_integer 4; Type.literal_integer 2])]);
-  let list_variadic = Type.Variable.Variadic.List.create "Ts" in
-  assert_equal
-    ~printer
-    (instantiate_successors_parameters
-       variadic_order
-       ~source:
-         (Type.parametric
-            "IntTensor"
-            [
-              Group
-                (Type.OrderedTypes.Concatenation
-                   (Type.OrderedTypes.Concatenation.create
-                      ~tail:[Type.literal_integer 2]
-                      (Type.OrderedTypes.Concatenation.Middle.create_bare list_variadic)));
-            ])
-       ~target:"DTypedTensor")
-    (Some
-       [
-         Single Type.integer;
-         Group
-           (Type.OrderedTypes.Concatenation
-              (Type.OrderedTypes.Concatenation.create
-                 ~tail:[Type.literal_integer 2]
-                 (Type.OrderedTypes.Concatenation.Middle.create_bare list_variadic)));
-       ]);
   assert_equal
     ~printer
     (instantiate_successors_parameters

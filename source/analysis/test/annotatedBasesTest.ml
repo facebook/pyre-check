@@ -117,27 +117,6 @@ let test_inferred_generic_base context =
   assert_inferred_generic
     ~target:"test.Foo"
     {|
-      Ts = pyre_extensions.ListVariadic("Ts")
-      class Base(typing.Generic[Ts]): pass
-      class Foo(Base[Ts]): pass
-    |}
-    [
-      {
-        Argument.name = None;
-        value =
-          Type.expression
-            (Type.parametric
-               "typing.Generic"
-               [
-                 Type.Parameter.Group
-                   (Type.Variable.Variadic.List.self_reference
-                      (Type.Variable.Variadic.List.create "test.Ts"));
-               ]);
-      };
-    ];
-  assert_inferred_generic
-    ~target:"test.Foo"
-    {|
       TParams = pyre_extensions.ParameterSpecification("TParams")
       class Base(typing.Generic[TParams]): pass
       class Foo(Base[TParams]): pass

@@ -428,13 +428,6 @@ module ReadOnly = struct
       annotation
 
 
-  let parse_as_concatenation environment ?dependency expression =
-    delocalize expression
-    |> Type.OrderedTypes.Concatenation.parse
-         ~aliases:(fun ?replace_unbound_parameters_with_any:_ name ->
-           get_alias environment ?dependency name)
-
-
   let parse_as_parameter_specification_instance_annotation
       environment
       ?dependency

@@ -227,12 +227,9 @@ module OrderImplementation = struct
                 let variables = variables target in
                 let join_parameters (left, right, variable) =
                   match left, right, variable with
-                  | Type.Parameter.Group _, _, _
-                  | _, Type.Parameter.Group _, _
-                  | _, _, Type.Variable.ListVariadic _
-                  | CallableParameters _, _, _
-                  | _, CallableParameters _, _
-                  | _, _, ParameterVariadic _ ->
+                  | Type.Parameter.CallableParameters _, _, _
+                  | _, Type.Parameter.CallableParameters _, _
+                  | _, _, Type.Variable.ParameterVariadic _ ->
                       (* TODO(T47348395): Implement joining for variadics *)
                       None
                   | Single Type.Bottom, Single other, _
@@ -277,9 +274,6 @@ module OrderImplementation = struct
               in
               target >>= handle_target |> Option.value ~default:union
         (* Tuple variables are covariant. *)
-        | Type.Tuple (Type.Bounded (Concatenation _)), other
-        | other, Type.Tuple (Type.Bounded (Concatenation _)) ->
-            join order other (Type.Tuple (Type.Unbounded Type.object_primitive))
         | Type.Tuple (Type.Bounded (Concrete left)), Type.Tuple (Type.Bounded (Concrete right))
           when List.length left = List.length right ->
             List.map2_exn left right ~f:(join order) |> Type.tuple
@@ -454,10 +448,6 @@ module OrderImplementation = struct
               right
             else
               Type.Bottom
-        (* Tuple variables are covariant. *)
-        | Type.Tuple (Type.Bounded (Concatenation _)), _
-        | _, Type.Tuple (Type.Bounded (Concatenation _)) ->
-            Type.Bottom
         | Type.Tuple (Type.Bounded (Concrete left)), Type.Tuple (Type.Bounded (Concrete right))
           when List.length left = List.length right ->
             List.map2_exn left right ~f:(meet order) |> Type.tuple

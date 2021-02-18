@@ -588,7 +588,7 @@ let missing_builtin_classes, missing_typing_classes, missing_typing_extensions_c
   let single_unary_generic =
     [Type.parametric "typing.Generic" [Single (Variable (Type.Variable.Unary.create "typing._T"))]]
   in
-  let catch_all_generic = [Type.parametric "typing.Generic" [Group Any]] in
+  let catch_all_generic = [Type.parametric "typing.Generic" [Single Any]] in
   let callable_body =
     [
       Statement.Assign

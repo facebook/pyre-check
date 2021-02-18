@@ -10,10 +10,6 @@ open Statement
 
 type annotation_parser = {
   parse_annotation: Expression.expression Node.t -> Type.t;
-  parse_as_concatenation:
-    Expression.t ->
-    (Type.t Type.OrderedTypes.Concatenation.Middle.t, Type.t) Type.OrderedTypes.Concatenation.t
-    option;
   parse_as_parameter_specification_instance_annotation:
     variable_parameter_annotation:Expression.t ->
     keywords_parameter_annotation:Expression.t ->

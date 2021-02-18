@@ -23,16 +23,6 @@ let right_parent = Type.Primitive "right_parent"
 
 let grandparent = Type.Primitive "Grandparent"
 
-let create_concatenation ?head ?tail ?mappers variable
-    : (Type.t Type.OrderedTypes.Concatenation.Middle.t, Type.t) Type.OrderedTypes.Concatenation.t
-  =
-  let mappers = Option.value mappers ~default:[] in
-  Type.OrderedTypes.Concatenation.create
-    ?head
-    ?tail
-    (Type.OrderedTypes.Concatenation.Middle.create ~mappers ~variable)
-
-
 module DiamondOrder = struct
   type t = unit
 
@@ -136,27 +126,6 @@ let test_add_bound _ =
          ( parameter_variadic,
            Type.Callable.Defined [Named { name = "x"; annotation = Type.integer; default = false }]
          )));
-  let list_variadic = Type.Variable.Variadic.List.create in
-  assert_add_bound_succeeds
-    (`Lower
-      (ListVariadicPair (list_variadic "Ts", Type.OrderedTypes.Concrete [Type.integer; Type.string])));
-  assert_add_bound_succeeds
-    ~preconstraints:
-      (add_bound
-         (Some empty)
-         (`Lower
-           (ListVariadicPair
-              (list_variadic "Ts", Type.OrderedTypes.Concrete [Type.integer; Type.string]))))
-    (`Lower
-      (ListVariadicPair (list_variadic "Ts", Type.OrderedTypes.Concrete [Type.bool; Type.bool])));
-  assert_add_bound_fails
-    ~preconstraints:
-      (add_bound
-         (Some empty)
-         (`Lower
-           (ListVariadicPair
-              (list_variadic "Ts", Type.OrderedTypes.Concrete [Type.integer; Type.string]))))
-    (`Lower (ListVariadicPair (list_variadic "Ts", Type.OrderedTypes.Concrete [Type.bool])));
   ()
 
 
@@ -304,47 +273,6 @@ let test_single_variable_solution _ =
         `Lower (ParameterVariadicPair (parameter_variadic, one_named_parameter));
       ]
     None;
-  let list_variadic = Type.Variable.Variadic.List.create "Ts" in
-  assert_solution
-    ~sequentially_applied_bounds:
-      [`Lower (ListVariadicPair (list_variadic, Type.OrderedTypes.Concrete [left_parent; child]))]
-    (Some [ListVariadicPair (list_variadic, Type.OrderedTypes.Concrete [left_parent; child])]);
-  assert_solution
-    ~sequentially_applied_bounds:
-      [
-        `Lower (ListVariadicPair (list_variadic, Type.OrderedTypes.Concrete [left_parent; child]));
-        `Lower (ListVariadicPair (list_variadic, Type.OrderedTypes.Concrete [right_parent; child]));
-      ]
-    (Some [ListVariadicPair (list_variadic, Type.OrderedTypes.Concrete [grandparent; child])]);
-  assert_solution
-    ~sequentially_applied_bounds:
-      [
-        `Lower (ListVariadicPair (list_variadic, Type.OrderedTypes.Concrete [left_parent; child]));
-        `Lower
-          (ListVariadicPair (list_variadic, Type.OrderedTypes.Concrete [right_parent; child; child]));
-      ]
-    None;
-  assert_solution
-    ~sequentially_applied_bounds:
-      [
-        `Lower (ListVariadicPair (list_variadic, Type.OrderedTypes.Concrete [left_parent; child]));
-        `Upper (ListVariadicPair (list_variadic, Type.OrderedTypes.Concrete [grandparent; child]));
-      ]
-    (Some [ListVariadicPair (list_variadic, Type.OrderedTypes.Concrete [left_parent; child])]);
-  assert_solution
-    ~sequentially_applied_bounds:
-      [
-        `Lower (ListVariadicPair (list_variadic, Type.OrderedTypes.Concrete [left_parent; child]));
-        `Upper (ListVariadicPair (list_variadic, Type.OrderedTypes.Concrete [right_parent; child]));
-      ]
-    None;
-  assert_solution
-    ~sequentially_applied_bounds:[`Fallback (Unary unconstrained)]
-    (Some [UnaryPair (unconstrained, Type.Any)]);
-  assert_solution
-    ~sequentially_applied_bounds:
-      [`Fallback (Unary unconstrained); `Lower (UnaryPair (unconstrained, Type.integer))]
-    (Some [UnaryPair (unconstrained, Type.integer)]);
   ()
 
 
@@ -460,70 +388,7 @@ let test_multiple_variable_solution _ =
                  () ));
       ]
     None;
-  let list_variadic_a = Type.Variable.Variadic.List.create "TsA" in
-  let list_variadic_b = Type.Variable.Variadic.List.create "TsB" in
-  assert_solution
-    ~sequentially_applied_bounds:
-      [
-        `Lower
-          (ListVariadicPair (list_variadic_a, Concatenation (create_concatenation list_variadic_b)));
-        `Lower
-          (ListVariadicPair (list_variadic_b, Type.OrderedTypes.Concrete [Type.integer; Type.string]));
-      ]
-    (Some
-       [
-         ListVariadicPair (list_variadic_a, Type.OrderedTypes.Concrete [Type.integer; Type.string]);
-         ListVariadicPair (list_variadic_b, Type.OrderedTypes.Concrete [Type.integer; Type.string]);
-       ]);
 
-  (* As with unaries, this trivial loop could be solvable, but we are choosing not to deal with this
-     yet *)
-  assert_solution
-    ~sequentially_applied_bounds:
-      [
-        `Lower
-          (ListVariadicPair (list_variadic_a, Concatenation (create_concatenation list_variadic_b)));
-        `Lower
-          (ListVariadicPair (list_variadic_b, Concatenation (create_concatenation list_variadic_a)));
-      ]
-    None;
-  assert_solution
-    ~sequentially_applied_bounds:
-      [
-        `Lower
-          (ListVariadicPair
-             (list_variadic_a, Type.OrderedTypes.Concrete [Type.Variable unconstrained_a]));
-        `Lower (UnaryPair (unconstrained_a, Type.integer));
-      ]
-    (Some
-       [
-         ListVariadicPair (list_variadic_a, Type.OrderedTypes.Concrete [Type.integer]);
-         UnaryPair (unconstrained_a, Type.integer);
-       ]);
-  assert_solution
-    ~sequentially_applied_bounds:
-      [
-        `Lower
-          (ListVariadicPair
-             ( list_variadic_a,
-               Concatenation
-                 (create_concatenation
-                    ~mappers:[Type.Record.OrderedTypes.RecordConcatenate.Middle.ClassMapper "Foo"]
-                    list_variadic_b) ));
-        `Lower
-          (ListVariadicPair (list_variadic_b, Type.OrderedTypes.Concrete [Type.integer; Type.string]));
-      ]
-    (Some
-       [
-         ListVariadicPair
-           ( list_variadic_a,
-             Concrete
-               [
-                 Parametric { name = "Foo"; parameters = [Single Type.integer] };
-                 Parametric { name = "Foo"; parameters = [Single Type.string] };
-               ] );
-         ListVariadicPair (list_variadic_b, Type.OrderedTypes.Concrete [Type.integer; Type.string]);
-       ]);
   assert_solution
     ~sequentially_applied_bounds:
       [
@@ -607,19 +472,6 @@ let test_partial_solution _ =
            (parameters_a, Type.Callable.ParameterVariadicTypeVariable (empty_head parameters_b));
        ])
     (Some []);
-  let list_variadic_a = Type.Variable.Variadic.List.create "TsA" in
-  let list_variadic_b = Type.Variable.Variadic.List.create "TsB" in
-  expect_split_solution
-    ~variables:[Type.Variable.ListVariadic list_variadic_a]
-    ~bounds:
-      [
-        `Lower
-          (ListVariadicPair (list_variadic_a, Concatenation (create_concatenation list_variadic_b)));
-        `Lower
-          (ListVariadicPair (list_variadic_b, Concatenation (create_concatenation list_variadic_a)));
-      ]
-    (Some [ListVariadicPair (list_variadic_a, Concatenation (create_concatenation list_variadic_b))])
-    (Some []);
   ()
 
 
@@ -660,26 +512,6 @@ let test_exists _ =
     (TypeConstraints.exists_in_bounds
        constraints_with_parameters_b
        ~variables:[Type.Variable.ParameterVariadic parameters_a]);
-  let list_variadic_a = Type.Variable.Variadic.List.create "TsA" in
-  let list_variadic_b = Type.Variable.Variadic.List.create "TsB" in
-  let constraints_with_list_variadic_b =
-    let pair =
-      Type.Variable.ListVariadicPair
-        (list_variadic_a, Concatenation (create_concatenation list_variadic_b))
-    in
-    DiamondOrderedConstraints.add_lower_bound TypeConstraints.empty ~order ~pair
-    |> function
-    | Some constraints -> constraints
-    | None -> failwith "add bound failed"
-  in
-  assert_true
-    (TypeConstraints.exists_in_bounds
-       constraints_with_list_variadic_b
-       ~variables:[Type.Variable.ListVariadic list_variadic_b]);
-  assert_false
-    (TypeConstraints.exists_in_bounds
-       constraints_with_list_variadic_b
-       ~variables:[Type.Variable.ListVariadic list_variadic_a]);
   ()
 
 

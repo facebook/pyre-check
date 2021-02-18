@@ -193,8 +193,6 @@ let errors_from_not_found
         | _ -> normal
       in
       [Some location, kind]
-  | MismatchWithListVariadicTypeVariable { variable; mismatch } ->
-      [None, Error.InvalidArgument (ListVariadicVariable { variable; mismatch })]
   | MissingArgument parameter -> [None, Error.MissingArgument { callee; parameter }]
   | MutuallyRecursiveTypeVariables -> [None, Error.MutuallyRecursiveTypeVariables callee]
   | ProtocolInstantiation class_name ->
@@ -562,7 +560,6 @@ module State (Context : Context) = struct
         let variables =
           List.map variables ~f:(function
               | Unary variable -> Type.Parameter.Single (Type.Variable variable)
-              | ListVariadic variadic -> Group (Type.Variable.Variadic.List.self_reference variadic)
               | ParameterVariadic parameters ->
                   CallableParameters (Type.Variable.Variadic.Parameters.self_reference parameters))
         in
@@ -611,7 +608,6 @@ module State (Context : Context) = struct
         in
         let extract = function
           | Type.Variable.Unary unary -> unarize unary
-          | ListVariadic variadic -> Type.Variable.ListVariadic variadic
           | ParameterVariadic variable -> ParameterVariadic variable
         in
         Reference.show class_name
@@ -1130,27 +1126,7 @@ module State (Context : Context) = struct
             in
             errors, { Annotation.annotation; mutability }
           in
-          let errors, { Annotation.annotation; mutability } =
-            if String.is_prefix ~prefix:"**" name then
-              parse_as_unary ()
-            else if String.is_prefix ~prefix:"*" name then
-              let make_tuple bounded =
-                Type.Tuple (Bounded bounded)
-                |> Type.Variable.mark_all_variables_as_bound
-                |> Annotation.create
-                |> fun annotation -> errors, annotation
-              in
-              let parsed_as_concatenation () =
-                annotation
-                >>= GlobalResolution.parse_as_concatenation global_resolution
-                >>| fun concatenation -> Type.OrderedTypes.Concatenation concatenation
-              in
-              match parsed_as_concatenation () with
-              | Some map -> make_tuple map
-              | None -> parse_as_unary ()
-            else
-              parse_as_unary ()
-          in
+          let errors, { Annotation.annotation; mutability } = parse_as_unary () in
           ( errors,
             Map.set
               annotation_store
@@ -1639,11 +1615,6 @@ module State (Context : Context) = struct
                           in
                           List.find_map overriding_parameters ~f:find_variable_parameter
                           |> validate_match ~expected:annotation
-                      | Variable (Concatenation _) ->
-                          (* TODO(T44178876): There is no reasonable way to compare either of these
-                             alone, which is the central issue with this comparison strategy. For
-                             now, let's just ignore this *)
-                          errors
                     in
                     Type.Callable.Overload.parameters implementation
                     |> Option.value ~default:[]

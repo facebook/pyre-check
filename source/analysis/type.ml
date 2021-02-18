@@ -116,34 +116,16 @@ module Record = struct
         let create ?(variance = Invariant) name =
           { name; variance; state = Free { escaped = false }; namespace = 1 }
       end
-
-      module RecordList = struct
-        type 'annotation record = {
-          name: Identifier.t;
-          constraints: 'annotation constraints;
-          variance: variance;
-          state: state;
-          namespace: RecordNamespace.t;
-        }
-        [@@deriving compare, eq, sexp, show, hash]
-
-        let create ?(constraints = Unconstrained) ?(variance = Invariant) name =
-          { name; constraints; variance; state = Free { escaped = false }; namespace = 1 }
-
-
-        let name { name; _ } = name
-      end
     end
 
     type 'a record =
       | Unary of 'a RecordUnary.record
       | ParameterVariadic of 'a RecordVariadic.RecordParameters.record
-      | ListVariadic of 'a RecordVariadic.RecordList.record
     [@@deriving compare, eq, sexp, show, hash]
   end
 
   module OrderedTypes = struct
-    let map_public_name = "pyre_extensions.type_variable_operators.Map"
+    let concatenate_public_name = "pyre_extensions.type_variable_operators.Concatenate"
 
     let show_type_list types ~pp_type =
       Format.asprintf
@@ -152,122 +134,17 @@ module Record = struct
         types
 
 
-    module RecordConcatenate = struct
-      let public_name = "pyre_extensions.type_variable_operators.Concatenate"
-
-      module Middle = struct
-        type 'annotation mapper =
-          | ClassMapper of Identifier.t
-          | GenericAliasMapper of 'annotation
-        [@@deriving compare, eq, sexp, show, hash]
-
-        type 'annotation t = {
-          variable: 'annotation Variable.RecordVariadic.RecordList.record;
-          mappers: 'annotation mapper list;
-        }
-        [@@deriving compare, eq, sexp, show, hash]
-
-        let show_generic_alias pp_type annotation = Format.asprintf "%a" pp_type annotation
-
-        let show_mapper pp_type = function
-          | ClassMapper name -> name
-          | GenericAliasMapper generic_alias -> show_generic_alias pp_type generic_alias
-
-
-        let rec show_concise ~pp_type = function
-          | { variable = { name; _ }; mappers = [] } -> name
-          | { mappers = head_mapper :: tail_mappers; _ } as mapped ->
-              let inner = { mapped with mappers = tail_mappers } in
-              Format.asprintf
-                "Map[%s, %s]"
-                (show_mapper pp_type head_mapper)
-                (show_concise ~pp_type inner)
-
-
-        let unwrap_if_bare = function
-          | { variable; mappers = [] } -> Some variable
-          | _ -> None
-      end
-
-      type 'annotation wrapping = {
-        head: 'annotation list;
-        tail: 'annotation list;
-      }
-      [@@deriving compare, eq, sexp, show, hash]
-
-      type ('middle, 'annotation) t = {
-        middle: 'middle;
-        wrapping: 'annotation wrapping;
-      }
-      [@@deriving compare, eq, sexp, show, hash]
-
-      let empty_wrap (middle : 'a Middle.t) = { middle; wrapping = { head = []; tail = [] } }
-
-      let head { wrapping = { head; _ }; _ } = head
-
-      let middle { middle; _ } = middle
-
-      let tail { wrapping = { tail; _ }; _ } = tail
-
-      let unwrap_if_only_middle concatenation =
-        Option.some_if
-          (List.is_empty (head concatenation) && List.is_empty (tail concatenation))
-          (middle concatenation)
-
-
-      let pp_concatenation format { middle; wrapping } ~pp_type =
-        match wrapping with
-        | { head = []; tail = [] } ->
-            Format.fprintf format "%s" (Middle.show_concise ~pp_type middle)
-        | { head; tail = [] } ->
-            Format.fprintf
-              format
-              "Concatenate[%s, %s]"
-              (show_type_list head ~pp_type)
-              (Middle.show_concise ~pp_type middle)
-        | { head = []; tail } ->
-            Format.fprintf
-              format
-              "Concatenate[%s, %s]"
-              (Middle.show_concise ~pp_type middle)
-              (show_type_list tail ~pp_type)
-        | { head; tail } ->
-            Format.fprintf
-              format
-              "Concatenate[%s, %s, %s]"
-              (show_type_list head ~pp_type)
-              (Middle.show_concise ~pp_type middle)
-              (show_type_list tail ~pp_type)
-    end
-
-    type 'annotation record =
-      | Concrete of 'annotation list
-      | Any
-      | Concatenation of ('annotation RecordConcatenate.Middle.t, 'annotation) RecordConcatenate.t
+    type 'annotation record = Concrete of 'annotation list
     [@@deriving compare, eq, sexp, show, hash]
 
     let pp_concise format variable ~pp_type =
       match variable with
       | Concrete types -> Format.fprintf format "%s" (show_type_list types ~pp_type)
-      | Any -> Format.fprintf format "..."
-      | Concatenation concatenation ->
-          Format.fprintf format "%a" (RecordConcatenate.pp_concatenation ~pp_type) concatenation
 
 
     let concatenate ~left ~right =
       match left, right with
       | Concrete left, Concrete right -> Some (Concrete (left @ right))
-      (* Any can masquerade as the empty list *)
-      | other, Any
-      | Any, other
-      | other, Concrete []
-      | Concrete [], other ->
-          Some other
-      | Concrete left, Concatenation ({ wrapping = { head; tail }; _ } as concatenation) ->
-          Some (Concatenation { concatenation with wrapping = { head = left @ head; tail } })
-      | Concatenation ({ wrapping = { head; tail }; _ } as concatenation), Concrete right ->
-          Some (Concatenation { concatenation with wrapping = { head; tail = tail @ right } })
-      | Concatenation _, Concatenation _ -> None
   end
 
   module Callable = struct
@@ -279,12 +156,7 @@ module Record = struct
       }
       [@@deriving compare, eq, sexp, show, hash]
 
-      type 'annotation variable =
-        | Concrete of 'annotation
-        | Concatenation of
-            ( 'annotation OrderedTypes.RecordConcatenate.Middle.t,
-              'annotation )
-            OrderedTypes.RecordConcatenate.t
+      type 'annotation variable = Concrete of 'annotation
       [@@deriving compare, eq, sexp, show, hash]
 
       type 'annotation t =
@@ -325,11 +197,6 @@ module Record = struct
         | Named named -> print_named ~kind:"Named" named
         | KeywordOnly named -> print_named ~kind:"KeywordOnly" named
         | Variable (Concrete annotation) -> Format.asprintf "Variable(%a)" pp_type annotation
-        | Variable (Concatenation concatenation) ->
-            Format.asprintf
-              "Variable(%a)"
-              (OrderedTypes.RecordConcatenate.pp_concatenation ~pp_type)
-              concatenation
         | Keywords annotation -> Format.asprintf "Keywords(%a)" pp_type annotation
 
 
@@ -339,7 +206,6 @@ module Record = struct
         | KeywordOnly { annotation; _ } -> Some annotation
         | Variable (Concrete annotation) -> Some annotation
         | Keywords annotation -> Some annotation
-        | _ -> None
     end
 
     type kind =
@@ -385,15 +251,12 @@ module Record = struct
   module Parameter = struct
     type 'annotation record =
       | Single of 'annotation
-      | Group of 'annotation OrderedTypes.record
       | CallableParameters of 'annotation Callable.record_parameters
     [@@deriving compare, eq, sexp, show, hash]
 
     let is_single = function
       | Single single -> Some single
-      | CallableParameters _
-      | Group _ ->
-          None
+      | CallableParameters _ -> None
   end
 
   module TypedDictionary = struct
@@ -1222,7 +1085,7 @@ let parameter_variable_type_representation = function
       let concretes = head @ [Primitive name] in
       Parametric
         {
-          name = Record.OrderedTypes.RecordConcatenate.public_name;
+          name = Record.OrderedTypes.concatenate_public_name;
           parameters = List.map concretes ~f:(fun concrete -> Record.Parameter.Single concrete);
         }
 
@@ -1238,18 +1101,14 @@ let show_callable_parameters ~pp_type = function
 
 
 let pp_parameters ~pp_type format = function
-  | [Record.Parameter.Group ordered] ->
-      Format.fprintf format "%a" (Record.OrderedTypes.pp_concise ~pp_type) ordered
   | parameters
     when List.for_all parameters ~f:(function
-             | Single parameter -> is_unbound parameter || is_top parameter
+             | Record.Parameter.Single parameter -> is_unbound parameter || is_top parameter
              | _ -> false) ->
       Format.fprintf format ""
   | parameters ->
       let s format = function
         | Record.Parameter.Single parameter -> Format.fprintf format "%a" pp_type parameter
-        | Group ordered_types ->
-            Format.fprintf format "[%a]" (Record.OrderedTypes.pp_concise ~pp_type) ordered_types
         | CallableParameters parameters ->
             Format.fprintf format "%s" (show_callable_parameters parameters ~pp_type)
       in
@@ -1359,11 +1218,6 @@ and pp_concise format annotation =
                     else
                       Format.asprintf "%s: %a" name pp_concise annotation
                 | Variable (Concrete annotation) -> Format.asprintf "*(%a)" pp_concise annotation
-                | Variable (Concatenation concatenation) ->
-                    Format.asprintf
-                      "*(%a)"
-                      (Record.OrderedTypes.RecordConcatenate.pp_concatenation ~pp_type:pp_concise)
-                      concatenation
                 | Keywords annotation -> Format.asprintf "**(%a)" pp_concise annotation
               in
               List.map parameters ~f:parameter |> String.concat ~sep:", "
@@ -1603,8 +1457,6 @@ let rec expression annotation =
           | KeywordOnly { name; annotation; default } ->
               call ~default ~name "KeywordOnly" (expression annotation)
           | Variable (Concrete annotation) -> call "Variable" (expression annotation)
-          | Variable (Concatenation concatenation) ->
-              call "Variable" (concatenation_expression concatenation)
         in
         Expression.List (List.map ~f:convert_parameter parameters) |> Node.create ~location
     | Undefined -> Node.create ~location Expression.Ellipsis
@@ -1709,19 +1561,11 @@ let rec expression annotation =
     | NoneType -> create_name "None"
     | Parametric { name; parameters } ->
         let parameters =
-          let expression_of_ordered = function
-            | Record.OrderedTypes.Any -> [expression (Primitive "...")]
-            | Concrete parameters -> List.map ~f:expression parameters
-            | Concatenation concatenation -> [concatenation_expression concatenation]
-          in
           let expression_of_parameter = function
-            | Record.Parameter.Group ordered ->
-                Node.create ~location (Expression.List (expression_of_ordered ordered))
-            | Single single -> expression single
+            | Record.Parameter.Single single -> expression single
             | CallableParameters parameters -> callable_parameters_expression parameters
           in
           match parameters with
-          | [Group ordered] -> expression_of_ordered ordered
           | parameters -> List.map parameters ~f:expression_of_parameter
         in
         get_item_call (reverse_substitute name) parameters
@@ -1739,9 +1583,7 @@ let rec expression annotation =
     | Tuple elements ->
         let parameters =
           match elements with
-          | Bounded Any -> [expression (Primitive "...")]
           | Bounded (Concrete parameters) -> List.map ~f:expression parameters
-          | Bounded (Concatenation concatenation) -> [concatenation_expression concatenation]
           | Unbounded parameter -> List.map ~f:expression [parameter; Primitive "..."]
         in
         get_item_call "typing.Tuple" parameters
@@ -1816,46 +1658,6 @@ let rec expression annotation =
   Node.create_with_default_location value
 
 
-and middle_annotation middle =
-  let single_wrap ~mapper ~inner =
-    match mapper with
-    | Record.OrderedTypes.RecordConcatenate.Middle.ClassMapper class_name ->
-        Parametric
-          {
-            name = Record.OrderedTypes.map_public_name;
-            parameters = [Single (Primitive class_name); Single inner];
-          }
-    | GenericAliasMapper annotation ->
-        Parametric
-          {
-            name = Record.OrderedTypes.map_public_name;
-            parameters = [Single annotation; Single inner];
-          }
-  in
-  match middle with
-  | { Record.OrderedTypes.RecordConcatenate.Middle.variable = { name; _ }; mappers = [] } ->
-      Primitive name
-  | { mappers = head_mapper :: tail_mappers; _ } ->
-      let inner = { middle with mappers = tail_mappers } in
-      single_wrap ~mapper:head_mapper ~inner:(middle_annotation inner)
-
-
-and concatenation_expression { middle; wrapping } =
-  let concatenation_annotation =
-    let middle_annotation = middle_annotation middle in
-    match wrapping with
-    | { head = []; tail = [] } -> middle_annotation
-    | { head; tail } ->
-        let concretes = head @ (middle_annotation :: tail) in
-        Parametric
-          {
-            name = Record.OrderedTypes.RecordConcatenate.public_name;
-            parameters = List.map concretes ~f:(fun concrete -> Record.Parameter.Single concrete);
-          }
-  in
-  concatenation_annotation |> expression
-
-
 module Transform = struct
   type 'state visit_result = {
     transformed_annotation: t;
@@ -1876,23 +1678,10 @@ module Transform = struct
     let rec visit_annotation ~state annotation =
       let visit_children annotation =
         let visit_all = List.map ~f:(visit_annotation ~state) in
-        let visit_concatenation
-            { Record.OrderedTypes.RecordConcatenate.middle; wrapping = { head; tail } }
-          =
-          let wrapping =
-            {
-              Record.OrderedTypes.RecordConcatenate.head =
-                List.map head ~f:(visit_annotation ~state);
-              tail = List.map tail ~f:(visit_annotation ~state);
-            }
-          in
-          { Record.OrderedTypes.RecordConcatenate.middle; wrapping }
-        in
         let visit_ordered_types ordered_types =
           match ordered_types with
-          | Record.OrderedTypes.Any -> ordered_types
-          | Concrete concretes -> Concrete (visit_all concretes)
-          | Concatenation concatenation -> Concatenation (visit_concatenation concatenation)
+          | Record.OrderedTypes.Concrete concretes ->
+              Record.OrderedTypes.Concrete (visit_all concretes)
         in
         let visit_parameters parameter =
           let visit_defined = function
@@ -1903,8 +1692,6 @@ module Transform = struct
                   { named with annotation = visit_annotation annotation ~state }
             | RecordParameter.Variable (Concrete annotation) ->
                 RecordParameter.Variable (Concrete (visit_annotation annotation ~state))
-            | RecordParameter.Variable (Concatenation concatenation) ->
-                Variable (Concatenation (visit_concatenation concatenation))
             | RecordParameter.Keywords annotation ->
                 RecordParameter.Keywords (visit_annotation annotation ~state)
             | RecordParameter.PositionalOnly ({ annotation; _ } as anonymous) ->
@@ -1938,9 +1725,8 @@ module Transform = struct
               }
         | Parametric { name; parameters } ->
             let visit = function
-              | Record.Parameter.Group ordered ->
-                  Record.Parameter.Group (visit_ordered_types ordered)
-              | Single single -> Single (visit_annotation single ~state)
+              | Record.Parameter.Single single ->
+                  Record.Parameter.Single (visit_annotation single ~state)
               | CallableParameters parameters -> CallableParameters (visit_parameters parameters)
             in
             Parametric { name; parameters = List.map parameters ~f:visit }
@@ -2276,70 +2062,6 @@ let primitive_name = function
   | _ -> None
 
 
-let create_concatenation_operator_from_annotation annotation ~variable_aliases =
-  let open Record.OrderedTypes.RecordConcatenate in
-  let create_mapper = function
-    | Primitive left_parameter -> Some (Middle.ClassMapper left_parameter)
-    | mapper_annotation -> Some (Middle.GenericAliasMapper mapper_annotation)
-  in
-  let create_map_operator_from_annotation annotation =
-    match annotation with
-    | Parametric
-        { name; parameters = [Single mapper_annotation; Group (Concatenation right_parameter)] }
-      when Identifier.equal name Record.OrderedTypes.map_public_name ->
-        unwrap_if_only_middle right_parameter
-        >>= Middle.unwrap_if_bare
-        >>= fun variable ->
-        create_mapper mapper_annotation
-        >>| fun mapper ->
-        { Record.OrderedTypes.RecordConcatenate.Middle.variable; mappers = [mapper] }
-    | _ -> None
-  in
-  match annotation with
-  | Parametric { name; parameters } -> (
-      match Identifier.equal name Record.OrderedTypes.RecordConcatenate.public_name with
-      | true -> (
-          let parse_as_middle = function
-            | Record.Parameter.Group (Concatenation potential_middle) ->
-                let open Record.OrderedTypes.RecordConcatenate in
-                unwrap_if_only_middle potential_middle
-            | CallableParameters _
-            | Group (Concrete _)
-            | Group Any ->
-                None
-            | Record.Parameter.Single potentially_a_map ->
-                create_map_operator_from_annotation potentially_a_map
-          in
-          let parameter_to_parsed =
-            List.map parameters ~f:(fun parameter ->
-                Record.Parameter.is_single parameter, parse_as_middle parameter)
-          in
-          let head, middle_and_tail =
-            List.split_while parameter_to_parsed ~f:(fun (_, parsed) -> Option.is_none parsed)
-          in
-          let middle, tail =
-            List.split_while middle_and_tail ~f:(fun (_, parsed) -> Option.is_some parsed)
-          in
-          let fsts = List.map ~f:fst in
-          let head = fsts head in
-          let tail = fsts tail in
-          match Option.all head, middle, Option.all tail with
-          | Some head, [(_, Some middle)], Some tail ->
-              Some { Record.OrderedTypes.RecordConcatenate.middle; wrapping = { head; tail } }
-          | _ -> None )
-      | _ ->
-          create_map_operator_from_annotation annotation
-          >>| fun map -> Record.OrderedTypes.RecordConcatenate.empty_wrap map )
-  | Primitive name -> (
-      match variable_aliases name with
-      | Some (Record.Variable.ListVariadic variable) ->
-          Some
-            (Record.OrderedTypes.RecordConcatenate.empty_wrap
-               { Record.OrderedTypes.RecordConcatenate.Middle.variable; mappers = [] })
-      | _ -> None )
-  | _ -> None
-
-
 let create_literal = function
   | Expression.True -> Some (Literal (Boolean true))
   | Expression.False -> Some (Literal (Boolean false))
@@ -2507,19 +2229,14 @@ let resolve_aliases ~aliases annotation =
 
 
 let rec create_logic ~aliases ~variable_aliases { Node.value = expression; _ } =
-  let substitute_ordered_types = function
-    | Primitive "..." -> Some Record.OrderedTypes.Any
-    | parameter ->
-        create_concatenation_operator_from_annotation parameter ~variable_aliases
-        >>| fun concatenation -> Record.OrderedTypes.Concatenation concatenation
-  in
   let substitute_parameter_variadic = function
     | Primitive name -> (
         match variable_aliases name with
-        | Some (ParameterVariadic variable) -> Some { Record.Callable.variable; head = [] }
+        | Some (Record.Variable.ParameterVariadic variable) ->
+            Some { Record.Callable.variable; head = [] }
         | _ -> None )
     | Parametric { name; parameters }
-      when Identifier.equal name Record.OrderedTypes.RecordConcatenate.public_name -> (
+      when Identifier.equal name Record.OrderedTypes.concatenate_public_name -> (
         match List.rev parameters with
         | Parameter.CallableParameters (ParameterVariadicTypeVariable { variable; head = [] })
           :: reversed_head ->
@@ -2627,10 +2344,6 @@ let rec create_logic ~aliases ~variable_aliases { Node.value = expression; _ } =
       let undefined = { annotation = Top; parameters = Undefined } in
       let get_signature = function
         | Expression.Tuple [parameters; annotation] -> (
-            let parse_as_variadic parsed_parameter =
-              create_concatenation_operator_from_annotation parsed_parameter ~variable_aliases
-              >>| fun concatenation -> CallableParameter.Concatenation concatenation
-            in
             let extract_parameter index parameter =
               match Node.value parameter with
               | Expression.Call
@@ -2682,9 +2395,7 @@ let rec create_logic ~aliases ~variable_aliases { Node.value = expression; _ } =
                             create_logic (Node.create_with_default_location annotation)
                         | _ -> Top
                       in
-                      parse_as_variadic annotation
-                      |> Option.value ~default:(CallableParameter.Concrete annotation)
-                      |> fun variable -> CallableParameter.Variable variable
+                      CallableParameter.Variable (CallableParameter.Concrete annotation)
                   | "Keywords", tail ->
                       let annotation =
                         match tail with
@@ -2706,13 +2417,9 @@ let rec create_logic ~aliases ~variable_aliases { Node.value = expression; _ } =
                 | Some variable ->
                     make_signature ~parameters:(ParameterVariadicTypeVariable variable)
                 | _ -> (
-                    match parse_as_variadic parsed with
-                    | Some variadic ->
-                        make_signature ~parameters:(Defined [CallableParameter.Variable variadic])
-                    | None -> (
-                        match parsed with
-                        | Primitive "..." -> make_signature ~parameters:Undefined
-                        | _ -> undefined ) ) ) )
+                    match parsed with
+                    | Primitive "..." -> make_signature ~parameters:Undefined
+                    | _ -> undefined ) ) )
         | _ -> undefined
       in
       let implementation =
@@ -2748,17 +2455,12 @@ let rec create_logic ~aliases ~variable_aliases { Node.value = expression; _ } =
       let parametric name =
         let parameters =
           let parse_parameter = function
-            | { Node.value = Expression.List elements; _ } ->
-                let concrete = List.map elements ~f:create_logic in
-                Record.Parameter.Group (Concrete concrete)
             | element -> (
                 let parsed = create_logic element in
-                match substitute_ordered_types parsed with
-                | Some ordered -> Record.Parameter.Group ordered
-                | None -> (
-                    match substitute_parameter_variadic parsed with
-                    | Some variable -> CallableParameters (ParameterVariadicTypeVariable variable)
-                    | _ -> Record.Parameter.Single parsed ) )
+                match substitute_parameter_variadic parsed with
+                | Some variable ->
+                    Record.Parameter.CallableParameters (ParameterVariadicTypeVariable variable)
+                | _ -> Record.Parameter.Single parsed )
           in
           match argument with
           | { Node.value = Expression.Tuple elements; _ } -> List.map elements ~f:parse_parameter
@@ -2976,11 +2678,11 @@ let rec create_logic ~aliases ~variable_aliases { Node.value = expression; _ } =
   | Parametric { name = "typing.Tuple"; parameters }
   | Parametric { name = "tuple"; parameters } -> (
       match parameters with
-      | [Single parameter; Group Any] -> Tuple (Unbounded parameter)
-      | [Group group] -> Tuple (Bounded group)
       | parameters ->
           Parameter.all_singles parameters
-          >>| (fun singles -> Tuple (Bounded (Concrete singles)))
+          >>| (function
+                | [annotation; Primitive "..."] -> Tuple (Unbounded annotation)
+                | singles -> Tuple (Bounded (Concrete singles)))
           |> Option.value ~default:Top )
   | Parametric { name; parameters } -> (
       match
@@ -3209,138 +2911,9 @@ module OrderedTypes = struct
 
   let pp_concise = pp_concise ~pp_type
 
-  module Concatenation = struct
-    include Record.OrderedTypes.RecordConcatenate
-
-    let apply_mapper ~mapper concrete =
-      match mapper with
-      | Middle.ClassMapper class_name ->
-          Parametric { name = class_name; parameters = [Single concrete] }
-      | Middle.GenericAliasMapper annotation ->
-          instantiate
-            ~constraints:(function
-              | Variable _ -> Some concrete
-              | _ -> None)
-            annotation
-
-
-    let apply_mapping { middle; wrapping = { head; tail } } ~mapper =
-      let wrapping =
-        {
-          head = List.map head ~f:(apply_mapper ~mapper);
-          tail = List.map tail ~f:(apply_mapper ~mapper);
-        }
-      in
-      let middle = { middle with Middle.mappers = mapper :: middle.Middle.mappers } in
-      { middle; wrapping }
-
-
-    module Middle = struct
-      include Record.OrderedTypes.RecordConcatenate.Middle
-
-      let create_bare variable = { variable; mappers = [] }
-
-      let create ~variable ~mappers = { variable; mappers }
-
-      let create_from_class_mappers ~variable ~mappers =
-        { variable; mappers = List.map ~f:(fun x -> ClassMapper x) mappers }
-
-
-      let rec replace_variable middle ~replacement =
-        match middle with
-        | { Middle.mappers = []; variable } -> replacement variable
-        | { Middle.mappers = head_mapper :: tail_mapper; _ } ->
-            let inner = { middle with mappers = tail_mapper } in
-            let handle_replaced = function
-              | Any -> Any
-              | Concrete concretes ->
-                  Concrete (List.map concretes ~f:(apply_mapper ~mapper:head_mapper))
-              | Concatenation concatenation ->
-                  Concatenation (apply_mapping ~mapper:head_mapper concatenation)
-            in
-            replace_variable inner ~replacement >>| handle_replaced
-
-
-      let singleton_replace_variable middle ~replacement =
-        let extract = function
-          | Some (Concrete [extracted]) -> extracted
-          | _ -> failwith "this was a singleton replace"
-        in
-        replace_variable middle ~replacement:(fun _ -> Some (Concrete [replacement])) |> extract
-    end
-
-    let parse expression ~aliases =
-      let variable_aliases name =
-        match aliases ?replace_unbound_parameters_with_any:(Some false) name with
-        | Some (VariableAlias variable) -> Some variable
-        | _ -> None
-      in
-      create expression ~aliases |> create_concatenation_operator_from_annotation ~variable_aliases
-
-
-    let map_head_and_tail { middle; wrapping = { head; tail } } ~f =
-      let wrapping = { head = List.map head ~f; tail = List.map tail ~f } in
-      { middle; wrapping }
-
-
-    let map_middle { middle; wrapping } ~f = { middle = f middle; wrapping }
-
-    let replace_variable { middle; wrapping } ~replacement =
-      let merge ~inner:{ head; tail } ~outer:{ head = outer_head; tail = outer_tail } =
-        { head = outer_head @ head; tail = tail @ outer_tail }
-      in
-      let actualize ~inner { head; tail } = head @ inner @ tail in
-      match Middle.replace_variable middle ~replacement with
-      | None -> None
-      | Some Any -> Some Any
-      | Some (Concrete inner) -> Some (Concrete (actualize ~inner wrapping))
-      | Some (Concatenation { middle = inner_middle; wrapping = inner }) ->
-          Some (Concatenation { middle = inner_middle; wrapping = merge ~inner ~outer:wrapping })
-
-
-    let variable { middle = { Middle.variable; _ }; _ } = variable
-
-    let expression = concatenation_expression
-
-    let create ?(head = []) ?(tail = []) middle = { wrapping = { head; tail }; middle }
-
-    let zip concatenation ~against =
-      let head = head concatenation in
-      let tail = tail concatenation in
-      let head_length = List.length head in
-      let tail_length = List.length tail in
-      let middle_length = List.length against - head_length - tail_length in
-      if middle_length >= 0 then
-        let middle = middle concatenation in
-        let concretes_head = List.sub against ~pos:0 ~len:head_length in
-        let concretes_middle = List.sub against ~pos:head_length ~len:middle_length in
-        let concretes_tail = List.sub against ~pos:(head_length + middle_length) ~len:tail_length in
-        let head = List.zip_exn head concretes_head in
-        let tail = List.zip_exn tail concretes_tail in
-        Some (create ~head ~tail (middle, concretes_middle))
-      else
-        None
-  end
-
   let union_upper_bound ordered =
     match ordered with
     | Concrete concretes -> union concretes
-    | Any -> Any
-    | Concatenation _ -> object_primitive
-
-
-  let variable ordered_types =
-    match ordered_types with
-    | Concrete _ -> None
-    | Any -> None
-    | Concatenation concatenation -> Some (Concatenation.variable concatenation)
-
-
-  let local_replace_variable ordered_types ~replacement =
-    match ordered_types with
-    | Concrete _ -> None
-    | Any -> None
-    | Concatenation concatenation -> Concatenation.replace_variable concatenation ~replacement
 end
 
 let split annotation =
@@ -3353,7 +2926,8 @@ let split annotation =
   | Tuple tuple ->
       let parameters =
         match tuple with
-        | Bounded parameters -> [Group parameters]
+        | Bounded (Concrete parameters) ->
+            List.map parameters ~f:(fun parameter -> Single parameter)
         | Unbounded parameter -> [Single parameter]
       in
       Primitive "tuple", parameters
@@ -3452,15 +3026,9 @@ module Variable : sig
 
   type parameter_variadic_domain = Callable.parameters
 
-  type list_variadic_t = type_t Record.Variable.RecordVariadic.RecordList.record
-  [@@deriving compare, eq, sexp, show, hash]
-
-  type list_variadic_domain = OrderedTypes.t
-
   type pair =
     | UnaryPair of unary_t * unary_domain
     | ParameterVariadicPair of parameter_variadic_t * parameter_variadic_domain
-    | ListVariadicPair of list_variadic_t * list_variadic_domain
 
   type t = type_t Record.Variable.record [@@deriving compare, eq, sexp, show, hash]
 
@@ -3549,18 +3117,6 @@ module Variable : sig
 
       val decompose : t -> Components.decomposition
     end
-
-    module List : sig
-      include VariableKind with type t = list_variadic_t and type domain = list_variadic_domain
-
-      val name : t -> Identifier.t
-
-      val create
-        :  ?constraints:type_t Record.Variable.constraints ->
-        ?variance:Record.Variable.variance ->
-        string ->
-        t
-    end
   end
 
   module GlobalTransforms : sig
@@ -3578,8 +3134,6 @@ module Variable : sig
 
     module ParameterVariadic :
       S with type t = parameter_variadic_t and type domain = Callable.parameters
-
-    module ListVariadic : S with type t = list_variadic_t and type domain = list_variadic_domain
   end
 
   include module type of struct
@@ -3652,15 +3206,9 @@ end = struct
 
   type parameter_variadic_domain = Callable.parameters
 
-  type list_variadic_t = type_t Record.Variable.RecordVariadic.RecordList.record
-  [@@deriving compare, eq, sexp, show, hash]
-
-  type list_variadic_domain = OrderedTypes.t
-
   type pair =
     | UnaryPair of unary_t * unary_domain
     | ParameterVariadicPair of parameter_variadic_t * parameter_variadic_domain
-    | ListVariadicPair of list_variadic_t * list_variadic_domain
 
   module type VariableKind = sig
     type t [@@deriving compare, eq, sexp, show, hash]
@@ -4001,170 +3549,6 @@ end = struct
               { component = KeywordArguments; variable_name; variance; variable_namespace };
         }
     end
-
-    module List = struct
-      include Record.Variable.RecordVariadic.RecordList
-
-      type t = type_t record [@@deriving compare, eq, sexp, show, hash]
-
-      type domain = OrderedTypes.t [@@deriving compare, eq, sexp, show, hash]
-
-      module Map = Core.Map.Make (struct
-        type t = type_t record [@@deriving compare, sexp]
-      end)
-
-      let any = OrderedTypes.Any
-
-      let self_reference variable =
-        OrderedTypes.Concatenation
-          (OrderedTypes.Concatenation.empty_wrap
-             { OrderedTypes.Concatenation.Middle.variable; mappers = [] })
-
-
-      let pair variable value = ListVariadicPair (variable, value)
-
-      let is_free = function
-        | { state = Free _; _ } -> true
-        | _ -> false
-
-
-      let is_escaped_and_free = function
-        | { state = Free { escaped }; _ } -> escaped
-        | _ -> false
-
-
-      let mark_as_bound variable = { variable with state = InFunction }
-
-      let namespace variable ~namespace = { variable with namespace }
-
-      (* TODO(T45087986): Add more entries here as we add hosts for these variables *)
-      let rec local_collect = function
-        | Tuple (Bounded bounded) -> OrderedTypes.variable bounded |> Option.to_list
-        | Callable { implementation; overloads; _ } ->
-            let map = function
-              | { parameters = Defined parameters; _ } ->
-                  let collect_variadic = function
-                    | Callable.Parameter.Variable (Concatenation concatenation) ->
-                        Some (OrderedTypes.Concatenation.variable concatenation)
-                    | _ -> None
-                  in
-                  List.filter_map parameters ~f:collect_variadic
-              | _ -> []
-            in
-            implementation :: overloads |> List.concat_map ~f:map
-        | Parametric { parameters; _ } ->
-            let collect = function
-              | Record.Parameter.Group ordered -> OrderedTypes.variable ordered |> Option.to_list
-              | CallableParameters _
-              | Single _ ->
-                  []
-            in
-            List.concat_map parameters ~f:collect
-        | IntExpression polynomial ->
-            List.concat_map polynomial ~f:(fun { variables; _ } ->
-                List.concat_map variables ~f:(fun { variable; _ } ->
-                    match variable with
-                    | Divide (dividend, quotient) ->
-                        local_collect (IntExpression dividend)
-                        @ local_collect (IntExpression quotient)
-                    | _ -> []))
-            |> List.dedup_and_sort ~compare
-        | _ -> []
-
-
-      let rec local_replace replacement = function
-        | Tuple (Bounded bounded) ->
-            OrderedTypes.local_replace_variable bounded ~replacement
-            >>| fun ordered_types -> Tuple (Bounded ordered_types)
-        | Parametric { name; parameters } ->
-            let replace = function
-              | Record.Parameter.Group ordered ->
-                  OrderedTypes.local_replace_variable ordered ~replacement
-                  >>| fun group -> Record.Parameter.Group group
-              | CallableParameters _
-              | Single _ ->
-                  None
-            in
-            let replaced = List.map parameters ~f:(fun parameter -> replace parameter, parameter) in
-            if List.exists replaced ~f:(fun (replaced, _) -> Option.is_some replaced) then
-              Some
-                ( List.map replaced ~f:(fun (replaced, default) -> Option.value replaced ~default)
-                |> parametric name )
-            else
-              None
-        | Callable callable ->
-            let map = function
-              | Defined parameters ->
-                  let replace_variadic = function
-                    | Callable.Parameter.Variable (Concatenation concatenation) ->
-                        let encode_ordered_types_into_parameters = function
-                          | OrderedTypes.Any -> [Callable.Parameter.Variable (Concrete Any)]
-                          | Concrete concretes ->
-                              let make_anonymous annotation =
-                                Callable.Parameter.PositionalOnly
-                                  { index = 0; annotation; default = false }
-                              in
-                              List.map concretes ~f:make_anonymous
-                          | Concatenation concatenation -> [Variable (Concatenation concatenation)]
-                        in
-                        OrderedTypes.Concatenation.replace_variable concatenation ~replacement
-                        >>| encode_ordered_types_into_parameters
-                        |> Option.value
-                             ~default:[Callable.Parameter.Variable (Concatenation concatenation)]
-                    | parameter -> [parameter]
-                  in
-                  let correct_indices index = function
-                    | Callable.Parameter.PositionalOnly anonymous ->
-                        Callable.Parameter.PositionalOnly { anonymous with index }
-                    | parameter -> parameter
-                  in
-                  List.concat_map parameters ~f:replace_variadic
-                  |> List.mapi ~f:correct_indices
-                  |> fun defined -> Defined defined
-              | parameters -> parameters
-            in
-            Callable.map_parameters callable ~f:map
-            |> (fun callable -> Callable callable)
-            |> Option.some
-        | IntExpression polynomial ->
-            local_replace_polynomial
-              polynomial
-              ~replace_variable:(fun _ -> None)
-              ~replace_recursive:(local_replace replacement)
-        | _ -> None
-
-
-      let mark_as_escaped variable = { variable with state = Free { escaped = true } }
-
-      let dequalify ({ name; _ } as variable) ~dequalify_map =
-        { variable with name = dequalify_identifier dequalify_map name }
-
-
-      let parse_declaration value ~target =
-        match value with
-        | {
-         Node.value =
-           Expression.Call
-             {
-               callee =
-                 {
-                   Node.value =
-                     Name
-                       (Name.Attribute
-                         {
-                           base = { Node.value = Name (Name.Identifier "pyre_extensions"); _ };
-                           attribute = "ListVariadic";
-                           special = false;
-                         });
-                   _;
-                 };
-               arguments = [{ Call.Argument.value = { Node.value = String _; _ }; _ }];
-             };
-         _;
-        } ->
-            Some (create (Reference.show target))
-        | _ -> None
-    end
   end
 
   module GlobalTransforms = struct
@@ -4274,7 +3658,6 @@ end = struct
 
     module Unary = Make (Unary)
     module ParameterVariadic = Make (Variadic.Parameters)
-    module ListVariadic = Make (Variadic.List)
   end
 
   let pp_type = pp
@@ -4293,23 +3676,18 @@ end = struct
     | Unary variable -> Unary.pp_concise format variable ~pp_type
     | ParameterVariadic { name; _ } ->
         Format.fprintf format "CallableParameterTypeVariable[%s]" name
-    | ListVariadic { name; _ } -> Format.fprintf format "ListVariadic[%s]" name
 
 
   let parse_declaration expression ~target =
     match Variadic.Parameters.parse_declaration expression ~target with
     | Some variable -> Some (ParameterVariadic variable)
-    | None -> (
-        match Variadic.List.parse_declaration expression ~target with
-        | Some variable -> Some (ListVariadic variable)
-        | None -> None )
+    | None -> None
 
 
   let dequalify dequalify_map = function
     | Unary variable -> Unary (Unary.dequalify variable ~dequalify_map)
     | ParameterVariadic variable ->
         ParameterVariadic (Variadic.Parameters.dequalify variable ~dequalify_map)
-    | ListVariadic variable -> ListVariadic (Variadic.List.dequalify variable ~dequalify_map)
 
 
   let namespace variable ~namespace =
@@ -4317,33 +3695,29 @@ end = struct
     | Unary variable -> Unary (Unary.namespace variable ~namespace)
     | ParameterVariadic variable ->
         ParameterVariadic (Variadic.Parameters.namespace variable ~namespace)
-    | ListVariadic variable -> ListVariadic (Variadic.List.namespace variable ~namespace)
 
 
   let partition =
     let partitioner = function
-      | Unary variable -> `Fst variable
-      | ParameterVariadic variable -> `Snd variable
-      | ListVariadic variable -> `Trd variable
+      | Unary variable -> First variable
+      | ParameterVariadic variable -> Second variable
     in
-    List.partition3_map ~f:partitioner
+    List.partition_map ~f:partitioner
 
 
   let mark_all_variables_as_bound ?specific annotation =
-    let specific_unaries, specific_parameters_variadics, specific_list_variadics =
+    let specific_unaries, specific_parameters_variadics =
       match specific >>| partition with
-      | None -> None, None, None
-      | Some (unaries, parameters, lists) -> Some unaries, Some parameters, Some lists
+      | None -> None, None
+      | Some (unaries, parameters) -> Some unaries, Some parameters
     in
     GlobalTransforms.Unary.mark_all_as_bound ?specific:specific_unaries annotation
     |> GlobalTransforms.ParameterVariadic.mark_all_as_bound ?specific:specific_parameters_variadics
-    |> GlobalTransforms.ListVariadic.mark_all_as_bound ?specific:specific_list_variadics
 
 
   let namespace_all_free_variables annotation ~namespace =
     GlobalTransforms.Unary.namespace_all_free_variables annotation ~namespace
     |> GlobalTransforms.ParameterVariadic.namespace_all_free_variables ~namespace
-    |> GlobalTransforms.ListVariadic.namespace_all_free_variables ~namespace
 
 
   let all_free_variables annotation =
@@ -4355,11 +3729,7 @@ end = struct
       GlobalTransforms.ParameterVariadic.all_free_variables annotation
       |> List.map ~f:(fun variable -> ParameterVariadic variable)
     in
-    let list_variadics =
-      GlobalTransforms.ListVariadic.all_free_variables annotation
-      |> List.map ~f:(fun variable -> ListVariadic variable)
-    in
-    unaries @ callable_variadics @ list_variadics
+    unaries @ callable_variadics
 
 
   let all_variables_are_resolved annotation = all_free_variables annotation |> List.is_empty
@@ -4371,18 +3741,13 @@ end = struct
       | Some variables -> variables
       | None -> all_free_variables annotation
     in
-    let specific_unaries, specific_parameters_variadics, specific_list_variadics =
-      partition variables
-    in
+    let specific_unaries, specific_parameters_variadics = partition variables in
     GlobalTransforms.Unary.mark_as_escaped
       annotation
       ~variables:specific_unaries
       ~namespace:fresh_namespace
     |> GlobalTransforms.ParameterVariadic.mark_as_escaped
          ~variables:specific_parameters_variadics
-         ~namespace:fresh_namespace
-    |> GlobalTransforms.ListVariadic.mark_as_escaped
-         ~variables:specific_list_variadics
          ~namespace:fresh_namespace
 
 
@@ -4414,56 +3779,43 @@ end = struct
   let contains_escaped_free_variable annotation =
     GlobalTransforms.Unary.contains_escaped_free_variable annotation
     || GlobalTransforms.ParameterVariadic.contains_escaped_free_variable annotation
-    || GlobalTransforms.ListVariadic.contains_escaped_free_variable annotation
 
 
   let convert_all_escaped_free_variables_to_anys annotation =
     GlobalTransforms.Unary.convert_all_escaped_free_variables_to_anys annotation
     |> GlobalTransforms.ParameterVariadic.convert_all_escaped_free_variables_to_anys
-    |> GlobalTransforms.ListVariadic.convert_all_escaped_free_variables_to_anys
 
 
   let converge_all_variable_namespaces annotation =
     GlobalTransforms.Unary.converge_all_variable_namespaces annotation
     |> GlobalTransforms.ParameterVariadic.converge_all_variable_namespaces
-    |> GlobalTransforms.ListVariadic.converge_all_variable_namespaces
 
 
   let coalesce_if_all_single parameters =
     Parameter.all_singles parameters
-    >>| (fun coalesced -> [Parameter.Group (Concrete coalesced)])
+    >>| (fun singles ->
+          [
+            Parameter.CallableParameters
+              (Defined (Callable.prepend_anonymous_parameters ~head:singles ~tail:[]));
+          ])
     |> Option.value ~default:parameters
-
-
-  let correct_concrete_group_into_parameters ~variable parameter =
-    match variable, parameter with
-    | ParameterVariadic _, Parameter.Group (Concrete group) ->
-        Parameter.CallableParameters
-          (Defined (Callable.prepend_anonymous_parameters ~head:group ~tail:[]))
-    | _, other -> other
 
 
   let zip_on_parameters ~parameters variables =
     let parameters =
       match variables with
-      | [ParameterVariadic _]
-      | [ListVariadic _] ->
-          coalesce_if_all_single parameters
+      | [ParameterVariadic _] -> coalesce_if_all_single parameters
       | _ -> parameters
     in
     match List.zip parameters variables with
-    | Ok zipped ->
-        List.map zipped ~f:(fun (parameter, variable) ->
-            correct_concrete_group_into_parameters ~variable parameter, variable)
-        |> Option.some
+    | Ok zipped -> Some zipped
     | Unequal_lengths -> None
 
 
   let zip_on_two_parameter_lists ~left_parameters ~right_parameters variables =
     let left_parameters, right_parameters =
       match variables with
-      | [ParameterVariadic _]
-      | [ListVariadic _] ->
+      | [ParameterVariadic _] ->
           coalesce_if_all_single left_parameters, coalesce_if_all_single right_parameters
       | _ -> left_parameters, right_parameters
     in
@@ -4471,11 +3823,7 @@ end = struct
     | Ok zipped -> (
         match List.zip zipped variables with
         | Ok zipped ->
-            let handle ((left, right), variable) =
-              let left = correct_concrete_group_into_parameters ~variable left in
-              let right = correct_concrete_group_into_parameters ~variable right in
-              left, right, variable
-            in
+            let handle ((left, right), variable) = left, right, variable in
             List.map zipped ~f:handle |> Option.some
         | _ -> None )
     | Unequal_lengths -> None
@@ -4484,15 +3832,12 @@ end = struct
   let all_unary variables =
     List.map variables ~f:(function
         | Unary unary -> Some unary
-        | ListVariadic _
-        | ParameterVariadic _ ->
-            None)
+        | ParameterVariadic _ -> None)
     |> Option.all
 
 
   let to_parameter = function
     | Unary variable -> Parameter.Single (Unary.self_reference variable)
-    | ListVariadic variable -> Parameter.Group (Variadic.List.self_reference variable)
     | ParameterVariadic variable ->
         Parameter.CallableParameters (Variadic.Parameters.self_reference variable)
 end

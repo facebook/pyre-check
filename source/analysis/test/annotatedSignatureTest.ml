@@ -45,22 +45,12 @@ let compare_sig_t left right =
         = 0
         && Type.equal left.annotation right.annotation
       in
-      let equal_mismatch_with_list_variadic_type_variable left right =
-        match left, right with
-        | ( SignatureSelectionTypes.NotDefiniteTuple left,
-            SignatureSelectionTypes.NotDefiniteTuple right ) ->
-            equal_invalid_argument left right
-        | _ -> SignatureSelectionTypes.equal_mismatch_with_list_variadic_type_variable left right
-      in
       match left_reason, right_reason with
       | InvalidKeywordArgument left, InvalidKeywordArgument right
       | InvalidVariableArgument left, InvalidVariableArgument right ->
           equal_invalid_argument left.value right.value
       | Mismatch left, Mismatch right ->
           SignatureSelectionTypes.equal_mismatch left.value right.value
-      | MismatchWithListVariadicTypeVariable left, MismatchWithListVariadicTypeVariable right ->
-          Type.OrderedTypes.equal left.variable right.variable
-          && equal_mismatch_with_list_variadic_type_variable left.mismatch right.mismatch
       | _ -> default )
   | _ -> default
 
@@ -105,7 +95,6 @@ let test_unresolved_select context =
                   g: typing.Callable[[int], bool]
                   f: typing.Callable[[int], typing.List[bool]]
                   Tparams = pyre_extensions.ParameterSpecification("Tparams")
-                  Ts = pyre_extensions.ListVariadic("Ts")
                   int_string_tuple: typing.Tuple[int, str]
                   unbounded_tuple: typing.Tuple[int, ...]
 
@@ -767,61 +756,6 @@ let test_unresolved_select context =
          closest_return_annotation = Type.integer;
          reason = Some SignatureSelectionTypes.CallingParameterVariadicTypeVariable;
        });
-  assert_select "[Ts, int]" "(1, 'string', 1, 'string')" (`Found "int");
-  assert_select "[[int, Variable(Ts)], int]" "(1)" (`Found "int");
-  assert_select
-    "[[Variable(Ts)], int]"
-    "(1, *int_string_tuple, *int_string_tuple, 1)"
-    (`Found "int");
-  assert_select
-    "[[Variable(Ts)], int]"
-    "(1, *unbounded_tuple)"
-    (`NotFound
-      ( "int",
-        Some
-          (SignatureSelectionTypes.MismatchWithListVariadicTypeVariable
-             {
-               variable =
-                 Concatenation
-                   (Type.OrderedTypes.Concatenation.create
-                      (Type.OrderedTypes.Concatenation.Middle.create_bare
-                         (Type.Variable.Variadic.List.create "test.Ts")));
-               mismatch =
-                 NotDefiniteTuple
-                   {
-                     expression =
-                       Some (+Expression.Name (Name.Identifier "$local_test$unbounded_tuple"));
-                     annotation = Type.Tuple (Unbounded Type.integer);
-                   };
-             }) ));
-  assert_select
-    "[[typing.Tuple[Ts], Variable(Ts)], int]"
-    "((1, 'string'), 1.1)"
-    (`NotFound
-      ( "int",
-        Some
-          (SignatureSelectionTypes.MismatchWithListVariadicTypeVariable
-             {
-               variable =
-                 Concatenation
-                   (Type.OrderedTypes.Concatenation.create
-                      (Type.OrderedTypes.Concatenation.Middle.create_bare
-                         (Type.Variable.Variadic.List.create "test.Ts")));
-               mismatch = ConstraintFailure (Concrete [Type.float]);
-             }) ));
-  assert_select
-    "[pyre_extensions.type_variable_operators.Map[typing.List, Ts], int]"
-    "([1,2,3], ['string', 'string'])"
-    (`Found "int");
-  assert_select
-    "[pyre_extensions.type_variable_operators.Map[typing.List, Ts], \
-     typing.Tuple[pyre_extensions.type_variable_operators.Map[typing.Type, Ts]]]"
-    "([1,2,3], ['string', 'string'])"
-    (`Found "typing.Tuple[typing.Type[int], typing.Type[str]]");
-  assert_select
-    "[[bool, Variable(pyre_extensions.type_variable_operators.Map[typing.List, Ts])], int]"
-    "(True, [1,2,3], ['string', 'string'])"
-    (`Found "int");
   ()
 
 

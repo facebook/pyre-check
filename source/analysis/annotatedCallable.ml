@@ -12,10 +12,6 @@ open Statement
 
 type annotation_parser = {
   parse_annotation: Expression.expression Node.t -> Type.t;
-  parse_as_concatenation:
-    Expression.t ->
-    (Type.t Type.OrderedTypes.Concatenation.Middle.t, Type.t) Type.OrderedTypes.Concatenation.t
-    option;
   parse_as_parameter_specification_instance_annotation:
     variable_parameter_annotation:Expression.t ->
     keywords_parameter_annotation:Expression.t ->
@@ -40,13 +36,7 @@ let return_annotation_without_applying_decorators
 
 
 let create_overload_without_applying_decorators
-    ~parser:
-      ( {
-          parse_annotation;
-          parse_as_concatenation;
-          parse_as_parameter_specification_instance_annotation;
-          _;
-        } as parser )
+    ~parser:({ parse_annotation; parse_as_parameter_specification_instance_annotation; _ } as parser)
     ~variables
     ({ Define.Signature.parameters; parent; _ } as signature)
   =
@@ -68,12 +58,8 @@ let create_overload_without_applying_decorators
             Named { named with annotation = parse_as_annotation annotation }
         | KeywordOnly ({ annotation; _ } as named) ->
             KeywordOnly { named with annotation = parse_as_annotation annotation }
-        | Variable (Concatenation _) -> failwith "impossible"
-        | Variable (Concrete annotation) -> (
-            let parsed_as_concatentation () = annotation >>= parse_as_concatenation in
-            match parsed_as_concatentation () with
-            | Some concatenation -> Parameter.Variable (Concatenation concatenation)
-            | None -> Parameter.Variable (Concrete (parse_as_annotation annotation)) )
+        | Variable (Concrete annotation) ->
+            Parameter.Variable (Concrete (parse_as_annotation annotation))
         | Keywords annotation -> Keywords (parse_as_annotation annotation)
       in
       match List.rev parameters with

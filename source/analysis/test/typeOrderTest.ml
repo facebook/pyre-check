@@ -668,31 +668,6 @@ let test_less_or_equal context =
        default
        ~left:(Type.tuple [Type.integer; Type.float])
        ~right:(Type.Tuple (Type.Unbounded Type.float)));
-  let list_variadic =
-    Type.Variable.Variadic.List.create "Ts"
-    |> Type.Variable.Variadic.List.mark_as_bound
-    |> Type.Variable.Variadic.List.self_reference
-  in
-  assert_false
-    (less_or_equal
-       default
-       ~left:(Type.Tuple (Bounded list_variadic))
-       ~right:(Type.Tuple (Type.Unbounded Type.integer)));
-  assert_true
-    (less_or_equal
-       default
-       ~left:(Type.Tuple (Bounded list_variadic))
-       ~right:(Type.Tuple (Type.Unbounded Type.object_primitive)));
-  assert_true
-    (less_or_equal
-       default
-       ~left:(Type.Tuple (Bounded (Concrete [Type.integer; Type.string])))
-       ~right:(Type.Tuple (Bounded Any)));
-  assert_true
-    (less_or_equal
-       default
-       ~left:(Type.Tuple (Bounded Any))
-       ~right:(Type.Tuple (Bounded (Concrete [Type.integer; Type.string]))));
   let order =
     let order = MockClassHierarchyHandler.create () in
     let open MockClassHierarchyHandler in
@@ -1939,17 +1914,6 @@ let test_join context =
 
   (* TODO(T41082573) throw here instead of unioning *)
   assert_join "typing.Tuple[int, int]" "typing.Iterator[int]" "typing.Iterator[int]";
-  let bound_list_variadic =
-    Type.Variable.Variadic.List.create "Ts" |> Type.Variable.Variadic.List.mark_as_bound
-  in
-  assert_join
-    ~aliases:(fun ?replace_unbound_parameters_with_any:_ name ->
-      match name with
-      | "Ts" -> Some (Type.VariableAlias (ListVariadic bound_list_variadic))
-      | _ -> None)
-    "typing.Tuple[Ts]"
-    "typing.Tuple[float, ...]"
-    "typing.Tuple[object, ...]";
 
   (* Optionals. *)
   assert_join "str" "typing.Optional[str]" "typing.Optional[str]";

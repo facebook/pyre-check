@@ -30,13 +30,6 @@ module AliasReadOnly : sig
     Expression.t ->
     Type.t
 
-  val parse_as_concatenation
-    :  t ->
-    ?dependency:DependencyKey.registered ->
-    Expression.t ->
-    (Type.t Type.OrderedTypes.Concatenation.Middle.t, Type.t) Type.OrderedTypes.Concatenation.t
-    option
-
   val parse_as_parameter_specification_instance_annotation
     :  t ->
     ?dependency:DependencyKey.registered ->

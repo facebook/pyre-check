@@ -450,10 +450,7 @@ let test_check_invalid_type context =
       import typing
       x: typing.Dict[int, [str]]
     |}
-    [
-      "Invalid type parameters [24]: Single type parameter `Variable[_S]` expected, but a type \
-       parameter group `[str]` was given for generic type dict.";
-    ];
+    ["Invalid type [31]: Expression `typing.Dict[(int, [str])]` is not a valid type."];
   assert_type_errors
     {|
       from typing import TypeVar, Generic
