@@ -229,6 +229,8 @@ module OrderImplementation = struct
                   match left, right, variable with
                   | Type.Parameter.CallableParameters _, _, _
                   | _, Type.Parameter.CallableParameters _, _
+                  | Type.Parameter.Unpacked _, _, _
+                  | _, Type.Parameter.Unpacked _, _
                   | _, _, Type.Variable.TupleVariadic _
                   | _, _, Type.Variable.ParameterVariadic _ ->
                       (* TODO(T47348395): Implement joining for variadics *)

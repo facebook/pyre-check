@@ -900,6 +900,7 @@ class base class_metadata_environment dependency =
                               } )
                         else
                           Type.Parameter.Single given, None
+                    | _, Unpacked _ -> failwith "not yet implemented - T84854853"
                     | TupleVariadic _, _ -> failwith "not yet implemented - T84854853"
                     | Unary _, CallableParameters _
                     | ParameterVariadic _, Single _ ->

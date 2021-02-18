@@ -797,6 +797,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
                         (TypeConstraints.Solution.instantiate_callable_parameters
                            desanitization_solution
                            parameters)
+                  | Unpacked _ -> failwith "not yet implemented - T84854853"
                 in
                 List.map ~f:instantiate
               in

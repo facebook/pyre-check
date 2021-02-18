@@ -149,7 +149,8 @@ module Record = struct
 
 
     module Concatenation = struct
-      type 'annotation unpackable = Variadic of 'annotation Variable.RecordVariadic.Tuple.record
+      type 'annotation record_unpackable =
+        | Variadic of 'annotation Variable.RecordVariadic.Tuple.record
       [@@deriving compare, eq, sexp, show, hash]
 
       (* We guarantee that there is exactly one top-level unpacked variadic in this concatenation.
@@ -159,7 +160,7 @@ module Record = struct
          `*Ts` as the top-level unpacked variadic. *)
       type 'annotation t = {
         prefix: 'annotation list;
-        middle: 'annotation unpackable;
+        middle: 'annotation record_unpackable;
         suffix: 'annotation list;
       }
       [@@deriving compare, eq, sexp, show, hash]
@@ -316,11 +317,14 @@ module Record = struct
     type 'annotation record =
       | Single of 'annotation
       | CallableParameters of 'annotation Callable.record_parameters
+      | Unpacked of 'annotation OrderedTypes.Concatenation.record_unpackable
     [@@deriving compare, eq, sexp, show, hash]
 
     let is_single = function
       | Single single -> Some single
-      | CallableParameters _ -> None
+      | CallableParameters _
+      | Unpacked _ ->
+          None
   end
 
   module TypedDictionary = struct
@@ -1175,6 +1179,8 @@ let pp_parameters ~pp_type format = function
         | Record.Parameter.Single parameter -> Format.fprintf format "%a" pp_type parameter
         | CallableParameters parameters ->
             Format.fprintf format "%s" (show_callable_parameters parameters ~pp_type)
+        | Unpacked unpackable ->
+            Format.fprintf format "%a" Record.OrderedTypes.Concatenation.pp_unpackable unpackable
       in
       Format.pp_print_list ~pp_sep:(fun format () -> Format.fprintf format ", ") s format parameters
 
@@ -1628,6 +1634,7 @@ let rec expression annotation =
           let expression_of_parameter = function
             | Record.Parameter.Single single -> expression single
             | CallableParameters parameters -> callable_parameters_expression parameters
+            | Unpacked _ -> failwith "not yet implemented - T84854853"
           in
           match parameters with
           | parameters -> List.map parameters ~f:expression_of_parameter
@@ -1795,6 +1802,7 @@ module Transform = struct
               | Record.Parameter.Single single ->
                   Record.Parameter.Single (visit_annotation single ~state)
               | CallableParameters parameters -> CallableParameters (visit_parameters parameters)
+              | Unpacked _ -> failwith "not yet implemented - T84854853"
             in
             Parametric { name; parameters = List.map parameters ~f:visit }
         | RecursiveType { name; body } ->

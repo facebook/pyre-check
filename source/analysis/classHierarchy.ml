@@ -358,6 +358,7 @@ let instantiate_successors_parameters ((module Handler : Handler) as handler) ~j
                         Type.Variable.ParameterVariadicPair (variable, parameters)
                     | Single _, ParameterVariadic variable ->
                         Type.Variable.ParameterVariadicPair (variable, Undefined)
+                    | Unpacked _, _ -> failwith "not yet implemented - T84854853"
                     | _, TupleVariadic _ -> failwith "not yet implemented - T84854853"
                   in
                   let replacement =
@@ -385,6 +386,7 @@ let instantiate_successors_parameters ((module Handler : Handler) as handler) ~j
                             (TypeConstraints.Solution.instantiate_callable_parameters
                                replacement
                                parameters)
+                      | Unpacked _ -> failwith "not yet implemented - T84854853"
                     in
                     { Target.target; parameters = List.map parameters ~f:instantiate }
                   in

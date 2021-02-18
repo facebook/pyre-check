@@ -63,6 +63,8 @@ module Record : sig
 
   module OrderedTypes : sig
     module Concatenation : sig
+      type 'annotation record_unpackable [@@deriving compare, eq, sexp, show, hash]
+
       type 'annotation t [@@deriving compare, eq, sexp, show, hash]
 
       val create
@@ -70,6 +72,12 @@ module Record : sig
         ?suffix:'annotation list ->
         'annotation Variable.RecordVariadic.Tuple.record ->
         'annotation t
+
+      val pp_unpackable : Format.formatter -> 'annotation record_unpackable -> unit
+
+      val create_unpackable
+        :  'annotation Variable.RecordVariadic.Tuple.record ->
+        'annotation record_unpackable
     end
 
     type 'annotation record =
@@ -141,6 +149,7 @@ module Record : sig
     type 'annotation record =
       | Single of 'annotation
       | CallableParameters of 'annotation Callable.record_parameters
+      | Unpacked of 'annotation OrderedTypes.Concatenation.record_unpackable
   end
 
   module TypedDictionary : sig
