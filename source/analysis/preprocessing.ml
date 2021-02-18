@@ -187,93 +187,9 @@ let transform_annotations ~transform_annotation_expression source =
 
 
 let expand_string_annotations ({ Source.source_path = { SourcePath.relative; _ }; _ } as source) =
-  let module Transform = Transform.Make (struct
-    type t = unit
-
-    let transform_expression_children _ _ = true
-
-    let transform_children _ _ = true
-
-    let statement _ ({ Node.value; _ } as statement) =
-      let transform_assign ~assign:({ Assign.annotation; _ } as assign) =
-        {
-          assign with
-          Assign.annotation = annotation >>| transform_string_annotation_expression ~relative;
-        }
-      in
-      let transform_define
-          ~define:({ Define.signature = { parameters; return_annotation; _ }; _ } as define)
-        =
-        let parameter ({ Node.value = { Parameter.annotation; _ } as parameter; _ } as node) =
-          {
-            node with
-            Node.value =
-              {
-                parameter with
-                Parameter.annotation =
-                  annotation >>| transform_string_annotation_expression ~relative;
-              };
-          }
-        in
-        let signature =
-          {
-            define.signature with
-            parameters = List.map parameters ~f:parameter;
-            return_annotation =
-              return_annotation >>| transform_string_annotation_expression ~relative;
-          }
-        in
-        { define with signature }
-      in
-      let transform_class ~class_statement:({ Class.bases; _ } as class_statement) =
-        let transform_base ({ Call.Argument.value; _ } as base) =
-          let value =
-            match value with
-            | { Node.value = Expression.String _; _ } -> value
-            | _ -> transform_string_annotation_expression ~relative value
-          in
-          { base with value }
-        in
-        { class_statement with bases = List.map bases ~f:transform_base }
-      in
-      let statement =
-        let value =
-          match value with
-          | Statement.Assign assign -> Statement.Assign (transform_assign ~assign)
-          | Define define -> Define (transform_define ~define)
-          | Class class_statement -> Class (transform_class ~class_statement)
-          | _ -> value
-        in
-        { statement with Node.value }
-      in
-      (), [statement]
-
-
-    let expression _ expression =
-      let transform_arguments = function
-        | [
-            ( { Call.Argument.name = None; value = { Node.value = String _; _ } as value } as
-            type_argument );
-            value_argument;
-          ] ->
-            let annotation = transform_string_annotation_expression ~relative value in
-            [{ type_argument with value = annotation }; value_argument]
-        | arguments -> arguments
-      in
-      let value =
-        match Node.value expression with
-        | Expression.Call { callee; arguments }
-          when name_is ~name:"pyre_extensions.safe_cast" callee
-               || name_is ~name:"typing.cast" callee
-               || name_is ~name:"cast" callee
-               || name_is ~name:"safe_cast" callee ->
-            Expression.Call { callee; arguments = transform_arguments arguments }
-        | value -> value
-      in
-      { expression with Node.value }
-  end)
-  in
-  Transform.transform () source |> Transform.source
+  transform_annotations
+    ~transform_annotation_expression:(transform_string_annotation_expression ~relative)
+    source
 
 
 let expand_strings_in_annotation_expression =
