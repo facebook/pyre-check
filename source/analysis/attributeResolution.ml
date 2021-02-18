@@ -900,6 +900,7 @@ class base class_metadata_environment dependency =
                               } )
                         else
                           Type.Parameter.Single given, None
+                    | TupleVariadic _, _ -> failwith "not yet implemented - T84854853"
                     | Unary _, CallableParameters _
                     | ParameterVariadic _, Single _ ->
                         ( CallableParameters Undefined,
@@ -925,7 +926,8 @@ class base class_metadata_environment dependency =
                             name
                             (List.map generics ~f:(function
                                 | Type.Variable.Unary _ -> Type.Parameter.Single Type.Any
-                                | ParameterVariadic _ -> CallableParameters Undefined)),
+                                | ParameterVariadic _ -> CallableParameters Undefined
+                                | TupleVariadic _ -> failwith "not yet implemented - T84854853")),
                           false )
                   in
                   let mismatch =
@@ -1768,6 +1770,7 @@ class base class_metadata_environment dependency =
                                  without that we can't actually return the correct metatype, which
                                  is a bummer *)
                               Type.Parameter.CallableParameters Undefined, Type.Any
+                          | TupleVariadic _ -> failwith "not yet implemented - T84854853"
                         in
                         let return_parameters, parameter_parameters =
                           List.map generics ~f:handle_variadics |> List.unzip

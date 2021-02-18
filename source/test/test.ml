@@ -1430,6 +1430,16 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         _Ts = ListVariadic("_Ts")
         class Length(Generic[_Ts], int): pass
         class Product(Generic[_Ts], int): pass
+
+        class TypeVarTuple:
+            def __init__(
+                self,
+                name: str,
+                *constraints: Type[Any],
+                bound: Union[None, Type[Any], str] = ...,
+                covariant: bool = ...,
+                contravariant: bool = ...,
+            ) -> None: ...
         |}
     );
     ( "pyre_extensions/type_variable_operators.pyi",

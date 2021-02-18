@@ -733,7 +733,8 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
                       | Type.Variable.Unary variable ->
                           Type.Parameter.Single (Type.Variable variable)
                       | ParameterVariadic variable ->
-                          CallableParameters (ParameterVariadicTypeVariable { head = []; variable }))
+                          CallableParameters (ParameterVariadicTypeVariable { head = []; variable })
+                      | TupleVariadic _ -> failwith "not yet implemented - T84854853")
             in
             let new_assumptions =
               ProtocolAssumptions.add
@@ -807,6 +808,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
                          ~default:
                            (Type.Callable.ParameterVariadicTypeVariable { head = []; variable })
                     |> fun instantiated -> Type.Parameter.CallableParameters instantiated
+                | TupleVariadic _ -> failwith "not yet implemented - T84854853"
               in
               protocol_generics
               >>| List.map ~f:instantiate

@@ -561,7 +561,8 @@ module State (Context : Context) = struct
           List.map variables ~f:(function
               | Unary variable -> Type.Parameter.Single (Type.Variable variable)
               | ParameterVariadic parameters ->
-                  CallableParameters (Type.Variable.Variadic.Parameters.self_reference parameters))
+                  CallableParameters (Type.Variable.Variadic.Parameters.self_reference parameters)
+              | TupleVariadic _ -> failwith "not yet implemented - T84854853")
         in
         Type.parametric parent_name variables
     | exception _ -> parent_type
@@ -609,6 +610,7 @@ module State (Context : Context) = struct
         let extract = function
           | Type.Variable.Unary unary -> unarize unary
           | ParameterVariadic variable -> ParameterVariadic variable
+          | TupleVariadic variable -> TupleVariadic variable
         in
         Reference.show class_name
         |> GlobalResolution.variables global_resolution

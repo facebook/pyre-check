@@ -304,6 +304,7 @@ let instantiate_successors_parameters ((module Handler : Handler) as handler) ~j
       let to_any = function
         | Type.Variable.Unary _ -> Type.Parameter.Single Type.Any
         | ParameterVariadic _ -> CallableParameters Undefined
+        | TupleVariadic _ -> failwith "not yet implemented - T84854853"
       in
       index_of target
       |> Handler.edges
@@ -357,12 +358,14 @@ let instantiate_successors_parameters ((module Handler : Handler) as handler) ~j
                         Type.Variable.ParameterVariadicPair (variable, parameters)
                     | Single _, ParameterVariadic variable ->
                         Type.Variable.ParameterVariadicPair (variable, Undefined)
+                    | _, TupleVariadic _ -> failwith "not yet implemented - T84854853"
                   in
                   let replacement =
                     let to_any = function
                       | Type.Variable.Unary variable -> Type.Variable.UnaryPair (variable, Type.Any)
                       | ParameterVariadic variable ->
                           Type.Variable.ParameterVariadicPair (variable, Undefined)
+                      | TupleVariadic _ -> failwith "not yet implemented - T84854853"
                     in
 
                     Type.Variable.zip_on_parameters ~parameters variables

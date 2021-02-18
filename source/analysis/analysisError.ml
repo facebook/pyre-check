@@ -1176,6 +1176,8 @@ let rec messages ~concise ~signature location kind =
             Format.asprintf
               "Callable parameters expected for parameter specification `%s`"
               (Type.Variable.Variadic.Parameters.name expected)
+        | TupleVariadic expected ->
+            Format.asprintf "Tuple expected for `%s`" (Type.Variable.Variadic.Tuple.name expected)
       in
       let actual =
         match actual with
@@ -1196,6 +1198,9 @@ let rec messages ~concise ~signature location kind =
           [Format.asprintf format (Type.show (Type.Variable variable))]
       | Type.Variable.ParameterVariadic variable ->
           let name = Type.Variable.Variadic.Parameters.name variable in
+          [Format.asprintf format name]
+      | Type.Variable.TupleVariadic variable ->
+          let name = Type.Variable.Variadic.Tuple.name variable in
           [Format.asprintf format name] )
   | InvalidTypeVariable { annotation; origin } -> (
       (* The explicit annotation is necessary to appease the compiler. *)
@@ -1225,6 +1230,10 @@ let rec messages ~concise ~signature location kind =
       | Type.Variable.ParameterVariadic variable ->
           (* We don't give hints for the more complicated cases. *)
           let name = Type.Variable.Variadic.Parameters.name variable in
+          [Format.asprintf format name]
+      | Type.Variable.TupleVariadic variable ->
+          (* We don't give hints for the more complicated cases. *)
+          let name = Type.Variable.Variadic.Tuple.name variable in
           [Format.asprintf format name] )
   | InvalidTypeVariance { origin; _ } when concise -> (
       match origin with
@@ -1953,8 +1962,11 @@ let rec messages ~concise ~signature location kind =
       match variable with
       | Type.Variable.Unary { Type.Record.Variable.RecordUnary.variable = name; _ } ->
           [Format.asprintf format name]
-      | Type.Variable.ParameterVariadic var ->
-          let name = Type.Variable.Variadic.Parameters.name var in
+      | Type.Variable.ParameterVariadic variable ->
+          let name = Type.Variable.Variadic.Parameters.name variable in
+          [Format.asprintf format name]
+      | Type.Variable.TupleVariadic variable ->
+          let name = Type.Variable.Variadic.Tuple.name variable in
           [Format.asprintf format name] )
   | UnboundName name when concise ->
       [Format.asprintf "Name `%a` is used but not defined." Identifier.pp_sanitized name]

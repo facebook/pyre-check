@@ -175,6 +175,7 @@ module Solution = struct
           solution with
           callable_parameters = ParameterVariable.Map.set callable_parameters ~key ~data;
         }
+    | Type.Variable.TupleVariadicPair _ -> failwith "not yet implemented - T84854853"
 
 
   let create = List.fold ~f:set ~init:empty
@@ -266,6 +267,7 @@ module OrderedConstraints (Order : OrderType) = struct
             match key with
             | Type.Variable.Unary unary -> Map.mem unaries unary
             | Type.Variable.ParameterVariadic parameters -> Map.mem callable_parameters parameters
+            | Type.Variable.TupleVariadic _ -> failwith "not yet implemented - T84854853"
           in
           has_constraints || Set.mem have_fallbacks key
         in
@@ -473,6 +475,7 @@ module OrderedConstraints (Order : OrderType) = struct
           ~bound
           ~is_lower_bound
         >>| fun callable_parameters -> { constraints with callable_parameters }
+    | Type.Variable.TupleVariadicPair _ -> failwith "not yet implemented - T84854853"
 
 
   let add_lower_bound = add_bound ~is_lower_bound:true
@@ -506,6 +509,7 @@ module OrderedConstraints (Order : OrderType) = struct
             solution with
             callable_parameters = optional_add callable_parameters variable Type.Callable.Undefined;
           }
+      | Type.Variable.TupleVariadic _ -> failwith "not yet implemented - T84854853"
     in
     Set.to_list have_fallbacks |> List.fold ~init:solution ~f:add_fallback
 
@@ -527,6 +531,7 @@ module OrderedConstraints (Order : OrderType) = struct
           let matches = function
             | Type.Variable.Unary key -> not (Map.mem dependent_unaries key)
             | ParameterVariadic key -> not (Map.mem dependent_parameters key)
+            | TupleVariadic _ -> failwith "not yet implemented - T84854853"
           in
           Set.partition_tf remaining_constraints.have_fallbacks ~f:matches
         in
@@ -583,6 +588,7 @@ module OrderedConstraints (Order : OrderType) = struct
         let matches = function
           | Type.Variable.Unary key -> unary_matches ~key ~data:()
           | ParameterVariadic key -> callable_parameters_matches ~key ~data:()
+          | TupleVariadic _ -> failwith "not yet implemented - T84854853"
         in
         Set.partition_tf have_fallbacks ~f:matches
       in

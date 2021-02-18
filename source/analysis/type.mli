@@ -48,11 +48,16 @@ module Record : sig
           type t [@@deriving compare, eq, sexp, show, hash]
         end
       end
+
+      module Tuple : sig
+        type 'annotation record [@@deriving compare, eq, sexp, show, hash]
+      end
     end
 
-    type 'annotation record =
-      | Unary of 'annotation RecordUnary.record
-      | ParameterVariadic of 'annotation RecordVariadic.RecordParameters.record
+    type 'a record =
+      | Unary of 'a RecordUnary.record
+      | ParameterVariadic of 'a RecordVariadic.RecordParameters.record
+      | TupleVariadic of 'a RecordVariadic.Tuple.record
     [@@deriving compare, eq, sexp, show, hash]
   end
 
@@ -647,9 +652,15 @@ module Variable : sig
 
   type parameter_variadic_domain = Callable.parameters
 
+  type tuple_variadic_t = type_t Record.Variable.RecordVariadic.Tuple.record
+  [@@deriving compare, eq, sexp, show, hash]
+
+  type tuple_variadic_domain = type_t
+
   type pair =
     | UnaryPair of unary_t * unary_domain
     | ParameterVariadicPair of parameter_variadic_t * parameter_variadic_domain
+    | TupleVariadicPair of tuple_variadic_t * tuple_variadic_domain
 
   type t = type_t Record.Variable.record [@@deriving compare, eq, sexp, show, hash]
 
@@ -741,6 +752,14 @@ module Variable : sig
       end
 
       val decompose : t -> Components.decomposition
+    end
+
+    module Tuple : sig
+      include VariableKind with type t = tuple_variadic_t and type domain = type_t
+
+      val name : t -> Identifier.t
+
+      val create : string -> t
     end
   end
 
