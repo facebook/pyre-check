@@ -7,5 +7,8 @@
 
 open Ast
 open Analysis
+open Statement
 
 val all_decorators : TypeEnvironment.ReadOnly.t -> Reference.t list
+
+val all_decorator_bodies : TypeEnvironment.ReadOnly.t -> Define.t Reference.Map.t

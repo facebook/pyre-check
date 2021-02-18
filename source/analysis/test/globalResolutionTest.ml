@@ -2326,6 +2326,115 @@ let test_extract_type_parameter context =
   ()
 
 
+let test_decorator_body context =
+  let assert_decorator_body ~decorator_name ~source ~expected_define_source =
+    let expected_source =
+      parse ~handle:"test.py" expected_define_source |> Preprocessing.preprocess
+    in
+    let expected_define =
+      match List.last_exn expected_source.statements with
+      | { Node.value = Statement.Define define; _ } -> Some define
+      | _ -> None
+    in
+    let resolution =
+      ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_resolution
+    in
+    assert_equal
+      ~cmp:(Option.equal (fun left right -> Define.location_insensitive_compare left right = 0))
+      ~printer:[%show: Define.t option]
+      ~pp_diff:
+        (diff ~print:(fun format x -> Format.fprintf format "%s" ([%show: Define.t option] x)))
+      expected_define
+      (GlobalResolution.get_decorator_define resolution decorator_name)
+  in
+  let source =
+    {|
+    from builtins import __test_sink
+    from typing import Callable
+
+    def with_logging(callable: Callable[[str], None]) -> Callable[[str], None]:
+
+      def inner(y: str) -> None:
+        __test_sink(y)
+        callable(y)
+
+      return inner
+
+    def two_inner_functions(callable: Callable[[str], None]) -> Callable[[str], None]:
+      def inner1(y: str) -> None:
+        __test_sink(y)
+
+      def inner2(y: str) -> None:
+        inner1(y)
+        callable(y)
+
+      return inner2
+
+    def decorator_factory(x: int) -> Callable[[Callable[[str], None]], Callable[[str], None]]:
+      def wrapper(f: Callable[[str], None]) -> Callable[[str], None]:
+        def inner(y: str) -> None:
+          __test_sink(y)
+          f(y)
+
+        return inner
+
+      return wrapper
+  |}
+  in
+  assert_decorator_body
+    ~decorator_name:!&"test.with_logging"
+    ~source
+    ~expected_define_source:
+      {|
+    from builtins import __test_sink
+    from typing import Callable
+    def with_logging(callable: Callable[[str], None]) -> Callable[[str], None]:
+
+      def inner(y: str) -> None:
+        __test_sink(y)
+        callable(y)
+
+      return inner
+    |};
+  assert_decorator_body
+    ~decorator_name:!&"test.two_inner_functions"
+    ~source
+    ~expected_define_source:
+      {|
+    from builtins import __test_sink
+    from typing import Callable
+
+    def two_inner_functions(callable: Callable[[str], None]) -> Callable[[str], None]:
+      def inner1(y: str) -> None:
+        __test_sink(y)
+
+      def inner2(y: str) -> None:
+        inner1(y)
+        callable(y)
+
+      return inner2
+    |};
+  assert_decorator_body
+    ~decorator_name:!&"test.decorator_factory"
+    ~source
+    ~expected_define_source:
+      {|
+    from builtins import __test_sink
+    from typing import Callable
+
+    def decorator_factory(x: int) -> Callable[[Callable[[str], None]], Callable[[str], None]]:
+      def wrapper(f: Callable[[str], None]) -> Callable[[str], None]:
+        def inner(y: str) -> None:
+          __test_sink(y)
+          f(y)
+
+        return inner
+
+      return wrapper
+    |};
+  ()
+
+
 let () =
   "class"
   >::: [
@@ -2344,5 +2453,6 @@ let () =
          "test_invalid_type_parameters" >:: test_invalid_type_parameters;
          "test_meet" >:: test_meet;
          "test_join" >:: test_join;
+         "decorator_body" >:: test_decorator_body;
        ]
   |> Test.run

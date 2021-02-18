@@ -8,6 +8,7 @@
 open Ast
 open Analysis
 open Core
+open Pyre
 open Statement
 
 let all_decorators environment =
@@ -31,3 +32,16 @@ let all_decorators environment =
     |> List.iter ~f:add_decorators
   in
   Base.Hash_set.to_list decorator_set
+
+
+let all_decorator_bodies environment =
+  all_decorators environment
+  |> List.filter_map ~f:(fun decorator_name ->
+         GlobalResolution.get_decorator_define
+           (TypeEnvironment.ReadOnly.global_resolution environment)
+           decorator_name
+         >>| fun decorator_define -> decorator_name, decorator_define)
+  |> Reference.Map.of_alist
+  |> function
+  | `Ok map -> map
+  | _ -> Reference.Map.empty
