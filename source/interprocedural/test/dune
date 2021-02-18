@@ -1,5 +1,5 @@
 (tests
- (names callableTest callGraphTest registrationTest DependencyGraphTest
+ (names callableTest callGraphTest decoratorHelperTest registrationTest DependencyGraphTest
    interproceduralAnalysisTest)
  (preprocess
   (pps ppx_deriving.eq ppx_deriving.show ppx_compare ppx_sexp_conv
