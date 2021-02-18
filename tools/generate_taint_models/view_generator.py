@@ -5,10 +5,10 @@
 
 # pyre-strict
 
+import inspect
 import logging
-from abc import ABC
 from importlib import import_module
-from typing import Any, Callable, Iterable, NamedTuple, Optional, Type
+from typing import Any, Callable, Iterable, NamedTuple, Type, List
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -23,7 +23,7 @@ class DjangoUrls(NamedTuple):
     url_pattern_type: DynamicURLType
 
 
-def get_all_views(django_urls: DjangoUrls) -> Iterable[Callable[..., object]]:
+def get_all_views(django_urls: DjangoUrls) -> List[Callable[..., object]]:
     LOG.info(f"Getting all URLs from `{django_urls.urls_module}`")
     imported_urls_module = import_module(django_urls.urls_module)
     functions_to_model = []
@@ -36,7 +36,17 @@ def get_all_views(django_urls: DjangoUrls) -> Iterable[Callable[..., object]]:
                 # nested function.
                 visit_all_patterns(pattern.url_patterns)
             elif isinstance(pattern, django_urls.url_pattern_type):
-                functions_to_model.append(pattern.callback)
+                callback = pattern.callback
+                if inspect.ismethod(callback) or inspect.isfunction(callback):
+                    functions_to_model.append(callback)
+                elif hasattr(callback, "__call__"):  # noqa: B004
+                    # Rare case: We have a functor, rather than a function. In
+                    # this case, we want to return the user-defined '__call__'
+                    # method itself, so that 'taint_callable_functions' can
+                    # properly model it
+                    functions_to_model.append(callback.__call__)
+                else:
+                    raise TypeError("callback is not a function, method, or functor")
             else:
                 raise TypeError("pattern is not url resolver or url pattern.")
 

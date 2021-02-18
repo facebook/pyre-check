@@ -7,33 +7,35 @@
 
 
 import unittest
-from typing import Callable, Iterable
+from typing import Any
 from unittest.mock import patch
 
-from .. import model_generator, view_generator
-from ..model import Model
+from .. import view_generator
 
 
 class ViewGeneratorTest(unittest.TestCase):
     def test_view_generator(self) -> None:
         class Url:
-            def __init__(self, value: int) -> None:
-                self.value = value
-
-            def callback(self) -> int:
-                return self.value
+            def __init__(self, callback: Any) -> None:
+                self.callback = callback
 
         class Resolver:
             pass
 
         class FirstUrls(Resolver):
-            url_patterns = [Url(1), Url(2), Url(3)]
+            url_patterns = [Url(lambda: 1), Url(lambda: 2), Url(lambda: 3)]
 
         class SecondUrls(Resolver):
-            url_patterns = [FirstUrls(), Url(4), Url(5), Url(6)]
+            url_patterns = [FirstUrls(), Url(lambda: 4), Url(lambda: 5), Url(lambda: 6)]
+
+        class CallableClass:
+            def __call__(self):
+                return 8
+
+        callable_class_object = CallableClass()
 
         class Urls:
-            urlpatterns = [SecondUrls(), Url(7)]
+            urlpatterns = [SecondUrls(), Url(lambda: 7), Url(callable_class_object)]
 
         with patch(f"{view_generator.__name__}.import_module", return_value=Urls):
             views = view_generator.get_all_views(
@@ -42,4 +44,6 @@ class ViewGeneratorTest(unittest.TestCase):
                 )
             )
             values = [view() for view in views]
-            self.assertEqual(values, [1, 2, 3, 4, 5, 6, 7])
+            self.assertEqual(values, [1, 2, 3, 4, 5, 6, 7, 8])
+
+            self.assertEqual(views[7], callable_class_object.__call__)
