@@ -92,6 +92,21 @@ class AsyncConnectionTest(testslide.TestCase):
             await self._test_binary_connect(socket_path)
             await self._test_text_connect(socket_path)
 
+    @setup.async_test
+    async def test_read_until(self) -> None:
+        with setup.spawn_unix_stream_server(EchoServerRequestHandler) as socket_path:
+            # Intentionally use a small buffer size, to test over-sized reads
+            async with connect(socket_path, buffer_size=64) as (
+                input_channel,
+                output_channel,
+            ):
+                # Try reading ~4MB of data from the input channel, and verify that
+                # `read_until` do not choke.
+                message = b"a" * (2 ** 14) + b"\n"
+                await output_channel.write(message)
+                result = await input_channel.read_until(b"\n")
+                self.assertEqual(message, result)
+
 
 class WaitForeverTask(BackgroundTask):
     async def run(self) -> None:

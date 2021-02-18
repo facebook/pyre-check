@@ -199,7 +199,19 @@ class StreamBytesReader(BytesReader):
         self.stream_reader = stream_reader
 
     async def read_until(self, separator: bytes = b"\n") -> bytes:
-        return await self.stream_reader.readuntil(separator)
+        # StreamReader.readuntil() may raise when its internal buffer cannot hold
+        # all the input data. We need to explicitly handle the raised exceptions
+        # by "parking" all partial-read results in memory.
+        chunks = []
+        while True:
+            try:
+                chunk = await self.stream_reader.readuntil(separator)
+                chunks.append(chunk)
+                break
+            except asyncio.LimitOverrunError as error:
+                chunk = await self.stream_reader.readexactly(error.consumed)
+                chunks.append(chunk)
+        return b"".join(chunks)
 
     async def read_exactly(self, count: int) -> bytes:
         return await self.stream_reader.readexactly(count)
