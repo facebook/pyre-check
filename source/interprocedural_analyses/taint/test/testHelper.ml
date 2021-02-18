@@ -378,6 +378,40 @@ type test_environment = {
   environment: TypeEnvironment.ReadOnly.t;
 }
 
+let type_environment_with_decorators_inlined ~configuration environment =
+  let decorator_bodies =
+    DecoratorHelper.all_decorator_bodies (TypeEnvironment.read_only environment)
+  in
+  let environment =
+    AstEnvironment.create
+      ~additional_preprocessing:
+        (DecoratorHelper.inline_decorators
+           ~environment:(TypeEnvironment.read_only environment)
+           ~decorator_bodies)
+      (AstEnvironment.module_tracker (TypeEnvironment.ast_environment environment))
+    |> AnnotatedGlobalEnvironment.create
+    |> TypeEnvironment.create
+  in
+  let all_internal_paths =
+    let get_internal_path source_path =
+      let path = SourcePath.full_path ~configuration source_path in
+      Option.some_if (SourcePath.is_internal_path ~configuration path) path
+    in
+    ModuleTracker.source_paths
+      (AstEnvironment.module_tracker (TypeEnvironment.ast_environment environment))
+    |> List.filter_map ~f:get_internal_path
+  in
+  let _ =
+    Server.IncrementalCheck.recheck
+      ~configuration
+      ~scheduler:(Test.mock_scheduler ())
+      ~environment
+      ~errors:(Ast.Reference.Table.create ())
+      all_internal_paths
+  in
+  TypeEnvironment.read_only environment
+
+
 let initialize
     ?(handle = "test.py")
     ?models
@@ -385,18 +419,17 @@ let initialize
     ~context
     source_content
   =
-  let configuration, ast_environment, environment, errors =
+  let configuration, environment, errors =
     let project = Test.ScratchProject.setup ~context [handle, source_content] in
     let { Test.ScratchProject.BuiltTypeEnvironment.type_environment; _ }, errors =
       Test.ScratchProject.build_type_environment_and_postprocess
         ~call_graph_builder:(module Callgraph.NullBuilder)
         project
     in
-    ( Test.ScratchProject.configuration_of project,
-      TypeEnvironment.ast_environment type_environment |> AstEnvironment.read_only,
-      type_environment,
-      errors )
+    Test.ScratchProject.configuration_of project, type_environment, errors
   in
+  let environment = type_environment_with_decorators_inlined ~configuration environment in
+  let ast_environment = TypeEnvironment.ReadOnly.ast_environment environment in
   let source =
     AstEnvironment.ReadOnly.get_processed_source
       ast_environment
@@ -417,7 +450,6 @@ let initialize
       in
       failwithf "Pyre errors were found in `%s`:\n%s" handle errors () );
 
-  let environment = TypeEnvironment.read_only environment in
   let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
   let resolution =
     TypeCheck.resolution

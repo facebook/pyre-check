@@ -3,9 +3,9 @@
  (public_name pyrelib.taintTestHelper)
  (modules testHelper)
  (preprocess
-  (pps ppx_sexp_message))
+  (pps ppx_sexp_message ppx_deriving.show))
  (libraries oUnit pyrelib.test pyrelib.ast pyrelib.analysis
-   pyrelib.interprocedural pyrelib.taint pyrelib.taintModelQuery))
+   pyrelib.interprocedural pyrelib.server pyrelib.taint pyrelib.taintModelQuery))
 
 (tests
  (names accessPathTest annotationParserTest configurationTest domainTest
@@ -13,7 +13,7 @@
    backwardAnalysisTest modelTest modelVerificationErrorTest missingFlowsTest)
  (modules :standard \ testHelper)
  (preprocess
-  (pps ppx_sexp_message))
+  (pps ppx_sexp_message ppx_deriving.show))
  (libraries oUnit re2 pyrelib.test pyrelib.ast pyrelib.analysis
    pyrelib.interprocedural pyrelib.taint pyrelib.taintTestHelper
    pyrelib.taintAnalysis pyrelib.taintIntegrationTest))
