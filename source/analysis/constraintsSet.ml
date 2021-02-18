@@ -682,6 +682,9 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
     match left, right with
     | left, right when Type.OrderedTypes.equal left right -> [constraints]
     | Concrete lefts, Concrete rights -> solve_concrete_against_concrete ~lefts ~rights constraints
+    | Concatenation _, _
+    | _, Concatenation _ ->
+        failwith "not yet implemented - T84854853"
 
 
   (* Find parameters to instantiate `protocol` such that `candidate <: protocol[parameters]`, where

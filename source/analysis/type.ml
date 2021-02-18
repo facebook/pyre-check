@@ -125,6 +125,8 @@ module Record = struct
         }
         [@@deriving compare, eq, sexp, show, hash]
 
+        let pp_concise format { name; _ } = Format.fprintf format "%s" name
+
         let create name = { name; state = Free { escaped = false }; namespace = 1 }
       end
     end
@@ -146,17 +148,67 @@ module Record = struct
         types
 
 
-    type 'annotation record = Concrete of 'annotation list
+    module Concatenation = struct
+      type 'annotation unpackable = Variadic of 'annotation Variable.RecordVariadic.Tuple.record
+      [@@deriving compare, eq, sexp, show, hash]
+
+      (* We guarantee that there is exactly one top-level unpacked variadic in this concatenation.
+
+         Note that there may be unpacked variadics within the prefix or suffix, but they are not
+         unpacked at the top-level. So, `Tuple[int, *Ts, Tuple[str, *Rs]]` will consider only the
+         `*Ts` as the top-level unpacked variadic. *)
+      type 'annotation t = {
+        prefix: 'annotation list;
+        middle: 'annotation unpackable;
+        suffix: 'annotation list;
+      }
+      [@@deriving compare, eq, sexp, show, hash]
+
+      let create_unpackable variadic = Variadic variadic
+
+      let create ?(prefix = []) ?(suffix = []) unpackable =
+        { prefix; middle = create_unpackable unpackable; suffix }
+
+
+      let pp_unpackable format = function
+        | Variadic variadic ->
+            Format.fprintf format "*%a" Variable.RecordVariadic.Tuple.pp_concise variadic
+
+
+      let pp_concatenation format { prefix; middle; suffix } ~pp_type =
+        Format.fprintf
+          format
+          "%s%s%a%s%s"
+          (show_type_list ~pp_type prefix)
+          (if List.is_empty prefix then "" else ", ")
+          pp_unpackable
+          middle
+          (if List.is_empty suffix then "" else ", ")
+          (show_type_list ~pp_type suffix)
+    end
+
+    type 'annotation record =
+      | Concrete of 'annotation list
+      | Concatenation of 'annotation Concatenation.t
     [@@deriving compare, eq, sexp, show, hash]
 
     let pp_concise format variable ~pp_type =
       match variable with
       | Concrete types -> Format.fprintf format "%s" (show_type_list types ~pp_type)
+      | Concatenation concatenation ->
+          Format.fprintf format "%a" (Concatenation.pp_concatenation ~pp_type) concatenation
 
 
     let concatenate ~left ~right =
       match left, right with
       | Concrete left, Concrete right -> Some (Concrete (left @ right))
+      | Concrete left, Concatenation ({ prefix; _ } as concatenation) ->
+          Some (Concatenation { concatenation with prefix = left @ prefix })
+      | Concatenation ({ suffix; _ } as concatenation), Concrete right ->
+          Some (Concatenation { concatenation with suffix = suffix @ right })
+      | Concatenation _, Concatenation _ ->
+          (* TODO(T84854853). *)
+          None
   end
 
   module Callable = struct
@@ -1596,6 +1648,7 @@ let rec expression annotation =
         let parameters =
           match elements with
           | Bounded (Concrete parameters) -> List.map ~f:expression parameters
+          | Bounded (Concatenation _) -> failwith "not yet implemented - T84854853"
           | Unbounded parameter -> List.map ~f:expression [parameter; Primitive "..."]
         in
         get_item_call "typing.Tuple" parameters
@@ -1694,6 +1747,8 @@ module Transform = struct
           match ordered_types with
           | Record.OrderedTypes.Concrete concretes ->
               Record.OrderedTypes.Concrete (visit_all concretes)
+          | Concatenation { prefix; middle; suffix } ->
+              Concatenation { prefix = visit_all prefix; middle; suffix = visit_all suffix }
         in
         let visit_parameters parameter =
           let visit_defined = function
@@ -2926,6 +2981,7 @@ module OrderedTypes = struct
   let union_upper_bound ordered =
     match ordered with
     | Concrete concretes -> union concretes
+    | Concatenation _ -> failwith "not yet implemented - T84854853"
 end
 
 let split annotation =
@@ -2940,6 +2996,7 @@ let split annotation =
         match tuple with
         | Bounded (Concrete parameters) ->
             List.map parameters ~f:(fun parameter -> Single parameter)
+        | Bounded (Concatenation _) -> failwith "not yet implemented - T84854853"
         | Unbounded parameter -> [Single parameter]
       in
       Primitive "tuple", parameters

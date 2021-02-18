@@ -159,6 +159,7 @@ module Solution = struct
     | Type.OrderedTypes.Concrete concretes ->
         List.map concretes ~f:(instantiate solution)
         |> fun concretes -> Type.OrderedTypes.Concrete concretes
+    | Concatenation _ -> failwith "not yet implemented - T84854853"
 
 
   let instantiate_callable_parameters solution parameters =

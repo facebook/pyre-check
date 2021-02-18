@@ -62,7 +62,19 @@ module Record : sig
   end
 
   module OrderedTypes : sig
-    type 'annotation record = Concrete of 'annotation list
+    module Concatenation : sig
+      type 'annotation t [@@deriving compare, eq, sexp, show, hash]
+
+      val create
+        :  ?prefix:'annotation list ->
+        ?suffix:'annotation list ->
+        'annotation Variable.RecordVariadic.Tuple.record ->
+        'annotation t
+    end
+
+    type 'annotation record =
+      | Concrete of 'annotation list
+      | Concatenation of 'annotation Concatenation.t
     [@@deriving compare, eq, sexp, show, hash]
 
     val pp_concise
