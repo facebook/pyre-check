@@ -1687,6 +1687,10 @@ let test_parse_type_variable_declarations _ =
     "pyre_extensions.ParameterSpecification('Tparams')"
     (Type.Variable.ParameterVariadic (Type.Variable.Variadic.Parameters.create "target"));
   assert_declaration_does_not_parse "pyre_extensions.ParameterSpecification('Tparams', int, str)";
+  assert_parses_declaration
+    "pyre_extensions.TypeVarTuple('Ts')"
+    (Type.Variable.TupleVariadic (Type.Variable.Variadic.Tuple.create "target"));
+  assert_declaration_does_not_parse "pyre_extensions.TypeVarTuple('Ts', covariant=True)";
   ()
 
 

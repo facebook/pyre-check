@@ -3627,6 +3627,32 @@ end = struct
 
       let dequalify ({ name; _ } as variable) ~dequalify_map =
         { variable with name = dequalify_identifier dequalify_map name }
+
+
+      let parse_declaration value ~target =
+        match value with
+        | {
+         Node.value =
+           Expression.Call
+             {
+               callee =
+                 {
+                   Node.value =
+                     Name
+                       (Name.Attribute
+                         {
+                           base = { Node.value = Name (Name.Identifier "pyre_extensions"); _ };
+                           attribute = "TypeVarTuple";
+                           special = false;
+                         });
+                   _;
+                 };
+               arguments = [{ Call.Argument.value = { Node.value = String _; _ }; _ }];
+             };
+         _;
+        } ->
+            Some (create (Reference.show target))
+        | _ -> None
     end
   end
 
@@ -3762,7 +3788,10 @@ end = struct
   let parse_declaration expression ~target =
     match Variadic.Parameters.parse_declaration expression ~target with
     | Some variable -> Some (ParameterVariadic variable)
-    | None -> None
+    | None -> (
+        match Variadic.Tuple.parse_declaration expression ~target with
+        | Some variable -> Some (TupleVariadic variable)
+        | None -> None )
 
 
   let dequalify dequalify_map = function
