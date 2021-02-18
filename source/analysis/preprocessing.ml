@@ -316,9 +316,9 @@ type scope = {
   is_in_class: bool;
 }
 
-let qualify_local_identifier name ~qualifier =
+let qualify_local_identifier ~qualifier name =
   let qualifier = Reference.show qualifier |> String.substr_replace_all ~pattern:"." ~with_:"?" in
-  name |> Format.asprintf "$local_%s$%s" qualifier |> fun identifier -> Name.Identifier identifier
+  Format.asprintf "$local_%s$%s" qualifier name
 
 
 let qualify
@@ -418,7 +418,7 @@ let qualify
     if is_in_function then
       match Reference.as_list name with
       | [simple_name] when (not (is_qualified simple_name)) && not (Set.mem immutables name) ->
-          let alias = qualify_local_identifier simple_name ~qualifier |> name_to_reference_exn in
+          let alias = qualify_local_identifier simple_name ~qualifier |> Reference.create in
           ( {
               scope with
               aliases =
@@ -582,9 +582,7 @@ let qualify
                         && (not (Set.mem locals reference))
                         && not (Set.mem immutables reference)
                       then
-                        let alias =
-                          qualify_local_identifier name ~qualifier |> name_to_reference_exn
-                        in
+                        let alias = qualify_local_identifier name ~qualifier |> Reference.create in
                         {
                           scope with
                           aliases =
