@@ -55,7 +55,7 @@ let run_infer ~scheduler ~configuration ~global_resolution qualifiers =
       ~inputs:qualifiers
       ()
   in
-  Statistics.performance ~name:"inference" ~timer ();
+  Statistics.performance ~name:"inference" ~phase_name:"Type inference" ~timer ();
   errors
 
 

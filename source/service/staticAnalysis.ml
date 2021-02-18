@@ -509,7 +509,11 @@ let analyze
             ~callables_with_dependency_information:new_callables
             ~stubs:new_stubs
             ~filtered_callables:new_filtered_callables;
-        Statistics.performance ~name:"Fetched initial callables to analyze" ~timer ();
+        Statistics.performance
+          ~name:"Fetched initial callables to analyze"
+          ~phase_name:"Fetching initial callables to analyze"
+          ~timer
+          ();
         new_callables, new_stubs, new_filtered_callables
   in
   let stubs = (stubs :> Callable.t list) in
@@ -571,8 +575,12 @@ let analyze
     Analysis.record_initial_models ~functions ~stubs models;
     skip_overrides
   in
-  Statistics.performance ~name:"Computed initial analysis state" ~timer ();
-  Log.info "Recording overrides...";
+  Statistics.performance
+    ~name:"Computed initial analysis state"
+    ~phase_name:"Computing initial analysis state"
+    ~timer
+    ();
+  Log.info "Comuting overrides...";
   let timer = Timer.start () in
   let { DependencyGraphSharedMemory.overrides; skipped_overrides } =
     record_overrides_for_qualifiers
@@ -584,7 +592,7 @@ let analyze
       ~qualifiers
   in
   let override_dependencies = DependencyGraph.from_overrides overrides in
-  Statistics.performance ~name:"Overrides recorded" ~timer ();
+  Statistics.performance ~name:"Overrides computed" ~phase_name:"Computing overrides" ~timer ();
   (* It's imperative that the call graph is built after the overrides are, due to a hidden global
      state dependency. We rely on shared memory to tell us which methods are overridden to
      accurately model the call graph's overrides. Without it, we'll underanalyze and have an
@@ -623,7 +631,7 @@ let analyze
             ~inputs:qualifiers
             ()
         in
-        Statistics.performance ~name:"Call graph built" ~timer ();
+        Statistics.performance ~name:"Call graph built" ~phase_name:"Building call graph" ~timer ();
         Log.info "Call graph edges: %d" (Callable.RealMap.length new_callgraph);
         if use_cache then
           Cache.save_call_graph ~configuration ~callgraph:new_callgraph;
@@ -631,7 +639,8 @@ let analyze
           DependencyGraph.from_callgraph new_callgraph |> DependencyGraph.dump ~configuration;
         new_callgraph
   in
-  Log.info "Computing overrides...";
+  Log.info "Computing dependencies...";
+  let timer = Timer.start () in
   let override_targets = (Callable.Map.keys override_dependencies :> Callable.t list) in
   let dependencies, callables =
     let dependencies =
@@ -651,7 +660,11 @@ let analyze
     in
     List.iter override_targets ~f:add_predefined
   in
-  Statistics.performance ~name:"Computed overrides" ~timer ();
+  Statistics.performance
+    ~name:"Computed dependencies"
+    ~phase_name:"Computing dependencies"
+    ~timer
+    ();
   Statistics.performance
     ~name:"Pre-fixpoint computation for static analysis"
     ~phase_name:"Pre-fixpoint computation for static analysis"
@@ -683,7 +696,12 @@ let analyze
           ~all_callables
           Interprocedural.Fixpoint.Epoch.initial
       in
-      Log.info "Fixpoint iterations: %d" iterations
+      Log.info "Fixpoint iterations: %d" iterations;
+      Statistics.performance
+        ~name:"Analysis fixpoint complete"
+        ~phase_name:"Static analysis fixpoint"
+        ~timer
+        ()
     with
     | exn ->
         save_results ();
@@ -691,11 +709,6 @@ let analyze
   in
   save_results ();
   let errors = Interprocedural.Analysis.extract_errors scheduler all_callables in
-  Statistics.performance
-    ~name:"Analysis fixpoint complete"
-    ~phase_name:"Static analysis fixpoint"
-    ~timer
-    ();
 
   (* If saving to a file, don't return errors. Thousands of errors on output is inconvenient *)
   if Option.is_some analysis_configuration.result_json_path then

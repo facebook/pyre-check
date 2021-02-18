@@ -116,7 +116,7 @@ include Taint.Result.Register (struct
           ~inputs:sources
           ()
       in
-      Statistics.performance ~name:"Parsed taint models" ~timer ();
+      Statistics.performance ~name:"Parsed taint models" ~phase_name:"Taint model parsing" ~timer ();
       result
     in
     let remove_sinks models = Callable.Map.map ~f:Model.remove_sinks models in
