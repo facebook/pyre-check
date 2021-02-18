@@ -53,10 +53,12 @@ let environment ?source context =
   global_environment
 
 
-let hierarchy class_hierarchy_handler =
+let hierarchy ~order class_hierarchy_handler =
   {
     ConstraintsSet.instantiate_successors_parameters =
-      ClassHierarchy.instantiate_successors_parameters class_hierarchy_handler;
+      ClassHierarchy.instantiate_successors_parameters
+        class_hierarchy_handler
+        ~join:(fun left right -> TypeOrder.join (Lazy.force order) left right);
     is_transitive_successor = ClassHierarchy.is_transitive_successor class_hierarchy_handler;
     variables = ClassHierarchy.variables class_hierarchy_handler;
     least_upper_bound = ClassHierarchy.least_upper_bound class_hierarchy_handler;
@@ -193,25 +195,26 @@ let make_assert_functions context =
         AnnotatedGlobalEnvironment.read_only environment
         |> GlobalResolution.create
         |> GlobalResolution.class_hierarchy
-        |> hierarchy
       in
       let metaclass name ~assumptions:_ = GlobalResolution.metaclass ~resolution name in
-      let order =
-        {
-          ConstraintsSet.class_hierarchy;
-          all_attributes = attributes;
-          attribute = attribute_from_attributes attributes;
-          is_protocol;
-          assumptions =
-            {
-              protocol_assumptions = ProtocolAssumptions.empty;
-              callable_assumptions = CallableAssumptions.empty;
-              decorator_assumptions = DecoratorAssumptions.empty;
-            };
-          get_typed_dictionary;
-          metaclass;
-        }
+      let rec order =
+        lazy
+          {
+            ConstraintsSet.class_hierarchy = hierarchy ~order class_hierarchy;
+            all_attributes = attributes;
+            attribute = attribute_from_attributes attributes;
+            is_protocol;
+            assumptions =
+              {
+                protocol_assumptions = ProtocolAssumptions.empty;
+                callable_assumptions = CallableAssumptions.empty;
+                decorator_assumptions = DecoratorAssumptions.empty;
+              };
+            get_typed_dictionary;
+            metaclass;
+          }
       in
+      let order = Lazy.force order in
       let attributes annotation ~assumptions =
         match attributes annotation ~assumptions with
         | Some attributes -> Some attributes
@@ -1037,7 +1040,7 @@ let test_instantiate_protocol_parameters context =
       in
       List.map ~f:parse_class
     in
-    let order =
+    let rec order =
       let classes, protocols = parse_attributes classes, parse_attributes protocols in
       let attributes annotation ~assumptions:_ =
         match annotation with
@@ -1052,21 +1055,23 @@ let test_instantiate_protocol_parameters context =
         | _ -> false
       in
       let handler = GlobalResolution.class_hierarchy resolution in
-      {
-        ConstraintsSet.class_hierarchy = hierarchy handler;
-        all_attributes = attributes;
-        attribute = attribute_from_attributes attributes;
-        is_protocol;
-        assumptions =
-          {
-            protocol_assumptions = ProtocolAssumptions.empty;
-            callable_assumptions = CallableAssumptions.empty;
-            decorator_assumptions = DecoratorAssumptions.empty;
-          };
-        get_typed_dictionary;
-        metaclass = (fun _ ~assumptions:_ -> Some (Type.Primitive "type"));
-      }
+      lazy
+        {
+          ConstraintsSet.class_hierarchy = hierarchy ~order handler;
+          all_attributes = attributes;
+          attribute = attribute_from_attributes attributes;
+          is_protocol;
+          assumptions =
+            {
+              protocol_assumptions = ProtocolAssumptions.empty;
+              callable_assumptions = CallableAssumptions.empty;
+              decorator_assumptions = DecoratorAssumptions.empty;
+            };
+          get_typed_dictionary;
+          metaclass = (fun _ ~assumptions:_ -> Some (Type.Primitive "type"));
+        }
     in
+    let order = Lazy.force order in
     assert_equal
       ~printer:optional_ordered_types_printer
       expected
@@ -1235,32 +1240,34 @@ let test_mark_escaped_as_escaped context =
     Type.Callable.create ~annotation:variable ~parameters:(Type.Callable.Defined []) ()
   in
   let result =
-    let handler =
+    let class_hierarchy =
       AnnotatedGlobalEnvironment.read_only environment
       |> GlobalResolution.create
       |> GlobalResolution.class_hierarchy
     in
-    let handler =
-      {
-        ConstraintsSet.class_hierarchy = hierarchy handler;
-        all_attributes = (fun _ ~assumptions:_ -> None);
-        attribute = (fun _ ~assumptions:_ ~name:_ -> None);
-        is_protocol = (fun _ ~protocol_assumptions:_ -> false);
-        assumptions =
-          {
-            protocol_assumptions = ProtocolAssumptions.empty;
-            callable_assumptions = CallableAssumptions.empty;
-            decorator_assumptions = DecoratorAssumptions.empty;
-          };
-        get_typed_dictionary;
-        metaclass = (fun _ ~assumptions:_ -> Some (Type.Primitive "type"));
-      }
+    let rec order =
+      lazy
+        {
+          ConstraintsSet.class_hierarchy = hierarchy ~order class_hierarchy;
+          all_attributes = (fun _ ~assumptions:_ -> None);
+          attribute = (fun _ ~assumptions:_ ~name:_ -> None);
+          is_protocol = (fun _ ~protocol_assumptions:_ -> false);
+          assumptions =
+            {
+              protocol_assumptions = ProtocolAssumptions.empty;
+              callable_assumptions = CallableAssumptions.empty;
+              decorator_assumptions = DecoratorAssumptions.empty;
+            };
+          get_typed_dictionary;
+          metaclass = (fun _ ~assumptions:_ -> Some (Type.Primitive "type"));
+        }
     in
+    let order = Lazy.force order in
     TypeOrder.OrderedConstraintsSet.add
       ConstraintsSet.empty
       ~new_constraint:(LessOrEqual { left; right })
-      ~order:handler
-    |> List.filter_map ~f:(OrderedConstraints.solve ~order:handler)
+      ~order
+    |> List.filter_map ~f:(OrderedConstraints.solve ~order)
   in
   match result with
   | [result] ->

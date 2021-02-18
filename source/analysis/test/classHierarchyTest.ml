@@ -522,6 +522,10 @@ let variadic_order =
   handler order
 
 
+let instantiate_successors_parameters ?(join = fun _ _ -> failwith "This should not be used") order =
+  instantiate_successors_parameters ~join order
+
+
 let test_instantiate_successors_parameters _ =
   assert_equal
     (instantiate_successors_parameters
@@ -541,8 +545,17 @@ let test_instantiate_successors_parameters _ =
        ~source:Type.string
        ~target:"typing.Iterable")
     (Some ![Type.string]);
+  let join left right =
+    match left, right with
+    | Type.Bottom, _ -> right
+    | _, Type.Top -> right
+    | _ -> left
+  in
+  (* TODO(T84854853): Remove this use of `join` once variadic tuples are supported. Tuple is the
+     only case that needs this special-handling since it is variadic. *)
   assert_equal
     (instantiate_successors_parameters
+       ~join
        parametric_order
        ~source:(Type.tuple [Type.integer; Type.integer])
        ~target:"typing.Iterable")
