@@ -193,7 +193,11 @@ let get_higher_order_function_parameter ~environment { Define.signature = { para
           (module TypeCheck.DummyContext)
       in
       match Resolution.resolve_expression_to_type resolution annotation with
-      | Type.Parametric { name = "type"; parameters = [Single (Type.Callable _)] } ->
+      | Type.Parametric
+          {
+            name = "type";
+            parameters = [Single (Type.Callable _ | Type.Primitive "typing.Callable")];
+          } ->
           (* We only support simple decorators that accept a callable. *)
           Some name
       | _ -> None )

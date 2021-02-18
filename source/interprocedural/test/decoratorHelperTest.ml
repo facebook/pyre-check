@@ -213,6 +213,47 @@ let test_inline_decorators context =
 
       return await __wrapper(y)
   |};
+  (* Decorator that types the function parameter as `f: Callable`. *)
+  assert_inlined
+    {|
+    from typing import Callable
+    from builtins import __test_sink
+
+    def with_logging(f: Callable) -> Callable:
+
+      def inner(y: str) -> int:
+        __test_sink(y)
+        f(y)
+
+      return inner
+
+    @with_logging
+    def foo(x: str) -> int:
+      print(x)
+  |}
+    {|
+    from typing import Callable
+    from builtins import __test_sink
+
+    def with_logging(f: Callable) -> Callable:
+
+      def inner(y: str) -> int:
+        __test_sink(y)
+        f(y)
+
+      return inner
+
+    def foo(y: str) -> int:
+
+      def __original_function(x: str) -> int:
+        print(x)
+
+      def __wrapper(y: str) -> int:
+        __test_sink(y)
+        __original_function(y)
+
+      return __wrapper(y)
+  |};
   ()
 
 
