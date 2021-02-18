@@ -352,6 +352,38 @@ let test_create _ =
   ()
 
 
+let test_create_variadic_tuple _ =
+  let assert_create ?(aliases = fun _ -> None) source annotation =
+    assert_equal
+      ~printer:Type.show
+      ~cmp:Type.equal
+      annotation
+      (Type.create
+         ~aliases:(fun ?replace_unbound_parameters_with_any:_ -> aliases)
+         (parse_single_expression ~preprocess:true source))
+  in
+  let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
+  assert_create
+    ~aliases:(function
+      | "Ts" -> Some (VariableAlias (Type.Variable.TupleVariadic variadic))
+      | _ -> None)
+    "Foo[pyre_extensions.Unpack[Ts]]"
+    (Type.parametric "Foo" [Unpacked (Type.OrderedTypes.Concatenation.create_unpackable variadic)]);
+  assert_create
+    ~aliases:(function
+      | "Ts" -> Some (VariableAlias (Type.Variable.TupleVariadic variadic))
+      | _ -> None)
+    "Foo[int, pyre_extensions.Unpack[Ts], str]"
+    (Type.parametric
+       "Foo"
+       [
+         Single Type.integer;
+         Unpacked (Type.OrderedTypes.Concatenation.create_unpackable variadic);
+         Single Type.string;
+       ]);
+  ()
+
+
 let test_resolve_aliases _ =
   let assert_resolved ~aliases annotation expected =
     let aliases ?replace_unbound_parameters_with_any:_ = aliases in
@@ -2016,6 +2048,7 @@ let () =
   "type"
   >::: [
          "create" >:: test_create;
+         "create_variadic_tuple" >:: test_create_variadic_tuple;
          "resolve_aliases" >:: test_resolve_aliases;
          "instantiate" >:: test_instantiate;
          "expression" >:: test_expression;

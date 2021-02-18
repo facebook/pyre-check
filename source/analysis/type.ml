@@ -149,6 +149,8 @@ module Record = struct
 
 
     module Concatenation = struct
+      let unpack_public_name = "pyre_extensions.Unpack"
+
       type 'annotation record_unpackable =
         | Variadic of 'annotation Variable.RecordVariadic.Tuple.record
       [@@deriving compare, eq, sexp, show, hash]
@@ -1802,7 +1804,7 @@ module Transform = struct
               | Record.Parameter.Single single ->
                   Record.Parameter.Single (visit_annotation single ~state)
               | CallableParameters parameters -> CallableParameters (visit_parameters parameters)
-              | Unpacked _ -> failwith "not yet implemented - T84854853"
+              | Unpacked (Variadic _) as unpacked -> unpacked
             in
             Parametric { name; parameters = List.map parameters ~f:visit }
         | RecursiveType { name; body } ->
@@ -2303,6 +2305,17 @@ let resolve_aliases ~aliases annotation =
   snd (ResolveTransform.visit () annotation)
 
 
+let create_unpacked_from_annotation annotation ~variable_aliases =
+  let open Record.OrderedTypes.Concatenation in
+  match annotation with
+  | Parametric { name; parameters = [Single (Primitive variable_name)] }
+    when Identifier.equal name Record.OrderedTypes.Concatenation.unpack_public_name -> (
+      match variable_aliases variable_name with
+      | Some (Record.Variable.TupleVariadic variadic) -> Some (Variadic variadic)
+      | _ -> None )
+  | _ -> None
+
+
 let rec create_logic ~aliases ~variable_aliases { Node.value = expression; _ } =
   let substitute_parameter_variadic = function
     | Primitive name -> (
@@ -2532,10 +2545,13 @@ let rec create_logic ~aliases ~variable_aliases { Node.value = expression; _ } =
           let parse_parameter = function
             | element -> (
                 let parsed = create_logic element in
-                match substitute_parameter_variadic parsed with
-                | Some variable ->
-                    Record.Parameter.CallableParameters (ParameterVariadicTypeVariable variable)
-                | _ -> Record.Parameter.Single parsed )
+                match create_unpacked_from_annotation ~variable_aliases parsed with
+                | Some unpacked -> Record.Parameter.Unpacked unpacked
+                | None -> (
+                    match substitute_parameter_variadic parsed with
+                    | Some variable ->
+                        Record.Parameter.CallableParameters (ParameterVariadicTypeVariable variable)
+                    | _ -> Record.Parameter.Single parsed ) )
           in
           match argument with
           | { Node.value = Expression.Tuple elements; _ } -> List.map elements ~f:parse_parameter
