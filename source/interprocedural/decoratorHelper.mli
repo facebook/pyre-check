@@ -20,3 +20,9 @@ val inline_decorators
   Source.t
 
 val sanitize_defines : strip_decorators:bool -> Source.t -> Source.t
+
+val requalify_name
+  :  old_qualifier:Reference.t ->
+  new_qualifier:Reference.t ->
+  Expression.Name.t ->
+  Expression.Name.t

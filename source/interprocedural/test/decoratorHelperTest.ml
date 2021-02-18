@@ -122,10 +122,87 @@ let test_inline_decorators context =
 
       return __wrapper(y)
   |};
+  assert_inlined
+    {|
+    from builtins import __test_sink
+    from typing import Callable
+
+    def with_logging(callable: Callable[[str], None]) -> Callable[[str], None]:
+
+      def inner(y: str) -> None:
+        __test_sink(y)
+        result = callable(y)
+        return result
+
+      return inner
+
+    @with_logging
+    def foo(z: str) -> None:
+      print(z)
+      result = None
+      return result
+  |}
+    {|
+    from builtins import __test_sink
+    from typing import Callable
+
+    def with_logging(callable: Callable[[str], None]) -> Callable[[str], None]:
+
+      def inner(y: str) -> None:
+        __test_sink(y)
+        result = callable(y)
+        return result
+
+      return inner
+
+    def foo(y: str) -> None:
+      def __original_function(z: str) -> None:
+        print(z)
+        result = None
+        return result
+
+      def __wrapper(y: str) -> None:
+        __test_sink(y)
+        result = __original_function(y)
+        return result
+
+      return __wrapper(y)
+  |};
+  ()
+
+
+let test_requalify_name _ =
+  let open Expression in
+  let assert_requalified ~old_qualifier ~new_qualifier name expected =
+    assert_equal
+      ~cmp:[%equal: Name.t]
+      ~printer:[%show: Name.t]
+      expected
+      (DecoratorHelper.requalify_name ~old_qualifier ~new_qualifier name)
+  in
+  assert_requalified
+    ~old_qualifier:!&"test.foo"
+    ~new_qualifier:!&"test.foo.bar"
+    (Name.Identifier "$local_test?foo$hello")
+    (Name.Identifier "$local_test?foo?bar$hello");
+  assert_requalified
+    ~old_qualifier:!&"test.foo"
+    ~new_qualifier:!&"test.foo.bar"
+    (Name.Identifier "$local_test$hello")
+    (Name.Identifier "$local_test$hello");
+  assert_requalified
+    ~old_qualifier:!&"test.foo"
+    ~new_qualifier:!&"test.foo.bar"
+    (Name.Identifier "hello")
+    (Name.Identifier "hello");
   ()
 
 
 let () =
   "decoratorHelper"
-  >::: ["all_decorators" >:: test_all_decorators; "inline_decorators" >:: test_inline_decorators]
+  >::: [
+         "all_decorators" >:: test_all_decorators;
+         "inline_decorators" >:: test_inline_decorators;
+         "requalify_name" >:: test_requalify_name;
+       ]
   |> Test.run

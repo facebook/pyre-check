@@ -106,6 +106,55 @@ let rename_local_variable ~from ~to_ statement =
   | _ -> failwith "impossible"
 
 
+let requalify_name ~old_qualifier ~new_qualifier = function
+  (* TODO(T69755379): Handle Name.Attribute too. *)
+  | Name.Identifier identifier as name ->
+      let reference = Reference.create identifier in
+      if Reference.is_local reference then
+        match
+          Reference.delocalize reference
+          |> Reference.drop_prefix ~prefix:old_qualifier
+          |> Reference.as_list
+        with
+        | [name] ->
+            Name.Identifier (Preprocessing.qualify_local_identifier ~qualifier:new_qualifier name)
+        | _ -> name
+      else
+        name
+  | name -> name
+
+
+let requalify_define ~old_qualifier ~new_qualifier define =
+  let module Requalify = Transform.Make (struct
+    type t = unit
+
+    let transform_expression_children _ _ = true
+
+    let transform_children _ _ = true
+
+    let expression _ { Node.location; value } =
+      match value with
+      | Expression.Name name ->
+          {
+            Node.location;
+            value = Expression.Name (requalify_name ~old_qualifier ~new_qualifier name);
+          }
+      | _ -> { Node.location; value }
+
+
+    let statement _ statement = (), [statement]
+  end)
+  in
+  Requalify.transform
+    ()
+    (Source.create [Statement.Define define |> Node.create_with_default_location])
+  |> (fun { Requalify.source; _ } -> source)
+  |> Source.statements
+  |> function
+  | [{ Node.value = Statement.Define define; _ }] -> define
+  | _ -> failwith "impossible"
+
+
 let create_function_call_to
     ~location
     { Define.signature = { name = { Node.value = function_name; _ }; parameters; _ }; _ }
@@ -161,7 +210,12 @@ let extract_wrapper_define { Define.body; _ } =
 
 let inline_decorator_in_define
     ~location
-    ~wrapper_define:({ Define.signature = wrapper_signature; _ } as wrapper_define)
+    ~wrapper_define:
+      ( {
+          Define.signature =
+            { name = { Node.value = wrapper_define_name; _ }; _ } as wrapper_signature;
+          _;
+        } as wrapper_define )
     ~higher_order_function_parameter_name
     ({ Define.signature = { name = { Node.value = original_function_name; _ }; _ }; _ } as define)
   =
@@ -169,6 +223,9 @@ let inline_decorator_in_define
   let inlined_original_define =
     sanitize_define define
     |> rename_define ~new_name:(Reference.create inlined_original_function_name)
+    |> requalify_define
+         ~old_qualifier:qualifier
+         ~new_qualifier:(Reference.create ~prefix:qualifier inlined_original_function_name)
   in
   let inlined_original_define_statement =
     Statement.Define inlined_original_define |> Node.create ~location
@@ -176,6 +233,9 @@ let inline_decorator_in_define
   let inlined_wrapper_define =
     sanitize_define wrapper_define
     |> rename_define ~new_name:(Reference.create inlined_wrapper_function_name)
+    |> requalify_define
+         ~old_qualifier:(Reference.delocalize wrapper_define_name)
+         ~new_qualifier:(Reference.create ~prefix:qualifier inlined_wrapper_function_name)
   in
   let inlined_wrapper_define_statement =
     Statement.Define inlined_wrapper_define
