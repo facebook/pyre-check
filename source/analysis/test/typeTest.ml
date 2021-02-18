@@ -382,6 +382,26 @@ let test_create_variadic_tuple _ =
          Unpacked (Type.OrderedTypes.Concatenation.create_unpackable variadic);
          Single Type.string;
        ]);
+  assert_create
+    ~aliases:(function
+      | "Ts" -> Some (VariableAlias (Type.Variable.TupleVariadic variadic))
+      | _ -> None)
+    "Foo[pyre_extensions.Unpack[typing.Tuple[int, str]]]"
+    (Type.parametric "Foo" [Single Type.integer; Single Type.string]);
+  (* Nested unpacks get normalized. *)
+  assert_create
+    ~aliases:(function
+      | "Ts" -> Some (VariableAlias (Type.Variable.TupleVariadic variadic))
+      | _ -> None)
+    "Foo[int, pyre_extensions.Unpack[typing.Tuple[str, pyre_extensions.Unpack[Ts]]]]"
+    (Type.parametric
+       "Foo"
+       [
+         Single Type.integer;
+         Single Type.string;
+         Unpacked (Type.OrderedTypes.Concatenation.create_unpackable variadic);
+       ]);
+
   (* Tuples. *)
   assert_create
     ~aliases:(function
@@ -407,6 +427,20 @@ let test_create_variadic_tuple _ =
       | _ -> None)
     "typing.Tuple[pyre_extensions.Unpack[Ts], pyre_extensions.Unpack[Ts]]"
     Type.Top;
+  assert_create
+    ~aliases:(function
+      | "Ts" -> Some (VariableAlias (Type.Variable.TupleVariadic variadic))
+      | _ -> None)
+    "typing.Tuple[pyre_extensions.Unpack[typing.Tuple[int, str]]]"
+    (Type.tuple [Type.integer; Type.string]);
+  (* Nested concrete unpacks get normalized. *)
+  assert_create
+    ~aliases:(function
+      | "Ts" -> Some (VariableAlias (Type.Variable.TupleVariadic variadic))
+      | _ -> None)
+    "typing.Tuple[bool, pyre_extensions.Unpack[typing.Tuple[int, \
+     pyre_extensions.Unpack[typing.Tuple[int, str]]]]]"
+    (Type.tuple [Type.bool; Type.integer; Type.integer; Type.string]);
   ()
 
 

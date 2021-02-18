@@ -2340,14 +2340,34 @@ module OrderedTypes = struct
         None
 end
 
-let create_unpacked_from_annotation annotation ~variable_aliases =
+let parameters_from_unpacked_annotation annotation ~variable_aliases =
   let open Record.OrderedTypes.Concatenation in
+  let unpacked_variadic_to_parameter = function
+    | Primitive variable_name -> (
+        match variable_aliases variable_name with
+        | Some (Record.Variable.TupleVariadic variadic) ->
+            Some (Parameter.Unpacked (Variadic variadic))
+        | _ -> None )
+    | _ -> None
+  in
   match annotation with
-  | Parametric { name; parameters = [Single (Primitive variable_name)] }
-    when Identifier.equal name Record.OrderedTypes.Concatenation.unpack_public_name -> (
-      match variable_aliases variable_name with
-      | Some (Record.Variable.TupleVariadic variadic) -> Some (Variadic variadic)
-      | _ -> None )
+  | Parametric { name; parameters = [Single (Primitive _ as element)] }
+    when Identifier.equal name Record.OrderedTypes.Concatenation.unpack_public_name ->
+      unpacked_variadic_to_parameter element >>| fun parameter -> [parameter]
+  | Parametric { name; parameters = [Single (Tuple (Bounded (Concrete elements)))] }
+    when Identifier.equal name Record.OrderedTypes.Concatenation.unpack_public_name ->
+      List.map elements ~f:(fun element -> Parameter.Single element) |> Option.some
+  | Parametric
+      {
+        name;
+        parameters =
+          [Single (Tuple (Bounded (Concatenation { prefix; middle = unpacked; suffix })))];
+      }
+    when Identifier.equal name Record.OrderedTypes.Concatenation.unpack_public_name ->
+      List.map prefix ~f:(fun element -> Parameter.Single element)
+      @ [Parameter.Unpacked unpacked]
+      @ List.map suffix ~f:(fun element -> Parameter.Single element)
+      |> Option.some
   | _ -> None
 
 
@@ -2577,20 +2597,20 @@ let rec create_logic ~aliases ~variable_aliases { Node.value = expression; _ } =
     let create_parametric ~base ~argument =
       let parametric name =
         let parameters =
-          let parse_parameter = function
-            | element -> (
-                let parsed = create_logic element in
-                match create_unpacked_from_annotation ~variable_aliases parsed with
-                | Some unpacked -> Record.Parameter.Unpacked unpacked
-                | None -> (
-                    match substitute_parameter_variadic parsed with
-                    | Some variable ->
-                        Record.Parameter.CallableParameters (ParameterVariadicTypeVariable variable)
-                    | _ -> Record.Parameter.Single parsed ) )
+          let element_to_parameters element =
+            let parsed = create_logic element in
+            match parameters_from_unpacked_annotation ~variable_aliases parsed with
+            | Some parameters -> parameters
+            | None -> (
+                match substitute_parameter_variadic parsed with
+                | Some variable ->
+                    [Record.Parameter.CallableParameters (ParameterVariadicTypeVariable variable)]
+                | _ -> [Record.Parameter.Single parsed] )
           in
           match argument with
-          | { Node.value = Expression.Tuple elements; _ } -> List.map elements ~f:parse_parameter
-          | element -> [parse_parameter element]
+          | { Node.value = Expression.Tuple elements; _ } ->
+              List.concat_map elements ~f:element_to_parameters
+          | element -> element_to_parameters element
         in
         Parametric { name; parameters } |> resolve_aliases
       in
