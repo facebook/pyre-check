@@ -2305,6 +2305,41 @@ let resolve_aliases ~aliases annotation =
   snd (ResolveTransform.visit () annotation)
 
 
+module OrderedTypes = struct
+  include Record.OrderedTypes
+
+  type t = type_t record [@@deriving compare, eq, sexp, show, hash]
+
+  type ordered_types_t = t
+
+  let pp_concise = pp_concise ~pp_type
+
+  let union_upper_bound ordered =
+    match ordered with
+    | Concrete concretes -> union concretes
+    | Concatenation _ -> failwith "not yet implemented - T84854853"
+
+
+  let concatenation_from_parameters parameters =
+    let unpacked_element_index index parameter =
+      match parameter with
+      | Parameter.Unpacked _ -> Some index
+      | _ -> None
+    in
+    match List.filter_mapi parameters ~f:unpacked_element_index with
+    | [unpacked_index] -> (
+        let prefix, rest = List.split_n parameters unpacked_index in
+        match rest with
+        | Unpacked middle :: suffix -> (
+            match Parameter.all_singles prefix, Parameter.all_singles suffix with
+            | Some prefix, Some suffix -> Some (Concatenation { prefix; middle; suffix })
+            | _ -> None )
+        | _ -> None )
+    | _ ->
+        (* TODO(T84854853): Proper default for variadic tuple. *)
+        None
+end
+
 let create_unpacked_from_annotation annotation ~variable_aliases =
   let open Record.OrderedTypes.Concatenation in
   match annotation with
@@ -2768,12 +2803,12 @@ let rec create_logic ~aliases ~variable_aliases { Node.value = expression; _ } =
       | None -> result )
   | Parametric { name = "typing.Tuple"; parameters }
   | Parametric { name = "tuple"; parameters } -> (
-      match parameters with
-      | parameters ->
-          Parameter.all_singles parameters
-          >>| (function
-                | [annotation; Primitive "..."] -> Tuple (Unbounded annotation)
-                | singles -> Tuple (Bounded (Concrete singles)))
+      match Parameter.all_singles parameters with
+      | Some [annotation; Primitive "..."] -> Tuple (Unbounded annotation)
+      | Some singles -> Tuple (Bounded (Concrete singles))
+      | None ->
+          OrderedTypes.concatenation_from_parameters parameters
+          >>| (fun concatenation -> Tuple (Bounded concatenation))
           |> Option.value ~default:Top )
   | Parametric { name; parameters } -> (
       match
@@ -2992,21 +3027,6 @@ let weaken_literals annotation =
   in
   instantiate ~constraints annotation
 
-
-module OrderedTypes = struct
-  include Record.OrderedTypes
-
-  type t = type_t record [@@deriving compare, eq, sexp, show, hash]
-
-  type ordered_types_t = t
-
-  let pp_concise = pp_concise ~pp_type
-
-  let union_upper_bound ordered =
-    match ordered with
-    | Concrete concretes -> union concretes
-    | Concatenation _ -> failwith "not yet implemented - T84854853"
-end
 
 let split annotation =
   let open Record.Parameter in

@@ -363,6 +363,7 @@ let test_create_variadic_tuple _ =
          (parse_single_expression ~preprocess:true source))
   in
   let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
+  (* Parametric types. *)
   assert_create
     ~aliases:(function
       | "Ts" -> Some (VariableAlias (Type.Variable.TupleVariadic variadic))
@@ -381,6 +382,31 @@ let test_create_variadic_tuple _ =
          Unpacked (Type.OrderedTypes.Concatenation.create_unpackable variadic);
          Single Type.string;
        ]);
+  (* Tuples. *)
+  assert_create
+    ~aliases:(function
+      | "Ts" -> Some (VariableAlias (Type.Variable.TupleVariadic variadic))
+      | _ -> None)
+    "typing.Tuple[pyre_extensions.Unpack[Ts]]"
+    (Type.Tuple (Bounded (Concatenation (Type.OrderedTypes.Concatenation.create variadic))));
+  assert_create
+    ~aliases:(function
+      | "Ts" -> Some (VariableAlias (Type.Variable.TupleVariadic variadic))
+      | _ -> None)
+    "typing.Tuple[int, pyre_extensions.Unpack[Ts], str]"
+    (Type.Tuple
+       (Bounded
+          (Concatenation
+             (Type.OrderedTypes.Concatenation.create
+                ~prefix:[Type.integer]
+                ~suffix:[Type.string]
+                variadic))));
+  assert_create
+    ~aliases:(function
+      | "Ts" -> Some (VariableAlias (Type.Variable.TupleVariadic variadic))
+      | _ -> None)
+    "typing.Tuple[pyre_extensions.Unpack[Ts], pyre_extensions.Unpack[Ts]]"
+    Type.Top;
   ()
 
 
