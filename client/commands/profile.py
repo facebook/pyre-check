@@ -189,6 +189,30 @@ def to_incremental_updates(events: Sequence[Event]) -> List[Dict[str, int]]:
     return results
 
 
+def to_taint(events: Sequence[Event]) -> Dict[str, int]:
+    result: Dict[str, int] = {}
+    for event in events:
+        if not isinstance(event, DurationEvent):
+            continue
+        event.add_phase_duration_to_result(result)
+
+    fixpoint_events = [
+        event
+        for event in events
+        if isinstance(event, DurationEvent)
+        and event.metadata.tags.get(PHASE_NAME) == "Static analysis fixpoint"
+    ]
+    if len(fixpoint_events) == 0:
+        return result
+
+    for name, value in fixpoint_events[-1].metadata.tags.items():
+        if name == PHASE_NAME:
+            continue
+        result[name.capitalize()] = int(value)
+
+    return result
+
+
 class TableStatistics:
     # category -> aggregation -> table name -> value
     # pyre-ignore: T62493941
@@ -364,6 +388,8 @@ class Profile(Command):
                     print(json.dumps(to_cold_start_phases(events), indent=2))
                 elif output == ProfileOutput.INCREMENTAL_UPDATES:
                     print(json.dumps(to_incremental_updates(events), indent=2))
+                elif output == ProfileOutput.TAINT:
+                    print(json.dumps(to_taint(events), indent=2))
                 else:
                     raise RuntimeError("Unrecognized output format: {}".format(output))
 
