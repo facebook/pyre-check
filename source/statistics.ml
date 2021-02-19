@@ -191,9 +191,13 @@ let performance
   Log.log ~section "%s: %.2fs" (String.capitalize name) (Int.to_float microseconds /. 1000000.0);
   Profiling.log_performance_event (fun () ->
       let tags =
+        List.map ~f:(fun (name, value) -> name, string_of_int value) integers
+        |> List.rev_append normals
+      in
+      let tags =
         match phase_name with
-        | None -> normals
-        | Some name -> ("phase_name", name) :: normals
+        | None -> tags
+        | Some name -> ("phase_name", name) :: tags
       in
       Profiling.Event.create name ~event_type:(Duration microseconds) ~tags);
   sample
