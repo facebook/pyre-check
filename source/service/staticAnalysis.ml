@@ -684,7 +684,7 @@ let analyze
       ~skipped_overrides
       all_callables
   in
-  let () =
+  let errors =
     try
       let iterations =
         Interprocedural.Analysis.compute_fixpoint
@@ -696,19 +696,27 @@ let analyze
           ~all_callables
           Interprocedural.Fixpoint.Epoch.initial
       in
+      let errors = Interprocedural.Analysis.extract_errors scheduler all_callables in
       Log.info "Fixpoint iterations: %d" iterations;
       Statistics.performance
         ~name:"Analysis fixpoint complete"
         ~phase_name:"Static analysis fixpoint"
         ~timer
-        ()
+        ~integers:
+          [
+            "pysa fixpoint iterations", iterations;
+            "pysa heap size", SharedMem.heap_size ();
+            "pysa issues", List.length errors;
+          ]
+        ();
+      Log.info "Found %d issues" (List.length errors);
+      errors
     with
     | exn ->
         save_results ();
         raise exn
   in
   save_results ();
-  let errors = Interprocedural.Analysis.extract_errors scheduler all_callables in
 
   (* If saving to a file, don't return errors. Thousands of errors on output is inconvenient *)
   if Option.is_some analysis_configuration.result_json_path then
