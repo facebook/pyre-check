@@ -772,6 +772,7 @@ let save_results
   match result_json_path with
   | None -> ()
   | Some directory ->
+      let timer = Timer.start () in
       let models_path analysis_name = Format.sprintf "%s-output.json" analysis_name in
       let root = configuration.local_root |> Path.absolute in
       let save_models (Result.Analysis { Result.analysis; kind }) =
@@ -828,7 +829,12 @@ let save_results
       in
       List.iter analyses ~f:save_models;
       List.iter analyses ~f:save_metadata;
-      Log.info "Analysis results were written to `%s`." (Path.absolute directory)
+      Log.info "Analysis results were written to `%s`." (Path.absolute directory);
+      Statistics.performance
+        ~name:"Wrote analysis results"
+        ~phase_name:"Writing analysis results"
+        ~timer
+        ()
 
 
 let record_initial_models ~functions ~stubs models =
