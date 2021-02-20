@@ -690,7 +690,7 @@ module OrderedConstraints (Order : OrderType) = struct
           let matches = function
             | Type.Variable.Unary key -> not (Map.mem dependent_unaries key)
             | ParameterVariadic key -> not (Map.mem dependent_parameters key)
-            | TupleVariadic _ -> failwith "not yet implemented - T84854853"
+            | TupleVariadic key -> not (Map.mem dependent_tuple_variadics key)
           in
           Set.partition_tf remaining_constraints.have_fallbacks ~f:matches
         in
@@ -761,7 +761,7 @@ module OrderedConstraints (Order : OrderType) = struct
         let matches = function
           | Type.Variable.Unary key -> unary_matches ~key ~data:()
           | ParameterVariadic key -> callable_parameters_matches ~key ~data:()
-          | TupleVariadic _ -> failwith "not yet implemented - T84854853"
+          | TupleVariadic key -> tuple_variadic_matches ~key ~data:()
         in
         Set.partition_tf have_fallbacks ~f:matches
       in

@@ -493,6 +493,25 @@ let test_multiple_variable_solution _ =
            (variadic, Type.OrderedTypes.Concrete [Type.integer; Type.bool; Type.string]);
          TupleVariadicPair (variadic2, Type.OrderedTypes.Concrete [Type.bool]);
        ]);
+  assert_solution
+    ~sequentially_applied_bounds:
+      [
+        `Lower
+          (TupleVariadicPair
+             ( variadic,
+               Type.OrderedTypes.Concatenation
+                 (Type.OrderedTypes.Concatenation.create
+                    ~prefix:[Type.integer]
+                    ~suffix:[Type.string]
+                    variadic2) ));
+        `Fallback (TupleVariadic variadic2);
+      ]
+    (Some
+       [
+         TupleVariadicPair
+           (variadic, Type.OrderedTypes.Concrete [Type.integer; Type.Any; Type.string]);
+         TupleVariadicPair (variadic2, Type.OrderedTypes.Concrete [Type.Any]);
+       ]);
   ()
 
 
