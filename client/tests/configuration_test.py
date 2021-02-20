@@ -101,9 +101,9 @@ class PartialConfigurationTest(unittest.TestCase):
         self.assertEqual(configuration.use_buck_builder, False)
         self.assertEqual(configuration.use_buck_source_database, True)
         self.assertEqual(configuration.use_command_v2, True)
-        self.assertEqual(configuration.python_major_version, 3)
-        self.assertEqual(configuration.python_minor_version, 6)
-        self.assertEqual(configuration.python_micro_version, 7)
+        self.assertEqual(
+            configuration.python_version, PythonVersion(major=3, minor=6, micro=7)
+        )
 
     def test_create_from_string_success(self) -> None:
         self.assertEqual(
@@ -292,21 +292,21 @@ class PartialConfigurationTest(unittest.TestCase):
         )
         self.assertEqual(
             PartialConfiguration.from_string(
-                json.dumps({"python_major_version": 3})
-            ).python_major_version,
-            3,
+                json.dumps({"python_version": "3"})
+            ).python_version,
+            PythonVersion(major=3, minor=0, micro=0),
         )
         self.assertEqual(
             PartialConfiguration.from_string(
-                json.dumps({"python_minor_version": 6})
-            ).python_minor_version,
-            6,
+                json.dumps({"python_version": "3.6"})
+            ).python_version,
+            PythonVersion(major=3, minor=6, micro=0),
         )
         self.assertEqual(
             PartialConfiguration.from_string(
-                json.dumps({"python_micro_version": 7})
-            ).python_micro_version,
-            7,
+                json.dumps({"python_version": "3.6.7"})
+            ).python_version,
+            PythonVersion(major=3, minor=6, micro=7),
         )
 
         self.assertIsNone(PartialConfiguration.from_string("{}").source_directories)
@@ -394,9 +394,8 @@ class PartialConfigurationTest(unittest.TestCase):
         assert_raises(json.dumps({"use_buck_source_database": 4.2}))
         assert_raises(json.dumps({"use_command_v2": 42}))
         assert_raises(json.dumps({"version": 123}))
-        assert_raises(json.dumps({"python_major_version": "abc"}))
-        assert_raises(json.dumps({"python_minor_version": []}))
-        assert_raises(json.dumps({"python_micro_version": {}}))
+        assert_raises(json.dumps({"python_version": "abc"}))
+        assert_raises(json.dumps({"python_version": 42}))
 
     def test_merge(self) -> None:
         # Unsafe features like `getattr` has to be used in this test to reduce boilerplates.
@@ -498,9 +497,7 @@ class PartialConfigurationTest(unittest.TestCase):
         assert_overwritten("logger")
         assert_overwritten("number_of_workers")
         assert_prepended("other_critical_files")
-        assert_overwritten("python_major_version")
-        assert_overwritten("python_minor_version")
-        assert_overwritten("python_micro_version")
+        assert_overwritten("python_version")
         assert_prepended("search_path")
         assert_raise_when_overridden("source_directories")
         assert_overwritten("strict")
@@ -624,9 +621,7 @@ class ConfigurationTest(testslide.TestCase):
                 logger="logger",
                 number_of_workers=3,
                 other_critical_files=["critical"],
-                python_major_version=3,
-                python_minor_version=6,
-                python_micro_version=7,
+                python_version=PythonVersion(major=3, minor=6, micro=7),
                 search_path=[SimpleSearchPathElement("search_path")],
                 source_directories=None,
                 strict=None,
@@ -660,9 +655,9 @@ class ConfigurationTest(testslide.TestCase):
         self.assertListEqual(
             list(configuration.search_path), [SimpleSearchPathElement("search_path")]
         )
-        self.assertEqual(configuration.python_major_version, 3)
-        self.assertEqual(configuration.python_minor_version, 6)
-        self.assertEqual(configuration.python_micro_version, 7)
+        self.assertEqual(
+            configuration.python_version, PythonVersion(major=3, minor=6, micro=7)
+        )
         self.assertEqual(configuration.source_directories, [])
         self.assertEqual(configuration.strict, False)
         self.assertEqual(configuration.taint_models_path, ["taint"])
@@ -930,49 +925,21 @@ class ConfigurationTest(testslide.TestCase):
             Configuration(
                 project_root="irrelevant",
                 dot_pyre_directory=Path(".pyre"),
-                python_major_version=3,
-            ).get_python_major_version(),
-            3,
+                python_version=PythonVersion(major=3, minor=6, micro=7),
+            ).get_python_version(),
+            PythonVersion(major=3, minor=6, micro=7),
         )
         self.assertEqual(
             Configuration(
                 project_root="irrelevant",
                 dot_pyre_directory=Path(".pyre"),
-                python_minor_version=6,
-            ).get_python_minor_version(),
-            6,
-        )
-        self.assertEqual(
-            Configuration(
-                project_root="irrelevant",
-                dot_pyre_directory=Path(".pyre"),
-                python_micro_version=7,
-            ).get_python_micro_version(),
-            7,
-        )
-        self.assertEqual(
-            Configuration(
-                project_root="irrelevant",
-                dot_pyre_directory=Path(".pyre"),
-                python_major_version=None,
-            ).get_python_major_version(),
-            sys.version_info.major,
-        )
-        self.assertEqual(
-            Configuration(
-                project_root="irrelevant",
-                dot_pyre_directory=Path(".pyre"),
-                python_minor_version=None,
-            ).get_python_minor_version(),
-            sys.version_info.minor,
-        )
-        self.assertEqual(
-            Configuration(
-                project_root="irrelevant",
-                dot_pyre_directory=Path(".pyre"),
-                python_minor_version=None,
-            ).get_python_micro_version(),
-            sys.version_info.micro,
+                python_version=None,
+            ).get_python_version(),
+            PythonVersion(
+                major=sys.version_info.major,
+                minor=sys.version_info.minor,
+                micro=sys.version_info.micro,
+            ),
         )
 
     def test_get_binary_from_configuration(self) -> None:
