@@ -2343,6 +2343,14 @@ module OrderedTypes = struct
     | _ ->
         (* TODO(T84854853): Proper default for variadic tuple. *)
         None
+
+
+  let to_parameters = function
+    | Concrete elements -> List.map elements ~f:(fun element -> Parameter.Single element)
+    | Concatenation { prefix; middle = unpacked; suffix } ->
+        List.map prefix ~f:(fun element -> Parameter.Single element)
+        @ [Parameter.Unpacked unpacked]
+        @ List.map suffix ~f:(fun element -> Parameter.Single element)
 end
 
 let parameters_from_unpacked_annotation annotation ~variable_aliases =
@@ -2359,20 +2367,9 @@ let parameters_from_unpacked_annotation annotation ~variable_aliases =
   | Parametric { name; parameters = [Single (Primitive _ as element)] }
     when Identifier.equal name Record.OrderedTypes.Concatenation.unpack_public_name ->
       unpacked_variadic_to_parameter element >>| fun parameter -> [parameter]
-  | Parametric { name; parameters = [Single (Tuple (Bounded (Concrete elements)))] }
+  | Parametric { name; parameters = [Single (Tuple (Bounded ordered_type))] }
     when Identifier.equal name Record.OrderedTypes.Concatenation.unpack_public_name ->
-      List.map elements ~f:(fun element -> Parameter.Single element) |> Option.some
-  | Parametric
-      {
-        name;
-        parameters =
-          [Single (Tuple (Bounded (Concatenation { prefix; middle = unpacked; suffix })))];
-      }
-    when Identifier.equal name Record.OrderedTypes.Concatenation.unpack_public_name ->
-      List.map prefix ~f:(fun element -> Parameter.Single element)
-      @ [Parameter.Unpacked unpacked]
-      @ List.map suffix ~f:(fun element -> Parameter.Single element)
-      |> Option.some
+      OrderedTypes.to_parameters ordered_type |> Option.some
   | _ -> None
 
 
