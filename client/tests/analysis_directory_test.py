@@ -78,10 +78,11 @@ class AnalysisDirectoryTest(unittest.TestCase):
         original_directory = "/project"
         project_root = "/project"
 
-        configuration = MagicMock()
-        configuration.source_directories = []
-        configuration.targets = []
-        configuration.local_root = None
+        configuration = configuration_module.Configuration.from_partial_configuration(
+            project_root=Path(project_root),
+            relative_local_root=None,
+            partial_configuration=configuration_module.PartialConfiguration(),
+        )
 
         expected_analysis_directory = AnalysisDirectory(
             configuration_module.SimpleSearchPathElement("a/b")
@@ -91,9 +92,7 @@ class AnalysisDirectoryTest(unittest.TestCase):
             targets=[],
             configuration=configuration,
             original_directory=original_directory,
-            project_root=project_root,
             filter_directory=None,
-            buck_mode=None,
         )
         self.assertEqualRootAndFilterRoot(
             analysis_directory, expected_analysis_directory
@@ -108,9 +107,7 @@ class AnalysisDirectoryTest(unittest.TestCase):
             targets=[],
             configuration=configuration,
             original_directory=original_directory,
-            project_root=project_root,
             filter_directory="/real/directory",
-            buck_mode=None,
         )
         self.assertEqualRootAndFilterRoot(
             analysis_directory, expected_analysis_directory
@@ -149,18 +146,21 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
     def test_filter_root_for_buck(
         self, exists: MagicMock, buck_root: MagicMock
     ) -> None:
-        configuration = MagicMock()
-        configuration.targets = ["cell//pyre_root/local:target"]
-        configuration.local_root = "/buck_root/pyre_root/local"
-        configuration.use_buck_builder = True
+        configuration = configuration_module.Configuration.from_partial_configuration(
+            project_root=Path("/buck_root/pyre_root"),
+            relative_local_root="local",
+            partial_configuration=configuration_module.PartialConfiguration(
+                targets=["cell//pyre_root/local:target"],
+                use_buck_builder=True,
+                buck_mode=None,
+            ),
+        )
         analysis_directory = resolve_analysis_directory(
             source_directories=[],
             targets=[],
             configuration=configuration,
             original_directory="/buck_root/pyre_root/local",
-            project_root="/buck_root/pyre_root",
             filter_directory=None,
-            buck_mode=None,
             isolate=False,
             relative_local_root=None,
         )
@@ -169,19 +169,25 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
         )
 
     def test_filter_root_for_nonbuck(self) -> None:
-        configuration = MagicMock()
-        configuration.targets = []
-        configuration.source_directories = ["/foo/bar", "/foo/baz"]
-        configuration.local_root = "/foo"
-        configuration.use_buck_builder = False
+        configuration = configuration_module.Configuration.from_partial_configuration(
+            project_root=Path("/foo"),
+            relative_local_root=None,
+            partial_configuration=configuration_module.PartialConfiguration(
+                source_directories=[
+                    configuration_module.SimpleSearchPathElement("/foo/bar"),
+                    configuration_module.SimpleSearchPathElement("/foo/baz"),
+                ],
+                targets=[],
+                use_buck_builder=False,
+                buck_mode=None,
+            ),
+        )
         analysis_directory = resolve_analysis_directory(
             source_directories=[],
             targets=[],
             configuration=configuration,
             original_directory="/foo",
-            project_root="/foo",
             filter_directory=None,
-            buck_mode=None,
             isolate=False,
             relative_local_root=None,
         )
@@ -816,9 +822,13 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
 
     def test_get_buck_builder__simple_buck_builder(self) -> None:
         actual = _get_buck_builder(
-            project_root="root",
-            configuration=MagicMock(use_buck_builder=False),
-            buck_mode=None,
+            configuration=configuration_module.Configuration.from_partial_configuration(
+                project_root=Path("root"),
+                relative_local_root=None,
+                partial_configuration=configuration_module.PartialConfiguration(
+                    buck_mode=None, use_buck_builder=False
+                ),
+            ),
             relative_local_root=None,
             isolate=False,
         )
@@ -844,9 +854,7 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
             ),
         )
         actual = _get_buck_builder(
-            project_root="root",
             configuration=configuration,
-            buck_mode=None,
             relative_local_root=None,
             isolate=False,
         )
@@ -881,9 +889,7 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
             ),
         )
         actual = _get_buck_builder(
-            project_root="root",
             configuration=configuration,
-            buck_mode=None,
             relative_local_root=None,
             isolate=False,
         )
@@ -918,7 +924,9 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
         configuration = MagicMock()
         configuration.source_directories = []
         configuration.targets = []
+        configuration.project_root = project_root
         configuration.local_root = None
+        configuration.buck_mode = None
 
         expected_analysis_directory = SharedAnalysisDirectory(
             [],
@@ -932,9 +940,7 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
             targets=["//x:y"],
             configuration=configuration,
             original_directory=original_directory,
-            project_root=project_root,
             filter_directory="/real/directory",
-            buck_mode=None,
         )
         self.assertEqualRootAndFilterRoot(
             analysis_directory, expected_analysis_directory
@@ -952,9 +958,7 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
             targets=["//overridden/..."],
             configuration=configuration,
             original_directory=original_directory,
-            project_root=project_root,
             filter_directory="/filter",
-            buck_mode=None,
         )
         self.assertEqualRootAndFilterRoot(
             analysis_directory, expected_analysis_directory
@@ -974,9 +978,7 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
             targets=[],
             configuration=configuration,
             original_directory=original_directory,
-            project_root=project_root,
             filter_directory="/filter",
-            buck_mode=None,
         )
         self.assertEqualRootAndFilterRoot(
             analysis_directory, expected_analysis_directory
@@ -998,9 +1000,7 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
             targets=[],
             configuration=configuration,
             original_directory=original_directory,
-            project_root=project_root,
             filter_directory=None,
-            buck_mode=None,
         )
         self.assertEqualRootAndFilterRoot(
             analysis_directory, expected_analysis_directory
@@ -1264,9 +1264,12 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
         socket_connection_class.assert_called_once()
 
     def test_resolve_filter_paths(self) -> None:
-        configuration = MagicMock()
         original_directory = "/project"
-        configuration.local_root = None
+        configuration = configuration_module.Configuration(
+            project_root="/project",
+            dot_pyre_directory=Path("irrlevant"),
+            relative_local_root=None,
+        )
 
         filter_paths = _resolve_filter_paths(
             source_directories=[],
@@ -1292,7 +1295,11 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
         )
         self.assertEqual(filter_paths, {"/project/a", "x/y"})
 
-        configuration.local_root = "project/local"
+        configuration = configuration_module.Configuration(
+            project_root="/project",
+            dot_pyre_directory=Path("irrlevant"),
+            relative_local_root="local",
+        )
         filter_paths = _resolve_filter_paths(
             source_directories=["/project/local/a"],
             targets=["//x/y:z"],
@@ -1301,7 +1308,6 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
         )
         self.assertEqual(filter_paths, {"/project/local/a", "x/y"})
 
-        configuration.local_root = "/project/local"
         filter_paths = _resolve_filter_paths(
             source_directories=[],
             targets=[],

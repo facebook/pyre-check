@@ -769,15 +769,15 @@ def _get_project_name(
 
 
 def _get_buck_builder(
-    project_root: str,
     configuration: Configuration,
-    buck_mode: Optional[str],
     relative_local_root: Optional[str],
     isolate: bool,
 ) -> Tuple[BuckBuilder, List[str]]:
     if not configuration.use_buck_builder:
         return (buck.SimpleBuckBuilder(), [])
 
+    project_root = configuration.project_root
+    buck_mode = configuration.buck_mode
     buck_root = find_buck_root(project_root)
     if not buck_root:
         raise EnvironmentException(
@@ -820,9 +820,7 @@ def resolve_analysis_directory(
     targets: List[str],
     configuration: Configuration,
     original_directory: str,
-    project_root: str,
     filter_directory: Optional[str],
-    buck_mode: Optional[str],
     isolate: bool = False,
     relative_local_root: Optional[str] = None,
 ) -> AnalysisDirectory:
@@ -859,6 +857,7 @@ def resolve_analysis_directory(
             command,
         )
 
+    project_root = configuration.project_root
     local_configuration_root = configuration.local_root
     if local_configuration_root:
         local_configuration_root = os.path.relpath(
@@ -876,7 +875,7 @@ def resolve_analysis_directory(
         )
     else:
         buck_builder, temporary_directories = _get_buck_builder(
-            project_root, configuration, buck_mode, relative_local_root, isolate
+            configuration, relative_local_root, isolate
         )
 
         analysis_directory = SharedAnalysisDirectory(

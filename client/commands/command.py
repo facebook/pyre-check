@@ -187,9 +187,7 @@ class Command(CommandParser, ABC):
             self._command_arguments.targets,
             self._configuration,
             self._original_directory,
-            self._configuration.project_root,
             filter_directory=self._command_arguments.filter_directory,
-            buck_mode=self._configuration.buck_mode,
             relative_local_root=self._configuration.relative_local_root,
         )
 
