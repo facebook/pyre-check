@@ -104,7 +104,7 @@ let empty =
   }
 
 
-let exists_in_bounds { unaries; callable_parameters; _ } ~variables =
+let exists_in_bounds { unaries; callable_parameters; tuple_variadics; _ } ~variables =
   let contains_variable annotation =
     let contains_unary =
       Type.Variable.GlobalTransforms.Unary.collect_all annotation
@@ -118,7 +118,12 @@ let exists_in_bounds { unaries; callable_parameters; _ } ~variables =
       Type.Variable.GlobalTransforms.ParameterVariadic.collect_all annotation
       |> List.exists ~f:parameter_variadic_contained_in_list
     in
-    contains_unary || contains_parameter_variadic
+    let contains_tuple_variadic =
+      Type.Variable.GlobalTransforms.TupleVariadic.collect_all annotation
+      |> List.exists ~f:(fun variable ->
+             List.mem variables (Type.Variable.TupleVariadic variable) ~equal:Type.Variable.equal)
+    in
+    contains_unary || contains_parameter_variadic || contains_tuple_variadic
   in
   let exists_in_interval_bounds { upper_bound; lower_bound } =
     contains_variable upper_bound || contains_variable lower_bound
@@ -128,10 +133,15 @@ let exists_in_bounds { unaries; callable_parameters; _ } ~variables =
         Type.Callable.create ~parameters ~annotation:Type.Any () |> contains_variable
     | _ -> false
   in
+  let exists_in_tuple_interval_bound = function
+    | SingletonTuple ordered_type -> Type.Tuple (Bounded ordered_type) |> contains_variable
+    | _ -> false
+  in
   UnaryVariable.Map.exists unaries ~f:exists_in_interval_bounds
   || ParameterVariable.Map.exists
        callable_parameters
        ~f:exists_in_callable_parameter_interval_bounds
+  || TupleVariable.Map.exists tuple_variadics ~f:exists_in_tuple_interval_bound
 
 
 module Solution = struct

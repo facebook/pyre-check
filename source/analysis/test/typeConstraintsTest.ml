@@ -609,6 +609,35 @@ let test_exists _ =
     (TypeConstraints.exists_in_bounds
        constraints_with_parameters_b
        ~variables:[Type.Variable.ParameterVariadic parameters_a]);
+
+  (* Variadic tuples. *)
+  let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
+  let variadic2 = Type.Variable.Variadic.Tuple.create "Ts2" in
+  let constraints_with_variadic2_in_bounds =
+    let pair =
+      TupleVariadicPair
+        ( variadic,
+          Type.OrderedTypes.Concatenation
+            (Type.OrderedTypes.Concatenation.create
+               ~prefix:[Type.Variable unconstrained_a]
+               ~suffix:[Type.string]
+               variadic2) )
+    in
+    DiamondOrderedConstraints.add_lower_bound TypeConstraints.empty ~order ~pair
+    |> fun constraints_option -> Option.value_exn constraints_option
+  in
+  assert_true
+    (TypeConstraints.exists_in_bounds
+       constraints_with_variadic2_in_bounds
+       ~variables:[Type.Variable.TupleVariadic variadic2]);
+  assert_false
+    (TypeConstraints.exists_in_bounds
+       constraints_with_variadic2_in_bounds
+       ~variables:[Type.Variable.TupleVariadic variadic]);
+  assert_true
+    (TypeConstraints.exists_in_bounds
+       constraints_with_variadic2_in_bounds
+       ~variables:[Type.Variable.Unary unconstrained_a]);
   ()
 
 
