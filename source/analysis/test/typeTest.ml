@@ -1757,6 +1757,27 @@ let test_collect_all _ =
                  (Type.Variable.Variadic.Parameters.create "TParams"));
           ]))
     [Type.Variable.Variadic.Parameters.create "TParams"];
+
+  (* Variadic tuples. *)
+  let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
+  let variadic2 = Type.Variable.Variadic.Tuple.create "Ts2" in
+  let assert_collected annotation expected =
+    let aliases ?replace_unbound_parameters_with_any:_ = function
+      | "Ts" -> Some (Type.VariableAlias (Type.Variable.TupleVariadic variadic))
+      | "Ts2" -> Some (Type.VariableAlias (Type.Variable.TupleVariadic variadic2))
+      | _ -> None
+    in
+    assert_equal
+      expected
+      (Type.Variable.GlobalTransforms.TupleVariadic.collect_all
+         (Type.create ~aliases (parse_single_expression ~preprocess:true annotation)))
+  in
+  assert_collected "typing.Tuple[int, str]" [];
+  assert_collected "typing.Tuple[int, pyre_extensions.Unpack[Ts], str]" [variadic];
+  assert_collected "Foo[int, pyre_extensions.Unpack[Ts], str]" [variadic];
+  assert_collected
+    "Foo[Bar[int, pyre_extensions.Unpack[Ts], str], Baz[pyre_extensions.Unpack[Ts2]]]"
+    [variadic; variadic2];
   ()
 
 

@@ -3283,6 +3283,9 @@ module Variable : sig
 
     module ParameterVariadic :
       S with type t = parameter_variadic_t and type domain = Callable.parameters
+
+    module TupleVariadic :
+      S with type t = tuple_variadic_t and type domain = type_t OrderedTypes.record
   end
 
   include module type of struct
@@ -3743,8 +3746,14 @@ end = struct
 
       let mark_as_escaped variable = { variable with state = Free { escaped = true } }
 
-      (* TODO(T84854853): Implement. *)
       let local_collect = function
+        | Parametric { parameters; _ } ->
+            let extract = function
+              | Parameter.Unpacked (Variadic variadic) -> Some variadic
+              | _ -> None
+            in
+            List.filter_map parameters ~f:extract
+        | Tuple (Bounded (Concatenation { middle = Variadic variadic; _ })) -> [variadic]
         | _ -> []
 
 

@@ -803,6 +803,9 @@ module Variable : sig
 
     module ParameterVariadic :
       S with type t = parameter_variadic_t and type domain = Callable.parameters
+
+    module TupleVariadic :
+      S with type t = tuple_variadic_t and type domain = type_t OrderedTypes.record
   end
 
   include module type of struct
