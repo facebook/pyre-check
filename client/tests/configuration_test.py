@@ -78,6 +78,7 @@ class PartialConfigurationTest(unittest.TestCase):
                 search_path=["x", "y"],
                 binary="binary",
                 buck_builder_binary="buck_builder_binary",
+                buck_mode="opt",
                 exclude=["excludes"],
                 typeshed="typeshed",
                 dot_pyre_directory=Path(".pyre"),
@@ -86,6 +87,7 @@ class PartialConfigurationTest(unittest.TestCase):
         )
         self.assertEqual(configuration.binary, "binary")
         self.assertEqual(configuration.buck_builder_binary, "buck_builder_binary")
+        self.assertEqual(configuration.buck_mode, "opt")
         self.assertEqual(configuration.dot_pyre_directory, Path(".pyre"))
         self.assertListEqual(list(configuration.excludes), ["excludes"])
         self.assertEqual(configuration.formatter, "formatter")
@@ -120,6 +122,12 @@ class PartialConfigurationTest(unittest.TestCase):
             PartialConfiguration.from_string(
                 json.dumps({"buck_builder_binary": "foo"})
             ).buck_builder_binary,
+            "foo",
+        )
+        self.assertEqual(
+            PartialConfiguration.from_string(
+                json.dumps({"buck_mode": "foo"})
+            ).buck_mode,
             "foo",
         )
         self.assertEqual(
@@ -373,6 +381,7 @@ class PartialConfigurationTest(unittest.TestCase):
         assert_raises(json.dumps({"autocomplete": 42}))
         assert_raises(json.dumps({"binary": True}))
         assert_raises(json.dumps({"buck_builder_binary": ["."]}))
+        assert_raises(json.dumps({"buck_mode": {}}))
         assert_raises(json.dumps({"disabled": "False"}))
         assert_raises(json.dumps({"do_not_ignore_errors_in": "abc"}))
         assert_raises(json.dumps({"dot_pyre_directory": {}}))
@@ -485,6 +494,7 @@ class PartialConfigurationTest(unittest.TestCase):
 
         assert_overwritten("autocomplete")
         assert_overwritten("buck_builder_binary")
+        assert_overwritten("buck_mode")
         assert_overwritten("disabled")
         assert_prepended("do_not_ignore_all_errors_in")
         assert_overwritten("dot_pyre_directory")
@@ -609,6 +619,7 @@ class ConfigurationTest(testslide.TestCase):
                 autocomplete=None,
                 binary="binary",
                 buck_builder_binary="buck_builder_binary",
+                buck_mode="opt",
                 disabled=None,
                 do_not_ignore_all_errors_in=["foo"],
                 dot_pyre_directory=None,
@@ -640,6 +651,7 @@ class ConfigurationTest(testslide.TestCase):
         self.assertEqual(configuration.autocomplete, False)
         self.assertEqual(configuration.binary, "binary")
         self.assertEqual(configuration.buck_builder_binary, "buck_builder_binary")
+        self.assertEqual(configuration.buck_mode, "opt")
         self.assertEqual(configuration.disabled, False)
         self.assertListEqual(list(configuration.do_not_ignore_all_errors_in), ["foo"])
         self.assertEqual(configuration.dot_pyre_directory, Path("root/.pyre"))

@@ -315,6 +315,7 @@ class PartialConfiguration:
     autocomplete: Optional[bool] = None
     binary: Optional[str] = None
     buck_builder_binary: Optional[str] = None
+    buck_mode: Optional[str] = None
     disabled: Optional[bool] = None
     do_not_ignore_all_errors_in: Sequence[str] = field(default_factory=list)
     dot_pyre_directory: Optional[Path] = None
@@ -348,7 +349,6 @@ class PartialConfiguration:
     def _get_extra_keys() -> Set[str]:
         return {
             "accept_command_v2",
-            "buck_mode",
             "create_open_source_configuration",
             "differential",
             "oncall",
@@ -374,6 +374,7 @@ class PartialConfiguration:
             autocomplete=None,
             binary=arguments.binary,
             buck_builder_binary=arguments.buck_builder_binary,
+            buck_mode=arguments.buck_mode,
             disabled=None,
             do_not_ignore_all_errors_in=[],
             dot_pyre_directory=arguments.dot_pyre_directory,
@@ -519,6 +520,7 @@ class PartialConfiguration:
                 buck_builder_binary=ensure_option_type(
                     configuration_json, "buck_builder_binary", str
                 ),
+                buck_mode=ensure_option_type(configuration_json, "buck_mode", str),
                 disabled=ensure_option_type(configuration_json, "disabled", bool),
                 do_not_ignore_all_errors_in=ensure_string_list(
                     configuration_json, "do_not_ignore_errors_in"
@@ -623,6 +625,7 @@ class PartialConfiguration:
             autocomplete=self.autocomplete,
             binary=binary,
             buck_builder_binary=buck_builder_binary,
+            buck_mode=self.buck_mode,
             disabled=self.disabled,
             do_not_ignore_all_errors_in=[
                 expand_relative_path(root, path)
@@ -688,6 +691,7 @@ def merge_partial_configurations(
         buck_builder_binary=overwrite_base(
             base.buck_builder_binary, override.buck_builder_binary
         ),
+        buck_mode=overwrite_base(base.buck_mode, override.buck_mode),
         disabled=overwrite_base(base.disabled, override.disabled),
         do_not_ignore_all_errors_in=prepend_base(
             base.do_not_ignore_all_errors_in, override.do_not_ignore_all_errors_in
@@ -745,6 +749,7 @@ class Configuration:
     autocomplete: bool = False
     binary: Optional[str] = None
     buck_builder_binary: Optional[str] = None
+    buck_mode: Optional[str] = None
     disabled: bool = False
     do_not_ignore_all_errors_in: Sequence[str] = field(default_factory=list)
     excludes: Sequence[str] = field(default_factory=list)
@@ -792,6 +797,7 @@ class Configuration:
             ),
             binary=partial_configuration.binary,
             buck_builder_binary=partial_configuration.buck_builder_binary,
+            buck_mode=partial_configuration.buck_mode,
             disabled=_get_optional_value(partial_configuration.disabled, default=False),
             do_not_ignore_all_errors_in=partial_configuration.do_not_ignore_all_errors_in,
             excludes=partial_configuration.excludes,
@@ -847,6 +853,7 @@ class Configuration:
         """
         binary = self.binary
         buck_builder_binary = self.buck_builder_binary
+        buck_mode = self.buck_mode
         formatter = self.formatter
         isolation_prefix = self.isolation_prefix
         logger = self.logger
@@ -865,6 +872,7 @@ class Configuration:
                 if buck_builder_binary is not None
                 else {}
             ),
+            **({"buck_mode": buck_mode} if buck_mode is not None else {}),
             "disabled": self.disabled,
             "do_not_ignore_all_errors_in": list(self.do_not_ignore_all_errors_in),
             "excludes": list(self.excludes),
