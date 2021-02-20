@@ -559,8 +559,20 @@ class SharedAnalysisDirectory(AnalysisDirectory):
         if absolute_link_map is None:
             relative_link_map = {}
             try:
+                configuration = self._configuration
+                buck_mode = (
+                    configuration.buck_mode if configuration is not None else None
+                )
+                isolation_prefix = (
+                    configuration.isolation_prefix
+                    if configuration is not None
+                    else None
+                )
                 relative_link_map = buck.query_buck_relative_paths(
-                    new_paths, self._targets
+                    new_paths,
+                    self._targets,
+                    buck_mode=buck_mode,
+                    isolation_prefix=isolation_prefix,
                 )
             except buck.BuckException as error:
                 LOG.error("Exception occurred when querying buck: %s", error)

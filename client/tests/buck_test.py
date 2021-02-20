@@ -219,6 +219,8 @@ class BuckTest(unittest.TestCase):
                     "buck",
                     "query",
                     "--json",
+                    "--config",
+                    "client.id=pyre",
                     "--output-attribute",
                     ".*",
                     "owner(%s) ^ deps(set(targetA targetB))",

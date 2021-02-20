@@ -378,13 +378,26 @@ def find_buck_root(path: str) -> Optional[str]:
 
 
 @functools.lru_cache()
-def _buck_query(project_paths: Tuple[str], targets: Tuple[str]) -> str:
+def _buck_query(
+    project_paths: Tuple[str],
+    targets: Tuple[str],
+    buck_mode: Optional[str],
+    isolation_prefix: Optional[str],
+) -> str:
     """We accept Tuples because `lru_cache` expects hashable arguments."""
     target_string = " ".join(targets)
     command = [
         "buck",
+        *(
+            ["--isolation_prefix", isolation_prefix]
+            if isolation_prefix is not None
+            else []
+        ),
         "query",
         "--json",
+        *(["@mode/" + buck_mode] if buck_mode is not None else []),
+        "--config",
+        "client.id=pyre",
         "--output-attribute",
         ".*",
         # This will get only those owner targets that are beneath our targets or
@@ -405,7 +418,10 @@ def clear_buck_query_cache() -> None:
 
 
 def query_buck_relative_paths(
-    project_paths: Iterable[str], targets: Iterable[str]
+    project_paths: Iterable[str],
+    targets: Iterable[str],
+    buck_mode: Optional[str] = None,
+    isolation_prefix: Optional[str] = None,
 ) -> Dict[str, str]:
     """Return a mapping from each absolute project path to its relative location
     in the buck output directory.
@@ -420,7 +436,9 @@ def query_buck_relative_paths(
     project_paths = tuple(project_paths)
     targets = tuple(targets)
     try:
-        owner_output = json.loads(_buck_query(project_paths, targets))
+        owner_output = json.loads(
+            _buck_query(project_paths, targets, buck_mode, isolation_prefix)
+        )
     except (
         subprocess.TimeoutExpired,
         subprocess.CalledProcessError,
