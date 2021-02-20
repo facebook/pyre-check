@@ -2583,6 +2583,86 @@ let test_recursive_aliases context =
   ()
 
 
+let test_variadic_tuples context =
+  let assert_type_errors = assert_type_errors ~context in
+  assert_type_errors
+    {|
+      from typing import Tuple
+      from pyre_extensions import TypeVarTuple
+
+      Ts = TypeVarTuple("Ts")
+
+      def foo(x: Tuple[int, *Ts]) -> Tuple[bool, *Ts]: ...
+
+      def bar() -> None:
+        x: Tuple[int, str, bool]
+        y = foo(x)
+        reveal_type(y)
+
+        x2: Tuple[int]
+        y2 = foo(x2)
+        reveal_type(y2)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `y` is `Tuple[bool, str, bool]`.";
+      "Revealed type [-1]: Revealed type for `y2` is `Tuple[bool]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Tuple
+      from pyre_extensions import TypeVarTuple
+
+      Ts = TypeVarTuple("Ts")
+
+      def foo(x: Tuple[int, *Ts, str]) -> Tuple[bool, *Ts]: ...
+
+      def bar() -> None:
+        x: Tuple[int]
+        foo(x)
+    |}
+    [
+      "Incompatible parameter type [6]: Expected `typing.Tuple[int, *test.Ts, str]` for 1st \
+       positional only parameter to call `foo` but got `Tuple[int]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Generic, Tuple, TypeVar
+      from pyre_extensions import TypeVarTuple
+
+      Ts = TypeVarTuple("Ts")
+      Tin = TypeVar("Tin")
+      Tout = TypeVar("Tout")
+
+      class Linear(Generic[Tin, Tout]):
+        """Transform the last dimension from Tin to Tout."""
+
+        def __init__(self, in_dimension: Tin, out_dimension: Tout) -> None:
+          self.in_dimension = in_dimension
+          self.out_dimension = out_dimension
+
+        def __call__(self, x: Tuple[*Ts, Tin]) -> Tuple[*Ts, Tout]: ...
+
+      def bar() -> None:
+        x = (10, 20)
+        layer1 = Linear(20, 30)
+        layer2 = Linear(30, 40)
+        layer3 = Linear(40, 50)
+        y = layer3(layer2(layer1(x)))
+        reveal_type(y)
+
+        shape_mismatch = (10, 21)
+        layer1(shape_mismatch)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `y` is `Tuple[typing_extensions.Literal[10], \
+       typing_extensions.Literal[50]]`.";
+      "Incompatible parameter type [6]: Expected `typing.Tuple[*test.Ts, \
+       typing_extensions.Literal[20]]` for 1st positional only parameter to call `Linear.__call__` \
+       but got `Tuple[typing_extensions.Literal[10], typing_extensions.Literal[21]]`.";
+    ];
+  ()
+
+
 let () =
   "typeVariable"
   >::: [
@@ -2599,5 +2679,6 @@ let () =
          "duplicate_type_variables" >:: test_duplicate_type_variables;
          "generic_aliases" >:: test_generic_aliases;
          "recursive_aliases" >:: test_recursive_aliases;
+         "variadic_tuples" >:: test_variadic_tuples;
        ]
   |> Test.run

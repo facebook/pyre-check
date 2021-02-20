@@ -116,6 +116,9 @@ let make_assert_functions context =
 
       class HasMeta(metaclass=Meta):
         pass
+
+      Ts = pyre_extensions.TypeVarTuple("Ts")
+      Ts2 = pyre_extensions.TypeVarTuple("Ts2")
     |}
       context
   in
@@ -150,6 +153,8 @@ let make_assert_functions context =
           "UserDefinedVariadic";
           "UserDefinedVariadicSimpleChild";
           "UserDefinedVariadicMapChild";
+          "Ts";
+          "Ts2";
         ]
         |> Type.Primitive.Set.of_list
       in
@@ -238,12 +243,19 @@ let make_assert_functions context =
                 | Type.Callable { implementation = { parameters; _ }; _ } -> parameters
                 | _ -> failwith "impossible"
               in
+              let parse_ordered_types ordered =
+                match parse_annotation ordered with
+                | Type.Tuple (Bounded ordered_type) -> ordered_type
+                | _ -> failwith "expected tuple"
+              in
               let global_resolution =
                 AnnotatedGlobalEnvironment.read_only environment |> GlobalResolution.create
               in
               match GlobalResolution.aliases global_resolution primitive with
               | Some (Type.VariableAlias (ParameterVariadic variable)) ->
                   Type.Variable.ParameterVariadicPair (variable, parse_parameters value)
+              | Some (Type.VariableAlias (TupleVariadic variable)) ->
+                  Type.Variable.TupleVariadicPair (variable, parse_ordered_types value)
               | _ -> failwith "not available" )
           | _ -> failwith "not a variable"
         in
@@ -325,9 +337,23 @@ let make_assert_functions context =
             (Type.Callable.ParameterVariadicTypeVariable
                { head = []; variable = Type.Variable.Variadic.Parameters.mark_as_bound variable })
       in
+      let mark_tuple_variadic variable =
+        if
+          List.mem
+            leave_unbound_in_left
+            (Type.Variable.Variadic.Tuple.name variable)
+            ~equal:Identifier.equal
+        then
+          None
+        else
+          Some
+            (Type.Variable.Variadic.Tuple.self_reference
+               (Type.Variable.Variadic.Tuple.mark_as_bound variable))
+      in
       parse_annotation left
       |> Type.Variable.GlobalTransforms.Unary.replace_all mark_unary
       |> Type.Variable.GlobalTransforms.ParameterVariadic.replace_all mark_parameter_variadic
+      |> Type.Variable.GlobalTransforms.TupleVariadic.replace_all mark_tuple_variadic
     in
     let right = parse_annotation right in
     assert_add_direct ~left ~right ~do_prep
@@ -786,6 +812,27 @@ let test_add_constraint_recursive_type context =
   ()
 
 
+let test_add_constraint_type_variable_tuple context =
+  let assert_add, _, _, _ = make_assert_functions context in
+  assert_add
+    ~left:"typing.Tuple[int, str, bool]"
+    ~right:"typing.Tuple[int, pyre_extensions.Unpack[Ts]]"
+    [["Ts", "typing.Tuple[str, bool]"]];
+  assert_add
+    ~left:"typing.Tuple[int, str, bool]"
+    ~right:"typing.Tuple[int, pyre_extensions.Unpack[Ts], bool]"
+    [["Ts", "typing.Tuple[str]"]];
+  assert_add
+    ~left:"typing.Tuple[int]"
+    ~right:"typing.Tuple[int, pyre_extensions.Unpack[Ts], bool]"
+    [];
+  assert_add
+    ~left:"typing.Tuple[int, str, bool]"
+    ~right:"typing.Tuple[pyre_extensions.Unpack[Ts], T]"
+    [["Ts", "typing.Tuple[int, str]"; "T", "bool"]];
+  ()
+
+
 let test_instantiate_protocol_parameters context =
   let assert_instantiate_protocol_parameters
       ?source
@@ -1046,6 +1093,7 @@ let () =
   >::: [
          "add_constraint" >:: test_add_constraint;
          "add_constraint_recursive_type" >:: test_add_constraint_recursive_type;
+         "add_constraint_type_variable_tuple" >:: test_add_constraint_type_variable_tuple;
          "instantiate_protocol_parameters" >:: test_instantiate_protocol_parameters;
          "marks_escaped_as_escaped" >:: test_mark_escaped_as_escaped;
        ]

@@ -665,26 +665,47 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
 
 
   and solve_ordered_types_less_or_equal order ~left ~right ~constraints =
-    let solve_concrete_against_concrete ~lefts ~rights constraints =
-      let folded_constraints =
-        let solve_pair constraints left right =
-          constraints
-          |> List.concat_map ~f:(fun constraints ->
-                 solve_less_or_equal order ~constraints ~left ~right)
-        in
-        List.fold2 ~init:[constraints] ~f:solve_pair lefts rights
+    let solve_non_variadic_pairs ~pairs constraints =
+      let solve_pair constraints (left, right) =
+        List.concat_map constraints ~f:(fun constraints ->
+            solve_less_or_equal order ~constraints ~left ~right)
       in
-      match folded_constraints with
-      | List.Or_unequal_lengths.Ok constraints -> constraints
-      | List.Or_unequal_lengths.Unequal_lengths -> impossible
+      List.fold ~init:[constraints] ~f:solve_pair pairs
     in
     let open Type.OrderedTypes in
-    match left, right with
-    | left, right when Type.OrderedTypes.equal left right -> [constraints]
-    | Concrete lefts, Concrete rights -> solve_concrete_against_concrete ~lefts ~rights constraints
-    | Concatenation _, _
-    | _, Concatenation _ ->
-        failwith "not yet implemented - T84854853"
+    if Type.OrderedTypes.equal left right then
+      [constraints]
+    else
+      let solve_split_ordered_types = function
+        (* TODO(T84854853): Optimization: Avoid this splitting and concatenating for Concrete vs
+           Concrete. *)
+        | { prefix_pairs; middle_pair = Concrete left_middle, Concrete right_middle; suffix_pairs }
+          -> (
+            match List.zip left_middle right_middle with
+            | Ok middle_pairs ->
+                solve_non_variadic_pairs
+                  ~pairs:(prefix_pairs @ middle_pairs @ suffix_pairs)
+                  constraints
+            | Unequal_lengths -> impossible )
+        | {
+            prefix_pairs;
+            middle_pair = Concrete concrete, Concatenation concatenation;
+            suffix_pairs;
+          } -> (
+            match Type.OrderedTypes.Concatenation.extract_sole_variadic concatenation with
+            | Some variadic ->
+                solve_non_variadic_pairs ~pairs:(prefix_pairs @ suffix_pairs) constraints
+                |> List.filter_map
+                     ~f:
+                       (OrderedConstraints.add_lower_bound
+                          ~order
+                          ~pair:(Type.Variable.TupleVariadicPair (variadic, Concrete concrete)))
+            | None -> impossible )
+        | _ -> failwith "not yet implemented - T84854853"
+      in
+      Type.OrderedTypes.split_matching_elements_by_length left right
+      >>| solve_split_ordered_types
+      |> Option.value ~default:impossible
 
 
   (* Find parameters to instantiate `protocol` such that `candidate <: protocol[parameters]`, where
