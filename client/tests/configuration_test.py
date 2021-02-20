@@ -18,6 +18,8 @@ import testslide
 
 from .. import command_arguments, find_directories
 from ..configuration import (
+    PythonVersion,
+    InvalidPythonVersion,
     Configuration,
     ExtensionElement,
     InvalidConfiguration,
@@ -39,6 +41,28 @@ from .setup import (
 )
 
 
+class PythonVersionTest(unittest.TestCase):
+    def test_from_string(self) -> None:
+        def assert_parsed(input: str, expected: PythonVersion) -> None:
+            self.assertEqual(PythonVersion.from_string(input), expected)
+
+        def assert_not_parsed(input: str) -> None:
+            with self.assertRaises(InvalidPythonVersion):
+                PythonVersion.from_string(input)
+
+        assert_not_parsed("")
+        assert_not_parsed("derp")
+        assert_not_parsed("123abc")
+        assert_not_parsed("1.a")
+        assert_not_parsed("1.2.a")
+        assert_not_parsed(".1")
+        assert_not_parsed("1.2.3.4")
+
+        assert_parsed("3", PythonVersion(major=3))
+        assert_parsed("3.6", PythonVersion(major=3, minor=6))
+        assert_parsed("3.6.7", PythonVersion(major=3, minor=6, micro=7))
+
+
 class PartialConfigurationTest(unittest.TestCase):
     def test_create_from_command_arguments(self) -> None:
         configuration = PartialConfiguration.from_command_arguments(
@@ -57,8 +81,7 @@ class PartialConfigurationTest(unittest.TestCase):
                 exclude=["excludes"],
                 typeshed="typeshed",
                 dot_pyre_directory=Path(".pyre"),
-                python_major_version=3,
-                python_minor_version=6,
+                python_version="3.6.7",
             )
         )
         self.assertEqual(configuration.binary, "binary")
@@ -80,6 +103,7 @@ class PartialConfigurationTest(unittest.TestCase):
         self.assertEqual(configuration.use_command_v2, True)
         self.assertEqual(configuration.python_major_version, 3)
         self.assertEqual(configuration.python_minor_version, 6)
+        self.assertEqual(configuration.python_micro_version, 7)
 
     def test_create_from_string_success(self) -> None:
         self.assertEqual(

@@ -93,6 +93,11 @@ class InvalidConfiguration(Exception):
         super().__init__(self.message)
 
 
+class InvalidPythonVersion(InvalidConfiguration):
+    def __init__(self, message: str) -> None:
+        super().__init__(message)
+
+
 class SearchPathElement(abc.ABC):
     @abc.abstractmethod
     def path(self) -> str:
@@ -277,6 +282,32 @@ def _in_virtual_environment(override: Optional[bool] = None) -> bool:
 
 
 @dataclass(frozen=True)
+class PythonVersion:
+    major: int
+    minor: int = 0
+    micro: int = 0
+
+    @staticmethod
+    def from_string(input: str) -> "PythonVersion":
+        try:
+            splits = input.split(".")
+            if len(splits) == 1:
+                return PythonVersion(major=int(splits[0]))
+            elif len(splits) == 2:
+                return PythonVersion(major=int(splits[0]), minor=int(splits[1]))
+            elif len(splits) == 3:
+                return PythonVersion(
+                    major=int(splits[0]), minor=int(splits[1]), micro=int(splits[2])
+                )
+            raise InvalidPythonVersion(
+                "Version string is expected to have the form of 'X.Y.Z' but got "
+                + f"'{input}'"
+            )
+        except ValueError as error:
+            raise InvalidPythonVersion(str(error))
+
+
+@dataclass(frozen=True)
 class PartialConfiguration:
     autocomplete: Optional[bool] = None
     binary: Optional[str] = None
@@ -337,6 +368,12 @@ class PartialConfiguration:
         targets: Optional[List[str]] = (
             arguments.targets if len(arguments.targets) > 0 else None
         )
+        python_version_string = arguments.python_version
+        python_version = (
+            PythonVersion.from_string(python_version_string)
+            if python_version_string is not None
+            else None
+        )
         return PartialConfiguration(
             autocomplete=None,
             binary=arguments.binary,
@@ -354,9 +391,15 @@ class PartialConfiguration:
             logger=arguments.logger,
             number_of_workers=None,
             other_critical_files=[],
-            python_major_version=arguments.python_major_version,
-            python_minor_version=arguments.python_minor_version,
-            python_micro_version=None,
+            python_major_version=python_version.major
+            if python_version is not None
+            else None,
+            python_minor_version=python_version.minor
+            if python_version is not None
+            else None,
+            python_micro_version=python_version.micro
+            if python_version is not None
+            else None,
             search_path=[
                 SimpleSearchPathElement(element) for element in arguments.search_path
             ],
