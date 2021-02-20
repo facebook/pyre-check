@@ -39,7 +39,9 @@ end
 (* Note that creating socket path this way implicitly assumes that `log_path` uniquely determines
    server instances. *)
 let socket_path_of log_path =
-  let socket_directory = Path.create_absolute ~follow_symbolic_links:false Filename.temp_dir_name in
+  let socket_directory =
+    Path.create_absolute ~follow_symbolic_links:false (Caml.Filename.get_temp_dir_name ())
+  in
   let log_path_digest = Path.absolute log_path |> Digest.string |> Digest.to_hex in
   Path.create_relative
     ~root:socket_directory

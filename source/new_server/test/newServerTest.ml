@@ -140,6 +140,7 @@ module ScratchProject = struct
     =
     let open Lwt.Infix in
     Memory.reset_shared_memory ();
+    Caml.Filename.set_temp_dir_name "/tmp";
     Start.start_server
       server_configuration
       ?watchman
