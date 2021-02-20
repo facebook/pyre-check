@@ -3757,8 +3757,32 @@ end = struct
         | _ -> []
 
 
-      (* TODO(T84854853): Implement. *)
-      let local_replace _ annotation = Some annotation
+      let local_replace replacement = function
+        | Parametric ({ parameters; _ } as parametric) ->
+            let replace parameter =
+              let replaced =
+                match parameter with
+                | Parameter.Unpacked (Variadic variadic) ->
+                    replacement variadic >>| OrderedTypes.to_parameters
+                | _ -> None
+              in
+              Option.value ~default:[parameter] replaced
+            in
+            Parametric { parametric with parameters = List.concat_map parameters ~f:replace }
+            |> Option.some
+        | Tuple (Bounded (Concatenation { prefix; middle = Variadic variadic; suffix })) ->
+            let expand_ordered_type_within_concatenation = function
+              | OrderedTypes.Concrete annotations ->
+                  OrderedTypes.Concrete (prefix @ annotations @ suffix)
+              | Concatenation { prefix = new_prefix; middle; suffix = new_suffix } ->
+                  Concatenation
+                    { prefix = prefix @ new_prefix; middle; suffix = new_suffix @ suffix }
+            in
+            replacement variadic
+            >>| expand_ordered_type_within_concatenation
+            >>| fun ordered_type -> Tuple (Bounded ordered_type)
+        | _ -> None
+
 
       let dequalify ({ name; _ } as variable) ~dequalify_map =
         { variable with name = dequalify_identifier dequalify_map name }

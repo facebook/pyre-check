@@ -1691,6 +1691,9 @@ let test_convert_all_escaped_free_variables_to_anys _ =
 let test_replace_all _ =
   let free_variable = Type.Variable (Type.Variable.Unary.create "T") in
   let annotation = Type.parametric "p" ![free_variable; Type.integer] in
+  let assert_equal actual expected =
+    assert_equal ~cmp:Type.equal ~printer:Type.show expected actual
+  in
   assert_equal
     (Type.Variable.GlobalTransforms.Unary.replace_all (fun _ -> Some Type.integer) annotation)
     (Type.parametric "p" ![Type.integer; Type.integer]);
@@ -1727,6 +1730,53 @@ let test_replace_all _ =
          CallableParameters
            (Defined [Named { name = "p"; annotation = Type.integer; default = false }]);
        ]);
+
+  (* Variadic tuples. *)
+  let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
+  let variadic2 = Type.Variable.Variadic.Tuple.create "Ts2" in
+  let assert_replaced ~replace annotation expected =
+    let aliases ?replace_unbound_parameters_with_any:_ = function
+      | "Ts" -> Some (Type.VariableAlias (Type.Variable.TupleVariadic variadic))
+      | "Ts2" -> Some (Type.VariableAlias (Type.Variable.TupleVariadic variadic2))
+      | _ -> None
+    in
+    assert_equal
+      (Type.Variable.GlobalTransforms.TupleVariadic.replace_all
+         replace
+         (Type.create ~aliases (parse_single_expression ~preprocess:true annotation)))
+      (Type.create ~aliases (parse_single_expression ~preprocess:true expected))
+  in
+  let replace_with_concrete given =
+    Option.some_if
+      (Type.Variable.Variadic.Tuple.equal given variadic)
+      (Type.OrderedTypes.Concrete [Type.bool; Type.bool])
+  in
+  let replace_with_concatenation _ =
+    Some
+      (Type.OrderedTypes.Concatenation
+         (Type.OrderedTypes.Concatenation.create ~prefix:[Type.bool] ~suffix:[Type.bool] variadic))
+  in
+  assert_replaced
+    ~replace:replace_with_concrete
+    "Foo[int, pyre_extensions.Unpack[Ts], str]"
+    "Foo[int, bool, bool, str]";
+  assert_replaced
+    ~replace:replace_with_concatenation
+    "Foo[int, pyre_extensions.Unpack[Ts], str]"
+    "Foo[int, bool, pyre_extensions.Unpack[Ts], bool, str]";
+  assert_replaced
+    ~replace:replace_with_concrete
+    "Foo[Bar[int, pyre_extensions.Unpack[Ts], str], Bar[int, pyre_extensions.Unpack[Ts2], str]]"
+    "Foo[Bar[int, bool, bool, str], Bar[int, pyre_extensions.Unpack[Ts2], str]]";
+  assert_replaced ~replace:replace_with_concrete "typing.Tuple[int, str]" "typing.Tuple[int, str]";
+  assert_replaced
+    ~replace:replace_with_concrete
+    "typing.Tuple[int, pyre_extensions.Unpack[Ts], str]"
+    "typing.Tuple[int, bool, bool, str]";
+  assert_replaced
+    ~replace:replace_with_concatenation
+    "typing.Tuple[int, pyre_extensions.Unpack[Ts], str]"
+    "typing.Tuple[int, bool, pyre_extensions.Unpack[Ts], bool, str]";
   ()
 
 
