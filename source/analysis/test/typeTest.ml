@@ -620,6 +620,21 @@ let test_expression _ =
        (Type.EnumerationMember
           { enumeration_type = Type.Primitive "test.MyEnum"; member_name = "ONE" }))
     "typing_extensions.Literal[test.MyEnum.ONE]";
+
+  (* Variadic tuples. *)
+  let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
+  assert_expression
+    (Type.parametric "Foo" [Unpacked (Type.OrderedTypes.Concatenation.create_unpackable variadic)])
+    "Foo[pyre_extensions.Unpack[Ts]]";
+  assert_expression
+    (Type.Tuple
+       (Bounded
+          (Type.OrderedTypes.Concatenation
+             (Type.OrderedTypes.Concatenation.create
+                ~prefix:[Type.integer]
+                ~suffix:[Type.string]
+                variadic))))
+    "typing.Tuple[int, pyre_extensions.Unpack[Ts], str]";
   ()
 
 

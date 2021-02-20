@@ -1589,6 +1589,43 @@ let rec expression annotation =
   let location = Location.any in
   let create_name name = Expression.Name (create_name ~location name) in
   let get_item_call = get_item_call ~location in
+  let variadic_to_expression variadic =
+    Expression.Call
+      {
+        callee =
+          {
+            Node.location;
+            value =
+              Name
+                (Name.Attribute
+                   {
+                     base =
+                       create_name Record.OrderedTypes.Concatenation.unpack_public_name
+                       |> Node.create ~location;
+                     attribute = "__getitem__";
+                     special = true;
+                   });
+          };
+        arguments =
+          [
+            {
+              name = None;
+              value =
+                create_name
+                  (Format.asprintf "%a" Record.Variable.RecordVariadic.Tuple.pp_concise variadic)
+                |> Node.create ~location;
+            };
+          ];
+      }
+    |> Node.create ~location
+  in
+  let concatenation_to_expression
+      { Record.OrderedTypes.Concatenation.prefix; middle = Variadic variadic; suffix }
+    =
+    List.map ~f:expression prefix
+    @ [variadic_to_expression variadic]
+    @ List.map ~f:expression suffix
+  in
   let callable_parameters_expression = function
     | Defined parameters ->
         let convert_parameter parameter =
@@ -1739,7 +1776,7 @@ let rec expression annotation =
           let expression_of_parameter = function
             | Record.Parameter.Single single -> expression single
             | CallableParameters parameters -> callable_parameters_expression parameters
-            | Unpacked _ -> failwith "not yet implemented - T84854853"
+            | Unpacked (Variadic variadic) -> variadic_to_expression variadic
           in
           match parameters with
           | parameters -> List.map parameters ~f:expression_of_parameter
@@ -1760,7 +1797,7 @@ let rec expression annotation =
         let parameters =
           match elements with
           | Bounded (Concrete parameters) -> List.map ~f:expression parameters
-          | Bounded (Concatenation _) -> failwith "not yet implemented - T84854853"
+          | Bounded (Concatenation concatenation) -> concatenation_to_expression concatenation
           | Unbounded parameter -> List.map ~f:expression [parameter; Primitive "..."]
         in
         get_item_call "typing.Tuple" parameters
