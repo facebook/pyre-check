@@ -286,6 +286,29 @@ let test_single_variable_solution _ =
         `Lower (ParameterVariadicPair (parameter_variadic, one_named_parameter));
       ]
     None;
+
+  let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
+  assert_solution
+    ~sequentially_applied_bounds:
+      [
+        `Lower (TupleVariadicPair (variadic, Type.OrderedTypes.Concrete [Type.integer; Type.string]));
+      ]
+    (Some [TupleVariadicPair (variadic, Type.OrderedTypes.Concrete [Type.integer; Type.string])]);
+  assert_solution
+    ~sequentially_applied_bounds:
+      [
+        `Lower (TupleVariadicPair (variadic, Type.OrderedTypes.Concrete [Type.integer; Type.string]));
+        `Lower
+          (TupleVariadicPair (variadic, Type.OrderedTypes.Concrete [Type.integer; Type.string]));
+      ]
+    (Some [TupleVariadicPair (variadic, Type.OrderedTypes.Concrete [Type.integer; Type.string])]);
+  assert_solution
+    ~sequentially_applied_bounds:
+      [
+        `Lower (TupleVariadicPair (variadic, Type.OrderedTypes.Concrete [Type.integer; Type.string]));
+        `Lower (TupleVariadicPair (variadic, Type.OrderedTypes.Concrete [Type.bool]));
+      ]
+    None;
   ()
 
 
@@ -409,6 +432,67 @@ let test_multiple_variable_solution _ =
         `Fallback (Unary unconstrained_b);
       ]
     (Some [UnaryPair (unconstrained_a, Type.Any); UnaryPair (unconstrained_b, Type.Any)]);
+
+  (* Variadic tuples. *)
+  let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
+  let variadic2 = Type.Variable.Variadic.Tuple.create "Ts2" in
+  assert_solution
+    ~sequentially_applied_bounds:
+      [
+        `Lower
+          (TupleVariadicPair
+             ( variadic,
+               Type.OrderedTypes.Concatenation
+                 (Type.OrderedTypes.Concatenation.create
+                    ~prefix:[Type.integer]
+                    ~suffix:[Type.string]
+                    variadic2) ));
+        `Lower (TupleVariadicPair (variadic2, Type.OrderedTypes.Concrete [Type.bool]));
+      ]
+    (Some
+       [
+         TupleVariadicPair
+           (variadic, Type.OrderedTypes.Concrete [Type.integer; Type.bool; Type.string]);
+         TupleVariadicPair (variadic2, Type.OrderedTypes.Concrete [Type.bool]);
+       ]);
+  (* The constraint-solver doesn't solve for cycles, just like with unaries. *)
+  assert_solution
+    ~sequentially_applied_bounds:
+      [
+        `Lower
+          (TupleVariadicPair
+             ( variadic,
+               Type.OrderedTypes.Concatenation
+                 (Type.OrderedTypes.Concatenation.create ~prefix:[] ~suffix:[] variadic2) ));
+        `Lower
+          (TupleVariadicPair
+             ( variadic2,
+               Type.OrderedTypes.Concatenation
+                 (Type.OrderedTypes.Concatenation.create ~prefix:[] ~suffix:[] variadic) ));
+      ]
+    None;
+  (* Test that unaries and variadic tuples work together. *)
+  assert_solution
+    ~sequentially_applied_bounds:
+      [
+        `Lower
+          (TupleVariadicPair
+             ( variadic,
+               Type.OrderedTypes.Concatenation
+                 (Type.OrderedTypes.Concatenation.create
+                    ~prefix:[Type.Variable unconstrained_a]
+                    ~suffix:[Type.string]
+                    variadic2) ));
+        `Lower (TupleVariadicPair (variadic2, Type.OrderedTypes.Concrete [Type.bool]));
+        `Lower (UnaryPair (unconstrained_a, Type.integer));
+      ]
+    (Some
+       [
+         UnaryPair (unconstrained_a, Type.integer);
+         TupleVariadicPair
+           (variadic, Type.OrderedTypes.Concrete [Type.integer; Type.bool; Type.string]);
+         TupleVariadicPair (variadic2, Type.OrderedTypes.Concrete [Type.bool]);
+       ]);
   ()
 
 
