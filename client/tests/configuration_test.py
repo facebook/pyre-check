@@ -278,6 +278,12 @@ class PartialConfigurationTest(unittest.TestCase):
             ).python_minor_version,
             6,
         )
+        self.assertEqual(
+            PartialConfiguration.from_string(
+                json.dumps({"python_micro_version": 7})
+            ).python_micro_version,
+            7,
+        )
 
         self.assertIsNone(PartialConfiguration.from_string("{}").source_directories)
         source_directories = PartialConfiguration.from_string(
@@ -366,6 +372,7 @@ class PartialConfigurationTest(unittest.TestCase):
         assert_raises(json.dumps({"version": 123}))
         assert_raises(json.dumps({"python_major_version": "abc"}))
         assert_raises(json.dumps({"python_minor_version": []}))
+        assert_raises(json.dumps({"python_micro_version": {}}))
 
     def test_merge(self) -> None:
         # Unsafe features like `getattr` has to be used in this test to reduce boilerplates.
@@ -469,6 +476,7 @@ class PartialConfigurationTest(unittest.TestCase):
         assert_prepended("other_critical_files")
         assert_overwritten("python_major_version")
         assert_overwritten("python_minor_version")
+        assert_overwritten("python_micro_version")
         assert_prepended("search_path")
         assert_raise_when_overridden("source_directories")
         assert_overwritten("strict")
@@ -594,6 +602,7 @@ class ConfigurationTest(testslide.TestCase):
                 other_critical_files=["critical"],
                 python_major_version=3,
                 python_minor_version=6,
+                python_micro_version=7,
                 search_path=[SimpleSearchPathElement("search_path")],
                 source_directories=None,
                 strict=None,
@@ -629,6 +638,7 @@ class ConfigurationTest(testslide.TestCase):
         )
         self.assertEqual(configuration.python_major_version, 3)
         self.assertEqual(configuration.python_minor_version, 6)
+        self.assertEqual(configuration.python_micro_version, 7)
         self.assertEqual(configuration.source_directories, [])
         self.assertEqual(configuration.strict, False)
         self.assertEqual(configuration.taint_models_path, ["taint"])
@@ -912,6 +922,14 @@ class ConfigurationTest(testslide.TestCase):
             Configuration(
                 project_root="irrelevant",
                 dot_pyre_directory=Path(".pyre"),
+                python_micro_version=7,
+            ).get_python_micro_version(),
+            7,
+        )
+        self.assertEqual(
+            Configuration(
+                project_root="irrelevant",
+                dot_pyre_directory=Path(".pyre"),
                 python_major_version=None,
             ).get_python_major_version(),
             sys.version_info.major,
@@ -923,6 +941,14 @@ class ConfigurationTest(testslide.TestCase):
                 python_minor_version=None,
             ).get_python_minor_version(),
             sys.version_info.minor,
+        )
+        self.assertEqual(
+            Configuration(
+                project_root="irrelevant",
+                dot_pyre_directory=Path(".pyre"),
+                python_minor_version=None,
+            ).get_python_micro_version(),
+            sys.version_info.micro,
         )
 
     def test_get_binary_from_configuration(self) -> None:

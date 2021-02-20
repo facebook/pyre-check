@@ -296,6 +296,7 @@ class PartialConfiguration:
     other_critical_files: Sequence[str] = field(default_factory=list)
     python_major_version: Optional[int] = None
     python_minor_version: Optional[int] = None
+    python_micro_version: Optional[int] = None
     search_path: Sequence[SearchPathElement] = field(default_factory=list)
     source_directories: Optional[Sequence[SearchPathElement]] = None
     strict: Optional[bool] = None
@@ -355,6 +356,7 @@ class PartialConfiguration:
             other_critical_files=[],
             python_major_version=arguments.python_major_version,
             python_minor_version=arguments.python_minor_version,
+            python_micro_version=None,
             search_path=[
                 SimpleSearchPathElement(element) for element in arguments.search_path
             ],
@@ -507,6 +509,9 @@ class PartialConfiguration:
                 python_minor_version=ensure_option_type(
                     configuration_json, "python_minor_version", int
                 ),
+                python_micro_version=ensure_option_type(
+                    configuration_json, "python_micro_version", int
+                ),
                 search_path=search_path,
                 source_directories=source_directories,
                 strict=ensure_option_type(configuration_json, "strict", bool),
@@ -604,6 +609,7 @@ class PartialConfiguration:
             ],
             python_major_version=self.python_major_version,
             python_minor_version=self.python_minor_version,
+            python_micro_version=self.python_micro_version,
             search_path=[path.expand_relative_root(root) for path in self.search_path],
             source_directories=source_directories,
             strict=self.strict,
@@ -677,6 +683,9 @@ def merge_partial_configurations(
         python_minor_version=overwrite_base(
             base.python_minor_version, override.python_minor_version
         ),
+        python_micro_version=overwrite_base(
+            base.python_micro_version, override.python_micro_version
+        ),
         search_path=prepend_base(base.search_path, override.search_path),
         source_directories=raise_when_overridden(
             base.source_directories,
@@ -722,6 +731,7 @@ class Configuration:
     other_critical_files: Sequence[str] = field(default_factory=list)
     python_major_version: Optional[int] = None
     python_minor_version: Optional[int] = None
+    python_micro_version: Optional[int] = None
     relative_local_root: Optional[str] = None
     search_path: Sequence[SearchPathElement] = field(default_factory=list)
     source_directories: Sequence[SearchPathElement] = field(default_factory=list)
@@ -770,6 +780,7 @@ class Configuration:
             other_critical_files=partial_configuration.other_critical_files,
             python_major_version=partial_configuration.python_major_version,
             python_minor_version=partial_configuration.python_minor_version,
+            python_micro_version=partial_configuration.python_micro_version,
             relative_local_root=relative_local_root,
             search_path=[
                 path.expand_global_root(str(project_root)) for path in search_path
@@ -818,6 +829,7 @@ class Configuration:
         number_of_workers = self.number_of_workers
         python_major_version = self.python_major_version
         python_minor_version = self.python_minor_version
+        python_micro_version = self.python_micro_version
         relative_local_root = self.relative_local_root
         typeshed = self.typeshed
         version_hash = self.version_hash
@@ -854,6 +866,11 @@ class Configuration:
             **(
                 {"python_minor_version": python_minor_version}
                 if python_minor_version is not None
+                else {}
+            ),
+            **(
+                {"python_micro_version": python_micro_version}
+                if python_micro_version is not None
                 else {}
             ),
             **(
@@ -1045,6 +1062,12 @@ class Configuration:
         if python_minor_version is not None:
             return python_minor_version
         return sys.version_info.minor
+
+    def get_python_micro_version(self) -> int:
+        python_micro_version = self.python_micro_version
+        if python_micro_version is not None:
+            return python_micro_version
+        return sys.version_info.micro
 
 
 def create_configuration(
