@@ -873,7 +873,7 @@ class ConfigurationTest(testslide.TestCase):
         )
 
     def test_get_number_of_workers(self) -> None:
-        self.assertEquals(
+        self.assertEqual(
             Configuration(
                 project_root="irrelevant",
                 dot_pyre_directory=Path(".pyre"),
@@ -892,7 +892,7 @@ class ConfigurationTest(testslide.TestCase):
         )
 
     def test_get_python_versions(self) -> None:
-        self.assertEquals(
+        self.assertEqual(
             Configuration(
                 project_root="irrelevant",
                 dot_pyre_directory=Path(".pyre"),
@@ -900,7 +900,7 @@ class ConfigurationTest(testslide.TestCase):
             ).get_python_major_version(),
             3,
         )
-        self.assertEquals(
+        self.assertEqual(
             Configuration(
                 project_root="irrelevant",
                 dot_pyre_directory=Path(".pyre"),
@@ -908,7 +908,7 @@ class ConfigurationTest(testslide.TestCase):
             ).get_python_minor_version(),
             6,
         )
-        self.assertEquals(
+        self.assertEqual(
             Configuration(
                 project_root="irrelevant",
                 dot_pyre_directory=Path(".pyre"),
@@ -916,7 +916,7 @@ class ConfigurationTest(testslide.TestCase):
             ).get_python_major_version(),
             sys.version_info.major,
         )
-        self.assertEquals(
+        self.assertEqual(
             Configuration(
                 project_root="irrelevant",
                 dot_pyre_directory=Path(".pyre"),

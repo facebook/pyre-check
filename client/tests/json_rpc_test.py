@@ -275,4 +275,4 @@ class JsonRPCTest(unittest.TestCase):
         file.seek(0)
         parsed_message = read_lsp_request(file)
 
-        self.assertEquals(message, parsed_message)
+        self.assertEqual(message, parsed_message)
