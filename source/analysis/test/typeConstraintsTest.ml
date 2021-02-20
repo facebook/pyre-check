@@ -569,6 +569,60 @@ let test_partial_solution _ =
            (parameters_a, Type.Callable.ParameterVariadicTypeVariable (empty_head parameters_b));
        ])
     (Some []);
+
+  (* Variadic tuples. *)
+  let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
+  let variadic2 = Type.Variable.Variadic.Tuple.create "Ts2" in
+  (* Ts <: Ts2 and Ts2 <: Ts. Solve for Ts. *)
+  expect_split_solution
+    ~variables:[Type.Variable.TupleVariadic variadic]
+    ~bounds:
+      [
+        `Lower
+          (TupleVariadicPair
+             ( variadic,
+               Type.OrderedTypes.Concatenation
+                 (Type.OrderedTypes.Concatenation.create ~prefix:[] ~suffix:[] variadic2) ));
+        `Lower
+          (TupleVariadicPair
+             ( variadic2,
+               Type.OrderedTypes.Concatenation
+                 (Type.OrderedTypes.Concatenation.create ~prefix:[] ~suffix:[] variadic) ));
+      ]
+    (Some
+       [
+         TupleVariadicPair
+           ( variadic,
+             Type.OrderedTypes.Concatenation
+               (Type.OrderedTypes.Concatenation.create ~prefix:[] ~suffix:[] variadic2) );
+       ])
+    (* This is a trivial solution because the remaining constraint just becomes `Ts2 <: Ts2`. *)
+    (Some []);
+  expect_split_solution
+    ~variables:[Type.Variable.TupleVariadic variadic]
+    ~bounds:
+      [
+        `Lower
+          (TupleVariadicPair
+             ( variadic,
+               Type.OrderedTypes.Concatenation
+                 (Type.OrderedTypes.Concatenation.create ~prefix:[] ~suffix:[] variadic2) ));
+        `Lower
+          (TupleVariadicPair
+             ( variadic2,
+               Type.OrderedTypes.Concatenation
+                 (Type.OrderedTypes.Concatenation.create ~prefix:[Type.integer] ~suffix:[] variadic)
+             ));
+      ]
+    (Some
+       [
+         TupleVariadicPair
+           ( variadic,
+             Type.OrderedTypes.Concatenation
+               (Type.OrderedTypes.Concatenation.create ~prefix:[] ~suffix:[] variadic2) );
+       ])
+    (* This fails because the remaining constraint becomes `[*Ts2] <: [int, *Ts2]`. *)
+    None;
   ()
 
 
