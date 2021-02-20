@@ -1857,6 +1857,126 @@ let test_parse_type_variable_declarations _ =
   ()
 
 
+let test_split_ordered_types _ =
+  let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
+  let assert_split ?(split_both_ways = true) left right expected =
+    let aliases ?replace_unbound_parameters_with_any:_ = function
+      | "Ts" -> Some (Type.VariableAlias (Type.Variable.TupleVariadic variadic))
+      | _ -> None
+    in
+    let left =
+      match
+        Type.create ~aliases (parse_single_expression ~preprocess:true ("typing.Tuple" ^ left))
+      with
+      | Type.Tuple (Bounded ordered_type) -> ordered_type
+      | _ -> failwith "expected tuple elements"
+    in
+    let right =
+      match
+        Type.create ~aliases (parse_single_expression ~preprocess:true ("typing.Tuple" ^ right))
+      with
+      | Type.Tuple (Bounded ordered_type) -> ordered_type
+      | _ -> failwith "expected tuple elements"
+    in
+    assert_equal
+      ~printer:[%show: Type.t Type.OrderedTypes.ordered_type_split option]
+      expected
+      (Type.OrderedTypes.split_matching_elements_by_length left right);
+    if split_both_ways then
+      let flip_splits { Type.Record.OrderedTypes.prefix_pairs; middle_pair; suffix_pairs } =
+        let swap (a, b) = b, a in
+        {
+          Type.Record.OrderedTypes.prefix_pairs = List.map prefix_pairs ~f:swap;
+          middle_pair = swap middle_pair;
+          suffix_pairs = List.map suffix_pairs ~f:swap;
+        }
+      in
+      assert_equal
+        ~printer:[%show: Type.t Type.OrderedTypes.ordered_type_split option]
+        (expected >>| flip_splits)
+        (Type.OrderedTypes.split_matching_elements_by_length right left)
+  in
+  let open Type.OrderedTypes in
+  assert_split
+    "[int, str]"
+    "[int, str]"
+    (Some
+       {
+         prefix_pairs = [Type.integer, Type.integer; Type.string, Type.string];
+         middle_pair = Concrete [], Concrete [];
+         suffix_pairs = [];
+       });
+  assert_split
+    "[int, str, bool, int, str]"
+    "[int, pyre_extensions.Unpack[Ts], int, str]"
+    (Some
+       {
+         prefix_pairs = [Type.integer, Type.integer];
+         middle_pair =
+           ( Concrete [Type.string; Type.bool],
+             Concatenation (Type.OrderedTypes.Concatenation.create ~prefix:[] ~suffix:[] variadic) );
+         suffix_pairs = [Type.integer, Type.integer; Type.string, Type.string];
+       });
+  (* Not enough elements. *)
+  assert_split "[int]" "[int, str, pyre_extensions.Unpack[Ts]]" None;
+  assert_split "[str]" "[pyre_extensions.Unpack[Ts], int, str]" None;
+  assert_split "[int, int]" "[int, pyre_extensions.Unpack[Ts], int, str]" None;
+  assert_split "[int, int]" "[int, pyre_extensions.Unpack[Ts], int, str]" None;
+  (* *Ts can match against zero elements. *)
+  assert_split
+    "[int, int, str]"
+    "[int, pyre_extensions.Unpack[Ts], int, str]"
+    (Some
+       {
+         prefix_pairs = [Type.integer, Type.integer];
+         middle_pair =
+           ( Concrete [],
+             Concatenation (Type.OrderedTypes.Concatenation.create ~prefix:[] ~suffix:[] variadic) );
+         suffix_pairs = [Type.integer, Type.integer; Type.string, Type.string];
+       });
+
+  (* Concatenation vs concatenation. *)
+  assert_split
+    "[int, pyre_extensions.Unpack[Ts], bool]"
+    "[int, pyre_extensions.Unpack[Ts], int]"
+    (Some
+       {
+         prefix_pairs = [Type.integer, Type.integer];
+         middle_pair =
+           ( Concatenation (Type.OrderedTypes.Concatenation.create ~prefix:[] ~suffix:[] variadic),
+             Concatenation (Type.OrderedTypes.Concatenation.create ~prefix:[] ~suffix:[] variadic) );
+         suffix_pairs = [Type.bool, Type.integer];
+       });
+  assert_split
+    "[int, str, pyre_extensions.Unpack[Ts], bool]"
+    "[int, pyre_extensions.Unpack[Ts], str, int]"
+    (Some
+       {
+         prefix_pairs = [Type.integer, Type.integer];
+         middle_pair =
+           ( Concatenation
+               (Type.OrderedTypes.Concatenation.create ~prefix:[Type.string] ~suffix:[] variadic),
+             Concatenation
+               (Type.OrderedTypes.Concatenation.create ~prefix:[] ~suffix:[Type.string] variadic) );
+         suffix_pairs = [Type.bool, Type.integer];
+       });
+  (* There are no matching elements of known length in either the prefix_pairs or the suffix_pairs. *)
+  assert_split
+    "[pyre_extensions.Unpack[Ts], str]"
+    "[int, pyre_extensions.Unpack[Ts]]"
+    (Some
+       {
+         prefix_pairs = [];
+         middle_pair =
+           ( Concatenation
+               (Type.OrderedTypes.Concatenation.create ~prefix:[] ~suffix:[Type.string] variadic),
+             Concatenation
+               (Type.OrderedTypes.Concatenation.create ~prefix:[Type.integer] ~suffix:[] variadic) );
+         suffix_pairs = [];
+       });
+  ()
+
+
 let test_union_upper_bound _ =
   let assert_union_upper_bound map expected =
     assert_equal (Type.OrderedTypes.union_upper_bound map) expected
@@ -2222,6 +2342,7 @@ let () =
          "replace_all" >:: test_replace_all;
          "collect_all" >:: test_collect_all;
          "parse_type_variable_declarations" >:: test_parse_type_variable_declarations;
+         "split_ordered_types" >:: test_split_ordered_types;
          "union_upper_bound" >:: test_union_upper_bound;
          "infer_transform" >:: test_infer_transform;
          "fields_from_constructor" >:: test_fields_from_constructor;

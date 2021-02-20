@@ -200,6 +200,30 @@ module Record = struct
       | Concatenation of 'annotation Concatenation.t
     [@@deriving compare, eq, sexp, show, hash]
 
+    (* This represents the splitting of two ordered types to match each other in length. The prefix
+       contains the prefix elements of known length that both have, the suffix contains the suffix
+       elements of known length that both have, and the middle part contains the rest.
+
+       [int, bool, str, int, bool] <: [int, int, *Ts, T]
+
+       will be represented as:
+
+       * prefix_match: [int; bool], [int; int].
+
+       * middle_match: [str; int], *Ts
+
+       * suffix_match: [bool], T.
+
+       We don't include `str` in the prefixes because the corresponding `*Ts` on the right side is
+       not of known length. Note that this doesn't check for compatibility; it is a purely
+       length-based operation. *)
+    type 'annotation ordered_type_split = {
+      prefix_pairs: ('annotation * 'annotation) list;
+      middle_pair: 'annotation record * 'annotation record;
+      suffix_pairs: ('annotation * 'annotation) list;
+    }
+    [@@deriving compare, eq, sexp, show, hash]
+
     let pp_concise format variable ~pp_type =
       match variable with
       | Concrete types -> Format.fprintf format "%s" (show_type_list types ~pp_type)
@@ -217,6 +241,80 @@ module Record = struct
       | Concatenation _, Concatenation _ ->
           (* TODO(T84854853). *)
           None
+
+
+    let split_matching_elements_by_length left right =
+      let split_concrete_against_concatenation
+          ~is_left_concrete
+          ~concrete
+          ~concatenation:{ Concatenation.prefix; middle; suffix }
+        =
+        let concrete_prefix, concrete_rest = List.split_n concrete (List.length prefix) in
+        let concrete_middle, concrete_suffix =
+          List.split_n concrete_rest (List.length concrete_rest - List.length suffix)
+        in
+        let prefix_pairs, middle_pair, suffix_pairs =
+          if is_left_concrete then
+            ( List.zip concrete_prefix prefix,
+              (Concrete concrete_middle, Concatenation { prefix = []; middle; suffix = [] }),
+              List.zip concrete_suffix suffix )
+          else
+            ( List.zip prefix concrete_prefix,
+              (Concatenation { prefix = []; middle; suffix = [] }, Concrete concrete_middle),
+              List.zip suffix concrete_suffix )
+        in
+        match prefix_pairs, middle_pair, suffix_pairs with
+        | Ok prefix_pairs, middle_pair, Ok suffix_pairs ->
+            Some { prefix_pairs; middle_pair; suffix_pairs }
+        | _ -> None
+      in
+      match left, right with
+      | Concrete left, Concrete right -> (
+          match List.zip left right with
+          | Ok prefix_pairs ->
+              Some { prefix_pairs; middle_pair = Concrete [], Concrete []; suffix_pairs = [] }
+          | Unequal_lengths -> None )
+      | Concrete left, Concatenation concatenation ->
+          split_concrete_against_concatenation ~is_left_concrete:true ~concrete:left ~concatenation
+      | Concatenation concatenation, Concrete right ->
+          split_concrete_against_concatenation
+            ~is_left_concrete:false
+            ~concrete:right
+            ~concatenation
+      | ( Concatenation { prefix = left_prefix; middle = left_middle; suffix = left_suffix },
+          Concatenation { prefix = right_prefix; middle = right_middle; suffix = right_suffix } )
+        -> (
+          let prefix_length = Int.min (List.length left_prefix) (List.length right_prefix) in
+          let suffix_length = Int.min (List.length left_suffix) (List.length right_suffix) in
+          let left_prefix, left_prefix_rest = List.split_n left_prefix prefix_length in
+          let right_prefix, right_prefix_rest = List.split_n right_prefix prefix_length in
+          let left_suffix_rest, left_suffix =
+            List.split_n left_suffix (List.length left_suffix - suffix_length)
+          in
+          let right_suffix_rest, right_suffix =
+            List.split_n right_suffix (List.length right_suffix - suffix_length)
+          in
+          match List.zip left_prefix right_prefix, List.zip left_suffix right_suffix with
+          | Ok prefix_pairs, Ok suffix_pairs ->
+              Some
+                {
+                  prefix_pairs;
+                  middle_pair =
+                    ( Concatenation
+                        {
+                          prefix = left_prefix_rest;
+                          middle = left_middle;
+                          suffix = left_suffix_rest;
+                        },
+                      Concatenation
+                        {
+                          prefix = right_prefix_rest;
+                          middle = right_middle;
+                          suffix = right_suffix_rest;
+                        } );
+                  suffix_pairs;
+                }
+          | _ -> None )
   end
 
   module Callable = struct
