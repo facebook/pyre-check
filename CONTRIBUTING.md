@@ -87,7 +87,7 @@ The way you can get around this is by setting up environment variables. If set, 
 
 Example `.bashrc`/`.bash_profile`:
 ```bash
-export PYRE_BINARY=/path/to/pyre-check/_build/default/main.exe
+export PYRE_BINARY=/path/to/pyre-check/source/_build/default/main.exe
 ```
 
 If you're working with a `PYRE_BINARY` and are frequently re-compiling Pyre, you should avoid using the Pyre server, as the server will not stop when you re-compile Pyre. You should instead run `pyre check` to create a one-off run.
