@@ -53,7 +53,6 @@ This will generate a `Makefile` in your checkout directory. You can subsequently
 ```bash
 $ make
 $ make test
-$ make python_tests
 ```
 
 ## Windows Subsystem for Linux (WSL) Install
