@@ -24,18 +24,17 @@ COMPILER_VERSION = "4.08.0"
 DEVELOPMENT_COMPILER: str = COMPILER_VERSION
 RELEASE_COMPILER = f"{COMPILER_VERSION}+flambda"
 DEPENDENCIES = [
-    "base64.3.4.0",
+    "base64.3.5.0",
     "conf-sqlite3",
-    "core.v0.14.0",
+    "core.v0.14.1",
     "re2.v0.14.0",
-    "dune.2.6.0",
+    "dune.2.8.2",
     "yojson.1.7.0",
-    "ppx_deriving_yojson.3.5.2",
-    "ounit.2.2.2",
-    "sedlex.2.1",
-    "menhir.20200612",
-    "lwt.5.3.0",
-    "ounit2-lwt.2.2.2",
+    "ppx_deriving_yojson.3.6.1",
+    "ounit.2.2.4",
+    "menhir.20201216",
+    "lwt.5.4.0",
+    "ounit2-lwt.2.2.4",
 ]
 
 

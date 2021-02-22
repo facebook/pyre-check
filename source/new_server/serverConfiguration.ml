@@ -278,10 +278,6 @@ module SavedStateAction = struct
 end
 
 module RemoteLogging = struct
-  (* This is (for now) required for @default to work. See
-     https://github.com/ocaml-ppx/ppx_deriving_yojson/issues/79 *)
-  let ( = ) = Stdlib.( = )
-
   type t = {
     logger: string;
     identifier: (string[@default ""]);
