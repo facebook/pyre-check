@@ -25,7 +25,7 @@ MODULE_NAME = "pyre_check"
 RUNTIME_DEPENDENCIES = [
     "async-generator",
     "click",
-    "dataclasses",
+    "dataclasses;python_version=='3.6'",
     "dataclasses-json",
     "libcst>=0.3.6",
     "psutil",
