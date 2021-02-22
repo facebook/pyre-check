@@ -20,7 +20,7 @@ from typing import Dict, List, Mapping, NamedTuple, Optional, Type
 LOG: logging.Logger = logging.getLogger(__name__)
 
 
-COMPILER_VERSION = "4.08.0"
+COMPILER_VERSION = "4.09.1"
 DEVELOPMENT_COMPILER: str = COMPILER_VERSION
 RELEASE_COMPILER = f"{COMPILER_VERSION}+flambda"
 DEPENDENCIES = [
