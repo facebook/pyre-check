@@ -187,6 +187,76 @@ let test_harder_registrations context =
     |}
     "test.GenericTree"
     ~expected_alias:None;
+  (* Aliases referring to recursive aliases. *)
+  assert_registers
+    {|
+      from typing import List, Union
+
+      X = List["X"]
+      Y = List[X]
+    |}
+    "test.Y"
+    ~expected_alias:
+      (Some
+         (Type.TypeAlias
+            (Type.list
+               (Type.RecursiveType.create
+                  ~name:"test.X"
+                  ~body:(Type.list (Type.Primitive "test.X"))))));
+  assert_registers
+    {|
+      from typing import List, Sequence, Union
+
+      X = Union[
+          Sequence["X"],
+          List["X"]
+      ]
+      Y = Union[int, X]
+    |}
+    "test.Y"
+    ~expected_alias:
+      (Some
+         (Type.TypeAlias
+            (Type.union
+               [
+                 Type.integer;
+                 Type.RecursiveType.create
+                   ~name:"test.X"
+                   ~body:
+                     (Type.union
+                        [
+                          Type.list (Type.Primitive "test.X");
+                          Type.parametric "typing.Sequence" [Single (Type.Primitive "test.X")];
+                        ]);
+               ])));
+  assert_registers
+    {|
+      from typing import List, Sequence, Union
+
+      X = Union[
+          Sequence["X"],
+          List["X"]
+      ]
+      Y = Union[int, X]
+      Z = List[Y]
+    |}
+    "test.Z"
+    ~expected_alias:
+      (Some
+         (Type.TypeAlias
+            (Type.list
+               (Type.union
+                  [
+                    Type.integer;
+                    Type.RecursiveType.create
+                      ~name:"test.X"
+                      ~body:
+                        (Type.union
+                           [
+                             Type.list (Type.Primitive "test.X");
+                             Type.parametric "typing.Sequence" [Single (Type.Primitive "test.X")];
+                           ]);
+                  ]))));
   ()
 
 

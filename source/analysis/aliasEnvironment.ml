@@ -264,6 +264,23 @@ let extract_alias unannotated_global_environment name ~dependency =
 
 
 let produce_alias empty_stub_environment global_name ~dependency =
+  let maybe_convert_to_recursive_alias alias_reference = function
+    | Type.TypeAlias annotation
+      when (not (Identifier.equal (Reference.show alias_reference) "typing"))
+           && Type.RecursiveType.is_recursive_alias_reference
+                ~alias_name:(Reference.show alias_reference)
+                annotation ->
+        let alias_name = Reference.show alias_reference in
+        let is_directly_recursive =
+          Type.resolve_class annotation
+          >>| List.exists ~f:(fun { Type.class_name; _ } -> Identifier.equal class_name alias_name)
+          |> Option.value ~default:true
+        in
+        let is_generic = Type.contains_variable annotation in
+        Type.TypeAlias (Type.RecursiveType.create ~name:alias_name ~body:annotation)
+        |> Option.some_if ((not is_directly_recursive) && not is_generic)
+    | resolved_alias -> Some resolved_alias
+  in
   (* TODO(T53786399): Optimize this function. Theres a lot of perf potentially to be gained here,
      currently biasing towards simplicity *)
   let rec get_aliased_type_for current ~visited =
@@ -272,7 +289,7 @@ let produce_alias empty_stub_environment global_name ~dependency =
       None
     else
       let visited = Set.add visited current in
-      let handle_extracted = function
+      let resolve_after_resolving_dependencies = function
         | VariableAlias variable -> Some (Type.VariableAlias variable)
         | TypeAlias unresolved -> (
             match
@@ -296,29 +313,14 @@ let produce_alias empty_stub_environment global_name ~dependency =
         (EmptyStubEnvironment.ReadOnly.unannotated_global_environment empty_stub_environment)
         current
         ~dependency
-      >>= handle_extracted
+      >>= resolve_after_resolving_dependencies
+      >>= maybe_convert_to_recursive_alias current
   in
   if Reference.equal global_name (Reference.create "typing.NoReturn") then
     (* TODO(T76821797): We should fix upstream `typeshed` instead of doing special-case like this. *)
     None
   else
-    let resolved_alias = get_aliased_type_for global_name ~visited:Reference.Set.empty in
-    match resolved_alias with
-    | Some (Type.TypeAlias annotation)
-      when (not (Identifier.equal (Reference.show global_name) "typing"))
-           && Type.RecursiveType.is_recursive_alias_reference
-                ~alias_name:(Reference.show global_name)
-                annotation ->
-        let alias_name = Reference.show global_name in
-        let is_directly_recursive =
-          Type.resolve_class annotation
-          >>| List.exists ~f:(fun { Type.class_name; _ } -> Identifier.equal class_name alias_name)
-          |> Option.value ~default:true
-        in
-        let is_generic = Type.contains_variable annotation in
-        Type.TypeAlias (Type.RecursiveType.create ~name:alias_name ~body:annotation)
-        |> Option.some_if ((not is_directly_recursive) && not is_generic)
-    | _ -> resolved_alias
+    get_aliased_type_for global_name ~visited:Reference.Set.empty
 
 
 module Aliases = Environment.EnvironmentTable.NoCache (struct

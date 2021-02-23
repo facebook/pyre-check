@@ -2580,6 +2580,65 @@ let test_recursive_aliases context =
       "Undefined or invalid type [11]: Annotation `GenericTree` is not defined as a type.";
       "Revealed type [-1]: Revealed type for `x` is `unknown`.";
     ];
+  (* Aliases that refer to recursive aliases. *)
+  assert_type_errors
+    {|
+      from typing import List, Union
+
+      X = List["X"]
+
+      Y = Union[int, X]
+
+      def foo() -> None:
+        y: Y
+        y == y
+        reveal_type(y)
+    |}
+    ["Revealed type [-1]: Revealed type for `y` is `Union[int, test.X (resolves to List[X])]`."];
+  assert_type_errors
+    {|
+      from typing import List, Sequence, Union
+
+      class Foo: ...
+
+      X = Union[
+          Sequence["X"],
+          List["X"]
+      ]
+
+      Y = Union[Foo, X]
+
+      def foo() -> None:
+        y: Y
+        y == y
+        reveal_type(y)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `y` is `Union[Foo, test.X (resolves to Union[List[X], \
+       Sequence[X]])]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import List, Sequence, Union
+
+      class Foo: ...
+
+      X = Union[
+          Sequence["X"],
+          List["X"]
+      ]
+
+      Y = Union[Foo, X]
+      Z = List[Y]
+
+      def foo() -> None:
+        z: Z
+        reveal_type(z)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `z` is `List[Union[Foo, test.X (resolves to \
+       Union[List[X], Sequence[X]])]]`.";
+    ];
   ()
 
 
