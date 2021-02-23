@@ -1,6 +1,6 @@
-![lint](https://github.com/facebook/pyre-check/workflows/lint/badge.svg)
-![tests](https://github.com/facebook/pyre-check/workflows/tests/badge.svg)
-![pyre](https://github.com/facebook/pyre-check/workflows/pyre/badge.svg)
+[![lint](https://github.com/facebook/pyre-check/workflows/lint/badge.svg)](https://github.com/facebook/pyre-check/actions/workflows/lint.yml)
+[![tests](https://github.com/facebook/pyre-check/workflows/tests/badge.svg)](https://github.com/facebook/pyre-check/actions/workflows/tests.yml)
+[![pyre](https://github.com/facebook/pyre-check/workflows/pyre/badge.svg)](https://github.com/facebook/pyre-check/actions/workflows/pyre.yml)
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/facebook/pyre-check/master/logo.png">
