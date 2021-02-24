@@ -816,7 +816,7 @@ let test_add_constraint_recursive_type context =
 
 
 let test_add_constraint_type_variable_tuple context =
-  let assert_add, _, _, _ = make_assert_functions context in
+  let assert_add, assert_add_direct, _, _ = make_assert_functions context in
   assert_add
     ~left:"typing.Tuple[int, str, bool]"
     ~right:"typing.Tuple[int, pyre_extensions.Unpack[Ts]]"
@@ -866,6 +866,24 @@ let test_add_constraint_type_variable_tuple context =
     ~left:"typing.Tuple[int, pyre_extensions.Unpack[Ts], str]"
     ~right:"typing.Tuple[int, bool, pyre_extensions.Unpack[Ts2], bool, str]"
     [];
+  let variadic = Type.Variable.Variadic.Tuple.create "test.Ts" in
+  let variadic2 = Type.Variable.Variadic.Tuple.create "test.Ts2" in
+  assert_add_direct
+    ~left:
+      (Type.Tuple
+         (Bounded
+            (Type.OrderedTypes.Concatenation
+               (Type.OrderedTypes.Concatenation.create ~prefix:[] ~suffix:[] variadic))))
+    ~right:
+      ( Type.Tuple
+          (Bounded
+             (Type.OrderedTypes.Concatenation
+                (Type.OrderedTypes.Concatenation.create
+                   ~prefix:[Type.integer]
+                   ~suffix:[Type.string]
+                   variadic2)))
+      |> Type.Variable.mark_all_variables_as_bound )
+    [["Ts", "typing.Tuple[int, pyre_extensions.Unpack[Ts2], str]"]];
   ()
 
 

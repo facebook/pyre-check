@@ -733,6 +733,15 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
                           ~pair:
                             (Type.Variable.TupleVariadicPair
                                (variadic, Concatenation left_concatenation)))
+            | Some variadic, _ when Type.Variable.Variadic.Tuple.is_free variadic ->
+                solve_non_variadic_pairs ~pairs:(prefix_pairs @ suffix_pairs) constraints
+                |> List.filter_map
+                     ~f:
+                       (OrderedConstraints.add_upper_bound
+                          ~order
+                          ~pair:
+                            (Type.Variable.TupleVariadicPair
+                               (variadic, Concatenation right_concatenation)))
             | _ -> impossible )
       in
       Type.OrderedTypes.split_matching_elements_by_length left right
