@@ -701,6 +701,20 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
                           ~order
                           ~pair:(Type.Variable.TupleVariadicPair (variadic, Concrete concrete)))
             | None -> impossible )
+        | {
+            prefix_pairs;
+            middle_pair = Concatenation concatenation, Concrete concrete;
+            suffix_pairs;
+          } -> (
+            match Type.OrderedTypes.Concatenation.extract_sole_variadic concatenation with
+            | Some variadic ->
+                solve_non_variadic_pairs ~pairs:(prefix_pairs @ suffix_pairs) constraints
+                |> List.filter_map
+                     ~f:
+                       (OrderedConstraints.add_upper_bound
+                          ~order
+                          ~pair:(Type.Variable.TupleVariadicPair (variadic, Concrete concrete)))
+            | None -> impossible )
         | _ -> failwith "not yet implemented - T84854853"
       in
       Type.OrderedTypes.split_matching_elements_by_length left right

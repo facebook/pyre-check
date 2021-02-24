@@ -830,6 +830,11 @@ let test_add_constraint_type_variable_tuple context =
     ~left:"typing.Tuple[int, str, bool]"
     ~right:"typing.Tuple[pyre_extensions.Unpack[Ts], T]"
     [["Ts", "typing.Tuple[int, str]"; "T", "bool"]];
+  assert_add
+    ~leave_unbound_in_left:["Ts"]
+    ~left:"typing.Tuple[int, pyre_extensions.Unpack[Ts]]"
+    ~right:"typing.Tuple[int, str, bool]"
+    [["Ts", "typing.Tuple[str, bool]"]];
   ()
 
 
