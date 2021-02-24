@@ -13,6 +13,8 @@ from pyre_extensions import ListVariadic
 from pyre_extensions.type_variable_operators import Concatenate
 
 
+# pyre-fixme[5]: Global expression must be annotated.
+# pyre-fixme[16]: Module `pyre_extensions` has no attribute `ListVariadic`.
 Ts = ListVariadic("Ts")
 
 
@@ -34,8 +36,15 @@ def check_stable(input: str, transformed: str) -> None:
 
 
 def check_stable_transformation(
+    # pyre-fixme[31]: Expression `Concatenate[(str,
+    #  $local_tools?pyre?tools?upgrade?ast$Ts)], str)]` is not a valid type.
+    # pyre-fixme[31]: Expression `Concatenate[(str,
+    #  $local_tools?pyre?tools?upgrade?ast$Ts)], str)]` is not a valid type.
     transform: "Callable[Concatenate[str, Ts], str]",
+    # pyre-fixme[31]: Expression `Concatenate[(str,
+    #  $local_tools?pyre?tools?upgrade?ast$Ts)], str)]` is not a valid type.
 ) -> "Callable[Concatenate[str, Ts], str]":
+    # pyre-fixme[11]: Annotation `Ts` is not defined as a type.
     def wrapper(input: str, *args: Ts) -> str:
         transformed = transform(input, *args)
         check_stable(input, transformed)
