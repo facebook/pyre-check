@@ -1071,6 +1071,33 @@ let test_invalid_type_parameters context =
             };
       };
     ];
+  assert_invalid_type_parameters
+    ~source:
+      {|
+      from typing import Generic
+      from pyre_extensions import TypeVarTuple
+
+      Ts = TypeVarTuple("Ts")
+      class Foo(Generic[*Ts]): ...
+    |}
+    ~given_type:"test.Foo[int, str]"
+    ~expected_transformed_type:"test.Foo[int, str]"
+    [];
+  assert_invalid_type_parameters
+    ~aliases:(fun ?replace_unbound_parameters_with_any:_ -> function
+      | "Ts" -> Some (VariableAlias (Type.Variable.TupleVariadic variadic))
+      | _ -> None)
+    ~source:
+      {|
+      from typing import Generic
+      from pyre_extensions import TypeVarTuple
+
+      Ts = TypeVarTuple("Ts")
+      class Foo(Generic[*Ts]): ...
+    |}
+    ~given_type:"test.Foo[pyre_extensions.Unpack[Ts]]"
+    ~expected_transformed_type:"test.Foo[pyre_extensions.Unpack[Ts]]"
+    [];
   ()
 
 

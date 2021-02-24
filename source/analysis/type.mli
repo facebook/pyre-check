@@ -649,6 +649,8 @@ module OrderedTypes : sig
 
   (* Concatenation is only defined for certain members *)
   val concatenate : left:t -> right:t -> t option
+
+  val to_parameters : t -> Parameter.t list
 end
 
 val split : t -> t * Parameter.t list

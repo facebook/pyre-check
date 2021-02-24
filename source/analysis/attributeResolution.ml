@@ -893,19 +893,21 @@ class base class_metadata_environment dependency =
                           |> Option.is_none
                         in
                         if invalid then
-                          ( Type.Parameter.Single Type.Any,
+                          ( [Type.Parameter.Single Type.Any],
                             Some
                               {
                                 name;
                                 kind = ViolateConstraints { expected = unary; actual = given };
                               } )
                         else
-                          Type.Parameter.Single given, None
+                          [Type.Parameter.Single given], None
                     | ParameterVariadicPair (_, given), CallableParameters _ ->
                         (* TODO(T47346673): accept w/ new kind of validation *)
-                        CallableParameters given, None
+                        [CallableParameters given], None
+                    | TupleVariadicPair (_, given), Single (Tuple (Bounded _)) ->
+                        Type.OrderedTypes.to_parameters given, None
                     | Type.Variable.UnaryPair (unary, given), _ ->
-                        ( Single given,
+                        ( [Single given],
                           Some
                             {
                               name;
@@ -917,7 +919,7 @@ class base class_metadata_environment dependency =
                                   };
                             } )
                     | ParameterVariadicPair (parameter_variadic, given), _ ->
-                        ( CallableParameters given,
+                        ( [CallableParameters given],
                           Some
                             {
                               name;
@@ -932,8 +934,9 @@ class base class_metadata_environment dependency =
                   in
                   List.map paired ~f:check_parameter
                   |> List.unzip
-                  |> fun (parameters, errors) ->
-                  Type.parametric name parameters, List.filter_map errors ~f:Fn.id @ sofar
+                  |> fun (list_of_parameters, errors) ->
+                  ( Type.parametric name (List.concat list_of_parameters),
+                    List.filter_map errors ~f:Fn.id @ sofar )
               | None when not replace_unbound_parameters_with_any ->
                   Type.parametric name (List.map generics ~f:Type.Variable.to_parameter), sofar
               | None ->
