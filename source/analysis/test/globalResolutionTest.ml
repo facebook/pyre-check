@@ -928,6 +928,7 @@ let test_invalid_type_parameters context =
   let open AttributeResolution in
   let assert_invalid_type_parameters
       ?(source = "")
+      ?(aliases = Type.empty_aliases)
       ~given_type
       ~expected_transformed_type
       expected_mismatches
@@ -936,7 +937,7 @@ let test_invalid_type_parameters context =
       parse_single_expression ~preprocess:true annotation
       (* Avoid `GlobalResolution.parse_annotation` because that calls
          `check_invalid_type_parameters`. *)
-      |> Type.create ~aliases:Type.empty_aliases
+      |> Type.create ~aliases
     in
     let global_resolution =
       let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
@@ -1012,6 +1013,24 @@ let test_invalid_type_parameters context =
         kind =
           IncorrectNumberOfParameters
             { actual = 0; expected = 1; can_accept_more_parameters = true };
+      };
+    ];
+  let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
+  assert_invalid_type_parameters
+    ~aliases:(fun ?replace_unbound_parameters_with_any:_ -> function
+      | "Ts" -> Some (VariableAlias (Type.Variable.TupleVariadic variadic))
+      | _ -> None)
+    ~given_type:"typing.List[pyre_extensions.Unpack[Ts]]"
+    ~expected_transformed_type:"typing.List[typing.Any]"
+    [
+      {
+        name = "list";
+        kind =
+          UnexpectedKind
+            {
+              actual = Unpacked (Type.OrderedTypes.Concatenation.create_unpackable variadic);
+              expected = Unary (Type.Variable.Unary.create "_T");
+            };
       };
     ];
   ()

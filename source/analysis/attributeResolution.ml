@@ -904,8 +904,6 @@ class base class_metadata_environment dependency =
                     | ParameterVariadicPair (_, given), CallableParameters _ ->
                         (* TODO(T47346673): accept w/ new kind of validation *)
                         CallableParameters given, None
-                    | _, Unpacked _ -> failwith "not yet implemented - T84854853"
-                    | TupleVariadicPair _, _ -> failwith "not yet implemented - T84854853"
                     | Type.Variable.UnaryPair (unary, given), _ ->
                         ( Single given,
                           Some
@@ -930,6 +928,7 @@ class base class_metadata_environment dependency =
                                     actual = received_parameter;
                                   };
                             } )
+                    | TupleVariadicPair _, _ -> failwith "not yet implemented - T84854853"
                   in
                   List.map paired ~f:check_parameter
                   |> List.unzip
