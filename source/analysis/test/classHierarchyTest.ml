@@ -284,20 +284,31 @@ let test_to_dot _ =
 
 
 let test_variables _ =
+  let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
   let order =
     let order = MockClassHierarchyHandler.create () in
     let open MockClassHierarchyHandler in
     insert order "typing.Generic";
     insert order "A";
     insert order "B";
+    insert order "Tensor";
     connect order ~parameters:![Type.variable "T"] ~predecessor:"A" ~successor:"typing.Generic";
+    connect
+      order
+      ~parameters:[Unpacked (Type.OrderedTypes.Concatenation.create_unpackable variadic)]
+      ~predecessor:"Tensor"
+      ~successor:"typing.Generic";
     handler order
   in
   let assert_variables ~expected source = assert_equal expected (variables order source) in
   assert_variables ~expected:None "B";
   assert_variables ~expected:(Some [Unary (Type.Variable.Unary.create "T")]) "A";
 
-  assert_variables ~expected:None "Nonexistent"
+  assert_variables ~expected:None "Nonexistent";
+  assert_variables
+    ~expected:(Some [TupleVariadic (Type.Variable.Variadic.Tuple.create "Ts")])
+    "Tensor";
+  ()
 
 
 let test_is_instantiated _ =

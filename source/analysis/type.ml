@@ -1104,6 +1104,13 @@ module Parameter = struct
   type t = type_t record [@@deriving compare, eq, sexp, show, hash]
 
   let all_singles parameters = List.map parameters ~f:is_single |> Option.all
+
+  let to_variable = function
+    | Single (Variable variable) -> Some (Record.Variable.Unary variable)
+    | CallableParameters (ParameterVariadicTypeVariable { head = []; variable }) ->
+        Some (ParameterVariadic variable)
+    | Unpacked (Variadic variadic) -> Some (TupleVariadic variadic)
+    | _ -> None
 end
 
 let is_any = function

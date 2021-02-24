@@ -320,6 +320,8 @@ module Parameter : sig
   type t = type_t Record.Parameter.record [@@deriving compare, eq, sexp, show, hash]
 
   val all_singles : t list -> type_t list option
+
+  val to_variable : t -> type_t Record.Variable.record option
 end
 
 val pp_parameters
