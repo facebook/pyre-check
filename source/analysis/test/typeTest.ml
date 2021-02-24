@@ -1992,7 +1992,7 @@ let test_split_ordered_types _ =
   ()
 
 
-let test_zip_on_parameters _ =
+let test_zip_variables_with_parameters _ =
   let unary = Type.Variable.Unary.create "T" in
   let unary2 = Type.Variable.Unary.create "T2" in
   let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
@@ -2023,7 +2023,7 @@ let test_zip_on_parameters _ =
       ~printer:[%show: Type.Variable.variable_zip_result list option]
       ~cmp:[%equal: Type.Variable.variable_zip_result list option]
       expected
-      (Type.Variable.zip_on_parameters ~parameters variables)
+      (Type.Variable.zip_variables_with_parameters ~parameters variables)
   in
   assert_zipped
     ~generic_class:"Generic[T, T2]"
@@ -2673,7 +2673,7 @@ let () =
          "collect_all" >:: test_collect_all;
          "parse_type_variable_declarations" >:: test_parse_type_variable_declarations;
          "split_ordered_types" >:: test_split_ordered_types;
-         "zip_on_parameters" >:: test_zip_on_parameters;
+         "zip_variables_with_parameters" >:: test_zip_variables_with_parameters;
          "union_upper_bound" >:: test_union_upper_bound;
          "infer_transform" >:: test_infer_transform;
          "fields_from_constructor" >:: test_fields_from_constructor;

@@ -345,7 +345,7 @@ let instantiate_successors_parameters ((module Handler : Handler) as handler) ~j
                           Type.Variable.ParameterVariadicPair (variable, Undefined)
                       | TupleVariadic _ -> failwith "not yet implemented - T84854853"
                     in
-                    Type.Variable.zip_on_parameters ~parameters variables
+                    Type.Variable.zip_variables_with_parameters ~parameters variables
                     >>| List.map ~f:(function { Type.Variable.variable_pair; _ } -> variable_pair)
                     |> Option.value ~default:(List.map ~f:to_any variables)
                     |> TypeConstraints.Solution.create

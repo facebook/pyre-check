@@ -859,7 +859,10 @@ module Variable : sig
 
   val convert_all_escaped_free_variables_to_anys : type_t -> type_t
 
-  val zip_on_parameters : parameters:Parameter.t list -> t list -> variable_zip_result list option
+  val zip_variables_with_parameters
+    :  parameters:Parameter.t list ->
+    t list ->
+    variable_zip_result list option
 
   val zip_on_two_parameter_lists
     :  left_parameters:Parameter.t sexp_list ->

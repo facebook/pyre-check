@@ -3474,7 +3474,10 @@ module Variable : sig
 
   val converge_all_variable_namespaces : type_t -> type_t
 
-  val zip_on_parameters : parameters:Parameter.t list -> t list -> variable_zip_result list option
+  val zip_variables_with_parameters
+    :  parameters:Parameter.t list ->
+    t list ->
+    variable_zip_result list option
 
   val zip_on_two_parameter_lists
     :  left_parameters:Parameter.t sexp_list ->
@@ -4307,8 +4310,8 @@ end = struct
     | _ -> None
 
 
-  (* Zip the parameters of a class Foo[int, str] with its generic variables `Generic[T1, T2]`. *)
-  let zip_on_parameters ~parameters variables =
+  (* Zip the generic variables `Generic[T1, T2]` of a class with its parameters Foo[int, str]. *)
+  let zip_variables_with_parameters ~parameters variables =
     let parameters =
       match variables with
       | [ParameterVariadic _] -> coalesce_if_all_single parameters
