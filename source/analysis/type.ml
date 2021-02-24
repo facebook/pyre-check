@@ -1111,6 +1111,11 @@ module Parameter = struct
         Some (ParameterVariadic variable)
     | Unpacked (Variadic variadic) -> Some (TupleVariadic variadic)
     | _ -> None
+
+
+  let is_unpacked = function
+    | Unpacked _ -> true
+    | _ -> false
 end
 
 let is_any = function
@@ -4240,30 +4245,89 @@ end = struct
     |> Option.value ~default:parameters
 
 
+  let make_variable_pair variable received_parameter =
+    let variable_pair =
+      match variable, received_parameter with
+      | Unary unary, Parameter.Single annotation -> UnaryPair (unary, annotation)
+      | ParameterVariadic parameter_variadic, CallableParameters callable_parameters ->
+          ParameterVariadicPair (parameter_variadic, callable_parameters)
+      | Unary unary, _ -> UnaryPair (unary, Unary.any)
+      | ParameterVariadic parameter_variadic, _ ->
+          ParameterVariadicPair (parameter_variadic, Variadic.Parameters.any)
+      | TupleVariadic tuple_variadic, _ ->
+          (* We should not hit this case at all. *)
+          TupleVariadicPair (tuple_variadic, Variadic.Tuple.any)
+    in
+    { variable_pair; received_parameter }
+
+
+  let pairs_for_variadic_class ~non_variadic_prefix_length variables parameters =
+    let variables_prefix, variables_rest = List.split_n variables non_variadic_prefix_length in
+    match variables_rest with
+    | TupleVariadic variadic :: variables_suffix ->
+        let parameters_prefix, parameters_rest =
+          List.split_n parameters non_variadic_prefix_length
+        in
+        let parameters_middle, parameters_suffix =
+          List.split_n parameters_rest (List.length parameters_rest - List.length variables_suffix)
+        in
+        let pairs () =
+          let ordered_middle_type =
+            match OrderedTypes.concatenation_from_parameters parameters_middle with
+            | Some ordered_type -> Some ordered_type
+            | None ->
+                Parameter.all_singles parameters_middle
+                >>| fun singles -> OrderedTypes.Concrete singles
+          in
+          match
+            ( List.map2 variables_prefix parameters_prefix ~f:make_variable_pair,
+              List.map2 variables_suffix parameters_suffix ~f:make_variable_pair,
+              ordered_middle_type )
+          with
+          | Ok prefix_pairs, Ok suffix_pairs, Some ordered_middle_type ->
+              prefix_pairs
+              @ [
+                  {
+                    variable_pair = TupleVariadicPair (variadic, ordered_middle_type);
+                    received_parameter = Single (Tuple (Bounded ordered_middle_type));
+                  };
+                ]
+              @ suffix_pairs
+              |> Option.some
+          | _ -> None
+        in
+        let has_variadic_in_prefix_or_suffix =
+          List.exists parameters_prefix ~f:Parameter.is_unpacked
+          || List.exists parameters_suffix ~f:Parameter.is_unpacked
+        in
+        if has_variadic_in_prefix_or_suffix then
+          None
+        else
+          pairs ()
+    | _ -> None
+
+
+  (* Zip the parameters of a class Foo[int, str] with its generic variables `Generic[T1, T2]`. *)
   let zip_on_parameters ~parameters variables =
     let parameters =
       match variables with
       | [ParameterVariadic _] -> coalesce_if_all_single parameters
-      (* TODO(T84854853):. *)
       | _ -> parameters
     in
-    let make_variable_pair variable received_parameter =
-      let variable_pair =
-        match variable, received_parameter with
-        | Unary unary, Parameter.Single annotation -> UnaryPair (unary, annotation)
-        | ParameterVariadic parameter_variadic, CallableParameters callable_parameters ->
-            ParameterVariadicPair (parameter_variadic, callable_parameters)
-        | TupleVariadic _, _ -> failwith "not yet implemented - T84854853"
-        | _, Unpacked _ -> failwith "not yet implemented - T84854853"
-        | Unary unary, _ -> UnaryPair (unary, Unary.any)
-        | ParameterVariadic parameter_variadic, _ ->
-            ParameterVariadicPair (parameter_variadic, Variadic.Parameters.any)
-      in
-      { variable_pair; received_parameter }
+    let variadic_index index = function
+      | TupleVariadic _ -> Some index
+      | _ -> None
     in
-    match List.map2 variables parameters ~f:make_variable_pair with
-    | Ok pairs -> Some pairs
-    | Unequal_lengths -> None
+    match List.filter_mapi variables ~f:variadic_index with
+    | [unpacked_index] ->
+        pairs_for_variadic_class ~non_variadic_prefix_length:unpacked_index variables parameters
+    | [] -> (
+        match List.map2 variables parameters ~f:make_variable_pair with
+        | Ok pairs -> Some pairs
+        | Unequal_lengths -> None )
+    | _ ->
+        (* Reject multiple variadic generics. *)
+        None
 
 
   let zip_on_two_parameter_lists ~left_parameters ~right_parameters variables =

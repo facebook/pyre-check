@@ -1995,11 +1995,15 @@ let test_split_ordered_types _ =
 let test_zip_on_parameters _ =
   let unary = Type.Variable.Unary.create "T" in
   let unary2 = Type.Variable.Unary.create "T2" in
+  let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
+  let variadic2 = Type.Variable.Variadic.Tuple.create "Ts2" in
   let parameter_variadic = Type.Variable.Variadic.Parameters.create "TParams" in
   let assert_zipped ~generic_class ~instantiation expected =
     let aliases ?replace_unbound_parameters_with_any:_ = function
       | "T" -> Some (Type.TypeAlias (Type.Variable unary))
       | "T2" -> Some (Type.TypeAlias (Type.Variable unary2))
+      | "Ts" -> Some (Type.VariableAlias (Type.Variable.TupleVariadic variadic))
+      | "Ts2" -> Some (Type.VariableAlias (Type.Variable.TupleVariadic variadic2))
       | "TParams" -> Some (Type.VariableAlias (Type.Variable.ParameterVariadic parameter_variadic))
       | _ -> None
     in
@@ -2114,6 +2118,192 @@ let test_zip_on_parameters _ =
            received_parameter = Single Type.Top;
          };
        ]);
+
+  (* Variadic tuples. *)
+  assert_zipped
+    ~generic_class:"Generic[pyre_extensions.Unpack[Ts]]"
+    ~instantiation:"Foo[pyre_extensions.Unpack[Ts]]"
+    (Some
+       [
+         {
+           variable_pair =
+             Type.Variable.TupleVariadicPair
+               (variadic, Concatenation (Type.OrderedTypes.Concatenation.create variadic));
+           received_parameter =
+             Single
+               (Tuple (Bounded (Concatenation (Type.OrderedTypes.Concatenation.create variadic))));
+         };
+       ]);
+  assert_zipped
+    ~generic_class:"Generic[T, pyre_extensions.Unpack[Ts]]"
+    ~instantiation:"Foo[int]"
+    (Some
+       [
+         {
+           variable_pair = Type.Variable.UnaryPair (unary, Type.integer);
+           received_parameter = Single Type.integer;
+         };
+         {
+           variable_pair = Type.Variable.TupleVariadicPair (variadic, Concrete []);
+           received_parameter = Single (Tuple (Bounded (Concrete [])));
+         };
+       ]);
+  assert_zipped
+    ~generic_class:"Generic[T, pyre_extensions.Unpack[Ts]]"
+    ~instantiation:"Foo[int, str, int, bool]"
+    (Some
+       [
+         {
+           variable_pair = Type.Variable.UnaryPair (unary, Type.integer);
+           received_parameter = Single Type.integer;
+         };
+         {
+           variable_pair =
+             Type.Variable.TupleVariadicPair
+               (variadic, Concrete [Type.string; Type.integer; Type.bool]);
+           received_parameter =
+             Single (Tuple (Bounded (Concrete [Type.string; Type.integer; Type.bool])));
+         };
+       ]);
+  assert_zipped
+    ~generic_class:"Generic[T, pyre_extensions.Unpack[Ts], T2]"
+    ~instantiation:"Foo[int, str, pyre_extensions.Unpack[Ts2], bool, str]"
+    (Some
+       [
+         {
+           variable_pair = Type.Variable.UnaryPair (unary, Type.integer);
+           received_parameter = Single Type.integer;
+         };
+         {
+           variable_pair =
+             Type.Variable.TupleVariadicPair
+               ( variadic,
+                 Concatenation
+                   (Type.OrderedTypes.Concatenation.create
+                      ~prefix:[Type.string]
+                      ~suffix:[Type.bool]
+                      variadic2) );
+           received_parameter =
+             Single
+               (Tuple
+                  (Bounded
+                     (Concatenation
+                        (Type.OrderedTypes.Concatenation.create
+                           ~prefix:[Type.string]
+                           ~suffix:[Type.bool]
+                           variadic2))));
+         };
+         {
+           variable_pair = Type.Variable.UnaryPair (unary2, Type.string);
+           received_parameter = Single Type.string;
+         };
+       ]);
+  (* Mix of unary, variadic, and ParamSpec. *)
+  assert_zipped
+    ~generic_class:"Generic[T, TParams, pyre_extensions.Unpack[Ts]]"
+    ~instantiation:"Foo[int, TParams, str, bool]"
+    (Some
+       [
+         {
+           variable_pair = Type.Variable.UnaryPair (unary, Type.integer);
+           received_parameter = Single Type.integer;
+         };
+         {
+           variable_pair =
+             Type.Variable.ParameterVariadicPair
+               ( parameter_variadic,
+                 Type.Callable.ParameterVariadicTypeVariable (empty_head parameter_variadic) );
+           received_parameter =
+             CallableParameters
+               (Type.Variable.Variadic.Parameters.self_reference parameter_variadic);
+         };
+         {
+           variable_pair =
+             Type.Variable.TupleVariadicPair (variadic, Concrete [Type.string; Type.bool]);
+           received_parameter = Single (Tuple (Bounded (Concrete [Type.string; Type.bool])));
+         };
+       ]);
+  assert_zipped
+    ~generic_class:"Generic[T, TParams, pyre_extensions.Unpack[Ts]]"
+    ~instantiation:"Foo[int, TParams, str, pyre_extensions.Unpack[Ts2]]"
+    (Some
+       [
+         {
+           variable_pair = Type.Variable.UnaryPair (unary, Type.integer);
+           received_parameter = Single Type.integer;
+         };
+         {
+           variable_pair =
+             Type.Variable.ParameterVariadicPair
+               ( parameter_variadic,
+                 Type.Callable.ParameterVariadicTypeVariable (empty_head parameter_variadic) );
+           received_parameter =
+             CallableParameters
+               (Type.Variable.Variadic.Parameters.self_reference parameter_variadic);
+         };
+         {
+           variable_pair =
+             Type.Variable.TupleVariadicPair
+               ( variadic,
+                 Concatenation
+                   (Type.OrderedTypes.Concatenation.create
+                      ~prefix:[Type.string]
+                      ~suffix:[]
+                      variadic2) );
+           received_parameter =
+             Single
+               (Tuple
+                  (Bounded
+                     (Concatenation
+                        (Type.OrderedTypes.Concatenation.create
+                           ~prefix:[Type.string]
+                           ~suffix:[]
+                           variadic2))));
+         };
+       ]);
+
+  (* Wrong kind of parameter passed to `T` and `TParams`. *)
+  assert_zipped
+    ~generic_class:"Generic[T]"
+    ~instantiation:"Foo[pyre_extensions.Unpack[Ts]]"
+    (Some
+       [
+         {
+           variable_pair = Type.Variable.UnaryPair (unary, Type.Any);
+           received_parameter =
+             Unpacked (Type.OrderedTypes.Concatenation.create_unpackable variadic);
+         };
+       ]);
+  assert_zipped
+    ~generic_class:"Generic[TParams]"
+    ~instantiation:"Foo[pyre_extensions.Unpack[Ts]]"
+    (Some
+       [
+         {
+           variable_pair = Type.Variable.ParameterVariadicPair (parameter_variadic, Undefined);
+           received_parameter =
+             Unpacked (Type.OrderedTypes.Concatenation.create_unpackable variadic);
+         };
+       ]);
+  assert_zipped
+    ~generic_class:"Generic[pyre_extensions.Unpack[Ts]]"
+    ~instantiation:"Foo[TParams]"
+    None;
+  (* We forbid
+
+     class Foo(Generic[T, *Ts]): ...
+
+     def foo(x: Foo[*Ts]) -> None: ...
+
+     because `Ts` might be an empty tuple, in which case the generic `T` won't be bound to any type. *)
+  assert_zipped
+    ~generic_class:"Generic[T, pyre_extensions.Unpack[Ts]]"
+    ~instantiation:"Foo[pyre_extensions.Unpack[Ts2]]"
+    None;
+  assert_zipped
+    ~generic_class:"Generic[pyre_extensions.Unpack[Ts], pyre_extensions.Unpack[Ts2]]"
+    ~instantiation:"Foo[int, str]"
+    None;
   ()
 
 
