@@ -676,22 +676,18 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
     if Type.OrderedTypes.equal left right then
       [constraints]
     else
-      let solve_split_ordered_types = function
+      let solve_split_ordered_types { prefix_pairs; middle_pair; suffix_pairs } =
+        match middle_pair with
         (* TODO(T84854853): Optimization: Avoid this splitting and concatenating for Concrete vs
            Concrete. *)
-        | { prefix_pairs; middle_pair = Concrete left_middle, Concrete right_middle; suffix_pairs }
-          -> (
+        | Concrete left_middle, Concrete right_middle -> (
             match List.zip left_middle right_middle with
             | Ok middle_pairs ->
                 solve_non_variadic_pairs
                   ~pairs:(prefix_pairs @ middle_pairs @ suffix_pairs)
                   constraints
             | Unequal_lengths -> impossible )
-        | {
-            prefix_pairs;
-            middle_pair = Concrete concrete, Concatenation concatenation;
-            suffix_pairs;
-          } -> (
+        | Concrete concrete, Concatenation concatenation -> (
             match Type.OrderedTypes.Concatenation.extract_sole_variadic concatenation with
             | Some variadic when Type.Variable.Variadic.Tuple.is_free variadic ->
                 solve_non_variadic_pairs ~pairs:(prefix_pairs @ suffix_pairs) constraints
@@ -701,11 +697,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
                           ~order
                           ~pair:(Type.Variable.TupleVariadicPair (variadic, Concrete concrete)))
             | _ -> impossible )
-        | {
-            prefix_pairs;
-            middle_pair = Concatenation concatenation, Concrete concrete;
-            suffix_pairs;
-          } -> (
+        | Concatenation concatenation, Concrete concrete -> (
             match Type.OrderedTypes.Concatenation.extract_sole_variadic concatenation with
             | Some variadic when Type.Variable.Variadic.Tuple.is_free variadic ->
                 solve_non_variadic_pairs ~pairs:(prefix_pairs @ suffix_pairs) constraints
@@ -715,11 +707,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
                           ~order
                           ~pair:(Type.Variable.TupleVariadicPair (variadic, Concrete concrete)))
             | _ -> impossible )
-        | {
-            prefix_pairs;
-            middle_pair = Concatenation left_concatenation, Concatenation right_concatenation;
-            suffix_pairs;
-          } -> (
+        | Concatenation left_concatenation, Concatenation right_concatenation -> (
             match
               ( Type.OrderedTypes.Concatenation.extract_sole_variadic left_concatenation,
                 Type.OrderedTypes.Concatenation.extract_sole_variadic right_concatenation )
