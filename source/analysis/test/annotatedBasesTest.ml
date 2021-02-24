@@ -48,6 +48,7 @@ let test_inferred_generic_base context =
       GlobalResolution.parse_annotation ~validation:ValidatePrimitives resolution
     in
     assert_equal
+      ~printer:[%show: Argument.t list]
       ~cmp:(List.equal Argument.equal)
       expected
       (Annotated.Bases.inferred_generic_base target ~parse_annotation)
@@ -132,6 +133,29 @@ let test_inferred_generic_base context =
                  Type.Parameter.CallableParameters
                    (Type.Variable.Variadic.Parameters.self_reference
                       (Type.Variable.Variadic.Parameters.create "test.TParams"));
+               ]);
+      };
+    ];
+  assert_inferred_generic
+    ~target:"test.Child"
+    {|
+      Ts = pyre_extensions.TypeVarTuple("Ts")
+
+      class Base(typing.Generic[*Ts]): ...
+
+      class Child(Base[*Ts]): ...
+    |}
+    [
+      {
+        Argument.name = None;
+        value =
+          Type.expression
+            (Type.parametric
+               "typing.Generic"
+               [
+                 Unpacked
+                   (Type.OrderedTypes.Concatenation.create_unpackable
+                      (Type.Variable.Variadic.Tuple.create "test.Ts"));
                ]);
       };
     ];

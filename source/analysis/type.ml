@@ -4265,7 +4265,7 @@ end = struct
     | Unary variable -> Parameter.Single (Unary.self_reference variable)
     | ParameterVariadic variable ->
         Parameter.CallableParameters (Variadic.Parameters.self_reference variable)
-    | TupleVariadic _ -> failwith "not yet implemented - T84854853"
+    | TupleVariadic variadic -> Parameter.Unpacked (Variadic variadic)
 end
 
 let namespace_insensitive_compare left right =
