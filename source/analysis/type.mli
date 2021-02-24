@@ -684,22 +684,23 @@ module Variable : sig
   type unary_t = type_t Record.Variable.RecordUnary.record
   [@@deriving compare, eq, sexp, show, hash]
 
-  type unary_domain = type_t
+  type unary_domain = type_t [@@deriving compare, eq, sexp, show, hash]
 
   type parameter_variadic_t = type_t Record.Variable.RecordVariadic.RecordParameters.record
   [@@deriving compare, eq, sexp, show, hash]
 
-  type parameter_variadic_domain = Callable.parameters
+  type parameter_variadic_domain = Callable.parameters [@@deriving compare, eq, sexp, show, hash]
 
   type tuple_variadic_t = type_t Record.Variable.RecordVariadic.Tuple.record
   [@@deriving compare, eq, sexp, show, hash]
 
-  type tuple_variadic_domain = type_t OrderedTypes.record
+  type tuple_variadic_domain = type_t OrderedTypes.record [@@deriving compare, eq, sexp, show, hash]
 
   type pair =
     | UnaryPair of unary_t * unary_domain
     | ParameterVariadicPair of parameter_variadic_t * parameter_variadic_domain
     | TupleVariadicPair of tuple_variadic_t * tuple_variadic_domain
+  [@@deriving compare, eq, sexp, show, hash]
 
   type t = type_t Record.Variable.record [@@deriving compare, eq, sexp, show, hash]
 
@@ -826,6 +827,12 @@ module Variable : sig
     include Record.Variable
   end
 
+  type variable_zip_result = {
+    variable_pair: pair;
+    received_parameter: Parameter.t;
+  }
+  [@@deriving compare, eq, sexp, show, hash]
+
   module Set : Core.Set.S with type Elt.t = t
 
   val pp_concise : Format.formatter -> t -> unit
@@ -852,10 +859,7 @@ module Variable : sig
 
   val convert_all_escaped_free_variables_to_anys : type_t -> type_t
 
-  val zip_on_parameters
-    :  parameters:Parameter.t sexp_list ->
-    t sexp_list ->
-    (Parameter.t * t) sexp_list sexp_option
+  val zip_on_parameters : parameters:Parameter.t list -> t list -> variable_zip_result list option
 
   val zip_on_two_parameter_lists
     :  left_parameters:Parameter.t sexp_list ->

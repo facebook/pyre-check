@@ -3296,22 +3296,23 @@ module Variable : sig
   type unary_t = type_t Record.Variable.RecordUnary.record
   [@@deriving compare, eq, sexp, show, hash]
 
-  type unary_domain = type_t
+  type unary_domain = type_t [@@deriving compare, eq, sexp, show, hash]
 
   type parameter_variadic_t = type_t Record.Variable.RecordVariadic.RecordParameters.record
   [@@deriving compare, eq, sexp, show, hash]
 
-  type parameter_variadic_domain = Callable.parameters
+  type parameter_variadic_domain = Callable.parameters [@@deriving compare, eq, sexp, show, hash]
 
   type tuple_variadic_t = type_t Record.Variable.RecordVariadic.Tuple.record
   [@@deriving compare, eq, sexp, show, hash]
 
-  type tuple_variadic_domain = type_t OrderedTypes.record
+  type tuple_variadic_domain = type_t OrderedTypes.record [@@deriving compare, eq, sexp, show, hash]
 
   type pair =
     | UnaryPair of unary_t * unary_domain
     | ParameterVariadicPair of parameter_variadic_t * parameter_variadic_domain
     | TupleVariadicPair of tuple_variadic_t * tuple_variadic_domain
+  [@@deriving compare, eq, sexp, show, hash]
 
   type t = type_t Record.Variable.record [@@deriving compare, eq, sexp, show, hash]
 
@@ -3436,6 +3437,12 @@ module Variable : sig
 
   module Set : Core.Set.S with type Elt.t = t
 
+  type variable_zip_result = {
+    variable_pair: pair;
+    received_parameter: Parameter.t;
+  }
+  [@@deriving compare, eq, sexp, show, hash]
+
   val pp_concise : Format.formatter -> t -> unit
 
   val parse_declaration : Expression.t -> target:Reference.t -> t option
@@ -3462,10 +3469,7 @@ module Variable : sig
 
   val converge_all_variable_namespaces : type_t -> type_t
 
-  val zip_on_parameters
-    :  parameters:Parameter.t sexp_list ->
-    t sexp_list ->
-    (Parameter.t * t) sexp_list sexp_option
+  val zip_on_parameters : parameters:Parameter.t list -> t list -> variable_zip_result list option
 
   val zip_on_two_parameter_lists
     :  left_parameters:Parameter.t sexp_list ->
@@ -3493,22 +3497,23 @@ end = struct
   type unary_t = type_t Record.Variable.RecordUnary.record
   [@@deriving compare, eq, sexp, show, hash]
 
-  type unary_domain = type_t
+  type unary_domain = type_t [@@deriving compare, eq, sexp, show, hash]
 
   type parameter_variadic_t = type_t Record.Variable.RecordVariadic.RecordParameters.record
   [@@deriving compare, eq, sexp, show, hash]
 
-  type parameter_variadic_domain = Callable.parameters
+  type parameter_variadic_domain = Callable.parameters [@@deriving compare, eq, sexp, show, hash]
 
   type tuple_variadic_t = type_t Record.Variable.RecordVariadic.Tuple.record
   [@@deriving compare, eq, sexp, show, hash]
 
-  type tuple_variadic_domain = type_t OrderedTypes.record
+  type tuple_variadic_domain = type_t OrderedTypes.record [@@deriving compare, eq, sexp, show, hash]
 
   type pair =
     | UnaryPair of unary_t * unary_domain
     | ParameterVariadicPair of parameter_variadic_t * parameter_variadic_domain
     | TupleVariadicPair of tuple_variadic_t * tuple_variadic_domain
+  [@@deriving compare, eq, sexp, show, hash]
 
   module type VariableKind = sig
     type t [@@deriving compare, eq, sexp, show, hash]
@@ -4079,6 +4084,12 @@ end = struct
     type t = type_t Record.Variable.record [@@deriving compare, sexp]
   end)
 
+  type variable_zip_result = {
+    variable_pair: pair;
+    received_parameter: Parameter.t;
+  }
+  [@@deriving compare, eq, sexp, show, hash]
+
   let pp_concise format = function
     | Unary variable -> Unary.pp_concise format variable ~pp_type
     | ParameterVariadic { name; _ } ->
@@ -4233,18 +4244,32 @@ end = struct
     let parameters =
       match variables with
       | [ParameterVariadic _] -> coalesce_if_all_single parameters
-      (* TODO(pradeep):. *)
+      (* TODO(T84854853):. *)
       | _ -> parameters
     in
-    match List.zip parameters variables with
-    | Ok zipped -> Some zipped
+    let make_variable_pair variable received_parameter =
+      let variable_pair =
+        match variable, received_parameter with
+        | Unary unary, Parameter.Single annotation -> UnaryPair (unary, annotation)
+        | ParameterVariadic parameter_variadic, CallableParameters callable_parameters ->
+            ParameterVariadicPair (parameter_variadic, callable_parameters)
+        | TupleVariadic _, _ -> failwith "not yet implemented - T84854853"
+        | _, Unpacked _ -> failwith "not yet implemented - T84854853"
+        | Unary unary, _ -> UnaryPair (unary, Unary.any)
+        | ParameterVariadic parameter_variadic, _ ->
+            ParameterVariadicPair (parameter_variadic, Variadic.Parameters.any)
+      in
+      { variable_pair; received_parameter }
+    in
+    match List.map2 variables parameters ~f:make_variable_pair with
+    | Ok pairs -> Some pairs
     | Unequal_lengths -> None
 
 
   let zip_on_two_parameter_lists ~left_parameters ~right_parameters variables =
     let left_parameters, right_parameters =
       match variables with
-      (* TODO(pradeep):. *)
+      (* TODO(T84854853):. *)
       | [ParameterVariadic _] ->
           coalesce_if_all_single left_parameters, coalesce_if_all_single right_parameters
       | _ -> left_parameters, right_parameters

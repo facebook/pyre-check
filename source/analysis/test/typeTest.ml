@@ -1992,6 +1992,131 @@ let test_split_ordered_types _ =
   ()
 
 
+let test_zip_on_parameters _ =
+  let unary = Type.Variable.Unary.create "T" in
+  let unary2 = Type.Variable.Unary.create "T2" in
+  let parameter_variadic = Type.Variable.Variadic.Parameters.create "TParams" in
+  let assert_zipped ~generic_class ~instantiation expected =
+    let aliases ?replace_unbound_parameters_with_any:_ = function
+      | "T" -> Some (Type.TypeAlias (Type.Variable unary))
+      | "T2" -> Some (Type.TypeAlias (Type.Variable unary2))
+      | "TParams" -> Some (Type.VariableAlias (Type.Variable.ParameterVariadic parameter_variadic))
+      | _ -> None
+    in
+    let parameters =
+      match Type.create ~aliases (parse_single_expression ~preprocess:true instantiation) with
+      | Type.Parametric { parameters; _ } -> parameters
+      | _ -> failwith "expected Parametric"
+    in
+    let variables =
+      match Type.create ~aliases (parse_single_expression ~preprocess:true generic_class) with
+      | Type.Parametric { parameters; _ } ->
+          let variables = List.map ~f:Type.Parameter.to_variable parameters |> Option.all in
+          Option.value_exn variables
+      | _ -> failwith "expected Parametric"
+    in
+    assert_equal
+      ~printer:[%show: Type.Variable.variable_zip_result list option]
+      ~cmp:[%equal: Type.Variable.variable_zip_result list option]
+      expected
+      (Type.Variable.zip_on_parameters ~parameters variables)
+  in
+  assert_zipped
+    ~generic_class:"Generic[T, T2]"
+    ~instantiation:"Foo[int, str]"
+    (Some
+       [
+         {
+           variable_pair = Type.Variable.UnaryPair (unary, Type.integer);
+           received_parameter = Single Type.integer;
+         };
+         {
+           variable_pair = Type.Variable.UnaryPair (unary2, Type.string);
+           received_parameter = Single Type.string;
+         };
+       ]);
+  assert_zipped ~generic_class:"Generic[T, T2]" ~instantiation:"Foo[int]" None;
+
+  (* ParamSpec. *)
+  assert_zipped
+    ~generic_class:"Generic[T, TParams]"
+    ~instantiation:"Foo[int, TParams]"
+    (Some
+       [
+         {
+           variable_pair = Type.Variable.UnaryPair (unary, Type.integer);
+           received_parameter = Single Type.integer;
+         };
+         {
+           variable_pair =
+             Type.Variable.ParameterVariadicPair
+               ( parameter_variadic,
+                 Type.Callable.ParameterVariadicTypeVariable (empty_head parameter_variadic) );
+           received_parameter =
+             CallableParameters
+               (Type.Variable.Variadic.Parameters.self_reference parameter_variadic);
+         };
+       ]);
+  (* Not enough parameters. *)
+  assert_zipped ~generic_class:"Generic[T, TParams]" ~instantiation:"Foo[int]" None;
+  (* Wrong kind of parameter passed to unary and ParamSpec. *)
+  assert_zipped
+    ~generic_class:"Generic[T, TParams]"
+    ~instantiation:"Foo[TParams, int]"
+    (Some
+       [
+         {
+           variable_pair = Type.Variable.UnaryPair (unary, Type.Any);
+           received_parameter =
+             CallableParameters
+               (Type.Variable.Variadic.Parameters.self_reference parameter_variadic);
+         };
+         {
+           variable_pair = Type.Variable.ParameterVariadicPair (parameter_variadic, Undefined);
+           received_parameter = Single Type.integer;
+         };
+       ]);
+  (* This is pretty unintuitive, but PEP 612 dictates it. *)
+  assert_zipped
+    ~generic_class:"Generic[TParams]"
+    ~instantiation:"Foo[int, str]"
+    (Some
+       [
+         {
+           variable_pair =
+             Type.Variable.ParameterVariadicPair
+               ( parameter_variadic,
+                 Defined
+                   (Type.Callable.prepend_anonymous_parameters
+                      ~head:[Type.integer; Type.string]
+                      ~tail:[]) );
+           received_parameter =
+             CallableParameters
+               (Defined
+                  (Type.Callable.prepend_anonymous_parameters
+                     ~head:[Type.integer; Type.string]
+                     ~tail:[]));
+         };
+       ]);
+  (* TODO(T84854853): Removing ListVariadic regressed this edge case. TParams is supposed to resolve
+     to [str, bool]. *)
+  assert_zipped
+    ~generic_class:"Generic[T, TParams]"
+    ~instantiation:"Foo[int, [str, bool]]"
+    (Some
+       [
+         {
+           variable_pair = Type.Variable.UnaryPair (unary, Type.integer);
+           received_parameter = Single Type.integer;
+         };
+         {
+           variable_pair = Type.Variable.ParameterVariadicPair (parameter_variadic, Undefined);
+           received_parameter = Single Type.Top;
+         };
+       ]);
+  ()
+
+
 let test_union_upper_bound _ =
   let assert_union_upper_bound map expected =
     assert_equal (Type.OrderedTypes.union_upper_bound map) expected
@@ -2358,6 +2483,7 @@ let () =
          "collect_all" >:: test_collect_all;
          "parse_type_variable_declarations" >:: test_parse_type_variable_declarations;
          "split_ordered_types" >:: test_split_ordered_types;
+         "zip_on_parameters" >:: test_zip_on_parameters;
          "union_upper_bound" >:: test_union_upper_bound;
          "infer_transform" >:: test_infer_transform;
          "fields_from_constructor" >:: test_fields_from_constructor;

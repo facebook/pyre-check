@@ -338,18 +338,6 @@ let instantiate_successors_parameters ((module Handler : Handler) as handler) ~j
                     >>= parameters_to_variables
                     |> Option.value ~default:[]
                   in
-                  let replacement = function
-                    | Type.Parameter.Single parameter, Type.Variable.Unary variable ->
-                        Type.Variable.UnaryPair (variable, parameter)
-                    | CallableParameters _, Unary variable ->
-                        Type.Variable.UnaryPair (variable, Type.Any)
-                    | CallableParameters parameters, ParameterVariadic variable ->
-                        Type.Variable.ParameterVariadicPair (variable, parameters)
-                    | Single _, ParameterVariadic variable ->
-                        Type.Variable.ParameterVariadicPair (variable, Undefined)
-                    | Unpacked _, _ -> failwith "not yet implemented - T84854853"
-                    | _, TupleVariadic _ -> failwith "not yet implemented - T84854853"
-                  in
                   let replacement =
                     let to_any = function
                       | Type.Variable.Unary variable -> Type.Variable.UnaryPair (variable, Type.Any)
@@ -357,12 +345,9 @@ let instantiate_successors_parameters ((module Handler : Handler) as handler) ~j
                           Type.Variable.ParameterVariadicPair (variable, Undefined)
                       | TupleVariadic _ -> failwith "not yet implemented - T84854853"
                     in
-
                     Type.Variable.zip_on_parameters ~parameters variables
-                    >>| List.map ~f:replacement
-                    |> (function
-                         | Some pairs -> pairs
-                         | None -> List.map ~f:to_any variables)
+                    >>| List.map ~f:(function { Type.Variable.variable_pair; _ } -> variable_pair)
+                    |> Option.value ~default:(List.map ~f:to_any variables)
                     |> TypeConstraints.Solution.create
                   in
                   let instantiate_parameters { Target.target; parameters } =
