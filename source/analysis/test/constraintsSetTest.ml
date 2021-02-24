@@ -835,6 +835,16 @@ let test_add_constraint_type_variable_tuple context =
     ~left:"typing.Tuple[int, pyre_extensions.Unpack[Ts]]"
     ~right:"typing.Tuple[int, str, bool]"
     [["Ts", "typing.Tuple[str, bool]"]];
+  (* Ts is bound on the left side. We fail because Ts could be any tuple. *)
+  assert_add
+    ~left:"typing.Tuple[int, pyre_extensions.Unpack[Ts]]"
+    ~right:"typing.Tuple[int, str, bool]"
+    [];
+  (* This ends up checking `[int, str] <: *Ts (bound)`, which is not valid. *)
+  assert_add
+    ~left:"typing.Callable[[typing.Tuple[pyre_extensions.Unpack[Ts]]], bool]"
+    ~right:"typing.Callable[[typing.Tuple[int, str]], bool]"
+    [];
   ()
 
 
