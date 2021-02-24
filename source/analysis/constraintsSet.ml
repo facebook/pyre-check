@@ -715,7 +715,25 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
                           ~order
                           ~pair:(Type.Variable.TupleVariadicPair (variadic, Concrete concrete)))
             | _ -> impossible )
-        | _ -> failwith "not yet implemented - T84854853"
+        | {
+            prefix_pairs;
+            middle_pair = Concatenation left_concatenation, Concatenation right_concatenation;
+            suffix_pairs;
+          } -> (
+            match
+              ( Type.OrderedTypes.Concatenation.extract_sole_variadic left_concatenation,
+                Type.OrderedTypes.Concatenation.extract_sole_variadic right_concatenation )
+            with
+            | _, Some variadic when Type.Variable.Variadic.Tuple.is_free variadic ->
+                solve_non_variadic_pairs ~pairs:(prefix_pairs @ suffix_pairs) constraints
+                |> List.filter_map
+                     ~f:
+                       (OrderedConstraints.add_lower_bound
+                          ~order
+                          ~pair:
+                            (Type.Variable.TupleVariadicPair
+                               (variadic, Concatenation left_concatenation)))
+            | _ -> impossible )
       in
       Type.OrderedTypes.split_matching_elements_by_length left right
       >>| solve_split_ordered_types

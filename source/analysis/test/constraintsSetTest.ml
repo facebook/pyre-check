@@ -254,8 +254,11 @@ let make_assert_functions context =
               match GlobalResolution.aliases global_resolution primitive with
               | Some (Type.VariableAlias (ParameterVariadic variable)) ->
                   Type.Variable.ParameterVariadicPair (variable, parse_parameters value)
-              | Some (Type.VariableAlias (TupleVariadic variable)) ->
-                  Type.Variable.TupleVariadicPair (variable, parse_ordered_types value)
+              | Some (Type.VariableAlias (TupleVariadic variable)) -> (
+                  match Type.Tuple (Bounded (parse_ordered_types value)) |> postprocess with
+                  | Type.Tuple (Bounded ordered_type) ->
+                      Type.Variable.TupleVariadicPair (variable, ordered_type)
+                  | _ -> failwith "expected a tuple" )
               | _ -> failwith "not available" )
           | _ -> failwith "not a variable"
         in
@@ -844,6 +847,24 @@ let test_add_constraint_type_variable_tuple context =
   assert_add
     ~left:"typing.Callable[[typing.Tuple[pyre_extensions.Unpack[Ts]]], bool]"
     ~right:"typing.Callable[[typing.Tuple[int, str]], bool]"
+    [];
+  assert_add
+    ~left:"typing.Tuple[pyre_extensions.Unpack[Ts]]"
+    ~right:"typing.Tuple[pyre_extensions.Unpack[Ts2]]"
+    [["Ts2", "typing.Tuple[pyre_extensions.Unpack[Ts]]"]];
+  assert_add
+    ~left:"typing.Tuple[int, pyre_extensions.Unpack[Ts], str]"
+    ~right:"typing.Tuple[pyre_extensions.Unpack[Ts2]]"
+    [["Ts2", "typing.Tuple[int, pyre_extensions.Unpack[Ts], str]"]];
+  assert_add
+    ~left:"typing.Tuple[int, bool, pyre_extensions.Unpack[Ts], bool, str]"
+    ~right:"typing.Tuple[int, pyre_extensions.Unpack[Ts2], str]"
+    [["Ts2", "typing.Tuple[bool, pyre_extensions.Unpack[Ts], bool]"]];
+  (* No solution because the middle portion is `[*Ts (bound)] <: [bool, *Ts2 (free), bool]`. The
+     bound `Ts` may not start with `bool`. *)
+  assert_add
+    ~left:"typing.Tuple[int, pyre_extensions.Unpack[Ts], str]"
+    ~right:"typing.Tuple[int, bool, pyre_extensions.Unpack[Ts2], bool, str]"
     [];
   ()
 
