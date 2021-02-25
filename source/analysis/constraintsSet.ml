@@ -551,6 +551,13 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
               let right = Type.Callable.create ~parameters:right ~annotation:Type.Any () in
               List.concat_map constraints ~f:(fun constraints ->
                   solve_less_or_equal order ~constraints ~left ~right)
+          | Type.Variable.TupleVariadicPair (_, left), Type.Variable.TupleVariadicPair (_, right) ->
+              (* We assume variadic classes are invariant. *)
+              constraints
+              |> List.concat_map ~f:(fun constraints ->
+                     solve_ordered_types_less_or_equal order ~left ~right ~constraints)
+              |> List.concat_map ~f:(fun constraints ->
+                     solve_ordered_types_less_or_equal order ~left:right ~right:left ~constraints)
           | _ -> impossible
         in
         let solve_parameters left_parameters right_parameters =

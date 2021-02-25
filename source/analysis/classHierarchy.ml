@@ -343,7 +343,9 @@ let instantiate_successors_parameters ((module Handler : Handler) as handler) ~j
                       | Type.Variable.Unary variable -> Type.Variable.UnaryPair (variable, Type.Any)
                       | ParameterVariadic variable ->
                           Type.Variable.ParameterVariadicPair (variable, Undefined)
-                      | TupleVariadic _ -> failwith "not yet implemented - T84854853"
+                      | TupleVariadic variadic ->
+                          Type.Variable.TupleVariadicPair
+                            (variadic, Type.Variable.Variadic.Tuple.any)
                     in
                     Type.Variable.zip_variables_with_parameters ~parameters variables
                     >>| List.map ~f:(function { Type.Variable.variable_pair; _ } -> variable_pair)
@@ -353,16 +355,26 @@ let instantiate_successors_parameters ((module Handler : Handler) as handler) ~j
                   let instantiate_parameters { Target.target; parameters } =
                     let instantiate = function
                       | Type.Parameter.Single single ->
-                          Type.Parameter.Single
-                            (TypeConstraints.Solution.instantiate replacement single)
+                          [
+                            Type.Parameter.Single
+                              (TypeConstraints.Solution.instantiate replacement single);
+                          ]
                       | CallableParameters parameters ->
-                          CallableParameters
-                            (TypeConstraints.Solution.instantiate_callable_parameters
+                          [
+                            CallableParameters
+                              (TypeConstraints.Solution.instantiate_callable_parameters
+                                 replacement
+                                 parameters);
+                          ]
+                      | Unpacked unpackable ->
+                          Type.OrderedTypes.to_parameters
+                            (TypeConstraints.Solution.instantiate_ordered_types
                                replacement
-                               parameters)
-                      | Unpacked _ -> failwith "not yet implemented - T84854853"
+                               (Concatenation
+                                  (Type.OrderedTypes.Concatenation.create_from_unpackable
+                                     unpackable)))
                     in
-                    { Target.target; parameters = List.map parameters ~f:instantiate }
+                    { Target.target; parameters = List.concat_map parameters ~f:instantiate }
                   in
                   List.map successors ~f:instantiate_parameters
                 in

@@ -82,6 +82,8 @@ module Record : sig
       val extract_sole_variadic
         :  'annotation t ->
         'annotation Variable.RecordVariadic.Tuple.record option
+
+      val create_from_unpackable : 'annotation record_unpackable -> 'annotation t
     end
 
     type 'annotation record =

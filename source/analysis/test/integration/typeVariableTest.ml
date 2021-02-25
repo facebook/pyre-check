@@ -2683,14 +2683,131 @@ let test_variadic_tuples context =
       "Incompatible parameter type [6]: Expected `typing.Tuple[int, *test.Ts, str]` for 1st \
        positional only parameter to call `foo` but got `Tuple[int]`.";
     ];
+  (* We should be able to typecheck the body of a generic variadic function. *)
   assert_type_errors
     {|
-      from typing import Generic, Tuple, TypeVar
+      from typing import Tuple
       from pyre_extensions import TypeVarTuple
 
       Ts = TypeVarTuple("Ts")
+
+      def add_int(xs: Tuple[*Ts]) -> Tuple[int, *Ts]: ...
+      def remove_int(xs: Tuple[int, *Ts]) -> Tuple[*Ts]: ...
+
+      def generic_function(xs: Tuple[*Ts]) -> None:
+        y = remove_int(add_int(xs))
+        reveal_type(y)
+
+        add_int(remove_int(xs))
+     |}
+    [
+      "Revealed type [-1]: Revealed type for `y` is `typing.Tuple[*test.Ts]`.";
+      "Incompatible parameter type [6]: Expected `typing.Tuple[int, *test.Ts]` for 1st positional \
+       only parameter to call `remove_int` but got `typing.Tuple[*test.Ts]`.";
+    ];
+  ()
+
+
+let test_variadic_classes context =
+  let assert_type_errors = assert_type_errors ~context in
+  assert_type_errors
+    {|
+      from typing import Generic
+      from pyre_extensions import TypeVarTuple
+
+      Ts = TypeVarTuple("Ts")
+
+      class Tensor(Generic[*Ts]): ...
+
+      def add_bool(x: Tensor[int, *Ts, str]) -> Tensor[bool, *Ts]: ...
+
+      def foo() -> None:
+        x: Tensor[int, bool, str]
+        y = add_bool(x)
+        reveal_type(y)
+     |}
+    ["Revealed type [-1]: Revealed type for `y` is `Tensor[bool, bool]`."];
+  (* Expect the same Tensor type for both parameters. We don't infer `Ts = Tuple[int | bool, str |
+     bool]` even though it is sound, because it is unintuitive. *)
+  assert_type_errors
+    {|
+      from typing import Generic
+      from pyre_extensions import TypeVarTuple
+
+      Ts = TypeVarTuple("Ts")
+
+      class Tensor(Generic[*Ts]): ...
+
+      def expects_same_tensors(x: Tensor[*Ts], y: Tensor[*Ts]) -> Tensor[*Ts]: ...
+
+      def bar() -> None:
+        tensor: Tensor[int, str]
+        tensor2: Tensor[bool, bool]
+        y = expects_same_tensors(tensor, tensor2)
+        reveal_type(y)
+     |}
+    [
+      "Incompatible parameter type [6]: Expected `Tensor[*test.Ts]` for 2nd positional only \
+       parameter to call `expects_same_tensors` but got `Tensor[bool, bool]`.";
+      "Revealed type [-1]: Revealed type for `y` is `Tensor[int, str]`.";
+    ];
+  (* Length mismatch. *)
+  assert_type_errors
+    {|
+      from typing import Generic
+      from pyre_extensions import TypeVarTuple
+
+      Ts = TypeVarTuple("Ts")
+
+      class Tensor(Generic[*Ts]): ...
+
+      def expects_same_length(xs: Tensor[*Ts], ys: Tensor[*Ts]) -> Tensor[*Ts]: ...
+
+      def bar() -> None:
+        xs: Tensor[int, str]
+        ys: Tensor[bool]
+        expects_same_length(xs, ys)
+     |}
+    [
+      "Incompatible parameter type [6]: Expected `Tensor[*test.Ts]` for 2nd positional only \
+       parameter to call `expects_same_length` but got `Tensor[bool]`.";
+    ];
+  (* Tensor is invariant. *)
+  assert_type_errors
+    {|
+      from typing import Generic, List, Protocol, Tuple, TypeVar
+      from pyre_extensions import TypeVarTuple
+
+      T = TypeVar("T")
+      Ts = TypeVarTuple("Ts")
+
+      class Tensor(Generic[*Ts]): ...
+
+      class Base: ...
+      class Child(Base): ...
+
+      def foo(x: Tensor[Base, Base]) -> None: ...
+
+      def bar() -> None:
+        child: Tensor[Child, Child]
+        foo(child)
+     |}
+    [
+      "Incompatible parameter type [6]: Expected `Tensor[Base, Base]` for 1st positional only \
+       parameter to call `foo` but got `Tensor[Child, Child]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Generic, TypeVar
+      from pyre_extensions import TypeVarTuple
+      from typing_extensions import Literal as L
+
+      Ts = TypeVarTuple("Ts")
+
       Tin = TypeVar("Tin")
       Tout = TypeVar("Tout")
+
+      class Tensor(Generic[*Ts]): ...
 
       class Linear(Generic[Tin, Tout]):
         """Transform the last dimension from Tin to Tout."""
@@ -2699,10 +2816,10 @@ let test_variadic_tuples context =
           self.in_dimension = in_dimension
           self.out_dimension = out_dimension
 
-        def __call__(self, x: Tuple[*Ts, Tin]) -> Tuple[*Ts, Tout]: ...
+        def __call__(self, x: Tensor[*Ts, Tin]) -> Tensor[*Ts, Tout]: ...
 
       def bar() -> None:
-        x = (10, 20)
+        x: Tensor[L[10], L[20]]
         layer1 = Linear(20, 30)
         layer2 = Linear(30, 40)
         layer3 = Linear(40, 50)
@@ -2713,11 +2830,11 @@ let test_variadic_tuples context =
         layer1(shape_mismatch)
     |}
     [
-      "Revealed type [-1]: Revealed type for `y` is `Tuple[typing_extensions.Literal[10], \
+      "Revealed type [-1]: Revealed type for `y` is `Tensor[typing_extensions.Literal[10], \
        typing_extensions.Literal[50]]`.";
-      "Incompatible parameter type [6]: Expected `typing.Tuple[*test.Ts, \
-       typing_extensions.Literal[20]]` for 1st positional only parameter to call `Linear.__call__` \
-       but got `Tuple[typing_extensions.Literal[10], typing_extensions.Literal[21]]`.";
+      "Incompatible parameter type [6]: Expected `Tensor[*test.Ts, typing_extensions.Literal[20]]` \
+       for 1st positional only parameter to call `Linear.__call__` but got \
+       `typing.Tuple[typing_extensions.Literal[10], typing_extensions.Literal[21]]`.";
     ];
   ()
 
@@ -2739,5 +2856,6 @@ let () =
          "generic_aliases" >:: test_generic_aliases;
          "recursive_aliases" >:: test_recursive_aliases;
          "variadic_tuples" >:: test_variadic_tuples;
+         "variadic_classes" >:: test_variadic_classes;
        ]
   |> Test.run

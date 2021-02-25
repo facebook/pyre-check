@@ -119,6 +119,8 @@ let make_assert_functions context =
 
       Ts = pyre_extensions.TypeVarTuple("Ts")
       Ts2 = pyre_extensions.TypeVarTuple("Ts2")
+
+      class Tensor(typing.Generic[pyre_extensions.Unpack[Ts]]): ...
     |}
       context
   in
@@ -155,6 +157,7 @@ let make_assert_functions context =
           "UserDefinedVariadicMapChild";
           "Ts";
           "Ts2";
+          "Tensor";
         ]
         |> Type.Primitive.Set.of_list
       in
@@ -884,6 +887,16 @@ let test_add_constraint_type_variable_tuple context =
                    variadic2)))
       |> Type.Variable.mark_all_variables_as_bound )
     [["Ts", "typing.Tuple[int, pyre_extensions.Unpack[Ts2], str]"]];
+  (* Tuple is covariant. *)
+  assert_add ~left:"typing.Tuple[int, str]" ~right:"typing.Tuple[float, str]" [[]];
+
+  (* Parametric types. *)
+  assert_add
+    ~left:"test.Tensor[str, bool]"
+    ~right:"test.Tensor[pyre_extensions.Unpack[Ts]]"
+    [["Ts", "typing.Tuple[str, bool]"]];
+  (* Tensor is invariant. *)
+  assert_add ~left:"Tensor[int, str]" ~right:"Tensor[float, str]" [];
   ()
 
 

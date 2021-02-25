@@ -226,11 +226,10 @@ module Solution = struct
     ParameterVariable.Map.find callable_parameters
 
 
-  let instantiate_ordered_types solution = function
-    | Type.OrderedTypes.Concrete concretes ->
-        List.map concretes ~f:(instantiate solution)
-        |> fun concretes -> Type.OrderedTypes.Concrete concretes
-    | Concatenation _ -> failwith "not yet implemented - T84854853"
+  let instantiate_ordered_types solution ordered_type =
+    match instantiate solution (Type.Tuple (Bounded ordered_type)) with
+    | Type.Tuple (Bounded instantiated_ordered_type) -> instantiated_ordered_type
+    | _ -> failwith "expected Tuple"
 
 
   let instantiate_callable_parameters solution parameters =

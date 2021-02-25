@@ -169,9 +169,11 @@ module Record = struct
 
       let create_unpackable variadic = Variadic variadic
 
-      let create ?(prefix = []) ?(suffix = []) unpackable =
-        { prefix; middle = create_unpackable unpackable; suffix }
+      let create ?(prefix = []) ?(suffix = []) variadic =
+        { prefix; middle = create_unpackable variadic; suffix }
 
+
+      let create_from_unpackable (Variadic variadic) = create variadic
 
       let pp_unpackable format = function
         | Variadic variadic ->
