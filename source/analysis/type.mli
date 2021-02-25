@@ -868,11 +868,11 @@ module Variable : sig
     t list ->
     variable_zip_result list option
 
-  val zip_on_two_parameter_lists
-    :  left_parameters:Parameter.t sexp_list ->
-    right_parameters:Parameter.t sexp_list ->
-    t sexp_list ->
-    (Parameter.t * Parameter.t * t) sexp_list sexp_option
+  val zip_variables_with_two_parameter_lists
+    :  left_parameters:Parameter.t list ->
+    right_parameters:Parameter.t list ->
+    t list ->
+    (variable_zip_result * variable_zip_result) list option
 
   val all_unary : t list -> Unary.t list option
 

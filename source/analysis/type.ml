@@ -3481,11 +3481,11 @@ module Variable : sig
     t list ->
     variable_zip_result list option
 
-  val zip_on_two_parameter_lists
-    :  left_parameters:Parameter.t sexp_list ->
-    right_parameters:Parameter.t sexp_list ->
-    t sexp_list ->
-    (Parameter.t * Parameter.t * t) sexp_list sexp_option
+  val zip_variables_with_two_parameter_lists
+    :  left_parameters:Parameter.t list ->
+    right_parameters:Parameter.t list ->
+    t list ->
+    (variable_zip_result * variable_zip_result) list option
 
   val all_unary : t list -> Unary.t list option
 
@@ -4346,21 +4346,14 @@ end = struct
         None
 
 
-  let zip_on_two_parameter_lists ~left_parameters ~right_parameters variables =
-    let left_parameters, right_parameters =
-      match variables with
-      (* TODO(T84854853):. *)
-      | [ParameterVariadic _] ->
-          coalesce_if_all_single left_parameters, coalesce_if_all_single right_parameters
-      | _ -> left_parameters, right_parameters
+  let zip_variables_with_two_parameter_lists ~left_parameters ~right_parameters variables =
+    let left_pairs, right_pairs =
+      ( zip_variables_with_parameters ~parameters:left_parameters variables,
+        zip_variables_with_parameters ~parameters:right_parameters variables )
     in
-    match List.zip left_parameters right_parameters with
-    | Ok zipped -> (
-        match List.zip zipped variables with
-        | Ok zipped ->
-            let handle ((left, right), variable) = left, right, variable in
-            List.map zipped ~f:handle |> Option.some
-        | _ -> None )
+    Option.map2 left_pairs right_pairs ~f:List.zip
+    >>= function
+    | Ok pairs -> Some pairs
     | Unequal_lengths -> None
 
 

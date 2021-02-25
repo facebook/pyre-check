@@ -520,52 +520,60 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
         in
         List.append through_protocol_hierarchy through_meta_hierarchy
     | _, Type.Parametric { name = right_name; parameters = right_parameters } ->
-        let solve_parameters left_parameters =
-          let handle_variables constraints (left, right, variable) =
-            match left, right, variable with
-            (* TODO kill these special cases *)
-            | Type.Parameter.Single Type.Bottom, _, _ ->
-                (* T[Bottom] is a subtype of T[_T2], for any _T2 and regardless of its variance. *)
-                constraints
-            | _, Type.Parameter.Single Type.Top, _ ->
-                (* T[_T2] is a subtype of T[Top], for any _T2 and regardless of its variance. *)
-                constraints
-            | Single Top, _, _ -> impossible
-            | ( Single left,
-                Single right,
-                Type.Variable.Unary { Type.Variable.Unary.variance = Covariant; _ } ) ->
-                constraints
-                |> List.concat_map ~f:(fun constraints ->
-                       solve_less_or_equal order ~constraints ~left ~right)
-            | Single left, Single right, Unary { variance = Contravariant; _ } ->
-                constraints
-                |> List.concat_map ~f:(fun constraints ->
-                       solve_less_or_equal order ~constraints ~left:right ~right:left)
-            | Single left, Single right, Unary { variance = Invariant; _ } ->
-                constraints
-                |> List.concat_map ~f:(fun constraints ->
-                       solve_less_or_equal order ~constraints ~left ~right)
-                |> List.concat_map ~f:(fun constraints ->
-                       solve_less_or_equal order ~constraints ~left:right ~right:left)
-            | CallableParameters left, CallableParameters right, ParameterVariadic _ ->
-                let left = Type.Callable.create ~parameters:left ~annotation:Type.Any () in
-                let right = Type.Callable.create ~parameters:right ~annotation:Type.Any () in
-                List.concat_map constraints ~f:(fun constraints ->
-                    solve_less_or_equal order ~constraints ~left ~right)
-            | _ -> impossible
-          in
-          variables right_name
-          >>= Type.Variable.zip_on_two_parameter_lists ~left_parameters ~right_parameters
-          >>| List.fold ~f:handle_variables ~init:[constraints]
+        let solve_respecting_variance constraints = function
+          | Type.Variable.UnaryPair (unary, left), Type.Variable.UnaryPair (_, right) -> (
+              match left, right, unary with
+              (* TODO kill these special cases *)
+              | Type.Bottom, _, _ ->
+                  (* T[Bottom] is a subtype of T[_T2], for any _T2 and regardless of its variance. *)
+                  constraints
+              | _, Type.Top, _ ->
+                  (* T[_T2] is a subtype of T[Top], for any _T2 and regardless of its variance. *)
+                  constraints
+              | Top, _, _ -> impossible
+              | left, right, { Type.Variable.Unary.variance = Covariant; _ } ->
+                  constraints
+                  |> List.concat_map ~f:(fun constraints ->
+                         solve_less_or_equal order ~constraints ~left ~right)
+              | left, right, { variance = Contravariant; _ } ->
+                  constraints
+                  |> List.concat_map ~f:(fun constraints ->
+                         solve_less_or_equal order ~constraints ~left:right ~right:left)
+              | left, right, { variance = Invariant; _ } ->
+                  constraints
+                  |> List.concat_map ~f:(fun constraints ->
+                         solve_less_or_equal order ~constraints ~left ~right)
+                  |> List.concat_map ~f:(fun constraints ->
+                         solve_less_or_equal order ~constraints ~left:right ~right:left) )
+          | ( Type.Variable.ParameterVariadicPair (_, left),
+              Type.Variable.ParameterVariadicPair (_, right) ) ->
+              let left = Type.Callable.create ~parameters:left ~annotation:Type.Any () in
+              let right = Type.Callable.create ~parameters:right ~annotation:Type.Any () in
+              List.concat_map constraints ~f:(fun constraints ->
+                  solve_less_or_equal order ~constraints ~left ~right)
+          | _ -> impossible
         in
-        let parameters =
-          let parameters = instantiate_successors_parameters ~source:left ~target:right_name in
-          match parameters with
+        let solve_parameters left_parameters right_parameters =
+          variables right_name
+          >>= Type.Variable.zip_variables_with_two_parameter_lists
+                ~left_parameters
+                ~right_parameters
+          >>| List.map ~f:(function
+                  | ( { Type.Variable.variable_pair = left_variable_pair; _ },
+                      { Type.Variable.variable_pair = right_variable_pair; _ } )
+                  -> left_variable_pair, right_variable_pair)
+          >>| List.fold ~f:solve_respecting_variance ~init:[constraints]
+        in
+        let left_parameters =
+          let left_parameters = instantiate_successors_parameters ~source:left ~target:right_name in
+          match left_parameters with
           | None when is_protocol right ~protocol_assumptions ->
               instantiate_protocol_parameters order ~protocol:right_name ~candidate:left
-          | _ -> parameters
+          | _ -> left_parameters
         in
-        parameters >>= solve_parameters |> Option.value ~default:impossible
+        left_parameters
+        >>= (fun left_parameters -> solve_parameters left_parameters right_parameters)
+        |> Option.value ~default:impossible
     | Type.Primitive source, Type.Primitive target -> (
         let left_typed_dictionary = get_typed_dictionary left in
         let right_typed_dictionary = get_typed_dictionary right in

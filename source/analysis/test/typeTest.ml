@@ -2320,6 +2320,69 @@ let test_zip_variables_with_parameters _ =
   ()
 
 
+let test_zip_on_two_parameter_lists _ =
+  let unary = Type.Variable.Unary.create "T" in
+  let unary2 = Type.Variable.Unary.create "T2" in
+  let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
+  let variadic2 = Type.Variable.Variadic.Tuple.create "Ts2" in
+  let parameter_variadic = Type.Variable.Variadic.Parameters.create "TParams" in
+  let assert_zipped ~generic_class ~left ~right expected =
+    let aliases ?replace_unbound_parameters_with_any:_ = function
+      | "T" -> Some (Type.TypeAlias (Type.Variable unary))
+      | "T2" -> Some (Type.TypeAlias (Type.Variable unary2))
+      | "Ts" -> Some (Type.VariableAlias (Type.Variable.TupleVariadic variadic))
+      | "Ts2" -> Some (Type.VariableAlias (Type.Variable.TupleVariadic variadic2))
+      | "TParams" -> Some (Type.VariableAlias (Type.Variable.ParameterVariadic parameter_variadic))
+      | _ -> None
+    in
+    let left_parameters =
+      match Type.create ~aliases (parse_single_expression ~preprocess:true left) with
+      | Type.Parametric { parameters; _ } -> parameters
+      | _ -> failwith "expected Parametric"
+    in
+    let right_parameters =
+      match Type.create ~aliases (parse_single_expression ~preprocess:true right) with
+      | Type.Parametric { parameters; _ } -> parameters
+      | _ -> failwith "expected Parametric"
+    in
+    let variables =
+      match Type.create ~aliases (parse_single_expression ~preprocess:true generic_class) with
+      | Type.Parametric { parameters; _ } ->
+          let variables = List.map ~f:Type.Parameter.to_variable parameters |> Option.all in
+          Option.value_exn variables
+      | _ -> failwith "expected Parametric"
+    in
+    assert_equal
+      ~printer:
+        [%show: (Type.Variable.variable_zip_result * Type.Variable.variable_zip_result) list option]
+      ~cmp:
+        [%equal:
+          (Type.Variable.variable_zip_result * Type.Variable.variable_zip_result) list option]
+      expected
+      (Type.Variable.zip_variables_with_two_parameter_lists
+         ~left_parameters
+         ~right_parameters
+         variables)
+  in
+  assert_zipped
+    ~generic_class:"Generic[T]"
+    ~left:"Child[int]"
+    ~right:"Base[str]"
+    (Some
+       [
+         ( {
+             variable_pair = Type.Variable.UnaryPair (unary, Type.integer);
+             received_parameter = Single Type.integer;
+           },
+           {
+             variable_pair = Type.Variable.UnaryPair (unary, Type.string);
+             received_parameter = Single Type.string;
+           } );
+       ]);
+  assert_zipped ~generic_class:"Generic[T]" ~left:"Child[int]" ~right:"Base[str, bool]" None;
+  ()
+
+
 let test_union_upper_bound _ =
   let assert_union_upper_bound map expected =
     assert_equal (Type.OrderedTypes.union_upper_bound map) expected
@@ -2687,6 +2750,7 @@ let () =
          "parse_type_variable_declarations" >:: test_parse_type_variable_declarations;
          "split_ordered_types" >:: test_split_ordered_types;
          "zip_variables_with_parameters" >:: test_zip_variables_with_parameters;
+         "zip_on_two_parameter_lists" >:: test_zip_on_two_parameter_lists;
          "union_upper_bound" >:: test_union_upper_bound;
          "infer_transform" >:: test_infer_transform;
          "fields_from_constructor" >:: test_fields_from_constructor;

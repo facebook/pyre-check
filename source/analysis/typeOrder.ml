@@ -225,36 +225,33 @@ module OrderImplementation = struct
                 let left_parameters = instantiate_successors_parameters ~source:left ~target in
                 let right_parameters = instantiate_successors_parameters ~source:right ~target in
                 let variables = variables target in
-                let join_parameters (left, right, variable) =
-                  match left, right, variable with
-                  | Type.Parameter.CallableParameters _, _, _
-                  | _, Type.Parameter.CallableParameters _, _
-                  | Type.Parameter.Unpacked _, _, _
-                  | _, Type.Parameter.Unpacked _, _
-                  | _, _, Type.Variable.TupleVariadic _
-                  | _, _, Type.Variable.ParameterVariadic _ ->
+                let join_parameters_respecting_variance = function
+                  | Type.Variable.UnaryPair (unary, left), Type.Variable.UnaryPair (_, right) -> (
+                      match left, right, unary with
+                      | Type.Bottom, other, _
+                      | other, Type.Bottom, _ ->
+                          Some other
+                      | Type.Top, _, _
+                      | _, Type.Top, _ ->
+                          Some Type.Top
+                      | left, right, { variance = Covariant; _ } -> Some (join order left right)
+                      | left, right, { variance = Contravariant; _ } -> (
+                          match meet order left right with
+                          | Type.Bottom -> None
+                          | not_bottom -> Some not_bottom )
+                      | left, right, { variance = Invariant; _ } ->
+                          if
+                            always_less_or_equal order ~left ~right
+                            && always_less_or_equal order ~left:right ~right:left
+                          then
+                            Some left
+                          else
+                            None )
+                  | Type.Variable.TupleVariadicPair _, Type.Variable.TupleVariadicPair _
+                  | Type.Variable.ParameterVariadicPair _, Type.Variable.ParameterVariadicPair _ ->
                       (* TODO(T47348395): Implement joining for variadics *)
                       None
-                  | Single Type.Bottom, Single other, _
-                  | Single other, Single Type.Bottom, _ ->
-                      Some other
-                  | Single Type.Top, _, _
-                  | _, Single Type.Top, _ ->
-                      Some Type.Top
-                  | Single left, Single right, Unary { variance = Covariant; _ } ->
-                      Some (join order left right)
-                  | Single left, Single right, Unary { variance = Contravariant; _ } -> (
-                      match meet order left right with
-                      | Type.Bottom -> None
-                      | not_bottom -> Some not_bottom )
-                  | Single left, Single right, Unary { variance = Invariant; _ } ->
-                      if
-                        always_less_or_equal order ~left ~right
-                        && always_less_or_equal order ~left:right ~right:left
-                      then
-                        Some left
-                      else
-                        None
+                  | _ -> None
                 in
                 match left_parameters, right_parameters, variables with
                 | Some left_parameters, Some right_parameters, Some variables ->
@@ -264,11 +261,15 @@ module OrderImplementation = struct
                       in
                       Type.Variable.GlobalTransforms.Unary.replace_all replace_if_free
                     in
-                    Type.Variable.zip_on_two_parameter_lists
+                    Type.Variable.zip_variables_with_two_parameter_lists
                       ~left_parameters
                       ~right_parameters
                       variables
-                    >>| List.map ~f:join_parameters
+                    >>| List.map ~f:(function
+                            | ( { Type.Variable.variable_pair = left_variable_pair; _ },
+                                { Type.Variable.variable_pair = right_variable_pair; _ } )
+                            -> left_variable_pair, right_variable_pair)
+                    >>| List.map ~f:join_parameters_respecting_variance
                     >>= Option.all
                     >>| List.map ~f:replace_free_unary_variables_with_top
                     >>| List.map ~f:(fun single -> Type.Parameter.Single single)
