@@ -802,6 +802,8 @@ module Variable : sig
       val name : t -> Identifier.t
 
       val create : string -> t
+
+      val synthetic_class_name_for_error : string
     end
   end
 

@@ -3413,6 +3413,8 @@ module Variable : sig
       val name : t -> Identifier.t
 
       val create : string -> t
+
+      val synthetic_class_name_for_error : string
     end
   end
 
@@ -3874,6 +3876,8 @@ end = struct
         type t = type_t record [@@deriving compare, sexp]
       end)
 
+      let synthetic_class_name_for_error = "$synthetic_class_for_variadic_error"
+
       (* TODO(T84854853): Add a better Any using unbound tuples. *)
       let any = OrderedTypes.Concrete [Any]
 
@@ -4275,28 +4279,37 @@ end = struct
           List.split_n parameters_rest (List.length parameters_rest - List.length variables_suffix)
         in
         let pairs () =
-          let ordered_middle_type =
-            match OrderedTypes.concatenation_from_parameters parameters_middle with
-            | Some ordered_type -> Some ordered_type
-            | None ->
-                Parameter.all_singles parameters_middle
-                >>| fun singles -> OrderedTypes.Concrete singles
-          in
           match
             ( List.map2 variables_prefix parameters_prefix ~f:make_variable_pair,
-              List.map2 variables_suffix parameters_suffix ~f:make_variable_pair,
-              ordered_middle_type )
+              List.map2 variables_suffix parameters_suffix ~f:make_variable_pair )
           with
-          | Ok prefix_pairs, Ok suffix_pairs, Some ordered_middle_type ->
-              prefix_pairs
-              @ [
-                  {
-                    variable_pair = TupleVariadicPair (variadic, ordered_middle_type);
-                    received_parameter = Single (Tuple (Bounded ordered_middle_type));
-                  };
-                ]
-              @ suffix_pairs
-              |> Option.some
+          | Ok prefix_pairs, Ok suffix_pairs ->
+              let variadic_pair =
+                let ordered_type =
+                  match OrderedTypes.concatenation_from_parameters parameters_middle with
+                  | Some ordered_type -> Some ordered_type
+                  | None ->
+                      Parameter.all_singles parameters_middle
+                      >>| fun singles -> OrderedTypes.Concrete singles
+                in
+                ordered_type
+                >>| (fun ordered_type ->
+                      {
+                        variable_pair = TupleVariadicPair (variadic, ordered_type);
+                        received_parameter = Single (Tuple (Bounded ordered_type));
+                      })
+                |> Option.value
+                     ~default:
+                       {
+                         variable_pair = TupleVariadicPair (variadic, Variadic.Tuple.any);
+                         received_parameter =
+                           Single
+                             (parametric
+                                Variadic.Tuple.synthetic_class_name_for_error
+                                parameters_middle);
+                       }
+              in
+              prefix_pairs @ [variadic_pair] @ suffix_pairs |> Option.some
           | _ -> None
         in
         let has_variadic_in_prefix_or_suffix =

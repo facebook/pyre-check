@@ -2288,7 +2288,20 @@ let test_zip_variables_with_parameters _ =
   assert_zipped
     ~generic_class:"Generic[pyre_extensions.Unpack[Ts]]"
     ~instantiation:"Foo[TParams]"
-    None;
+    (Some
+       [
+         {
+           variable_pair = Type.Variable.TupleVariadicPair (variadic, Concrete [Type.Any]);
+           received_parameter =
+             Single
+               (Type.parametric
+                  Type.Variable.Variadic.Tuple.synthetic_class_name_for_error
+                  [
+                    CallableParameters
+                      (Type.Variable.Variadic.Parameters.self_reference parameter_variadic);
+                  ]);
+         };
+       ]);
   (* We forbid
 
      class Foo(Generic[T, *Ts]): ...
