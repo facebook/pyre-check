@@ -2871,6 +2871,31 @@ let test_variadic_classes context =
        typing.Tuple[typing.Type[Variable[T]], typing.Any]], typing.Type[Tensor[Variable[T], \
        typing.Any]]], typing.Type[Tensor]]`.";
     ];
+  assert_type_errors
+    {|
+      from typing import Generic, List, Protocol, Tuple, TypeVar
+      from pyre_extensions import TypeVarTuple
+
+      T = TypeVar("T")
+      Ts = TypeVarTuple("Ts")
+
+      class VariadicProtocol(Protocol[T, *Ts]):
+        def foo(self, x: Tuple[T, *Ts]) -> None: ...
+
+      class Tensor(Generic[*Ts]):
+        """This implements VariadicProtocol with T = List[int] and Ts = Tuple[*Ts]."""
+
+        def foo(self, x: Tuple[List[int], *Ts]) -> None:...
+
+
+      def accepts_variadic_protocol(x: VariadicProtocol[T, *Ts]) -> VariadicProtocol[T, *Ts]: ...
+
+      def bar() -> None:
+        x: Tensor[int, str]
+        y = accepts_variadic_protocol(x)
+        reveal_type(y)
+     |}
+    ["Revealed type [-1]: Revealed type for `y` is `VariadicProtocol[List[int], int, str]`."];
   ()
 
 

@@ -796,13 +796,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
         | None ->
             let protocol_generics = variables protocol in
             let protocol_generic_parameters =
-              protocol_generics
-              >>| List.map ~f:(function
-                      | Type.Variable.Unary variable ->
-                          Type.Parameter.Single (Type.Variable variable)
-                      | ParameterVariadic variable ->
-                          CallableParameters (ParameterVariadicTypeVariable { head = []; variable })
-                      | TupleVariadic _ -> failwith "not yet implemented - T84854853")
+              protocol_generics >>| List.map ~f:Type.Variable.to_parameter
             in
             let new_assumptions =
               ProtocolAssumptions.add
@@ -855,32 +849,45 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
                 let desanitization_solution = TypeConstraints.Solution.create desanitize_map in
                 let instantiate = function
                   | Type.Parameter.Single single ->
-                      Type.Parameter.Single
-                        (TypeConstraints.Solution.instantiate desanitization_solution single)
+                      [
+                        Type.Parameter.Single
+                          (TypeConstraints.Solution.instantiate desanitization_solution single);
+                      ]
                   | CallableParameters parameters ->
-                      CallableParameters
-                        (TypeConstraints.Solution.instantiate_callable_parameters
-                           desanitization_solution
-                           parameters)
-                  | Unpacked _ -> failwith "not yet implemented - T84854853"
+                      [
+                        CallableParameters
+                          (TypeConstraints.Solution.instantiate_callable_parameters
+                             desanitization_solution
+                             parameters);
+                      ]
+                  | Unpacked unpackable ->
+                      TypeConstraints.Solution.instantiate_ordered_types
+                        desanitization_solution
+                        (Concatenation
+                           (Type.OrderedTypes.Concatenation.create_from_unpackable unpackable))
+                      |> Type.OrderedTypes.to_parameters
                 in
-                List.map ~f:instantiate
+                List.concat_map ~f:instantiate
               in
               let instantiate = function
                 | Type.Variable.Unary variable ->
                     TypeConstraints.Solution.instantiate_single_variable solution variable
                     |> Option.value ~default:(Type.Variable variable)
-                    |> fun instantiated -> Type.Parameter.Single instantiated
+                    |> fun instantiated -> [Type.Parameter.Single instantiated]
                 | ParameterVariadic variable ->
                     TypeConstraints.Solution.instantiate_single_parameter_variadic solution variable
                     |> Option.value
                          ~default:
                            (Type.Callable.ParameterVariadicTypeVariable { head = []; variable })
-                    |> fun instantiated -> Type.Parameter.CallableParameters instantiated
-                | TupleVariadic _ -> failwith "not yet implemented - T84854853"
+                    |> fun instantiated -> [Type.Parameter.CallableParameters instantiated]
+                | TupleVariadic variadic ->
+                    TypeConstraints.Solution.instantiate_ordered_types
+                      solution
+                      (Concatenation (Type.OrderedTypes.Concatenation.create variadic))
+                    |> Type.OrderedTypes.to_parameters
               in
               protocol_generics
-              >>| List.map ~f:instantiate
+              >>| List.concat_map ~f:instantiate
               >>| desanitize
               |> Option.value ~default:[]
             in
