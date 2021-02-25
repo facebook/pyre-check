@@ -889,6 +889,10 @@ let test_add_constraint_type_variable_tuple context =
     [["Ts", "typing.Tuple[int, pyre_extensions.Unpack[Ts2], str]"]];
   (* Tuple is covariant. *)
   assert_add ~left:"typing.Tuple[int, str]" ~right:"typing.Tuple[float, str]" [[]];
+  assert_add
+    ~left:"typing.Tuple[int, pyre_extensions.Unpack[Ts]]"
+    ~right:"typing.Tuple[object, ...]"
+    [[]];
 
   (* Parametric types. *)
   assert_add

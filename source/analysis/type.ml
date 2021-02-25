@@ -2468,10 +2468,9 @@ module OrderedTypes = struct
 
   let pp_concise = pp_concise ~pp_type
 
-  let union_upper_bound ordered =
-    match ordered with
+  let union_upper_bound = function
     | Concrete concretes -> union concretes
-    | Concatenation _ -> failwith "not yet implemented - T84854853"
+    | Concatenation _ -> object_primitive
 
 
   let concatenation_from_parameters parameters =

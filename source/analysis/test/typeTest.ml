@@ -2385,11 +2385,24 @@ let test_zip_on_two_parameter_lists _ =
 
 let test_union_upper_bound _ =
   let assert_union_upper_bound map expected =
-    assert_equal (Type.OrderedTypes.union_upper_bound map) expected
+    assert_equal ~cmp:Type.equal (Type.OrderedTypes.union_upper_bound map) expected
   in
   assert_union_upper_bound
     (Concrete [Type.integer; Type.string; Type.bool])
     (Type.union [Type.integer; Type.string; Type.bool]);
+
+  let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
+  assert_union_upper_bound
+    (Concatenation (Type.OrderedTypes.Concatenation.create variadic))
+    Type.object_primitive;
+
+  assert_union_upper_bound
+    (Concatenation
+       (Type.OrderedTypes.Concatenation.create
+          ~prefix:[Type.integer]
+          ~suffix:[Type.string]
+          variadic))
+    Type.object_primitive;
   ()
 
 

@@ -1915,6 +1915,16 @@ let test_join context =
   (* TODO(T41082573) throw here instead of unioning *)
   assert_join "typing.Tuple[int, int]" "typing.Iterator[int]" "typing.Iterator[int]";
 
+  let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
+  assert_join
+    ~aliases:(fun ?replace_unbound_parameters_with_any:_ name ->
+      match name with
+      | "Ts" -> Some (Type.VariableAlias (Type.Variable.TupleVariadic variadic))
+      | _ -> None)
+    "typing.Tuple[pyre_extensions.Unpack[Ts]]"
+    "typing.Tuple[int, ...]"
+    "typing.Tuple[object, ...]";
+
   (* Optionals. *)
   assert_join "str" "typing.Optional[str]" "typing.Optional[str]";
   assert_join "str" "typing.Optional[$bottom]" "str";
