@@ -930,7 +930,18 @@ class base class_metadata_environment dependency =
                                     actual = received_parameter;
                                   };
                             } )
-                    | TupleVariadicPair _, _ -> failwith "not yet implemented - T84854853"
+                    | TupleVariadicPair (tuple_variadic, given), _ ->
+                        ( Type.OrderedTypes.to_parameters given,
+                          Some
+                            {
+                              name;
+                              kind =
+                                UnexpectedKind
+                                  {
+                                    expected = TupleVariadic tuple_variadic;
+                                    actual = received_parameter;
+                                  };
+                            } )
                   in
                   List.map paired ~f:check_parameter
                   |> List.unzip

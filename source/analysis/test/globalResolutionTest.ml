@@ -1098,6 +1098,42 @@ let test_invalid_type_parameters context =
     ~given_type:"test.Foo[pyre_extensions.Unpack[Ts]]"
     ~expected_transformed_type:"test.Foo[pyre_extensions.Unpack[Ts]]"
     [];
+  assert_invalid_type_parameters_direct
+    ~source:
+      {|
+      from typing import Generic
+      from pyre_extensions import TypeVarTuple
+
+      Ts = TypeVarTuple("Ts")
+      class Foo(Generic[*Ts]): ...
+    |}
+    ~given_type:
+      (Type.parametric
+         "test.Foo"
+         [
+           CallableParameters
+             (ParameterVariadicTypeVariable
+                { Type.Callable.head = []; variable = parameter_variadic });
+         ])
+    ~expected_transformed_type:(Type.parametric "test.Foo" [Single Any])
+    [
+      {
+        name = "test.Foo";
+        kind =
+          UnexpectedKind
+            {
+              actual =
+                Single
+                  (Type.parametric
+                     Type.Variable.Variadic.Tuple.synthetic_class_name_for_error
+                     [
+                       CallableParameters
+                         (Type.Variable.Variadic.Parameters.self_reference parameter_variadic);
+                     ]);
+              expected = Type.Variable.TupleVariadic (Type.Variable.Variadic.Tuple.create "test.Ts");
+            };
+      };
+    ];
   ()
 
 
