@@ -808,33 +808,22 @@ class base class_metadata_environment dependency =
           (class_hierarchy_environment class_metadata_environment)
       in
       let metaclass class_name ~assumptions = self#metaclass class_name ~assumptions in
-      (* TODO(T84854853): We have to make this a recursive value to allow
-         `instantiate_successors_parameters` to use `join`. Adding this temporarily to support
-         solving `Tuple[int, int] <: Iterator[T]`, which we can't do without the variadic `Group`.
-         Remove this once variadic tuples are supported. *)
-      let rec full_order =
-        lazy
+      {
+        ConstraintsSet.class_hierarchy =
           {
-            ConstraintsSet.class_hierarchy =
-              {
-                instantiate_successors_parameters =
-                  ClassHierarchy.instantiate_successors_parameters
-                    class_hierarchy_handler
-                    ~join:(fun left right -> TypeOrder.join (Lazy.force full_order) left right);
-                is_transitive_successor =
-                  ClassHierarchy.is_transitive_successor class_hierarchy_handler;
-                variables = ClassHierarchy.variables class_hierarchy_handler;
-                least_upper_bound = ClassHierarchy.least_upper_bound class_hierarchy_handler;
-              };
-            attribute;
-            all_attributes;
-            is_protocol;
-            assumptions;
-            get_typed_dictionary = self#get_typed_dictionary ~assumptions;
-            metaclass;
-          }
-      in
-      Lazy.force full_order
+            instantiate_successors_parameters =
+              ClassHierarchy.instantiate_successors_parameters class_hierarchy_handler;
+            is_transitive_successor = ClassHierarchy.is_transitive_successor class_hierarchy_handler;
+            variables = ClassHierarchy.variables class_hierarchy_handler;
+            least_upper_bound = ClassHierarchy.least_upper_bound class_hierarchy_handler;
+          };
+        attribute;
+        all_attributes;
+        is_protocol;
+        assumptions;
+        get_typed_dictionary = self#get_typed_dictionary ~assumptions;
+        metaclass;
+      }
 
     method check_invalid_type_parameters
         ?(replace_unbound_parameters_with_any = true)

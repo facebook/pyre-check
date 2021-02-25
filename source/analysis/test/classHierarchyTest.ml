@@ -480,10 +480,6 @@ let variadic_order =
   handler order
 
 
-let instantiate_successors_parameters ?(join = fun _ _ -> failwith "This should not be used") order =
-  instantiate_successors_parameters ~join order
-
-
 let test_instantiate_successors_parameters _ =
   assert_equal
     (instantiate_successors_parameters

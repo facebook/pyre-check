@@ -107,7 +107,6 @@ val is_transitive_successor
 
 val instantiate_successors_parameters
   :  (module Handler) ->
-  join:(Type.t -> Type.t -> Type.t) ->
   source:Type.t ->
   target:Type.Primitive.t ->
   Type.Parameter.t list option

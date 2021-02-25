@@ -285,12 +285,7 @@ let is_transitive_successor
   iterate worklist
 
 
-let instantiate_successors_parameters
-    ((module Handler : Handler) as handler)
-    ~join:_
-    ~source
-    ~target
-  =
+let instantiate_successors_parameters ((module Handler : Handler) as handler) ~source ~target =
   raise_if_untracked handler target;
   let generic_index = IndexTracker.index generic_primitive in
   match source with
