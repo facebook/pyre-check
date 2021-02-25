@@ -66,6 +66,7 @@ module.exports = {
     'pysa-additional-resources',
     ...fbInternalOnly(['fb/pysa-cross-repo-taint-exchange']),
     'pysa-explore',
+    ...fbInternalOnly(['fb/pysa-ig-integration-test']),
     ...fbInternalOnly([
       {
         'Pysa Developer Docs': [
