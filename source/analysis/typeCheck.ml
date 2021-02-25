@@ -557,14 +557,7 @@ module State (Context : Context) = struct
     | Some [] ->
         parent_type
     | Some variables ->
-        let variables =
-          List.map variables ~f:(function
-              | Unary variable -> Type.Parameter.Single (Type.Variable variable)
-              | ParameterVariadic parameters ->
-                  CallableParameters (Type.Variable.Variadic.Parameters.self_reference parameters)
-              | TupleVariadic _ -> failwith "not yet implemented - T84854853")
-        in
-        Type.parametric parent_name variables
+        List.map variables ~f:Type.Variable.to_parameter |> Type.parametric parent_name
     | exception _ -> parent_type
 
 

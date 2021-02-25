@@ -2836,6 +2836,21 @@ let test_variadic_classes context =
        for 1st positional only parameter to call `Linear.__call__` but got \
        `typing.Tuple[typing_extensions.Literal[10], typing_extensions.Literal[21]]`.";
     ];
+  assert_type_errors
+    {|
+      from typing import Generic
+      from pyre_extensions import TypeVarTuple
+
+      Ts = TypeVarTuple("Ts")
+
+      class Tensor(Generic[*Ts]):
+        def some_method(self, x: Tensor[*Ts]) -> None: ...
+
+      def bar() -> None:
+        xs: Tensor[int, str]
+        xs.some_method(xs)
+     |}
+    [];
   ()
 
 
