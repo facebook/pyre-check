@@ -951,18 +951,29 @@ class base class_metadata_environment dependency =
               | None when not replace_unbound_parameters_with_any ->
                   Type.parametric name (List.map generics ~f:Type.Variable.to_parameter), sofar
               | None ->
-                  let annotation, can_accept_more_parameters =
+                  let annotation, expected_parameter_count, can_accept_more_parameters =
                     match name with
-                    | "typing.Callable" -> Type.Callable.create ~annotation:Type.Any (), false
-                    | "tuple" -> Type.Tuple (Type.Unbounded Type.Any), true
+                    | "typing.Callable" ->
+                        Type.Callable.create ~annotation:Type.Any (), List.length generics, false
+                    | "tuple" -> Type.Tuple (Type.Unbounded Type.Any), List.length generics, true
                     | _ ->
-                        ( Type.parametric
+                        let is_tuple_variadic = function
+                          | Type.Variable.TupleVariadic _ -> true
+                          | _ -> false
+                        in
+                        let annotation =
+                          Type.parametric
                             name
-                            (List.map generics ~f:(function
-                                | Type.Variable.Unary _ -> Type.Parameter.Single Type.Any
-                                | ParameterVariadic _ -> CallableParameters Undefined
-                                | TupleVariadic _ -> failwith "not yet implemented - T84854853")),
-                          false )
+                            (List.concat_map generics ~f:(function
+                                | Type.Variable.Unary _ -> [Type.Parameter.Single Type.Any]
+                                | ParameterVariadic _ -> [CallableParameters Undefined]
+                                | TupleVariadic _ ->
+                                    Type.OrderedTypes.to_parameters Type.Variable.Variadic.Tuple.any))
+                        in
+                        ( annotation,
+                          List.filter generics ~f:(fun x -> not (is_tuple_variadic x))
+                          |> List.length,
+                          List.exists generics ~f:is_tuple_variadic )
                   in
                   let mismatch =
                     {
@@ -971,7 +982,7 @@ class base class_metadata_environment dependency =
                         IncorrectNumberOfParameters
                           {
                             actual = List.length given;
-                            expected = List.length generics;
+                            expected = expected_parameter_count;
                             can_accept_more_parameters;
                           };
                     }

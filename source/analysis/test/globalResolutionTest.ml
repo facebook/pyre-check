@@ -1134,6 +1134,29 @@ let test_invalid_type_parameters context =
             };
       };
     ];
+  assert_invalid_type_parameters
+    ~aliases:(fun ?replace_unbound_parameters_with_any:_ -> function
+      | "Ts" -> Some (VariableAlias (Type.Variable.TupleVariadic variadic))
+      | _ -> None)
+    ~source:
+      {|
+      from typing import Generic, TypeVar
+      from pyre_extensions import TypeVarTuple
+
+      Ts = TypeVarTuple("Ts")
+      T = TypeVar("T")
+      class Foo(Generic[T, *Ts]): ...
+    |}
+    ~given_type:"test.Foo[pyre_extensions.Unpack[Ts]]"
+    ~expected_transformed_type:"test.Foo[typing.Any, typing.Any]"
+    [
+      {
+        name = "test.Foo";
+        kind =
+          IncorrectNumberOfParameters
+            { actual = 1; expected = 1; can_accept_more_parameters = true };
+      };
+    ];
   ()
 
 
