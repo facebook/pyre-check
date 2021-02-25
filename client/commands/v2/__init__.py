@@ -4,6 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 from . import incremental  # noqa F401
+from . import kill  # noqa F401
 from . import persistent  # noqa F401
 from . import query  # noqa F401
 from . import rage  # noqa F401
