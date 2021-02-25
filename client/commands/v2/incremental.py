@@ -6,6 +6,7 @@
 import dataclasses
 import json
 import logging
+import os
 from pathlib import Path
 from typing import List
 
@@ -56,7 +57,7 @@ def parse_type_error_response(response: str) -> List[error.Error]:
 
 
 def _relativize_error_path(error: error.Error) -> error.Error:
-    relativized_path = error.path.relative_to(Path.cwd())
+    relativized_path = os.path.relpath(str(error.path), str(Path.cwd()))
     return dataclasses.replace(error, path=relativized_path)
 
 
