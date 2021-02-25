@@ -306,7 +306,6 @@ let test_check_annotation context =
 
 
 let assert_resolved ~context sources expression expected =
-  let module State = State (DefaultContext) in
   let resolution = ScratchProject.setup ~context sources |> ScratchProject.build_resolution in
   let resolved =
     Resolution.resolve_expression_to_type resolution (parse_single_expression expression)
@@ -450,7 +449,6 @@ type parameter_kind =
   | KeywordParameter
 
 let test_forward_expression context =
-  let module State = State (DefaultContext) in
   let assert_forward
       ?(precondition = [])
       ?(postcondition = [])
@@ -885,32 +883,10 @@ let test_forward_statement context =
       ?(precondition_immutables = [])
       ?(postcondition_immutables = [])
       ?(bottom = false)
-      ?expected_return
       precondition
       statement
       postcondition
     =
-    let define =
-      let annotation =
-        expected_return >>| Format.asprintf " -> %a" Type.pp |> Option.value ~default:""
-      in
-      Format.asprintf "def foo()%s: ..." annotation
-      |> parse_single_statement
-      |> function
-      | { Node.value = Define define; _ } -> define
-      | _ -> failwith "Unable to parse define."
-    in
-    let module Context = struct
-      let qualifier = Reference.empty
-
-      let debug = false
-
-      let define = +define
-
-      module Builder = Callgraph.NullBuilder
-    end
-    in
-    let module State = State (Context) in
     let forwarded =
       let parsed =
         parse statement
@@ -1218,8 +1194,6 @@ let test_forward_statement context =
 
   (* Return. *)
   assert_forward [] "return 1" [];
-  assert_forward ~expected_return:Type.integer [] "return 1" [];
-  assert_forward ~expected_return:Type.string [] "return 1" [];
 
   (* Pass. *)
   assert_forward ["y", Type.integer] "pass" ["y", Type.integer]

@@ -1191,7 +1191,6 @@ let test_deduplicate context =
   end
   in
   let module ForwardAsserter = TargetAsserter (ClassHierarchy.Target.List) in
-  let module BackwardsAsserter = TargetAsserter (ClassHierarchy.Target.Set) in
   ForwardAsserter.assert_targets
     Handler.edges
     "test.Zero"

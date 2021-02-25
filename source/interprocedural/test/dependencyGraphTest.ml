@@ -329,7 +329,7 @@ let test_construction_reverse context =
 
 let test_type_collection context =
   let assert_type_collection source ~handle ~expected =
-    let configuration, source, environment =
+    let source, environment =
       let project = ScratchProject.setup ~context [handle, source] in
       let { ScratchProject.BuiltTypeEnvironment.type_environment = environment; _ } =
         ScratchProject.build_type_environment project
@@ -340,7 +340,7 @@ let test_type_collection context =
           (Reference.create (String.chop_suffix_exn handle ~suffix:".py"))
         |> fun option -> Option.value_exn option
       in
-      ScratchProject.configuration_of project, source, TypeEnvironment.read_only environment
+      source, TypeEnvironment.read_only environment
     in
     let defines =
       Preprocessing.defines ~include_toplevels:true source
@@ -368,16 +368,6 @@ let test_type_collection context =
       |> List.hd_exn
       |> fun expression ->
       if String.equal (Expression.show expression) test_expression then
-        let module State = TypeCheck.State (struct
-          let qualifier = Reference.empty
-
-          let debug = configuration.debug
-
-          let define = +Test.mock_define
-
-          module Builder = Callgraph.NullBuilder
-        end)
-        in
         match Resolution.resolve_expression_to_type resolution expression with
         | Type.Callable { Type.Callable.kind = Type.Callable.Named callable_type; _ } ->
             assert_equal expected_type (Reference.show callable_type)

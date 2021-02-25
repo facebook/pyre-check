@@ -7,12 +7,12 @@
 (env
  (dev
   (flags
-   (:standard -w A-3-4-23-40-41-42-44-45-48-49))
+   (:standard -w A-3-4-23-40-41-42-44-45-48-49-67))
   (ocamlopt_flags
    (-g -Oclassic)))
  (release
   (flags
-   (:standard -w A-3-4-23-40-41-42-44-45-48-49))
+   (:standard -w A-3-4-23-40-41-42-44-45-48-49-67))
   (ocamlopt_flags (-O3))))
 
 (library

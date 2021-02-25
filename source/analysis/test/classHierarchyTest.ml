@@ -266,7 +266,6 @@ let test_to_dot _ =
     (*connect_annotations_to_object order ["0"; "1"; "2"; "object"];*)
     handler order, Hash_set.to_list order.all_indices
   in
-  let (module Handler) = order in
   assert_equal
     ~printer:ident
     ( {|
