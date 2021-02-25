@@ -2851,6 +2851,26 @@ let test_variadic_classes context =
         xs.some_method(xs)
      |}
     [];
+  assert_type_errors
+    {|
+      from typing import Generic, TypeVar
+      from pyre_extensions import TypeVarTuple
+
+      T = TypeVar("T")
+      Ts = TypeVarTuple("Ts")
+
+      class Tensor(Generic[T, *Ts]): ...
+
+      def bar() -> None:
+        x = Tensor.__getitem__
+        reveal_type(x)
+     |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is \
+       `BoundMethod[typing.Callable(typing.GenericMeta.__getitem__)[[Named(self, unknown), \
+       typing.Tuple[typing.Type[Variable[T]], typing.Any]], typing.Type[Tensor[Variable[T], \
+       typing.Any]]], typing.Type[Tensor]]`.";
+    ];
   ()
 
 

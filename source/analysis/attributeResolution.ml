@@ -1795,26 +1795,30 @@ class base class_metadata_environment dependency =
                     | [Unary generic] ->
                         overload (create_parameter (Type.meta (Variable generic))), []
                     | _ ->
-                        let handle_variadics = function
+                        (* To support the value `GenericFoo[int, str]`, we need `class
+                           GenericFoo[T1, T2]` to have:
+
+                           `def __getitem__(cls, __x: Tuple[Type[T1], Type[T2]] ) -> GenericFoo[T1,
+                           T2]`. *)
+                        let meta_type_and_return_type = function
                           | Type.Variable.Unary single ->
-                              ( Type.Parameter.Single (Type.Variable single),
-                                Type.meta (Variable single) )
+                              ( Type.meta (Variable single),
+                                Type.Parameter.Single (Type.Variable single) )
                           | ParameterVariadic _ ->
                               (* TODO:(T60536033) We'd really like to take FiniteList[Ts], but
                                  without that we can't actually return the correct metatype, which
                                  is a bummer *)
-                              Type.Parameter.CallableParameters Undefined, Type.Any
-                          | TupleVariadic _ -> failwith "not yet implemented - T84854853"
+                              Type.Any, Type.Parameter.CallableParameters Undefined
+                          | TupleVariadic _ -> Type.Any, Single Any
                         in
-                        let return_parameters, parameter_parameters =
-                          List.map generics ~f:handle_variadics |> List.unzip
+                        let meta_types, return_parameters =
+                          List.map generics ~f:meta_type_and_return_type |> List.unzip
                         in
                         ( {
                             Type.Callable.annotation =
                               Type.meta (Type.parametric name return_parameters);
                             parameters =
-                              Defined
-                                [self_parameter; create_parameter (Type.tuple parameter_parameters)];
+                              Defined [self_parameter; create_parameter (Type.tuple meta_types)];
                           },
                           [] ) )
               in
