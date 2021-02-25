@@ -285,7 +285,12 @@ let is_transitive_successor
   iterate worklist
 
 
-let instantiate_successors_parameters ((module Handler : Handler) as handler) ~join ~source ~target =
+let instantiate_successors_parameters
+    ((module Handler : Handler) as handler)
+    ~join:_
+    ~source
+    ~target
+  =
   raise_if_untracked handler target;
   let generic_index = IndexTracker.index generic_primitive in
   match source with
@@ -304,17 +309,8 @@ let instantiate_successors_parameters ((module Handler : Handler) as handler) ~j
       let split =
         match Type.split source with
         | Primitive primitive, _ when not (contains handler primitive) -> None
-        | Type.Primitive ("tuple" as primitive), parameters -> (
-            match Type.Parameter.all_singles parameters with
-            | Some singles ->
-                (* Handle cases like `Tuple[int, int]` <= `Iterator[int]`. *)
-                let parameters =
-                  [List.fold ~init:Type.Bottom ~f:join singles]
-                  |> List.map ~f:(fun annotation ->
-                         Type.Parameter.Single (Type.weaken_literals annotation))
-                in
-                Some (primitive, parameters)
-            | None -> Some (primitive, parameters) )
+        | Primitive "tuple", [Type.Parameter.Single parameter] ->
+            Some ("tuple", [Type.Parameter.Single (Type.weaken_literals parameter)])
         | Primitive primitive, parameters -> Some (primitive, parameters)
         | _ ->
             (* We can only propagate from those that actually split off a primitive *)

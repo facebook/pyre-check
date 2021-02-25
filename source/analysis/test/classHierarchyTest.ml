@@ -503,19 +503,16 @@ let test_instantiate_successors_parameters _ =
        ~source:Type.string
        ~target:"typing.Iterable")
     (Some ![Type.string]);
-  let join left right =
-    match left, right with
-    | Type.Bottom, _ -> right
-    | _, Type.Top -> right
-    | _ -> left
-  in
-  (* TODO(T84854853): Remove this use of `join` once variadic tuples are supported. Tuple is the
-     only case that needs this special-handling since it is variadic. *)
   assert_equal
     (instantiate_successors_parameters
-       ~join
        parametric_order
-       ~source:(Type.tuple [Type.integer; Type.integer])
+       ~source:(Type.tuple [Type.integer; Type.string])
+       ~target:"typing.Iterable")
+    (Some ![Type.union [Type.integer; Type.string]]);
+  assert_equal
+    (instantiate_successors_parameters
+       parametric_order
+       ~source:(Type.tuple [Type.literal_integer 1])
        ~target:"typing.Iterable")
     (Some ![Type.integer]);
   let ( !! ) name = Type.Primitive name in
@@ -619,6 +616,16 @@ let test_instantiate_successors_parameters _ =
          variadic_parameter;
          Single (Type.literal_integer 2);
        ]);
+  assert_equal
+    (instantiate_successors_parameters
+       variadic_order
+       ~source:
+         (Type.Tuple
+            (Bounded
+               (Concatenation
+                  (Type.OrderedTypes.Concatenation.create ~prefix:[Type.integer] variadic))))
+       ~target:"typing.Iterable")
+    (Some [Single Type.object_primitive]);
   ()
 
 

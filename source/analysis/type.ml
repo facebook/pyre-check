@@ -3206,11 +3206,11 @@ let split annotation =
       Primitive "typing.Optional", [Single parameter]
   | Parametric { name; parameters } -> Primitive name, parameters
   | Tuple tuple ->
+      (* We want to return a type `typing.tuple[X]` where X is the type that would make `given_tuple
+         <: Tuple[X, ...]`. *)
       let parameters =
         match tuple with
-        | Bounded (Concrete parameters) ->
-            List.map parameters ~f:(fun parameter -> Single parameter)
-        | Bounded (Concatenation _) -> failwith "not yet implemented - T84854853"
+        | Bounded ordered_type -> [Single (OrderedTypes.union_upper_bound ordered_type)]
         | Unbounded parameter -> [Single parameter]
       in
       Primitive "tuple", parameters
