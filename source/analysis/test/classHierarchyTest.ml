@@ -6,7 +6,6 @@
  *)
 
 open Core
-open Pyre
 open OUnit2
 open Analysis
 open Test
@@ -449,6 +448,35 @@ let variadic_order =
     ~predecessor:"ConcreteChildClassParametricOnParamSpec"
     ~successor:"ClassParametricOnParamSpec"
     ~parameters:[Single Type.integer];
+
+  let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
+  let variadic_parameter =
+    Type.Parameter.Unpacked (Type.OrderedTypes.Concatenation.create_unpackable variadic)
+  in
+  insert order "Base";
+  connect order ~predecessor:"Base" ~successor:"typing.Generic" ~parameters:[variadic_parameter];
+
+  insert order "Child";
+  connect order ~predecessor:"Child" ~successor:"typing.Generic" ~parameters:[variadic_parameter];
+  connect order ~predecessor:"Child" ~successor:"Base" ~parameters:[variadic_parameter];
+
+  insert order "DTypedTensor";
+  connect
+    order
+    ~predecessor:"DTypedTensor"
+    ~successor:"typing.Generic"
+    ~parameters:[Single (Type.Variable (Type.Variable.Unary.create "DType")); variadic_parameter];
+  insert order "IntTensor";
+  connect
+    order
+    ~predecessor:"IntTensor"
+    ~successor:"typing.Generic"
+    ~parameters:[variadic_parameter];
+  connect
+    order
+    ~predecessor:"IntTensor"
+    ~successor:"DTypedTensor"
+    ~parameters:[Single Type.integer; variadic_parameter];
   handler order
 
 
@@ -528,13 +556,10 @@ let test_instantiate_successors_parameters _ =
        ~target:"GenericContainer")
     (Some ![Type.Any; Type.Any]);
 
-  let printer optional_ordered_types =
-    optional_ordered_types
-    >>| Format.asprintf "%a" (Type.pp_parameters ~pp_type:Type.pp)
-    |> Option.value ~default:"None"
+  let assert_equal actual expected =
+    assert_equal expected actual ~printer:[%show: Type.Parameter.t list option]
   in
   assert_equal
-    ~printer
     (instantiate_successors_parameters
        variadic_order
        ~source:
@@ -551,7 +576,6 @@ let test_instantiate_successors_parameters _ =
            (Defined [Named { name = "p"; annotation = Type.integer; default = false }]);
        ]);
   assert_equal
-    ~printer
     (instantiate_successors_parameters
        variadic_order
        ~source:(Primitive "ConcreteChildClassParametricOnParamSpec")
@@ -560,6 +584,40 @@ let test_instantiate_successors_parameters _ =
        [
          CallableParameters
            (Defined [PositionalOnly { index = 0; annotation = Type.integer; default = false }]);
+       ]);
+  assert_equal
+    (instantiate_successors_parameters variadic_order ~source:Type.Bottom ~target:"Base")
+    (Some [Single Any]);
+  assert_equal
+    (instantiate_successors_parameters
+       variadic_order
+       ~source:(Type.parametric "Child" ![Type.integer; Type.string; Type.bool])
+       ~target:"Base")
+    (Some ![Type.integer; Type.string; Type.bool]);
+  assert_equal
+    (instantiate_successors_parameters
+       variadic_order
+       ~source:(Type.parametric "IntTensor" ![Type.literal_integer 1; Type.literal_integer 2])
+       ~target:"DTypedTensor")
+    (Some ![Type.integer; Type.literal_integer 1; Type.literal_integer 2]);
+  let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
+  let variadic_parameter =
+    Type.Parameter.Unpacked (Type.OrderedTypes.Concatenation.create_unpackable variadic)
+  in
+  assert_equal
+    (instantiate_successors_parameters
+       variadic_order
+       ~source:
+         (Type.parametric
+            "IntTensor"
+            [Single (Type.literal_integer 1); variadic_parameter; Single (Type.literal_integer 2)])
+       ~target:"DTypedTensor")
+    (Some
+       [
+         Single Type.integer;
+         Single (Type.literal_integer 1);
+         variadic_parameter;
+         Single (Type.literal_integer 2);
        ]);
   ()
 

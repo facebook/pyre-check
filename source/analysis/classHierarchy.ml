@@ -291,15 +291,15 @@ let instantiate_successors_parameters ((module Handler : Handler) as handler) ~j
   match source with
   | Type.Bottom ->
       let to_any = function
-        | Type.Variable.Unary _ -> Type.Parameter.Single Type.Any
-        | ParameterVariadic _ -> CallableParameters Undefined
-        | TupleVariadic _ -> failwith "not yet implemented - T84854853"
+        | Type.Variable.Unary _ -> [Type.Parameter.Single Type.Any]
+        | ParameterVariadic _ -> [CallableParameters Undefined]
+        | TupleVariadic _ -> Type.OrderedTypes.to_parameters Type.Variable.Variadic.Tuple.any
       in
       index_of target
       |> Handler.edges
       >>= get_generic_parameters ~generic_index
       >>= parameters_to_variables
-      >>| List.map ~f:to_any
+      >>| List.concat_map ~f:to_any
   | _ ->
       let split =
         match Type.split source with
