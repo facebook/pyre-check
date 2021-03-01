@@ -1993,6 +1993,63 @@ let test_generic_aliases context =
       reveal_type(x)
     |}
     ["Revealed type [-1]: Revealed type for `x` is `typing.Optional[typing.Dict[str, int]]`."];
+  let sources_exporting_generic_classes =
+    [
+      {
+        Test.handle = "bar/baz.py";
+        source = {|
+            from typing import Callable
+          |};
+      };
+    ]
+  in
+  assert_type_errors
+    ~update_environment_with:sources_exporting_generic_classes
+    {|
+      from bar.baz import Callable
+
+      def foo() -> None:
+        reveal_type(Callable)
+        f: Callable[[int], str]
+        y = f(1)
+        reveal_type(y)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `bar.baz.Callable` is `typing.Type[typing.Callable]`.";
+      "Revealed type [-1]: Revealed type for `y` is `str`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Callable
+
+      C = Callable
+
+      def foo() -> None:
+        f: C[[int], str]
+        reveal_type(f)
+    |}
+    [
+      (* TODO(T78935633): Probably shouldn't error here. *)
+      "Invalid type parameters [24]: Generic type `Callable` expects 2 type parameters.";
+      "Revealed type [-1]: Revealed type for `f` is `typing.Callable[[int], str]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Callable, Iterable, Iterator, TypeVar
+
+      T = TypeVar("T")
+
+      Predicate = Callable[[T], int]
+      def dropwhile(predicate: Predicate[T], iterable: Iterable[T]) -> Iterator[T]: ...
+
+      def foo() -> None:
+        reveal_type(dropwhile)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `test.dropwhile` is \
+       `typing.Callable(dropwhile)[[Named(predicate, typing.Callable[[Variable[T]], int]), \
+       Named(iterable, Iterable[Variable[T]])], Iterator[Variable[T]]]`.";
+    ];
   (* Generic alias for a class respects variance. *)
   assert_type_errors
     {|

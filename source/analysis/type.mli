@@ -493,6 +493,11 @@ module Callable : sig
     :  head:type_t list ->
     tail:type_t Parameter.t list ->
     type_t Parameter.t list
+
+  val resolve_getitem_callee
+    :  resolve_aliases:(type_t -> type_t) ->
+    Expression.expression ->
+    Expression.expression
 end
 
 type alias =

@@ -140,6 +140,14 @@ let test_create _ =
                 Type.parametric "Future" ![Type.integer; Type.variable "_T"];
                 Type.awaitable (Type.variable "_T");
               ] );
+          "baz.Callable", Type.Callable.create ~annotation:Type.Any ~parameters:Undefined ();
+          ( "Predicate",
+            Type.Callable.create
+              ~annotation:Type.integer
+              ~parameters:
+                (Defined
+                   [PositionalOnly { index = 0; annotation = Type.variable "T"; default = false }])
+              () );
         ]
       |> (fun table -> Identifier.Table.find table primitive)
       >>| fun alias -> Type.TypeAlias alias
@@ -159,6 +167,33 @@ let test_create _ =
     "_Future[int]"
     (Type.union
        [Type.parametric "Future" ![Type.integer; Type.integer]; Type.awaitable Type.integer]);
+
+  assert_alias
+    "baz.Callable[[int], str]"
+    (Type.Callable
+       {
+         kind = Type.Callable.Anonymous;
+         implementation =
+           {
+             annotation = Type.string;
+             parameters =
+               Defined [PositionalOnly { index = 0; annotation = Type.integer; default = false }];
+           };
+         overloads = [];
+       });
+  assert_alias
+    "Predicate[str]"
+    (Type.Callable
+       {
+         kind = Type.Callable.Anonymous;
+         implementation =
+           {
+             annotation = Type.integer;
+             parameters =
+               Defined [PositionalOnly { index = 0; annotation = Type.string; default = false }];
+           };
+         overloads = [];
+       });
 
   (* String literals. *)
   assert_create "'foo'" (Type.Primitive "foo");
@@ -2620,6 +2655,84 @@ let test_parameter_create _ =
     ]
 
 
+let test_resolve_getitem_callee _ =
+  let open Expression in
+  let assert_resolved_getitem_callee ?(resolve_aliases = Fn.id) actual expected =
+    let parse_callee given =
+      match parse_single_expression given |> Node.value with
+      | Expression.Call { callee = { Node.value = callee; _ }; _ } -> callee
+      | _ -> failwith "expected Call"
+    in
+    assert_equal
+      ~cmp:(fun left right ->
+        Expression.location_insensitive_compare
+          (Node.create_with_default_location left)
+          (Node.create_with_default_location right)
+        = 0)
+      ~printer:[%show: Expression.expression]
+      (parse_callee expected)
+      (Type.Callable.resolve_getitem_callee ~resolve_aliases (parse_callee actual))
+  in
+  assert_resolved_getitem_callee "NotAlias[int]" "NotAlias[int]";
+  assert_resolved_getitem_callee "typing.Callable[[int], str]" "typing.Callable[[int], str]";
+  assert_resolved_getitem_callee
+    "typing.Callable[[int], str][[int], str]"
+    "typing.Callable[[int], str][[int], str]";
+  assert_resolved_getitem_callee
+    "typing.Callable[[int], str][[int], str][[int], str]"
+    "typing.Callable[[int], str][[int], str][[int], str]";
+
+  assert_resolved_getitem_callee
+    ~resolve_aliases:(function
+      | Type.Primitive "bar.baz.Callable" -> Type.Primitive "typing.Callable"
+      | annotation -> annotation)
+    "bar.baz.Callable[[int], str]"
+    "typing.Callable[[int], str]";
+
+  assert_resolved_getitem_callee
+    ~resolve_aliases:(function
+      | Type.Primitive "bar.baz.Callable" ->
+          Type.Callable.create ~annotation:Type.Any ~parameters:Undefined ()
+      | annotation -> annotation)
+    "bar.baz.Callable[[int], str]"
+    "typing.Callable[[int], str]";
+
+  assert_resolved_getitem_callee
+    ~resolve_aliases:(function
+      | Type.Primitive "bar.baz.CallableAlias" ->
+          Type.Callable.create
+            ~annotation:Type.integer
+            ~parameters:
+              (Defined
+                 [PositionalOnly { index = 0; annotation = Type.variable "T"; default = false }])
+            ()
+      | annotation -> annotation)
+    "bar.baz.CallableAlias[str]"
+    "bar.baz.CallableAlias[str]";
+
+  assert_resolved_getitem_callee
+    ~resolve_aliases:(function
+      | Type.Primitive "bar.baz.Callable" -> Type.Primitive "typing.Callable"
+      | annotation -> annotation)
+    "bar.baz.Callable[[int], str][[int], str][[int], str]"
+    "typing.Callable[[int], str][[int], str][[int], str]";
+
+  assert_resolved_getitem_callee
+    ~resolve_aliases:(function
+      | Type.Primitive "bar.baz.Callable" -> Type.Primitive "typing.Callable"
+      | annotation -> annotation)
+    "not_an_alias.Callable[[int], str]"
+    "not_an_alias.Callable[[int], str]";
+
+  assert_resolved_getitem_callee
+    ~resolve_aliases:(function
+      | Type.Primitive "bar.baz.Callable" -> Type.Primitive "typing.Callable"
+      | annotation -> annotation)
+    "Foo[int].Callable[[int], str]"
+    "Foo[int].Callable[[int], str]";
+  ()
+
+
 let test_resolve_class _ =
   let assert_resolved_class annotation expected =
     assert_equal
@@ -2784,5 +2897,6 @@ let () =
          "with_return_annotation" >:: test_with_return_annotation;
          "overload_parameters" >:: test_overload_parameters;
          "parameter_create" >:: test_parameter_create;
+         "resolve_getitem_callee" >:: test_resolve_getitem_callee;
        ]
   |> Test.run

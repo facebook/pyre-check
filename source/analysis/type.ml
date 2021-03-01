@@ -2244,6 +2244,72 @@ module Callable = struct
     in
     let head = List.map head ~f:make_anonymous in
     List.mapi ~f:correct_indices (head @ tail)
+
+
+  let rec resolve_getitem_callee ~resolve_aliases callee =
+    let resolve_getitem_callee = resolve_getitem_callee ~resolve_aliases in
+    match callee with
+    | Expression.Name
+        (Name.Attribute
+          {
+            base =
+              {
+                Node.value =
+                  Name
+                    (Name.Attribute
+                      {
+                        base = { Node.value = Name (Name.Identifier "typing"); _ };
+                        attribute = "Callable";
+                        _;
+                      });
+                _;
+              };
+            attribute = "__getitem__";
+            _;
+          }) ->
+        callee
+    | Expression.Name
+        (Name.Attribute
+          ( { base = { Node.value = Name name; location } as base; attribute = "__getitem__"; _ } as
+          attribute )) ->
+        Ast.Expression.name_to_reference name
+        >>| Reference.show
+        >>| (fun name ->
+              match resolve_aliases (Primitive name) with
+              | Primitive "typing.Callable"
+              | Callable
+                  {
+                    implementation = { parameters = Undefined; annotation = Any };
+                    overloads = [];
+                    _;
+                  } ->
+                  Expression.Name
+                    (Name.Attribute
+                       {
+                         attribute with
+                         base =
+                           {
+                             base with
+                             Node.value =
+                               Name
+                                 (Name.Attribute
+                                    {
+                                      base =
+                                        { Node.value = Name (Name.Identifier "typing"); location };
+                                      attribute = "Callable";
+                                      special = false;
+                                    });
+                           };
+                       })
+              | _ -> callee)
+        |> Option.value ~default:callee
+    | Name (Name.Attribute ({ base = { Node.value = base; location }; _ } as attribute)) ->
+        Name
+          (Name.Attribute
+             { attribute with base = { Node.location; value = resolve_getitem_callee base } })
+    | Call ({ callee = { Node.value = callee; location }; _ } as call) ->
+        Call { call with callee = { Node.value = resolve_getitem_callee callee; location } }
+    | _ -> callee
 end
 
 let lambda ~parameters ~return_annotation =
@@ -2926,15 +2992,17 @@ let rec create_logic ~aliases ~variable_aliases { Node.value = expression; _ } =
         >>= Option.all
         >>| union
         |> Option.value ~default:Top
-    | Call { callee = { Node.value = callee; _ }; _ } when is_typing_callable callee ->
-        parse_callable expression
-    | Call
-        {
-          callee = { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ };
-          arguments = [{ Call.Argument.name = None; value = argument; _ }];
-        } ->
-        (* TODO(T84854853): Add back support for `Length` and `Product`. *)
-        create_parametric ~base ~argument
+    | Call ({ callee = { Node.value = callee; location }; arguments } as callee_expression) -> (
+        let resolved_callee = Callable.resolve_getitem_callee ~resolve_aliases callee in
+        match callee, arguments with
+        | _ when is_typing_callable resolved_callee ->
+            parse_callable
+              (Call { callee_expression with callee = { Node.value = resolved_callee; location } })
+        | ( Expression.Name (Name.Attribute { base; attribute = "__getitem__"; _ }),
+            [{ Call.Argument.name = None; value = argument; _ }] ) ->
+            (* TODO(T84854853): Add back support for `Length` and `Product`. *)
+            create_parametric ~base ~argument
+        | _ -> Top )
     | Name (Name.Identifier identifier) ->
         let sanitized = Identifier.sanitized identifier in
         if String.equal sanitized "None" then
