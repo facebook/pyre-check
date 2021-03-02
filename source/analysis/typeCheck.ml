@@ -519,12 +519,12 @@ module State (Context : Context) = struct
         }
 
 
-  type base =
-    | Class of Type.t
-    | Instance of Type.t
-    | Super of Type.t
-
   module Resolved = struct
+    type base =
+      | Class of Type.t
+      | Instance of Type.t
+      | Super of Type.t
+
     type t = {
       resolution: Resolution.t;
       errors: Error.t list;
@@ -2500,9 +2500,12 @@ module State (Context : Context) = struct
               Some (Type.single_parameter resolved_callee), false
             else
               match base with
-              | Some (Instance resolved) when not (Type.is_top resolved) -> Some resolved, true
-              | Some (Class resolved) when not (Type.is_top resolved) -> Some resolved, false
-              | Some (Super resolved) when not (Type.is_top resolved) -> Some resolved, false
+              | Some (Resolved.Instance resolved) when not (Type.is_top resolved) ->
+                  Some resolved, true
+              | Some (Resolved.Class resolved) when not (Type.is_top resolved) ->
+                  Some resolved, false
+              | Some (Resolved.Super resolved) when not (Type.is_top resolved) ->
+                  Some resolved, false
               | _ -> None, false
           in
           match resolved_callee with
@@ -3224,7 +3227,7 @@ module State (Context : Context) = struct
           in
           let base =
             match super_base with
-            | Some (Super _) -> super_base
+            | Some (Resolved.Super _) -> super_base
             | _ ->
                 let is_global_meta =
                   let is_global () =
@@ -3239,9 +3242,9 @@ module State (Context : Context) = struct
                   Type.is_meta resolved_base && is_global ()
                 in
                 if is_global_meta then
-                  Some (Class resolved_base)
+                  Some (Resolved.Class resolved_base)
                 else
-                  Some (Instance resolved_base)
+                  Some (Resolved.Instance resolved_base)
           in
           { resolved with base }
         in
