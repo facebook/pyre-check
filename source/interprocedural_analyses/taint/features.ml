@@ -57,13 +57,15 @@ module LeafName = struct
     leaf: string;
     port: string option;
   }
-  [@@deriving show, compare]
+  [@@deriving compare]
 
   let pp formatter { leaf; port } =
     match port with
     | None -> Format.fprintf formatter "LeafName(%s)" leaf
     | Some port -> Format.fprintf formatter "LeafName(%s, port=%s)" leaf port
 
+
+  let show = Format.asprintf "%a" pp
 
   let to_json ~leaf_kind_json { leaf; port } =
     let port_assoc =
