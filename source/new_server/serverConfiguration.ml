@@ -203,6 +203,7 @@ module SavedStateAction = struct
         project_name: string;
         project_metadata: string option;
       }
+    | SaveToFile of { shared_memory_path: Path.t }
   [@@deriving sexp, compare, hash]
 
   let of_yojson json =
@@ -247,6 +248,16 @@ module SavedStateAction = struct
         | `String project_name, `Null ->
             Result.Ok (LoadFromProject { project_name; project_metadata = None })
         | _, _ -> parsing_failed () )
+    | `List [`String "save_to_file"; save_to_file_options] -> (
+        match member "shared_memory_path" save_to_file_options with
+        | `String shared_memory_path ->
+            Result.Ok
+              (SaveToFile
+                 {
+                   shared_memory_path =
+                     Path.create_absolute ~follow_symbolic_links:false shared_memory_path;
+                 })
+        | _ -> parsing_failed () )
     | _ -> parsing_failed ()
 
 
@@ -275,6 +286,11 @@ module SavedStateAction = struct
               [project_name_option; project_metadata_option]
         in
         `List [`String "load_from_project"; `Assoc load_from_project_options]
+    | SaveToFile { shared_memory_path } ->
+        let save_to_file_options =
+          ["shared_memory_path", `String (Path.absolute shared_memory_path)]
+        in
+        `List [`String "save_to_file"; `Assoc save_to_file_options]
 end
 
 module RemoteLogging = struct

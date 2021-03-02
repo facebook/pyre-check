@@ -53,6 +53,7 @@ module SavedStateAction : sig
         project_name: string;
         project_metadata: string option;
       }
+    | SaveToFile of { shared_memory_path: Path.t }
   [@@deriving sexp, compare, hash, yojson]
 end
 

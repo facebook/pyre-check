@@ -269,6 +269,25 @@ let test_json_parsing context =
           {
             %s,
             "saved_state_action": [
+              "save_to_file",
+              {
+                "shared_memory_path": "/some/path"
+              }
+            ]
+          }
+       |}
+       mandatory_fileds)
+    ~expected:
+      [
+        ( "saved_state_action",
+          `List [`String "save_to_file"; `Assoc ["shared_memory_path", `String "/some/path"]] );
+      ];
+  assert_parsed
+    (Format.sprintf
+       {|
+          {
+            %s,
+            "saved_state_action": [
               "load_from_project",
               {
                 "project_name": "my_project"

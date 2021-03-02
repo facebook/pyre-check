@@ -11,10 +11,14 @@ exception IncompatibleState of string
 
 module ServerErrors : sig
   val load : unit -> Analysis.TypeEnvironment.Error.t list Ast.Reference.Table.t
+
+  val store : Analysis.TypeEnvironment.Error.t list Ast.Reference.Table.t -> unit
 end
 
 module StoredConfiguration : sig
   val load : unit -> Configuration.Analysis.t
+
+  val store : Configuration.Analysis.t -> unit
 end
 
 (* Exposed for testing. *)

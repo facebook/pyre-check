@@ -386,9 +386,6 @@ let initialize_server_state
           Lwt.return result
         in
         match saved_state_action with
-        | None ->
-            with_performance_logging ~normals:["initialization method", "cold start"] ~f:(fun _ ->
-                Lwt.return (start_from_scratch ()))
         | Some
             (ServerConfiguration.SavedStateAction.LoadFromFile
               { shared_memory_path; changed_files_path }) ->
@@ -409,10 +406,29 @@ let initialize_server_state
             with_performance_logging ~normals ~f:(fun _ ->
                 fetch_saved_state_from_project ~project_name ~project_metadata ()
                 >>= load_from_saved_state)
+        | _ ->
+            with_performance_logging ~normals:["initialization method", "cold start"] ~f:(fun _ ->
+                Lwt.return (start_from_scratch ()))
+      in
+      let store_initial_state { ServerState.configuration; type_environment; error_table; _ } =
+        match saved_state_action with
+        | Some (ServerConfiguration.SavedStateAction.SaveToFile { shared_memory_path }) ->
+            Memory.SharedMemory.collect `aggressive;
+            Analysis.TypeEnvironment.module_tracker type_environment
+            |> Analysis.ModuleTracker.SharedMemory.store;
+            Analysis.TypeEnvironment.ast_environment type_environment
+            |> Analysis.AstEnvironment.store;
+            Server.SavedState.StoredConfiguration.store configuration;
+            Server.SavedState.ServerErrors.store error_table;
+            Analysis.SharedMemoryKeys.DependencyKey.Registry.store ();
+            Memory.save_shared_memory ~path:(Path.absolute shared_memory_path) ~configuration;
+            Log.info "Initial server state written to %a" Path.pp shared_memory_path
+        | _ -> ()
       in
       get_initial_state ()
       >>= fun state ->
       Log.info "Server state initialized.";
+      store_initial_state state;
       Lwt.return (ref state)
 
 
