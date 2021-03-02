@@ -207,7 +207,7 @@ let get_generic_parameters ~generic_index edges =
   List.find_map ~f:generic_parameters edges
 
 
-let least_common_successor ((module Handler : Handler) as order) ~successors left right =
+let least_common_successor order ~successors left right =
   raise_if_untracked order left;
   raise_if_untracked order right;
   if Type.Primitive.compare left right = 0 then
