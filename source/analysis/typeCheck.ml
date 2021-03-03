@@ -2048,7 +2048,7 @@ module State (Context : Context) = struct
           =
           let signature =
             GlobalResolution.signature_select
-              ~arguments:(Resolved arguments)
+              ~arguments
               ~global_resolution
               ~resolve_with_locals:(resolve_expression_type_with_locals ~resolution)
               ~callable
@@ -2079,7 +2079,7 @@ module State (Context : Context) = struct
                           ]
                         in
                         ( GlobalResolution.signature_select
-                            ~arguments:(Resolved arguments)
+                            ~arguments
                             ~global_resolution:(Resolution.global_resolution resolution)
                             ~resolve_with_locals:(resolve_expression_type_with_locals ~resolution)
                             ~callable

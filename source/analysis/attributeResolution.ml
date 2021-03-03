@@ -68,10 +68,6 @@ module Argument = struct
   end
 end
 
-type arguments =
-  | Resolved of Argument.t list
-  | Unresolved of Ast.Expression.Call.Argument.t list
-
 type argument =
   | Argument of Argument.WithPosition.t
   | Default
@@ -1896,21 +1892,19 @@ class base class_metadata_environment dependency =
                     self#signature_select
                       ~assumptions
                       ~arguments:
-                        (Resolved
-                           [
-                             { kind = Positional; expression = None; resolved = descriptor };
-                             {
-                               kind = Positional;
-                               expression = None;
-                               resolved =
-                                 (if accessed_through_class then Type.none else instantiated);
-                             };
-                             {
-                               kind = Positional;
-                               expression = None;
-                               resolved = Type.meta instantiated;
-                             };
-                           ])
+                        [
+                          { Argument.kind = Positional; expression = None; resolved = descriptor };
+                          {
+                            Argument.kind = Positional;
+                            expression = None;
+                            resolved = (if accessed_through_class then Type.none else instantiated);
+                          };
+                          {
+                            Argument.kind = Positional;
+                            expression = None;
+                            resolved = Type.meta instantiated;
+                          };
+                        ]
                       ~resolve_with_locals:(fun ~locals:_ _ -> Type.object_primitive)
                       ~callable
                       ~self_argument:None
@@ -2775,7 +2769,7 @@ class base class_metadata_environment dependency =
                   self#signature_select
                     ~assumptions
                     ~resolve_with_locals:(fun ~locals:_ _ -> Type.Top)
-                    ~arguments:(Resolved arguments)
+                    ~arguments
                     ~callable:factory_callable
                     ~self_argument:None
                     ~skip_marking_escapees:false
@@ -2813,9 +2807,7 @@ class base class_metadata_environment dependency =
                         self#signature_select
                           ~assumptions
                           ~resolve_with_locals:(fun ~locals:_ _ -> Type.object_primitive)
-                          ~arguments:
-                            (Resolved
-                               [{ kind = Positional; expression = None; resolved = argument }])
+                          ~arguments:[{ kind = Positional; expression = None; resolved = argument }]
                           ~callable
                           ~self_argument:None
                           ~skip_marking_escapees:false
@@ -3751,24 +3743,10 @@ class base class_metadata_environment dependency =
       let get_match signatures =
         let arguments =
           let arguments =
-            match arguments with
-            | Resolved resolved ->
-                let add_index index { Argument.expression; kind; resolved } =
-                  { Argument.WithPosition.position = index + 1; expression; kind; resolved }
-                in
-                List.mapi resolved ~f:add_index
-            | Unresolved unresolved ->
-                let create_argument index argument =
-                  let expression, kind = Ast.Expression.Call.Argument.unpack argument in
-                  let resolved = resolve_with_locals ~locals:[] expression in
-                  {
-                    Argument.WithPosition.position = index + 1;
-                    expression = Some expression;
-                    kind;
-                    resolved;
-                  }
-                in
-                List.mapi unresolved ~f:create_argument
+            let add_index index { Argument.expression; kind; resolved } =
+              { Argument.WithPosition.position = index + 1; expression; kind; resolved }
+            in
+            List.mapi arguments ~f:add_index
           in
           let unpack sofar argument =
             match argument with

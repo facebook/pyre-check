@@ -299,14 +299,7 @@ let fallback_attribute ?(accessed_through_class = false) ~resolution ~name class
                   ~global_resolution
                   ~resolve_with_locals:(resolve_expression_to_type_with_locals resolution)
                   ~arguments:
-                    (Resolved
-                       [
-                         {
-                           expression = None;
-                           kind = Positional;
-                           resolved = Type.literal_string name;
-                         };
-                       ])
+                    [{ expression = None; kind = Positional; resolved = Type.literal_string name }]
                   ~callable
                   ~self_argument:(Some self_argument)
               with

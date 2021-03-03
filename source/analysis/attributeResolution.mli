@@ -54,10 +54,6 @@ module Argument : sig
   }
 end
 
-type arguments =
-  | Resolved of Argument.t list
-  | Unresolved of Ast.Expression.Call.Argument.t list
-
 type uninstantiated
 
 type uninstantiated_attribute = uninstantiated AnnotatedAttribute.t
@@ -149,7 +145,7 @@ module AttributeReadOnly : sig
     ?dependency:DependencyKey.registered ->
     resolve_with_locals:
       (locals:(Reference.t * Annotation.t) list -> Expression.expression Node.t -> Type.t) ->
-    arguments:arguments ->
+    arguments:Argument.t list ->
     callable:Type.Callable.t ->
     self_argument:Type.t option ->
     SignatureSelectionTypes.sig_t

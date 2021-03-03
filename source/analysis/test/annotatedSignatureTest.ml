@@ -156,9 +156,19 @@ let test_unresolved_select context =
                (Resolution.global_resolution resolution)
           |> enforce_callable
         in
+        let resolved_arguments =
+          let create_argument argument =
+            let expression, kind = Ast.Expression.Call.Argument.unpack argument in
+            let resolved =
+              (Resolution.resolve_expression_to_type_with_locals resolution) ~locals:[] expression
+            in
+            { AttributeResolution.Argument.expression = Some expression; kind; resolved }
+          in
+          List.map arguments ~f:create_argument
+        in
         ( callable,
           GlobalResolution.signature_select
-            ~arguments:(Unresolved arguments)
+            ~arguments:resolved_arguments
             ~global_resolution
             ~callable
             ~self_argument:None
@@ -253,8 +263,18 @@ let test_unresolved_select context =
     let resolution = ScratchProject.setup ~context [] |> ScratchProject.build_resolution in
     let global_resolution = Resolution.global_resolution resolution in
     let signature =
+      let resolved_arguments =
+        let create_argument argument =
+          let expression, kind = Ast.Expression.Call.Argument.unpack argument in
+          let resolved =
+            (Resolution.resolve_expression_to_type_with_locals resolution) ~locals:[] expression
+          in
+          { AttributeResolution.Argument.expression = Some expression; kind; resolved }
+        in
+        List.map arguments ~f:create_argument
+      in
       GlobalResolution.signature_select
-        ~arguments:(Unresolved arguments)
+        ~arguments:resolved_arguments
         ~global_resolution
         ~callable
         ~self_argument:None
@@ -766,7 +786,7 @@ let test_resolved_select context =
     let global_resolution = Resolution.global_resolution resolution in
     let signature =
       GlobalResolution.signature_select
-        ~arguments:(Resolved arguments)
+        ~arguments
         ~global_resolution
         ~callable
         ~self_argument:None
