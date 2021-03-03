@@ -2647,6 +2647,28 @@ module OrderedTypes = struct
             | _ -> None )
         | _ -> None )
     | _ -> None
+
+
+  let concatenation_from_unpack_expression ~parse_annotation = function
+    | {
+        Node.value =
+          Expression.Call
+            {
+              callee =
+                { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ };
+              _;
+            };
+        _;
+      } as annotation
+      when name_is ~name:Concatenation.unpack_public_name base -> (
+        let location = Location.any in
+        let wrapped_in_tuple =
+          get_item_call ~location "typing.Tuple" [annotation] |> Node.create ~location
+        in
+        match parse_annotation wrapped_in_tuple with
+        | Tuple (Bounded (Concatenation concatenation)) -> Some concatenation
+        | _ -> None )
+    | _ -> None
 end
 
 let parameters_from_unpacked_annotation annotation ~variable_aliases =

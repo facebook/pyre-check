@@ -665,6 +665,11 @@ module OrderedTypes : sig
   val to_parameters : t -> Parameter.t list
 
   val to_starred_annotation_expression : type_t Concatenation.t -> Expression.t
+
+  val concatenation_from_unpack_expression
+    :  parse_annotation:(Expression.t -> type_t) ->
+    Expression.t ->
+    type_t Concatenation.t option
 end
 
 val split : t -> t * Parameter.t list

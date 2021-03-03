@@ -1121,7 +1121,20 @@ module State (Context : Context) = struct
             in
             errors, { Annotation.annotation; mutability }
           in
-          let errors, { Annotation.annotation; mutability } = parse_as_unary () in
+          let errors, { Annotation.annotation; mutability } =
+            if String.is_prefix ~prefix:"*" name && not (String.is_prefix ~prefix:"**" name) then
+              annotation
+              >>= Type.OrderedTypes.concatenation_from_unpack_expression
+                    ~parse_annotation:(GlobalResolution.parse_annotation global_resolution)
+              >>| (fun concatenation ->
+                    Type.Tuple (Bounded (Concatenation concatenation))
+                    |> Type.Variable.mark_all_variables_as_bound
+                    |> Annotation.create
+                    |> fun annotation -> errors, annotation)
+              |> Option.value ~default:(parse_as_unary ())
+            else
+              parse_as_unary ()
+          in
           ( errors,
             Map.set
               annotation_store

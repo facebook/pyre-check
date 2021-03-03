@@ -2022,6 +2022,38 @@ let test_starred_annotation_expression _ =
   ()
 
 
+let test_concatenation_from_unpack_expression _ =
+  let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
+  let assert_concatenation expression concatenation =
+    let parse_annotation expression =
+      let aliases ?replace_unbound_parameters_with_any:_ = function
+        | "Ts" -> Some (Type.VariableAlias (Type.Variable.TupleVariadic variadic))
+        | _ -> None
+      in
+      Type.create ~aliases (parse_single_expression ~preprocess:true (Expression.show expression))
+    in
+    assert_equal
+      ~printer:[%show: Type.t Type.OrderedTypes.Concatenation.t option]
+      ~cmp:[%equal: Type.t Type.OrderedTypes.Concatenation.t option]
+      concatenation
+      (Type.OrderedTypes.concatenation_from_unpack_expression
+         ~parse_annotation
+         (parse_single_expression ~coerce_special_methods:true expression))
+  in
+  assert_concatenation
+    "pyre_extensions.Unpack[Ts]"
+    (Some (Type.OrderedTypes.Concatenation.create ~prefix:[] ~suffix:[] variadic));
+  assert_concatenation
+    "pyre_extensions.Unpack[typing.Tuple[int, pyre_extensions.Unpack[Ts], str]]"
+    (Some
+       (Type.OrderedTypes.Concatenation.create
+          ~prefix:[Type.integer]
+          ~suffix:[Type.string]
+          variadic));
+  assert_concatenation "int" None;
+  ()
+
+
 let test_split_ordered_types _ =
   let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
   let assert_split ?(split_both_ways = true) left right expected =
@@ -2990,6 +3022,7 @@ let () =
          "collect_all" >:: test_collect_all;
          "parse_type_variable_declarations" >:: test_parse_type_variable_declarations;
          "starred_annotation_expression" >:: test_starred_annotation_expression;
+         "concatenation_from_unpack_expression" >:: test_concatenation_from_unpack_expression;
          "split_ordered_types" >:: test_split_ordered_types;
          "zip_variables_with_parameters" >:: test_zip_variables_with_parameters;
          "zip_on_two_parameter_lists" >:: test_zip_on_two_parameter_lists;

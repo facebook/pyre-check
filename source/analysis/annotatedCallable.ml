@@ -59,7 +59,14 @@ let create_overload_without_applying_decorators
         | KeywordOnly ({ annotation; _ } as named) ->
             KeywordOnly { named with annotation = parse_as_annotation annotation }
         | Variable (Concrete annotation) ->
-            Parameter.Variable (Concrete (parse_as_annotation annotation))
+            annotation
+            >>= Type.OrderedTypes.concatenation_from_unpack_expression
+                  ~parse_annotation:(fun expression -> parse_as_annotation (Some expression))
+            >>| (fun concatenation ->
+                  Type.Callable.Parameter.Variable (Concatenation concatenation))
+            |> Option.value
+                 ~default:
+                   (Type.Callable.Parameter.Variable (Concrete (parse_as_annotation annotation)))
         | Variable (Concatenation _) ->
             (* We are guaranteed that `Type.Callable.Parameter.create expression` will not convert
                `*args: <anything>` to `Variable (Concatenation ...)`. *)
