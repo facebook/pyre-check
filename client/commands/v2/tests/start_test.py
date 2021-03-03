@@ -354,15 +354,16 @@ class StartTest(testslide.TestCase):
                 root_path, {"source_directories": ["src"]}, relative="local"
             )
 
+            server_configuration = configuration.create_configuration(
+                command_arguments.CommandArguments(
+                    local_configuration="local",
+                    dot_pyre_directory=root_path / ".pyre",
+                ),
+                root_path,
+            )
             self.assertEqual(
                 create_server_arguments(
-                    configuration.create_configuration(
-                        command_arguments.CommandArguments(
-                            local_configuration="local",
-                            dot_pyre_directory=root_path / ".pyre",
-                        ),
-                        root_path,
-                    ),
+                    server_configuration,
                     command_arguments.StartArguments(
                         debug=True,
                         no_watchman=False,
@@ -400,6 +401,7 @@ class StartTest(testslide.TestCase):
                     relative_local_root="local",
                     number_of_workers=42,
                     parallel=True,
+                    python_version=server_configuration.get_python_version(),
                     saved_state_action=LoadSavedStateFromProject(
                         project_name="project", project_metadata="local"
                     ),

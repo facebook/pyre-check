@@ -806,6 +806,12 @@ class InferTest(unittest.TestCase):
                     "/root",
                     "-log-directory",
                     ".pyre",
+                    "-python-major-version",
+                    "3",
+                    "-python-minor-version",
+                    "6",
+                    "-python-micro-version",
+                    "0",
                 ],
             )
             command.run()
@@ -839,6 +845,12 @@ class InferTest(unittest.TestCase):
                     "/root",
                     "-log-directory",
                     ".pyre",
+                    "-python-major-version",
+                    "3",
+                    "-python-minor-version",
+                    "6",
+                    "-python-micro-version",
+                    "0",
                 ],
             )
             command.run()
@@ -872,6 +884,12 @@ class InferTest(unittest.TestCase):
                         "/root",
                         "-log-directory",
                         ".pyre",
+                        "-python-major-version",
+                        "3",
+                        "-python-minor-version",
+                        "6",
+                        "-python-micro-version",
+                        "0",
                     ],
                 )
                 command.run()
@@ -905,6 +923,12 @@ class InferTest(unittest.TestCase):
                         "/root",
                         "-log-directory",
                         ".pyre",
+                        "-python-major-version",
+                        "3",
+                        "-python-minor-version",
+                        "6",
+                        "-python-micro-version",
+                        "0",
                         "-ignore-infer",
                         "path1.py;path2.py",
                     ],

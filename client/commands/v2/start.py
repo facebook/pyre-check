@@ -131,6 +131,9 @@ class Arguments:
     number_of_workers: int = 1
     parallel: bool = True
     profiling_output: Optional[Path] = None
+    python_version: configuration_module.PythonVersion = (
+        configuration_module.PythonVersion(major=3)
+    )
     remote_logging: Optional[RemoteLogging] = None
     saved_state_action: Optional[SavedStateAction] = None
     search_paths: Sequence[configuration_module.SearchPathElement] = dataclasses.field(
@@ -175,6 +178,11 @@ class Arguments:
             "taint_model_paths": self.taint_models_path,
             "debug": self.debug,
             "strict": self.strict,
+            "python_version": {
+                "major": self.python_version.major,
+                "minor": self.python_version.minor,
+                "micro": self.python_version.micro,
+            },
             "show_error_traces": self.show_error_traces,
             "critical_files": [
                 critical_file.serialize() for critical_file in self.critical_files
@@ -350,6 +358,7 @@ def create_server_arguments(
         number_of_workers=configuration.get_number_of_workers(),
         parallel=not start_arguments.sequential,
         profiling_output=profiling_output,
+        python_version=configuration.get_python_version(),
         remote_logging=remote_logging,
         saved_state_action=None
         if start_arguments.no_saved_state

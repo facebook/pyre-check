@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Optional
 from unittest.mock import MagicMock
 
-from .. import command_arguments, configuration
+from .. import command_arguments, configuration as configuration_module
 from ..analysis_directory import AnalysisDirectory
 from ..commands.command import IncrementalStyle
 from ..commands.incremental import Incremental
@@ -67,6 +67,7 @@ def mock_arguments(
         saved_state_project=saved_state_project,
         dot_pyre_directory=dot_pyre_directory or Path(".pyre"),
         features=features,
+        python_version="3.6.0",
     )
 
 
@@ -89,12 +90,17 @@ def mock_configuration(version_hash=None, file_hash=None) -> MagicMock:
     configuration.relative_local_root = None
     configuration.log_directory = ".pyre"
     configuration.disabled = False
+    configuration.get_python_version = lambda: configuration_module.PythonVersion(
+        major=3, minor=6, micro=0
+    )
     return configuration
 
 
-def mock_incremental_command(cfg: configuration.Configuration) -> Incremental:
+def mock_incremental_command(cfg: configuration_module.Configuration) -> Incremental:
     arguments = mock_arguments()
-    analysis_directory = AnalysisDirectory(configuration.SimpleSearchPathElement("."))
+    analysis_directory = AnalysisDirectory(
+        configuration_module.SimpleSearchPathElement(".")
+    )
     return Incremental(
         arguments,
         original_directory="/original/directory",

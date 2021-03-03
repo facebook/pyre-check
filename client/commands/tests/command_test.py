@@ -94,6 +94,12 @@ class CommandTest(unittest.TestCase):
                 "/root",
                 "-log-directory",
                 ".pyre",
+                "-python-major-version",
+                "3",
+                "-python-minor-version",
+                "6",
+                "-python-micro-version",
+                "0",
             ],
         )
 
@@ -112,6 +118,12 @@ class CommandTest(unittest.TestCase):
                 "/foo/bar",
                 "-log-directory",
                 ".pyre",
+                "-python-major-version",
+                "3",
+                "-python-minor-version",
+                "6",
+                "-python-micro-version",
+                "0",
             ],
         )
         with patch.object(
@@ -134,5 +146,11 @@ class CommandTest(unittest.TestCase):
                     "/foo/bar",
                     "-log-directory",
                     ".pyre",
+                    "-python-major-version",
+                    "3",
+                    "-python-minor-version",
+                    "6",
+                    "-python-micro-version",
+                    "0",
                 ],
             )

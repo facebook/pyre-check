@@ -252,6 +252,17 @@ class Command(CommandParser, ABC):
         if logger:
             flags.extend(["-logger", logger])
         flags.extend(["-log-directory", self._configuration.log_directory])
+        python_version = self._configuration.get_python_version()
+        flags.extend(
+            [
+                "-python-major-version",
+                str(python_version.major),
+                "-python-minor-version",
+                str(python_version.minor),
+                "-python-micro-version",
+                str(python_version.micro),
+            ]
+        )
         return flags
 
     # temporarily always return empty list to unblock client release
