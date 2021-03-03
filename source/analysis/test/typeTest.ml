@@ -1956,6 +1956,7 @@ let test_collect_all _ =
       | _ -> None
     in
     assert_equal
+      ~printer:[%show: Type.Variable.Variadic.Tuple.t list]
       expected
       (Type.Variable.GlobalTransforms.TupleVariadic.collect_all
          (Type.create ~aliases (parse_single_expression ~preprocess:true annotation)))
@@ -1966,6 +1967,14 @@ let test_collect_all _ =
   assert_collected
     "Foo[Bar[int, pyre_extensions.Unpack[Ts], str], Baz[pyre_extensions.Unpack[Ts2]]]"
     [variadic; variadic2];
+  assert_collected
+    "typing.Callable[[Variable(int, pyre_extensions.Unpack[Ts], str)], typing.Tuple[int, \
+     pyre_extensions.Unpack[Ts2], str]]"
+    [variadic2; variadic];
+  assert_collected
+    "typing.Callable[[Variable(int, pyre_extensions.Unpack[Ts], str)], \
+     typing.Callable[[Variable(int, pyre_extensions.Unpack[Ts2], str)], bool]]"
+    [variadic2; variadic];
   ()
 
 

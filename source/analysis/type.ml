@@ -4105,6 +4105,15 @@ end = struct
             in
             List.filter_map parameters ~f:extract
         | Tuple (Bounded (Concatenation { middle = Variadic variadic; _ })) -> [variadic]
+        | Callable { implementation; overloads; _ } ->
+            let extract = function
+              | { parameters = Defined parameters; _ } ->
+                  List.find_map parameters ~f:(function
+                      | Variable (Concatenation { middle = Variadic variadic; _ }) -> Some variadic
+                      | _ -> None)
+              | _ -> None
+            in
+            List.filter_map (implementation :: overloads) ~f:extract
         | _ -> []
 
 
