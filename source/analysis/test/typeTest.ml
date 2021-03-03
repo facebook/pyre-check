@@ -398,6 +398,7 @@ let test_create_variadic_tuple _ =
          (parse_single_expression ~preprocess:true source))
   in
   let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
+  let variadic2 = Type.Variable.Variadic.Tuple.create "Ts2" in
   (* Parametric types. *)
   assert_create
     ~aliases:(function
@@ -514,6 +515,39 @@ let test_create_variadic_tuple _ =
                       variadic));
             ])
        ~annotation:Type.integer
+       ());
+  assert_create
+    ~aliases:(function
+      | "Ts" -> Some (VariableAlias (Type.Variable.TupleVariadic variadic))
+      | "Ts2" -> Some (VariableAlias (Type.Variable.TupleVariadic variadic2))
+      | _ -> None)
+    "typing.Callable[[Variable(int, pyre_extensions.Unpack[Ts], str)], \
+     typing.Callable[[Variable(int, pyre_extensions.Unpack[Ts2], str)], int]]"
+    (Type.Callable.create
+       ~parameters:
+         (Defined
+            [
+              Variable
+                (Concatenation
+                   (Type.OrderedTypes.Concatenation.create
+                      ~prefix:[Type.integer]
+                      ~suffix:[Type.string]
+                      variadic));
+            ])
+       ~annotation:
+         (Type.Callable.create
+            ~parameters:
+              (Defined
+                 [
+                   Variable
+                     (Concatenation
+                        (Type.OrderedTypes.Concatenation.create
+                           ~prefix:[Type.integer]
+                           ~suffix:[Type.string]
+                           variadic2));
+                 ])
+            ~annotation:Type.integer
+            ())
        ());
   ()
 

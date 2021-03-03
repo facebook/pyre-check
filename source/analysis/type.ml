@@ -2830,13 +2830,25 @@ let rec create_logic ~aliases ~variable_aliases { Node.value = expression; _ } =
                           default;
                         }
                   | "Variable", tail ->
-                      let annotation =
+                      let callable_parameter =
                         match tail with
-                        | annotation :: _ ->
-                            create_logic (Node.create_with_default_location annotation)
-                        | _ -> Top
+                        | head :: _ ->
+                            let elements =
+                              List.map tail ~f:(fun annotation ->
+                                  create_logic (Node.create_with_default_location annotation))
+                            in
+                            OrderedTypes.from_annotations ~variable_aliases elements
+                            >>= (function
+                                  | OrderedTypes.Concatenation concatenation ->
+                                      Some (CallableParameter.Concatenation concatenation)
+                                  | _ -> None)
+                            |> Option.value
+                                 ~default:
+                                   (CallableParameter.Concrete
+                                      (create_logic (Node.create_with_default_location head)))
+                        | _ -> CallableParameter.Concrete Top
                       in
-                      CallableParameter.Variable (CallableParameter.Concrete annotation)
+                      CallableParameter.Variable callable_parameter
                   | "Keywords", tail ->
                       let annotation =
                         match tail with
