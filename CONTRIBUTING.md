@@ -80,6 +80,12 @@ During analysis, each function will be processed into a control flow graph to re
 
 ## Development Tips and Tricks
 
+### Getting Started
+- Install `opam` and run `opam switch install "4.10.2"`
+- run ` ./scripts/setup.sh`
+- After the setup script runs successfully, you should be able to `cd` into `source` and run `make` to build the Pyre binary
+
+
 ### How do I test my OCaml changes against real code?
 When you run pyre on the command line, what runs under the hood is a shim which finds and runs a suitable pyre binary. This works well for production use, but isn't great for testing out your own build of Pyre.
 
