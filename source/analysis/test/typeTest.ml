@@ -476,6 +476,45 @@ let test_create_variadic_tuple _ =
     "typing.Tuple[bool, pyre_extensions.Unpack[typing.Tuple[int, \
      pyre_extensions.Unpack[typing.Tuple[int, str]]]]]"
     (Type.tuple [Type.bool; Type.integer; Type.integer; Type.string]);
+
+  (* Callables. *)
+  assert_create
+    ~aliases:(function
+      | "Ts" -> Some (VariableAlias (Type.Variable.TupleVariadic variadic))
+      | _ -> None)
+    "typing.Callable[[int, pyre_extensions.Unpack[Ts], str], int]"
+    (Type.Callable.create
+       ~parameters:
+         (Defined
+            [
+              Variable
+                (Concatenation
+                   (Type.OrderedTypes.Concatenation.create
+                      ~prefix:[Type.integer]
+                      ~suffix:[Type.string]
+                      variadic));
+            ])
+       ~annotation:Type.integer
+       ());
+  assert_create
+    ~aliases:(function
+      | "Ts" -> Some (VariableAlias (Type.Variable.TupleVariadic variadic))
+      | _ -> None)
+    "typing.Callable[[int, pyre_extensions.Unpack[typing.Tuple[bool, pyre_extensions.Unpack[Ts], \
+     bool]], str], int]"
+    (Type.Callable.create
+       ~parameters:
+         (Defined
+            [
+              Variable
+                (Concatenation
+                   (Type.OrderedTypes.Concatenation.create
+                      ~prefix:[Type.integer; Type.bool]
+                      ~suffix:[Type.bool; Type.string]
+                      variadic));
+            ])
+       ~annotation:Type.integer
+       ());
   ()
 
 
@@ -670,6 +709,21 @@ let test_expression _ =
                 ~suffix:[Type.string]
                 variadic))))
     "typing.Tuple[int, pyre_extensions.Unpack[Ts], str]";
+  assert_expression
+    (Type.Callable.create
+       ~parameters:
+         (Defined
+            [
+              Parameter.Variable
+                (Concatenation
+                   (Type.OrderedTypes.Concatenation.create
+                      ~prefix:[Type.integer]
+                      ~suffix:[Type.string]
+                      variadic));
+            ])
+       ~annotation:Type.integer
+       ())
+    "typing.Callable.__getitem__(([Variable(int, pyre_extensions.Unpack[Ts], str)], int))";
   ()
 
 

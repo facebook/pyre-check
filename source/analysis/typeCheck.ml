@@ -1603,6 +1603,11 @@ module State (Context : Context) = struct
                           in
                           List.find_map overriding_parameters ~f:find_variable_parameter
                           |> validate_match ~expected:annotation
+                      | Variable (Concatenation _) ->
+                          (* TODO(T53997072): There is no reasonable way to compare either of these
+                             alone, which is the central issue with this comparison strategy. For
+                             now, let's just ignore this. *)
+                          errors
                       | Keywords annotation ->
                           let find_variable_parameter = function
                             | Type.Callable.Parameter.Keywords annotation -> Some annotation

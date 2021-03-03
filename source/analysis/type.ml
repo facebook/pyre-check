@@ -328,7 +328,9 @@ module Record = struct
       }
       [@@deriving compare, eq, sexp, show, hash]
 
-      type 'annotation variable = Concrete of 'annotation
+      type 'annotation variable =
+        | Concrete of 'annotation
+        | Concatenation of 'annotation OrderedTypes.Concatenation.t
       [@@deriving compare, eq, sexp, show, hash]
 
       type 'annotation t =
@@ -369,6 +371,11 @@ module Record = struct
         | Named named -> print_named ~kind:"Named" named
         | KeywordOnly named -> print_named ~kind:"KeywordOnly" named
         | Variable (Concrete annotation) -> Format.asprintf "Variable(%a)" pp_type annotation
+        | Variable (Concatenation concatenation) ->
+            Format.asprintf
+              "Variable(%a)"
+              (OrderedTypes.Concatenation.pp_concatenation ~pp_type)
+              concatenation
         | Keywords annotation -> Format.asprintf "Keywords(%a)" pp_type annotation
 
 
@@ -378,6 +385,7 @@ module Record = struct
         | KeywordOnly { annotation; _ } -> Some annotation
         | Variable (Concrete annotation) -> Some annotation
         | Keywords annotation -> Some annotation
+        | _ -> None
     end
 
     type kind =
@@ -1407,6 +1415,11 @@ and pp_concise format annotation =
                     else
                       Format.asprintf "%s: %a" name pp_concise annotation
                 | Variable (Concrete annotation) -> Format.asprintf "*(%a)" pp_concise annotation
+                | Variable (Concatenation concatenation) ->
+                    Format.asprintf
+                      "*(%a)"
+                      (Record.OrderedTypes.Concatenation.pp_concatenation ~pp_type:pp_concise)
+                      concatenation
                 | Keywords annotation -> Format.asprintf "**(%a)" pp_concise annotation
               in
               List.map parameters ~f:parameter |> String.concat ~sep:", "
@@ -1683,6 +1696,16 @@ let rec expression annotation =
           | KeywordOnly { name; annotation; default } ->
               call ~default ~name "KeywordOnly" (expression annotation)
           | Variable (Concrete annotation) -> call "Variable" (expression annotation)
+          | Variable (Concatenation concatenation) ->
+              Expression.Call
+                {
+                  callee = Node.create ~location (Expression.Name (Name.Identifier "Variable"));
+                  arguments =
+                    concatenation_to_expression concatenation
+                    |> List.map ~f:(fun annotation ->
+                           { Call.Argument.name = None; value = annotation });
+                }
+              |> Node.create ~location
         in
         Expression.List (List.map ~f:convert_parameter parameters) |> Node.create ~location
     | Undefined -> Node.create ~location Expression.Ellipsis
@@ -1906,12 +1929,18 @@ module Transform = struct
     let rec visit_annotation ~state annotation =
       let visit_children annotation =
         let visit_all = List.map ~f:(visit_annotation ~state) in
+        let visit_concatenation { Record.OrderedTypes.Concatenation.prefix; middle; suffix } =
+          {
+            Record.OrderedTypes.Concatenation.prefix = visit_all prefix;
+            middle;
+            suffix = visit_all suffix;
+          }
+        in
         let visit_ordered_types ordered_types =
           match ordered_types with
           | Record.OrderedTypes.Concrete concretes ->
               Record.OrderedTypes.Concrete (visit_all concretes)
-          | Concatenation { prefix; middle; suffix } ->
-              Concatenation { prefix = visit_all prefix; middle; suffix = visit_all suffix }
+          | Concatenation concatenation -> Concatenation (visit_concatenation concatenation)
         in
         let visit_parameters parameter =
           let visit_defined = function
@@ -1922,6 +1951,8 @@ module Transform = struct
                   { named with annotation = visit_annotation annotation ~state }
             | RecordParameter.Variable (Concrete annotation) ->
                 RecordParameter.Variable (Concrete (visit_annotation annotation ~state))
+            | RecordParameter.Variable (Concatenation concatenation) ->
+                RecordParameter.Variable (Concatenation (visit_concatenation concatenation))
             | RecordParameter.Keywords annotation ->
                 RecordParameter.Keywords (visit_annotation annotation ~state)
             | RecordParameter.PositionalOnly ({ annotation; _ } as anonymous) ->
@@ -2565,6 +2596,45 @@ module OrderedTypes = struct
         List.map prefix ~f:(fun element -> Parameter.Single element)
         @ [Parameter.Unpacked unpacked]
         @ List.map suffix ~f:(fun element -> Parameter.Single element)
+
+
+  let from_annotations ~variable_aliases annotations =
+    let unpacked_element_index index = function
+      | Parametric { name; _ } when Identifier.equal name Concatenation.unpack_public_name ->
+          Some index
+      | _ -> None
+    in
+    match List.filter_mapi annotations ~f:unpacked_element_index with
+    | [unpacked_index] -> (
+        let prefix, rest = List.split_n annotations unpacked_index in
+        match rest with
+        | middle :: suffix -> (
+            match middle with
+            | Parametric { name; parameters = [Single (Primitive variable_name)] }
+              when Identifier.equal name Record.OrderedTypes.Concatenation.unpack_public_name -> (
+                variable_aliases variable_name
+                >>= function
+                | Record.Variable.TupleVariadic variadic ->
+                    Some (Concatenation (Concatenation.create ~prefix ~suffix variadic))
+                | _ -> None )
+            | Parametric
+                {
+                  name;
+                  parameters =
+                    [
+                      Single
+                        (Tuple
+                          (Bounded
+                            (Concatenation { prefix = inner_prefix; middle; suffix = inner_suffix })));
+                    ];
+                }
+              when Identifier.equal name Record.OrderedTypes.Concatenation.unpack_public_name ->
+                Some
+                  (Concatenation
+                     { prefix = prefix @ inner_prefix; middle; suffix = inner_suffix @ suffix })
+            | _ -> None )
+        | _ -> None )
+    | _ -> None
 end
 
 let parameters_from_unpacked_annotation annotation ~variable_aliases =
@@ -3064,6 +3134,35 @@ let rec create_logic ~aliases ~variable_aliases { Node.value = expression; _ } =
           | _ -> result )
       | _, None -> result )
   | Union elements -> union elements
+  | Callable ({ implementation; overloads; _ } as callable) ->
+      let collect_unpacked_parameters_if_any ({ parameters; _ } as overload) =
+        match parameters with
+        | Defined parameters ->
+            let all_positional_only_parameters =
+              List.map parameters ~f:(function
+                  | PositionalOnly { annotation; _ } -> Some annotation
+                  | _ -> None)
+              |> Option.all
+            in
+            all_positional_only_parameters
+            >>= OrderedTypes.from_annotations ~variable_aliases
+            >>= (function
+                  | OrderedTypes.Concatenation concatenation ->
+                      Some
+                        {
+                          overload with
+                          parameters = Defined [Variable (Concatenation concatenation)];
+                        }
+                  | Concrete _ -> None)
+            |> Option.value ~default:overload
+        | _ -> overload
+      in
+      Callable
+        {
+          callable with
+          implementation = collect_unpacked_parameters_if_any implementation;
+          overloads = List.map overloads ~f:collect_unpacked_parameters_if_any;
+        }
   | _ -> result
 
 

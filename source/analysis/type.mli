@@ -118,7 +118,10 @@ module Record : sig
         default: bool;
       }
 
-      and 'annotation variable = Concrete of 'annotation
+      and 'annotation variable =
+        | Concrete of 'annotation
+        | Concatenation of 'annotation OrderedTypes.Concatenation.t
+      [@@deriving compare, eq, sexp, show, hash]
 
       and 'annotation t =
         | PositionalOnly of {

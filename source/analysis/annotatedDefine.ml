@@ -97,6 +97,8 @@ let decorate
                           ~annotation:(Type.expression annotation)
                           ~name:"*args"
                           ()
+                    | Type.Callable.Parameter.Variable (Concatenation _) ->
+                        failwith "not yet implemented - T84854853"
                     | Type.Callable.Parameter.Keywords annotation ->
                         Expression.Parameter.create
                           ~location

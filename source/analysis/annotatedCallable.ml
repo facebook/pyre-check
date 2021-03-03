@@ -60,6 +60,10 @@ let create_overload_without_applying_decorators
             KeywordOnly { named with annotation = parse_as_annotation annotation }
         | Variable (Concrete annotation) ->
             Parameter.Variable (Concrete (parse_as_annotation annotation))
+        | Variable (Concatenation _) ->
+            (* We are guaranteed that `Type.Callable.Parameter.create expression` will not convert
+               `*args: <anything>` to `Variable (Concatenation ...)`. *)
+            failwith "impossible"
         | Keywords annotation -> Keywords (parse_as_annotation annotation)
       in
       match List.rev parameters with

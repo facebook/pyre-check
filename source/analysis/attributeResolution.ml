@@ -3179,6 +3179,9 @@ class base class_metadata_environment dependency =
         in
         let update ~key ~data ({ reasons = { arity; _ } as reasons; _ } as signature_match) =
           match key, data with
+          | Parameter.Variable (Concatenation _), _ ->
+              (* TODO(T84854853):. *)
+              signature_match
           | Parameter.Variable _, []
           | Parameter.Keywords _, [] ->
               (* Parameter was not matched, but empty is acceptable for variable arguments and
