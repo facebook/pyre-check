@@ -534,6 +534,13 @@ module State (Context : Context) = struct
       resolved_annotation: Annotation.t option;
       base: base option;
     }
+
+    let resolved_base_type = function
+      | Some (Class base_type)
+      | Some (Instance base_type)
+      | Some (Super base_type) ->
+          Some base_type
+      | None -> None
   end
 
   let type_of_signature ~resolution signature =
@@ -1895,7 +1902,16 @@ module State (Context : Context) = struct
           | _ ->
               { resolution; errors; resolved = Type.Top; resolved_annotation = None; base = None } )
     in
-    let forward_callable ~resolution ~errors ~target ~dynamic ~callee ~resolved_callee ~arguments =
+    let forward_callable
+        ~resolution
+        ~errors
+        ~target
+        ~dynamic
+        ~callee
+        ~resolved_callee
+        ~resolved_callee_base
+        ~arguments
+      =
       let original_arguments = arguments in
       let resolution, errors, reversed_arguments =
         let forward_argument (resolution, errors, reversed_arguments) argument =
@@ -1991,7 +2007,11 @@ module State (Context : Context) = struct
                     inverse_operator attribute
                     >>= (fun name -> find_method ~parent:resolved ~name ~special_method:false)
                     >>= (fun found_callable ->
-                          let resolved_base = resolve_expression_type ~resolution base in
+                          let resolved_base =
+                            match resolved_callee_base with
+                            | Some resolved_base -> resolved_base
+                            | None -> resolve_expression_type ~resolution base
+                          in
                           let inverted_arguments =
                             [
                               {
@@ -2028,7 +2048,6 @@ module State (Context : Context) = struct
           =
           let signature =
             GlobalResolution.signature_select
-            (* TODO use Resolved to reuse resolved types from above *)
               ~arguments:(Resolved arguments)
               ~global_resolution
               ~resolve_with_locals:(resolve_expression_type_with_locals ~resolution)
@@ -2045,9 +2064,22 @@ module State (Context : Context) = struct
                   inverse_operator (Reference.last name)
                   >>= (fun name -> find_method ~parent:resolved ~name ~special_method:false)
                   >>| (fun ({ callable; self_argument } as unpacked_callable_and_self_argument) ->
-                        let arguments = [{ Call.Argument.value = base; name = None }] in
+                        let arguments =
+                          let resolved_base =
+                            match resolved_callee_base with
+                            | Some resolved_base -> resolved_base
+                            | None -> resolve_expression_type ~resolution base
+                          in
+                          [
+                            {
+                              AttributeResolution.Argument.expression = Some base;
+                              kind = Positional;
+                              resolved = resolved_base;
+                            };
+                          ]
+                        in
                         ( GlobalResolution.signature_select
-                            ~arguments:(Unresolved arguments)
+                            ~arguments:(Resolved arguments)
                             ~global_resolution:(Resolution.global_resolution resolution)
                             ~resolve_with_locals:(resolve_expression_type_with_locals ~resolution)
                             ~callable
@@ -2263,7 +2295,9 @@ module State (Context : Context) = struct
               base = Some (Super resolved);
             }
         | None ->
-            let { Resolved.resolved; _ } = forward_expression ~resolution ~expression:callee in
+            let { Resolved.resolved; base; _ } =
+              forward_expression ~resolution ~expression:callee
+            in
             forward_callable
               ~resolution
               ~errors:[]
@@ -2271,6 +2305,7 @@ module State (Context : Context) = struct
               ~callee
               ~dynamic:false
               ~resolved_callee:resolved
+              ~resolved_callee_base:(Resolved.resolved_base_type base)
               ~arguments )
     | Call
         {
@@ -2461,17 +2496,17 @@ module State (Context : Context) = struct
             ( [{ Call.Argument.value = expression; _ }]
             | [{ Call.Argument.value = expression; _ }; _] ) as arguments;
         } ->
-        let resolution, resolved_callee, errors =
+        let resolution, resolved_callee, errors, base =
           let resolution, assume_errors =
             let post_resolution, errors =
               forward_statement ~resolution ~statement:(Statement.assume expression)
             in
             Option.value post_resolution ~default:resolution, errors
           in
-          let { Resolved.resolution; resolved; errors = callee_errors; _ } =
+          let { Resolved.resolution; resolved; errors = callee_errors; base; _ } =
             forward_expression ~resolution ~expression:callee
           in
-          resolution, resolved, List.append assume_errors callee_errors
+          resolution, resolved, List.append assume_errors callee_errors, base
         in
         forward_callable
           ~resolution
@@ -2480,6 +2515,7 @@ module State (Context : Context) = struct
           ~dynamic:true
           ~callee
           ~resolved_callee
+          ~resolved_callee_base:(Resolved.resolved_base_type base)
           ~arguments
     | Call
         {
@@ -2489,17 +2525,17 @@ module State (Context : Context) = struct
             ( [{ Call.Argument.value = expression; _ }]
             | [{ Call.Argument.value = expression; _ }; _] ) as arguments;
         } ->
-        let resolution, resolved_callee, errors =
+        let resolution, resolved_callee, errors, base =
           let resolution, assume_errors =
             let post_resolution, errors =
               forward_statement ~resolution ~statement:(Statement.assume (negate expression))
             in
             Option.value post_resolution ~default:resolution, errors
           in
-          let { Resolved.resolution; resolved; errors = callee_errors; _ } =
+          let { Resolved.resolution; resolved; errors = callee_errors; base; _ } =
             forward_expression ~resolution ~expression:callee
           in
-          resolution, resolved, List.append assume_errors callee_errors
+          resolution, resolved, List.append assume_errors callee_errors, base
         in
         forward_callable
           ~resolution
@@ -2508,6 +2544,7 @@ module State (Context : Context) = struct
           ~dynamic:true
           ~callee
           ~resolved_callee
+          ~resolved_callee_base:(Resolved.resolved_base_type base)
           ~arguments
     | Call call ->
         let { Call.callee; arguments } = AnnotatedCall.redirect_special_calls ~resolution call in
@@ -2540,6 +2577,7 @@ module State (Context : Context) = struct
                   ~dynamic
                   ~callee
                   ~resolved_callee:inner_resolved_callee
+                  ~resolved_callee_base:(Resolved.resolved_base_type base)
                   ~arguments
                 |> fun { resolution; resolved; errors = new_errors; _ } ->
                 resolution, List.append new_errors errors, resolved :: annotations
@@ -2566,6 +2604,7 @@ module State (Context : Context) = struct
                 ~dynamic
                 ~callee
                 ~resolved_callee
+                ~resolved_callee_base:(Resolved.resolved_base_type base)
                 ~arguments
         in
         {
@@ -2629,6 +2668,7 @@ module State (Context : Context) = struct
                   ~dynamic:true
                   ~callee
                   ~resolved_callee:resolved
+                  ~resolved_callee_base:None
                   ~arguments:[{ Call.Argument.name = None; value = left }]
             | None -> (
                 match
@@ -2658,7 +2698,7 @@ module State (Context : Context) = struct
                     let forward_method
                         ~method_name
                         ~arguments
-                        { Resolved.resolution; resolved = parent; errors; _ }
+                        { Resolved.resolution; resolved = parent; errors; base; _ }
                       =
                       Type.split parent
                       |> fst
@@ -2670,6 +2710,7 @@ module State (Context : Context) = struct
                         ~errors
                         ~target:(Some parent)
                         ~resolved_callee:callable
+                        ~resolved_callee_base:(Resolved.resolved_base_type base)
                         ~arguments:
                           (List.map arguments ~f:(fun value -> { Call.Argument.name = None; value }))
                     in
@@ -2678,6 +2719,7 @@ module State (Context : Context) = struct
                       ~errors
                       ~target:(Some instantiated)
                       ~resolved_callee:iter_callable
+                      ~resolved_callee_base:None
                       ~arguments:[]
                     |> forward_method ~method_name:"__next__" ~arguments:[]
                     >>= forward_method ~method_name:"__eq__" ~arguments:[left]
