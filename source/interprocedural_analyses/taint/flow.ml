@@ -158,29 +158,42 @@ let generate_issues ~define { location; flows } =
     List.map flows ~f:partition
   in
   let apply_rule { Rule.sources; sinks; code; _ } =
-    let get_source_taint { source_partition; _ } =
+    let fold_partitions
+        ({ source_taint; sink_taint } as flow_so_far)
+        { source_partition; sink_partition }
+      =
       let add_source_taint source_taint source =
         match Map.Poly.find source_partition (erase_source_subkind source) with
         | Some taint -> ForwardTaint.join source_taint taint
         | None -> source_taint
       in
-      List.fold sources ~f:add_source_taint ~init:ForwardTaint.bottom
-    in
-    let get_sink_taint { sink_partition; _ } =
       let add_sink_taint sink_taint sink =
         match Map.Poly.find sink_partition (erase_sink_subkind sink) with
         | Some taint -> BackwardTaint.join sink_taint taint
         | None -> sink_taint
       in
-      List.fold sinks ~f:add_sink_taint ~init:BackwardTaint.bottom
+      let partition_flow =
+        {
+          source_taint = List.fold sources ~f:add_source_taint ~init:ForwardTaint.bottom;
+          sink_taint = List.fold sinks ~f:add_sink_taint ~init:BackwardTaint.bottom;
+        }
+      in
+      if
+        ForwardTaint.is_bottom partition_flow.source_taint
+        || BackwardTaint.is_bottom partition_flow.sink_taint
+      then
+        flow_so_far
+      else
+        {
+          source_taint = ForwardTaint.join source_taint partition_flow.source_taint;
+          sink_taint = BackwardTaint.join sink_taint partition_flow.sink_taint;
+        }
     in
-    let fold_source_taint taint partition = ForwardTaint.join taint (get_source_taint partition) in
-    let fold_sink_taint taint partition = BackwardTaint.join taint (get_sink_taint partition) in
     let flow =
-      {
-        source_taint = List.fold partitions ~init:ForwardTaint.bottom ~f:fold_source_taint;
-        sink_taint = List.fold partitions ~init:BackwardTaint.bottom ~f:fold_sink_taint;
-      }
+      List.fold
+        partitions
+        ~init:{ source_taint = ForwardTaint.bottom; sink_taint = BackwardTaint.bottom }
+        ~f:fold_partitions
     in
     if ForwardTaint.is_bottom flow.source_taint || BackwardTaint.is_bottom flow.sink_taint then
       None
