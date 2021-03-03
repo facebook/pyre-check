@@ -329,6 +329,7 @@ let initialize_server_state
       let load_from_saved_state = function
         | Result.Error message ->
             Log.warning "%s" message;
+            Statistics.event ~name:"saved state failure" ~normals:["reason", message] ();
             Lwt.return (start_from_scratch ())
         | Result.Ok { SavedState.Fetched.path; changed_files } -> (
             Log.info "Restoring environments from saved state...";
@@ -344,6 +345,10 @@ let initialize_server_state
                 Log.warning
                   "Cannot load saved state due to unexpected configuration change. Falling back to \
                    cold start...";
+                Statistics.event
+                  ~name:"saved state failure"
+                  ~normals:["reason", "configuration change"]
+                  ();
                 Memory.reset_shared_memory ();
                 Lwt.return (start_from_scratch ())
             | true ->
@@ -365,6 +370,7 @@ let initialize_server_state
                 in
                 let open Lwt.Infix in
                 Log.info "Processing recent updates not included in saved state...";
+                Statistics.event ~name:"saved state success" ();
                 Request.IncrementalUpdate (List.map changed_files ~f:Path.absolute)
                 |> RequestHandler.process_request ~state:loaded_state
                 >>= fun (new_state, _) -> Lwt.return new_state )
