@@ -5480,6 +5480,35 @@ let test_expand_starred_type_variable_tuples _ =
       pyre_extensions.Unpack[Tuple[pyre_extensions.Unpack[Ts], pyre_extensions.Unpack[Ts]]]
     ]: ...
   |};
+  assert_expand
+    {|
+    f: typing.Callable[[int, *Ts, str], Tuple[int, *Ts, str]]
+  |}
+    {|
+    f: typing.Callable[
+        [int, pyre_extensions.Unpack[Ts], str], Tuple[int, pyre_extensions.Unpack[Ts], str]
+    ]
+  |};
+  assert_expand
+    {|
+    f: typing.Callable[
+        [typing.Callable[[int, *Ts, str], Tuple[int, *Ts, str]]],
+        typing.Callable[[int, *Ts, *Ts2], bool],
+    ]
+  |}
+    {|
+    f: typing.Callable[
+        [
+            typing.Callable[
+                [int, pyre_extensions.Unpack[Ts], str],
+                Tuple[int, pyre_extensions.Unpack[Ts], str],
+            ]
+        ],
+        typing.Callable[
+            [int, pyre_extensions.Unpack[Ts], pyre_extensions.Unpack[Ts2]], bool
+        ],
+    ]
+  |};
   ()
 
 

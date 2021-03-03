@@ -3621,6 +3621,7 @@ let expand_starred_type_variable_tuple source =
                 ];
             }
       | Tuple elements -> Tuple (List.map elements ~f:transform_annotation_expression)
+      | List elements -> List (List.map elements ~f:transform_annotation_expression)
       | _ -> value
     in
     { expression with Node.value }
