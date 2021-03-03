@@ -8,7 +8,8 @@ import logging
 from pathlib import Path
 
 from ..configuration import Configuration
-from ..filesystem import path_exists
+from ..errors import Errors
+from ..filesystem import LocalMode, add_local_mode, path_exists
 from ..repository import Repository
 from .command import CommandArguments, ErrorSource, ErrorSuppressingCommand
 
@@ -25,11 +26,13 @@ class FixmeSingle(ErrorSuppressingCommand):
         path: Path,
         upgrade_version: bool,
         error_source: ErrorSource,
+        fixme_threshold: int,
     ) -> None:
         super().__init__(command_arguments, repository=repository)
         self._path: Path = path
         self._upgrade_version: bool = upgrade_version
         self._error_source: ErrorSource = error_source
+        self._fixme_threshold: int = fixme_threshold
 
     @staticmethod
     def from_arguments(
@@ -42,6 +45,7 @@ class FixmeSingle(ErrorSuppressingCommand):
             path=arguments.path,
             upgrade_version=arguments.upgrade_version,
             error_source=arguments.error_source,
+            fixme_threshold=arguments.fixme_threshold,
         )
 
     @classmethod
@@ -66,16 +70,40 @@ class FixmeSingle(ErrorSuppressingCommand):
             default=ErrorSource.GENERATE,
             type=ErrorSource,
         )
+        parser.add_argument(
+            "--fixme-threshold",
+            type=int,
+            default=0,
+            help="Ignore all errors if fixme count exceeds threshold.",
+        )
 
     def run(self) -> None:
         project_configuration = Configuration.find_project_configuration()
         configuration_path = self._path / ".pyre_configuration.local"
         configuration = Configuration(configuration_path)
-        self._suppress_errors(
-            configuration=configuration,
-            error_source=self._error_source,
-            upgrade_version=self._upgrade_version,
-        )
+        if self._fixme_threshold == 0:
+            self._suppress_errors(
+                configuration=configuration,
+                error_source=self._error_source,
+                upgrade_version=self._upgrade_version,
+            )
+        else:
+            all_errors = configuration.get_errors()
+            error_threshold = self._fixme_threshold
+
+            for path, errors in all_errors.paths_to_errors.items():
+                errors = list(errors)
+                error_count = len(errors)
+                if error_threshold and error_count > error_threshold:
+                    LOG.info(
+                        "%d errors found in `%s`. Adding file-level ignore.",
+                        error_count,
+                        path,
+                    )
+                    add_local_mode(path, LocalMode.IGNORE)
+                else:
+                    self._apply_suppressions(Errors(errors))
+
         local_root = configuration.get_directory().resolve()
         title = "{} for {}".format(
             "Update pyre version" if self._upgrade_version else "Suppress pyre errors",
