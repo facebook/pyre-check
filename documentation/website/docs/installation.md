@@ -47,7 +47,7 @@ $ cd pyre-check
 $ ./scripts/setup.sh --local
 ```
 
-This will generate a `Makefile` in your checkout directory. You can subsequently build and test
+This will generate a `Makefile` in the `source` directory. You can subsequently build and test
 `pyre` with
 
 ```bash
