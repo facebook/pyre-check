@@ -90,6 +90,10 @@ and invalid_argument =
       expression: Expression.t option;
       annotation: Type.t;
     }
+  | TupleVariadicVariable of {
+      variable: Type.OrderedTypes.t;
+      mismatch: SignatureSelectionTypes.mismatch_with_tuple_variadic_type_variable;
+    }
 
 and precondition_mismatch =
   | Found of mismatch

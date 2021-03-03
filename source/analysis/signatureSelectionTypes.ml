@@ -27,9 +27,9 @@ type missing_argument =
   | PositionalOnly of int
 [@@deriving eq, show, compare, sexp, hash]
 
-type mismatch_with_list_variadic_type_variable =
-  | NotDefiniteTuple of invalid_argument
-  | CantConcatenate of Type.OrderedTypes.t list
+type mismatch_with_tuple_variadic_type_variable =
+  | NotBoundedTuple of invalid_argument
+  | CannotConcatenate of Type.OrderedTypes.t list
   | ConstraintFailure of Type.OrderedTypes.t
 [@@deriving compare, eq, show, sexp, hash]
 
@@ -42,6 +42,10 @@ type reason =
   | InvalidKeywordArgument of invalid_argument Node.t
   | InvalidVariableArgument of invalid_argument Node.t
   | Mismatch of mismatch Node.t
+  | MismatchWithTupleVariadicTypeVariable of {
+      variable: Type.OrderedTypes.t;
+      mismatch: mismatch_with_tuple_variadic_type_variable;
+    }
   | MissingArgument of missing_argument
   | MutuallyRecursiveTypeVariables
   | ProtocolInstantiation of Reference.t

@@ -3178,10 +3178,77 @@ class base class_metadata_environment dependency =
           | _ -> None
         in
         let update ~key ~data ({ reasons = { arity; _ } as reasons; _ } as signature_match) =
+          let bind_arguments_to_variadic ~expected ~arguments =
+            let extract_ordered_types arguments =
+              let extracted, errors =
+                let arguments =
+                  List.map arguments ~f:(function
+                      | Argument argument -> argument
+                      | Default -> failwith "Variable parameters do not have defaults")
+                in
+                let extract { Argument.WithPosition.kind; resolved; expression; _ } =
+                  match kind with
+                  | SingleStar -> (
+                      match resolved with
+                      | Type.Tuple (Bounded ordered_types) -> Either.First ordered_types
+                      (* We don't support unpacking unbounded tuples yet. *)
+                      | annotation -> Either.Second { expression; annotation } )
+                  | _ -> Either.First (Type.OrderedTypes.Concrete [resolved])
+                in
+                List.rev arguments |> List.partition_map ~f:extract
+              in
+              match errors with
+              | [] -> Ok extracted
+              | not_bounded_tuple :: _ ->
+                  Error
+                    (MismatchWithTupleVariadicTypeVariable
+                       { variable = expected; mismatch = NotBoundedTuple not_bounded_tuple })
+            in
+            let concatenate extracted =
+              let concatenated =
+                match extracted with
+                | [] -> Some (Type.OrderedTypes.Concrete [])
+                | head :: tail ->
+                    let concatenate sofar next =
+                      sofar >>= fun left -> Type.OrderedTypes.concatenate ~left ~right:next
+                    in
+                    List.fold tail ~f:concatenate ~init:(Some head)
+              in
+              match concatenated with
+              | Some concatenated -> Ok concatenated
+              | None ->
+                  Error
+                    (MismatchWithTupleVariadicTypeVariable
+                       { variable = expected; mismatch = CannotConcatenate extracted })
+            in
+            let solve concatenated =
+              let updated_constraints_set =
+                TypeOrder.OrderedConstraintsSet.add
+                  signature_match.constraints_set
+                  ~new_constraint:
+                    (OrderedTypesLessOrEqual { left = concatenated; right = expected })
+                  ~order
+              in
+              if ConstraintsSet.potentially_satisfiable updated_constraints_set then
+                Ok updated_constraints_set
+              else
+                Error
+                  (MismatchWithTupleVariadicTypeVariable
+                     { variable = expected; mismatch = ConstraintFailure concatenated })
+            in
+            let make_signature_match = function
+              | Ok constraints_set -> { signature_match with constraints_set }
+              | Error error ->
+                  { signature_match with reasons = { reasons with arity = error :: arity } }
+            in
+            let open Result in
+            extract_ordered_types arguments >>= concatenate >>= solve |> make_signature_match
+          in
           match key, data with
-          | Parameter.Variable (Concatenation _), _ ->
-              (* TODO(T84854853):. *)
-              signature_match
+          | Parameter.Variable (Concatenation concatenation), arguments ->
+              bind_arguments_to_variadic
+                ~expected:(Type.OrderedTypes.Concatenation concatenation)
+                ~arguments
           | Parameter.Variable _, []
           | Parameter.Keywords _, [] ->
               (* Parameter was not matched, but empty is acceptable for variable arguments and
@@ -3551,6 +3618,7 @@ class base class_metadata_environment dependency =
                 | InvalidVariableArgument _ -> 0
                 | Mismatch { Node.value = { position; _ }; _ } -> 0 - position
                 | MissingArgument _ -> 1
+                | MismatchWithTupleVariadicTypeVariable _ -> 1
                 | MutuallyRecursiveTypeVariables -> 1
                 | ProtocolInstantiation _ -> 1
                 | TooManyArguments _ -> 1

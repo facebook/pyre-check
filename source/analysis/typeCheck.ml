@@ -194,6 +194,8 @@ let errors_from_not_found
       in
       [Some location, kind]
   | MissingArgument parameter -> [None, Error.MissingArgument { callee; parameter }]
+  | MismatchWithTupleVariadicTypeVariable { variable; mismatch } ->
+      [None, Error.InvalidArgument (TupleVariadicVariable { variable; mismatch })]
   | MutuallyRecursiveTypeVariables -> [None, Error.MutuallyRecursiveTypeVariables callee]
   | ProtocolInstantiation class_name ->
       [None, Error.InvalidClassInstantiation (ProtocolInstantiation class_name)]

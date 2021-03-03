@@ -99,6 +99,10 @@ and invalid_argument =
       expression: Expression.t option;
       annotation: Type.t;
     }
+  | TupleVariadicVariable of {
+      variable: Type.OrderedTypes.t;
+      mismatch: SignatureSelectionTypes.mismatch_with_tuple_variadic_type_variable;
+    }
 
 and precondition_mismatch =
   | Found of mismatch
@@ -969,7 +973,28 @@ let rec messages ~concise ~signature location kind =
               "Keyword argument must be a mapping%s."
               (if require_string_keys then " with string keys" else "");
           ]
-      | ConcreteVariable _ -> ["Variable argument must be an iterable."] )
+      | ConcreteVariable _ -> ["Variable argument must be an iterable."]
+      | TupleVariadicVariable { variable; mismatch = ConstraintFailure _ } ->
+          [
+            Format.asprintf
+              "Variable argument conflicts with constraints on `%a`."
+              Type.OrderedTypes.pp_concise
+              variable;
+          ]
+      | TupleVariadicVariable { variable; mismatch = NotBoundedTuple _ } ->
+          [
+            Format.asprintf
+              "Variable argument for `%a` must be a bounded tuple."
+              Type.OrderedTypes.pp_concise
+              variable;
+          ]
+      | TupleVariadicVariable { variable; mismatch = CannotConcatenate _ } ->
+          [
+            Format.asprintf
+              "Concatenating multiple variadic tuples for variable `%a` is not yet supported."
+              Type.OrderedTypes.pp_concise
+              variable;
+          ] )
   | InvalidArgument argument -> (
       match argument with
       | Keyword { expression; annotation; require_string_keys } ->
@@ -988,6 +1013,41 @@ let rec messages ~concise ~signature location kind =
               (show_sanitized_optional_expression expression)
               pp_type
               annotation;
+          ]
+      | TupleVariadicVariable { variable; mismatch = ConstraintFailure ordered_types } ->
+          [
+            Format.asprintf
+              "Argument types `%a` are not compatible with expected variadic elements `%a`."
+              (Type.Record.OrderedTypes.pp_concise ~pp_type)
+              ordered_types
+              (Type.Record.OrderedTypes.pp_concise ~pp_type)
+              variable;
+          ]
+      | TupleVariadicVariable { variable; mismatch = NotBoundedTuple { expression; annotation } } ->
+          [
+            Format.asprintf
+              "Variable argument%s has type `%a` but must be a definite tuple to be included in \
+               variadic type variable `%a`."
+              (show_sanitized_optional_expression expression)
+              pp_type
+              annotation
+              (Type.Record.OrderedTypes.pp_concise ~pp_type)
+              variable;
+          ]
+      | TupleVariadicVariable { variable; mismatch = CannotConcatenate unconcatenatable } ->
+          let unconcatenatable =
+            List.map
+              unconcatenatable
+              ~f:(Format.asprintf "%a" (Type.Record.OrderedTypes.pp_concise ~pp_type))
+            |> String.concat ~sep:", "
+          in
+          [
+            Format.asprintf
+              "Variadic type variable `%a` cannot be made to contain `%s`; concatenation of \
+               multiple variadic type variables is not yet implemented."
+              (Type.Record.OrderedTypes.pp_concise ~pp_type)
+              variable
+              unconcatenatable;
           ] )
   | InvalidDecoration { decorator = { name; _ }; reason = CouldNotResolve } ->
       let name = Node.value name |> Reference.sanitized |> Reference.show in
@@ -2294,6 +2354,8 @@ let due_to_analysis_limitations { kind; _ } =
   | InconsistentOverride { override = WeakenedPostcondition { actual; _ }; _ }
   | InvalidArgument (Keyword { annotation = actual; _ })
   | InvalidArgument (ConcreteVariable { annotation = actual; _ })
+  | InvalidArgument
+      (TupleVariadicVariable { mismatch = NotBoundedTuple { annotation = actual; _ }; _ })
   | InvalidException { annotation = actual; _ }
   | InvalidType (InvalidType { annotation = actual; _ })
   | InvalidType (FinalNested actual)
@@ -2317,6 +2379,7 @@ let due_to_analysis_limitations { kind; _ } =
   | IncompatibleAsyncGeneratorReturnType _
   | IncompatibleConstructorAnnotation _
   | InconsistentOverride { override = StrengthenedPrecondition (NotFound _); _ }
+  | InvalidArgument (TupleVariadicVariable _)
   | InvalidDecoration _
   | InvalidMethodSignature _
   | InvalidTypeParameters _
@@ -3507,6 +3570,17 @@ let dequalify
           (Keyword { expression; annotation = dequalify annotation; require_string_keys })
     | InvalidArgument (ConcreteVariable { expression; annotation }) ->
         InvalidArgument (ConcreteVariable { expression; annotation = dequalify annotation })
+    | InvalidArgument (TupleVariadicVariable { variable; mismatch }) ->
+        let mismatch =
+          match mismatch with
+          | NotBoundedTuple { expression; annotation } ->
+              SignatureSelectionTypes.NotBoundedTuple
+                { expression; annotation = dequalify annotation }
+          | _ ->
+              (* TODO(T45656387): Implement dequalify for ordered_types *)
+              mismatch
+        in
+        InvalidArgument (TupleVariadicVariable { variable; mismatch })
     | InvalidException { expression; annotation } ->
         InvalidException { expression; annotation = dequalify annotation }
     | InvalidMethodSignature ({ annotation; _ } as kind) ->
