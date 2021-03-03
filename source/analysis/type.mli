@@ -67,6 +67,8 @@ module Record : sig
 
       type 'annotation t [@@deriving compare, eq, sexp, show, hash]
 
+      val unpack_public_name : string
+
       val create
         :  ?prefix:'annotation list ->
         ?suffix:'annotation list ->
@@ -661,6 +663,8 @@ module OrderedTypes : sig
   val concatenate : left:t -> right:t -> t option
 
   val to_parameters : t -> Parameter.t list
+
+  val to_starred_annotation_expression : type_t Concatenation.t -> Expression.t
 end
 
 val split : t -> t * Parameter.t list

@@ -1961,6 +1961,24 @@ let test_parse_type_variable_declarations _ =
   ()
 
 
+let test_starred_annotation_expression _ =
+  let assert_starred_expression concatenation expression =
+    assert_equal
+      ~printer:Expression.show
+      ~cmp:(fun left right -> Expression.location_insensitive_compare left right = 0)
+      (parse_single_expression ~coerce_special_methods:true expression)
+      (Type.OrderedTypes.to_starred_annotation_expression concatenation)
+  in
+  let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
+  assert_starred_expression
+    (Type.OrderedTypes.Concatenation.create ~prefix:[] ~suffix:[] variadic)
+    "pyre_extensions.Unpack[Ts]";
+  assert_starred_expression
+    (Type.OrderedTypes.Concatenation.create ~prefix:[Type.integer] ~suffix:[Type.string] variadic)
+    "pyre_extensions.Unpack[(int, pyre_extensions.Unpack[Ts], str)]";
+  ()
+
+
 let test_split_ordered_types _ =
   let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
   let assert_split ?(split_both_ways = true) left right expected =
@@ -2928,6 +2946,7 @@ let () =
          "replace_all" >:: test_replace_all;
          "collect_all" >:: test_collect_all;
          "parse_type_variable_declarations" >:: test_parse_type_variable_declarations;
+         "starred_annotation_expression" >:: test_starred_annotation_expression;
          "split_ordered_types" >:: test_split_ordered_types;
          "zip_variables_with_parameters" >:: test_zip_variables_with_parameters;
          "zip_on_two_parameter_lists" >:: test_zip_on_two_parameter_lists;

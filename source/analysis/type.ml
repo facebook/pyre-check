@@ -195,6 +195,39 @@ module Record = struct
       let extract_sole_variadic = function
         | { prefix = []; middle = Variadic variadic; suffix = [] } -> Some variadic
         | _ -> None
+
+
+      let unpackable_to_expression ~location (Variadic variadic) =
+        Expression.Call
+          {
+            callee =
+              {
+                Node.location;
+                value =
+                  Name
+                    (Name.Attribute
+                       {
+                         base =
+                           Expression.Name (create_name ~location unpack_public_name)
+                           |> Node.create ~location;
+                         attribute = "__getitem__";
+                         special = true;
+                       });
+              };
+            arguments =
+              [
+                {
+                  name = None;
+                  value =
+                    Expression.Name
+                      (create_name
+                         ~location
+                         (Format.asprintf "%a" Variable.RecordVariadic.Tuple.pp_concise variadic))
+                    |> Node.create ~location;
+                };
+              ];
+          }
+        |> Node.create ~location
     end
 
     type 'annotation record =
@@ -1616,41 +1649,11 @@ let rec expression annotation =
   let location = Location.any in
   let create_name name = Expression.Name (create_name ~location name) in
   let get_item_call = get_item_call ~location in
-  let variadic_to_expression variadic =
-    Expression.Call
-      {
-        callee =
-          {
-            Node.location;
-            value =
-              Name
-                (Name.Attribute
-                   {
-                     base =
-                       create_name Record.OrderedTypes.Concatenation.unpack_public_name
-                       |> Node.create ~location;
-                     attribute = "__getitem__";
-                     special = true;
-                   });
-          };
-        arguments =
-          [
-            {
-              name = None;
-              value =
-                create_name
-                  (Format.asprintf "%a" Record.Variable.RecordVariadic.Tuple.pp_concise variadic)
-                |> Node.create ~location;
-            };
-          ];
-      }
-    |> Node.create ~location
-  in
-  let concatenation_to_expression
-      { Record.OrderedTypes.Concatenation.prefix; middle = Variadic variadic; suffix }
+  let concatenation_to_expressions
+      { Record.OrderedTypes.Concatenation.prefix; middle = unpackable; suffix }
     =
     List.map ~f:expression prefix
-    @ [variadic_to_expression variadic]
+    @ [Record.OrderedTypes.Concatenation.unpackable_to_expression ~location unpackable]
     @ List.map ~f:expression suffix
   in
   let callable_parameters_expression = function
@@ -1701,7 +1704,7 @@ let rec expression annotation =
                 {
                   callee = Node.create ~location (Expression.Name (Name.Identifier "Variable"));
                   arguments =
-                    concatenation_to_expression concatenation
+                    concatenation_to_expressions concatenation
                     |> List.map ~f:(fun annotation ->
                            { Call.Argument.name = None; value = annotation });
                 }
@@ -1813,7 +1816,8 @@ let rec expression annotation =
           let expression_of_parameter = function
             | Record.Parameter.Single single -> expression single
             | CallableParameters parameters -> callable_parameters_expression parameters
-            | Unpacked (Variadic variadic) -> variadic_to_expression variadic
+            | Unpacked unpackable ->
+                Record.OrderedTypes.Concatenation.unpackable_to_expression ~location unpackable
           in
           match parameters with
           | parameters -> List.map parameters ~f:expression_of_parameter
@@ -1834,7 +1838,7 @@ let rec expression annotation =
         let parameters =
           match elements with
           | Bounded (Concrete parameters) -> List.map ~f:expression parameters
-          | Bounded (Concatenation concatenation) -> concatenation_to_expression concatenation
+          | Bounded (Concatenation concatenation) -> concatenation_to_expressions concatenation
           | Unbounded parameter -> List.map ~f:expression [parameter; Primitive "..."]
         in
         get_item_call "typing.Tuple" parameters
@@ -2596,6 +2600,14 @@ module OrderedTypes = struct
         List.map prefix ~f:(fun element -> Parameter.Single element)
         @ [Parameter.Unpacked unpacked]
         @ List.map suffix ~f:(fun element -> Parameter.Single element)
+
+
+  let to_starred_annotation_expression = function
+    | { Concatenation.prefix = []; middle; suffix = [] } ->
+        Concatenation.unpackable_to_expression ~location:Location.any middle
+    | concatenation ->
+        parametric Concatenation.unpack_public_name (to_parameters (Concatenation concatenation))
+        |> expression
 
 
   let from_annotations ~variable_aliases annotations =

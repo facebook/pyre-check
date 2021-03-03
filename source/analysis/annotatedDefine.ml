@@ -97,8 +97,13 @@ let decorate
                           ~annotation:(Type.expression annotation)
                           ~name:"*args"
                           ()
-                    | Type.Callable.Parameter.Variable (Concatenation _) ->
-                        failwith "not yet implemented - T84854853"
+                    | Type.Callable.Parameter.Variable (Concatenation concatenation) ->
+                        Expression.Parameter.create
+                          ~location
+                          ~annotation:
+                            (Type.OrderedTypes.to_starred_annotation_expression concatenation)
+                          ~name:"*args"
+                          ()
                     | Type.Callable.Parameter.Keywords annotation ->
                         Expression.Parameter.create
                           ~location
