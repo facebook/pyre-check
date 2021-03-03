@@ -16,6 +16,7 @@ from ..start import (
     CriticalFile,
     LoadSavedStateFromFile,
     LoadSavedStateFromProject,
+    StoreSavedStateToFile,
     RemoteLogging,
     MatchPolicy,
     create_server_arguments,
@@ -65,6 +66,10 @@ class ArgumentTest(testslide.TestCase):
                 "load_from_project",
                 {"project_name": "my_project", "project_metadata": "my_metadata"},
             ),
+        )
+        self.assertTupleEqual(
+            StoreSavedStateToFile(shared_memory_path="/foo/bar").serialize(),
+            ("save_to_file", {"shared_memory_path": "/foo/bar"}),
         )
 
     def test_serialize_remote_logging(self) -> None:
@@ -309,6 +314,12 @@ class StartTest(testslide.TestCase):
                 relative_local_root="local/root",
             ),
             LoadSavedStateFromFile(shared_memory_path="foo", changed_files_path="bar"),
+        )
+        self.assertEqual(
+            get_saved_state_action(
+                command_arguments.StartArguments(save_initial_state_to="/foo")
+            ),
+            StoreSavedStateToFile(shared_memory_path="/foo"),
         )
 
     def test_find_watchman_root(self) -> None:

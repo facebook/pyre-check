@@ -97,7 +97,22 @@ class LoadSavedStateFromProject:
         )
 
 
-SavedStateAction = Union[LoadSavedStateFromFile, LoadSavedStateFromProject]
+@dataclasses.dataclass(frozen=True)
+class StoreSavedStateToFile:
+    shared_memory_path: str
+
+    def serialize(self) -> Tuple[str, Dict[str, str]]:
+        return (
+            "save_to_file",
+            {
+                "shared_memory_path": self.shared_memory_path,
+            },
+        )
+
+
+SavedStateAction = Union[
+    LoadSavedStateFromFile, LoadSavedStateFromProject, StoreSavedStateToFile
+]
 
 
 @dataclasses.dataclass(frozen=True)
@@ -261,11 +276,14 @@ def get_saved_state_action(
     start_arguments: command_arguments.StartArguments,
     relative_local_root: Optional[str] = None,
 ) -> Optional[SavedStateAction]:
-    # Loading states from file takes precedence
-    saved_state_file = start_arguments.load_initial_state_from
-    if saved_state_file is not None:
+    saved_state_output_path = start_arguments.save_initial_state_to
+    if saved_state_output_path is not None:
+        return StoreSavedStateToFile(shared_memory_path=saved_state_output_path)
+
+    saved_state_input_path = start_arguments.load_initial_state_from
+    if saved_state_input_path is not None:
         return LoadSavedStateFromFile(
-            shared_memory_path=saved_state_file,
+            shared_memory_path=saved_state_input_path,
             changed_files_path=start_arguments.changed_files_path,
         )
 
