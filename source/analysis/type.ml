@@ -2541,7 +2541,7 @@ module OrderedTypes = struct
         |> expression
 
 
-  let from_annotations ~variable_aliases annotations =
+  let concatenation_from_annotations ~variable_aliases annotations =
     let unpacked_element_index index = function
       | Parametric { name; _ } when Identifier.equal name Concatenation.unpack_public_name ->
           Some index
@@ -2558,7 +2558,7 @@ module OrderedTypes = struct
                 variable_aliases variable_name
                 >>= function
                 | Record.Variable.TupleVariadic variadic ->
-                    Some (Concatenation (Concatenation.create ~prefix ~suffix variadic))
+                    Some (Concatenation.create ~prefix ~suffix variadic)
                 | _ -> None )
             | Parametric
                 {
@@ -2572,9 +2572,7 @@ module OrderedTypes = struct
                     ];
                 }
               when Identifier.equal name Record.OrderedTypes.Concatenation.unpack_public_name ->
-                Some
-                  (Concatenation
-                     { prefix = prefix @ inner_prefix; middle; suffix = inner_suffix @ suffix })
+                Some { prefix = prefix @ inner_prefix; middle; suffix = inner_suffix @ suffix }
             | _ -> None )
         | _ -> None )
     | _ -> None
@@ -2789,11 +2787,8 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
                               List.map tail ~f:(fun annotation ->
                                   create_logic (Node.create_with_default_location annotation))
                             in
-                            OrderedTypes.from_annotations ~variable_aliases elements
-                            >>= (function
-                                  | OrderedTypes.Concatenation concatenation ->
-                                      Some (CallableParameter.Concatenation concatenation)
-                                  | _ -> None)
+                            OrderedTypes.concatenation_from_annotations ~variable_aliases elements
+                            >>| (fun concatenation -> CallableParameter.Concatenation concatenation)
                             |> Option.value
                                  ~default:
                                    (CallableParameter.Concrete
@@ -3121,15 +3116,9 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
               |> Option.all
             in
             all_positional_only_parameters
-            >>= OrderedTypes.from_annotations ~variable_aliases
-            >>= (function
-                  | OrderedTypes.Concatenation concatenation ->
-                      Some
-                        {
-                          overload with
-                          parameters = Defined [Variable (Concatenation concatenation)];
-                        }
-                  | Concrete _ -> None)
+            >>= OrderedTypes.concatenation_from_annotations ~variable_aliases
+            >>| (fun concatenation ->
+                  { overload with parameters = Defined [Variable (Concatenation concatenation)] })
             |> Option.value ~default:overload
         | _ -> overload
       in
