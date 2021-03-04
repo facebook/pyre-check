@@ -912,6 +912,35 @@ let test_add_constraint_type_variable_tuple context =
     ~right:"typing.Callable[[int, str, bool], typing.Tuple[str, bool]]"
     ~leave_unbound_in_left:["Ts"]
     [[]];
+
+  (* Unbounded tuples. *)
+  assert_add
+    ~left:"typing.Tuple[int, ...]"
+    ~right:"typing.Tuple[pyre_extensions.Unpack[Ts]]"
+    [["Ts", "typing.Tuple[pyre_extensions.Unpack[typing.Tuple[int, ...]]]"]];
+  assert_add ~left:"typing.Tuple[int, ...]" ~right:"typing.Tuple[T]" [];
+  assert_add
+    ~left:"typing.Tuple[int, str, pyre_extensions.Unpack[typing.Tuple[str, ...]], bool]"
+    ~right:"typing.Tuple[int, pyre_extensions.Unpack[Ts], bool]"
+    [["Ts", "typing.Tuple[str, pyre_extensions.Unpack[typing.Tuple[str, ...]]]"]];
+  assert_add
+    ~left:"typing.Tuple[int, pyre_extensions.Unpack[Ts], bool]"
+    ~right:"typing.Tuple[int, str, pyre_extensions.Unpack[typing.Tuple[str, ...]], bool]"
+    ~leave_unbound_in_left:["Ts"]
+    [["Ts", "typing.Tuple[str, pyre_extensions.Unpack[typing.Tuple[str, ...]]]"]];
+  (* Not valid because the unbounded tuple may be empty. *)
+  assert_add
+    ~left:"typing.Tuple[int, ...]"
+    ~right:"typing.Tuple[int, pyre_extensions.Unpack[Ts]]"
+    [];
+  assert_add
+    ~left:"typing.Tuple[int, ...]"
+    ~right:"typing.Tuple[pyre_extensions.Unpack[Ts], int]"
+    [];
+  assert_add
+    ~left:"typing.Tuple[int, pyre_extensions.Unpack[typing.Tuple[str, ...]], bool]"
+    ~right:"typing.Tuple[int, str, pyre_extensions.Unpack[typing.Tuple[str, ...]], bool]"
+    [];
   ()
 
 

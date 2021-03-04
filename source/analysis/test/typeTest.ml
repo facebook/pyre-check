@@ -439,6 +439,11 @@ let test_create_variadic_tuple _ =
          Single Type.string;
          Unpacked (Type.OrderedTypes.Concatenation.create_unpackable variadic);
        ]);
+  assert_create
+    "Foo[pyre_extensions.Unpack[typing.Tuple[int, ...]]]"
+    (Type.parametric
+       "Foo"
+       [Unpacked (Type.OrderedTypes.Concatenation.create_unbounded_unpackable Type.integer)]);
 
   (* Tuples. *)
   assert_create

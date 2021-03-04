@@ -2882,6 +2882,66 @@ let test_variadic_tuples context =
       "Incompatible parameter type [6]: Expected `typing.Tuple[*test.Ts]` for 2nd positional only \
        parameter to call `expects_same_tuples` but got `Tuple[bool]`.";
     ];
+  assert_type_errors
+    {|
+      from typing import Tuple
+      from pyre_extensions import TypeVarTuple
+
+      Ts = TypeVarTuple("Ts")
+
+      def add_int(xs: Tuple[*Tuple[str, ...]]) -> Tuple[int, *Tuple[str, ...]]: ...
+
+      def foo() -> None:
+        xs: Tuple[str, str]
+        y = add_int(xs)
+        reveal_type(y)
+
+        invalid: Tuple[int, str]
+        add_int(invalid)
+     |}
+    [
+      "Revealed type [-1]: Revealed type for `y` is `typing.Tuple[int, *Tuple[str, ...]]`.";
+      "Incompatible parameter type [6]: Expected `typing.Tuple[str, ...]` for 1st positional only \
+       parameter to call `add_int` but got `Tuple[int, str]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Tuple
+      from pyre_extensions import TypeVarTuple
+
+      Ts = TypeVarTuple("Ts")
+
+      def foo(xs: Tuple[*Ts]) -> Tuple[*Ts]: ...
+
+      def baz() -> None:
+       	unbounded_tuple: Tuple[int, ...]
+       	y = foo(unbounded_tuple)
+       	reveal_type(y)
+     |}
+    ["Revealed type [-1]: Revealed type for `y` is `typing.Tuple[int, ...]`."];
+  assert_type_errors
+    {|
+      from typing import Tuple, TypeVar
+      from pyre_extensions import TypeVarTuple
+
+      T = TypeVar("T")
+      Ts = TypeVarTuple("Ts")
+
+      def foo(xs: Tuple[T, *Tuple[str, ...]]) -> T: ...
+
+      def baz() -> None:
+       	some_tuple: Tuple[int, str, str]
+       	y = foo(some_tuple)
+       	reveal_type(y)
+
+       	invalid_tuple: Tuple[int, str, int]
+       	foo(invalid_tuple)
+     |}
+    [
+      "Revealed type [-1]: Revealed type for `y` is `int`.";
+      "Incompatible parameter type [6]: Expected `typing.Tuple[Variable[T], *Tuple[str, ...]]` for \
+       1st positional only parameter to call `foo` but got `Tuple[int, str, int]`.";
+    ];
   ()
 
 
