@@ -1,0 +1,42 @@
+{
+  "name": "pysa-vscode",
+  "version": "0.0.1",
+  "publisher": "fb-pyre-check",
+  "engines": {
+    "vscode": "^1.15.0"
+  },
+  "license": "MIT",
+  "displayName": "pysa-vscode",
+  "description": "VSCode extension for Pysa",
+  "keywords": [
+    "python",
+    "pysa",
+    "static analysis",
+    "taint flow analysis",
+    "security"
+  ],
+  "main": "./out/main",
+  "activationEvents": [
+    "workspaceContains:.pyre_configuration"
+  ],
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "postinstall": "node ./node_modules/vscode/bin/install",
+    "test": "npm run compile && node ./node_modules/vscode/bin/test",
+    "lint": "tslint --force -p ."
+  },
+  "dependencies": {
+    "vscode-languageclient": "^3.5.0"
+  },
+  "devDependencies": {
+    "@types/mocha": "^2.2.44",
+    "@types/node": "^8.0.53",
+    "cson": "^4.1.0",
+    "tslint": "^5.8.0",
+    "tslint-microsoft-contrib": "^5.0.1",
+    "typescript": "^3.5.1",
+    "vscode": "^1.1.7"
+  }
+}

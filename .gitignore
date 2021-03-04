@@ -26,3 +26,7 @@ website/i18n/*
 hack_parallel/hack_parallel/utils/get_build_id.c
 /.buckd
 /buck-out
+
+node_modules/
+tools/ide_plugins/pysa-vscode/out
+**/package-lock.json
