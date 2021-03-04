@@ -4598,9 +4598,11 @@ let resolve_aliases ~aliases annotation =
                     (* Type variables are stored as `_T aliases to _T`. Don't replace them. *)
                     | Variable _ as variable -> variable
                     | alias ->
-                        Variable.GlobalTransforms.Unary.replace_all
-                          (fun _ -> Some Variable.Unary.any)
-                          alias
+                        alias
+                        |> Variable.GlobalTransforms.Unary.replace_all (fun _ ->
+                               Some Variable.Unary.any)
+                        |> Variable.GlobalTransforms.ParameterVariadic.replace_all (fun _ ->
+                               Some Variable.Variadic.Parameters.any)
                   in
                   mark_recursive_alias_as_visited alias;
                   alias
@@ -4629,6 +4631,15 @@ let resolve_aliases ~aliases annotation =
                            List.find_map variable_pairs ~f:(function
                                | UnaryPair (variable, replacement)
                                  when [%equal: Variable.unary_t] variable given_variable ->
+                                   Some replacement
+                               | _ -> None))
+                    |> Variable.GlobalTransforms.ParameterVariadic.replace_all
+                         (fun given_variable ->
+                           List.find_map variable_pairs ~f:(function
+                               | ParameterVariadicPair (variable, replacement)
+                                 when [%equal: Variable.parameter_variadic_t]
+                                        variable
+                                        given_variable ->
                                    Some replacement
                                | _ -> None))
                 | _ -> uninstantiated_alias_annotation

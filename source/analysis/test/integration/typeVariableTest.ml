@@ -1816,6 +1816,54 @@ let test_user_defined_parameter_specification_classes context =
         reveal_type(f)
     |}
     ["Revealed type [-1]: Revealed type for `f` is `typing.Callable[[str, Named(x, int)], int]`."];
+  assert_type_errors
+    {|
+      from pyre_extensions import ParameterSpecification
+      from typing import TypeVar, Generic, Callable
+
+      TParams = ParameterSpecification("TParams")
+
+      class MyClass(Generic[TParams]):
+        def __call__(__self, *args: TParams.args, **kwargs: TParams.kwargs) -> bool: ...
+
+      IntStrParamSpec = MyClass[int, str]
+
+      def foo() -> None:
+        f: IntStrParamSpec
+        reveal_type(f)
+
+        f(1, "hello")
+
+        f("invalid")
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `f` is `MyClass[[int, str]]`.";
+      "Missing argument [20]: Call `MyClass.__call__` expects argument in position 2.";
+    ];
+  assert_type_errors
+    {|
+      from pyre_extensions import ParameterSpecification
+      from typing import TypeVar, Generic, Callable, Protocol
+
+      TParams = ParameterSpecification("TParams")
+
+      class PrependIntProtocol(Protocol[TParams]):
+        def __call__(__self, __f: int, *args: TParams.args, **kwargs: TParams.kwargs) -> int: ...
+
+      IntBoolStrParamSpec = PrependIntProtocol[bool, str]
+
+      def foo() -> None:
+        f: IntBoolStrParamSpec
+        reveal_type(f)
+
+        f(1, True, "hello")
+
+        f("invalid")
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `f` is `PrependIntProtocol[[bool, str]]`.";
+      "Missing argument [20]: Call `PrependIntProtocol.__call__` expects argument in position 2.";
+    ];
   ()
 
 

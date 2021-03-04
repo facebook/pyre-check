@@ -640,6 +640,37 @@ let test_resolve_aliases _ =
     | _ -> None
   in
   assert_resolved ~aliases (Type.Primitive "Foo") (Type.parametric "Bar" ![Type.Any; Type.Any]);
+  let parameter_variadic = Type.Variable.Variadic.Parameters.create "TParams" in
+  let aliases = function
+    | "TParams" -> Some (Type.VariableAlias (Type.Variable.ParameterVariadic parameter_variadic))
+    | "FooParamSpec" ->
+        Some
+          (Type.TypeAlias
+             (Type.parametric
+                "Bar"
+                [
+                  CallableParameters
+                    (Type.Variable.Variadic.Parameters.self_reference parameter_variadic);
+                ]))
+    | _ -> None
+  in
+  assert_resolved
+    ~aliases
+    (Type.parametric "FooParamSpec" ![Type.integer; Type.string])
+    (Type.parametric
+       "Bar"
+       [
+         CallableParameters
+           (Defined
+              [
+                PositionalOnly { index = 0; annotation = Type.integer; default = false };
+                PositionalOnly { index = 1; annotation = Type.string; default = false };
+              ]);
+       ]);
+  assert_resolved
+    ~aliases
+    (Type.Primitive "FooParamSpec")
+    (Type.parametric "Bar" [CallableParameters Undefined]);
   ()
 
 
