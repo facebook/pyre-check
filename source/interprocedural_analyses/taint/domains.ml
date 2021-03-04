@@ -156,7 +156,7 @@ module TraceInfo = struct
 end
 
 module TraceLength = Abstract.SimpleDomain.Make (struct
-  type t = int [@@deriving show]
+  type t = int
 
   let name = "trace length"
 
@@ -167,6 +167,8 @@ module TraceLength = Abstract.SimpleDomain.Make (struct
   let less_or_equal ~left ~right = left >= right
 
   let bottom = max_int
+
+  let show length = if Int.equal length max_int then "<bottom>" else string_of_int length
 end)
 
 module FlowDetails = struct
