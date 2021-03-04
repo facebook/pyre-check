@@ -217,6 +217,10 @@ and unsupported_operand_kind =
 and illegal_annotation_target_kind =
   | InvalidExpression
   | Reassignment
+
+and tuple_concatenation_problem =
+  | MultipleVariadics of { variadic_expressions: Expression.t list }
+  | UnpackingNonTuple of { annotation: Type.t }
 [@@deriving compare, eq, sexp, show, hash]
 
 type invalid_decoration = {
@@ -397,6 +401,7 @@ and kind =
       variable: Type.Variable.t;
       base: polymorphism_base_class;
     }
+  | TupleConcatenationError of tuple_concatenation_problem
   (* Additional errors. *)
   (* TODO(T38384376): split this into a separate module. *)
   | DeadStore of Identifier.t
@@ -465,6 +470,7 @@ let code = function
   | IncompatibleAsyncGeneratorReturnType _ -> 57
   | UnsupportedOperand _ -> 58
   | DuplicateTypeVariables _ -> 59
+  | TupleConcatenationError _ -> 60
   | ParserFailure _ -> 404
   (* Additional errors. *)
   | UnawaitedAwaitable _ -> 1001
@@ -534,6 +540,7 @@ let name = function
   | UnsupportedOperand _ -> "Unsupported operand"
   | UnusedIgnore _ -> "Unused ignore"
   | UnusedLocalMode _ -> "Unused local mode"
+  | TupleConcatenationError _ -> "Unable to concatenate tuple"
 
 
 let weaken_literals kind =
@@ -1924,6 +1931,14 @@ let rec messages ~concise ~signature location kind =
           (if provided > 1 then "were" else "was");
       ]
   | Top -> ["Problem with analysis."]
+  | TupleConcatenationError (UnpackingNonTuple { annotation }) ->
+      [Format.asprintf "Expected to unpack a tuple, but got `%a`." pp_type annotation]
+  | TupleConcatenationError (MultipleVariadics { variadic_expressions }) ->
+      [
+        Format.asprintf
+          "Concatenation not yet support for multiple variadic tuples: `%s`."
+          (String.concat ~sep:", " (List.map ~f:show_sanitized_expression variadic_expressions));
+      ]
   | TypedDictionaryAccessWithNonLiteral acceptable_keys ->
       let explanation =
         let acceptable_keys =
@@ -2409,6 +2424,7 @@ let due_to_analysis_limitations { kind; _ } =
   | PrivateProtocolProperty _
   | ProhibitedAny _
   | TooManyArguments _
+  | TupleConcatenationError _
   | TypedDictionaryAccessWithNonLiteral _
   | TypedDictionaryKeyNotFound _
   | TypedDictionaryInitializationError _
@@ -2727,6 +2743,7 @@ let less_or_equal ~resolution left right =
   | UnsafeCast _, _
   | TooManyArguments _, _
   | Top, _
+  | TupleConcatenationError _, _
   | TypedDictionaryAccessWithNonLiteral _, _
   | TypedDictionaryInvalidOperation _, _
   | TypedDictionaryInitializationError _, _
@@ -3152,6 +3169,7 @@ let join ~resolution left right =
     | RevealedType _, _
     | UnsafeCast _, _
     | TooManyArguments _, _
+    | TupleConcatenationError _, _
     | TypedDictionaryAccessWithNonLiteral _, _
     | TypedDictionaryKeyNotFound _, _
     | TypedDictionaryInvalidOperation _, _
@@ -3713,6 +3731,7 @@ let dequalify
             override = WeakenedPostcondition (dequalify_mismatch mismatch);
           }
     | InvalidDecoration expression -> InvalidDecoration expression
+    | TupleConcatenationError expressions -> TupleConcatenationError expressions
     | TypedDictionaryAccessWithNonLiteral expression ->
         TypedDictionaryAccessWithNonLiteral expression
     | TypedDictionaryKeyNotFound { typed_dictionary_name; missing_key } ->

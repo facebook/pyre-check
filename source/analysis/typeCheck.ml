@@ -3527,22 +3527,64 @@ module State (Context : Context) = struct
           base = None;
         }
     | Tuple elements ->
-        let resolution, errors, resolved =
+        let resolution, errors, resolved_elements =
           let forward_element (resolution, errors, resolved) expression =
-            let { Resolved.resolution; resolved = new_resolved; errors = new_errors; _ } =
-              forward_expression ~resolution ~expression
+            let resolution, new_errors, resolved_element =
+              match expression with
+              | { Node.value = Expression.Starred (Starred.Once expression); _ } ->
+                  let { Resolved.resolution; resolved = resolved_element; errors = new_errors; _ } =
+                    forward_expression ~resolution ~expression
+                  in
+                  let ordered_type, new_errors =
+                    match resolved_element with
+                    | Type.Tuple ordered_type -> ordered_type, new_errors
+                    | _ ->
+                        ( Type.OrderedTypes.Concrete [Type.Any],
+                          emit_error
+                            ~errors:new_errors
+                            ~location
+                            ~kind:
+                              (Error.TupleConcatenationError
+                                 (UnpackingNonTuple { annotation = resolved_element })) )
+                  in
+                  resolution, new_errors, ordered_type
+              | _ ->
+                  let { Resolved.resolution; resolved = resolved_element; errors = new_errors; _ } =
+                    forward_expression ~resolution ~expression
+                  in
+                  resolution, new_errors, Type.OrderedTypes.Concrete [resolved_element]
             in
-            resolution, List.append new_errors errors, new_resolved :: resolved
+            resolution, List.append new_errors errors, resolved_element :: resolved
           in
           List.fold elements ~f:forward_element ~init:(resolution, [], [])
         in
-        {
-          resolution;
-          errors;
-          resolved = Type.tuple (List.rev resolved);
-          resolved_annotation = None;
-          base = None;
-        }
+        let resolved, errors =
+          let resolved_elements = List.rev resolved_elements in
+          let concatenated_elements =
+            let concatenate sofar next =
+              sofar >>= fun left -> Type.OrderedTypes.concatenate ~left ~right:next
+            in
+            List.fold resolved_elements ~f:concatenate ~init:(Some (Type.OrderedTypes.Concrete []))
+          in
+          match concatenated_elements with
+          | Some concatenated_elements -> Type.Tuple concatenated_elements, errors
+          | None ->
+              let variadic_expressions =
+                match List.zip elements resolved_elements with
+                | Ok pairs ->
+                    List.filter_map pairs ~f:(function
+                        | expression, Type.OrderedTypes.Concatenation _ -> Some expression
+                        | _ -> None)
+                | Unequal_lengths -> elements
+              in
+              ( Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation Type.Any),
+                emit_error
+                  ~errors
+                  ~location
+                  ~kind:(Error.TupleConcatenationError (MultipleVariadics { variadic_expressions }))
+              )
+        in
+        { resolution; errors; resolved; resolved_annotation = None; base = None }
     | UnaryOperator ({ UnaryOperator.operand; _ } as operator) -> (
         match UnaryOperator.override operator with
         | Some expression -> forward_expression ~resolution ~expression

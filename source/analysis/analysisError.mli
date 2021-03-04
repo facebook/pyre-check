@@ -208,6 +208,10 @@ and unsupported_operand_kind =
 and illegal_annotation_target_kind =
   | InvalidExpression
   | Reassignment
+
+and tuple_concatenation_problem =
+  | MultipleVariadics of { variadic_expressions: Expression.t list }
+  | UnpackingNonTuple of { annotation: Type.t }
 [@@deriving compare, eq, sexp, show, hash]
 
 type invalid_decoration_reason =
@@ -388,6 +392,7 @@ and kind =
       variable: Type.Variable.t;
       base: polymorphism_base_class;
     }
+  | TupleConcatenationError of tuple_concatenation_problem
   (* Additional errors. *)
   | DeadStore of Identifier.t
   | Deobfuscation of Source.t

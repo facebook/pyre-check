@@ -592,6 +592,77 @@ let test_length context =
   ()
 
 
+let test_unpacking context =
+  let assert_type_errors = assert_type_errors ~context in
+  assert_type_errors
+    {|
+      from typing import Tuple
+
+      def foo(x: int, xs: Tuple[str, bool]) -> None:
+
+        y = (x, *xs)
+        reveal_type(y)
+    |}
+    ["Revealed type [-1]: Revealed type for `y` is `Tuple[int, str, bool]`."];
+  assert_type_errors
+    {|
+      from typing import Tuple
+
+      def foo(x: int, xs: str) -> None:
+
+        y = (x, *xs)
+        reveal_type(y)
+    |}
+    [
+      "Unable to concatenate tuple [60]: Expected to unpack a tuple, but got `str`.";
+      "Revealed type [-1]: Revealed type for `y` is `Tuple[int, typing.Any]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Tuple
+
+      def foo() -> None:
+
+        y = (1, *(2, 3), *(4, 5, 6), 7)
+        reveal_type(y)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `y` is `Tuple[typing_extensions.Literal[1], \
+       typing_extensions.Literal[2], typing_extensions.Literal[3], typing_extensions.Literal[4], \
+       typing_extensions.Literal[5], typing_extensions.Literal[6], typing_extensions.Literal[7]]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Tuple
+      from pyre_extensions import TypeVarTuple
+
+      Ts = TypeVarTuple("Ts")
+
+      def foo(x: int, xs: Tuple[str, *Ts, bool]) -> Tuple[int, str, *Ts, bool]:
+        y = (x, *xs)
+        reveal_type(y)
+        return y
+    |}
+    ["Revealed type [-1]: Revealed type for `y` is `typing.Tuple[int, str, *test.Ts, bool]`."];
+  assert_type_errors
+    {|
+      from typing import Tuple
+      from pyre_extensions import TypeVarTuple
+
+      Ts = TypeVarTuple("Ts")
+
+      def foo(xs: Tuple[str, *Ts, bool]) -> None:
+        y = ( *xs, *(2, 3), *xs)
+        reveal_type(y)
+    |}
+    [
+      "Unable to concatenate tuple [60]: Concatenation not yet support for multiple variadic \
+       tuples: `*xs, *xs`.";
+      "Revealed type [-1]: Revealed type for `y` is `typing.Tuple[typing.Any, ...]`.";
+    ];
+  ()
+
+
 let () =
   "tuple"
   >::: [
@@ -599,5 +670,6 @@ let () =
          "literal_access" >:: test_tuple_literal_access;
          "custom_tuple" >:: test_custom_tuple;
          "length" >:: test_length;
+         "unpacking" >:: test_unpacking;
        ]
   |> Test.run
