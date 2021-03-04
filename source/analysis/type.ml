@@ -4596,31 +4596,42 @@ let resolve_aliases ~aliases annotation =
                   mark_recursive_alias_as_visited alias;
                   alias
               | _ -> annotation )
-          | Parametric { name; parameters = [Single parameter] } -> (
-              (* Don't replace unbound generic parameters with Any. Otherwise, a generic alias Foo
-                 (or an import alias for a generic alias) will become Foo[Any] instead of Foo[T]. We
-                 will not find any free type variables in Foo[Any] and simply resolve it as
-                 Foo[Any]. *)
-              match aliases ?replace_unbound_parameters_with_any:(Some false) name with
-              | Some (TypeAlias alias) ->
-                  let instantiated_alias =
-                    instantiate
-                      ~constraints:(function
-                        | Variable _ -> Some parameter
-                        | _ -> None)
-                      alias
-                  in
-                  mark_recursive_alias_as_visited instantiated_alias;
-                  instantiated_alias
-              | _ -> annotation )
-          | Parametric { name = alias_name; parameters = alias_parameters } ->
+          | Parametric { name = alias_name; parameters = given_parameters } ->
+              let deduplicate_preserving_order list =
+                List.fold list ~init:([], Variable.Set.empty) ~f:(fun (sofar, seen_set) x ->
+                    if Variable.Set.mem seen_set x then
+                      sofar, seen_set
+                    else
+                      x :: sofar, Variable.Set.add seen_set x)
+                |> fst
+                |> List.rev
+              in
+              let instantiate ~given_parameters uninstantiated_alias_annotation =
+                let variable_pairs =
+                  Variable.zip_variables_with_parameters
+                    ~parameters:given_parameters
+                    ( Variable.all_free_variables uninstantiated_alias_annotation
+                    |> deduplicate_preserving_order )
+                in
+                match variable_pairs with
+                | Some variable_pairs ->
+                    uninstantiated_alias_annotation
+                    |> Variable.GlobalTransforms.Unary.replace_all (fun given_variable ->
+                           List.find_map variable_pairs ~f:(function
+                               | UnaryPair (variable, replacement)
+                                 when [%equal: Variable.unary_t] variable given_variable ->
+                                   Some replacement
+                               | _ -> None))
+                | _ -> uninstantiated_alias_annotation
+              in
               let resolved =
+                (* Don't replace unbound generic parameters with Any. Otherwise, a generic alias Foo
+                   (or an import alias for a generic alias) will become Foo[Any] instead of Foo[T].
+                   We will not find any free type variables in Foo[Any] and simply resolve it as
+                   Foo[Any]. *)
                 match aliases ?replace_unbound_parameters_with_any:(Some false) alias_name with
-                | Some
-                    (TypeAlias
-                      (Parametric { name = resolved_name; parameters = resolved_parameters }))
-                  when List.length resolved_parameters = List.length alias_parameters ->
-                    Parametric { name = resolved_name; parameters = alias_parameters }
+                | Some (TypeAlias uninstantiated_alias_annotation) ->
+                    instantiate ~given_parameters uninstantiated_alias_annotation
                 | _ -> annotation
               in
               mark_recursive_alias_as_visited resolved;

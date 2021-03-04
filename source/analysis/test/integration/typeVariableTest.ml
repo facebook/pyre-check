@@ -2103,11 +2103,11 @@ let test_generic_aliases context =
     |}
     [
       (* TODO(T78935633): Raise clearer error. *)
-      "Undefined or invalid type [11]: Annotation `Pair` is not defined as a type.";
+      "Invalid type variable [34]: The type variable `Variable[T]` can only be used to annotate \
+       generic classes or functions.";
       "Revealed type [-1]: Revealed type for `y` is `typing.Any`.";
     ];
-  (* More than one free variable in the alias body. Choosing to error on this because otherwise the
-     order of the type parameters can be hard to figure out. *)
+  (* More than one free variable in the alias body. *)
   assert_type_errors
     {|
       from typing import Tuple, TypeVar
@@ -2122,11 +2122,13 @@ let test_generic_aliases context =
       reveal_type(y)
     |}
     [
-      (* TODO(T78935633): Raise error about the extra free variable. *)
-      "Revealed type [-1]: Revealed type for `y` is `Tuple[int, int]`.";
       (* TODO(T78935633): Raise clearer error. *)
-      "Undefined or invalid type [11]: Annotation `Pair` is not defined as a type.";
+      "Invalid type variable [34]: The type variable `Variable[T1]` can only be used to annotate \
+       generic classes or functions.";
+      "Invalid type variable [34]: The type variable `Variable[T2]` can only be used to annotate \
+       generic classes or functions.";
       "Revealed type [-1]: Revealed type for `y` is `typing.Any`.";
+      "Revealed type [-1]: Revealed type for `y` is `Tuple[int, str]`.";
     ];
   (* No free variables in the alias body. *)
   assert_type_errors
@@ -2184,6 +2186,27 @@ let test_generic_aliases context =
       "Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable(foo)[[Named(x, \
        typing.List[typing.Any])], typing.List[typing.Any]]`.";
       "Revealed type [-1]: Revealed type for `test.foo([\"hello\"])` is `typing.List[typing.Any]`.";
+    ];
+  (* This confusing behavior is the downside of allowing multiple type variables. *)
+  assert_type_errors
+    {|
+      from typing import List, Tuple, TypeVar, Union
+
+      T1 = TypeVar("T1")
+      T2 = TypeVar("T2")
+      T3 = TypeVar("T3")
+
+      Alias2Before3 = Tuple[T1, Union[T2, T3], T2]
+      Alias3Before2 = Tuple[T1, Union[T3, T2], T2]
+
+      x: Alias2Before3[int, str, bool]
+      reveal_type(x)
+      y: Alias3Before2[int, str, bool]
+      reveal_type(y)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `Tuple[int, Union[bool, str], str]`.";
+      "Revealed type [-1]: Revealed type for `y` is `Tuple[int, Union[bool, str], str]`.";
     ];
   ()
 

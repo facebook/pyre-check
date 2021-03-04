@@ -612,6 +612,29 @@ let test_resolve_aliases _ =
     ~aliases
     (Type.parametric "Tree" [Single Type.integer])
     (Type.RecursiveType.create ~name:"Tree" ~body:tree_body);
+  let aliases = function
+    | "MyDict" -> Some (Type.TypeAlias (Type.dictionary ~key:variable_t ~value:variable_k))
+    | _ -> None
+  in
+  assert_resolved
+    ~aliases
+    (Type.parametric "MyDict" ![Type.integer; Type.string])
+    (Type.dictionary ~key:Type.integer ~value:Type.string);
+  let aliases = function
+    | "Mix" ->
+        Some
+          (Type.TypeAlias
+             (Type.parametric
+                "Foo"
+                ![variable_t; Type.list variable_v; Type.union [variable_k; variable_v]]))
+    | _ -> None
+  in
+  assert_resolved
+    ~aliases
+    (Type.parametric "Mix" ![Type.integer; Type.string; Type.bool])
+    (Type.parametric
+       "Foo"
+       ![Type.integer; Type.list Type.string; Type.union [Type.bool; Type.string]]);
   ()
 
 
