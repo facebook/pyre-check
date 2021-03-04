@@ -543,6 +543,40 @@ module State (Context : Context) = struct
       | None -> None
   end
 
+  module Callee = struct
+    type base = {
+      expression: Expression.t;
+      resolved_base: Type.t;
+    }
+
+    type attribute = {
+      name: Identifier.t;
+      resolved: Type.t;
+    }
+
+    type t =
+      | Attribute of {
+          base: base;
+          attribute: attribute;
+          expression: Expression.t;
+        }
+      | NonAttribute of {
+          expression: Expression.t;
+          resolved: Type.t;
+        }
+
+    let resolved = function
+      | Attribute { attribute = { resolved; _ }; _ }
+      | NonAttribute { resolved; _ } ->
+          resolved
+
+
+    let expression = function
+      | Attribute { expression; _ }
+      | NonAttribute { expression; _ } ->
+          expression
+  end
+
   let type_of_signature ~resolution signature =
     let global_resolution = Resolution.global_resolution resolution in
     match
@@ -1902,16 +1936,7 @@ module State (Context : Context) = struct
           | _ ->
               { resolution; errors; resolved = Type.Top; resolved_annotation = None; base = None } )
     in
-    let forward_callable
-        ~resolution
-        ~errors
-        ~target
-        ~dynamic
-        ~callee
-        ~resolved_callee
-        ~resolved_callee_base
-        ~arguments
-      =
+    let forward_callable ~resolution ~errors ~target ~dynamic ~callee ~arguments =
       let original_arguments = arguments in
       let resolution, errors, reversed_arguments =
         let forward_argument (resolution, errors, reversed_arguments) argument =
@@ -1976,17 +2001,19 @@ module State (Context : Context) = struct
          operand, the missing attribute error would not have been thrown for the original operator.
          Build up the original error in case the inverse operator does not typecheck. *)
       let potential_missing_operator_error =
-        match resolved_callee, Node.value callee, target with
-        | Type.Top, Expression.Name (Attribute { attribute; _ }), Some target
-          when Option.is_some (inverse_operator attribute)
+        match target, callee with
+        | Some target, Callee.Attribute { attribute = { name; resolved }; _ }
+          when Type.is_top resolved
+               && Option.is_some (inverse_operator name)
                && (not (Type.is_any target))
                && not (Type.is_unbound target) -> (
-            match arguments, operator_name_to_symbol attribute with
+            match arguments, operator_name_to_symbol name with
             | [{ AttributeResolution.Argument.resolved; _ }], Some operator_name ->
                 Some
                   (Error.UnsupportedOperand
                      (Binary { operator_name; left_operand = target; right_operand = resolved }))
-            | _ -> Some (Error.UndefinedAttribute { attribute; origin = Error.Class target }) )
+            | _ -> Some (Error.UndefinedAttribute { attribute = name; origin = Error.Class target })
+            )
         | _ -> None
       in
       let signatures =
@@ -1996,26 +2023,20 @@ module State (Context : Context) = struct
             | Some unpacked -> Some unpacked
             | _ -> find_method ~parent:resolved ~name:"__call__" ~special_method:true
           in
-          let rec get_callables = function
-            | Type.Union annotations ->
-                List.map annotations ~f:callable |> Option.all, arguments, false
-            | Type.Variable { constraints = Type.Variable.Bound parent; _ } -> get_callables parent
-            | Type.Top -> (
-                match Node.value callee, arguments with
-                | ( Expression.Name (Attribute { base; attribute; _ }),
-                    [{ AttributeResolution.Argument.resolved; _ }] ) ->
-                    inverse_operator attribute
+          let rec get_callables callee =
+            match callee with
+            | Callee.Attribute
+                { base = { expression; resolved_base }; attribute = { name; resolved }; _ }
+              when Type.is_top resolved -> (
+                match arguments with
+                | [{ AttributeResolution.Argument.resolved; _ }] ->
+                    inverse_operator name
                     >>= (fun name -> find_method ~parent:resolved ~name ~special_method:false)
                     >>= (fun found_callable ->
-                          let resolved_base =
-                            match resolved_callee_base with
-                            | Some resolved_base -> resolved_base
-                            | None -> resolve_expression_type ~resolution base
-                          in
                           let inverted_arguments =
                             [
                               {
-                                AttributeResolution.Argument.expression = Some base;
+                                AttributeResolution.Argument.expression = Some expression;
                                 resolved = resolved_base;
                                 kind = Positional;
                               };
@@ -2030,9 +2051,25 @@ module State (Context : Context) = struct
                          ~f:(fun (callables, arguments, was_operator_inverted) ->
                            Some callables, arguments, was_operator_inverted)
                 | _ -> None, arguments, false )
-            | annotation -> (callable annotation >>| fun callable -> [callable]), arguments, false
+            | Callee.Attribute { attribute = { resolved; _ }; _ }
+            | Callee.NonAttribute { resolved; _ } -> (
+                match resolved with
+                | Type.Union annotations ->
+                    List.map annotations ~f:callable |> Option.all, arguments, false
+                | Type.Variable { constraints = Type.Variable.Bound parent; _ } ->
+                    let callee =
+                      match callee with
+                      | Callee.Attribute { attribute; base; expression } ->
+                          Callee.Attribute
+                            { base; attribute = { attribute with resolved = parent }; expression }
+                      | Callee.NonAttribute callee ->
+                          Callee.NonAttribute { callee with resolved = parent }
+                    in
+                    get_callables callee
+                | annotation ->
+                    (callable annotation >>| fun callable -> [callable]), arguments, false )
           in
-          get_callables resolved_callee
+          get_callables callee
         in
         Context.Builder.add_callee
           ~global_resolution
@@ -2041,8 +2078,8 @@ module State (Context : Context) = struct
           ~arguments:original_arguments
           ~dynamic
           ~qualifier:Context.qualifier
-          ~callee_type:resolved_callee
-          ~callee;
+          ~callee_type:(Callee.resolved callee)
+          ~callee:(Callee.expression callee);
         let signature_with_unpacked_callable_and_self_argument
             ({ callable; self_argument } as unpacked_callable_and_self_argument)
           =
@@ -2056,8 +2093,8 @@ module State (Context : Context) = struct
           in
           match signature, callable with
           | NotFound _, _ -> (
-              match Node.value callee, callable, arguments with
-              | ( Name (Name.Attribute { base; _ }),
+              match callee, callable, arguments with
+              | ( Callee.Attribute { base = { expression; resolved_base }; _ },
                   { Type.Callable.kind = Type.Callable.Named name; _ },
                   [{ AttributeResolution.Argument.resolved; _ }] )
                 when not was_operator_inverted ->
@@ -2065,14 +2102,9 @@ module State (Context : Context) = struct
                   >>= (fun name -> find_method ~parent:resolved ~name ~special_method:false)
                   >>| (fun ({ callable; self_argument } as unpacked_callable_and_self_argument) ->
                         let arguments =
-                          let resolved_base =
-                            match resolved_callee_base with
-                            | Some resolved_base -> resolved_base
-                            | None -> resolve_expression_type ~resolution base
-                          in
                           [
                             {
-                              AttributeResolution.Argument.expression = Some base;
+                              AttributeResolution.Argument.expression = Some expression;
                               kind = Positional;
                               resolved = resolved_base;
                             };
@@ -2149,7 +2181,7 @@ module State (Context : Context) = struct
                 ~self_argument
                 ~global_resolution
                 ?original_target:target
-                ~callee_expression:callee
+                ~callee_expression:(Callee.expression callee)
                 ~arguments:(Some arguments)
             in
             let emit errors (more_specific_error_location, kind) =
@@ -2178,6 +2210,7 @@ module State (Context : Context) = struct
           { resolution; errors; resolved; resolved_annotation = None; base = None }
       | _ ->
           let errors =
+            let resolved_callee = Callee.resolved callee in
             match resolved_callee, potential_missing_operator_error with
             | Type.Top, Some kind -> emit_error ~errors ~location ~kind
             | Parametric { name = "type"; parameters = [Single Any] }, _
@@ -2295,17 +2328,13 @@ module State (Context : Context) = struct
               base = Some (Super resolved);
             }
         | None ->
-            let { Resolved.resolved; base; _ } =
-              forward_expression ~resolution ~expression:callee
-            in
+            let { Resolved.resolved; _ } = forward_expression ~resolution ~expression:callee in
             forward_callable
               ~resolution
               ~errors:[]
               ~target:None
-              ~callee
+              ~callee:(Callee.NonAttribute { expression = callee; resolved })
               ~dynamic:false
-              ~resolved_callee:resolved
-              ~resolved_callee_base:(Resolved.resolved_base_type base)
               ~arguments )
     | Call
         {
@@ -2489,66 +2518,91 @@ module State (Context : Context) = struct
         {
           callee =
             {
-              Node.value = Name (Name.Attribute { attribute = "assertIsNotNone" | "assertTrue"; _ });
+              Node.value =
+                Name
+                  (Name.Attribute
+                    { attribute = ("assertIsNotNone" | "assertTrue") as attribute; base; _ });
               _;
             } as callee;
           arguments =
             ( [{ Call.Argument.value = expression; _ }]
             | [{ Call.Argument.value = expression; _ }; _] ) as arguments;
         } ->
-        let resolution, resolved_callee, errors, base =
+        let resolution, resolved_callee, errors, resolved_base =
           let resolution, assume_errors =
             let post_resolution, errors =
               forward_statement ~resolution ~statement:(Statement.assume expression)
             in
             Option.value post_resolution ~default:resolution, errors
           in
-          let { Resolved.resolution; resolved; errors = callee_errors; base; _ } =
+          let { Resolved.resolution; resolved; errors = callee_errors; base = resolved_base; _ } =
             forward_expression ~resolution ~expression:callee
           in
-          resolution, resolved, List.append assume_errors callee_errors, base
+          resolution, resolved, List.append assume_errors callee_errors, resolved_base
         in
         forward_callable
           ~resolution
           ~errors
           ~target:None
           ~dynamic:true
-          ~callee
-          ~resolved_callee
-          ~resolved_callee_base:(Resolved.resolved_base_type base)
+          ~callee:
+            (Callee.Attribute
+               {
+                 base =
+                   {
+                     expression = base;
+                     resolved_base =
+                       Resolved.resolved_base_type resolved_base |> Option.value ~default:Type.Top;
+                   };
+                 attribute = { name = attribute; resolved = resolved_callee };
+                 expression = callee;
+               })
           ~arguments
     | Call
         {
           callee =
-            { Node.value = Name (Name.Attribute { attribute = "assertFalse"; _ }); _ } as callee;
+            {
+              Node.value = Name (Name.Attribute { attribute = "assertFalse" as attribute; base; _ });
+              _;
+            } as callee;
           arguments =
             ( [{ Call.Argument.value = expression; _ }]
             | [{ Call.Argument.value = expression; _ }; _] ) as arguments;
         } ->
-        let resolution, resolved_callee, errors, base =
+        let resolution, resolved_callee, errors, resolved_base =
           let resolution, assume_errors =
             let post_resolution, errors =
               forward_statement ~resolution ~statement:(Statement.assume (negate expression))
             in
             Option.value post_resolution ~default:resolution, errors
           in
-          let { Resolved.resolution; resolved; errors = callee_errors; base; _ } =
+          let { Resolved.resolution; resolved; errors = callee_errors; base = resolved_base; _ } =
             forward_expression ~resolution ~expression:callee
           in
-          resolution, resolved, List.append assume_errors callee_errors, base
+          resolution, resolved, List.append assume_errors callee_errors, resolved_base
         in
         forward_callable
           ~resolution
           ~errors
           ~target:None
           ~dynamic:true
-          ~callee
-          ~resolved_callee
-          ~resolved_callee_base:(Resolved.resolved_base_type base)
+          ~callee:
+            (Callee.Attribute
+               {
+                 base =
+                   {
+                     expression = base;
+                     resolved_base =
+                       Resolved.resolved_base_type resolved_base |> Option.value ~default:Type.Top;
+                   };
+                 attribute = { name = attribute; resolved = resolved_callee };
+                 expression = callee;
+               })
           ~arguments
     | Call call ->
         let { Call.callee; arguments } = AnnotatedCall.redirect_special_calls ~resolution call in
-        let { Resolved.errors = callee_errors; resolved = resolved_callee; base; _ } =
+        let { Resolved.errors = callee_errors; resolved = resolved_callee; base = resolved_base; _ }
+          =
           forward_expression ~resolution ~expression:callee
         in
         let { Resolved.resolution = updated_resolution; resolved; errors = updated_errors; _ } =
@@ -2556,7 +2610,7 @@ module State (Context : Context) = struct
             if Type.is_meta resolved_callee then
               Some (Type.single_parameter resolved_callee), false
             else
-              match base with
+              match resolved_base with
               | Some (Resolved.Instance resolved) when not (Type.is_top resolved) ->
                   Some resolved, true
               | Some (Resolved.Class resolved) when not (Type.is_top resolved) ->
@@ -2564,6 +2618,23 @@ module State (Context : Context) = struct
               | Some (Resolved.Super resolved) when not (Type.is_top resolved) ->
                   Some resolved, false
               | _ -> None, false
+          in
+          let create_callee resolved =
+            match Node.value callee with
+            | Expression.Name (Name.Attribute { base; attribute; _ }) ->
+                Callee.Attribute
+                  {
+                    base =
+                      {
+                        expression = base;
+                        resolved_base =
+                          Resolved.resolved_base_type resolved_base
+                          |> Option.value ~default:Type.Top;
+                      };
+                    attribute = { name = attribute; resolved = resolved_callee };
+                    expression = callee;
+                  }
+            | _ -> Callee.NonAttribute { expression = callee; resolved }
           in
           match resolved_callee with
           | Type.Parametric { name = "type"; parameters = [Single (Type.Union resolved_callees)] }
@@ -2575,9 +2646,7 @@ module State (Context : Context) = struct
                   ~errors:[]
                   ~target
                   ~dynamic
-                  ~callee
-                  ~resolved_callee:inner_resolved_callee
-                  ~resolved_callee_base:(Resolved.resolved_base_type base)
+                  ~callee:(create_callee inner_resolved_callee)
                   ~arguments
                 |> fun { resolution; resolved; errors = new_errors; _ } ->
                 resolution, List.append new_errors errors, resolved :: annotations
@@ -2602,9 +2671,7 @@ module State (Context : Context) = struct
                 ~errors:callee_errors
                 ~target
                 ~dynamic
-                ~callee
-                ~resolved_callee
-                ~resolved_callee_base:(Resolved.resolved_base_type base)
+                ~callee:(create_callee resolved_callee)
                 ~arguments
         in
         {
@@ -2654,12 +2721,22 @@ module State (Context : Context) = struct
             with
             | Some resolved ->
                 let callee =
-                  {
-                    Node.location;
-                    value =
-                      Expression.Name
-                        (Name.Attribute { base = right; attribute = "__contains__"; special = true });
-                  }
+                  let { Resolved.resolved = resolved_base; _ } =
+                    forward_expression ~resolution ~expression:right
+                  in
+                  Callee.Attribute
+                    {
+                      base = { expression = right; resolved_base };
+                      attribute = { name = "__contains__"; resolved };
+                      expression =
+                        {
+                          Node.location;
+                          value =
+                            Expression.Name
+                              (Name.Attribute
+                                 { base = right; attribute = "__contains__"; special = true });
+                        };
+                    }
                 in
                 forward_callable
                   ~resolution
@@ -2667,8 +2744,6 @@ module State (Context : Context) = struct
                   ~target:(Some instantiated)
                   ~dynamic:true
                   ~callee
-                  ~resolved_callee:resolved
-                  ~resolved_callee_base:None
                   ~arguments:[{ Call.Argument.name = None; value = left }]
             | None -> (
                 match
@@ -2680,17 +2755,19 @@ module State (Context : Context) = struct
                     "__iter__"
                 with
                 | Some iter_callable ->
-                    let forward_callable =
-                      let callee =
+                    let create_callee resolved =
+                      Callee.NonAttribute
                         {
-                          Node.location;
-                          value =
-                            Expression.Name
-                              (Name.Attribute
-                                 { base = right; attribute = "__iter__"; special = true });
+                          expression =
+                            {
+                              Node.location;
+                              value =
+                                Expression.Name
+                                  (Name.Attribute
+                                     { base = right; attribute = "__iter__"; special = true });
+                            };
+                          resolved;
                         }
-                      in
-                      forward_callable ~dynamic:true ~callee
                     in
                     (* Since we can't call forward_expression with the general type (we don't have a
                        good way of saying "synthetic expression with type T", simulate what happens
@@ -2698,7 +2775,7 @@ module State (Context : Context) = struct
                     let forward_method
                         ~method_name
                         ~arguments
-                        { Resolved.resolution; resolved = parent; errors; base; _ }
+                        { Resolved.resolution; resolved = parent; errors; _ }
                       =
                       Type.split parent
                       |> fst
@@ -2706,20 +2783,20 @@ module State (Context : Context) = struct
                       >>= (fun class_name -> resolve_method class_name parent method_name)
                       >>| fun callable ->
                       forward_callable
+                        ~dynamic:true
                         ~resolution
                         ~errors
                         ~target:(Some parent)
-                        ~resolved_callee:callable
-                        ~resolved_callee_base:(Resolved.resolved_base_type base)
+                        ~callee:(create_callee callable)
                         ~arguments:
                           (List.map arguments ~f:(fun value -> { Call.Argument.name = None; value }))
                     in
                     forward_callable
+                      ~dynamic:true
                       ~resolution
                       ~errors
                       ~target:(Some instantiated)
-                      ~resolved_callee:iter_callable
-                      ~resolved_callee_base:None
+                      ~callee:(create_callee iter_callable)
                       ~arguments:[]
                     |> forward_method ~method_name:"__next__" ~arguments:[]
                     >>= forward_method ~method_name:"__eq__" ~arguments:[left]
