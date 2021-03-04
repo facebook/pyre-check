@@ -788,7 +788,11 @@ module Variable : sig
       val create : ?variance:Record.Variable.variance -> string -> t
 
       val parse_instance_annotation
-        :  variable_parameter_annotation:Expression.t ->
+        :  create_type:
+             (aliases:(?replace_unbound_parameters_with_any:bool -> Primitive.t -> alias option) ->
+             Expression.t ->
+             type_t) ->
+        variable_parameter_annotation:Expression.t ->
         keywords_parameter_annotation:Expression.t ->
         aliases:(?replace_unbound_parameters_with_any:bool -> Primitive.t -> alias option) ->
         t option

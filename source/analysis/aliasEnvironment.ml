@@ -440,6 +440,7 @@ module ReadOnly = struct
       delocalize variable_parameter_annotation, delocalize keywords_parameter_annotation
     in
     Type.Variable.Variadic.Parameters.parse_instance_annotation
+      ~create_type:Type.create
       ~aliases:(fun ?replace_unbound_parameters_with_any:_ name ->
         get_alias environment ?dependency name)
       ~variable_parameter_annotation

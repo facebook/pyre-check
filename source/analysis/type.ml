@@ -3499,8 +3499,6 @@ let dequalify_identifier map identifier =
   Reference.create identifier |> dequalify_reference map |> Reference.show
 
 
-let create_type = create
-
 module Variable : sig
   module Namespace : sig
     include module type of struct
@@ -3598,7 +3596,11 @@ module Variable : sig
       val create : ?variance:Record.Variable.variance -> string -> t
 
       val parse_instance_annotation
-        :  variable_parameter_annotation:Expression.t ->
+        :  create_type:
+             (aliases:(?replace_unbound_parameters_with_any:bool -> Primitive.t -> alias option) ->
+             Expression.t ->
+             type_t) ->
+        variable_parameter_annotation:Expression.t ->
         keywords_parameter_annotation:Expression.t ->
         aliases:(?replace_unbound_parameters_with_any:bool -> Primitive.t -> alias option) ->
         t option
@@ -4001,6 +4003,7 @@ end = struct
 
 
       let parse_instance_annotation
+          ~create_type
           ~variable_parameter_annotation
           ~keywords_parameter_annotation
           ~aliases
@@ -4030,8 +4033,8 @@ end = struct
                && Identifier.equal keywords_parameter_attribute (component_name KeywordArguments)
           -> (
             match
-              ( create_type variable_parameter_base ~aliases,
-                create_type keywords_parameter_base ~aliases )
+              ( create_type ~aliases variable_parameter_base,
+                create_type ~aliases keywords_parameter_base )
             with
             | Primitive positionals_base, Primitive keywords_base
               when Identifier.equal positionals_base keywords_base ->
