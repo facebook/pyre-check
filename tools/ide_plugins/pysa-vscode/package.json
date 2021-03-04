@@ -11,7 +11,9 @@
   "keywords": [
     "python",
     "pysa",
-    "typechecking"
+    "static analysis",
+    "taint flow analysis",
+    "security"
   ],
   "main": "./out/main",
   "activationEvents": [
