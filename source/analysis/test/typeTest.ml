@@ -698,7 +698,12 @@ let test_resolve_aliases _ =
   assert_resolved
     ~aliases
     (Type.Primitive "FloatTensor")
-    (Type.parametric "Tensor" [Single Type.float; Single Type.Any]);
+    (Type.parametric
+       "Tensor"
+       [
+         Single Type.float;
+         Unpacked (Type.OrderedTypes.Concatenation.create_unbounded_unpackable Type.Any);
+       ]);
   ()
 
 
@@ -2584,7 +2589,8 @@ let test_zip_variables_with_parameters _ =
     (Some
        [
          {
-           variable_pair = Type.Variable.TupleVariadicPair (variadic, Concrete [Type.Any]);
+           variable_pair =
+             Type.Variable.TupleVariadicPair (variadic, Type.Variable.Variadic.Tuple.any);
            received_parameter =
              Single
                (Type.parametric

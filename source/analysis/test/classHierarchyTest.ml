@@ -580,7 +580,7 @@ let test_instantiate_successors_parameters _ =
        ]);
   assert_equal
     (instantiate_successors_parameters variadic_order ~source:Type.Bottom ~target:"Base")
-    (Some [Single Any]);
+    (Some [Unpacked (Type.OrderedTypes.Concatenation.create_unbounded_unpackable Type.Any)]);
   assert_equal
     (instantiate_successors_parameters
        variadic_order

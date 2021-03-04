@@ -172,14 +172,16 @@ module Record = struct
 
       let create_unbounded_unpackable annotation = UnboundedElements annotation
 
-      let create ?(prefix = []) ?(suffix = []) variadic =
-        { prefix; middle = create_unpackable variadic; suffix }
+      let create_from_unpackable ?(prefix = []) ?(suffix = []) unpackable =
+        { prefix; middle = unpackable; suffix }
 
 
-      let create_from_unpackable = function
-        | Variadic variadic -> create variadic
-        | UnboundedElements annotation ->
-            { prefix = []; middle = UnboundedElements annotation; suffix = [] }
+      let create ?prefix ?suffix variadic =
+        create_from_unpackable ?prefix ?suffix (Variadic variadic)
+
+
+      let create_from_unbounded_element ?prefix ?suffix annotation =
+        create_from_unpackable ?prefix ?suffix (UnboundedElements annotation)
 
 
       let pp_unpackable ~pp_type format = function
@@ -255,7 +257,7 @@ module Record = struct
     [@@deriving compare, eq, sexp, show, hash]
 
     let create_unbounded_concatenation annotation =
-      Concatenation (Concatenation.create_from_unpackable (UnboundedElements annotation))
+      Concatenation (Concatenation.create_from_unbounded_element annotation)
 
 
     (* This represents the splitting of two ordered types to match each other in length. The prefix
@@ -2555,9 +2557,7 @@ module OrderedTypes = struct
             | Some prefix, Some suffix -> Some (Concatenation { prefix; middle; suffix })
             | _ -> None )
         | _ -> None )
-    | _ ->
-        (* TODO(T84854853): Proper default for variadic tuple. *)
-        None
+    | _ -> None
 
 
   let to_parameters = function
@@ -4043,8 +4043,7 @@ end = struct
 
       let synthetic_class_name_for_error = "$synthetic_class_for_variadic_error"
 
-      (* TODO(T84854853): Add a better Any using unbound tuples. *)
-      let any = OrderedTypes.Concrete [Any]
+      let any = OrderedTypes.create_unbounded_concatenation Any
 
       let name { name; _ } = name
 

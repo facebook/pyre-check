@@ -555,8 +555,16 @@ let test_multiple_variable_solution _ =
     (Some
        [
          TupleVariadicPair
-           (variadic, Type.OrderedTypes.Concrete [Type.integer; Type.Any; Type.string]);
-         TupleVariadicPair (variadic2, Type.OrderedTypes.Concrete [Type.Any]);
+           ( variadic,
+             Concatenation
+               (Type.OrderedTypes.Concatenation.create_from_unbounded_element
+                  ~prefix:[Type.integer]
+                  ~suffix:[Type.string]
+                  Type.Any) );
+         TupleVariadicPair
+           ( variadic2,
+             Concatenation (Type.OrderedTypes.Concatenation.create_from_unbounded_element Type.Any)
+           );
        ]);
   ()
 

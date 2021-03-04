@@ -3185,7 +3185,7 @@ let test_variadic_classes context =
     [
       "Revealed type [-1]: Revealed type for `x` is `Tensor[float, typing_extensions.Literal[10], \
        typing_extensions.Literal[20]]`.";
-      "Revealed type [-1]: Revealed type for `y` is `Tensor[float, typing.Any]`.";
+      "Revealed type [-1]: Revealed type for `y` is `Tensor[float, *Tuple[typing.Any, ...]]`.";
     ];
   assert_type_errors
     {|
@@ -3206,6 +3206,55 @@ let test_variadic_classes context =
         reveal_type(y)
      |}
     ["Revealed type [-1]: Revealed type for `y` is `typing_extensions.Literal[20]`."];
+  assert_type_errors
+    {|
+      from typing import Generic, Tuple, TypeVar
+      from pyre_extensions import TypeVarTuple
+      from typing_extensions import Literal as L
+
+      T = TypeVar("T")
+      Ts = TypeVarTuple("Ts")
+
+      class Tensor(Generic[T, *Ts]): ...
+
+      # pyre-ignore[24]: Generic type `Tensor` expects at least 1 type parameter.
+      def accept_arbitrary_tensor(t: Tensor) -> Tensor: ...
+
+      def bar() -> None:
+        x: Tensor[float, L[10], L[20]]
+        y = accept_arbitrary_tensor(x)
+        reveal_type(y)
+
+        # pyre-ignore[24]: Generic type `Tensor` expects at least 1 type parameter.
+        no_parameters: Tensor
+        accept_arbitrary_tensor(no_parameters)
+     |}
+    ["Revealed type [-1]: Revealed type for `y` is `Tensor[typing.Any, *Tuple[typing.Any, ...]]`."];
+  assert_type_errors
+    {|
+      from typing import Generic, Tuple, TypeVar
+      from pyre_extensions import TypeVarTuple
+      from typing_extensions import Literal as L
+
+      T = TypeVar("T")
+      Ts = TypeVarTuple("Ts")
+
+      class Tensor(Generic[T, *Ts]): ...
+
+      def strip_last(x: Tensor[int, *Ts, int]) -> Tensor[int, *Ts]: ...
+
+      def bar() -> None:
+        invalid: Tensor[int, L[10], str]
+        y = strip_last(invalid)
+        reveal_type(y)
+     |}
+    [
+      "Incomplete type [37]: Type `Tensor[int, *test.Ts]` inferred for `y` is incomplete, add an \
+       explicit annotation.";
+      "Incompatible parameter type [6]: Expected `Tensor[int, *test.Ts, int]` for 1st positional \
+       only parameter to call `strip_last` but got `Tensor[int, int, str]`.";
+      "Revealed type [-1]: Revealed type for `y` is `Tensor[int, *Tuple[typing.Any, ...]]`.";
+    ];
   ()
 
 

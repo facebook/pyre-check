@@ -69,12 +69,6 @@ module Record : sig
 
       val unpack_public_name : string
 
-      val create
-        :  ?prefix:'annotation list ->
-        ?suffix:'annotation list ->
-        'annotation Variable.RecordVariadic.Tuple.record ->
-        'annotation t
-
       val pp_unpackable
         :  pp_type:(Format.formatter -> 'annotation -> unit) ->
         Format.formatter ->
@@ -95,7 +89,23 @@ module Record : sig
 
       val is_fully_unbounded : 'annotation t -> bool
 
-      val create_from_unpackable : 'annotation record_unpackable -> 'annotation t
+      val create_from_unpackable
+        :  ?prefix:'annotation list ->
+        ?suffix:'annotation list ->
+        'annotation record_unpackable ->
+        'annotation t
+
+      val create
+        :  ?prefix:'annotation list ->
+        ?suffix:'annotation list ->
+        'annotation Variable.RecordVariadic.Tuple.record ->
+        'annotation t
+
+      val create_from_unbounded_element
+        :  ?prefix:'annotation list ->
+        ?suffix:'annotation list ->
+        'annotation ->
+        'annotation t
     end
 
     type 'annotation record =

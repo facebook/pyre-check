@@ -40,10 +40,7 @@ type callable_parameter_interval =
    upper bound.
 
    In other words, the type lattice is just Top, Bottom, and individual tuples. The `join` of
-   unequal types is Top and the `meet` of unequal types is Bottom.
-
-   TODO(T84854853): Support unbounded tuples as well. The Top and Bottom should ideally be
-   Tuple[Any, ...]. *)
+   unequal types is Top and the `meet` of unequal types is Bottom. *)
 type tuple_interval =
   | TopTuple
   | BottomTuple
