@@ -1245,7 +1245,10 @@ let rec messages ~concise ~signature location kind =
         | CallableParameters actual ->
             Format.asprintf "callable parameters `%a`" Type.Callable.pp_parameters actual
         | Unpacked actual ->
-            Format.asprintf "variadic `%a`" Type.OrderedTypes.Concatenation.pp_unpackable actual
+            Format.asprintf
+              "variadic `%a`"
+              (Type.OrderedTypes.Concatenation.pp_unpackable ~pp_type:Type.pp)
+              actual
       in
       [Format.asprintf "%s, but a %s was given for generic type %s." expected actual name]
   | InvalidTypeVariable { annotation; origin } when concise -> (

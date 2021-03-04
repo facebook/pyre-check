@@ -101,7 +101,9 @@ let decorate
                         Expression.Parameter.create
                           ~location
                           ~annotation:
-                            (Type.OrderedTypes.to_starred_annotation_expression concatenation)
+                            (Type.OrderedTypes.to_starred_annotation_expression
+                               ~expression:Type.expression
+                               concatenation)
                           ~name:"*args"
                           ()
                     | Type.Callable.Parameter.Keywords annotation ->

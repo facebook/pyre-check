@@ -153,6 +153,7 @@ module Record = struct
 
       type 'annotation record_unpackable =
         | Variadic of 'annotation Variable.RecordVariadic.Tuple.record
+        | UnboundedElements of 'annotation
       [@@deriving compare, eq, sexp, show, hash]
 
       (* We guarantee that there is exactly one top-level unpacked variadic in this concatenation.
@@ -173,11 +174,16 @@ module Record = struct
         { prefix; middle = create_unpackable variadic; suffix }
 
 
-      let create_from_unpackable (Variadic variadic) = create variadic
+      let create_from_unpackable = function
+        | Variadic variadic -> create variadic
+        | UnboundedElements annotation ->
+            { prefix = []; middle = UnboundedElements annotation; suffix = [] }
 
-      let pp_unpackable format = function
+
+      let pp_unpackable ~pp_type format = function
         | Variadic variadic ->
             Format.fprintf format "*%a" Variable.RecordVariadic.Tuple.pp_concise variadic
+        | UnboundedElements annotation -> Format.fprintf format "*Tuple[%a, ...]" pp_type annotation
 
 
       let pp_concatenation format { prefix; middle; suffix } ~pp_type =
@@ -186,18 +192,32 @@ module Record = struct
           "%s%s%a%s%s"
           (show_type_list ~pp_type prefix)
           (if List.is_empty prefix then "" else ", ")
-          pp_unpackable
+          (pp_unpackable ~pp_type)
           middle
           (if List.is_empty suffix then "" else ", ")
           (show_type_list ~pp_type suffix)
 
 
+      (* TODO(T84854853):. *)
       let extract_sole_variadic = function
         | { prefix = []; middle = Variadic variadic; suffix = [] } -> Some variadic
         | _ -> None
 
 
-      let unpackable_to_expression ~location (Variadic variadic) =
+      let unpackable_to_expression ~expression ~location unpackable =
+        let argument =
+          match unpackable with
+          | Variadic variadic ->
+              Expression.Name
+                (create_name
+                   ~location
+                   (Format.asprintf "%a" Variable.RecordVariadic.Tuple.pp_concise variadic))
+          | UnboundedElements annotation ->
+              get_item_call
+                ~location
+                "typing.Tuple"
+                [expression annotation; Expression.Ellipsis |> Node.create ~location]
+        in
         Expression.Call
           {
             callee =
@@ -214,18 +234,7 @@ module Record = struct
                          special = true;
                        });
               };
-            arguments =
-              [
-                {
-                  name = None;
-                  value =
-                    Expression.Name
-                      (create_name
-                         ~location
-                         (Format.asprintf "%a" Variable.RecordVariadic.Tuple.pp_concise variadic))
-                    |> Node.create ~location;
-                };
-              ];
+            arguments = [{ name = None; value = argument |> Node.create ~location }];
           }
         |> Node.create ~location
     end
@@ -1340,7 +1349,11 @@ let pp_parameters ~pp_type format = function
         | CallableParameters parameters ->
             Format.fprintf format "%s" (show_callable_parameters parameters ~pp_type)
         | Unpacked unpackable ->
-            Format.fprintf format "%a" Record.OrderedTypes.Concatenation.pp_unpackable unpackable
+            Format.fprintf
+              format
+              "%a"
+              (Record.OrderedTypes.Concatenation.pp_unpackable ~pp_type)
+              unpackable
       in
       Format.pp_print_list ~pp_sep:(fun format () -> Format.fprintf format ", ") s format parameters
 
@@ -1653,7 +1666,7 @@ let rec expression annotation =
       { Record.OrderedTypes.Concatenation.prefix; middle = unpackable; suffix }
     =
     List.map ~f:expression prefix
-    @ [Record.OrderedTypes.Concatenation.unpackable_to_expression ~location unpackable]
+    @ [Record.OrderedTypes.Concatenation.unpackable_to_expression ~expression ~location unpackable]
     @ List.map ~f:expression suffix
   in
   let callable_parameters_expression = function
@@ -1817,7 +1830,10 @@ let rec expression annotation =
             | Record.Parameter.Single single -> expression single
             | CallableParameters parameters -> callable_parameters_expression parameters
             | Unpacked unpackable ->
-                Record.OrderedTypes.Concatenation.unpackable_to_expression ~location unpackable
+                Record.OrderedTypes.Concatenation.unpackable_to_expression
+                  ~expression
+                  ~location
+                  unpackable
           in
           match parameters with
           | parameters -> List.map parameters ~f:expression_of_parameter
@@ -1994,6 +2010,8 @@ module Transform = struct
                   Record.Parameter.Single (visit_annotation single ~state)
               | CallableParameters parameters -> CallableParameters (visit_parameters parameters)
               | Unpacked (Variadic _) as unpacked -> unpacked
+              | Unpacked (UnboundedElements annotation) ->
+                  Unpacked (UnboundedElements (visit_annotation annotation ~state))
             in
             Parametric { name; parameters = List.map parameters ~f:visit }
         | RecursiveType { name; body } ->
@@ -2533,9 +2551,9 @@ module OrderedTypes = struct
         @ List.map suffix ~f:(fun element -> Parameter.Single element)
 
 
-  let to_starred_annotation_expression = function
+  let to_starred_annotation_expression ~expression = function
     | { Concatenation.prefix = []; middle; suffix = [] } ->
-        Concatenation.unpackable_to_expression ~location:Location.any middle
+        Concatenation.unpackable_to_expression ~expression ~location:Location.any middle
     | concatenation ->
         parametric Concatenation.unpack_public_name (to_parameters (Concatenation concatenation))
         |> expression
@@ -2610,6 +2628,7 @@ let parameters_from_unpacked_annotation annotation ~variable_aliases =
         | _ -> None )
     | _ -> None
   in
+  (* TODO(T84854853):. *)
   match annotation with
   | Parametric { name; parameters = [Single (Primitive _ as element)] }
     when Identifier.equal name Record.OrderedTypes.Concatenation.unpack_public_name ->

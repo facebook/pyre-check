@@ -2099,7 +2099,7 @@ let test_starred_annotation_expression _ =
       ~printer:Expression.show
       ~cmp:(fun left right -> Expression.location_insensitive_compare left right = 0)
       (parse_single_expression ~coerce_special_methods:true expression)
-      (Type.OrderedTypes.to_starred_annotation_expression concatenation)
+      (Type.OrderedTypes.to_starred_annotation_expression ~expression:Type.expression concatenation)
   in
   let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
   assert_starred_expression

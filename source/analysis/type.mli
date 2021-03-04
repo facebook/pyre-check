@@ -75,7 +75,11 @@ module Record : sig
         'annotation Variable.RecordVariadic.Tuple.record ->
         'annotation t
 
-      val pp_unpackable : Format.formatter -> 'annotation record_unpackable -> unit
+      val pp_unpackable
+        :  pp_type:(Format.formatter -> 'annotation -> unit) ->
+        Format.formatter ->
+        'annotation record_unpackable ->
+        unit
 
       val create_unpackable
         :  'annotation Variable.RecordVariadic.Tuple.record ->
@@ -664,7 +668,10 @@ module OrderedTypes : sig
 
   val to_parameters : t -> Parameter.t list
 
-  val to_starred_annotation_expression : type_t Concatenation.t -> Expression.t
+  val to_starred_annotation_expression
+    :  expression:(type_t -> Expression.t) ->
+    type_t Concatenation.t ->
+    Expression.t
 
   val concatenation_from_unpack_expression
     :  parse_annotation:(Expression.t -> type_t) ->
