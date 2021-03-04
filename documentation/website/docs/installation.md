@@ -65,8 +65,7 @@ $ ./scripts/run-python-tests.sh
 When installing and running `pyre` from PyPi, the entry point to the executable is actually `client/pyre.py`. To be able to run this file from anywhere, add the `pyre-check` directory to `PYTHONPATH` and subsequently assign `client.pyre` an alias to invoke the binary from anywhere
 
 ```bash
-$ echo "export PYTHONPATH=/path/to/pyre-check" >> ~/.bashrc
-$ echo "alias pyre='python -m client.pyre'" >> ~/.bashrc
+$ echo "alias pyre='PYTHONPATH=\"/path/to/pyre-check:\$PYTHONPATH\" python -m client.pyre'" >> ~/.bashrc
 $ source ~/.bashrc
 ```
 You should be able to open a new shell and run `pyre -h` now, confirming `pyre` was set-up correctly. Any changes made to the Pyre Python client code should be immediately observable the next time you invoke `pyre`
