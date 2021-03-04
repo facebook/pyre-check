@@ -3024,6 +3024,95 @@ let test_variadic_callables context =
        ...]` but must be a definite tuple to be included in variadic type variable `int, *test.Ts, \
        str`.";
     ];
+  assert_type_errors
+    {|
+      from typing import Callable, Tuple, TypeVar
+      from pyre_extensions import TypeVarTuple
+
+      Ts = TypeVarTuple("Ts")
+
+      def strip_int_parameter(f: Callable[[int, *Ts], None]) -> Callable[[*Ts], None]: ...
+
+      def foo(x: int, y: str, z: bool) -> None: ...
+
+      def baz() -> None:
+       	f = strip_int_parameter(foo)
+       	reveal_type(f)
+
+       	# Valid
+       	f("hello", True)
+
+       	# Error
+       	f("hello")
+     |}
+    [
+      "Revealed type [-1]: Revealed type for `f` is `typing.Callable[[str, bool], None]`.";
+      "Missing argument [20]: PositionalOnly call expects argument in position 1.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Callable, Tuple, TypeVar
+      from pyre_extensions import TypeVarTuple
+
+      Ts = TypeVarTuple("Ts")
+
+      def strip_int_parameter(f: Callable[[int, *Ts], None]) -> Callable[[*Ts], None]: ...
+
+      def no_leading_int(y: str, z: bool) -> None: ...
+
+      def foo() -> None:
+       	strip_int_parameter(no_leading_int)
+     |}
+    [
+      "Incompatible parameter type [6]: Expected `typing.Callable[[Variable(int, *test.Ts)], \
+       None]` for 1st positional only parameter to call `strip_int_parameter` but got \
+       `typing.Callable(no_leading_int)[[Named(y, str), Named(z, bool)], None]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Callable, Generic, Tuple, TypeVar
+      from pyre_extensions import TypeVarTuple
+
+      T = TypeVar("T")
+      Ts = TypeVarTuple("Ts")
+
+      class Tensor(Generic[*Ts]):
+        def some_method(self, *args: *Ts) -> Tuple[*Ts]: ...
+
+      def bar() -> None:
+        x: Tensor[int, str]
+        y = x.some_method(1, "hello")
+        reveal_type(y)
+
+        x.some_method("invalid")
+     |}
+    [
+      "Revealed type [-1]: Revealed type for `y` is `Tuple[int, str]`.";
+      "Missing argument [20]: Call `Tensor.some_method` expects argument in position 2.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Callable, Tuple, TypeVar
+      from pyre_extensions import TypeVarTuple
+
+      Ts = TypeVarTuple("Ts")
+      T = TypeVar("T")
+
+      def apply(f: Callable[[*Ts], T], *args: *Ts) -> T: ...
+
+      def foo(x: int, y: str, z: bool) -> str: ...
+
+      def bar(a: int, b: str, c: bool) -> None:
+        y = apply(foo, a, b, c)
+        reveal_type(y)
+
+        apply(foo, a, b)
+     |}
+    [
+      "Revealed type [-1]: Revealed type for `y` is `str`.";
+      "Invalid argument [32]: Argument types `int, str` are not compatible with expected variadic \
+       elements `*test.Ts`.";
+    ];
   ()
 
 

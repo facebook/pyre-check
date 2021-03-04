@@ -118,7 +118,66 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
     let open Callable in
     let solve implementation ~initial_constraints =
       try
-        let rec solve_parameters ~left_parameters ~right_parameters constraints =
+        let rec solve_parameters_against_tuple_variadic
+            ~is_lower_bound
+            ~concretes
+            ~ordered_type
+            ~remaining_parameters
+          =
+          let before_first_keyword, after_first_keyword_inclusive =
+            let is_not_keyword_only = function
+              | Type.Callable.Parameter.Keywords _
+              | Type.Callable.Parameter.KeywordOnly _ ->
+                  false
+              | _ -> true
+            in
+            List.split_while concretes ~f:is_not_keyword_only
+          in
+          let solve_remaining_parameters constraints =
+            if is_lower_bound then
+              solve_parameters
+                ~left_parameters:after_first_keyword_inclusive
+                ~right_parameters:remaining_parameters
+                constraints
+            else
+              solve_parameters
+                ~left_parameters:remaining_parameters
+                ~right_parameters:after_first_keyword_inclusive
+                constraints
+          in
+          let add_bound concretes =
+            let left, right =
+              if is_lower_bound then
+                concretes, ordered_type
+              else
+                ordered_type, concretes
+            in
+            solve_ordered_types_less_or_equal order ~left ~right ~constraints
+          in
+          let ordered_type_from_non_keyword_parameters =
+            let extract_component = function
+              | Type.Callable.Parameter.PositionalOnly { annotation; _ } ->
+                  Some (Type.OrderedTypes.Concrete [annotation])
+              | Named { annotation; _ } when not is_lower_bound ->
+                  (* Named arguments can be called positionally, but positionals can't be called
+                     with a name *)
+                  Some (Type.OrderedTypes.Concrete [annotation])
+              | Variable (Concatenation concatenation) ->
+                  Some (Type.OrderedTypes.Concatenation concatenation)
+              | _ -> None
+            in
+            let concatenate left right =
+              left >>= fun left -> Type.OrderedTypes.concatenate ~left ~right
+            in
+            List.map before_first_keyword ~f:extract_component
+            |> Option.all
+            >>= List.fold ~init:(Some (Type.OrderedTypes.Concrete [])) ~f:concatenate
+          in
+          ordered_type_from_non_keyword_parameters
+          >>| add_bound
+          >>| List.concat_map ~f:solve_remaining_parameters
+          |> Option.value ~default:impossible
+        and solve_parameters ~left_parameters ~right_parameters constraints =
           match left_parameters, right_parameters with
           | Parameter.PositionalOnly _ :: _, Parameter.Named _ :: _ -> []
           | ( Parameter.PositionalOnly { annotation = left_annotation; _ } :: left_parameters,
@@ -155,6 +214,26 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
               Parameter.PositionalOnly { annotation = right_annotation; _ } :: right_parameters ) ->
               solve_less_or_equal order ~constraints ~left:right_annotation ~right:left_annotation
               |> List.concat_map ~f:(solve_parameters ~left_parameters ~right_parameters)
+          | ( Parameter.Variable (Concatenation left) :: left_parameters,
+              Parameter.Variable (Concatenation right) :: right_parameters ) ->
+              solve_ordered_types_less_or_equal
+                order
+                ~left:(Type.OrderedTypes.Concatenation left)
+                ~right:(Type.OrderedTypes.Concatenation right)
+                ~constraints
+              |> List.concat_map ~f:(solve_parameters ~left_parameters ~right_parameters)
+          | left, Parameter.Variable (Concatenation concatenation) :: remaining_parameters ->
+              solve_parameters_against_tuple_variadic
+                ~is_lower_bound:false
+                ~concretes:left
+                ~ordered_type:(Concatenation concatenation)
+                ~remaining_parameters
+          | Parameter.Variable (Concatenation concatenation) :: remaining_parameters, right ->
+              solve_parameters_against_tuple_variadic
+                ~is_lower_bound:true
+                ~concretes:right
+                ~ordered_type:(Concatenation concatenation)
+                ~remaining_parameters
           | ( Parameter.Variable (Concrete variable_annotation)
               :: Parameter.Keywords keywords_annotation :: _,
               Parameter.Named { annotation = named_annotation; _ } :: right_parameters ) ->

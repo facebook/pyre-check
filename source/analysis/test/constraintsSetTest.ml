@@ -897,6 +897,23 @@ let test_add_constraint_type_variable_tuple context =
     [["Ts", "typing.Tuple[str, bool]"]];
   (* Tensor is invariant. *)
   assert_add ~left:"Tensor[int, str]" ~right:"Tensor[float, str]" [];
+
+  (* Callable. *)
+  assert_add
+    ~left:"typing.Callable[[int, str, bool], None]"
+    ~right:"typing.Callable[[int, pyre_extensions.Unpack[Ts]], None]"
+    [["Ts", "typing.Tuple[str, bool]"]];
+  assert_add
+    ~left:"typing.Callable[[int, bool, pyre_extensions.Unpack[Ts], bool, str], None]"
+    ~right:"typing.Callable[[int, pyre_extensions.Unpack[Ts2], str], None]"
+    [["Ts2", "typing.Tuple[bool, pyre_extensions.Unpack[Ts], bool]"]];
+  (* List of empty list means we found a satisfying solution. *)
+  assert_add
+    ~left:
+      "typing.Callable[[int, pyre_extensions.Unpack[Ts]], typing.Tuple[pyre_extensions.Unpack[Ts]]]"
+    ~right:"typing.Callable[[int, str, bool], typing.Tuple[str, bool]]"
+    ~leave_unbound_in_left:["Ts"]
+    [[]];
   ()
 
 
