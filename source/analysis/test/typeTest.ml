@@ -671,6 +671,28 @@ let test_resolve_aliases _ =
     ~aliases
     (Type.Primitive "FooParamSpec")
     (Type.parametric "Bar" [CallableParameters Undefined]);
+  let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
+  let aliases = function
+    | "Ts" -> Some (Type.VariableAlias (Type.Variable.TupleVariadic variadic))
+    | "FloatTensor" ->
+        Some
+          (Type.TypeAlias
+             (Type.parametric
+                "Tensor"
+                [
+                  Single Type.float;
+                  Unpacked (Type.OrderedTypes.Concatenation.create_unpackable variadic);
+                ]))
+    | _ -> None
+  in
+  assert_resolved
+    ~aliases
+    (Type.parametric "FloatTensor" ![Type.integer; Type.string])
+    (Type.parametric "Tensor" [Single Type.float; Single Type.integer; Single Type.string]);
+  assert_resolved
+    ~aliases
+    (Type.Primitive "FloatTensor")
+    (Type.parametric "Tensor" [Single Type.float; Single Type.Any]);
   ()
 
 

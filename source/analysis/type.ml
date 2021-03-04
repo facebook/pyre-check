@@ -4603,6 +4603,8 @@ let resolve_aliases ~aliases annotation =
                                Some Variable.Unary.any)
                         |> Variable.GlobalTransforms.ParameterVariadic.replace_all (fun _ ->
                                Some Variable.Variadic.Parameters.any)
+                        |> Variable.GlobalTransforms.TupleVariadic.replace_all (fun _ ->
+                               Some Variable.Variadic.Tuple.any)
                   in
                   mark_recursive_alias_as_visited alias;
                   alias
@@ -4640,6 +4642,12 @@ let resolve_aliases ~aliases annotation =
                                  when [%equal: Variable.parameter_variadic_t]
                                         variable
                                         given_variable ->
+                                   Some replacement
+                               | _ -> None))
+                    |> Variable.GlobalTransforms.TupleVariadic.replace_all (fun given_variable ->
+                           List.find_map variable_pairs ~f:(function
+                               | TupleVariadicPair (variable, replacement)
+                                 when [%equal: Variable.tuple_variadic_t] variable given_variable ->
                                    Some replacement
                                | _ -> None))
                 | _ -> uninstantiated_alias_annotation

@@ -11,6 +11,11 @@ open Pyre
 open Expression
 module PreviousEnvironment = EmptyStubEnvironment
 
+let preprocess_alias_value value =
+  Preprocessing.expand_strings_in_annotation_expression value
+  |> Preprocessing.expand_starred_variadic_in_annotation_expression
+
+
 module AliasValue = struct
   type t = Type.alias option
 
@@ -220,9 +225,7 @@ let extract_alias unannotated_global_environment name ~dependency =
             match Type.Variable.parse_declaration (delocalize value) ~target:name with
             | Some variable -> Some (VariableAlias variable)
             | _ ->
-                let value =
-                  Preprocessing.expand_strings_in_annotation_expression value |> delocalize
-                in
+                let value = preprocess_alias_value value |> delocalize in
                 let value_annotation = Type.create ~aliases:Type.empty_aliases value in
                 if
                   not
@@ -392,9 +395,7 @@ module ReadOnly = struct
       Option.value modify_aliases ~default:(fun ?replace_unbound_parameters_with_any:_ name -> name)
     in
     let parsed =
-      let expression =
-        Preprocessing.expand_strings_in_annotation_expression expression |> delocalize
-      in
+      let expression = preprocess_alias_value expression |> delocalize in
       let aliases ?replace_unbound_parameters_with_any name =
         get_alias environment ?dependency name
         >>| modify_aliases ?replace_unbound_parameters_with_any

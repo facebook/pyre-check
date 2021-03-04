@@ -3098,6 +3098,31 @@ let test_variadic_classes context =
       "Incompatible parameter type [6]: Expected `Tensor[int, Base, Base]` for 1st positional only \
        parameter to call `expects_base` but got `Tensor[int, Child, Child]`.";
     ];
+  assert_type_errors
+    {|
+      from typing import Generic, TypeVar
+      from pyre_extensions import TypeVarTuple
+      from typing_extensions import Literal as L
+
+      T = TypeVar("T")
+      Ts = TypeVarTuple("Ts")
+
+      class Tensor(Generic[T, *Ts]): ...
+
+      FloatTensor = Tensor[float, *Ts]
+
+      def bar() -> None:
+        x: FloatTensor[L[10], L[20]]
+        reveal_type(x)
+
+        y: FloatTensor
+        reveal_type(y)
+     |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `Tensor[float, typing_extensions.Literal[10], \
+       typing_extensions.Literal[20]]`.";
+      "Revealed type [-1]: Revealed type for `y` is `Tensor[float, typing.Any]`.";
+    ];
   ()
 
 

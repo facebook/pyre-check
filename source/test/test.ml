@@ -1440,6 +1440,8 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
                 covariant: bool = ...,
                 contravariant: bool = ...,
             ) -> None: ...
+
+        class Unpack(Generic[_T]): ...
         |}
     );
     ( "pyre_extensions/type_variable_operators.pyi",
