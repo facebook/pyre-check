@@ -121,6 +121,8 @@ module Label = struct
 
   let show_path path = ListLabels.map ~f:show path |> String.concat ""
 
+  let pp_path formatter path = Format.fprintf formatter "%s" (show_path path)
+
   let create_name_field name = Field name
 
   let create_int_field i = Field (string_of_int i)
