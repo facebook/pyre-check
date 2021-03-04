@@ -612,22 +612,22 @@ let test_less_or_equal context =
   assert_true
     (less_or_equal
        default
-       ~left:(Type.Tuple (Type.Unbounded Type.integer))
+       ~left:(Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation Type.integer))
        ~right:(Type.iterator Type.integer));
   assert_false
     (less_or_equal
        default
-       ~left:(Type.Tuple (Type.Unbounded Type.float))
+       ~left:(Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation Type.float))
        ~right:(Type.iterator Type.integer));
   assert_true
     (less_or_equal
        default
        ~left:(Type.Primitive "tuple")
-       ~right:(Type.Tuple (Type.Unbounded Type.float)));
+       ~right:(Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation Type.float)));
   assert_true
     (less_or_equal
        default
-       ~left:(Type.Tuple (Type.Bounded (Concrete [Type.integer; Type.integer])))
+       ~left:(Type.Tuple (Concrete [Type.integer; Type.integer]))
        ~right:(Type.parametric "tuple" ![Type.integer]));
 
   (* Union types *)
@@ -643,17 +643,17 @@ let test_less_or_equal context =
     (less_or_equal
        default
        ~left:(Type.tuple [Type.integer; Type.integer])
-       ~right:(Type.Tuple (Type.Unbounded Type.integer)));
+       ~right:(Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation Type.integer)));
   assert_true
     (less_or_equal
        default
        ~left:(Type.tuple [Type.integer; Type.integer])
-       ~right:(Type.Tuple (Type.Unbounded Type.float)));
+       ~right:(Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation Type.float)));
   assert_true
     (less_or_equal
        default
        ~left:(Type.tuple [Type.integer; Type.float])
-       ~right:(Type.Tuple (Type.Unbounded Type.float)));
+       ~right:(Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation Type.float)));
   let order =
     let order = MockClassHierarchyHandler.create () in
     let open MockClassHierarchyHandler in
@@ -1570,10 +1570,10 @@ let test_is_compatible_with _ =
     (Type.tuple [list_of_float; list_of_float]);
   assert_is_compatible
     (Type.tuple [list_of_integer; list_of_integer])
-    (Type.Tuple (Unbounded list_of_integer));
+    (Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation list_of_integer));
   assert_is_compatible
     (Type.tuple [list_of_integer; list_of_integer])
-    (Type.Tuple (Unbounded list_of_float));
+    (Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation list_of_float));
   assert_not_compatible
     (Type.tuple [list_of_integer; list_of_string])
     (Type.tuple [list_of_string; list_of_string]);
@@ -1582,7 +1582,7 @@ let test_is_compatible_with _ =
     (Type.tuple [list_of_integer; list_of_float]);
   assert_not_compatible
     (Type.tuple [list_of_string; list_of_integer])
-    (Type.Tuple (Unbounded list_of_float));
+    (Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation list_of_float));
 
   (* Union *)
   assert_is_compatible list_of_integer (Type.union [list_of_integer]);

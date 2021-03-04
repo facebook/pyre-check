@@ -85,9 +85,15 @@ module Record : sig
         :  'annotation Variable.RecordVariadic.Tuple.record ->
         'annotation record_unpackable
 
+      val create_unbounded_unpackable : 'annotation -> 'annotation record_unpackable
+
       val extract_sole_variadic
         :  'annotation t ->
         'annotation Variable.RecordVariadic.Tuple.record option
+
+      val extract_sole_unbounded_annotation : 'annotation t -> 'annotation option
+
+      val is_fully_unbounded : 'annotation t -> bool
 
       val create_from_unpackable : 'annotation record_unpackable -> 'annotation t
     end
@@ -103,6 +109,8 @@ module Record : sig
       suffix_pairs: ('annotation * 'annotation) list;
     }
     [@@deriving compare, eq, sexp, show, hash]
+
+    val create_unbounded_concatenation : 'annotation -> 'annotation record
 
     val pp_concise
       :  Format.formatter ->
@@ -262,10 +270,6 @@ type literal =
       member_name: Identifier.t;
     }
 
-and tuple =
-  | Bounded of t Record.OrderedTypes.record
-  | Unbounded of t
-
 and t =
   | Annotated of t
   | Bottom
@@ -281,7 +285,7 @@ and t =
   | Primitive of Primitive.t
   | RecursiveType of t Record.RecursiveType.record
   | Top
-  | Tuple of tuple
+  | Tuple of t Record.OrderedTypes.record
   | Union of t list
   | Variable of t Record.Variable.RecordUnary.record
   | IntExpression of t Polynomial.t

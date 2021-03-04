@@ -61,7 +61,9 @@ let test_create _ =
     (Type.parametric "collections.defaultdict" ![Type.integer; Type.string]);
   assert_create "typing.Dict[int, str]" (Type.dictionary ~key:Type.integer ~value:Type.string);
   assert_create "typing.Tuple[int, str]" (Type.tuple [Type.integer; Type.string]);
-  assert_create "typing.Tuple[int, ...]" (Type.Tuple (Type.Unbounded Type.integer));
+  assert_create
+    "typing.Tuple[int, ...]"
+    (Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation Type.integer));
   assert_create "typing.Tuple[()]" (Type.tuple []);
   assert_create "tuple" (Type.Primitive "tuple");
   assert_create "typing.Any" Type.Any;
@@ -444,19 +446,18 @@ let test_create_variadic_tuple _ =
       | "Ts" -> Some (VariableAlias (Type.Variable.TupleVariadic variadic))
       | _ -> None)
     "typing.Tuple[pyre_extensions.Unpack[Ts]]"
-    (Type.Tuple (Bounded (Concatenation (Type.OrderedTypes.Concatenation.create variadic))));
+    (Type.Tuple (Concatenation (Type.OrderedTypes.Concatenation.create variadic)));
   assert_create
     ~aliases:(function
       | "Ts" -> Some (VariableAlias (Type.Variable.TupleVariadic variadic))
       | _ -> None)
     "typing.Tuple[int, pyre_extensions.Unpack[Ts], str]"
     (Type.Tuple
-       (Bounded
-          (Concatenation
-             (Type.OrderedTypes.Concatenation.create
-                ~prefix:[Type.integer]
-                ~suffix:[Type.string]
-                variadic))));
+       (Concatenation
+          (Type.OrderedTypes.Concatenation.create
+             ~prefix:[Type.integer]
+             ~suffix:[Type.string]
+             variadic)));
   assert_create
     ~aliases:(function
       | "Ts" -> Some (VariableAlias (Type.Variable.TupleVariadic variadic))
@@ -728,10 +729,10 @@ let test_expression _ =
   assert_expression Type.Top "$unknown";
   assert_expression (Type.parametric "foo.bar" ![Type.Primitive "baz"]) "foo.bar.__getitem__(baz)";
   assert_expression
-    (Type.Tuple (Type.Bounded (Type.OrderedTypes.Concrete [Type.integer; Type.string])))
+    (Type.Tuple (Type.OrderedTypes.Concrete [Type.integer; Type.string]))
     "typing.Tuple.__getitem__((int, str))";
   assert_expression
-    (Type.Tuple (Type.Unbounded Type.integer))
+    (Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation Type.integer))
     "typing.Tuple.__getitem__((int, ...))";
   assert_expression (Type.parametric "list" ![Type.integer]) "typing.List.__getitem__(int)";
 
@@ -817,12 +818,11 @@ let test_expression _ =
     "Foo[pyre_extensions.Unpack[Ts]]";
   assert_expression
     (Type.Tuple
-       (Bounded
-          (Type.OrderedTypes.Concatenation
-             (Type.OrderedTypes.Concatenation.create
-                ~prefix:[Type.integer]
-                ~suffix:[Type.string]
-                variadic))))
+       (Type.OrderedTypes.Concatenation
+          (Type.OrderedTypes.Concatenation.create
+             ~prefix:[Type.integer]
+             ~suffix:[Type.string]
+             variadic)))
     "typing.Tuple[int, pyre_extensions.Unpack[Ts], str]";
   assert_expression
     (Type.Callable.create
@@ -921,7 +921,9 @@ let test_concise _ =
   assert_concise (Type.parametric "parametric" ![Type.Top; Type.float]) "parametric[unknown, float]";
   assert_concise (Type.Primitive "a.b.c") "c";
   assert_concise (Type.tuple [Type.integer; Type.Any]) "Tuple[int, Any]";
-  assert_concise (Type.Tuple (Type.Unbounded Type.integer)) "Tuple[int, ...]";
+  assert_concise
+    (Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation Type.integer))
+    "Tuple[int, ...]";
   assert_concise (Type.union [Type.integer; Type.string]) "Union[int, str]";
   assert_concise (Type.variable ~constraints:(Type.Variable.Explicit [Type.Top]) "T") "T";
   assert_concise
@@ -993,8 +995,12 @@ let test_primitives _ =
   assert_equal [Type.integer] (Type.primitives (Type.Callable.create ~annotation:Type.integer ()));
   assert_equal [] (Type.primitives (Type.optional Type.Top));
   assert_equal [Type.integer] (Type.primitives (Type.optional Type.integer));
-  assert_equal [] (Type.primitives (Type.Tuple (Type.Unbounded Type.Top)));
-  assert_equal [Type.integer] (Type.primitives (Type.Tuple (Type.Unbounded Type.integer)));
+  assert_equal
+    []
+    (Type.primitives (Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation Type.Top)));
+  assert_equal
+    [Type.integer]
+    (Type.primitives (Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation Type.integer)));
   assert_equal
     []
     (Type.primitives (Type.variable ~constraints:(Type.Variable.Explicit [Type.Top]) "T"));
@@ -1028,8 +1034,12 @@ let test_elements _ =
     ["int"; "typing.Callable"]
     (Type.elements (Type.Callable.create ~annotation:Type.integer ()));
   assert_equal ["int"; "typing.Optional"] (Type.elements (Type.optional Type.integer));
-  assert_equal ["tuple"] (Type.elements (Type.Tuple (Type.Unbounded Type.Top)));
-  assert_equal ["int"; "tuple"] (Type.elements (Type.Tuple (Type.Unbounded Type.integer)));
+  assert_equal
+    ["tuple"]
+    (Type.elements (Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation Type.Top)));
+  assert_equal
+    ["int"; "tuple"]
+    (Type.elements (Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation Type.integer)));
   assert_equal
     []
     (Type.elements (Type.variable ~constraints:(Type.Variable.Explicit [Type.Top]) "T"));
@@ -1076,8 +1086,9 @@ let test_exists _ =
   assert_false (top_exists (Type.Callable.create ~annotation:Type.integer ()));
   assert_true (top_exists (Type.optional Type.Top));
   assert_false (top_exists (Type.optional Type.integer));
-  assert_true (top_exists (Type.Tuple (Type.Unbounded Type.Top)));
-  assert_false (top_exists (Type.Tuple (Type.Unbounded Type.integer)));
+  assert_true (top_exists (Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation Type.Top)));
+  assert_false
+    (top_exists (Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation Type.integer)));
   assert_true (top_exists (Type.variable ~constraints:(Type.Variable.Explicit [Type.Top]) "T"));
   assert_false (top_exists (Type.variable ~constraints:(Type.Variable.Explicit [Type.integer]) "T"));
   assert_true (top_exists (Type.parametric "parametric" ![Type.integer; Type.Top]));
@@ -1291,12 +1302,13 @@ let test_contains_unknown _ =
   assert_true (Type.contains_unknown (Type.Union [Type.integer; Type.Top]));
   assert_false (Type.contains_unknown (Type.Union [Type.integer; Type.string]));
   assert_false (Type.contains_unknown (Type.variable "derp"));
+  assert_true (Type.contains_unknown (Type.Tuple (Concrete [Type.integer; Type.Top])));
+  assert_false (Type.contains_unknown (Type.Tuple (Concrete [Type.integer; Type.string])));
   assert_true
-    (Type.contains_unknown (Type.Tuple (Type.Bounded (Concrete [Type.integer; Type.Top]))));
+    (Type.contains_unknown (Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation Type.Top)));
   assert_false
-    (Type.contains_unknown (Type.Tuple (Type.Bounded (Concrete [Type.integer; Type.string]))));
-  assert_true (Type.contains_unknown (Type.Tuple (Type.Unbounded Type.Top)));
-  assert_false (Type.contains_unknown (Type.Tuple (Type.Unbounded Type.integer)))
+    (Type.contains_unknown
+       (Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation Type.integer)))
 
 
 let test_is_resolved _ =
@@ -1916,6 +1928,11 @@ let test_replace_all _ =
   assert_equal
     (Type.Variable.GlobalTransforms.Unary.replace_all (fun _ -> Some Type.integer) annotation)
     (Type.parametric "p" ![Type.integer; Type.integer]);
+  assert_equal
+    (Type.Variable.GlobalTransforms.Unary.replace_all
+       (fun _ -> Some Type.integer)
+       (Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation free_variable)))
+    (Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation Type.integer));
   let free_variable_callable =
     let parameter_variadic = Type.Variable.Variadic.Parameters.create "T" in
     Type.Callable.create
@@ -2012,6 +2029,10 @@ let test_collect_all _ =
   let annotation = Type.parametric "p" ![free_variable; Type.integer] in
   assert_equal
     (Type.Variable.GlobalTransforms.Unary.collect_all annotation)
+    [Type.Variable.Unary.create "T"];
+  assert_equal
+    (Type.Variable.GlobalTransforms.Unary.collect_all
+       (Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation free_variable)))
     [Type.Variable.Unary.create "T"];
   let free_variable_callable =
     let parameter_variadic = Type.Variable.Variadic.Parameters.create "T" in
@@ -2154,14 +2175,14 @@ let test_split_ordered_types _ =
       match
         Type.create ~aliases (parse_single_expression ~preprocess:true ("typing.Tuple" ^ left))
       with
-      | Type.Tuple (Bounded ordered_type) -> ordered_type
+      | Type.Tuple ordered_type -> ordered_type
       | _ -> failwith "expected tuple elements"
     in
     let right =
       match
         Type.create ~aliases (parse_single_expression ~preprocess:true ("typing.Tuple" ^ right))
       with
-      | Type.Tuple (Bounded ordered_type) -> ordered_type
+      | Type.Tuple ordered_type -> ordered_type
       | _ -> failwith "expected tuple elements"
     in
     assert_equal
@@ -2401,8 +2422,7 @@ let test_zip_variables_with_parameters _ =
              Type.Variable.TupleVariadicPair
                (variadic, Concatenation (Type.OrderedTypes.Concatenation.create variadic));
            received_parameter =
-             Single
-               (Tuple (Bounded (Concatenation (Type.OrderedTypes.Concatenation.create variadic))));
+             Single (Tuple (Concatenation (Type.OrderedTypes.Concatenation.create variadic)));
          };
        ]);
   assert_zipped
@@ -2416,7 +2436,7 @@ let test_zip_variables_with_parameters _ =
          };
          {
            variable_pair = Type.Variable.TupleVariadicPair (variadic, Concrete []);
-           received_parameter = Single (Tuple (Bounded (Concrete [])));
+           received_parameter = Single (Tuple (Concrete []));
          };
        ]);
   assert_zipped
@@ -2432,8 +2452,7 @@ let test_zip_variables_with_parameters _ =
            variable_pair =
              Type.Variable.TupleVariadicPair
                (variadic, Concrete [Type.string; Type.integer; Type.bool]);
-           received_parameter =
-             Single (Tuple (Bounded (Concrete [Type.string; Type.integer; Type.bool])));
+           received_parameter = Single (Tuple (Concrete [Type.string; Type.integer; Type.bool]));
          };
        ]);
   assert_zipped
@@ -2457,12 +2476,11 @@ let test_zip_variables_with_parameters _ =
            received_parameter =
              Single
                (Tuple
-                  (Bounded
-                     (Concatenation
-                        (Type.OrderedTypes.Concatenation.create
-                           ~prefix:[Type.string]
-                           ~suffix:[Type.bool]
-                           variadic2))));
+                  (Concatenation
+                     (Type.OrderedTypes.Concatenation.create
+                        ~prefix:[Type.string]
+                        ~suffix:[Type.bool]
+                        variadic2)));
          };
          {
            variable_pair = Type.Variable.UnaryPair (unary2, Type.string);
@@ -2491,7 +2509,7 @@ let test_zip_variables_with_parameters _ =
          {
            variable_pair =
              Type.Variable.TupleVariadicPair (variadic, Concrete [Type.string; Type.bool]);
-           received_parameter = Single (Tuple (Bounded (Concrete [Type.string; Type.bool])));
+           received_parameter = Single (Tuple (Concrete [Type.string; Type.bool]));
          };
        ]);
   assert_zipped
@@ -2524,12 +2542,11 @@ let test_zip_variables_with_parameters _ =
            received_parameter =
              Single
                (Tuple
-                  (Bounded
-                     (Concatenation
-                        (Type.OrderedTypes.Concatenation.create
-                           ~prefix:[Type.string]
-                           ~suffix:[]
-                           variadic2))));
+                  (Concatenation
+                     (Type.OrderedTypes.Concatenation.create
+                        ~prefix:[Type.string]
+                        ~suffix:[]
+                        variadic2)));
          };
        ]);
 
@@ -2678,14 +2695,12 @@ let test_infer_transform _ =
   assert_transform
     ~annotation:
       (Type.Tuple
-         (Type.Bounded
-            (Concrete [Type.Primitive "string"; Type.Primitive "string"; Type.Primitive "string"])))
-    ~expected:(Type.Tuple (Type.Unbounded (Type.Primitive "string")));
-  assert_transform
-    ~annotation:
-      (Type.Tuple (Type.Bounded (Concrete [Type.Primitive "string"; Type.Primitive "string"])))
+         (Concrete [Type.Primitive "string"; Type.Primitive "string"; Type.Primitive "string"]))
     ~expected:
-      (Type.Tuple (Type.Bounded (Concrete [Type.Primitive "string"; Type.Primitive "string"])));
+      (Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation (Type.Primitive "string")));
+  assert_transform
+    ~annotation:(Type.Tuple (Concrete [Type.Primitive "string"; Type.Primitive "string"]))
+    ~expected:(Type.Tuple (Concrete [Type.Primitive "string"; Type.Primitive "string"]));
   assert_transform
     ~annotation:
       (Type.parametric

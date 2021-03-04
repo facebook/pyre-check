@@ -211,8 +211,11 @@ let add_type_breadcrumb ~resolution annotation =
       | Type.Union [annotation; Type.NoneType]
       | Type.Parametric { name = "typing.Awaitable"; parameters = [Single annotation] } ->
           matches_at_leaves ~f annotation
-      | Type.Tuple (Type.Unbounded annotation) -> matches_at_leaves ~f annotation
-      | Type.Tuple (Type.Bounded (Type.OrderedTypes.Concrete annotations)) ->
+      | Type.Tuple (Concatenation concatenation) ->
+          Type.OrderedTypes.Concatenation.extract_sole_unbounded_annotation concatenation
+          >>| (fun element -> matches_at_leaves ~f element)
+          |> Option.value ~default:(f annotation)
+      | Type.Tuple (Type.OrderedTypes.Concrete annotations) ->
           List.for_all annotations ~f:(matches_at_leaves ~f)
       | annotation -> f annotation
     in

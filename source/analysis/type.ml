@@ -170,6 +170,8 @@ module Record = struct
 
       let create_unpackable variadic = Variadic variadic
 
+      let create_unbounded_unpackable annotation = UnboundedElements annotation
+
       let create ?(prefix = []) ?(suffix = []) variadic =
         { prefix; middle = create_unpackable variadic; suffix }
 
@@ -198,10 +200,18 @@ module Record = struct
           (show_type_list ~pp_type suffix)
 
 
-      (* TODO(T84854853):. *)
       let extract_sole_variadic = function
         | { prefix = []; middle = Variadic variadic; suffix = [] } -> Some variadic
         | _ -> None
+
+
+      let extract_sole_unbounded_annotation = function
+        | { prefix = []; middle = UnboundedElements annotation; suffix = [] } -> Some annotation
+        | _ -> None
+
+
+      let is_fully_unbounded concatenation =
+        extract_sole_unbounded_annotation concatenation |> Option.is_some
 
 
       let unpackable_to_expression ~expression ~location unpackable =
@@ -243,6 +253,10 @@ module Record = struct
       | Concrete of 'annotation list
       | Concatenation of 'annotation Concatenation.t
     [@@deriving compare, eq, sexp, show, hash]
+
+    let create_unbounded_concatenation annotation =
+      Concatenation (Concatenation.create_from_unpackable (UnboundedElements annotation))
+
 
     (* This represents the splitting of two ordered types to match each other in length. The prefix
        contains the prefix elements of known length that both have, the suffix contains the suffix
@@ -974,10 +988,6 @@ module T = struct
         member_name: Identifier.t;
       }
 
-  and tuple =
-    | Bounded of t Record.OrderedTypes.record
-    | Unbounded of t
-
   and t =
     | Annotated of t
     | Bottom
@@ -994,7 +1004,7 @@ module T = struct
     | Primitive of Primitive.t
     | RecursiveType of t Record.RecursiveType.record
     | Top
-    | Tuple of tuple
+    | Tuple of t Record.OrderedTypes.record
     | Union of t list
     | Variable of t Record.Variable.RecordUnary.record
     | IntExpression of t Polynomial.t
@@ -1401,12 +1411,13 @@ let rec pp format annotation =
   | Primitive name -> Format.fprintf format "%a" String.pp name
   | RecursiveType { name; body } -> Format.fprintf format "%s (resolves to %a)" name pp body
   | Top -> Format.fprintf format "unknown"
-  | Tuple tuple ->
+  | Tuple ordered_type ->
       let parameters =
-        match tuple with
-        | Bounded parameters ->
-            Format.asprintf "%a" (Record.OrderedTypes.pp_concise ~pp_type:pp) parameters
-        | Unbounded parameter -> Format.asprintf "%a, ..." pp parameter
+        match ordered_type with
+        | Concatenation { middle = UnboundedElements annotation; prefix = []; suffix = [] } ->
+            Format.asprintf "%a, ..." pp annotation
+        | ordered_type ->
+            Format.asprintf "%a" (Record.OrderedTypes.pp_concise ~pp_type:pp) ordered_type
       in
       Format.fprintf format "typing.Tuple[%s]" parameters
   | Union [NoneType; parameter]
@@ -1490,13 +1501,14 @@ and pp_concise format annotation =
   | Primitive name -> Format.fprintf format "%s" (strip_qualification name)
   | RecursiveType { name; _ } -> Format.fprintf format "%s" name
   | Top -> Format.fprintf format "unknown"
-  | Tuple (Bounded parameters) ->
+  | Tuple (Concatenation { middle = UnboundedElements parameter; prefix = []; suffix = [] }) ->
+      Format.fprintf format "Tuple[%a, ...]" pp_concise parameter
+  | Tuple ordered_type ->
       Format.fprintf
         format
         "Tuple[%a]"
         (Record.OrderedTypes.pp_concise ~pp_type:pp_concise)
-        parameters
-  | Tuple (Unbounded parameter) -> Format.fprintf format "Tuple[%a, ...]" pp_concise parameter
+        ordered_type
   | Union [NoneType; parameter]
   | Union [parameter; NoneType] ->
       Format.fprintf format "Optional[%a]" pp_concise parameter
@@ -1601,7 +1613,7 @@ let literal_string literal = Literal (String literal)
 
 let literal_bytes literal = Literal (Bytes literal)
 
-let tuple parameters = Tuple (Bounded (Concrete parameters))
+let tuple parameters = Tuple (Concrete parameters)
 
 let union parameters =
   let parameters =
@@ -1848,14 +1860,15 @@ let rec expression annotation =
     | Primitive name -> create_name name
     | RecursiveType { name; _ } -> create_name name
     | Top -> create_name "$unknown"
-    | Tuple (Bounded (Concrete [])) ->
+    | Tuple (Concrete []) ->
         get_item_call "typing.Tuple" [Node.create ~location (Expression.Tuple [])]
-    | Tuple elements ->
+    | Tuple ordered_type ->
         let parameters =
-          match elements with
-          | Bounded (Concrete parameters) -> List.map ~f:expression parameters
-          | Bounded (Concatenation concatenation) -> concatenation_to_expressions concatenation
-          | Unbounded parameter -> List.map ~f:expression [parameter; Primitive "..."]
+          match ordered_type with
+          | Concatenation { middle = UnboundedElements parameter; prefix = []; suffix = [] } ->
+              List.map ~f:expression [parameter; Primitive "..."]
+          | Concatenation concatenation -> concatenation_to_expressions concatenation
+          | Concrete parameters -> List.map ~f:expression parameters
         in
         get_item_call "typing.Tuple" parameters
     | Union [NoneType; parameter]
@@ -1950,6 +1963,11 @@ module Transform = struct
       let visit_children annotation =
         let visit_all = List.map ~f:(visit_annotation ~state) in
         let visit_concatenation { Record.OrderedTypes.Concatenation.prefix; middle; suffix } =
+          let middle =
+            match middle with
+            | Variadic _ -> middle
+            | UnboundedElements annotation -> UnboundedElements (visit_annotation annotation ~state)
+          in
           {
             Record.OrderedTypes.Concatenation.prefix = visit_all prefix;
             middle;
@@ -2016,8 +2034,7 @@ module Transform = struct
             Parametric { name; parameters = List.map parameters ~f:visit }
         | RecursiveType { name; body } ->
             RecursiveType { name; body = visit_annotation ~state body }
-        | Tuple (Bounded ordered) -> Tuple (Bounded (visit_ordered_types ordered))
-        | Tuple (Unbounded annotation) -> Tuple (Unbounded (visit_annotation annotation ~state))
+        | Tuple ordered_type -> Tuple (visit_ordered_types ordered_type)
         | Union annotations -> union (List.map annotations ~f:(visit_annotation ~state))
         | Variable ({ constraints; _ } as variable) ->
             let constraints =
@@ -2585,8 +2602,7 @@ module OrderedTypes = struct
                     [
                       Single
                         (Tuple
-                          (Bounded
-                            (Concatenation { prefix = inner_prefix; middle; suffix = inner_suffix })));
+                          (Concatenation { prefix = inner_prefix; middle; suffix = inner_suffix }));
                     ];
                 }
               when Identifier.equal name Record.OrderedTypes.Concatenation.unpack_public_name ->
@@ -2613,7 +2629,7 @@ module OrderedTypes = struct
           get_item_call ~location "typing.Tuple" [annotation] |> Node.create ~location
         in
         match parse_annotation wrapped_in_tuple with
-        | Tuple (Bounded (Concatenation concatenation)) -> Some concatenation
+        | Tuple (Concatenation concatenation) -> Some concatenation
         | _ -> None )
     | _ -> None
 end
@@ -2628,12 +2644,11 @@ let parameters_from_unpacked_annotation annotation ~variable_aliases =
         | _ -> None )
     | _ -> None
   in
-  (* TODO(T84854853):. *)
   match annotation with
   | Parametric { name; parameters = [Single (Primitive _ as element)] }
     when Identifier.equal name Record.OrderedTypes.Concatenation.unpack_public_name ->
       unpacked_variadic_to_parameter element >>| fun parameter -> [parameter]
-  | Parametric { name; parameters = [Single (Tuple (Bounded ordered_type))] }
+  | Parametric { name; parameters = [Single (Tuple ordered_type)] }
     when Identifier.equal name Record.OrderedTypes.Concatenation.unpack_public_name ->
       OrderedTypes.to_parameters ordered_type |> Option.some
   | _ -> None
@@ -3102,11 +3117,12 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
   | Parametric { name = "typing.Tuple"; parameters }
   | Parametric { name = "tuple"; parameters } -> (
       match Parameter.all_singles parameters with
-      | Some [annotation; Primitive "..."] -> Tuple (Unbounded annotation)
-      | Some singles -> Tuple (Bounded (Concrete singles))
+      | Some [annotation; Primitive "..."] ->
+          Tuple (OrderedTypes.create_unbounded_concatenation annotation)
+      | Some singles -> Tuple (Concrete singles)
       | None ->
           OrderedTypes.concatenation_from_parameters parameters
-          >>| (fun concatenation -> Tuple (Bounded concatenation))
+          >>| (fun concatenation -> Tuple concatenation)
           |> Option.value ~default:Top )
   | Parametric { name; parameters } -> (
       match
@@ -3313,7 +3329,7 @@ let parameters = function
 let type_parameters_for_bounded_tuple_union = function
   | Union annotations ->
       let bounded_tuple_parameters = function
-        | Tuple (Bounded (Concrete parameters)) -> Some parameters
+        | Tuple (Concrete parameters) -> Some parameters
         | _ -> None
       in
       List.map annotations ~f:bounded_tuple_parameters
@@ -3352,8 +3368,9 @@ let split annotation =
          <: Tuple[X, ...]`. *)
       let parameters =
         match tuple with
-        | Bounded ordered_type -> [Single (OrderedTypes.union_upper_bound ordered_type)]
-        | Unbounded parameter -> [Single parameter]
+        | Concatenation { middle = UnboundedElements parameter; prefix = []; suffix = [] } ->
+            [Single parameter]
+        | ordered_type -> [Single (OrderedTypes.union_upper_bound ordered_type)]
       in
       Primitive "tuple", parameters
   | Literal _ as literal -> weaken_literals literal, []
@@ -4060,7 +4077,7 @@ end = struct
               | _ -> None
             in
             List.filter_map parameters ~f:extract
-        | Tuple (Bounded (Concatenation { middle = Variadic variadic; _ })) -> [variadic]
+        | Tuple (Concatenation { middle = Variadic variadic; _ }) -> [variadic]
         | Callable { implementation; overloads; _ } ->
             let extract = function
               | { parameters = Defined parameters; _ } ->
@@ -4086,7 +4103,7 @@ end = struct
             in
             Parametric { parametric with parameters = List.concat_map parameters ~f:replace }
             |> Option.some
-        | Tuple (Bounded (Concatenation { prefix; middle = Variadic variadic; suffix })) ->
+        | Tuple (Concatenation { prefix; middle = Variadic variadic; suffix }) ->
             let expand_ordered_type_within_concatenation = function
               | OrderedTypes.Concrete annotations ->
                   OrderedTypes.Concrete (prefix @ annotations @ suffix)
@@ -4096,7 +4113,7 @@ end = struct
             in
             replacement variadic
             >>| expand_ordered_type_within_concatenation
-            >>| fun ordered_type -> Tuple (Bounded ordered_type)
+            >>| fun ordered_type -> Tuple ordered_type
         | Callable callable ->
             let replace_variadic parameters_so_far parameters =
               let expanded_parameters =
@@ -4494,7 +4511,7 @@ end = struct
                 >>| (fun ordered_type ->
                       {
                         variable_pair = TupleVariadicPair (variadic, ordered_type);
-                        received_parameter = Single (Tuple (Bounded ordered_type));
+                        received_parameter = Single (Tuple ordered_type);
                       })
                 |> Option.value
                      ~default:
@@ -4753,7 +4770,7 @@ let dequalify map annotation =
                 parameters =
                   List.map parameters ~f:(fun parameter -> Record.Parameter.Single parameter);
               }
-        | Tuple (Bounded (Concrete parameters)) ->
+        | Tuple (Concrete parameters) ->
             Parametric
               {
                 name = dequalify_string "typing.Tuple";
@@ -5114,10 +5131,13 @@ let infer_transform annotation =
                 else
                   false)
           in
-          if should_be_unbound then Some (Tuple (Unbounded parameter)) else None
+          if should_be_unbound then
+            Some (Tuple (OrderedTypes.create_unbounded_concatenation parameter))
+          else
+            None
         in
         match annotation with
-        | Tuple (Bounded (Concrete types)) when List.length types > 2 ->
+        | Tuple (Concrete types) when List.length types > 2 ->
             shorten_tuple_type types |> Option.value ~default:annotation
         | Parametric { name = "typing.Tuple"; parameters } when List.length parameters > 2 ->
             let types = List.filter_map parameters ~f:Parameter.is_single in

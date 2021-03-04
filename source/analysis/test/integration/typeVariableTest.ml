@@ -3166,6 +3166,27 @@ let test_variadic_callables context =
     [
       "Revealed type [-1]: Revealed type for `y` is `Tuple[int, typing_extensions.Literal[3], str]`.";
     ];
+  (* Unpack an unbounded tuple. *)
+  assert_type_errors
+    {|
+      from typing import Callable, Tuple
+      from pyre_extensions import TypeVarTuple
+
+      Ts = TypeVarTuple("Ts")
+
+      def make_tuple( *args: *Tuple[int, *Ts, str]) -> None: ...
+
+      def foo(x: Tuple[*Ts]) -> None:
+        unbounded_tuple: Tuple[int, ...]
+        make_tuple(1, *unbounded_tuple, "foo")
+
+        # Not ok because the unbounded tuple may be empty.
+        make_tuple( *unbounded_tuple, "foo")
+     |}
+    [
+      "Invalid argument [32]: Argument types `*Tuple[int, ...], typing_extensions.Literal['foo']` \
+       are not compatible with expected variadic elements `int, *test.Ts, str`.";
+    ];
   assert_type_errors
     {|
       from typing import Callable, Tuple
@@ -3178,9 +3199,6 @@ let test_variadic_callables context =
       def foo(x: Tuple[*Ts]) -> None:
         make_tuple(1, 2)
         make_tuple(1, *x, *x, "foo")
-
-        unbounded_tuple: Tuple[int, ...]
-        make_tuple(1, *unbounded_tuple, "foo")
      |}
     [
       "Invalid argument [32]: Argument types `typing_extensions.Literal[1], \
@@ -3190,9 +3208,6 @@ let test_variadic_callables context =
        contain `typing_extensions.Literal[1], *test.Ts, *test.Ts, \
        typing_extensions.Literal['foo']`; concatenation of multiple variadic type variables is not \
        yet implemented.";
-      "Invalid argument [32]: Variable argument `unbounded_tuple` has type `typing.Tuple[int, \
-       ...]` but must be a definite tuple to be included in variadic type variable `int, *test.Ts, \
-       str`.";
     ];
   assert_type_errors
     {|

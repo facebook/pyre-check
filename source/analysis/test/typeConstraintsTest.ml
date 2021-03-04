@@ -38,7 +38,7 @@ module DiamondOrder = struct
     | Type.Primitive "right_parent", Type.Primitive "Grandparent" -> true
     | left, Union rights ->
         List.exists rights ~f:(fun right -> always_less_or_equal () ~left ~right)
-    | Tuple (Bounded (Concrete left)), Tuple (Bounded (Concrete right)) -> (
+    | Tuple (Concrete left), Tuple (Concrete right) -> (
         match
           List.for_all2 left right ~f:(fun left right -> always_less_or_equal () ~left ~right)
         with

@@ -134,7 +134,7 @@ let exists_in_bounds { unaries; callable_parameters; tuple_variadics; _ } ~varia
     | _ -> false
   in
   let exists_in_tuple_interval_bound = function
-    | SingletonTuple ordered_type -> Type.Tuple (Bounded ordered_type) |> contains_variable
+    | SingletonTuple ordered_type -> Type.Tuple ordered_type |> contains_variable
     | _ -> false
   in
   UnaryVariable.Map.exists unaries ~f:exists_in_interval_bounds
@@ -227,8 +227,8 @@ module Solution = struct
 
 
   let instantiate_ordered_types solution ordered_type =
-    match instantiate solution (Type.Tuple (Bounded ordered_type)) with
-    | Type.Tuple (Bounded instantiated_ordered_type) -> instantiated_ordered_type
+    match instantiate solution (Type.Tuple ordered_type) with
+    | Type.Tuple instantiated_ordered_type -> instantiated_ordered_type
     | _ -> failwith "expected Tuple"
 
 
@@ -554,18 +554,9 @@ module OrderedConstraints (Order : OrderType) = struct
       | BottomTuple, other ->
           Some other
       | SingletonTuple left, SingletonTuple right ->
-          if
-            Order.always_less_or_equal
-              order
-              ~left:(Type.Tuple (Bounded left))
-              ~right:(Type.Tuple (Bounded right))
-          then
+          if Order.always_less_or_equal order ~left:(Type.Tuple left) ~right:(Type.Tuple right) then
             Some (SingletonTuple right)
-          else if
-            Order.always_less_or_equal
-              order
-              ~left:(Type.Tuple (Bounded right))
-              ~right:(Type.Tuple (Bounded left))
+          else if Order.always_less_or_equal order ~left:(Type.Tuple right) ~right:(Type.Tuple left)
           then
             Some (SingletonTuple left)
           else
@@ -586,9 +577,8 @@ module OrderedConstraints (Order : OrderType) = struct
       | BottomTuple ->
           target
       | SingletonTuple ordered_type -> (
-          match Solution.instantiate solution (Type.Tuple (Bounded ordered_type)) with
-          | Type.Tuple (Bounded instantiated_ordered_type) ->
-              SingletonTuple instantiated_ordered_type
+          match Solution.instantiate solution (Type.Tuple ordered_type) with
+          | Type.Tuple instantiated_ordered_type -> SingletonTuple instantiated_ordered_type
           | _ -> failwith "impossible" )
 
 
@@ -605,8 +595,7 @@ module OrderedConstraints (Order : OrderType) = struct
       | TopTuple
       | BottomTuple ->
           []
-      | SingletonTuple ordered_type ->
-          Type.Variable.all_free_variables (Type.Tuple (Bounded ordered_type))
+      | SingletonTuple ordered_type -> Type.Variable.all_free_variables (Type.Tuple ordered_type)
   end
 
   module CallableParametersIntervalContainer = IntervalContainer.Make (CallableParametersInterval)

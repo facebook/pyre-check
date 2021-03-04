@@ -446,14 +446,12 @@ module State (Context : Context) = struct
     let open Expression in
     let is_nonuniform_sequence ~minimum_length annotation =
       match annotation with
-      | Type.Tuple (Type.Bounded (Concrete parameters))
-        when minimum_length <= List.length parameters ->
-          true
+      | Type.Tuple (Concrete parameters) when minimum_length <= List.length parameters -> true
       | _ -> false
     in
     let nonuniform_sequence_parameters annotation =
       match annotation with
-      | Type.Tuple (Type.Bounded (Concrete parameters)) -> parameters
+      | Type.Tuple (Concrete parameters) -> parameters
       | _ -> []
     in
     match Node.value target with

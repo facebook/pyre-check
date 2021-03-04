@@ -893,7 +893,7 @@ class base class_metadata_environment dependency =
                     | ParameterVariadicPair (_, given), CallableParameters _ ->
                         (* TODO(T47346673): accept w/ new kind of validation *)
                         [CallableParameters given], None
-                    | TupleVariadicPair (_, given), Single (Tuple (Bounded _)) ->
+                    | TupleVariadicPair (_, given), Single (Tuple _) ->
                         Type.OrderedTypes.to_parameters given, None
                     | Type.Variable.UnaryPair (unary, given), _ ->
                         ( [Single given],
@@ -944,7 +944,10 @@ class base class_metadata_environment dependency =
                     match name with
                     | "typing.Callable" ->
                         Type.Callable.create ~annotation:Type.Any (), List.length generics, false
-                    | "tuple" -> Type.Tuple (Type.Unbounded Type.Any), List.length generics, true
+                    | "tuple" ->
+                        ( Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation Type.Any),
+                          List.length generics,
+                          true )
                     | _ ->
                         let is_tuple_variadic = function
                           | Type.Variable.TupleVariadic _ -> true
@@ -1720,7 +1723,7 @@ class base class_metadata_environment dependency =
             Type.Callable.Parameter.Named { name = "self"; annotation = Type.Top; default = false }
           in
           match instantiated, attribute_name, class_name with
-          | Type.Tuple (Bounded (Concrete members)), "__getitem__", _ ->
+          | Type.Tuple (Concrete members), "__getitem__", _ ->
               let { Type.Callable.overloads; _ } = callable in
               let overload index member =
                 {
@@ -1772,7 +1775,7 @@ class base class_metadata_environment dependency =
                             [
                               self_parameter;
                               create_parameter
-                                (Type.Tuple (Bounded (Concrete [Type.Any; Type.meta synthetic])));
+                                (Type.Tuple (Concrete [Type.Any; Type.meta synthetic]));
                             ];
                       },
                       [] )
@@ -3186,7 +3189,7 @@ class base class_metadata_environment dependency =
                   match kind with
                   | SingleStar -> (
                       match resolved with
-                      | Type.Tuple (Bounded ordered_types) -> Either.First ordered_types
+                      | Type.Tuple ordered_types -> Either.First ordered_types
                       (* We don't support unpacking unbounded tuples yet. *)
                       | annotation -> Either.Second { expression; annotation } )
                   | _ -> Either.First (Type.OrderedTypes.Concrete [resolved])
@@ -3755,7 +3758,7 @@ class base class_metadata_environment dependency =
           let unpack sofar argument =
             match argument with
             | {
-             Argument.WithPosition.resolved = Tuple (Bounded (Concrete tuple_parameters));
+             Argument.WithPosition.resolved = Tuple (Concrete tuple_parameters);
              kind = SingleStar;
              position;
              expression;
@@ -3842,8 +3845,9 @@ class base class_metadata_environment dependency =
         (* Tuples are special. *)
         if String.equal class_name "tuple" then
           match generics with
-          | [Single tuple_variable] -> Type.Tuple (Type.Unbounded tuple_variable)
-          | _ -> Type.Tuple (Type.Unbounded Type.Any)
+          | [Single tuple_variable] ->
+              Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation tuple_variable)
+          | _ -> Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation Type.Any)
         else
           let backup = Type.parametric class_name generics in
           match instantiated, generics with
@@ -4010,12 +4014,13 @@ class base class_metadata_environment dependency =
         | TupleAssign { value; index; total_length; _ } ->
             let extracted =
               match self#resolve_literal ~assumptions value with
-              | Type.Tuple (Type.Bounded (Concrete parameters))
-                when List.length parameters = total_length ->
+              | Type.Tuple (Concrete parameters) when List.length parameters = total_length ->
                   List.nth parameters index
                   (* This should always be Some, but I don't think its worth being fragile here *)
                   |> Option.value ~default:Type.Top
-              | Type.Tuple (Type.Unbounded parameter) -> parameter
+              | Type.Tuple (Concatenation concatenation) ->
+                  Type.OrderedTypes.Concatenation.extract_sole_unbounded_annotation concatenation
+                  |> Option.value ~default:Type.Top
               | _ -> Type.Top
             in
             produce_assignment_global ~is_explicit:false extracted

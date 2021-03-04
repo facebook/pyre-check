@@ -617,9 +617,7 @@ let test_instantiate_successors_parameters _ =
        variadic_order
        ~source:
          (Type.Tuple
-            (Bounded
-               (Concatenation
-                  (Type.OrderedTypes.Concatenation.create ~prefix:[Type.integer] variadic))))
+            (Concatenation (Type.OrderedTypes.Concatenation.create ~prefix:[Type.integer] variadic)))
        ~target:"typing.Iterable")
     (Some [Single Type.object_primitive]);
   ()

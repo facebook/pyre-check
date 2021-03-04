@@ -1146,7 +1146,7 @@ module State (Context : Context) = struct
               if String.is_prefix ~prefix:"**" name then
                 Type.dictionary ~key:Type.string ~value:annotation
               else if String.is_prefix ~prefix:"*" name then
-                Type.Tuple (Type.Unbounded annotation)
+                Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation annotation)
               else
                 annotation
             in
@@ -1170,7 +1170,7 @@ module State (Context : Context) = struct
               >>= Type.OrderedTypes.concatenation_from_unpack_expression
                     ~parse_annotation:(GlobalResolution.parse_annotation global_resolution)
               >>| (fun concatenation ->
-                    Type.Tuple (Bounded (Concatenation concatenation))
+                    Type.Tuple (Concatenation concatenation)
                     |> Type.Variable.mark_all_variables_as_bound
                     |> Annotation.create
                     |> fun annotation -> errors, annotation)
@@ -2465,12 +2465,16 @@ module State (Context : Context) = struct
                   in
                   let new_annotations =
                     match resolved with
-                    | Type.Tuple (Type.Bounded (Concrete annotations)) ->
+                    | Type.Tuple (Concrete annotations) ->
                         List.map annotations ~f:(fun annotation ->
                             annotation, Node.location expression)
-                    | Type.Tuple (Type.Unbounded annotation)
-                    | annotation ->
-                        [annotation, Node.location expression]
+                    | Type.Tuple (Concatenation concatenation) ->
+                        Type.OrderedTypes.Concatenation.extract_sole_unbounded_annotation
+                          concatenation
+                        >>| (fun element_annotation ->
+                              [element_annotation, Node.location expression])
+                        |> Option.value ~default:[resolved, Node.location expression]
+                    | annotation -> [annotation, Node.location expression]
                   in
                   resolution, List.append expression_errors errors, new_annotations @ collected
             in
@@ -2491,7 +2495,12 @@ module State (Context : Context) = struct
                          Error.actual = non_meta;
                          expected =
                            Type.union
-                             [Type.meta Type.Any; Type.Tuple (Type.Unbounded (Type.meta Type.Any))];
+                             [
+                               Type.meta Type.Any;
+                               Type.Tuple
+                                 (Type.OrderedTypes.create_unbounded_concatenation
+                                    (Type.meta Type.Any));
+                             ];
                          due_to_invariance = false;
                        };
                    })
@@ -2500,8 +2509,11 @@ module State (Context : Context) = struct
             match annotation with
             | _ when Type.is_meta annotation -> true
             | Type.Primitive "typing._Alias" -> true
-            | Type.Tuple (Type.Unbounded annotation) -> Type.is_meta annotation
-            | Type.Tuple (Type.Bounded (Type.OrderedTypes.Concrete annotations)) ->
+            | Type.Tuple (Concatenation concatenation) ->
+                Type.OrderedTypes.Concatenation.extract_sole_unbounded_annotation concatenation
+                >>| (fun annotation -> Type.is_meta annotation)
+                |> Option.value ~default:false
+            | Type.Tuple (Type.OrderedTypes.Concrete annotations) ->
                 List.for_all ~f:Type.is_meta annotations
             | Type.Union annotations -> List.for_all annotations ~f:is_compatible
             | _ -> false
@@ -3817,9 +3829,16 @@ module State (Context : Context) = struct
                 ~expression
               =
               let uniform_sequence_parameter annotation =
-                match annotation with
-                | Type.Tuple (Type.Unbounded parameter) -> parameter
-                | _ -> (
+                let unbounded_annotation =
+                  match annotation with
+                  | Type.Tuple (Concatenation concatenation) ->
+                      Type.OrderedTypes.Concatenation.extract_sole_unbounded_annotation
+                        concatenation
+                  | _ -> None
+                in
+                match unbounded_annotation with
+                | Some annotation -> annotation
+                | None -> (
                     match
                       GlobalResolution.extract_type_parameters
                         global_resolution
@@ -3831,7 +3850,7 @@ module State (Context : Context) = struct
               in
               let nonuniform_sequence_parameters expected_size annotation =
                 match annotation with
-                | Type.Tuple (Type.Bounded (Concrete parameters)) -> Some parameters
+                | Type.Tuple (Concrete parameters) -> Some parameters
                 | annotation when NamedTuple.is_named_tuple ~global_resolution ~annotation ->
                     NamedTuple.field_annotations ~global_resolution annotation
                 | annotation ->
@@ -3884,10 +3903,12 @@ module State (Context : Context) = struct
               in
               let is_uniform_sequence annotation =
                 match annotation with
-                | Type.Tuple (Type.Unbounded _) -> true
+                | Type.Tuple (Concatenation concatenation)
+                  when Type.OrderedTypes.Concatenation.is_fully_unbounded concatenation ->
+                    true
                 (* Bounded tuples subclass iterable, but should be handled in the nonuniform case. *)
-                | Type.Tuple (Type.Bounded _) -> false
-                | Type.Union (Type.Tuple (Type.Bounded _) :: _)
+                | Type.Tuple _ -> false
+                | Type.Union (Type.Tuple _ :: _)
                   when Option.is_some (Type.type_parameters_for_bounded_tuple_union annotation) ->
                     false
                 | _ ->
@@ -4784,11 +4805,14 @@ module State (Context : Context) = struct
                   (* Try to resolve meta-types given as expressions. *)
                   match resolve_expression_type ~resolution annotation with
                   | annotation when Type.is_meta annotation -> Type.single_parameter annotation
-                  | Type.Tuple (Bounded (Concrete elements))
-                    when List.for_all ~f:Type.is_meta elements ->
+                  | Type.Tuple (Concrete elements) when List.for_all ~f:Type.is_meta elements ->
                       List.map ~f:Type.single_parameter elements |> Type.union
-                  | Type.Tuple (Unbounded element) when Type.is_meta element ->
-                      Type.single_parameter element
+                  | Type.Tuple (Concatenation concatenation) ->
+                      Type.OrderedTypes.Concatenation.extract_sole_unbounded_annotation
+                        concatenation
+                      >>= (fun element ->
+                            Type.single_parameter element |> Option.some_if (Type.is_meta element))
+                      |> Option.value ~default:Type.Top
                   | _ -> Type.Top )
               | annotation -> annotation
             in

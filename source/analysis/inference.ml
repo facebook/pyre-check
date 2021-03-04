@@ -659,7 +659,7 @@ module State (Context : Context) = struct
                     |> Option.value ~default:resolution
                 | Tuple arguments -> (
                     match parameter_annotation with
-                    | Type.Tuple (Type.Bounded (Concrete parameter_annotations))
+                    | Type.Tuple (Concrete parameter_annotations)
                       when List.length arguments = List.length parameter_annotations ->
                         List.fold2_exn
                           ~init:resolution
@@ -728,8 +728,12 @@ module State (Context : Context) = struct
             | Tuple values ->
                 let parameters =
                   match target_annotation with
-                  | Type.Tuple (Type.Bounded (Concrete parameters)) -> parameters
-                  | Type.Tuple (Type.Unbounded parameter) -> List.map values ~f:(fun _ -> parameter)
+                  | Type.Tuple (Concrete parameters) -> parameters
+                  | Type.Tuple (Concatenation concatenation) ->
+                      Type.OrderedTypes.Concatenation.extract_sole_unbounded_annotation
+                        concatenation
+                      >>| (fun annotation -> List.map values ~f:(fun _ -> annotation))
+                      |> Option.value ~default:[]
                   | _ -> []
                 in
                 if List.length values = List.length parameters then
@@ -765,7 +769,7 @@ module State (Context : Context) = struct
             |> Annotation.annotation
           in
           match return_annotation with
-          | Tuple (Bounded (Concrete parameters))
+          | Tuple (Concrete parameters)
             when Int.equal (List.length parameters) (List.length expressions) ->
               List.fold2_exn
                 parameters

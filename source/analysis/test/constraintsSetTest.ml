@@ -244,7 +244,7 @@ let make_assert_functions context =
               in
               let parse_ordered_types ordered =
                 match parse_annotation ordered with
-                | Type.Tuple (Bounded ordered_type) -> ordered_type
+                | Type.Tuple ordered_type -> ordered_type
                 | _ -> failwith "expected tuple"
               in
               let global_resolution =
@@ -254,8 +254,8 @@ let make_assert_functions context =
               | Some (Type.VariableAlias (ParameterVariadic variable)) ->
                   Type.Variable.ParameterVariadicPair (variable, parse_parameters value)
               | Some (Type.VariableAlias (TupleVariadic variable)) -> (
-                  match Type.Tuple (Bounded (parse_ordered_types value)) |> postprocess with
-                  | Type.Tuple (Bounded ordered_type) ->
+                  match Type.Tuple (parse_ordered_types value) |> postprocess with
+                  | Type.Tuple ordered_type ->
                       Type.Variable.TupleVariadicPair (variable, ordered_type)
                   | _ -> failwith "expected a tuple" )
               | _ -> failwith "not available" )
@@ -870,17 +870,15 @@ let test_add_constraint_type_variable_tuple context =
   assert_add_direct
     ~left:
       (Type.Tuple
-         (Bounded
-            (Type.OrderedTypes.Concatenation
-               (Type.OrderedTypes.Concatenation.create ~prefix:[] ~suffix:[] variadic))))
+         (Type.OrderedTypes.Concatenation
+            (Type.OrderedTypes.Concatenation.create ~prefix:[] ~suffix:[] variadic)))
     ~right:
       ( Type.Tuple
-          (Bounded
-             (Type.OrderedTypes.Concatenation
-                (Type.OrderedTypes.Concatenation.create
-                   ~prefix:[Type.integer]
-                   ~suffix:[Type.string]
-                   variadic2)))
+          (Type.OrderedTypes.Concatenation
+             (Type.OrderedTypes.Concatenation.create
+                ~prefix:[Type.integer]
+                ~suffix:[Type.string]
+                variadic2))
       |> Type.Variable.mark_all_variables_as_bound )
     [["Ts", "typing.Tuple[int, pyre_extensions.Unpack[Ts2], str]"]];
   (* Tuple is covariant. *)

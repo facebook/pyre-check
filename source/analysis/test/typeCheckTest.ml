@@ -961,16 +961,20 @@ let test_forward_statement context =
     "x, y = z"
     ["x", Type.integer; "y", Type.string; "z", Type.tuple [Type.integer; Type.string]];
   assert_forward
-    ["z", Type.Tuple (Type.Unbounded Type.integer)]
+    ["z", Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation Type.integer)]
     "x, y = z"
-    ["x", Type.integer; "y", Type.integer; "z", Type.Tuple (Type.Unbounded Type.integer)];
+    [
+      "x", Type.integer;
+      "y", Type.integer;
+      "z", Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation Type.integer);
+    ];
   assert_forward [] "(x, y), z = 1" ["x", Type.Any; "y", Type.Any; "z", Type.Any];
   assert_forward
     ["z", Type.list Type.integer]
     "x, y = z"
     ["x", Type.integer; "y", Type.integer; "z", Type.list Type.integer];
   assert_forward [] "x, y = return_tuple()" ["x", Type.integer; "y", Type.integer];
-  assert_forward [] "x = ()" ["x", Type.Tuple (Type.Bounded (Concrete []))];
+  assert_forward [] "x = ()" ["x", Type.Tuple (Concrete [])];
 
   (* Assignments with list. *)
   assert_forward
@@ -992,13 +996,21 @@ let test_forward_statement context =
     "[a, b] = x"
     ["x", Type.iterable Type.integer; "a", Type.integer; "b", Type.integer];
   assert_forward
-    ["c", Type.Tuple (Type.Unbounded Type.integer)]
+    ["c", Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation Type.integer)]
     "a, b = c"
-    ["a", Type.integer; "b", Type.integer; "c", Type.Tuple (Type.Unbounded Type.integer)];
+    [
+      "a", Type.integer;
+      "b", Type.integer;
+      "c", Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation Type.integer);
+    ];
   assert_forward
-    ["c", Type.Tuple (Type.Unbounded Type.integer)]
+    ["c", Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation Type.integer)]
     "*a, b = c"
-    ["a", Type.list Type.integer; "b", Type.integer; "c", Type.Tuple (Type.Unbounded Type.integer)];
+    [
+      "a", Type.list Type.integer;
+      "b", Type.integer;
+      "c", Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation Type.integer);
+    ];
 
   (* Assignments with non-uniform sequences. *)
   assert_forward
@@ -1171,9 +1183,17 @@ let test_forward_statement context =
       "x", Type.union [Type.integer; Type.string];
     ];
   assert_forward
-    ["my_type", Type.Tuple (Type.Unbounded (Type.meta Type.integer)); "x", Type.Top]
+    [
+      ( "my_type",
+        Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation (Type.meta Type.integer)) );
+      "x", Type.Top;
+    ]
     "assert isinstance(x, my_type)"
-    ["my_type", Type.Tuple (Type.Unbounded (Type.meta Type.integer)); "x", Type.integer];
+    [
+      ( "my_type",
+        Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation (Type.meta Type.integer)) );
+      "x", Type.integer;
+    ];
 
   (* Works for general expressions. *)
   assert_forward

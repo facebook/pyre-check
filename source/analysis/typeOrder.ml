@@ -273,26 +273,50 @@ module OrderImplementation = struct
                 | _ -> None
               in
               target >>= handle_target |> Option.value ~default:union
-        (* Tuple variables are covariant. *)
-        | Type.Tuple (Type.Bounded (Concatenation _)), other
-        | other, Type.Tuple (Type.Bounded (Concatenation _)) ->
-            join order other (Type.Tuple (Type.Unbounded Type.object_primitive))
-        | Type.Tuple (Type.Bounded (Concrete left)), Type.Tuple (Type.Bounded (Concrete right))
+        | Type.Tuple (Concrete left), Type.Tuple (Concrete right)
           when List.length left = List.length right ->
             List.map2_exn left right ~f:(join order) |> Type.tuple
-        | Type.Tuple (Type.Unbounded left), Type.Tuple (Type.Unbounded right) ->
-            Type.Tuple (Type.Unbounded (join order left right))
-        | Type.Tuple (Type.Bounded (Concrete (left :: tail))), Type.Tuple (Type.Unbounded right)
-        | Type.Tuple (Type.Unbounded right), Type.Tuple (Type.Bounded (Concrete (left :: tail)))
-          when List.for_all ~f:(fun element -> Type.equal element left) tail
-               && always_less_or_equal order ~left ~right ->
-            Type.Tuple (Type.Unbounded right)
-        | Type.Tuple (Type.Unbounded parameter), (Type.Parametric _ as annotation)
-        | Type.Tuple (Type.Unbounded parameter), (Type.Primitive _ as annotation)
-        | (Type.Parametric _ as annotation), Type.Tuple (Type.Unbounded parameter)
-        | (Type.Primitive _ as annotation), Type.Tuple (Type.Unbounded parameter) ->
-            join order (Type.parametric "tuple" [Single parameter]) annotation
-        | Type.Tuple (Type.Bounded (Concrete parameters)), (Type.Parametric _ as annotation) ->
+        | Type.Tuple (Concatenation left), Type.Tuple (Concatenation right) ->
+            let left_unbounded_element =
+              Type.OrderedTypes.Concatenation.extract_sole_unbounded_annotation left
+              |> Option.value ~default:Type.object_primitive
+            in
+            let right_unbounded_element =
+              Type.OrderedTypes.Concatenation.extract_sole_unbounded_annotation right
+              |> Option.value ~default:Type.object_primitive
+            in
+            Type.Tuple
+              (Type.OrderedTypes.create_unbounded_concatenation
+                 (join order left_unbounded_element right_unbounded_element))
+        | Type.Tuple (Concrete concrete), Type.Tuple (Concatenation concatenation)
+        | Type.Tuple (Concatenation concatenation), Type.Tuple (Concrete concrete) -> (
+            let unbounded_element =
+              Type.OrderedTypes.Concatenation.extract_sole_unbounded_annotation concatenation
+              |> Option.value ~default:Type.object_primitive
+            in
+            match concrete with
+            | concrete_head :: tail
+              when List.for_all ~f:(fun element -> Type.equal element concrete_head) tail
+                   && always_less_or_equal order ~left:concrete_head ~right:unbounded_element ->
+                Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation unbounded_element)
+            | _ ->
+                Type.union
+                  [
+                    Tuple (Concrete concrete);
+                    Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation unbounded_element);
+                  ] )
+        | other, Type.Tuple (Concatenation concatenation)
+        | Type.Tuple (Concatenation concatenation), other -> (
+            let unbounded_element =
+              Type.OrderedTypes.Concatenation.extract_sole_unbounded_annotation concatenation
+              |> Option.value ~default:Type.object_primitive
+            in
+            match other with
+            | (Type.Parametric _ as annotation)
+            | (Type.Primitive _ as annotation) ->
+                join order (Type.parametric "tuple" [Single unbounded_element]) annotation
+            | _ -> Type.union [left; right] )
+        | Type.Tuple (Concrete parameters), (Type.Parametric _ as annotation) ->
             (* Handle cases like `Tuple[int, int]` <= `Iterator[int]`. *)
             let parameter = List.fold ~init:Type.Bottom ~f:(join order) parameters in
             join order (Type.parametric "tuple" [Single parameter]) annotation
@@ -451,19 +475,30 @@ module OrderImplementation = struct
               right
             else
               Type.Bottom
-        | Type.Tuple (Type.Bounded (Concatenation _)), _
-        | _, Type.Tuple (Type.Bounded (Concatenation _)) ->
-            Type.Bottom
-        | Type.Tuple (Type.Bounded (Concrete left)), Type.Tuple (Type.Bounded (Concrete right))
+        | Type.Tuple (Concrete left), Type.Tuple (Concrete right)
           when List.length left = List.length right ->
             List.map2_exn left right ~f:(meet order) |> Type.tuple
-        | Type.Tuple (Type.Unbounded left), Type.Tuple (Type.Unbounded right) ->
-            Type.Tuple (Type.Unbounded (meet order left right))
-        | Type.Tuple (Type.Bounded (Concrete (left :: tail))), Type.Tuple (Type.Unbounded right)
-        | Type.Tuple (Type.Unbounded right), Type.Tuple (Type.Bounded (Concrete (left :: tail)))
-          when List.for_all ~f:(fun element -> Type.equal element left) tail
-               && always_less_or_equal order ~left ~right ->
-            Type.Tuple (Type.Unbounded left) (* My brain hurts... *)
+        | Type.Tuple (Concatenation left), Type.Tuple (Concatenation right) -> (
+            match
+              ( Type.OrderedTypes.Concatenation.extract_sole_unbounded_annotation left,
+                Type.OrderedTypes.Concatenation.extract_sole_unbounded_annotation right )
+            with
+            | Some left_unbounded_element, Some right_unbounded_element ->
+                Type.Tuple
+                  (Type.OrderedTypes.create_unbounded_concatenation
+                     (meet order left_unbounded_element right_unbounded_element))
+            | _ -> Type.Bottom )
+        | Type.Tuple (Concrete concrete), Type.Tuple (Concatenation concatenation)
+        | Type.Tuple (Concatenation concatenation), Type.Tuple (Concrete concrete) -> (
+            match
+              ( Type.OrderedTypes.Concatenation.extract_sole_unbounded_annotation concatenation,
+                concrete )
+            with
+            | Some unbounded_element, concrete_head :: tail
+              when List.for_all ~f:(fun element -> Type.equal element concrete_head) tail
+                   && always_less_or_equal order ~left:concrete_head ~right:unbounded_element ->
+                Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation concrete_head)
+            | _ -> Type.Bottom )
         | (Type.Tuple _ as tuple), (Type.Parametric _ as parametric)
         | (Type.Parametric _ as parametric), (Type.Tuple _ as tuple) ->
             if always_less_or_equal order ~left:tuple ~right:parametric then
@@ -561,6 +596,7 @@ module IncludableImplementation : FullOrderTypeWithoutT = Implementation
 include IncludableImplementation
 
 let rec is_compatible_with order ~left ~right =
+  let fallback () = always_less_or_equal order ~left ~right in
   match left, right with
   (* Any *)
   | _, Type.Any
@@ -572,12 +608,15 @@ let rec is_compatible_with order ~left ~right =
   (* None *)
   | Type.NoneType, Type.NoneType -> true
   (* Tuple *)
-  | Type.Tuple (Type.Bounded (Concrete left)), Type.Tuple (Type.Bounded (Concrete right))
+  | Type.Tuple (Concrete left), Type.Tuple (Concrete right)
     when List.length left = List.length right ->
       List.for_all2_exn left right ~f:(fun left right -> is_compatible_with order ~left ~right)
-  | Type.Tuple (Type.Bounded (Concrete bounded)), Type.Tuple (Type.Unbounded right) ->
-      List.for_all bounded ~f:(fun bounded_type ->
-          is_compatible_with order ~left:bounded_type ~right)
+  | Type.Tuple (Concrete bounded), Type.Tuple (Concatenation concatenation) -> (
+      match Type.OrderedTypes.Concatenation.extract_sole_unbounded_annotation concatenation with
+      | Some unbounded_element ->
+          List.for_all bounded ~f:(fun bounded_type ->
+              is_compatible_with order ~left:bounded_type ~right:unbounded_element)
+      | None -> fallback () )
   (* Union *)
   | Type.Union left, right ->
       List.fold
@@ -597,9 +636,8 @@ let rec is_compatible_with order ~left ~right =
       | Some left_parameters, Some right_parameters ->
           List.for_all2_exn left_parameters right_parameters ~f:(fun left right ->
               is_compatible_with order ~left ~right)
-      | _ -> always_less_or_equal order ~left ~right )
-  (* Fallback *)
-  | _, _ -> always_less_or_equal order ~left ~right
+      | _ -> fallback () )
+  | _, _ -> fallback ()
 
 
 let widen order ~widening_threshold ~previous ~next ~iteration =
