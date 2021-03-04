@@ -59,22 +59,22 @@ module TraceInfo = struct
   [@@deriving compare]
 
   let pp formatter = function
-    | Declaration _ -> Format.fprintf formatter "declaration"
-    | Origin location -> Format.fprintf formatter "@%a" Location.WithModule.pp location
+    | Declaration _ -> Format.fprintf formatter "Declaration"
+    | Origin location -> Format.fprintf formatter "Origin(%a)" Location.WithModule.pp location
     | CallSite { location; callees; port; path } ->
         let port = AccessPath.create port path |> AccessPath.show in
         Format.fprintf
           formatter
-          "via call@%a[%s][%s]"
+          "CallSite(callees=[%s], location=%a, port=%s)"
+          (String.concat
+             ~sep:", "
+             (List.map ~f:Interprocedural.Callable.external_target_name callees))
           Location.WithModule.pp
           location
-          (String.concat
-             ~sep:" "
-             (List.map ~f:Interprocedural.Callable.external_target_name callees))
           port
 
 
-  let show trace_information = Format.asprintf "%a" pp trace_information
+  let show = Format.asprintf "%a" pp
 
   (* Breaks recursion among trace info and overall taint domain. *)
   let has_significant_summary =
@@ -237,6 +237,12 @@ module FlowDetails = struct
   let complex_feature_set = Features.ComplexSet.Set
 
   let tito_position_element = Features.TitoPositionSet.Element
+
+  let product_pp = pp (* shadow *)
+
+  let pp formatter = Format.fprintf formatter "FlowDetails(%a)" product_pp
+
+  let show = Format.asprintf "%a" pp
 end
 
 module type TAINT_DOMAIN = sig
