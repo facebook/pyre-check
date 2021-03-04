@@ -34,23 +34,23 @@ namespace Configuration {
 export async function activate(_: vscode.ExtensionContext) {
 
     let serverOptions = {
-    command: "pyre",
-    args: ["persistent"]
+        command: "pyre",
+        args: ["persistent"]
     };
     
     let clientOptions: LanguageClientOptions = {
-    documentSelector: [{scheme: 'file', language: 'python'}],
-    synchronize: {
-        // Notify the server about file changes to '.clientrc files contain in the workspace
-        fileEvents: vscode.workspace.createFileSystemWatcher('**/.clientrc'),
-    }
+        documentSelector: [{scheme: 'file', language: 'python'}],
+        synchronize: {
+            // Notify the server about file changes to '.clientrc files contain in the workspace
+            fileEvents: vscode.workspace.createFileSystemWatcher('**/.clientrc'),
+        }
     };
     
     const languageClient = new LanguageClient(
-    'pyre',
-    'Pyre Language Client',
-    serverOptions,
-    clientOptions,
+        'pyre',
+        'Pyre Language Client',
+        serverOptions,
+        clientOptions,
     )
 
     languageClient.registerProposedFeatures();
