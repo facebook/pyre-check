@@ -1915,6 +1915,14 @@ let test_replace_all _ =
     ~replace:replace_with_concatenation
     "typing.Tuple[int, pyre_extensions.Unpack[Ts], str]"
     "typing.Tuple[int, bool, pyre_extensions.Unpack[Ts], bool, str]";
+  assert_replaced
+    ~replace:replace_with_concrete
+    "typing.Callable[[int, pyre_extensions.Unpack[Ts], str], None]"
+    "typing.Callable[[int, bool, bool, str], None]";
+  assert_replaced
+    ~replace:replace_with_concatenation
+    "typing.Callable[[int, pyre_extensions.Unpack[Ts], str], None]"
+    "typing.Callable[[int, bool, pyre_extensions.Unpack[Ts], bool, str], None]";
   ()
 
 

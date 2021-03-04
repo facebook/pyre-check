@@ -4163,6 +4163,47 @@ end = struct
             replacement variadic
             >>| expand_ordered_type_within_concatenation
             >>| fun ordered_type -> Tuple (Bounded ordered_type)
+        | Callable callable ->
+            let replace_variadic parameters_so_far parameters =
+              let expanded_parameters =
+                match parameters with
+                | Callable.Parameter.Variable
+                    (Concatenation
+                      ({ prefix; middle = Variadic variadic; suffix } as concatenation)) ->
+                    let encode_ordered_types_into_parameters = function
+                      | OrderedTypes.Concrete concretes ->
+                          let start_index = List.length parameters_so_far in
+                          let make_anonymous_parameter index annotation =
+                            Callable.Parameter.PositionalOnly
+                              { index = start_index + index; annotation; default = false }
+                          in
+                          List.mapi (prefix @ concretes @ suffix) ~f:make_anonymous_parameter
+                          @ parameters_so_far
+                      | Concatenation { prefix = new_prefix; middle; suffix = new_suffix } ->
+                          [
+                            Variable
+                              (Concatenation
+                                 {
+                                   prefix = prefix @ new_prefix;
+                                   middle;
+                                   suffix = new_suffix @ suffix;
+                                 });
+                          ]
+                    in
+                    replacement variadic
+                    >>| encode_ordered_types_into_parameters
+                    |> Option.value
+                         ~default:[Callable.Parameter.Variable (Concatenation concatenation)]
+                | parameter -> [parameter]
+              in
+              List.rev_append expanded_parameters parameters_so_far
+            in
+            let map = function
+              | Defined parameters ->
+                  Defined (List.fold parameters ~init:[] ~f:replace_variadic |> List.rev)
+              | parameters -> parameters
+            in
+            Some (Callable (Callable.map_parameters callable ~f:map))
         | _ -> None
 
 
