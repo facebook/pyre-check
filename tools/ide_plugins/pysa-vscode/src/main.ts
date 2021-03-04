@@ -6,7 +6,7 @@
  */
 
 /**
- * @file Entry point for Pyre's VSCode extension.
+ * @file Entry point for Pysa's VSCode extension.
  */
 
 import * as vscode from 'vscode';
@@ -16,48 +16,46 @@ let languageClient: LanguageClient;
 
 namespace Configuration {
 
-	let configurationListener: vscode.Disposable;
+    let configurationListener: vscode.Disposable;
 
-	export function initialize() {
-		configurationListener = vscode.workspace.onDidChangeConfiguration(() => {
-			languageClient.sendNotification(DidChangeConfigurationNotification.type, { settings: null });
-		});
-	}
+    export function initialize() {
+        configurationListener = vscode.workspace.onDidChangeConfiguration(() => {
+            languageClient.sendNotification(DidChangeConfigurationNotification.type, { settings: null });
+        });
+    }
 
-	export function dispose() {
-		if (configurationListener) {
-			configurationListener.dispose();
-		}
-	}
+    export function dispose() {
+        if (configurationListener) {
+            configurationListener.dispose();
+        }
+    }
 }
 
 export async function activate(_: vscode.ExtensionContext) {
 
-    let debugOptions = { execArgv: ["--nolazy", "--inspect=6009"] };
-
     let serverOptions = {
-	command: "pyre",
-	args: ["persistent"]
+    command: "pyre",
+    args: ["persistent"]
     };
     
     let clientOptions: LanguageClientOptions = {
-	documentSelector: [{scheme: 'file', language: 'python'}],
-	synchronize: {
-	    // Notify the server about file changes to '.clientrc files contain in the workspace
-	    fileEvents: vscode.workspace.createFileSystemWatcher('**/.clientrc'),
-	}
+    documentSelector: [{scheme: 'file', language: 'python'}],
+    synchronize: {
+        // Notify the server about file changes to '.clientrc files contain in the workspace
+        fileEvents: vscode.workspace.createFileSystemWatcher('**/.clientrc'),
+    }
     };
     
     const languageClient = new LanguageClient(
-        'pyre',
-	'Pyre Language Client',
-	serverOptions,
-	clientOptions,
+    'pyre',
+    'Pyre Language Client',
+    serverOptions,
+    clientOptions,
     )
 
     languageClient.registerProposedFeatures();
     languageClient.onReady().then(() => {
-		Configuration.initialize();
+        Configuration.initialize();
     });
     languageClient.start();
 }
