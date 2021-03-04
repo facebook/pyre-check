@@ -587,11 +587,26 @@ let test_check_function_parameters context =
       S = typing.Callable[[], T]
 
       def foo(x: S) -> T: ...
+      def foo_with_type_parameter(x: S[T]) -> T: ...
 
       def bar() -> None:
+          reveal_type(foo)
           foo()
+
+          reveal_type(foo_with_type_parameter)
+          foo_with_type_parameter()
     |}
-    ["Missing argument [20]: Call `foo` expects argument `x`."]
+    [
+      "Invalid type variable [34]: The type variable `Variable[T (bound to int)]` isn't present in \
+       the function's parameters.";
+      "Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable(foo)[[Named(x, \
+       typing.Callable[[], typing.Any])], Variable[T (bound to int)]]`.";
+      "Missing argument [20]: Call `foo` expects argument `x`.";
+      "Revealed type [-1]: Revealed type for `test.foo_with_type_parameter` is \
+       `typing.Callable(foo_with_type_parameter)[[Named(x, typing.Callable[[], Variable[T (bound \
+       to int)]])], Variable[T (bound to int)]]`.";
+      "Missing argument [20]: Call `foo_with_type_parameter` expects argument `x`.";
+    ]
 
 
 let test_check_function_parameter_errors context =

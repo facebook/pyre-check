@@ -635,6 +635,11 @@ let test_resolve_aliases _ =
     (Type.parametric
        "Foo"
        ![Type.integer; Type.list Type.string; Type.union [Type.bool; Type.string]]);
+  let aliases = function
+    | "Foo" -> Some (Type.TypeAlias (Type.parametric "Bar" ![variable_t; variable_v]))
+    | _ -> None
+  in
+  assert_resolved ~aliases (Type.Primitive "Foo") (Type.parametric "Bar" ![Type.Any; Type.Any]);
   ()
 
 

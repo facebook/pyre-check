@@ -4593,6 +4593,15 @@ let resolve_aliases ~aliases annotation =
           | Primitive name -> (
               match aliases ?replace_unbound_parameters_with_any:(Some true) name with
               | Some (TypeAlias alias) ->
+                  let alias =
+                    match alias with
+                    (* Type variables are stored as `_T aliases to _T`. Don't replace them. *)
+                    | Variable _ as variable -> variable
+                    | alias ->
+                        Variable.GlobalTransforms.Unary.replace_all
+                          (fun _ -> Some Variable.Unary.any)
+                          alias
+                  in
                   mark_recursive_alias_as_visited alias;
                   alias
               | _ -> annotation )

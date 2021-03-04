@@ -2083,13 +2083,7 @@ let test_generic_aliases context =
       y: Pair
       reveal_type(y)
     |}
-    [
-      (* TODO(T78935633): Raise clearer error. This happens because `y: Pair` resolves to `y:
-         Tuple[T, T]`. *)
-      "Invalid type variable [34]: The type variable `Variable[T]` can only be used to annotate \
-       generic classes or functions.";
-      "Revealed type [-1]: Revealed type for `y` is `typing.Any`.";
-    ];
+    ["Revealed type [-1]: Revealed type for `y` is `Tuple[typing.Any, typing.Any]`."];
   (* Extra type parameters provided. *)
   assert_type_errors
     {|
@@ -2165,10 +2159,8 @@ let test_generic_aliases context =
       reveal_type(foo(1, ['hello']))
     |}
     [
-      "Incompatible parameter type [6]: Expected `typing.List[Variable[T]]` for 2nd positional \
-       only parameter to call `foo` but got `typing.List[str]`.";
       "Revealed type [-1]: Revealed type for `test.foo(1, [\"hello\"])` is \
-       `typing.List[typing_extensions.Literal[1]]`.";
+       `typing.List[typing.Any]`.";
     ];
   assert_type_errors
     {|
