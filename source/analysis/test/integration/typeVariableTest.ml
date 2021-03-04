@@ -2762,6 +2762,63 @@ let test_variadic_tuples context =
       "Incompatible parameter type [6]: Expected `typing.Tuple[int, *test.Ts]` for 1st positional \
        only parameter to call `remove_int` but got `typing.Tuple[*test.Ts]`.";
     ];
+  (* We should not infer Tuple[int|bool, str|bool] for Ts. That would surprise most users who would
+     expect that the Ts was bound to at least one of the concrete types they specified. *)
+  assert_type_errors
+    {|
+      from typing import Tuple
+      from pyre_extensions import TypeVarTuple
+
+      Ts = TypeVarTuple("Ts")
+
+      def expects_same_tuples(x: Tuple[*Ts], y: Tuple[*Ts]) -> Tuple[*Ts]: ...
+
+      def bar() -> None:
+        tuple1: Tuple[int, str]
+        tuple2: Tuple[bool, bool]
+        expects_same_tuples(tuple1, tuple2)
+     |}
+    [
+      "Incompatible parameter type [6]: Expected `typing.Tuple[*test.Ts]` for 2nd positional only \
+       parameter to call `expects_same_tuples` but got `Tuple[bool, bool]`.";
+    ];
+  (* Length mismatch. *)
+  assert_type_errors
+    {|
+      from typing import Tuple
+      from pyre_extensions import TypeVarTuple
+
+      Ts = TypeVarTuple("Ts")
+
+      def expects_same_tuples(x: Tuple[*Ts], y: Tuple[*Ts]) -> Tuple[*Ts]: ...
+
+      def bar() -> None:
+        tuple1: Tuple[int, str]
+        shorter_tuple: Tuple[bool]
+        expects_same_tuples(tuple1, shorter_tuple)
+     |}
+    [
+      "Incompatible parameter type [6]: Expected `typing.Tuple[*test.Ts]` for 2nd positional only \
+       parameter to call `expects_same_tuples` but got `Tuple[bool]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Tuple
+      from pyre_extensions import TypeVarTuple
+
+      Ts = TypeVarTuple("Ts")
+
+      def expects_same_tuples(x: Tuple[*Ts], y: Tuple[*Ts]) -> Tuple[*Ts]: ...
+
+      def bar() -> None:
+        tuple1: Tuple[int, str]
+        shorter_tuple: Tuple[bool]
+        expects_same_tuples(tuple1, shorter_tuple)
+     |}
+    [
+      "Incompatible parameter type [6]: Expected `typing.Tuple[*test.Ts]` for 2nd positional only \
+       parameter to call `expects_same_tuples` but got `Tuple[bool]`.";
+    ];
   ()
 
 
@@ -2953,6 +3010,31 @@ let test_variadic_classes context =
         reveal_type(y)
      |}
     ["Revealed type [-1]: Revealed type for `y` is `VariadicProtocol[List[int], int, str]`."];
+  (* TODO(T84553937): While Tensor is indeed invariant, we should have inferred `Tensor[int, Base,
+     Base]` below. *)
+  assert_type_errors
+    {|
+      from typing import Generic, Tuple, TypeVar
+      from pyre_extensions import TypeVarTuple
+
+      T = TypeVar("T")
+      Ts = TypeVarTuple("Ts")
+
+      class Tensor(Generic[T, *Ts]):
+        def __init__(self, default: T, shape: Tuple[*Ts]) -> None: ...
+
+      class Base: ...
+      class Child(Base): ...
+
+      def expects_base(t: Tensor[int, Base, Base]) -> None: ...
+
+      def bar() -> None:
+        expects_base(Tensor(1, (Child(), Child())))
+     |}
+    [
+      "Incompatible parameter type [6]: Expected `Tensor[int, Base, Base]` for 1st positional only \
+       parameter to call `expects_base` but got `Tensor[int, Child, Child]`.";
+    ];
   ()
 
 
@@ -3111,6 +3193,35 @@ let test_variadic_callables context =
     [
       "Revealed type [-1]: Revealed type for `y` is `str`.";
       "Invalid argument [32]: Argument types `int, str` are not compatible with expected variadic \
+       elements `*test.Ts`.";
+    ];
+  (* It should be fine to pass a subclass to a function expecting the base class. *)
+  assert_type_errors
+    {|
+      from typing import Callable, Tuple, TypeVar
+      from pyre_extensions import TypeVarTuple
+
+      Ts = TypeVarTuple("Ts")
+      T = TypeVar("T")
+
+      def apply(f: Callable[[*Ts], T], *args: *Ts) -> T: ...
+
+      class Base: ...
+      class Child(Base): ...
+
+      def expects_base(x: int, y: str, z: Base) -> str: ...
+      def expects_child(x: int, y: str, z: Child) -> str: ...
+
+      def bar() -> None:
+        child: Child
+        apply(expects_base, 1, "hello", child)
+
+        base: Base
+        apply(expects_child, 1, "hello", base)
+     |}
+    [
+      "Invalid argument [32]: Argument types `typing_extensions.Literal[1], \
+       typing_extensions.Literal['hello'], test.Base` are not compatible with expected variadic \
        elements `*test.Ts`.";
     ];
   ()

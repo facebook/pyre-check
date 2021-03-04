@@ -38,6 +38,12 @@ module DiamondOrder = struct
     | Type.Primitive "right_parent", Type.Primitive "Grandparent" -> true
     | left, Union rights ->
         List.exists rights ~f:(fun right -> always_less_or_equal () ~left ~right)
+    | Tuple (Bounded (Concrete left)), Tuple (Bounded (Concrete right)) -> (
+        match
+          List.for_all2 left right ~f:(fun left right -> always_less_or_equal () ~left ~right)
+        with
+        | Ok result -> result
+        | _ -> false )
     | _ -> false
 
 
@@ -307,6 +313,46 @@ let test_single_variable_solution _ =
       [
         `Lower (TupleVariadicPair (variadic, Type.OrderedTypes.Concrete [Type.integer; Type.string]));
         `Lower (TupleVariadicPair (variadic, Type.OrderedTypes.Concrete [Type.bool]));
+      ]
+    None;
+  (* We pick one of the provided concrete types, if the others are consistent with it. *)
+  assert_solution
+    ~sequentially_applied_bounds:
+      [
+        `Lower
+          (TupleVariadicPair
+             (variadic, Type.OrderedTypes.Concrete [Type.Primitive "Child"; Type.Primitive "Child"]));
+        `Lower
+          (TupleVariadicPair
+             ( variadic,
+               Type.OrderedTypes.Concrete
+                 [Type.Primitive "Grandparent"; Type.Primitive "Grandparent"] ));
+      ]
+    (Some
+       [
+         TupleVariadicPair
+           ( variadic,
+             Type.OrderedTypes.Concrete [Type.Primitive "Grandparent"; Type.Primitive "Grandparent"]
+           );
+       ]);
+  assert_solution
+    ~sequentially_applied_bounds:
+      [
+        `Lower
+          (TupleVariadicPair
+             ( variadic,
+               Type.OrderedTypes.Concrete [Type.Primitive "Child"; Type.Primitive "Grandparent"] ));
+        `Lower
+          (TupleVariadicPair
+             ( variadic,
+               Type.OrderedTypes.Concrete [Type.Primitive "Grandparent"; Type.Primitive "Child"] ));
+      ]
+    None;
+  assert_solution
+    ~sequentially_applied_bounds:
+      [
+        `Lower (TupleVariadicPair (variadic, Type.OrderedTypes.Concrete [Type.Primitive "Child"]));
+        `Lower (TupleVariadicPair (variadic, Type.OrderedTypes.Concrete [Type.string]));
       ]
     None;
   ()

@@ -545,7 +545,7 @@ module OrderedConstraints (Order : OrderType) = struct
       | _ -> TopTuple
 
 
-    let intersection left right ~order:_ =
+    let intersection left right ~order =
       match left, right with
       | TopTuple, _
       | _, TopTuple ->
@@ -553,10 +553,23 @@ module OrderedConstraints (Order : OrderType) = struct
       | other, BottomTuple
       | BottomTuple, other ->
           Some other
-      | SingletonTuple left, SingletonTuple right
-        when Type.OrderedTypes.equal_record Type.equal left right ->
-          Some (SingletonTuple left)
-      | _, _ -> Some TopTuple
+      | SingletonTuple left, SingletonTuple right ->
+          if
+            Order.always_less_or_equal
+              order
+              ~left:(Type.Tuple (Bounded left))
+              ~right:(Type.Tuple (Bounded right))
+          then
+            Some (SingletonTuple right)
+          else if
+            Order.always_less_or_equal
+              order
+              ~left:(Type.Tuple (Bounded right))
+              ~right:(Type.Tuple (Bounded left))
+          then
+            Some (SingletonTuple left)
+          else
+            None
 
 
     let narrowest_valid_value interval ~order:_ ~variable:_ =
