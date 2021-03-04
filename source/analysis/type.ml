@@ -2672,6 +2672,76 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
         | _ -> None )
     | _ -> None
   in
+  let extract_parameter ~create_logic index parameter =
+    match Node.value parameter with
+    | Expression.Call { callee = { Node.value = Name (Name.Identifier name); _ }; arguments } -> (
+        let arguments =
+          List.map arguments ~f:(fun { Call.Argument.value; _ } -> Node.value value)
+        in
+        match name, arguments with
+        | "PositionalOnly", annotation :: tail ->
+            let default =
+              match tail with
+              | [Name (Name.Identifier "default")] -> true
+              | _ -> false
+            in
+            CallableParameter.PositionalOnly
+              {
+                index;
+                annotation = create_logic (Node.create_with_default_location annotation);
+                default;
+              }
+        | "Named", Name (Name.Identifier name) :: annotation :: tail ->
+            let default =
+              match tail with
+              | [Name (Name.Identifier "default")] -> true
+              | _ -> false
+            in
+            Named
+              {
+                name;
+                annotation = create_logic (Node.create_with_default_location annotation);
+                default;
+              }
+        | "KeywordOnly", Name (Name.Identifier name) :: annotation :: tail ->
+            let default =
+              match tail with
+              | [Name (Name.Identifier "default")] -> true
+              | _ -> false
+            in
+            KeywordOnly
+              {
+                name;
+                annotation = create_logic (Node.create_with_default_location annotation);
+                default;
+              }
+        | "Variable", tail ->
+            let callable_parameter =
+              match tail with
+              | head :: _ ->
+                  let elements =
+                    List.map tail ~f:(fun annotation ->
+                        create_logic (Node.create_with_default_location annotation))
+                  in
+                  OrderedTypes.concatenation_from_annotations ~variable_aliases elements
+                  >>| (fun concatenation -> CallableParameter.Concatenation concatenation)
+                  |> Option.value
+                       ~default:
+                         (CallableParameter.Concrete
+                            (create_logic (Node.create_with_default_location head)))
+              | _ -> CallableParameter.Concrete Top
+            in
+            CallableParameter.Variable callable_parameter
+        | "Keywords", tail ->
+            let annotation =
+              match tail with
+              | annotation :: _ -> create_logic (Node.create_with_default_location annotation)
+              | _ -> Top
+            in
+            Keywords annotation
+        | _ -> PositionalOnly { index; annotation = Top; default = false } )
+    | _ -> PositionalOnly { index; annotation = create_logic parameter; default = false }
+  in
 
   let result =
     let create_logic = create_logic ~resolve_aliases ~variable_aliases in
@@ -2769,82 +2839,11 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
       let undefined = { annotation = Top; parameters = Undefined } in
       let get_signature = function
         | Expression.Tuple [parameters; annotation] -> (
-            let extract_parameter index parameter =
-              match Node.value parameter with
-              | Expression.Call
-                  { callee = { Node.value = Name (Name.Identifier name); _ }; arguments } -> (
-                  let arguments =
-                    List.map arguments ~f:(fun { Call.Argument.value; _ } -> Node.value value)
-                  in
-                  match name, arguments with
-                  | "PositionalOnly", annotation :: tail ->
-                      let default =
-                        match tail with
-                        | [Name (Name.Identifier "default")] -> true
-                        | _ -> false
-                      in
-                      CallableParameter.PositionalOnly
-                        {
-                          index;
-                          annotation = create_logic (Node.create_with_default_location annotation);
-                          default;
-                        }
-                  | "Named", Name (Name.Identifier name) :: annotation :: tail ->
-                      let default =
-                        match tail with
-                        | [Name (Name.Identifier "default")] -> true
-                        | _ -> false
-                      in
-                      Named
-                        {
-                          name;
-                          annotation = create_logic (Node.create_with_default_location annotation);
-                          default;
-                        }
-                  | "KeywordOnly", Name (Name.Identifier name) :: annotation :: tail ->
-                      let default =
-                        match tail with
-                        | [Name (Name.Identifier "default")] -> true
-                        | _ -> false
-                      in
-                      KeywordOnly
-                        {
-                          name;
-                          annotation = create_logic (Node.create_with_default_location annotation);
-                          default;
-                        }
-                  | "Variable", tail ->
-                      let callable_parameter =
-                        match tail with
-                        | head :: _ ->
-                            let elements =
-                              List.map tail ~f:(fun annotation ->
-                                  create_logic (Node.create_with_default_location annotation))
-                            in
-                            OrderedTypes.concatenation_from_annotations ~variable_aliases elements
-                            >>| (fun concatenation -> CallableParameter.Concatenation concatenation)
-                            |> Option.value
-                                 ~default:
-                                   (CallableParameter.Concrete
-                                      (create_logic (Node.create_with_default_location head)))
-                        | _ -> CallableParameter.Concrete Top
-                      in
-                      CallableParameter.Variable callable_parameter
-                  | "Keywords", tail ->
-                      let annotation =
-                        match tail with
-                        | annotation :: _ ->
-                            create_logic (Node.create_with_default_location annotation)
-                        | _ -> Top
-                      in
-                      Keywords annotation
-                  | _ -> PositionalOnly { index; annotation = Top; default = false } )
-              | _ -> PositionalOnly { index; annotation = create_logic parameter; default = false }
-            in
             let make_signature ~parameters = { annotation = create_logic annotation; parameters } in
             match Node.value parameters with
             | List parameters ->
-                make_signature ~parameters:(Defined (List.mapi ~f:extract_parameter parameters))
+                make_signature
+                  ~parameters:(Defined (List.mapi ~f:(extract_parameter ~create_logic) parameters))
             | _ -> (
                 let parsed = create_logic parameters in
                 match substitute_parameter_variadic parsed with
@@ -2888,15 +2887,24 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
     let create_parametric ~base ~argument =
       let parametric name =
         let parameters =
-          let element_to_parameters element =
-            let parsed = create_logic element in
-            match parameters_from_unpacked_annotation ~variable_aliases parsed with
-            | Some parameters -> parameters
-            | None -> (
-                match substitute_parameter_variadic parsed with
-                | Some variable ->
-                    [Record.Parameter.CallableParameters (ParameterVariadicTypeVariable variable)]
-                | _ -> [Record.Parameter.Single parsed] )
+          let element_to_parameters = function
+            | { Node.value = Expression.List elements; _ } ->
+                [
+                  Record.Parameter.CallableParameters
+                    (Defined (List.mapi ~f:(extract_parameter ~create_logic) elements));
+                ]
+            | element -> (
+                let parsed = create_logic element in
+                match parameters_from_unpacked_annotation ~variable_aliases parsed with
+                | Some parameters -> parameters
+                | None -> (
+                    match substitute_parameter_variadic parsed with
+                    | Some variable ->
+                        [
+                          Record.Parameter.CallableParameters
+                            (ParameterVariadicTypeVariable variable);
+                        ]
+                    | _ -> [Record.Parameter.Single parsed] ) )
           in
           match argument with
           | { Node.value = Expression.Tuple elements; _ } ->

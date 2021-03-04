@@ -3255,6 +3255,33 @@ let test_variadic_classes context =
        only parameter to call `strip_last` but got `Tensor[int, int, str]`.";
       "Revealed type [-1]: Revealed type for `y` is `Tensor[int, *Tuple[typing.Any, ...]]`.";
     ];
+  assert_type_errors
+    {|
+      from typing import Callable, Generic, Tuple, TypeVar
+      from pyre_extensions import ParameterSpecification, TypeVarTuple
+      from typing_extensions import Literal as L
+
+      T = TypeVar("T")
+      Ts = TypeVarTuple("Ts")
+      TParams = ParameterSpecification("TParams")
+
+      class Tensor(Generic[T, TParams, *Ts]):
+        def __init__(self, f: Callable[TParams, T], shape: Tuple[*Ts]) -> None:
+          self.f = f
+          self.shape = shape
+
+
+      def bar() -> None:
+        tensor: Tensor[float, [int, str], int, str]
+        y = tensor.f( *tensor.shape)
+        reveal_type(y)
+
+        tensor.f("wrong argument")
+     |}
+    [
+      "Revealed type [-1]: Revealed type for `y` is `float`.";
+      "Missing argument [20]: PositionalOnly call expects argument in position 1.";
+    ];
   ()
 
 

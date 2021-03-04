@@ -1243,7 +1243,10 @@ let rec messages ~concise ~signature location kind =
         match actual with
         | Single actual -> Format.asprintf "single type `%a`" Type.pp actual
         | CallableParameters actual ->
-            Format.asprintf "callable parameters `%a`" Type.Callable.pp_parameters actual
+            Format.asprintf
+              "callable parameters `%a`"
+              (Type.pp_parameters ~pp_type:Type.pp)
+              [CallableParameters actual]
         | Unpacked actual ->
             Format.asprintf
               "variadic `%a`"

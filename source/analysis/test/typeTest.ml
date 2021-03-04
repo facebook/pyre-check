@@ -386,6 +386,22 @@ let test_create _ =
   assert_create "typing_extensions.Literal[ONE]" Type.Top;
   assert_create "typing_extensions.Literal[None]" Type.none;
   assert_create "_NotImplementedType" Type.Any;
+
+  (* ParamSpec class. *)
+  assert_create
+    "ParamSpecClass[[int, str], [bool]]"
+    (Type.parametric
+       "ParamSpecClass"
+       [
+         CallableParameters
+           (Defined
+              [
+                PositionalOnly { index = 0; annotation = Type.integer; default = false };
+                PositionalOnly { index = 1; annotation = Type.string; default = false };
+              ]);
+         CallableParameters
+           (Defined [PositionalOnly { index = 0; annotation = Type.bool; default = false }]);
+       ]);
   ()
 
 
@@ -2404,8 +2420,6 @@ let test_zip_variables_with_parameters _ =
                      ~tail:[]));
          };
        ]);
-  (* TODO(T84854853): Removing ListVariadic regressed this edge case. TParams is supposed to resolve
-     to [str, bool]. *)
   assert_zipped
     ~generic_class:"Generic[T, TParams]"
     ~instantiation:"Foo[int, [str, bool]]"
@@ -2416,8 +2430,21 @@ let test_zip_variables_with_parameters _ =
            received_parameter = Single Type.integer;
          };
          {
-           variable_pair = Type.Variable.ParameterVariadicPair (parameter_variadic, Undefined);
-           received_parameter = Single Type.Top;
+           variable_pair =
+             Type.Variable.ParameterVariadicPair
+               ( parameter_variadic,
+                 Defined
+                   [
+                     PositionalOnly { index = 0; annotation = Type.string; default = false };
+                     PositionalOnly { index = 1; annotation = Type.bool; default = false };
+                   ] );
+           received_parameter =
+             CallableParameters
+               (Defined
+                  [
+                    PositionalOnly { index = 0; annotation = Type.string; default = false };
+                    PositionalOnly { index = 1; annotation = Type.bool; default = false };
+                  ]);
          };
        ]);
 
