@@ -99,6 +99,19 @@ class BasicTestCase(unittest.TestCase):
         except Exception:
             self.fail("Generic/GenericMeta/Concatenate missing or broken")
 
+    def test_variadic_tuple(self) -> None:
+        try:
+            from .. import TypeVarTuple, Unpack
+
+            T = TypeVar("T")
+            Ts = TypeVarTuple("Ts")
+
+            def apply(f: Callable[[Unpack[Ts]], T], *args: Unpack[Ts]) -> T:
+                return f(*args)
+
+        except Exception:
+            self.fail("Variadic tuples missing or broken")
+
 
 if __name__ == "__main__":
     unittest.main()

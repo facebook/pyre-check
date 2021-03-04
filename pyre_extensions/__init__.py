@@ -22,6 +22,8 @@ __all__ = [
     "safe_cast",
     "ParameterSpecification",
     "ListVariadic",
+    "TypeVarTuple",
+    "Unpack",
 ]
 
 
@@ -118,4 +120,16 @@ class Length(Generic[_Ts], int):
 
 
 class Product(Generic[_Ts], int):
+    pass
+
+
+class TypeVarTuple:
+    def __init__(
+        self,
+        name: str,
+    ) -> None:
+        pass
+
+
+class Unpack(Generic[_T]):
     pass
