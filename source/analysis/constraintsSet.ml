@@ -644,10 +644,6 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
           >>= Type.Variable.zip_variables_with_two_parameter_lists
                 ~left_parameters
                 ~right_parameters
-          >>| List.map ~f:(function
-                  | ( { Type.Variable.variable_pair = left_variable_pair; _ },
-                      { Type.Variable.variable_pair = right_variable_pair; _ } )
-                  -> left_variable_pair, right_variable_pair)
           >>| List.fold ~f:solve_respecting_variance ~init:[constraints]
         in
         let left_parameters =

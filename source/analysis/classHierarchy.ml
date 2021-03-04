@@ -339,7 +339,6 @@ let instantiate_successors_parameters ((module Handler : Handler) as handler) ~s
                             (variadic, Type.Variable.Variadic.Tuple.any)
                     in
                     Type.Variable.zip_variables_with_parameters ~parameters variables
-                    >>| List.map ~f:(function { Type.Variable.variable_pair; _ } -> variable_pair)
                     |> Option.value ~default:(List.map ~f:to_any variables)
                     |> TypeConstraints.Solution.create
                   in

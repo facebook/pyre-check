@@ -265,10 +265,6 @@ module OrderImplementation = struct
                       ~left_parameters
                       ~right_parameters
                       variables
-                    >>| List.map ~f:(function
-                            | ( { Type.Variable.variable_pair = left_variable_pair; _ },
-                                { Type.Variable.variable_pair = right_variable_pair; _ } )
-                            -> left_variable_pair, right_variable_pair)
                     >>| List.map ~f:join_parameters_respecting_variance
                     >>= Option.all
                     >>| List.map ~f:replace_free_unary_variables_with_top

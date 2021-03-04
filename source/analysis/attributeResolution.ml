@@ -860,7 +860,11 @@ class base class_metadata_environment dependency =
             in
             let invalid_type_parameters ~name ~given =
               let generics = generics_for_name name in
-              match Type.Variable.zip_variables_with_parameters ~parameters:given generics with
+              match
+                Type.Variable.zip_variables_with_parameters_including_mismatches
+                  ~parameters:given
+                  generics
+              with
               | Some [] -> Type.Primitive name, sofar
               | Some paired ->
                   let check_parameter { Type.Variable.variable_pair; received_parameter } =

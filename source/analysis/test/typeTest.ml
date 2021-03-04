@@ -2213,7 +2213,7 @@ let test_zip_variables_with_parameters _ =
       ~printer:[%show: Type.Variable.variable_zip_result list option]
       ~cmp:[%equal: Type.Variable.variable_zip_result list option]
       expected
-      (Type.Variable.zip_variables_with_parameters ~parameters variables)
+      (Type.Variable.zip_variables_with_parameters_including_mismatches ~parameters variables)
   in
   assert_zipped
     ~generic_class:"Generic[T, T2]"
@@ -2543,11 +2543,8 @@ let test_zip_on_two_parameter_lists _ =
       | _ -> failwith "expected Parametric"
     in
     assert_equal
-      ~printer:
-        [%show: (Type.Variable.variable_zip_result * Type.Variable.variable_zip_result) list option]
-      ~cmp:
-        [%equal:
-          (Type.Variable.variable_zip_result * Type.Variable.variable_zip_result) list option]
+      ~printer:[%show: (Type.Variable.pair * Type.Variable.pair) list option]
+      ~cmp:[%equal: (Type.Variable.pair * Type.Variable.pair) list option]
       expected
       (Type.Variable.zip_variables_with_two_parameter_lists
          ~left_parameters
@@ -2559,16 +2556,7 @@ let test_zip_on_two_parameter_lists _ =
     ~left:"Child[int]"
     ~right:"Base[str]"
     (Some
-       [
-         ( {
-             variable_pair = Type.Variable.UnaryPair (unary, Type.integer);
-             received_parameter = Single Type.integer;
-           },
-           {
-             variable_pair = Type.Variable.UnaryPair (unary, Type.string);
-             received_parameter = Single Type.string;
-           } );
-       ]);
+       [Type.Variable.UnaryPair (unary, Type.integer), Type.Variable.UnaryPair (unary, Type.string)]);
   assert_zipped ~generic_class:"Generic[T]" ~left:"Child[int]" ~right:"Base[str, bool]" None;
   ()
 

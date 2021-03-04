@@ -882,7 +882,9 @@ module Variable : sig
 
   val convert_all_escaped_free_variables_to_anys : type_t -> type_t
 
-  val zip_variables_with_parameters
+  val zip_variables_with_parameters : parameters:Parameter.t list -> t list -> pair list option
+
+  val zip_variables_with_parameters_including_mismatches
     :  parameters:Parameter.t list ->
     t list ->
     variable_zip_result list option
@@ -891,7 +893,7 @@ module Variable : sig
     :  left_parameters:Parameter.t list ->
     right_parameters:Parameter.t list ->
     t list ->
-    (variable_zip_result * variable_zip_result) list option
+    (pair * pair) list option
 
   val all_unary : t list -> Unary.t list option
 
