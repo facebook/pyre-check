@@ -632,12 +632,11 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
               List.concat_map constraints ~f:(fun constraints ->
                   solve_less_or_equal order ~constraints ~left ~right)
           | Type.Variable.TupleVariadicPair (_, left), Type.Variable.TupleVariadicPair (_, right) ->
-              (* We assume variadic classes are invariant. *)
+              (* We assume variadic classes are covariant by default since they represent the
+                 immutable shape of a datatype. *)
               constraints
               |> List.concat_map ~f:(fun constraints ->
                      solve_ordered_types_less_or_equal order ~left ~right ~constraints)
-              |> List.concat_map ~f:(fun constraints ->
-                     solve_ordered_types_less_or_equal order ~left:right ~right:left ~constraints)
           | _ -> impossible
         in
         let solve_parameters left_parameters right_parameters =

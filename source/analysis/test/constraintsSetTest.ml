@@ -118,7 +118,7 @@ let make_assert_functions context =
       Ts = pyre_extensions.TypeVarTuple("Ts")
       Ts2 = pyre_extensions.TypeVarTuple("Ts2")
 
-      class Tensor(typing.Generic[pyre_extensions.Unpack[Ts]]): ...
+      class Tensor(typing.Generic[T, pyre_extensions.Unpack[Ts]]): ...
     |}
       context
   in
@@ -890,11 +890,17 @@ let test_add_constraint_type_variable_tuple context =
 
   (* Parametric types. *)
   assert_add
-    ~left:"test.Tensor[str, bool]"
-    ~right:"test.Tensor[pyre_extensions.Unpack[Ts]]"
-    [["Ts", "typing.Tuple[str, bool]"]];
-  (* Tensor is invariant. *)
-  assert_add ~left:"Tensor[int, str]" ~right:"Tensor[float, str]" [];
+    ~left:"test.Tensor[str, bool, str]"
+    ~right:"test.Tensor[str, pyre_extensions.Unpack[Ts]]"
+    [["Ts", "typing.Tuple[bool, str]"]];
+  (* Tensor is invariant in the datatype. *)
+  assert_add ~left:"Tensor[int, int]" ~right:"Tensor[float, int]" [];
+  (* Tensor is covariant in the shape, since the shape is immutable. *)
+  assert_add ~left:"Tensor[int, int, int]" ~right:"Tensor[int, float, float]" [[]];
+  assert_add
+    ~left:"test.Tensor[str, int]"
+    ~right:"test.Tensor[str, pyre_extensions.Unpack[typing.Tuple[int, ...]]]"
+    [[]];
 
   (* Callable. *)
   assert_add

@@ -3009,7 +3009,8 @@ let test_variadic_classes context =
       "Incompatible parameter type [6]: Expected `Tensor[*test.Ts]` for 2nd positional only \
        parameter to call `expects_same_length` but got `Tensor[bool]`.";
     ];
-  (* Tensor is invariant. *)
+  (* Tensor is covariant in its shape, since the shape is immutable. However, it is invariant in the
+     unary datatype. *)
   assert_type_errors
     {|
       from typing import Generic, List, Protocol, Tuple, TypeVar
@@ -3018,20 +3019,23 @@ let test_variadic_classes context =
       T = TypeVar("T")
       Ts = TypeVarTuple("Ts")
 
-      class Tensor(Generic[*Ts]): ...
+      class Tensor(Generic[T, *Ts]): ...
 
       class Base: ...
       class Child(Base): ...
 
-      def foo(x: Tensor[Base, Base]) -> None: ...
+      def foo(x: Tensor[float, Base, Base]) -> None: ...
 
       def bar() -> None:
-        child: Tensor[Child, Child]
+        child: Tensor[float, Child, Child]
         foo(child)
+
+        int_tensor: Tensor[int, Base, Base]
+        foo(int_tensor)
      |}
     [
-      "Incompatible parameter type [6]: Expected `Tensor[Base, Base]` for 1st positional only \
-       parameter to call `foo` but got `Tensor[Child, Child]`.";
+      "Incompatible parameter type [6]: Expected `Tensor[float, Base, Base]` for 1st positional \
+       only parameter to call `foo` but got `Tensor[int, Base, Base]`.";
     ];
   assert_type_errors
     {|
@@ -3183,6 +3187,25 @@ let test_variadic_classes context =
        typing_extensions.Literal[20]]`.";
       "Revealed type [-1]: Revealed type for `y` is `Tensor[float, typing.Any]`.";
     ];
+  assert_type_errors
+    {|
+      from typing import Generic, Tuple, TypeVar
+      from pyre_extensions import TypeVarTuple
+      from typing_extensions import Literal as L
+
+      T = TypeVar("T")
+      Ts = TypeVarTuple("Ts")
+
+      class Tensor(Generic[T, *Ts]): ...
+
+      def get_last_type(t: Tensor[float, *Tuple[int, ...], T]) -> T: ...
+
+      def bar() -> None:
+        x: Tensor[float, L[10], L[20]]
+        y = get_last_type(x)
+        reveal_type(y)
+     |}
+    ["Revealed type [-1]: Revealed type for `y` is `typing_extensions.Literal[20]`."];
   ()
 
 
