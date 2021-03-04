@@ -2491,75 +2491,6 @@ module RecursiveType = struct
   end
 end
 
-let resolve_aliases ~aliases annotation =
-  let visited = Hash_set.create () in
-  let module ResolveTransform = Transform.Make (struct
-    type state = unit
-
-    let visit_children_before _ _ = false
-
-    let visit_children_after = true
-
-    let visit _ annotation =
-      let resolve annotation =
-        if Core.Hash_set.mem visited annotation then
-          annotation
-        else (
-          Core.Hash_set.add visited annotation;
-          let mark_recursive_alias_as_visited = function
-            | RecursiveType { name; _ } ->
-                (* Don't resolve the inner reference to the type. *)
-                Core.Hash_set.add visited (Primitive name)
-            | _ -> ()
-          in
-          match annotation with
-          | Primitive name -> (
-              match aliases ?replace_unbound_parameters_with_any:(Some true) name with
-              | Some (TypeAlias alias) ->
-                  mark_recursive_alias_as_visited alias;
-                  alias
-              | _ -> annotation )
-          | Parametric { name; parameters = [Single parameter] } -> (
-              (* Don't replace unbound generic parameters with Any. Otherwise, a generic alias Foo
-                 (or an import alias for a generic alias) will become Foo[Any] instead of Foo[T]. We
-                 will not find any free type variables in Foo[Any] and simply resolve it as
-                 Foo[Any]. *)
-              match aliases ?replace_unbound_parameters_with_any:(Some false) name with
-              | Some (TypeAlias alias) ->
-                  let instantiated_alias =
-                    instantiate
-                      ~constraints:(function
-                        | Variable _ -> Some parameter
-                        | _ -> None)
-                      alias
-                  in
-                  mark_recursive_alias_as_visited instantiated_alias;
-                  instantiated_alias
-              | _ -> annotation )
-          | Parametric { name = alias_name; parameters = alias_parameters } ->
-              let resolved =
-                match aliases ?replace_unbound_parameters_with_any:(Some false) alias_name with
-                | Some
-                    (TypeAlias
-                      (Parametric { name = resolved_name; parameters = resolved_parameters }))
-                  when List.length resolved_parameters = List.length alias_parameters ->
-                    Parametric { name = resolved_name; parameters = alias_parameters }
-                | _ -> annotation
-              in
-              mark_recursive_alias_as_visited resolved;
-              resolved
-          | RecursiveType _ ->
-              mark_recursive_alias_as_visited annotation;
-              annotation
-          | _ -> annotation )
-      in
-      let transformed_annotation = resolve annotation in
-      { Transform.transformed_annotation; new_state = () }
-  end)
-  in
-  snd (ResolveTransform.visit () annotation)
-
-
 module OrderedTypes = struct
   include Record.OrderedTypes
 
@@ -2691,7 +2622,7 @@ let parameters_from_unpacked_annotation annotation ~variable_aliases =
   | _ -> None
 
 
-let rec create_logic ~aliases ~variable_aliases { Node.value = expression; _ } =
+let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expression; _ } =
   let substitute_parameter_variadic = function
     | Primitive name -> (
         match variable_aliases name with
@@ -2711,8 +2642,7 @@ let rec create_logic ~aliases ~variable_aliases { Node.value = expression; _ } =
   in
 
   let result =
-    let create_logic = create_logic ~aliases ~variable_aliases in
-    let resolve_aliases = resolve_aliases ~aliases in
+    let create_logic = create_logic ~resolve_aliases ~variable_aliases in
     let rec is_typing_callable = function
       | Expression.Name
           (Name.Attribute
@@ -3388,15 +3318,6 @@ let type_parameters_for_bounded_tuple_union = function
 let single_parameter = function
   | Parametric { parameters = [Single parameter]; _ } -> parameter
   | _ -> failwith "Type does not have single parameter"
-
-
-let create ~aliases =
-  let variable_aliases name =
-    match aliases ?replace_unbound_parameters_with_any:(Some false) name with
-    | Some (VariableAlias variable) -> Some variable
-    | _ -> None
-  in
-  create_logic ~aliases ~variable_aliases
 
 
 let weaken_literals annotation =
@@ -4646,6 +4567,84 @@ end = struct
         Parameter.CallableParameters (Variadic.Parameters.self_reference variable)
     | TupleVariadic variadic -> Parameter.Unpacked (Variadic variadic)
 end
+
+let resolve_aliases ~aliases annotation =
+  let visited = Hash_set.create () in
+  let module ResolveTransform = Transform.Make (struct
+    type state = unit
+
+    let visit_children_before _ _ = false
+
+    let visit_children_after = true
+
+    let visit _ annotation =
+      let resolve annotation =
+        if Core.Hash_set.mem visited annotation then
+          annotation
+        else (
+          Core.Hash_set.add visited annotation;
+          let mark_recursive_alias_as_visited = function
+            | RecursiveType { name; _ } ->
+                (* Don't resolve the inner reference to the type. *)
+                Core.Hash_set.add visited (Primitive name)
+            | _ -> ()
+          in
+          match annotation with
+          | Primitive name -> (
+              match aliases ?replace_unbound_parameters_with_any:(Some true) name with
+              | Some (TypeAlias alias) ->
+                  mark_recursive_alias_as_visited alias;
+                  alias
+              | _ -> annotation )
+          | Parametric { name; parameters = [Single parameter] } -> (
+              (* Don't replace unbound generic parameters with Any. Otherwise, a generic alias Foo
+                 (or an import alias for a generic alias) will become Foo[Any] instead of Foo[T]. We
+                 will not find any free type variables in Foo[Any] and simply resolve it as
+                 Foo[Any]. *)
+              match aliases ?replace_unbound_parameters_with_any:(Some false) name with
+              | Some (TypeAlias alias) ->
+                  let instantiated_alias =
+                    instantiate
+                      ~constraints:(function
+                        | Variable _ -> Some parameter
+                        | _ -> None)
+                      alias
+                  in
+                  mark_recursive_alias_as_visited instantiated_alias;
+                  instantiated_alias
+              | _ -> annotation )
+          | Parametric { name = alias_name; parameters = alias_parameters } ->
+              let resolved =
+                match aliases ?replace_unbound_parameters_with_any:(Some false) alias_name with
+                | Some
+                    (TypeAlias
+                      (Parametric { name = resolved_name; parameters = resolved_parameters }))
+                  when List.length resolved_parameters = List.length alias_parameters ->
+                    Parametric { name = resolved_name; parameters = alias_parameters }
+                | _ -> annotation
+              in
+              mark_recursive_alias_as_visited resolved;
+              resolved
+          | RecursiveType _ ->
+              mark_recursive_alias_as_visited annotation;
+              annotation
+          | _ -> annotation )
+      in
+      let transformed_annotation = resolve annotation in
+      { Transform.transformed_annotation; new_state = () }
+  end)
+  in
+  snd (ResolveTransform.visit () annotation)
+
+
+let create ~aliases =
+  let variable_aliases name =
+    match aliases ?replace_unbound_parameters_with_any:(Some false) name with
+    | Some (VariableAlias variable) -> Some variable
+    | _ -> None
+  in
+  create_logic ~resolve_aliases:(resolve_aliases ~aliases) ~variable_aliases
+
 
 let namespace_insensitive_compare left right =
   compare
