@@ -355,11 +355,21 @@ module Record = struct
             List.split_n right_suffix (List.length right_suffix - suffix_length)
           in
           match List.zip left_prefix right_prefix, List.zip left_suffix right_suffix with
-          | Ok prefix_pairs, Ok suffix_pairs ->
-              Some
-                {
-                  prefix_pairs;
-                  middle_pair =
+          | Ok prefix_pairs, Ok suffix_pairs -> (
+              match left_middle, right_middle, right_prefix_rest, right_suffix_rest with
+              | UnboundedElements left_unbounded, UnboundedElements right_unbounded, [], [] ->
+                  Some
+                    {
+                      prefix_pairs =
+                        prefix_pairs
+                        @ List.map left_prefix_rest ~f:(fun concrete -> concrete, right_unbounded);
+                      middle_pair = Concrete [left_unbounded], Concrete [right_unbounded];
+                      suffix_pairs =
+                        List.map left_suffix_rest ~f:(fun concrete -> concrete, right_unbounded)
+                        @ suffix_pairs;
+                    }
+              | _ ->
+                  let middle_pair =
                     ( Concatenation
                         {
                           prefix = left_prefix_rest;
@@ -371,9 +381,9 @@ module Record = struct
                           prefix = right_prefix_rest;
                           middle = right_middle;
                           suffix = right_suffix_rest;
-                        } );
-                  suffix_pairs;
-                }
+                        } )
+                  in
+                  Some { prefix_pairs; middle_pair; suffix_pairs } )
           | _ -> None )
   end
 

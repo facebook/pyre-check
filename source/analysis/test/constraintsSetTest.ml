@@ -934,6 +934,11 @@ let test_add_constraint_type_variable_tuple context =
     ~right:"typing.Tuple[int, str, pyre_extensions.Unpack[typing.Tuple[str, ...]], bool]"
     ~leave_unbound_in_left:["Ts"]
     [["Ts", "typing.Tuple[str, pyre_extensions.Unpack[typing.Tuple[str, ...]]]"]];
+  assert_add
+    ~left:"typing.Tuple[int, str, pyre_extensions.Unpack[typing.Tuple[str, ...]], str, bool]"
+    ~right:"typing.Tuple[int, pyre_extensions.Unpack[typing.Tuple[T, ...]], bool]"
+    [["T", "str"]];
+
   (* Not valid because the unbounded tuple may be empty. *)
   assert_add
     ~left:"typing.Tuple[int, ...]"
