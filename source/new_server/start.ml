@@ -591,7 +591,8 @@ let start_server_and_wait ?event_channel server_configuration =
             Format.sprintf "Watchman subscription error: %s" message
         | Watchman.QueryError message -> Format.sprintf "Watchman query error: %s" message
         | Unix.Unix_error (Unix.EADDRINUSE, _, _) ->
-            "A Pyre server is already running for the current project."
+            "A Pyre server is already running for the current project. Use `pyre stop` to stop it \
+             before starting another one."
         | _ -> Exn.to_string exn
       in
       Log.info "%s" message;
