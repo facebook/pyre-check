@@ -143,3 +143,14 @@ def no_propagation_of_a_sink(x):
 def propagation_of_b_sink(x):
     y = sanitize_a_sink_tito(x)
     b_sink(y)
+
+
+def sanitize_a_tito_with_sink(x):
+    a_sink(x)
+    return x
+
+
+def test4():
+    x = a_source()
+    y = sanitize_a_tito_with_sink(x)  # flow here
+    a_sink(y)  # no flow here

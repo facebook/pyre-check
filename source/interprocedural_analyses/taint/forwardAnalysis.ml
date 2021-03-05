@@ -205,7 +205,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             (tito_effects, state)
             (argument_taint, ((argument, sink_matches), (_dup, tito_matches)))
           =
-          let argument_taint =
+          let taint_to_propagate =
             match mode with
             | Sanitize { tito = Some (SpecificTito { sanitized_tito_sources; _ }); _ } ->
                 ForwardState.Tree.partition
@@ -245,14 +245,14 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
               in
               let taint_to_propagate =
                 if collapse_tito then
-                  ForwardState.Tree.read path argument_taint
+                  ForwardState.Tree.read path taint_to_propagate
                   |> ForwardState.Tree.collapse
                   |> ForwardTaint.transform
                        ForwardTaint.flow_details
                        Abstract.Domain.(Map add_features_and_position)
                   |> ForwardState.Tree.create_leaf
                 else
-                  ForwardState.Tree.read path argument_taint
+                  ForwardState.Tree.read path taint_to_propagate
                   |> ForwardState.Tree.transform
                        ForwardTaint.flow_details
                        Abstract.Domain.(Map add_features_and_position)
@@ -292,7 +292,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           let tito =
             if taint_model.is_obscure then
               let obscure_tito =
-                ForwardState.Tree.collapse argument_taint
+                ForwardState.Tree.collapse taint_to_propagate
                 |> ForwardTaint.transform
                      ForwardTaint.simple_feature
                      Abstract.Domain.(Add Features.obscure)

@@ -1,5 +1,54 @@
 @generated
 {
+  "kind": "issue",
+  "data": {
+    "callable": "sanitize.test4",
+    "callable_line": 153,
+    "code": 1000,
+    "line": 155,
+    "start": 34,
+    "end": 35,
+    "filename": "sanitize.py",
+    "message": "source A to sink A",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "sanitize.py",
+              "line": 154,
+              "start": 8,
+              "end": 18
+            },
+            "leaves": [ { "kind": "TestA", "name": "sanitize.a_source" } ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "call": {
+              "position": {
+                "filename": "sanitize.py",
+                "line": 155,
+                "start": 34,
+                "end": 35
+              },
+              "resolves_to": [ "sanitize.sanitize_a_tito_with_sink" ],
+              "port": "formal(x)",
+              "length": 1
+            },
+            "leaves": [ { "kind": "TestA", "name": "sanitize.a_sink" } ]
+          }
+        ]
+      }
+    ],
+    "features": []
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "sanitize.a_sink",
@@ -156,6 +205,40 @@
     "callable": "sanitize.sanitize_a_tito",
     "sources": [],
     "sinks": [],
+    "tito": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize.sanitize_a_tito_with_sink",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "root": {
+              "filename": "sanitize.py",
+              "line": 149,
+              "start": 11,
+              "end": 12
+            },
+            "leaves": [ { "kind": "TestA", "name": "sanitize.a_sink" } ]
+          }
+        ]
+      }
+    ],
     "tito": [
       {
         "port": "formal(x)",
