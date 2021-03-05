@@ -162,7 +162,25 @@ let test_check_assert context =
           expect_int(y)
           expect_int(x)
     |}
-    []
+    [];
+  assert_type_errors
+    {|
+      from typing import Tuple, Any
+
+      def foo() -> None:
+        # pyre-ignore[33]: Explicit Any.
+        stringish_types: Tuple[Any, ...]
+
+        y: str
+        if isinstance(y, stringish_types):
+          pass
+   |}
+    [
+      "Incompatible parameter type [6]: Expected `typing.Union[typing.Type[typing.Any], \
+       typing.Tuple[typing.Type[typing.Any], ...]]` for 2nd positional only parameter to call \
+       `isinstance` but got `typing.Any`.";
+    ];
+  ()
 
 
 let test_check_assert_functions context =

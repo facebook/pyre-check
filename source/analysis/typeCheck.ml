@@ -4853,7 +4853,10 @@ module State (Context : Context) = struct
                       Type.OrderedTypes.Concatenation.extract_sole_unbounded_annotation
                         concatenation
                       >>= (fun element ->
-                            Type.single_parameter element |> Option.some_if (Type.is_meta element))
+                            if Type.is_meta element then
+                              Some (Type.single_parameter element)
+                            else
+                              None)
                       |> Option.value ~default:Type.Top
                   | _ -> Type.Top )
               | annotation -> annotation
