@@ -506,6 +506,14 @@ let test_resolve_mutable_literals context =
     ~source:"([test.D()], [test.C()])"
     ~against:"typing.Tuple[typing.List[test.C], ...]"
     "typing.Tuple[typing.List[test.C], ...]";
+  assert_resolve_mutable_literals
+    ~source:"( test.D(), *(test.C(), test.C()))"
+    ~against:"typing.Tuple[test.D, test.D, test.D]"
+    "typing.Tuple[test.D, test.C, test.C]";
+  assert_resolve_mutable_literals
+    ~source:"( test.D(), *(test.C(), test.C()))"
+    ~against:"typing.Tuple[test.D, ...]"
+    "typing.Tuple[test.D, test.C, test.C]";
 
   assert_resolve_mutable_literals
     ~source:"{'foo': 3}"
