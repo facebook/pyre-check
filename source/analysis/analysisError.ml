@@ -220,7 +220,7 @@ and illegal_annotation_target_kind =
 
 and tuple_concatenation_problem =
   | MultipleVariadics of { variadic_expressions: Expression.t list }
-  | UnpackingNonTuple of { annotation: Type.t }
+  | UnpackingNonIterable of { annotation: Type.t }
 [@@deriving compare, eq, sexp, show, hash]
 
 type invalid_decoration = {
@@ -1931,8 +1931,8 @@ let rec messages ~concise ~signature location kind =
           (if provided > 1 then "were" else "was");
       ]
   | Top -> ["Problem with analysis."]
-  | TupleConcatenationError (UnpackingNonTuple { annotation }) ->
-      [Format.asprintf "Expected to unpack a tuple, but got `%a`." pp_type annotation]
+  | TupleConcatenationError (UnpackingNonIterable { annotation }) ->
+      [Format.asprintf "Expected to unpack an iterable, but got `%a`." pp_type annotation]
   | TupleConcatenationError (MultipleVariadics { variadic_expressions }) ->
       [
         Format.asprintf

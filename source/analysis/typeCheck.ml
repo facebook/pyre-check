@@ -3535,17 +3535,29 @@ module State (Context : Context) = struct
                   let { Resolved.resolution; resolved = resolved_element; errors = new_errors; _ } =
                     forward_expression ~resolution ~expression
                   in
-                  let ordered_type, new_errors =
+                  let new_errors, ordered_type =
                     match resolved_element with
-                    | Type.Tuple ordered_type -> ordered_type, new_errors
-                    | _ ->
-                        ( Type.OrderedTypes.Concrete [Type.Any],
-                          emit_error
-                            ~errors:new_errors
-                            ~location
-                            ~kind:
-                              (Error.TupleConcatenationError
-                                 (UnpackingNonTuple { annotation = resolved_element })) )
+                    | Type.Tuple ordered_type -> new_errors, ordered_type
+                    | Type.Any ->
+                        new_errors, Type.OrderedTypes.create_unbounded_concatenation Type.Any
+                    | _ -> (
+                        match
+                          GlobalResolution.extract_type_parameters
+                            global_resolution
+                            ~target:"typing.Iterable"
+                            ~source:resolved_element
+                        with
+                        | Some [element_type] ->
+                            ( new_errors,
+                              Type.OrderedTypes.create_unbounded_concatenation element_type )
+                        | _ ->
+                            ( emit_error
+                                ~errors:new_errors
+                                ~location
+                                ~kind:
+                                  (Error.TupleConcatenationError
+                                     (UnpackingNonIterable { annotation = resolved_element })),
+                              Type.OrderedTypes.create_unbounded_concatenation Type.Any ) )
                   in
                   resolution, new_errors, ordered_type
               | _ ->

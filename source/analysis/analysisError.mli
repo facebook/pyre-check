@@ -211,7 +211,7 @@ and illegal_annotation_target_kind =
 
 and tuple_concatenation_problem =
   | MultipleVariadics of { variadic_expressions: Expression.t list }
-  | UnpackingNonTuple of { annotation: Type.t }
+  | UnpackingNonIterable of { annotation: Type.t }
 [@@deriving compare, eq, sexp, show, hash]
 
 type invalid_decoration_reason =

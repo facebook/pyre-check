@@ -613,10 +613,7 @@ let test_unpacking context =
         y = (x, *xs)
         reveal_type(y)
     |}
-    [
-      "Unable to concatenate tuple [60]: Expected to unpack a tuple, but got `str`.";
-      "Revealed type [-1]: Revealed type for `y` is `Tuple[int, typing.Any]`.";
-    ];
+    ["Revealed type [-1]: Revealed type for `y` is `typing.Tuple[int, *Tuple[str, ...]]`."];
   assert_type_errors
     {|
       from typing import Tuple
@@ -659,6 +656,57 @@ let test_unpacking context =
       "Unable to concatenate tuple [60]: Concatenation not yet support for multiple variadic \
        tuples: `*xs, *xs`.";
       "Revealed type [-1]: Revealed type for `y` is `typing.Tuple[typing.Any, ...]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import List, Tuple
+
+      def foo(x: int, some_list: List[int]) -> Tuple[int, ...]:
+        y = (x, *some_list)
+        reveal_type(y)
+        return y
+    |}
+    ["Revealed type [-1]: Revealed type for `y` is `typing.Tuple[int, *Tuple[int, ...]]`."];
+  assert_type_errors
+    {|
+      from typing import List
+
+      def foo(x: int, some_list: List[str]) -> None:
+        y = (x, *some_list)
+        reveal_type(y)
+    |}
+    ["Revealed type [-1]: Revealed type for `y` is `typing.Tuple[int, *Tuple[str, ...]]`."];
+  assert_type_errors
+    {|
+      from typing import Tuple, Union
+
+      def foo(x: int, union: Union[Tuple[int, str], Tuple[bool]]) -> None:
+        y = (x, *union)
+        reveal_type(y)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `y` is `typing.Tuple[int, *Tuple[Union[bool, int, \
+       str], ...]]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Any
+
+      # pyre-ignore[2]: Explicit Any.
+      def foo(x: int, any: Any) -> None:
+        y = (x, *any)
+        reveal_type(y)
+    |}
+    ["Revealed type [-1]: Revealed type for `y` is `typing.Tuple[int, *Tuple[typing.Any, ...]]`."];
+  assert_type_errors
+    {|
+      def foo(x: int, not_iterable: int) -> None:
+        y = (x, *not_iterable)
+        reveal_type(y)
+    |}
+    [
+      "Unable to concatenate tuple [60]: Expected to unpack an iterable, but got `int`.";
+      "Revealed type [-1]: Revealed type for `y` is `typing.Tuple[int, *Tuple[typing.Any, ...]]`.";
     ];
   ()
 
