@@ -97,6 +97,13 @@ def _watchman_section(watchman: str, name: str) -> Optional[Section]:
     )
 
 
+def _parse_log_file_name(name: str) -> Optional[datetime.datetime]:
+    try:
+        return datetime.datetime.strptime(name, start.SERVER_LOG_FILE_FORMAT)
+    except ValueError:
+        return None
+
+
 def _server_log_sections(
     log_directory: Path, limit: Optional[int] = None
 ) -> List[Section]:
@@ -104,9 +111,13 @@ def _server_log_sections(
     # will come first.
     timestamp_and_paths = sorted(
         (
-            (datetime.datetime.strptime(path.name, start.SERVER_LOG_FILE_FORMAT), path)
-            for path in (log_directory / "new_server").iterdir()
-            if path.is_file() and not path.is_symlink()
+            (timestamp, path)
+            for timestamp, path in (
+                (_parse_log_file_name(path.name), path)
+                for path in (log_directory / "new_server").iterdir()
+                if path.is_file()
+            )
+            if timestamp is not None
         ),
         key=lambda pair: pair[0],
         reverse=True,
