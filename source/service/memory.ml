@@ -195,11 +195,18 @@ let load_shared_memory ~path ~configuration =
   let open Pyre in
   let { directory; table_path; dependencies_path } = prepare_saved_state_directory configuration in
   run_tar ["xf"; path; "-C"; Path.absolute directory];
-  SharedMem.load_table (Path.absolute table_path);
-  let _edges_count : bytes =
-    SharedMem.load_dep_table_sqlite (Path.absolute dependencies_path) true
-  in
-  ()
+  try
+    SharedMem.load_table (Path.absolute table_path);
+    let _edges_count : bytes =
+      SharedMem.load_dep_table_sqlite (Path.absolute dependencies_path) true
+    in
+    ()
+  with
+  | SharedMem.C_assertion_failure e ->
+      Log.error
+        "Failed to load saved state from shared memory.\n\
+         This is likely due to a mismatch between the saved state and the binary version.";
+      raise (SharedMem.C_assertion_failure e)
 
 
 external pyre_reset : unit -> unit = "pyre_reset"
