@@ -69,6 +69,8 @@ val worker_garbage_control : Caml.Gc.control
 
 val report_statistics : unit -> unit
 
+exception SavedStateLoadingFailure of string
+
 val save_shared_memory : path:string -> configuration:Configuration.Analysis.t -> unit
 
 val load_shared_memory : path:string -> configuration:Configuration.Analysis.t -> unit

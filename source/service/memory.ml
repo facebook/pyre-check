@@ -180,6 +180,8 @@ let run_tar arguments =
     ()
 
 
+exception SavedStateLoadingFailure of string
+
 let save_shared_memory ~path ~configuration =
   let open Pyre in
   SharedMemory.collect `aggressive;
@@ -202,11 +204,11 @@ let load_shared_memory ~path ~configuration =
     in
     ()
   with
-  | SharedMem.C_assertion_failure e ->
+  | SharedMem.C_assertion_failure message ->
       Log.error
         "Failed to load saved state from shared memory.\n\
          This is likely due to a mismatch between the saved state and the binary version.";
-      raise (SharedMem.C_assertion_failure e)
+      raise (SavedStateLoadingFailure message)
 
 
 external pyre_reset : unit -> unit = "pyre_reset"

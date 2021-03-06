@@ -326,6 +326,10 @@ let initialize_server_state
         && list_length_equal left_excludes right_excludes
         && list_length_equal left_extensions right_extensions
       in
+      let load_from_shared_memory path =
+        try Result.Ok (Memory.load_shared_memory ~path:(Path.absolute path) ~configuration) with
+        | Memory.SavedStateLoadingFailure message -> Result.Error message
+      in
       let load_from_saved_state = function
         | Result.Error message ->
             Log.warning "%s" message;
@@ -333,47 +337,56 @@ let initialize_server_state
             Lwt.return (start_from_scratch ())
         | Result.Ok { SavedState.Fetched.path; changed_files } -> (
             Log.info "Restoring environments from saved state...";
-            Memory.load_shared_memory ~path:(Path.absolute path) ~configuration;
-            match
-              configuration_equal configuration (Server.SavedState.StoredConfiguration.load ())
-            with
-            | false ->
-                (* Although this is a rare occurrence, it *is* possible for the provided
-                   `Configuration.Analysis.t` to be different from what's stored in the saved state
-                   even if the configuration file remained the same. If that happens, we cannot
-                   reuse the saved state as it may lead to a server crash later. *)
-                Log.warning
-                  "Cannot load saved state due to unexpected configuration change. Falling back to \
-                   cold start...";
+            match load_from_shared_memory path with
+            | Result.Error message ->
+                Log.log ~section:`Server "Failed to load shared memory: %s" message;
                 Statistics.event
                   ~name:"saved state failure"
-                  ~normals:["reason", "configuration change"]
+                  ~normals:["reason", "shared memory loading failure"]
                   ();
                 Memory.reset_shared_memory ();
                 Lwt.return (start_from_scratch ())
-            | true ->
-                let loaded_state =
-                  let module_tracker = Analysis.ModuleTracker.SharedMemory.load () in
-                  let ast_environment = Analysis.AstEnvironment.load module_tracker in
-                  let type_environment =
-                    Analysis.AnnotatedGlobalEnvironment.create ast_environment
-                    |> Analysis.TypeEnvironment.create
-                  in
-                  Analysis.SharedMemoryKeys.DependencyKey.Registry.load ();
-                  let error_table = Server.SavedState.ServerErrors.load () in
-                  ServerState.create
-                    ~socket_path:(socket_path_of log_path)
-                    ~server_configuration
-                    ~type_environment
-                    ~error_table
-                    ()
-                in
-                let open Lwt.Infix in
-                Log.info "Processing recent updates not included in saved state...";
-                Statistics.event ~name:"saved state success" ();
-                Request.IncrementalUpdate (List.map changed_files ~f:Path.absolute)
-                |> RequestHandler.process_request ~state:loaded_state
-                >>= fun (new_state, _) -> Lwt.return new_state )
+            | Result.Ok () -> (
+                match
+                  configuration_equal configuration (Server.SavedState.StoredConfiguration.load ())
+                with
+                | false ->
+                    (* Although this is a rare occurrence, it *is* possible for the provided
+                       `Configuration.Analysis.t` to be different from what's stored in the saved
+                       state even if the configuration file remained the same. If that happens, we
+                       cannot reuse the saved state as it may lead to a server crash later. *)
+                    Log.warning
+                      "Cannot load saved state due to unexpected configuration change. Falling \
+                       back to cold start...";
+                    Statistics.event
+                      ~name:"saved state failure"
+                      ~normals:["reason", "configuration change"]
+                      ();
+                    Memory.reset_shared_memory ();
+                    Lwt.return (start_from_scratch ())
+                | true ->
+                    let loaded_state =
+                      let module_tracker = Analysis.ModuleTracker.SharedMemory.load () in
+                      let ast_environment = Analysis.AstEnvironment.load module_tracker in
+                      let type_environment =
+                        Analysis.AnnotatedGlobalEnvironment.create ast_environment
+                        |> Analysis.TypeEnvironment.create
+                      in
+                      Analysis.SharedMemoryKeys.DependencyKey.Registry.load ();
+                      let error_table = Server.SavedState.ServerErrors.load () in
+                      ServerState.create
+                        ~socket_path:(socket_path_of log_path)
+                        ~server_configuration
+                        ~type_environment
+                        ~error_table
+                        ()
+                    in
+                    let open Lwt.Infix in
+                    Log.info "Processing recent updates not included in saved state...";
+                    Statistics.event ~name:"saved state success" ();
+                    Request.IncrementalUpdate (List.map changed_files ~f:Path.absolute)
+                    |> RequestHandler.process_request ~state:loaded_state
+                    >>= fun (new_state, _) -> Lwt.return new_state ) )
       in
       let open Lwt.Infix in
       let get_initial_state () =
