@@ -205,9 +205,12 @@ let load_shared_memory ~path ~configuration =
     ()
   with
   | SharedMem.C_assertion_failure message ->
-      Log.error
-        "Failed to load saved state from shared memory.\n\
-         This is likely due to a mismatch between the saved state and the binary version.";
+      let message =
+        Format.sprintf
+          "Assertion failure in shared memory loading: %s. This is likely due to a mismatch \
+           between the saved state and the binary version."
+          message
+      in
       raise (SavedStateLoadingFailure message)
 
 

@@ -339,7 +339,7 @@ let initialize_server_state
             Log.info "Restoring environments from saved state...";
             match load_from_shared_memory path with
             | Result.Error message ->
-                Log.log ~section:`Server "Failed to load shared memory: %s" message;
+                Log.warning "%s" message;
                 Statistics.event
                   ~name:"saved state failure"
                   ~normals:["reason", "shared memory loading failure"]
