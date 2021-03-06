@@ -16,6 +16,7 @@ from typing import Any, Dict, List, Optional, Set, Type
 
 from typing_extensions import Final
 
+from ...api.connection import PyreConnection
 from ...client import statistics
 from .annotated_function_generator import (  # noqa
     AnnotatedFunctionGenerator,
@@ -60,6 +61,7 @@ class GenerationArguments:
     mode: Final[Optional[List[str]]]
     verbose: bool
     output_directory: Final[Optional[str]]
+    no_saved_state: bool = False
 
 
 def _file_exists(path: str) -> str:
@@ -75,6 +77,9 @@ def _parse_arguments(
     parser.add_argument("-v", "--verbose", action="store_true", help="Verbose logging")
     parser.add_argument("--mode", action="append", choices=generator_options.keys())
     parser.add_argument(
+        "--no-saved-state", action="store_true", help="Disable pyre saved state"
+    )
+    parser.add_argument(
         "--output-directory", type=_file_exists, help="Directory to write models to"
     )
     arguments: argparse.Namespace = parser.parse_args()
@@ -82,6 +87,7 @@ def _parse_arguments(
         mode=arguments.mode,
         verbose=arguments.verbose,
         output_directory=arguments.output_directory,
+        no_saved_state=arguments.no_saved_state,
     )
 
 
@@ -122,12 +128,16 @@ def run_from_parsed_arguments(
     default_modes: List[str],
     logger_executable: Optional[str] = None,
     include_default_modes: bool = False,
+    pyre_connection: Optional[PyreConnection] = None,
 ) -> None:
     argument_modes = arguments.mode or []
     if len(argument_modes) == 0 or include_default_modes:
         modes = list(set(argument_modes + default_modes))
     else:
         modes = argument_modes
+
+    if pyre_connection is not None and arguments.no_saved_state:
+        pyre_connection.add_arguments("--no-saved-state")
 
     generated_models: Dict[str, Set[Model]] = {}
     for mode in modes:
@@ -161,6 +171,7 @@ def run_generators(
     verbose: bool = False,
     logger_executable: Optional[str] = None,
     include_default_modes: bool = False,
+    pyre_connection: Optional[PyreConnection] = None,
 ) -> None:
     arguments = _parse_arguments(generator_options)
     logging.basicConfig(
@@ -174,4 +185,5 @@ def run_generators(
         default_modes,
         logger_executable,
         include_default_modes=include_default_modes,
+        pyre_connection=pyre_connection,
     )

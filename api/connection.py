@@ -33,10 +33,15 @@ class PyreQueryError(Exception):
 
 
 class PyreConnection:
-    def __init__(self, pyre_directory: Optional[Path] = None) -> None:
+    def __init__(
+        self,
+        pyre_directory: Optional[Path] = None,
+        pyre_arguments: Optional[List[str]] = None,
+    ) -> None:
         self.pyre_directory: Path = (
             pyre_directory if pyre_directory is not None else Path.cwd()
         )
+        self.pyre_arguments: List[str] = pyre_arguments or []
         self.server_initialized = False
 
     def __enter__(self) -> "PyreConnection":
@@ -52,12 +57,16 @@ class PyreConnection:
         self.stop_server()
         return None
 
+    def add_arguments(self, *arguments: str) -> None:
+        self.pyre_arguments += arguments
+
     def start_server(self) -> PyreCheckResult:
         subprocess.run(
-            ["pyre", "--noninteractive", "start"], cwd=str(self.pyre_directory)
+            ["pyre", "--noninteractive", *self.pyre_arguments, "start"],
+            cwd=str(self.pyre_directory),
         )
         result = subprocess.run(
-            ["pyre", "--noninteractive", "incremental"],
+            ["pyre", "--noninteractive", *self.pyre_arguments, "incremental"],
             stdout=subprocess.PIPE,
             cwd=str(self.pyre_directory),
         )
@@ -67,7 +76,7 @@ class PyreConnection:
     def restart_server(self) -> PyreCheckResult:
         result = _parse_check_output(
             subprocess.run(
-                ["pyre", "--noninteractive", "restart"],
+                ["pyre", "--noninteractive", *self.pyre_arguments, "restart"],
                 stdout=subprocess.PIPE,
                 cwd=str(self.pyre_directory),
             )
@@ -77,7 +86,7 @@ class PyreConnection:
 
     def stop_server(self) -> None:
         subprocess.run(
-            ["pyre", "--noninteractive", "stop"],
+            ["pyre", "--noninteractive", *self.pyre_arguments, "stop"],
             check=True,
             cwd=str(self.pyre_directory),
         )
@@ -102,7 +111,7 @@ class PyreConnection:
             self.start_server()
         LOG.debug(f"Running query: `pyre query '{query}'`")
         result = subprocess.run(
-            ["pyre", "--noninteractive", "query", query],
+            ["pyre", "--noninteractive", *self.pyre_arguments, "query", query],
             stdout=subprocess.PIPE,
             cwd=str(self.pyre_directory),
         )
