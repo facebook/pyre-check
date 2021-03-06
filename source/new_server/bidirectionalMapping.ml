@@ -63,4 +63,54 @@ module Make (Key : S) (Value : S) = struct
       in
       Hash_set.fold mapping ~init:[] ~f
   end
+
+  module Index = struct
+    type t = {
+      key_index: Value.t list Hashtbl.M(Key).t;
+      value_index: Key.t list Hashtbl.M(Value).t;
+    }
+
+    let create unindexed =
+      let size = Unindexed.length unindexed in
+      let key_index = Hashtbl.create (module Key) ~size in
+      let value_index = Hashtbl.create (module Value) ~size in
+      let do_index (item_key, item_value) =
+        Hashtbl.update key_index item_key ~f:(function
+            | None -> [item_value]
+            | Some values -> item_value :: values);
+        Hashtbl.update value_index item_value ~f:(function
+            | None -> [item_key]
+            | Some keys -> item_key :: keys)
+      in
+      Hash_set.iter unindexed ~f:do_index;
+      { key_index; value_index }
+
+
+    let lookup_key { key_index; _ } key = Hashtbl.find key_index key |> Option.value ~default:[]
+
+    let lookup_value { value_index; _ } value =
+      Hashtbl.find value_index value |> Option.value ~default:[]
+  end
+
+  module Indexed = struct
+    type t = {
+      unindexed: Unindexed.t;
+      index: Index.t;
+    }
+
+    let create unindexed = { unindexed; index = Index.create unindexed }
+
+    let length { unindexed; _ } = Unindexed.length unindexed
+
+    let difference
+        ~original:{ unindexed = original_unindexed; _ }
+        { unindexed = current_unindexed; _ }
+      =
+      Unindexed.difference ~original:original_unindexed current_unindexed
+
+
+    let lookup_key { index; _ } key = Index.lookup_key index key
+
+    let lookup_value { index; _ } value = Index.lookup_value index value
+  end
 end

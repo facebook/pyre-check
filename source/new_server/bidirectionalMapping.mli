@@ -75,4 +75,36 @@ module Make (Key : S) (Value : S) : sig
         contain no duplicates but are not guaranteed to be put in any particular order. Time
         complexity of this operation is O(n), where n is the size of the mapping.*)
   end
+
+  (** An indexed bidirectional mapping that can only be created from an unindexed one. It attempts
+      to be API-compatible with the its unindexed counterpart, except that an additional indexing
+      structure is computed such that the time complexity for lookup operations is constant instead
+      of linear. *)
+  module Indexed : sig
+    type t
+
+    val create : Unindexed.t -> t
+    (** Create an indexed bidirectional map from an unindexed one. Time complexity of this operation
+        is O(n + m). *)
+
+    val length : t -> int
+    (** Number of (key, value) pairs stored in the mapping. *)
+
+    val difference : original:t -> t -> Difference.t
+    (** [difference ~original current] computes the difference between the [original] mapping and
+        the [current] mapping. Time complexity of this operation is O(n + m), where n and m are the
+        sizes of the given hash sets. *)
+
+    val lookup_key : t -> Key.t -> Value.t list
+    (** Lookup all values that corresponds to the given key in a mapping. If there is no such value,
+        an empty list is returned. Note that the elements in the returned list are guaranteed to
+        contain no duplicates but are not guaranteed to be put in any particular order. Time
+        complexity of this operation is O(1). *)
+
+    val lookup_value : t -> Value.t -> Key.t list
+    (** Lookup all keys that corresponds to the given value in a mapping. If there is no such key,
+        an empty list is returned. Note that the elements in the returned list are guaranteed to
+        contain no duplicates but are not guaranteed to be put in any particular order. Time
+        complexity of this operation is O(1).*)
+  end
 end

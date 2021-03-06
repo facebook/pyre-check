@@ -59,6 +59,46 @@ let test_lookup context =
   ()
 
 
+let test_lookup_indexed context =
+  let assert_lookup_key ~mapping ~expected key =
+    assert_lookup
+      ~context
+      ~lookup:(fun _ -> IntToIntBidirectionalMapping.Indexed.lookup_key mapping key)
+      expected
+  in
+  let assert_lookup_value ~mapping ~expected value =
+    assert_lookup
+      ~context
+      ~lookup:(fun _ -> IntToIntBidirectionalMapping.Indexed.lookup_value mapping value)
+      expected
+  in
+
+  let mapping =
+    IntToIntBidirectionalMapping.Unindexed.of_list [1, 2; 1, 3; 2, 3; 2, 4; 3, 2; 3, 5; 3, 6; 4, 3]
+    |> IntToIntBidirectionalMapping.Indexed.create
+  in
+  assert_equal
+    ~ctxt:context
+    ~cmp:Int.equal
+    ~printer:Int.to_string
+    8
+    (IntToIntBidirectionalMapping.Indexed.length mapping);
+  assert_lookup_key ~mapping 1 ~expected:[2; 3];
+  assert_lookup_key ~mapping 2 ~expected:[3; 4];
+  assert_lookup_key ~mapping 3 ~expected:[2; 5; 6];
+  assert_lookup_key ~mapping 4 ~expected:[3];
+  assert_lookup_key ~mapping 5 ~expected:[];
+
+  assert_lookup_value ~mapping 1 ~expected:[];
+  assert_lookup_value ~mapping 2 ~expected:[1; 3];
+  assert_lookup_value ~mapping 3 ~expected:[1; 2; 4];
+  assert_lookup_value ~mapping 4 ~expected:[2];
+  assert_lookup_value ~mapping 5 ~expected:[3];
+  assert_lookup_value ~mapping 6 ~expected:[3];
+
+  ()
+
+
 let test_difference context =
   let assert_set_equal ~expected ~actual () =
     assert_equal
@@ -118,5 +158,9 @@ let test_difference context =
 
 let () =
   "bidirectional_mapping"
-  >::: ["lookup" >:: test_lookup; "difference" >:: test_difference]
+  >::: [
+         "lookup" >:: test_lookup;
+         "lookup_indexed" >:: test_lookup_indexed;
+         "difference" >:: test_difference;
+       ]
   |> Test.run
