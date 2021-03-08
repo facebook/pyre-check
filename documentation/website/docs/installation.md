@@ -34,7 +34,7 @@ $ opam switch 4.10.2
 
 This will compile the compiler from scratch and is likely going to take some time on your system.
 
-### Getting the Source
+### Building OCaml changes
 With a working OCaml, you can clone the source from [GitHub](https://github.com/facebook/pyre-check) with
 ```bash
 $ git clone https://github.com/facebook/pyre-check
@@ -54,6 +54,21 @@ This will generate a `Makefile` in the `source` directory. You can subsequently 
 $ make
 $ make test
 ```
+### Testing changes to the Python Client
+In a virtualenv, install dependencies with `requirements.txt` and run python tests to make sure everything is set up correctly
+
+```bash
+$ cd /path/to/pyre-check
+$ pip install -r requirements.txt
+$ ./scripts/run-python-tests.sh
+```
+When installing and running `pyre` from PyPi, the entry point to the executable is actually `client/pyre.py`. To be able to run this file from anywhere, add the `pyre-check` directory to `PYTHONPATH` and subsequently assign `pyre` and an alias for `client.pyre`.
+
+```bash
+$ echo "alias pyre='PYTHONPATH=\"/path/to/pyre-check:\$PYTHONPATH\" python -m client.pyre'" >> ~/.bashrc
+$ source ~/.bashrc
+```
+You should be able to open a new shell and run `pyre -h` now, confirming `pyre` was set-up correctly. Any changes made to the Pyre Python client code should be immediately observable the next time you invoke `pyre`
 
 ## Windows Subsystem for Linux (WSL) Install
 
