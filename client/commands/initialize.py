@@ -50,7 +50,8 @@ class Initialize(CommandParser):
                     with open(watchman_configuration_path, "w+") as configuration_file:
                         configuration_file.write("{}\n")
                     LOG.warning(
-                        f"Created basic `.watchmanconfig` at {watchman_configuration_path}"
+                        "Created basic `.watchmanconfig` at "
+                        + f"{watchman_configuration_path}"
                     )
                 subprocess.run(
                     [watchman_path, "watch-project", "."],
@@ -72,17 +73,15 @@ class Initialize(CommandParser):
             )
         if binary_path is None:
             binary_path = os.path.abspath(
-                log.get_input(
-                    "No `{}` found, enter the path manually: ".format(BINARY_NAME)
-                )
+                log.get_input(f"No `{BINARY_NAME}` found, enter the path manually: ")
             )
             if not os.path.isfile(binary_path):
                 raise InitializationException(
-                    "Unable to locate binary at `{}`.".format(binary_path)
+                    f"Unable to locate binary at `{binary_path}`."
                 )
             configuration["binary"] = binary_path
         else:
-            LOG.info("Binary found at `{}`".format(binary_path))
+            LOG.info(f"Binary found at `{binary_path}`")
 
         typeshed: Optional[Path] = find_typeshed()
         if typeshed is None:
@@ -91,7 +90,7 @@ class Initialize(CommandParser):
             ).resolve()
             if not typeshed.is_dir():
                 raise InitializationException(
-                    "No typeshed directory found at `{}`.".format(typeshed)
+                    f"No typeshed directory found at `{typeshed}`."
                 )
             configuration["typeshed"] = str(typeshed)
 
@@ -135,21 +134,21 @@ class Initialize(CommandParser):
             if os.path.isfile(configuration_path):
                 if is_local:
                     error = (
-                        "Local configurations must be created in subdirectories of `{}`"
-                        "as it already contains a `.pyre_configuration`.".format(
-                            current_directory
-                        )
+                        "Local configurations must be created in subdirectories of "
+                        + f"`{current_directory}` as it already contains a "
+                        + "`.pyre_configuration`."
                     )
                 else:
-                    error = "A pyre configuration already exists at `{}`.".format(
-                        configuration_path
+                    error = (
+                        "A pyre configuration already exists at "
+                        + f"`{configuration_path}`."
                     )
                 raise InitializationException(error)
-            if os.path.isfile(configuration_path + ".local"):
+            local_configuration_path = configuration_path + ".local"
+            if os.path.isfile(local_configuration_path):
                 raise InitializationException(
-                    "A local pyre configuration already exists at `{}`.".format(
-                        configuration_path + ".local"
-                    )
+                    "A local pyre configuration already exists at "
+                    + f"`{local_configuration_path}`."
                 )
             if is_local:
                 configuration_path = configuration_path + ".local"
@@ -163,7 +162,7 @@ class Initialize(CommandParser):
             LOG.log(
                 log.SUCCESS,
                 "Successfully initialized pyre! "
-                + "You can view the configuration at `{}`.".format(configuration_path),
+                + f"You can view the configuration at `{configuration_path}`.",
             )
         except InitializationException as error:
             LOG.error(f"{error}")
