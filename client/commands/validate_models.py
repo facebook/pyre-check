@@ -38,6 +38,9 @@ class ValidateModels(Query):
         error: ModelVerificationError,
         original_directory: str,
     ) -> ModelVerificationError:
+        if error.path is None:
+            return error
+
         path = os.path.realpath(os.path.join(relative_root, error.path))
         # If relative paths don't make sense, keep the absolute path around.
         if not path.startswith(configuration.project_root) or not os.path.exists(path):
@@ -67,7 +70,7 @@ class ValidateModels(Query):
                 )
                 for error_json in json_result["errors"]
             ),
-            key=lambda error: (error.path, error.line, error.code),
+            key=lambda error: (error.path or "?", error.line, error.code),
         )
 
     def _socket_result_handler(self, result: Result) -> None:

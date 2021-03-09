@@ -181,7 +181,7 @@ class ModelVerificationError:
     column: int
     stop_line: int
     stop_column: int
-    path: Path
+    path: Optional[Path]
     description: str
     code: Optional[int]
 
@@ -193,7 +193,9 @@ class ModelVerificationError:
                 column=error_json["column"],
                 stop_line=error_json["stop_line"],
                 stop_column=error_json["stop_column"],
-                path=Path(error_json["path"]),
+                path=Path(error_json["path"])
+                if error_json["path"] is not None
+                else None,
                 description=error_json["description"],
                 code=error_json.get("code"),
             )
@@ -218,13 +220,13 @@ class ModelVerificationError:
             "column": self.column,
             "stop_line": self.stop_line,
             "stop_column": self.stop_column,
-            "path": str(self.path),
+            "path": str(self.path) if self.path is not None else None,
             "description": self.description,
             "code": self.code,
         }
 
     def to_text(self) -> str:
-        path = click.style(str(self.path), fg="red")
+        path = click.style(str(self.path or "?"), fg="red")
         line = click.style(str(self.line), fg="yellow")
         column = click.style(str(self.column), fg="yellow")
         return f"{path}:{line}:{column} {self.description}"

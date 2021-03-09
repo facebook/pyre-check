@@ -19,6 +19,9 @@ LOG: logging.Logger = logging.getLogger(__name__)
 def _relativize_error_path(
     error: error_module.ModelVerificationError,
 ) -> error_module.ModelVerificationError:
+    if error.path is None:
+        return error
+
     relativized_path = Path(os.path.relpath(error.path, Path.cwd()))
     return dataclasses.replace(error, path=relativized_path)
 

@@ -181,3 +181,23 @@ class ErrorTest(unittest.TestCase):
                 code=1001,
             ),
         )
+        assert_parsed(
+            {
+                "line": 1,
+                "column": 1,
+                "stop_line": 2,
+                "stop_column": 3,
+                "path": None,
+                "description": "Some description",
+                "code": 1001,
+            },
+            expected=ModelVerificationError(
+                line=1,
+                column=1,
+                stop_line=2,
+                stop_column=3,
+                path=None,
+                description="Some description",
+                code=1001,
+            ),
+        )
