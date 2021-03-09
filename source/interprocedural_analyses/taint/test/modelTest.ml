@@ -1155,15 +1155,6 @@ let test_invalid_models context =
     ~model_source:"def test.partial_sink(x: PartialSink[Test[a]], y: PartialSink[Test[b]]): ..."
     ();
 
-  assert_invalid_model
-    ~model_source:"def not_in_the_environment(parameter: InvalidTaintDirection[Test]): ..."
-    ~expect:"`not_in_the_environment` is not part of the environment!"
-    ();
-  assert_invalid_model
-    ~model_source:"def not_in_the_environment.derp(parameter: InvalidTaintDirection[Test]): ..."
-    ~expect:"`not_in_the_environment.derp` is not part of the environment!"
-    ();
-
   assert_valid_model ~model_source:"def test.sink(): ..." ();
   assert_valid_model ~model_source:"def test.sink_with_optional(): ..." ();
   assert_valid_model ~model_source:"def test.sink_with_optional(parameter): ..." ();
@@ -1678,6 +1669,46 @@ let test_invalid_models context =
       @Sanitize
       class test.C: ...
     |}
+    ();
+
+  (* Error on non-existenting callables. *)
+  assert_invalid_model
+    ~model_source:"def not_in_the_environment(parameter: InvalidTaintDirection[Test]): ..."
+    ~expect:"`not_in_the_environment` is not part of the environment!"
+    ();
+  assert_invalid_model
+    ~model_source:"def not_in_the_environment.derp(parameter: InvalidTaintDirection[Test]): ..."
+    ~expect:"`not_in_the_environment.derp` is not part of the environment!"
+    ();
+  assert_invalid_model
+    ~source:
+      {|
+      class Parent:
+        def foo(self) -> int: ...
+      class Child(Parent):
+        pass
+    |}
+    ~model_source:{|
+      def test.Child.foo(self) -> TaintSource[Test]: ...
+    |}
+    ~expect:
+      "The modelled function `test.Child.foo` is an imported function, please model \
+       `test.Parent.foo` directly."
+    ();
+  assert_invalid_model
+    ~source:
+      {|
+      class Parent:
+        @property
+        def foo(self) -> int: ...
+      class Child(Parent):
+        pass
+    |}
+    ~model_source:{|
+      @property
+      def test.Child.foo(self) -> TaintSource[Test]: ...
+    |}
+    ~expect:"`test.Child.foo` is not part of the environment!"
     ();
   ()
 

@@ -1486,13 +1486,18 @@ let callable_annotation
     >>= List.find_map ~f:get_matching_define
     >>| Annotation.create
     |> function
-    | Some annotation -> annotation
-    | None -> global_type ()
+    | Some annotation -> Ok annotation
+    | None ->
+        Error
+          (model_verification_error
+             ~path:None
+             ~location
+             (ModelVerificationError.T.NotInEnvironment (Reference.show name)))
   in
   if signature_is_property define then
-    Ok (get_matching_method ~predicate:is_property)
+    get_matching_method ~predicate:is_property
   else if Define.Signature.is_property_setter define then
-    Ok (get_matching_method ~predicate:Define.is_property_setter)
+    get_matching_method ~predicate:Define.is_property_setter
   else if (not (List.is_empty decorators)) && verify_decorators then
     (* Ensure that models don't declare decorators that our taint analyses doesn't understand. We
        check for the verify_decorators flag, as defines originating from
