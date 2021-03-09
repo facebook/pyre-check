@@ -137,11 +137,8 @@ def find_typeshed() -> Optional[Path]:
     return find_parent_directory_containing_directory(current_directory, "typeshed/")
 
 
-def find_typeshed_search_paths(typeshed_root: Path) -> List[Path]:
-    """
-    Given the root of typeshed, find all subdirectories in it that can be used
-    as search paths for Pyre.
-    """
+# TODO (T84007561): Remove this function when typeshed is up-to-date in all repos.
+def find_legacy_typeshed_search_paths(typeshed_root: Path) -> List[Path]:
     search_path = []
     typeshed_subdirectories = ["stdlib", "third_party"]
     for typeshed_subdirectory_name in typeshed_subdirectories:
@@ -159,6 +156,34 @@ def find_typeshed_search_paths(typeshed_root: Path) -> List[Path]:
                 continue
             search_path.append(typeshed_subdirectory / version_name)
     return search_path
+
+
+def find_new_typeshed_search_paths(typeshed_root: Path) -> List[Path]:
+    search_path = []
+    third_party_root = typeshed_root / "stubs"
+    third_party_subdirectories = (
+        third_party_root.iterdir() if third_party_root.is_dir() else []
+    )
+    for typeshed_subdirectory in itertools.chain(
+        [typeshed_root / "stdlib"], third_party_subdirectories
+    ):
+        if typeshed_subdirectory.is_dir():
+            search_path.append(typeshed_subdirectory)
+    return search_path
+
+
+def find_typeshed_search_paths(typeshed_root: Path) -> List[Path]:
+    """
+    Given the root of typeshed, find all subdirectories in it that can be used
+    as search paths for Pyre.
+    """
+    # HACK: for backward compatibility, we heuristically check for the existence
+    # of `third_party` directory to determine whether to use the legacy structure
+    # or the new structure.
+    if (typeshed_root / "third_party").is_dir():
+        return find_legacy_typeshed_search_paths(typeshed_root)
+    else:
+        return find_new_typeshed_search_paths(typeshed_root)
 
 
 def find_taint_models_directory() -> Optional[Path]:

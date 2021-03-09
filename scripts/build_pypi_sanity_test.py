@@ -42,10 +42,6 @@ def validate_configuration(temporary_project_path: Path) -> None:
 
     production_assert(typeshed_path.is_dir(), "Typeshed was not installed.")
     production_assert(
-        (typeshed_path / "third_party").is_dir(),
-        "`third_party` was not included in typeshed.",
-    )
-    production_assert(
         (typeshed_path / "stdlib").is_dir(), "`stdlib` was not included in typeshed."
     )
 

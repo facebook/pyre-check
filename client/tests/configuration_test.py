@@ -795,7 +795,7 @@ class ConfigurationTest(testslide.TestCase):
             root_path = Path(root)
             ensure_directories_exists(root_path, ["a"])
             ensure_directories_exists(
-                root_path, ["typeshed/stdlib/3", "typeshed/third_party/3"]
+                root_path, ["typeshed/stdlib", "typeshed/stubs/foo"]
             )
 
             self.assertListEqual(
@@ -809,8 +809,8 @@ class ConfigurationTest(testslide.TestCase):
                 ).get_existent_search_paths(),
                 [
                     SimpleSearchPathElement(str(root_path / "a")),
-                    SimpleSearchPathElement(str(root_path / "typeshed/stdlib/3")),
-                    SimpleSearchPathElement(str(root_path / "typeshed/third_party/3")),
+                    SimpleSearchPathElement(str(root_path / "typeshed/stdlib")),
+                    SimpleSearchPathElement(str(root_path / "typeshed/stubs/foo")),
                 ],
             )
 

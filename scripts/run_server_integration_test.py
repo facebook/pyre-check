@@ -45,7 +45,7 @@ def extract_typeshed(typeshed_zip_path: str, base_directory: str) -> str:
     assert_readable_directory(typeshed)
     # Prune all non-essential directories.
     for entry in os.listdir(typeshed):
-        if entry in ["stdlib", "third_party"]:
+        if entry in ["stdlib", "third_party", "stubs"]:
             continue
         full_path = os.path.join(typeshed, entry)
         if os.path.isfile(full_path):
