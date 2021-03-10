@@ -179,8 +179,9 @@ class Initialize(CommandParser):
                 configuration_file.write("\n")
             LOG.log(
                 log.SUCCESS,
-                "Successfully initialized pyre! "
-                + f"You can view the configuration at `{configuration_path}`.",
+                "Successfully initialized pyre!\n"
+                + f"  You can view the configuration at `{configuration_path}`.\n"
+                + "  You can now run the type checker with `pyre`.",
             )
         except InitializationException as error:
             LOG.error(f"{error}")
