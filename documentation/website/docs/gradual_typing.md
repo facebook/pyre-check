@@ -98,7 +98,7 @@ We have found tools that automatically add type annotations to code useful to ge
 
 Pyre can do static type inference. You can run
 ```bash
-(venv) $ pyre infer -i <directory or path>
+(venv) $ cd <path to project>; pyre infer -i
 ```
 to automatically apply annotations.
 
