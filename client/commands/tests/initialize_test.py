@@ -42,11 +42,11 @@ class InitializeTest(unittest.TestCase):
         get_yes_no_input.return_value = True
 
         def exists(path):
-            if path.endswith(".watchmanconfig"):
+            if str(path).endswith(".watchmanconfig"):
                 return False
-            elif path.endswith(".pyre_configuration"):
+            elif str(path).endswith(".pyre_configuration"):
                 return False
-            elif path.endswith(".pyre_configuration.local"):
+            elif str(path).endswith(".pyre_configuration.local"):
                 return False
             else:
                 return True
@@ -76,7 +76,7 @@ class InitializeTest(unittest.TestCase):
         file = mock_open()
         with patch("builtins.open", file), patch.object(
             initialize.Initialize, "_get_local_configuration", return_value={}
-        ), patch.object(initialize.Initialize, "_is_local", return_value=True):
+        ), patch.object(initialize, "find_global_root", return_value=Path("/")):
             initialize.Initialize().run()
             file().write.assert_has_calls([call("{}"), call("\n")])
 
@@ -98,7 +98,8 @@ class InitializeTest(unittest.TestCase):
         ):
             yes_no_input.side_effect = [True]
             self.assertEqual(
-                command._get_local_configuration(), {"targets": ["//target/..."]}
+                command._get_local_configuration(Path("/"), Path("/")),
+                {"targets": ["//target/..."]},
             )
 
         with patch.object(log, "get_yes_no_input") as yes_no_input, patch.object(
@@ -106,6 +107,6 @@ class InitializeTest(unittest.TestCase):
         ):
             yes_no_input.side_effect = [False]
             self.assertEqual(
-                command._get_local_configuration(),
+                command._get_local_configuration(Path("/"), Path("/")),
                 {"source_directories": ["project/a", "project/b"]},
             )

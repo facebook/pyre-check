@@ -17,7 +17,9 @@ from .. import log
 from ..find_directories import (
     BINARY_NAME,
     CONFIGURATION_FILE,
+    LOCAL_CONFIGURATION_FILE,
     find_global_root,
+    find_parent_directory_containing_file,
     find_taint_models_directory,
     find_typeshed,
 )
@@ -105,15 +107,29 @@ class Initialize(CommandParser):
         configuration["source_directories"] = [analysis_directory]
         return configuration
 
-    def _get_local_configuration(self) -> Dict[str, Any]:
+    def _get_local_configuration(
+        self, current_directory: Path, buck_root: Optional[Path]
+    ) -> Dict[str, Any]:
         configuration: Dict[str, Any] = {}
         using_targets = log.get_yes_no_input("Is your project built with Buck?")
         if using_targets:
             targets = log.get_input(
-                "Which buck target(s) should pyre analyze? \
-                (`//target:a`, `//target/b/...`)\n"
-            )
-            configuration["targets"] = [target.strip() for target in targets.split(",")]
+                "Which buck target(s) should pyre analyze?\n"
+                + "  Default: Analyze all targets under the configuration.\n"
+                + "  (Ex. `//target:a, //target/b/...`)\n"
+            ).strip()
+            if len(targets) == 0:
+                if buck_root:
+                    root = current_directory.relative_to(buck_root)
+                    configuration["targets"] = f"//{str(root)}/..."
+                else:
+                    raise InitializationException(
+                        "No `.buckconfig` found with which to create a default target."
+                    )
+            else:
+                configuration["targets"] = [
+                    target.strip() for target in targets.split(",")
+                ]
         else:
             source_directories = log.get_input(
                 "Which directory(ies) should pyre analyze?\n"
@@ -123,36 +139,38 @@ class Initialize(CommandParser):
             ]
         return configuration
 
-    def _is_local(self) -> bool:
-        return find_global_root(Path(".")) is not None
-
     def _run(self) -> None:
         try:
-            is_local = self._is_local()
-            current_directory = os.getcwd()
-            configuration_path = os.path.join(current_directory, CONFIGURATION_FILE)
+            global_root: Optional[Path] = find_global_root(Path("."))
+            buck_root: Optional[Path] = find_parent_directory_containing_file(
+                Path("."), ".buckconfig"
+            )
+            current_directory: Path = Path(os.getcwd())
+            configuration_path = current_directory / CONFIGURATION_FILE
             if os.path.isfile(configuration_path):
-                if is_local:
+                if global_root:
                     error = (
                         "Local configurations must be created in subdirectories of "
-                        + f"`{current_directory}` as it already contains a "
+                        + f"`{str(current_directory)}` as it already contains a "
                         + "`.pyre_configuration`."
                     )
                 else:
                     error = (
                         "A pyre configuration already exists at "
-                        + f"`{configuration_path}`."
+                        + f"`{str(configuration_path)}`."
                     )
                 raise InitializationException(error)
-            local_configuration_path = configuration_path + ".local"
-            if os.path.isfile(local_configuration_path):
+            local_configuration_path = current_directory / LOCAL_CONFIGURATION_FILE
+            if local_configuration_path.is_file():
                 raise InitializationException(
                     "A local pyre configuration already exists at "
-                    + f"`{local_configuration_path}`."
+                    + f"`{str(local_configuration_path)}`."
                 )
-            if is_local:
-                configuration_path = configuration_path + ".local"
-                configuration = self._get_local_configuration()
+            if global_root:
+                configuration_path = local_configuration_path
+                configuration = self._get_local_configuration(
+                    current_directory, buck_root
+                )
             else:
                 configuration = self._get_configuration()
 
