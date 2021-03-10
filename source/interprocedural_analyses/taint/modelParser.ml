@@ -1441,6 +1441,7 @@ type model_or_query =
   | Query of ModelQuery.rule
 
 let callable_annotation
+    ~path
     ~location
     ~verify_decorators
     ~resolution
@@ -1490,7 +1491,7 @@ let callable_annotation
     | None ->
         Error
           (model_verification_error
-             ~path:None
+             ~path
              ~location
              (ModelVerificationError.T.NotInEnvironment (Reference.show name)))
   in
@@ -1504,7 +1505,7 @@ let callable_annotation
        `create_model_from_annotation` are not user-specified models that we're parsing. *)
     Error
       (model_verification_error
-         ~path:None
+         ~path
          ~location
          (ModelVerificationError.T.UnexpectedDecorators { name; unexpected_decorators = decorators }))
   else
@@ -1703,7 +1704,7 @@ let compute_sources_and_sinks_to_keep ~configuration ~rule_filter =
       Some sources_to_keep, Some sinks_to_keep
 
 
-let create ~resolution ?path ~configuration ~rule_filter source =
+let create ~resolution ~path ~configuration ~rule_filter source =
   let open Core.Result in
   let sources_to_keep, sinks_to_keep =
     compute_sources_and_sinks_to_keep ~configuration ~rule_filter
@@ -2057,7 +2058,7 @@ let create ~resolution ?path ~configuration ~rule_filter source =
     in
     (* Make sure we know about what we model. *)
     let callable_annotation =
-      callable_annotation ~location ~verify_decorators:true ~resolution define
+      callable_annotation ~path ~location ~verify_decorators:true ~resolution define
     in
     let call_target = (call_target :> Callable.t) in
     let callable_annotation =
@@ -2236,7 +2237,7 @@ let create ~resolution ?path ~configuration ~rule_filter source =
 
 let parse ~resolution ?path ?rule_filter ~source ~configuration models =
   let new_models_and_queries, errors =
-    create ~resolution ?path ~rule_filter ~configuration source |> List.partition_result
+    create ~resolution ~path ~rule_filter ~configuration source |> List.partition_result
   in
   let new_models, new_queries =
     List.fold
@@ -2286,7 +2287,12 @@ let create_model_from_annotations ~resolution ~callable ~sources_to_keep ~sinks_
            (Format.sprintf "No callable corresponding to `%s` found." (Callable.show callable)))
   | Some (_, { Node.value = { Define.signature = define; _ }; _ }) ->
       let callable_annotation =
-        callable_annotation ~location:Location.any ~resolution ~verify_decorators:false define
+        callable_annotation
+          ~path:None
+          ~location:Location.any
+          ~resolution
+          ~verify_decorators:false
+          define
         >>| Annotation.annotation
         >>| function
         | Type.Callable t -> Some t
