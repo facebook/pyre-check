@@ -2056,6 +2056,16 @@ let create ~resolution ~path ~configuration ~rule_filter source =
       let sanitizers, nonsanitizers = List.partition_tf define.decorators ~f:is_taint_decorator in
       sanitizers, { define with decorators = nonsanitizers }
     in
+    (* To ensure that the start/stop lines can be used for commenting out models,
+     * we include the earliest decorator location. *)
+    let location =
+      let start =
+        match decorators with
+        | [] -> location.Location.start
+        | first :: _ -> first.name.location.start
+      in
+      { location with start }
+    in
     (* Make sure we know about what we model. *)
     let callable_annotation =
       callable_annotation ~path ~location ~verify_decorators:true ~resolution define
@@ -2071,16 +2081,6 @@ let create ~resolution ~path ~configuration ~rule_filter source =
            annotation. This is fragile! *)
         && not (Annotation.is_immutable callable_annotation)
       then
-        let location =
-          (* To ensure that the start/stop lines can be used for commenting out models, we have the
-             not-in-environment errors also include the earliest decorator location. *)
-          let start =
-            match decorators with
-            | [] -> location.start
-            | first :: _ -> first.name.location.start
-          in
-          { location with start }
-        in
         Error
           {
             ModelVerificationError.T.kind =
