@@ -94,7 +94,7 @@ class ClassHierarchy:
 
 class InvalidModel(NamedTuple):
     fully_qualified_name: str
-    path: str
+    path: Optional[str]
     line: int
     column: int
     stop_line: int
