@@ -80,13 +80,13 @@ let sanitize_defines ~strip_decorators source =
   source
 
 
-let rename_local_variable ~from ~to_ { Node.value = statement; location } =
+let rename_local_variable ~from ~to_ statement =
   let rename_identifier = function
     | Expression.Name (Name.Identifier identifier) when Identifier.equal identifier from ->
         Expression.Name (Name.Identifier to_)
     | expression -> expression
   in
-  { Node.value = Transform.transform_expressions ~transform:rename_identifier statement; location }
+  Transform.transform_expressions ~transform:rename_identifier statement
 
 
 let requalify_name ~old_qualifier ~new_qualifier = function
@@ -303,10 +303,10 @@ let inline_decorator_in_define
   in
   let inlined_wrapper_define_statement =
     Statement.Define inlined_wrapper_define
-    |> Node.create ~location
     |> rename_local_variable
          ~from:higher_order_function_parameter_name
          ~to_:(Preprocessing.qualify_local_identifier ~qualifier inlined_original_function_name)
+    |> Node.create ~location
   in
   let return_call_to_wrapper =
     Statement.Return
