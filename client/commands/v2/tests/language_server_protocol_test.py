@@ -34,6 +34,7 @@ from ..language_server_protocol import (
     DidCloseTextDocumentParameters,
     TextDocumentIdentifier,
     DidSaveTextDocumentParameters,
+    InitializationOptions,
 )
 
 T = TypeVar("T")
@@ -188,7 +189,7 @@ class LSPParsingTest(testslide.TestCase):
                 "processId": 42,
                 "clientInfo": {"name": "foo", "version": "v0"},
                 "rootUri": "file:///not_relevant",
-                "initializationOptions": "not_relevant",
+                "initializationOptions": {"notebookNumber": 12345},
                 "capabilities": {
                     "workspace": {},
                     "textDocument": {
@@ -232,6 +233,7 @@ class LSPParsingTest(testslide.TestCase):
                         ),
                     )
                 ),
+                initialization_options=InitializationOptions(notebook_number=12345),
             ),
         )
 

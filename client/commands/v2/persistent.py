@@ -102,6 +102,7 @@ def process_initialize_request(
 class InitializationSuccess:
     client_capabilities: lsp.ClientCapabilities
     client_info: Optional[lsp.Info] = None
+    initialization_options: Optional[lsp.InitializationOptions] = None
 
 
 @dataclasses.dataclass(frozen=True)
@@ -170,6 +171,7 @@ async def try_initialize(
         return InitializationSuccess(
             client_capabilities=initialize_parameters.capabilities,
             client_info=initialize_parameters.client_info,
+            initialization_options=initialize_parameters.initialization_options,
         )
     except json_rpc.JSONRPCException as json_rpc_error:
         await lsp.write_json_rpc(

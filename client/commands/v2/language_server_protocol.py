@@ -295,10 +295,20 @@ class ServerCapabilities:
     undefined=dataclasses_json.Undefined.EXCLUDE,
 )
 @dataclasses.dataclass(frozen=True)
+class InitializationOptions:
+    notebook_number: Optional[int] = None
+
+
+@dataclasses_json.dataclass_json(
+    letter_case=dataclasses_json.LetterCase.CAMEL,
+    undefined=dataclasses_json.Undefined.EXCLUDE,
+)
+@dataclasses.dataclass(frozen=True)
 class InitializeParameters:
     capabilities: ClientCapabilities
     process_id: Optional[int] = None
     client_info: Optional[Info] = None
+    initialization_options: Optional[InitializationOptions] = None
 
     @staticmethod
     def from_json_rpc_parameters(
