@@ -2,22 +2,26 @@
 def requests.api.request(
         method: TaintSink[RequestSend_METADATA],
         url: TaintSink[RequestSend_URI],
+        *,
         auth: TaintSink[Authentication],
         **kwargs: TaintSink[RequestSend_DATA]
 ): ...
 def requests.api.get(
         url: TaintSink[RequestSend_URI],
         params: TaintSink[RequestSend_DATA],
+        *,
         auth: TaintSink[Authentication],
         **kwargs: TaintSink[RequestSend_METADATA]
 ): ...
 def requests.api.options(
         url: TaintSink[RequestSend_URI],
+        *,
         auth: TaintSink[Authentication],
         **kwargs: TaintSink[RequestSend_METADATA]
 ): ...
 def requests.api.head(
         url: TaintSink[RequestSend_URI],
+        *,
         auth: TaintSink[Authentication],
         **kwargs: TaintSink[RequestSend_METADATA]
 ): ...
@@ -25,6 +29,7 @@ def requests.api.post(
         url: TaintSink[RequestSend_URI],
         data: TaintSink[RequestSend_DATA],
         json: TaintSink[RequestSend_DATA],
+        *,
         auth: TaintSink[Authentication],
         **kwargs: TaintSink[RequestSend_METADATA]
 ): ...
@@ -32,6 +37,7 @@ def requests.api.put(
         url: TaintSink[RequestSend_URI],
         data: TaintSink[RequestSend_DATA],
         json: TaintSink[RequestSend_DATA],
+        *,
         auth: TaintSink[Authentication],
         **kwargs: TaintSink[RequestSend_METADATA]
 ): ...
@@ -39,11 +45,13 @@ def requests.api.patch(
         url: TaintSink[RequestSend_URI],
         data: TaintSink[RequestSend_DATA],
         json: TaintSink[RequestSend_DATA],
+        *,
         auth: TaintSink[Authentication],
         **kwargs: TaintSink[RequestSend_METADATA]
 ): ...
 def requests.api.delete(
         url: TaintSink[RequestSend_URI],
+        *,
         auth: TaintSink[Authentication],
         **kwargs: TaintSink[RequestSend_METADATA]
 ): ...
@@ -52,18 +60,21 @@ def requests.api.delete(
 def requests.sessions.Session.get(
         self,
         url: TaintSink[RequestSend_URI],
+        *,
         auth: TaintSink[Authentication],
         **kwargs: TaintSink[RequestSend_METADATA]
 ): ...
 def requests.sessions.Session.options(
         self,
         url: TaintSink[RequestSend_URI],
+        *,
         auth: TaintSink[Authentication],
         **kwargs: TaintSink[RequestSend_METADATA]
 ): ...
 def requests.sessions.Session.head(
         self,
         url: TaintSink[RequestSend_URI],
+        *,
         auth: TaintSink[Authentication],
         **kwargs: TaintSink[RequestSend_METADATA]
 ): ...
@@ -72,6 +83,7 @@ def requests.sessions.Session.post(
         url: TaintSink[RequestSend_URI],
         data: TaintSink[RequestSend_DATA],
         json: TaintSink[RequestSend_DATA],
+        *,
         auth: TaintSink[Authentication],
         **kwargs: TaintSink[RequestSend_METADATA]
 ): ...
@@ -79,6 +91,7 @@ def requests.sessions.Session.put(
         self,
         url: TaintSink[RequestSend_URI],
         data: TaintSink[RequestSend_DATA],
+        *,
         auth: TaintSink[Authentication],
         **kwargs: TaintSink[RequestSend_METADATA]
 ): ...
@@ -86,12 +99,14 @@ def requests.sessions.Session.patch(
         self,
         url: TaintSink[RequestSend_URI],
         data: TaintSink[RequestSend_DATA],
+        *,
         auth: TaintSink[Authentication],
         **kwargs: TaintSink[RequestSend_METADATA]
 ): ...
 def requests.sessions.Session.delete(
         self,
         url: TaintSink[RequestSend_URI],
+        *,
         auth: TaintSink[Authentication],
         **kwargs: TaintSink[RequestSend_METADATA]
 ): ...
@@ -171,7 +186,7 @@ def http.client.HTTPConnection.putrequest(self,
                                          ): ...
 def http.client.HTTPConnection.putheader(self,
                                          header: TaintSink[RequestSend_METADATA],
-                                         argument: TaintSink[RequestSend_DATA]
+                                         *argument: TaintSink[RequestSend_DATA]
                                         ): ...
 
 # socket
