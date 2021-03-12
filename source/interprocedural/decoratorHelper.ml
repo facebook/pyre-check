@@ -121,14 +121,11 @@ let create_function_call_to
     ~location
     { Define.signature = { name = { Node.value = function_name; _ }; async; parameters; _ }; _ }
   =
-  let parameter_to_argument = function
-    | { Node.value = { Parameter.name; value = None; _ }; location } ->
-        Some
-          {
-            Call.Argument.name = None;
-            value = Expression.Name (create_name ~location name) |> Node.create ~location;
-          }
-    | _ -> None
+  let parameter_to_argument { Node.value = { Parameter.name; _ }; location } =
+    {
+      Call.Argument.name = None;
+      value = Expression.Name (create_name ~location name) |> Node.create ~location;
+    }
   in
   let call =
     Expression.Call
@@ -136,7 +133,7 @@ let create_function_call_to
         callee =
           Expression.Name (create_name_from_reference ~location function_name)
           |> Node.create ~location;
-        arguments = List.filter_map parameters ~f:parameter_to_argument;
+        arguments = List.map parameters ~f:parameter_to_argument;
       }
   in
   if async then Expression.Await (Node.create ~location call) else call

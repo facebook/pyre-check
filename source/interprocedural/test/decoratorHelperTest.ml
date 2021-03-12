@@ -254,6 +254,46 @@ let test_inline_decorators context =
 
       return __wrapper(y)
   |};
+  (* Wrapper function with default values for parameters. *)
+  assert_inlined
+    {|
+    from builtins import __test_sink
+    from typing import Callable
+
+    def with_logging(callable: Callable[[str], None]) -> Callable[[str], None]:
+
+      def inner(y: str, z: int = 4) -> None:
+        __test_sink(y)
+        callable(y + z)
+
+      return inner
+
+    @with_logging
+    def foo(z: str) -> None:
+      print(z)
+  |}
+    {|
+    from builtins import __test_sink
+    from typing import Callable
+
+    def with_logging(callable: Callable[[str], None]) -> Callable[[str], None]:
+
+      def inner(y: str, z: int = 4) -> None:
+        __test_sink(y)
+        callable(y + z)
+
+      return inner
+
+    def foo(y: str, z: int = 4) -> None:
+      def __original_function(z: str) -> None:
+        print(z)
+
+      def __wrapper(y: str, z: int = 4) -> None:
+        __test_sink(y)
+        __original_function(y + z)
+
+      return __wrapper(y, z)
+  |};
   ()
 
 
