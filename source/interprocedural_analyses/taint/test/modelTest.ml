@@ -1208,8 +1208,12 @@ let test_invalid_models context =
   assert_valid_model
     ~model_source:"def test.function_with_args(normal_arg, __random_name, *args): ..."
     ();
-  assert_valid_model
+  assert_invalid_model
     ~model_source:"def test.function_with_args(normal_arg, __random_name, *, named_arg, *args): ..."
+    ~expect:
+      "Model signature parameters for `test.function_with_args` do not match implementation `def \
+       function_with_args(normal_arg: unknown, unknown, *(unknown)) -> None: ...`. Reason: \
+       unexpected named parameter: `named_arg`."
     ();
   assert_valid_model
     ~model_source:

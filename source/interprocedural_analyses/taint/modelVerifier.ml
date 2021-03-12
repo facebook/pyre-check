@@ -120,9 +120,13 @@ let model_compatible
           if String.Set.mem parameter_set name then
             let parameter_set = String.Set.remove parameter_set name in
             errors, { requirements with parameter_set }
-          else if has_star_parameter || has_star_star_parameter then
-            (* If the name is not found in the set, it might be covered by ``**kwargs` *)
+          else if has_star_star_parameter then
+            (* If the name is not found in the set, it is covered by `**kwargs` *)
             errors, requirements
+          else if has_star_parameter then (* positional parameters can be covered by `*args` *)
+            match model_parameter with
+            | PositionalParameter _ -> errors, requirements
+            | _ -> UnexpectedNamedParameter name :: errors, requirements
           else
             UnexpectedNamedParameter name :: errors, requirements
     | StarParameter _ ->
