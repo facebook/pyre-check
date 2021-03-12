@@ -155,6 +155,15 @@ let test_parse _ =
   assert_ignore ["def foo() -> int: return 1.0  # 'quote before is not OK' pyre-ignore"] [];
   assert_ignore ["def foo() -> int: return 1.0  # 'still in quotes' 'pyre-ignore'"] [];
 
+  (* Test whitespace parsing *)
+  assert_ignore
+    ["def foo() -> str: return 1  #      pyre-ignore[7, 1, 2]"]
+    [create_ignore 1 [7; 1; 2] PyreIgnore 1 28 1 55];
+  assert_ignore
+    ["def foo() -> str: return 1  # pyre-ignore   [7, 1, 2]"]
+    [create_ignore 1 [7; 1; 2] PyreIgnore 1 28 1 53];
+  assert_ignore_codes " # pyre-ignore-all-errors   [42, 7,   15] " [42; 7; 15];
+
   (* Ignores apply to next non-comment line *)
   assert_ignore
     ["# pyre-ignore[7]"; "# another comment"; "def foo() -> str: return"]
