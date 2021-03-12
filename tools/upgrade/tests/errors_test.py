@@ -206,6 +206,12 @@ class ErrorsTest(unittest.TestCase):
             "# Unrelated comment.",
         )
 
+        get_unused_ignore_codes.return_value = [1, 3, 4]
+        self.assertEqual(
+            _remove_unused_ignores("# pyre-fixme    [1, 2, 3, 4]: Comment", []),
+            "# pyre-fixme    [2]: Comment",
+        )
+
     def assertSuppressErrors(
         self,
         errors: Dict[int, List[Dict[str, str]]],

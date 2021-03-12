@@ -429,7 +429,7 @@ def _get_unused_ignore_codes(errors: List[Dict[str, str]]) -> List[int]:
 
 def _remove_unused_ignores(line: str, errors: List[Dict[str, str]]) -> str:
     unused_ignore_codes = _get_unused_ignore_codes(errors)
-    match = re.search(r"pyre-(ignore|fixme)\[([0-9, ]*)\]", line)
+    match = re.search(r"pyre-(ignore|fixme) *\[([0-9, ]*)\]", line)
     stripped_line = re.sub(r"# pyre-(ignore|fixme).*$", "", line).rstrip()
     if not match:
         return stripped_line
