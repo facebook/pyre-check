@@ -439,40 +439,36 @@ module MakeStatementTransformer (Transformer : StatementTransformer) = struct
     { state = !state; source = { source with Source.statements } }
 end
 
-module SanitizeExpressions = Make (struct
-  type t = unit
+let transform_expressions ~transform statement =
+  let module TransformExpressions = Make (struct
+    type t = unit
 
-  let transform_expression_children _ _ = true
+    let transform_expression_children _ _ = true
 
-  let expression _ { Node.location; value } =
-    match value with
-    | Expression.Name (Name.Identifier identifier) ->
-        {
-          Node.location;
-          value = Expression.Name (Name.Identifier (Identifier.sanitized identifier));
-        }
-    | Name (Name.Attribute ({ attribute; _ } as attribute_expression)) ->
-        {
-          Node.location;
-          value =
-            Name
-              (Name.Attribute
-                 { attribute_expression with attribute = Identifier.sanitized attribute });
-        }
-    | _ -> { Node.location; value }
+    let expression _ { Node.value; location } = { Node.value = transform value; location }
 
+    let transform_children _ _ = true
 
-  let transform_children _ _ = true
-
-  let statement state statement = state, [statement]
-end)
-
-let sanitize_expression expression =
-  SanitizeExpressions.transform
-    ()
-    (Source.create [Node.create_with_default_location (Statement.Expression expression)])
-  |> (fun { SanitizeExpressions.source; _ } -> source)
+    let statement state statement = state, [statement]
+  end)
+  in
+  TransformExpressions.transform () (Source.create [Node.create_with_default_location statement])
+  |> (fun { TransformExpressions.source; _ } -> source)
   |> Source.statements
   |> function
-  | [{ Node.value = Statement.Expression expression; _ }] -> expression
+  | [{ Node.value = statement; _ }] -> statement
+  | _ -> failwith "expected single statement"
+
+
+let sanitize_expression expression =
+  let transform = function
+    | Expression.Name (Name.Identifier identifier) ->
+        Expression.Name (Name.Identifier (Identifier.sanitized identifier))
+    | Name (Name.Attribute ({ attribute; _ } as attribute_expression)) ->
+        Name
+          (Name.Attribute { attribute_expression with attribute = Identifier.sanitized attribute })
+    | expression -> expression
+  in
+  match transform_expressions ~transform (Statement.Expression expression) with
+  | Statement.Expression expression -> expression
   | _ -> expression

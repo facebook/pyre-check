@@ -484,6 +484,53 @@ let test_statement_transformer _ =
     28
 
 
+let test_transform_expression _ =
+  let keep_first_argument = function
+    | Expression.Call
+        {
+          Call.callee = { Node.value = Name (Identifier given_callee_name); location };
+          arguments = argument :: _;
+        } ->
+        Expression.Call
+          {
+            Call.callee = { Node.value = Name (Identifier given_callee_name); location };
+            arguments = [argument];
+          }
+    | expression -> expression
+  in
+  let assert_transform given expected =
+    match parse given |> Source.statements, parse expected |> Source.statements with
+    | [{ Node.value = given; _ }], [{ Node.value = expected; _ }] ->
+        let actual = Transform.transform_expressions ~transform:keep_first_argument given in
+        let printer x = [%sexp_of: Statement.statement] x |> Sexp.to_string_hum in
+        assert_equal
+          ~cmp:(fun left right ->
+            Statement.location_insensitive_compare
+              (Node.create_with_default_location left)
+              (Node.create_with_default_location right)
+            = 0)
+          ~printer
+          ~pp_diff:(diff ~print:(fun format x -> Format.fprintf format "%s" (printer x)))
+          expected
+          actual
+    | _ -> failwith "expected one statement each"
+  in
+  assert_transform
+    {|
+      def foo():
+        bar(1, 2)
+        x = bar(bar(1, bar(2, 3)), bar(4, 5))
+        some_other_function()
+    |}
+    {|
+      def foo():
+        bar(1)
+        x = bar(bar(1))
+        some_other_function()
+    |};
+  ()
+
+
 let () =
   "transform"
   >::: [
@@ -492,5 +539,6 @@ let () =
          "expansion_with_stop" >:: test_expansion_with_stop;
          "statement_double_counter" >:: test_double_count;
          "statement_transformer" >:: test_statement_transformer;
+         "transform_expression" >:: test_transform_expression;
        ]
   |> Test.run
