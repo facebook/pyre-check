@@ -98,6 +98,23 @@ def foo_with_shady_decorators(z: str) -> None:
     print(z)
 
 
+def with_named_logger(logger_name: str) -> Callable[[Callable], Callable]:
+    def _inner_decorator(f: Callable) -> Callable:
+        def inner(*args: object, **kwargs: object) -> None:
+            print("Logging to:", logger_name)
+            __test_sink(args)
+            f(*args, **kwargs)
+
+        return inner
+
+    return _inner_decorator
+
+
+@with_named_logger("foo_logger")
+def foo_using_decorator_factory(x: str) -> None:
+    print(x)
+
+
 def main() -> None:
     foo(__test_source())
     foo_with_sink(__test_source())
@@ -111,3 +128,5 @@ def main() -> None:
     foo_args_kwargs_with_sink("hello", __test_source())
 
     foo_with_shady_decorators("hello")
+
+    foo_using_decorator_factory(__test_source())

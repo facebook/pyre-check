@@ -153,35 +153,30 @@ let rename_define ~new_name ({ Define.signature = { name; _ } as signature; _ } 
   { define with Define.signature = { signature with name = { name with Node.value = new_name } } }
 
 
-let get_higher_order_function_parameter ~environment { Define.signature = { parameters; _ }; _ } =
-  match parameters with
-  | [{ Node.value = { Parameter.name; annotation = Some annotation; _ }; _ }] -> (
-      let resolution =
-        TypeCheck.resolution
-          (TypeEnvironment.ReadOnly.global_resolution environment)
-          (module TypeCheck.DummyContext)
-      in
-      match Resolution.resolve_expression_to_type resolution annotation with
-      | Type.Parametric
-          {
-            name = "type";
-            parameters = [Single (Type.Callable _ | Type.Primitive "typing.Callable")];
-          } ->
-          (* We only support simple decorators that accept a callable. *)
-          Some name
-      | _ -> None )
-  | _ -> None
+type decorator_data = {
+  wrapper_define: Define.t;
+  higher_order_function_parameter_name: Identifier.t;
+}
 
-
-let extract_wrapper_define { Define.body; _ } =
-  let nested_defines =
+let extract_decorator_data ~is_decorator_factory { Define.signature = { parameters; _ }; body; _ } =
+  let get_nested_defines body =
     List.filter_map body ~f:(function
         | { Node.value = Statement.Define wrapper_define; _ } -> Some wrapper_define
         | _ -> None)
   in
-  match nested_defines with
-  | [wrapper_define] -> Some wrapper_define
-  | _ -> None
+  let sole_wrapper_function_and_callable_parameter ~parameters body =
+    match get_nested_defines body, parameters with
+    | [wrapper_define], [{ Node.value = { Parameter.name; _ }; _ }] ->
+        Some { wrapper_define; higher_order_function_parameter_name = name }
+    | _ -> None
+  in
+  if is_decorator_factory then
+    match get_nested_defines body with
+    | [{ Define.body; signature = { parameters; _ }; _ }] ->
+        sole_wrapper_function_and_callable_parameter ~parameters body
+    | _ -> None
+  else
+    sole_wrapper_function_and_callable_parameter ~parameters body
 
 
 let make_args_assignment_from_parameters
@@ -427,18 +422,16 @@ let inline_decorator_in_define
 
 let apply_decorator
     ~location
-    ~environment
     ~qualifier
     ~decorator_bodies
-    ~decorator:{ Decorator.name = { Node.value = decorator_name; _ }; _ }
+    ~decorator:{ Decorator.name = { Node.value = decorator_name; _ }; arguments }
     define
   =
   let decorator_body = Map.find decorator_bodies decorator_name in
   match
-    ( decorator_body >>= extract_wrapper_define,
-      decorator_body >>= get_higher_order_function_parameter ~environment )
+    decorator_body >>= extract_decorator_data ~is_decorator_factory:(Option.is_some arguments)
   with
-  | Some wrapper_define, Some higher_order_function_parameter_name ->
+  | Some { wrapper_define; higher_order_function_parameter_name } ->
       inline_decorator_in_define
         ~location
         ~qualifier
@@ -449,7 +442,7 @@ let apply_decorator
   | _ -> None
 
 
-let inline_decorators ~environment ~decorator_bodies source =
+let inline_decorators ~environment:_ ~decorator_bodies source =
   let module Transform = Transform.Make (struct
     type t = unit
 
@@ -488,8 +481,7 @@ let inline_decorators ~environment ~decorator_bodies source =
                         (List.length decorators - index - 1)
                         ~f:(fun _ -> inlined_original_function_name)))
               in
-              define_sofar
-              >>= apply_decorator ~location ~environment ~qualifier ~decorator_bodies ~decorator
+              define_sofar >>= apply_decorator ~location ~qualifier ~decorator_bodies ~decorator
             in
             List.foldi (List.rev decorators) ~init:(Some define) ~f:apply_decorator_with_qualifier
             >>= postprocess

@@ -547,6 +547,110 @@ let test_inline_decorators context =
     def foo(z: str) -> None:
       print(z)
   |};
+  (* Decorator factory. *)
+  assert_inlined
+    {|
+    from typing import Callable
+    from builtins import __test_sink
+
+    def with_named_logger(logger_name: str) -> Callable[[Callable], Callable]:
+
+      def _inner_decorator(f: Callable) -> Callable:
+
+        def inner( *args: object, **kwargs: object) -> None:
+          print(logger_name)
+          __test_sink(args)
+          f( *args, **kwargs)
+
+        return inner
+
+      return _inner_decorator
+
+    @with_named_logger("foo_logger")
+    def foo(x: str) -> None:
+      print(x)
+  |}
+    {|
+    from typing import Callable
+    from builtins import __test_sink
+
+    def with_named_logger(logger_name: str) -> Callable[[Callable], Callable]:
+
+      def _inner_decorator(f: Callable) -> Callable:
+
+        def inner( *args: object, **kwargs: object) -> None:
+          print(logger_name)
+          __test_sink(args)
+          f( *args, **kwargs)
+
+        return inner
+
+      return _inner_decorator
+
+    def foo(x: str) -> None:
+      def __original_function(x: str) -> None:
+        print(x)
+
+      def __wrapper(x: str) -> None:
+        __args = (x, )
+        __kwargs = {"$parameter$x": x}
+
+        print($parameter$logger_name)
+        __test_sink(__args)
+        __original_function(x)
+
+      return __wrapper(x)
+  |};
+  (* TODO(T69755379): We currently ignore decorators that have nested helper functions. *)
+  assert_inlined
+    {|
+    from typing import Callable
+    from builtins import __test_sink
+
+    def with_named_logger(logger_name: str) -> Callable[[Callable], Callable]:
+
+      def _inner_decorator(f: Callable) -> Callable:
+
+        def my_helper() -> None:
+          pass
+
+        def inner( *args: object, **kwargs: object) -> None:
+          print(logger_name)
+          __test_sink(args)
+          f( *args, **kwargs)
+
+        return inner
+
+      return _inner_decorator
+
+    @with_named_logger("foo_logger")
+    def foo(x: str) -> None:
+      print(x)
+  |}
+    {|
+    from typing import Callable
+    from builtins import __test_sink
+
+    def with_named_logger(logger_name: str) -> Callable[[Callable], Callable]:
+
+      def _inner_decorator(f: Callable) -> Callable:
+
+        def my_helper() -> None:
+          pass
+
+        def inner( *args: object, **kwargs: object) -> None:
+          print(logger_name)
+          __test_sink(args)
+          f( *args, **kwargs)
+
+        return inner
+
+      return _inner_decorator
+
+    @with_named_logger("foo_logger")
+    def foo(x: str) -> None:
+      print(x)
+  |};
   ()
 
 
