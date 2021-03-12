@@ -56,12 +56,28 @@ let transform_string_annotation_expression ~relative =
               { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ } as
               callee;
             arguments;
+          } -> (
+          match base with
+          | {
+           Node.value =
+             Expression.Name
+               (Name.Attribute
+                 {
+                   base =
+                     {
+                       Node.value =
+                         Expression.Name
+                           (Name.Identifier "typing" | Name.Identifier "typing_extensions");
+                       _;
+                     };
+                   attribute = "Literal";
+                   _;
+                 });
+           _;
           } ->
-          if name_is ~name:"typing_extensions.Literal" base then
-            (* Don't transform arguments in Literals. *)
-            value
-          else
-            Call { callee; arguments = List.map ~f:transform_argument arguments }
+              (* Don't transform arguments in Literals. *)
+              value
+          | _ -> Call { callee; arguments = List.map ~f:transform_argument arguments } )
       | Expression.Call { callee; arguments = variable_name :: remaining_arguments }
         when name_is ~name:"typing.TypeVar" callee
              || name_is ~name:"$local_typing$TypeVar" callee
@@ -1050,7 +1066,10 @@ let qualify
                 :: List.map ~f:(qualify_argument ~qualify_strings:true ~scope) remaining_arguments
             | arguments ->
                 let qualify_strings =
-                  if name_is ~name:"typing_extensions.Literal.__getitem__" callee then
+                  if
+                    name_is ~name:"typing_extensions.Literal.__getitem__" callee
+                    || name_is ~name:"typing.Literal.__getitem__" callee
+                  then
                     false
                   else
                     match callee with
@@ -3538,7 +3557,13 @@ let rec expand_starred_variadic_in_annotation_expression ({ Node.value; _ } as e
                               (Name.Attribute
                                 {
                                   base =
-                                    { Node.value = Name (Name.Identifier "typing_extensions"); _ };
+                                    {
+                                      Node.value =
+                                        Name
+                                          ( Name.Identifier "typing_extensions"
+                                          | Name.Identifier "typing" );
+                                      _;
+                                    };
                                   attribute = "Literal";
                                   _;
                                 });

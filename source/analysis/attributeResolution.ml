@@ -1762,6 +1762,7 @@ class base class_metadata_environment dependency =
                 (* This can't be expressed without IntVars, StrVars, and corresponding ListVariadic
                    variants of them *)
                 | "typing_extensions.Literal"
+                | "typing.Literal"
                 (* TODO:(T60535947) We can't do the Map[Ts, type] -> X[Ts] trick here because we
                    don't yet support Union[Ts] *)
                 | "typing.Union" ->

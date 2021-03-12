@@ -726,6 +726,7 @@ let missing_builtin_classes, missing_typing_classes, missing_typing_extensions_c
       make "typing.FrozenSet" ~bases:single_unary_generic;
       make "typing.ClassVar" ~bases:single_unary_generic;
       make "typing.Final" ~bases:catch_all_generic;
+      make "typing.Literal" ~bases:catch_all_generic;
       make "typing.Union" ~bases:catch_all_generic;
       make ~metaclasses:[Primitive "typing.GenericMeta"] "typing.Generic";
       make "typing.ClassMethod" ~bases:single_unary_generic ~body:classmethod_body;

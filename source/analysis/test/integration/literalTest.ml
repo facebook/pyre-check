@@ -12,7 +12,7 @@ let test_boolean_literal context =
   let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
-      from typing_extensions import Literal
+      from typing import Literal
       def foo(b: Literal[True]) -> None: ...
       def bar() -> None:
         foo(True)
@@ -47,7 +47,7 @@ let test_enumeration_literal context =
   assert_type_errors
     {|
       import enum
-      from typing_extensions import Literal
+      from typing import Literal
 
       class MyEnum(enum.Enum):
         HELLO = "hello"
@@ -196,8 +196,7 @@ let test_ternary_with_literals context =
   let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
-      from typing import Union
-      from typing_extensions import Literal
+      from typing import Union, Literal
 
       def takes_literal(x: Union[Literal["a"], Literal["b"]]) -> None: ...
 
@@ -253,7 +252,7 @@ let test_bytes_literals context =
   let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
-      from typing_extensions import Literal
+      from typing import Literal
 
       def expects_bytes(s: bytes) -> None: ...
 
@@ -278,7 +277,7 @@ let test_literal_none context =
   let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
-      from typing_extensions import Literal
+      from typing import Literal
 
       def expects_literal_none(s: Literal[None]) -> None: ...
 

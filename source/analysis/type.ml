@@ -3070,8 +3070,40 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
         | Top -> create_parametric ~base ~argument
         | _ -> created_type )
         |> resolve_aliases
-    | Call { callee; arguments } when name_is ~name:"typing_extensions.Literal.__getitem__" callee
-      ->
+    | Call
+        {
+          callee =
+            {
+              Node.value =
+                Expression.Name
+                  (Name.Attribute
+                    {
+                      base =
+                        {
+                          Node.value =
+                            Expression.Name
+                              (Name.Attribute
+                                {
+                                  base =
+                                    {
+                                      Node.value =
+                                        Expression.Name
+                                          ( Name.Identifier "typing"
+                                          | Name.Identifier "typing_extensions" );
+                                      _;
+                                    };
+                                  attribute = "Literal";
+                                  _;
+                                });
+                          _;
+                        };
+                      attribute = "__getitem__";
+                      _;
+                    });
+              _;
+            };
+          arguments;
+        } ->
         let arguments =
           match arguments with
           | [{ Call.Argument.name = None; value = { Node.value = Expression.Tuple arguments; _ } }]
