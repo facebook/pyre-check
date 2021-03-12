@@ -145,10 +145,19 @@ let parse_raw_sources ~configuration ~scheduler ~ast_environment source_paths =
     match parse_source ~configuration source_path with
     | Success ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source) ->
         let source =
+          let {
+            Configuration.Analysis.python_major_version;
+            python_minor_version;
+            python_micro_version;
+            _;
+          }
+            =
+            configuration
+          in
           Preprocessing.replace_version_specific_code
-            ~major_version:configuration.python_minor_version
-            ~minor_version:configuration.python_minor_version
-            ~micro_version:configuration.python_micro_version
+            ~major_version:python_major_version
+            ~minor_version:python_minor_version
+            ~micro_version:python_micro_version
             source
           |> Preprocessing.preprocess_phase0
         in
