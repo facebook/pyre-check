@@ -80,30 +80,13 @@ let sanitize_defines ~strip_decorators source =
   source
 
 
-let rename_local_variable ~from ~to_ statement =
-  let module RenameLocalVariable = Transform.Make (struct
-    type t = unit
-
-    let transform_expression_children _ _ = true
-
-    let transform_children _ _ = true
-
-    let expression _ { Node.location; value } =
-      match value with
-      | Expression.Name (Name.Identifier identifier) when Identifier.equal identifier from ->
-          { Node.location; value = Expression.Name (Name.Identifier to_) }
-      | _ -> { Node.location; value }
-
-
-    let statement _ statement = (), [statement]
-  end)
+let rename_local_variable ~from ~to_ { Node.value = statement; location } =
+  let rename_identifier = function
+    | Expression.Name (Name.Identifier identifier) when Identifier.equal identifier from ->
+        Expression.Name (Name.Identifier to_)
+    | expression -> expression
   in
-  RenameLocalVariable.transform () (Source.create [statement])
-  |> (fun { RenameLocalVariable.source; _ } -> source)
-  |> Source.statements
-  |> function
-  | [statement] -> statement
-  | _ -> failwith "impossible"
+  { Node.value = Transform.transform_expressions ~transform:rename_identifier statement; location }
 
 
 let requalify_name ~old_qualifier ~new_qualifier = function
@@ -125,34 +108,13 @@ let requalify_name ~old_qualifier ~new_qualifier = function
 
 
 let requalify_define ~old_qualifier ~new_qualifier define =
-  let module Requalify = Transform.Make (struct
-    type t = unit
-
-    let transform_expression_children _ _ = true
-
-    let transform_children _ _ = true
-
-    let expression _ { Node.location; value } =
-      match value with
-      | Expression.Name name ->
-          {
-            Node.location;
-            value = Expression.Name (requalify_name ~old_qualifier ~new_qualifier name);
-          }
-      | _ -> { Node.location; value }
-
-
-    let statement _ statement = (), [statement]
-  end)
+  let transform = function
+    | Expression.Name name -> Expression.Name (requalify_name ~old_qualifier ~new_qualifier name)
+    | expression -> expression
   in
-  Requalify.transform
-    ()
-    (Source.create [Statement.Define define |> Node.create_with_default_location])
-  |> (fun { Requalify.source; _ } -> source)
-  |> Source.statements
-  |> function
-  | [{ Node.value = Statement.Define define; _ }] -> define
-  | _ -> failwith "impossible"
+  match Transform.transform_expressions ~transform (Statement.Define define) with
+  | Statement.Define define -> define
+  | _ -> failwith "expected define"
 
 
 let create_function_call_to
