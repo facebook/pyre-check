@@ -426,6 +426,127 @@ let test_inline_decorators context =
 
       return __wrapper(x)
   |};
+  (* Multiple decorators. *)
+  assert_inlined
+    {|
+    from builtins import __test_sink, __test_source
+    from typing import Callable
+
+    def with_logging_sink(callable: Callable[[str], None]) -> Callable[[str], None]:
+
+      def inner(y: str) -> None:
+        __test_sink(y)
+        callable(y)
+
+      return inner
+
+    def with_logging_source(callable: Callable[[str], None]) -> Callable[[str], None]:
+
+      def inner(y: str) -> None:
+        callable(y + __test_source())
+
+      return inner
+
+    @with_logging_source
+    @with_logging_sink
+    def foo(z: str) -> None:
+      print(z)
+  |}
+    {|
+    from builtins import __test_sink, __test_source
+    from typing import Callable
+
+    def with_logging_sink(callable: Callable[[str], None]) -> Callable[[str], None]:
+
+      def inner(y: str) -> None:
+        __test_sink(y)
+        callable(y)
+
+      return inner
+
+    def with_logging_source(callable: Callable[[str], None]) -> Callable[[str], None]:
+
+      def inner(y: str) -> None:
+        callable(y + __test_source())
+
+      return inner
+
+    def foo(y: str) -> None:
+      def __original_function(y: str) -> None:
+        def __original_function(z: str) -> None:
+          print(z)
+
+        def __wrapper(y: str) -> None:
+          __test_sink(y)
+          __original_function(y)
+
+        return __wrapper(y)
+
+      def __wrapper(y: str) -> None:
+        __original_function(y + __test_source())
+
+      return __wrapper(y)
+  |};
+  (* Multiple decorators where one decorator fails to apply. *)
+  assert_inlined
+    {|
+    from builtins import __test_sink, __test_source
+    from typing import Callable
+
+    def with_logging_sink(callable: Callable[[str], None]) -> Callable[[str], None]:
+
+      def inner(y: str) -> None:
+        __test_sink(y)
+        callable(y)
+
+      return inner
+
+    def with_logging_source(callable: Callable[[str], None]) -> Callable[[str], None]:
+
+      def inner(y: str) -> None:
+        callable(y + __test_source())
+
+      return inner
+
+    # We give up on inlining this because it has no inner wrapper function.
+    def fails_to_apply(f):
+      return f
+
+    @with_logging_source
+    @fails_to_apply
+    @with_logging_sink
+    def foo(z: str) -> None:
+      print(z)
+  |}
+    {|
+    from builtins import __test_sink, __test_source
+    from typing import Callable
+
+    def with_logging_sink(callable: Callable[[str], None]) -> Callable[[str], None]:
+
+      def inner(y: str) -> None:
+        __test_sink(y)
+        callable(y)
+
+      return inner
+
+    def with_logging_source(callable: Callable[[str], None]) -> Callable[[str], None]:
+
+      def inner(y: str) -> None:
+        callable(y + __test_source())
+
+      return inner
+
+    # We give up on inlining this because it has no inner wrapper function.
+    def fails_to_apply(f):
+      return f
+
+    @with_logging_source
+    @fails_to_apply
+    @with_logging_sink
+    def foo(z: str) -> None:
+      print(z)
+  |};
   ()
 
 

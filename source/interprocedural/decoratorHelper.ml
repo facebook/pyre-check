@@ -363,14 +363,10 @@ let inline_decorator_in_define
             { name = { Node.value = wrapper_define_name; _ }; _ } as wrapper_signature;
           _;
         } as wrapper_define )
+    ~qualifier
     ~higher_order_function_parameter_name
-    ( {
-        Define.signature =
-          { name = { Node.value = original_function_name; _ }; _ } as original_signature;
-        _;
-      } as define )
+    ({ Define.signature = original_signature; _ } as define)
   =
-  let qualifier = original_function_name in
   let inlined_original_define =
     sanitize_define define
     |> rename_define ~new_name:(Reference.create inlined_original_function_name)
@@ -429,6 +425,30 @@ let inline_decorator_in_define
   |> rename_define ~new_name:qualifier
 
 
+let apply_decorator
+    ~location
+    ~environment
+    ~qualifier
+    ~decorator_bodies
+    ~decorator:{ Decorator.name = { Node.value = decorator_name; _ }; _ }
+    define
+  =
+  let decorator_body = Map.find decorator_bodies decorator_name in
+  match
+    ( decorator_body >>= extract_wrapper_define,
+      decorator_body >>= get_higher_order_function_parameter ~environment )
+  with
+  | Some wrapper_define, Some higher_order_function_parameter_name ->
+      inline_decorator_in_define
+        ~location
+        ~qualifier
+        ~wrapper_define
+        ~higher_order_function_parameter_name
+        define
+      |> Option.some
+  | _ -> None
+
+
 let inline_decorators ~environment ~decorator_bodies source =
   let module Transform = Transform.Make (struct
     type t = unit
@@ -445,28 +465,9 @@ let inline_decorators ~environment ~decorator_bodies source =
         | {
          Node.value =
            Statement.Define
-             ( {
-                 signature =
-                   { decorators = [{ Decorator.name = { Node.value = decorator_name; _ }; _ }]; _ };
-                 _;
-               } as define );
+             ({ signature = { name = { Node.value = name; _ }; decorators; _ }; _ } as define);
          location;
         } ->
-            let decorator_body = Map.find decorator_bodies decorator_name in
-            let inlined_define =
-              match
-                ( decorator_body >>= extract_wrapper_define,
-                  decorator_body >>= get_higher_order_function_parameter ~environment )
-              with
-              | Some wrapper_define, Some higher_order_function_parameter_name ->
-                  inline_decorator_in_define
-                    ~location
-                    ~wrapper_define
-                    ~higher_order_function_parameter_name
-                    define
-                  |> Option.some
-              | _ -> None
-            in
             let postprocess decorated_define =
               let statement = { statement with value = Statement.Define decorated_define } in
               Source.create [statement]
@@ -475,10 +476,24 @@ let inline_decorators ~environment ~decorator_bodies source =
               |> Preprocessing.populate_captures
               |> Source.statements
               |> function
-              | [statement] -> statement
-              | _ -> failwith "impossible"
+              | [statement] -> Some statement
+              | _ -> None
             in
-            inlined_define >>| postprocess |> Option.value ~default:statement
+            let apply_decorator_with_qualifier index define_sofar decorator =
+              let qualifier =
+                Reference.combine
+                  name
+                  (Reference.create_from_list
+                     (List.init
+                        (List.length decorators - index - 1)
+                        ~f:(fun _ -> inlined_original_function_name)))
+              in
+              define_sofar
+              >>= apply_decorator ~location ~environment ~qualifier ~decorator_bodies ~decorator
+            in
+            List.foldi (List.rev decorators) ~init:(Some define) ~f:apply_decorator_with_qualifier
+            >>= postprocess
+            |> Option.value ~default:statement
         | _ -> statement
       in
       (), [statement]

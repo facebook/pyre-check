@@ -77,6 +77,27 @@ def foo_args_kwargs_with_sink(x: str, y: int) -> None:
     __test_sink(y)
 
 
+def with_logging_sink(callable: Callable[[str], None]) -> Callable[[str], None]:
+    def inner(y: str) -> None:
+        __test_sink(y)
+        callable(y)
+
+    return inner
+
+
+def with_logging_source(callable: Callable[[str], None]) -> Callable[[str], None]:
+    def inner(y: str) -> None:
+        callable(y + __test_source())
+
+    return inner
+
+
+@with_logging_source
+@with_logging_sink
+def foo_with_shady_decorators(z: str) -> None:
+    print(z)
+
+
 def main() -> None:
     foo(__test_source())
     foo_with_sink(__test_source())
@@ -88,3 +109,5 @@ def main() -> None:
     foo_args_kwargs_with_sink(__test_source(), 0)
     # Issue.
     foo_args_kwargs_with_sink("hello", __test_source())
+
+    foo_with_shady_decorators("hello")
