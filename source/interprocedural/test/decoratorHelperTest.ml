@@ -378,13 +378,16 @@ let test_replace_signature _ =
       def wrapper( *args, **kwargs) -> None:
         foo( *args, **kwargs)
         bar(args)
+        baz(kwargs)
   |}
     (Some
        {|
       def wrapper(y: str, z: int = 7) -> None:
-        args = (y, z)
+        __args = (y, z)
+        __kwargs = {"y": y, "z": z}
         foo(y, z)
-        bar(args)
+        bar(__args)
+        baz(__kwargs)
   |});
   assert_signature_replaced
     ~new_signature:"def foo(y: str) -> None: ..."
@@ -414,9 +417,47 @@ let test_replace_signature _ =
     (Some
        {|
       def wrapper(y: str) -> None:
-        args = (y,)
+        __args = (y,)
+        __kwargs = {"y": y}
         foo(y)
-        bar(args)
+        bar(__args)
+  |});
+  (* If the callee expects `args` and `kwargs`, make sure not to confuse them with our synthetic
+     locals `__args` and `__kwargs`.
+
+     Note that we conservatively store all the arguments to both `__args` and `__kwargs` so that we
+     catch any flows to sinks within the decorator. We are more precise about what we pass to the
+     callee since false positives there might be more annoying. *)
+  assert_signature_replaced
+    ~new_signature:"def foo(y: str, *args: int, **kwargs: str) -> None: ..."
+    {|
+      def wrapper( *args, **kwargs) -> None:
+        foo( *args, **kwargs)
+        baz(kwargs)
+  |}
+    (Some
+       {|
+      def wrapper(y: str, *args: int, **kwargs: str) -> None:
+        __args = (y, *args)
+        __kwargs = {"y": y, **kwargs}
+        foo(y, *args, **kwargs)
+        baz(__kwargs)
+  |});
+  (* Ensure that the return type is unchanged regardless of the new signature. *)
+  assert_signature_replaced
+    ~new_signature:"def foo(y: str) -> None: ..."
+    {|
+      def wrapper( *args, **kwargs) -> int:
+        foo( *args, **kwargs)
+        return 1
+  |}
+    (Some
+       {|
+      def wrapper(y: str) -> int:
+        __args = (y,)
+        __kwargs = {"y": y}
+        foo(y)
+        return 1
   |});
   ()
 
