@@ -117,10 +117,7 @@ let requalify_define ~old_qualifier ~new_qualifier define =
   | _ -> failwith "expected define"
 
 
-let create_function_call_to
-    ~location
-    { Define.signature = { name = { Node.value = function_name; _ }; async; parameters; _ }; _ }
-  =
+let create_function_call_to ~location ~callee_name { Define.Signature.parameters; async; _ } =
   let parameter_to_argument { Node.value = { Parameter.name; _ }; location } =
     {
       Call.Argument.name = None;
@@ -131,7 +128,7 @@ let create_function_call_to
     Expression.Call
       {
         callee =
-          Expression.Name (create_name_from_reference ~location function_name)
+          Expression.Name (create_name_from_reference ~location callee_name)
           |> Node.create ~location;
         arguments = List.map parameters ~f:parameter_to_argument;
       }
@@ -174,6 +171,105 @@ let extract_wrapper_define { Define.body; _ } =
   | _ -> None
 
 
+let make_args_assignment_from_parameters ~args_parameter { Define.Signature.parameters; _ } =
+  let parameter_to_tuple_element { Node.value = { Parameter.name; _ }; location } =
+    Some (Expression.Name (create_name ~location name) |> Node.create ~location)
+  in
+  let elements = List.filter_map parameters ~f:parameter_to_tuple_element in
+  let location = Location.any in
+  Statement.Assign
+    {
+      target =
+        Expression.Name
+          (create_name_from_reference
+             ~location
+             (Reference.create (String.drop_prefix args_parameter 1)))
+        |> Node.create ~location;
+      annotation = None;
+      parent = None;
+      value = Expression.Tuple elements |> Node.create ~location;
+    }
+  |> Node.create ~location
+
+
+(* If a function always passes on its `args` and `kwargs` to `callee_name`, then replace its broad
+   signature `def foo( *args, **kwargs) -> None` with the precise signature `def foo(x: int, y: str)
+   -> None`. Pass the specific arguments to any calls to `callee_name`. *)
+let replace_signature_if_always_passing_on_arguments
+    ~callee_name
+    ~new_signature:({ Define.Signature.parameters = new_parameters; _ } as new_signature)
+    ({ Define.signature = { parameters = wrapper_parameters; _ }; _ } as wrapper_define)
+  =
+  match wrapper_parameters with
+  | [
+   { Node.value = { name = args_parameter; _ }; _ };
+   { Node.value = { name = kwargs_parameter; _ }; _ };
+  ]
+    when String.is_prefix ~prefix:"*" args_parameter
+         && (not (String.is_prefix ~prefix:"**" args_parameter))
+         && String.is_prefix ~prefix:"**" kwargs_parameter -> (
+      let always_passes_on_args_kwargs = ref true in
+      let pass_precise_arguments_instead_of_args_kwargs = function
+        | Expression.Call
+            {
+              Call.callee = { Node.value = Name (Identifier given_callee_name); location };
+              arguments;
+              _;
+            } as expression
+          when Identifier.equal callee_name given_callee_name -> (
+            match arguments with
+            | [
+             {
+               Call.Argument.name = None;
+               value =
+                 {
+                   Node.value =
+                     Starred (Once { Node.value = Name (Identifier given_args_parameter); _ });
+                   _;
+                 };
+             };
+             {
+               Call.Argument.name = None;
+               value =
+                 {
+                   Node.value =
+                     Starred (Twice { Node.value = Name (Identifier given_kwargs_parameter); _ });
+                   _;
+                 };
+             };
+            ]
+              when Identifier.equal args_parameter ("*" ^ given_args_parameter)
+                   && Identifier.equal kwargs_parameter ("**" ^ given_kwargs_parameter) ->
+                create_function_call_to
+                  ~location
+                  ~callee_name:(Reference.create callee_name)
+                  new_signature
+            | _ ->
+                (* The wrapper is calling the original function as something other than `original(
+                   *args, **kwargs)`. This means it probably has a different signature from the
+                   original function, so give up on making it have the same signature. *)
+                always_passes_on_args_kwargs := false;
+                expression )
+        | expression -> expression
+      in
+      match
+        Transform.transform_expressions
+          ~transform:pass_precise_arguments_instead_of_args_kwargs
+          (Statement.Define wrapper_define)
+      with
+      | Statement.Define define ->
+          let ({ Define.body; _ } as define_with_original_signature) =
+            { define with signature = { define.signature with parameters = new_parameters } }
+          in
+          let args_local_assignment =
+            make_args_assignment_from_parameters ~args_parameter new_signature
+          in
+          { define_with_original_signature with body = args_local_assignment :: body }
+          |> Option.some_if !always_passes_on_args_kwargs
+      | _ -> failwith "impossible" )
+  | _ -> None
+
+
 let inline_decorator_in_define
     ~location
     ~wrapper_define:
@@ -196,7 +292,9 @@ let inline_decorator_in_define
   let inlined_original_define_statement =
     Statement.Define inlined_original_define |> Node.create ~location
   in
-  let inlined_wrapper_define =
+  let ( { Define.signature = { name = { Node.value = inlined_wrapper_define_name; _ }; _ }; _ } as
+      inlined_wrapper_define )
+    =
     sanitize_define wrapper_define
     |> rename_define ~new_name:(Reference.create inlined_wrapper_function_name)
     |> requalify_define
@@ -215,7 +313,12 @@ let inline_decorator_in_define
       {
         is_implicit = false;
         expression =
-          Some (create_function_call_to ~location inlined_wrapper_define |> Node.create ~location);
+          Some
+            ( create_function_call_to
+                ~location
+                ~callee_name:inlined_wrapper_define_name
+                inlined_wrapper_define.signature
+            |> Node.create ~location );
       }
     |> Node.create ~location
   in

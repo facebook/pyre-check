@@ -7,6 +7,7 @@
 
 open OUnit2
 open Core
+open Pyre
 open Analysis
 open Ast
 open Interprocedural
@@ -324,11 +325,108 @@ let test_requalify_name _ =
   ()
 
 
+let test_replace_signature _ =
+  let assert_signature_replaced ~new_signature given expected =
+    match
+      ( (expected >>| fun expected -> parse expected |> Source.statements),
+        parse given |> Source.statements,
+        parse new_signature |> Source.statements )
+    with
+    | ( expected,
+        [{ Node.value = Define given; _ }],
+        [
+          {
+            Node.value =
+              Define
+                { signature = { name = { Node.value = callee_name; _ }; _ } as new_signature; _ };
+            _;
+          };
+        ] ) ->
+        let actual =
+          DecoratorHelper.replace_signature_if_always_passing_on_arguments
+            ~callee_name:(Reference.show callee_name)
+            ~new_signature
+            given
+        in
+        let expected =
+          match expected with
+          | Some [{ Node.value = Define expected; _ }] -> Some expected
+          | _ -> None
+        in
+        let printer = [%show: Statement.statement option] in
+        let equal_optional_statements left right =
+          match left, right with
+          | Some left, Some right ->
+              Statement.location_insensitive_compare
+                (Node.create_with_default_location left)
+                (Node.create_with_default_location right)
+              = 0
+          | None, None -> true
+          | _ -> false
+        in
+        assert_equal
+          ~cmp:equal_optional_statements
+          ~printer
+          ~pp_diff:(diff ~print:(fun format x -> Format.fprintf format "%s" (printer x)))
+          (expected >>| fun x -> Statement.Statement.Define x)
+          (actual >>| fun x -> Statement.Statement.Define x)
+    | _ -> failwith "expected one statement each"
+  in
+  assert_signature_replaced
+    ~new_signature:"def foo(y: str, z: int = 7) -> None: ..."
+    {|
+      def wrapper( *args, **kwargs) -> None:
+        foo( *args, **kwargs)
+        bar(args)
+  |}
+    (Some
+       {|
+      def wrapper(y: str, z: int = 7) -> None:
+        args = (y, z)
+        foo(y, z)
+        bar(args)
+  |});
+  assert_signature_replaced
+    ~new_signature:"def foo(y: str) -> None: ..."
+    {|
+      def wrapper( *args, **kwargs) -> None:
+        foo("extra argument", *args, **kwargs)
+        bar(args)
+  |}
+    None;
+  (* Give up if the wrapper has anything more complex than `*args, **kwargs`. *)
+  assert_signature_replaced
+    ~new_signature:"def foo(y: str) -> None: ..."
+    {|
+      def wrapper(extra: int, *args, **kwargs) -> None:
+        foo( *args, **kwargs)
+  |}
+    None;
+  (* The wrapper still has `*args, **kwargs` but also gives them a type annotation. If it always
+     passes on both to the callee, we use the callee's signature. *)
+  assert_signature_replaced
+    ~new_signature:"def foo(y: str) -> None: ..."
+    {|
+      def wrapper( *args: int, **kwargs: str) -> None:
+        foo( *args, **kwargs)
+        bar(args)
+  |}
+    (Some
+       {|
+      def wrapper(y: str) -> None:
+        args = (y,)
+        foo(y)
+        bar(args)
+  |});
+  ()
+
+
 let () =
   "decoratorHelper"
   >::: [
          "all_decorators" >:: test_all_decorators;
          "inline_decorators" >:: test_inline_decorators;
          "requalify_name" >:: test_requalify_name;
+         "replace_signature" >:: test_replace_signature;
        ]
   |> Test.run

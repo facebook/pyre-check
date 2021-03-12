@@ -26,3 +26,9 @@ val requalify_name
   new_qualifier:Reference.t ->
   Expression.Name.t ->
   Expression.Name.t
+
+val replace_signature_if_always_passing_on_arguments
+  :  callee_name:Identifier.t ->
+  new_signature:Define.Signature.t ->
+  Define.t ->
+  Define.t option
