@@ -12,6 +12,7 @@ open Ast
 module T = struct
   type incompatible_model_error_reason =
     | UnexpectedPositionalOnlyParameter of string
+    | UnexpectedPositionalParameter of string
     | UnexpectedNamedParameter of string
     | UnexpectedStarredParameter
     | UnexpectedDoubleStarredParameter
@@ -78,6 +79,8 @@ let description error =
         List.map reasons ~f:(function
             | UnexpectedPositionalOnlyParameter name ->
                 Format.sprintf "unexpected positional only parameter: `%s`" name
+            | UnexpectedPositionalParameter name ->
+                Format.sprintf "unexpected positional parameter: `%s`" name
             | UnexpectedNamedParameter name ->
                 Format.sprintf "unexpected named parameter: `%s`" name
             | UnexpectedStarredParameter -> "unexpected star parameter"

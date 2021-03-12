@@ -10,6 +10,7 @@ open Ast
 module T : sig
   type incompatible_model_error_reason =
     | UnexpectedPositionalOnlyParameter of string
+    | UnexpectedPositionalParameter of string
     | UnexpectedNamedParameter of string
     | UnexpectedStarredParameter
     | UnexpectedDoubleStarredParameter

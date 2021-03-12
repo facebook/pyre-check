@@ -247,6 +247,9 @@ let rec parse_annotations
       (ModelVerificationError.T.InvalidTaintAnnotation { taint_annotation = annotation; reason })
   in
   let get_parameter_position name =
+    let callable_parameter_names_to_positions =
+      Option.value ~default:String.Map.empty callable_parameter_names_to_positions
+    in
     match Map.find callable_parameter_names_to_positions name with
     | Some position -> Ok position
     | None -> (
@@ -1161,7 +1164,7 @@ let parse_model_clause ~path ~configuration ({ Node.value; location } as express
               ~model_name:"model query"
               ~configuration
               ~parameters:[]
-              ~callable_parameter_names_to_positions:String.Map.empty
+              ~callable_parameter_names_to_positions:None
               expression
             >>| List.map ~f:(fun taint -> ModelQuery.TaintAnnotation taint)
       in
@@ -1583,7 +1586,7 @@ let adjust_mode_and_skipped_overrides
                           ~model_name:(Reference.show define_name)
                           ~configuration
                           ~parameters:[]
-                          ~callable_parameter_names_to_positions:String.Map.empty
+                          ~callable_parameter_names_to_positions:None
                           value
                         >>= List.fold_result ~init:([], []) ~f:add_tito_annotation
                         >>| fun (sanitized_tito_sources, sanitized_tito_sinks) ->
@@ -1646,7 +1649,7 @@ let adjust_mode_and_skipped_overrides
                         ~model_name:(Reference.show define_name)
                         ~configuration
                         ~parameters:[]
-                        ~callable_parameter_names_to_positions:String.Map.empty
+                        ~callable_parameter_names_to_positions:None
                         value
                       >>= fun annotations ->
                       sanitize
@@ -2034,7 +2037,7 @@ let create ~resolution ~path ~configuration ~rule_filter source =
   in
   let create_model
       ( ( {
-            Define.Signature.name = { Node.value = name; _ };
+            Define.Signature.name = { Node.value = callable_name; _ };
             parameters;
             return_annotation;
             decorators;
@@ -2084,7 +2087,7 @@ let create ~resolution ~path ~configuration ~rule_filter source =
         Error
           {
             ModelVerificationError.T.kind =
-              ModelVerificationError.T.NotInEnvironment (Reference.show name);
+              ModelVerificationError.T.NotInEnvironment (Reference.show callable_name);
             path;
             location;
           }
@@ -2092,7 +2095,7 @@ let create ~resolution ~path ~configuration ~rule_filter source =
         Error
           {
             ModelVerificationError.T.kind =
-              ModelVerificationError.T.ModelingClassAsDefine (Reference.show name);
+              ModelVerificationError.T.ModelingClassAsDefine (Reference.show callable_name);
             path;
             location;
           }
@@ -2119,52 +2122,64 @@ let create ~resolution ~path ~configuration ~rule_filter source =
                 { Type.Callable.parameters = Type.Callable.Defined parameters; _ };
               _;
             }) ->
-          let name = function
+          let add_parameter_to_position position map parameter =
+            match parameter with
             | Type.Callable.Parameter.Named { name; _ }
             | Type.Callable.Parameter.KeywordOnly { name; _ } ->
-                Some name
-            | _ -> None
+                Map.set map ~key:(Identifier.sanitized name) ~data:position
+            | _ -> map
           in
-          let add_parameter_to_position position map parameter =
-            match name parameter with
-            | Some name -> Map.set map ~key:(Identifier.sanitized name) ~data:position
-            | None -> map
-          in
-          List.foldi parameters ~f:add_parameter_to_position ~init:String.Map.empty
-      | _ -> String.Map.empty
+          Some (List.foldi parameters ~f:add_parameter_to_position ~init:String.Map.empty)
+      | _ -> None
     in
     (* If there were parameters omitted from the model, the positioning will be off in the access
        path conversion. Let's fix the positions after the fact to make sure that our models aren't
        off. *)
     let normalized_model_parameters =
       let parameters = AccessPath.Root.normalize_parameters parameters in
-      let adjust_position (root, name, parameter) =
-        let root =
-          match root with
-          | AccessPath.Root.PositionalParameter { position; name; positional_only } ->
-              AccessPath.Root.PositionalParameter
-                {
-                  position =
-                    Map.find callable_parameter_names_to_positions name
-                    |> Option.value ~default:position;
-                  name;
-                  positional_only;
-                }
-          | _ -> root
-        in
-
-        root, name, parameter
-      in
-      List.map parameters ~f:adjust_position
+      match callable_parameter_names_to_positions with
+      | None -> Ok parameters
+      | Some names_to_positions ->
+          let adjust_position (root, name, parameter) =
+            match root with
+            | AccessPath.Root.PositionalParameter { name; positional_only = false; _ }
+              when not (String.is_prefix ~prefix:"__" name) -> (
+                match Map.find names_to_positions name with
+                | Some accurate_position ->
+                    Ok
+                      ( AccessPath.Root.PositionalParameter
+                          { position = accurate_position; name; positional_only = false },
+                        name,
+                        parameter )
+                | None ->
+                    Error
+                      {
+                        ModelVerificationError.T.kind =
+                          IncompatibleModelError
+                            {
+                              name = Reference.show callable_name;
+                              callable_type =
+                                Option.value_exn
+                                  (Caml.Result.value callable_annotation ~default:None);
+                              reasons = [UnexpectedPositionalParameter name];
+                            };
+                        path;
+                        location;
+                      } )
+            | _ -> Ok (root, name, parameter)
+          in
+          List.map parameters ~f:adjust_position |> all
     in
     let annotations () =
+      normalized_model_parameters
+      >>= fun normalized_model_parameters ->
       List.map
         normalized_model_parameters
         ~f:
           (parse_parameter_taint
              ~path
              ~location
-             ~model_name:(Reference.show name)
+             ~model_name:(Reference.show callable_name)
              ~configuration
              ~parameters
              ~callable_parameter_names_to_positions)
@@ -2177,7 +2192,7 @@ let create ~resolution ~path ~configuration ~rule_filter source =
              (parse_return_taint
                 ~path
                 ~location
-                ~model_name:(Reference.show name)
+                ~model_name:(Reference.show callable_name)
                 ~configuration
                 ~parameters
                 ~callable_parameter_names_to_positions)
@@ -2187,11 +2202,13 @@ let create ~resolution ~path ~configuration ~rule_filter source =
     let model =
       callable_annotation
       >>= fun callable_annotation ->
+      normalized_model_parameters
+      >>= fun normalized_model_parameters ->
       ModelVerifier.verify_signature
         ~path
         ~location
         ~normalized_model_parameters
-        ~name
+        ~name:callable_name
         callable_annotation
       >>= fun () ->
       annotations ()
@@ -2203,7 +2220,7 @@ let create ~resolution ~path ~configuration ~rule_filter source =
           add_taint_annotation_to_model
             ~path
             ~location
-            ~model_name:(Reference.show name)
+            ~model_name:(Reference.show callable_name)
             ~resolution:(Resolution.global_resolution resolution)
             ~annotation_kind
             ~callable_annotation
@@ -2218,7 +2235,7 @@ let create ~resolution ~path ~configuration ~rule_filter source =
           ~location
           ~configuration
           ~top_level_decorators
-          ~define_name:name
+          ~define_name:callable_name
     >>| fun (model, skipped_override) ->
     Model ({ model; call_target; is_obscure = false }, skipped_override)
   in

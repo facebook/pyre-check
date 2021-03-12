@@ -1168,15 +1168,14 @@ let test_invalid_models context =
     ~expect:
       "Model signature parameters for `test.sink_with_optional` do not match implementation `def \
        sink_with_optional(parameter: unknown, firstOptional: unknown = ..., secondOptional: \
-       unknown = ...) -> None: ...`. Reason: unexpected named parameter: `thirdOptional`."
+       unknown = ...) -> None: ...`. Reason: unexpected positional parameter: `thirdOptional`."
     ();
   assert_invalid_model
     ~model_source:"def test.sink_with_optional(parameter, firstBad, secondBad): ..."
     ~expect:
       "Model signature parameters for `test.sink_with_optional` do not match implementation `def \
        sink_with_optional(parameter: unknown, firstOptional: unknown = ..., secondOptional: \
-       unknown = ...) -> None: ...`. Reasons: unexpected named parameter: `firstBad`; unexpected \
-       named parameter: `secondBad`."
+       unknown = ...) -> None: ...`. Reason: unexpected positional parameter: `secondBad`."
     ();
   assert_invalid_model
     ~model_source:"def test.sink_with_optional(parameter, *args): ..."
@@ -1199,19 +1198,33 @@ let test_invalid_models context =
        sink_with_optional(parameter: unknown, firstOptional: unknown = ..., secondOptional: \
        unknown = ...) -> None: ...`. Reason: unexpected positional only parameter: `__parameter`."
     ();
-  assert_valid_model
+  assert_invalid_model
     ~model_source:"def test.function_with_args(normal_arg, __random_name, named_arg, *args): ..."
+    ~expect:
+      "Model signature parameters for `test.function_with_args` do not match implementation `def \
+       function_with_args(normal_arg: unknown, unknown, *(unknown)) -> None: ...`. Reason: \
+       unexpected positional parameter: `named_arg`."
     ();
   assert_valid_model
     ~model_source:"def test.function_with_args(normal_arg, __random_name, *args): ..."
+    ();
+  assert_valid_model
+    ~model_source:"def test.function_with_args(normal_arg, __random_name, *, named_arg, *args): ..."
     ();
   assert_valid_model
     ~model_source:
       "def test.function_with_args(normal_arg, __random_name, __random_name_2, *args): ..."
     ();
   assert_valid_model ~model_source:"def test.function_with_kwargs(normal_arg, **kwargs): ..." ();
-  assert_valid_model
+  assert_invalid_model
     ~model_source:"def test.function_with_kwargs(normal_arg, crazy_arg, **kwargs): ..."
+    ~expect:
+      "Model signature parameters for `test.function_with_kwargs` do not match implementation `def \
+       function_with_kwargs(normal_arg: unknown, **(unknown)) -> None: ...`. Reason: unexpected \
+       positional parameter: `crazy_arg`."
+    ();
+  assert_valid_model
+    ~model_source:"def test.function_with_kwargs(normal_arg, *, crazy_arg, **kwargs): ..."
     ();
   assert_valid_model ~model_source:"def test.anonymous_only(__a1, __a2, __a3): ..." ();
   assert_valid_model ~model_source:"def test.anonymous_with_optional(__a1, __a2): ..." ();
@@ -1333,7 +1346,7 @@ let test_invalid_models context =
     |}
     ~expect:
       "Model signature parameters for `test.C.foo` do not match implementation `(self: C) -> int`. \
-       Reason: unexpected named parameter: `value`."
+       Reason: unexpected positional parameter: `value`."
     ();
   assert_valid_model
     ~source:
