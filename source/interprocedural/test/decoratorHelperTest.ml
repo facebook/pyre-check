@@ -295,6 +295,137 @@ let test_inline_decorators context =
 
       return __wrapper(y, z)
   |};
+  (* Wrapper function with `*args` and `**kwargs`. *)
+  assert_inlined
+    {|
+    from typing import Callable
+    from builtins import __test_sink
+
+    def with_logging(f: Callable) -> Callable:
+
+      def inner( *args, **kwargs) -> None:
+        __test_sink(args)
+        f( *args, **kwargs)
+
+      return inner
+
+    @with_logging
+    def foo(x: str) -> None:
+      print(x)
+  |}
+    {|
+    from typing import Callable
+    from builtins import __test_sink
+
+    def with_logging(f: Callable) -> Callable:
+
+      def inner( *args, **kwargs) -> None:
+        __test_sink(args)
+        f( *args, **kwargs)
+
+      return inner
+
+    def foo(x: str) -> None:
+
+      def __original_function(x: str) -> None:
+        print(x)
+
+      def __wrapper(x: str) -> None:
+        __args = (x,)
+        __kwargs = {"x": x}
+        __test_sink(__args)
+        __original_function(x)
+
+      return __wrapper(x)
+  |};
+  (* ParamSpec. *)
+  assert_inlined
+    {|
+    from typing import Callable
+    from pyre_extensions import ParameterSpecification
+    from builtins import __test_sink
+
+    P = ParameterSpecification("P")
+
+    def with_logging(f: Callable[P, None]) -> Callable[P, None]:
+
+      def inner( *args: P.args, **kwargs: P.kwargs) -> None:
+        f( *args, **kwargs)
+
+      return inner
+
+    @with_logging
+    def foo(x: str, y: int) -> None:
+      print(x, y)
+  |}
+    {|
+    from typing import Callable
+    from pyre_extensions import ParameterSpecification
+    from builtins import __test_sink
+
+    P = ParameterSpecification("P")
+
+    def with_logging(f: Callable[P, None]) -> Callable[P, None]:
+
+      def inner( *args: P.args, **kwargs: P.kwargs) -> None:
+        f( *args, **kwargs)
+
+      return inner
+
+    def foo(x: str, y: int) -> None:
+
+      def __original_function(x: str, y: int) -> None:
+        print(x, y)
+
+      def __wrapper(x: str, y: int) -> None:
+        __args = (x, y)
+        __kwargs = {"x": x, "y": y}
+        __original_function(x, y)
+
+      return __wrapper(x, y)
+  |};
+  assert_inlined
+    {|
+    from typing import Callable
+    from builtins import __test_sink
+
+    def change_return_type(f: Callable) -> Callable:
+
+      def inner( *args, **kwargs) -> int:
+        f( *args, **kwargs)
+        return 1
+
+      return inner
+
+    @change_return_type
+    def foo(x: str) -> None:
+      print(x)
+  |}
+    {|
+    from typing import Callable
+    from builtins import __test_sink
+
+    def change_return_type(f: Callable) -> Callable:
+
+      def inner( *args, **kwargs) -> int:
+        f( *args, **kwargs)
+        return 1
+
+      return inner
+
+    def foo(x: str) -> int:
+
+      def __original_function(x: str) -> None:
+        print(x)
+
+      def __wrapper(x: str) -> int:
+        __args = (x,)
+        __kwargs = {"x": x}
+        __original_function(x)
+        return 1
+
+      return __wrapper(x)
+  |};
   ()
 
 

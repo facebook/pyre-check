@@ -52,7 +52,39 @@ async def foo_async(x: str) -> None:
     print(x)
 
 
+def with_logging_args_kwargs(f: Callable) -> Callable:
+    def inner(*args, **kwargs) -> None:
+        __test_sink(kwargs)
+        f(*args, **kwargs)
+
+    return inner
+
+
+@with_logging_args_kwargs
+def foo_args_kwargs(x: str) -> None:
+    print(x)
+
+
+def with_logging_args_kwargs_no_sink(f: Callable) -> Callable:
+    def inner(*args, **kwargs) -> None:
+        f(*args, **kwargs)
+
+    return inner
+
+
+@with_logging_args_kwargs_no_sink
+def foo_args_kwargs_with_sink(x: str, y: int) -> None:
+    __test_sink(y)
+
+
 def main() -> None:
     foo(__test_source())
     foo_with_sink(__test_source())
     await foo_async(__test_source())
+
+    foo_args_kwargs(__test_source())
+
+    # No issue because the taint is on the second parameter.
+    foo_args_kwargs_with_sink(__test_source(), 0)
+    # Issue.
+    foo_args_kwargs_with_sink("hello", __test_source())

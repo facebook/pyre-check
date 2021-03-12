@@ -218,10 +218,15 @@ let make_kwargs_assignment_from_parameters
     | { Node.value = Expression.Starred (Twice keyword); _ } -> `Fst keyword
     | { Node.value = Expression.Starred (Once _); _ } -> `Snd ()
     | argument ->
+        let raw_argument_string = Expression.show argument in
+        let argument_string =
+          String.chop_prefix ~prefix:"$parameter$" raw_argument_string
+          |> Option.value ~default:raw_argument_string
+        in
         `Trd
           {
             Dictionary.Entry.key =
-              Expression.String (StringLiteral.create (Expression.show argument))
+              Expression.String (StringLiteral.create argument_string)
               |> Node.create_with_default_location;
             value = argument;
           }
@@ -359,7 +364,11 @@ let inline_decorator_in_define
           _;
         } as wrapper_define )
     ~higher_order_function_parameter_name
-    ({ Define.signature = { name = { Node.value = original_function_name; _ }; _ }; _ } as define)
+    ( {
+        Define.signature =
+          { name = { Node.value = original_function_name; _ }; _ } as original_signature;
+        _;
+      } as define )
   =
   let qualifier = original_function_name in
   let inlined_original_define =
@@ -368,6 +377,16 @@ let inline_decorator_in_define
     |> requalify_define
          ~old_qualifier:qualifier
          ~new_qualifier:(Reference.create ~prefix:qualifier inlined_original_function_name)
+  in
+  let wrapper_define, outer_signature =
+    match
+      replace_signature_if_always_passing_on_arguments
+        ~callee_name:higher_order_function_parameter_name
+        ~new_signature:original_signature
+        wrapper_define
+    with
+    | Some ({ Define.signature; _ } as wrapper_define) -> wrapper_define, signature
+    | None -> wrapper_define, wrapper_signature
   in
   let inlined_original_define_statement =
     Statement.Define inlined_original_define |> Node.create ~location
@@ -405,7 +424,7 @@ let inline_decorator_in_define
   let body =
     [inlined_original_define_statement; inlined_wrapper_define_statement; return_call_to_wrapper]
   in
-  { define with body; signature = wrapper_signature }
+  { define with body; signature = outer_signature }
   |> sanitize_define
   |> rename_define ~new_name:qualifier
 
