@@ -2119,6 +2119,84 @@ let test_replace_version_specific_code _ =
     {|
       a = 2
     |};
+  assert_preprocessed
+    ~major_version:3
+    ~minor_version:4
+    ~micro_version:10
+    {|
+      if sys.version_info.major == 3:
+        a = 1
+      else:
+        a = 2
+    |}
+    {|
+      a = 1
+    |};
+  assert_preprocessed
+    ~major_version:3
+    ~minor_version:4
+    ~micro_version:10
+    {|
+      if sys.version_info.minor == 4:
+        a = 1
+      else:
+        a = 2
+    |}
+    {|
+      a = 1
+    |};
+  assert_preprocessed
+    ~major_version:3
+    ~minor_version:4
+    ~micro_version:10
+    {|
+      if sys.version_info.micro == 10:
+        a = 1
+      else:
+        a = 2
+    |}
+    {|
+      a = 1
+    |};
+  assert_preprocessed
+    ~major_version:3
+    ~minor_version:4
+    ~micro_version:10
+    {|
+      if 3 == sys.version_info.major:
+        a = 1
+      else:
+        a = 2
+    |}
+    {|
+      a = 1
+    |};
+  assert_preprocessed
+    ~major_version:3
+    ~minor_version:4
+    ~micro_version:10
+    {|
+      if 4 == sys.version_info.minor:
+        a = 1
+      else:
+        a = 2
+    |}
+    {|
+      a = 1
+    |};
+  assert_preprocessed
+    ~major_version:3
+    ~minor_version:4
+    ~micro_version:10
+    {|
+      if 10 == sys.version_info.micro:
+        a = 1
+      else:
+        a = 2
+    |}
+    {|
+      a = 1
+    |};
   ()
 
 

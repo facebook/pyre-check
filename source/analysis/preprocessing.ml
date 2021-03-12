@@ -1313,6 +1313,34 @@ let replace_version_specific_code ~major_version ~minor_version ~micro_version s
                 true
             | _ -> false
           in
+          let is_system_version_attribute_access_expression ~attribute = function
+            | {
+                Node.value =
+                  Expression.Name
+                    (Name.Attribute
+                      {
+                        base =
+                          {
+                            Node.value =
+                              Expression.Name
+                                (Name.Attribute
+                                  {
+                                    base =
+                                      { Node.value = Expression.Name (Name.Identifier "sys"); _ };
+                                    attribute = "version_info";
+                                    _;
+                                  });
+                            _;
+                          };
+                        attribute = version_attribute;
+                        _;
+                      });
+                _;
+              }
+              when String.equal attribute version_attribute ->
+                true
+            | _ -> false
+          in
           let is_system_version_tuple_access_expression ?index = function
             | {
                 Node.value =
@@ -1415,6 +1443,15 @@ let replace_version_specific_code ~major_version ~minor_version ~micro_version s
           | Some (operator, left, { Node.value = Expression.Integer given_micro_version; _ })
             when is_system_version_tuple_access_expression ~index:2 left ->
               evaluate_one_version ~operator micro_version given_micro_version |> do_replace
+          | Some (operator, left, { Node.value = Expression.Integer given_major_version; _ })
+            when is_system_version_attribute_access_expression ~attribute:"major" left ->
+              evaluate_one_version ~operator major_version given_major_version |> do_replace
+          | Some (operator, left, { Node.value = Expression.Integer given_minor_version; _ })
+            when is_system_version_attribute_access_expression ~attribute:"minor" left ->
+              evaluate_one_version ~operator minor_version given_minor_version |> do_replace
+          | Some (operator, left, { Node.value = Expression.Integer given_micro_version; _ })
+            when is_system_version_attribute_access_expression ~attribute:"micro" left ->
+              evaluate_one_version ~operator micro_version given_micro_version |> do_replace
           | Some
               ( operator,
                 {
@@ -1479,6 +1516,27 @@ let replace_version_specific_code ~major_version ~minor_version ~micro_version s
               |> do_replace
           | Some (operator, { Node.value = Expression.Integer given_micro_version; _ }, right)
             when is_system_version_tuple_access_expression ~index:2 right ->
+              evaluate_one_version
+                ~operator:(Comparison.inverse operator)
+                micro_version
+                given_micro_version
+              |> do_replace
+          | Some (operator, { Node.value = Expression.Integer given_major_version; _ }, right)
+            when is_system_version_attribute_access_expression ~attribute:"major" right ->
+              evaluate_one_version
+                ~operator:(Comparison.inverse operator)
+                major_version
+                given_major_version
+              |> do_replace
+          | Some (operator, { Node.value = Expression.Integer given_minor_version; _ }, right)
+            when is_system_version_attribute_access_expression ~attribute:"minor" right ->
+              evaluate_one_version
+                ~operator:(Comparison.inverse operator)
+                minor_version
+                given_minor_version
+              |> do_replace
+          | Some (operator, { Node.value = Expression.Integer given_micro_version; _ }, right)
+            when is_system_version_attribute_access_expression ~attribute:"micro" right ->
               evaluate_one_version
                 ~operator:(Comparison.inverse operator)
                 micro_version
