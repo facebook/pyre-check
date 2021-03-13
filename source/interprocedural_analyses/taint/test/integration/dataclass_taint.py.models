@@ -3,9 +3,9 @@
   "kind": "issue",
   "data": {
     "callable": "dataclass_taint.issue_in_dataclass_constructor",
-    "callable_line": 37,
+    "callable_line": 38,
     "code": 5002,
-    "line": 38,
+    "line": 39,
     "start": 26,
     "end": 41,
     "filename": "dataclass_taint.py",
@@ -17,7 +17,7 @@
           {
             "root": {
               "filename": "dataclass_taint.py",
-              "line": 38,
+              "line": 39,
               "start": 26,
               "end": 41
             },
@@ -33,7 +33,7 @@
             "call": {
               "position": {
                 "filename": "dataclass_taint.py",
-                "line": 38,
+                "line": 39,
                 "start": 26,
                 "end": 41
               },
@@ -362,7 +362,7 @@
           {
             "root": {
               "filename": "dataclass_taint.py",
-              "line": 34,
+              "line": 35,
               "start": 20,
               "end": 23
             },
@@ -428,7 +428,7 @@
           {
             "root": {
               "filename": "dataclass_taint.py",
-              "line": 49,
+              "line": 50,
               "start": 23,
               "end": 26
             },
@@ -450,7 +450,7 @@
           {
             "root": {
               "filename": "dataclass_taint.py",
-              "line": 51,
+              "line": 52,
               "start": 8,
               "end": 26
             },
@@ -527,11 +527,11 @@
           {
             "root": {
               "filename": "dataclass_taint.py",
-              "line": 17,
+              "line": 18,
               "start": 28,
               "end": 43
             },
-            "tito": [ { "line": 17, "start": 28, "end": 43 } ],
+            "tito": [ { "line": 18, "start": 28, "end": 43 } ],
             "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [
               { "always-via": "tito" },
@@ -549,9 +549,9 @@
   "kind": "issue",
   "data": {
     "callable": "dataclass_taint.bad_is_tainted",
-    "callable_line": 16,
+    "callable_line": 17,
     "code": 5002,
-    "line": 18,
+    "line": 19,
     "start": 16,
     "end": 23,
     "filename": "dataclass_taint.py",
@@ -563,11 +563,11 @@
           {
             "root": {
               "filename": "dataclass_taint.py",
-              "line": 17,
+              "line": 18,
               "start": 28,
               "end": 43
             },
-            "tito": [ { "line": 17, "start": 28, "end": 43 } ],
+            "tito": [ { "line": 18, "start": 28, "end": 43 } ],
             "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [
               { "always-via": "tito" },
@@ -582,7 +582,7 @@
           {
             "root": {
               "filename": "dataclass_taint.py",
-              "line": 18,
+              "line": 19,
               "start": 16,
               "end": 23
             },
@@ -610,11 +610,11 @@
           {
             "root": {
               "filename": "dataclass_taint.py",
-              "line": 23,
+              "line": 24,
               "start": 28,
               "end": 43
             },
-            "tito": [ { "line": 23, "start": 28, "end": 43 } ],
+            "tito": [ { "line": 24, "start": 28, "end": 43 } ],
             "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [
               { "always-via": "tito" },
@@ -631,6 +631,186 @@
 {
   "kind": "model",
   "data": {
+    "callable": "dataclass_taint.test_dataclass_with_other_source",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(context)[not_tainted]",
+        "taint": [
+          {
+            "root": {
+              "filename": "dataclass_taint.py",
+              "line": 80,
+              "start": 16,
+              "end": 35
+            },
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(context)[tainted]",
+        "taint": [
+          {
+            "root": {
+              "filename": "dataclass_taint.py",
+              "line": 79,
+              "start": 16,
+              "end": 31
+            },
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "dataclass_taint.test_dataclass_with_other_source",
+    "callable_line": 78,
+    "code": 5002,
+    "line": 79,
+    "start": 16,
+    "end": 31,
+    "filename": "dataclass_taint.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "dataclass_taint.py",
+              "line": 79,
+              "start": 16,
+              "end": 31
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "dataclass_taint.DataClassWithOtherSource.tainted"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "dataclass_taint.py",
+              "line": 79,
+              "start": 16,
+              "end": 31
+            },
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_sink" } ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "dataclass_taint.test_dataclass_with_source",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(context)[not_tainted]",
+        "taint": [
+          {
+            "root": {
+              "filename": "dataclass_taint.py",
+              "line": 68,
+              "start": 16,
+              "end": 35
+            },
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(context)[tainted]",
+        "taint": [
+          {
+            "root": {
+              "filename": "dataclass_taint.py",
+              "line": 67,
+              "start": 16,
+              "end": 31
+            },
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "dataclass_taint.test_dataclass_with_source",
+    "callable_line": 66,
+    "code": 5002,
+    "line": 67,
+    "start": 16,
+    "end": 31,
+    "filename": "dataclass_taint.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "dataclass_taint.py",
+              "line": 67,
+              "start": 16,
+              "end": 31
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "Obj{dataclass_taint.DataClassWithSource.tainted}"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "dataclass_taint.py",
+              "line": 67,
+              "start": 16,
+              "end": 31
+            },
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_sink" } ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "dataclass_taint.test_weird_dataclass_taint",
     "sources": [
       {
@@ -640,7 +820,7 @@
             "call": {
               "position": {
                 "filename": "dataclass_taint.py",
-                "line": 55,
+                "line": 56,
                 "start": 11,
                 "end": 43
               },

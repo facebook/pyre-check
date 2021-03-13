@@ -5,6 +5,7 @@
 
 from builtins import __test_sink, __test_source
 from dataclasses import dataclass
+from typing import final
 
 
 @dataclass
@@ -53,3 +54,27 @@ class WeirdDataClass:
 
 def test_weird_dataclass_taint() -> WeirdDataClass:
     return WeirdDataClass(bad=1, another=2)
+
+
+@final
+@dataclass(frozen=True)
+class DataClassWithSource:
+    tainted: int
+    not_tainted: str
+
+
+def test_dataclass_with_source(context: DataClassWithSource) -> None:
+    __test_sink(context.tainted)
+    __test_sink(context.not_tainted)
+
+
+@final
+@dataclass(frozen=True)
+class DataClassWithOtherSource:
+    tainted: int
+    not_tainted: str
+
+
+def test_dataclass_with_other_source(context: DataClassWithOtherSource) -> None:
+    __test_sink(context.tainted)
+    __test_sink(context.not_tainted)
