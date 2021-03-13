@@ -593,7 +593,7 @@ let test_inline_decorators context =
 
       def __wrapper(x: str) -> None:
         __args = (x, )
-        __kwargs = {"$parameter$x": x}
+        __kwargs = {"x": x}
 
         print($parameter$logger_name)
         __test_sink(__args)
