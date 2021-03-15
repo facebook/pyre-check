@@ -7,11 +7,9 @@
 
 open Ast
 
-let register_alarm time callback =
-  let previous = Sys.signal Sys.sigalrm (Sys.Signal_handle callback) in
-  let _ = Unix.alarm time in
-  previous
+let register_alarm callback = Sys.signal Sys.sigalrm (Sys.Signal_handle callback)
 
+let start_alarm time = ignore (Unix.alarm time)
 
 let clear_alarm previous =
   let _ = Unix.alarm 0 in
@@ -22,23 +20,32 @@ let clear_alarm previous =
 let callable_max_time_in_seconds = 60
 
 let with_alarm name f () =
+  (* Print a warning every `callable_max_time_in_seconds` * 2^n seconds. *)
+  let alarm_counter = ref 0 in
+  let next_warning = ref 1 in
   let callback _ =
-    Statistics.event
-      ~flush:true
-      ~name:"long taint analysis of callable"
-      ~section:`Performance
-      ~integers:["cutoff time", callable_max_time_in_seconds]
-      ~normals:["callable", Reference.show name]
-      ();
-    let pid = Unix.getpid () in
-    Log.info
-      "The analysis of %a is taking more than %d seconds (pid = %d)"
-      Reference.pp
-      name
-      callable_max_time_in_seconds
-      pid
+    start_alarm callable_max_time_in_seconds;
+    incr alarm_counter;
+    if !alarm_counter = !next_warning then (
+      next_warning := 2 * !next_warning;
+      let current_time_in_seconds = !alarm_counter * callable_max_time_in_seconds in
+      Statistics.event
+        ~flush:true
+        ~name:"long taint analysis of callable"
+        ~section:`Performance
+        ~integers:["cutoff time", current_time_in_seconds]
+        ~normals:["callable", Reference.show name]
+        ();
+      let pid = Unix.getpid () in
+      Log.info
+        "The analysis of %a is taking more than %d seconds (pid = %d)"
+        Reference.pp
+        name
+        current_time_in_seconds
+        pid )
   in
-  let id = register_alarm callable_max_time_in_seconds callback in
+  let id = register_alarm callback in
+  let () = start_alarm callable_max_time_in_seconds in
   try
     let result = f () in
     clear_alarm id;
