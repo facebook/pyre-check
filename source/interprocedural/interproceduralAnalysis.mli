@@ -49,7 +49,7 @@ val save_results
   filename_lookup:(Ast.Reference.t -> string option) ->
   analyses:AnalysisKind.abstract list ->
   skipped_overrides:Ast.Reference.t list ->
-  Callable.t list ->
+  Callable.Set.t ->
   unit
 
 type initialize_result = {

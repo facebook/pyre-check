@@ -521,7 +521,7 @@ let analyze
   let timer = Timer.start () in
   Log.info "Initializing analysis...";
   (* Initialize and add initial models of analyses to shared mem. *)
-  let skip_overrides =
+  let skip_overrides, initial_models_callables =
     let configuration_json =
       let taint_model_paths =
         configuration.Configuration.Analysis.taint_model_paths
@@ -573,7 +573,7 @@ let analyze
         ~stubs
     in
     Analysis.record_initial_models ~functions ~stubs models;
-    skip_overrides
+    skip_overrides, Callable.Map.keys models
   in
   Statistics.performance
     ~name:"Computed initial analysis state"
@@ -642,7 +642,7 @@ let analyze
   Log.info "Computing dependencies...";
   let timer = Timer.start () in
   let override_targets = (Callable.Map.keys override_dependencies :> Callable.t list) in
-  let dependencies, callables =
+  let dependencies, callables_to_analyze =
     let dependencies =
       DependencyGraph.from_callgraph callgraph |> DependencyGraph.union override_dependencies
     in
@@ -670,13 +670,16 @@ let analyze
     ~phase_name:"Pre-fixpoint computation for static analysis"
     ~timer:pre_fixpoint_timer
     ();
-  let all_callables = List.rev_append override_targets callables in
   Log.info
-    "Analysis fixpoint started for %d overrides %d functions..."
+    "Analysis fixpoint started for %d overrides and %d functions..."
     (List.length override_targets)
-    (List.length callables);
+    (List.length callables_to_analyze);
+  let callables_to_analyze = List.rev_append override_targets callables_to_analyze in
   let timer = Timer.start () in
   let save_results () =
+    let all_callables =
+      Callable.Set.of_list (List.rev_append initial_models_callables callables_to_analyze)
+    in
     Interprocedural.Analysis.save_results
       ~configuration:analysis_configuration
       ~filename_lookup
@@ -693,10 +696,10 @@ let analyze
           ~analyses
           ~dependencies
           ~filtered_callables
-          ~all_callables
+          ~all_callables:callables_to_analyze
           Interprocedural.Fixpoint.Epoch.initial
       in
-      let errors = Interprocedural.Analysis.extract_errors scheduler all_callables in
+      let errors = Interprocedural.Analysis.extract_errors scheduler callables_to_analyze in
       Log.info "Fixpoint iterations: %d" iterations;
       Statistics.performance
         ~name:"Analysis fixpoint complete"

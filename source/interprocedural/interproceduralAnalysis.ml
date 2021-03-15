@@ -788,7 +788,7 @@ let save_results
         in
         Json.to_outbuf out_buffer header_with_version;
         Bi_outbuf.add_string out_buffer "\n";
-        List.iter ~f:(emit_externalization ~filename_lookup kind array_emitter) all_callables;
+        Callable.Set.iter (emit_externalization ~filename_lookup kind array_emitter) all_callables;
         Bi_outbuf.flush_output_writer out_buffer;
         close_out out_channel
       in
