@@ -236,6 +236,7 @@ class ServerState:
         default_factory=dict
     )
 
+
 class Server:
     # I/O Channels
     input_channel: connection.TextReader
