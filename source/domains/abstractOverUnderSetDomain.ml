@@ -190,17 +190,6 @@ module Make (Element : AbstractSetDomain.ELEMENT) = struct
     | _ -> C.fold part ~f ~init set
 
 
-  let add set element =
-    match set with
-    | Bottom ->
-        let singleton = Set.singleton element in
-        BiSet { over = singleton; under = singleton }
-    | BiSet { over; under } ->
-        let over = Set.add element over in
-        let under = Set.add element under in
-        make ~old:set ~over ~under
-
-
   (* Logically, this is a union with point-wise meet of whether the element is in the
      under-approximation *)
   let add_element set { element; in_under } =
@@ -224,6 +213,8 @@ module Make (Element : AbstractSetDomain.ELEMENT) = struct
         in
         make ~old:set ~over ~under
 
+
+  let add set element = add_element set { element; in_under = true }
 
   let of_list elements = ListLabels.fold_left ~f:add elements ~init:bottom
 
