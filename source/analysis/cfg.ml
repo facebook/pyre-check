@@ -12,7 +12,7 @@ open Statement
 
 module Node = struct
   type kind =
-    | Block of Statement.t list
+    | Block of Ast.Statement.t list
     | Dispatch
     | Entry
     | Error
