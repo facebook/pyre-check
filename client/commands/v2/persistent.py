@@ -442,7 +442,7 @@ class PysaServer:
             await self.pyre_manager.ensure_task_running()
         else:
             LOG.info(
-                "Not restarting Pyre since failed consecutive start attempt limit"
+                "Not restarting Pysa since failed consecutive start attempt limit"
                 " has been reached."
             )
 
@@ -906,6 +906,7 @@ class PyreServerHandler(connection.BackgroundTask):
             )
             raise
 
+
 class PysaServerHandler(connection.BackgroundTask):
     binary_location: str
     server_identifier: str
@@ -955,7 +956,7 @@ class PysaServerHandler(connection.BackgroundTask):
 
     def update_type_errors(self, type_errors: Sequence[error.Error]) -> None:
         LOG.info(
-            "Refereshing type errors received from Pyre server. "
+            "Refereshing type errors received from Pysa server. "
             f"Total number of type errors is {len(type_errors)}."
         )
         self.server_state.diagnostics = type_errors_to_diagnostics(type_errors)
@@ -977,7 +978,7 @@ class PysaServerHandler(connection.BackgroundTask):
             raw_response = await server_input_channel.read_until(separator="\n")
             yield raw_response
         except incremental.InvalidServerResponse as error:
-            LOG.error(f"Pyre server returns invalid response: {error}")
+            LOG.error(f"Pysa  server returns invalid response: {error}")
 
     async def _subscribe_to_type_error(
         self,
@@ -1016,7 +1017,7 @@ class PysaServerHandler(connection.BackgroundTask):
             )
         finally:
             await self.show_message_to_client(
-                "Lost connection to background Pyre server.",
+                "Lost connection to background Pysa server.",
                 level=lsp.MessageType.WARNING,
             )
             self.server_state.diagnostics = {}
@@ -1059,7 +1060,7 @@ class PysaServerHandler(connection.BackgroundTask):
                 await self.subscribe_to_type_error(input_channel, output_channel)
         except connection.ConnectionFailure:
             await self.log_and_show_message_to_client(
-                f"Starting a new Pyre server at `{self.server_identifier}` in "
+                f"Starting a new Pysa server at `{self.server_identifier}` in "
                 "the background..."
             )
 
@@ -1068,7 +1069,7 @@ class PysaServerHandler(connection.BackgroundTask):
             )
             if isinstance(start_status, StartSuccess):
                 await self.log_and_show_message_to_client(
-                    f"Pyre server at `{self.server_identifier}` has been initialized."
+                    f"Pysa server at `{self.server_identifier}` has been initialized."
                 )
 
                 async with connection.connect_in_text_mode(socket_path) as (
