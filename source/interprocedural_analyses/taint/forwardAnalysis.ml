@@ -1171,101 +1171,108 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
 
 
     and analyze_expression ~resolution ~state ~expression:({ Node.location; _ } as expression) =
+      log "Forward analysis of expression: %a" Expression.pp expression;
       let location = Location.with_module ~qualifier:FunctionContext.qualifier location in
-      match expression.Node.value with
-      | Await expression -> analyze_expression ~resolution ~state ~expression
-      | BooleanOperator { left; operator = _; right } ->
-          let left_taint, state = analyze_expression ~resolution ~state ~expression:left in
-          let right_taint, state = analyze_expression ~resolution ~state ~expression:right in
-          ForwardState.Tree.join left_taint right_taint, state
-      | ComparisonOperator ({ left; operator = _; right } as comparison) -> (
-          match
-            ComparisonOperator.override ~location:(Location.strip_module location) comparison
-          with
-          | Some override -> analyze_expression ~resolution ~state ~expression:override
-          | None ->
-              let left_taint, state = analyze_expression ~resolution ~state ~expression:left in
-              let right_taint, state = analyze_expression ~resolution ~state ~expression:right in
-              ForwardState.Tree.join left_taint right_taint, state )
-      | Call { callee; arguments } -> analyze_call ~resolution ~location ~state ~callee ~arguments
-      | Complex _ -> ForwardState.Tree.empty, state
-      | Dictionary { Dictionary.entries; keywords } ->
-          let taint, state =
-            List.fold
-              entries
-              ~f:(analyze_dictionary_entry ~resolution)
+      let taint, state =
+        match expression.Node.value with
+        | Await expression -> analyze_expression ~resolution ~state ~expression
+        | BooleanOperator { left; operator = _; right } ->
+            let left_taint, state = analyze_expression ~resolution ~state ~expression:left in
+            let right_taint, state = analyze_expression ~resolution ~state ~expression:right in
+            ForwardState.Tree.join left_taint right_taint, state
+        | ComparisonOperator ({ left; operator = _; right } as comparison) -> (
+            match
+              ComparisonOperator.override ~location:(Location.strip_module location) comparison
+            with
+            | Some override -> analyze_expression ~resolution ~state ~expression:override
+            | None ->
+                let left_taint, state = analyze_expression ~resolution ~state ~expression:left in
+                let right_taint, state = analyze_expression ~resolution ~state ~expression:right in
+                ForwardState.Tree.join left_taint right_taint, state )
+        | Call { callee; arguments } -> analyze_call ~resolution ~location ~state ~callee ~arguments
+        | Complex _ -> ForwardState.Tree.empty, state
+        | Dictionary { Dictionary.entries; keywords } ->
+            let taint, state =
+              List.fold
+                entries
+                ~f:(analyze_dictionary_entry ~resolution)
+                ~init:(ForwardState.Tree.empty, state)
+            in
+            let analyze_dictionary_keywords (taint, state) keywords =
+              let new_taint, state = analyze_expression ~resolution ~state ~expression:keywords in
+              ForwardState.Tree.join new_taint taint, state
+            in
+            List.fold keywords ~f:analyze_dictionary_keywords ~init:(taint, state)
+        | DictionaryComprehension comprehension ->
+            analyze_dictionary_comprehension ~resolution ~state comprehension
+        | Ellipsis
+        | False
+        | Float _ ->
+            ForwardState.Tree.empty, state
+        | Generator comprehension -> analyze_comprehension ~resolution comprehension state
+        | Integer _ -> ForwardState.Tree.empty, state
+        | Lambda { parameters = _; body } ->
+            (* Ignore parameter bindings and pretend body is inlined *)
+            analyze_expression ~resolution ~state ~expression:body
+        | List list ->
+            List.foldi
+              list
+              ~f:(analyze_list_element ~resolution)
               ~init:(ForwardState.Tree.empty, state)
-          in
-          let analyze_dictionary_keywords (taint, state) keywords =
-            let new_taint, state = analyze_expression ~resolution ~state ~expression:keywords in
-            ForwardState.Tree.join new_taint taint, state
-          in
-          List.fold keywords ~f:analyze_dictionary_keywords ~init:(taint, state)
-      | DictionaryComprehension comprehension ->
-          analyze_dictionary_comprehension ~resolution ~state comprehension
-      | Ellipsis
-      | False
-      | Float _ ->
-          ForwardState.Tree.empty, state
-      | Generator comprehension -> analyze_comprehension ~resolution comprehension state
-      | Integer _ -> ForwardState.Tree.empty, state
-      | Lambda { parameters = _; body } ->
-          (* Ignore parameter bindings and pretend body is inlined *)
-          analyze_expression ~resolution ~state ~expression:body
-      | List list ->
-          List.foldi
-            list
-            ~f:(analyze_list_element ~resolution)
-            ~init:(ForwardState.Tree.empty, state)
-      | ListComprehension comprehension -> analyze_comprehension ~resolution comprehension state
-      | Name _ when AccessPath.is_global ~resolution expression ->
-          let global = Option.value_exn (AccessPath.get_global ~resolution expression) in
-          global_model ~location global, state
-      | Name (Name.Identifier identifier) ->
-          ForwardState.read ~root:(AccessPath.Root.Variable identifier) ~path:[] state.taint, state
-      (* __dict__ reveals an object's underlying data structure, so we should analyze the base under
-         the existing taint instead of adding the index to the taint. *)
-      | Name (Name.Attribute { base; attribute = "__dict__"; _ }) ->
-          analyze_expression ~resolution ~state ~expression:base
-      | Name (Name.Attribute { base; attribute; _ }) -> (
-          match
-            FunctionContext.get_property_callees
-              ~location:(Location.strip_module location)
-              ~attribute
-          with
-          | Some (RegularTargets { targets; _ }) ->
-              let arguments = [{ Call.Argument.name = None; value = base }] in
-              apply_call_targets ~resolution ~callee:expression location arguments state targets
-          | _ -> analyze_attribute_access ~resolution ~state ~location base attribute )
-      | Set set ->
-          List.fold ~f:(analyze_set_element ~resolution) set ~init:(ForwardState.Tree.empty, state)
-      | SetComprehension comprehension -> analyze_comprehension ~resolution comprehension state
-      | Starred (Starred.Once expression)
-      | Starred (Starred.Twice expression) ->
-          analyze_expression ~resolution ~state ~expression
-          |>> ForwardState.Tree.read [Abstract.TreeDomain.Label.Any]
-      | String string_literal -> analyze_string_literal ~resolution ~state ~location string_literal
-      | Ternary { target; test; alternative } ->
-          let state = analyze_condition ~resolution test state in
-          let taint_then, state_then = analyze_expression ~resolution ~state ~expression:target in
-          let taint_else, state_else =
-            analyze_expression ~resolution ~state ~expression:alternative
-          in
-          ForwardState.Tree.join taint_then taint_else, join state_then state_else
-      | True -> ForwardState.Tree.empty, state
-      | Tuple expressions ->
-          List.foldi
-            ~f:(analyze_list_element ~resolution)
-            expressions
-            ~init:(ForwardState.Tree.empty, state)
-      | UnaryOperator { operator = _; operand } ->
-          analyze_expression ~resolution ~state ~expression:operand
-      | WalrusOperator { target; value } ->
-          let target_taint, state = analyze_expression ~resolution ~state ~expression:target in
-          let value_taint, state = analyze_expression ~resolution ~state ~expression:value in
-          ForwardState.Tree.join target_taint value_taint, state
-      | Yield (Some expression) -> analyze_expression ~resolution ~state ~expression
-      | Yield None -> ForwardState.Tree.empty, state
+        | ListComprehension comprehension -> analyze_comprehension ~resolution comprehension state
+        | Name _ when AccessPath.is_global ~resolution expression ->
+            let global = Option.value_exn (AccessPath.get_global ~resolution expression) in
+            global_model ~location global, state
+        | Name (Name.Identifier identifier) ->
+            ( ForwardState.read ~root:(AccessPath.Root.Variable identifier) ~path:[] state.taint,
+              state )
+        (* __dict__ reveals an object's underlying data structure, so we should analyze the base
+           under the existing taint instead of adding the index to the taint. *)
+        | Name (Name.Attribute { base; attribute = "__dict__"; _ }) ->
+            analyze_expression ~resolution ~state ~expression:base
+        | Name (Name.Attribute { base; attribute; _ }) -> (
+            match
+              FunctionContext.get_property_callees
+                ~location:(Location.strip_module location)
+                ~attribute
+            with
+            | Some (RegularTargets { targets; _ }) ->
+                let arguments = [{ Call.Argument.name = None; value = base }] in
+                apply_call_targets ~resolution ~callee:expression location arguments state targets
+            | _ -> analyze_attribute_access ~resolution ~state ~location base attribute )
+        | Set set ->
+            List.fold ~f:(analyze_set_element ~resolution) set ~init:(ForwardState.Tree.empty, state)
+        | SetComprehension comprehension -> analyze_comprehension ~resolution comprehension state
+        | Starred (Starred.Once expression)
+        | Starred (Starred.Twice expression) ->
+            analyze_expression ~resolution ~state ~expression
+            |>> ForwardState.Tree.read [Abstract.TreeDomain.Label.Any]
+        | String string_literal ->
+            analyze_string_literal ~resolution ~state ~location string_literal
+        | Ternary { target; test; alternative } ->
+            let state = analyze_condition ~resolution test state in
+            let taint_then, state_then = analyze_expression ~resolution ~state ~expression:target in
+            let taint_else, state_else =
+              analyze_expression ~resolution ~state ~expression:alternative
+            in
+            ForwardState.Tree.join taint_then taint_else, join state_then state_else
+        | True -> ForwardState.Tree.empty, state
+        | Tuple expressions ->
+            List.foldi
+              ~f:(analyze_list_element ~resolution)
+              expressions
+              ~init:(ForwardState.Tree.empty, state)
+        | UnaryOperator { operator = _; operand } ->
+            analyze_expression ~resolution ~state ~expression:operand
+        | WalrusOperator { target; value } ->
+            let target_taint, state = analyze_expression ~resolution ~state ~expression:target in
+            let value_taint, state = analyze_expression ~resolution ~state ~expression:value in
+            ForwardState.Tree.join target_taint value_taint, state
+        | Yield (Some expression) -> analyze_expression ~resolution ~state ~expression
+        | Yield None -> ForwardState.Tree.empty, state
+      in
+      log "Forward taint: %a" ForwardState.Tree.pp taint;
+      taint, state
 
 
     and analyze_assignment
@@ -1463,7 +1470,8 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
 
 
     let forward ~key state ~statement =
-      log "State: %a\nAnalyzing statement: %a" pp state Statement.pp statement;
+      log "Forward analysis of statement: %a" Statement.pp statement;
+      log "Forward state: %a" pp state;
       let resolution =
         let { Node.value = { Define.signature = { Define.Signature.parent; _ }; _ }; _ } =
           FunctionContext.definition
@@ -1702,7 +1710,7 @@ let run ~environment ~qualifier ~define ~call_graph_of_define ~existing_model =
          (Define.name (Node.value define) |> Node.value |> Reference.show);
   let module AnalysisInstance = AnalysisInstance (Context) in
   let open AnalysisInstance in
-  log "Starting analysis of %a" Interprocedural.Callable.pp (Interprocedural.Callable.create define);
+  log "Forward analysis of callable: `%a`" Reference.pp name;
   let timer = Timer.start () in
   let cfg = Cfg.create define.value in
   let initial =
@@ -1713,6 +1721,11 @@ let run ~environment ~qualifier ~define ~call_graph_of_define ~existing_model =
   let exit_state =
     Metrics.with_alarm name (fun () -> Analyzer.forward ~cfg ~initial |> Analyzer.exit) ()
   in
+  let () =
+    match exit_state with
+    | Some exit_state -> log "Exit state: %a" FixpointState.pp exit_state
+    | None -> log "No exit state found"
+  in
   let resolution = TypeEnvironment.ReadOnly.global_resolution environment in
   let extract_model ({ FixpointState.taint; _ } as result) =
     (* Explicitly declared taint is not propagated to the result and needs to be picked up from the
@@ -1721,7 +1734,7 @@ let run ~environment ~qualifier ~define ~call_graph_of_define ~existing_model =
     let source_taint =
       extract_source_model ~define:define.value ~resolution ~features_to_attach taint
     in
-    let () = log "Model: %a" FixpointState.pp result in
+    let () = log "Forward Model: %a" FixpointState.pp result in
     TaintResult.Forward.{ source_taint }
   in
   let issues = Context.generate_issues () in

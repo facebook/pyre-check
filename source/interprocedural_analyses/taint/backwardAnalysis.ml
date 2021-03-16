@@ -106,7 +106,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
   let read_tree = BackwardState.Tree.read ~transform_non_leaves
 
   module rec FixpointState : FixpointState = struct
-    type t = { taint: BackwardState.t } [@@deriving show]
+    type t = { taint: BackwardState.t } [@@deriving show { with_path = false }]
 
     let create () = { taint = BackwardState.empty }
 
@@ -956,7 +956,8 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
         ~state
         ~expression:{ Node.location; value = expression }
       =
-      log "analyze_expression: %a" Expression.pp_expression expression;
+      log "Backward analysis of expression: %a" Expression.pp_expression expression;
+      log "Backward taint: %a" BackwardState.Tree.pp taint;
       match expression with
       | Await expression -> analyze_expression ~resolution ~taint ~state ~expression
       | BooleanOperator { left; operator = _; right } ->
@@ -1170,8 +1171,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       analyze_expression ~resolution ~taint ~state ~expression:value
 
 
-    let analyze_statement ~resolution state statement =
-      log "State: %a\nStmt: %a" pp state pp_statement statement;
+    let analyze_statement ~resolution state { Node.value = statement; _ } =
       match statement with
       | Statement.Assign { value = { Node.value = Expression.Ellipsis; _ }; _ } -> state
       | Statement.Assign { target = { Node.location; value = target_value } as target; value; _ }
@@ -1232,7 +1232,9 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           analyze_expression ~resolution ~taint:return_taint ~state ~expression
 
 
-    let backward ~key state ~statement:{ Node.value = statement; _ } =
+    let backward ~key state ~statement =
+      log "Backward analysis of statement: %a" Statement.pp statement;
+      log "Backward state: %a" pp state;
       let resolution =
         let { Node.value = { Define.signature = { Define.Signature.parent; _ }; _ }; _ } =
           FunctionContext.definition
@@ -1421,14 +1423,14 @@ let run ~environment ~qualifier ~define ~call_graph_of_define ~existing_model ~t
   let open AnalysisInstance in
   let initial = FixpointState.{ taint = initial_taint } in
   let cfg = Cfg.create define.value in
-  let () = log "Backward analysis of callable: %a" Reference.pp name in
+  let () = log "Backward analysis of callable: `%a`" Reference.pp name in
   let entry_state =
     Metrics.with_alarm name (fun () -> Analyzer.backward ~cfg ~initial |> Analyzer.entry) ()
   in
   let () =
     match entry_state with
-    | Some entry_state -> log "Final state: %a" FixpointState.pp entry_state
-    | None -> log "No final state found"
+    | Some entry_state -> log "Entry state: %a" FixpointState.pp entry_state
+    | None -> log "No entry state found"
   in
   let resolution = TypeEnvironment.ReadOnly.global_resolution environment in
   let extract_model FixpointState.{ taint; _ } =
@@ -1440,7 +1442,7 @@ let run ~environment ~qualifier ~define ~call_graph_of_define ~existing_model ~t
         ~existing_backward:existing_model.TaintResult.backward
         taint
     in
-    let () = log "Callable: %a Models: %a" Reference.pp name TaintResult.Backward.pp_model model in
+    let () = log "Backward Model:\n%a" TaintResult.Backward.pp_model model in
     model
   in
   Statistics.performance
