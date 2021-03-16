@@ -10,7 +10,6 @@ open Analysis
 open Ast
 open Expression
 open Pyre
-open Statement
 open Domains
 open AccessPath
 
@@ -30,7 +29,7 @@ type triggered_sinks = (AccessPath.Root.t * Sinks.t) list Location.Table.t
 module type FUNCTION_CONTEXT = sig
   val qualifier : Reference.t
 
-  val definition : Define.t Node.t
+  val definition : Statement.Define.t Node.t
 
   val get_callees
     :  location:Location.t ->
@@ -503,8 +502,8 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
 
     and analyze_comprehension_generators ~resolution ~state generators =
       let add_binding (state, resolution) ({ Comprehension.Generator.conditions; _ } as generator) =
-        let ({ Ast.Statement.Assign.target; value; _ } as assignment) =
-          Ast.Statement.Statement.generator_assignment generator
+        let ({ Statement.Assign.target; value; _ } as assignment) =
+          Statement.Statement.generator_assignment generator
         in
         let assign_value_taint, state = analyze_expression ~resolution ~state ~expression:value in
         let state =
@@ -698,9 +697,9 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             {
               Node.value =
                 {
-                  Ast.Statement.Define.signature =
+                  Statement.Define.signature =
                     {
-                      Ast.Statement.Define.Signature.parameters =
+                      Statement.Define.Signature.parameters =
                         { Node.value = { Parameter.name = self_parameter; _ }; _ } :: _;
                       _;
                     };
@@ -1006,7 +1005,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                           "%a: Revealed forward taint for `%s`: %s"
                           Location.WithModule.pp
                           location
-                          (Ast.Transform.sanitize_expression expression |> Expression.show)
+                          (Transform.sanitize_expression expression |> Expression.show)
                           (ForwardState.Tree.show taint)
                     | ( Expression.Name (Name.Identifier "reveal_type"),
                         [{ Call.Argument.value = expression; _ }] ) ->
@@ -1018,7 +1017,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                           "%a: Revealed type for %s: %s"
                           Location.WithModule.pp
                           location
-                          (Ast.Transform.sanitize_expression expression |> Expression.show)
+                          (Transform.sanitize_expression expression |> Expression.show)
                           (Resolution.resolve_expression_to_type resolution expression |> Type.show)
                     | _ -> ()
                   end;
@@ -1346,9 +1345,9 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
 
     let analyze_statement ~resolution { Node.value = statement; location } state =
       match statement with
-      | Statement.Assign { value = { Node.value = Expression.Ellipsis; _ }; _ } -> state
-      | Statement.Assign
-          { value = { Node.value = Expression.Name (Name.Identifier "None"); _ }; target; _ } -> (
+      | Statement.Statement.Assign { value = { Node.value = Expression.Ellipsis; _ }; _ } -> state
+      | Assign { value = { Node.value = Expression.Name (Name.Identifier "None"); _ }; target; _ }
+        -> (
           match AccessPath.of_expression ~resolution target with
           | Some { AccessPath.root; path } ->
               (* We need to take some care to ensure we clear existing taint, without adding new
@@ -1359,8 +1358,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
               else
                 state
           | _ -> state )
-      | Statement.Assign { target = { Node.location; value = target_value } as target; value; _ }
-        -> (
+      | Assign { target = { Node.location; value = target_value } as target; value; _ } -> (
           let target_is_sanitized =
             (* Optimization: We only view names as being sanitizable to avoid unnecessary type
                checking. *)
@@ -1433,7 +1431,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       let forward_primed_taint = existing_model.TaintResult.forward.source_taint in
       let prime_parameter
           state
-          (parameter_root, name, { Ast.Node.location; value = { Parameter.value; _ } })
+          (parameter_root, name, { Node.location; value = { Parameter.value; _ } })
         =
         let prime =
           let location = Location.with_module ~qualifier:FunctionContext.qualifier location in
@@ -1473,7 +1471,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       log "Forward analysis of statement: %a" Statement.pp statement;
       log "Forward state: %a" pp state;
       let resolution =
-        let { Node.value = { Define.signature = { Define.Signature.parent; _ }; _ }; _ } =
+        let { Node.value = { Statement.Define.signature = { parent; _ }; _ }; _ } =
           FunctionContext.definition
         in
         TypeCheck.resolution_with_key
@@ -1519,7 +1517,8 @@ let extract_features_to_attach existing_taint =
 
 let extract_source_model ~define ~resolution ~features_to_attach exit_taint =
   let {
-    Define.signature = { return_annotation; name = { Node.value = name; _ }; parameters; _ };
+    Statement.Define.signature =
+      { return_annotation; name = { Node.value = name; _ }; parameters; _ };
     _;
   }
     =
@@ -1562,7 +1561,8 @@ let extract_source_model ~define ~resolution ~features_to_attach exit_taint =
        * setter and the pre-existing taint (as we wouldn't know what taint to delete, etc. Marking
        * self as implicitly returned here allows this handling to work and simulates runtime
        * behavior accurately. *)
-      if String.equal (Reference.last name) "__init__" || Define.is_property_setter define then
+      if String.equal (Reference.last name) "__init__" || Statement.Define.is_property_setter define
+      then
         match parameters with
         | { Node.value = { Parameter.name = self_parameter; _ }; _ } :: _ ->
             AccessPath.Root.Variable self_parameter
@@ -1581,7 +1581,8 @@ let run ~environment ~qualifier ~define ~call_graph_of_define ~existing_model =
   let {
     Node.value =
       {
-        Define.signature = { name = { Node.value = name; _ }; parameters; return_annotation; _ };
+        Statement.Define.signature =
+          { name = { Node.value = name; _ }; parameters; return_annotation; _ };
         _;
       };
     _;
@@ -1621,10 +1622,10 @@ let run ~environment ~qualifier ~define ~call_graph_of_define ~existing_model =
     let local_annotations =
       TypeEnvironment.ReadOnly.get_local_annotations
         environment
-        (Node.value define |> Define.name |> Node.value)
+        (Node.value define |> Statement.Define.name |> Node.value)
 
 
-    let debug = Define.dump define.value
+    let debug = Statement.Define.dump define.value
 
     let candidates = Location.WithModule.Table.create ()
 
@@ -1697,7 +1698,7 @@ let run ~environment ~qualifier ~define ~call_graph_of_define ~existing_model =
       Hashtbl.set triggered_sinks ~key:location ~data:new_triggered_sinks
   end
   in
-  if Define.dump_call_graph (Node.value define) then
+  if Statement.Define.dump_call_graph (Node.value define) then
     Map.to_alist call_graph_of_define
     |> List.map ~f:(fun (key, callees) ->
            Format.sprintf
@@ -1707,7 +1708,7 @@ let run ~environment ~qualifier ~define ~call_graph_of_define ~existing_model =
     |> String.concat ~sep:"\n"
     |> Log.dump
          "Call graph of `%s`:\n %s"
-         (Define.name (Node.value define) |> Node.value |> Reference.show);
+         (Statement.Define.name (Node.value define) |> Node.value |> Reference.show);
   let module AnalysisInstance = AnalysisInstance (Context) in
   let open AnalysisInstance in
   log "Forward analysis of callable: `%a`" Reference.pp name;

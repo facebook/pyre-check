@@ -10,7 +10,6 @@ open Analysis
 open Ast
 open Expression
 open Pyre
-open Statement
 open Domains
 open AccessPath
 
@@ -27,7 +26,7 @@ end
 module type FUNCTION_CONTEXT = sig
   val qualifier : Reference.t
 
-  val definition : Define.t Node.t
+  val definition : Statement.Define.t Node.t
 
   val get_callees
     :  location:Location.t ->
@@ -75,7 +74,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
     (* We handle constructors and property setters specially and track effects. *)
     if
       FunctionContext.is_constructor ()
-      || Define.is_property_setter (Node.value FunctionContext.definition)
+      || Statement.Define.is_property_setter (Node.value FunctionContext.definition)
     then
       match FunctionContext.first_parameter () with
       | Some root ->
@@ -437,7 +436,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       let resolve_generator resolution generator =
         Resolution.resolve_assignment
           resolution
-          (Ast.Statement.Statement.generator_assignment generator)
+          (Statement.Statement.generator_assignment generator)
       in
       List.fold generators ~init:resolution ~f:resolve_generator
 
@@ -452,7 +451,9 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                 ~state
                 ~expression:condition)
         in
-        let { Assign.target; value; _ } = Statement.generator_assignment generator in
+        let { Statement.Assign.target; value; _ } =
+          Statement.Statement.generator_assignment generator
+        in
         analyze_assignment ~resolution ~target ~value state
       in
       List.fold ~f:handle_generator generators ~init:state
@@ -950,14 +951,10 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       | _ -> state
 
 
-    and analyze_expression
-        ~resolution
-        ~taint
-        ~state
-        ~expression:{ Node.location; value = expression }
-      =
-      log "Backward analysis of expression: %a" Expression.pp_expression expression;
+    and analyze_expression ~resolution ~taint ~state ~expression =
+      log "Backward analysis of expression: %a" Expression.pp expression;
       log "Backward taint: %a" BackwardState.Tree.pp taint;
+      let { Node.location; value = expression } = expression in
       match expression with
       | Await expression -> analyze_expression ~resolution ~taint ~state ~expression
       | BooleanOperator { left; operator = _; right } ->
@@ -1173,9 +1170,8 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
 
     let analyze_statement ~resolution state { Node.value = statement; _ } =
       match statement with
-      | Statement.Assign { value = { Node.value = Expression.Ellipsis; _ }; _ } -> state
-      | Statement.Assign { target = { Node.location; value = target_value } as target; value; _ }
-        -> (
+      | Statement.Statement.Assign { value = { Node.value = Expression.Ellipsis; _ }; _ } -> state
+      | Assign { target = { Node.location; value = target_value } as target; value; _ } -> (
           let target_is_sanitized =
             match target_value with
             | Name (Name.Attribute _) -> Model.global_is_sanitized ~resolution ~expression:target
@@ -1236,7 +1232,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       log "Backward analysis of statement: %a" Statement.pp statement;
       log "Backward state: %a" pp state;
       let resolution =
-        let { Node.value = { Define.signature = { Define.Signature.parent; _ }; _ }; _ } =
+        let { Node.value = { Statement.Define.signature = { parent; _ }; _ }; _ } =
           FunctionContext.definition
         in
         TypeCheck.resolution_with_key
@@ -1260,7 +1256,7 @@ end
 
 (* Split the inferred entry state into externally visible taint_in_taint_out parts and sink_taint. *)
 let extract_tito_and_sink_models define ~is_constructor ~resolution ~existing_backward entry_taint =
-  let { Define.signature = { parameters; _ }; _ } = define in
+  let { Statement.Define.signature = { parameters; _ }; _ } = define in
   let {
     Configuration.analysis_model_constraints =
       { maximum_model_width; maximum_complex_access_path_length; _ };
@@ -1364,8 +1360,10 @@ let extract_tito_and_sink_models define ~is_constructor ~resolution ~existing_ba
 
 let run ~environment ~qualifier ~define ~call_graph_of_define ~existing_model ~triggered_sinks =
   let timer = Timer.start () in
-  let ( { Node.value = { Define.signature = { name = { Node.value = name; _ }; _ }; _ }; _ } as
-      define )
+  let ( {
+          Node.value = { Statement.Define.signature = { name = { Node.value = name; _ }; _ }; _ };
+          _;
+        } as define )
     =
     (* Apply decorators to make sure we match parameters up correctly. *)
     let resolution = TypeEnvironment.ReadOnly.global_resolution environment in
@@ -1404,18 +1402,18 @@ let run ~environment ~qualifier ~define ~call_graph_of_define ~existing_model ~t
     let local_annotations =
       TypeEnvironment.ReadOnly.get_local_annotations
         environment
-        (Node.value define |> Define.name |> Node.value)
+        (Node.value define |> Statement.Define.name |> Node.value)
 
 
     let is_constructor = is_constructor
 
     let first_parameter () =
-      match define.value.Define.signature.parameters with
+      match define.value.Statement.Define.signature.parameters with
       | { Node.value = { Parameter.name; _ }; _ } :: _ -> Some (Root.Variable name)
       | _ -> None
 
 
-    let debug = Define.dump define.value
+    let debug = Statement.Define.dump define.value
 
     let triggered_sinks = triggered_sinks
   end)
