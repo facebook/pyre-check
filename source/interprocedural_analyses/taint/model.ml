@@ -237,7 +237,7 @@ let get_global_sink_model ~resolution ~location ~expression =
   get_global_model ~resolution ~expression >>| to_sink
 
 
-let get_global_tito_model ~resolution ~expression =
+let get_global_tito_model_and_mode ~resolution ~expression =
   let to_tito
       ( _,
         { model = { TaintResult.backward = { TaintResult.Backward.taint_in_taint_out; _ }; _ }; _ }
@@ -245,7 +245,9 @@ let get_global_tito_model ~resolution ~expression =
     =
     BackwardState.read ~root:global_root ~path:[] taint_in_taint_out
   in
-  get_global_model ~resolution ~expression >>| to_tito
+  let get_mode (_, { model = { TaintResult.mode; _ }; _ }) = mode in
+  let global_model = get_global_model ~resolution ~expression in
+  global_model >>| to_tito, global_model >>| get_mode
 
 
 let global_is_sanitized ~resolution ~expression =

@@ -11,6 +11,38 @@ from typing import Sequence, TypeVar
 T = TypeVar("T")
 
 
+class C_sanitized_a_source:
+    attribute = None
+
+    def __init__(self, value):
+        self.instance = value
+        self.attribute = value
+
+
+class C_sanitized_b_source:
+    attribute = None
+
+    def __init__(self, value):
+        self.instance = value
+        self.attribute = value
+
+
+class C_sanitized_ab_sources:
+    attribute = None
+
+    def __init__(self, value):
+        self.instance = value
+        self.attribute = value
+
+
+class C_sanitized_all_sources:
+    attribute = None
+
+    def __init__(self, value):
+        self.instance = value
+        self.attribute = value
+
+
 def return_taint_sanitize(arg: T) -> T:
     """Identity function that returns the argument unmodified, but is marked as
     'Sanitize' in the accompanying .pysa file
@@ -154,3 +186,79 @@ def test4():
     x = a_source()
     y = sanitize_a_tito_with_sink(x)  # flow here
     a_sink(y)  # no flow here
+
+
+def sanitize_test_a_source_attribute():
+    if 1 > 2:
+        x = a_source()
+    else:
+        x = b_source()
+    c = C_sanitized_a_source(x)
+    __test_sink(c.attribute)
+
+
+def sanitize_test_b_source_attribute():
+    if 1 > 2:
+        x = a_source()
+    else:
+        x = b_source()
+    c = C_sanitized_b_source(x)
+    __test_sink(c.attribute)
+
+
+def sanitize_test_ab_sources_attribute():
+    if 1 > 2:
+        x = a_source()
+    else:
+        x = b_source()
+    c = C_sanitized_ab_sources(x)
+    __test_sink(c.attribute)  # should only trigger Test -> Test
+
+
+def sanitize_test_all_sources_attribute():
+    if 1 > 2:
+        x = a_source()
+    elif 2 > 3:
+        x = b_source()
+    else:
+        x = __test_source()
+    c = C_sanitized_all_sources(x)
+    __test_sink(c.attribute)
+
+
+def sanitize_test_a_source_instance():
+    if 1 > 2:
+        x = a_source()
+    else:
+        x = b_source()
+    c = C_sanitized_a_source(x)
+    __test_sink(c.instance)
+
+
+def sanitize_test_b_source_instance():
+    if 1 > 2:
+        x = a_source()
+    else:
+        x = b_source()
+    c = C_sanitized_b_source(x)
+    __test_sink(c.instance)
+
+
+def sanitize_test_ab_sources_instance():
+    if 1 > 2:
+        x = a_source()
+    else:
+        x = b_source()
+    c = C_sanitized_ab_sources(x)
+    __test_sink(c.instance)  # should only trigger Test -> Test
+
+
+def sanitize_test_all_sources_instance():
+    if 1 > 2:
+        x = a_source()
+    elif 2 > 3:
+        x = b_source()
+    else:
+        x = __test_source()
+    c = C_sanitized_all_sources(x)
+    __test_sink(c.instance)

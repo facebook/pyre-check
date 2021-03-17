@@ -1083,16 +1083,15 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             List.fold annotations ~init:ForwardState.Tree.empty ~f:attribute_taint
       in
       let attribute_taint = attribute_taint annotation in
+      let expression =
+        Node.create_with_default_location
+          (Expression.Name (Name.Attribute { Name.Attribute.base; attribute; special = false }))
+      in
+      let global_tito_model, global_analysis_mode =
+        Model.get_global_tito_model_and_mode ~resolution ~expression
+      in
       let add_tito_features taint =
-        let attribute_breadcrumbs =
-          Model.get_global_tito_model
-            ~resolution
-            ~expression:
-              (Node.create_with_default_location
-                 (Expression.Name
-                    (Name.Attribute { Name.Attribute.base; attribute; special = false })))
-          >>| BackwardState.Tree.get_all_breadcrumbs
-        in
+        let attribute_breadcrumbs = global_tito_model >>| BackwardState.Tree.get_all_breadcrumbs in
         match attribute_breadcrumbs with
         | Some (_ :: _ as breadcrumbs) ->
             ForwardState.Tree.transform
@@ -1100,6 +1099,29 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
               Abstract.Domain.(Map (List.rev_append breadcrumbs))
               taint
         | _ -> taint
+      in
+      let apply_attribute_sanitizers taint =
+        match global_analysis_mode with
+        | Some mode -> (
+            match mode with
+            | Sanitize { sources = sanitize_sources; _ } -> (
+                match sanitize_sources with
+                | Some TaintResult.Mode.AllSources -> ForwardState.Tree.empty
+                | Some (TaintResult.Mode.SpecificSources sanitized_sources) ->
+                    ForwardState.Tree.partition
+                      ForwardTaint.leaf
+                      ~f:(fun source ->
+                        Option.some_if
+                          (not (List.mem ~equal:Sources.equal sanitized_sources source))
+                          source)
+                      taint
+                    |> Core.Map.Poly.fold
+                         ~init:ForwardState.Tree.bottom
+                         ~f:(fun ~key:_ ~data:source_state state ->
+                           ForwardState.Tree.join source_state state)
+                | None -> taint )
+            | _ -> taint )
+        | None -> taint
       in
 
       let field = Abstract.TreeDomain.Label.Field attribute in
@@ -1109,6 +1131,9 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       |>> ForwardState.Tree.transform
             ForwardTaint.first_fields
             Abstract.Domain.(Map (add_first_field attribute))
+      (* This should be applied before the join with the attribute taint, so inferred taint
+       * is sanitized, but user-specified taint on the attribute is still propagated. *)
+      |>> apply_attribute_sanitizers
       |>> ForwardState.Tree.join attribute_taint
 
 

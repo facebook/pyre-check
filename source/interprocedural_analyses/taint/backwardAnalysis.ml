@@ -1036,7 +1036,8 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                        (Name.Attribute { Name.Attribute.base; attribute; special = false }))
                 in
                 let attribute_breadcrumbs =
-                  Model.get_global_tito_model ~resolution ~expression
+                  Model.get_global_tito_model_and_mode ~resolution ~expression
+                  |> fst
                   >>| BackwardState.Tree.get_all_breadcrumbs
                 in
                 match attribute_breadcrumbs with
