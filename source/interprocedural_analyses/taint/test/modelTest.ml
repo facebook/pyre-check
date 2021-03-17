@@ -492,6 +492,112 @@ let test_sanitize context =
                })
           "test.taint";
       ]
+    ();
+  assert_model
+    ~model_source:"django.http.Request.GET: Sanitize = ..."
+    ~expect:
+      [
+        outcome
+          ~kind:`Object
+          ~analysis_mode:
+            (Mode.Sanitize
+               {
+                 Mode.sources = Some Mode.AllSources;
+                 Mode.sinks = Some Mode.AllSinks;
+                 Mode.tito = Some Mode.AllTito;
+               })
+          "django.http.Request.GET";
+      ]
+    ();
+  assert_model
+    ~model_source:"django.http.Request.GET: Sanitize[TaintSource] = ..."
+    ~expect:
+      [
+        outcome
+          ~kind:`Object
+          ~analysis_mode:
+            (Mode.Sanitize { Mode.sources = Some Mode.AllSources; sinks = None; tito = None })
+          "django.http.Request.GET";
+      ]
+    ();
+  assert_model
+    ~model_source:"django.http.Request.GET: Sanitize[TaintSink] = ..."
+    ~expect:
+      [
+        outcome
+          ~kind:`Object
+          ~analysis_mode:
+            (Mode.Sanitize { sources = None; Mode.sinks = Some Mode.AllSinks; tito = None })
+          "django.http.Request.GET";
+      ]
+    ();
+  assert_model
+    ~model_source:"django.http.Request.GET: Sanitize[TaintSource[Test]] = ..."
+    ~expect:
+      [
+        outcome
+          ~kind:`Object
+          ~analysis_mode:
+            (Mode.Sanitize
+               {
+                 Mode.sources = Some (Mode.SpecificSources [Sources.NamedSource "Test"]);
+                 sinks = None;
+                 tito = None;
+               })
+          "django.http.Request.GET";
+      ]
+    ();
+  assert_model
+    ~model_source:"django.http.Request.GET: Sanitize[TaintSink[Test]] = ..."
+    ~expect:
+      [
+        outcome
+          ~kind:`Object
+          ~analysis_mode:
+            (Mode.Sanitize
+               {
+                 sources = None;
+                 Mode.sinks = Some (Mode.SpecificSinks [Sinks.NamedSink "Test"]);
+                 tito = None;
+               })
+          "django.http.Request.GET";
+      ]
+    ();
+  assert_model
+    ~model_source:"django.http.Request.GET: Sanitize[TaintSource[Test, TestTest]] = ..."
+    ~expect:
+      [
+        outcome
+          ~kind:`Object
+          ~analysis_mode:
+            (Mode.Sanitize
+               {
+                 Mode.sources =
+                   Some
+                     (Mode.SpecificSources
+                        [Sources.NamedSource "TestTest"; Sources.NamedSource "Test"]);
+                 sinks = None;
+                 tito = None;
+               })
+          "django.http.Request.GET";
+      ]
+    ();
+  assert_model
+    ~model_source:"django.http.Request.GET: Sanitize[TaintSink[Test, TestSink]] = ..."
+    ~expect:
+      [
+        outcome
+          ~kind:`Object
+          ~analysis_mode:
+            (Mode.Sanitize
+               {
+                 sources = None;
+                 Mode.sinks =
+                   Some (Mode.SpecificSinks [Sinks.NamedSink "TestSink"; Sinks.NamedSink "Test"]);
+                 tito = None;
+               })
+          "django.http.Request.GET";
+      ]
     ()
 
 
@@ -1726,6 +1832,28 @@ let test_invalid_models context =
       def test.Child.foo(self) -> TaintSource[Test]: ...
     |}
     ~expect:"`test.Child.foo` is not part of the environment!"
+    ();
+  assert_invalid_model
+    ~source:{|
+      class C:
+        x = ...
+      |}
+    ~model_source:{|
+      test.C.x: Sanitize[TaintInTaintOut[TaintSource[Test]]] = ...
+    |}
+    ~expect:
+      "Invalid model for `test.C.x`: TaintInTaintOut sanitizers cannot be modelled on attributes."
+    ();
+  assert_invalid_model
+    ~source:{|
+      class C:
+        x = ...
+      |}
+    ~model_source:{|
+      test.C.x: Sanitize[TaintInTaintOut[TaintSink[Test]]] = ...
+    |}
+    ~expect:
+      "Invalid model for `test.C.x`: TaintInTaintOut sanitizers cannot be modelled on attributes."
     ();
   ()
 

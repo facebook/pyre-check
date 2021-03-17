@@ -1938,6 +1938,20 @@ let create ~resolution ~path ~configuration ~rule_filter source =
           [ParsedSignature (signature, location, Callable.create_object name)]
       | {
        Node.value =
+         Assign { Assign.target = { Node.value = Name name; _ }; annotation = Some annotation; _ };
+       location;
+      }
+        when is_simple_name name
+             && Expression.show annotation |> String.is_prefix ~prefix:"Sanitize[TaintInTaintOut["
+        ->
+          Error
+            (invalid_model_error
+               ~path
+               ~location
+               ~name:(Reference.show (name_to_reference_exn name))
+               "TaintInTaintOut sanitizers cannot be modelled on attributes.")
+      | {
+       Node.value =
          Assign
            {
              Assign.target = { Node.value = Name name; location = name_location };
@@ -1946,10 +1960,17 @@ let create ~resolution ~path ~configuration ~rule_filter source =
            };
        location;
       }
-        when is_simple_name name && Expression.show annotation |> String.equal "Sanitize" ->
+        when (is_simple_name name && Expression.show annotation |> String.equal "Sanitize")
+             || Expression.show annotation |> String.is_prefix ~prefix:"Sanitize[TaintSource"
+             || Expression.show annotation |> String.is_prefix ~prefix:"Sanitize[TaintSink" ->
           let name = name_to_reference_exn name in
           ModelVerifier.verify_global ~path ~location ~resolution ~name
           >>| fun () ->
+          let arguments =
+            match annotation.Node.value with
+            | Expression.Call { arguments; _ } -> Some arguments
+            | _ -> None
+          in
           let signature =
             {
               Define.Signature.name = Node.create ~location:name_location name;
@@ -1958,7 +1979,7 @@ let create ~resolution ~path ~configuration ~rule_filter source =
                 [
                   {
                     Decorator.name = Node.create_with_default_location (Reference.create "Sanitize");
-                    arguments = None;
+                    arguments;
                   };
                 ];
               return_annotation = None;
