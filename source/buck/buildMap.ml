@@ -104,6 +104,24 @@ module Indexed = struct
   let lookup_artifact { lookup_artifact; _ } = lookup_artifact
 end
 
+module Difference = struct
+  module Kind = struct
+    type t =
+      | New of string
+      | Deleted
+      | Changed of string
+    [@@deriving sexp, compare]
+  end
+
+  type t = Kind.t Hashtbl.M(String).t [@@deriving sexp]
+
+  let to_alist = Hashtbl.to_alist
+
+  let iter ~f (difference : t) =
+    let f ~key ~data = f ~kind:data key in
+    Hashtbl.iteri difference ~f
+end
+
 type t = { artifact_to_source: Partial.t }
 
 let create artifact_to_source = { artifact_to_source }
@@ -130,3 +148,30 @@ let index { artifact_to_source } =
 let iter ~f { artifact_to_source } =
   let f ~key ~data = f ~source:data key in
   Hashtbl.iteri artifact_to_source ~f
+
+
+let difference ~original:{ artifact_to_source = original } { artifact_to_source = current } =
+  let result = Hashtbl.create (module String) in
+  let scan_original_item ~key ~data =
+    match Hashtbl.find current key with
+    | None ->
+        (* The key exists in the original map but not in the current one. *)
+        Hashtbl.set result ~key ~data:Difference.Kind.Deleted
+    | Some current_data ->
+        (* The key exists in both the original and the current map but the corresponding values are
+           different. *)
+        if not (String.equal data current_data) then
+          Hashtbl.set result ~key ~data:(Difference.Kind.Changed current_data)
+  in
+  let scan_current_item ~key ~data =
+    match Hashtbl.find original key with
+    | None ->
+        (* The key exists in the current map but not in the original one. *)
+        Hashtbl.set result ~key ~data:(Difference.Kind.New data)
+    | Some _ ->
+        (* We've already handled this case in `scan_original_item`. *)
+        ()
+  in
+  Hashtbl.iteri original ~f:scan_original_item;
+  Hashtbl.iteri current ~f:scan_current_item;
+  result

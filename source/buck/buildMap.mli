@@ -87,6 +87,26 @@ module Indexed : sig
       artifact, return an empty list. Time complexity of this operation is O(1).*)
 end
 
+(** Result type for the [difference] operation. It represents a set of artifact paths where each
+    path has an associated tag indicating whether the file is added, removed, or updated. *)
+module Difference : sig
+  module Kind : sig
+    type t =
+      | New of string
+      | Deleted
+      | Changed of string
+    [@@deriving sexp, compare]
+  end
+
+  type t [@@deriving sexp]
+
+  (* Convert a build map difference into an associated list. Exposed for testing. *)
+  val to_alist : t -> (string * Kind.t) list
+
+  val iter : f:(kind:Kind.t -> string -> unit) -> t -> unit
+  (** [iter ~f difference] applies `f` to every path in [difference]. *)
+end
+
 type t
 (** Type of the build map. *)
 
@@ -100,3 +120,8 @@ val index : t -> Indexed.t
 
 val iter : f:(source:string -> string -> unit) -> t -> unit
 (** [iter ~f build_map] applies `f` to every artifact-to-source mapping in [build_map]. *)
+
+val difference : original:t -> t -> Difference.t
+(** [difference ~original current] computes the difference between the [original] build map and the
+    [current] build map. Time complexity of this operation is O(n + m), where n and m are the sizes
+    of the two build maps. *)

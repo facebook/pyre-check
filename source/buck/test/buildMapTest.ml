@@ -163,11 +163,87 @@ let test_build_map_lookup context =
   ()
 
 
+let test_build_map_difference context =
+  let assert_difference ~expected ~original ~current () =
+    let original = BuildMap.Partial.of_alist_exn original |> BuildMap.create in
+    let current = BuildMap.Partial.of_alist_exn current |> BuildMap.create in
+    let actual = BuildMap.difference ~original current |> BuildMap.Difference.to_alist in
+    let sort_alist = List.sort ~compare:[%compare: string * BuildMap.Difference.Kind.t] in
+    assert_equal
+      ~ctxt:context
+      ~cmp:[%compare.equal: (string * BuildMap.Difference.Kind.t) list]
+      ~printer:(fun elements ->
+        [%sexp_of: (string * BuildMap.Difference.Kind.t) list] elements |> Sexp.to_string_hum)
+      (sort_alist expected)
+      (sort_alist actual)
+  in
+
+  let open BuildMap.Difference.Kind in
+  assert_difference ~original:[] ~current:[] ~expected:[] ();
+  assert_difference
+    ~original:["foo.py", "source/foo.py"]
+    ~current:["foo.py", "source/foo.py"]
+    ~expected:[]
+    ();
+  assert_difference
+    ~original:["foo.py", "source/foo.py"]
+    ~current:["foo.py", "source/foo.py"; "bar.py", "source/bar.py"]
+    ~expected:["bar.py", New "source/bar.py"]
+    ();
+  assert_difference
+    ~original:["foo.py", "source/foo.py"; "bar.py", "source/bar.py"]
+    ~current:["foo.py", "source/foo.py"]
+    ~expected:["bar.py", Deleted]
+    ();
+  assert_difference
+    ~original:["foo.py", "source/foo.py"; "bar.py", "source/bar.py"]
+    ~current:["foo.py", "source/foo.py"; "bar.py", "source/baz.py"]
+    ~expected:["bar.py", Changed "source/baz.py"]
+    ();
+  assert_difference
+    ~original:["foo.py", "source/foo.py"]
+    ~current:["foo.py", "source/foo.py"; "bar.py", "source/bar.py"; "baz.py", "source/baz.py"]
+    ~expected:["bar.py", New "source/bar.py"; "baz.py", New "source/baz.py"]
+    ();
+  assert_difference
+    ~original:["foo.py", "source/foo.py"]
+    ~current:["bar.py", "source/bar.py"]
+    ~expected:["bar.py", New "source/bar.py"; "foo.py", Deleted]
+    ();
+  assert_difference
+    ~original:["foo.py", "source/foo.py"]
+    ~current:["foo.py", "source/baz.py"; "bar.py", "source/bar.py"]
+    ~expected:["bar.py", New "source/bar.py"; "foo.py", Changed "source/baz.py"]
+    ();
+  assert_difference
+    ~original:["foo.py", "source/foo.py"; "bar.py", "source/bar.py"]
+    ~current:[]
+    ~expected:["foo.py", Deleted; "bar.py", Deleted]
+    ();
+  assert_difference
+    ~original:["foo.py", "source/foo.py"; "bar.py", "source/bar.py"]
+    ~current:["bar.py", "source/baz.py"]
+    ~expected:["foo.py", Deleted; "bar.py", Changed "source/baz.py"]
+    ();
+  assert_difference
+    ~original:["foo.py", "source/foo.py"; "bar.py", "source/bar.py"]
+    ~current:["foo.py", "source/foo2.py"; "bar.py", "source/bar2.py"]
+    ~expected:["foo.py", Changed "source/foo2.py"; "bar.py", Changed "source/bar2.py"]
+    ();
+  assert_difference
+    ~original:["foo.py", "source/foo.py"; "bar.py", "source/bar.py"]
+    ~current:["baz.py", "source/baz.py"; "bar.py", "source/bar2.py"]
+    ~expected:["baz.py", New "source/baz.py"; "foo.py", Deleted; "bar.py", Changed "source/bar2.py"]
+    ();
+  ()
+
+
 let () =
   "build_map_test"
   >::: [
          "partial_build_map_from_json" >:: test_partial_build_map_from_json;
          "partial_build_map_merge" >:: test_partial_build_map_merge;
          "build_map_lookup" >:: test_build_map_lookup;
+         "build_map_difference" >:: test_build_map_difference;
        ]
   |> Test.run
