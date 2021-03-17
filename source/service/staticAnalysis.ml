@@ -580,7 +580,7 @@ let analyze
     ~phase_name:"Computing initial analysis state"
     ~timer
     ();
-  Log.info "Comuting overrides...";
+  Log.info "Computing overrides...";
   let timer = Timer.start () in
   let { DependencyGraphSharedMemory.overrides; skipped_overrides } =
     record_overrides_for_qualifiers
