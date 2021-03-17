@@ -1181,17 +1181,21 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             analyze_expression ~resolution ~taint:BackwardState.Tree.bottom ~state ~expression:value
           else
             match target_value with
-            | Expression.Name (Name.Attribute { attribute; _ }) -> (
+            | Expression.Name (Name.Attribute { base; attribute; _ }) -> (
                 match FunctionContext.get_property_callees ~location ~attribute with
                 | Some (RegularTargets { targets; _ }) ->
-                    let arguments = [{ Call.Argument.value; name = None }] in
+                    (* Treat `a.property = x` as `a = a.property(x)` *)
+                    let taint = compute_assignment_taint ~resolution base state |> fst in
+                    let arguments =
+                      [{ Call.Argument.name = None; value = base }; { name = None; value }]
+                    in
                     apply_call_targets
                       ~resolution
                       ~call_expression:(Expression.Call { Call.callee = target; arguments })
                       location
                       arguments
                       state
-                      BackwardState.Tree.bottom
+                      taint
                       targets
                 | _ -> analyze_assignment ~resolution ~target ~value state )
             | _ -> analyze_assignment ~resolution ~target ~value state )

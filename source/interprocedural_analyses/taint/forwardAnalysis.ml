@@ -1373,12 +1373,16 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             | Expression.Name (Name.Attribute { base; attribute; _ }) -> (
                 match FunctionContext.get_property_callees ~location ~attribute with
                 | Some (RegularTargets { targets; _ }) ->
+                    (* Treat `a.property = x` as `a = a.property(x)` *)
+                    let arguments =
+                      [{ Call.Argument.name = None; value = base }; { name = None; value }]
+                    in
                     let taint, state =
                       apply_call_targets
                         ~resolution
                         ~callee:target
                         (Location.with_module ~qualifier:FunctionContext.qualifier location)
-                        [{ Call.Argument.value; name = None }]
+                        arguments
                         state
                         targets
                     in

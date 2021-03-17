@@ -141,3 +141,23 @@ T = TypeVar("T", Class, Class2)
 
 def test_type_variable_properties_are_resolved(x: T):
     return x.my_property
+
+
+class PropertySetterInConstructor:
+    def __init__(self, y):
+        self.underlying = 0
+        self.x = y
+
+    @property
+    def x(self) -> int:
+        return self.underlying
+
+    @x.setter
+    def x(self, x_value) -> None:
+        self.underlying = x_value
+
+
+def property_setter_in_constructor():
+    obj = PropertySetterInConstructor(__test_source())
+    __test_sink(obj.x)
+    __test_sink(obj.underlying)
