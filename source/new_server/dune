@@ -6,4 +6,4 @@
     ppx_deriving_yojson))
  (libraries core ppx_deriving_yojson.runtime pyrelib.lwtsubprocess
    pyrelib.server pyrelib.service pyrelib.ast pyrelib.analysis
-   pyrelib.fetchSavedStateNew pyrelib.pyre pyrelib.version))
+   pyrelib.fetchSavedStateNew pyrelib.pyre pyrelib.version pyrelib.buck))

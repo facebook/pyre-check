@@ -1,0 +1,8 @@
+(library
+ (name buck)
+ (public_name pyrelib.buck)
+ (preprocess
+  (pps ppx_hash ppx_compare ppx_sexp_conv ppx_sexp_message
+    ppx_deriving_yojson))
+ (libraries core ppx_deriving_yojson.runtime pyrelib.lwtsubprocess
+   pyrelib.pyre))
