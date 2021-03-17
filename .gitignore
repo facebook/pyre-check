@@ -10,7 +10,7 @@ _build
 .ignore
 /pyrelib.install
 /hack_parallel.install
-dune
+source/dune
 /_tags
 /scripts/dist
 version.ml
