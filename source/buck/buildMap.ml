@@ -92,3 +92,41 @@ module Partial = struct
 
   let to_alist = Hashtbl.to_alist
 end
+
+module Indexed = struct
+  type t = {
+    lookup_source: string -> string option;
+    lookup_artifact: string -> string list;
+  }
+
+  let lookup_source { lookup_source; _ } = lookup_source
+
+  let lookup_artifact { lookup_artifact; _ } = lookup_artifact
+end
+
+type t = { artifact_to_source: Partial.t }
+
+let create artifact_to_source = { artifact_to_source }
+
+let index { artifact_to_source } =
+  let source_to_artifact =
+    let result =
+      let size = Hashtbl.length artifact_to_source in
+      Hashtbl.create (module String) ~size
+    in
+    let add_item ~key ~data =
+      Hashtbl.update result data ~f:(function
+          | None -> [key]
+          | Some values -> key :: values)
+    in
+    Hashtbl.iteri artifact_to_source ~f:add_item;
+    result
+  in
+  let lookup_source = Hashtbl.find artifact_to_source in
+  let lookup_artifact source = Hashtbl.find source_to_artifact source |> Option.value ~default:[] in
+  { Indexed.lookup_source; lookup_artifact }
+
+
+let iter ~f { artifact_to_source } =
+  let f ~key ~data = f ~source:data key in
+  Hashtbl.iteri artifact_to_source ~f

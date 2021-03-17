@@ -7,12 +7,24 @@
 
 open Base
 
-(** A partial build map is an link-tree-to-source mapping for all `.py` or `.pyi` files within a
-    specific Buck target. It is usually build from a buck source-db JSON file.
+(** This module implements the build map data structure, which stores the association between
+    artifact Python files and source Python files. Storing the association is necessary because if
+    Buck builds a project, it will create copies/symlinks from the source files to artifact files,
+    where artifact files do not necessarily end up being placed in the same relative path as they
+    are placed in the source directories.
+
+    The build map represents a one-to-many association: there can be only one source file mapped to
+    a given artifact file, but there can be multiple artifact files mapped to the same source file.
+    Mappings are interpreted in an order-insensitive way: it does not matter which items are
+    inserted before or after which. As long as two mappings hold the same combination of items, they
+    will be considered equivalent.
 
     The map only holds relative paths. Artifact paths (i.e. keys) stored in the build map are
     relative to the build root. Source paths (i.e. values) stored in the build map are relative to
     the source's buck root. *)
+
+(** A partial build map is an link-tree-to-source mapping for all `.py` or `.pyi` files within a
+    specific Buck target. It is usually build from a buck source-db JSON file. *)
 module Partial : sig
   type t [@@deriving sexp]
 
@@ -61,3 +73,30 @@ module Partial : sig
   (* Convert a partial build map into an associated list. Exposed for testing. *)
   val to_alist : t -> (string * string) list
 end
+
+(** Result type for the [index] operation. *)
+module Indexed : sig
+  type t
+
+  val lookup_source : t -> string -> string option
+  (** Lookup the source path that corresponds to the given artifact path. If there is no such
+      artifact, return [None]. Time complexity of this operation is O(1).*)
+
+  val lookup_artifact : t -> string -> string list
+  (** Lookup all artifact paths that corresponds to the given source path. If there is no such
+      artifact, return an empty list. Time complexity of this operation is O(1).*)
+end
+
+type t
+(** Type of the build map. *)
+
+val create : Partial.t -> t
+(** Create a build map from a partial build map. This is intended to be the only API for build map
+    creation. *)
+
+val index : t -> Indexed.t
+(** Create a index for the given build map and return a pair of constant-time lookup functions that
+    utilizes the index. *)
+
+val iter : f:(source:string -> string -> unit) -> t -> unit
+(** [iter ~f build_map] applies `f` to every artifact-to-source mapping in [build_map]. *)

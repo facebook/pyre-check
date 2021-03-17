@@ -106,10 +106,68 @@ let test_partial_build_map_merge context =
   ()
 
 
+let test_build_map_lookup context =
+  let index_from_mappings mappings =
+    BuildMap.Partial.of_alist_exn mappings |> BuildMap.create |> BuildMap.index
+  in
+  let assert_lookup_source ~mappings ~expected key =
+    let actual = BuildMap.Indexed.lookup_source (index_from_mappings mappings) key in
+    assert_equal
+      ~ctxt:context
+      ~cmp:[%compare.equal: string option]
+      ~printer:(fun element -> [%sexp_of: string option] element |> Sexp.to_string_hum)
+      expected
+      actual
+  in
+  let assert_lookup_artifact ~mappings ~expected key =
+    let actual = BuildMap.Indexed.lookup_artifact (index_from_mappings mappings) key in
+    assert_equal
+      ~ctxt:context
+      ~cmp:[%compare.equal: string list]
+      ~printer:(fun elements -> [%sexp_of: string list] elements |> Sexp.to_string_hum)
+      (List.sort ~compare:String.compare expected)
+      (List.sort ~compare:String.compare actual)
+  in
+
+  assert_lookup_source
+    "foo.py"
+    ~mappings:["foo.py", "source/foo.py"]
+    ~expected:(Some "source/foo.py");
+  assert_lookup_source
+    "bar.py"
+    ~mappings:["foo.py", "source/foo.py"; "bar.py", "source/bar.py"]
+    ~expected:(Some "source/bar.py");
+  assert_lookup_source
+    "bar.py"
+    ~mappings:["foo.py", "source/foo.py"; "bar.py", "source/foo.py"]
+    ~expected:(Some "source/foo.py");
+  assert_lookup_source "bar.py" ~mappings:["foo.py", "source/foo.py"] ~expected:None;
+
+  assert_lookup_artifact "source/foo.py" ~mappings:["foo.py", "source/foo.py"] ~expected:["foo.py"];
+  assert_lookup_artifact
+    "source/bar.py"
+    ~mappings:["foo.py", "source/foo.py"; "bar.py", "source/bar.py"]
+    ~expected:["bar.py"];
+  assert_lookup_artifact
+    "source/foo.py"
+    ~mappings:["foo.py", "source/foo.py"; "bar.py", "source/foo.py"]
+    ~expected:["foo.py"; "bar.py"];
+  assert_lookup_artifact
+    "source/baz.py"
+    ~mappings:["foo.py", "source/foo.py"; "bar.py", "source/foo.py"; "baz.py", "source/baz.py"]
+    ~expected:["baz.py"];
+  assert_lookup_artifact
+    "source/baz.py"
+    ~mappings:["foo.py", "source/foo.py"; "bar.py", "source/bar.py"]
+    ~expected:[];
+  ()
+
+
 let () =
   "build_map_test"
   >::: [
          "partial_build_map_from_json" >:: test_partial_build_map_from_json;
          "partial_build_map_merge" >:: test_partial_build_map_merge;
+         "build_map_lookup" >:: test_build_map_lookup;
        ]
   |> Test.run
