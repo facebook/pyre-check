@@ -43,6 +43,38 @@ class C_sanitized_all_sources:
         self.attribute = value
 
 
+class C_sanitized_a_sink:
+    attribute = ...
+
+    def __init__(self, value):
+        self.instance = value
+        self.attribute = value
+
+
+class C_sanitized_b_sink:
+    attribute = ...
+
+    def __init__(self, value):
+        self.instance = value
+        self.attribute = value
+
+
+class C_sanitized_ab_sinks:
+    attribute = ...
+
+    def __init__(self, value):
+        self.instance = value
+        self.attribute = value
+
+
+class C_sanitized_all_sinks:
+    attribute = ...
+
+    def __init__(self, value):
+        self.instance = value
+        self.attribute = value
+
+
 def return_taint_sanitize(arg: T) -> T:
     """Identity function that returns the argument unmodified, but is marked as
     'Sanitize' in the accompanying .pysa file
@@ -262,3 +294,99 @@ def sanitize_test_all_sources_instance():
         x = __test_source()
     c = C_sanitized_all_sources(x)
     __test_sink(c.instance)
+
+
+def sanitize_a_sink_attribute(c: C_sanitized_a_sink):
+    if 1 > 2:
+        a_sink(c.attribute)
+    else:
+        b_sink(c.attribute)
+
+
+def sanitize_b_sink_attribute(c: C_sanitized_b_sink):
+    if 1 > 2:
+        a_sink(c.attribute)
+    else:
+        b_sink(c.attribute)
+
+
+def sanitize_ab_sinks_attribute(c: C_sanitized_ab_sinks):
+    if 1 > 2:
+        a_sink(c.attribute)
+    else:
+        b_sink(c.attribute)
+
+
+def sanitize_all_sinks_attribute(c: C_sanitized_all_sinks):
+    if 1 > 2:
+        a_sink(c.attribute)
+    elif 2 > 3:
+        b_sink(c.attribute)
+    else:
+        __test_sink(c.attribute)
+
+
+def sanitize_a_sink_instance(c: C_sanitized_a_sink):
+    if 1 > 2:
+        a_sink(c.instance)
+    else:
+        b_sink(c.instance)
+
+
+def sanitize_b_sink_instance(c: C_sanitized_b_sink):
+    if 1 > 2:
+        a_sink(c.instance)
+    else:
+        b_sink(c.instance)
+
+
+def sanitize_ab_sinks_instance(c: C_sanitized_ab_sinks):
+    if 1 > 2:
+        a_sink(c.instance)
+    else:
+        b_sink(c.instance)
+
+
+def sanitize_all_sinks_instance(c: C_sanitized_all_sinks):
+    if 1 > 2:
+        a_sink(c.instance)
+    elif 2 > 3:
+        b_sink(c.instance)
+    else:
+        __test_sink(c.instance)
+
+
+def sanitize_test_a_sink_attribute():
+    sanitize_a_sink_attribute(__test_source())
+
+
+def sanitize_test_b_sink_attribute():
+    sanitize_b_sink_attribute(__test_source())
+
+
+def sanitize_test_ab_sinks_attribute():
+    sanitize_ab_sinks_attribute(__test_source())
+
+
+def sanitize_test_all_sinks_attribute():
+    sanitize_all_sinks_attribute(__test_source())  # should not trigger
+    c = C_sanitized_all_sinks({})
+    c.attribute = __test_source()  # should trigger Test -> Test
+
+
+def sanitize_test_a_sink_instance():
+    sanitize_a_sink_instance(__test_source())
+
+
+def sanitize_test_b_sink_instance():
+    sanitize_b_sink_instance(__test_source())
+
+
+def sanitize_test_ab_sinks_instance():
+    sanitize_ab_sinks_instance(__test_source())
+
+
+def sanitize_test_all_sinks_instance():
+    sanitize_all_sinks_instance(__test_source())  # should not trigger
+    c = C_sanitized_all_sinks({})
+    c.instance = __test_source()  # should trigger Test -> Test

@@ -1029,16 +1029,17 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                 targets
           | _ ->
               let field = Abstract.TreeDomain.Label.Field attribute in
+              let expression =
+                Node.create_with_default_location
+                  (Expression.Name
+                     (Name.Attribute { Name.Attribute.base; attribute; special = false }))
+              in
+              let global_tito_model, global_analysis_mode =
+                Model.get_global_tito_model_and_mode ~resolution ~expression
+              in
               let add_tito_features taint =
-                let expression =
-                  Node.create_with_default_location
-                    (Expression.Name
-                       (Name.Attribute { Name.Attribute.base; attribute; special = false }))
-                in
                 let attribute_breadcrumbs =
-                  Model.get_global_tito_model_and_mode ~resolution ~expression
-                  |> fst
-                  >>| BackwardState.Tree.get_all_breadcrumbs
+                  global_tito_model >>| BackwardState.Tree.get_all_breadcrumbs
                 in
                 match attribute_breadcrumbs with
                 | Some (_ :: _ as breadcrumbs) ->
@@ -1048,7 +1049,34 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                       taint
                 | _ -> taint
               in
-              let taint = BackwardState.Tree.prepend [field] (add_tito_features taint) in
+
+              let apply_attribute_sanitizers taint =
+                match global_analysis_mode with
+                | Some mode -> (
+                    match mode with
+                    | Sanitize { sinks = sanitize_sinks; _ } -> (
+                        match sanitize_sinks with
+                        | Some TaintResult.Mode.AllSinks -> BackwardState.Tree.empty
+                        | Some (TaintResult.Mode.SpecificSinks sanitized_sinks) ->
+                            BackwardState.Tree.partition
+                              BackwardTaint.leaf
+                              ~f:(fun sink ->
+                                Option.some_if
+                                  (not (List.mem ~equal:Sinks.equal sanitized_sinks sink))
+                                  sink)
+                              taint
+                            |> Core.Map.Poly.fold
+                                 ~init:BackwardState.Tree.bottom
+                                 ~f:(fun ~key:_ ~data:sink_state state ->
+                                   BackwardState.Tree.join sink_state state)
+                        | None -> taint )
+                    | _ -> taint )
+                | None -> taint
+              in
+              let taint =
+                BackwardState.Tree.prepend [field] (add_tito_features taint)
+                |> apply_attribute_sanitizers
+              in
               analyze_expression ~resolution ~taint ~state ~expression:base )
       | Set set ->
           let element_taint = read_tree [Abstract.TreeDomain.Label.Any] taint in
