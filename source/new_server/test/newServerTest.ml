@@ -97,7 +97,7 @@ module ScratchProject = struct
       else
         external_sources
     in
-    let log_root = bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:false in
+    let log_root = bracket_tmpdir context |> Path.create_absolute in
     List.iter sources ~f:(add_source ~root:source_root);
     List.iter external_sources ~f:(add_source ~root:external_root);
     (* We assume that watchman root is the same as global root. *)

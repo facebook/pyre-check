@@ -264,8 +264,7 @@ module Subscriber = struct
               | files_json -> (
                   try
                     let root =
-                      Yojson.Safe.Util.(member "root" response |> to_string)
-                      |> Path.create_absolute ~follow_symbolic_links:false
+                      Yojson.Safe.Util.(member "root" response |> to_string) |> Path.create_absolute
                     in
                     let changed_paths =
                       Yojson.Safe.Util.(convert_each to_string files_json)

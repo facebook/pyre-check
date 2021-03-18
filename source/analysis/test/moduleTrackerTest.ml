@@ -524,10 +524,10 @@ let test_creation context =
     let local_root = bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true in
     let source_root0_path = Path.absolute local_root ^ "/source0" in
     Sys_utils.mkdir_no_fail source_root0_path;
-    let source_root0 = Path.create_absolute ~follow_symbolic_links:false source_root0_path in
+    let source_root0 = Path.create_absolute source_root0_path in
     let source_root1_path = Path.absolute local_root ^ "/source1" in
     Sys_utils.mkdir_no_fail source_root1_path;
-    let source_root1 = Path.create_absolute ~follow_symbolic_links:false source_root1_path in
+    let source_root1 = Path.create_absolute source_root1_path in
     let source_paths0 = ["a.py"; "b.py"; "c.pyi"; "d.py"; "e.pyi"; "f.pyi"; "g.pyi"] in
     List.iter ~f:(touch source_root0) source_paths0;
     let source_paths1 = ["a.py"; "b.py"; "c.py"; "d.pyi"; "e.py"; "f.pyi"; "g.pyi"] in
@@ -705,7 +705,7 @@ let test_creation context =
      * We want to test the case when `ignore_all_errors` contains nonexistent directories. *)
     let local_root = bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true in
     let search_root = bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true in
-    let nonexist_root = Path.create_absolute ~follow_symbolic_links:false "/whosyourdaddy" in
+    let nonexist_root = Path.create_absolute "/whosyourdaddy" in
     assert (not (Path.file_exists nonexist_root));
 
     touch local_root "a.py";

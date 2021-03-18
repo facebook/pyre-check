@@ -10,7 +10,7 @@ open OUnit2
 open Newserver
 module Path = Pyre.Path
 
-let ( ! ) = Path.create_absolute ~follow_symbolic_links:false
+let ( ! ) = Path.create_absolute
 
 let test_json_parsing context =
   let assert_parsed ~expected json_string =

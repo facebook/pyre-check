@@ -1182,7 +1182,7 @@ let test_invalid_models context =
         }
     in
     let error_message =
-      let path = path >>| Path.create_absolute ~follow_symbolic_links:false in
+      let path = path >>| Path.create_absolute in
       Model.parse
         ~resolution
         ~configuration

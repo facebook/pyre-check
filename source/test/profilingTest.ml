@@ -44,7 +44,7 @@ let test_event_format _ =
   let output_name = Filename.temp_file "event_format" "test" in
   Profiling.GlobalState.initialize ~profiling_output:output_name ();
   let assert_event ~name ~event_type ~timestamp ~tags event =
-    PyrePath.(remove_if_exists (create_absolute ~follow_symbolic_links:false output_name));
+    PyrePath.(remove_if_exists (create_absolute output_name));
     Profiling.log_performance_event event;
     assert_event ~name ~event_type ~timestamp ~tags output_name
   in

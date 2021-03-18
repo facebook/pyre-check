@@ -36,7 +36,7 @@ include Taint.Result.Register (struct
     let dump_model_query_results_path =
       Yojson.Safe.Util.member "dump_model_query_results_path" taint
       |> Yojson.Safe.Util.to_string_option
-      >>| Path.create_absolute ~follow_symbolic_links:false
+      >>| Path.create_absolute
     in
     let rule_filter =
       if List.mem ~equal:String.equal (Yojson.Safe.Util.keys taint) "rule_filter" then

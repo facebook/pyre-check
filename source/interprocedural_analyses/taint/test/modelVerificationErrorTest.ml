@@ -38,7 +38,7 @@ let test_to_json _ =
           Ast.Location.start = { Ast.Location.line = 1; column = 2 };
           stop = { Ast.Location.line = 3; column = 4 };
         };
-      path = Some (Path.create_absolute ~follow_symbolic_links:false "/a/b.pysa");
+      path = Some (Path.create_absolute "/a/b.pysa");
     }
 
 

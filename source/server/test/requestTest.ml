@@ -248,7 +248,7 @@ let test_process_type_check_request context =
   Request.process_type_check_request
     ~state
     ~configuration
-    [Path.create_absolute ~follow_symbolic_links:false "/nonexistent_root/a.py"]
+    [Path.create_absolute "/nonexistent_root/a.py"]
   |> ignore
 
 
@@ -279,9 +279,7 @@ let test_process_get_definition_request context =
       | Some valid_filename -> Path.create_relative ~root:local_root ~relative:valid_filename
       | _ ->
           (* Create a bogus filename entry. *)
-          Path.create_relative
-            ~relative:"bogusfile.py"
-            ~root:(Path.create_absolute ~follow_symbolic_links:false "/bogus/dir")
+          Path.create_relative ~relative:"bogusfile.py" ~root:(Path.create_absolute "/bogus/dir")
     in
     let request = { Protocol.DefinitionRequest.id = int_request_id 0; path; position } in
     let actual_response =

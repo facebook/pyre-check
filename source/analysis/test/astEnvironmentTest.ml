@@ -152,13 +152,13 @@ let test_parse_sources context =
   let scheduler = Test.mock_scheduler () in
   let content = "def foo() -> int: ..." in
   let source_handles, ast_environment =
-    let local_root = Path.create_absolute ~follow_symbolic_links:false (bracket_tmpdir context) in
+    let local_root = Path.create_absolute (bracket_tmpdir context) in
     let typeshed_root =
       Path.create_relative ~root:local_root ~relative:".pyre/resource_cache/typeshed"
     in
     Sys_utils.mkdir_p (Path.absolute typeshed_root);
-    let module_root = Path.create_absolute ~follow_symbolic_links:false (bracket_tmpdir context) in
-    let link_root = Path.create_absolute ~follow_symbolic_links:false (bracket_tmpdir context) in
+    let module_root = Path.create_absolute (bracket_tmpdir context) in
+    let link_root = Path.create_absolute (bracket_tmpdir context) in
     let write_file root relative =
       File.create ~content (Path.create_relative ~root ~relative) |> File.write
     in
@@ -215,7 +215,7 @@ let test_parse_sources context =
     ~printer:(String.concat ~sep:", ")
     ["a.pyi"; "b.pyi"; "c.py"; "d.pyi"; "foo.pyi"]
     source_handles;
-  let local_root = Path.create_absolute ~follow_symbolic_links:false (bracket_tmpdir context) in
+  let local_root = Path.create_absolute (bracket_tmpdir context) in
   let stub_root = Path.create_relative ~root:local_root ~relative:"stubs" in
   let source_handles =
     let configuration =

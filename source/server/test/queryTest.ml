@@ -88,9 +88,7 @@ let test_parse_query context =
   assert_fails_to_parse "types('a.py', 1, 2)";
   assert_parses "attributes(C)" (Attributes !&"C");
   assert_fails_to_parse "attributes(C, D)";
-  assert_parses
-    "save_server_state('state')"
-    (SaveServerState (Path.create_absolute ~follow_symbolic_links:false "state"));
+  assert_parses "save_server_state('state')" (SaveServerState (Path.create_absolute "state"));
   assert_fails_to_parse "save_server_state(state)";
   assert_parses "path_of_module(a.b.c)" (PathOfModule !&"a.b.c");
   assert_fails_to_parse "path_of_module('a.b.c')";

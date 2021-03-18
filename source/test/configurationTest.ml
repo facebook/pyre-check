@@ -53,10 +53,9 @@ let test_equal _ =
 let test_search_path _ =
   let assert_search_path ?(search_path = []) ~source_path expected =
     let search_path =
-      List.map search_path ~f:(Path.create_absolute ~follow_symbolic_links:false)
-      |> List.map ~f:(fun root -> SearchPath.Root root)
+      List.map search_path ~f:Path.create_absolute |> List.map ~f:(fun root -> SearchPath.Root root)
     in
-    let source_path = List.map source_path ~f:(Path.create_absolute ~follow_symbolic_links:false) in
+    let source_path = List.map source_path ~f:Path.create_absolute in
     let to_search_path root = SearchPath.Root root in
     let search_path =
       Configuration.Analysis.search_path

@@ -141,7 +141,7 @@ module Analysis = struct
       ?ignore_all_errors
       ?(number_of_workers = 4)
       ?(local_root = Path.current_working_directory ())
-      ?(project_root = Path.create_absolute ~follow_symbolic_links:false "/")
+      ?(project_root = Path.create_absolute "/")
       ?(search_path = [])
       ?(taint_model_paths = [])
       ?expected_version
@@ -196,7 +196,7 @@ module Analysis = struct
       ignore_infer;
       log_directory =
         ( match log_directory with
-        | Some directory -> Path.create_absolute ~follow_symbolic_links:false directory
+        | Some directory -> Path.create_absolute directory
         | None -> Path.append local_root ~element:".pyre" );
       python_major_version;
       python_minor_version;

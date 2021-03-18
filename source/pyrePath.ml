@@ -50,7 +50,7 @@ let compare left right = String.compare (absolute left) (absolute right)
 
 let pp format path = Format.fprintf format "%s" (absolute path)
 
-let create_absolute ~follow_symbolic_links path =
+let create_absolute ?(follow_symbolic_links = false) path =
   if follow_symbolic_links then
     Absolute (Filename.realpath path)
   else
@@ -79,7 +79,7 @@ let from_uri uri =
   |> Option.map ~f:(create_absolute ~follow_symbolic_links:true)
 
 
-let current_working_directory () = create_absolute ~follow_symbolic_links:false (Sys.getcwd ())
+let current_working_directory () = create_absolute (Sys.getcwd ())
 
 let append path ~element =
   match path with
@@ -196,7 +196,7 @@ let search_upwards ~target ~target_type ~root =
   in
   let rec directory_has_target directory =
     match exists (directory ^/ target) with
-    | `Yes -> Some (create_absolute ~follow_symbolic_links:false directory)
+    | `Yes -> Some (create_absolute directory)
     | _ when [%compare.equal: path] (Filename.dirname directory) directory -> None
     | _ -> directory_has_target (Filename.dirname directory)
   in
@@ -261,9 +261,7 @@ let with_suffix path ~suffix =
   | Relative { root; relative } -> Relative { root; relative = relative ^ suffix }
 
 
-let get_directory path =
-  absolute path |> Filename.dirname |> create_absolute ~follow_symbolic_links:false
-
+let get_directory path = absolute path |> Filename.dirname |> create_absolute
 
 let project_directory ~local_root ~filter_directories =
   if String.is_substring ~substring:"/scratch/" local_root then

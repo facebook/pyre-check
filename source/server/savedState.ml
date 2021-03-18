@@ -115,7 +115,7 @@ let load
     | Some (Load (LoadFromFiles parameters)) ->
         let { Configuration.Server.shared_memory_path; changed_files_path } = parameters in
         let files =
-          let to_path serialized = Path.create_absolute ~follow_symbolic_links:false serialized in
+          let to_path serialized = Path.create_absolute serialized in
           changed_files_path
           >>| File.create
           >>= File.content

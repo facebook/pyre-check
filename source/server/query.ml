@@ -345,8 +345,7 @@ let rec parse_request_exn query =
       | "is_compatible_with", [left; right] -> Request.IsCompatibleWith (access left, access right)
       | "less_or_equal", [left; right] -> Request.LessOrEqual (access left, access right)
       | "path_of_module", [module_access] -> Request.PathOfModule (reference module_access)
-      | "save_server_state", [path] ->
-          Request.SaveServerState (Path.create_absolute ~follow_symbolic_links:false (string path))
+      | "save_server_state", [path] -> Request.SaveServerState (Path.create_absolute (string path))
       | "superclasses", names -> Superclasses (List.map ~f:reference names)
       | "type", [argument] -> Type (expression argument)
       | "types", paths -> Request.TypesInFiles (List.map ~f:string paths)

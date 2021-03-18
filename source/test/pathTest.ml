@@ -10,7 +10,7 @@ open OUnit2
 open Pyre
 open Test
 
-let ( ! ) = Path.create_absolute ~follow_symbolic_links:false
+let ( ! ) = Path.create_absolute
 
 let root context =
   let path = bracket_tmpdir context in
@@ -121,17 +121,17 @@ let test_is_python_file _ =
     let actual = Path.is_python_init path in
     if expected then assert_true actual else assert_false actual
   in
-  assert_stub ~path:(Path.create_absolute ~follow_symbolic_links:false "test.py") false;
-  assert_stub ~path:(Path.create_absolute ~follow_symbolic_links:false "test.pyi") true;
-  assert_stub ~path:(Path.create_absolute ~follow_symbolic_links:false "durp/test.pyi") true;
-  assert_init ~path:(Path.create_absolute ~follow_symbolic_links:false "test.py") false;
-  assert_init ~path:(Path.create_absolute ~follow_symbolic_links:false "test.pyi") false;
-  assert_init ~path:(Path.create_absolute ~follow_symbolic_links:false "__init__.py") true;
-  assert_init ~path:(Path.create_absolute ~follow_symbolic_links:false "__init__.pyi") true;
-  assert_init ~path:(Path.create_absolute ~follow_symbolic_links:false "durp/__init__.py") true;
-  assert_init ~path:(Path.create_absolute ~follow_symbolic_links:false "durp/__init__.pyi") true;
+  assert_stub ~path:(Path.create_absolute "test.py") false;
+  assert_stub ~path:(Path.create_absolute "test.pyi") true;
+  assert_stub ~path:(Path.create_absolute "durp/test.pyi") true;
+  assert_init ~path:(Path.create_absolute "test.py") false;
+  assert_init ~path:(Path.create_absolute "test.pyi") false;
+  assert_init ~path:(Path.create_absolute "__init__.py") true;
+  assert_init ~path:(Path.create_absolute "__init__.pyi") true;
+  assert_init ~path:(Path.create_absolute "durp/__init__.py") true;
+  assert_init ~path:(Path.create_absolute "durp/__init__.pyi") true;
 
-  let root = Path.create_absolute ~follow_symbolic_links:false "root" in
+  let root = Path.create_absolute "root" in
   assert_stub ~path:(Path.create_relative ~root ~relative:"test") false;
   assert_stub ~path:(Path.create_relative ~root ~relative:"test.py") false;
   assert_stub ~path:(Path.create_relative ~root ~relative:"test.pyi") true;
@@ -162,7 +162,7 @@ let test_get_directory context =
     let actual = Path.get_directory path in
     assert_equal ~printer:Path.show ~cmp:Path.equal expected actual
   in
-  let create_absolute = Path.create_absolute ~follow_symbolic_links:false in
+  let create_absolute = Path.create_absolute in
   assert_get_directory (create_absolute "/") ~expected:(create_absolute "/");
   assert_get_directory (create_absolute "/foo") ~expected:(create_absolute "/");
   assert_get_directory (create_absolute "/foo/bar") ~expected:(create_absolute "/foo");
@@ -215,7 +215,7 @@ let test_link context =
   let linklink = link ^ "-link" in
   Unix.symlink ~target:path ~link_name:link;
   Unix.symlink ~target:link ~link_name:linklink;
-  let symbolic = Path.create_absolute ~follow_symbolic_links:false link in
+  let symbolic = Path.create_absolute link in
   let link = Path.create_absolute ~follow_symbolic_links:true link in
   let linklink = Path.create_absolute ~follow_symbolic_links:true linklink in
   assert_equal root (Path.real_path root);

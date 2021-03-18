@@ -45,9 +45,8 @@ let show path = Format.asprintf "%a" pp path
 
 let create serialized =
   match String.split serialized ~on:'$' with
-  | [root] -> Root (Path.create_absolute ~follow_symbolic_links:false root)
-  | [root; subdirectory] ->
-      Subdirectory { root = Path.create_absolute ~follow_symbolic_links:false root; subdirectory }
+  | [root] -> Root (Path.create_absolute root)
+  | [root; subdirectory] -> Subdirectory { root = Path.create_absolute root; subdirectory }
   | _ -> failwith (Format.asprintf "Unable to create search path from %s" serialized)
 
 

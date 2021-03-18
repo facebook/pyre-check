@@ -71,7 +71,7 @@ let process_request
                 module_of_path
                   ~configuration
                   ~module_tracker:(TypeEnvironment.module_tracker type_environment)
-                  (Path.create_absolute ~follow_symbolic_links:false path))
+                  (Path.create_absolute path))
       in
       let errors =
         let get_type_error qualifier =
@@ -89,7 +89,7 @@ let process_request
       in
       Lwt.return (state, response)
   | Request.IncrementalUpdate paths -> (
-      let paths = List.map paths ~f:(Path.create_absolute ~follow_symbolic_links:false) in
+      let paths = List.map paths ~f:Path.create_absolute in
       match find_critical_file ~server_configuration paths with
       | Some path ->
           Format.asprintf

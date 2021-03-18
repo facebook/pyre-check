@@ -26,7 +26,7 @@ let parse_and_translate
         SearchPath.search_for_path ~search_paths path
         >>| fun SearchPath.{ relative_path; _ } -> Path.Relative relative_path
   in
-  let string_to_path string_path = Path.create_absolute ~follow_symbolic_links:false string_path in
+  let string_to_path string_path = Path.create_absolute string_path in
   let strings_to_scratch_paths strings =
     List.map strings ~f:string_to_path
     |> List.filter_map ~f:(translate_path ~configuration ~symlink_targets_to_sources)

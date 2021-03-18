@@ -21,7 +21,7 @@ module JsonParsing = struct
 
   let to_int_with_default = with_default ~extract:to_int ~extract_optional:to_int_option
 
-  let to_path json = to_string json |> Path.create_absolute ~follow_symbolic_links:false
+  let to_path json = to_string json |> Path.create_absolute
 
   (* The absent of explicit `~default` parameter means that the corresponding JSON field is
      mandantory. *)
@@ -162,8 +162,7 @@ module CriticalFile = struct
 
   let of_yojson = function
     | `Assoc [("base_name", `String name)] -> Result.Ok (BaseName name)
-    | `Assoc [("full_path", `String path)] ->
-        Result.Ok (FullPath (Path.create_absolute ~follow_symbolic_links:false path))
+    | `Assoc [("full_path", `String path)] -> Result.Ok (FullPath (Path.create_absolute path))
     | _ as json ->
         let message =
           Format.sprintf "Malformed critical file JSON: %s" (Yojson.Safe.to_string json)
@@ -224,17 +223,14 @@ module SavedStateAction = struct
             Result.Ok
               (LoadFromFile
                  {
-                   shared_memory_path =
-                     Path.create_absolute ~follow_symbolic_links:false shared_memory_path;
-                   changed_files_path =
-                     Some (Path.create_absolute ~follow_symbolic_links:false changed_files_path);
+                   shared_memory_path = Path.create_absolute shared_memory_path;
+                   changed_files_path = Some (Path.create_absolute changed_files_path);
                  })
         | `String shared_memory_path, `Null ->
             Result.Ok
               (LoadFromFile
                  {
-                   shared_memory_path =
-                     Path.create_absolute ~follow_symbolic_links:false shared_memory_path;
+                   shared_memory_path = Path.create_absolute shared_memory_path;
                    changed_files_path = None;
                  })
         | _, _ -> parsing_failed () )
@@ -251,12 +247,7 @@ module SavedStateAction = struct
     | `List [`String "save_to_file"; save_to_file_options] -> (
         match member "shared_memory_path" save_to_file_options with
         | `String shared_memory_path ->
-            Result.Ok
-              (SaveToFile
-                 {
-                   shared_memory_path =
-                     Path.create_absolute ~follow_symbolic_links:false shared_memory_path;
-                 })
+            Result.Ok (SaveToFile { shared_memory_path = Path.create_absolute shared_memory_path })
         | _ -> parsing_failed () )
     | _ -> parsing_failed ()
 

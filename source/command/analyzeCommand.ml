@@ -101,7 +101,7 @@ let run_analysis
         ~source_path:(List.map source_path ~f:SearchPath.create_normalized)
         ()
     in
-    let result_json_path = result_json_path >>| Path.create_absolute ~follow_symbolic_links:false in
+    let result_json_path = result_json_path >>| Path.create_absolute in
     let () =
       match result_json_path with
       | Some path when not (Path.is_directory path) ->

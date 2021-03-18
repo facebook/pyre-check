@@ -51,7 +51,7 @@ let test_low_level_apis _ =
 
 let test_subscription _ =
   let open Lwt.Infix in
-  let root = Path.create_absolute ~follow_symbolic_links:false "/fake/root" in
+  let root = Path.create_absolute "/fake/root" in
   let version_name = "fake_watchman_version" in
   let subscription_name = "my_subscription" in
   let initial_clock = "fake:clock:0" in
@@ -267,7 +267,7 @@ let test_filter_expression context =
 
 let test_since_query_request context =
   let open Watchman.SinceQuery in
-  let root = Path.create_absolute ~follow_symbolic_links:false "/fake/root" in
+  let root = Path.create_absolute "/fake/root" in
   let filter = { Watchman.Filter.base_names = [".pyre_configuration"]; suffixes = [".py"] } in
   let assert_request ~expected request =
     let actual = watchman_request_of request in
@@ -480,7 +480,7 @@ let test_since_query _ =
             query_exn
               ~connection
               {
-                root = Path.create_absolute ~follow_symbolic_links:false "/fake/root";
+                root = Path.create_absolute "/fake/root";
                 filter = { Watchman.Filter.base_names = []; suffixes = [] };
                 since = Since.Clock "fake:clock";
               }))
