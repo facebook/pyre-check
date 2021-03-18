@@ -84,16 +84,27 @@ let sanitize_defines ~strip_decorators source =
   source
 
 
-let rename_local_variable ~from ~to_ define =
-  let rename_identifier = function
-    | Expression.Name (Name.Identifier identifier) when Identifier.equal identifier from ->
-        Expression.Name (Name.Identifier to_)
-    | expression -> expression
-  in
-  match Transform.transform_expressions ~transform:rename_identifier (Statement.Define define) with
-  | Statement.Define define -> define
-  | _ -> failwith "impossible"
+let rename_local_variables ~pairs define =
+  let rename_map = Identifier.Map.of_alist pairs in
+  match rename_map with
+  | `Duplicate_key _ -> define
+  | `Ok rename_map -> (
+      let rename_identifier = function
+        | Expression.Name (Name.Identifier identifier) ->
+            let renamed_identifier =
+              Map.find rename_map identifier |> Option.value ~default:identifier
+            in
+            Expression.Name (Name.Identifier renamed_identifier)
+        | expression -> expression
+      in
+      match
+        Transform.transform_expressions ~transform:rename_identifier (Statement.Define define)
+      with
+      | Statement.Define define -> define
+      | _ -> failwith "impossible" )
 
+
+let rename_local_variable ~from ~to_ define = rename_local_variables ~pairs:[from, to_] define
 
 let requalify_name ~old_qualifier ~new_qualifier = function
   (* TODO(T69755379): Handle Name.Attribute too. *)

@@ -818,6 +818,51 @@ let test_replace_signature _ =
   ()
 
 
+let test_rename_local_variables _ =
+  let assert_renamed ~pairs given expected =
+    match parse expected |> Source.statements, parse given |> Source.statements with
+    | [{ Node.value = Define expected; _ }], [{ Node.value = Define given; _ }] ->
+        let actual = DecoratorHelper.rename_local_variables ~pairs given in
+        let printer = [%show: Statement.statement] in
+        assert_equal
+          ~cmp:(fun left right ->
+            Statement.location_insensitive_compare
+              (Node.create_with_default_location left)
+              (Node.create_with_default_location right)
+            = 0)
+          ~printer
+          ~pp_diff:(diff ~print:(fun format x -> Format.fprintf format "%s" (printer x)))
+          (Statement.Statement.Define expected)
+          (Statement.Statement.Define actual)
+    | _ -> failwith "expected one statement each"
+  in
+  assert_renamed
+    ~pairs:["y", "y_renamed"; "z", "z_renamed"; "not_found", "not_found_renamed"]
+    {|
+    def wrapper(y: str, z: int) -> None:
+      x = y + z
+      foo(y, z)
+  |}
+    {|
+    def wrapper(y: str, z: int) -> None:
+      x = y_renamed + z_renamed
+      foo(y_renamed, z_renamed)
+  |};
+  assert_renamed
+    ~pairs:["y", "y_renamed"; "y", "y_duplicate"]
+    {|
+    def wrapper(y: str, z: int) -> None:
+      x = y + z
+      foo(y, z)
+  |}
+    {|
+    def wrapper(y: str, z: int) -> None:
+      x = y + z
+      foo(y, z)
+  |};
+  ()
+
+
 let () =
   "decoratorHelper"
   >::: [
@@ -825,5 +870,6 @@ let () =
          "inline_decorators" >:: test_inline_decorators;
          "requalify_name" >:: test_requalify_name;
          "replace_signature" >:: test_replace_signature;
+         "rename_local_variables" >:: test_rename_local_variables;
        ]
   |> Test.run

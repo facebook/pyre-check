@@ -32,3 +32,5 @@ val replace_signature_if_always_passing_on_arguments
   new_signature:Define.Signature.t ->
   Define.t ->
   Define.t option
+
+val rename_local_variables : pairs:(Identifier.t * Identifier.t) list -> Define.t -> Define.t
