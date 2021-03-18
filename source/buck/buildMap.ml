@@ -115,11 +115,9 @@ module Difference = struct
 
   type t = Kind.t Hashtbl.M(String).t [@@deriving sexp]
 
-  let to_alist = Hashtbl.to_alist
+  let of_alist_exn items = Hashtbl.of_alist_exn (module String) items
 
-  let iter ~f (difference : t) =
-    let f ~key ~data = f ~kind:data key in
-    Hashtbl.iteri difference ~f
+  let to_alist = Hashtbl.to_alist
 end
 
 type t = { artifact_to_source: Partial.t }

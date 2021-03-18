@@ -19,9 +19,16 @@ open Base
     inserted before or after which. As long as two mappings hold the same combination of items, they
     will be considered equivalent.
 
-    The map only holds relative paths. Artifact paths (i.e. keys) stored in the build map are
-    relative to the build root. Source paths (i.e. values) stored in the build map are relative to
-    the source's buck root. *)
+    The map only holds relative paths. To pin down the absolute path, additional root directoiry
+    info for the both sources and artifacts is required.
+
+    One implicit assumption we make regarding the artifact paths is that the names of
+    sub-directories under which the artifact files live do not conflict with the names of the
+    artifact files themselves. For example, if there is a mapping for artifact file `a.py`, then we
+    assume that no other artifact would live under a directory named `a.py`. Conversely, if there is
+    a mapping for artifact `foo/a.py`, then we assume that no other artifact file would be named
+    `foo`. This property is not enforced by any of the build map APIs due to the associated cost of
+    the check, but it is nevertheless crucial for the correctness of many downstream clients. *)
 
 (** A partial build map is an link-tree-to-source mapping for all `.py` or `.pyi` files within a
     specific Buck target. It is usually build from a buck source-db JSON file. *)
@@ -100,11 +107,12 @@ module Difference : sig
 
   type t [@@deriving sexp]
 
-  (* Convert a build map difference into an associated list. Exposed for testing. *)
-  val to_alist : t -> (string * Kind.t) list
+  (* Create a build map difference from an associated list. Exposed for testing. *)
+  val of_alist_exn : (string * Kind.t) list -> t
 
-  val iter : f:(kind:Kind.t -> string -> unit) -> t -> unit
-  (** [iter ~f difference] applies `f` to every path in [difference]. *)
+  val to_alist : t -> (string * Kind.t) list
+  (** Convert a build map difference into an associated list. Each element in the list is a pair
+      consisting of both the artifact path and the kind of the update. *)
 end
 
 type t
