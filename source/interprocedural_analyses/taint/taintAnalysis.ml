@@ -142,7 +142,9 @@ include Taint.Result.Register (struct
       | [] -> models, Ast.Reference.Set.empty
       | _ -> (
           try
-            let paths = List.map model_paths ~f:Path.create_absolute in
+            let paths =
+              List.map model_paths ~f:(Path.create_absolute ~follow_symbolic_links:true)
+            in
             let configuration =
               TaintConfiguration.create
                 ~rule_filter

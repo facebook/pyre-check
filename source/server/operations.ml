@@ -25,13 +25,15 @@ exception ServerNotRunning
 let socket_path ?(create = false) ?(name = "server") configuration =
   let link_path = Constants.Server.root configuration ^| name ^ ".sock" in
   if not create then
-    try Unix.readlink (Path.absolute link_path) |> Path.create_absolute with
+    try
+      Unix.readlink (Path.absolute link_path) |> Path.create_absolute ~follow_symbolic_links:true
+    with
     | Unix.Unix_error _ -> raise ServerNotRunning
   else
     let socket_path =
       let pid = Pid.to_string (Unix.getpid ()) in
       Path.create_relative
-        ~root:(Path.create_absolute Filename.temp_dir_name)
+        ~root:(Path.create_absolute ~follow_symbolic_links:true Filename.temp_dir_name)
         ~relative:(Format.sprintf "pyre_%s_%s.sock" name pid)
     in
     ( try Unix.unlink (Path.absolute link_path) with

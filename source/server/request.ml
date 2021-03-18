@@ -441,7 +441,7 @@ let rec process
             relative_path
             >>| (fun path ->
                   LanguageServer.Protocol.PublishDiagnostics.clear_diagnostics_for_uri
-                    ~uri:(Path.uri (Path.create_absolute path)))
+                    ~uri:(Path.uri (Path.create_absolute ~follow_symbolic_links:true path)))
             >>| LanguageServer.Protocol.PublishDiagnostics.to_yojson
             >>| Yojson.Safe.to_string
             >>| (fun response -> LanguageServerProtocolResponse response)

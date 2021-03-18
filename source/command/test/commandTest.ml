@@ -36,7 +36,7 @@ let mock_analysis_configuration
 let mock_server_configuration ~local_root ?expected_version () =
   let temporary = Filename.temp_file "" "" in
   Server.Operations.create_configuration
-    ~log_path:(Path.create_absolute temporary)
+    ~log_path:(Path.create_absolute ~follow_symbolic_links:false temporary)
     (mock_analysis_configuration ~local_root ?expected_version ())
 
 
@@ -189,7 +189,7 @@ module ScratchServer = struct
         Hashtbl.add_multi errors ~key ~data:error);
     let server_configuration =
       Server.Operations.create_configuration
-        ~log_path:(Path.create_absolute "/dev/null")
+        ~log_path:(Path.create_absolute ~follow_symbolic_links:false "/dev/null")
         configuration
     in
     let () =

@@ -664,7 +664,7 @@ let rec process_request ~environment ~configuration request =
             match path with
             | Some path ->
                 if String.is_prefix ~prefix:"/" path then
-                  [Path.create_absolute path]
+                  [Path.create_absolute ~follow_symbolic_links:true path]
                 else
                   let { Configuration.Analysis.local_root = root; _ } = configuration in
                   [Path.create_relative ~root ~relative:path]

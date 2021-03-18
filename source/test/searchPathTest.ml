@@ -103,7 +103,7 @@ let test_normalize context =
 
 
 let test_search_for_path context =
-  let root = bracket_tmpdir context |> Path.create_absolute in
+  let root = bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:false in
   let assert_path ~search_paths ~path ~expected =
     assert_equal
       (Some expected)

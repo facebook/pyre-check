@@ -11,8 +11,8 @@ open Pyre
 open Test
 
 let test_restore_symbolic_links context =
-  let project_root = bracket_tmpdir context |> Path.create_absolute in
-  let local_root = bracket_tmpdir context |> Path.create_absolute in
+  let project_root = bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true in
+  let local_root = bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true in
   let path name = Path.create_relative ~root:project_root ~relative:name in
   let create_file name = path name |> File.create ~content:"" |> File.write in
   let link name =

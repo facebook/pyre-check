@@ -21,13 +21,13 @@ let assert_consumed ~log_path expected =
 let test_basic context =
   assert_consumed ~log_path:(Path.create_absolute ~follow_symbolic_links:false "/nonexistent") None;
 
-  let test_root = bracket_tmpdir context |> Path.create_absolute in
+  let test_root = bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:false in
   let test_message = "They asked me how well I understood theoretical physics." in
   StartupNotification.produce ~log_path:test_root test_message;
   assert_consumed ~log_path:test_root (Some test_message);
   assert_consumed ~log_path:test_root None;
 
-  let test_root2 = bracket_tmpdir context |> Path.create_absolute in
+  let test_root2 = bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:false in
   let test_message2 = "I said I had a theoretical degree in physics. They said welcome aboard." in
   StartupNotification.produce ~log_path:test_root2 test_message;
   StartupNotification.produce ~log_path:test_root2 test_message2;

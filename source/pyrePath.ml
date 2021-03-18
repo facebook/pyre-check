@@ -50,7 +50,7 @@ let compare left right = String.compare (absolute left) (absolute right)
 
 let pp format path = Format.fprintf format "%s" (absolute path)
 
-let create_absolute ?(follow_symbolic_links = true) path =
+let create_absolute ~follow_symbolic_links path =
   if follow_symbolic_links then
     Absolute (Filename.realpath path)
   else
@@ -74,9 +74,12 @@ let get_relative_to_root ~root ~path =
   String.chop_prefix ~prefix:root (absolute path)
 
 
-let from_uri uri = String.chop_prefix ~prefix:"file://" uri |> Option.map ~f:create_absolute
+let from_uri uri =
+  String.chop_prefix ~prefix:"file://" uri
+  |> Option.map ~f:(create_absolute ~follow_symbolic_links:true)
 
-let current_working_directory () = create_absolute (Sys.getcwd ())
+
+let current_working_directory () = create_absolute ~follow_symbolic_links:false (Sys.getcwd ())
 
 let append path ~element =
   match path with
@@ -137,7 +140,7 @@ let last path =
 let real_path path =
   match path with
   | Absolute _ -> path
-  | Relative _ -> absolute path |> create_absolute
+  | Relative _ -> absolute path |> create_absolute ~follow_symbolic_links:true
 
 
 let follow_symbolic_link path =
@@ -193,7 +196,7 @@ let search_upwards ~target ~target_type ~root =
   in
   let rec directory_has_target directory =
     match exists (directory ^/ target) with
-    | `Yes -> Some (create_absolute directory)
+    | `Yes -> Some (create_absolute ~follow_symbolic_links:false directory)
     | _ when [%compare.equal: path] (Filename.dirname directory) directory -> None
     | _ -> directory_has_target (Filename.dirname directory)
   in

@@ -48,7 +48,7 @@ let test_language_server_protocol_json_format context =
   let path =
     Path.create_relative ~root:local_root ~relative:handle
     |> Path.absolute
-    |> Path.create_absolute
+    |> Path.create_absolute ~follow_symbolic_links:true
     |> function
     | Path.Absolute path -> path
     | _ -> failwith "Absolute path expected"
@@ -93,7 +93,12 @@ let test_language_server_protocol_json_format context =
 
 let test_server_exits_on_directory_removal context =
   let directory = bracket_tmpdir context in
-  let pid = Pid.of_int (CommandTest.start_server ~local_root:(Path.create_absolute directory) ()) in
+  let pid =
+    Pid.of_int
+      (CommandTest.start_server
+         ~local_root:(Path.create_absolute ~follow_symbolic_links:true directory)
+         ())
+  in
   Sys_utils.rm_dir_tree directory;
   CommandTest.with_timeout
     ~seconds:6
@@ -210,7 +215,7 @@ let test_protocol_type_check context =
 
 
 let test_connect context =
-  let local_root = bracket_tmpdir context |> Path.create_absolute in
+  let local_root = bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true in
   CommandTest.start_server ~local_root ~expected_version:"A" () |> ignore;
   let {
     Configuration.Server.configuration;

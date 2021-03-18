@@ -78,6 +78,7 @@ let create_update_message ~local_root ~project_root ~filter_directories =
   let hg_root_absolute = hg_root project_root in
   let project_directory_absolute =
     Path.create_absolute
+      ~follow_symbolic_links:true
       (Path.project_directory
          ~local_root:(Path.show local_root)
          ~filter_directories:
@@ -85,7 +86,7 @@ let create_update_message ~local_root ~project_root ~filter_directories =
   in
   let project_directory_relative =
     Path.get_relative_to_root
-      ~root:(Path.create_absolute hg_root_absolute)
+      ~root:(Path.create_absolute ~follow_symbolic_links:true hg_root_absolute)
       ~path:project_directory_absolute
   in
   let diff = hg_diff project_root in

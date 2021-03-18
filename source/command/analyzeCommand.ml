@@ -67,15 +67,15 @@ let run_analysis
       filter_directories
       >>| String.split_on_chars ~on:[';']
       >>| List.map ~f:String.strip
-      >>| List.map ~f:Path.create_absolute
+      >>| List.map ~f:(Path.create_absolute ~follow_symbolic_links:true)
     in
     let ignore_all_errors =
       ignore_all_errors
       >>| String.split_on_chars ~on:[';']
       >>| List.map ~f:String.strip
-      >>| List.map ~f:Path.create_absolute
+      >>| List.map ~f:(Path.create_absolute ~follow_symbolic_links:true)
     in
-    let repository_root = repository_root >>| Path.create_absolute in
+    let repository_root = repository_root >>| Path.create_absolute ~follow_symbolic_links:true in
     let configuration =
       Configuration.Analysis.create
         ?expected_version
@@ -83,13 +83,14 @@ let run_analysis
         ~strict
         ~show_error_traces
         ~infer:false
-        ~project_root:(Path.create_absolute project_root)
+        ~project_root:(Path.create_absolute ~follow_symbolic_links:true project_root)
         ~parallel:(not sequential)
         ?filter_directories
         ?ignore_all_errors
         ~number_of_workers
         ~search_path:(List.map search_path ~f:SearchPath.create_normalized)
-        ~taint_model_paths:(List.map taint_models_paths ~f:Path.create_absolute)
+        ~taint_model_paths:
+          (List.map taint_models_paths ~f:(Path.create_absolute ~follow_symbolic_links:true))
         ~excludes
         ~extensions:(List.map ~f:Configuration.Extension.create_extension extensions)
         ?log_directory

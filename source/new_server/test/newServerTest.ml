@@ -86,16 +86,18 @@ module ScratchProject = struct
     in
     (* We assume that there's only one checked source directory that acts as the global root as
        well. *)
-    let source_root = bracket_tmpdir context |> Path.create_absolute in
+    let source_root = bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true in
     (* We assume that there's only one external source directory. *)
-    let external_root = bracket_tmpdir context |> Path.create_absolute in
+    let external_root =
+      bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true
+    in
     let external_sources =
       if include_typeshed_stubs then
         Test.typeshed_stubs ~include_helper_builtins () @ external_sources
       else
         external_sources
     in
-    let log_root = bracket_tmpdir context |> Path.create_absolute in
+    let log_root = bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:false in
     List.iter sources ~f:(add_source ~root:source_root);
     List.iter external_sources ~f:(add_source ~root:external_root);
     (* We assume that watchman root is the same as global root. *)

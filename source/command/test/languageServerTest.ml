@@ -613,7 +613,7 @@ let test_did_save_notification context =
   in
   let source_path = Path.create_relative ~root:local_root ~relative:source_name in
   let link_name = "test_did_save_notification_link.py" in
-  let link_root = bracket_tmpdir context |> Path.create_absolute in
+  let link_root = bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true in
   let link_path = Path.create_relative ~root:link_root ~relative:link_name in
   Unix.symlink ~target:(Path.absolute source_path) ~link_name:(Path.absolute link_path);
   let message =
@@ -650,7 +650,7 @@ let test_did_save_notification context =
 
 let test_language_server_definition_response context =
   let open Ast.Location in
-  let local_root = bracket_tmpdir context |> Path.create_absolute in
+  let local_root = bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true in
   let assert_response ~id ~location ~expected =
     let message =
       let response =
@@ -816,7 +816,9 @@ let test_request_parser context =
     ScratchServer.start ~context [file_handle, ""; symlink_handle, ""; stub_handle, ""]
   in
   let { Configuration.Analysis.local_root; _ } = configuration in
-  let alternative_root = bracket_tmpdir context |> Path.create_absolute in
+  let alternative_root =
+    bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true
+  in
   let file_path = Path.create_relative ~root:local_root ~relative:file_handle in
   let stub_path = Path.create_relative ~root:local_root ~relative:stub_handle in
   let symlink_source = Path.create_relative ~root:local_root ~relative:symlink_handle in

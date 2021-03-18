@@ -11,7 +11,7 @@ open Pyre
 open Path.AppendOperator
 
 let test_socket_path context =
-  let root = bracket_tmpdir context |> Path.create_absolute in
+  let root = bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true in
   let configuration =
     Configuration.Analysis.create
       ~project_root:root
@@ -42,7 +42,7 @@ let test_socket_path context =
   File.write (File.create ~content:"" socket_path);
   let expected_path =
     Format.sprintf "%s/pyre_server_%d.sock" Filename.temp_dir_name (Unix.getpid () |> Pid.to_int)
-    |> Path.create_absolute
+    |> Path.create_absolute ~follow_symbolic_links:true
   in
   assert_equal ~printer:Path.absolute ~cmp:Path.equal expected_path socket_path;
   assert_equal
@@ -59,7 +59,7 @@ let test_socket_path context =
       "%s/pyre_json_server_%d.sock"
       Filename.temp_dir_name
       (Unix.getpid () |> Pid.to_int)
-    |> Path.create_absolute
+    |> Path.create_absolute ~follow_symbolic_links:true
   in
   assert_equal ~printer:Path.absolute ~cmp:Path.equal json_expected_path json_socket_path;
   assert_equal

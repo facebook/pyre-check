@@ -54,7 +54,7 @@ let run_check
       argument
       >>| String.split_on_chars ~on:[';']
       >>| List.map ~f:String.strip
-      >>| List.map ~f:Path.create_absolute
+      >>| List.map ~f:(Path.create_absolute ~follow_symbolic_links:true)
     in
     let filter_directories = argument_to_paths filter_directories in
     let ignore_all_errors = argument_to_paths ignore_all_errors in
@@ -65,7 +65,7 @@ let run_check
         ~strict
         ~show_error_traces
         ~infer:false
-        ~project_root:(Path.create_absolute project_root)
+        ~project_root:(Path.create_absolute ~follow_symbolic_links:true project_root)
         ~parallel:(not sequential)
         ?filter_directories
         ?ignore_all_errors

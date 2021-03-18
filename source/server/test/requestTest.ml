@@ -238,7 +238,7 @@ let test_process_type_check_request context =
   (* Check nonexistent handles. *)
   let { ScratchServer.configuration; state; _ } = ScratchServer.start ~context [] in
   let paths =
-    let root = bracket_tmpdir context |> Path.create_absolute in
+    let root = bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true in
     [Path.create_relative ~root ~relative:"nonexistent.py"]
   in
   let { Request.response; _ } = Request.process_type_check_request ~state ~configuration paths in
@@ -350,7 +350,7 @@ let test_process_get_definition_request context =
 
 
 let test_create_annotation_edit context =
-  let root = bracket_tmpdir context |> Path.create_absolute in
+  let root = bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true in
   let mock_missing_annotation : Error.missing_annotation =
     {
       name = Reference.create "x";

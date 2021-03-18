@@ -10,7 +10,7 @@ open OUnit2
 open Pyre
 open Test
 
-let ( ! ) = Path.create_absolute
+let ( ! ) = Path.create_absolute ~follow_symbolic_links:false
 
 let root context =
   let path = bracket_tmpdir context in
@@ -216,8 +216,8 @@ let test_link context =
   Unix.symlink ~target:path ~link_name:link;
   Unix.symlink ~target:link ~link_name:linklink;
   let symbolic = Path.create_absolute ~follow_symbolic_links:false link in
-  let link = Path.create_absolute link in
-  let linklink = Path.create_absolute linklink in
+  let link = Path.create_absolute ~follow_symbolic_links:true link in
+  let linklink = Path.create_absolute ~follow_symbolic_links:true linklink in
   assert_equal root (Path.real_path root);
   assert_equal root (Path.real_path link);
   assert_equal root (Path.real_path linklink);
@@ -239,7 +239,7 @@ let test_remove context =
 (* Yolo *)
 
 let test_build_symlink_map context =
-  let root = bracket_tmpdir context |> Path.create_absolute in
+  let root = bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true in
   let path relative = Path.create_relative ~root ~relative in
   let create_file path = Out_channel.write_all ~data:"" (Path.absolute path) in
   let link = path "link.py" in

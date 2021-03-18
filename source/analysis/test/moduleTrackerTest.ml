@@ -120,20 +120,22 @@ let test_creation context =
      * external_root/b/__init__.py
      * external_root/c.py
      * external_root/c.pyi *)
-    let local_root = bracket_tmpdir context |> Path.create_absolute in
-    let external_root = bracket_tmpdir context |> Path.create_absolute in
+    let local_root = bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true in
+    let external_root =
+      bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true
+    in
     let local_d_path = Path.absolute local_root ^ "/d" in
     let external_b_path = Path.absolute external_root ^ "/b" in
     Sys_utils.mkdir_no_fail local_d_path;
     Sys_utils.mkdir_no_fail external_b_path;
     List.iter ~f:(touch local_root) ["a.py"; "b.py"; "c.py"; "c.pyi"; "d.py"; "e.py"];
     let () =
-      let path = local_d_path |> Path.create_absolute in
+      let path = local_d_path |> Path.create_absolute ~follow_symbolic_links:true in
       touch path "__init__.py"
     in
     List.iter ~f:(touch external_root) ["a.py"; "b.pyi"; "c.py"; "c.pyi"];
     let () =
-      let path = external_b_path |> Path.create_absolute in
+      let path = external_b_path |> Path.create_absolute ~follow_symbolic_links:true in
       touch path "__init__.py"
     in
     let configuration =
@@ -329,8 +331,10 @@ let test_creation context =
      * external_root/d/g.py
      * external_root/h/i/j/__init__.pyi
      *)
-    let local_root = bracket_tmpdir context |> Path.create_absolute in
-    let external_root = bracket_tmpdir context |> Path.create_absolute in
+    let local_root = bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true in
+    let external_root =
+      bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true
+    in
     List.iter
       ~f:Sys_utils.mkdir_no_fail
       [
@@ -392,11 +396,13 @@ let test_creation context =
     assert_module !&"h.i.j.k" ~expected:ModuleStatus.Untracked
   in
   let test_search_path_subdirectory () =
-    let local_root = bracket_tmpdir context |> Path.create_absolute in
-    let search_root = bracket_tmpdir context |> Path.create_absolute in
+    let local_root = bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true in
+    let search_root = bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true in
     let search_subdirectory_path = Path.absolute search_root ^ "/sub" in
     Sys_utils.mkdir_no_fail search_subdirectory_path;
-    let search_subdirectory = Path.create_absolute search_subdirectory_path in
+    let search_subdirectory =
+      Path.create_absolute ~follow_symbolic_links:true search_subdirectory_path
+    in
     touch local_root "a.py";
     touch search_root "b.py";
     touch search_subdirectory "c.py";
@@ -420,9 +426,13 @@ let test_creation context =
       (SourcePath.full_path ~configuration source_path_b)
   in
   let test_priority () =
-    let local_root = bracket_tmpdir context |> Path.create_absolute in
-    let external_root0 = bracket_tmpdir context |> Path.create_absolute in
-    let external_root1 = bracket_tmpdir context |> Path.create_absolute in
+    let local_root = bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true in
+    let external_root0 =
+      bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true
+    in
+    let external_root1 =
+      bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true
+    in
     let external_paths0 = ["a.py"; "b.py"; "c.pyi"; "d.py"; "e.pyi"; "f.pyi"; "g.pyi"] in
     List.iter ~f:(touch external_root0) external_paths0;
     let external_paths1 = ["a.py"; "b.py"; "c.py"; "d.pyi"; "e.py"; "f.pyi"; "g.pyi"] in
@@ -511,7 +521,7 @@ let test_creation context =
       ~is_external:true
   in
   let test_priority_multi_source_paths () =
-    let local_root = bracket_tmpdir context |> Path.create_absolute in
+    let local_root = bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true in
     let source_root0_path = Path.absolute local_root ^ "/source0" in
     Sys_utils.mkdir_no_fail source_root0_path;
     let source_root0 = Path.create_absolute ~follow_symbolic_links:false source_root0_path in
@@ -591,8 +601,10 @@ let test_creation context =
   in
   let test_exclude () =
     (* Test that ${SOURCE_DIRECTORY} gets correctly replaced *)
-    let local_root = bracket_tmpdir context |> Path.create_absolute in
-    let external_root = bracket_tmpdir context |> Path.create_absolute in
+    let local_root = bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true in
+    let external_root =
+      bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true
+    in
     touch local_root "foo.py";
     touch local_root "bar.py";
     touch local_root "baz.py";
@@ -635,14 +647,14 @@ let test_creation context =
      * - both derp and durp lives under search_root
      * - search_root is whitelisted with filter_directories and durp is blacklisted with ignore_all_errors
      * We want to make sure that the is_external field is correct for this setup. *)
-    let local_root = bracket_tmpdir context |> Path.create_absolute in
-    let search_root = bracket_tmpdir context |> Path.create_absolute in
+    let local_root = bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true in
+    let search_root = bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true in
     let derp_path = Path.absolute search_root ^ "/derp" in
     Sys_utils.mkdir_no_fail derp_path;
     let durp_path = Path.absolute search_root ^ "/durp" in
     Sys_utils.mkdir_no_fail durp_path;
-    let derp = Path.create_absolute derp_path in
-    let durp = Path.create_absolute durp_path in
+    let derp = Path.create_absolute ~follow_symbolic_links:true derp_path in
+    let durp = Path.create_absolute ~follow_symbolic_links:true durp_path in
     touch local_root "a.py";
     touch search_root "b.py";
     touch derp "c.py";
@@ -691,8 +703,8 @@ let test_creation context =
      * - local_root is the local root
      * - search_root is the root of other search paths
      * We want to test the case when `ignore_all_errors` contains nonexistent directories. *)
-    let local_root = bracket_tmpdir context |> Path.create_absolute in
-    let search_root = bracket_tmpdir context |> Path.create_absolute in
+    let local_root = bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true in
+    let search_root = bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true in
     let nonexist_root = Path.create_absolute ~follow_symbolic_links:false "/whosyourdaddy" in
     assert (not (Path.file_exists nonexist_root));
 
@@ -723,10 +735,14 @@ let test_creation context =
   in
   let test_directory_filter3 () =
     (* We want test that filter_directories follows symlinks *)
-    let local_root = bracket_tmpdir context |> Path.create_absolute in
-    let search_root = bracket_tmpdir context |> Path.create_absolute in
-    let link_local_root = bracket_tmpdir context |> Path.create_absolute in
-    let link_search_root = bracket_tmpdir context |> Path.create_absolute in
+    let local_root = bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true in
+    let search_root = bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true in
+    let link_local_root =
+      bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true
+    in
+    let link_search_root =
+      bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true
+    in
     touch local_root "a.py";
     touch search_root "b.py";
     Unix.symlink
@@ -764,13 +780,13 @@ let test_creation context =
      * - external_root0 lives under local_root
      * - external_root1 lives under external_root0
      * Module resolution boils down to which root comes first in the search path *)
-    let local_root = bracket_tmpdir context |> Path.create_absolute in
+    let local_root = bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true in
     let external_root0_path = Path.absolute local_root ^ "/external0" in
     Sys_utils.mkdir_no_fail external_root0_path;
     let external_root1_path = external_root0_path ^ "/external1" in
     Sys_utils.mkdir_no_fail external_root1_path;
-    let external_root0 = Path.create_absolute external_root0_path in
-    let external_root1 = Path.create_absolute external_root1_path in
+    let external_root0 = Path.create_absolute ~follow_symbolic_links:true external_root0_path in
+    let external_root1 = Path.create_absolute ~follow_symbolic_links:true external_root1_path in
     touch external_root0 "a.py";
     touch external_root1 "a.py";
     touch local_root "a.py";
@@ -919,11 +935,11 @@ let test_creation context =
      * - stubs_root lives under local_root (project-internal stubs)
      * - venv_root lives outside local_root (project-external stubs)
      *)
-    let local_root = bracket_tmpdir context |> Path.create_absolute in
+    let local_root = bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true in
     let stubs_path = Path.absolute local_root ^ "/stubs" in
     Sys_utils.mkdir_no_fail stubs_path;
-    let stubs_root = Path.create_absolute stubs_path in
-    let venv_root = bracket_tmpdir context |> Path.create_absolute in
+    let stubs_root = Path.create_absolute ~follow_symbolic_links:true stubs_path in
+    let venv_root = bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true in
     touch local_root "a.py";
     touch local_root "b.pyi";
     touch local_root "c.pyi";
@@ -993,12 +1009,22 @@ let test_creation context =
   in
   let test_root_independence () =
     (* We want to test that `ModuleTracker` creation is independent of where the root is located at. *)
-    let local_root = bracket_tmpdir context |> Path.create_absolute in
-    let external_root0 = bracket_tmpdir context |> Path.create_absolute in
-    let external_root1 = bracket_tmpdir context |> Path.create_absolute in
-    let local_root_copy = bracket_tmpdir context |> Path.create_absolute in
-    let external_root0_copy = bracket_tmpdir context |> Path.create_absolute in
-    let external_root1_copy = bracket_tmpdir context |> Path.create_absolute in
+    let local_root = bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true in
+    let external_root0 =
+      bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true
+    in
+    let external_root1 =
+      bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true
+    in
+    let local_root_copy =
+      bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true
+    in
+    let external_root0_copy =
+      bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true
+    in
+    let external_root1_copy =
+      bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true
+    in
     let setup local_root external_root0 external_root1 =
       touch local_root "a.py";
       touch local_root "b.pyi";

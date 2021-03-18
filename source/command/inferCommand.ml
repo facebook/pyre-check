@@ -54,7 +54,7 @@ let run_infer
       argument
       >>| String.split_on_chars ~on:[';']
       >>| List.map ~f:String.strip
-      >>| List.map ~f:Path.create_absolute
+      >>| List.map ~f:(Path.create_absolute ~follow_symbolic_links:true)
     in
     let ignore_infer = argument_to_paths ignore_infer in
     let filter_directories = argument_to_paths filter_directories in
@@ -66,7 +66,7 @@ let run_infer
         ~strict
         ~show_error_traces
         ~infer:true
-        ~project_root:(Path.create_absolute project_root)
+        ~project_root:(Path.create_absolute ~follow_symbolic_links:true project_root)
         ~parallel:(not sequential)
         ?filter_directories
         ?ignore_all_errors

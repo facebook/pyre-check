@@ -629,13 +629,13 @@ let run_start_command
     filter_directories
     >>| String.split_on_chars ~on:[';']
     >>| List.map ~f:String.strip
-    >>| List.map ~f:Path.create_absolute
+    >>| List.map ~f:(Path.create_absolute ~follow_symbolic_links:true)
   in
   let ignore_all_errors =
     ignore_all_errors
     >>| String.split_on_chars ~on:[';']
     >>| List.map ~f:String.strip
-    >>| List.map ~f:Path.create_absolute
+    >>| List.map ~f:(Path.create_absolute ~follow_symbolic_links:true)
   in
   let configuration =
     let incremental_style =
@@ -655,9 +655,10 @@ let run_start_command
       ?filter_directories
       ?ignore_all_errors
       ~number_of_workers
-      ~project_root:(Path.create_absolute project_root)
+      ~project_root:(Path.create_absolute ~follow_symbolic_links:true project_root)
       ~search_path:(List.map search_path ~f:SearchPath.create_normalized)
-      ~taint_model_paths:(List.map taint_model_paths ~f:Path.create_absolute)
+      ~taint_model_paths:
+        (List.map taint_model_paths ~f:(Path.create_absolute ~follow_symbolic_links:true))
       ~excludes
       ~extensions:(List.map ~f:Configuration.Extension.create_extension extensions)
       ~local_root
@@ -672,7 +673,7 @@ let run_start_command
       ?python_micro_version
       ()
   in
-  let log_path = log_path >>| Path.create_absolute in
+  let log_path = log_path >>| Path.create_absolute ~follow_symbolic_links:true in
   let saved_state_action =
     match save_state_to, saved_state_project with
     | Some path, _ -> Some (Configuration.Server.Save path)
@@ -688,8 +689,9 @@ let run_start_command
                  (Configuration.Server.LoadFromFiles
                     {
                       Configuration.Server.shared_memory_path =
-                        Path.create_absolute shared_memory_path;
-                      changed_files_path = changed_files_path >>| Path.create_absolute;
+                        Path.create_absolute ~follow_symbolic_links:true shared_memory_path;
+                      changed_files_path =
+                        changed_files_path >>| Path.create_absolute ~follow_symbolic_links:true;
                     }))
         | None, Some _ ->
             Log.error "-load-state-from must be set when -changed-files-path is passed in.";

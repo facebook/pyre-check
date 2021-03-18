@@ -2671,10 +2671,12 @@ module ScratchProject = struct
       File.write file
     in
     (* We assume that there's only one checked source directory that acts as the local root as well. *)
-    let local_root = bracket_tmpdir context |> Path.create_absolute in
+    let local_root = bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:false in
     (* We assume that there's only one external source directory that acts as the local root as
        well. *)
-    let external_root = bracket_tmpdir context |> Path.create_absolute in
+    let external_root =
+      bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:false
+    in
     let log_directory = bracket_tmpdir context in
     let configuration =
       Configuration.Analysis.create

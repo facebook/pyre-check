@@ -12,7 +12,9 @@ open Network
 open OUnit2
 
 let test_persistent_client_connect context =
-  let local_root = bracket_tmpdir context |> Pyre.Path.create_absolute in
+  let local_root =
+    bracket_tmpdir context |> Pyre.Path.create_absolute ~follow_symbolic_links:true
+  in
   let set_up _ =
     Format.pp_set_formatter_out_channel Format.err_formatter (Out_channel.create "/dev/null");
     CommandTest.start_server ~local_root () |> ignore;
