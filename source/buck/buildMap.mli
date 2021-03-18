@@ -118,8 +118,9 @@ val index : t -> Indexed.t
 (** Create a index for the given build map and return a pair of constant-time lookup functions that
     utilizes the index. *)
 
-val iter : f:(source:string -> string -> unit) -> t -> unit
-(** [iter ~f build_map] applies `f` to every artifact-to-source mapping in [build_map]. *)
+val to_alist : t -> (string * string) list
+(** Convert a partial build map into an associated list. Each element in the list represent an
+    (artifact_path, source_path) mapping. *)
 
 val difference : original:t -> t -> Difference.t
 (** [difference ~original current] computes the difference between the [original] build map and the
