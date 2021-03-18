@@ -4,7 +4,7 @@
     ".*/generate_taint_models/.*",
     ".*/scripts/.*",
     ".*/source/.*",
-    ".*/stubs/.*"
+    ".*/pyre-check/stubs/.*"
   ],
   "ignore_all_errors": [
     "client/tests/configuration_test.py",
