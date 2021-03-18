@@ -18,6 +18,8 @@ let root context =
   path, root
 
 
+let touch path = Stdio.Out_channel.write_all (Path.absolute path) ~data:""
+
 let test_create context =
   let path, root = root context in
   (* Create absolute paths. *)
@@ -227,6 +229,19 @@ let test_link context =
   assert_equal link (Path.real_path linklink)
 
 
+let test_create_directory_recursively context =
+  let _, root = root context in
+  let first_level = Path.create_relative ~root ~relative:"a" in
+  let second_level = Path.create_relative ~root:first_level ~relative:"b" in
+  let third_level = Path.create_relative ~root:second_level ~relative:"c" in
+  Path.create_directory_recursively third_level |> Result.ok_or_failwith;
+
+  assert_true (Path.is_directory first_level);
+  assert_true (Path.is_directory second_level);
+  assert_true (Path.is_directory third_level);
+  ()
+
+
 let test_remove context =
   let path, _ = bracket_tmpfile context in
   let path = !path in
@@ -234,6 +249,41 @@ let test_remove context =
   Path.remove path;
   assert_false (Path.file_exists path);
   Path.remove path
+
+
+let test_remove_recursively context =
+  let _, root = root context in
+  let remove_root = Path.create_relative ~root ~relative:"test" in
+  let top_level_directory =
+    Path.create_relative ~root:remove_root ~relative:"top_level_directory"
+  in
+  let top_level_file = Path.create_relative ~root:remove_root ~relative:"top_level_file" in
+  let second_level_directory =
+    Path.create_relative ~root:top_level_directory ~relative:"second_level_directory"
+  in
+  let second_level_file =
+    Path.create_relative ~root:top_level_directory ~relative:"second_level_file"
+  in
+  let second_level_symlink =
+    Path.create_relative ~root:top_level_directory ~relative:"second_level_symlink"
+  in
+
+  Unix.mkdir (Path.absolute remove_root);
+  Unix.mkdir (Path.absolute top_level_directory);
+  touch top_level_file;
+  Unix.mkdir (Path.absolute second_level_directory);
+  touch second_level_file;
+  Unix.symlink
+    ~target:(Path.absolute top_level_file)
+    ~link_name:(Path.absolute second_level_symlink);
+
+  Path.remove_recursively remove_root;
+  assert_false (Path.file_exists remove_root);
+  assert_false (Path.file_exists top_level_directory);
+  assert_false (Path.file_exists second_level_directory);
+  assert_false (Path.file_exists second_level_file);
+  assert_false (Path.file_exists second_level_symlink);
+  ()
 
 
 (* Yolo *)
@@ -280,7 +330,9 @@ let () =
          "get_directory" >:: test_get_directory;
          "project_directory" >:: test_project_directory;
          "link" >:: test_link;
+         "create_directory_recursively" >:: test_create_directory_recursively;
          "remove" >:: test_remove;
+         "remove_recursively" >:: test_remove_recursively;
          "build_symlink_map" >:: test_build_symlink_map;
        ]
   |> Test.run

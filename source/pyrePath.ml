@@ -66,6 +66,28 @@ let create_relative ~root ~relative =
   Relative { root; relative }
 
 
+let get_directory path = absolute path |> Filename.dirname |> create_absolute
+
+let create_directory_recursively ?permission path =
+  let rec do_create = function
+    | path when not (Caml.Sys.file_exists path) -> (
+        match do_create (Filename.dirname path) with
+        | Result.Error _ as error -> error
+        | Result.Ok () ->
+            Unix.mkdir path ?perm:permission;
+            Result.Ok () )
+    | path when Caml.Sys.is_directory path -> Result.Ok ()
+    | path ->
+        let message = Format.sprintf "A non-directory already exists: %s" path in
+        Result.Error message
+  in
+  do_create (absolute path)
+
+
+let ensure_parent_directory_exists ?permission path =
+  create_directory_recursively ?permission (get_directory path)
+
+
 let get_relative_to_root ~root ~path =
   let root =
     let root = absolute root in
@@ -217,6 +239,34 @@ let remove_if_exists path =
       ()
 
 
+let remove_recursively path =
+  let rec do_remove path =
+    try
+      let stats = Unix.lstat path in
+      match stats.Unix.st_kind with
+      | Unix.S_DIR ->
+          let contents = Caml.Sys.readdir path in
+          List.iter (Array.to_list contents) ~f:(fun name ->
+              let name = Filename.concat path name in
+              do_remove name);
+          Unix.rmdir path
+      | Unix.S_LNK
+      | Unix.S_REG
+      | Unix.S_CHR
+      | Unix.S_BLK
+      | Unix.S_FIFO
+      | Unix.S_SOCK ->
+          Unix.unlink path
+    with
+    (* Path has been deleted out from under us - can ignore it. *)
+    | Sys_error message ->
+        Log.warning "Error occurred when removing %s recursively: %s" path message;
+        ()
+    | Unix.Unix_error (Unix.ENOENT, _, _) -> ()
+  in
+  do_remove (absolute path)
+
+
 let readlink path =
   try Unix.readlink (absolute path) |> Option.some with
   | Unix.Unix_error _ -> None
@@ -260,8 +310,6 @@ let with_suffix path ~suffix =
   | Absolute prefix -> Absolute (prefix ^ suffix)
   | Relative { root; relative } -> Relative { root; relative = relative ^ suffix }
 
-
-let get_directory path = absolute path |> Filename.dirname |> create_absolute
 
 let project_directory ~local_root ~filter_directories =
   if String.is_substring ~substring:"/scratch/" local_root then

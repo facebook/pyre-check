@@ -36,6 +36,10 @@ val create_absolute : ?follow_symbolic_links:bool -> path -> t
 
 val create_relative : root:t -> relative:path -> t
 
+val create_directory_recursively : ?permission:int -> t -> (unit, string) Result.t
+
+val ensure_parent_directory_exists : ?permission:int -> t -> (unit, string) Result.t
+
 val get_relative_to_root : root:t -> path:t -> path option
 
 val from_uri : path -> t option
@@ -86,6 +90,8 @@ val search_upwards : target:string -> target_type:FileType.t -> root:t -> t opti
 val remove : t -> unit
 
 val remove_if_exists : t -> unit
+
+val remove_recursively : t -> unit
 
 val readlink : t -> path option
 
