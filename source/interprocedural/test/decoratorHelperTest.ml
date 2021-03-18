@@ -651,6 +651,61 @@ let test_inline_decorators context =
     def foo(x: str) -> None:
       print(x)
   |};
+  assert_inlined
+    {|
+    from typing import Callable
+    from pyre_extensions import ParameterSpecification
+    from pyre_extensions.type_variable_operators import Concatenate
+
+    from builtins import __test_sink
+
+    P = ParameterSpecification("P")
+
+    def with_logging(f: Callable[Concatenate[int, P], None]) -> Callable[Concatenate[int, P], None]:
+
+      def inner(first_parameter: int, *args: P.args, **kwargs: P.kwargs) -> None:
+        f(first_parameter, *args, **kwargs)
+        print(first_parameter)
+        print(args, kwargs)
+
+      return inner
+
+    @with_logging
+    def foo(x: int, y: str, z: bool) -> None:
+      print(x, y, z)
+  |}
+    {|
+    from typing import Callable
+    from pyre_extensions import ParameterSpecification
+    from pyre_extensions.type_variable_operators import Concatenate
+
+    from builtins import __test_sink
+
+    P = ParameterSpecification("P")
+
+    def with_logging(f: Callable[Concatenate[int, P], None]) -> Callable[Concatenate[int, P], None]:
+
+      def inner(first_parameter: int, *args: P.args, **kwargs: P.kwargs) -> None:
+        f(first_parameter, *args, **kwargs)
+        print(first_parameter)
+        print(args, kwargs)
+
+      return inner
+
+    def foo(x: int, y: str, z: bool) -> None:
+
+      def __original_function(x: int, y: str, z: bool) -> None:
+        print(x, y, z)
+
+      def __wrapper(x: int, y: str, z: bool) -> None:
+        __args = (y, z)
+        __kwargs = {"y": y, "z": z}
+        __original_function(x, y, z)
+        print(x)
+        print(__args, __kwargs)
+
+      return __wrapper(x, y, z)
+  |};
   ()
 
 
@@ -814,6 +869,102 @@ let test_replace_signature _ =
         __kwargs = {"y": y}
         foo(y)
         return 1
+  |});
+  assert_signature_replaced
+    ~new_signature:"def foo(some_parameter: int, x: str, y: bool) -> None: ..."
+    {|
+      def wrapper(some_parameter: int, *args: object, **kwargs: object) -> int:
+        foo(some_parameter, *args, **kwargs)
+        print(some_parameter)
+        print(args, kwargs)
+  |}
+    (Some
+       {|
+      def wrapper(some_parameter: int, x: str, y: bool) -> int:
+        __args = (x, y)
+        __kwargs = {"x": x, "y": y}
+        foo(some_parameter, x, y)
+        print(some_parameter)
+        print(__args, __kwargs)
+  |});
+  assert_signature_replaced
+    ~new_signature:"def foo(prefix1: int, prefix2: str, x: str, y: bool) -> None: ..."
+    {|
+      def wrapper(some_parameter1: int, some_parameter2: str, *args: object, **kwargs: object) -> int:
+        foo(some_parameter1, some_parameter2, *args, **kwargs)
+        print(some_parameter1, some_parameter2)
+        print(args, kwargs)
+  |}
+    (Some
+       {|
+      def wrapper(prefix1: int, prefix2: str, x: str, y: bool) -> int:
+        __args = (x, y)
+        __kwargs = {"x": x, "y": y}
+        foo(prefix1, prefix2, x, y)
+        print(prefix1, prefix2)
+        print(__args, __kwargs)
+  |});
+  (* Don't get confused if the original function uses `x` as a parameter name. *)
+  assert_signature_replaced
+    ~new_signature:"def foo(some_parameter: int, x: str, y: bool) -> None: ..."
+    {|
+      def wrapper(x: int, *args: object, **kwargs: object) -> int:
+        foo(x, *args, **kwargs)
+        print(x)
+        print(args, kwargs)
+  |}
+    (Some
+       {|
+      def wrapper(some_parameter: int, x: str, y: bool) -> int:
+        __args = (x, y)
+        __kwargs = {"x": x, "y": y}
+        foo(some_parameter, x, y)
+        print(some_parameter)
+        print(__args, __kwargs)
+  |});
+  assert_signature_replaced
+    ~new_signature:"def foo(some_parameter: int, x: str, y: bool) -> None: ..."
+    {|
+      def wrapper(x: int, *args: object, **kwargs: object) -> int:
+        foo(x, "extra argument", *args, **kwargs)
+        print(x)
+        print(args, kwargs)
+  |}
+    None;
+  assert_signature_replaced
+    ~new_signature:"def foo(some_parameter: int, x: str, y: bool) -> None: ..."
+    {|
+      def wrapper(x: int, *args: object, **kwargs: object) -> int:
+        foo("not x", *args, **kwargs)
+        print(x)
+        print(args, kwargs)
+  |}
+    None;
+  assert_signature_replaced
+    ~new_signature:"def foo() -> None: ..."
+    {|
+      def wrapper(x: int, *args: object, **kwargs: object) -> int:
+        foo(x, *args, **kwargs)
+        print(x)
+        print(args, kwargs)
+  |}
+    None;
+  assert_signature_replaced
+    ~new_signature:"def foo(some_parameter: int, *args: int, **kwargs: str) -> None: ..."
+    {|
+      def wrapper(some_parameter: int, *args: object, **kwargs: object) -> int:
+        foo(some_parameter, *args, **kwargs)
+        print(some_parameter)
+        print(args, kwargs)
+  |}
+    (Some
+       {|
+      def wrapper(some_parameter: int, *args: int, **kwargs: str) -> int:
+        __args = ( *args,)
+        __kwargs = { **kwargs}
+        foo(some_parameter, *args, **kwargs)
+        print(some_parameter)
+        print(__args, __kwargs)
   |});
   ()
 

@@ -8,6 +8,11 @@
 from builtins import __test_sink, __test_source
 from typing import Awaitable, Callable
 
+from pyre_extensions import ParameterSpecification
+from pyre_extensions.type_variable_operators import Concatenate
+
+P = ParameterSpecification("P")
+
 
 def with_logging(f: Callable[[int], None]) -> Callable[[int], None]:
     def inner(x: int) -> None:
@@ -115,6 +120,24 @@ def foo_using_decorator_factory(x: str) -> None:
     print(x)
 
 
+def with_logging_first_parameter(
+    f: Callable[Concatenate[int, P], None]
+) -> Callable[Concatenate[int, P], None]:
+    def inner(first_parameter: int, *args: P.args, **kwargs: P.kwargs) -> None:
+        if first_parameter != 42:
+            __test_sink(first_parameter)
+            return
+
+        f(first_parameter, *args, **kwargs)
+
+    return inner
+
+
+@with_logging_first_parameter
+def foo_log_first_parameter(x: int, y: str) -> None:
+    print(x, y)
+
+
 def main() -> None:
     foo(__test_source())
     foo_with_sink(__test_source())
@@ -130,3 +153,5 @@ def main() -> None:
     foo_with_shady_decorators("hello")
 
     foo_using_decorator_factory(__test_source())
+
+    foo_log_first_parameter(__test_source(), "hello")
