@@ -103,6 +103,15 @@ class InitializeTest(unittest.TestCase):
             )
 
         with patch.object(log, "get_yes_no_input") as yes_no_input, patch.object(
+            log, "get_input", return_value=""
+        ):
+            yes_no_input.side_effect = [True]
+            self.assertEqual(
+                command._get_local_configuration(Path("/project"), Path("/")),
+                {"targets": ["//project/..."]},
+            )
+
+        with patch.object(log, "get_yes_no_input") as yes_no_input, patch.object(
             log, "get_input", return_value="project/a, project/b"
         ):
             yes_no_input.side_effect = [False]

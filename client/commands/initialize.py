@@ -121,7 +121,7 @@ class Initialize(CommandParser):
             if len(targets) == 0:
                 if buck_root:
                     root = current_directory.relative_to(buck_root)
-                    configuration["targets"] = f"//{str(root)}/..."
+                    configuration["targets"] = [f"//{str(root)}/..."]
                 else:
                     raise InitializationException(
                         "No `.buckconfig` found with which to create a default target."
