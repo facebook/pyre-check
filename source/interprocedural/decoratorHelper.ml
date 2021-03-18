@@ -192,10 +192,7 @@ let extract_decorator_data ~is_decorator_factory { Define.signature = { paramete
     sole_wrapper_function_and_callable_parameter ~parameters body
 
 
-let make_args_assignment_from_parameters
-    ~args_local_variable_name
-    { Define.Signature.parameters; _ }
-  =
+let make_args_assignment_from_parameters ~args_local_variable_name parameters =
   let location = Location.any in
   let elements =
     List.map parameters ~f:convert_parameter_to_argument
@@ -216,10 +213,7 @@ let make_args_assignment_from_parameters
   |> Node.create ~location
 
 
-let make_kwargs_assignment_from_parameters
-    ~kwargs_local_variable_name
-    { Define.Signature.parameters; _ }
-  =
+let make_kwargs_assignment_from_parameters ~kwargs_local_variable_name parameters =
   let location = Location.any in
   let parameter_to_keyword_or_entry parameter =
     match convert_parameter_to_argument parameter with
@@ -253,6 +247,59 @@ let make_kwargs_assignment_from_parameters
   |> Node.create ~location
 
 
+let call_function_with_precise_parameters ~callee_name ~new_signature define =
+  let always_passes_on_args_kwargs = ref true in
+  let pass_precise_arguments_instead_of_args_kwargs = function
+    | Expression.Call
+        {
+          Call.callee = { Node.value = Name (Identifier given_callee_name); location };
+          arguments;
+          _;
+        } as expression
+      when Identifier.equal callee_name given_callee_name -> (
+        match arguments with
+        | [
+         {
+           Call.Argument.name = None;
+           value =
+             {
+               Node.value = Starred (Once { Node.value = Name (Identifier given_args_variable); _ });
+               _;
+             };
+         };
+         {
+           Call.Argument.name = None;
+           value =
+             {
+               Node.value =
+                 Starred (Twice { Node.value = Name (Identifier given_kwargs_variable); _ });
+               _;
+             };
+         };
+        ]
+          when Identifier.equal args_local_variable_name given_args_variable
+               && Identifier.equal kwargs_local_variable_name given_kwargs_variable ->
+            create_function_call_to
+              ~location
+              ~callee_name:(Reference.create callee_name)
+              new_signature
+        | _ ->
+            (* The wrapper is calling the original function as something other than `original(
+               *args, **kwargs)`. This means it probably has a different signature from the original
+               function, so give up on making it have the same signature. *)
+            always_passes_on_args_kwargs := false;
+            expression )
+    | expression -> expression
+  in
+  match
+    Transform.transform_expressions
+      ~transform:pass_precise_arguments_instead_of_args_kwargs
+      (Statement.Define define)
+  with
+  | Statement.Define define when !always_passes_on_args_kwargs -> Some define
+  | _ -> None
+
+
 (* If a function always passes on its `args` and `kwargs` to `callee_name`, then replace its broad
    signature `def foo( *args, **kwargs) -> None` with the precise signature `def foo(x: int, y: str)
    -> None`. Pass precise arguments to any calls to `callee_name`.
@@ -274,50 +321,6 @@ let replace_signature_if_always_passing_on_arguments
          && String.is_prefix ~prefix:"**" kwargs_parameter -> (
       let args_parameter = String.drop_prefix args_parameter 1 in
       let kwargs_parameter = String.drop_prefix kwargs_parameter 2 in
-      let always_passes_on_args_kwargs = ref true in
-      let pass_precise_arguments_instead_of_args_kwargs = function
-        | Expression.Call
-            {
-              Call.callee = { Node.value = Name (Identifier given_callee_name); location };
-              arguments;
-              _;
-            } as expression
-          when Identifier.equal callee_name given_callee_name -> (
-            match arguments with
-            | [
-             {
-               Call.Argument.name = None;
-               value =
-                 {
-                   Node.value =
-                     Starred (Once { Node.value = Name (Identifier given_args_variable); _ });
-                   _;
-                 };
-             };
-             {
-               Call.Argument.name = None;
-               value =
-                 {
-                   Node.value =
-                     Starred (Twice { Node.value = Name (Identifier given_kwargs_variable); _ });
-                   _;
-                 };
-             };
-            ]
-              when Identifier.equal args_local_variable_name given_args_variable
-                   && Identifier.equal kwargs_local_variable_name given_kwargs_variable ->
-                create_function_call_to
-                  ~location
-                  ~callee_name:(Reference.create callee_name)
-                  new_signature
-            | _ ->
-                (* The wrapper is calling the original function as something other than `original(
-                   *args, **kwargs)`. This means it probably has a different signature from the
-                   original function, so give up on making it have the same signature. *)
-                always_passes_on_args_kwargs := false;
-                expression )
-        | expression -> expression
-      in
 
       (* We have to rename `args` and `kwargs` to `__args` and `__kwargs` before transforming calls
          to `callee`.
@@ -329,19 +332,20 @@ let replace_signature_if_always_passing_on_arguments
         |> rename_local_variable ~from:kwargs_parameter ~to_:kwargs_local_variable_name
       in
       match
-        Transform.transform_expressions
-          ~transform:pass_precise_arguments_instead_of_args_kwargs
-          (Statement.Define define_with_renamed_args_kwargs)
+        call_function_with_precise_parameters
+          ~callee_name
+          ~new_signature
+          define_with_renamed_args_kwargs
       with
-      | Statement.Define define when !always_passes_on_args_kwargs ->
+      | Some define ->
           let define_with_original_signature =
             { define with signature = { define.signature with parameters = new_parameters } }
           in
           let args_local_assignment =
-            make_args_assignment_from_parameters ~args_local_variable_name new_signature
+            make_args_assignment_from_parameters ~args_local_variable_name new_parameters
           in
           let kwargs_local_assignment =
-            make_kwargs_assignment_from_parameters ~kwargs_local_variable_name new_signature
+            make_kwargs_assignment_from_parameters ~kwargs_local_variable_name new_parameters
           in
           Some
             {
@@ -351,7 +355,7 @@ let replace_signature_if_always_passing_on_arguments
                 :: kwargs_local_assignment
                 :: define_with_original_signature.body;
             }
-      | _ -> None )
+      | None -> None )
   | _ -> None
 
 
