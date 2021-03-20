@@ -401,15 +401,17 @@ let replace_signature_if_always_passing_on_arguments
 
 let inline_decorator_in_define
     ~location
-    ~wrapper_define:
-      ( {
+    ~qualifier
+    ~define:({ Define.signature = original_signature; _ } as define)
+    {
+      wrapper_define =
+        {
           Define.signature =
             { name = { Node.value = wrapper_define_name; _ }; _ } as wrapper_signature;
           _;
-        } as wrapper_define )
-    ~qualifier
-    ~higher_order_function_parameter_name
-    ({ Define.signature = original_signature; _ } as define)
+        } as wrapper_define;
+      higher_order_function_parameter_name;
+    }
   =
   let inlined_original_define =
     sanitize_define define
@@ -478,18 +480,9 @@ let apply_decorator
     define
   =
   let decorator_body = Map.find decorator_bodies decorator_name in
-  match
-    decorator_body >>= extract_decorator_data ~is_decorator_factory:(Option.is_some arguments)
-  with
-  | Some { wrapper_define; higher_order_function_parameter_name } ->
-      inline_decorator_in_define
-        ~location
-        ~qualifier
-        ~wrapper_define
-        ~higher_order_function_parameter_name
-        define
-      |> Option.some
-  | _ -> None
+  decorator_body
+  >>= extract_decorator_data ~is_decorator_factory:(Option.is_some arguments)
+  >>| inline_decorator_in_define ~location ~qualifier ~define
 
 
 let inline_decorators ~environment:_ ~decorator_bodies source =
