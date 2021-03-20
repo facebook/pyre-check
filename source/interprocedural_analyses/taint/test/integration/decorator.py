@@ -138,6 +138,32 @@ def foo_log_first_parameter(x: int, y: str) -> None:
     print(x, y)
 
 
+def with_logging_helper_functions(
+    f: Callable[P, Awaitable[None]]
+) -> Callable[P, Awaitable[None]]:
+    async def inner(*args: P.args, **kwargs: P.kwargs) -> None:
+        try:
+            before(*args, **kwargs)
+            await f(*args, **kwargs)
+            after(*args, **kwargs)
+        except Exception as exception:
+            print(exception)
+
+    def before(*args: object, **kwargs: object) -> None:
+        print("before", args)
+
+    def after(*args: object, **kwargs: object) -> None:
+        print("after", kwargs)
+        __test_sink(args)
+
+    return inner
+
+
+@with_logging_helper_functions
+async def foo_with_helper_function(x: int, y: str) -> None:
+    print(x, y)
+
+
 def main() -> None:
     foo(__test_source())
     foo_with_sink(__test_source())
@@ -155,3 +181,5 @@ def main() -> None:
     foo_using_decorator_factory(__test_source())
 
     foo_log_first_parameter(__test_source(), "hello")
+
+    foo_with_helper_function(__test_source(), "hello")

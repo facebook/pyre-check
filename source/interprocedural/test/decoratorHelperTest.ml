@@ -601,55 +601,173 @@ let test_inline_decorators context =
 
       return __wrapper(x)
   |};
-  (* TODO(T69755379): We currently ignore decorators that have nested helper functions. *)
+  (* Decorator that uses helper functions. *)
   assert_inlined
     {|
-    from typing import Callable
     from builtins import __test_sink
+    from typing import Callable
 
-    def with_named_logger(logger_name: str) -> Callable[[Callable], Callable]:
+    def with_logging(callable: Callable[[str], None]) -> Callable[[str], None]:
 
-      def _inner_decorator(f: Callable) -> Callable:
+      def inner(y: str) -> None:
+        __test_sink(y)
+        before(y)
+        callable(y)
+        after(y)
 
-        def my_helper() -> None:
-          pass
+      def my_print(y: str) -> None:
+        print("before", y)
 
-        def inner( *args: object, **kwargs: object) -> None:
-          print(logger_name)
-          __test_sink(args)
-          f( *args, **kwargs)
+      def before(y: str) -> None:
+        message = "before"
+        my_print(message, y)
 
-        return inner
+      def after(y: str) -> None:
+        message = "after"
+        my_print(message, y)
 
-      return _inner_decorator
+      return inner
 
-    @with_named_logger("foo_logger")
-    def foo(x: str) -> None:
-      print(x)
+    @with_logging
+    def foo(z: str) -> None:
+      print(z)
   |}
     {|
-    from typing import Callable
     from builtins import __test_sink
+    from typing import Callable
+
+    def with_logging(callable: Callable[[str], None]) -> Callable[[str], None]:
+
+      def inner(y: str) -> None:
+        __test_sink(y)
+        before(y)
+        callable(y)
+        after(y)
+
+      def my_print(y: str) -> None:
+        print("before", y)
+
+      def before(y: str) -> None:
+        message = "before"
+        my_print(message, y)
+
+      def after(y: str) -> None:
+        message = "after"
+        my_print(message, y)
+
+      return inner
+
+    def foo(y: str) -> None:
+      def __original_function(z: str) -> None:
+        print(z)
+
+      def __wrapper(y: str) -> None:
+        __test_sink(y)
+        before(y)
+        __original_function(y)
+        after(y)
+
+      def my_print(y: str) -> None:
+        print("before", y)
+
+      def before(y: str) -> None:
+        message = "before"
+        my_print(message, y)
+
+      def after(y: str) -> None:
+        message = "after"
+        my_print(message, y)
+
+      return __wrapper(y)
+  |};
+  (* Decorator factory with helper functions. *)
+  assert_inlined
+    {|
+    from builtins import __test_sink
+    from typing import Callable
 
     def with_named_logger(logger_name: str) -> Callable[[Callable], Callable]:
+      def with_logging(callable: Callable[[str], None]) -> Callable[[str], None]:
 
-      def _inner_decorator(f: Callable) -> Callable:
+        def inner(y: str) -> None:
+          __test_sink(y)
+          before(y)
+          callable(y)
+          after(y)
 
-        def my_helper() -> None:
-          pass
+        def my_print(y: str) -> None:
+          print("before", y)
 
-        def inner( *args: object, **kwargs: object) -> None:
-          print(logger_name)
-          __test_sink(args)
-          f( *args, **kwargs)
+        def before(y: str) -> None:
+          message = "before"
+          my_print(message, y)
+
+        def after(y: str) -> None:
+          message = "after"
+          callable(y)
+          my_print(message, y)
 
         return inner
 
-      return _inner_decorator
+      return with_logging
 
-    @with_named_logger("foo_logger")
-    def foo(x: str) -> None:
-      print(x)
+    @with_named_logger("hello")
+    def foo(z: str) -> None:
+      print(z)
+  |}
+    {|
+    from builtins import __test_sink
+    from typing import Callable
+
+    def with_named_logger(logger_name: str) -> Callable[[Callable], Callable]:
+      def with_logging(callable: Callable[[str], None]) -> Callable[[str], None]:
+
+        def inner(y: str) -> None:
+          __test_sink(y)
+          before(y)
+          callable(y)
+          after(y)
+
+        def my_print(y: str) -> None:
+          print("before", y)
+
+        def before(y: str) -> None:
+          message = "before"
+          my_print(message, y)
+
+        def after(y: str) -> None:
+          message = "after"
+          callable(y)
+          my_print(message, y)
+
+        return inner
+
+      return with_logging
+
+    def foo(y: str) -> None:
+      def __original_function(z: str) -> None:
+        print(z)
+
+      def __wrapper(y: str) -> None:
+        __test_sink(y)
+        before(y)
+        __original_function(y)
+        after(y)
+
+      def my_print(y: str) -> None:
+        print("before", y)
+
+      def before(y: str) -> None:
+        message = "before"
+        my_print(message, y)
+
+      def after(y: str) -> None:
+        message = "after"
+        # Uses of `callable` in the helper functions treat it as an unknown variable.
+        $parameter$callable(y)
+        my_print(message, y)
+
+      return __wrapper(y)
   |};
   assert_inlined
     {|
