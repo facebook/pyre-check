@@ -19,7 +19,7 @@ ipython==7.19.0
 ipython-genutils==0.2.0
 itsdangerous==1.1.0
 jedi==0.17.2
-Jinja2==2.11.2
+Jinja2==2.11.3
 libcst==0.3.16
 MarkupSafe==1.1.1
 marshmallow==3.10.0
