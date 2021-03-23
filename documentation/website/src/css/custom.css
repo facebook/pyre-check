@@ -26,6 +26,7 @@
   --ifm-menu-color-background-active:rgba(0, 0, 0, 0.05);
   --ifm-footer-color:#5e5e5e;
   --ifm-container-width: 1300px;
+  --ifm-tabs-color-active: #d66b00;
 }
 
 .navbar__link--active {
