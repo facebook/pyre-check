@@ -12,16 +12,21 @@ module Completed = struct
     status: Unix.process_status;
   }
 
-  let create_from_process process =
+  let create_from_process_and_consumers ~consume_stdout ~consume_stderr process =
     let open Lwt.Infix in
-    (* Wait for it to finish *)
-    process#status
-    >>= fun status ->
-    Lwt_io.read process#stdout
-    >>= fun stdout ->
-    Lwt_io.read process#stderr >>= fun stderr -> Lwt.return { stdout; stderr; status }
+    Lwt.both
+      process#status
+      (Lwt.both (consume_stdout process#stdout) (consume_stderr process#stderr))
+    >>= fun (status, (stdout, stderr)) -> Lwt.return { stdout; stderr; status }
 end
 
-let run ~arguments executable =
+let run
+    ?(consume_stdout = fun input_channel -> Lwt_io.read input_channel)
+    ?(consume_stderr = fun input_channel -> Lwt_io.read input_channel)
+    ~arguments
+    executable
+  =
   let lwt_command = executable, Array.of_list (executable :: arguments) in
-  Lwt_process.with_process_full lwt_command Completed.create_from_process
+  Lwt_process.with_process_full
+    lwt_command
+    (Completed.create_from_process_and_consumers ~consume_stdout ~consume_stderr)
