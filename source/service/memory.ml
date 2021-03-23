@@ -77,20 +77,32 @@ type configuration = {
 
 let configuration : configuration option ref = ref None
 
+(* Defined in `Gc` module. *)
+let best_fit_allocation_policy = 2
+
 let worker_garbage_control =
-  { (Gc.get ()) with Gc.minor_heap_size = 256 * 1024; (* 256 KB *)
-                                                      space_overhead = 100 }
+  (* GC for the worker process. *)
+  {
+    (Gc.get ()) with
+    Gc.minor_heap_size = 256 * 1024;
+    allocation_policy = best_fit_allocation_policy;
+    space_overhead = 120;
+  }
 
 
 let initialize ~heap_size ~dep_table_pow ~hash_table_pow ~log_level () =
   match !configuration with
   | None ->
-      let minor_heap_size = 4 * 1024 * 1024 in
       (* 4 MB *)
-      let space_overhead = 50 in
-      (* Only sets the GC for the master process - the parallel workers use GC settings with less
-         overhead. *)
-      Gc.set { (Gc.get ()) with Gc.minor_heap_size; space_overhead };
+      let minor_heap_size = 4 * 1024 * 1024 in
+      (* GC for the master process. *)
+      Gc.set
+        {
+          (Gc.get ()) with
+          Gc.minor_heap_size;
+          allocation_policy = best_fit_allocation_policy;
+          space_overhead = 100;
+        };
       let shared_mem_config =
         {
           SharedMemory.global_size = 0;
