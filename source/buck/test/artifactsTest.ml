@@ -8,7 +8,10 @@
 open Base
 open OUnit2
 module Path = Pyre.Path
-open Buck
+
+(* Create aliases to private modules so we could test their internal APIs. *)
+module BuildMap = Buck__BuildMap
+module Artifacts = Buck__Artifacts
 
 let setup_source_directory ~root contents =
   let add_file (relative, content) =

@@ -5,10 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-type t [@@deriving sexp, compare, hash]
-
-val of_string : string -> t
-
-val show : t -> string
-
-val pp : Format.formatter -> t -> unit
+module BuildMap = BuildMap
+module Raw = Raw
+module Target = Target
+module Artifacts = Artifacts
+module Builder = Builder

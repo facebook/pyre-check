@@ -7,7 +7,11 @@
 
 open Base
 open OUnit2
-open Buck
+
+(* Create aliases to private modules so we could test their internal APIs. *)
+module BuildMap = Buck__BuildMap
+module Builder = Buck__Builder
+module Target = Buck__Target
 
 let test_parse_buck_query_output context =
   let assert_parsed ~expected output =

@@ -7,7 +7,9 @@
 
 open Base
 open OUnit2
-open Buck
+
+(* Create aliases to private modules so we could test their internal APIs. *)
+module BuildMap = Buck__BuildMap
 
 let assert_mapping_equal ~context ~expected actual =
   assert_equal
