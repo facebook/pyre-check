@@ -75,6 +75,26 @@ val full_incremental_build
     times. For faster incremental build, itt is recommended to use other variant of incremental
     build APIs if their pre-conditions are known to be satisfied. *)
 
+val incremental_build_with_normalized_targets
+  :  source_root:PyrePath.t ->
+  artifact_root:PyrePath.t ->
+  old_build_map:BuildMap.t ->
+  targets:Target.t list ->
+  t ->
+  BuildResult.t Lwt.t
+(** Given a source root, an artifact root, and a list of normalized targets to build, fully
+    construct a new build map for the targets and incrementally update the Python link tree at the
+    given artifact root according to how the new build map changed compared to the old build map.
+    Return the new build map along with a list of targets that are covered by the build map. This
+    API may raise the same set of exceptions as {!full_build}.
+
+    The difference between this API and {!full_incremental_build} is that this API makes an
+    additional assumption that the given incremental update does not change the set of targets to
+    build. As a result, it can skip the target normalizing step entirely as performance
+    optimization. Such an assumption usually holds when the incremental update does not touch any
+    `BUCK` or `TARGETS` file -- callers are encouraged to verify this before deciding which
+    incremental build API to invoke. *)
+
 (* Raise [JsonError] on parsing error. Exposed for testing. *)
 val parse_buck_query_output : string -> string list
 

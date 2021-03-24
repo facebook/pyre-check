@@ -230,14 +230,36 @@ let build ~source_root ~artifact_root ~targets builder =
   | Result.Ok () -> Lwt.return { BuildResult.targets; build_map }
 
 
-let full_incremental_build ~source_root ~artifact_root ~old_build_map ~targets builder =
+let do_incremental_build ~source_root ~artifact_root ~old_build_map ~new_build_map () =
   let open Lwt.Infix in
-  construct_build_map builder targets
-  >>= fun (targets, build_map) ->
   Log.info "Calculating the scope of the re-build...";
-  let difference = BuildMap.difference ~original:old_build_map build_map in
+  let difference = BuildMap.difference ~original:old_build_map new_build_map in
   Log.info "Incrementally updating Python link-tree for type checking...";
   Artifacts.update ~source_root ~artifact_root difference
   >>= function
   | Result.Error message -> raise (LinkTreeConstructionError message)
-  | Result.Ok () -> Lwt.return { BuildResult.targets; build_map }
+  | Result.Ok () -> Lwt.return ()
+
+
+let full_incremental_build ~source_root ~artifact_root ~old_build_map ~targets builder =
+  let open Lwt.Infix in
+  construct_build_map builder targets
+  >>= fun (targets, build_map) ->
+  do_incremental_build ~source_root ~artifact_root ~old_build_map ~new_build_map:build_map ()
+  >>= fun () -> Lwt.return { BuildResult.targets; build_map }
+
+
+let incremental_build_with_normalized_targets
+    ~source_root
+    ~artifact_root
+    ~old_build_map
+    ~targets
+    builder
+  =
+  let open Lwt.Infix in
+  build_source_databases builder targets
+  >>= fun target_and_source_database_paths ->
+  load_and_merge_source_databases target_and_source_database_paths
+  >>= fun (targets, build_map) ->
+  do_incremental_build ~source_root ~artifact_root ~old_build_map ~new_build_map:build_map ()
+  >>= fun () -> Lwt.return { BuildResult.targets; build_map }
