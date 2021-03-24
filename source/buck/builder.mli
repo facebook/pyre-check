@@ -57,6 +57,24 @@ val build
     of the artifact directory is desirable, it is expected that the caller would take care of that
     before its invocation. *)
 
+val full_incremental_build
+  :  source_root:PyrePath.t ->
+  artifact_root:PyrePath.t ->
+  old_build_map:BuildMap.t ->
+  targets:string list ->
+  t ->
+  BuildResult.t Lwt.t
+(** Given a source root, an artifact root, and a list of buck target specificaitons to build, fully
+    construct a new build map for the targets and incrementally update the Python link tree at the
+    given artifact root according to how the new build map changed compared to the old build map.
+    Return the new build map along with a list of targets that are covered by the build map. This
+    API may raise the same set of exceptions as {!full_build}.
+
+    This API is guaranteed to rebuild the entire build map from scratch. It is guaranteed to produce
+    the most correct and most up-to-date build map, but at the same time it is a costly operation at
+    times. For faster incremental build, itt is recommended to use other variant of incremental
+    build APIs if their pre-conditions are known to be satisfied. *)
+
 (* Raise [JsonError] on parsing error. Exposed for testing. *)
 val parse_buck_query_output : string -> string list
 
