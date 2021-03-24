@@ -25,3 +25,4 @@ space-around-variants
 type-decl=sparse
 wrap-comments
 wrap-fun-args=false
+parse-docstrings

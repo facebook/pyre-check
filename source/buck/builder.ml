@@ -10,6 +10,15 @@ module Path = Pyre.Path
 
 exception JsonError of string
 
+exception LinkTreeConstructionError of string
+
+module BuildResult = struct
+  type t = {
+    build_map: BuildMap.t;
+    targets: Target.t list;
+  }
+end
+
 let source_database_suffix = "#source-db"
 
 type t = {
@@ -114,6 +123,10 @@ let load_partial_build_map path =
   | Yojson.Json_error message -> raise (JsonError message)
 
 
+(* Given a list of buck target specifications (which may contain `...` or filter expression), query
+   `buck` and return the set of individual targets which will be built. May raise
+   [Buck.Raw.BuckError] when `buck` invocation fails, or [Buck.Builder.JsonError] when `buck` itself
+   succeeds but its output cannot be parsed. *)
 let normalize_targets builder target_specifications =
   let open Lwt.Infix in
   Log.info "Collecting buck targets to build...";
@@ -124,6 +137,14 @@ let normalize_targets builder target_specifications =
   Lwt.return targets
 
 
+(* Run `buck build` on the given target with the `#source-db` flavor. This will make `buck`
+   construct its link tree and for each target, dump a source-db JSON file containing how files in
+   the link tree corresponds to the final Python artifacts. Return a list containing the input
+   targets as well as the corresponding location of the source-db JSON file. Note that targets in
+   the returned list is not guaranteed to be in the same order as the input list.
+
+   May raise [Buck.Raw.BuckError] when `buck` invocation fails, or [Buck.Builder.JsonError] when
+   `buck` itself succeeds but its output cannot be parsed. *)
 let build_source_databases builder targets =
   let open Lwt.Infix in
   Log.info "Building Buck source databases...";
@@ -173,7 +194,37 @@ let merge_build_maps target_and_build_maps =
   List.rev reversed_targets, BuildMap.create merged_build_map
 
 
+(* Given a list of (target, path) obtained from [build_source_databases], load the source-db JSON
+   file for each target, and merge the source-db for all targets into one single build map. May
+   raise [Buck.Builder.JsonError] if the JSON loading fails.
+
+   Source-db merging may not always succeed (see {!val:Buck.BuildMap.Partial.merge}). If it is
+   deteced that the source-db for one target cannot be merged into the build map due to confliction,
+   a warning will be printed and the target will be dropped. If a target is dropped, it will not
+   show up in the final target list returned from this API (alongside with the build map). *)
 let load_and_merge_source_databases target_and_source_database_paths =
   let open Lwt.Infix in
   load_build_maps target_and_source_database_paths
   >>= fun target_and_build_maps -> Lwt.return (merge_build_maps target_and_build_maps)
+
+
+(* A convenient wrapper that stitches together [normalize_targets], [build_source_databases], and
+   [load_and_merge_source_databases]. *)
+let construct_build_map builder target_specifications =
+  let open Lwt.Infix in
+  normalize_targets builder target_specifications
+  >>= fun normalized_targets ->
+  build_source_databases builder normalized_targets
+  >>= fun target_and_source_database_paths ->
+  load_and_merge_source_databases target_and_source_database_paths
+
+
+let build ~source_root ~artifact_root ~targets builder =
+  let open Lwt.Infix in
+  construct_build_map builder targets
+  >>= fun (targets, build_map) ->
+  Log.info "Constructing Python link-tree for type checking...";
+  Artifacts.populate ~source_root ~artifact_root build_map
+  >>= function
+  | Result.Error message -> raise (LinkTreeConstructionError message)
+  | Result.Ok () -> Lwt.return { BuildResult.targets; build_map }

@@ -12,36 +12,50 @@ type t
 exception JsonError of string
 (** Raised when `buck` returns malformed JSONs *)
 
+exception LinkTreeConstructionError of string
+(** Raised when artifact building fails. See {!val:Buck.Artifacts.populate}. *)
+
+module BuildResult : sig
+  type t = {
+    build_map: BuildMap.t;
+    targets: Target.t list;
+  }
+  (** The return type for all build-related APIs. It contains a build map as well as a list of buck
+      targets that are successfully included in the build. *)
+end
+
 val create : ?mode:string -> ?isolation_prefix:string -> Raw.t -> t
 
-val normalize_targets : t -> string list -> Target.t list Lwt.t
-(** Given a list of buck target specifications (which may contain `...` or filter expression), query
-    `buck` and return the set of individual targets which will be built. May raise
-    [Buck.Raw.BuckError] when `buck` invocation fails, or [Buck.Builder.JsonError] when `buck`
-    itself succeeds but its output cannot be parsed. *)
+val build
+  :  source_root:PyrePath.t ->
+  artifact_root:PyrePath.t ->
+  targets:string list ->
+  t ->
+  BuildResult.t Lwt.t
+(** Given a source root, an artifact root, and a list of buck target specificaitons to build,
+    construct a build map for the targets and create a Python link tree at the given artifact root
+    according to the build map. Return the constructed build map along with a list of targets that
+    are covered by the build map.
 
-val build_source_databases : t -> Target.t list -> (Target.t * PyrePath.t) list Lwt.t
-(** Run `buck build` on the given target with the `#source-db` flavor. This will make `buck`
-    construct its link tree and for each target, dump a source-db JSON file containing how files in
-    the link tree corresponds to the final Python artifacts. Return a list containing the input
-    targets as well as the corresponding location of the source-db JSON file. Note that targets in
-    the returned list is not guaranteed to be in the same order as the input list.
+    Concretely, the entire build process can be broken down into 4 steps:
 
-    May raise [Buck.Raw.BuckError] when `buck` invocation fails, or [Buck.Builder.JsonError] when
-    `buck` itself succeeds but its output cannot be parsed. *)
+    - Query `buck` to desugar any `...` wildcard and filter expressions.
+    - Run `buck build` to force-generating all Python files and source databases.
+    - Load all source databases generated from the previous step, and merge all of them into a
+      single [BuildMap.t].
+    - Construct the link tree under [artifact_root] based on the content of the [BuiltMap.t].
 
-val load_and_merge_source_databases
-  :  (Target.t * PyrePath.t) list ->
-  (Target.t list * BuildMap.t) Lwt.t
-(** Given a list of (target, path) obtained from [build_source_databases], load the source-db JSON
-    file for each target, and merge the source-db for all targets into one single build map. May
-    raise [Buck.Builder.JsonError] if the JSON loading fails.
+    The following exceptions may be raised by this API:
 
-    Source-db merging may not always succeed (see {!val:Buck.BuildMap.Partial.merge}). If it is
-    deteced that the source-db for one target cannot be merged into the build map due to
-    confliction, a warning will be printed and the target will be dropped. If a target is dropped,
-    it will not show up in the final target list returned from this API (alongside with the build
-    map). *)
+    - {!exception: JsonError} if `buck` returns malformed or inconsistent JSON blobs.
+    - {!exception: Buck.Raw.BuckError} if `buck` quits in any unexpected ways when shelling out to
+      it.
+    - {!exception: LinkTreeConstructionError} if any error is encountered when constructing the link
+      tree from the build map.
+
+    Note this API does not ensure the artifact root to be empty before the build starts. If cleaness
+    of the artifact directory is desirable, it is expected that the caller would take care of that
+    before its invocation. *)
 
 (* Raise [JsonError] on parsing error. Exposed for testing. *)
 val parse_buck_query_output : string -> string list
