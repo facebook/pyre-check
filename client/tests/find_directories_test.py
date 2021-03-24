@@ -394,6 +394,6 @@ class FindTypeshedTest(unittest.TestCase):
                 find_typeshed_search_paths(root_path),
                 [
                     root_path / subdirectory
-                    for subdirectory in ["stdlib", "stubs/foo", "stubs/bar"]
+                    for subdirectory in ["stdlib", "stubs/bar", "stubs/foo"]
                 ],
             )
