@@ -30,8 +30,24 @@ val build_source_databases : t -> Target.t list -> (Target.t * PyrePath.t) list 
     May raise [Buck.Raw.BuckError] when `buck` invocation fails, or [Buck.Builder.JsonError] when
     `buck` itself succeeds but its output cannot be parsed. *)
 
+val load_and_merge_source_databases
+  :  (Target.t * PyrePath.t) list ->
+  (Target.t list * BuildMap.t) Lwt.t
+(** Given a list of (target, path) obtained from [build_source_databases], load the source-db JSON
+    file for each target, and merge the source-db for all targets into one single build map. May
+    raise [Buck.Builder.JsonError] if the JSON loading fails.
+
+    Source-db merging may not always succeed (see {!val:Buck.BuildMap.Partial.merge}). If it is
+    deteced that the source-db for one target cannot be merged into the build map due to
+    confliction, a warning will be printed and the target will be dropped. If a target is dropped,
+    it will not show up in the final target list returned from this API (alongside with the build
+    map). *)
+
 (* Raise [JsonError] on parsing error. Exposed for testing. *)
 val parse_buck_query_output : string -> string list
 
 (* Raise [JsonError] on parsing error. Exposed for testing. *)
 val parse_buck_build_output : string -> (string * string) list
+
+(* Merge given partial build maps into one full build map. Exposed for testing. *)
+val merge_build_maps : (Target.t * BuildMap.Partial.t) list -> Target.t list * BuildMap.t

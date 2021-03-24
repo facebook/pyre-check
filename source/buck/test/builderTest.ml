@@ -118,10 +118,85 @@ let test_parse_buck_build_output context =
   ()
 
 
+let test_merge_build_map context =
+  let assert_loaded ~targets ~build_map target_and_build_maps =
+    let actual_targets, actual_build_map =
+      List.map target_and_build_maps ~f:(fun (target, build_map) ->
+          Target.of_string target, BuildMap.Partial.of_alist_exn build_map)
+      |> Builder.merge_build_maps
+    in
+    assert_equal
+      ~ctxt:context
+      ~cmp:[%compare.equal: string list]
+      ~printer:(fun targets -> Sexp.to_string_hum ([%sexp_of: string list] targets))
+      targets
+      (List.map actual_targets ~f:Target.show);
+    let actual_build_map = BuildMap.to_alist actual_build_map in
+    let compare = [%compare: string * string] in
+    assert_equal
+      ~ctxt:context
+      ~cmp:[%compare.equal: (string * string) list]
+      ~printer:(fun mappings -> Sexp.to_string_hum ([%sexp_of: (string * string) list] mappings))
+      (List.sort ~compare build_map)
+      (List.sort ~compare actual_build_map)
+  in
+
+  assert_loaded [] ~targets:[] ~build_map:[];
+  assert_loaded
+    ["//foo:bar", ["a.py", "source/a.py"]]
+    ~targets:["//foo:bar"]
+    ~build_map:["a.py", "source/a.py"];
+  assert_loaded
+    ["//foo:bar", ["a.py", "source/a.py"; "b.py", "source/b.py"]]
+    ~targets:["//foo:bar"]
+    ~build_map:["a.py", "source/a.py"; "b.py", "source/b.py"];
+  assert_loaded
+    ["//foo:bar", ["a.py", "source/a.py"]; "//foo:baz", ["b.py", "source/b.py"]]
+    ~targets:["//foo:bar"; "//foo:baz"]
+    ~build_map:["a.py", "source/a.py"; "b.py", "source/b.py"];
+  assert_loaded
+    [
+      "//foo:bar", ["a.py", "source/a.py"; "b.py", "source/b.py"];
+      "//foo:baz", ["b.py", "source/b.py"];
+    ]
+    ~targets:["//foo:bar"; "//foo:baz"]
+    ~build_map:["a.py", "source/a.py"; "b.py", "source/b.py"];
+  assert_loaded
+    [
+      "//foo:bar", ["a.py", "source/a.py"; "x.py", "source/b.py"];
+      (* Conflict on `x.py` *)
+      "//foo:baz", ["d.py", "source/d.py"; "x.py", "source/c.py"];
+      "//foo:qux", ["e.py", "source/e.py"];
+    ]
+    ~targets:["//foo:bar"; "//foo:qux"]
+    ~build_map:["a.py", "source/a.py"; "x.py", "source/b.py"; "e.py", "source/e.py"];
+  assert_loaded
+    [
+      "//foo:bar", ["a.py", "source/a.py"];
+      "//foo:baz", ["b.py", "source/b.py"; "x.py", "source/c.py"];
+      (* Conflict on `x.py` *)
+      "//foo:qux", ["e.py", "source/e.py"; "x.py", "source/d.py"];
+    ]
+    ~targets:["//foo:bar"; "//foo:baz"]
+    ~build_map:["a.py", "source/a.py"; "b.py", "source/b.py"; "x.py", "source/c.py"];
+  assert_loaded
+    [
+      "//foo:bar", ["a.py", "source/a.py"; "x.py", "source/b.py"];
+      (* Conflict on `x.py` *)
+      "//foo:baz", ["d.py", "source/d.py"; "x.py", "source/c.py"];
+      (* Conflict on `x.py` *)
+      "//foo:qux", ["e.py", "source/e.py"; "x.py", "source/f.py"];
+    ]
+    ~targets:["//foo:bar"]
+    ~build_map:["a.py", "source/a.py"; "x.py", "source/b.py"];
+  ()
+
+
 let () =
   "builder_test"
   >::: [
          "parse_buck_query_output" >:: test_parse_buck_query_output;
          "parse_buck_build_output" >:: test_parse_buck_build_output;
+         "merge_build_map" >:: test_merge_build_map;
        ]
   |> Test.run

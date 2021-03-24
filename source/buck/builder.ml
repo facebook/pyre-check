@@ -101,6 +101,19 @@ let parse_buck_build_output query_output =
       raise (JsonError message)
 
 
+let load_partial_build_map path =
+  let open Lwt.Infix in
+  let path = Path.absolute path in
+  Lwt_io.(with_file ~mode:Input path read)
+  >>= fun content ->
+  try
+    match BuildMap.Partial.of_json (Yojson.Safe.from_string ~fname:path content) with
+    | Result.Error message -> raise (JsonError message)
+    | Result.Ok build_map -> Lwt.return build_map
+  with
+  | Yojson.Json_error message -> raise (JsonError message)
+
+
 let normalize_targets builder target_specifications =
   let open Lwt.Infix in
   Log.info "Collecting buck targets to build...";
@@ -122,3 +135,45 @@ let build_source_databases builder targets =
          ( String.drop_suffix target source_database_suffix_length |> Target.of_string,
            Path.create_absolute path ))
   |> Lwt.return
+
+
+let load_build_maps target_and_source_database_paths =
+  Log.info "Loading Buck source databases from files...";
+  let load_build_map (target, source_database_path) =
+    let open Lwt.Infix in
+    load_partial_build_map source_database_path >>= fun build_map -> Lwt.return (target, build_map)
+  in
+  (* Make sure the targets are in a determinstic order. This is important to make the merging
+     process deterministic later. *)
+  List.sort target_and_source_database_paths ~compare:(fun (left_target, _) (right_target, _) ->
+      Target.compare left_target right_target)
+  |> List.map ~f:load_build_map
+  |> Lwt.all
+
+
+let merge_build_maps target_and_build_maps =
+  Log.info "Merging source databases...";
+  let merge (targets_sofar, build_map_sofar) (next_target, next_build_map) =
+    let open BuildMap.Partial in
+    match merge build_map_sofar next_build_map with
+    | MergeResult.Incompatible { MergeResult.IncompatibleItem.key; left_value; right_value } ->
+        Log.warning
+          "Cannot include target %s for type checking: file `%s` has already been mapped to `%s` \
+           but the target maps it to `%s` instead. "
+          (Target.show next_target)
+          key
+          left_value
+          right_value;
+        targets_sofar, build_map_sofar
+    | MergeResult.Ok merged_build_map -> next_target :: targets_sofar, merged_build_map
+  in
+  let reversed_targets, merged_build_map =
+    List.fold target_and_build_maps ~init:([], BuildMap.Partial.empty) ~f:merge
+  in
+  List.rev reversed_targets, BuildMap.create merged_build_map
+
+
+let load_and_merge_source_databases target_and_source_database_paths =
+  let open Lwt.Infix in
+  load_build_maps target_and_source_database_paths
+  >>= fun target_and_build_maps -> Lwt.return (merge_build_maps target_and_build_maps)

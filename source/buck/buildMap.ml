@@ -39,6 +39,8 @@ module Partial = struct
     result
 
 
+  let empty = of_alist_exn []
+
   let of_json_exn json =
     let open Yojson.Safe.Util in
     let sources = member "sources" json |> to_assoc in

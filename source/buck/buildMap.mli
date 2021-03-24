@@ -51,6 +51,9 @@ module Partial : sig
       | Incompatible of IncompatibleItem.t
   end
 
+  val empty : t
+  (** An empty map. *)
+
   val of_json_exn : Yojson.Safe.t -> t
   (** Create a partial build map from a JSON. The JSON must conform to Buck's Python source-db
       format. Raise an exception if the creation fails. *)
