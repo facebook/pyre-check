@@ -72,5 +72,56 @@ let test_parse_buck_query_output context =
   ()
 
 
+let test_parse_buck_build_output context =
+  let assert_parsed ~expected output =
+    let actual = Builder.parse_buck_build_output output in
+    assert_equal
+      ~ctxt:context
+      ~cmp:[%compare.equal: (string * string) list]
+      ~printer:(fun items -> Sexp.to_string_hum ([%sexp_of: (string * string) list] items))
+      expected
+      actual
+  in
+  let assert_not_parsed output =
+    try
+      let _ = Builder.parse_buck_build_output output in
+      let message = Format.sprintf "Unexpected parsing success: %s" output in
+      assert_failure message
+    with
+    | Builder.JsonError _ -> ()
+  in
+
+  assert_parsed "{}" ~expected:[];
+  assert_parsed
+    {|
+     {"//foo:bar": "/path/to/sourcedb.json"}
+  |}
+    ~expected:["//foo:bar", "/path/to/sourcedb.json"];
+  assert_parsed
+    {|
+      {
+        "//foo:bar":"/path/to/bar.json",
+        "//foo:baz":"/path/to/baz.json"
+      }
+    |}
+    ~expected:["//foo:bar", "/path/to/bar.json"; "//foo:baz", "/path/to/baz.json"];
+
+  assert_not_parsed "42";
+  assert_not_parsed "derp";
+  assert_not_parsed {|"abc"|};
+  assert_not_parsed "[]";
+  assert_not_parsed {| { foo: 42 } |};
+  assert_not_parsed {| { "foo": 42 } |};
+  assert_not_parsed {| { "foo": { "bar": 42 } } |};
+  assert_not_parsed {| { "foo": "derp", "bar": 42 } |};
+  assert_not_parsed {| { "foo": [ "bar" ] } |};
+  ()
+
+
 let () =
-  "builder_test" >::: ["parse_buck_query_output" >:: test_parse_buck_query_output] |> Test.run
+  "builder_test"
+  >::: [
+         "parse_buck_query_output" >:: test_parse_buck_query_output;
+         "parse_buck_build_output" >:: test_parse_buck_build_output;
+       ]
+  |> Test.run
