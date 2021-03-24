@@ -14,3 +14,11 @@ type t =
   | Query of string
   | Stop
 [@@deriving sexp, compare, hash, yojson { strict = false }]
+
+(* For some of the requests, use their legacy names for backward compatibility. *)
+let name_of = function
+  | GetInfo -> "GetInfo"
+  | DisplayTypeError _ -> "DisplayTypeErrors"
+  | IncrementalUpdate _ -> "IncrementalCheck"
+  | Query _ -> "TypeQuery"
+  | Stop -> "Stop"
