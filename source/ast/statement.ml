@@ -2480,7 +2480,7 @@ module PrettyPrinter = struct
     in
     Format.fprintf
       formatter
-      "%a@[<v 2>%adef %a%s%a(%a)%s:@;%a@]@."
+      "%a@[<v 2>%adef %a%s%a(%a)%s:@;%a@]@;"
       pp_decorators
       decorators
       pp_async

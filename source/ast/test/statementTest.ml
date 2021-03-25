@@ -868,8 +868,13 @@ let test_pp _ =
       |> List.map ~f:show
       |> String.concat ~sep:"\n"
       |> String.rstrip ~drop:(Char.equal '\n')
+      |> Test.trim_extra_indentation
     in
-    assert_equal ~printer:Fn.id pretty_print_expected pretty_print_of_source
+    assert_equal
+      ~printer:Fn.id
+      ~pp_diff:(Test.diff ~print:(fun formatter -> Format.fprintf formatter "%s"))
+      pretty_print_expected
+      pretty_print_of_source
   in
   (* Test 1 : simple def *)
   assert_pretty_print
@@ -940,7 +945,7 @@ let test_pp _ =
           for i in xrange(quux):
             i = 1
           i = 2
-    |};
+      |};
 
   (* Test 5 : try/except/finally blocks *)
   assert_pretty_print
@@ -1017,7 +1022,47 @@ let test_pp _ =
       global a
     |} ~expected:{|
       global a
+    |};
+  (* Nested functions.
+
+     Note that the newline after each nested function actually has whitespace to keep it on the same
+     indent as the other statements in the outer function. *)
+  assert_pretty_print
+    {|
+      def foo(bar):
+        def inner(bar):
+          y = "hello world"
+        def inner2(bar):
+          y = "hello world"
+          def inner3(bar):
+            y = "hello world"
+            z = "hello world"
+          def inner4(bar):
+            y = "hello world"
+        x = "hello world"
     |}
+    ~expected:
+      ( {|
+      def foo(bar):
+        def inner(bar):
+          y = "hello world"|}
+      ^ "\n  "
+      ^ {|
+        def inner2(bar):
+          y = "hello world"
+          def inner3(bar):
+            y = "hello world"
+            z = "hello world"|}
+      ^ "\n    "
+      ^ {|
+          def inner4(bar):
+            y = "hello world"|}
+      ^ "\n    "
+      ^ "\n  "
+      ^ {|
+        x = "hello world"
+        |} );
+  ()
 
 
 let test_is_generator context =
