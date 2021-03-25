@@ -79,7 +79,7 @@ VSCode will not pick up your shell aliases, so the alias step in the previous se
 export PYTHONPATH="/path/to/pyre-check:$PYTHONPATH"
 python -m client.pyre "$@"
 ```
-Add the `pyre-check` directory to `PYTHONPATH`, the `pyre-check/scripts` directory to `PATH` and then use the command `pyre` to launch the client like before
+Add the `pyre-check/scripts` directory to `PATH` (assuming you placed the above script in that directory) and then use the command `pyre` to launch the client like before
 
 ```bash
 $ echo 'export PATH="/path/to/pyre-check/scripts:$PATH"' >> ~/.bashrc
