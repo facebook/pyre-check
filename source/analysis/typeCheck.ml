@@ -5369,8 +5369,9 @@ module State (Context : Context) = struct
       when Core.Set.mem Recognized.assert_functions (Expression.show callee) ->
         forward_statement ~resolution ~statement:(Statement.assume test)
     | Expression expression ->
-        forward_expression ~resolution ~expression
-        |> fun { Resolved.resolution; resolved; errors; _ } ->
+        let { Resolved.resolution; resolved; errors; _ } =
+          forward_expression ~resolution ~expression
+        in
         if Type.is_noreturn resolved then
           None, errors
         else
