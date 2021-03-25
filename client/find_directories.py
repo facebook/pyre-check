@@ -162,7 +162,7 @@ def find_new_typeshed_search_paths(typeshed_root: Path) -> List[Path]:
     search_path = []
     third_party_root = typeshed_root / "stubs"
     third_party_subdirectories = (
-        third_party_root.iterdir() if third_party_root.is_dir() else []
+        sorted(third_party_root.iterdir()) if third_party_root.is_dir() else []
     )
     for typeshed_subdirectory in itertools.chain(
         [typeshed_root / "stdlib"], third_party_subdirectories

@@ -293,7 +293,7 @@ takes_int_list(float_list)  # this call is OK because MyList is contravariant: M
 ```
 
 ### 53: Missing annotation for captured variables
-Pyre makes no attempt at trying to infer the types across function boundaries. The statement holds for nested funtions as well.
+Pyre makes no attempt at trying to infer the types across function boundaries. The statement holds for nested functions as well.
 From a nested function's perspective, a variable defined in an nesting function behaves not too differently from a global variable. Therefore, Pyre treats such variables in the same way as it treats global variable: an explicit annotation is required if strict mode is turned on.
 
 ```python

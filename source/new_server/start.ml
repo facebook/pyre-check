@@ -46,6 +46,22 @@ let socket_path_of log_path =
     ~relative:(Format.sprintf "pyre_server_%s.sock" log_path_digest)
 
 
+let with_performance_logging ?(normals = []) ~name f =
+  let open Lwt.Infix in
+  let timer = Timer.start () in
+  f ()
+  >>= fun result ->
+  let normals =
+    let version =
+      (* HACK: Use `Version.version ()` directly when all servers are migrated. *)
+      Format.sprintf "newserver-%s" (Version.version ())
+    in
+    ("binary_version", version) :: normals
+  in
+  Statistics.performance ~name ~timer ~normals ();
+  Lwt.return result
+
+
 module ClientRequest = struct
   type t =
     | Request of Request.t
@@ -85,7 +101,10 @@ let handle_request ~server_state request =
   Lwt.catch
     (fun () ->
       Log.log ~section:`Server "Processing request %a..." Sexp.pp (Request.sexp_of_t request);
-      RequestHandler.process_request ~state:!server_state request)
+      with_performance_logging
+        ~normals:["request kind", Request.name_of request]
+        ~name:"server request"
+        (fun () -> RequestHandler.process_request ~state:!server_state request))
     on_uncaught_server_exception
   >>= fun (new_state, response) ->
   Log.log ~section:`Server "Request processed";
@@ -388,25 +407,14 @@ let initialize_server_state
       in
       let open Lwt.Infix in
       let get_initial_state () =
-        let with_performance_logging ?(normals = []) ~f =
-          let timer = Timer.start () in
-          f ()
-          >>= fun result ->
-          let normals =
-            let version =
-              (* HACK: Use `Version.version ()` directly when all servers are migrated. *)
-              Format.sprintf "newserver-%s" (Version.version ())
-            in
-            ("binary_version", version) :: normals
-          in
-          Statistics.performance ~name:"initialization" ~timer ~normals ();
-          Lwt.return result
-        in
         match saved_state_action with
         | Some
             (ServerConfiguration.SavedStateAction.LoadFromFile
               { shared_memory_path; changed_files_path }) ->
-            with_performance_logging ~normals:["initialization method", "saved state"] ~f:(fun _ ->
+            with_performance_logging
+              ~normals:["initialization method", "saved state"]
+              ~name:"initialization"
+              (fun _ ->
                 fetch_saved_state_from_files ~shared_memory_path ~changed_files_path ()
                 >>= load_from_saved_state)
         | Some
@@ -420,12 +428,14 @@ let initialize_server_state
               | None -> normals
               | Some metadata -> ("saved_state_metadata", metadata) :: normals
             in
-            with_performance_logging ~normals ~f:(fun _ ->
+            with_performance_logging ~normals ~name:"initialization" (fun _ ->
                 fetch_saved_state_from_project ~project_name ~project_metadata ()
                 >>= load_from_saved_state)
         | _ ->
-            with_performance_logging ~normals:["initialization method", "cold start"] ~f:(fun _ ->
-                Lwt.return (start_from_scratch ()))
+            with_performance_logging
+              ~normals:["initialization method", "cold start"]
+              ~name:"initialization"
+              (fun _ -> Lwt.return (start_from_scratch ()))
       in
       let store_initial_state { ServerState.configuration; type_environment; error_table; _ } =
         match saved_state_action with
