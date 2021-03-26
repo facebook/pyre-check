@@ -15,8 +15,6 @@ import traceback
 from pathlib import Path
 from typing import Union, Optional, AsyncIterator, Set, List, Sequence, Dict
 
-import async_generator
-
 from ... import (
     json_rpc,
     error,
@@ -186,7 +184,7 @@ async def try_initialize(
         return InitializationFailure(exception=json_rpc_error)
 
 
-@async_generator.asynccontextmanager
+@connection.asynccontextmanager
 async def _read_lsp_request(
     input_channel: connection.TextReader, output_channel: connection.TextWriter
 ) -> AsyncIterator[json_rpc.Request]:
@@ -569,7 +567,7 @@ class PyreServerHandler(connection.BackgroundTask):
                     self.client_output_channel, path, diagnostics
                 )
 
-    @async_generator.asynccontextmanager
+    @connection.asynccontextmanager
     async def _read_server_response(
         self, server_input_channel: connection.TextReader
     ) -> AsyncIterator[str]:
