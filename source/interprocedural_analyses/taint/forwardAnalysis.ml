@@ -1634,12 +1634,30 @@ let run ~environment ~qualifier ~define ~call_graph_of_define ~existing_model =
 
     let definition = define
 
+    let debug = Statement.Define.dump define.value
+
+    let log format =
+      if debug then
+        Log.dump format
+      else
+        Log.log ~section:`Taint format
+
+
     let get_callees ~location ~call =
-      match Map.find call_graph_of_define location with
-      | Some (Interprocedural.CallGraph.Callees callees) -> Some callees
-      | Some (Interprocedural.CallGraph.SyntheticCallees name_to_callees) ->
-          String.Map.Tree.find name_to_callees (Interprocedural.CallGraph.call_name call)
-      | None -> None
+      let callees =
+        match Map.find call_graph_of_define location with
+        | Some (Interprocedural.CallGraph.Callees callees) -> Some callees
+        | Some (Interprocedural.CallGraph.SyntheticCallees name_to_callees) ->
+            String.Map.Tree.find name_to_callees (Interprocedural.CallGraph.call_name call)
+        | None -> None
+      in
+      log
+        "Resolved callees for call `%a`: %a"
+        Expression.pp
+        (Node.create ~location:Location.any (Expression.Call call))
+        Interprocedural.CallGraph.pp_raw_callees_option
+        callees;
+      callees
 
 
     let get_property_callees ~location ~attribute =
@@ -1662,15 +1680,6 @@ let run ~environment ~qualifier ~define ~call_graph_of_define ~existing_model =
       TypeEnvironment.ReadOnly.get_local_annotations
         environment
         (Node.value define |> Statement.Define.name |> Node.value)
-
-
-    let debug = Statement.Define.dump define.value
-
-    let log format =
-      if debug then
-        Log.dump format
-      else
-        Log.log ~section:`Taint format
 
 
     let candidates = Location.WithModule.Table.create ()

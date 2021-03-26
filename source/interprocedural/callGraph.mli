@@ -34,6 +34,8 @@ type callees =
   | SyntheticCallees of raw_callees String.Map.Tree.t
 [@@deriving eq, show]
 
+val pp_raw_callees_option : Format.formatter -> raw_callees option -> unit
+
 val call_graph_of_define
   :  environment:Analysis.TypeEnvironment.ReadOnly.t ->
   define:Ast.Statement.Define.t ->

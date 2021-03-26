@@ -1423,14 +1423,32 @@ let run ~environment ~qualifier ~define ~call_graph_of_define ~existing_model ~t
 
     let definition = define
 
+    let debug = Statement.Define.dump define.value
+
+    let log format =
+      if debug then
+        Log.dump format
+      else
+        Log.log ~section:`Taint format
+
+
     let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment
 
     let get_callees ~location ~call =
-      match Map.find call_graph_of_define location with
-      | Some (Interprocedural.CallGraph.Callees callees) -> Some callees
-      | Some (Interprocedural.CallGraph.SyntheticCallees name_to_callees) ->
-          String.Map.Tree.find name_to_callees (Interprocedural.CallGraph.call_name call)
-      | None -> None
+      let callees =
+        match Map.find call_graph_of_define location with
+        | Some (Interprocedural.CallGraph.Callees callees) -> Some callees
+        | Some (Interprocedural.CallGraph.SyntheticCallees name_to_callees) ->
+            String.Map.Tree.find name_to_callees (Interprocedural.CallGraph.call_name call)
+        | None -> None
+      in
+      log
+        "Resolved callees for call `%a`: %a"
+        Expression.pp
+        (Node.create ~location:Location.any (Expression.Call call))
+        Interprocedural.CallGraph.pp_raw_callees_option
+        callees;
+      callees
 
 
     let get_property_callees ~location ~attribute =
@@ -1453,15 +1471,6 @@ let run ~environment ~qualifier ~define ~call_graph_of_define ~existing_model ~t
       match define.value.Statement.Define.signature.parameters with
       | { Node.value = { Parameter.name; _ }; _ } :: _ -> Some (Root.Variable name)
       | _ -> None
-
-
-    let debug = Statement.Define.dump define.value
-
-    let log format =
-      if debug then
-        Log.dump format
-      else
-        Log.log ~section:`Taint format
 
 
     let triggered_sinks = triggered_sinks

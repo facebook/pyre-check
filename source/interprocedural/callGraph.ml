@@ -17,7 +17,7 @@ type regular_targets = {
   collapse_tito: bool;
   targets: Callable.t list;
 }
-[@@deriving eq, show]
+[@@deriving eq, show { with_path = false }]
 
 type raw_callees =
   | ConstructorTargets of {
@@ -29,7 +29,7 @@ type raw_callees =
       higher_order_function: regular_targets;
       callable_argument: int * regular_targets;
     }
-[@@deriving eq, show]
+[@@deriving eq, show { with_path = false }]
 
 type unprocessed_callees =
   | Named of {
@@ -42,6 +42,11 @@ type callees =
   | Callees of raw_callees
   | SyntheticCallees of raw_callees String.Map.Tree.t
 [@@deriving eq]
+
+let pp_raw_callees_option formatter = function
+  | None -> Format.fprintf formatter "None"
+  | Some callees -> pp_raw_callees formatter callees
+
 
 let pp_callees formatter = function
   | Callees callees -> Format.fprintf formatter "%s" (show_raw_callees callees)
