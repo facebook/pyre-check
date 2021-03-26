@@ -29,7 +29,7 @@ from ..persistent import (
     InitializationSuccess,
     InitializationFailure,
     InitializationExit,
-    Server,
+    PyreServer,
     ServerState,
     parse_subscription_response,
     SubscriptionResponse,
@@ -212,7 +212,7 @@ class PersistentTest(testslide.TestCase):
     @setup.async_test
     async def test_open_close(self) -> None:
         server_state = ServerState()
-        server = Server(
+        server = PyreServer(
             input_channel=create_memory_text_reader(""),
             output_channel=create_memory_text_writer(),
             client_capabilities=lsp.ClientCapabilities(),
@@ -276,7 +276,7 @@ class PersistentTest(testslide.TestCase):
         )
         bytes_writer = MemoryBytesWriter()
         fake_task_manager = BackgroundTaskManager(WaitForeverBackgroundTask())
-        server = Server(
+        server = PyreServer(
             input_channel=create_memory_text_reader(""),
             output_channel=TextWriter(bytes_writer),
             client_capabilities=lsp.ClientCapabilities(),
@@ -314,7 +314,7 @@ class PersistentTest(testslide.TestCase):
     @setup.async_test
     async def test_open_triggers_pyre_restart(self) -> None:
         fake_task_manager = BackgroundTaskManager(WaitForeverBackgroundTask())
-        server = Server(
+        server = PyreServer(
             input_channel=create_memory_text_reader(""),
             output_channel=create_memory_text_writer(),
             client_capabilities=lsp.ClientCapabilities(),
@@ -340,7 +340,7 @@ class PersistentTest(testslide.TestCase):
     @setup.async_test
     async def test_open_triggers_pyre_restart__limit_reached(self) -> None:
         fake_task_manager = BackgroundTaskManager(WaitForeverBackgroundTask())
-        server = Server(
+        server = PyreServer(
             input_channel=create_memory_text_reader(""),
             output_channel=create_memory_text_writer(),
             client_capabilities=lsp.ClientCapabilities(),
@@ -369,7 +369,7 @@ class PersistentTest(testslide.TestCase):
     async def test_save_triggers_pyre_restart(self) -> None:
         test_path = Path("/foo.py")
         fake_task_manager = BackgroundTaskManager(WaitForeverBackgroundTask())
-        server = Server(
+        server = PyreServer(
             input_channel=create_memory_text_reader(""),
             output_channel=create_memory_text_writer(),
             client_capabilities=lsp.ClientCapabilities(),
@@ -392,7 +392,7 @@ class PersistentTest(testslide.TestCase):
     async def test_save_triggers_pyre_restart__limit_reached(self) -> None:
         test_path = Path("/foo.py")
         fake_task_manager = BackgroundTaskManager(WaitForeverBackgroundTask())
-        server = Server(
+        server = PyreServer(
             input_channel=create_memory_text_reader(""),
             output_channel=create_memory_text_writer(),
             client_capabilities=lsp.ClientCapabilities(),

@@ -235,7 +235,7 @@ class ServerState:
     )
 
 
-class Server:
+class PyreServer:
     # I/O Channels
     input_channel: connection.TextReader
     output_channel: connection.TextWriter
@@ -771,7 +771,7 @@ async def run_persistent(
             client_capabilities = initialize_result.client_capabilities
             LOG.debug(f"Client capabilities: {client_capabilities}")
             initial_server_state = ServerState()
-            server = Server(
+            server = PyreServer(
                 input_channel=stdin,
                 output_channel=stdout,
                 client_capabilities=client_capabilities,
