@@ -174,7 +174,8 @@ module SimpleSet = Abstract.OverUnderSetDomain.Make (Simple)
 module Complex = struct
   let name = "complex features"
 
-  type t = ReturnAccessPath of Abstract.TreeDomain.Label.path [@@deriving show, compare]
+  type t = ReturnAccessPath of Abstract.TreeDomain.Label.path
+  [@@deriving show { with_path = false }, compare]
 
   let less_or_equal ~left ~right =
     match left, right with

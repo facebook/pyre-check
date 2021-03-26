@@ -62,7 +62,7 @@ module type FUNCTION_CONTEXT = sig
 
   val return_sink : BackwardState.Tree.t
 
-  val debug : bool
+  val log : ('a, Format.formatter, unit, unit, unit, unit) Core.format6 -> 'a
 
   val add_triggered_sinks : location:Location.t -> triggered_sinks:(Root.t * Sinks.t) list -> unit
 end
@@ -70,12 +70,7 @@ end
 let ( |>> ) (taint, state) f = f taint, state
 
 module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
-  let log format =
-    if FunctionContext.debug then
-      Log.dump format
-    else
-      Log.log ~section:`Taint format
-
+  let log = FunctionContext.log
 
   module rec FixpointState : FixpointState = struct
     type t = { taint: ForwardState.t } [@@deriving show { with_path = false }]
@@ -170,6 +165,12 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
         let ({ Model.model = { TaintResult.forward; backward; mode }; _ } as taint_model) =
           Model.get_callsite_model ~resolution ~call_target ~arguments
         in
+        log
+          "Forward analysis of call: %a\nCall site model: %a"
+          Expression.pp
+          (Expression.Call { Call.callee; arguments } |> Node.create ~location:Location.any)
+          Model.pp
+          taint_model;
         let sink_argument_matches =
           BackwardState.roots backward.sink_taint |> AccessPath.match_actuals_to_formals arguments
         in
@@ -395,6 +396,12 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
               | Some sink_tree -> FunctionContext.check_flow ~location ~source_tree ~sink_tree
             end;
             let access_path = AccessPath.of_expression ~resolution argument in
+            log
+              "Propagating taint to argument `%a`: %a"
+              Expression.pp
+              argument
+              ForwardState.Tree.pp
+              source_tree;
             store_taint_option ~weak:true access_path source_tree state
           in
           let for_each_target ~key:target ~data:taint state =
@@ -1195,7 +1202,6 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
 
 
     and analyze_expression ~resolution ~state ~expression:({ Node.location; _ } as expression) =
-      log "Forward analysis of expression: %a" Expression.pp expression;
       let location = Location.with_module ~qualifier:FunctionContext.qualifier location in
       let taint, state =
         match expression.Node.value with
@@ -1295,7 +1301,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
         | Yield (Some expression) -> analyze_expression ~resolution ~state ~expression
         | Yield None -> ForwardState.Tree.empty, state
       in
-      log "Forward taint: %a" ForwardState.Tree.pp taint;
+      log "Forward taint of expression `%a`: %a" Expression.pp expression ForwardState.Tree.pp taint;
       taint, state
 
 
@@ -1497,8 +1503,12 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
 
 
     let forward ~key state ~statement =
-      log "Forward analysis of statement: %a" Statement.pp statement;
-      log "Forward state: %a" pp state;
+      log
+        "Forward analysis of statement: `%a`\nWith forward state: %a"
+        Statement.pp
+        statement
+        pp
+        state;
       let resolution =
         let { Node.value = { Statement.Define.signature = { parent; _ }; _ }; _ } =
           FunctionContext.definition
@@ -1656,6 +1666,13 @@ let run ~environment ~qualifier ~define ~call_graph_of_define ~existing_model =
 
     let debug = Statement.Define.dump define.value
 
+    let log format =
+      if debug then
+        Log.dump format
+      else
+        Log.log ~section:`Taint format
+
+
     let candidates = Location.WithModule.Table.create ()
 
     let add_flow_candidate candidate =
@@ -1670,6 +1687,20 @@ let run ~environment ~qualifier ~define ~call_graph_of_define ~existing_model =
 
 
     let check_flow ~location ~source_tree ~sink_tree =
+      let () =
+        if
+          (not (ForwardState.Tree.is_bottom source_tree))
+          && not (BackwardState.Tree.is_bottom sink_tree)
+        then
+          log
+            "Sources flowing into sinks at `%a`\nWith sources: %a\nWith sinks: %a"
+            Location.WithModule.pp
+            location
+            ForwardState.Tree.pp
+            source_tree
+            BackwardState.Tree.pp
+            sink_tree
+      in
       let flow_candidate = Flow.generate_source_sink_matches ~location ~source_tree ~sink_tree in
       add_flow_candidate flow_candidate
 

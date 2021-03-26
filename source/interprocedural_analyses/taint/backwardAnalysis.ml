@@ -46,18 +46,13 @@ module type FUNCTION_CONTEXT = sig
 
   val local_annotations : LocalAnnotationMap.ReadOnly.t option
 
-  val debug : bool
+  val log : ('a, Format.formatter, unit, unit, unit, unit) Core.format6 -> 'a
 
   val triggered_sinks : ForwardAnalysis.triggered_sinks
 end
 
 module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
-  let log format =
-    if FunctionContext.debug then
-      Log.dump format
-    else
-      Log.log ~section:`Taint format
-
+  let log = FunctionContext.log
 
   let add_first_index index indices =
     if Features.FirstIndexSet.is_bottom indices then
@@ -161,6 +156,12 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           | None -> BackwardState.bottom
         in
         let taint_model = Model.get_callsite_model ~resolution ~call_target ~arguments in
+        log
+          "Backward analysis of call: %a\nCall site model: %a"
+          Expression.pp
+          (Node.create ~location:Location.any call_expression)
+          Model.pp
+          taint_model;
         let { TaintResult.backward; mode; _ } = taint_model.model in
         let sink_taint = BackwardState.join backward.sink_taint triggered_taint in
         let sink_argument_matches =
@@ -952,8 +953,12 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
 
 
     and analyze_expression ~resolution ~taint ~state ~expression =
-      log "Backward analysis of expression: %a" Expression.pp expression;
-      log "Backward taint: %a" BackwardState.Tree.pp taint;
+      log
+        "Backward analysis of expression: `%a` with backward taint: %a"
+        Expression.pp
+        expression
+        BackwardState.Tree.pp
+        taint;
       let { Node.location; value = expression } = expression in
       match expression with
       | Await expression -> analyze_expression ~resolution ~taint ~state ~expression
@@ -1262,8 +1267,12 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
 
 
     let backward ~key state ~statement =
-      log "Backward analysis of statement: %a" Statement.pp statement;
-      log "Backward state: %a" pp state;
+      log
+        "Backward analysis of statement: `%a`\nWith backward state: %a"
+        Statement.pp
+        statement
+        pp
+        state;
       let resolution =
         let { Node.value = { Statement.Define.signature = { parent; _ }; _ }; _ } =
           FunctionContext.definition
@@ -1447,6 +1456,13 @@ let run ~environment ~qualifier ~define ~call_graph_of_define ~existing_model ~t
 
 
     let debug = Statement.Define.dump define.value
+
+    let log format =
+      if debug then
+        Log.dump format
+      else
+        Log.log ~section:`Taint format
+
 
     let triggered_sinks = triggered_sinks
   end)
