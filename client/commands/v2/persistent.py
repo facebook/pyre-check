@@ -442,8 +442,8 @@ class PysaServer:
             await self.pyre_manager.ensure_task_running()
         else:
             LOG.info(
-                "Not restarting Pysa since failed consecutive start attempt limit"
-                " has been reached."
+                ("Not restarting Pysa since failed consecutive start attempt limit"
+                + " has been reached.")
             )
 
     async def process_open_request(
@@ -956,8 +956,8 @@ class PysaServerHandler(connection.BackgroundTask):
 
     def update_type_errors(self, type_errors: Sequence[error.Error]) -> None:
         LOG.info(
-            "Refereshing type errors received from Pysa server. "
-            f"Total number of type errors is {len(type_errors)}."
+            ("Refereshing type errors received from Pysa server. "
+             + f"Total number of type errors is {len(type_errors)}.")
         )
         self.server_state.diagnostics = type_errors_to_diagnostics(type_errors)
 
@@ -1045,8 +1045,8 @@ class PysaServerHandler(connection.BackgroundTask):
                 output_channel,
             ):
                 await self.log_and_show_message_to_client(
-                    "Established connection with existing Pyre server at "
-                    f"`{self.server_identifier}`."
+                    ("Established connection with existing Pyre server at "
+                    + f"`{self.server_identifier}`.")
                 )
                 self.server_state.consecutive_start_failure = 0
                 _log_lsp_event(
@@ -1060,8 +1060,8 @@ class PysaServerHandler(connection.BackgroundTask):
                 await self.subscribe_to_type_error(input_channel, output_channel)
         except connection.ConnectionFailure:
             await self.log_and_show_message_to_client(
-                f"Starting a new Pysa server at `{self.server_identifier}` in "
-                "the background..."
+                (f"Starting a new Pysa server at `{self.server_identifier}` in "
+                + "the background...")
             )
 
             start_status = await _start_pyre_server(
@@ -1101,7 +1101,8 @@ class PysaServerHandler(connection.BackgroundTask):
                         },
                     )
                     await self.show_message_to_client(
-                        f"Cannot start a new Pyre server at `{self.server_identifier}`.",
+                        ("Cannot start a new Pyre "
+                        + f"server at `{self.server_identifier}`."),
                         level=lsp.MessageType.ERROR,
                     )
 
@@ -1118,8 +1119,8 @@ class PysaServerHandler(connection.BackgroundTask):
                         stop.remove_socket_if_exists(socket_path)
                 else:
                     await self.show_message_to_client(
-                        f"Pyre server restart at `{self.server_identifier}` has been "
-                        "failing repeatedly. Disabling The Pyre plugin for now.",
+                        (f"Pyre server restart at `{self.server_identifier}` has been "
+                        + "failing repeatedly. Disabling The Pyre plugin for now."),
                         level=lsp.MessageType.ERROR,
                     )
                     _log_lsp_event(
