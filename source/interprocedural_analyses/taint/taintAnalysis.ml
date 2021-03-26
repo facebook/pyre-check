@@ -15,6 +15,7 @@ include Taint.Result.Register (struct
   include Taint.Result
 
   let init ~configuration ~scheduler ~environment ~functions ~stubs =
+    let configuration = Configuration.StaticAnalysis.to_json configuration in
     let global_resolution = Analysis.TypeEnvironment.ReadOnly.global_resolution environment in
     let resolution =
       Analysis.TypeCheck.resolution

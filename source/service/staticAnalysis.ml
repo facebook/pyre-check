@@ -471,16 +471,7 @@ let analyze
     ~scheduler
     ~analysis_kind
     ~configuration:
-      ( {
-          Configuration.StaticAnalysis.configuration;
-          dump_call_graph;
-          verify_models;
-          rule_filter;
-          find_missing_flows;
-          dump_model_query_results;
-          use_cache;
-          _;
-        } as analysis_configuration )
+      ({ Configuration.StaticAnalysis.configuration; use_cache; _ } as static_analysis_configuration)
     ~filename_lookup
     ~environment
     ~qualifiers
@@ -522,51 +513,11 @@ let analyze
   Log.info "Initializing analysis...";
   (* Initialize and add initial models of analyses to shared mem. *)
   let skip_overrides, initial_models_callables =
-    let configuration_json =
-      let taint_model_paths =
-        configuration.Configuration.Analysis.taint_model_paths
-        |> List.map ~f:Path.absolute
-        |> List.map ~f:(fun directory -> `String directory)
-      in
-      let rule_settings =
-        match rule_filter with
-        | Some rule_filter ->
-            ["rule_filter", `List (List.map rule_filter ~f:(fun rule -> `Int rule))]
-        | None -> []
-      in
-      let find_missing_flows_settings =
-        match find_missing_flows with
-        | Some missing_flow -> ["find_missing_flows", `String missing_flow]
-        | None -> []
-      in
-      let dump_model_query_results_path =
-        if dump_model_query_results then
-          Path.create_relative
-            ~root:configuration.Configuration.Analysis.log_directory
-            ~relative:"model_query_results.pysa"
-          |> Path.absolute
-          |> fun path -> `String path
-        else
-          `Null
-      in
-      `Assoc
-        [
-          ( "taint",
-            `Assoc
-              ( [
-                  "model_paths", `List taint_model_paths;
-                  "verify_models", `Bool verify_models;
-                  "dump_model_query_results_path", dump_model_query_results_path;
-                ]
-              @ rule_settings
-              @ find_missing_flows_settings ) );
-        ]
-    in
     let functions = (List.map callables_with_dependency_information ~f:fst :> Callable.t list) in
     let { Interprocedural.Analysis.initial_models = models; skip_overrides } =
       Analysis.initialize
         analyses
-        ~configuration:configuration_json
+        ~configuration:static_analysis_configuration
         ~scheduler
         ~environment
         ~functions
@@ -635,7 +586,7 @@ let analyze
         Log.info "Call graph edges: %d" (Callable.RealMap.length new_callgraph);
         if use_cache then
           Cache.save_call_graph ~configuration ~callgraph:new_callgraph;
-        if dump_call_graph then
+        if static_analysis_configuration.dump_call_graph then
           DependencyGraph.from_callgraph new_callgraph |> DependencyGraph.dump ~configuration;
         new_callgraph
   in
@@ -681,7 +632,7 @@ let analyze
       Callable.Set.of_list (List.rev_append initial_models_callables callables_to_analyze)
     in
     Interprocedural.Analysis.save_results
-      ~configuration:analysis_configuration
+      ~configuration:static_analysis_configuration
       ~filename_lookup
       ~analyses
       ~skipped_overrides
@@ -722,7 +673,7 @@ let analyze
   save_results ();
 
   (* If saving to a file, don't return errors. Thousands of errors on output is inconvenient *)
-  if Option.is_some analysis_configuration.result_json_path then
+  if Option.is_some static_analysis_configuration.result_json_path then
     []
   else
     errors

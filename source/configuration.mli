@@ -174,4 +174,6 @@ module StaticAnalysis : sig
     dump_model_query_results: bool;
     use_cache: bool;
   }
+
+  val to_json : t -> Yojson.Safe.json
 end
