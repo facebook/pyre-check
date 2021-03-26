@@ -7,7 +7,8 @@
     ppx_deriving_yojson))
  (libraries base64 core sexplib ppxlib pyrelib.ast pyrelib.analysis
    pyrelib.interprocedural pyrelib.path pyrelib.taint pyrelib.deadStore
-   pyrelib.scheduler pyrelib.languageServer pyrelib.memory))
+   pyrelib.typeInference pyrelib.scheduler pyrelib.languageServer
+   pyrelib.memory))
 
 (library
  (name dependencyTrackedMemory)
