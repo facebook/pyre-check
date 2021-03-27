@@ -524,7 +524,16 @@ let with_server
   let server_waiter () = f (socket_path, server_state) in
   let server_destructor () =
     Log.info "Server is going down. Cleaning up...";
-    Lwt_io.shutdown_server server
+    let build_system_cleanup () =
+      if Lazy.is_val server_state then
+        Lazy.force server_state
+        >>= fun server_state ->
+        let { ServerState.build_system; _ } = !server_state in
+        BuildSystem.cleanup build_system
+      else
+        Lwt.return_unit
+    in
+    build_system_cleanup () >>= fun () -> Lwt_io.shutdown_server server
   in
   finalize
     (fun () ->
