@@ -397,6 +397,8 @@ let initialize_server_state
   in
   let open Lwt.Infix in
   let get_initial_state ~build_system () =
+    BuildSystem.initialize build_system
+    >>= fun () ->
     match saved_state_action with
     | Some
         (ServerConfiguration.SavedStateAction.LoadFromFile
