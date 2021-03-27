@@ -29,7 +29,16 @@ from . import (
     server_event,
 )
 
+
+"""
+The following are temporary redefinitions of classes / variables from persistent.py. 
+They are redefined here as this is a temporary implrmentation of Pysa language server
+that will change soon. The server is an exact copy of Pyre's server for now (hence, 
+duplicate dependencies.)
+"""
+
 LOG: logging.Logger = logging.getLogger(__name__)
+
 
 class LSPEvent(enum.Enum):
     INITIALIZED = "initialized"
@@ -50,6 +59,23 @@ class ServerState:
         default_factory=dict
     )
 
+
+@async_generator.asynccontextmanager
+async def _read_lsp_request(
+    input_channel: connection.TextReader, output_channel: connection.TextWriter
+) -> AsyncIterator[json_rpc.Request]:
+    try:
+        message = await lsp.read_json_rpc(input_channel)
+        yield message
+    except json_rpc.JSONRPCException as json_rpc_error:
+        await lsp.write_json_rpc(
+            output_channel,
+            json_rpc.ErrorResponse(
+                id=message.id,
+                code=json_rpc_error.error_code(),
+                message=str(json_rpc_error),
+            ),
+        )
 
 
 class PysaServerHandler(connection.BackgroundTask):
@@ -291,7 +317,6 @@ class PysaServerHandler(connection.BackgroundTask):
             raise
 
 
-
 class PysaServer:
     # I/O Channels
     input_channel: connection.TextReader
@@ -452,4 +477,3 @@ class PysaServer:
             return await self._run()
         finally:
             await self.pyre_manager.ensure_task_stop()
-
