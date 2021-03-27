@@ -133,11 +133,99 @@ let test_type_errors context =
   |> ScratchProject.test_server_with ~f:test_type_errors
 
 
+let test_update context =
+  let internal_state = ref "unupdated" in
+  let test_source_path = Path.create_absolute "/foo/test.py" in
+  let test_artifact_path =
+    (* The real value will be deterimend once the server starts. *)
+    ref (Path.create_absolute "uninitialized")
+  in
+  let build_system =
+    let lookup_source path =
+      if Path.equal path !test_artifact_path then
+        Some test_source_path
+      else
+        None
+    in
+    let lookup_artifact path =
+      if Path.equal path test_source_path then
+        [!test_artifact_path]
+      else
+        []
+    in
+    let update actual_paths =
+      assert_equal
+        ~ctxt:context
+        ~cmp:[%compare.equal: Path.t list]
+        ~printer:(fun paths -> List.map paths ~f:Path.show |> String.concat ~sep:", ")
+        [test_source_path]
+        actual_paths;
+      internal_state := "updated";
+      Lwt.return []
+    in
+    BuildSystem.create_for_testing ~update ~lookup_source ~lookup_artifact ()
+  in
+  let test_update client =
+    let open Lwt.Infix in
+    let root =
+      Client.current_server_state client
+      |> fun { ServerState.server_configuration = { ServerConfiguration.global_root; _ }; _ } ->
+      global_root
+    in
+    test_artifact_path := Path.create_relative ~root ~relative:"test.py";
+
+    File.create !test_artifact_path ~content:"reveal_type(42)" |> File.write;
+    Client.send_request client (Request.IncrementalUpdate [Path.absolute test_source_path])
+    >>= fun _ ->
+    (* Verify that the build system has indeed been updated. *)
+    assert_equal ~ctxt:context ~cmp:String.equal ~printer:Fn.id "updated" !internal_state;
+    (* Verify that recheck has indeed happened. *)
+    let expected_error =
+      Analysis.AnalysisError.Instantiated.of_yojson
+        (`Assoc
+          [
+            "line", `Int 1;
+            "column", `Int 0;
+            "stop_line", `Int 1;
+            "stop_column", `Int 11;
+            "path", `String "/foo/test.py";
+            "code", `Int (-1);
+            "name", `String "Revealed type";
+            ( "description",
+              `String
+                "Revealed type [-1]: Revealed type for `42` is `typing_extensions.Literal[42]`." );
+            ( "long_description",
+              `String
+                "Revealed type [-1]: Revealed type for `42` is `typing_extensions.Literal[42]`." );
+            ( "concise_description",
+              `String
+                "Revealed type [-1]: Revealed type for `42` is `typing_extensions.Literal[42]`." );
+            "inference", `Assoc [];
+            "define", `String "test.$toplevel";
+          ])
+      |> Result.ok_or_failwith
+    in
+    Client.assert_response
+      client
+      ~request:(Request.DisplayTypeError [])
+      ~expected:(Response.TypeErrors [expected_error])
+    >>= fun () -> Lwt.return_unit
+  in
+  ScratchProject.setup
+    ~context
+    ~include_typeshed_stubs:false
+    ~include_helper_builtins:false
+    ~build_system
+    ["test.py", "reveal_type(True)"]
+  |> ScratchProject.test_server_with ~f:test_update
+
+
 let () =
   "build_system_test"
   >::: [
          "initialize" >:: OUnitLwt.lwt_wrapper test_initialize;
          "cleanup" >:: OUnitLwt.lwt_wrapper test_cleanup;
          "type_errors" >:: OUnitLwt.lwt_wrapper test_type_errors;
+         "update" >:: OUnitLwt.lwt_wrapper test_update;
        ]
   |> Test.run

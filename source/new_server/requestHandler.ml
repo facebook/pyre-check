@@ -101,6 +101,13 @@ let process_incremental_update_request
       |> StartupNotification.produce_for_configuration ~server_configuration;
       Stop.log_and_stop_waiting_server ~reason:"critical file update" ~state ()
   | None -> (
+      BuildSystem.update build_system paths
+      >>= fun changed_paths_from_rebuild ->
+      let changed_paths =
+        List.concat_map paths ~f:(BuildSystem.lookup_artifact build_system)
+        |> List.append changed_paths_from_rebuild
+        |> List.dedup_and_sort ~compare:Path.compare
+      in
       let _ =
         Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->
             Server.IncrementalCheck.recheck
@@ -108,7 +115,7 @@ let process_incremental_update_request
               ~scheduler
               ~environment:type_environment
               ~errors:error_table
-              paths)
+              changed_paths)
       in
       match ServerState.Subscriptions.all subscriptions with
       | [] -> Lwt.return state
