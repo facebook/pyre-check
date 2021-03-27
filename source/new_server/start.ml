@@ -182,272 +182,277 @@ let handle_connection ~server_state _client_address (input_channel, output_chann
 
 let initialize_server_state
     ?watchman_subscriber
+    ?build_system
     ( { ServerConfiguration.log_path; saved_state_action; critical_files; source_paths; _ } as
     server_configuration )
   =
-  match source_paths with
-  | ServerConfiguration.SourcePaths.Buck _ ->
-      failwith "Buck building is currently not supported by the Pyre server"
-  | Simple _ ->
-      let configuration = ServerConfiguration.analysis_configuration_of server_configuration in
-      (* This is needed to initialize shared memory. *)
-      let _ = Memory.get_heap_handle configuration in
-      let start_from_scratch () =
-        Log.info "Initializing server state from scratch...";
-        let { Service.Check.environment; errors } =
-          Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->
-              Service.Check.check
-                ~scheduler
-                ~configuration
-                ~call_graph_builder:(module Analysis.Callgraph.DefaultBuilder))
-        in
-        let error_table =
-          let table = Ast.Reference.Table.create () in
-          let add_error error =
-            let key = Analysis.AnalysisError.path error in
-            Hashtbl.add_multi table ~key ~data:error
-          in
-          List.iter errors ~f:add_error;
-          table
-        in
-        ServerState.create
-          ~socket_path:(socket_path_of log_path)
-          ~server_configuration
-          ~type_environment:environment
-          ~error_table
-          ()
+  let configuration = ServerConfiguration.analysis_configuration_of server_configuration in
+  (* This is needed to initialize shared memory. *)
+  let _ = Memory.get_heap_handle configuration in
+  let start_from_scratch ~build_system () =
+    Log.info "Initializing server state from scratch...";
+    let { Service.Check.environment; errors } =
+      Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->
+          Service.Check.check
+            ~scheduler
+            ~configuration
+            ~call_graph_builder:(module Analysis.Callgraph.DefaultBuilder))
+    in
+    let error_table =
+      let table = Ast.Reference.Table.create () in
+      let add_error error =
+        let key = Analysis.AnalysisError.path error in
+        Hashtbl.add_multi table ~key ~data:error
       in
-      let fetch_saved_state_from_files ~shared_memory_path ~changed_files_path () =
-        try
-          let open Pyre in
-          let changed_files =
-            changed_files_path
-            >>| File.create
-            >>= File.content
-            >>| String.split_lines
-            >>| List.map ~f:Path.create_absolute
-            |> Option.value ~default:[]
+      List.iter errors ~f:add_error;
+      table
+    in
+    ServerState.create
+      ~socket_path:(socket_path_of log_path)
+      ~server_configuration
+      ~build_system
+      ~type_environment:environment
+      ~error_table
+      ()
+  in
+  let fetch_saved_state_from_files ~shared_memory_path ~changed_files_path () =
+    try
+      let open Pyre in
+      let changed_files =
+        changed_files_path
+        >>| File.create
+        >>= File.content
+        >>| String.split_lines
+        >>| List.map ~f:Path.create_absolute
+        |> Option.value ~default:[]
+      in
+      Lwt.return (Result.Ok { SavedState.Fetched.path = shared_memory_path; changed_files })
+    with
+    | exn ->
+        let message =
+          let detailed_message =
+            match exn with
+            | Watchman.ConnectionError message
+            | Watchman.QueryError message ->
+                message
+            | _ -> Exn.to_string exn
           in
-          Lwt.return (Result.Ok { SavedState.Fetched.path = shared_memory_path; changed_files })
-        with
-        | exn ->
-            let message =
-              let detailed_message =
-                match exn with
-                | Watchman.ConnectionError message
-                | Watchman.QueryError message ->
-                    message
-                | _ -> Exn.to_string exn
-              in
-              Format.sprintf "Cannot fetch saved state from file: %s" detailed_message
+          Format.sprintf "Cannot fetch saved state from file: %s" detailed_message
+        in
+        Lwt.return (Result.Error message)
+  in
+  let fetch_saved_state_from_project ~project_name ~project_metadata () =
+    let open Lwt.Infix in
+    Lwt.catch
+      (fun () ->
+        match watchman_subscriber with
+        | None -> failwith "Watchman is not enabled"
+        | Some watchman_subscriber ->
+            let {
+              Watchman.Subscriber.Setting.root = watchman_root;
+              filter = watchman_filter;
+              raw;
+              _;
+            }
+              =
+              Watchman.Subscriber.setting_of watchman_subscriber
             in
-            Lwt.return (Result.Error message)
-      in
-      let fetch_saved_state_from_project ~project_name ~project_metadata () =
-        let open Lwt.Infix in
-        Lwt.catch
-          (fun () ->
-            match watchman_subscriber with
-            | None -> failwith "Watchman is not enabled"
-            | Some watchman_subscriber ->
-                let {
-                  Watchman.Subscriber.Setting.root = watchman_root;
-                  filter = watchman_filter;
-                  raw;
-                  _;
-                }
-                  =
-                  Watchman.Subscriber.setting_of watchman_subscriber
+            Watchman.Raw.with_connection raw ~f:(fun watchman_connection ->
+                let target =
+                  Path.create_relative ~root:log_path ~relative:"new_server/server.state"
                 in
-                Watchman.Raw.with_connection raw ~f:(fun watchman_connection ->
-                    let target =
-                      Path.create_relative ~root:log_path ~relative:"new_server/server.state"
-                    in
-                    SavedState.query_and_fetch_exn
-                      {
-                        SavedState.Setting.watchman_root;
-                        watchman_filter;
-                        watchman_connection;
-                        project_name;
-                        project_metadata;
-                        critical_files;
-                        target;
-                      }
-                    >>= fun fetched -> Lwt.return (Result.Ok fetched)))
-          (fun exn ->
-            let message =
-              let detailed_message =
-                match exn with
-                | Watchman.ConnectionError message
-                | Watchman.QueryError message
-                | SavedState.SavedStateQueryFailure message ->
-                    message
-                | _ -> Exn.to_string exn
-              in
-              Format.sprintf "Cannot fetch saved state from project: %s" detailed_message
-            in
-            Lwt.return (Result.Error message))
-      in
-      (* Note that this function contains some heuristics: it only attempts to perform cheap checks
-         on what might affect type checking result. Do *NOT* use it as a general-purpose
-         configuration comparator. *)
-      let configuration_equal
-          {
-            Configuration.Analysis.analyze_external_sources = left_analyze_external_sources;
-            filter_directories = left_filter_directories;
-            ignore_all_errors = left_ignore_all_errors;
-            source_path = left_source_path;
-            search_path = left_search_path;
-            taint_model_paths = left_taint_model_paths;
-            strict = left_strict;
-            excludes = left_excludes;
-            extensions = left_extensions;
-            _;
-          }
-          {
-            Configuration.Analysis.analyze_external_sources = right_analyze_external_sources;
-            filter_directories = right_filter_directories;
-            ignore_all_errors = right_ignore_all_errors;
-            source_path = right_source_path;
-            search_path = right_search_path;
-            taint_model_paths = right_taint_model_paths;
-            strict = right_strict;
-            excludes = right_excludes;
-            extensions = right_extensions;
-            _;
-          }
-        =
-        let list_length_equal left right = Int.equal (List.length left) (List.length right) in
-        let optional_list_length_equal left right =
-          match left, right with
-          | None, None -> true
-          | Some left, Some right when list_length_equal left right -> true
-          | _, _ -> false
+                SavedState.query_and_fetch_exn
+                  {
+                    SavedState.Setting.watchman_root;
+                    watchman_filter;
+                    watchman_connection;
+                    project_name;
+                    project_metadata;
+                    critical_files;
+                    target;
+                  }
+                >>= fun fetched -> Lwt.return (Result.Ok fetched)))
+      (fun exn ->
+        let message =
+          let detailed_message =
+            match exn with
+            | Watchman.ConnectionError message
+            | Watchman.QueryError message
+            | SavedState.SavedStateQueryFailure message ->
+                message
+            | _ -> Exn.to_string exn
+          in
+          Format.sprintf "Cannot fetch saved state from project: %s" detailed_message
         in
-        Bool.equal left_analyze_external_sources right_analyze_external_sources
-        && optional_list_length_equal left_filter_directories right_filter_directories
-        && optional_list_length_equal left_ignore_all_errors right_ignore_all_errors
-        && list_length_equal left_source_path right_source_path
-        && list_length_equal left_search_path right_search_path
-        && list_length_equal left_taint_model_paths right_taint_model_paths
-        && Bool.equal left_strict right_strict
-        && list_length_equal left_excludes right_excludes
-        && list_length_equal left_extensions right_extensions
-      in
-      let load_from_shared_memory path =
-        try Result.Ok (Memory.load_shared_memory ~path:(Path.absolute path) ~configuration) with
-        | Memory.SavedStateLoadingFailure message -> Result.Error message
-      in
-      let load_from_saved_state = function
+        Lwt.return (Result.Error message))
+  in
+  (* Note that this function contains some heuristics: it only attempts to perform cheap checks on
+     what might affect type checking result. Do *NOT* use it as a general-purpose configuration
+     comparator. *)
+  let configuration_equal
+      {
+        Configuration.Analysis.analyze_external_sources = left_analyze_external_sources;
+        filter_directories = left_filter_directories;
+        ignore_all_errors = left_ignore_all_errors;
+        source_path = left_source_path;
+        search_path = left_search_path;
+        taint_model_paths = left_taint_model_paths;
+        strict = left_strict;
+        excludes = left_excludes;
+        extensions = left_extensions;
+        _;
+      }
+      {
+        Configuration.Analysis.analyze_external_sources = right_analyze_external_sources;
+        filter_directories = right_filter_directories;
+        ignore_all_errors = right_ignore_all_errors;
+        source_path = right_source_path;
+        search_path = right_search_path;
+        taint_model_paths = right_taint_model_paths;
+        strict = right_strict;
+        excludes = right_excludes;
+        extensions = right_extensions;
+        _;
+      }
+    =
+    let list_length_equal left right = Int.equal (List.length left) (List.length right) in
+    let optional_list_length_equal left right =
+      match left, right with
+      | None, None -> true
+      | Some left, Some right when list_length_equal left right -> true
+      | _, _ -> false
+    in
+    Bool.equal left_analyze_external_sources right_analyze_external_sources
+    && optional_list_length_equal left_filter_directories right_filter_directories
+    && optional_list_length_equal left_ignore_all_errors right_ignore_all_errors
+    && list_length_equal left_source_path right_source_path
+    && list_length_equal left_search_path right_search_path
+    && list_length_equal left_taint_model_paths right_taint_model_paths
+    && Bool.equal left_strict right_strict
+    && list_length_equal left_excludes right_excludes
+    && list_length_equal left_extensions right_extensions
+  in
+  let load_from_shared_memory path =
+    try Result.Ok (Memory.load_shared_memory ~path:(Path.absolute path) ~configuration) with
+    | Memory.SavedStateLoadingFailure message -> Result.Error message
+  in
+  let load_from_saved_state ~build_system = function
+    | Result.Error message ->
+        Log.warning "%s" message;
+        Statistics.event ~name:"saved state failure" ~normals:["reason", message] ();
+        Lwt.return (start_from_scratch ~build_system ())
+    | Result.Ok { SavedState.Fetched.path; changed_files } -> (
+        Log.info "Restoring environments from saved state...";
+        match load_from_shared_memory path with
         | Result.Error message ->
             Log.warning "%s" message;
-            Statistics.event ~name:"saved state failure" ~normals:["reason", message] ();
-            Lwt.return (start_from_scratch ())
-        | Result.Ok { SavedState.Fetched.path; changed_files } -> (
-            Log.info "Restoring environments from saved state...";
-            match load_from_shared_memory path with
-            | Result.Error message ->
-                Log.warning "%s" message;
+            Statistics.event
+              ~name:"saved state failure"
+              ~normals:["reason", "shared memory loading failure"]
+              ();
+            Memory.reset_shared_memory ();
+            Lwt.return (start_from_scratch ~build_system ())
+        | Result.Ok () -> (
+            match
+              configuration_equal configuration (Server.SavedState.StoredConfiguration.load ())
+            with
+            | false ->
+                (* Although this is a rare occurrence, it *is* possible for the provided
+                   `Configuration.Analysis.t` to be different from what's stored in the saved state
+                   even if the configuration file remained the same. If that happens, we cannot
+                   reuse the saved state as it may lead to a server crash later. *)
+                Log.warning
+                  "Cannot load saved state due to unexpected configuration change. Falling back to \
+                   cold start...";
                 Statistics.event
                   ~name:"saved state failure"
-                  ~normals:["reason", "shared memory loading failure"]
+                  ~normals:["reason", "configuration change"]
                   ();
                 Memory.reset_shared_memory ();
-                Lwt.return (start_from_scratch ())
-            | Result.Ok () -> (
-                match
-                  configuration_equal configuration (Server.SavedState.StoredConfiguration.load ())
-                with
-                | false ->
-                    (* Although this is a rare occurrence, it *is* possible for the provided
-                       `Configuration.Analysis.t` to be different from what's stored in the saved
-                       state even if the configuration file remained the same. If that happens, we
-                       cannot reuse the saved state as it may lead to a server crash later. *)
-                    Log.warning
-                      "Cannot load saved state due to unexpected configuration change. Falling \
-                       back to cold start...";
-                    Statistics.event
-                      ~name:"saved state failure"
-                      ~normals:["reason", "configuration change"]
-                      ();
-                    Memory.reset_shared_memory ();
-                    Lwt.return (start_from_scratch ())
-                | true ->
-                    let loaded_state =
-                      let module_tracker = Analysis.ModuleTracker.SharedMemory.load () in
-                      let ast_environment = Analysis.AstEnvironment.load module_tracker in
-                      let type_environment =
-                        Analysis.AnnotatedGlobalEnvironment.create ast_environment
-                        |> Analysis.TypeEnvironment.create
-                      in
-                      Analysis.SharedMemoryKeys.DependencyKey.Registry.load ();
-                      let error_table = Server.SavedState.ServerErrors.load () in
-                      ServerState.create
-                        ~socket_path:(socket_path_of log_path)
-                        ~server_configuration
-                        ~type_environment
-                        ~error_table
-                        ()
-                    in
-                    let open Lwt.Infix in
-                    Log.info "Processing recent updates not included in saved state...";
-                    Statistics.event ~name:"saved state success" ();
-                    Request.IncrementalUpdate (List.map changed_files ~f:Path.absolute)
-                    |> RequestHandler.process_request ~state:loaded_state
-                    >>= fun (new_state, _) -> Lwt.return new_state ) )
-      in
-      let open Lwt.Infix in
-      let get_initial_state () =
-        match saved_state_action with
-        | Some
-            (ServerConfiguration.SavedStateAction.LoadFromFile
-              { shared_memory_path; changed_files_path }) ->
-            with_performance_logging
-              ~normals:["initialization method", "saved state"]
-              ~name:"initialization"
-              (fun _ ->
-                fetch_saved_state_from_files ~shared_memory_path ~changed_files_path ()
-                >>= load_from_saved_state)
-        | Some
-            (ServerConfiguration.SavedStateAction.LoadFromProject
-              { project_name; project_metadata }) ->
-            let normals =
-              let normals =
-                ["initialization method", "saved state"; "saved_state_project", project_name]
-              in
-              match project_metadata with
-              | None -> normals
-              | Some metadata -> ("saved_state_metadata", metadata) :: normals
-            in
-            with_performance_logging ~normals ~name:"initialization" (fun _ ->
-                fetch_saved_state_from_project ~project_name ~project_metadata ()
-                >>= load_from_saved_state)
-        | _ ->
-            with_performance_logging
-              ~normals:["initialization method", "cold start"]
-              ~name:"initialization"
-              (fun _ -> Lwt.return (start_from_scratch ()))
-      in
-      let store_initial_state { ServerState.configuration; type_environment; error_table; _ } =
-        match saved_state_action with
-        | Some (ServerConfiguration.SavedStateAction.SaveToFile { shared_memory_path }) ->
-            Memory.SharedMemory.collect `aggressive;
-            Analysis.TypeEnvironment.module_tracker type_environment
-            |> Analysis.ModuleTracker.SharedMemory.store;
-            Analysis.TypeEnvironment.ast_environment type_environment
-            |> Analysis.AstEnvironment.store;
-            Server.SavedState.StoredConfiguration.store configuration;
-            Server.SavedState.ServerErrors.store error_table;
-            Analysis.SharedMemoryKeys.DependencyKey.Registry.store ();
-            Memory.save_shared_memory ~path:(Path.absolute shared_memory_path) ~configuration;
-            Log.info "Initial server state written to %a" Path.pp shared_memory_path
-        | _ -> ()
-      in
-      get_initial_state ()
-      >>= fun state ->
-      Log.info "Server state initialized.";
-      store_initial_state state;
-      Lwt.return (ref state)
+                Lwt.return (start_from_scratch ~build_system ())
+            | true ->
+                let loaded_state =
+                  let module_tracker = Analysis.ModuleTracker.SharedMemory.load () in
+                  let ast_environment = Analysis.AstEnvironment.load module_tracker in
+                  let type_environment =
+                    Analysis.AnnotatedGlobalEnvironment.create ast_environment
+                    |> Analysis.TypeEnvironment.create
+                  in
+                  Analysis.SharedMemoryKeys.DependencyKey.Registry.load ();
+                  let error_table = Server.SavedState.ServerErrors.load () in
+                  ServerState.create
+                    ~socket_path:(socket_path_of log_path)
+                    ~server_configuration
+                    ~build_system
+                    ~type_environment
+                    ~error_table
+                    ()
+                in
+                let open Lwt.Infix in
+                Log.info "Processing recent updates not included in saved state...";
+                Statistics.event ~name:"saved state success" ();
+                Request.IncrementalUpdate (List.map changed_files ~f:Path.absolute)
+                |> RequestHandler.process_request ~state:loaded_state
+                >>= fun (new_state, _) -> Lwt.return new_state ) )
+  in
+  let open Lwt.Infix in
+  let get_initial_state ~build_system () =
+    match saved_state_action with
+    | Some
+        (ServerConfiguration.SavedStateAction.LoadFromFile
+          { shared_memory_path; changed_files_path }) ->
+        with_performance_logging
+          ~normals:["initialization method", "saved state"]
+          ~name:"initialization"
+          (fun _ ->
+            fetch_saved_state_from_files ~shared_memory_path ~changed_files_path ()
+            >>= load_from_saved_state ~build_system)
+    | Some (ServerConfiguration.SavedStateAction.LoadFromProject { project_name; project_metadata })
+      ->
+        let normals =
+          let normals =
+            ["initialization method", "saved state"; "saved_state_project", project_name]
+          in
+          match project_metadata with
+          | None -> normals
+          | Some metadata -> ("saved_state_metadata", metadata) :: normals
+        in
+        with_performance_logging ~normals ~name:"initialization" (fun _ ->
+            fetch_saved_state_from_project ~project_name ~project_metadata ()
+            >>= load_from_saved_state ~build_system)
+    | _ ->
+        with_performance_logging
+          ~normals:["initialization method", "cold start"]
+          ~name:"initialization"
+          (fun _ -> Lwt.return (start_from_scratch ~build_system ()))
+  in
+  let store_initial_state { ServerState.configuration; type_environment; error_table; _ } =
+    match saved_state_action with
+    | Some (ServerConfiguration.SavedStateAction.SaveToFile { shared_memory_path }) ->
+        Memory.SharedMemory.collect `aggressive;
+        Analysis.TypeEnvironment.module_tracker type_environment
+        |> Analysis.ModuleTracker.SharedMemory.store;
+        Analysis.TypeEnvironment.ast_environment type_environment |> Analysis.AstEnvironment.store;
+        Server.SavedState.StoredConfiguration.store configuration;
+        Server.SavedState.ServerErrors.store error_table;
+        Analysis.SharedMemoryKeys.DependencyKey.Registry.store ();
+        Memory.save_shared_memory ~path:(Path.absolute shared_memory_path) ~configuration;
+        Log.info "Initial server state written to %a" Path.pp shared_memory_path
+    | _ -> ()
+  in
+  let build_system =
+    let build_system_from_source_paths = function
+      | ServerConfiguration.SourcePaths.Simple _ -> BuildSystem.null
+      | ServerConfiguration.SourcePaths.Buck buck_options -> BuildSystem.buck buck_options
+    in
+    (* If not specified, auto-determine which build system to use based on server configuration *)
+    Option.value build_system ~default:(build_system_from_source_paths source_paths)
+  in
+  get_initial_state ~build_system ()
+  >>= fun state ->
+  Log.info "Server state initialized.";
+  store_initial_state state;
+  Lwt.return (ref state)
 
 
 let get_watchman_subscriber
@@ -493,7 +498,12 @@ let on_watchman_update ~server_state paths =
   Lwt.return_unit
 
 
-let with_server ?watchman ~f ({ ServerConfiguration.log_path; _ } as server_configuration) =
+let with_server
+    ?watchman
+    ?build_system
+    ~f
+    ({ ServerConfiguration.log_path; _ } as server_configuration)
+  =
   let open Lwt in
   let socket_path = socket_path_of log_path in
   (* Watchman connection needs to be up before server can start -- otherwise we risk missing
@@ -503,7 +513,7 @@ let with_server ?watchman ~f ({ ServerConfiguration.log_path; _ } as server_conf
   let server_state =
     (* We do not want the expensive server initialization to happen before we start to listen on the
        socket. Hence the use of `lazy` here to delay the initialization. *)
-    lazy (initialize_server_state ?watchman_subscriber server_configuration)
+    lazy (initialize_server_state ?watchman_subscriber ?build_system server_configuration)
   in
   Lwt_io.establish_server_with_client_address
     (Lwt_unix.ADDR_UNIX (Path.absolute socket_path))
@@ -551,6 +561,7 @@ let wait_on_signals ~on_caught signals =
 
 let start_server
     ?watchman
+    ?build_system
     ?(on_server_socket_ready = fun _ -> Lwt.return_unit)
     ~on_started
     ~on_exception
@@ -561,7 +572,7 @@ let start_server
     on_server_socket_ready socket_path
     >>= fun _ -> Lazy.force uninitialized_server_state >>= on_started
   in
-  catch (fun () -> with_server ?watchman server_configuration ~f) on_exception
+  catch (fun () -> with_server ?watchman ?build_system server_configuration ~f) on_exception
 
 
 let start_server_and_wait ?event_channel server_configuration =

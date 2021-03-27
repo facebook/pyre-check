@@ -29,6 +29,7 @@ type t = {
   socket_path: Path.t;
   server_configuration: ServerConfiguration.t;
   configuration: Configuration.Analysis.t;
+  build_system: BuildSystem.t;
   type_environment: TypeEnvironment.t;
   error_table: AnalysisError.t list Reference.Table.t;
   subscriptions: Subscriptions.t;
@@ -40,6 +41,7 @@ let create
     ?subscriptions
     ~socket_path
     ~server_configuration
+    ~build_system
     ~type_environment
     ()
   =
@@ -48,6 +50,7 @@ let create
     socket_path;
     server_configuration;
     configuration = ServerConfiguration.analysis_configuration_of server_configuration;
+    build_system;
     type_environment;
     error_table = Option.value error_table ~default:(Reference.Table.create ());
     subscriptions = Option.value subscriptions ~default:(Subscriptions.create ());
