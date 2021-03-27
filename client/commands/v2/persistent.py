@@ -399,7 +399,6 @@ class Server:
             await self.pyre_manager.ensure_task_stop()
 
 
-
 @dataclasses.dataclass(frozen=True)
 class StartSuccess:
     pass
