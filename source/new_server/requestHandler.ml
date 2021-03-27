@@ -17,19 +17,21 @@ let module_of_path ~configuration ~module_tracker path =
 
 
 let instantiate_error
+    ~build_system
     ~configuration:({ Configuration.Analysis.show_error_traces; _ } as configuration)
     ~ast_environment
     error
   =
   let lookup qualifier =
     AstEnvironment.ReadOnly.get_real_path ~configuration ast_environment qualifier
+    |> Option.bind ~f:(BuildSystem.lookup_source build_system)
     |> Option.map ~f:Path.absolute
   in
   AnalysisError.instantiate ~show_error_traces ~lookup error
 
 
-let instantiate_errors ~configuration ~ast_environment errors =
-  List.map errors ~f:(instantiate_error ~configuration ~ast_environment)
+let instantiate_errors ~build_system ~configuration ~ast_environment errors =
+  List.map errors ~f:(instantiate_error ~build_system ~configuration ~ast_environment)
 
 
 let find_critical_file ~server_configuration:{ ServerConfiguration.critical_files; _ } paths =
@@ -45,6 +47,7 @@ let process_request
           type_environment;
           error_table;
           subscriptions;
+          build_system;
           _;
         } as state )
     request
@@ -67,11 +70,23 @@ let process_request
         match paths with
         | [] -> Hashtbl.keys error_table
         | _ ->
-            List.filter_map paths ~f:(fun path ->
-                module_of_path
-                  ~configuration
-                  ~module_tracker:(TypeEnvironment.module_tracker type_environment)
-                  (Path.create_absolute path))
+            let get_module_for_source_path path =
+              let path = Path.create_absolute path in
+              match BuildSystem.lookup_artifact build_system path with
+              | [] -> None
+              | artifact_path :: _ ->
+                  (* If the same source file is mapped to more than one artifact paths, all of the
+                     artifact paths will likely contain the same set of type errors. It does not
+                     matter which artifact path is picked.
+
+                     NOTE (grievejia): It is possible for the type errors to differ. We may need to
+                     reconsider how this is handled in the future. *)
+                  module_of_path
+                    ~configuration
+                    ~module_tracker:(TypeEnvironment.module_tracker type_environment)
+                    artifact_path
+            in
+            List.filter_map paths ~f:get_module_for_source_path
       in
       let errors =
         let get_type_error qualifier =
@@ -83,6 +98,7 @@ let process_request
         Response.TypeErrors
           (instantiate_errors
              errors
+             ~build_system
              ~configuration
              ~ast_environment:
                (TypeEnvironment.ast_environment type_environment |> AstEnvironment.read_only))
@@ -120,6 +136,7 @@ let process_request
                 Response.TypeErrors
                   (instantiate_errors
                      errors
+                     ~build_system
                      ~configuration
                      ~ast_environment:
                        (TypeEnvironment.ast_environment type_environment |> AstEnvironment.read_only))

@@ -60,10 +60,84 @@ let test_cleanup context =
   Lwt.return_unit
 
 
+let test_type_errors context =
+  let test_source_path =
+    (* The real value will be deterimend once the server starts. *)
+    ref (Path.create_absolute "uninitialized")
+  in
+  let test_artifact_path = Path.create_absolute "/foo/test.py" in
+  let build_system =
+    let lookup_source path =
+      if Path.equal path !test_source_path then
+        Some test_artifact_path
+      else
+        None
+    in
+    let lookup_artifact path =
+      if Path.equal path test_artifact_path then
+        [!test_source_path]
+      else
+        []
+    in
+    BuildSystem.create_for_testing ~lookup_source ~lookup_artifact ()
+  in
+  let test_type_errors client =
+    let open Lwt.Infix in
+    let global_root =
+      Client.current_server_state client
+      |> fun { ServerState.server_configuration = { ServerConfiguration.global_root; _ }; _ } ->
+      global_root
+    in
+    test_source_path := Path.create_relative ~root:global_root ~relative:"test.py";
+    let expected_error =
+      Analysis.AnalysisError.Instantiated.of_yojson
+        (`Assoc
+          [
+            "line", `Int 1;
+            "column", `Int 0;
+            "stop_line", `Int 1;
+            "stop_column", `Int 11;
+            "path", `String "/foo/test.py";
+            "code", `Int (-1);
+            "name", `String "Revealed type";
+            ( "description",
+              `String
+                "Revealed type [-1]: Revealed type for `42` is `typing_extensions.Literal[42]`." );
+            ( "long_description",
+              `String
+                "Revealed type [-1]: Revealed type for `42` is `typing_extensions.Literal[42]`." );
+            ( "concise_description",
+              `String
+                "Revealed type [-1]: Revealed type for `42` is `typing_extensions.Literal[42]`." );
+            "inference", `Assoc [];
+            "define", `String "test.$toplevel";
+          ])
+      |> Result.ok_or_failwith
+    in
+    Client.assert_response
+      client
+      ~request:(Request.DisplayTypeError [])
+      ~expected:(Response.TypeErrors [expected_error])
+    >>= fun () ->
+    Client.assert_response
+      client
+      ~request:(Request.DisplayTypeError ["/foo/test.py"])
+      ~expected:(Response.TypeErrors [expected_error])
+  in
+  ScratchProject.setup
+    ~context
+    ~include_typeshed_stubs:false
+    ~include_helper_builtins:false
+    ~build_system
+    ["test.py", "reveal_type(42)"]
+  |> ScratchProject.test_server_with ~f:test_type_errors
+
+
 let () =
   "build_system_test"
   >::: [
          "initialize" >:: OUnitLwt.lwt_wrapper test_initialize;
          "cleanup" >:: OUnitLwt.lwt_wrapper test_cleanup;
+         "type_errors" >:: OUnitLwt.lwt_wrapper test_type_errors;
        ]
   |> Test.run
