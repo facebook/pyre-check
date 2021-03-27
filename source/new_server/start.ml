@@ -84,8 +84,6 @@ end
 
 let handle_request ~server_state request =
   let open Lwt.Infix in
-  Lazy.force server_state
-  >>= fun server_state ->
   let on_uncaught_server_exception exn =
     Log.info "Uncaught server exception: %s" (Exn.to_string exn);
     let server_state = !server_state in
@@ -112,16 +110,12 @@ let handle_request ~server_state request =
   Lwt.return response
 
 
-let handle_subscription ~server_state ~output_channel request =
-  let open Lwt.Infix in
-  Lazy.force server_state
-  >>= fun server_state ->
+let handle_subscription ~server_state:{ ServerState.subscriptions; _ } ~output_channel request =
   match request with
   | Subscription.Request.SubscribeToTypeErrors subscriber_name ->
       let subscription = Subscription.create ~name:subscriber_name ~output_channel () in
-      let { ServerState.subscriptions; _ } = !server_state in
       ServerState.Subscriptions.add subscriptions ~name:subscriber_name ~subscription;
-      Lwt.return subscription
+      subscription
 
 
 module ConnectionState = struct
@@ -136,21 +130,16 @@ module ConnectionState = struct
     { subscription_names = name :: subscription_names }
 
 
-  let cleanup ~server_state { subscription_names } =
-    let open Lwt.Infix in
-    if Lazy.is_val server_state then
-      Lazy.force server_state
-      >|= fun server_state ->
-      List.iter subscription_names ~f:(fun name ->
-          Log.log ~section:`Server "Subscription removed: %s" name;
-          let { ServerState.subscriptions; _ } = !server_state in
-          ServerState.Subscriptions.remove ~name subscriptions)
-    else
-      Lwt.return_unit
+  let cleanup ~server_state:{ ServerState.subscriptions; _ } { subscription_names } =
+    List.iter subscription_names ~f:(fun name ->
+        Log.log ~section:`Server "Subscription removed: %s" name;
+        ServerState.Subscriptions.remove ~name subscriptions)
 end
 
 let handle_connection ~server_state _client_address (input_channel, output_channel) =
   let open Lwt.Infix in
+  Lazy.force server_state
+  >>= fun server_state ->
   Log.log ~section:`Server "Connection established";
   (* Raw request messages are processed line-by-line. *)
   let rec handle_line connection_state =
@@ -158,7 +147,8 @@ let handle_connection ~server_state _client_address (input_channel, output_chann
     >>= function
     | None ->
         Log.log ~section:`Server "Connection closed";
-        ConnectionState.cleanup ~server_state connection_state
+        ConnectionState.cleanup ~server_state:!server_state connection_state;
+        Lwt.return_unit
     | Some message ->
         let result =
           match ClientRequest.of_string message with
@@ -167,8 +157,9 @@ let handle_connection ~server_state _client_address (input_channel, output_chann
               handle_request ~server_state request
               >>= fun response -> Lwt.return (connection_state, response)
           | ClientRequest.Subscription subscription ->
-              handle_subscription ~server_state ~output_channel subscription
-              >>= fun subscription ->
+              let subscription =
+                handle_subscription ~server_state:!server_state ~output_channel subscription
+              in
               (* We send back the initial set of type errors when a subscription first gets
                  established. *)
               handle_request ~server_state (Request.DisplayTypeError [])
@@ -532,6 +523,8 @@ let with_server ?watchman ~f ({ ServerConfiguration.log_path; _ } as server_conf
           server_waiter ()
       | Some subscriber ->
           let watchman_waiter =
+            Lazy.force server_state
+            >>= fun server_state ->
             Watchman.Subscriber.listen ~f:(on_watchman_update ~server_state) subscriber
             >>= fun () ->
             (* Lost watchman connection is considered an error. *)
