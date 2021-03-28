@@ -6,16 +6,13 @@
 import os
 import logging
 import traceback
-import dataclasses
-import enum
 from pathlib import Path
-from typing import Optional, AsyncIterator, Set, List, Sequence, Dict
+from typing import Optional, AsyncIterator, Sequence, Dict
 import async_generator
 
 from ... import (
     json_rpc,
     error,
-    version,
     commands,
 )
 
@@ -26,56 +23,18 @@ from . import (
     start,
     stop,
     incremental,
-    server_event,
 )
 
 
-"""
-The following are temporary redefinitions of classes / variables from persistent.py. 
-They are redefined here as this is a temporary implrmentation of Pysa language server
-that will change soon. The server is an exact copy of Pyre's server for now (hence, 
-duplicate dependencies.)
-"""
+from .persistent import (
+    LSPEvent,
+    ServerState,
+    CONSECUTIVE_START_ATTEMPT_THRESHOLD,
+    _read_lsp_request,
+)
+
 
 LOG: logging.Logger = logging.getLogger(__name__)
-
-
-class LSPEvent(enum.Enum):
-    INITIALIZED = "initialized"
-    CONNECTED = "connected"
-    NOT_CONNECTED = "not connected"
-    DISCONNECTED = "disconnected"
-    SUSPENDED = "suspended"
-
-
-CONSECUTIVE_START_ATTEMPT_THRESHOLD: int = 6
-
-
-@dataclasses.dataclass
-class ServerState:
-    consecutive_start_failure: int = 0
-    opened_documents: Set[Path] = dataclasses.field(default_factory=set)
-    diagnostics: Dict[Path, List[lsp.Diagnostic]] = dataclasses.field(
-        default_factory=dict
-    )
-
-
-@async_generator.asynccontextmanager
-async def _read_lsp_request(
-    input_channel: connection.TextReader, output_channel: connection.TextWriter
-) -> AsyncIterator[json_rpc.Request]:
-    try:
-        message = await lsp.read_json_rpc(input_channel)
-        yield message
-    except json_rpc.JSONRPCException as json_rpc_error:
-        await lsp.write_json_rpc(
-            output_channel,
-            json_rpc.ErrorResponse(
-                id=message.id,
-                code=json_rpc_error.error_code(),
-                message=str(json_rpc_error),
-            ),
-        )
 
 
 class PysaServerHandler(connection.BackgroundTask):
