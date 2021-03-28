@@ -3,17 +3,36 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-import os
+
+"""
+This is a temporary implementation of Pysa's langauge server. This is an exact copy
+of Pyre's langauge server, which lives in persistent.py. 
+"""
+
+import asyncio
+import dataclasses
+import enum
+import json
 import logging
+import os
+import subprocess
+import tempfile
 import traceback
 from pathlib import Path
-from typing import Optional, AsyncIterator, Sequence, Dict
+from typing import Union, Optional, AsyncIterator, Set, List, Sequence, Dict
+
+
 import async_generator
 
 from ... import (
     json_rpc,
     error,
+    version,
+    command_arguments,
     commands,
+    configuration as configuration_module,
+    statistics,
+    version,
 )
 
 from . import (
@@ -23,14 +42,22 @@ from . import (
     start,
     stop,
     incremental,
+    server_event,
 )
-
 
 from .persistent import (
     LSPEvent,
     ServerState,
     CONSECUTIVE_START_ATTEMPT_THRESHOLD,
     _read_lsp_request,
+    try_initialize,
+    _start_pyre_server,
+    _log_lsp_event,
+    parse_subscription_response,
+    StartSuccess,
+    StartFailure,
+    _publish_diagnostics,
+    type_errors_to_diagnostics,
 )
 
 
@@ -436,3 +463,81 @@ class PysaServer:
             return await self._run()
         finally:
             await self.pyre_manager.ensure_task_stop()
+
+
+async def run_persistent(
+    binary_location: str, server_identifier: str, pysa_arguments: start.Arguments
+) -> int:
+    stdin, stdout = await connection.create_async_stdin_stdout()
+    while True:
+        initialize_result = await try_initialize(stdin, stdout)
+        if isinstance(initialize_result, InitializationExit):
+            LOG.info("Received exit request before initialization.")
+            return 0
+        elif isinstance(initialize_result, InitializationSuccess):
+            LOG.info("Initialization successful.")
+            client_info = initialize_result.client_info
+            _log_lsp_event(
+                remote_logging=pysa_arguments.remote_logging,
+                event=LSPEvent.INITIALIZED,
+                normals=(
+                    {}
+                    if client_info is None
+                    else {
+                        "lsp client name": client_info.name,
+                        "lsp client version": client_info.version,
+                    }
+                ),
+            )
+
+            client_capabilities = initialize_result.client_capabilities
+            LOG.debug(f"Client capabilities: {client_capabilities}")
+            initial_server_state = ServerState()
+            server = PysaServer(
+                input_channel=stdin,
+                output_channel=stdout,
+                client_capabilities=client_capabilities,
+                state=initial_server_state,
+                pyre_manager=connection.BackgroundTaskManager(
+                    PysaServerHandler(
+                        binary_location=binary_location,
+                        server_identifier=server_identifier,
+                        pyre_arguments=pysa_arguments,
+                        client_output_channel=stdout,
+                        server_state=initial_server_state,
+                    )
+                ),
+            )
+            return await server.run()
+        elif isinstance(initialize_result, InitializationFailure):
+            exception = initialize_result.exception
+            message = (
+                str(exception) if exception is not None else "ignoring notification"
+            )
+            LOG.info(f"Initialization failed: {message}")
+            # Loop until we get either InitializeExit or InitializeSuccess
+        else:
+            raise RuntimeError("Cannot determine the type of initialize_result")
+
+
+def run(
+    configuration: configuration_module.Configuration,
+    start_arguments: command_arguments.StartArguments,
+) -> int:
+    binary_location = configuration.get_binary_respecting_override()
+    if binary_location is None:
+        raise configuration_module.InvalidConfiguration(
+            "Cannot locate a Pyre binary to run."
+        )
+
+    server_identifier = start.get_server_identifier(configuration)
+    pyre_arguments = start.create_server_arguments(configuration, start_arguments)
+    if pyre_arguments.watchman_root is None:
+        raise commands.ClientException(
+            "Cannot locate a `watchman` root. Pyre's server will not function "
+            "properly."
+        )
+
+    return asyncio.get_event_loop().run_until_complete(
+        run_persistent(binary_location, server_identifier, pyre_arguments)
+    )
