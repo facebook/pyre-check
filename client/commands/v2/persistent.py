@@ -23,7 +23,6 @@ from ... import (
     commands,
     configuration as configuration_module,
     statistics,
-    version,
 )
 from . import (
     language_server_protocol as lsp,
