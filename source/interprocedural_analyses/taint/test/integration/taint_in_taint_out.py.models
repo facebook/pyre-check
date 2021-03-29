@@ -1003,7 +1003,12 @@
             "decl": null,
             "tito": [
               { "line": 33, "start": 20, "end": 21 },
-              { "line": 36, "start": 30, "end": 38 }
+              { "line": 36, "start": 30, "end": 38 },
+              { "line": 40, "start": 30, "end": 37 },
+              { "line": 41, "start": 33, "end": 40 },
+              { "line": 41, "start": 51, "end": 60 },
+              { "line": 41, "start": 72, "end": 82 },
+              { "line": 43, "start": 26, "end": 38 }
             ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
             "features": [ { "always-via": "tito" }, { "via": "obscure" } ]

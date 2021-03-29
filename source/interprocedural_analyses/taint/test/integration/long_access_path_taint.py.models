@@ -222,6 +222,8 @@
           {
             "decl": null,
             "tito": [
+              { "line": 24, "start": 19, "end": 25 },
+              { "line": 29, "start": 30, "end": 36 },
               { "line": 31, "start": 23, "end": 29 },
               { "line": 31, "start": 31, "end": 35 },
               { "line": 31, "start": 37, "end": 44 }

@@ -141,6 +141,7 @@
               "start": 8,
               "end": 23
             },
+            "tito": [ { "line": 59, "start": 13, "end": 14 } ],
             "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [
               { "always-type": "scalar" },
@@ -203,6 +204,7 @@
               "port": "result",
               "length": 1
             },
+            "tito": [ { "line": 69, "start": 22, "end": 23 } ],
             "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [
               { "always-type": "scalar" },
@@ -460,6 +462,7 @@
         "taint": [
           {
             "decl": null,
+            "tito": [ { "line": 46, "start": 15, "end": 16 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
             "features": [
               { "always-type": "scalar" },

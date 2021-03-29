@@ -435,6 +435,7 @@
               "start": 16,
               "end": 17
             },
+            "tito": [ { "line": 68, "start": 22, "end": 23 } ],
             "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
             "features": [
               { "always-via": "special_sink" },
@@ -463,6 +464,7 @@
               "start": 8,
               "end": 23
             },
+            "tito": [ { "line": 64, "start": 25, "end": 26 } ],
             "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [
               { "always-via": "special_source" },
@@ -489,6 +491,7 @@
         "taint": [
           {
             "decl": null,
+            "tito": [ { "line": 59, "start": 25, "end": 26 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
             "features": [
               { "always-via": "obscure" },

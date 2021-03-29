@@ -140,16 +140,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       List.fold target_candidates ~f:merge_models ~init:ForwardState.Tree.empty
 
 
-    let rec analyze_argument
-        ~resolution
-        (taint_accumulator, state)
-        { Call.Argument.value = argument; _ }
-      =
-      analyze_expression ~resolution ~state ~expression:argument
-      |>> ForwardState.Tree.join taint_accumulator
-
-
-    and apply_call_targets
+    let rec apply_call_targets
         ~resolution
         ~callee
         ?(collapse_tito = true)
@@ -293,6 +284,9 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             if taint_model.is_obscure then
               let obscure_tito =
                 ForwardState.Tree.collapse taint_to_propagate
+                |> ForwardTaint.transform
+                     FlowDetails.tito_position_element
+                     Abstract.Domain.(Add argument.Node.location)
                 |> ForwardTaint.transform
                      ForwardTaint.simple_feature
                      Abstract.Domain.(Add Features.obscure)
@@ -454,7 +448,23 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       match call_targets with
       | [] ->
           (* If we don't have a call target: propagate argument taint. *)
-          let callee_taint, state = analyze_expression ~resolution ~state ~expression:callee in
+          let analyze_argument
+              ~resolution
+              (taint_accumulator, state)
+              { Call.Argument.value = argument; _ }
+            =
+            analyze_expression ~resolution ~state ~expression:argument
+            |>> ForwardState.Tree.transform
+                  FlowDetails.tito_position_element
+                  Abstract.Domain.(Add argument.Node.location)
+            |>> ForwardState.Tree.join taint_accumulator
+          in
+          let callee_taint, state =
+            analyze_expression ~resolution ~state ~expression:callee
+            |>> ForwardState.Tree.transform
+                  FlowDetails.tito_position_element
+                  Abstract.Domain.(Add callee.Node.location)
+          in
           List.fold_left arguments ~init:(callee_taint, state) ~f:(analyze_argument ~resolution)
           |>> ForwardState.Tree.transform
                 ForwardTaint.simple_feature

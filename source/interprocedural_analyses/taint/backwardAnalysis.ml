@@ -130,11 +130,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
 
     let analyze_definition ~define:_ state = state
 
-    let rec analyze_argument ~resolution taint { Call.Argument.value = argument; _ } state =
-      analyze_expression ~resolution ~taint ~state ~expression:argument
-
-
-    and apply_call_targets
+    let rec apply_call_targets
         ~resolution
         ~call_expression
         location
@@ -301,6 +297,12 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                        BackwardState.Tree.join sink_state state)
             | _ -> taint_in_taint_out
           in
+          let obscure_taint =
+            BackwardState.Tree.transform
+              FlowDetails.tito_position_element
+              Abstract.Domain.(Add argument.Node.location)
+              obscure_taint
+          in
           let argument_taint =
             BackwardState.Tree.join sink_taint taint_in_taint_out
             |> BackwardState.Tree.join obscure_taint
@@ -368,6 +370,15 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       match call_targets with
       | [] -> (
           (* If we don't have a call target: propagate argument taint. *)
+          let analyze_argument ~resolution taint { Call.Argument.value = argument; _ } state =
+            let taint =
+              BackwardState.Tree.transform
+                FlowDetails.tito_position_element
+                Abstract.Domain.(Add argument.Node.location)
+                taint
+            in
+            analyze_expression ~resolution ~taint ~state ~expression:argument
+          in
           let obscure_taint =
             BackwardState.Tree.collapse call_taint
             |> BackwardTaint.transform

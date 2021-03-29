@@ -572,6 +572,7 @@
         "taint": [
           {
             "decl": null,
+            "tito": [ { "line": 57, "start": 30, "end": 33 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
             "features": [ { "always-via": "obscure" } ]
           }

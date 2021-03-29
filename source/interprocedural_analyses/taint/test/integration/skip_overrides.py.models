@@ -33,6 +33,7 @@
               "start": 24,
               "end": 39
             },
+            "tito": [ { "line": 18, "start": 24, "end": 39 } ],
             "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [
               { "always-via": "special_source" },
@@ -49,6 +50,7 @@
         "taint": [
           {
             "decl": null,
+            "tito": [ { "line": 18, "start": 11, "end": 12 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
             "features": [ { "always-via": "obscure" } ]
           }
