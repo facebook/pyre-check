@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+open Core
 open Interprocedural
 
 include TypeInferenceResult.Register (struct
@@ -12,6 +13,7 @@ include TypeInferenceResult.Register (struct
     { Result.initial_models = Callable.Map.empty; skip_overrides = Ast.Reference.Set.empty }
 
 
-  let analyze ~callable:_ ~environment:_ ~qualifier:_ ~define:_ ~existing:_ =
-    ["placeholder_result"], "placeholder_model"
+  let analyze ~callable:_ ~environment:_ ~qualifier:_ ~define:_ ~existing =
+    let new_model = Option.value existing ~default:TypeInferenceDomain.bottom in
+    ["placeholder_result"], new_model
 end)

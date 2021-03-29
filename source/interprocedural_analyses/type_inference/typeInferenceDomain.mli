@@ -5,7 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-include
-  Interprocedural.Result.ANALYSIS_RESULT_WITH_REGISTRATION
-    with type result := string list
-     and type call_model := TypeInferenceDomain.t
+type t [@@deriving show]
+
+val bottom : t
+
+val join : t -> t -> t
+
+val less_or_equal : left:t -> right:t -> bool

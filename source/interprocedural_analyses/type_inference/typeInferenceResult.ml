@@ -11,21 +11,23 @@ open Interprocedural
 module ResultArgument = struct
   type result = string list
 
-  type call_model = string [@@deriving show]
+  type call_model = TypeInferenceDomain.t [@@deriving show]
 
   let name = "type_inference"
 
-  let empty_model = "empty_model"
+  let empty_model = TypeInferenceDomain.bottom
 
-  let obscure_model = "obscure_model"
+  let obscure_model = TypeInferenceDomain.bottom
 
-  let get_errors _ = []
-
-  let join ~iteration:_ left right = left ^ " " ^ right
+  let join ~iteration:_ = TypeInferenceDomain.join
 
   let widen ~iteration ~previous ~next = join ~iteration previous next
 
-  let reached_fixpoint ~iteration:_ ~previous:_ ~next:_ = true
+  let reached_fixpoint ~iteration:_ ~previous ~next =
+    TypeInferenceDomain.less_or_equal ~left:next ~right:previous
+
+
+  let get_errors _ = []
 
   let externalize ~filename_lookup:_ callable result_option model =
     let result_json =
@@ -38,7 +40,7 @@ module ResultArgument = struct
         [
           "analysis", `String name;
           "name", `String (Callable.show callable);
-          "model", `String model;
+          "model", `String (show_call_model model);
           "result", result_json;
         ];
     ]

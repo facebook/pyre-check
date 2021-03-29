@@ -49,9 +49,9 @@ let test_fixpoint_wiring context =
     externalized
     ~expected:
       [
-        {| {"analysis":"type_inference","name":"fun_a (fun)","model":"obscure_model","result":null} |};
-        {| {"analysis":"type_inference","name":"fun_b (fun)","model":"obscure_model","result":null} |};
-        {| {"analysis":"type_inference","name":"fun_c (fun)","model":"obscure_model","result":null} |};
+        {| {"analysis":"type_inference","name":"fun_a (fun)","model":"TypeInferenceDomain.Bottom","result":null} |};
+        {| {"analysis":"type_inference","name":"fun_b (fun)","model":"TypeInferenceDomain.Bottom","result":null} |};
+        {| {"analysis":"type_inference","name":"fun_c (fun)","model":"TypeInferenceDomain.Bottom","result":null} |};
       ]
 
 
