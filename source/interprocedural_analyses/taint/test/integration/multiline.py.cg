@@ -1,0 +1,3 @@
+@generated
+Call dependencies
+multiline.test (fun) -> [__test_sink (fun) __test_source (fun)]

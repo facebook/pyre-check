@@ -19,11 +19,20 @@ module type SET_ARG = sig
   val ignore_leaf_at_call : t -> bool
 end
 
-let location_to_json { Location.start = { line; column }; stop = { column = end_column; _ } }
+let location_to_json
+    {
+      Location.start = { line = start_line; column = start_column };
+      stop = { line = end_line; column = end_column };
+    }
     : Yojson.Safe.json
   =
-  (* Note: this is not correct for multiple line span *)
-  `Assoc ["line", `Int line; "start", `Int column; "end", `Int end_column]
+  (* If the location spans multiple lines, we only return the position of the first character. *)
+  `Assoc
+    [
+      "line", `Int start_line;
+      "start", `Int start_column;
+      "end", `Int (if start_line = end_line then end_column else start_column);
+    ]
 
 
 let location_with_module_to_json ~filename_lookup location_with_module : Yojson.Safe.json =

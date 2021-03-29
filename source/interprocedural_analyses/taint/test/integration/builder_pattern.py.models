@@ -98,7 +98,7 @@
                 "filename": "builder_pattern.py",
                 "line": 75,
                 "start": 4,
-                "end": 5
+                "end": 4
               },
               "resolves_to": [ "builder_pattern.Builder.async_save" ],
               "port": "formal(self)[_saved]",
@@ -157,7 +157,7 @@
                 "filename": "builder_pattern.py",
                 "line": 57,
                 "start": 4,
-                "end": 5
+                "end": 4
               },
               "resolves_to": [ "builder_pattern.Builder.async_save" ],
               "port": "formal(self)[_saved]",

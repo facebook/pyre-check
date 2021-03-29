@@ -108,7 +108,7 @@
               "filename": "attach_features.py",
               "line": 62,
               "start": 0,
-              "end": 12
+              "end": 0
             },
             "leaves": [ { "kind": "Test" } ],
             "features": [ { "always-via": "string_concat_lhs" } ]
