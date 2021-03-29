@@ -60,7 +60,7 @@ module type FUNCTION_CONTEXT = sig
     sink_tree:BackwardState.Tree.t ->
     unit
 
-  val return_sink : BackwardState.Tree.t
+  val return_sink : return_location:Location.WithModule.t -> BackwardState.Tree.t
 
   val log : ('a, Format.formatter, unit, unit, unit, unit) Core.format6 -> 'a
 
@@ -1448,7 +1448,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           FunctionContext.check_flow
             ~location
             ~source_tree:taint
-            ~sink_tree:FunctionContext.return_sink;
+            ~sink_tree:(FunctionContext.return_sink ~return_location:location);
           store_taint ~root:AccessPath.Root.LocalResult ~path:[] taint state
       | Return { expression = None; _ }
       | Try _
@@ -1619,11 +1619,7 @@ let extract_source_model ~define ~resolution ~features_to_attach exit_taint =
 let run ~environment ~qualifier ~define ~call_graph_of_define ~existing_model =
   let {
     Node.value =
-      {
-        Statement.Define.signature =
-          { name = { Node.value = name; _ }; parameters; return_annotation; _ };
-        _;
-      };
+      { Statement.Define.signature = { name = { Node.value = name; _ }; parameters; _ }; _ };
     _;
   }
     =
@@ -1731,19 +1727,14 @@ let run ~environment ~qualifier ~define ~call_graph_of_define ~existing_model =
       Location.WithModule.Table.fold candidates ~f:accumulate ~init:[]
 
 
-    let return_sink =
-      let return_location =
-        match return_annotation with
-        | Some node -> node.Node.location
-        | None -> define.Node.location
-      in
+    let return_sink ~return_location =
       let taint =
         BackwardState.read
           ~root:AccessPath.Root.LocalResult
           ~path:[]
           existing_model.TaintResult.backward.sink_taint
         |> BackwardState.Tree.apply_call
-             (Location.with_module ~qualifier return_location)
+             return_location
              ~callees:[]
              ~port:AccessPath.Root.LocalResult
       in
