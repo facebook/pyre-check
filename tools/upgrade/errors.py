@@ -481,7 +481,14 @@ def _suppress_errors(
             else:
                 removing_pyre_comments = False
         number = index + 1
-        relevant_errors = errors[number] if number in errors else []
+
+        # Deduplicate errors
+        error_mapping = {
+            error["code"] + error["description"]: error
+            for error in errors.get(number, [])
+        }
+        relevant_errors = list(error_mapping.values())
+
         if any(error["code"] == "0" for error in relevant_errors):
             replacement = _remove_unused_ignores(line, relevant_errors)
             if replacement == "":

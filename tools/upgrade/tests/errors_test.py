@@ -261,6 +261,27 @@ class ErrorsTest(unittest.TestCase):
             """,
         )
 
+        # Avoid duplicate error messages
+        self.assertSuppressErrors(
+            {
+                1: [
+                    {"code": "1", "description": "description 1"},
+                    {"code": "2", "description": "description duplicate"},
+                    {"code": "2", "description": "description duplicate"},
+                    {"code": "1", "description": "description 2"},
+                ]
+            },
+            """
+            def foo() -> None: pass
+            """,
+            """
+            # FIXME[1]: description 1
+            # FIXME[2]: description duplicate
+            # FIXME[1]: description 2
+            def foo() -> None: pass
+            """,
+        )
+
         # Indentation is correct.
         self.assertSuppressErrors(
             {2: [{"code": "1", "description": "description"}]},
