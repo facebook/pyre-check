@@ -19,6 +19,14 @@ module BuildResult = struct
   }
 end
 
+module IncrementalBuildResult = struct
+  type t = {
+    build_map: BuildMap.t;
+    targets: Target.t list;
+    changed_artifacts: PyrePath.t list;
+  }
+end
+
 let source_database_suffix = "#source-db"
 
 type t = {
@@ -238,7 +246,9 @@ let do_incremental_build ~source_root ~artifact_root ~old_build_map ~new_build_m
   Artifacts.update ~source_root ~artifact_root difference
   >>= function
   | Result.Error message -> raise (LinkTreeConstructionError message)
-  | Result.Ok () -> Lwt.return ()
+  | Result.Ok () ->
+      let to_artifact_path (relative, _) = Path.create_relative ~root:artifact_root ~relative in
+      BuildMap.Difference.to_alist difference |> List.map ~f:to_artifact_path |> Lwt.return
 
 
 let full_incremental_build ~source_root ~artifact_root ~old_build_map ~targets builder =
@@ -246,7 +256,8 @@ let full_incremental_build ~source_root ~artifact_root ~old_build_map ~targets b
   construct_build_map builder targets
   >>= fun (targets, build_map) ->
   do_incremental_build ~source_root ~artifact_root ~old_build_map ~new_build_map:build_map ()
-  >>= fun () -> Lwt.return { BuildResult.targets; build_map }
+  >>= fun changed_artifacts ->
+  Lwt.return { IncrementalBuildResult.targets; build_map; changed_artifacts }
 
 
 let incremental_build_with_normalized_targets
@@ -262,4 +273,5 @@ let incremental_build_with_normalized_targets
   load_and_merge_source_databases target_and_source_database_paths
   >>= fun (targets, build_map) ->
   do_incremental_build ~source_root ~artifact_root ~old_build_map ~new_build_map:build_map ()
-  >>= fun () -> Lwt.return { BuildResult.targets; build_map }
+  >>= fun changed_artifacts ->
+  Lwt.return { IncrementalBuildResult.targets; build_map; changed_artifacts }

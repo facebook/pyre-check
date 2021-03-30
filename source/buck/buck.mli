@@ -280,12 +280,23 @@ module Builder : sig
   exception LinkTreeConstructionError of string
   (** Raised when artifact building fails. See {!val:Artifacts.populate}. *)
 
-  (** The return type for all build-related APIs. It contains a build map as well as a list of buck
-      targets that are successfully included in the build. *)
+  (** The return type for initial builds. It contains a build map as well as a list of buck targets
+      that are successfully included in the build. *)
   module BuildResult : sig
     type t = {
       build_map: BuildMap.t;
       targets: Target.t list;
+    }
+  end
+
+  (** The return type for incremental builds. It contains a build map, a list of buck targets that
+      are successfully included in the build, and a list of artifact files whose contents may be
+      altered by the build . *)
+  module IncrementalBuildResult : sig
+    type t = {
+      build_map: BuildMap.t;
+      targets: Target.t list;
+      changed_artifacts: PyrePath.t list;
     }
   end
 
@@ -328,7 +339,7 @@ module Builder : sig
     old_build_map:BuildMap.t ->
     targets:string list ->
     t ->
-    BuildResult.t Lwt.t
+    IncrementalBuildResult.t Lwt.t
   (** Given a source root, an artifact root, and a list of buck target specificaitons to build,
       fully construct a new build map for the targets and incrementally update the Python link tree
       at the given artifact root according to how the new build map changed compared to the old
@@ -346,7 +357,7 @@ module Builder : sig
     old_build_map:BuildMap.t ->
     targets:Target.t list ->
     t ->
-    BuildResult.t Lwt.t
+    IncrementalBuildResult.t Lwt.t
   (** Given a source root, an artifact root, and a list of normalized targets to build, fully
       construct a new build map for the targets and incrementally update the Python link tree at the
       given artifact root according to how the new build map changed compared to the old build map.
