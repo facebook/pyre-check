@@ -5,21 +5,16 @@
 
 
 """
-This is a temporary implementation of Pysa's langauge server. This is an exact copy
-of Pyre's langauge server, which lives in persistent.py. 
+This is a temporary implementation of Pysa's language server. This is an exact copy
+of Pyre's language server, which lives in persistent.py.
 """
 
 import asyncio
-import dataclasses
-import enum
-import json
 import logging
 import os
-import subprocess
-import tempfile
 import traceback
 from pathlib import Path
-from typing import Union, Optional, AsyncIterator, Set, List, Sequence, Dict
+from typing import Optional, AsyncIterator, Sequence, Dict
 
 
 import async_generator
@@ -27,12 +22,9 @@ import async_generator
 from ... import (
     json_rpc,
     error,
-    version,
     command_arguments,
     commands,
     configuration as configuration_module,
-    statistics,
-    version,
 )
 
 from . import (
@@ -42,7 +34,6 @@ from . import (
     start,
     stop,
     incremental,
-    server_event,
 )
 
 from .persistent import (
