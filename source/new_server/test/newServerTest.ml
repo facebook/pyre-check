@@ -72,6 +72,8 @@ module ScratchProject = struct
     build_system: BuildSystem.t;
   }
 
+  let server_configuration_of { server_configuration; _ } = server_configuration
+
   let setup
       ~context
       ?(external_sources = [])

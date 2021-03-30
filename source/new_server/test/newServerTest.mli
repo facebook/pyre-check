@@ -28,12 +28,9 @@ module Client : sig
 end
 
 module ScratchProject : sig
-  type t = {
-    context: OUnit2.test_ctxt;
-    server_configuration: ServerConfiguration.t;
-    watchman: Watchman.Raw.t option;
-    build_system: BuildSystem.t;
-  }
+  type t
+
+  val server_configuration_of : t -> ServerConfiguration.t
 
   val setup
     :  context:OUnit2.test_ctxt ->
