@@ -201,6 +201,14 @@ let obscure = Simple.Breadcrumb Breadcrumb.Obscure
 
 let lambda = Simple.Breadcrumb Breadcrumb.Lambda
 
+let type_bool =
+  SimpleSet.create
+    [
+      Part (SimpleSet.Element, Simple.Breadcrumb (Breadcrumb.Type "scalar"));
+      Part (SimpleSet.Element, Simple.Breadcrumb (Breadcrumb.Type "bool"));
+    ]
+
+
 let add_type_breadcrumb ~resolution annotation =
   let matches_at_leaves ~f annotation =
     let rec matches_at_leaves ~f annotation =

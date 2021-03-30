@@ -97,3 +97,9 @@ async def async_issue_bools() -> None:
 
 def dynamic_feature_tito(x):
     return x
+
+
+def issue_via_in():
+    o = __test_source()
+    __test_sink("a" in o)
+    __test_sink(o in "a")

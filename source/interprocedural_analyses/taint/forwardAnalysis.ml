@@ -1228,7 +1228,13 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             | None ->
                 let left_taint, state = analyze_expression ~resolution ~state ~expression:left in
                 let right_taint, state = analyze_expression ~resolution ~state ~expression:right in
-                ForwardState.Tree.join left_taint right_taint, state )
+                let taint =
+                  ForwardState.Tree.join left_taint right_taint
+                  |> ForwardState.Tree.transform
+                       FlowDetails.simple_feature_self
+                       Abstract.Domain.(Add Features.type_bool)
+                in
+                taint, state )
         | Call { callee; arguments } -> analyze_call ~resolution ~location ~state ~callee ~arguments
         | Complex _ -> ForwardState.Tree.empty, state
         | Dictionary { Dictionary.entries; keywords } ->

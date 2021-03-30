@@ -980,6 +980,12 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           match ComparisonOperator.override ~location comparison with
           | Some override -> analyze_expression ~resolution ~taint ~state ~expression:override
           | None ->
+              let taint =
+                BackwardState.Tree.transform
+                  FlowDetails.simple_feature_self
+                  Abstract.Domain.(Add Features.type_bool)
+                  taint
+              in
               analyze_expression ~resolution ~taint ~state ~expression:right
               |> fun state -> analyze_expression ~resolution ~taint ~state ~expression:left )
       | Call { callee; arguments } ->
