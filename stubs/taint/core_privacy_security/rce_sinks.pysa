@@ -64,7 +64,7 @@ def subprocess.run(
     errors,
     input: TaintSink[RemoteCodeExecution],
     text,
-    timeout: TaintSink[RemoteCodeExecution],
+    timeout,
 ): ...
 
 def subprocess.call(
@@ -85,7 +85,7 @@ def subprocess.call(
   restore_signals,
   start_new_session,
   pass_fds,
-  timeout: TaintSink[RemoteCodeExecution],
+  timeout,
 ): ...
 
 def subprocess.check_call(
@@ -106,7 +106,7 @@ def subprocess.check_call(
   restore_signals,
   start_new_session,
   pass_fds,
-  timeout: TaintSink[RemoteCodeExecution],
+  timeout,
 ): ...
 
 def subprocess.check_output(
@@ -127,7 +127,7 @@ def subprocess.check_output(
   start_new_session,
   pass_fds,
   *,
-  timeout: TaintSink[RemoteCodeExecution],
+  timeout,
   input: TaintSink[RemoteCodeExecution],
   encoding,
   errors,
