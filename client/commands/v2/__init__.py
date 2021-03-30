@@ -13,4 +13,4 @@ from . import servers  # noqa F401
 from . import start  # noqa F401
 from . import stop  # noqa F401
 from . import validate_models  # noqa F401
-from . import pysa_server  # noqa F40
+from . import pysa_server  # noqa F401
