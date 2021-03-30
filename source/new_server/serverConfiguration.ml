@@ -60,25 +60,25 @@ end
 
 module Buck = struct
   type t = {
-    (* This is the buck root of the source directory, i.e. output of `buck root`. *)
-    root: Path.t;
     mode: string option;
     isolation_prefix: string option;
     targets: string list;
+    (* This is the buck root of the source directory, i.e. output of `buck root`. *)
+    source_root: Path.t;
     (* This is the root of directory where built artifacts will be placed. *)
-    build_root: Path.t;
+    artifact_root: Path.t;
   }
   [@@deriving sexp, compare, hash]
 
   let of_yojson json =
     let open JsonParsing in
     try
-      let root = path_member "root" json in
       let mode = optional_string_member "mode" json in
       let isolation_prefix = optional_string_member "isolation_prefix" json in
       let targets = string_list_member "targets" json ~default:[] in
-      let build_root = path_member "build_root" json in
-      Result.Ok { root; mode; isolation_prefix; targets; build_root }
+      let source_root = path_member "source_root" json in
+      let artifact_root = path_member "artifact_root" json in
+      Result.Ok { mode; isolation_prefix; targets; source_root; artifact_root }
     with
     | Yojson.Safe.Util.Type_error (message, _)
     | Yojson.Safe.Util.Undefined (message, _) ->
@@ -86,12 +86,12 @@ module Buck = struct
     | other_exception -> Result.Error (Exn.to_string other_exception)
 
 
-  let to_yojson { root; mode; isolation_prefix; targets; build_root } =
+  let to_yojson { mode; isolation_prefix; targets; source_root; artifact_root } =
     let result =
       [
-        "root", `String (Path.absolute root);
         "targets", `List (List.map targets ~f:(fun target -> `String target));
-        "build_root", `String (Path.absolute build_root);
+        "source_root", `String (Path.absolute source_root);
+        "artifact_root", `String (Path.absolute artifact_root);
       ]
     in
     let result =
@@ -566,7 +566,7 @@ let analysis_configuration_of
   let source_path =
     match source_paths with
     | SourcePaths.Simple source_paths -> source_paths
-    | Buck { Buck.build_root; _ } -> [SearchPath.Root build_root]
+    | Buck { Buck.artifact_root; _ } -> [SearchPath.Root artifact_root]
   in
   Configuration.Analysis.create
     ~infer:false

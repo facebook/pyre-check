@@ -362,8 +362,8 @@ let test_json_parsing context =
             %s,
             "source_paths": {
               "kind": "buck",
-              "root": "/buck/root",
-              "build_root": "/build/root"
+              "source_root": "/buck/root",
+              "artifact_root": "/build/root"
             }
           }
        |}
@@ -374,9 +374,9 @@ let test_json_parsing context =
           `Assoc
             [
               "kind", `String "buck";
-              "root", `String "/buck/root";
               "targets", `List [];
-              "build_root", `String "/build/root";
+              "source_root", `String "/buck/root";
+              "artifact_root", `String "/build/root";
             ] );
       ];
   assert_parsed
@@ -386,11 +386,11 @@ let test_json_parsing context =
             %s,
             "source_paths": {
               "kind": "buck",
-              "root": "/buck/root",
               "targets": ["//my:target"],
               "mode": "@mode/opt",
               "isolation_prefix": "prefix",
-              "build_root": "/build/root"
+              "source_root": "/buck/root",
+              "artifact_root": "/build/root"
             }
           }
        |}
@@ -401,11 +401,11 @@ let test_json_parsing context =
           `Assoc
             [
               "kind", `String "buck";
-              "root", `String "/buck/root";
               "targets", `List [`String "//my:target"];
               "mode", `String "@mode/opt";
               "isolation_prefix", `String "prefix";
-              "build_root", `String "/build/root";
+              "source_root", `String "/buck/root";
+              "artifact_root", `String "/build/root";
             ] );
       ];
   ()

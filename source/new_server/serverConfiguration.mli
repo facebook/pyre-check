@@ -10,13 +10,13 @@ open Pyre
 
 module Buck : sig
   type t = {
-    (* This is the buck root of the source directory, i.e. output of `buck root`. *)
-    root: Path.t;
     mode: string option;
     isolation_prefix: string option;
     targets: string list;
+    (* This is the buck root of the source directory, i.e. output of `buck root`. *)
+    source_root: Path.t;
     (* This is the root of directory where built artifacts will be placed. *)
-    build_root: Path.t;
+    artifact_root: Path.t;
   }
   [@@deriving sexp, compare, hash, yojson]
 end
