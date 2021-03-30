@@ -62,6 +62,7 @@ $ cd /path/to/pyre-check
 $ pip install -r requirements.txt
 $ ./scripts/run-python-tests.sh
 ```
+
 When installing and running `pyre` from PyPi, the entry point to the executable is actually `client/pyre.py`. To be able to run this file from anywhere, add the `pyre-check` directory to `PYTHONPATH` and subsequently assign `pyre` and an alias for `client.pyre`. For the `pyre` command to correctly point to the compiled binary, also set the environment variable `PYRE_BINARY` to `source/build/default/main.exe`.
 
 ```bash
@@ -70,6 +71,20 @@ $ echo "export PYRE_BINARY=/path/to/pyre-check/source/_build/default/main.exe" >
 $ source ~/.bashrc
 ```
 You should be able to open a new shell and run `pyre -h` now, confirming `pyre` was set-up correctly. Any changes made to the Pyre Python client code should be immediately observable the next time you invoke `pyre`
+
+#### Testing changes for Plugin Development
+VSCode will not pick up your shell aliases, so the alias step in the previous section will not work if you're doing VSCode Plugin development. To get around this, instead of creating an alias, we can create an executable script called `pyre` and place it in a directory in our `PATH`:
+
+```bash
+#!/bin/bash
+PYTHONPATH="/path/to/pyre-check:$PYTHONPATH" python -m client.pyre "$@"
+```
+Add the `pyre-check/scripts` directory to `PATH` (assuming you placed the above script in that directory) and then use the command `pyre` to launch the client like before
+
+```bash
+$ echo 'PATH="/path/to/pyre-check/scripts:$PATH"' >> ~/.bashrc
+$ source ~/.bashrc
+```
 
 ## Windows Subsystem for Linux (WSL) Install
 
