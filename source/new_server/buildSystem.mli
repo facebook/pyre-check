@@ -22,10 +22,6 @@ type t
 
 (** {1 External Interfaces} *)
 
-val initialize : t -> unit Lwt.t
-(** This API allows the build system to perform additional work (e.g. copying or indexing files) to
-    construct & establish the source-to-artifact mapping. *)
-
 val update : t -> PyrePath.t list -> PyrePath.t list Lwt.t
 (** [update build_system source_paths] notifies [build_system] that certain [source_paths] may have
     been updated on the filesystem. The build system should use the provided info to update its
@@ -43,24 +39,41 @@ val lookup_artifact : t -> PyrePath.t -> PyrePath.t list
 (** Given an source path, return the corresponding artifact paths. Return the empty list if no such
     artifact path exists. *)
 
-(** {2 Construction} *)
-
-val null : t
-(** [null] is a no-op build system. It does nothing on [initialize], [update], and [cleanup], and it
-    always assumes an identity source-to-artifact mapping. This can be used when the project being
-    checked does not use a build system. *)
-
-val buck : ServerConfiguration.Buck.t -> t
-(** [buck] is a build system that interops with Buck. See {!module:Buck} for more details about its
-    behavior. *)
+(** {2 Construction & Initialization} *)
 
 (* This function allows the client to fully tweak the behavior of a build system. Expose for testing
    purpose only. *)
 val create_for_testing
-  :  ?initialize:(unit -> unit Lwt.t) ->
-  ?update:(PyrePath.t list -> PyrePath.t list Lwt.t) ->
+  :  ?update:(PyrePath.t list -> PyrePath.t list Lwt.t) ->
   ?cleanup:(unit -> unit Lwt.t) ->
   ?lookup_source:(PyrePath.t -> PyrePath.t option) ->
   ?lookup_artifact:(PyrePath.t -> PyrePath.t list) ->
   unit ->
   t
+
+(** This module provides APIs that facilitate build system creation. *)
+module Initializer : sig
+  type build_system = t
+  (** A type alias to {!type:BuildSystem.t}. This alias is needed to avoid naming conflict with
+      {!type:BuildSystem.Initializer.t}. *)
+
+  type t
+  (** The abstract type of a build system initializer. *)
+
+  val run : t -> build_system Lwt.t
+  (** Construct a {!type:BuildSystem.t}. Additional work can be performed (e.g. copying or indexing
+      files) to establish the source-to-artifact mapping, before the build system gets created. *)
+
+  val null : t
+  (** [null] initializes a no-op build system. It does nothing on [update], and [cleanup], and it
+      always assumes an identity source-to-artifact mapping. This can be used when the project being
+      checked does not use a build system. *)
+
+  val buck : ServerConfiguration.Buck.t -> t
+  (** [buck] initializes a build system that interops with Buck. See {!module:Buck} for more details
+      about its behavior. *)
+
+  (* This function allows the client to fully tweak the behavior of an initializer. Expose for
+     testing purpose only. *)
+  val create_for_testing : initialize:(unit -> build_system Lwt.t) -> unit -> t
+end

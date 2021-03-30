@@ -38,7 +38,7 @@ module ScratchProject : sig
     ?include_typeshed_stubs:bool ->
     ?include_helper_builtins:bool ->
     ?watchman:Watchman.Raw.t ->
-    ?build_system:BuildSystem.t ->
+    ?build_system_initializer:BuildSystem.Initializer.t ->
     (* A list of test sources specified in the form of (relative_path, content) *)
     (string * string) list ->
     t

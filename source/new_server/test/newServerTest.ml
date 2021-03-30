@@ -69,7 +69,7 @@ module ScratchProject = struct
     context: test_ctxt;
     server_configuration: ServerConfiguration.t;
     watchman: Watchman.Raw.t option;
-    build_system: BuildSystem.t;
+    build_system_initializer: BuildSystem.Initializer.t;
   }
 
   let server_configuration_of { server_configuration; _ } = server_configuration
@@ -80,7 +80,7 @@ module ScratchProject = struct
       ?(include_typeshed_stubs = true)
       ?(include_helper_builtins = true)
       ?watchman
-      ?build_system
+      ?build_system_initializer
       sources
     =
     let add_source ~root (relative, content) =
@@ -139,7 +139,8 @@ module ScratchProject = struct
       context;
       server_configuration;
       watchman;
-      build_system = Option.value build_system ~default:BuildSystem.null;
+      build_system_initializer =
+        Option.value build_system_initializer ~default:BuildSystem.Initializer.null;
     }
 
 
@@ -147,7 +148,7 @@ module ScratchProject = struct
       ?(expected_exit_status = Start.ExitStatus.Ok)
       ?on_server_socket_ready
       ~f
-      { context; server_configuration; watchman; build_system }
+      { context; server_configuration; watchman; build_system_initializer }
     =
     let open Lwt.Infix in
     Memory.reset_shared_memory ();
@@ -155,7 +156,7 @@ module ScratchProject = struct
     Start.start_server
       server_configuration
       ?watchman
-      ~build_system
+      ~build_system_initializer
       ?on_server_socket_ready
       ~on_exception:(function
         | OUnitTest.OUnit_failure _ as exn ->

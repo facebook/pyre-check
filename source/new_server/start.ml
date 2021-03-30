@@ -182,7 +182,7 @@ let handle_connection ~server_state _client_address (input_channel, output_chann
 
 let initialize_server_state
     ?watchman_subscriber
-    ?build_system
+    ?build_system_initializer
     ( { ServerConfiguration.log_path; saved_state_action; critical_files; source_paths; _ } as
     server_configuration )
   =
@@ -396,9 +396,9 @@ let initialize_server_state
                 >>= fun (new_state, _) -> Lwt.return new_state ) )
   in
   let open Lwt.Infix in
-  let get_initial_state ~build_system () =
-    BuildSystem.initialize build_system
-    >>= fun () ->
+  let get_initial_state ~build_system_initializer () =
+    BuildSystem.Initializer.run build_system_initializer
+    >>= fun build_system ->
     match saved_state_action with
     | Some
         (ServerConfiguration.SavedStateAction.LoadFromFile
@@ -442,15 +442,16 @@ let initialize_server_state
         Log.info "Initial server state written to %a" Path.pp shared_memory_path
     | _ -> ()
   in
-  let build_system =
-    let build_system_from_source_paths = function
-      | ServerConfiguration.SourcePaths.Simple _ -> BuildSystem.null
-      | ServerConfiguration.SourcePaths.Buck buck_options -> BuildSystem.buck buck_options
+  let build_system_initializer =
+    let from_source_paths = function
+      | ServerConfiguration.SourcePaths.Simple _ -> BuildSystem.Initializer.null
+      | ServerConfiguration.SourcePaths.Buck buck_options ->
+          BuildSystem.Initializer.buck buck_options
     in
     (* If not specified, auto-determine which build system to use based on server configuration *)
-    Option.value build_system ~default:(build_system_from_source_paths source_paths)
+    Option.value build_system_initializer ~default:(from_source_paths source_paths)
   in
-  get_initial_state ~build_system ()
+  get_initial_state ~build_system_initializer ()
   >>= fun state ->
   Log.info "Server state initialized.";
   store_initial_state state;
@@ -502,7 +503,7 @@ let on_watchman_update ~server_state paths =
 
 let with_server
     ?watchman
-    ?build_system
+    ?build_system_initializer
     ~f
     ({ ServerConfiguration.log_path; _ } as server_configuration)
   =
@@ -515,7 +516,8 @@ let with_server
   let server_state =
     (* We do not want the expensive server initialization to happen before we start to listen on the
        socket. Hence the use of `lazy` here to delay the initialization. *)
-    lazy (initialize_server_state ?watchman_subscriber ?build_system server_configuration)
+    lazy
+      (initialize_server_state ?watchman_subscriber ?build_system_initializer server_configuration)
   in
   Lwt_io.establish_server_with_client_address
     (Lwt_unix.ADDR_UNIX (Path.absolute socket_path))
@@ -572,7 +574,7 @@ let wait_on_signals ~on_caught signals =
 
 let start_server
     ?watchman
-    ?build_system
+    ?build_system_initializer
     ?(on_server_socket_ready = fun _ -> Lwt.return_unit)
     ~on_started
     ~on_exception
@@ -583,7 +585,9 @@ let start_server
     on_server_socket_ready socket_path
     >>= fun _ -> Lazy.force uninitialized_server_state >>= on_started
   in
-  catch (fun () -> with_server ?watchman ?build_system server_configuration ~f) on_exception
+  catch
+    (fun () -> with_server ?watchman ?build_system_initializer server_configuration ~f)
+    on_exception
 
 
 let start_server_and_wait ?event_channel server_configuration =
