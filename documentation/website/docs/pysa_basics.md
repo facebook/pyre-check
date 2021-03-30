@@ -288,6 +288,12 @@ them:
 django.http.request.HttpRequest.GET: Sanitize
 ```
 
+Sanitizing specific sources and sinks can also be used with attributes:
+```python
+def module.Node.id: Sanitize[TaintSource[UserSecrets]] = ...
+def module.Node.id: Sanitize[TaintSink[Logging]] = ...
+```
+
 This annotation is useful in the case of explicit sanitizers such as `escape`,
 which helps prevent cross site scripting (XSS) by escaping HTML characters. The
 annotation is also useful, however, in cases where a function is not intended to
