@@ -540,7 +540,12 @@ def pyre(
 )
 @click.option("--dump-call-graph", is_flag=True, default=False, hidden=True)
 @click.option("--repository-root", type=os.path.abspath)
-@click.option("--rule", type=int, multiple=True, hidden=True)
+@click.option(
+    "--rule",
+    type=int,
+    multiple=True,
+    help="Only track taint flows for the given rule.",
+)
 @click.option(
     "--find-missing-flows",
     type=click.Choice([kind.value for kind in MissingFlowsKind]),
