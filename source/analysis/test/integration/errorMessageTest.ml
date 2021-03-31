@@ -78,9 +78,8 @@ let test_show_error_traces context =
         constant = "hi"
     |}
     [
-      "Incompatible variable type [9]: constant is declared to have type `int` but is used as "
-      ^ "type `str`. Redeclare `constant` on line 5 if you wish to override the previously "
-      ^ "declared type.";
+      "Incompatible variable type [9]: constant is declared to have type `int` but is used as type \
+       `str`.";
     ];
   assert_type_errors
     {|
@@ -183,9 +182,9 @@ let test_show_error_traces context =
     |}
     [
       "Incompatible variable type [9]: a is declared to have type `typing.List[float]` but is used \
-       as type `typing.List[int]`. Redeclare `a` on line 6 if you wish to override the previously \
-       declared type. See https://pyre-check.org/docs/errors#covariance-and-contravariance for \
-       mutable container errors.";
+       as type `typing.List[int]`. See \
+       https://pyre-check.org/docs/errors#covariance-and-contravariance for mutable container \
+       errors.";
     ];
   assert_type_errors
     {|

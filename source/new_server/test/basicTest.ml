@@ -67,8 +67,7 @@ let test_basic client =
           ( "long_description",
             `String
               "Incompatible variable type [9]: bar is declared to have type `str` but is used as \
-               type `int`.\n\
-               Redeclare `bar` on line 2 if you wish to override the previously declared type." );
+               type `int`." );
           ( "concise_description",
             `String "Incompatible variable type [9]: bar has type `str`; used as `int`." );
           "inference", `Assoc [];
@@ -253,8 +252,7 @@ let test_watchman_integration ~watchman_mailbox client =
           ( "long_description",
             `String
               "Incompatible variable type [9]: bar is declared to have type `str` but is used as \
-               type `int`.\n\
-               Redeclare `bar` on line 1 if you wish to override the previously declared type." );
+               type `int`." );
           ( "concise_description",
             `String "Incompatible variable type [9]: bar has type `str`; used as `int`." );
           "inference", `Assoc [];

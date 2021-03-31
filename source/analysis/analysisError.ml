@@ -897,22 +897,19 @@ let rec messages ~concise ~signature location kind =
             actual
       in
       let trace =
-        Format.asprintf
-          "Redeclare `%a` on line %d if you wish to override the previously declared type.%s"
-          pp_reference
-          name
-          start_line
-          (if due_to_invariance then " " ^ invariance_message else "")
-        ::
-        ( if Type.equal (Type.weaken_literals actual) expected then
+        if due_to_invariance then
+          if Type.equal (Type.weaken_literals actual) expected then
             [
+              invariance_message;
               "Hint: To avoid this error, you may need to use explicit type parameters in your \
                constructor: e.g., `Foo[str](\"hello\")` instead of `Foo(\"hello\")`.";
             ]
+          else
+            [invariance_message]
         else
-          [] )
+          []
       in
-      [message] @ trace
+      message :: trace
   | InconsistentOverride { parent; override; override_kind; overridden_method } ->
       let kind =
         match override_kind with
