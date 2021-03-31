@@ -5,7 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+open Analysis
+
 include
   Interprocedural.Result.ANALYSIS_RESULT_WITH_REGISTRATION
-    with type result := string list
+    with type result := AnalysisError.Instantiated.t list
      and type call_model := TypeInferenceDomain.t

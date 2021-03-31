@@ -6,10 +6,11 @@
  *)
 
 open Core
+open Analysis
 open Interprocedural
 
 module ResultArgument = struct
-  type result = string list
+  type result = AnalysisError.Instantiated.t list
 
   type call_model = TypeInferenceDomain.t [@@deriving show]
 
@@ -33,7 +34,8 @@ module ResultArgument = struct
     let result_json =
       match result_option with
       | None -> `Null
-      | Some result -> `List (List.map ~f:(fun x -> `String x) result)
+      | Some result ->
+          `List (List.map ~f:(fun error -> AnalysisError.Instantiated.to_yojson error) result)
     in
     [
       `Assoc
