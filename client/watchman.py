@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import Any, Dict, List, NamedTuple
 
 from .configuration import Configuration
-from .filesystem import acquire_lock, remove_if_exists
+from .filesystem import acquire_lock
 from .process import Process
 
 
@@ -41,7 +41,7 @@ def compute_pid_path(base_path: str, name: str) -> str:
     return str(Path(base_path, f"{name}.pid"))
 
 
-class Subscriber(object):
+class Subscriber:
     def __init__(self, base_path: str, configuration: Configuration) -> None:
         self._base_path: str = base_path
         self._configuration = configuration
@@ -208,5 +208,5 @@ def stop_subscriptions(base_path: str, subscriber_name: str) -> None:
     except (OSError, ValueError) as exception:
         LOG.debug(
             f"Could not stop the {subscriber_name} "
-            f"because of exception `{exception}`."
+            + f"because of exception `{exception}`."
         )

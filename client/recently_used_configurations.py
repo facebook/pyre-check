@@ -44,7 +44,7 @@ class Cache(Generic[T]):
         except FileNotFoundError:
             LOG.debug(f"No existing file `{str(self._file_path)}`.")
         except json.JSONDecodeError:
-            LOG.debug("Error when loading json from " f"`{str(self._file_path)}`")
+            LOG.debug(f"Error when loading json from `{str(self._file_path)}`")
         return items
 
     def put(self, new_item: T) -> None:
@@ -56,7 +56,7 @@ class Cache(Generic[T]):
         except OSError:
             LOG.debug(
                 f"Failed to acquire lock `{str(self._lock_path)}`. "
-                "Not adding to recently-used items cache."
+                + "Not adding to recently-used items cache."
             )
 
     def get_all_items(self) -> List[T]:
@@ -66,7 +66,7 @@ class Cache(Generic[T]):
         except OSError:
             LOG.debug(
                 f"Failed to acquire lock `{str(self._lock_path)}`. "
-                "Returning empty list of recently-used items."
+                + "Returning empty list of recently-used items."
             )
             return []
 
@@ -76,7 +76,7 @@ class Cache(Generic[T]):
             os.remove(str(self._file_path))
         except OSError as error:
             LOG.debug(
-                "Error while trying to delete recently-used cache files: " f"{error}."
+                f"Error while trying to delete recently-used cache files: {error}."
             )
 
 
@@ -93,7 +93,7 @@ def prompt_user_for_local_root(local_roots: List[str]) -> Optional[str]:
     ]
     prompt = (
         "Enter the number of the local root you want to use "
-        "(`Enter` for the default; any other key to quit): "
+        + "(`Enter` for the default; any other key to quit): "
     )
     message = "\n".join(
         (

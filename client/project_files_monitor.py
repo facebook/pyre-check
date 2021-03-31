@@ -154,7 +154,7 @@ class ProjectFilesMonitor(Subscriber):
         if watchman_path is None:
             raise MonitorException(
                 "Could not find a watchman directory from "
-                "the current directory `{}`".format(directory)
+                + f"the current directory `{directory}`"
             )
         return str(watchman_path)
 

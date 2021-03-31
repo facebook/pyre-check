@@ -8,7 +8,6 @@ import logging
 import os
 import platform
 import subprocess
-import sys
 import time
 import traceback
 from enum import Enum

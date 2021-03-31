@@ -236,8 +236,8 @@ def _get_site_roots() -> List[str]:
         # where `getsitepackages` is not available.
         LOG.warning(
             "`site.getsitepackages()` is not available in your virtualenv. "
-            "This is a known virtualenv bug and as a workaround please avoid"
-            'using `"site-package"` in your search path configuration.'
+            + "This is a known virtualenv bug and as a workaround please avoid"
+            + 'using `"site-package"` in your search path configuration.'
         )
         return []
 
@@ -437,7 +437,7 @@ class PartialConfiguration:
                 return result
             raise InvalidConfiguration(
                 f"Configuration `{name}` is expected to be a list of "
-                f"strings but got `{json}`."
+                + f"strings but got `{json}`."
             )
 
         def ensure_string_list(
@@ -450,7 +450,7 @@ class PartialConfiguration:
                 return result
             raise InvalidConfiguration(
                 f"Configuration `{name}` is expected to be a list of "
-                f"strings but got `{json}`."
+                + f"strings but got `{json}`."
             )
 
         def ensure_list(json: Dict[str, Any], name: str) -> List[Any]:

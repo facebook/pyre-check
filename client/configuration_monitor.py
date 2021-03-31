@@ -66,7 +66,7 @@ class ConfigurationMonitor(Subscriber):
         for root in roots:
             root_path = Path(root).resolve()
             if root_path in (self._project_root_path, *self._project_root_path.parents):
-                name = "pyre_monitor_{}".format(os.path.basename(root))
+                name = f"pyre_monitor_{os.path.basename(root)}"
                 subscription = {
                     "empty_on_fresh_instance": True,
                     "expression": [
@@ -131,8 +131,8 @@ class ConfigurationMonitor(Subscriber):
             self._stop()
         else:
             LOG.info(
-                "None of the changed paths correspond to the root "
-                "configuration, a local pyre configuration, or any other critical file."
+                "None of the changed paths correspond to the root configuration, "
+                + "a local pyre configuration, or any other critical file."
             )
 
     @staticmethod

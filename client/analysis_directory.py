@@ -407,7 +407,7 @@ class SharedAnalysisDirectory(AnalysisDirectory):
         if is_start_message:
             message = (
                 "Pyre is rebuilding because a significant number of files were "
-                "changed. Your results may be outdated until this is finished."
+                + "changed. Your results may be outdated until this is finished."
             )
             short_message = "Rebuilding..."
             message_type = json_rpc.LanguageServerMessageType.WARNING.value

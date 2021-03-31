@@ -20,7 +20,7 @@ class SocketException(Exception):
     pass
 
 
-class SocketConnection(object):
+class SocketConnection:
     def __init__(self, root: str, socket_name: str = "json_server.sock") -> None:
         self.socket: socket.socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         self.root = root

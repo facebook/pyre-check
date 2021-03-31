@@ -132,7 +132,7 @@ class FastBuckBuilder(BuckBuilder):
         if builder_binary is None:
             raise BuckException(
                 "--buck-builder-binary must be provided "
-                "if fast buck builder is used."
+                + "if fast buck builder is used."
             )
         return builder_binary
 

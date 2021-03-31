@@ -57,12 +57,12 @@ def get_dot_pyre_directory(root_directory: str) -> str:
         except PermissionError:
             LOG.debug(
                 "Did not have permission to write to the dot pyre directory in scratch."
-                " Falling back to a dot pyre directory in the project root."
+                + " Falling back to a dot pyre directory in the project root."
             )
         except Exception as exception:
             LOG.debug(
                 f"Could not test if the dot pyre directory is writable:\n{exception}\n"
-                "Falling back to a dot pyre directory in the project root."
+                + "Falling back to a dot pyre directory in the project root."
             )
         else:
             dot_pyre_directory = os.path.join(scratch_path, LOG_DIRECTORY)

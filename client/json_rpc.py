@@ -200,7 +200,7 @@ class Response(JSONRPC):
         else:
             raise InvalidRequestError(
                 "Either `result` or `error` must be presented in JSON-RPC "
-                f"responses. Got {response_json}."
+                + f"responses. Got {response_json}."
             )
 
     @staticmethod
@@ -364,10 +364,8 @@ def perform_handshake(
             server_version = server_handshake_parameters.values.get("version")
             if server_version != client_version:
                 raise ValueError(
-                    "Version mismatch. Server has version `{}`, "
-                    "while client has version `{}`.".format(
-                        server_version, client_version
-                    )
+                    f"Version mismatch. Server has version `{server_version}`, "
+                    + f"while client has version `{client_version}`."
                 )
             client_handshake = Request(
                 method="handshake/client",

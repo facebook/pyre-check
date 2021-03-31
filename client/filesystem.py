@@ -85,14 +85,14 @@ def translate_paths(paths: Set[str], original_directory: str) -> Set[str]:
 
 def exists(path: str) -> str:
     if not os.path.isfile(path):
-        raise ValueError("%s is not a valid file" % path)
+        raise ValueError(f"{path} is not a valid file")
     return path
 
 
 def file_or_directory_exists(path: str) -> str:
     if os.path.isdir(path) or os.path.isfile(path):
         return path
-    raise ValueError("%s is not a valid path" % path)
+    raise ValueError(f"{path} is not a valid path")
 
 
 def is_parent(parent: str, child: str) -> bool:
@@ -142,7 +142,7 @@ def find_python_paths(root: str) -> List[str]:
     except subprocess.CalledProcessError:
         raise EnvironmentException(
             "Pyre was unable to locate an analysis directory. "
-            "Ensure that your project is built and re-run pyre."
+            + "Ensure that your project is built and re-run pyre."
         )
 
 
@@ -183,7 +183,7 @@ def _compute_symbolic_link_mapping(
     except subprocess.CalledProcessError as error:
         LOG.warning(
             "Exception encountered trying to find source files "
-            "in the analysis directory: `%s`",
+            + "in the analysis directory: `%s`",
             error,
         )
         LOG.warning("Starting with an empty set of tracked files.")

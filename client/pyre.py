@@ -225,8 +225,8 @@ def _run_default_command(arguments: command_arguments.CommandArguments) -> ExitC
         watchman_link = "https://facebook.github.io/watchman/docs/install"
         LOG.warning(
             "No watchman binary found. \n"
-            "To enable pyre incremental, "
-            "you can install watchman: {}".format(watchman_link)
+            + "To enable pyre incremental, "
+            + f"you can install watchman: {watchman_link}"
         )
         LOG.warning("Defaulting to non-incremental check.")
         return _run_check_command(arguments)
@@ -280,7 +280,7 @@ def _create_configuration_with_retry(
     LOG.warning(f"Running pyre under local root `{local_root_for_rerun}`...")
     LOG.warning(
         f"Hint: To avoid this prompt, run `pyre -l {local_root_for_rerun}` "
-        f"or `cd {local_root_for_rerun} && pyre`."
+        + f"or `cd {local_root_for_rerun} && pyre`."
     )
     new_configuration = configuration_module.create_configuration(
         replace(arguments, local_configuration=local_root_for_rerun), base_directory

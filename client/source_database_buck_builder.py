@@ -54,14 +54,14 @@ def _get_buck_query_arguments(
         *mode_sublist,
         'kind("python_binary|python_library|python_test", %s)'
         # Don't check generated rules.
-        " - attrfilter(labels, generated, %s)"
+        + " - attrfilter(labels, generated, %s)"
         # `python_unittest()` sources are separated into a macro-generated
         # library, so make sure we include those.
-        " + attrfilter(labels, unittest-library, %s)"
+        + " + attrfilter(labels, unittest-library, %s)"
         # Provide an opt-out label so that rules can avoid type-checking (e.g.
         # some libraries wrap generated sources which are expensive to build
         # and therefore typecheck).
-        " - attrfilter(labels, no_pyre, %s)",
+        + " - attrfilter(labels, no_pyre, %s)",
         *specifications,
     ]
 
