@@ -788,119 +788,125 @@ end
 
 let name = "Inference"
 
-let run
+let run_local
     ~configuration
     ~global_resolution
     ~source:
       ( {
-          Source.source_path = { SourcePath.qualifier; relative; is_stub; _ };
+          Source.source_path = { SourcePath.qualifier; relative; _ };
           metadata = { local_mode; ignore_codes; _ };
           _;
         } as source )
-  =
-  Log.debug "Checking %s..." relative;
-  let dequalify_map = Preprocessing.dequalify_map source in
-  let check
+    ~define:
       ( {
           Node.location;
           value = { Define.signature = { name = { Node.value = name; _ }; _ }; _ } as define;
         } as define_node )
-    =
-    let module State = State (struct
-      let configuration = configuration
+  =
+  let module State = State (struct
+    let configuration = configuration
 
-      let qualifier = qualifier
+    let qualifier = qualifier
 
-      let define = Node.create ~location define
-    end)
-    in
-    let resolution = TypeCheck.resolution global_resolution (module State.TypeCheckContext) in
-
-    let module Fixpoint = Fixpoint.Make (State) in
-    Log.log ~section:`Check "Checking %a" Reference.pp name;
-    let dump = Define.dump define in
-    if dump then (
-      Log.dump "Checking `%s`..." (Log.Color.yellow (Reference.show name));
-      Log.dump "AST:\n%s" (AnnotatedDefine.create define_node |> AnnotatedDefine.show) );
-    let print_state name state =
-      if dump then
-        Log.dump "%s state:\n%a" name State.pp state;
-      state
-    in
-    try
-      let cfg = Cfg.create define in
-      let backward_fixpoint ~initial_forward ~initialize_backward =
-        let rec fixpoint iteration ~initial_forward ~initialize_backward =
-          let invariants =
-            Fixpoint.forward ~cfg ~initial:initial_forward
-            |> Fixpoint.exit
-            >>| (fun forward_state -> initialize_backward ~forward:forward_state)
-            |> Option.value ~default:initial_forward
-            |> fun initial -> Fixpoint.backward ~cfg ~initial
-          in
-          let entry =
-            invariants
-            |> Fixpoint.entry
-            >>| State.update_only_existing_annotations initial_forward
-            >>| (fun post -> State.widen ~previous:initial_forward ~next:post ~iteration)
-            |> Option.value ~default:initial_forward
-          in
-          if State.less_or_equal ~left:entry ~right:initial_forward then
-            invariants
-          else
-            fixpoint (iteration + 1) ~initial_forward:entry ~initialize_backward
-        in
-        fixpoint 0 ~initial_forward ~initialize_backward
-      in
-      let exit =
-        backward_fixpoint
-          ~initial_forward:(State.initial_forward ~resolution)
-          ~initialize_backward:State.initial_backward
-        |> Fixpoint.entry
-        >>| print_state "Entry"
-        >>| State.check_entry
-      in
-      let errors =
-        let errors = exit >>| State.errors |> Option.value ~default:[] in
-        if configuration.debug then
-          errors
-        else
-          let keep_error error =
-            let mode = Source.mode ~configuration ~local_mode in
-            not (Error.suppress ~mode ~ignore_codes error)
-          in
-          List.filter ~f:keep_error errors
-      in
-      errors
-    with
-    | ClassHierarchy.Untracked annotation ->
-        Statistics.event
-          ~name:"undefined type"
-          ~integers:[]
-          ~normals:["handle", relative; "define", Reference.show name; "type", annotation]
-          ();
-        if configuration.debug then
-          [
-            Error.create
-              ~location:(Location.with_module ~qualifier location)
-              ~kind:(Error.AnalysisFailure annotation)
-              ~define:define_node;
-          ]
-        else
-          []
+    let define = Node.create ~location define
+  end)
   in
-  let format_errors errors =
+  let resolution = TypeCheck.resolution global_resolution (module State.TypeCheckContext) in
+
+  let module Fixpoint = Fixpoint.Make (State) in
+  Log.log ~section:`Check "Checking %a" Reference.pp name;
+  let dump = Define.dump define in
+  if dump then (
+    Log.dump "Checking `%s`..." (Log.Color.yellow (Reference.show name));
+    Log.dump "AST:\n%s" (AnnotatedDefine.create define_node |> AnnotatedDefine.show) );
+  let print_state name state =
+    if dump then
+      Log.dump "%s state:\n%a" name State.pp state;
+    state
+  in
+  try
+    let cfg = Cfg.create define in
+    let backward_fixpoint ~initial_forward ~initialize_backward =
+      let rec fixpoint iteration ~initial_forward ~initialize_backward =
+        let invariants =
+          Fixpoint.forward ~cfg ~initial:initial_forward
+          |> Fixpoint.exit
+          >>| (fun forward_state -> initialize_backward ~forward:forward_state)
+          |> Option.value ~default:initial_forward
+          |> fun initial -> Fixpoint.backward ~cfg ~initial
+        in
+        let entry =
+          invariants
+          |> Fixpoint.entry
+          >>| State.update_only_existing_annotations initial_forward
+          >>| (fun post -> State.widen ~previous:initial_forward ~next:post ~iteration)
+          |> Option.value ~default:initial_forward
+        in
+        if State.less_or_equal ~left:entry ~right:initial_forward then
+          invariants
+        else
+          fixpoint (iteration + 1) ~initial_forward:entry ~initialize_backward
+      in
+      fixpoint 0 ~initial_forward ~initialize_backward
+    in
+    let exit =
+      backward_fixpoint
+        ~initial_forward:(State.initial_forward ~resolution)
+        ~initialize_backward:State.initial_backward
+      |> Fixpoint.entry
+      >>| print_state "Entry"
+      >>| State.check_entry
+    in
+    let errors =
+      let errors = exit >>| State.errors |> Option.value ~default:[] in
+      if configuration.debug then
+        errors
+      else
+        let keep_error error =
+          let mode = Source.mode ~configuration ~local_mode in
+          not (Error.suppress ~mode ~ignore_codes error)
+        in
+        List.filter ~f:keep_error errors
+    in
+    let dequalify_map = Preprocessing.dequalify_map source in
     errors
     |> List.map ~f:(Error.dequalify dequalify_map ~resolution:global_resolution)
     |> List.map ~f:(fun ({ Error.kind; _ } as error) ->
            { error with kind = Error.weaken_literals kind })
+    |> Error.join_at_source ~resolution:global_resolution
     |> List.sort ~compare:Error.compare
-  in
+  with
+  | ClassHierarchy.Untracked annotation ->
+      Statistics.event
+        ~name:"undefined type"
+        ~integers:[]
+        ~normals:["handle", relative; "define", Reference.show name; "type", annotation]
+        ();
+      if configuration.debug then
+        [
+          Error.create
+            ~location:(Location.with_module ~qualifier location)
+            ~kind:(Error.AnalysisFailure annotation)
+            ~define:define_node;
+        ]
+      else
+        []
+
+
+let run
+    ~configuration
+    ~global_resolution
+    ~source:({ Source.source_path = { relative; is_stub; _ }; _ } as source)
+  =
+  Log.debug "Checking %s..." relative;
+  let check define = run_local ~configuration ~global_resolution ~source ~define in
   if is_stub then
     []
   else
     let results = source |> Preprocessing.defines ~include_toplevels:true |> List.map ~f:check in
     let errors =
-      List.concat results |> Error.join_at_source ~resolution:global_resolution |> format_errors
+      List.concat results
+      |> Error.join_at_source ~resolution:global_resolution
+      |> List.sort ~compare:Error.compare
     in
     errors
