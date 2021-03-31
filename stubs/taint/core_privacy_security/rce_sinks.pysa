@@ -40,7 +40,7 @@ def yaml.load(
 def yaml.load_all(stream: TaintSink[RemoteCodeExecution], Loader): ...
 # Subprocess
 def subprocess.run(
-    args: TaintSink[RemoteCodeExecution, Via[command_line_args], ViaTypeOf[args]],
+    args: TaintSink[ExecArgSink, ViaTypeOf[args]],
     bufsize: TaintSink[RemoteCodeExecution],
     executable: TaintSink[RemoteCodeExecution],
     stdin,
@@ -49,7 +49,7 @@ def subprocess.run(
     preexec_fn: TaintSink[RemoteCodeExecution],
     close_fds: TaintSink[RemoteCodeExecution],
     shell: TaintSink[RemoteCodeExecution],
-    cwd: TaintSink[RemoteCodeExecution],
+    cwd: TaintSink[ExecArgSink],
     env: TaintSink[ExecEnvSink],
     universal_newlines,
     startupinfo,
@@ -62,13 +62,13 @@ def subprocess.run(
     check,
     encoding,
     errors,
-    input: TaintSink[RemoteCodeExecution],
+    input: TaintSink[ExecArgSink],
     text,
     timeout,
 ): ...
 
 def subprocess.call(
-  args: TaintSink[RemoteCodeExecution, Via[command_line_args], ViaTypeOf[args]],
+  args: TaintSink[ExecArgSink, ViaTypeOf[args]],
   bufsize: TaintSink[RemoteCodeExecution],
   executable: TaintSink[RemoteCodeExecution],
   stdin,
@@ -77,7 +77,7 @@ def subprocess.call(
   preexec_fn: TaintSink[RemoteCodeExecution],
   close_fds: TaintSink[RemoteCodeExecution],
   shell: TaintSink[RemoteCodeExecution],
-  cwd: TaintSink[RemoteCodeExecution],
+  cwd: TaintSink[ExecArgSink],
   env: TaintSink[ExecEnvSink],
   universal_newlines,
   startupinfo,
@@ -89,7 +89,7 @@ def subprocess.call(
 ): ...
 
 def subprocess.check_call(
-  args: TaintSink[RemoteCodeExecution, Via[command_line_args], ViaTypeOf[args]],
+  args: TaintSink[ExecArgSink, ViaTypeOf[args]],
   bufsize: TaintSink[RemoteCodeExecution],
   executable: TaintSink[RemoteCodeExecution],
   stdin: TaintSink[RemoteCodeExecution],
@@ -98,7 +98,7 @@ def subprocess.check_call(
   preexec_fn: TaintSink[RemoteCodeExecution],
   close_fds: TaintSink[RemoteCodeExecution],
   shell: TaintSink[RemoteCodeExecution],
-  cwd: TaintSink[RemoteCodeExecution],
+  cwd: TaintSink[ExecArgSink],
   env: TaintSink[ExecEnvSink],
   universal_newlines,
   startupinfo,
@@ -110,7 +110,7 @@ def subprocess.check_call(
 ): ...
 
 def subprocess.check_output(
-  args: TaintSink[RemoteCodeExecution, Via[command_line_args], ViaTypeOf[args]],
+  args: TaintSink[ExecArgSink, ViaTypeOf[args]],
   bufsize: TaintSink[RemoteCodeExecution],
   executable: TaintSink[RemoteCodeExecution],
   stdin,
@@ -118,7 +118,7 @@ def subprocess.check_output(
   preexec_fn: TaintSink[RemoteCodeExecution],
   close_fds: TaintSink[RemoteCodeExecution],
   shell: TaintSink[RemoteCodeExecution],
-  cwd: TaintSink[RemoteCodeExecution],
+  cwd: TaintSink[ExecArgSink],
   env: TaintSink[ExecEnvSink],
   universal_newlines,
   startupinfo,
@@ -128,7 +128,7 @@ def subprocess.check_output(
   pass_fds,
   *,
   timeout,
-  input: TaintSink[RemoteCodeExecution],
+  input: TaintSink[ExecArgSink],
   encoding,
   errors,
   text,
@@ -138,17 +138,17 @@ def subprocess.getstatusoutput(cmd: TaintSink[RemoteCodeExecution, ViaTypeOf[cmd
 
 def subprocess.getoutput(cmd: TaintSink[RemoteCodeExecution, ViaTypeOf[cmd]]): ...
 
-def subprocess.Popen.__new__(self, args: TaintSink[RemoteCodeExecution, Via[command_line_args], ViaTypeOf[args]], bufsize, executable: TaintSink[RemoteCodeExecution],
+def subprocess.Popen.__new__(self, args: TaintSink[ExecArgSink, ViaTypeOf[args]], bufsize, executable: TaintSink[RemoteCodeExecution],
                  stdin, stdout, stderr,
                  preexec_fn: TaintSink[RemoteCodeExecution], close_fds,
-                 shell: TaintSink[RemoteCodeExecution], cwd: TaintSink[RemoteCodeExecution], env: TaintSink[ExecEnvSink], universal_newlines,
+                 shell: TaintSink[RemoteCodeExecution], cwd: TaintSink[ExecArgSink], env: TaintSink[ExecEnvSink], universal_newlines,
                  startupinfo, creationflags,
                  restore_signals, start_new_session,
                  pass_fds, *, encoding, errors): ...
 
 async def asyncio.subprocess.create_subprocess_exec(
     program: TaintSink[RemoteCodeExecution, ViaTypeOf[program]],
-    *args: TaintSink[RemoteCodeExecution, Via[command_line_args]],
+    *args: TaintSink[ExecArgSink],
     stdin,
     stdout,
     stderr,
@@ -168,22 +168,22 @@ async def asyncio.subprocess.create_subprocess_shell(
 ): ...
 
 # os module
-def os.execl(file: TaintSink[RemoteCodeExecution], __arg0, *args: TaintSink[RemoteCodeExecution, Via[command_line_args]]): ...
+def os.execl(file: TaintSink[RemoteCodeExecution], __arg0, *args: TaintSink[ExecArgSink]): ...
 def os.execle(file: TaintSink[RemoteCodeExecution], __arg0, *args): ...
 def os.execlp(file: TaintSink[RemoteCodeExecution], __arg0, *args): ...
 def os.execlpe(file: TaintSink[RemoteCodeExecution], __arg0,*args): ...
 def os.execv(__path: TaintSink[RemoteCodeExecution], __argv: TaintSink[RemoteCodeExecution]): ...
-def os.execve(path: TaintSink[RemoteCodeExecution], argv: TaintSink[RemoteCodeExecution, Via[command_line_args]], env: TaintSink[ExecEnvSink]): ...
-def os.execvp(file: TaintSink[RemoteCodeExecution], args: TaintSink[RemoteCodeExecution, Via[command_line_args]]): ...
-def os.execvpe(file: TaintSink[RemoteCodeExecution], args: TaintSink[RemoteCodeExecution, Via[command_line_args]], env: TaintSink[ExecEnvSink]): ...
+def os.execve(path: TaintSink[RemoteCodeExecution], argv: TaintSink[ExecArgSink], env: TaintSink[ExecEnvSink]): ...
+def os.execvp(file: TaintSink[RemoteCodeExecution], args: TaintSink[ExecArgSink]): ...
+def os.execvpe(file: TaintSink[RemoteCodeExecution], args: TaintSink[ExecArgSink], env: TaintSink[ExecEnvSink]): ...
 def os.popen(cmd: TaintSink[RemoteCodeExecution], mode, buffering):...
-def os.spawnl(mode, file: TaintSink[RemoteCodeExecution], arg0, *args: TaintSink[RemoteCodeExecution, Via[command_line_args]]): ...
-def os.spawnle(mode, file: TaintSink[RemoteCodeExecution], arg0, *args: TaintSink[RemoteCodeExecution, Via[command_line_args]]): ...
-def os.spawnlp(mode, file: TaintSink[RemoteCodeExecution], arg0, *args: TaintSink[RemoteCodeExecution, Via[command_line_args]]): ...
-def os.spawnlpe(mode, file: TaintSink[RemoteCodeExecution], arg0, *args: TaintSink[RemoteCodeExecution, Via[command_line_args]]): ...
-def os.spawnv(mode, file: TaintSink[RemoteCodeExecution], args: TaintSink[RemoteCodeExecution, Via[command_line_args]]): ...
-def os.spawnve(mode, file: TaintSink[RemoteCodeExecution], args: TaintSink[RemoteCodeExecution, Via[command_line_args]], env: TaintSink[ExecEnvSink]): ...
-def os.spawnvp(mode, file: TaintSink[RemoteCodeExecution], args: TaintSink[RemoteCodeExecution, Via[command_line_args]]): ...
+def os.spawnl(mode, file: TaintSink[RemoteCodeExecution], arg0, *args: TaintSink[ExecArgSink]): ...
+def os.spawnle(mode, file: TaintSink[RemoteCodeExecution], arg0, *args: TaintSink[ExecArgSink]): ...
+def os.spawnlp(mode, file: TaintSink[RemoteCodeExecution], arg0, *args: TaintSink[ExecArgSink]): ...
+def os.spawnlpe(mode, file: TaintSink[RemoteCodeExecution], arg0, *args: TaintSink[ExecArgSink]): ...
+def os.spawnv(mode, file: TaintSink[RemoteCodeExecution], args: TaintSink[ExecArgSink]): ...
+def os.spawnve(mode, file: TaintSink[RemoteCodeExecution], args: TaintSink[ExecArgSink], env: TaintSink[ExecEnvSink]): ...
+def os.spawnvp(mode, file: TaintSink[RemoteCodeExecution], args: TaintSink[ExecArgSink]): ...
 def os.system(command: TaintSink[RemoteCodeExecution]): ...
 
 # marshaling
