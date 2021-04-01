@@ -461,7 +461,7 @@ let initialize_server_state
 
 let get_watchman_subscriber
     ?watchman
-    { ServerConfiguration.watchman_root; critical_files; extensions; _ }
+    { ServerConfiguration.watchman_root; critical_files; extensions; source_paths; _ }
   =
   let open Lwt.Infix in
   match watchman_root with
@@ -480,11 +480,27 @@ let get_watchman_subscriber
             |> String.Set.of_list
             |> fun set ->
             Set.add set ".pyre_configuration"
-            |> fun set -> Set.add set ".pyre_configuration.local" |> Set.to_list
+            |> fun set ->
+            Set.add set ".pyre_configuration.local"
+            |> fun set ->
+            ( match source_paths with
+            | ServerConfiguration.SourcePaths.Buck _ ->
+                let set = Set.add set "TARGETS" in
+                Set.add set "BUCK"
+            | ServerConfiguration.SourcePaths.Simple _ -> set )
+            |> Set.to_list
           in
           let suffixes =
             String.Set.of_list (List.map ~f:Configuration.Extension.suffix extensions)
-            |> fun set -> Set.add set "py" |> fun set -> Set.add set "pyi" |> Set.to_list
+            |> fun set ->
+            Set.add set "py"
+            |> fun set ->
+            Set.add set "pyi"
+            |> fun set ->
+            ( match source_paths with
+            | ServerConfiguration.SourcePaths.Buck _ -> Set.add set "thrift"
+            | ServerConfiguration.SourcePaths.Simple _ -> set )
+            |> Set.to_list
           in
           { Watchman.Filter.base_names; suffixes }
         in
