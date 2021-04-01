@@ -231,6 +231,58 @@ let test_update context =
   |> ScratchProject.test_server_with ~f:test_update
 
 
+let test_buck_update context =
+  (* Count how many times target renormalization has happened. *)
+  let query_counter = ref 0 in
+  let assert_query_counter expected =
+    assert_equal ~ctxt:context ~cmp:Int.equal ~printer:Int.to_string expected !query_counter
+  in
+
+  let get_buck_build_system () =
+    let raw =
+      let query _ =
+        incr query_counter;
+        Lwt.return "{}"
+      in
+      let build _ = Lwt.return {| { "sources": {}, "dependencies": {} } |} in
+      Buck.Raw.create_for_testing ~query ~build ()
+    in
+    let source_root = bracket_tmpdir context |> Path.create_absolute in
+    let artifact_root = bracket_tmpdir context |> Path.create_absolute in
+    {
+      ServerConfiguration.Buck.mode = None;
+      isolation_prefix = None;
+      targets = ["//foo:target"];
+      source_root;
+      artifact_root;
+    }
+    |> BuildSystem.Initializer.buck ~raw
+    |> BuildSystem.Initializer.run
+  in
+  let open Lwt.Infix in
+  get_buck_build_system ()
+  >>= fun buck_build_system ->
+  (* Normalization will happen once upon initialization. *)
+  assert_query_counter 1;
+
+  (* Normalization won't happen if no target file changes. *)
+  BuildSystem.update buck_build_system []
+  >>= fun _ ->
+  assert_query_counter 1;
+  BuildSystem.update buck_build_system [Path.create_absolute "/foo/derp.py"]
+  >>= fun _ ->
+  assert_query_counter 1;
+
+  (* Normalization will happen if target file has changes. *)
+  BuildSystem.update buck_build_system [Path.create_absolute "/foo/TARGETS"]
+  >>= fun _ ->
+  assert_query_counter 2;
+  BuildSystem.update buck_build_system [Path.create_absolute "/foo/BUCK"]
+  >>= fun _ ->
+  assert_query_counter 3;
+  Lwt.return_unit
+
+
 let () =
   "build_system_test"
   >::: [
@@ -238,5 +290,6 @@ let () =
          "cleanup" >:: OUnitLwt.lwt_wrapper test_cleanup;
          "type_errors" >:: OUnitLwt.lwt_wrapper test_type_errors;
          "update" >:: OUnitLwt.lwt_wrapper test_update;
+         "buck_update" >:: OUnitLwt.lwt_wrapper test_buck_update;
        ]
   |> Test.run

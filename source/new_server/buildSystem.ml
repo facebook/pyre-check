@@ -54,6 +54,13 @@ module BuckBuildSystem = struct
       }
 
 
+    let update ~normalized_targets ~build_map state =
+      state.normalized_targets <- normalized_targets;
+      state.build_map <- build_map;
+      state.build_map_index <- Buck.BuildMap.index build_map;
+      ()
+
+
     let create_from_scratch ~builder ~targets () =
       let open Lwt.Infix in
       Buck.Builder.build builder ~targets
@@ -72,13 +79,39 @@ module BuckBuildSystem = struct
 
 
   let initialize_from_state (state : State.t) =
+    let update paths =
+      let incremental_build =
+        let should_renormalize paths =
+          let f path =
+            let file_name = Path.last path in
+            String.equal file_name "TARGETS" || String.equal file_name "BUCK"
+          in
+          List.exists paths ~f
+        in
+        if should_renormalize paths then
+          Buck.Builder.full_incremental_build ~old_build_map:state.build_map ~targets:state.targets
+        else
+          Buck.Builder.incremental_build_with_normalized_targets
+            ~old_build_map:state.build_map
+            ~targets:state.normalized_targets
+      in
+      let open Lwt.Infix in
+      incremental_build state.builder
+      >>= fun {
+                Buck.Builder.IncrementalBuildResult.targets = normalized_targets;
+                build_map;
+                changed_artifacts;
+              } ->
+      State.update ~normalized_targets ~build_map state;
+      Lwt.return changed_artifacts
+    in
     let cleanup () =
       Buck.Builder.cleanup state.builder;
       Lwt.return_unit
     in
     Lwt.return
       {
-        update = failwith "not implemented yet";
+        update;
         cleanup;
         lookup_source =
           Buck.Builder.lookup_source ~index:state.build_map_index ~builder:state.builder;

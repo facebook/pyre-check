@@ -261,6 +261,14 @@ module Raw : sig
   val create : unit -> t
   (** Create an instance of [Raw.t] based on system-installed Buck. *)
 
+  val create_for_testing
+    :  query:(string list -> string Lwt.t) ->
+    build:(string list -> string Lwt.t) ->
+    unit ->
+    t
+  (** Create an instance of [Raw.t] from custom [query] and [build] behavior. Useful for unit
+      testing. *)
+
   val query : t -> string list -> string Lwt.t
   (** Shell out to `buck query` with the given cli arguments. Returns the content of stdout. If the
       return code is not 0, raise [BuckError]. *)
