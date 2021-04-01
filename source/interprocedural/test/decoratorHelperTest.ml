@@ -123,6 +123,69 @@ let test_inline_decorators context =
 
       return __wrapper(y)
   |};
+  (* Leave decorators as such if none can be inlined. *)
+  assert_inlined
+    {|
+    from builtins import __test_sink, __test_source
+    from typing import Callable
+
+    def fails_to_apply(f):
+      return f
+
+    @fails_to_apply
+    def foo(z: str) -> None:
+      print(z)
+  |}
+    {|
+    from builtins import __test_sink, __test_source
+    from typing import Callable
+
+    def fails_to_apply(f):
+      return f
+
+    @fails_to_apply
+    def foo(z: str) -> None:
+      print(z)
+  |};
+  assert_inlined
+    {|
+    from builtins import __test_sink, __test_source
+    from typing import Callable
+
+    class Foo:
+      _some_property: str = "hello"
+
+      @classmethod
+      def some_method(cls, z: str) -> None:
+        print(z)
+
+      @property
+      def some_property(self) -> str:
+        return self._some_property
+
+      @some_property.setter
+      def some_property(self, value: str) -> None:
+        self._some_property = value
+  |}
+    {|
+    from builtins import __test_sink, __test_source
+    from typing import Callable
+
+    class Foo:
+      _some_property: str = "hello"
+
+      @classmethod
+      def some_method(cls, z: str) -> None:
+        print(z)
+
+      @property
+      def some_property(self) -> str:
+        return self._some_property
+
+      @some_property.setter
+      def some_property(self, value: str) -> None:
+        self._some_property = value
+  |};
   assert_inlined
     {|
     from builtins import __test_sink
@@ -508,13 +571,14 @@ let test_inline_decorators context =
 
       return inner
 
-    # We give up on inlining this because it has no inner wrapper function.
     def fails_to_apply(f):
       return f
 
+    @fails_to_apply
     @with_logging_source
     @fails_to_apply
     @with_logging_sink
+    @fails_to_apply
     def foo(z: str) -> None:
       print(z)
   |}
@@ -537,15 +601,24 @@ let test_inline_decorators context =
 
       return inner
 
-    # We give up on inlining this because it has no inner wrapper function.
     def fails_to_apply(f):
       return f
 
-    @with_logging_source
-    @fails_to_apply
-    @with_logging_sink
-    def foo(z: str) -> None:
-      print(z)
+    def foo(y: str) -> None:
+      def __original_function(y: str) -> None:
+        def __original_function(z: str) -> None:
+          print(z)
+
+        def __wrapper(y: str) -> None:
+          __test_sink(y)
+          __original_function(y)
+
+        return __wrapper(y)
+
+      def __wrapper(y: str) -> None:
+        __original_function(y + __test_source())
+
+      return __wrapper(y)
   |};
   (* Decorator factory. *)
   assert_inlined

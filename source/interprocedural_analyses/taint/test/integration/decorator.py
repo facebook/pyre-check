@@ -97,8 +97,15 @@ def with_logging_source(callable: Callable[[str], None]) -> Callable[[str], None
     return inner
 
 
+def fails_to_apply(f):
+    return f
+
+
+@fails_to_apply
 @with_logging_source
+@fails_to_apply
 @with_logging_sink
+@fails_to_apply
 def foo_with_shady_decorators(z: str) -> None:
     print(z)
 

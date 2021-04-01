@@ -545,19 +545,6 @@ let inline_decorator_in_define
   |> rename_define ~new_name:qualifier
 
 
-let apply_decorator
-    ~location
-    ~qualifier
-    ~decorator_bodies
-    ~decorator:{ Decorator.name = { Node.value = decorator_name; _ }; arguments }
-    define
-  =
-  let decorator_body = Map.find decorator_bodies decorator_name in
-  decorator_body
-  >>= extract_decorator_data ~is_decorator_factory:(Option.is_some arguments)
-  >>| inline_decorator_in_define ~location ~qualifier ~define
-
-
 let inline_decorators ~environment:_ ~decorator_bodies source =
   let module Transform = Transform.Make (struct
     type t = unit
@@ -588,19 +575,26 @@ let inline_decorators ~environment:_ ~decorator_bodies source =
               | [statement] -> Some statement
               | _ -> None
             in
-            let apply_decorator_with_qualifier index define_sofar decorator =
+            let decorator_data_list =
+              List.filter_map
+                decorators
+                ~f:(fun { Decorator.name = { Node.value = decorator_name; _ }; arguments } ->
+                  Map.find decorator_bodies decorator_name
+                  >>= extract_decorator_data ~is_decorator_factory:(Option.is_some arguments))
+            in
+            let apply_decorator_with_qualifier index define_sofar decorator_data =
               let qualifier =
                 Reference.combine
                   name
                   (Reference.create_from_list
                      (List.init
-                        (List.length decorators - index - 1)
+                        (List.length decorator_data_list - index - 1)
                         ~f:(fun _ -> inlined_original_function_name)))
               in
-              define_sofar >>= apply_decorator ~location ~qualifier ~decorator_bodies ~decorator
+              inline_decorator_in_define ~location ~qualifier ~define:define_sofar decorator_data
             in
-            List.foldi (List.rev decorators) ~init:(Some define) ~f:apply_decorator_with_qualifier
-            >>= postprocess
+            List.foldi (List.rev decorator_data_list) ~init:define ~f:apply_decorator_with_qualifier
+            |> postprocess
             |> Option.value ~default:statement
         | _ -> statement
       in
