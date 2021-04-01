@@ -590,18 +590,13 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
     |> Option.value ~default:Taint.bottom
 
 
-  let get_all_breadcrumbs taint_tree =
-    let gather_features feature features =
-      let open Features in
-      match feature.Abstract.OverUnderSetDomain.element with
-      | Simple.Breadcrumb _ -> feature :: features
-      (* The ViaValueOf/ViaTypeOf models will be converted to breadcrumbs at the call site via
-         `get_callsite_model`. *)
-      | Simple.ViaValueOf _
-      | Simple.ViaTypeOf _ ->
-          feature :: features
-    in
-    fold FlowDetails.simple_feature_element ~f:gather_features ~init:[] taint_tree
+  let get_all_features taint_tree =
+    let gather_features to_add features = Features.SimpleSet.add_set features ~to_add in
+    fold
+      FlowDetails.simple_feature_self
+      ~f:gather_features
+      ~init:Features.SimpleSet.bottom
+      taint_tree
 end
 
 module MakeTaintEnvironment (Taint : TAINT_DOMAIN) () = struct
@@ -671,14 +666,17 @@ module BackwardState = struct
   include MakeTaintEnvironment (BackwardTaint) ()
 
   let compute_features_to_attach ~root taint =
+    let gather_features to_add features = Features.SimpleSet.add_set features ~to_add in
     read ~root ~path:[] taint
     |> Tree.collapse
     |> BackwardTaint.partition BackwardTaint.leaf ~f:(fun sink ->
            if Sinks.equal Sinks.Attach sink then Some true else None)
     |> (fun map -> Map.Poly.find map true)
-    >>| BackwardTaint.fold BackwardTaint.simple_feature_set ~f:List.rev_append ~init:[]
-    |> Option.value ~default:[]
-    |> Features.SimpleSet.of_approximation
+    >>| BackwardTaint.fold
+          BackwardTaint.simple_feature_self
+          ~f:gather_features
+          ~init:Features.SimpleSet.bottom
+    |> Option.value ~default:Features.SimpleSet.bottom
 end
 
 (* Special sink as it needs the return access path *)
@@ -690,6 +688,3 @@ let local_return_taint =
       Part (BackwardTaint.complex_feature, Features.Complex.ReturnAccessPath []);
       Part (Features.SimpleSet.Self, Features.SimpleSet.empty);
     ]
-
-
-let format_string_feature = Features.Simple.Breadcrumb Features.Breadcrumb.FormatString

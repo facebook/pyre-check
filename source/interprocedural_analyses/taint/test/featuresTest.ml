@@ -21,7 +21,8 @@ let test_add_type_breadcrumb context =
     in
     let actual =
       let open Abstract.OverUnderSetDomain in
-      add_type_breadcrumb ~resolution (Some annotation) []
+      type_breadcrumbs ~resolution (Some annotation)
+      |> SimpleSet.to_approximation
       |> List.map ~f:(fun { element; _ } -> element)
       |> List.filter_map ~f:(function
              | Simple.Breadcrumb (Breadcrumb.Type type_name) -> Some type_name

@@ -1270,32 +1270,35 @@ let find_named_parameter_annotation search_name parameters =
   List.find ~f:has_name parameters |> Option.bind ~f:Type.Record.Callable.RecordParameter.annotation
 
 
-let add_signature_based_breadcrumbs ~resolution root ~callable_annotation breadcrumbs =
-  match root, callable_annotation with
-  | ( AccessPath.Root.PositionalParameter { position; _ },
-      Some
-        {
-          Type.Callable.implementation =
-            { Type.Callable.parameters = Type.Callable.Defined implementation_parameters; _ };
-          _;
-        } ) ->
-      let parameter_annotation =
-        find_positional_parameter_annotation position implementation_parameters
-      in
-      Features.add_type_breadcrumb ~resolution parameter_annotation breadcrumbs
-  | ( AccessPath.Root.NamedParameter { name; _ },
-      Some
-        {
-          Type.Callable.implementation =
-            { Type.Callable.parameters = Type.Callable.Defined implementation_parameters; _ };
-          _;
-        } ) ->
-      let parameter_annotation = find_named_parameter_annotation name implementation_parameters in
-      Features.add_type_breadcrumb ~resolution parameter_annotation breadcrumbs
-  | ( AccessPath.Root.LocalResult,
-      Some { Type.Callable.implementation = { Type.Callable.annotation; _ }; _ } ) ->
-      Features.add_type_breadcrumb ~resolution (Some annotation) breadcrumbs
-  | _ -> breadcrumbs
+let add_signature_based_breadcrumbs ~resolution root ~callable_annotation =
+  let type_breadcrumbs =
+    match root, callable_annotation with
+    | ( AccessPath.Root.PositionalParameter { position; _ },
+        Some
+          {
+            Type.Callable.implementation =
+              { Type.Callable.parameters = Type.Callable.Defined implementation_parameters; _ };
+            _;
+          } ) ->
+        let parameter_annotation =
+          find_positional_parameter_annotation position implementation_parameters
+        in
+        Features.type_breadcrumbs ~resolution parameter_annotation
+    | ( AccessPath.Root.NamedParameter { name; _ },
+        Some
+          {
+            Type.Callable.implementation =
+              { Type.Callable.parameters = Type.Callable.Defined implementation_parameters; _ };
+            _;
+          } ) ->
+        let parameter_annotation = find_named_parameter_annotation name implementation_parameters in
+        Features.type_breadcrumbs ~resolution parameter_annotation
+    | ( AccessPath.Root.LocalResult,
+        Some { Type.Callable.implementation = { Type.Callable.annotation; _ }; _ } ) ->
+        Features.type_breadcrumbs ~resolution (Some annotation)
+    | _ -> Features.SimpleSet.empty
+  in
+  List.rev_append (Features.SimpleSet.to_approximation type_breadcrumbs)
 
 
 let parse_parameter_taint

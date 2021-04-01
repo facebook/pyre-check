@@ -201,6 +201,10 @@ let obscure = Simple.Breadcrumb Breadcrumb.Obscure
 
 let lambda = Simple.Breadcrumb Breadcrumb.Lambda
 
+let tito = Simple.Breadcrumb Breadcrumb.Tito
+
+let format_string = Simple.Breadcrumb Breadcrumb.FormatString
+
 let type_bool =
   SimpleSet.create
     [
@@ -209,7 +213,7 @@ let type_bool =
     ]
 
 
-let add_type_breadcrumb ~resolution annotation =
+let type_breadcrumbs ~resolution annotation =
   let matches_at_leaves ~f annotation =
     let rec matches_at_leaves ~f annotation =
       match annotation with
@@ -241,16 +245,13 @@ let add_type_breadcrumb ~resolution annotation =
     matches_at_leaves annotation ~f:(fun left ->
         GlobalResolution.less_or_equal resolution ~left ~right:Type.bool)
   in
-  let add feature_set =
-    let add_if cond type_name feature_set =
-      if cond then
-        SimpleSet.inject (Simple.Breadcrumb (Breadcrumb.Type type_name)) :: feature_set
-      else
-        feature_set
-    in
-    feature_set |> add_if (is_scalar || is_boolean) "scalar" |> add_if is_boolean "bool"
+  let add_if cond type_name features =
+    if cond then
+      SimpleSet.add (Simple.Breadcrumb (Breadcrumb.Type type_name)) features
+    else
+      features
   in
-  add
+  SimpleSet.bottom |> add_if (is_scalar || is_boolean) "scalar" |> add_if is_boolean "bool"
 
 
 let simple_via ~allowed name =
@@ -258,10 +259,18 @@ let simple_via ~allowed name =
   Breadcrumb.simple_via ~allowed name >>| fun breadcrumb -> Simple.Breadcrumb breadcrumb
 
 
-let gather_breadcrumbs feature breadcrumbs =
-  match feature.Abstract.OverUnderSetDomain.element with
-  | Simple.Breadcrumb _ -> feature :: breadcrumbs
-  | _ -> breadcrumbs
+let gather_breadcrumbs features breadcrumbs =
+  let to_add =
+    SimpleSet.transform
+      SimpleSet.Element
+      Abstract.Domain.(
+        Filter
+          (function
+          | Simple.Breadcrumb _ -> true
+          | _ -> false))
+      features
+  in
+  SimpleSet.add_set breadcrumbs ~to_add
 
 
 let is_breadcrumb = function

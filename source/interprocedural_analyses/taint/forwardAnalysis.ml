@@ -220,10 +220,10 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
               =
               let breadcrumbs =
                 BackwardTaint.fold
-                  BackwardTaint.simple_feature_element
+                  BackwardTaint.simple_feature_self
                   return_taint
                   ~f:Features.gather_breadcrumbs
-                  ~init:Features.[SimpleSet.inject (Simple.Breadcrumb Breadcrumb.Tito)]
+                  ~init:(Features.SimpleSet.singleton Features.tito)
               in
               let add_features_and_position leaf_taint =
                 leaf_taint
@@ -231,8 +231,8 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                      FlowDetails.tito_position_element
                      Abstract.Domain.(Add argument.Node.location)
                 |> FlowDetails.transform
-                     FlowDetails.simple_feature_set
-                     Abstract.Domain.(Map (fun features -> List.rev_append breadcrumbs features))
+                     FlowDetails.simple_feature_self
+                     Abstract.Domain.(Add breadcrumbs)
               in
               let taint_to_propagate =
                 if collapse_tito then
@@ -319,22 +319,24 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           (* Add features to arguments. *)
           let state =
             match AccessPath.of_expression ~resolution argument with
-            | Some { AccessPath.root; path } -> (
+            | Some { AccessPath.root; path } ->
                 let features_to_add =
                   BackwardState.Tree.filter_by_leaf ~leaf:Sinks.AddFeatureToArgument sink_tree
-                  |> BackwardTaint.fold BackwardTaint.simple_feature_set ~f:List.rev_append ~init:[]
-                  |> List.filter ~f:Features.is_breadcrumb
+                  |> BackwardTaint.fold
+                       BackwardTaint.simple_feature_self
+                       ~f:Features.gather_breadcrumbs
+                       ~init:Features.SimpleSet.bottom
                 in
-                match features_to_add with
-                | _ :: _ as features ->
-                    let taint =
-                      ForwardState.read state.taint ~root ~path
-                      |> ForwardState.Tree.transform
-                           ForwardTaint.simple_feature_set
-                           Abstract.Domain.(Map (List.rev_append features))
-                    in
-                    store_taint ~root ~path taint state
-                | [] -> state )
+                if Features.SimpleSet.is_bottom features_to_add then
+                  state
+                else
+                  let taint =
+                    ForwardState.read state.taint ~root ~path
+                    |> ForwardState.Tree.transform
+                         ForwardTaint.simple_feature_self
+                         Abstract.Domain.(Add features_to_add)
+                  in
+                  store_taint ~root ~path taint state
             | None -> state
           in
           FunctionContext.check_flow ~location ~source_tree:argument_taint ~sink_tree;
@@ -419,13 +421,14 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                 resolution
                 (Node.create_with_default_location (Expression.Call { Call.callee; arguments }))
             in
+            let type_breadcrumbs =
+              Features.type_breadcrumbs
+                ~resolution:(Resolution.global_resolution resolution)
+                (Some annotation)
+            in
             ForwardState.Tree.transform
-              ForwardTaint.simple_feature_set
-              Abstract.Domain.(
-                Map
-                  (Features.add_type_breadcrumb
-                     ~resolution:(Resolution.global_resolution resolution)
-                     (Some annotation)))
+              ForwardTaint.simple_feature_self
+              Abstract.Domain.(Add type_breadcrumbs)
               joined
           else
             joined
@@ -1054,7 +1057,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                     { base = { Node.value = Expression.String _; _ }; attribute = "format"; _ }) ->
                   ForwardState.Tree.transform
                     ForwardTaint.simple_feature
-                    Abstract.Domain.(Add Domains.format_string_feature)
+                    Abstract.Domain.(Add Features.format_string)
                     taint
               | _ -> taint
             in
@@ -1108,12 +1111,12 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
         Model.get_global_tito_model_and_mode ~resolution ~expression
       in
       let add_tito_features taint =
-        let attribute_breadcrumbs = global_tito_model >>| BackwardState.Tree.get_all_breadcrumbs in
-        match attribute_breadcrumbs with
-        | Some (_ :: _ as breadcrumbs) ->
+        let attribute_features = global_tito_model >>| BackwardState.Tree.get_all_features in
+        match attribute_features with
+        | Some features when not (Features.SimpleSet.is_bottom features) ->
             ForwardState.Tree.transform
-              ForwardTaint.simple_feature_set
-              Abstract.Domain.(Map (List.rev_append breadcrumbs))
+              ForwardTaint.simple_feature_self
+              Abstract.Domain.(Add features)
               taint
         | _ -> taint
       in
@@ -1183,7 +1186,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
               ~init:(ForwardState.Tree.empty, state)
             |>> ForwardState.Tree.transform
                   ForwardTaint.simple_feature
-                  Abstract.Domain.(Add Domains.format_string_feature)
+                  Abstract.Domain.(Add Features.format_string)
             |>> ForwardState.Tree.join value_taint
           in
           (* Compute flows of user-controlled data -> literal string sinks if applicable. *)
@@ -1555,18 +1558,12 @@ let extract_features_to_attach existing_taint =
   |> (fun map -> Map.Poly.find map true)
   |> function
   | Some taint ->
-      let gather_features feature features =
-        let open Features in
-        match feature.Abstract.OverUnderSetDomain.element with
-        | Simple.Breadcrumb _ -> feature :: features
-        (* The ViaValueOf/ViaTypeOf models will be converted to breadcrumbs at the call site via
-           `get_callsite_model`. *)
-        | Simple.ViaValueOf _
-        | Simple.ViaTypeOf _ ->
-            feature :: features
-      in
-      ForwardTaint.fold ForwardTaint.simple_feature_element ~f:gather_features ~init:[] taint
-      |> Features.SimpleSet.of_approximation
+      let gather_features to_add features = Features.SimpleSet.add_set features ~to_add in
+      ForwardTaint.fold
+        ForwardTaint.simple_feature_self
+        ~f:gather_features
+        ~init:Features.SimpleSet.bottom
+        taint
   | None -> Features.SimpleSet.bottom
 
 
@@ -1582,6 +1579,7 @@ let extract_source_model ~define ~resolution ~features_to_attach exit_taint =
   let return_annotation =
     Option.map ~f:(GlobalResolution.parse_annotation resolution) return_annotation
   in
+  let return_type_breadcrumbs = Features.type_breadcrumbs ~resolution return_annotation in
   let {
     Configuration.analysis_model_constraints =
       { maximum_model_width; maximum_complex_access_path_length; _ };
@@ -1595,8 +1593,8 @@ let extract_source_model ~define ~resolution ~features_to_attach exit_taint =
     let essential = ForwardState.Tree.essential tree in
     ForwardState.Tree.shape tree ~mold:essential
     |> ForwardState.Tree.transform
-         ForwardTaint.simple_feature_set
-         Abstract.Domain.(Map (Features.add_type_breadcrumb ~resolution return_annotation))
+         ForwardTaint.simple_feature_self
+         Abstract.Domain.(Add return_type_breadcrumbs)
     |> ForwardState.Tree.limit_to ~width:maximum_model_width
     |> ForwardState.Tree.approximate_complex_access_paths ~maximum_complex_access_path_length
   in
