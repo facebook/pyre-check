@@ -71,7 +71,7 @@ class Persistent(Command):
     def _flags(self) -> List[str]:
         flags = [
             "-log-identifier",
-            '"{}"'.format(self._analysis_directory.get_root()),
+            f'"{self._analysis_directory.get_root()}"',
             "-expected-binary-version",
             self._configuration.get_version_hash_respecting_override() or "unversioned",
         ]
@@ -88,7 +88,7 @@ class Persistent(Command):
             {"jsonrpc": "2.0", "id": request_id, "result": {"capabilities": {}}},
             sort_keys=True,
         )
-        return "Content-Length: {}\r\n\r\n{}\r\n".format(len(response), response)
+        return f"Content-Length: {len(response)}\r\n\r\n{response}\r\n"
 
     @classmethod
     def run_null_server(cls, timeout: Optional[int] = None) -> None:

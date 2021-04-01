@@ -82,7 +82,7 @@ class Stop(Command):
             if not stopped:
                 LOG.warning(
                     "Could not stop server. "
-                    "Run `pyre kill` if you want to force-kill all existing servers."
+                    + "Run `pyre kill` if you want to force-kill all existing servers."
                 )
             else:
                 LOG.info("Stopped server at `%s`", self._analysis_directory.get_root())

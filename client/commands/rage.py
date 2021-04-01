@@ -70,7 +70,7 @@ class Rage(Command):
             self._analysis_directory = AnalysisDirectory(SimpleSearchPathElement("."))
             print(
                 f"No server running for {self._original_directory}."
-                " Printing rage for all recently-used servers.",
+                + " Printing rage for all recently-used servers.",
                 file=output_file,
                 flush=True,
             )

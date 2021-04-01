@@ -147,7 +147,8 @@ class Start(Reporting):
                     flags.extend(["-changed-files-path", changed_files_path])
             elif changed_files_path is not None:
                 LOG.error(
-                    "--load-initial-state-from must be set if --changed-files-path is set."
+                    "--load-initial-state-from must be set "
+                    + "if --changed-files-path is set."
                 )
         flags.extend(
             [

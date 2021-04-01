@@ -82,14 +82,14 @@ class Result:
 
     def check(self) -> None:
         if self.code != ExitCode.SUCCESS:
-            description = ":\n{}".format(self.output) if self.output else ""
+            description = f":\n{self.output}" if self.output else ""
             if self.code == ExitCode.SIGSEGV:
                 description += (
                     "\nThis is a Pyre bug. Please re-run Pyre with --debug "
-                    "and provide the output to the developers."
+                    + "and provide the output to the developers."
                 )
             raise ClientException(
-                "Client exited with error code {}{}".format(self.code, description)
+                f"Client exited with error code {self.code}{description}"
             )
 
 
@@ -106,9 +106,9 @@ def _convert_json_response_to_result(response: json_rpc.Response) -> Result:
 
 def executable_file(file_path: str) -> str:
     if not os.path.isfile(file_path):
-        raise EnvironmentException("%s is not a valid file" % file_path)
+        raise EnvironmentException(f"{file_path} is not a valid file")
     if not os.access(file_path, os.X_OK):
-        raise EnvironmentException("%s is not an executable file" % file_path)
+        raise EnvironmentException(f"{file_path} is not an executable file")
     return file_path
 
 
@@ -291,7 +291,7 @@ class Command(CommandParser, ABC):
     ) -> Result:
         if not os.path.isdir(self._analysis_directory.get_root()):
             raise EnvironmentException(
-                "`{}` is not a link tree.".format(self._analysis_directory.get_root())
+                f"`{self._analysis_directory.get_root()}` is not a link tree."
             )
 
         binary = self._configuration.get_binary_respecting_override()

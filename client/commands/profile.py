@@ -90,7 +90,7 @@ def parse_event(input_string: str) -> Event:
         description = None if len(event_type) <= 1 else event_type[1]
         return CounterEvent(description=description, metadata=metadata)
     else:
-        raise ValueError("Unrecognized event type: {}".format(input))
+        raise ValueError(f"Unrecognized event type: {input}")
 
 
 def parse_events(input_string: str) -> List[Event]:
@@ -102,9 +102,7 @@ def parse_events(input_string: str) -> List[Event]:
                 continue
             output.append(parse_event(line))
         except Exception:
-            raise RuntimeError(
-                "Malformed log entry detected on line {}".format(index + 1)
-            )
+            raise RuntimeError(f"Malformed log entry detected on line {index + 1}")
     return output
 
 
@@ -325,9 +323,7 @@ class Profile(Command):
         )
         server_stdout = Path(server_stdout_path)
         if not server_stdout.is_file():
-            raise RuntimeError(
-                "Cannot find server output at `{}`.".format(server_stdout_path)
-            )
+            raise RuntimeError(f"Cannot find server output at `{server_stdout_path}`.")
         return server_stdout
 
     def collect_memory_statistics_over_time(self) -> StatisticsOverTime:
@@ -348,10 +344,9 @@ class Profile(Command):
                     extracted.add(line)
             if extracted.is_empty():
                 raise RuntimeError(
-                    "Cannot find table size data in `{}`. "
-                    "Please run Pyre with `--debug` option first.".format(
-                        server_stdout.as_posix()
-                    )
+                    "Cannot find table size data in "
+                    + f"`{server_stdout.as_posix()}`. "
+                    + "Please run Pyre with `--debug` option first."
                 )
             sizes = json.dumps(extracted.get_totals())
             counts = json.dumps(extracted.get_counts())
@@ -359,9 +354,9 @@ class Profile(Command):
             # simultaneously machine and human readable
             combined = (
                 "{\n"
-                f'  "total_table_sizes": {sizes},\n'
-                f'  "table_key_counts": {counts}\n'
-                "}"
+                + f'  "total_table_sizes": {sizes},\n'
+                + f'  "table_key_counts": {counts}\n'
+                + "}"
             )
             print(combined)
         elif output == ProfileOutput.TOTAL_SHARED_MEMORY_SIZE_OVER_TIME:
@@ -375,11 +370,9 @@ class Profile(Command):
                 profiling_output = Path(self.profiling_log_path())
                 if not profiling_output.is_file():
                     raise RuntimeError(
-                        "Cannot find profiling output at `{}`. "
-                        "Please run Pyre with `--enable-profiling` or "
-                        "`--enable-memory-profiling` option first.".format(
-                            profiling_output
-                        )
+                        f"Cannot find profiling output at `{profiling_output}`. "
+                        + "Please run Pyre with `--enable-profiling` or "
+                        + "`--enable-memory-profiling` option first."
                     )
                 events = parse_events(profiling_output.read_text())
                 if output == ProfileOutput.TRACE_EVENT:
@@ -391,8 +384,8 @@ class Profile(Command):
                 elif output == ProfileOutput.TAINT:
                     print(json.dumps(to_taint(events), indent=2))
                 else:
-                    raise RuntimeError("Unrecognized output format: {}".format(output))
+                    raise RuntimeError(f"Unrecognized output format: {output}")
 
             except Exception as e:
-                LOG.error("Failed to inspect profiling log: {}".format(e))
+                LOG.error(f"Failed to inspect profiling log: {e}")
                 raise e

@@ -16,7 +16,7 @@ import sys
 from collections import defaultdict
 from logging import Logger
 from pathlib import Path
-from typing import IO, Any, Dict, List, Optional, Sequence, Set, Union
+from typing import IO, Dict, List, Optional, Sequence, Set, Union
 
 import libcst
 from libcst.codemod import CodemodContext
@@ -129,7 +129,7 @@ class FunctionStub:
     def _get_decorator_string(self) -> str:
         decorator_string = ""
         for decorator in self.decorators:
-            decorator_string += "@{}\n".format(decorator)
+            decorator_string += f"@{decorator}\n"
         return decorator_string
 
     def _get_async_string(self) -> str:
@@ -145,6 +145,7 @@ class FunctionStub:
         return True
 
     def to_string(self) -> str:
+        # lint-fixme: UseFstringRule
         return "{}{}def {}({}){}: ...".format(
             self._get_decorator_string(),
             self._get_async_string(),
@@ -187,9 +188,7 @@ class FieldStub:
         return self.name.split(".")[-1] if self.name.split(".") else ""
 
     def to_string(self) -> str:
-        return "{}: {} = ...".format(
-            self._get_name(), dequalify_and_fix_pathlike(self.actual)
-        )
+        return f"{self._get_name()}: {dequalify_and_fix_pathlike(self.actual)} = ..."  # noqa
 
     @functools.lru_cache(maxsize=1)
     def get_typing_imports(self) -> Set[str]:
@@ -302,29 +301,28 @@ class StubFile:
             contents += stub.to_string() + "\n"
 
         for parent, stubs in classes.items():
-            contents += "\nclass {}:\n".format(parent)
+            contents += f"\nclass {parent}:\n"
             for stub in stubs:
                 stubs_in_file.append(stub)
-                contents += "    {}\n".format(stub.to_string().replace("\n", "\n    "))
+                tabbed_stub = stub.to_string().replace("\n", "\n    ")
+                contents += f"    {tabbed_stub}\n"
 
         for stub in stubs_in_file:
             typing_imports.update(stub.get_typing_imports())
             alphabetical_imports = sorted(typing_imports)
 
         if alphabetical_imports and contents != "":
-            contents = (
-                "from typing import {}\n\n".format(
-                    ", ".join(str(type_import) for type_import in alphabetical_imports)
-                )
-                + contents
+            typing_imports = ", ".join(
+                str(type_import) for type_import in alphabetical_imports
             )
+            contents = f"from typing import {typing_imports}\n\n{contents}"
         return contents
 
     def is_empty(self) -> bool:
         return self._stubs == []
 
     def path(self, directory) -> Path:
-        return directory / Path("{}i".format(self._path))
+        return directory / Path(f"{self._path}i")
 
     def output_to_file(self, path) -> None:
         contents = self.to_string()
@@ -355,11 +353,11 @@ def write_stubs_to_disk(
     type_directory: Path,
 ) -> None:
     if type_directory.exists():
-        LOG.log(log.SUCCESS, "Deleting {}".format(type_directory))
+        LOG.log(log.SUCCESS, f"Deleting {type_directory}")
         shutil.rmtree(type_directory)
     type_directory.mkdir(parents=True, exist_ok=True)
 
-    LOG.log(log.SUCCESS, "Outputting inferred stubs to {}".format(type_directory))
+    LOG.log(log.SUCCESS, f"Outputting inferred stubs to {type_directory}")
     for stub in stubs:
         stub.output_to_file(stub.path(type_directory))
 
@@ -373,7 +371,7 @@ def filter_paths(
         if all(not str(stub.path(Path(""))).startswith(str(path)) for stub in stubs)
     ]
     for path in unused_annotates:
-        LOG.log(log.SUCCESS, "No annotations for {}".format(path))
+        LOG.log(log.SUCCESS, f"No annotations for {path}")
 
     return [
         stub
@@ -402,11 +400,11 @@ def annotate_path(stub_path: str, file_path: str, debug_infer: bool) -> None:
         annotated_content = apply_stub_annotations(stub_path, file_path)
         with open(file_path, "w") as source_file:
             source_file.write(annotated_content)
-        LOG.info("Annotated {}".format(file_path))
+        LOG.info(f"Annotated {file_path}")
     except Exception as error:
-        LOG.warning("Failed to annotate {}".format(file_path))
+        LOG.warning(f"Failed to annotate {file_path}")
         if debug_infer:
-            LOG.warning("\tError: {}".format(error))
+            LOG.warning(f"\tError: {error}")
 
 
 def annotate_paths(

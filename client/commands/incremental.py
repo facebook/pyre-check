@@ -100,9 +100,9 @@ class Incremental(Reporting):
                 ):
                     LOG.warning(
                         "Pyre's file watching service is down."
-                        " Results may be inconsistent with full checks."
-                        " Please run `pyre restart` to bring Pyre server to a "
-                        "consistent state again."
+                        + " Results may be inconsistent with full checks."
+                        + " Please run `pyre restart` to bring Pyre server to a "
+                        + "consistent state again."
                     )
                     self._exit_code = ExitCode.INCONSISTENT_SERVER
                     raise ClientInitializationError

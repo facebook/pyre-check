@@ -6,7 +6,6 @@
 
 import enum
 import json
-import os
 from typing import List, Optional
 
 from typing_extensions import Final
@@ -16,7 +15,7 @@ from ..analysis_directory import AnalysisDirectory, resolve_analysis_directory
 from ..configuration import Configuration
 from ..error import print_errors
 from .check import Check
-from .command import ClientException, ExitCode, Result
+from .command import ClientException, ExitCode
 from .validate_models import ValidateModels
 
 

@@ -119,7 +119,7 @@ class Kill(Command):
         try:
             scratch_path = (
                 subprocess.check_output(
-                    f"mkscratch path --subdir pyre {self._configuration.project_root}".split()
+                    f"mkscratch path --subdir pyre {self._configuration.project_root}".split()  # noqa
                 )
                 .decode()
                 .strip()
@@ -154,17 +154,12 @@ class Kill(Command):
             if pid_to_kill == os.getpgid(os.getpid()):
                 continue
             try:
-                LOG.info(
-                    "Killing process {} with pid {}.".format(
-                        process.info["name"], pid_to_kill
-                    )
-                )
+                LOG.info(f"Killing process {name} with pid {pid_to_kill}.")
                 os.kill(pid_to_kill, signal.SIGKILL)
             except (ProcessLookupError, PermissionError) as exception:
                 LOG.debug(
-                    "Failed to kill process {} with pid {} due to exception {}".format(
-                        process.info["name"], pid_to_kill, exception
-                    )
+                    f"Failed to kill process {name} "
+                    + f"with pid {pid_to_kill} due to exception {exception}"
                 )
 
     def _kill_client_processes(self) -> None:
@@ -195,7 +190,7 @@ class Kill(Command):
         LOG.warning("Force-killing all running pyre servers.")
         LOG.warning(
             "Use `pyre servers stop` if you want to gracefully stop"
-            " all running servers."
+            + " all running servers."
         )
         binary_name = _get_process_name("PYRE_BINARY", BINARY_NAME)
         self._kill_processes_by_name(binary_name)
@@ -227,7 +222,7 @@ class Kill(Command):
         if explicit_local:
             LOG.warning(
                 "Pyre kill will terminate all running servers. "
-                "Specifying local path `{}` is unnecessary.".format(explicit_local)
+                + f"Specifying local path `{explicit_local}` is unnecessary."
             )
         self._rage()
         self._kill_binary_processes()
@@ -236,8 +231,9 @@ class Kill(Command):
         self._kill_client_processes()
         if self._with_fire:
             LOG.warning(
-                "Note that `--with-fire` adds emphasis to `pyre kill` but does not affect its behavior."
-                f"\n{PYRE_FIRE}"
+                "Note that `--with-fire` adds emphasis to `pyre kill` "
+                + "but does not affect its behavior."
+                + f"\n{PYRE_FIRE}"
             )
 
 

@@ -53,8 +53,8 @@ class Reporting(Command):
             # TODO(T62259082): Identify why the client receives such JSON output.
             LOG.error(
                 "Received invalid JSON output for the last `pyre` command"
-                " (known bug: GitHub issue #238 / T62259082)."
-                " You may want to rerun your command."
+                + " (known bug: GitHub issue #238 / T62259082)."
+                + " You may want to rerun your command."
             )
             LOG.debug("Invalid JSON output: %s", json_output)
         return error_list
