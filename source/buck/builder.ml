@@ -29,15 +29,25 @@ end
 
 let source_database_suffix = "#source-db"
 
+module BuckOptions = struct
+  type t = {
+    raw: Raw.t;
+    mode: string option;
+    isolation_prefix: string option;
+  }
+end
+
 type t = {
-  raw: Raw.t;
-  mode: string option;
-  isolation_prefix: string option;
+  buck_options: BuckOptions.t;
+  source_root: Path.t;
+  artifact_root: Path.t;
 }
 
-let create ?mode ?isolation_prefix raw = { raw; mode; isolation_prefix }
+let create ?mode ?isolation_prefix ~source_root ~artifact_root raw =
+  { buck_options = { BuckOptions.raw; mode; isolation_prefix }; source_root; artifact_root }
 
-let query_buck_for_targets { raw; mode; isolation_prefix } target_specifications =
+
+let query_buck_for_targets { BuckOptions.raw; mode; isolation_prefix } target_specifications =
   match target_specifications with
   | [] -> Lwt.return "{}"
   | _ ->
@@ -66,7 +76,7 @@ let query_buck_for_targets { raw; mode; isolation_prefix } target_specifications
       |> Raw.query raw
 
 
-let run_buck_build_for_targets { raw; isolation_prefix; _ } targets =
+let run_buck_build_for_targets { BuckOptions.raw; mode; isolation_prefix } targets =
   match targets with
   | [] -> Lwt.return "{}"
   | _ ->
@@ -78,6 +88,7 @@ let run_buck_build_for_targets { raw; isolation_prefix; _ } targets =
           ["--config"; "client.id=pyre"];
           Option.value_map isolation_prefix ~default:[] ~f:(fun isolation_prefix ->
               ["--isolation_prefix"; isolation_prefix]);
+          Option.value_map mode ~default:[] ~f:(fun mode -> ["@mode/" ^ mode]);
           List.map targets ~f:(fun target ->
               Format.sprintf "%s%s" (Target.show target) source_database_suffix);
         ]
@@ -135,10 +146,10 @@ let load_partial_build_map path =
    `buck` and return the set of individual targets which will be built. May raise
    [Buck.Raw.BuckError] when `buck` invocation fails, or [Buck.Builder.JsonError] when `buck` itself
    succeeds but its output cannot be parsed. *)
-let normalize_targets builder target_specifications =
+let normalize_targets buck_options target_specifications =
   let open Lwt.Infix in
   Log.info "Collecting buck targets to build...";
-  query_buck_for_targets builder target_specifications
+  query_buck_for_targets buck_options target_specifications
   >>= fun query_output ->
   let targets = parse_buck_query_output query_output |> List.map ~f:Target.of_string in
   Log.info "Collected %d targets" (List.length targets);
@@ -153,10 +164,10 @@ let normalize_targets builder target_specifications =
 
    May raise [Buck.Raw.BuckError] when `buck` invocation fails, or [Buck.Builder.JsonError] when
    `buck` itself succeeds but its output cannot be parsed. *)
-let build_source_databases builder targets =
+let build_source_databases buck_options targets =
   let open Lwt.Infix in
   Log.info "Building Buck source databases...";
-  run_buck_build_for_targets builder targets
+  run_buck_build_for_targets buck_options targets
   >>= fun build_output ->
   let source_database_suffix_length = String.length source_database_suffix in
   parse_buck_build_output build_output
@@ -218,18 +229,18 @@ let load_and_merge_source_databases target_and_source_database_paths =
 
 (* A convenient wrapper that stitches together [normalize_targets], [build_source_databases], and
    [load_and_merge_source_databases]. *)
-let construct_build_map builder target_specifications =
+let construct_build_map buck_options target_specifications =
   let open Lwt.Infix in
-  normalize_targets builder target_specifications
+  normalize_targets buck_options target_specifications
   >>= fun normalized_targets ->
-  build_source_databases builder normalized_targets
+  build_source_databases buck_options normalized_targets
   >>= fun target_and_source_database_paths ->
   load_and_merge_source_databases target_and_source_database_paths
 
 
-let build ~source_root ~artifact_root ~targets builder =
+let build ~targets { buck_options; source_root; artifact_root } =
   let open Lwt.Infix in
-  construct_build_map builder targets
+  construct_build_map buck_options targets
   >>= fun (targets, build_map) ->
   Log.info "Constructing Python link-tree for type checking...";
   Artifacts.populate ~source_root ~artifact_root build_map
@@ -251,9 +262,9 @@ let do_incremental_build ~source_root ~artifact_root ~old_build_map ~new_build_m
       BuildMap.Difference.to_alist difference |> List.map ~f:to_artifact_path |> Lwt.return
 
 
-let full_incremental_build ~source_root ~artifact_root ~old_build_map ~targets builder =
+let full_incremental_build ~old_build_map ~targets { buck_options; source_root; artifact_root } =
   let open Lwt.Infix in
-  construct_build_map builder targets
+  construct_build_map buck_options targets
   >>= fun (targets, build_map) ->
   do_incremental_build ~source_root ~artifact_root ~old_build_map ~new_build_map:build_map ()
   >>= fun changed_artifacts ->
@@ -261,14 +272,12 @@ let full_incremental_build ~source_root ~artifact_root ~old_build_map ~targets b
 
 
 let incremental_build_with_normalized_targets
-    ~source_root
-    ~artifact_root
     ~old_build_map
     ~targets
-    builder
+    { buck_options; source_root; artifact_root }
   =
   let open Lwt.Infix in
-  build_source_databases builder targets
+  build_source_databases buck_options targets
   >>= fun target_and_source_database_paths ->
   load_and_merge_source_databases target_and_source_database_paths
   >>= fun (targets, build_map) ->

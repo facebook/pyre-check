@@ -300,19 +300,19 @@ module Builder : sig
     }
   end
 
-  val create : ?mode:string -> ?isolation_prefix:string -> Raw.t -> t
+  val create
+    :  ?mode:string ->
+    ?isolation_prefix:string ->
+    source_root:PyrePath.t ->
+    artifact_root:PyrePath.t ->
+    Raw.t ->
+    t
   (** Create an instance of [Builder.t] from an instance of {!Raw.t} and some buck options. *)
 
-  val build
-    :  source_root:PyrePath.t ->
-    artifact_root:PyrePath.t ->
-    targets:string list ->
-    t ->
-    BuildResult.t Lwt.t
-  (** Given a source root, an artifact root, and a list of buck target specificaitons to build,
-      construct a build map for the targets and create a Python link tree at the given artifact root
-      according to the build map. Return the constructed build map along with a list of targets that
-      are covered by the build map.
+  val build : targets:string list -> t -> BuildResult.t Lwt.t
+  (** Given a list of buck target specificaitons to build, construct a build map for the targets and
+      create a Python link tree at the given artifact root according to the build map. Return the
+      constructed build map along with a list of targets that are covered by the build map.
 
       Concretely, the entire build process can be broken down into 4 steps:
 
@@ -334,17 +334,15 @@ module Builder : sig
       care of that before its invocation. *)
 
   val full_incremental_build
-    :  source_root:PyrePath.t ->
-    artifact_root:PyrePath.t ->
-    old_build_map:BuildMap.t ->
+    :  old_build_map:BuildMap.t ->
     targets:string list ->
     t ->
     IncrementalBuildResult.t Lwt.t
-  (** Given a source root, an artifact root, and a list of buck target specificaitons to build,
-      fully construct a new build map for the targets and incrementally update the Python link tree
-      at the given artifact root according to how the new build map changed compared to the old
-      build map. Return the new build map along with a list of targets that are covered by the build
-      map. This API may raise the same set of exceptions as {!full_build}.
+  (** Given a list of buck target specificaitons to build, fully construct a new build map for the
+      targets and incrementally update the Python link tree at the given artifact root according to
+      how the new build map changed compared to the old build map. Return the new build map along
+      with a list of targets that are covered by the build map. This API may raise the same set of
+      exceptions as {!full_build}.
 
       This API is guaranteed to rebuild the entire build map from scratch. It is guaranteed to
       produce the most correct and most up-to-date build map, but at the same time it is a costly
@@ -352,17 +350,15 @@ module Builder : sig
       incremental build APIs if their pre-conditions are known to be satisfied. *)
 
   val incremental_build_with_normalized_targets
-    :  source_root:PyrePath.t ->
-    artifact_root:PyrePath.t ->
-    old_build_map:BuildMap.t ->
+    :  old_build_map:BuildMap.t ->
     targets:Target.t list ->
     t ->
     IncrementalBuildResult.t Lwt.t
-  (** Given a source root, an artifact root, and a list of normalized targets to build, fully
-      construct a new build map for the targets and incrementally update the Python link tree at the
-      given artifact root according to how the new build map changed compared to the old build map.
-      Return the new build map along with a list of targets that are covered by the build map. This
-      API may raise the same set of exceptions as {!full_build}.
+  (** Given a list of normalized targets to build, fully construct a new build map for the targets
+      and incrementally update the Python link tree at the given artifact root according to how the
+      new build map changed compared to the old build map. Return the new build map along with a
+      list of targets that are covered by the build map. This API may raise the same set of
+      exceptions as {!full_build}.
 
       The difference between this API and {!full_incremental_build} is that this API makes an
       additional assumption that the given incremental update does not change the set of targets to
