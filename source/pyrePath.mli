@@ -93,6 +93,9 @@ val remove_if_exists : t -> unit
 
 val remove_recursively : t -> unit
 
+(* Remove every file under the given directory, but not the directory itself. *)
+val remove_contents_of_directory : t -> (unit, string) Result.t
+
 val readlink : t -> path option
 
 module Map : Map.S with type Key.t = t

@@ -267,6 +267,15 @@ let remove_recursively path =
   do_remove (absolute path)
 
 
+let remove_contents_of_directory path =
+  try
+    Caml.Sys.readdir (absolute path)
+    |> Array.iter ~f:(fun relative -> remove_recursively (create_relative ~root:path ~relative));
+    Result.Ok ()
+  with
+  | Sys_error message -> Result.Error message
+
+
 let readlink path =
   try Unix.readlink (absolute path) |> Option.some with
   | Unix.Unix_error _ -> None

@@ -286,6 +286,58 @@ let test_remove_recursively context =
   ()
 
 
+let test_remove_contents_of_directory context =
+  let assert_success path =
+    Path.remove_contents_of_directory path |> Result.ok_or_failwith;
+    let elements = Sys.readdir (Path.absolute path) in
+    assert_true (Array.is_empty elements)
+  in
+  let assert_failure path =
+    match Path.remove_contents_of_directory path with
+    | Result.Ok () -> assert_failure "Unexpected success on `ensure_parent_directory`"
+    | _ -> ()
+  in
+
+  let _, root = root context in
+  (* Empty directory *)
+  let root0 = Path.create_relative ~root ~relative:"test0" in
+  Unix.mkdir (Path.absolute root0);
+  assert_success root0;
+
+  (* Files *)
+  let root1 = Path.create_relative ~root ~relative:"test1" in
+  Unix.mkdir (Path.absolute root1);
+  touch (Path.create_relative ~root:root1 ~relative:"file");
+  assert_success root1;
+
+  (* Subdirectory *)
+  let root2 = Path.create_relative ~root ~relative:"test2" in
+  let subdirectory = Path.create_relative ~root:root2 ~relative:"subdirectory" in
+  Unix.mkdir (Path.absolute root2);
+  Unix.mkdir (Path.absolute subdirectory);
+  touch (Path.create_relative ~root:subdirectory ~relative:"file");
+  assert_success root2;
+
+  (* Mixed *)
+  let root3 = Path.create_relative ~root ~relative:"test3" in
+  let subdirectory = Path.create_relative ~root:root3 ~relative:"subdirectory" in
+  Unix.mkdir (Path.absolute root3);
+  touch (Path.create_relative ~root:root3 ~relative:"file0");
+  Unix.mkdir (Path.absolute subdirectory);
+  touch (Path.create_relative ~root:subdirectory ~relative:"file1");
+  assert_success root3;
+
+  (* Not a directory *)
+  let not_a_directory = Path.create_relative ~root ~relative:"not_a_directory" in
+  touch not_a_directory;
+  assert_failure not_a_directory;
+
+  (* Directory does not exist *)
+  let does_not_exist = Path.create_relative ~root ~relative:"does_not_exist" in
+  assert_failure does_not_exist;
+  ()
+
+
 (* Yolo *)
 
 let test_build_symlink_map context =
@@ -333,6 +385,7 @@ let () =
          "create_directory_recursively" >:: test_create_directory_recursively;
          "remove" >:: test_remove;
          "remove_recursively" >:: test_remove_recursively;
+         "remove_contents_of_directory" >:: test_remove_contents_of_directory;
          "build_symlink_map" >:: test_build_symlink_map;
        ]
   |> Test.run
