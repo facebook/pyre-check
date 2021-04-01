@@ -25,19 +25,6 @@ LOG_DIRECTORY: str = ".pyre"
 LOG: Logger = logging.getLogger(__name__)
 
 
-def find_log_directory(
-    project_root: str, local_configuration: Optional[str], dot_pyre_directory: str
-) -> str:
-    """Pyre outputs all logs to a .pyre directory that lives in the project root."""
-    log_directory = dot_pyre_directory
-    if local_configuration:
-        # `log_directory` will never escape `.pyre/` because in `switch_root` we have
-        # guaranteed that configurations are never deeper than local configurations
-        relative = os.path.relpath(local_configuration, project_root)
-        log_directory = os.path.join(log_directory, relative)
-    return log_directory
-
-
 def get_dot_pyre_directory(root_directory: str) -> str:
     dot_pyre_directory = os.path.join(root_directory, LOG_DIRECTORY)
     try:
@@ -72,39 +59,3 @@ def get_dot_pyre_directory(root_directory: str) -> str:
             except Exception:
                 pass
     return dot_pyre_directory
-
-
-def log_directory(
-    project_root: str,
-    local_root: Optional[str] = None,
-    subdirectory: Optional[str] = None,
-) -> Path:
-    dot_pyre = get_dot_pyre_directory(root_directory=project_root)
-    if local_root is None:
-        return Path(dot_pyre)
-    project_root_path = find_global_root(Path(project_root)) or Path(project_root)
-    log_directory = Path(
-        find_log_directory(
-            dot_pyre_directory=dot_pyre,
-            project_root=str(project_root_path),
-            local_configuration=local_root,
-        )
-    )
-    if subdirectory is None:
-        return log_directory
-    return log_directory / subdirectory
-
-
-def get_configuration_value(directory: str, key: str) -> str:
-    local_configuration = Path(directory) / LOCAL_CONFIGURATION_FILE
-    with open(local_configuration) as file:
-        local_configuration = json.load(file)
-
-    if local_configuration.get(key):
-        return local_configuration.get(key)
-    else:
-        project_root = find_global_root(Path(directory)) or Path(directory)
-        project_configuration = project_root / CONFIGURATION_FILE
-        with open(project_configuration) as file:
-            project_configuration = json.load(file)
-        return project_configuration.get(key)
