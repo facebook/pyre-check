@@ -14,6 +14,7 @@ CONFIGURATION_FILE: str = ".pyre_configuration"
 LOCAL_CONFIGURATION_FILE: str = ".pyre_configuration.local"
 BINARY_NAME: str = "pyre.bin"
 CLIENT_NAME: str = "pyre-client"
+LOG_DIRECTORY: str = ".pyre"
 
 
 LOG: logging.Logger = logging.getLogger(__name__)

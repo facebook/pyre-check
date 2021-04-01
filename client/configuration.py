@@ -42,9 +42,9 @@ from .find_directories import (
     BINARY_NAME,
     CONFIGURATION_FILE,
     LOCAL_CONFIGURATION_FILE,
+    LOG_DIRECTORY,
     get_relative_local_root,
 )
-from .resources import LOG_DIRECTORY
 
 
 LOG: Logger = logging.getLogger(__name__)
