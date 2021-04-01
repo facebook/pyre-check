@@ -446,7 +446,8 @@ let initialize_server_state
     let from_source_paths = function
       | ServerConfiguration.SourcePaths.Simple _ -> BuildSystem.Initializer.null
       | ServerConfiguration.SourcePaths.Buck buck_options ->
-          BuildSystem.Initializer.buck buck_options
+          let raw = Buck.Raw.create () in
+          BuildSystem.Initializer.buck ~raw buck_options
     in
     (* If not specified, auto-determine which build system to use based on server configuration *)
     Option.value build_system_initializer ~default:(from_source_paths source_paths)

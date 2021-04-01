@@ -62,16 +62,28 @@ module Initializer : sig
 
   val run : t -> build_system Lwt.t
   (** Construct a {!type:BuildSystem.t}. Additional work can be performed (e.g. copying or indexing
-      files) to establish the source-to-artifact mapping, before the build system gets created. *)
+      files) to establish the source-to-artifact mapping, before the build system gets created.
+
+      This API may or may not raise exceptions, depending on the behavior of each individual
+      initializer. *)
 
   val null : t
   (** [null] initializes a no-op build system. It does nothing on [update], and [cleanup], and it
       always assumes an identity source-to-artifact mapping. This can be used when the project being
-      checked does not use a build system. *)
+      checked does not use a build system. This initializer never raises. *)
 
-  val buck : ServerConfiguration.Buck.t -> t
+  val buck : raw:Buck.Raw.t -> ServerConfiguration.Buck.t -> t
   (** [buck] initializes a build system that interops with Buck. See {!module:Buck} for more details
-      about its behavior. *)
+      about its behavior.
+
+      The initialization process may fail with many kinds of exceptions:
+
+      - {!Buck.Raw.BuckError} could happen when the underlying [buck] invocation has unexpected
+        return code.
+      - {!Buck.Builder.JsonError} could happen when the underlying [buck] invocation has unexpected
+        output.
+      - {!Buck.Builder.LinkTreeConstructionError} could happen when build artifact creation cannot
+        function properly due to unexpected issues on the filesystem. *)
 
   (* This function allows the client to fully tweak the behavior of an initializer. Expose for
      testing purpose only. *)
