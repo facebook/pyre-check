@@ -115,44 +115,47 @@ let get_callsite_model ~resolution ~call_target ~arguments =
           { forward = { source_taint }; backward = { sink_taint; taint_in_taint_out }; mode }
         =
         let expand features =
-          let transform feature =
-            let open Features in
+          let transform feature features =
             let match_argument_to_parameter parameter =
               AccessPath.match_actuals_to_formals arguments [parameter]
               |> List.find ~f:(fun (_, matches) -> not (List.is_empty matches))
               >>| fst
             in
-            match feature.Abstract.OverUnderSetDomain.element with
-            | Simple.ViaValueOf { parameter; tag } ->
-                Simple.via_value_of_breadcrumb
-                  ?tag
-                  ~argument:(match_argument_to_parameter parameter)
-                |> SimpleSet.inject
-            | Simple.ViaTypeOf { parameter; tag } ->
-                Simple.via_type_of_breadcrumb
-                  ?tag
-                  ~resolution
-                  ~argument:(match_argument_to_parameter parameter)
-                |> SimpleSet.inject
-            | _ -> feature
+            match feature with
+            | Features.Simple.ViaValueOf { parameter; tag } ->
+                features
+                |> Features.SimpleSet.remove feature
+                |> Features.SimpleSet.add
+                     (Features.Simple.via_value_of_breadcrumb
+                        ?tag
+                        ~argument:(match_argument_to_parameter parameter))
+            | Features.Simple.ViaTypeOf { parameter; tag } ->
+                features
+                |> Features.SimpleSet.remove feature
+                |> Features.SimpleSet.add
+                     (Features.Simple.via_type_of_breadcrumb
+                        ?tag
+                        ~resolution
+                        ~argument:(match_argument_to_parameter parameter))
+            | _ -> features
           in
-          List.map features ~f:transform
+          Features.SimpleSet.fold Features.SimpleSet.Element features ~f:transform ~init:features
         in
         let source_taint =
           ForwardState.transform
-            ForwardTaint.simple_feature_set
+            ForwardTaint.simple_feature_self
             Abstract.Domain.(Map expand)
             source_taint
         in
         let sink_taint =
           BackwardState.transform
-            BackwardTaint.simple_feature_set
+            BackwardTaint.simple_feature_self
             Abstract.Domain.(Map expand)
             sink_taint
         in
         let taint_in_taint_out =
           BackwardState.transform
-            BackwardTaint.simple_feature_set
+            BackwardTaint.simple_feature_self
             Abstract.Domain.(Map expand)
             taint_in_taint_out
         in
