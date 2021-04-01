@@ -72,10 +72,14 @@ module BuckBuildSystem = struct
 
 
   let initialize_from_state (state : State.t) =
+    let cleanup () =
+      Buck.Builder.cleanup state.builder;
+      Lwt.return_unit
+    in
     Lwt.return
       {
         update = failwith "not implemented yet";
-        cleanup = failwith "not implemented yet";
+        cleanup;
         lookup_source =
           Buck.Builder.lookup_source ~index:state.build_map_index ~builder:state.builder;
         lookup_artifact =
