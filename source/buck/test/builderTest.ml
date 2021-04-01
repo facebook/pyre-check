@@ -7,6 +7,7 @@
 
 open Base
 open OUnit2
+module Path = Pyre.Path
 
 (* Create aliases to private modules so we could test their internal APIs. *)
 module BuildMap = Buck__BuildMap
@@ -196,11 +197,165 @@ let test_merge_build_map context =
   ()
 
 
+let test_lookup_source context =
+  let assert_lookup ~source_root ~artifact_root ~build_map ~expected path =
+    let index = BuildMap.Partial.of_alist_exn build_map |> BuildMap.create |> BuildMap.index in
+    let actual =
+      Builder.do_lookup_source
+        ~index
+        ~source_root:(Path.create_absolute source_root)
+        ~artifact_root:(Path.create_absolute artifact_root)
+        (Path.create_absolute path)
+      |> Option.map ~f:Path.absolute
+    in
+    assert_equal
+      ~ctxt:context
+      ~cmp:[%compare.equal: string option]
+      ~printer:(fun result -> Sexp.to_string_hum ([%sexp_of: string option] result))
+      expected
+      actual
+  in
+
+  assert_lookup
+    ~source_root:"/source"
+    ~artifact_root:"/artifact"
+    ~build_map:["a.py", "a.py"]
+    "/artifact/a.py"
+    ~expected:(Some "/source/a.py");
+  assert_lookup
+    ~source_root:"/source"
+    ~artifact_root:"/artifact"
+    ~build_map:["a.py", "b.py"]
+    "/artifact/a.py"
+    ~expected:(Some "/source/b.py");
+  assert_lookup
+    ~source_root:"/source"
+    ~artifact_root:"/artifact"
+    ~build_map:["a.py", "a.py"]
+    "/artifact/b.py"
+    ~expected:None;
+  assert_lookup
+    ~source_root:"/source"
+    ~artifact_root:"/artifact"
+    ~build_map:["a.py", "a.py"]
+    "/source/a.py"
+    ~expected:None;
+  assert_lookup
+    ~source_root:"/source"
+    ~artifact_root:"/artifact"
+    ~build_map:["foo/a.py", "a.py"; "bar/b.py", "b.py"]
+    "/artifact/foo/b.py"
+    ~expected:None;
+  assert_lookup
+    ~source_root:"/source"
+    ~artifact_root:"/artifact"
+    ~build_map:["foo/a.py", "a.py"; "bar/b.py", "b.py"]
+    "/artifact/bar/b.py"
+    ~expected:(Some "/source/b.py");
+  assert_lookup
+    ~source_root:"/source"
+    ~artifact_root:"/artifact"
+    ~build_map:["a.py", "foo/a.py"; "b.py", "bar/b.py"]
+    "/artifact/a.py"
+    ~expected:(Some "/source/foo/a.py");
+  assert_lookup
+    ~source_root:"/source"
+    ~artifact_root:"/artifact"
+    ~build_map:["a.py", "a.py"; "b.py", "a.py"]
+    "/artifact/a.py"
+    ~expected:(Some "/source/a.py");
+  assert_lookup
+    ~source_root:"/source"
+    ~artifact_root:"/artifact"
+    ~build_map:["a.py", "a.py"; "b.py", "a.py"]
+    "/artifact/b.py"
+    ~expected:(Some "/source/a.py");
+  ()
+
+
+let test_lookup_artifact context =
+  let assert_lookup ~source_root ~artifact_root ~build_map ~expected path =
+    let index = BuildMap.Partial.of_alist_exn build_map |> BuildMap.create |> BuildMap.index in
+    let actual =
+      Builder.do_lookup_artifact
+        ~index
+        ~source_root:(Path.create_absolute source_root)
+        ~artifact_root:(Path.create_absolute artifact_root)
+        (Path.create_absolute path)
+      |> List.map ~f:Path.absolute
+    in
+    assert_equal
+      ~ctxt:context
+      ~cmp:[%compare.equal: string list]
+      ~printer:(fun result -> Sexp.to_string_hum ([%sexp_of: string list] result))
+      (List.sort ~compare:String.compare expected)
+      (List.sort ~compare:String.compare actual)
+  in
+
+  assert_lookup
+    ~source_root:"/source"
+    ~artifact_root:"/artifact"
+    ~build_map:["a.py", "a.py"]
+    "/source/a.py"
+    ~expected:["/artifact/a.py"];
+  assert_lookup
+    ~source_root:"/source"
+    ~artifact_root:"/artifact"
+    ~build_map:["a.py", "b.py"]
+    "/source/b.py"
+    ~expected:["/artifact/a.py"];
+  assert_lookup
+    ~source_root:"/source"
+    ~artifact_root:"/artifact"
+    ~build_map:["a.py", "a.py"]
+    "/source/b.py"
+    ~expected:[];
+  assert_lookup
+    ~source_root:"/source"
+    ~artifact_root:"/artifact"
+    ~build_map:["a.py", "a.py"]
+    "/artifact/a.py"
+    ~expected:[];
+  assert_lookup
+    ~source_root:"/source"
+    ~artifact_root:"/artifact"
+    ~build_map:["foo/a.py", "a.py"; "bar/b.py", "b.py"]
+    "/source/b.py"
+    ~expected:["/artifact/bar/b.py"];
+  assert_lookup
+    ~source_root:"/source"
+    ~artifact_root:"/artifact"
+    ~build_map:["a.py", "foo/a.py"; "b.py", "bar/b.py"]
+    "/source/foo/a.py"
+    ~expected:["/artifact/a.py"];
+  assert_lookup
+    ~source_root:"/source"
+    ~artifact_root:"/artifact"
+    ~build_map:["a.py", "foo/a.py"; "b.py", "bar/b.py"]
+    "/source/foo/b.py"
+    ~expected:[];
+  assert_lookup
+    ~source_root:"/source"
+    ~artifact_root:"/artifact"
+    ~build_map:["a.py", "a.py"; "b.py", "a.py"]
+    "/source/a.py"
+    ~expected:["/artifact/a.py"; "/artifact/b.py"];
+  assert_lookup
+    ~source_root:"/source"
+    ~artifact_root:"/artifact"
+    ~build_map:["foo/a.py", "baz/a.py"; "bar/b.py", "baz/a.py"]
+    "/source/baz/a.py"
+    ~expected:["/artifact/foo/a.py"; "/artifact/bar/b.py"];
+  ()
+
+
 let () =
   "builder_test"
   >::: [
          "parse_buck_query_output" >:: test_parse_buck_query_output;
          "parse_buck_build_output" >:: test_parse_buck_build_output;
          "merge_build_map" >:: test_merge_build_map;
+         "lookup_source" >:: test_lookup_source;
+         "lookup_artifact" >:: test_lookup_artifact;
        ]
   |> Test.run

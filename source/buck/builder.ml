@@ -284,3 +284,27 @@ let incremental_build_with_normalized_targets
   do_incremental_build ~source_root ~artifact_root ~old_build_map ~new_build_map:build_map ()
   >>= fun changed_artifacts ->
   Lwt.return { IncrementalBuildResult.targets; build_map; changed_artifacts }
+
+
+let do_lookup_source ~index ~source_root ~artifact_root path =
+  match Path.get_relative_to_root ~root:artifact_root ~path with
+  | None -> None
+  | Some relative_artifact_path ->
+      BuildMap.Indexed.lookup_source index relative_artifact_path
+      |> Option.map ~f:(fun relative -> Path.create_relative ~root:source_root ~relative)
+
+
+let lookup_source ~index ~builder:{ source_root; artifact_root; _ } path =
+  do_lookup_source ~index ~source_root ~artifact_root path
+
+
+let do_lookup_artifact ~index ~source_root ~artifact_root path =
+  match Path.get_relative_to_root ~root:source_root ~path with
+  | None -> []
+  | Some relative_source_path ->
+      BuildMap.Indexed.lookup_artifact index relative_source_path
+      |> List.map ~f:(fun relative -> Path.create_relative ~root:artifact_root ~relative)
+
+
+let lookup_artifact ~index ~builder:{ source_root; artifact_root; _ } path =
+  do_lookup_artifact ~index ~source_root ~artifact_root path

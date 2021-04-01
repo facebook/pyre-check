@@ -71,13 +71,15 @@ module BuckBuildSystem = struct
     | Result.Ok () -> ()
 
 
-  let initialize_from_state _ =
+  let initialize_from_state (state : State.t) =
     Lwt.return
       {
         update = failwith "not implemented yet";
         cleanup = failwith "not implemented yet";
-        lookup_source = failwith "not implemented yet";
-        lookup_artifact = failwith "not implemented yet";
+        lookup_source =
+          Buck.Builder.lookup_source ~index:state.build_map_index ~builder:state.builder;
+        lookup_artifact =
+          Buck.Builder.lookup_artifact ~index:state.build_map_index ~builder:state.builder;
       }
 
 

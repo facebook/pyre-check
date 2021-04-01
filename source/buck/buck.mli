@@ -280,6 +280,19 @@ module Builder : sig
   exception LinkTreeConstructionError of string
   (** Raised when artifact building fails. See {!val:Artifacts.populate}. *)
 
+  (** {1 Creation} *)
+
+  val create
+    :  ?mode:string ->
+    ?isolation_prefix:string ->
+    source_root:PyrePath.t ->
+    artifact_root:PyrePath.t ->
+    Raw.t ->
+    t
+  (** Create an instance of [Builder.t] from an instance of {!Raw.t} and some buck options. *)
+
+  (** {1 Build} *)
+
   (** The return type for initial builds. It contains a build map as well as a list of buck targets
       that are successfully included in the build. *)
   module BuildResult : sig
@@ -299,15 +312,6 @@ module Builder : sig
       changed_artifacts: PyrePath.t list;
     }
   end
-
-  val create
-    :  ?mode:string ->
-    ?isolation_prefix:string ->
-    source_root:PyrePath.t ->
-    artifact_root:PyrePath.t ->
-    Raw.t ->
-    t
-  (** Create an instance of [Builder.t] from an instance of {!Raw.t} and some buck options. *)
 
   val build : targets:string list -> t -> BuildResult.t Lwt.t
   (** Given a list of buck target specificaitons to build, construct a build map for the targets and
@@ -366,4 +370,22 @@ module Builder : sig
       optimization. Such an assumption usually holds when the incremental update does not touch any
       `BUCK` or `TARGETS` file -- callers are encouraged to verify this before deciding which
       incremental build API to invoke. *)
+
+  (** {1 Lookup} *)
+
+  val lookup_source : index:BuildMap.Indexed.t -> builder:t -> PyrePath.t -> PyrePath.t option
+  (** Lookup the source path that corresponds to the given artifact path. If there is no such
+      artifact, return [None]. Time complexity of this operation is O(1).
+
+      The difference between this API and {!BuildMap.Indexed.lookup_source} is that the build map
+      API only understands relative paths, while this API operates on full paths and takes care of
+      relativizing/expanding the input/output paths against source/artifact root. *)
+
+  val lookup_artifact : index:BuildMap.Indexed.t -> builder:t -> PyrePath.t -> PyrePath.t list
+  (** Lookup all artifact paths that corresponds to the given source path. If there is no such
+      artifact, return an empty list. Time complexity of this operation is O(1).
+
+      The difference between this API and {!BuildMap.Indexed.lookup_artifact} is that the build map
+      API only understands relative paths, while this API operates on full paths and takes care of
+      relativizing/expanding the input/output paths against artifact/source root.*)
 end
