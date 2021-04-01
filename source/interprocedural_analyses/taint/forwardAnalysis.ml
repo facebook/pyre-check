@@ -1802,15 +1802,16 @@ let run ~environment ~qualifier ~define ~call_graph_of_define ~existing_model =
     | None -> log "No exit state found"
   in
   let resolution = TypeEnvironment.ReadOnly.global_resolution environment in
-  let extract_model ({ FixpointState.taint; _ } as result) =
+  let extract_model { FixpointState.taint; _ } =
     (* Explicitly declared taint is not propagated to the result and needs to be picked up from the
        existing model. *)
     let features_to_attach = extract_features_to_attach existing_model.forward.source_taint in
     let source_taint =
       extract_source_model ~define:define.value ~resolution ~features_to_attach taint
     in
-    let () = log "Forward Model: %a" FixpointState.pp result in
-    TaintResult.Forward.{ source_taint }
+    let model = TaintResult.Forward.{ source_taint } in
+    let () = log "Forward Model:\n%a" TaintResult.Forward.pp_model model in
+    model
   in
   let issues = Context.generate_issues () in
   let model = exit_state >>| extract_model |> Option.value ~default:TaintResult.Forward.empty in
