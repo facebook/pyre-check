@@ -627,6 +627,20 @@ let start_server_and_wait ?event_channel server_configuration =
     ~on_exception:(fun exn ->
       let message =
         match exn with
+        | Buck.Raw.BuckError { arguments; description } ->
+            Format.sprintf
+              "Cannot build the project: %s. To reproduce this error, run `%s`."
+              description
+              (String.concat ~sep:" " ("buck" :: arguments))
+        | Buck.Builder.JsonError message ->
+            Format.sprintf
+              "Cannot build the project because Buck returns malformed JSON: %s"
+              message
+        | Buck.Builder.LinkTreeConstructionError message ->
+            Format.sprintf
+              "Cannot build the project because Pyre encounters a fatal error while constructing a \
+               link tree: %s"
+              message
         | Watchman.ConnectionError message -> Format.sprintf "Watchman connection error: %s" message
         | Watchman.SubscriptionError message ->
             Format.sprintf "Watchman subscription error: %s" message
