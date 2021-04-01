@@ -1088,11 +1088,28 @@ def create_configuration(
     arguments: command_arguments.CommandArguments, base_directory: Path
 ) -> Configuration:
     local_root_argument = arguments.local_configuration
-    found_root = find_directories.find_global_and_local_root(
+    search_base = (
         base_directory
         if local_root_argument is None
         else base_directory / local_root_argument
     )
+    found_root = find_directories.find_global_and_local_root(search_base)
+
+    # If the local root was explicitly specified but does not exist, return an
+    # error instead of falling back to current directory.
+    if local_root_argument is not None:
+        if found_root is None:
+            raise InvalidConfiguration(
+                "A local configuration path was explicitly specified, but no"
+                + f"{CONFIGURATION_FILE} file was found in {search_base}"
+                + " or its parents."
+            )
+        elif found_root.local_root is None:
+            raise InvalidConfiguration(
+                "A local configuration path was explicitly specified, but no"
+                + f"{LOCAL_CONFIGURATION_FILE} file was found in {search_base}"
+                + " or its parents."
+            )
 
     command_argument_configuration = PartialConfiguration.from_command_arguments(
         arguments

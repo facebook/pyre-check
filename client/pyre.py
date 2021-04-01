@@ -258,6 +258,13 @@ def _create_configuration_with_retry(
     if len(configuration.source_directories) > 0 or len(configuration.targets) > 0:
         return configuration
 
+    if arguments.local_configuration is not None:
+        raise configuration_module.InvalidConfiguration(
+            "No buck targets or source directories to analyze.\nHint: Include"
+            + ' a "source_directories" or "targets" entry in your local'
+            + " configuration file."
+        )
+
     # Heuristic: If neither `source_directories` nor `targets` is specified,
     # and if there exists recently-used local configurations, we guess that
     # the user may have forgotten to specifiy `-l`.
