@@ -164,13 +164,17 @@ let test_is_constructor _ =
   assert_is_constructor ~name:"Foo.bar" ~parent:(Some "Foo") false
 
 
-let test_dump _ =
-  let assert_dump source expected =
-    assert_equal expected (parse_single_define source |> Define.dump)
+let test_pyre_dump _ =
+  let assert_dump ?(dump = false) ?(dump_cfg = false) ?(dump_locations = false) source =
+    let parsed = parse_single_define source in
+    assert_equal dump (parsed |> Define.dump);
+    assert_equal dump_cfg (parsed |> Define.dump_cfg);
+    assert_equal dump_locations (parsed |> Define.dump_locations)
   in
-  assert_dump "def foo(): pass" false;
-  assert_dump "def foo(): pyre_dump()" true;
-  assert_dump "def foo(): pyre_dump_cfg()" false;
+  assert_dump "def foo(): pass";
+  assert_dump "def foo(): pyre_dump()" ~dump:true;
+  assert_dump "def foo(): pyre_dump_cfg()" ~dump_cfg:true;
+  assert_dump "def foo(): pyre_dump_locations()" ~dump_locations:true;
   assert_dump
     {|
       def foo():
@@ -178,7 +182,7 @@ let test_dump _ =
         pass
         pyre_dump()
     |}
-    true
+    ~dump:true
 
 
 let test_constructor _ =
@@ -1153,7 +1157,7 @@ let () =
          "is_class_property" >:: test_is_class_property;
          "decorator" >:: test_decorator;
          "is_constructor" >:: test_is_constructor;
-         "dump" >:: test_dump;
+         "pyre_dump" >:: test_pyre_dump;
        ]
   |> Test.run;
   "class"

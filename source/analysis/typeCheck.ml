@@ -6418,17 +6418,39 @@ let exit_state ~resolution (module Context : Context) =
   else (
     Log.log ~section:`Check "Checking %a" Reference.pp name;
     Context.Builder.initialize ();
-    let dump = Define.dump define in
-    if dump then
-      Log.dump "AST:\n%a" Define.pp define;
-    if Define.dump_locations define then
-      Log.dump "AST with Locations:\n%s" (Define.show_json define);
     let cfg = Cfg.create define in
-    let exit =
-      let fixpoint = Fixpoint.forward ~cfg ~initial in
-      Fixpoint.exit fixpoint
-    in
-    if dump then Option.iter exit ~f:(Log.dump "Exit state:\n%a" State.pp);
+    let fixpoint = Fixpoint.forward ~cfg ~initial in
+    let exit = Fixpoint.exit fixpoint in
+    (* debugging logic for pyre_dump / pyre_dump_locations / pyre_dump_cfg *)
+    if Define.dump_locations define then
+      Log.dump
+        "AST of %a with Locations:\n----\n%s\n----"
+        Reference.pp
+        name
+        (Define.show_json define);
+    if Define.dump define then (
+      Log.dump "AST of %a:\n----%a\n----" Reference.pp name Define.pp define;
+      Option.iter exit ~f:(Log.dump "Exit state:\n%a" State.pp) );
+    ( if Define.dump_cfg define then
+        let precondition table id =
+          match Hashtbl.find table id with
+          | Some { State.resolution = Some exit_resolution; _ } ->
+              let stringify ~key ~data label =
+                let annotation_string =
+                  Type.show (Annotation.annotation data) |> String.strip ~drop:(Char.equal '`')
+                in
+                label ^ " " ^ Reference.show key ^ ": " ^ annotation_string
+              in
+              Resolution.annotation_store exit_resolution
+              |> Map.filter_map ~f:RefinementUnit.base
+              |> Map.fold ~f:stringify ~init:""
+          | _ -> ""
+        in
+        Log.dump
+          "CFG for %a in dot syntax for graphviz:\n----\n%s\n----"
+          Reference.pp
+          name
+          (Cfg.to_dot ~precondition:(precondition fixpoint) ~single_line:true cfg) );
 
     let callees = Context.Builder.get_all_callees () in
     let errors, local_annotations =

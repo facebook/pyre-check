@@ -147,7 +147,8 @@ let pp format graph =
   Hashtbl.keys graph |> List.sort ~compare:Int.compare |> List.iter ~f:print_node
 
 
-let to_dot ?(precondition = fun _ -> "") ?(sort_labels = false) graph =
+let to_dot ?(precondition = fun _ -> "") ?(sort_labels = false) ?(single_line = false) graph =
+  let newline_or_space = if single_line then " " else "\n" in
   let sorted_iteri table ~f =
     let map =
       Hashtbl.fold table ~init:Int.Map.empty ~f:(fun ~key ~data map -> Map.set ~key ~data map)
@@ -155,12 +156,13 @@ let to_dot ?(precondition = fun _ -> "") ?(sort_labels = false) graph =
     Map.iteri map ~f
   in
   let buffer = Buffer.create 10000 in
-  Buffer.add_string buffer "digraph {\n";
+  Buffer.add_string buffer "digraph {";
+  Buffer.add_string buffer newline_or_space;
   let iteri = if sort_labels then sorted_iteri else Hashtbl.iteri in
   iteri
     ~f:(fun ~key ~data ->
       let label = Node.description data |> String.escaped in
-      let label = Printf.sprintf "  %d[label=\"%s\"]\n" key label in
+      let label = Printf.sprintf "  %d[label=\"%s\"]%s" key label newline_or_space in
       Buffer.add_string buffer label)
     graph;
   iteri
@@ -169,10 +171,11 @@ let to_dot ?(precondition = fun _ -> "") ?(sort_labels = false) graph =
         ~f:(fun successor_id ->
           let edge =
             Printf.sprintf
-              "  %d -> %d [label=\"%s\", fontcolor=blue]\n"
+              "  %d -> %d [label=\"%s\", fontcolor=blue]%s"
               key
               successor_id
               (precondition successor_id)
+              newline_or_space
           in
           Buffer.add_string buffer edge)
         (Node.successors data))
