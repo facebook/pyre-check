@@ -3732,6 +3732,40 @@ let expand_import_python_calls ({ Source.source_path = { SourcePath.qualifier; _
                   {
                     callee = { Node.value = Name (Name.Identifier "import_python"); _ };
                     arguments =
+                      [
+                        {
+                          Call.Argument.value =
+                            { Node.value = Expression.String { value = from_name; _ }; _ };
+                          _;
+                        };
+                      ];
+                  };
+              location;
+            } ->
+            Statement.Import
+              {
+                Import.from = None;
+                imports =
+                  [
+                    {
+                      Import.alias = None;
+                      name =
+                        {
+                          Node.value =
+                            Reference.create
+                              (String.substr_replace_all ~pattern:"/" ~with_:"." from_name);
+                          location;
+                        };
+                    };
+                  ];
+              }
+        | Statement.Expression
+            {
+              Node.value =
+                Call
+                  {
+                    callee = { Node.value = Name (Name.Identifier "import_python"); _ };
+                    arguments =
                       {
                         Call.Argument.value =
                           { Node.value = Expression.String { value = from_name; _ }; _ };

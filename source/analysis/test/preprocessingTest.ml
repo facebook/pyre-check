@@ -5608,6 +5608,13 @@ let test_expand_import_python_calls _ =
     {|
       from cubism.shared.cinc import *
     |};
+  assert_expand
+    {|
+    import_python("cubism/shared.cinc")
+    |}
+    {|
+      import cubism.shared.cinc
+    |};
   ()
 
 
