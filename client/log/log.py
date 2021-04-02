@@ -142,7 +142,7 @@ class TimedStreamHandler(logging.StreamHandler):
                 color = "yellow"
             if age > 30:
                 color = "red"
-            suffix = click.style(" [{:.1f}s]".format(age), fg=color)
+            suffix = click.style(f" [{age:.1f}s]", fg=color)
         else:
             self._record = record
             self._last_update = time.time()
@@ -356,7 +356,7 @@ def get_yes_no_input(prompt: str) -> bool:
 
 
 def get_optional_input(prompt: str, default: str) -> str:
-    result = get_input(prompt, suffix=" (Default: `{}`): ".format(default))
+    result = get_input(prompt, suffix=f" (Default: `{default}`): ")
     if result == "":
         return default
     return result
