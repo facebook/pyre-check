@@ -670,10 +670,10 @@ class ConfigurationTest(testslide.TestCase):
         self.assertEqual(
             configuration.python_version, PythonVersion(major=3, minor=6, micro=7)
         )
-        self.assertEqual(configuration.source_directories, [])
+        self.assertEqual(configuration.source_directories, None)
         self.assertEqual(configuration.strict, False)
         self.assertEqual(configuration.taint_models_path, ["taint"])
-        self.assertEqual(configuration.targets, [])
+        self.assertEqual(configuration.targets, None)
         self.assertEqual(configuration.typeshed, "typeshed")
         self.assertEqual(configuration.use_buck_builder, False)
         self.assertEqual(configuration.use_buck_source_database, False)

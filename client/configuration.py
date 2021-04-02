@@ -765,10 +765,10 @@ class Configuration:
     python_version: Optional[PythonVersion] = None
     relative_local_root: Optional[str] = None
     search_path: Sequence[SearchPathElement] = field(default_factory=list)
-    source_directories: Sequence[SearchPathElement] = field(default_factory=list)
+    source_directories: Optional[Sequence[SearchPathElement]] = None
     strict: bool = False
     taint_models_path: Sequence[str] = field(default_factory=list)
-    targets: Sequence[str] = field(default_factory=list)
+    targets: Optional[Sequence[str]] = None
     typeshed: Optional[str] = None
     use_buck_builder: bool = False
     use_buck_source_database: bool = False
@@ -815,12 +815,10 @@ class Configuration:
             search_path=[
                 path.expand_global_root(str(project_root)) for path in search_path
             ],
-            source_directories=_get_optional_value(
-                partial_configuration.source_directories, default=[]
-            ),
+            source_directories=partial_configuration.source_directories,
             strict=_get_optional_value(partial_configuration.strict, default=False),
             taint_models_path=partial_configuration.taint_models_path,
-            targets=_get_optional_value(partial_configuration.targets, default=[]),
+            targets=partial_configuration.targets,
             typeshed=partial_configuration.typeshed,
             use_buck_builder=_get_optional_value(
                 partial_configuration.use_buck_builder, default=False
@@ -860,6 +858,8 @@ class Configuration:
         number_of_workers = self.number_of_workers
         python_version = self.python_version
         relative_local_root = self.relative_local_root
+        source_directories = self.source_directories
+        targets = self.targets
         typeshed = self.typeshed
         version_hash = self.version_hash
         return {
@@ -899,10 +899,14 @@ class Configuration:
                 else {}
             ),
             "search_path": [path.path() for path in self.search_path],
-            "source_directories": [path.path() for path in self.source_directories],
+            **(
+                {"source_directories": [path.path() for path in source_directories]}
+                if source_directories is not None
+                else {}
+            ),
             "strict": self.strict,
             "taint_models_path": list(self.taint_models_path),
-            "targets": list(self.targets),
+            **({"targets": list(targets)} if targets is not None else {}),
             **({"typeshed": typeshed} if typeshed is not None else {}),
             "use_buck_builder": self.use_buck_builder,
             "use_buck_source_database": self.use_buck_source_database,
@@ -911,7 +915,7 @@ class Configuration:
         }
 
     def get_existent_source_directories(self) -> List[SearchPathElement]:
-        return self._get_existent_paths(self.source_directories)
+        return self._get_existent_paths(self.source_directories or [])
 
     def get_existent_search_paths(self) -> List[SearchPathElement]:
         existent_paths = self._get_existent_paths(self.search_path)

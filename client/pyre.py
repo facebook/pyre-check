@@ -255,7 +255,10 @@ def _create_configuration_with_retry(
     arguments: command_arguments.CommandArguments, base_directory: Path
 ) -> configuration_module.Configuration:
     configuration = configuration_module.create_configuration(arguments, base_directory)
-    if len(configuration.source_directories) > 0 or len(configuration.targets) > 0:
+    if (
+        configuration.source_directories is not None
+        or configuration.targets is not None
+    ):
         return configuration
 
     if arguments.local_configuration is not None:
@@ -293,8 +296,8 @@ def _create_configuration_with_retry(
         replace(arguments, local_configuration=local_root_for_rerun), base_directory
     )
     if (
-        len(new_configuration.source_directories) > 0
-        or len(new_configuration.targets) > 0
+        new_configuration.source_directories is not None
+        or new_configuration.targets is not None
     ):
         return new_configuration
     raise configuration_module.InvalidConfiguration(error_message)

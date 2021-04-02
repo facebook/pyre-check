@@ -849,7 +849,7 @@ def resolve_analysis_directory(
         source_paths: List[
             SearchPathElement
         ] = configuration.get_existent_source_directories()
-        targets = list(configuration.targets)
+        targets = list(configuration.targets or [])
     else:
         source_paths: List[SearchPathElement] = [
             # TODO: support SubdirectorySearchPathElement here too?
