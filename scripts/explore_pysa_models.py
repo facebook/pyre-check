@@ -75,13 +75,13 @@ def _assert_loaded() -> None:
         raise AssertionError("call index() first")
 
 
-def callable_containing(string: str) -> List[str]:
+def callables_containing(string: str) -> List[str]:
     """Find all callables containing the given string."""
     _assert_loaded()
     return sorted(filter(lambda name: string in name, __model_index.keys()))
 
 
-def callable_matching(pattern: str) -> List[str]:
+def callables_matching(pattern: str) -> List[str]:
     """Find all callables matching the given regular expression."""
     _assert_loaded()
     regex = re.compile(pattern)
@@ -148,8 +148,8 @@ def print_help() -> None:
     print("Available commands:")
     commands = [
         (index, "index('taint-output.json')"),
-        (callable_containing, "callable_containing('foo.bar')"),
-        (callable_matching, "callable_matching(r'foo\\..*')"),
+        (callables_containing, "callables_containing('foo.bar')"),
+        (callables_matching, "callables_matching(r'foo\\..*')"),
         (get_model, "get_model('foo.bar')"),
         (print_model, "print_model('foo.bar')"),
         (get_issues, "get_issues('foo.bar')"),

@@ -22,13 +22,13 @@ After the analysis succeeds, Pysa will write a file, `/tmp/output_dir/taint-outp
 $ python3 -i scripts/explore_pysa_models.py
 # Pysa Model Explorer
 Available commands:
-  index('taint-output.json')     Index all available models in the given taint output file or directory.
-  callable_containing('foo.bar') Find all callables containing the given string.
-  callable_matching(r'foo\..*')  Find all callables matching the given regular expression.
-  get_model('foo.bar')           Get the model for the given callable.
-  print_model('foo.bar')         Pretty print the model for the given callable.
-  get_issues('foo.bar')          Get all issues within the given callable.
-  print_issues('foo.bar')        Pretty print the issues within the given callable.
+  index('taint-output.json')      Index all available models in the given taint output file or directory.
+  callables_containing('foo.bar') Find all callables containing the given string.
+  callables_matching(r'foo\..*')  Find all callables matching the given regular expression.
+  get_model('foo.bar')            Get the model for the given callable.
+  print_model('foo.bar')          Pretty print the model for the given callable.
+  get_issues('foo.bar')           Get all issues within the given callable.
+  print_issues('foo.bar')         Pretty print the issues within the given callable.
 ```
 ```python
 >>> index('/tmp/output_dir')
@@ -40,7 +40,7 @@ Once we've indexed our taint JSON, we're good to go! Let's investigate what mode
 
 
 ```python
->>> callable_containing('HttpRequest')
+>>> callables_containing('HttpRequest')
 ['django.http.request.HttpRequest.__init__', 'django.http.request.HttpRequest.body', ...]
 >>> get_model('django.http.request.HttpRequest.__init_')
 {'callable': 'django.http.request.HttpRequest.__init__', 'sources': [], 'sinks': [], 'tito': [{'port': 'formal(self)', 'taint': [{'decl': None, 'leaves': [{'kind': 'LocalReturn', 'name': ''}]}]}]}
