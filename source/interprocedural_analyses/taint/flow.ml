@@ -153,37 +153,50 @@ let generate_issues ~define { location; flows } =
     in
     List.map flows ~f:partition
   in
-  let apply_rule { Rule.sources; sinks; code; _ } =
-    let fold_partitions
-        ({ source_taint; sink_taint } as flow_so_far)
-        { source_partition; sink_partition }
-      =
-      let add_source_taint source_taint source =
-        match Map.Poly.find source_partition (erase_source_subkind source) with
-        | Some taint -> ForwardTaint.join source_taint taint
-        | None -> source_taint
-      in
-      let add_sink_taint sink_taint sink =
-        match Map.Poly.find sink_partition (erase_sink_subkind sink) with
-        | Some taint -> BackwardTaint.join sink_taint taint
-        | None -> sink_taint
-      in
-      let partition_flow =
-        {
-          source_taint = List.fold sources ~f:add_source_taint ~init:ForwardTaint.bottom;
-          sink_taint = List.fold sinks ~f:add_sink_taint ~init:BackwardTaint.bottom;
-        }
-      in
-      if
-        ForwardTaint.is_bottom partition_flow.source_taint
-        || BackwardTaint.is_bottom partition_flow.sink_taint
-      then
-        flow_so_far
-      else
-        {
-          source_taint = ForwardTaint.join source_taint partition_flow.source_taint;
-          sink_taint = BackwardTaint.join sink_taint partition_flow.sink_taint;
-        }
+  let apply_rule_on_flow { Rule.sources; sinks; _ } { source_partition; sink_partition } =
+    let add_source_taint source_taint source =
+      match Map.Poly.find source_partition (erase_source_subkind source) with
+      | Some taint -> ForwardTaint.join source_taint taint
+      | None -> source_taint
+    in
+    let add_sink_taint sink_taint sink =
+      match Map.Poly.find sink_partition (erase_sink_subkind sink) with
+      | Some taint -> BackwardTaint.join sink_taint taint
+      | None -> sink_taint
+    in
+    let partition_flow =
+      {
+        source_taint = List.fold sources ~f:add_source_taint ~init:ForwardTaint.bottom;
+        sink_taint = List.fold sinks ~f:add_sink_taint ~init:BackwardTaint.bottom;
+      }
+    in
+    if
+      ForwardTaint.is_bottom partition_flow.source_taint
+      || BackwardTaint.is_bottom partition_flow.sink_taint
+    then
+      None
+    else
+      Some partition_flow
+  in
+  let apply_rule_separate_access_path issues_so_far (rule : Rule.t) =
+    let fold_partitions issues candidate =
+      match apply_rule_on_flow rule candidate with
+      | Some flow ->
+          let features = get_issue_features flow in
+          { code = rule.code; flow; features; issue_location = location; define } :: issues
+      | None -> issues
+    in
+    List.fold partitions ~init:issues_so_far ~f:fold_partitions
+  in
+  let apply_rule_merge_access_path rule =
+    let fold_partitions flow_so_far candidate =
+      match apply_rule_on_flow rule candidate with
+      | Some flow ->
+          {
+            source_taint = ForwardTaint.join flow_so_far.source_taint flow.source_taint;
+            sink_taint = BackwardTaint.join flow_so_far.sink_taint flow.sink_taint;
+          }
+      | None -> flow_so_far
     in
     let flow =
       List.fold
@@ -195,11 +208,15 @@ let generate_issues ~define { location; flows } =
       None
     else
       let features = get_issue_features flow in
-      let issue = { code; flow; features; issue_location = location; define } in
+      let issue = { code = rule.code; flow; features; issue_location = location; define } in
       Some issue
   in
   let configuration = Configuration.get () in
-  List.filter_map ~f:apply_rule configuration.rules
+  if configuration.lineage_analysis then
+    (* Create different issues for same access path, e.g, Issue{[a] -> [b]}, Issue {[c] -> [d]}. *)
+    List.fold configuration.rules ~init:[] ~f:apply_rule_separate_access_path
+  else (* Create single issue for same access path, e.g, Issue{[a],[c] -> [b], [d]}. *)
+    List.filter_map ~f:apply_rule_merge_access_path configuration.rules
 
 
 let sinks_regexp = Str.regexp_string "{$sinks}"

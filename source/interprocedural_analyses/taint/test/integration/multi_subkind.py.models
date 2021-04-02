@@ -1,0 +1,217 @@
+@generated
+{
+  "kind": "issue",
+  "data": {
+    "callable": "multi_subkind.issue",
+    "callable_line": 28,
+    "code": 1000,
+    "line": 32,
+    "start": 15,
+    "end": 16,
+    "filename": "multi_subkind.py",
+    "message": "source A to sink A",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "multi_subkind.py",
+              "line": 31,
+              "start": 13,
+              "end": 23
+            },
+            "leaves": [
+              { "kind": "SourceA[KindB]", "name": "multi_subkind.source_b" }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "call": {
+              "position": {
+                "filename": "multi_subkind.py",
+                "line": 32,
+                "start": 15,
+                "end": 16
+              },
+              "resolves_to": [ "multi_subkind.multi_sink" ],
+              "port": "formal(d)[b]",
+              "length": 1
+            },
+            "leaves": [
+              { "kind": "SinkA[KindB]", "name": "multi_subkind.sink_b" }
+            ],
+            "features": [ { "has": "first-index" }, { "first-index": "b" } ]
+          }
+        ]
+      }
+    ],
+    "features": [ { "has": "first-index" }, { "first-index": "b" } ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "multi_subkind.issue",
+    "callable_line": 28,
+    "code": 1000,
+    "line": 32,
+    "start": 15,
+    "end": 16,
+    "filename": "multi_subkind.py",
+    "message": "source A to sink A",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "multi_subkind.py",
+              "line": 30,
+              "start": 13,
+              "end": 23
+            },
+            "leaves": [
+              { "kind": "SourceA[KindA]", "name": "multi_subkind.source_a" }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "call": {
+              "position": {
+                "filename": "multi_subkind.py",
+                "line": 32,
+                "start": 15,
+                "end": 16
+              },
+              "resolves_to": [ "multi_subkind.multi_sink" ],
+              "port": "formal(d)[a]",
+              "length": 1
+            },
+            "leaves": [
+              { "kind": "SinkA[KindA]", "name": "multi_subkind.sink_a" }
+            ],
+            "features": [ { "has": "first-index" }, { "first-index": "a" } ]
+          }
+        ]
+      }
+    ],
+    "features": [ { "has": "first-index" }, { "first-index": "a" } ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multi_subkind.multi_sink",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(d)[a]",
+        "taint": [
+          {
+            "root": {
+              "filename": "multi_subkind.py",
+              "line": 24,
+              "start": 11,
+              "end": 17
+            },
+            "leaves": [
+              { "kind": "SinkA[KindA]", "name": "multi_subkind.sink_a" }
+            ],
+            "features": [ { "has": "first-index" }, { "first-index": "a" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(d)[b]",
+        "taint": [
+          {
+            "root": {
+              "filename": "multi_subkind.py",
+              "line": 25,
+              "start": 11,
+              "end": 17
+            },
+            "leaves": [
+              { "kind": "SinkA[KindB]", "name": "multi_subkind.sink_b" }
+            ],
+            "features": [ { "has": "first-index" }, { "first-index": "b" } ]
+          }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multi_subkind.sink_a",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(arg)",
+        "taint": [
+          { "decl": null, "leaves": [ { "kind": "SinkA[KindA]" } ] }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multi_subkind.sink_b",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(arg)",
+        "taint": [
+          { "decl": null, "leaves": [ { "kind": "SinkA[KindB]" } ] }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multi_subkind.source_a",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          { "decl": null, "leaves": [ { "kind": "SourceA[KindA]" } ] }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multi_subkind.source_b",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          { "decl": null, "leaves": [ { "kind": "SourceA[KindB]" } ] }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
