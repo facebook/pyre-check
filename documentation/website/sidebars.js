@@ -66,6 +66,7 @@ module.exports = {
     ...fbInternalOnly([
       {
         'Warning Codes': [
+          'fb/warning_codes/overview',
           'fb/warning_codes/code-5001',
           'fb/warning_codes/code-5003',
           'fb/warning_codes/code-5004',
