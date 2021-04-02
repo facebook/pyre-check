@@ -19,6 +19,8 @@ from ..start import (
     StoreSavedStateToFile,
     RemoteLogging,
     MatchPolicy,
+    SimpleSourcePath,
+    BuckSourcePath,
     create_server_arguments,
     find_watchman_root,
     get_critical_files,
@@ -80,6 +82,47 @@ class ArgumentTest(testslide.TestCase):
         self.assertDictEqual(
             RemoteLogging(logger="/bin/logger", identifier="foo").serialize(),
             {"logger": "/bin/logger", "identifier": "foo"},
+        )
+
+    def test_serialize_source_paths(self) -> None:
+        self.assertDictEqual(
+            SimpleSourcePath(
+                [
+                    configuration.SimpleSearchPathElement("/source0"),
+                    configuration.SimpleSearchPathElement("/source1"),
+                ]
+            ).serialize(),
+            {"kind": "simple", "paths": ["/source0", "/source1"]},
+        )
+        self.assertDictEqual(
+            BuckSourcePath(
+                source_root=Path("/source"),
+                artifact_root=Path("/artifact"),
+                targets=["//foo:bar", "//foo:baz"],
+            ).serialize(),
+            {
+                "kind": "buck",
+                "source_root": "/source",
+                "artifact_root": "/artifact",
+                "targets": ["//foo:bar", "//foo:baz"],
+            },
+        )
+        self.assertDictEqual(
+            BuckSourcePath(
+                source_root=Path("/source"),
+                artifact_root=Path("/artifact"),
+                targets=["//foo:bar"],
+                mode="opt",
+                isolation_prefix=".lsp",
+            ).serialize(),
+            {
+                "kind": "buck",
+                "source_root": "/source",
+                "artifact_root": "/artifact",
+                "targets": ["//foo:bar"],
+                "mode": "opt",
+                "isolation_prefix": ".lsp",
+            },
         )
 
     def test_serialize_arguments(self) -> None:

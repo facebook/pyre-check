@@ -125,6 +125,47 @@ class RemoteLogging:
 
 
 @dataclasses.dataclass(frozen=True)
+class SimpleSourcePath:
+    elements: Sequence[configuration_module.SearchPathElement] = dataclasses.field(
+        default_factory=list
+    )
+
+    def serialize(self) -> Dict[str, object]:
+        return {
+            "kind": "simple",
+            "paths": [element.command_line_argument() for element in self.elements],
+        }
+
+
+@dataclasses.dataclass(frozen=True)
+class BuckSourcePath:
+    source_root: Path
+    artifact_root: Path
+    targets: Sequence[str] = dataclasses.field(default_factory=list)
+    mode: Optional[str] = None
+    isolation_prefix: Optional[str] = None
+
+    def serialize(self) -> Dict[str, object]:
+        mode = self.mode
+        isolation_prefix = self.isolation_prefix
+        return {
+            "kind": "buck",
+            "targets": self.targets,
+            **({} if mode is None else {"mode": mode}),
+            **(
+                {}
+                if isolation_prefix is None
+                else {"isolation_prefix": isolation_prefix}
+            ),
+            "source_root": str(self.source_root),
+            "artifact_root": str(self.artifact_root),
+        }
+
+
+SourcePath = Union[SimpleSourcePath, BuckSourcePath]
+
+
+@dataclasses.dataclass(frozen=True)
 class Arguments:
     """
     Data structure for configuration options the backend server can recognize.
