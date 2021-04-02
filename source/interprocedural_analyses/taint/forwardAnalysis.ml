@@ -213,11 +213,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             | _ -> argument_taint
           in
           let tito =
-            let convert_tito_path
-                kind
-                { BackwardState.Tree.path; tip = return_taint; _ }
-                accumulated_tito
-              =
+            let convert_tito_path kind (path, return_taint) accumulated_tito =
               let breadcrumbs =
                 BackwardTaint.fold
                   BackwardTaint.simple_feature_self
@@ -271,7 +267,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             in
             let convert_tito ~key:kind ~data:tito_tree =
               BackwardState.Tree.fold
-                BackwardState.Tree.RawPath
+                BackwardState.Tree.Path
                 tito_tree
                 ~init:ForwardState.Tree.empty
                 ~f:(convert_tito_path kind)

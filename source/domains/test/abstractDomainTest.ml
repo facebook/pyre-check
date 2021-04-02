@@ -1903,12 +1903,8 @@ module TreeOfStringSets = struct
     ]
 
 
-  let show_path_element { path; ancestors; tip } =
-    Format.sprintf
-      "path:%s; ancestors:%s; tip:%s"
-      (AbstractTreeDomain.Label.show_path path)
-      (StringSet.show ancestors)
-      (StringSet.show tip)
+  let show_path_element (path, tip) =
+    Format.sprintf "path:%s; tip:%s" (AbstractTreeDomain.Label.show_path path) (StringSet.show tip)
 
 
   let test_fold _ =
@@ -1933,9 +1929,9 @@ module TreeOfStringSets = struct
           Part (Path, (parse_path "a.b", StringSet.of_list ["aa"; "bb"]));
           Part (Path, (parse_path "a", StringSet.of_list ["a"]));
         ]
-      ~by:RawPath
+      ~by:Path
       ~f:show_path_element
-      ~expected:["path:[a][b]; ancestors:[a]; tip:[aa, bb]"; "path:[a]; ancestors:[]; tip:[a]"]
+      ~expected:["path:[a][b]; tip:[aa, bb]"; "path:[a]; tip:[a]"]
 
 
   let test_transform _ =
@@ -1943,7 +1939,7 @@ module TreeOfStringSets = struct
       let map = create initial in
       let result =
         transform part (Map f) map
-        |> fold RawPath ~f:(fun element list -> to_result element :: list) ~init:[]
+        |> fold Path ~f:(fun element list -> to_result element :: list) ~init:[]
       in
       assert_equal expected result ~printer:string_list_printer
     in
@@ -1956,8 +1952,7 @@ module TreeOfStringSets = struct
       ~by:StringSet.Element
       ~f:(fun x -> "t." ^ x)
       ~to_result:show_path_element
-      ~expected:
-        ["path:[a][b]; ancestors:[t.a]; tip:[t.aa, t.bb]"; "path:[a]; ancestors:[]; tip:[t.a]"];
+      ~expected:["path:[a][b]; tip:[t.aa, t.bb]"; "path:[a]; tip:[t.a]"];
     test
       ~initial:
         [
@@ -1967,11 +1962,7 @@ module TreeOfStringSets = struct
       ~by:Path
       ~f:(fun (path, element) -> AbstractTreeDomain.Label.Field "prefix" :: path, element)
       ~to_result:show_path_element
-      ~expected:
-        [
-          "path:[prefix][a][b]; ancestors:[a]; tip:[aa, bb]";
-          "path:[prefix][a]; ancestors:[]; tip:[a]";
-        ]
+      ~expected:["path:[prefix][a][b]; tip:[aa, bb]"; "path:[prefix][a]; tip:[a]"]
 
 
   let test_partition _ =

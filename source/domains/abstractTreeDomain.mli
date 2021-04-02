@@ -36,20 +36,11 @@ end
 module Make (Config : CONFIG) (Element : AbstractDomainCore.S) () : sig
   include AbstractDomainCore.S
 
-  type raw_path_info = {
-    path: Label.path;
-    ancestors: Element.t;
-    tip: Element.t;
-  }
-
   type _ AbstractDomainCore.part +=
-    | (* The abstract value at each path including ancestors (only non-bottom points are visitied *)
+    | (* The abstract value at the tip of each path, not including ancestors (only non-bottom points
+         are visitied *)
         Path :
         (Label.path * Element.t) AbstractDomainCore.part
-    | (* The abstract value at each path with separate ancestor values (only non-bottom points are
-         visitied *)
-        RawPath :
-        raw_path_info AbstractDomainCore.part
 
   val create_leaf : Element.t -> t
 

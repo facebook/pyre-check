@@ -189,10 +189,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
               get_taint access_path state
         in
         let combine_tito location taint_tree { AccessPath.root; actual_path; formal_path } =
-          let translate_tito
-              { BackwardState.Tree.path = tito_path; tip = element; _ }
-              argument_taint
-            =
+          let translate_tito (tito_path, element) argument_taint =
             let compute_parameter_tito ~key:kind ~data:element argument_taint =
               let extra_paths =
                 match kind with
@@ -256,7 +253,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             ~path:formal_path
             backward.taint_in_taint_out
           |> BackwardState.Tree.fold
-               BackwardState.Tree.RawPath
+               BackwardState.Tree.Path
                ~f:translate_tito
                ~init:BackwardState.Tree.bottom
           |> BackwardState.Tree.transform
@@ -1370,7 +1367,7 @@ let extract_tito_and_sink_models define ~is_constructor ~resolution ~existing_ba
       in
       let number_of_paths =
         BackwardState.Tree.fold
-          BackwardState.Tree.RawPath
+          BackwardState.Tree.Path
           ~init:0
           ~f:(fun _ count -> count + 1)
           candidate_tree

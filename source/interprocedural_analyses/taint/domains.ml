@@ -527,7 +527,7 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
             ()
 
   let apply_call location ~callees ~port taint_tree =
-    let transform_path { path; ancestors = _; tip } =
+    let transform_path (path, tip) =
       let tip =
         Taint.partition
           Taint.leaf
@@ -538,9 +538,9 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
         | None -> Taint.bottom
         | Some taint -> Taint.apply_call location ~callees ~port ~path ~element:taint
       in
-      { path; ancestors = Taint.bottom; tip }
+      path, tip
     in
-    transform RawPath (Abstract.Domain.Map transform_path) taint_tree
+    transform Path (Abstract.Domain.Map transform_path) taint_tree
 
 
   let empty = bottom
@@ -614,12 +614,12 @@ module MakeTaintEnvironment (Taint : TAINT_DOMAIN) () = struct
 
   let create_json ~taint_to_json environment =
     let element_to_json json_list (root, tree) =
-      let path_to_json { Tree.path; ancestors = _; tip } json_list =
+      let path_to_json (path, tip) json_list =
         let port = AccessPath.create root path |> AccessPath.to_json in
         (path, ["port", port; "taint", taint_to_json tip]) :: json_list
       in
       let ports =
-        Tree.fold Tree.RawPath ~f:path_to_json tree ~init:[]
+        Tree.fold Tree.Path ~f:path_to_json tree ~init:[]
         |> List.dedup_and_sort ~compare:(fun (p1, _) (p2, _) ->
                Abstract.TreeDomain.Label.compare_path p1 p2)
         |> List.rev_map ~f:(fun (_, fields) -> `Assoc fields)
