@@ -2607,9 +2607,9 @@ let test_recursive_aliases context =
     ];
   assert_type_errors
     {|
-      import typing
+      from typing_extensions import TypeAlias
       MyInt = int
-      X: typing.TypeAlias = "MyInt"
+      X: TypeAlias = "MyInt"
       y: X
       reveal_type(y)
     |}

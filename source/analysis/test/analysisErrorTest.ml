@@ -297,7 +297,7 @@ let test_due_to_analysis_limitations _ =
          callee = Some !&"callee";
          mismatch =
            {
-             Error.actual = Type.Primitive "typing.TypeAlias";
+             Error.actual = Type.Primitive "typing_extensions.TypeAlias";
              expected = Type.Top;
              due_to_invariance = false;
            };

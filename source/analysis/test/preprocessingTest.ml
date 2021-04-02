@@ -749,16 +749,16 @@ let test_qualify _ =
     |};
   assert_qualify
     {|
-      from typing import TypeAlias
+      from typing_extensions import TypeAlias
 
       class C: ...
       my_alias: TypeAlias = "C"
     |}
     {|
-      from typing import TypeAlias
+      from typing_extensions import TypeAlias
 
       class qualifier.C: ...
-      $local_qualifier$my_alias: typing.TypeAlias = "qualifier.C"
+      $local_qualifier$my_alias: typing_extensions.TypeAlias = "qualifier.C"
     |};
   (* Don't qualify the TypeVar name argument. *)
   assert_qualify

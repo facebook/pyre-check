@@ -215,7 +215,7 @@ let extract_alias unannotated_global_environment name ~dependency =
                   Name
                     (Name.Attribute
                       {
-                        base = { Node.value = Name (Name.Identifier "typing"); _ };
+                        base = { Node.value = Name (Name.Identifier "typing_extensions"); _ };
                         attribute = "TypeAlias";
                         _;
                       });
@@ -269,7 +269,7 @@ let extract_alias unannotated_global_environment name ~dependency =
 let produce_alias empty_stub_environment global_name ~dependency =
   let maybe_convert_to_recursive_alias alias_reference = function
     | Type.TypeAlias annotation
-      when (not (Identifier.equal (Reference.show alias_reference) "typing"))
+      when (not (Identifier.equal (Reference.show alias_reference) "typing_extensions"))
            && Type.RecursiveType.is_recursive_alias_reference
                 ~alias_name:(Reference.show alias_reference)
                 annotation ->

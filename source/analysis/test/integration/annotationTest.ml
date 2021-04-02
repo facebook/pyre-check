@@ -319,8 +319,8 @@ let test_check_invalid_type context =
     |} [];
   assert_type_errors
     {|
-      import typing
-      MyType: typing.TypeAlias = int
+      import typing_extensions
+      MyType: typing_extensions.TypeAlias = int
       x: MyType = 1
     |}
     [];
@@ -367,9 +367,9 @@ let test_check_invalid_type context =
     ["Undefined or invalid type [11]: Annotation `Foo.X` is not defined as a type."];
   assert_type_errors
     {|
-        import typing
+        import typing_extensions
         def foo() -> None:
-          MyType: typing.TypeAlias = int
+          MyType: typing_extensions.TypeAlias = int
           x: MyType = 1
       |}
     [
@@ -1406,14 +1406,16 @@ let test_check_aliases context =
   assert_type_errors
     {|
       import typing
-      MyAlias: typing.TypeAlias = typing.Union[int, UndefinedName]
+      import typing_extensions
+      MyAlias: typing_extensions.TypeAlias = typing.Union[int, UndefinedName]
     |}
     ["Unbound name [10]: Name `UndefinedName` is used but not defined in the current scope."];
   (* TODO (T61917464): Surface explicit type aliases registeration failures as type errors *)
   assert_type_errors
     {|
       import typing
-      MyAlias: typing.TypeAlias = typing.Union[int, "UndefinedName"]
+      import typing_extensions
+      MyAlias: typing_extensions.TypeAlias = typing.Union[int, "UndefinedName"]
     |}
     [];
 
@@ -1427,7 +1429,8 @@ let test_check_aliases context =
   assert_type_errors
     {|
       import typing
-      MyAlias: typing.TypeAlias = typing.Union[int, 3]
+      import typing_extensions
+      MyAlias: typing_extensions.TypeAlias = typing.Union[int, 3]
     |}
     [];
   (* Handle quoted references to aliases. *)

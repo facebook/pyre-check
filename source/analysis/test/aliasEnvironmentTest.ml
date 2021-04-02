@@ -134,7 +134,7 @@ let test_harder_registrations context =
     import typing
 
     X = int
-    Y: typing.TypeAlias = "X"
+    Y: typing_extensions.TypeAlias = "X"
   |}
     "test.Y"
     ~expected_alias:(Some (Type.TypeAlias Type.integer));

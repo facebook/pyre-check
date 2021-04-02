@@ -1306,7 +1306,7 @@ let is_tuple = function
 
 
 let is_type_alias = function
-  | Primitive "typing.TypeAlias" -> true
+  | Primitive "typing_extensions.TypeAlias" -> true
   | _ -> false
 
 

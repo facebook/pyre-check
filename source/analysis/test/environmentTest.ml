@@ -113,10 +113,10 @@ let test_register_aliases context =
         {|
           class C: ...
           class D(C): pass
-          B: typing.TypeAlias = D
-          A: typing.TypeAlias = B
-          Twiddledee: typing.TypeAlias
-          Twiddledum: typing.TypeAlias
+          B: typing_extensions.TypeAlias = D
+          A: typing_extensions.TypeAlias = B
+          Twiddledee: typing_extensions.TypeAlias
+          Twiddledum: typing_extensions.TypeAlias
           Twiddledee, Twiddledum = C, C
         |}
       );
@@ -136,8 +136,8 @@ let test_register_aliases context =
         {|
           class C: ...
           class D(C): pass
-          B: typing.TypeAlias = D
-          A: typing.TypeAlias = B
+          B: typing_extensions.TypeAlias = D
+          A: typing_extensions.TypeAlias = B
         |}
       );
     ]

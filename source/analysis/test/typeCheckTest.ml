@@ -282,7 +282,7 @@ let test_check_annotation context =
     "test.x"
     ["Undefined or invalid type [11]: Annotation `test.x` is not defined as a type."];
   assert_check_annotation "x = typing.Any" "test.x" [];
-  assert_check_annotation "x: typing.TypeAlias = typing.Any" "test.x" [];
+  assert_check_annotation "x: typing_extensions.TypeAlias = typing.Any" "test.x" [];
   assert_check_annotation {|
       class Foo: ...
       x = Foo

@@ -1278,8 +1278,9 @@ let test_is_none _ =
 
 
 let test_is_type_alias _ =
-  assert_true (Type.is_type_alias (Type.Primitive "typing.TypeAlias"));
-  assert_false (Type.is_type_alias (Type.parametric "typing.TypeAlias" ![Type.Top]))
+  assert_true (Type.is_type_alias (Type.Primitive "typing_extensions.TypeAlias"));
+  assert_false (Type.is_type_alias (Type.Primitive "typing.TypeAlias"));
+  assert_false (Type.is_type_alias (Type.parametric "typing_extensions.TypeAlias" ![Type.Top]))
 
 
 let test_create_recursive_type _ =

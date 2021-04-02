@@ -638,7 +638,7 @@ let qualify
         let qualified_value =
           let is_potential_alias =
             match qualified_annotation >>| Expression.show with
-            | Some "typing.TypeAlias"
+            | Some "typing_extensions.TypeAlias"
             | None ->
                 is_top_level
             | _ -> false
