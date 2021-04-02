@@ -149,13 +149,24 @@ def f(x: int) -> None:
 The rationale here is that it's surprising for an explicitly annotated variable to have an
 incompatible type later on in the same function.
 
-If you intended to change the type of the variable, you can explicitly annotate it with the new type:
+If you are constructing an object that is generic over an invariant type, you may run into an error:
 
 ```python
-def f(x: int) -> None:
-  x: str = "" # No errors!
-  y: int = 1
-  y: str = "" # No errors!
+_T = TypeVar('_T')
+
+class Foo(Generic[_T]):
+    def __init__(self, x: _T) -> None: ...
+
+def f() -> None:
+    foo: Foo[Optional[int]] = Foo(x=1) # Incompatible variable type error
+```
+
+This is due to the fact that `Foo[X]` is not less than `Foo[Y]` even if `X < Y` when the type variable is invariant.
+You can declare your intention to initialize the object with a wider type than is given to fix this error:
+
+```python
+def f() -> None:
+    foo: Foo[Optional[int]] = Foo[Optional[int]](x=1)
 ```
 
 ### 14,15: Behavioral Subtyping
