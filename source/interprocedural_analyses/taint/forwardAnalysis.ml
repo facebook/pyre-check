@@ -1059,8 +1059,15 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             in
             taint, state
       in
-
-      assign_super_constructor_taint_to_self_if_necessary taint state
+      let taint, state = assign_super_constructor_taint_to_self_if_necessary taint state in
+      let configuration = Configuration.get () in
+      if not configuration.lineage_analysis then
+        taint, state
+      else
+        let taint, forward_state =
+          LineageAnalysis.forward_analyze_call callee arguments taint state.taint
+        in
+        taint, { taint = forward_state }
 
 
     and analyze_attribute_access ~resolution ~state ~location base attribute =
