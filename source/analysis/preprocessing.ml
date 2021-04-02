@@ -3718,6 +3718,59 @@ let expand_starred_type_variable_tuple source =
     source
 
 
+let expand_import_python_calls ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source) =
+  let module Transform = Transform.MakeStatementTransformer (struct
+    type t = Reference.t
+
+    let statement qualifier { Node.location; value } =
+      let value =
+        match value with
+        | Statement.Expression
+            {
+              Node.value =
+                Call
+                  {
+                    callee = { Node.value = Name (Name.Identifier "import_python"); _ };
+                    arguments =
+                      {
+                        Call.Argument.value =
+                          { Node.value = Expression.String { value = from_name; _ }; _ };
+                        _;
+                      }
+                      :: imports;
+                  };
+              location;
+            } ->
+            let create_import from_name =
+              let imports =
+                List.filter_map imports ~f:(fun { Call.Argument.value; _ } ->
+                    match Node.value value with
+                    | Expression.String { value = name; _ } ->
+                        Some
+                          {
+                            Import.alias = None;
+                            name =
+                              { Node.value = Reference.create name; location = Node.location value };
+                          }
+                    | _ -> None)
+              in
+              let formatted_from_name =
+                String.substr_replace_all ~pattern:"/" ~with_:"." from_name
+              in
+              {
+                Import.from = Some { Node.value = Reference.create formatted_from_name; location };
+                imports;
+              }
+            in
+            Statement.Import (create_import from_name)
+        | _ -> value
+      in
+      qualifier, [{ Node.location; value }]
+  end)
+  in
+  Transform.transform qualifier source |> Transform.source
+
+
 let preprocess_phase0 source =
   source
   |> expand_relative_imports
@@ -3725,6 +3778,7 @@ let preprocess_phase0 source =
   |> expand_type_checking_imports
   |> expand_format_string
   |> expand_implicit_returns
+  |> expand_import_python_calls
 
 
 let preprocess_phase1 source =

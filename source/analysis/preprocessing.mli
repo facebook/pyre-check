@@ -9,6 +9,8 @@ open Ast
 
 val expand_relative_imports : Source.t -> Source.t
 
+val expand_import_python_calls : Source.t -> Source.t
+
 val expand_string_annotations : Source.t -> Source.t
 
 val expand_strings_in_annotation_expression : Expression.t -> Expression.t

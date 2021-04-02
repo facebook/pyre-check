@@ -5590,6 +5590,27 @@ let test_expand_starred_type_variable_tuples _ =
   ()
 
 
+let test_expand_import_python_calls _ =
+  let assert_expand ?(handle = "test.py") source expected =
+    let expected = parse ~handle ~coerce_special_methods:true expected in
+    let actual = parse ~handle source |> Preprocessing.expand_import_python_calls in
+    assert_source_equal ~location_insensitive:true expected actual
+  in
+  assert_expand {|
+     import_python("a", "*")
+  |} {|
+    from a import *
+  |};
+  assert_expand
+    {|
+    import_python("cubism/shared.cinc", "*")
+    |}
+    {|
+      from cubism.shared.cinc import *
+    |};
+  ()
+
+
 let () =
   "preprocessing"
   >::: [
@@ -5616,5 +5637,6 @@ let () =
          "union_shorthand" >:: test_union_shorthand;
          "six_metaclass_decorator" >:: test_six_metaclass_decorator;
          "expand_starred_type_variable_tuples" >:: test_expand_starred_type_variable_tuples;
+         "expand_import_python_calls" >:: test_expand_import_python_calls;
        ]
   |> Test.run
