@@ -17,12 +17,6 @@ module type KEY = sig
   val absence_implicitly_maps_to_bottom : bool
 end
 
-type 'a AbstractDomainCore.transform +=
-  | (* Custom operation to expand one key/binding into multiple bindings *)
-      Expand :
-      ('a -> 'a list)
-      -> 'a AbstractDomainCore.transform
-
 module Make (Key : KEY) (Element : AbstractDomainCore.S) : sig
   include AbstractDomainCore.S
 

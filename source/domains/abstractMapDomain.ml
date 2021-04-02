@@ -20,8 +20,6 @@ module type KEY = sig
   val absence_implicitly_maps_to_bottom : bool
 end
 
-type 'a transform += Expand : ('a -> 'a list) -> 'a transform
-
 module Make (Key : KEY) (Element : AbstractDomainCore.S) = struct
   module Map = struct
     module Map = Map.Make (Key)

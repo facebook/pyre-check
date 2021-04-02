@@ -14,10 +14,6 @@ type _ part = ..
 (* Packages a part and a corresponding value. See create function below. *)
 type value_part = Part : 'a part * 'a -> value_part
 
-type _ transform = ..
-
-type transformer = T : 'a part * 'a transform -> transformer
-
 type _ introspect =
   (* Uses an object to pass a polymorphic function. *)
   | GetParts : < report : 'a. 'a part -> unit > -> unit introspect
@@ -26,11 +22,14 @@ type _ introspect =
   (* Get multi-line description of entire domain structure *)
   | Structure : string list introspect
 
-type 'a transform +=
+type 'a transform =
   | Map of ('a -> 'a)
   | Add : 'a -> 'a transform
   | Filter : ('a -> bool) -> 'a transform
+  | Expand : ('a -> 'a list) -> 'a transform
   | Multi : transformer list -> 'a transform
+
+and transformer = T : 'a part * 'a transform -> transformer
 
 module type S = sig
   type t [@@deriving show]
@@ -89,7 +88,12 @@ let part_name (part : 'a part) =
 
 
 let transform_name (t : 'a transform) =
-  Obj.Extension_constructor.of_val t |> Obj.Extension_constructor.name
+  match t with
+  | Map _ -> "Map"
+  | Add _ -> "Add"
+  | Filter _ -> "Filter"
+  | Expand _ -> "Expand"
+  | Multi _ -> "Multi"
 
 
 module Common (D : sig
