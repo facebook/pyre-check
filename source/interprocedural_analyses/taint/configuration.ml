@@ -83,6 +83,7 @@ type t = {
   find_missing_flows: missing_flows_kind option;
   dump_model_query_results_path: Path.t option;
   analysis_model_constraints: analysis_model_constraints;
+  lineage_analysis: bool;
 }
 
 let empty =
@@ -98,6 +99,7 @@ let empty =
     find_missing_flows = None;
     dump_model_query_results_path = None;
     analysis_model_constraints = default_analysis_model_constraints;
+    lineage_analysis = false;
   }
 
 
@@ -167,6 +169,9 @@ module PartialSinkConverter = struct
 end
 
 let parse source_jsons =
+  let json_bool_member key value ~default =
+    Yojson.Safe.Util.member key value |> Yojson.Safe.Util.to_bool_option |> Option.value ~default
+  in
   let member name json =
     try Json.Util.member name json with
     | Not_found -> `Null
@@ -182,6 +187,7 @@ let parse source_jsons =
     | `String "parametric" -> AnnotationParser.Parametric
     | unexpected -> failwith (Format.sprintf "Unexpected kind %s" (Json.Util.to_string unexpected))
   in
+  let parse_lineage_analysis json = json_bool_member "lineage_analysis" json ~default:false in
   let parse_string_list json = Json.Util.to_list json |> List.map ~f:Json.Util.to_string in
   let parse_source_or_sink json =
     let name = Json.Util.member "name" json |> Json.Util.to_string in
@@ -417,6 +423,7 @@ let parse source_jsons =
     List.map source_jsons ~f:(parse_implicit_sources ~allowed_sources:sources)
     |> List.fold ~init:empty_implicit_sources ~f:merge_implicit_sources
   in
+  let lineage_analysis = List.exists ~f:parse_lineage_analysis source_jsons in
   {
     sources;
     sinks;
@@ -430,6 +437,7 @@ let parse source_jsons =
     dump_model_query_results_path = None;
     analysis_model_constraints =
       { default_analysis_model_constraints with maximum_overrides_to_analyze };
+    lineage_analysis;
   }
 
 
@@ -565,6 +573,7 @@ let default =
     find_missing_flows = None;
     dump_model_query_results_path = None;
     analysis_model_constraints = default_analysis_model_constraints;
+    lineage_analysis = false;
   }
 
 

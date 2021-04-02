@@ -63,6 +63,7 @@ type t = {
   find_missing_flows: missing_flows_kind option;
   dump_model_query_results_path: Path.t option;
   analysis_model_constraints: analysis_model_constraints;
+  lineage_analysis: bool;
 }
 
 val empty : t

@@ -254,6 +254,36 @@ let test_empty _ =
       ())
 
 
+let test_lineage_analysis _ =
+  let configuration =
+    TaintConfiguration.parse
+      [
+        Yojson.Safe.from_string
+          {|
+          { sources:[],
+            sinks: [],
+            rules: []
+           }
+           |};
+      ]
+  in
+  assert_equal configuration.lineage_analysis false;
+  let configuration =
+    TaintConfiguration.parse
+      [
+        Yojson.Safe.from_string
+          {|
+          { sources:[],
+            sinks: [],
+            rules: [],
+            lineage_analysis: true
+           }
+           |};
+      ]
+  in
+  assert_equal configuration.lineage_analysis true
+
+
 let test_partial_sink_converter _ =
   let assert_triggered_sinks configuration ~partial_sink ~source ~expected_sink =
     parse configuration |> Taint.TaintConfiguration.register;
@@ -692,6 +722,7 @@ let () =
          "implicit_sinks" >:: test_implicit_sinks;
          "invalid_sink" >:: test_invalid_sink;
          "invalid_source" >:: test_invalid_source;
+         "lineage_analysis" >:: test_lineage_analysis;
          "multiple_configurations" >:: test_multiple_configurations;
          "partial_sink_converter" >:: test_partial_sink_converter;
          "simple" >:: test_simple;
