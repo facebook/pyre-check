@@ -35,7 +35,7 @@ export async function activate(_: vscode.ExtensionContext) {
 
     let serverOptions = {
         command: "pyre",
-        args: ["persistent"]
+        args: ["pysa-language-server"]
     };
     
     let clientOptions: LanguageClientOptions = {
