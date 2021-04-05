@@ -4,6 +4,7 @@
  (preprocess
   (pps ppx_hash ppx_compare ppx_sexp_conv ppx_sexp_message
     ppx_deriving_yojson))
- (libraries core ppx_deriving_yojson.runtime pyrelib.lwtsubprocess
-   pyrelib.server pyrelib.service pyrelib.ast pyrelib.analysis
-   pyrelib.fetchSavedStateNew pyrelib.pyre pyrelib.version pyrelib.buck))
+ (libraries core core.lock_file_blocking ppx_deriving_yojson.runtime
+   pyrelib.lwtsubprocess pyrelib.server pyrelib.service pyrelib.ast
+   pyrelib.analysis pyrelib.fetchSavedStateNew pyrelib.pyre pyrelib.version
+   pyrelib.buck))

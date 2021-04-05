@@ -46,6 +46,38 @@ let socket_path_of log_path =
     ~relative:(Format.sprintf "pyre_server_%s.sock" log_path_digest)
 
 
+(* One of the biggest pain point of using a Unix-domain socket is that the socket file will not get
+   auto-deleted if the server process is force-killed or crashes with fatal signals. If that
+   happens, the now-defunct socket file on disk will block all future attempts at starting a new
+   server process, until the file gets manually removed.
+
+   It may seem that such an issue can be addressed by always removing the pre-existing socket file
+   on disk whenever a new server is started. But blind file removal will incur a race condition
+   among concurrent server starts: if the pre-existing socket file is not defunct (i.e. another
+   living server is still listening on the socket), removing it will render another living server
+   unreachable, leaking system resources unless the dangling server gets manually killed.
+
+   To determine whether it is safe to remove the pre-existing socket file, we resort to file lock
+   here. One nice property about file lock is that the lock is guaranteed to be automatically
+   released from a process even if it gets forced-killed or crashes unexpectedly (ideally we want
+   the same property to hold for the socket file itself -- but unfortunately Unix-domain sockets do
+   not work this way due to historical reasons). This means that if we cannot grab a lock, we know
+   that another living process may still own the socket file, in which case it's probably not a good
+   idea to remove the file.
+
+   Note that file locks are advisory, meaning that they cannot protect the socket file from being
+   removed by another server process that does not follow the same locking protocol. Besides, file
+   locks are not guaranteed to be functional on all OSes and all filesystems. Hence this function
+   may not be able to remove defunct sockets in some cases even though it is safe to do so. *)
+let remove_existing_socket_file_if_needed socket_path =
+  let lock_path = Path.with_suffix socket_path ~suffix:".lock" in
+  match
+    Lock_file_blocking.create ~close_on_exec:true ~unlink_on_exit:true (Path.absolute lock_path)
+  with
+  | true -> Path.remove_if_exists socket_path
+  | false -> ()
+
+
 let with_performance_logging ?(normals = []) ~name f =
   let open Lwt.Infix in
   let timer = Timer.start () in
@@ -526,6 +558,7 @@ let with_server
   =
   let open Lwt in
   let socket_path = socket_path_of log_path in
+  remove_existing_socket_file_if_needed socket_path;
   (* Watchman connection needs to be up before server can start -- otherwise we risk missing
      filesystem updates during server establishment. *)
   get_watchman_subscriber ?watchman server_configuration
