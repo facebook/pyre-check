@@ -8,7 +8,7 @@
 import unittest
 from dataclasses import dataclass
 
-from graphql import (
+from graphql3 import (
     GraphQLBoolean,
     GraphQLField,
     GraphQLID,
@@ -54,11 +54,11 @@ queryType = GraphQLObjectType(
     description="GraphQLObject directly created at top level",
     fields={
         "no_resolver": GraphQLField(GraphQLNonNull(GraphQLID)),
-        "resolver1": GraphQLField(GraphQLBoolean, resolver=function1),
-        "resolver2": GraphQLField(GraphQLBoolean, resolver=function2),
-        "resolver3": GraphQLField(GraphQLBoolean, resolver=TestClass.method1),
-        "resolver4": GraphQLField(GraphQLBoolean, resolver=TestClass.method2),
-        "lambda_resolver": GraphQLField(GraphQLBoolean, resolver=lambda x: x),
+        "resolver1": GraphQLField(GraphQLBoolean, resolve=function1),
+        "resolver2": GraphQLField(GraphQLBoolean, resolve=function2),
+        "resolver3": GraphQLField(GraphQLBoolean, resolve=TestClass.method1),
+        "resolver4": GraphQLField(GraphQLBoolean, resolve=TestClass.method2),
+        "lambda_resolver": GraphQLField(GraphQLBoolean, resolve=lambda x: x),
     },
 )
 

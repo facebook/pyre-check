@@ -7,7 +7,7 @@
 
 from typing import Any, Callable, Iterable, List, Optional, Type
 
-from graphql import GraphQLSchema
+from graphql3 import GraphQLSchema
 
 from .function_tainter import taint_callable_functions
 from .generator_specifications import AllParametersAnnotation, AnnotationSpecification
@@ -41,7 +41,7 @@ class DynamicGraphQLSourceGenerator(ModelGenerator[CallableModel]):
         )
 
     def gather_functions_to_model(self) -> Iterable[Callable[..., object]]:
-        type_map = self.graphql_schema.get_type_map()
+        type_map = self.graphql_schema.type_map
 
         # Get all graphql resolver functions.
         resolvers: List[Callable[..., object]] = []
@@ -59,7 +59,7 @@ class DynamicGraphQLSourceGenerator(ModelGenerator[CallableModel]):
                 continue
 
             for field in fields:
-                resolver = fields[field].resolver
+                resolver = fields[field].resolve
                 if resolver is not None and resolver.__name__ != "<lambda>":
                     resolvers.append(resolver)
 

@@ -9,14 +9,14 @@ import os  # noqa
 import unittest
 from typing import Callable
 
-from graphql.type import (
+from graphql3 import (
     GraphQLBoolean,
     GraphQLField,
     GraphQLID,
     GraphQLNonNull,
     GraphQLObjectType,
+    GraphQLType,
 )
-from graphql.type.definition import GraphQLType
 
 from ...generate_taint_models.get_graphql_sources import (
     GraphQLSourceGenerator,
@@ -84,8 +84,8 @@ DirectObjectType = GraphQLObjectType(
     description="GraphQLObject directly created at top level",
     fields={
         "no_resolver": GraphQLField(GraphQLNonNull(GraphQLID)),
-        "resolver": GraphQLField(GraphQLBoolean, resolver=function_1),
-        "lambda_resolver": GraphQLField(GraphQLBoolean, resolver=lambda x: x),
+        "resolver": GraphQLField(GraphQLBoolean, resolve=function_1),
+        "lambda_resolver": GraphQLField(GraphQLBoolean, resolve=lambda x: x),
     },
 )
 
@@ -94,13 +94,13 @@ BrokenObjectType = GraphQLObjectType(
 )
 
 
-def add_field(type: GraphQLType, name: str, resolver: Callable) -> None:
+def add_field(type: GraphQLType, name: str, resolve: Callable) -> None:
     # pyre-ignore[16]: Undefined attribute
-    type._fields[name] = GraphQLField(GraphQLNonNull(GraphQLID), resolver=resolver)
+    type._fields[name] = GraphQLField(GraphQLNonNull(GraphQLID), resolve=resolve)
 
 
 # Indirectly add in an additional resolver, so that
 # 'test_gather_functions_to_model' can verify that that resolver is detected
 IndirectObjectType = add_field(
-    type=DirectObjectType, name="indirect", resolver=function_2
+    type=DirectObjectType, name="indirect", resolve=function_2
 )

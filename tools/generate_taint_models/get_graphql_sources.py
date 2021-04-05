@@ -65,7 +65,7 @@ class GraphQLSourceGenerator(ModelGenerator[CallableModel]):
                         # program defensively here :(
                         fields = []
                     for field in fields:
-                        resolver = fields[field].resolver
+                        resolver = fields[field].resolve
                         if resolver is not None and resolver.__name__ != "<lambda>":
                             views.append(resolver)
 
