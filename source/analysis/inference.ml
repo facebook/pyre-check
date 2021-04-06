@@ -862,10 +862,8 @@ let run_local
       if configuration.debug then
         errors
       else
-        let keep_error error =
-          let mode = Source.mode ~configuration ~local_mode in
-          not (Error.suppress ~mode ~ignore_codes error)
-        in
+        let mode = Source.mode ~configuration ~local_mode in
+        let keep_error error = not (Error.suppress ~mode ~ignore_codes error) in
         List.filter ~f:keep_error errors
     in
     let dequalify_map = Preprocessing.dequalify_map source in
