@@ -86,6 +86,7 @@ module TraceInfo = struct
   let show = Format.asprintf "%a" pp
 
   (* Breaks recursion among trace info and overall taint domain. *)
+  (* See implementation in TaintResult. *)
   let has_significant_summary =
     ref
       (fun (_ : AccessPath.Root.t)
@@ -644,6 +645,18 @@ module MakeTaintEnvironment (Taint : TAINT_DOMAIN) () = struct
       | Some tree -> Tree.assign ~weak ~tree path ~subtree
     in
     update environment root ~f:assign_tree
+
+
+  let read_tree_raw
+      ?(transform_non_leaves = fun _ e -> e)
+      ?(use_precise_fields = false)
+      ~root
+      ~path
+      environment
+    =
+    match get root environment with
+    | None -> Taint.bottom, Tree.bottom
+    | Some tree -> Tree.read_tree_raw ~transform_non_leaves ~use_precise_fields path tree
 
 
   let read ?(transform_non_leaves = fun _ e -> e) ~root ~path environment =

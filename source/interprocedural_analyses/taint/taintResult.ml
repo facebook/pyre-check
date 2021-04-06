@@ -368,11 +368,17 @@ let has_significant_summary root path target =
   | Some { forward; backward; _ } -> (
       match root with
       | AccessPath.Root.LocalResult ->
-          let tree = ForwardState.read ~root ~path forward.source_taint in
-          not (ForwardState.Tree.is_empty tree)
+          let _, tree =
+            ForwardState.read_tree_raw ~use_precise_fields:true ~root ~path forward.source_taint
+          in
+          let taint = ForwardState.Tree.get_root_taint tree in
+          not (ForwardTaint.is_bottom taint)
       | _ ->
-          let tree = BackwardState.read ~root ~path backward.sink_taint in
-          not (BackwardState.Tree.is_empty tree) )
+          let _, tree =
+            BackwardState.read_tree_raw ~use_precise_fields:true ~root ~path backward.sink_taint
+          in
+          let taint = BackwardState.Tree.get_root_taint tree in
+          not (BackwardTaint.is_bottom taint) )
 
 
 let () = TraceInfo.has_significant_summary := has_significant_summary

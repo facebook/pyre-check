@@ -590,7 +590,7 @@ module Make (Config : CONFIG) (Element : AbstractDomainCore.S) () = struct
 
       ancestors is accumulated down the recursion and returned when we reach the end of that path.
       That way the recursion is tail-recursive. *)
-  let rec read_raw ~ancestors path { children; element } ~use_precise_fields ~transform_non_leaves =
+  let rec read_raw ~transform_non_leaves ~use_precise_fields ~ancestors path { children; element } =
     match path with
     | [] -> ancestors, create_node_option element children
     | label_element :: rest -> (
@@ -605,7 +605,7 @@ module Make (Config : CONFIG) (Element : AbstractDomainCore.S) () = struct
                 Element.bottom, None
               else
                 let ancestors_result, subtree =
-                  read_raw ~ancestors ~use_precise_fields ~transform_non_leaves rest subtree
+                  read_raw ~transform_non_leaves ~use_precise_fields ~ancestors rest subtree
                 in
                 let subtree =
                   join_option_trees Element.bottom ~widen_depth:None tree_accumulator subtree
@@ -619,24 +619,29 @@ module Make (Config : CONFIG) (Element : AbstractDomainCore.S) () = struct
             | None -> (
                 match LabelMap.find_opt Label.Any children with
                 | Some subtree ->
-                    read_raw ~ancestors ~use_precise_fields ~transform_non_leaves rest subtree
+                    read_raw ~transform_non_leaves ~use_precise_fields ~ancestors rest subtree
                 | None -> ancestors, None )
             | Some subtree ->
-                read_raw ~ancestors ~use_precise_fields ~transform_non_leaves rest subtree )
+                read_raw ~transform_non_leaves ~use_precise_fields ~ancestors rest subtree )
         | _ -> (
             match LabelMap.find_opt label_element children with
             | None -> ancestors, None
             | Some subtree ->
-                read_raw ~ancestors ~use_precise_fields ~transform_non_leaves rest subtree ) )
+                read_raw ~transform_non_leaves ~use_precise_fields ~ancestors rest subtree ) )
 
 
   (** Read the subtree at path p within t. Returns the pair ancestors, tree_at_tip. *)
-  let read_tree_raw path tree ~use_precise_fields ~transform_non_leaves =
+  let read_tree_raw
+      ?(transform_non_leaves = fun _p element -> element)
+      ?(use_precise_fields = false)
+      path
+      tree
+    =
     let message () =
       Format.sprintf "read tree_raw: %s :from: %s" (Label.show_path path) (show tree)
     in
     let ancestors, tree_option =
-      read_raw ~ancestors:Element.bottom ~use_precise_fields ~transform_non_leaves path tree
+      read_raw ~transform_non_leaves ~use_precise_fields ~ancestors:Element.bottom path tree
     in
     ancestors, option_node_tree ~message tree_option
 
@@ -771,7 +776,7 @@ module Make (Config : CONFIG) (Element : AbstractDomainCore.S) () = struct
 
 
   let read ?(transform_non_leaves = fun _p element -> element) path tree =
-    let ancestors, tree = read_tree_raw path tree ~use_precise_fields:false ~transform_non_leaves in
+    let ancestors, tree = read_tree_raw ~transform_non_leaves ~use_precise_fields:false path tree in
     let message () = Format.sprintf "read [%s] from %s" (Label.show_path path) (show tree) in
     (* Important to properly join the trees and not just join ancestors and
        tree.element, as otherwise this could result in non-minimal trees. *)

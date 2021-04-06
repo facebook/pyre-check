@@ -53,6 +53,15 @@ module Make (Config : CONFIG) (Element : AbstractDomainCore.S) () : sig
 
   val read : ?transform_non_leaves:(Label.path -> Element.t -> Element.t) -> Label.path -> t -> t
 
+  (* Read the subtree at the given path. Returns the pair ancestors, tree_at_tip.
+   * ~use_precise_fields overrides the default handling of [*] matching all fields. *)
+  val read_tree_raw
+    :  ?transform_non_leaves:(Label.path -> Element.t -> Element.t) ->
+    ?use_precise_fields:bool ->
+    Label.path ->
+    t ->
+    Element.t * t
+
   (* Compute minimum/maximum path length to non-bottom element. *)
   val min_depth : t -> int
 
