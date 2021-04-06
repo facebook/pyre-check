@@ -10,8 +10,6 @@ open Analysis
 open Interprocedural
 
 include TypeInferenceResult.Register (struct
-  let configuration : Configuration.Analysis.t option ref = ref None
-
   let init
       ~configuration:{ Configuration.StaticAnalysis.configuration = c; _ }
       ~scheduler:_
@@ -19,7 +17,7 @@ include TypeInferenceResult.Register (struct
       ~functions:_
       ~stubs:_
     =
-    configuration := Some c;
+    TypeInferenceSharedMemory.register_configuration c;
     { Result.initial_models = Callable.Map.empty; skip_overrides = Ast.Reference.Set.empty }
 
 
@@ -27,12 +25,13 @@ include TypeInferenceResult.Register (struct
     let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
     let ast_environment = GlobalResolution.ast_environment global_resolution in
     let maybe_source = AstEnvironment.ReadOnly.get_processed_source ast_environment qualifier in
+    let configuration = TypeInferenceSharedMemory.get_configuration () in
     let result =
-      match !configuration, maybe_source with
-      | None, _ -> []
-      | _, None -> []
-      | Some configuration, Some source ->
-          Inference.run_local ~configuration ~global_resolution ~source ~define
+      match maybe_source with
+      | None -> []
+      | Some source ->
+          let result = Inference.run_local ~configuration ~global_resolution ~source ~define in
+          result
           |> List.map
                ~f:
                  (AnalysisError.instantiate

@@ -17,6 +17,8 @@ let get_analysis_kind = function
       failwith "bad argument"
 
 
+let should_infer analysis = analysis == "type_inference"
+
 let run_analysis
     analysis
     result_json_path
@@ -83,7 +85,7 @@ let run_analysis
         ~debug
         ~strict
         ~show_error_traces
-        ~infer:false
+        ~infer:(should_infer analysis)
         ~project_root:(Path.create_absolute ~follow_symbolic_links:true project_root)
         ~parallel:(not sequential)
         ?filter_directories
