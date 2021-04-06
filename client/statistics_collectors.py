@@ -43,10 +43,19 @@ class AnnotationCountCollector(StatisticsCollector):
         self.annotated_attribute_count = annotated_attribute_count
         self.partially_annotated_function_count = partially_annotated_function_count
         self.fully_annotated_function_count = fully_annotated_function_count
-        self.in_class_definition = False
-        self.in_function_definition = False
-        self.is_static_function = False
+        self.class_definition_depth = 0
+        self.function_definition_depth = 0
+        self.static_function_definition_depth = 0
         self.line_count = 0
+
+    def in_class_definition(self) -> bool:
+        return self.class_definition_depth > 0
+
+    def in_function_definition(self) -> bool:
+        return self.function_definition_depth > 0
+
+    def in_static_function_definition(self) -> bool:
+        return self.static_function_definition_depth > 0
 
     def build_json(self) -> Dict[str, int]:
         return {
@@ -66,7 +75,11 @@ class AnnotationCountCollector(StatisticsCollector):
         }
 
     def _is_self_or_cls(self, index: int) -> bool:
-        return index == 0 and self.in_class_definition and not self.is_static_function
+        return (
+            index == 0
+            and self.in_class_definition()
+            and not self.in_static_function_definition()
+        )
 
     def _check_parameter_annotations(self, parameters: Sequence[cst.Param]) -> int:
         annotated_parameter_count = 0
@@ -83,8 +96,9 @@ class AnnotationCountCollector(StatisticsCollector):
             decorator_node = decorator.decorator
             if isinstance(decorator_node, cst.Name):
                 if decorator_node.value == "staticmethod":
-                    self.is_static_function = True
-        self.in_function_definition = True
+                    self.static_function_definition_depth += 1
+                    break
+        self.function_definition_depth += 1
 
         self.return_count += 1
         return_is_annotated = node.returns is not None
@@ -99,21 +113,26 @@ class AnnotationCountCollector(StatisticsCollector):
             self.partially_annotated_function_count += 1
 
     def leave_FunctionDef(self, original_node: cst.FunctionDef) -> None:
-        self.in_function_definition = False
-        self.is_static_function = False
+        self.function_definition_depth -= 1
+        for decorator in original_node.decorators:
+            decorator_node = decorator.decorator
+            if isinstance(decorator_node, cst.Name):
+                if decorator_node.value == "staticmethod":
+                    self.static_function_definition_depth -= 1
+                    break
 
     def visit_Assign(self, node: cst.Assign) -> None:
-        if self.in_function_definition:
+        if self.in_function_definition():
             return
-        if self.in_class_definition:
+        if self.in_class_definition():
             self.attribute_count += 1
         else:
             self.globals_count += 1
 
     def visit_AnnAssign(self, node: cst.AnnAssign) -> None:
-        if self.in_function_definition:
+        if self.in_function_definition():
             return
-        if self.in_class_definition:
+        if self.in_class_definition():
             self.attribute_count += 1
             self.annotated_attribute_count += 1
         else:
@@ -121,10 +140,10 @@ class AnnotationCountCollector(StatisticsCollector):
             self.annotated_globals_count += 1
 
     def visit_ClassDef(self, node: cst.ClassDef) -> None:
-        self.in_class_definition = True
+        self.class_definition_depth += 1
 
     def leave_ClassDef(self, original_node: cst.ClassDef) -> None:
-        self.in_class_definition = False
+        self.class_definition_depth -= 1
 
     def leave_Module(self, original_node: cst.Module) -> None:
         file_range = self.get_metadata(PositionProvider, original_node)

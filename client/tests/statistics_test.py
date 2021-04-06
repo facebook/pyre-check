@@ -8,9 +8,14 @@ import unittest
 from typing import Dict
 
 import libcst as cst
+from libcst.metadata import MetadataWrapper
 
 from ..commands.statistics import _path_wise_counts
-from ..statistics_collectors import FixmeCountCollector, StrictCountCollector
+from ..statistics_collectors import (
+    AnnotationCountCollector,
+    FixmeCountCollector,
+    StrictCountCollector,
+)
 
 
 class StatisticsCollectorTest(unittest.TestCase):
@@ -112,4 +117,63 @@ class StatisticsCollectorTest(unittest.TestCase):
                 return x  # FIXME[7]
             """,
             {"strict_count": 1, "unsafe_count": 0},
+        )
+
+    def assert_annotation_count_equal(
+        self,
+        file_content: str,
+        expected_counts: Dict[str, int],
+    ) -> None:
+        module = cst.parse_module(textwrap.dedent(file_content).strip())
+        annotation_counts = _path_wise_counts(
+            {"test.py": MetadataWrapper(module)}, AnnotationCountCollector
+        )
+        actual_counts = annotation_counts["test.py"].build_json()
+        self.assertEqual(expected_counts, actual_counts)
+
+    def test_annotation_count(self) -> None:
+        self.assert_annotation_count_equal(
+            """
+            def foo(x: str) -> str:
+                return x
+            """,
+            {
+                "return_count": 1,
+                "annotated_return_count": 1,
+                "globals_count": 0,
+                "annotated_globals_count": 0,
+                "parameter_count": 1,
+                "annotated_parameter_count": 1,
+                "attribute_count": 0,
+                "annotated_attribute_count": 0,
+                "partially_annotated_function_count": 0,
+                "fully_annotated_function_count": 1,
+                "line_count": 3,
+            },
+        )
+        self.assert_annotation_count_equal(
+            """
+            class Test:
+                def foo(self, input: str) -> None:
+                    class Foo:
+                        pass
+
+                    pass
+
+                def bar(self, input: str) -> None:
+                    pass
+            """,
+            {
+                "return_count": 2,
+                "annotated_return_count": 2,
+                "globals_count": 0,
+                "annotated_globals_count": 0,
+                "parameter_count": 4,
+                "annotated_parameter_count": 4,
+                "attribute_count": 0,
+                "annotated_attribute_count": 0,
+                "partially_annotated_function_count": 0,
+                "fully_annotated_function_count": 2,
+                "line_count": 10,
+            },
         )
