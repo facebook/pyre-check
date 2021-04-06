@@ -1030,6 +1030,9 @@ module Make (Config : CONFIG) (Element : AbstractDomainCore.S) () = struct
       | Path, OpAcc ->
           let fold_tree_node ~path ~element accumulator = f (path, element) accumulator in
           fold_tree_paths ~init ~f:fold_tree_node tree
+      | Path, OpExists ->
+          let fold_tree_node ~path ~element accumulator = accumulator || f (path, element) in
+          init || fold_tree_paths ~init ~f:fold_tree_node tree
       | _, OpContext (Path, op) ->
           let fold_tree_node ~path ~element accumulator =
             Element.reduce
@@ -1059,6 +1062,12 @@ module Make (Config : CONFIG) (Element : AbstractDomainCore.S) () = struct
         | Some tree -> assign_tree_path ~tree path ~subtree:leaf
       in
       match part, op with
+      | Path, OpBy ->
+          let partition ~path ~element result =
+            let partition_key = f (path, element) in
+            MapPoly.update result partition_key ~f:(update path element)
+          in
+          fold_tree_paths ~init:MapPoly.empty ~f:partition tree
       | Path, OpByFilter ->
           let partition ~path ~element result =
             match f (path, element) with

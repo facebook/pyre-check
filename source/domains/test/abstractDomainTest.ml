@@ -290,7 +290,7 @@ module StringSet = struct
     let test ~initial ~f ~expected =
       let element_set = of_list initial in
       let actual =
-        partition Element ~f element_set
+        partition_new Element AbstractDomain.OpBy ~f element_set
         |> MapPoly.fold ~init:[] ~f:(fun ~key ~data result ->
                let elements =
                  fold Element ~init:[] ~f:List.cons data |> List.sort ~compare:String.compare
@@ -302,7 +302,7 @@ module StringSet = struct
     in
     test
       ~initial:["abc"; "bef"; "g"]
-      ~f:(fun x -> Some (String.length x))
+      ~f:(fun x -> String.length x)
       ~expected:[1, ["g"]; 3, ["abc"; "bef"]]
 
 

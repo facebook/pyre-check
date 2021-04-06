@@ -131,10 +131,18 @@ module Make (Element : ELEMENT) = struct
           match set with
           | Universe -> init
           | InvertedSet set -> Set.fold f set init )
+      | Element, OpExists -> (
+          match set with
+          | Universe -> init
+          | InvertedSet set -> init || Set.exists f set )
       | Set, OpAcc -> (
           match set with
           | Universe -> f { is_universe = true; elements = [] } init
           | InvertedSet set -> f { is_universe = false; elements = Set.elements set } init )
+      | Set, OpExists -> (
+          match set with
+          | Universe -> init || f { is_universe = true; elements = [] }
+          | InvertedSet set -> init || f { is_universe = false; elements = Set.elements set } )
       | _ -> Base.reduce part ~using:op ~f ~init set
 
 
@@ -148,6 +156,18 @@ module Make (Element : ELEMENT) = struct
         | Some set -> add element set
       in
       match part, op with
+      | Element, OpBy -> (
+          match set with
+          | Universe -> Core_kernel.Map.Poly.empty
+          | InvertedSet set ->
+              let f element result =
+                let key = f element in
+                Core_kernel.Map.Poly.update result key ~f:(update element)
+              in
+              Set.fold f set Core_kernel.Map.Poly.empty )
+      | Set, OpBy ->
+          let key = f (elements set) in
+          Core_kernel.Map.Poly.singleton key set
       | Element, OpByFilter -> (
           match set with
           | Universe -> Core_kernel.Map.Poly.empty

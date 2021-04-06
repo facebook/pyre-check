@@ -252,13 +252,24 @@ module Make (Element : AbstractSetDomain.ELEMENT) = struct
       match part, op, set with
       | Element, OpAcc, Bottom -> init
       | Element, OpAcc, BiSet { over; _ } -> Set.fold f over init
+      | Element, OpExists, Bottom -> init
+      | Element, OpExists, BiSet { over; _ } -> init || Set.exists f over
       | Set, OpAcc, _ -> f (elements set) init
+      | Set, OpExists, _ -> init || f (elements set)
       | ElementAndUnder, OpAcc, Bottom -> init
       | ElementAndUnder, OpAcc, BiSet { over; under } ->
           let element_of = element_of ~under in
           let f element accumulator = f (element_of element) accumulator in
           Set.fold f over init
+      | ElementAndUnder, OpExists, Bottom -> init
+      | ElementAndUnder, OpExists, BiSet { over; under } ->
+          init
+          ||
+          let element_of = element_of ~under in
+          let f element = f (element_of element) in
+          Set.exists f over
       | SetAndUnder, OpAcc, set -> f (to_approximation set) init
+      | SetAndUnder, OpExists, set -> init || f (to_approximation set)
       | _ -> Base.reduce part ~using:op ~f ~init set
 
 
@@ -272,7 +283,28 @@ module Make (Element : AbstractSetDomain.ELEMENT) = struct
         | Some set -> add_element set element
       in
       match part, op, set with
+      | (Element | ElementAndUnder), OpBy, Bottom -> Core_kernel.Map.Poly.empty
       | (Element | ElementAndUnder), OpByFilter, Bottom -> Core_kernel.Map.Poly.empty
+      | Element, OpBy, _ ->
+          let f result element =
+            let key = f element.element in
+            Core_kernel.Map.Poly.update result key ~f:(update_element element)
+          in
+          to_approximation set |> ListLabels.fold_left ~f ~init:Core_kernel.Map.Poly.empty
+      | ElementAndUnder, OpBy, BiSet { over; under } ->
+          let element_of = element_of ~under in
+          let f element result =
+            let element = element_of element in
+            let key = f element in
+            Core_kernel.Map.Poly.update result key ~f:(update_element element)
+          in
+          Set.fold f over Core_kernel.Map.Poly.empty
+      | Set, OpBy, _ ->
+          let key = f (elements set) in
+          Core_kernel.Map.Poly.singleton key set
+      | SetAndUnder, OpBy, _ ->
+          let key = f (to_approximation set) in
+          Core_kernel.Map.Poly.singleton key set
       | Element, OpByFilter, _ ->
           let f result element =
             match f element.element with

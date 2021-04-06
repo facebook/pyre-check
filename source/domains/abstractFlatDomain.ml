@@ -105,6 +105,8 @@ module Make (Element : ELEMENT) = struct
       match part, op, p with
       | Element, OpAcc, Concrete e -> f e init
       | Element, OpAcc, (Top | Bottom) -> init
+      | Element, OpExists, Concrete e -> init || f e
+      | Element, OpExists, (Top | Bottom) -> init
       | _ -> Base.reduce part ~using:op ~f ~init p
 
 
@@ -114,6 +116,12 @@ module Make (Element : ELEMENT) = struct
       =
      fun part op ~f flat ->
       match part, op with
+      | Element, OpBy -> (
+          match flat with
+          | Top
+          | Bottom ->
+              Core_kernel.Map.Poly.empty
+          | Concrete e -> Core_kernel.Map.Poly.singleton (f e) flat )
       | Element, OpByFilter -> (
           match flat with
           | Top

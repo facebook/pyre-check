@@ -232,7 +232,9 @@ module Make (Key : KEY) (Element : AbstractDomainCore.S) = struct
      fun part ~using:op ~f ~init map ->
       match part, op with
       | Key, OpAcc -> Map.fold ~f:(fun ~key ~data:_ result -> f key result) ~init map
+      | Key, OpExists -> init || Map.exists (fun key _ -> f key) map
       | KeyValue, OpAcc -> Map.fold ~f:(fun ~key ~data result -> f (key, data) result) ~init map
+      | KeyValue, OpExists -> init || Map.exists (fun key data -> f (key, data)) map
       | part, OpContext (Key, op) ->
           Map.fold
             ~f:(fun ~key ~data init ->
@@ -266,6 +268,18 @@ module Make (Key : KEY) (Element : AbstractDomainCore.S) = struct
       =
      fun part op ~f map ->
       match part, op with
+      | Key, OpBy ->
+          let partition_by_key ~key ~data partition =
+            let partition_key = f key in
+            MapPoly.update partition partition_key ~f:(update_partition ~key ~data)
+          in
+          Map.fold map ~init:MapPoly.empty ~f:partition_by_key
+      | KeyValue, OpBy ->
+          let partition_by_key ~key ~data partition =
+            let partition_key = f (key, data) in
+            MapPoly.update partition partition_key ~f:(update_partition ~key ~data)
+          in
+          Map.fold map ~init:MapPoly.empty ~f:partition_by_key
       | Key, OpByFilter ->
           let partition_by_key ~key ~data partition =
             match f key with

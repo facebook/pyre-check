@@ -155,9 +155,13 @@ module Make (Element : ELEMENT) = struct
      fun part ~using:op ~f ~init set ->
       match set, part, op with
       | Top, Element, OpAcc -> init
+      | Top, Element, OpExists -> init
       | Top, Set, OpAcc -> f Top init
+      | Top, Set, OpExists -> init || f Top
       | ASet set, Element, OpAcc -> Set.fold f set init
+      | ASet set, Element, OpExists -> init || Set.exists f set
       | ASet set, Set, OpAcc -> f (ASet (Set.elements set)) init
+      | ASet set, Set, OpExists -> init || f (ASet (Set.elements set))
       | _ -> Base.reduce part ~using:op ~f ~init set
 
 
@@ -171,6 +175,12 @@ module Make (Element : ELEMENT) = struct
         | Some set -> add element set
       in
       match set, part, op with
+      | ASet set, Element, OpBy ->
+          let f element result =
+            let partition_key = f element in
+            Core_kernel.Map.Poly.update result partition_key ~f:(update element)
+          in
+          Set.fold f set Core_kernel.Map.Poly.empty
       | ASet set, Element, OpByFilter ->
           let f element result =
             match f element with
@@ -180,6 +190,14 @@ module Make (Element : ELEMENT) = struct
           in
           Set.fold f set Core_kernel.Map.Poly.empty
       | Top, Element, _ -> failwith "Topped set cannot be partitioned by Element"
+      | _, Set, OpBy ->
+          let value =
+            match set with
+            | Top -> Top
+            | ASet set -> ASet (Set.elements set)
+          in
+          let partition_key = f value in
+          Core_kernel.Map.Poly.singleton partition_key set
       | _, Set, OpByFilter -> (
           let value =
             match set with

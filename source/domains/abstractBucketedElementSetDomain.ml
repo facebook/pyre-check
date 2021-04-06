@@ -111,6 +111,7 @@ module Make (Element : BUCKETED_ELEMENT) = struct
       | Set, OpAcc ->
           (* Present the flattened set *)
           f (elements buckets) init
+      | Set, OpExists -> init || f (elements buckets)
       | (Set | Self), _ -> Base.reduce part ~using:op ~f ~init buckets
       | _ -> Map.reduce part ~using:op ~f ~init buckets
 
@@ -121,6 +122,9 @@ module Make (Element : BUCKETED_ELEMENT) = struct
       =
      fun part op ~f buckets ->
       match part, op with
+      | Set, OpBy ->
+          let key = f (elements buckets) in
+          Core_kernel.Map.Poly.singleton key buckets
       | Set, OpByFilter -> (
           match f (elements buckets) with
           | None -> Core_kernel.Map.Poly.empty

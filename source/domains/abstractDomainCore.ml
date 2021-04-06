@@ -57,7 +57,9 @@ type ('k, 'a, _, 'd, _) operation =
   | OpNest : 'c part * ('k, 'c, 'f, 'd, 'b) operation -> ('k, 'a, 'f, 'd, 'b) operation
   (* reductions *)
   | OpAcc : (reduce, 'a, 'a -> 'b -> 'b, 'd, 'b) operation
+  | OpExists : (reduce, 'a, 'a -> bool, 'd, bool) operation
   (* partitioning *)
+  | OpBy : (partition, 'a, 'a -> 'b, 'd, 'b) operation
   | OpByFilter : (partition, 'a, 'a -> 'b option, 'd, 'b) operation
 
 module type S = sig
@@ -151,7 +153,9 @@ let rec op_name : type k a f d b. (k, a, f, d, b) operation -> string =
   | OpNest (p, op) -> Format.sprintf "Nest(%s, %s)" (part_name p) (op_name op)
   (* folds *)
   | OpAcc -> "Acc"
+  | OpExists -> "Exists"
   (* Partitions *)
+  | OpBy -> "By"
   | OpByFilter -> "ByFilter"
 
 
@@ -261,6 +265,7 @@ end) : BASE with type t := D.t = struct
    fun op ->
     match op with
     | OpAcc -> OpAcc
+    | OpExists -> OpExists
     | OpContext (part, op) -> OpContext (part, freshen_reduce op)
     | OpSeq (op1, op2) -> OpSeq (freshen_transform op1, freshen_reduce op2)
     | OpNest (p, op) -> OpNest (p, freshen_reduce op)
@@ -271,6 +276,7 @@ end) : BASE with type t := D.t = struct
     =
    fun op ->
     match op with
+    | OpBy -> OpBy
     | OpByFilter -> OpByFilter
     | OpContext (part, op) -> OpContext (part, freshen_partition op)
     | OpSeq (op1, op2) -> OpSeq (freshen_transform op1, freshen_partition op2)
@@ -300,6 +306,7 @@ end) : BASE with type t := D.t = struct
    fun part ~using:op ~f ~init d ->
     match part, op with
     | D.Self, OpAcc -> f d init
+    | D.Self, OpExists -> init || f d
     | _, OpSeq (op1, op2) ->
         let f1, f2 = f in
         let d = D.transform_new part op1 ~f:f1 d in
@@ -322,6 +329,7 @@ end) : BASE with type t := D.t = struct
     =
    fun part op ~f d ->
     match part, op with
+    | D.Self, OpBy -> Core_kernel.Map.Poly.singleton (f d) d
     | D.Self, OpByFilter -> (
         match f d with
         | None -> Core_kernel.Map.Poly.empty

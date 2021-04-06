@@ -106,7 +106,9 @@ module Make (Element : ELEMENT) = struct
      fun part ~using:op ~f ~init set ->
       match part, op with
       | Element, OpAcc -> Set.fold f set init
+      | Element, OpExists -> init || Set.exists f set
       | Set, OpAcc -> f (Set.elements set) init
+      | Set, OpExists -> init || f (Set.elements set)
       | _ -> Base.reduce part ~using:op ~f ~init set
 
 
@@ -120,6 +122,15 @@ module Make (Element : ELEMENT) = struct
         | Some set -> add element set
       in
       match part, op with
+      | Element, OpBy ->
+          let f element result =
+            let key = f element in
+            Core_kernel.Map.Poly.update result key ~f:(update element)
+          in
+          Set.fold f set Core_kernel.Map.Poly.empty
+      | Set, OpBy ->
+          let key = f (Set.elements set) in
+          Core_kernel.Map.Poly.singleton key set
       | Element, OpByFilter ->
           let f element result =
             match f element with
