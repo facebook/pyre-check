@@ -90,23 +90,23 @@ module Make (Element : ELEMENT) = struct
 
     let pp formatter set = Format.fprintf formatter "%s" (show set)
 
-    let transform_new : type a f. a part -> (transform2, a, f, t, t) operation -> f:f -> t -> t =
+    let transform : type a f. a part -> (transform, a, f, t, t) operation -> f:f -> t -> t =
      fun part op ~f set ->
       match part, op with
-      | Element, OpMap -> (
+      | Element, Map -> (
           match set with
           | Universe -> Universe
           | InvertedSet set ->
               Set.elements set
               |> ListLabels.fold_left ~f:(fun result element -> add (f element) result) ~init:bottom
           )
-      | Element, OpAdd -> add f set
-      | Element, OpFilter -> (
+      | Element, Add -> add f set
+      | Element, Filter -> (
           match set with
           | Universe -> Universe
           | InvertedSet set -> InvertedSet (Set.filter f set) )
-      | Set, OpMap -> elements set |> f |> of_elements
-      | Set, OpAdd -> (
+      | Set, Map -> elements set |> f |> of_elements
+      | Set, Add -> (
           let { is_universe; elements = new_elements } = f in
           if is_universe then
             Universe
@@ -114,7 +114,7 @@ module Make (Element : ELEMENT) = struct
             match set with
             | Universe -> Universe
             | InvertedSet set -> InvertedSet (Set.union set (Set.of_list new_elements)) )
-      | Set, OpFilter ->
+      | Set, Filter ->
           if f (elements set) then
             set
           else
@@ -127,26 +127,26 @@ module Make (Element : ELEMENT) = struct
       =
      fun part ~using:op ~f ~init set ->
       match part, op with
-      | Element, OpAcc -> (
+      | Element, Acc -> (
           match set with
           | Universe -> init
           | InvertedSet set -> Set.fold f set init )
-      | Element, OpExists -> (
+      | Element, Exists -> (
           match set with
           | Universe -> init
           | InvertedSet set -> init || Set.exists f set )
-      | Set, OpAcc -> (
+      | Set, Acc -> (
           match set with
           | Universe -> f { is_universe = true; elements = [] } init
           | InvertedSet set -> f { is_universe = false; elements = Set.elements set } init )
-      | Set, OpExists -> (
+      | Set, Exists -> (
           match set with
           | Universe -> init || f { is_universe = true; elements = [] }
           | InvertedSet set -> init || f { is_universe = false; elements = Set.elements set } )
       | _ -> Base.reduce part ~using:op ~f ~init set
 
 
-    let partition_new
+    let partition
         : type a f b.
           a part -> (partition, a, f, t, b) operation -> f:f -> t -> (b, t) Core_kernel.Map.Poly.t
       =
@@ -156,7 +156,7 @@ module Make (Element : ELEMENT) = struct
         | Some set -> add element set
       in
       match part, op with
-      | Element, OpBy -> (
+      | Element, By -> (
           match set with
           | Universe -> Core_kernel.Map.Poly.empty
           | InvertedSet set ->
@@ -165,10 +165,10 @@ module Make (Element : ELEMENT) = struct
                 Core_kernel.Map.Poly.update result key ~f:(update element)
               in
               Set.fold f set Core_kernel.Map.Poly.empty )
-      | Set, OpBy ->
+      | Set, By ->
           let key = f (elements set) in
           Core_kernel.Map.Poly.singleton key set
-      | Element, OpByFilter -> (
+      | Element, ByFilter -> (
           match set with
           | Universe -> Core_kernel.Map.Poly.empty
           | InvertedSet set ->
@@ -178,7 +178,7 @@ module Make (Element : ELEMENT) = struct
                 | Some key -> Core_kernel.Map.Poly.update result key ~f:(update element)
               in
               Set.fold f set Core_kernel.Map.Poly.empty )
-      | Set, OpByFilter -> (
+      | Set, ByFilter -> (
           match f (elements set) with
           | None -> Core_kernel.Map.Poly.empty
           | Some key -> Core_kernel.Map.Poly.singleton key set )
@@ -210,11 +210,7 @@ module Make (Element : ELEMENT) = struct
       ListLabels.fold_left parts ~f:create_part ~init:bottom
 
 
-    let transform = Base.legacy_transform
-
     let fold = Base.fold
-
-    let partition = Base.legacy_partition
 
     let meet = Base.meet
   end

@@ -200,45 +200,45 @@ module Make (Element : AbstractSetDomain.ELEMENT) = struct
               make ~old:from ~over:(Set.union over under) ~under
 
 
-    let transform_new : type a f. a part -> (transform2, a, f, t, t) operation -> f:f -> t -> t =
+    let transform : type a f. a part -> (transform, a, f, t, t) operation -> f:f -> t -> t =
      fun part op ~f set ->
       match part, op, set with
-      | Element, OpMap, Bottom -> set
-      | Element, OpMap, BiSet _ ->
+      | Element, Map, Bottom -> set
+      | Element, Map, BiSet _ ->
           to_approximation set
           |> ListLabels.map ~f:(fun e -> { e with element = f e.element })
           |> of_approximation
-      | Element, OpAdd, _ -> add set f
-      | Element, OpFilter, Bottom -> set
-      | Element, OpFilter, BiSet { over; under } ->
+      | Element, Add, _ -> add set f
+      | Element, Filter, Bottom -> set
+      | Element, Filter, BiSet { over; under } ->
           let over = Set.filter f over in
           let under = Set.filter f under in
           make ~old:set ~over ~under
-      | ElementAndUnder, OpMap, Bottom -> set
-      | ElementAndUnder, OpMap, BiSet _ ->
+      | ElementAndUnder, Map, Bottom -> set
+      | ElementAndUnder, Map, BiSet _ ->
           to_approximation set |> ListLabels.map ~f |> of_approximation
-      | ElementAndUnder, OpAdd, _ -> add_element set f
-      | ElementAndUnder, OpFilter, Bottom -> Bottom
-      | ElementAndUnder, OpFilter, BiSet _ ->
+      | ElementAndUnder, Add, _ -> add_element set f
+      | ElementAndUnder, Filter, Bottom -> Bottom
+      | ElementAndUnder, Filter, BiSet _ ->
           to_approximation set |> ListLabels.filter ~f |> of_approximation
-      | Set, OpMap, _ -> of_list (f (elements set))
-      | Set, OpAdd, _ -> ListLabels.fold_left f ~f:add ~init:set
-      | Set, OpFilter, _ ->
+      | Set, Map, _ -> of_list (f (elements set))
+      | Set, Add, _ -> ListLabels.fold_left f ~f:add ~init:set
+      | Set, Filter, _ ->
           if f (elements set) then
             set
           else
             bottom
-      | SetAndUnder, OpMap, set -> of_approximation (f (to_approximation set))
-      | SetAndUnder, OpAdd, _ ->
+      | SetAndUnder, Map, set -> of_approximation (f (to_approximation set))
+      | SetAndUnder, Add, _ ->
           let to_add = of_approximation f in
           add_set set ~to_add
-      | SetAndUnder, OpFilter, Bottom -> set
-      | SetAndUnder, OpFilter, _ ->
+      | SetAndUnder, Filter, Bottom -> set
+      | SetAndUnder, Filter, _ ->
           if f (to_approximation set) then
             set
           else
             bottom
-      | Self, OpAdd, _ ->
+      | Self, Add, _ ->
           (* Special handling of Add here, as we don't want to use the join of the common
              implementation. *)
           add_set set ~to_add:f
@@ -250,30 +250,30 @@ module Make (Element : AbstractSetDomain.ELEMENT) = struct
       =
      fun part ~using:op ~f ~init set ->
       match part, op, set with
-      | Element, OpAcc, Bottom -> init
-      | Element, OpAcc, BiSet { over; _ } -> Set.fold f over init
-      | Element, OpExists, Bottom -> init
-      | Element, OpExists, BiSet { over; _ } -> init || Set.exists f over
-      | Set, OpAcc, _ -> f (elements set) init
-      | Set, OpExists, _ -> init || f (elements set)
-      | ElementAndUnder, OpAcc, Bottom -> init
-      | ElementAndUnder, OpAcc, BiSet { over; under } ->
+      | Element, Acc, Bottom -> init
+      | Element, Acc, BiSet { over; _ } -> Set.fold f over init
+      | Element, Exists, Bottom -> init
+      | Element, Exists, BiSet { over; _ } -> init || Set.exists f over
+      | Set, Acc, _ -> f (elements set) init
+      | Set, Exists, _ -> init || f (elements set)
+      | ElementAndUnder, Acc, Bottom -> init
+      | ElementAndUnder, Acc, BiSet { over; under } ->
           let element_of = element_of ~under in
           let f element accumulator = f (element_of element) accumulator in
           Set.fold f over init
-      | ElementAndUnder, OpExists, Bottom -> init
-      | ElementAndUnder, OpExists, BiSet { over; under } ->
+      | ElementAndUnder, Exists, Bottom -> init
+      | ElementAndUnder, Exists, BiSet { over; under } ->
           init
           ||
           let element_of = element_of ~under in
           let f element = f (element_of element) in
           Set.exists f over
-      | SetAndUnder, OpAcc, set -> f (to_approximation set) init
-      | SetAndUnder, OpExists, set -> init || f (to_approximation set)
+      | SetAndUnder, Acc, set -> f (to_approximation set) init
+      | SetAndUnder, Exists, set -> init || f (to_approximation set)
       | _ -> Base.reduce part ~using:op ~f ~init set
 
 
-    let partition_new
+    let partition
         : type a f b.
           a part -> (partition, a, f, t, b) operation -> f:f -> t -> (b, t) Core_kernel.Map.Poly.t
       =
@@ -283,15 +283,15 @@ module Make (Element : AbstractSetDomain.ELEMENT) = struct
         | Some set -> add_element set element
       in
       match part, op, set with
-      | (Element | ElementAndUnder), OpBy, Bottom -> Core_kernel.Map.Poly.empty
-      | (Element | ElementAndUnder), OpByFilter, Bottom -> Core_kernel.Map.Poly.empty
-      | Element, OpBy, _ ->
+      | (Element | ElementAndUnder), By, Bottom -> Core_kernel.Map.Poly.empty
+      | (Element | ElementAndUnder), ByFilter, Bottom -> Core_kernel.Map.Poly.empty
+      | Element, By, _ ->
           let f result element =
             let key = f element.element in
             Core_kernel.Map.Poly.update result key ~f:(update_element element)
           in
           to_approximation set |> ListLabels.fold_left ~f ~init:Core_kernel.Map.Poly.empty
-      | ElementAndUnder, OpBy, BiSet { over; under } ->
+      | ElementAndUnder, By, BiSet { over; under } ->
           let element_of = element_of ~under in
           let f element result =
             let element = element_of element in
@@ -299,20 +299,20 @@ module Make (Element : AbstractSetDomain.ELEMENT) = struct
             Core_kernel.Map.Poly.update result key ~f:(update_element element)
           in
           Set.fold f over Core_kernel.Map.Poly.empty
-      | Set, OpBy, _ ->
+      | Set, By, _ ->
           let key = f (elements set) in
           Core_kernel.Map.Poly.singleton key set
-      | SetAndUnder, OpBy, _ ->
+      | SetAndUnder, By, _ ->
           let key = f (to_approximation set) in
           Core_kernel.Map.Poly.singleton key set
-      | Element, OpByFilter, _ ->
+      | Element, ByFilter, _ ->
           let f result element =
             match f element.element with
             | Some key -> Core_kernel.Map.Poly.update result key ~f:(update_element element)
             | None -> result
           in
           to_approximation set |> ListLabels.fold_left ~f ~init:Core_kernel.Map.Poly.empty
-      | ElementAndUnder, OpByFilter, BiSet { over; under } ->
+      | ElementAndUnder, ByFilter, BiSet { over; under } ->
           let element_of = element_of ~under in
           let f element result =
             let element = element_of element in
@@ -321,11 +321,11 @@ module Make (Element : AbstractSetDomain.ELEMENT) = struct
             | None -> result
           in
           Set.fold f over Core_kernel.Map.Poly.empty
-      | Set, OpByFilter, _ -> (
+      | Set, ByFilter, _ -> (
           match f (elements set) with
           | None -> Core_kernel.Map.Poly.empty
           | Some key -> Core_kernel.Map.Poly.singleton key set )
-      | SetAndUnder, OpByFilter, _ -> (
+      | SetAndUnder, ByFilter, _ -> (
           match f (to_approximation set) with
           | None -> Core_kernel.Map.Poly.empty
           | Some key -> Core_kernel.Map.Poly.singleton key set )
@@ -393,11 +393,7 @@ module Make (Element : AbstractSetDomain.ELEMENT) = struct
 
     let meet = Base.meet
 
-    let transform = Base.legacy_transform
-
     let fold = Base.fold
-
-    let partition = Base.legacy_partition
   end
 
   let _ = Base.fold (* unused module warning work-around *)

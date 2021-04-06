@@ -144,19 +144,22 @@ let get_callsite_model ~resolution ~call_target ~arguments =
         let source_taint =
           ForwardState.transform
             ForwardTaint.simple_feature_self
-            Abstract.Domain.(Map expand)
+            Abstract.Domain.Map
+            ~f:expand
             source_taint
         in
         let sink_taint =
           BackwardState.transform
             BackwardTaint.simple_feature_self
-            Abstract.Domain.(Map expand)
+            Abstract.Domain.Map
+            ~f:expand
             sink_taint
         in
         let taint_in_taint_out =
           BackwardState.transform
             BackwardTaint.simple_feature_self
-            Abstract.Domain.(Map expand)
+            Abstract.Domain.Map
+            ~f:expand
             taint_in_taint_out
         in
         { forward = { source_taint }; backward = { sink_taint; taint_in_taint_out }; mode }
@@ -288,14 +291,11 @@ let infer_class_models ~environment =
   let fold_taint position existing_state attribute =
     let leaf =
       BackwardState.Tree.create_leaf (BackwardTaint.singleton Sinks.LocalReturn)
-      |> BackwardState.Tree.transform
-           BackwardTaint.complex_feature_set
-           (Abstract.Domain.Map
-              (fun _ ->
-                [
-                  Features.Complex.ReturnAccessPath
-                    [Abstract.TreeDomain.Label.create_name_field attribute];
-                ]))
+      |> BackwardState.Tree.transform BackwardTaint.complex_feature_set Map ~f:(fun _ ->
+             [
+               Features.Complex.ReturnAccessPath
+                 [Abstract.TreeDomain.Label.create_name_field attribute];
+             ])
     in
     BackwardState.assign
       ~root:

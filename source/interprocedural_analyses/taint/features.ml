@@ -263,11 +263,10 @@ let gather_breadcrumbs features breadcrumbs =
   let to_add =
     SimpleSet.transform
       SimpleSet.Element
-      Abstract.Domain.(
-        Filter
-          (function
-          | Simple.Breadcrumb _ -> true
-          | _ -> false))
+      Abstract.Domain.Filter
+      ~f:(function
+        | Simple.Breadcrumb _ -> true
+        | _ -> false)
       features
   in
   SimpleSet.add_set breadcrumbs ~to_add

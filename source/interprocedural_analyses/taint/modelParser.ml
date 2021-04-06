@@ -760,11 +760,10 @@ let introduce_sink_taint
             if leaf_name_provided then
               BackwardTaint.transform
                 BackwardTaint.trace_info
-                Abstract.Domain.(
-                  Map
-                    (function
-                    | TraceInfo.Declaration _ -> TraceInfo.Declaration { leaf_name_provided = true }
-                    | trace_info -> trace_info))
+                Map
+                ~f:(function
+                  | TraceInfo.Declaration _ -> TraceInfo.Declaration { leaf_name_provided = true }
+                  | trace_info -> trace_info)
                 taint
             else
               taint
@@ -773,10 +772,12 @@ let introduce_sink_taint
             BackwardTaint.singleton taint_sink_kind
             |> BackwardTaint.transform
                  BackwardTaint.leaf_name_set
-                 Abstract.Domain.(Map (add_leaf_names leaf_names))
+                 Map
+                 ~f:(add_leaf_names leaf_names)
             |> BackwardTaint.transform
                  BackwardTaint.simple_feature_set
-                 Abstract.Domain.(Map (add_breadcrumbs breadcrumbs))
+                 Map
+                 ~f:(add_breadcrumbs breadcrumbs)
             |> transform_trace_information
             |> BackwardState.Tree.create_leaf
           in
@@ -806,7 +807,8 @@ let introduce_taint_in_taint_out
           Domains.local_return_taint
           |> BackwardTaint.transform
                BackwardTaint.simple_feature_set
-               Abstract.Domain.(Map (add_breadcrumbs breadcrumbs))
+               Map
+               ~f:(add_breadcrumbs breadcrumbs)
           |> BackwardState.Tree.create_leaf
         in
         let taint_in_taint_out = assign_backward_taint taint_in_taint_out return_taint in
@@ -819,7 +821,8 @@ let introduce_taint_in_taint_out
           BackwardTaint.singleton taint_sink_kind
           |> BackwardTaint.transform
                BackwardTaint.simple_feature_set
-               Abstract.Domain.(Map (add_breadcrumbs breadcrumbs))
+               Map
+               ~f:(add_breadcrumbs breadcrumbs)
           |> BackwardState.Tree.create_leaf
         in
         let taint_in_taint_out = assign_backward_taint taint_in_taint_out update_taint in
@@ -857,11 +860,10 @@ let introduce_source_taint
         if leaf_name_provided then
           ForwardTaint.transform
             ForwardTaint.trace_info
-            Abstract.Domain.(
-              Map
-                (function
-                | TraceInfo.Declaration _ -> TraceInfo.Declaration { leaf_name_provided = true }
-                | trace_info -> trace_info))
+            Map
+            ~f:(function
+              | TraceInfo.Declaration _ -> TraceInfo.Declaration { leaf_name_provided = true }
+              | trace_info -> trace_info)
             taint
         else
           taint
@@ -869,12 +871,11 @@ let introduce_source_taint
 
       let leaf_taint =
         ForwardTaint.singleton taint_source_kind
-        |> ForwardTaint.transform
-             ForwardTaint.leaf_name_set
-             Abstract.Domain.(Map (add_leaf_names leaf_names))
+        |> ForwardTaint.transform ForwardTaint.leaf_name_set Map ~f:(add_leaf_names leaf_names)
         |> ForwardTaint.transform
              ForwardTaint.simple_feature_set
-             Abstract.Domain.(Map (add_breadcrumbs breadcrumbs))
+             Map
+             ~f:(add_breadcrumbs breadcrumbs)
         |> transform_trace_information
         |> ForwardState.Tree.create_leaf
       in

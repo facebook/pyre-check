@@ -238,6 +238,7 @@ include Taint.Result.Register (struct
                 let { Forward.source_taint } = forward in
                 ForwardState.partition
                   ForwardTaint.leaf
+                  ByFilter
                   ~f:(fun source ->
                     Option.some_if
                       (not (List.mem ~equal:Sources.equal sanitized_sources source))
@@ -262,6 +263,7 @@ include Taint.Result.Register (struct
                 let { Backward.sink_taint; _ } = backward in
                 BackwardState.partition
                   BackwardTaint.leaf
+                  ByFilter
                   ~f:(fun source ->
                     Option.some_if (not (List.mem ~equal:Sinks.equal sanitized_sinks source)) source)
                   sink_taint

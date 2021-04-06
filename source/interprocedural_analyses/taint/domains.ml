@@ -228,9 +228,8 @@ module FlowDetails = struct
 
 
   let strip_tito_positions =
-    transform
-      Features.TitoPositionSet.Self
-      (Abstract.Domain.Map (fun _ -> Features.TitoPositionSet.bottom))
+    transform Features.TitoPositionSet.Self Abstract.Domain.Map ~f:(fun _ ->
+        Features.TitoPositionSet.bottom)
 
 
   let leaf_name_set = Features.LeafNameSet.Set
@@ -458,7 +457,7 @@ end = struct
       LeafDomain.Map.to_alist leaftaint |> List.map ~f:(leaf_to_json traceinfo)
     in
     (* expand now do dedup possibly abstract targets that resolve to the same concrete ones *)
-    let taint = Map.transform Key (Abstract.Domain.Map TraceInfo.expand_call_site) taint in
+    let taint = Map.transform Key Abstract.Domain.Map ~f:TraceInfo.expand_call_site taint in
     let elements = Map.to_alist taint |> List.concat_map ~f:trace_to_json in
     `List elements
 
@@ -475,7 +474,8 @@ end = struct
       let leaf_taint =
         LeafDomain.transform
           Features.TitoPositionSet.Self
-          (Abstract.Domain.Map (fun _ -> Features.TitoPositionSet.bottom))
+          Abstract.Domain.Map
+          ~f:(fun _ -> Features.TitoPositionSet.bottom)
           leaf_taint
       in
       match trace_info with
@@ -485,7 +485,7 @@ end = struct
           let trace_info = CallSite { location; callees; port; path } in
           let leaf_taint =
             leaf_taint
-            |> LeafDomain.transform TraceLength.Self (Abstract.Domain.Map increase_length)
+            |> LeafDomain.transform TraceLength.Self Abstract.Domain.Map ~f:increase_length
           in
           trace_info, leaf_taint
       | Declaration { leaf_name_provided } ->
@@ -505,12 +505,13 @@ end = struct
           let leaf_taint =
             LeafDomain.transform
               FlowDetails.leaf_name_set
-              (Abstract.Domain.Map add_leaf_names)
+              Abstract.Domain.Map
+              ~f:add_leaf_names
               leaf_taint
           in
           trace_info, leaf_taint
     in
-    Map.transform Map.KeyValue (Abstract.Domain.Map apply) taint
+    Map.transform Map.KeyValue Abstract.Domain.Map ~f:apply taint
 end
 
 module ForwardTaint = MakeTaint (Sources)
@@ -531,6 +532,7 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
       let tip =
         Taint.partition
           Taint.leaf
+          ByFilter
           ~f:(fun leaf -> if Taint.ignore_leaf_at_call leaf then None else Some false)
           tip
         |> (fun map -> Map.Poly.find map false)
@@ -540,7 +542,7 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
       in
       path, tip
     in
-    transform Path (Abstract.Domain.Map transform_path) taint_tree
+    transform Path Map ~f:transform_path taint_tree
 
 
   let empty = bottom
@@ -554,11 +556,11 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
     let essential_simple_features _ = Features.SimpleSet.bottom in
     let essential_tito_positions _ = Features.TitoPositionSet.bottom in
     let essential_leaf_names _ = Features.LeafNameSet.bottom in
-    transform Taint.trace_info Abstract.Domain.(Map essential_trace_info) tree
-    |> transform Features.ComplexSet.Self Abstract.Domain.(Map essential_complex_features)
-    |> transform Features.SimpleSet.Self Abstract.Domain.(Map essential_simple_features)
-    |> transform Features.TitoPositionSet.Self Abstract.Domain.(Map essential_tito_positions)
-    |> transform Features.LeafNameSet.Self Abstract.Domain.(Map essential_leaf_names)
+    transform Taint.trace_info Map ~f:essential_trace_info tree
+    |> transform Features.ComplexSet.Self Map ~f:essential_complex_features
+    |> transform Features.SimpleSet.Self Map ~f:essential_simple_features
+    |> transform Features.TitoPositionSet.Self Map ~f:essential_tito_positions
+    |> transform Features.LeafNameSet.Self Map ~f:essential_leaf_names
 
 
   (* Keep only non-essential structure. *)
@@ -579,12 +581,12 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
       else
         features
     in
-    transform Taint.complex_feature_set (Abstract.Domain.Map cut_off) tree
+    transform Taint.complex_feature_set Map ~f:cut_off tree
 
 
   let filter_by_leaf ~leaf taint_tree =
     collapse taint_tree
-    |> Taint.partition Taint.leaf ~f:(fun candidate ->
+    |> Taint.partition Taint.leaf ByFilter ~f:(fun candidate ->
            if Taint.equal_leaf leaf candidate then Some true else None)
     |> (fun map -> Map.Poly.find map true)
     |> Option.value ~default:Taint.bottom
@@ -669,7 +671,7 @@ module BackwardState = struct
     let gather_features to_add features = Features.SimpleSet.add_set features ~to_add in
     read ~root ~path:[] taint
     |> Tree.collapse
-    |> BackwardTaint.partition BackwardTaint.leaf ~f:(fun sink ->
+    |> BackwardTaint.partition BackwardTaint.leaf ByFilter ~f:(fun sink ->
            if Sinks.equal Sinks.Attach sink then Some true else None)
     |> (fun map -> Map.Poly.find map true)
     >>| BackwardTaint.fold

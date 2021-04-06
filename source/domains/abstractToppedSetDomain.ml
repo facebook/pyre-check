@@ -122,25 +122,23 @@ module Make (Element : ELEMENT) = struct
 
     let pp formatter set = Format.fprintf formatter "%s" (show set)
 
-    let transform_new : type a f. a part -> (transform2, a, f, t, t) operation -> f:f -> t -> t =
+    let transform : type a f. a part -> (transform, a, f, t, t) operation -> f:f -> t -> t =
      fun part op ~f topped_set ->
       match topped_set, part, op with
-      | ASet set, Element, OpMap ->
-          Set.map f set |> make_transformed ~old:set ~old_topped:topped_set
-      | ASet set, Element, OpAdd ->
-          Set.add f set |> make_transformed ~old:set ~old_topped:topped_set
-      | ASet set, Element, OpFilter ->
+      | ASet set, Element, Map -> Set.map f set |> make_transformed ~old:set ~old_topped:topped_set
+      | ASet set, Element, Add -> Set.add f set |> make_transformed ~old:set ~old_topped:topped_set
+      | ASet set, Element, Filter ->
           Set.filter f set |> make_transformed ~old:set ~old_topped:topped_set
-      | ASet set, Set, OpMap -> (
+      | ASet set, Set, Map -> (
           let value = ASet (Set.elements set) in
           match f value with
           | Top -> Top
           | ASet l -> make (Set.of_list l) )
-      | ASet set, Set, OpAdd -> (
+      | ASet set, Set, Add -> (
           match f with
           | Top -> Top
           | ASet l -> make (Set.union set (Set.of_list l)) )
-      | ASet set_elements, Set, OpFilter ->
+      | ASet set_elements, Set, Filter ->
           if f (ASet (Set.elements set_elements)) then
             topped_set
           else
@@ -154,18 +152,18 @@ module Make (Element : ELEMENT) = struct
       =
      fun part ~using:op ~f ~init set ->
       match set, part, op with
-      | Top, Element, OpAcc -> init
-      | Top, Element, OpExists -> init
-      | Top, Set, OpAcc -> f Top init
-      | Top, Set, OpExists -> init || f Top
-      | ASet set, Element, OpAcc -> Set.fold f set init
-      | ASet set, Element, OpExists -> init || Set.exists f set
-      | ASet set, Set, OpAcc -> f (ASet (Set.elements set)) init
-      | ASet set, Set, OpExists -> init || f (ASet (Set.elements set))
+      | Top, Element, Acc -> init
+      | Top, Element, Exists -> init
+      | Top, Set, Acc -> f Top init
+      | Top, Set, Exists -> init || f Top
+      | ASet set, Element, Acc -> Set.fold f set init
+      | ASet set, Element, Exists -> init || Set.exists f set
+      | ASet set, Set, Acc -> f (ASet (Set.elements set)) init
+      | ASet set, Set, Exists -> init || f (ASet (Set.elements set))
       | _ -> Base.reduce part ~using:op ~f ~init set
 
 
-    let partition_new
+    let partition
         : type a f b.
           a part -> (partition, a, f, t, b) operation -> f:f -> t -> (b, t) Core_kernel.Map.Poly.t
       =
@@ -175,13 +173,13 @@ module Make (Element : ELEMENT) = struct
         | Some set -> add element set
       in
       match set, part, op with
-      | ASet set, Element, OpBy ->
+      | ASet set, Element, By ->
           let f element result =
             let partition_key = f element in
             Core_kernel.Map.Poly.update result partition_key ~f:(update element)
           in
           Set.fold f set Core_kernel.Map.Poly.empty
-      | ASet set, Element, OpByFilter ->
+      | ASet set, Element, ByFilter ->
           let f element result =
             match f element with
             | None -> result
@@ -190,7 +188,7 @@ module Make (Element : ELEMENT) = struct
           in
           Set.fold f set Core_kernel.Map.Poly.empty
       | Top, Element, _ -> failwith "Topped set cannot be partitioned by Element"
-      | _, Set, OpBy ->
+      | _, Set, By ->
           let value =
             match set with
             | Top -> Top
@@ -198,7 +196,7 @@ module Make (Element : ELEMENT) = struct
           in
           let partition_key = f value in
           Core_kernel.Map.Poly.singleton partition_key set
-      | _, Set, OpByFilter -> (
+      | _, Set, ByFilter -> (
           let value =
             match set with
             | Top -> Top
@@ -238,11 +236,7 @@ module Make (Element : ELEMENT) = struct
       ListLabels.fold_left parts ~f:create_part ~init:bottom
 
 
-    let transform = Base.legacy_transform
-
     let fold = Base.fold
-
-    let partition = Base.legacy_partition
   end
 
   let _ = Base.fold (* unused module warning work-around *)

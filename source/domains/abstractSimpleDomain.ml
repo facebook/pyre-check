@@ -37,11 +37,11 @@ module Make (Element : ELEMENT) = struct
 
     type _ part += Self : t part
 
-    let transform_new = Base.transform
+    let transform = Base.transform
 
     let reduce = Base.reduce
 
-    let partition_new = Base.partition
+    let partition = Base.partition
 
     let introspect (type a) (op : a introspect) : a =
       match op with
@@ -70,11 +70,7 @@ module Make (Element : ELEMENT) = struct
         from
 
 
-    let transform = Base.legacy_transform
-
     let fold = Base.fold
-
-    let partition = Base.legacy_partition
   end
 
   let _ = Base.fold (* unused module warning work-around *)

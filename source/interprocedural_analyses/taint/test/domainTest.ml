@@ -46,7 +46,8 @@ let test_partition_call_map _ =
   let matches, does_not_match =
     ForwardTaint.partition
       ForwardTaint.leaf
-      ~f:(fun leaf -> Some (Sources.equal leaf (Sources.NamedSource "UserControlled")))
+      By
+      ~f:(fun leaf -> Sources.equal leaf (Sources.NamedSource "UserControlled"))
       joined
     |> split
   in
@@ -74,9 +75,7 @@ let test_approximate_complex_access_paths _ =
   in
   let create ~features =
     ForwardState.Tree.create_leaf (ForwardTaint.singleton (Sources.NamedSource "Demo"))
-    |> ForwardState.Tree.transform
-         ForwardTaint.complex_feature_set
-         (Abstract.Domain.Map (fun _ -> features))
+    |> ForwardState.Tree.transform ForwardTaint.complex_feature_set Map ~f:(fun _ -> features)
   in
   assert_approximate_complex_access_paths
     ~expected:

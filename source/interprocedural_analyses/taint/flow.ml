@@ -144,11 +144,11 @@ let generate_issues ~define { location; flows } =
     let partition { source_taint; sink_taint } =
       {
         source_partition =
-          ForwardTaint.partition ForwardTaint.leaf source_taint ~f:(fun leaf ->
-              Some (erase_source_subkind leaf));
+          ForwardTaint.partition ForwardTaint.leaf By source_taint ~f:(fun leaf ->
+              erase_source_subkind leaf);
         sink_partition =
-          BackwardTaint.partition BackwardTaint.leaf sink_taint ~f:(fun leaf ->
-              Some (erase_sink_subkind leaf));
+          BackwardTaint.partition BackwardTaint.leaf By sink_taint ~f:(fun leaf ->
+              erase_sink_subkind leaf);
       }
     in
     List.map flows ~f:partition
@@ -326,15 +326,13 @@ let code_metadata () =
 let compute_triggered_sinks ~triggered_sinks ~location ~source_tree ~sink_tree =
   let partial_sinks_to_taint =
     BackwardState.Tree.collapse sink_tree
-    |> BackwardTaint.partition BackwardTaint.leaf ~f:(function
+    |> BackwardTaint.partition BackwardTaint.leaf ByFilter ~f:(function
            | Sinks.PartialSink { Sinks.kind; label } -> Some { Sinks.kind; label }
            | _ -> None)
   in
   if not (Map.Poly.is_empty partial_sinks_to_taint) then
     let sources =
-      source_tree
-      |> ForwardState.Tree.partition ForwardTaint.leaf ~f:(fun source -> Some source)
-      |> Map.Poly.keys
+      source_tree |> ForwardState.Tree.partition ForwardTaint.leaf By ~f:Fn.id |> Map.Poly.keys
     in
     let add_triggered_sinks (triggered, candidates) sink =
       let add_triggered_sinks_for_source source =

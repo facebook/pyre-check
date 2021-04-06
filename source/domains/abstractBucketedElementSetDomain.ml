@@ -87,20 +87,20 @@ module Make (Element : BUCKETED_ELEMENT) = struct
 
     let pp formatter map = Format.fprintf formatter "%s" (show map)
 
-    let transform_new : type a f. a part -> (transform2, a, f, t, t) operation -> f:f -> t -> t =
+    let transform : type a f. a part -> (transform, a, f, t, t) operation -> f:f -> t -> t =
      fun part op ~f buckets ->
       match part, op with
-      | Set, OpMap ->
+      | Set, Map ->
           (* Present the flattened set *)
           f (elements buckets) |> of_list
-      | Set, OpAdd -> ListLabels.fold_left f ~f:(fun result e -> add e result) ~init:buckets
-      | Set, OpFilter ->
+      | Set, Add -> ListLabels.fold_left f ~f:(fun result e -> add e result) ~init:buckets
+      | Set, Filter ->
           if f (elements buckets) then
             buckets
           else
             bottom
       | (Set | Self), _ -> Base.transform part op ~f buckets
-      | _ -> Map.transform_new part op ~f buckets
+      | _ -> Map.transform part op ~f buckets
 
 
     let reduce
@@ -108,29 +108,29 @@ module Make (Element : BUCKETED_ELEMENT) = struct
       =
      fun part ~using:op ~f ~init buckets ->
       match part, op with
-      | Set, OpAcc ->
+      | Set, Acc ->
           (* Present the flattened set *)
           f (elements buckets) init
-      | Set, OpExists -> init || f (elements buckets)
+      | Set, Exists -> init || f (elements buckets)
       | (Set | Self), _ -> Base.reduce part ~using:op ~f ~init buckets
       | _ -> Map.reduce part ~using:op ~f ~init buckets
 
 
-    let partition_new
+    let partition
         : type a f b.
           a part -> (partition, a, f, t, b) operation -> f:f -> t -> (b, t) Core_kernel.Map.Poly.t
       =
      fun part op ~f buckets ->
       match part, op with
-      | Set, OpBy ->
+      | Set, By ->
           let key = f (elements buckets) in
           Core_kernel.Map.Poly.singleton key buckets
-      | Set, OpByFilter -> (
+      | Set, ByFilter -> (
           match f (elements buckets) with
           | None -> Core_kernel.Map.Poly.empty
           | Some key -> Core_kernel.Map.Poly.singleton key buckets )
       | (Set | Self), _ -> Base.partition part op ~f buckets
-      | _ -> Map.partition_new part op ~f buckets
+      | _ -> Map.partition part op ~f buckets
 
 
     let introspect (type a) (op : a introspect) : a =
@@ -164,11 +164,7 @@ module Make (Element : BUCKETED_ELEMENT) = struct
 
     let meet = Base.meet
 
-    let transform = Base.legacy_transform
-
     let fold = Base.fold
-
-    let partition = Base.legacy_partition
   end
 
   let singleton element =

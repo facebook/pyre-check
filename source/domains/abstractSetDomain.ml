@@ -93,15 +93,15 @@ module Make (Element : ELEMENT) = struct
 
     let pp formatter set = Format.fprintf formatter "%s" (show set)
 
-    let transform_new : type a f. a part -> (transform2, a, f, t, t) operation -> f:f -> t -> t =
+    let transform : type a f. a part -> (transform, a, f, t, t) operation -> f:f -> t -> t =
      fun part op ~f set ->
       match part, op with
-      | Element, OpMap -> Set.map f set
-      | Element, OpAdd -> Set.add f set
-      | Element, OpFilter -> Set.filter f set
-      | Set, OpMap -> f (Set.elements set) |> Set.of_list
-      | Set, OpAdd -> Set.elements set |> List.rev_append f |> Set.of_list
-      | Set, OpFilter ->
+      | Element, Map -> Set.map f set
+      | Element, Add -> Set.add f set
+      | Element, Filter -> Set.filter f set
+      | Set, Map -> f (Set.elements set) |> Set.of_list
+      | Set, Add -> Set.elements set |> List.rev_append f |> Set.of_list
+      | Set, Filter ->
           if f (Set.elements set) then
             set
           else
@@ -114,14 +114,14 @@ module Make (Element : ELEMENT) = struct
       =
      fun part ~using:op ~f ~init set ->
       match part, op with
-      | Element, OpAcc -> Set.fold f set init
-      | Element, OpExists -> init || Set.exists f set
-      | Set, OpAcc -> f (Set.elements set) init
-      | Set, OpExists -> init || f (Set.elements set)
+      | Element, Acc -> Set.fold f set init
+      | Element, Exists -> init || Set.exists f set
+      | Set, Acc -> f (Set.elements set) init
+      | Set, Exists -> init || f (Set.elements set)
       | _ -> Base.reduce part ~using:op ~f ~init set
 
 
-    let partition_new
+    let partition
         : type a f b.
           a part -> (partition, a, f, t, b) operation -> f:f -> t -> (b, t) Core_kernel.Map.Poly.t
       =
@@ -131,22 +131,22 @@ module Make (Element : ELEMENT) = struct
         | Some set -> Set.add element set
       in
       match part, op with
-      | Element, OpBy ->
+      | Element, By ->
           let f element result =
             Core_kernel.Map.Poly.update result (f element) ~f:(update element)
           in
           Set.fold f set Core_kernel.Map.Poly.empty
-      | Set, OpBy ->
+      | Set, By ->
           let key = f (Set.elements set) in
           Core_kernel.Map.Poly.singleton key set
-      | Element, OpByFilter ->
+      | Element, ByFilter ->
           let f element result =
             match f element with
             | None -> result
             | Some key -> Core_kernel.Map.Poly.update result key ~f:(update element)
           in
           Set.fold f set Core_kernel.Map.Poly.empty
-      | Set, OpByFilter -> (
+      | Set, ByFilter -> (
           match f (Set.elements set) with
           | None -> Core_kernel.Map.Poly.empty
           | Some key -> Core_kernel.Map.Poly.singleton key set )
@@ -178,11 +178,7 @@ module Make (Element : ELEMENT) = struct
       ListLabels.fold_left parts ~f:create_part ~init:bottom
 
 
-    let transform = Base.legacy_transform
-
     let fold = Base.fold
-
-    let partition = Base.legacy_partition
   end
 
   let _ = Base.fold (* unused module warning work-around *)

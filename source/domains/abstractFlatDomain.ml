@@ -83,17 +83,17 @@ module Make (Element : ELEMENT) = struct
 
     let widen ~iteration:_ ~prev ~next = join prev next
 
-    let transform_new : type a f. a part -> (transform2, a, f, t, t) operation -> f:f -> t -> t =
+    let transform : type a f. a part -> (transform, a, f, t, t) operation -> f:f -> t -> t =
      fun part op ~f p ->
       match part with
       | Element -> (
           match p, op with
-          | Bottom, OpAdd -> Concrete f
+          | Bottom, Add -> Concrete f
           | Bottom, _ -> p
           | Top, _ -> p
-          | Concrete e, OpAdd -> if e = f then p else Top
-          | Concrete e, OpMap -> Concrete (f e)
-          | Concrete e, OpFilter -> if f e then p else Bottom
+          | Concrete e, Add -> if e = f then p else Top
+          | Concrete e, Map -> Concrete (f e)
+          | Concrete e, Filter -> if f e then p else Bottom
           | _ -> Base.transform part op ~f p )
       | _ -> Base.transform part op ~f p
 
@@ -103,26 +103,26 @@ module Make (Element : ELEMENT) = struct
       =
      fun part ~using:op ~f ~init p ->
       match part, op, p with
-      | Element, OpAcc, Concrete e -> f e init
-      | Element, OpAcc, (Top | Bottom) -> init
-      | Element, OpExists, Concrete e -> init || f e
-      | Element, OpExists, (Top | Bottom) -> init
+      | Element, Acc, Concrete e -> f e init
+      | Element, Acc, (Top | Bottom) -> init
+      | Element, Exists, Concrete e -> init || f e
+      | Element, Exists, (Top | Bottom) -> init
       | _ -> Base.reduce part ~using:op ~f ~init p
 
 
-    let partition_new
+    let partition
         : type a f b.
           a part -> (partition, a, f, t, b) operation -> f:f -> t -> (b, t) Core_kernel.Map.Poly.t
       =
      fun part op ~f flat ->
       match part, op with
-      | Element, OpBy -> (
+      | Element, By -> (
           match flat with
           | Top
           | Bottom ->
               Core_kernel.Map.Poly.empty
           | Concrete e -> Core_kernel.Map.Poly.singleton (f e) flat )
-      | Element, OpByFilter -> (
+      | Element, ByFilter -> (
           match flat with
           | Top
           | Bottom ->
@@ -165,11 +165,7 @@ module Make (Element : ELEMENT) = struct
         from
 
 
-    let transform = Base.legacy_transform
-
     let fold = Base.fold
-
-    let partition = Base.legacy_partition
   end
 
   let make e = Concrete e

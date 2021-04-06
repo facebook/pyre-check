@@ -990,16 +990,16 @@ module Make (Config : CONFIG) (Element : AbstractDomainCore.S) () = struct
       |> check_join_property prev next
 
 
-    let transform_new : type a f. a part -> (transform2, a, f, t, t) operation -> f:f -> t -> t =
+    let transform : type a f. a part -> (transform, a, f, t, t) operation -> f:f -> t -> t =
      fun part op ~f tree ->
       match part, op with
-      | Path, OpMap ->
+      | Path, Map ->
           let transform_node ~path ~element = f (path, element) in
           filter_map_tree_paths ~f:transform_node tree
-      | Path, OpAdd ->
+      | Path, Add ->
           let path, element = f in
           join tree (create_tree path (create_leaf element))
-      | Path, OpFilter ->
+      | Path, Filter ->
           filter_map_tree_paths
             ~f:(fun ~path ~element ->
               if f (path, element) then
@@ -1007,17 +1007,15 @@ module Make (Config : CONFIG) (Element : AbstractDomainCore.S) () = struct
               else
                 path, Element.bottom)
             tree
-      | _, OpContext (Path, op) ->
+      | _, Context (Path, op) ->
           let transform_node ~path ~element =
-            ( path,
-              Element.transform_new part (Base.freshen_transform op) ~f:(f (path, element)) element
-            )
+            path, Element.transform part (Base.freshen_transform op) ~f:(f (path, element)) element
           in
           filter_map_tree_paths ~f:transform_node tree
       | (Path | Self), _ -> Base.transform part op ~f tree
       | _ ->
           let transform_node ~path ~element =
-            path, Element.transform_new part (Base.freshen_transform op) ~f element
+            path, Element.transform part (Base.freshen_transform op) ~f element
           in
           filter_map_tree_paths ~f:transform_node tree
 
@@ -1027,13 +1025,13 @@ module Make (Config : CONFIG) (Element : AbstractDomainCore.S) () = struct
       =
      fun part ~using:op ~f ~init tree ->
       match part, op with
-      | Path, OpAcc ->
+      | Path, Acc ->
           let fold_tree_node ~path ~element accumulator = f (path, element) accumulator in
           fold_tree_paths ~init ~f:fold_tree_node tree
-      | Path, OpExists ->
+      | Path, Exists ->
           let fold_tree_node ~path ~element accumulator = accumulator || f (path, element) in
           init || fold_tree_paths ~init ~f:fold_tree_node tree
-      | _, OpContext (Path, op) ->
+      | _, Context (Path, op) ->
           let fold_tree_node ~path ~element accumulator =
             Element.reduce
               part
@@ -1051,7 +1049,7 @@ module Make (Config : CONFIG) (Element : AbstractDomainCore.S) () = struct
           fold_tree_paths ~init ~f:fold_tree_node tree
 
 
-    let partition_new
+    let partition
         : type a f b. a part -> (partition, a, f, t, b) operation -> f:f -> t -> (b, t) MapPoly.t
       =
      fun part op ~f tree ->
@@ -1062,23 +1060,23 @@ module Make (Config : CONFIG) (Element : AbstractDomainCore.S) () = struct
         | Some tree -> assign_tree_path ~tree path ~subtree:leaf
       in
       match part, op with
-      | Path, OpBy ->
+      | Path, By ->
           let partition ~path ~element result =
             let partition_key = f (path, element) in
             MapPoly.update result partition_key ~f:(update path element)
           in
           fold_tree_paths ~init:MapPoly.empty ~f:partition tree
-      | Path, OpByFilter ->
+      | Path, ByFilter ->
           let partition ~path ~element result =
             match f (path, element) with
             | None -> result
             | Some partition_key -> MapPoly.update result partition_key ~f:(update path element)
           in
           fold_tree_paths ~init:MapPoly.empty ~f:partition tree
-      | _, OpContext (Path, op) ->
+      | _, Context (Path, op) ->
           let partition ~path ~element result =
             let element_partition =
-              Element.partition_new part (Base.freshen_partition op) ~f:(f (path, element)) element
+              Element.partition part (Base.freshen_partition op) ~f:(f (path, element)) element
             in
             let distribute ~key ~data result = MapPoly.update result key ~f:(update path data) in
             MapPoly.fold ~init:result ~f:distribute element_partition
@@ -1087,9 +1085,7 @@ module Make (Config : CONFIG) (Element : AbstractDomainCore.S) () = struct
       | (Path | Self), _ -> Base.partition part op ~f tree
       | _ ->
           let partition ~path ~element result =
-            let element_partition =
-              Element.partition_new part (Base.freshen_partition op) ~f element
-            in
+            let element_partition = Element.partition part (Base.freshen_partition op) ~f element in
             let distribute ~key ~data result = MapPoly.update result key ~f:(update path data) in
             MapPoly.fold ~init:result ~f:distribute element_partition
           in
@@ -1124,11 +1120,7 @@ module Make (Config : CONFIG) (Element : AbstractDomainCore.S) () = struct
       ListLabels.fold_left parts ~init:bottom ~f:create_path
 
 
-    let transform = Base.legacy_transform
-
     let fold = Base.fold
-
-    let partition = Base.legacy_partition
 
     let meet = Base.meet
   end

@@ -248,7 +248,7 @@ module Make (Config : PRODUCT_CONFIG) = struct
 
     let pp formatter map = Format.fprintf formatter "%s" (show map)
 
-    let transform_new : type a f. a part -> (transform2, a, f, t, t) operation -> f:f -> t -> t =
+    let transform : type a f. a part -> (transform, a, f, t, t) operation -> f:f -> t -> t =
      fun part op ~f product ->
       match part with
       | Self -> Base.transform part op ~f product
@@ -256,7 +256,7 @@ module Make (Config : PRODUCT_CONFIG) = struct
           let transform (Slot slot) =
             let value = get slot product in
             let module D = (val Config.slot_domain slot) in
-            let new_value = D.transform_new part (Base.freshen_transform op) ~f value in
+            let new_value = D.transform part (Base.freshen_transform op) ~f value in
             update slot new_value product
           in
           let route = get_route part in
@@ -279,7 +279,7 @@ module Make (Config : PRODUCT_CONFIG) = struct
           fold slots.(route)
 
 
-    let partition_new
+    let partition
         : type a f b.
           a part -> (partition, a, f, t, b) operation -> f:f -> t -> (b, t) Core_kernel.Map.Poly.t
       =
@@ -290,7 +290,7 @@ module Make (Config : PRODUCT_CONFIG) = struct
           let partition (Slot slot) : (b, t) Core_kernel.Map.Poly.t =
             let value = get slot product in
             let module D = (val Config.slot_domain slot) in
-            D.partition_new part (Base.freshen_partition op) ~f value
+            D.partition part (Base.freshen_partition op) ~f value
             |> Core_kernel.Map.Poly.map ~f:(fun value -> update slot value product)
           in
           let route = get_route part in
@@ -362,11 +362,7 @@ module Make (Config : PRODUCT_CONFIG) = struct
       Array.mapi create_slot slots |> make_strict
 
 
-    let transform = Base.legacy_transform
-
     let fold = Base.fold
-
-    let partition = Base.legacy_partition
   end
 
   let _ = Base.fold (* unused module warning work-around *)

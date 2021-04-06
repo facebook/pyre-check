@@ -329,28 +329,31 @@ module ResultArgument = struct
       source_taint
       |> ForwardState.transform
            ForwardTaint.flow_details
-           (Abstract.Domain.Map Domains.FlowDetails.strip_tito_positions)
-      |> ForwardState.transform
-           ForwardTaint.trace_info
-           (Abstract.Domain.Map Domains.TraceInfo.strip_for_callsite)
+           Map
+           ~f:Domains.FlowDetails.strip_tito_positions
+      |> ForwardState.transform ForwardTaint.trace_info Map ~f:Domains.TraceInfo.strip_for_callsite
     in
     let sink_taint =
       sink_taint
       |> BackwardState.transform
            BackwardTaint.flow_details
-           (Abstract.Domain.Map Domains.FlowDetails.strip_tito_positions)
+           Map
+           ~f:Domains.FlowDetails.strip_tito_positions
       |> BackwardState.transform
            BackwardTaint.trace_info
-           (Abstract.Domain.Map Domains.TraceInfo.strip_for_callsite)
+           Map
+           ~f:Domains.TraceInfo.strip_for_callsite
     in
     let taint_in_taint_out =
       taint_in_taint_out
       |> BackwardState.transform
            BackwardTaint.flow_details
-           (Abstract.Domain.Map Domains.FlowDetails.strip_tito_positions)
+           Map
+           ~f:Domains.FlowDetails.strip_tito_positions
       |> BackwardState.transform
            BackwardTaint.trace_info
-           (Abstract.Domain.Map Domains.TraceInfo.strip_for_callsite)
+           Map
+           ~f:Domains.TraceInfo.strip_for_callsite
     in
     { forward = { source_taint }; backward = { sink_taint; taint_in_taint_out }; mode }
 end

@@ -154,34 +154,34 @@ module Make (Key : KEY) (Element : AbstractDomainCore.S) = struct
         Map.merge ~f:merge prev next
 
 
-    let transform_new : type a f. a part -> (transform2, a, f, t, t) operation -> f:f -> t -> t =
+    let transform : type a f. a part -> (transform, a, f, t, t) operation -> f:f -> t -> t =
      fun part op ~f map ->
       match part, op with
-      | Key, OpMap ->
+      | Key, Map ->
           Map.fold
             map
             ~f:(fun ~key ~data result -> update ~key:(f key) ~data result)
             ~init:Map.empty
-      | Key, OpAdd -> update map ~key:f ~data:Element.bottom
-      | Key, OpFilter -> Map.filter (fun key _ -> f key) map
-      | Key, OpExpand ->
+      | Key, Add -> update map ~key:f ~data:Element.bottom
+      | Key, Filter -> Map.filter (fun key _ -> f key) map
+      | Key, Expand ->
           Map.fold
             map
             ~f:(fun ~key ~data result ->
               List.fold (f key) ~init:result ~f:(fun result key -> update result ~key ~data))
             ~init:Map.empty
-      | KeyValue, OpMap ->
+      | KeyValue, Map ->
           Map.fold
             map
             ~f:(fun ~key ~data result ->
               let key, data = f (key, data) in
               update ~key ~data result)
             ~init:Map.empty
-      | KeyValue, OpAdd ->
+      | KeyValue, Add ->
           let key, data = f in
           update map ~key ~data
-      | KeyValue, OpFilter -> Map.filter (fun key data -> f (key, data)) map
-      | KeyValue, OpExpand ->
+      | KeyValue, Filter -> Map.filter (fun key data -> f (key, data)) map
+      | KeyValue, Expand ->
           Map.fold
             map
             ~f:(fun ~key ~data result ->
@@ -190,29 +190,28 @@ module Make (Key : KEY) (Element : AbstractDomainCore.S) = struct
                 ~init:result
                 ~f:(fun result (key, data) -> update result ~key ~data))
             ~init:Map.empty
-      | _, OpContext (Key, op) ->
+      | _, Context (Key, op) ->
           let op = Base.freshen_transform op in
           if Key.absence_implicitly_maps_to_bottom then
             Map.fold
               map
               ~f:(fun ~key ~data result ->
-                set ~key ~data:(Element.transform_new part op ~f:(f key) data) result)
+                set ~key ~data:(Element.transform part op ~f:(f key) data) result)
               ~init:Map.empty
           else
             Map.mapi
-              (fun key data ->
-                Element.transform_new part (Base.freshen_transform op) ~f:(f key) data)
+              (fun key data -> Element.transform part (Base.freshen_transform op) ~f:(f key) data)
               map
-      | _, OpContext (KeyValue, op) ->
+      | _, Context (KeyValue, op) ->
           let op = Base.freshen_transform op in
           if Key.absence_implicitly_maps_to_bottom then
             Map.fold
               map
               ~f:(fun ~key ~data result ->
-                set ~key ~data:(Element.transform_new part op ~f:(f (key, data)) data) result)
+                set ~key ~data:(Element.transform part op ~f:(f (key, data)) data) result)
               ~init:Map.empty
           else
-            Map.mapi (fun key data -> Element.transform_new part op ~f:(f (key, data)) data) map
+            Map.mapi (fun key data -> Element.transform part op ~f:(f (key, data)) data) map
       | (Self | Key | KeyValue), _ -> Base.transform part op ~f map
       | _, op ->
           let op = Base.freshen_transform op in
@@ -220,10 +219,10 @@ module Make (Key : KEY) (Element : AbstractDomainCore.S) = struct
             Map.fold
               map
               ~f:(fun ~key ~data result ->
-                set ~key ~data:(Element.transform_new part op ~f data) result)
+                set ~key ~data:(Element.transform part op ~f data) result)
               ~init:Map.empty
           else
-            Map.map ~f:(Element.transform_new part op ~f) map
+            Map.map ~f:(Element.transform part op ~f) map
 
 
     let reduce
@@ -231,17 +230,17 @@ module Make (Key : KEY) (Element : AbstractDomainCore.S) = struct
       =
      fun part ~using:op ~f ~init map ->
       match part, op with
-      | Key, OpAcc -> Map.fold ~f:(fun ~key ~data:_ result -> f key result) ~init map
-      | Key, OpExists -> init || Map.exists (fun key _ -> f key) map
-      | KeyValue, OpAcc -> Map.fold ~f:(fun ~key ~data result -> f (key, data) result) ~init map
-      | KeyValue, OpExists -> init || Map.exists (fun key data -> f (key, data)) map
-      | part, OpContext (Key, op) ->
+      | Key, Acc -> Map.fold ~f:(fun ~key ~data:_ result -> f key result) ~init map
+      | Key, Exists -> init || Map.exists (fun key _ -> f key) map
+      | KeyValue, Acc -> Map.fold ~f:(fun ~key ~data result -> f (key, data) result) ~init map
+      | KeyValue, Exists -> init || Map.exists (fun key data -> f (key, data)) map
+      | part, Context (Key, op) ->
           Map.fold
             ~f:(fun ~key ~data init ->
               Element.reduce part ~using:(Base.freshen_reduce op) ~f:(f key) ~init data)
             ~init
             map
-      | part, OpContext (KeyValue, op) ->
+      | part, Context (KeyValue, op) ->
           Map.fold
             ~f:(fun ~key ~data init ->
               Element.reduce part ~using:(Base.freshen_reduce op) ~f:(f (key, data)) ~init data)
@@ -263,24 +262,24 @@ module Make (Key : KEY) (Element : AbstractDomainCore.S) = struct
       | Some existing -> update existing ~key ~data
 
 
-    let partition_new
+    let partition
         : type a b f. a part -> (partition, a, f, t, b) operation -> f:f -> t -> (b, t) MapPoly.t
       =
      fun part op ~f map ->
       match part, op with
-      | Key, OpBy ->
+      | Key, By ->
           let partition_by_key ~key ~data partition =
             let partition_key = f key in
             MapPoly.update partition partition_key ~f:(update_partition ~key ~data)
           in
           Map.fold map ~init:MapPoly.empty ~f:partition_by_key
-      | KeyValue, OpBy ->
+      | KeyValue, By ->
           let partition_by_key ~key ~data partition =
             let partition_key = f (key, data) in
             MapPoly.update partition partition_key ~f:(update_partition ~key ~data)
           in
           Map.fold map ~init:MapPoly.empty ~f:partition_by_key
-      | Key, OpByFilter ->
+      | Key, ByFilter ->
           let partition_by_key ~key ~data partition =
             match f key with
             | None -> partition
@@ -288,7 +287,7 @@ module Make (Key : KEY) (Element : AbstractDomainCore.S) = struct
                 MapPoly.update partition partition_key ~f:(update_partition ~key ~data)
           in
           Map.fold map ~init:MapPoly.empty ~f:partition_by_key
-      | KeyValue, OpByFilter ->
+      | KeyValue, ByFilter ->
           let partition_by_key ~key ~data partition =
             match f (key, data) with
             | None -> partition
@@ -296,10 +295,10 @@ module Make (Key : KEY) (Element : AbstractDomainCore.S) = struct
                 MapPoly.update partition partition_key ~f:(update_partition ~key ~data)
           in
           Map.fold map ~init:MapPoly.empty ~f:partition_by_key
-      | part, OpContext (Key, op) ->
+      | part, Context (Key, op) ->
           let partition_by_elements ~key ~data partition =
             let element_partition =
-              Element.partition_new part (Base.freshen_partition op) ~f:(f key) data
+              Element.partition part (Base.freshen_partition op) ~f:(f key) data
             in
             MapPoly.fold
               element_partition
@@ -308,10 +307,10 @@ module Make (Key : KEY) (Element : AbstractDomainCore.S) = struct
                 MapPoly.update partition partition_key ~f:(update_partition ~key ~data))
           in
           Map.fold map ~init:MapPoly.empty ~f:partition_by_elements
-      | part, OpContext (KeyValue, op) ->
+      | part, Context (KeyValue, op) ->
           let partition_by_elements ~key ~data partition =
             let element_partition =
-              Element.partition_new part (Base.freshen_partition op) ~f:(f (key, data)) data
+              Element.partition part (Base.freshen_partition op) ~f:(f (key, data)) data
             in
             MapPoly.fold
               element_partition
@@ -323,9 +322,7 @@ module Make (Key : KEY) (Element : AbstractDomainCore.S) = struct
       | (Key | KeyValue | Self), _ -> Base.partition part op ~f map
       | _, op ->
           let partition_by_elements ~key ~data partition =
-            let element_partition =
-              Element.partition_new part (Base.freshen_partition op) ~f data
-            in
+            let element_partition = Element.partition part (Base.freshen_partition op) ~f data in
             MapPoly.fold
               element_partition
               ~init:partition
@@ -408,11 +405,7 @@ module Make (Key : KEY) (Element : AbstractDomainCore.S) = struct
 
     let meet = Base.meet
 
-    let transform = Base.legacy_transform
-
     let fold = Base.fold
-
-    let partition = Base.legacy_partition
   end
 
   let to_alist = Map.to_alist
