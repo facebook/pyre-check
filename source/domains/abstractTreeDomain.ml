@@ -786,13 +786,6 @@ module Make (Config : CONFIG) (Element : AbstractDomainCore.S) () = struct
     join_trees Element.bottom ~widen_depth:(Some depth) tree tree |> option_node_tree ~message
 
 
-  let less_or_equal ~left ~right = less_or_equal_tree left Element.bottom right |> Checks.is_true
-
-  let subtract _to_remove ~from =
-    (* Correct, but one can probably do better when needed. *)
-    from
-
-
   (* Makes sure tree has at most ~width leaves by collapsing levels (lowest
      first). Only entire levels are collapsed. *)
   let limit_to ~width tree =
@@ -844,7 +837,7 @@ module Make (Config : CONFIG) (Element : AbstractDomainCore.S) () = struct
 
 
   let join left right =
-    if left == right then
+    if left == right || is_bottom right then
       left
     else
       let message () =
@@ -853,15 +846,6 @@ module Make (Config : CONFIG) (Element : AbstractDomainCore.S) () = struct
       join_trees Element.bottom ~widen_depth:None left right
       |> option_node_tree ~message
       |> check_join_property left right
-
-
-  let widen ~iteration:_ ~prev ~next =
-    let message () =
-      Format.sprintf "wident trees: previous\n%s\nnext:\n%s\n" (show prev) (show next)
-    in
-    join_trees Element.bottom ~widen_depth:(Some Config.max_tree_depth_after_widening) prev next
-    |> option_node_tree ~message
-    |> check_join_property prev next
 
 
   (* Shape tree ~mold transforms the left tree so it only contains branches present in mold. *)
@@ -965,122 +949,186 @@ module Make (Config : CONFIG) (Element : AbstractDomainCore.S) () = struct
     create_tree_option path element |> option_node_tree ~message
 
 
-  module CommonArg = struct
+  open AbstractDomainCore
+
+  type _ part += Path : (Label.path * Element.t) part
+
+  module rec Base : (BASE with type t := t) = MakeBase (struct
     type nonrec t = t
 
-    let bottom = bottom
+    include Domain
+  end)
+
+  and Domain : (S with type t := t) = struct
+    type nonrec t = t
+
+    let show = show
+
+    let pp = pp
+
+    type _ part += Self : t part
 
     let join = join
 
-    let less_or_equal = less_or_equal
+    let bottom = bottom
+
+    let is_bottom = is_bottom
+
+    let less_or_equal ~left ~right = less_or_equal_tree left Element.bottom right |> Checks.is_true
+
+    let subtract _to_remove ~from =
+      (* Correct, but one can probably do better when needed. *)
+      from
+
+
+    let widen ~iteration:_ ~prev ~next =
+      let message () =
+        Format.sprintf "wident trees: previous\n%s\nnext:\n%s\n" (show prev) (show next)
+      in
+      join_trees Element.bottom ~widen_depth:(Some Config.max_tree_depth_after_widening) prev next
+      |> option_node_tree ~message
+      |> check_join_property prev next
+
+
+    let transform_new : type a f. a part -> (transform2, a, f, t, t) operation -> f:f -> t -> t =
+     fun part op ~f tree ->
+      match part, op with
+      | Path, OpMap ->
+          let transform_node ~path ~element = f (path, element) in
+          filter_map_tree_paths ~f:transform_node tree
+      | Path, OpAdd ->
+          let path, element = f in
+          join tree (create_tree path (create_leaf element))
+      | Path, OpFilter ->
+          filter_map_tree_paths
+            ~f:(fun ~path ~element ->
+              if f (path, element) then
+                path, element
+              else
+                path, Element.bottom)
+            tree
+      | _, OpContext (Path, op) ->
+          let transform_node ~path ~element =
+            ( path,
+              Element.transform_new part (Base.freshen_transform op) ~f:(f (path, element)) element
+            )
+          in
+          filter_map_tree_paths ~f:transform_node tree
+      | (Path | Self), _ -> Base.transform part op ~f tree
+      | _ ->
+          let transform_node ~path ~element =
+            path, Element.transform_new part (Base.freshen_transform op) ~f element
+          in
+          filter_map_tree_paths ~f:transform_node tree
+
+
+    let reduce
+        : type a f b. a part -> using:(reduce, a, f, t, b) operation -> f:f -> init:b -> t -> b
+      =
+     fun part ~using:op ~f ~init tree ->
+      match part, op with
+      | Path, OpAcc ->
+          let fold_tree_node ~path ~element accumulator = f (path, element) accumulator in
+          fold_tree_paths ~init ~f:fold_tree_node tree
+      | _, OpContext (Path, op) ->
+          let fold_tree_node ~path ~element accumulator =
+            Element.reduce
+              part
+              ~using:(Base.freshen_reduce op)
+              ~f:(f (path, element))
+              ~init:accumulator
+              element
+          in
+          fold_tree_paths ~init ~f:fold_tree_node tree
+      | (Path | Self), _ -> Base.reduce part ~using:op ~f ~init tree
+      | _ ->
+          let fold_tree_node ~path:_ ~element accumulator =
+            Element.reduce part ~using:(Base.freshen_reduce op) ~init:accumulator ~f element
+          in
+          fold_tree_paths ~init ~f:fold_tree_node tree
+
+
+    let partition_new
+        : type a f b. a part -> (partition, a, f, t, b) operation -> f:f -> t -> (b, t) MapPoly.t
+      =
+     fun part op ~f tree ->
+      let update path element existing =
+        let leaf = create_leaf element in
+        match existing with
+        | None -> create_tree path leaf
+        | Some tree -> assign_tree_path ~tree path ~subtree:leaf
+      in
+      match part, op with
+      | Path, OpByFilter ->
+          let partition ~path ~element result =
+            match f (path, element) with
+            | None -> result
+            | Some partition_key -> MapPoly.update result partition_key ~f:(update path element)
+          in
+          fold_tree_paths ~init:MapPoly.empty ~f:partition tree
+      | _, OpContext (Path, op) ->
+          let partition ~path ~element result =
+            let element_partition =
+              Element.partition_new part (Base.freshen_partition op) ~f:(f (path, element)) element
+            in
+            let distribute ~key ~data result = MapPoly.update result key ~f:(update path data) in
+            MapPoly.fold ~init:result ~f:distribute element_partition
+          in
+          fold_tree_paths ~init:MapPoly.empty ~f:partition tree
+      | (Path | Self), _ -> Base.partition part op ~f tree
+      | _ ->
+          let partition ~path ~element result =
+            let element_partition =
+              Element.partition_new part (Base.freshen_partition op) ~f element
+            in
+            let distribute ~key ~data result = MapPoly.update result key ~f:(update path data) in
+            MapPoly.fold ~init:result ~f:distribute element_partition
+          in
+          fold_tree_paths ~init:MapPoly.empty ~f:partition tree
+
+
+    let introspect (type a) (op : a introspect) : a =
+      match op with
+      | GetParts f ->
+          f#report Self;
+          f#report Path;
+          Element.introspect op
+      | Structure ->
+          let range = Element.introspect op in
+          "Tree ->" :: ListLabels.map ~f:(fun s -> "  " ^ s) range
+      | Name part -> (
+          match part with
+          | Path -> Format.sprintf "Tree.Path"
+          | Self -> Format.sprintf "Tree.Self"
+          | _ -> Base.introspect op )
+
+
+    let create parts =
+      let create_path result part =
+        match part with
+        | Part (Path, (path, tip)) -> create_leaf tip |> create_tree path |> join result
+        | Part (Self, info) -> join result (info : t)
+        | _ ->
+            (* Assume [] path *)
+            Element.create [part] |> create_leaf |> join result
+      in
+      ListLabels.fold_left parts ~init:bottom ~f:create_path
+
+
+    let transform = Base.legacy_transform
+
+    let fold = Base.fold
+
+    let partition = Base.legacy_partition
+
+    let meet = Base.meet
   end
 
-  module C = AbstractDomainCore.Common (CommonArg)
+  let _ = Base.fold (* unused module warning work-around *)
 
-  type _ AbstractDomainCore.part +=
-    | Self = C.Self | Path : (Label.path * Element.t) AbstractDomainCore.part
-
-  let fold (type a b) (part : a AbstractDomainCore.part) ~(f : a -> b -> b) ~init (tree : t) =
-    match part with
-    | Path ->
-        let fold_tree_node ~path ~element accumulator = f (path, element) accumulator in
-        fold_tree_paths ~init ~f:fold_tree_node tree
-    | C.Self -> C.fold part ~f ~init tree
-    | _ ->
-        let fold_tree_node ~path:_ ~element accumulator =
-          Element.fold part ~init:accumulator ~f element
-        in
-        fold_tree_paths ~init ~f:fold_tree_node tree
-
-
-  let rec transform : type a. a AbstractDomainCore.part -> a AbstractDomainCore.transform -> t -> t =
-   fun part t tree ->
-    let open AbstractDomainCore in
-    match part, t with
-    | Path, Map f ->
-        let transform_node ~path ~element =
-          let path, tip = f (path, element) in
-          path, tip
-        in
-        filter_map_tree_paths ~f:transform_node tree
-    | Path, Add (path, tip) -> join tree (create_tree path (create_leaf tip))
-    | Path, Filter f ->
-        filter_map_tree_paths
-          ~f:(fun ~path ~element ->
-            if f (path, element) then
-              path, element
-            else
-              path, Element.bottom)
-          tree
-    | Path, _ -> C.transform transformer part t tree
-    | C.Self, _ -> C.transform transformer part t tree
-    | _ ->
-        let transform_node ~path ~element = path, Element.transform part t element in
-        filter_map_tree_paths ~f:transform_node tree
-
-
-  and transformer (AbstractDomainCore.T (part, t)) (d : t) : t = transform part t d
-
-  let partition (type a b) (part : a AbstractDomainCore.part) ~(f : a -> b option) (tree : t)
-      : (b, t) MapPoly.t
-    =
-    let update path element existing =
-      let leaf = create_leaf element in
-      match existing with
-      | None -> create_tree path leaf
-      | Some tree -> assign_tree_path ~tree path ~subtree:leaf
-    in
-    match part with
-    | Path ->
-        let partition ~path ~element result =
-          match f (path, element) with
-          | None -> result
-          | Some partition_key -> MapPoly.update result partition_key ~f:(update path element)
-        in
-        fold_tree_paths ~init:MapPoly.empty ~f:partition tree
-    | C.Self -> C.partition part ~f tree
-    | _ ->
-        let partition ~path ~element result =
-          let element_partition = Element.partition part ~f element in
-          let distribute ~key ~data result = MapPoly.update result key ~f:(update path data) in
-          MapPoly.fold ~init:result ~f:distribute element_partition
-        in
-        fold_tree_paths ~init:MapPoly.empty ~f:partition tree
-
-
-  let create parts =
-    let create_path result part =
-      match part with
-      | AbstractDomainCore.Part (Path, (path, tip)) ->
-          create_leaf tip |> create_tree path |> join result
-      | AbstractDomainCore.Part (C.Self, info) -> join result (info : t)
-      | _ ->
-          (* Assume [] path *)
-          Element.create [part] |> create_leaf |> join result
-    in
-    ListLabels.fold_left parts ~init:bottom ~f:create_path
-
+  include Domain
 
   let collapse = collapse ~widen_depth:None
 
   let prepend = create_tree
-
-  let introspect (type a) (op : a AbstractDomainCore.introspect) : a =
-    let open AbstractDomainCore in
-    match op with
-    | GetParts f ->
-        f#report C.Self;
-        f#report Path;
-        Element.introspect op
-    | Structure ->
-        let range = Element.introspect op in
-        "Tree ->" :: ListLabels.map ~f:(fun s -> "  " ^ s) range
-    | Name part -> (
-        match part with
-        | Path -> Format.sprintf "Tree.Path"
-        | Self -> Format.sprintf "Tree.Self"
-        | _ -> C.introspect op )
-
-
-  let meet = C.meet
 end

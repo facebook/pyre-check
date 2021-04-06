@@ -9,12 +9,18 @@ open Core_kernel
 open OUnit2
 open AbstractDomain
 
+let ( = ) = Caml.( = )
+
 let string_list_printer elements = String.concat ~sep:"," elements
 
 let int_list_printer elements = ListLabels.map ~f:Int.to_string elements |> String.concat ~sep:","
 
 let string_pair_list_printer elements =
   List.map elements ~f:(fun (s1, s2) -> Format.sprintf "(%s,%s)" s1 s2) |> String.concat ~sep:", "
+
+
+let int_string_pair_list_printer elements =
+  List.map elements ~f:(fun (s1, s2) -> Format.sprintf "(%d,%s)" s1 s2) |> String.concat ~sep:", "
 
 
 let int_string_list_list_printer elements =
@@ -63,6 +69,8 @@ module type AbstractDomainUnderTest = sig
   val test_create : test_ctxt -> unit
 
   val test_additional : test_ctxt -> unit
+
+  val test_context : test_ctxt -> unit
 end
 
 (* General functor that tests abstract domains. *)
@@ -178,15 +186,27 @@ module TestAbstractDomain (Domain : AbstractDomainUnderTest) = struct
     assert_equivalent "v <> kept v" v kept
 
 
+  let test_self_context v _ =
+    let check_id context value =
+      assert_bool "self context not equal to self" (phys_equal context value);
+      assert_bool "self context not equal to value" (phys_equal context v);
+      value
+    in
+    let r = Domain.transform_new Domain.Self (OpContext (Domain.Self, OpMap)) ~f:check_id v in
+    assert_bool "identity transform not physically equal" (phys_equal r v)
+
+
   (* The test suite created by this functor. *)
   let suite () =
     let create_test value ~f = Domain.show value >:: f value in
     let test_basic_values = List.map values ~f:(create_test ~f:test_basic) in
     let test_self_values = List.map values ~f:(create_test ~f:test_self) in
+    let test_self_contexts = List.map values ~f:(create_test ~f:test_self_context) in
     let test_joins = test_cartesian ~title:"join" ~f:test_join_conformance values in
     let test_subtract = test_cartesian ~title:"subtract" ~f:test_subtract_conformance values in
     test_basic_values
     |> List.rev_append test_self_values
+    |> List.rev_append test_self_contexts
     |> List.rev_append ["test_bottom_top" >:: test_bottom_top]
     |> List.rev_append test_diff_unrelated
     |> List.rev_append test_joins
@@ -201,6 +221,7 @@ module TestAbstractDomain (Domain : AbstractDomainUnderTest) = struct
            "test_partition" >:: Domain.test_partition;
            "test_create" >:: Domain.test_create;
            "test_additional" >:: Domain.test_additional;
+           "test_context" >:: Domain.test_context;
          ]
 end
 
@@ -298,6 +319,9 @@ module StringSet = struct
       assert_equal "Set(strings)" (introspect Structure |> String.concat ~sep:"\n") ~printer:Fn.id
     in
     ()
+
+
+  let test_context _ = ()
 end
 
 module TestStringSet = TestAbstractDomain (StringSet)
@@ -397,6 +421,9 @@ module InvertedStringSet = struct
     let b = of_elements ["b"; "c"; "d"] in
     let ajoinb = join a b in
     assert_equivalent (of_elements ["b"; "c"]) ajoinb
+
+
+  let test_context _ = ()
 end
 
 module TestInvertedStringSet = TestAbstractDomain (InvertedStringSet)
@@ -490,6 +517,9 @@ module ToppedStringSet = struct
         ~printer:Fn.id
     in
     ()
+
+
+  let test_context _ = ()
 end
 
 module TestToppedStringSet = TestAbstractDomain (ToppedStringSet)
@@ -708,6 +738,15 @@ module IntToStringSet = struct
            ])
     in
     ()
+
+
+  let test_context _ =
+    let v = build_map [0, ["a"; "b"]; 1, ["b"; "c"]; 2, ["c"; "d"]; 3, []] in
+    let key_values key value sofar = (key, value) :: sofar in
+    assert_equal
+      ~printer:int_string_pair_list_printer
+      (List.rev [0, "a"; 0, "b"; 1, "b"; 1, "c"; 2, "c"; 2, "d"])
+      (reduce StringSet.Element ~using:(OpContext (Key, OpAcc)) ~f:key_values ~init:[] v)
 end
 
 module TestIntToStringSet = TestAbstractDomain (IntToStringSet)
@@ -838,6 +877,38 @@ module StrictIntToStringSet = struct
         ~printer:Fn.id
     in
     ()
+
+
+  let test_context _ =
+    let v = build_map [0, ["a"; "b"]; 1, ["b"; "c"]; 2, ["c"; "d"]; 3, []] in
+    let key_values key value sofar = (key, value) :: sofar in
+    assert_equal
+      ~printer:int_string_pair_list_printer
+      (List.rev [0, "a"; 0, "b"; 1, "b"; 1, "c"; 2, "c"; 2, "d"])
+      (reduce StringSet.Element ~using:(OpContext (Key, OpAcc)) ~f:key_values ~init:[] v);
+    let filter key value = key = 1 && value = "b" in
+    assert_equal
+      ~printer:int_string_pair_list_printer
+      [1, "b"]
+      (reduce
+         StringSet.Element
+         ~using:(OpContext (Key, OpSeq (OpFilter, OpAcc)))
+         ~f:(fun key -> filter key, key_values key)
+         ~init:[]
+         v);
+    (* same, but inefficient as we traverse map twice *)
+    assert_equal
+      ~printer:int_string_pair_list_printer
+      [1, "b"]
+      (reduce
+         Self
+         ~using:
+           (OpSeq
+              ( OpContext (Key, OpNest (StringSet.Element, OpFilter)),
+                OpContext (Key, OpNest (StringSet.Element, OpAcc)) ))
+         ~f:(filter, key_values)
+         ~init:[]
+         v)
 end
 
 module TestStrictIntToStringSet = TestAbstractDomain (StrictIntToStringSet)
@@ -1034,6 +1105,9 @@ module PairStringMapIntToString = struct
       assert_equal 10 (List.length !parts) ~printer:Int.to_string
     in
     ()
+
+
+  let test_context _ = ()
 end
 
 module TestPair = TestAbstractDomain (PairStringMapIntToString)
@@ -1213,6 +1287,9 @@ module AbstractElementSet = struct
       ~msg:"widen"
       ~cmp
       ~printer:show
+
+
+  let test_context _ = ()
 end
 
 module TestAbstractElement = TestAbstractDomain (AbstractElementSet)
@@ -1315,9 +1392,10 @@ module AbstractBucketedElementSet = struct
       assert_equal expected actual ~printer:int_string_list_list_printer
     in
     test
-      ~initial:[A; B; C ("x", 5); C ("y", 5)]
+      ~initial:[A; B; C ("x", 5); C ("y", 5); C ("z", 6)]
       ~f:(function
-        | C (_, i) -> Some i
+        | C (_, 5) -> Some 5
+        | C _ -> None
         | _ -> Some (-1))
       ~expected:[-1, ["A"; "B"]; 5, ["C(x,5)"; "C(y,5)"]]
 
@@ -1374,6 +1452,9 @@ module AbstractBucketedElementSet = struct
       ~msg:"widen"
       ~cmp
       ~printer:show
+
+
+  let test_context _ = ()
 end
 
 module TestAbstractBucketedElement = TestAbstractDomain (AbstractBucketedElementSet)
@@ -1507,6 +1588,9 @@ module PairStringString = struct
     assert_bool
       "product of bottoms is less equal to bottom"
       (less_or_equal ~left:(build [] []) ~right:bottom)
+
+
+  let test_context _ = ()
 end
 
 module TestPairStringString = TestAbstractDomain (PairStringString)
@@ -1705,6 +1789,9 @@ module ProductDomain = struct
       assert_equal [] actual ~printer:int_list_printer
     in
     ()
+
+
+  let test_context _ = ()
 end
 
 module TestProductDomain = TestAbstractDomain (ProductDomain)
@@ -1852,6 +1939,9 @@ module PathDomain = struct
     test_meet c a ~expected:a;
     test_meet b c ~expected:b;
     test_meet c b ~expected:b
+
+
+  let test_context _ = ()
 end
 
 module TestSimpleDomain = TestAbstractDomain (PathDomain)
@@ -2131,6 +2221,24 @@ module TreeOfStringSets = struct
          ~tree:(parse_tree ["a", ["item"]])
          [AbstractTreeDomain.Label.Field "b"]
          ~subtree:bottom)
+
+
+  let test_context _ =
+    let tree =
+      create
+        [
+          Part (Path, (parse_path "a.b", StringSet.of_list ["x"; "y"]));
+          Part (Path, (parse_path "c", StringSet.of_list ["z"]));
+          Part (Path, (parse_path "d", StringSet.of_list ["q"]));
+        ]
+    in
+    let path_value (path, _) value sofar =
+      (AbstractTreeDomain.Label.show_path path, value) :: sofar
+    in
+    assert_equal
+      ~printer:string_pair_list_printer
+      (List.rev ["[a][b]", "x"; "[a][b]", "y"; "[c]", "z"; "[d]", "q"])
+      (reduce StringSet.Element ~using:(OpContext (Path, OpAcc)) ~f:path_value ~init:[] tree)
 end
 
 module TestTreeDomain = TestAbstractDomain (TreeOfStringSets)
@@ -2355,6 +2463,9 @@ module OverUnderStringSet = struct
       (subtract set_b ~from:set_a_over)
       ~printer:show
       ~cmp:compare
+
+
+  let test_context _ = ()
 end
 
 module TestOverUnderStringSet = TestAbstractDomain (OverUnderStringSet)
@@ -2413,6 +2524,9 @@ module FlatString = struct
       assert_equal "Flat(strings)" (introspect Structure |> String.concat ~sep:"\n") ~printer:Fn.id
     in
     ()
+
+
+  let test_context _ = ()
 end
 
 module TestFlatString = TestAbstractDomain (FlatString)

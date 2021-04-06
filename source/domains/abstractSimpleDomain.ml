@@ -24,67 +24,60 @@ module type ELEMENT = sig
 end
 
 module Make (Element : ELEMENT) = struct
-  include Element
+  module rec Base : (BASE with type t := Element.t) = MakeBase (Domain)
 
-  let pp formatter value = Format.fprintf formatter "%s" (Element.show value)
+  and Domain : (S with type t = Element.t) = struct
+    include Element
 
-  let is_bottom v = v = Element.bottom
+    let pp formatter value = Format.fprintf formatter "%s" (Element.show value)
 
-  let widen ~iteration:_ ~prev ~next = join prev next
+    let is_bottom v = v = Element.bottom
 
-  module CommonArg = struct
-    type nonrec t = t
+    let widen ~iteration:_ ~prev ~next = join prev next
 
-    let bottom = bottom
+    type _ part += Self : t part
 
-    let join = join
+    let transform_new = Base.transform
 
-    let less_or_equal = less_or_equal
+    let reduce = Base.reduce
+
+    let partition_new = Base.partition
+
+    let introspect (type a) (op : a introspect) : a =
+      match op with
+      | GetParts f -> f#report Self
+      | Structure -> [Format.sprintf "Simple(%s)" Element.name]
+      | Name part -> (
+          match part with
+          | Self -> Format.sprintf "Simple(%s).Self" Element.name
+          | _ -> Base.introspect op )
+
+
+    let create parts =
+      ListLabels.fold_left
+        ~f:(fun result (Part (part, value)) ->
+          match part with
+          | Self -> join value result
+          | _ -> Base.create part value result)
+        parts
+        ~init:bottom
+
+
+    let subtract to_remove ~from =
+      if to_remove == from then
+        bottom
+      else
+        from
+
+
+    let transform = Base.legacy_transform
+
+    let fold = Base.fold
+
+    let partition = Base.legacy_partition
   end
 
-  module C = Common (CommonArg)
+  let _ = Base.fold (* unused module warning work-around *)
 
-  type _ part += Self = C.Self
-
-  let rec transform : type a. a part -> a transform -> t -> t =
-   fun part t p -> C.transform transformer part t p
-
-
-  and transformer (T (part, t)) (d : t) : t = transform part t d
-
-  let fold (type a b) (part : a part) ~(f : a -> b -> b) ~(init : b) (p : t) =
-    C.fold part ~f ~init p
-
-
-  let create parts =
-    ListLabels.fold_left
-      ~f:(fun result (Part (part, value)) ->
-        match part with
-        | Self -> join value result
-        | _ -> C.create part value result)
-      parts
-      ~init:bottom
-
-
-  let subtract to_remove ~from =
-    if to_remove == from then
-      bottom
-    else
-      from
-
-
-  let partition (type a b) (part : a part) ~(f : a -> b option) (product : t)
-      : (b, t) Core_kernel.Map.Poly.t
-    =
-    C.partition part ~f product
-
-
-  let introspect (type a) (op : a introspect) : a =
-    match op with
-    | GetParts f -> f#report C.Self
-    | Structure -> [Format.sprintf "Simple(%s)" Element.name]
-    | Name part -> (
-        match part with
-        | Self -> Format.sprintf "Simple(%s).Self" Element.name
-        | _ -> C.introspect op )
+  include Domain
 end
