@@ -64,6 +64,7 @@ module type S = sig
 
   val join : t -> t -> t
 
+  (* meet a b is an over-approximation of the intersection of 'a' and 'b' *)
   val meet : t -> t -> t
 
   val less_or_equal : left:t -> right:t -> bool
