@@ -411,6 +411,33 @@ let test_string_literal context =
         expect_str(s)
     |}
     [];
+  assert_type_errors
+    {|
+      from typing import Literal
+
+      def bar() -> None:
+        some_bool: bool
+        if some_bool:
+          x = "hello"
+        else:
+          x = "world"
+        reveal_type(x)
+    |}
+    [
+      (* TODO(T48477564): We don't join literals in general. *)
+      "Revealed type [-1]: Revealed type for `x` is `str`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Literal
+
+      def bar() -> None:
+        some_bool: bool
+        literal_string: Literal[str]
+        x = "hello" if some_bool else literal_string
+        reveal_type(x)
+    |}
+    ["Revealed type [-1]: Revealed type for `x` is `typing_extensions.Literal[str]`."];
   ()
 
 

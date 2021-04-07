@@ -3508,6 +3508,9 @@ module State (Context : Context) = struct
           (* Joining Literals as their union is currently too expensive, so we do it only for
              ternary expressions. *)
           match target_resolved, alternative_resolved with
+          | Type.Literal (Type.String Type.AnyLiteral), Type.Literal (Type.String _)
+          | Type.Literal (Type.String _), Type.Literal (Type.String Type.AnyLiteral) ->
+              Type.Literal (Type.String Type.AnyLiteral)
           | Type.Literal (Type.Boolean _), Type.Literal (Type.Boolean _)
           | Type.Literal (Type.Integer _), Type.Literal (Type.Integer _)
           | Type.Literal (Type.String _), Type.Literal (Type.String _)
