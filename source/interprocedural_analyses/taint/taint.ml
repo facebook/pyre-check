@@ -65,7 +65,7 @@ module Model = struct
 
   let compute_sources_and_sinks_to_keep = ModelParser.compute_sources_and_sinks_to_keep
 
-  let create_model_from_annotations = ModelParser.create_model_from_annotations
+  let create_model_from_annotations = ModelParser.create_callable_model_from_annotations
 end
 
 module Result = TaintResult

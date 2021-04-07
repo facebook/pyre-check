@@ -75,6 +75,7 @@ module T : sig
     type kind =
       | FunctionModel
       | MethodModel
+      | AttributeModel
     [@@deriving show, compare]
 
     type produced_taint =
@@ -103,6 +104,7 @@ module T : sig
           taint: produced_taint list;
         }
       | ReturnTaint of produced_taint list
+      | AttributeTaint of produced_taint list
     [@@deriving show, compare]
 
     type rule = {
@@ -138,10 +140,18 @@ val compute_sources_and_sinks_to_keep
   rule_filter:int list option ->
   Sources.Set.t option * Sinks.Set.t option
 
-val create_model_from_annotations
+val create_callable_model_from_annotations
   :  resolution:Analysis.Resolution.t ->
   callable:Interprocedural.Callable.real_target ->
   sources_to_keep:Sources.Set.t option ->
   sinks_to_keep:Sinks.Set.t option ->
   (T.annotation_kind * T.taint_annotation) list ->
+  (TaintResult.call_model, ModelVerificationError.t) result
+
+val create_attribute_model_from_annotations
+  :  resolution:Analysis.Resolution.t ->
+  name:Ast.Reference.t ->
+  sources_to_keep:Sources.Set.t option ->
+  sinks_to_keep:Sinks.Set.t option ->
+  T.taint_annotation list ->
   (TaintResult.call_model, ModelVerificationError.t) result

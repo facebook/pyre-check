@@ -57,3 +57,69 @@ ModelQuery(
     PositionalParameter(index=1, taint = TaintSource[Test]),
   ]
 )
+
+# Test attribute models
+ModelQuery(
+  find = "attributes",
+  where = [parent.extends("model_query.AttributeTestBase")],
+  model = [
+    AttributeModel(TaintSource[SourceA])
+  ]
+)
+
+ModelQuery(
+  find = "attributes",
+  where = [name.matches("foo")],
+  model = [
+    AttributeModel(TaintSource[SourceB])
+  ]
+)
+
+# Test attribute model queries work with existing models
+ModelQuery(
+  find = "attributes",
+  where = [parent.equals("model_query.AttributeTestClass3")],
+  model = [
+    AttributeModel(TaintSink[SinkA])
+  ]
+)
+model_query.AttributeTestClass3.attribute: TaintSink[SinkB] = ...
+model_query.AttributeTestClass3.instance: TaintSink[SinkC] = ...
+def model_query.alarm_5(source: TaintSource[Test]): ...
+
+
+ModelQuery(
+  find = "attributes",
+  where = [parent.equals("model_query.AttributeTestClass4")],
+  model = [
+    AttributeModel(TaintSource[SourceC])
+  ]
+)
+model_query.AttributeTestClass4.attribute: TaintSource[SourceD] = ...
+model_query.AttributeTestClass4.instance: TaintSource[SourceE] = ...
+def model_query.alarm_7() -> TaintSink[Test]: ...
+
+# Testing some attribute queries that shouldn't generate any models
+ModelQuery(
+  find = "attributes",
+  where = [name.matches("nothingshouldmatchthis")],
+  model = [
+    AttributeModel(TaintSource[Test])
+  ]
+)
+
+ModelQuery(
+  find = "attributes",
+  where = [parent.equals("NonExistentClass")],
+  model = [
+    AttributeModel(TaintSource[Test])
+  ]
+)
+
+ModelQuery(
+  find = "attributes",
+  where = [parent.extends("NonExistentClass")],
+  model = [
+    AttributeModel(TaintSource[Test])
+  ]
+)

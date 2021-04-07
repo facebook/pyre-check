@@ -498,6 +498,7 @@ let initialize
                   | (`Function _ as callable), _ -> Some (callable :> Callable.real_target)
                   | (`Method _ as callable), _ -> Some (callable :> Callable.real_target)
                   | _ -> None))
+            ~environment
         in
         let remove_sinks models = Callable.Map.map ~f:Model.remove_sinks models in
         let add_obscure_sinks models =

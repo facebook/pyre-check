@@ -37,7 +37,7 @@ end
 
 let matches_pattern ~pattern = Re2.matches (Re2.create_exn pattern)
 
-let rec matches_constraint query_constraint ~resolution ~callable =
+let rec callable_matches_constraint query_constraint ~resolution ~callable =
   let get_callable_type =
     Memo.unit (fun () -> Callable.get_module_and_definition ~resolution callable >>| snd)
   in
@@ -106,7 +106,7 @@ let rec matches_constraint query_constraint ~resolution ~callable =
               | None -> false)
       | _ -> false )
   | ModelQuery.AnyOf constraints ->
-      List.exists constraints ~f:(matches_constraint ~resolution ~callable)
+      List.exists constraints ~f:(callable_matches_constraint ~resolution ~callable)
   | ModelQuery.ParentConstraint (Equals class_name) ->
       Callable.class_name callable >>| String.equal class_name |> Option.value ~default:false
   | ModelQuery.ParentConstraint (Extends class_name) ->
@@ -118,7 +118,7 @@ let rec matches_constraint query_constraint ~resolution ~callable =
       Callable.class_name callable >>| Re2.matches class_pattern |> Option.value ~default:false
 
 
-let apply_productions ~resolution ~productions ~callable =
+let apply_callable_productions ~resolution ~productions ~callable =
   let definition = Callable.get_module_and_definition ~resolution callable in
   match definition with
   | None -> []
@@ -264,11 +264,12 @@ let apply_productions ~resolution ~productions ~callable =
             in
             List.cartesian_product normalized_parameters taint
             |> List.filter_map ~f:apply_parameter_production
+        | ModelQuery.AttributeTaint _ -> []
       in
       List.concat_map productions ~f:apply_production
 
 
-let apply_query_rule
+let apply_callable_query_rule
     ~verbose
     ~resolution
     ~rule:{ ModelQuery.rule_kind; query; productions; name }
@@ -282,29 +283,128 @@ let apply_query_rule
     | _ -> false
   in
 
-  if kind_matches && List.for_all ~f:(matches_constraint ~resolution ~callable) query then begin
+  if kind_matches && List.for_all ~f:(callable_matches_constraint ~resolution ~callable) query then begin
     if verbose then
       Log.info
         "Callable `%a` matches all constraints for the model query rule%s."
         Callable.pretty_print
         (callable :> Callable.t)
         (name |> Option.map ~f:(Format.sprintf " `%s`") |> Option.value ~default:"");
-    apply_productions ~resolution ~productions ~callable
+    apply_callable_productions ~resolution ~productions ~callable
   end
   else
     []
 
 
-let apply_all_rules ~resolution ~scheduler ~configuration ~rule_filter ~rules ~callables ~models =
+let rec attribute_matches_constraint query_constraint ~resolution ~attribute =
+  let class_name = Reference.prefix attribute >>| Reference.show in
+  match query_constraint with
+  | ModelQuery.NameConstraint pattern -> matches_pattern ~pattern (Reference.show attribute)
+  | ModelQuery.AnyOf constraints ->
+      List.exists constraints ~f:(attribute_matches_constraint ~resolution ~attribute)
+  | ModelQuery.ParentConstraint (Equals query_class_name) ->
+      class_name >>| String.equal query_class_name |> Option.value ~default:false
+  | ModelQuery.ParentConstraint (Extends query_class_name) ->
+      class_name
+      >>| GlobalResolution.immediate_parents ~resolution
+      >>| (fun parents -> List.mem parents query_class_name ~equal:String.equal)
+      |> Option.value ~default:false
+  | ModelQuery.ParentConstraint (Matches class_pattern) ->
+      class_name >>| Re2.matches class_pattern |> Option.value ~default:false
+  | _ -> false
+
+
+let apply_attribute_productions ~productions =
+  let production_to_taint = function
+    | ModelQuery.TaintAnnotation taint_annotation -> Some taint_annotation
+    | _ -> None
+  in
+  let apply_production = function
+    | ModelQuery.AttributeTaint productions -> List.filter_map productions ~f:production_to_taint
+    | _ -> []
+  in
+  List.concat_map productions ~f:apply_production
+
+
+let apply_attribute_query_rule
+    ~verbose
+    ~resolution
+    ~rule:{ ModelQuery.rule_kind; query; productions; name }
+    ~attribute
+  =
+  let kind_matches =
+    match rule_kind with
+    | ModelQuery.AttributeModel -> true
+    | _ -> false
+  in
+
+  if kind_matches && List.for_all ~f:(attribute_matches_constraint ~resolution ~attribute) query
+  then begin
+    if verbose then
+      Log.info
+        "Attribute `%s` matches all constraints for the model query rule%s."
+        (Reference.show attribute)
+        (name |> Option.map ~f:(Format.sprintf " `%s`") |> Option.value ~default:"");
+    apply_attribute_productions ~productions
+  end
+  else
+    []
+
+
+let get_class_attributes ~global_resolution ~class_name =
+  let class_summary =
+    GlobalResolution.class_definition global_resolution (Type.Primitive class_name) >>| Node.value
+  in
+  match class_summary with
+  | None -> []
+  | Some { ClassSummary.attribute_components; name = class_name_reference; _ } ->
+      let attributes, constructor_attributes =
+        ( Statement.Class.attributes ~include_generated_attributes:false attribute_components,
+          Statement.Class.constructor_attributes attribute_components )
+      in
+      let all_attributes =
+        Identifier.SerializableMap.union (fun _ x _ -> Some x) attributes constructor_attributes
+      in
+      Identifier.SerializableMap.fold
+        (fun attribute _ accumulator ->
+          Reference.create ~prefix:class_name_reference attribute :: accumulator)
+        all_attributes
+        []
+
+
+let apply_all_rules
+    ~resolution
+    ~scheduler
+    ~configuration
+    ~rule_filter
+    ~rules
+    ~callables
+    ~environment
+    ~models
+  =
   let global_resolution = Resolution.global_resolution resolution in
   if List.length rules > 0 then (
     let sources_to_keep, sinks_to_keep =
       ModelParser.compute_sources_and_sinks_to_keep ~configuration ~rule_filter
     in
-    let apply_rules models callable =
+    let merge_models new_models models =
+      Map.merge_skewed new_models models ~combine:(fun ~key:_ left right ->
+          Taint.Result.join ~iteration:0 left right)
+    in
+    let attribute_rules, callable_rules =
+      List.partition_tf
+        ~f:(fun { ModelQuery.rule_kind; _ } ->
+          match rule_kind with
+          | ModelQuery.AttributeModel -> true
+          | _ -> false)
+        rules
+    in
+
+    (* Generate models for functions and methods. *)
+    let apply_rules_for_callable models callable =
       let taint_to_model =
-        List.concat_map rules ~f:(fun rule ->
-            apply_query_rule
+        List.concat_map callable_rules ~f:(fun rule ->
+            apply_callable_query_rule
               ~verbose:(Option.is_some configuration.dump_model_query_results_path)
               ~resolution:global_resolution
               ~rule
@@ -312,7 +412,7 @@ let apply_all_rules ~resolution ~scheduler ~configuration ~rule_filter ~rules ~c
       in
       if not (List.is_empty taint_to_model) then (
         match
-          ModelParser.create_model_from_annotations
+          ModelParser.create_callable_model_from_annotations
             ~resolution
             ~callable
             ~sources_to_keep
@@ -343,11 +443,7 @@ let apply_all_rules ~resolution ~scheduler ~configuration ~rule_filter ~rules ~c
           | `Method _ as callable -> Some (callable :> Callable.real_target)
           | _ -> None)
     in
-    let merge_models new_models models =
-      Map.merge_skewed new_models models ~combine:(fun ~key:_ left right ->
-          Taint.Result.join ~iteration:0 left right)
-    in
-    let new_models =
+    let callable_models =
       Scheduler.map_reduce
         scheduler
         ~policy:
@@ -356,13 +452,82 @@ let apply_all_rules ~resolution ~scheduler ~configuration ~rule_filter ~rules ~c
              ~preferred_chunks_per_worker:1
              ())
         ~initial:Callable.Map.empty
-        ~map:(fun models callables -> List.fold callables ~init:models ~f:apply_rules)
+        ~map:(fun models callables -> List.fold callables ~init:models ~f:apply_rules_for_callable)
         ~reduce:(fun new_models models ->
           Map.merge_skewed new_models models ~combine:(fun ~key:_ left right ->
               Taint.Result.join ~iteration:0 left right))
         ~inputs:callables
         ()
     in
+
+    (* Generate models for attributes. *)
+    let apply_rules_for_attribute models attribute =
+      let taint_to_model =
+        List.concat_map attribute_rules ~f:(fun rule ->
+            apply_attribute_query_rule
+              ~verbose:(Option.is_some configuration.dump_model_query_results_path)
+              ~resolution:global_resolution
+              ~rule
+              ~attribute)
+      in
+      if not (List.is_empty taint_to_model) then (
+        let callable = Callable.create_object attribute in
+        match
+          ModelParser.create_attribute_model_from_annotations
+            ~resolution
+            ~name:attribute
+            ~sources_to_keep
+            ~sinks_to_keep
+            taint_to_model
+        with
+        | Ok model ->
+            let models =
+              let model =
+                match Callable.Map.find models (callable :> Callable.t) with
+                | Some existing_model -> Taint.Result.join ~iteration:0 existing_model model
+                | None -> model
+              in
+              Callable.Map.set models ~key:(callable :> Callable.t) ~data:model
+            in
+            models
+        | Error error ->
+            Log.error
+              "Error while executing model query: %s"
+              (Model.display_verification_error error);
+            models )
+      else
+        models
+    in
+    let attribute_models =
+      if not (List.is_empty attribute_rules) then
+        let all_classes =
+          TypeEnvironment.ReadOnly.global_resolution environment
+          |> GlobalResolution.unannotated_global_environment
+          |> UnannotatedGlobalEnvironment.ReadOnly.all_classes
+        in
+        let attributes =
+          List.concat_map all_classes ~f:(fun class_name ->
+              get_class_attributes ~global_resolution ~class_name)
+        in
+        Scheduler.map_reduce
+          scheduler
+          ~policy:
+            (Scheduler.Policy.fixed_chunk_count
+               ~minimum_chunk_size:500
+               ~preferred_chunks_per_worker:1
+               ())
+          ~initial:Callable.Map.empty
+          ~map:(fun models attributes ->
+            List.fold attributes ~init:models ~f:apply_rules_for_attribute)
+          ~reduce:(fun new_models models ->
+            Map.merge_skewed new_models models ~combine:(fun ~key:_ left right ->
+                Taint.Result.join ~iteration:0 left right))
+          ~inputs:attributes
+          ()
+      else
+        Callable.Map.empty
+    in
+    let new_models = merge_models callable_models attribute_models in
     begin
       match configuration.dump_model_query_results_path with
       | Some path -> DumpModelQueryResults.dump ~path ~models:new_models

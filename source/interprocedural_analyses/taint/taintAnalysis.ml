@@ -189,6 +189,7 @@ include Taint.Result.Register (struct
                 ~rule_filter
                 ~rules:queries
                 ~callables
+                ~environment
                 ~models
             in
             let models =

@@ -94,6 +94,7 @@ module T = struct
     type kind =
       | FunctionModel
       | MethodModel
+      | AttributeModel
     [@@deriving show, compare]
 
     type produced_taint =
@@ -122,6 +123,7 @@ module T = struct
           taint: produced_taint list;
         }
       | ReturnTaint of produced_taint list
+      | AttributeTaint of produced_taint list
     [@@deriving show, compare]
 
     type rule = {
@@ -892,6 +894,7 @@ let parse_find_clause ~path ({ Node.value; location } as expression) =
       match value with
       | "functions" -> Ok ModelQuery.FunctionModel
       | "methods" -> Ok ModelQuery.MethodModel
+      | "attributes" -> Ok ModelQuery.AttributeModel
       | unsupported ->
           Error
             (invalid_model_error
@@ -1182,6 +1185,12 @@ let parse_model_clause ~path ~configuration ({ Node.value; location } as express
           arguments = [{ Call.Argument.value = taint; _ }];
         } ->
         parse_taint taint >>| fun taint -> ModelQuery.ReturnTaint taint
+    | Expression.Call
+        {
+          Call.callee = { Node.value = Name (Name.Identifier "AttributeModel"); _ };
+          arguments = [{ Call.Argument.value = taint; _ }];
+        } ->
+        parse_taint taint >>| fun taint -> ModelQuery.AttributeTaint taint
     | Expression.Call
         {
           Call.callee = { Node.value = Name (Name.Identifier "NamedParameter"); _ };
@@ -2314,18 +2323,25 @@ let parse ~resolution ?path ?rule_filter ~source ~configuration models =
   }
 
 
-let create_model_from_annotations ~resolution ~callable ~sources_to_keep ~sinks_to_keep annotations =
+let invalid_model_query_error message =
+  invalid_model_error ~path:None ~location:Location.any ~name:"Model query" message
+
+
+let create_callable_model_from_annotations
+    ~resolution
+    ~callable
+    ~sources_to_keep
+    ~sinks_to_keep
+    annotations
+  =
   let open Core.Result in
   let global_resolution = Resolution.global_resolution resolution in
-  let invalid_model_error message =
-    invalid_model_error ~path:None ~location:Location.any ~name:"Model query" message
-  in
   match
     Interprocedural.Callable.get_module_and_definition ~resolution:global_resolution callable
   with
   | None ->
       Error
-        (invalid_model_error
+        (invalid_model_query_error
            (Format.sprintf "No callable corresponding to `%s` found." (Callable.show callable)))
   | Some (_, { Node.value = { Define.signature = define; _ }; _ }) ->
       let callable_annotation =
@@ -2362,6 +2378,91 @@ let create_model_from_annotations ~resolution ~callable ~sources_to_keep ~sinks_
             ~sinks_to_keep
             accumulator
             annotation)
+
+
+let create_attribute_model_from_annotations
+    ~resolution
+    ~name
+    ~sources_to_keep
+    ~sinks_to_keep
+    annotations
+  =
+  let open Core.Result in
+  let global_resolution = Resolution.global_resolution resolution in
+  let global_parameter_annotation =
+    (* We don't have real models for attributes, so we make a fake callable model with a 'parameter'
+       $global which acts as the taint sink whenever attributes are marked as sinks. This needs to
+       be annotated with something arbitrary so that add_taint_annotation_to_model works correctly
+       later on. *)
+    Node.create_with_default_location
+      (Expression.Name (Ast.Expression.create_name ~location:Location.any "$global"))
+  in
+  let signature =
+    {
+      Define.Signature.name = Node.create ~location:Location.any name;
+      parameters =
+        [
+          Parameter.create
+            ~location:Location.any
+            ~annotation:global_parameter_annotation
+            ~name:"$global"
+            ();
+        ];
+      decorators = [];
+      return_annotation = None;
+      async = false;
+      generator = false;
+      parent = None;
+      nesting_define = None;
+    }
+  in
+  let callable_annotation =
+    callable_annotation
+      ~path:None
+      ~location:Location.any
+      ~resolution
+      ~verify_decorators:false
+      signature
+    >>| Annotation.annotation
+    >>| function
+    | Type.Callable t -> Some t
+    | _ -> None
+  in
+  callable_annotation
+  >>= fun callable_annotation ->
+  List.fold annotations ~init:(Ok TaintResult.empty_model) ~f:(fun accumulator annotation ->
+      accumulator
+      >>= fun accumulator ->
+      let annotation_kind =
+        match annotation with
+        | Source _ -> Ok ReturnAnnotation
+        | Sink _
+        | Tito _ ->
+            Ok
+              (ParameterAnnotation
+                 (AccessPath.Root.PositionalParameter
+                    { position = 0; name = "$global"; positional_only = false }))
+        | _ ->
+            Error
+              (invalid_model_query_error
+                 (Format.sprintf
+                    "Invalid annotation for attribute model `%s`: `%s`."
+                    (Reference.show name)
+                    (show_taint_annotation annotation)))
+      in
+      annotation_kind
+      >>= fun annotation_kind ->
+      add_taint_annotation_to_model
+        ~path:None
+        ~location:Location.any
+        ~model_name:"Model query"
+        ~resolution:global_resolution
+        ~annotation_kind
+        ~callable_annotation
+        ~sources_to_keep
+        ~sinks_to_keep
+        accumulator
+        annotation)
 
 
 let verify_model_syntax ~path ~source =
