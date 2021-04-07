@@ -39,6 +39,7 @@ from . import server_connection, server_event, stop, remote_logging
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
+ARTIFACT_ROOT_NAME: str = "link_trees"
 SERVER_LOG_FILE_FORMAT: str = "server.stderr.%Y_%m_%d_%H_%M_%S_%f"
 
 
@@ -343,6 +344,60 @@ def get_saved_state_action(
 def find_watchman_root(base: Path) -> Optional[Path]:
     return find_directories.find_parent_directory_containing_file(
         base, ".watchmanconfig"
+    )
+
+
+def find_buck_root(base: Path) -> Optional[Path]:
+    return find_directories.find_parent_directory_containing_file(base, ".buckconfig")
+
+
+def get_source_path(configuration: configuration_module.Configuration) -> SourcePath:
+    source_directories = configuration.source_directories
+    targets = configuration.targets
+
+    if source_directories is not None and targets is None:
+        elements: Sequence[
+            configuration_module.SearchPathElement
+        ] = configuration.get_existent_source_directories()
+        if len(elements) == 0:
+            LOG.warning("Pyre did not find an existent source directory.")
+        return SimpleSourcePath(elements)
+
+    if targets is not None and source_directories is None:
+        if len(targets) == 0:
+            LOG.warning("Pyre did not find any targets to check.")
+
+        search_base = Path(configuration.project_root)
+        artifact_root = configuration.dot_pyre_directory / ARTIFACT_ROOT_NAME
+
+        relative_local_root = configuration.relative_local_root
+        if relative_local_root is not None:
+            search_base = search_base / relative_local_root
+            artifact_root = artifact_root / relative_local_root
+
+        source_root = find_buck_root(search_base)
+        if source_root is None:
+            raise configuration_module.InvalidConfiguration(
+                "Cannot find a buck root for the specified targets. "
+                + "Make sure the project is covered by a `.buckconfig` file."
+            )
+
+        return BuckSourcePath(
+            source_root=source_root,
+            artifact_root=artifact_root,
+            targets=targets,
+            mode=configuration.buck_mode,
+            isolation_prefix=configuration.isolation_prefix,
+        )
+
+    if source_directories is None and targets is not None:
+        raise configuration_module.InvalidConfiguration(
+            "`source_directory` and `targets` are mutually exclusive"
+        )
+
+    raise configuration_module.InvalidConfiguration(
+        "Cannot find any source files to analyze. "
+        + "Either `source_directory` or `targets` must be specified."
     )
 
 

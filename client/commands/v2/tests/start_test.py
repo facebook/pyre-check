@@ -23,11 +23,14 @@ from ..start import (
     BuckSourcePath,
     create_server_arguments,
     find_watchman_root,
+    find_buck_root,
     get_critical_files,
     get_saved_state_action,
     get_server_identifier,
     get_profiling_log_path,
+    get_source_path,
     background_server_log_file,
+    ARTIFACT_ROOT_NAME,
 )
 
 
@@ -382,6 +385,156 @@ class StartTest(testslide.TestCase):
             self.assertIsNone(find_watchman_root(root_path / "foo/qux"))
             self.assertIsNone(find_watchman_root(root_path / "foo"))
             self.assertIsNone(find_watchman_root(root_path))
+
+    def test_find_buck_root(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root).resolve()
+            setup.ensure_files_exist(
+                root_path,
+                ["foo/qux/derp", "foo/bar/.buckconfig", "foo/bar/baz/derp"],
+            )
+
+            expected_root = root_path / "foo/bar"
+            self.assertEqual(find_buck_root(root_path / "foo/bar/baz"), expected_root)
+            self.assertEqual(find_buck_root(root_path / "foo/bar"), expected_root)
+
+            self.assertIsNone(find_buck_root(root_path / "foo/qux"))
+            self.assertIsNone(find_buck_root(root_path / "foo"))
+            self.assertIsNone(find_buck_root(root_path))
+
+    def test_get_simple_source_path__exists(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root).resolve()
+            setup.ensure_directories_exists(root_path, [".pyre", "src"])
+            element = configuration.SimpleSearchPathElement(str(root_path / "src"))
+            self.assertEqual(
+                get_source_path(
+                    configuration.Configuration(
+                        project_root=str(root_path / "project"),
+                        dot_pyre_directory=(root_path / ".pyre"),
+                        source_directories=[element],
+                    )
+                ),
+                SimpleSourcePath([element]),
+            )
+
+    def test_get_simple_source_path__nonexists(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root).resolve()
+            setup.ensure_directories_exists(root_path, [".pyre"])
+            element = configuration.SimpleSearchPathElement(str(root_path / "src"))
+            self.assertEqual(
+                get_source_path(
+                    configuration.Configuration(
+                        project_root=str(root_path / "project"),
+                        dot_pyre_directory=(root_path / ".pyre"),
+                        source_directories=[element],
+                    )
+                ),
+                SimpleSourcePath([]),
+            )
+
+    def test_get_buck_source_path__global(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root).resolve()
+            setup.ensure_directories_exists(root_path, [".pyre", "buck_root"])
+            setup.ensure_files_exist(root_path, ["buck_root/.buckconfig"])
+            setup.write_configuration_file(
+                root_path / "buck_root",
+                {
+                    "targets": ["//ct:marle", "//ct:lucca"],
+                    "buck_mode": "opt",
+                    "isolation_prefix": ".lsp",
+                },
+            )
+            self.assertEqual(
+                get_source_path(
+                    configuration.create_configuration(
+                        command_arguments.CommandArguments(
+                            dot_pyre_directory=root_path / ".pyre",
+                        ),
+                        root_path / "buck_root",
+                    )
+                ),
+                BuckSourcePath(
+                    source_root=root_path / "buck_root",
+                    artifact_root=root_path / ".pyre" / ARTIFACT_ROOT_NAME,
+                    targets=["//ct:marle", "//ct:lucca"],
+                    mode="opt",
+                    isolation_prefix=".lsp",
+                ),
+            )
+
+    def test_get_buck_source_path__local(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root).resolve()
+            setup.ensure_directories_exists(root_path, [".pyre", "project/local"])
+            setup.ensure_files_exist(root_path, ["project/local/.buckconfig"])
+            setup.write_configuration_file(
+                root_path / "project",
+                {
+                    "buck_mode": "opt",
+                    "isolation_prefix": ".lsp",
+                },
+            )
+            setup.write_configuration_file(
+                root_path / "project",
+                {"targets": ["//ct:chrono"]},
+                relative="local",
+            )
+            self.assertEqual(
+                get_source_path(
+                    configuration.create_configuration(
+                        command_arguments.CommandArguments(
+                            local_configuration="local",
+                            dot_pyre_directory=root_path / ".pyre",
+                        ),
+                        root_path / "project",
+                    )
+                ),
+                BuckSourcePath(
+                    source_root=root_path / "project/local",
+                    artifact_root=root_path / ".pyre" / ARTIFACT_ROOT_NAME / "local",
+                    targets=["//ct:chrono"],
+                    mode="opt",
+                    isolation_prefix=".lsp",
+                ),
+            )
+
+    def test_get_buck_source_path__no_buck_root(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root).resolve()
+            setup.ensure_directories_exists(root_path, [".pyre", "project"])
+            with self.assertRaises(configuration.InvalidConfiguration):
+                get_source_path(
+                    configuration.Configuration(
+                        project_root=str(root_path / "project"),
+                        dot_pyre_directory=(root_path / ".pyre"),
+                        targets=["//ct:frog"],
+                    )
+                )
+
+    def test_get_source_path__no_source_specified(self) -> None:
+        with self.assertRaises(configuration.InvalidConfiguration):
+            get_source_path(
+                configuration.Configuration(
+                    project_root="project",
+                    dot_pyre_directory=Path(".pyre"),
+                    source_directories=None,
+                    targets=None,
+                )
+            )
+
+    def test_get_source_path__confliciting_source_specified(self) -> None:
+        with self.assertRaises(configuration.InvalidConfiguration):
+            get_source_path(
+                configuration.Configuration(
+                    project_root="project",
+                    dot_pyre_directory=Path(".pyre"),
+                    source_directories=[configuration.SimpleSearchPathElement("src")],
+                    targets=["//ct:ayla"],
+                )
+            )
 
     def test_create_server_arguments(self) -> None:
         with tempfile.TemporaryDirectory() as root:
