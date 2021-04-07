@@ -42,6 +42,10 @@ class ArgumentTest(testslide.TestCase):
             {"base_name": "foo"},
         )
         self.assertDictEqual(
+            CriticalFile(policy=MatchPolicy.EXTENSION, path="foo").serialize(),
+            {"extension": "foo"},
+        )
+        self.assertDictEqual(
             CriticalFile(policy=MatchPolicy.FULL_PATH, path="/foo/bar").serialize(),
             {"full_path": "/foo/bar"},
         )
@@ -184,6 +188,7 @@ class ArgumentTest(testslide.TestCase):
                 store_type_check_resolution=True,
                 critical_files=[
                     CriticalFile(policy=MatchPolicy.BASE_NAME, path="foo.py"),
+                    CriticalFile(policy=MatchPolicy.EXTENSION, path="txt"),
                     CriticalFile(policy=MatchPolicy.FULL_PATH, path="/home/bar.txt"),
                 ],
             ),
@@ -194,7 +199,11 @@ class ArgumentTest(testslide.TestCase):
                 ("store_type_check_resolution", True),
                 (
                     "critical_files",
-                    [{"base_name": "foo.py"}, {"full_path": "/home/bar.txt"}],
+                    [
+                        {"base_name": "foo.py"},
+                        {"extension": "txt"},
+                        {"full_path": "/home/bar.txt"},
+                    ],
                 ),
             ],
         )

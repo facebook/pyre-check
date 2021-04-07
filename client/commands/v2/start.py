@@ -54,6 +54,7 @@ BUCK_TARGET_PATTERN: str = (
 
 class MatchPolicy(enum.Enum):
     BASE_NAME = "base_name"
+    EXTENSION = "extension"
     FULL_PATH = "full_path"
 
     def __str__(self) -> str:
