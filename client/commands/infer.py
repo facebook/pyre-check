@@ -407,53 +407,6 @@ def annotate_path(stub_path: str, file_path: str, debug_infer: bool) -> None:
             LOG.warning(f"\tError: {error}")
 
 
-def annotate_paths(
-    root,
-    formatter: Optional[str],
-    stubs: Sequence[StubFile],
-    type_directory: Path,
-    in_place: Sequence[str],
-    debug_infer: bool,
-) -> None:
-    if in_place != []:
-        stubs = filter_paths(stubs, type_directory, in_place)
-
-    for stub in stubs:
-        stub_path = stub.path(type_directory)
-        if not stub._path.resolve().exists():
-            file_path = (root / stub._path).resolve()
-        else:
-            file_path = stub._path.resolve()
-        annotate_path(str(stub_path), file_path, debug_infer)
-    if formatter:
-        subprocess.call(formatter, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-
-
-def annotate_from_existing_stubs(
-    root: Path,
-    formatter: Optional[str],
-    type_directory: Path,
-    in_place: Sequence[str],
-    debug_infer: bool,
-) -> None:
-    in_place_paths = [Path(path) for path in in_place]
-    for stub_path in type_directory.rglob("*.pyi"):
-        relative_source_path_for_stub = stub_path.relative_to(
-            type_directory
-        ).with_suffix(".py")
-
-        if in_place_paths == [] or any(
-            path
-            in (relative_source_path_for_stub, *relative_source_path_for_stub.parents)
-            for path in in_place_paths
-        ):
-            annotate_path(
-                str(stub_path), str(root / relative_source_path_for_stub), debug_infer
-            )
-    if formatter:
-        subprocess.call(formatter, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-
-
 def _existing_annotations_as_errors(
     modules: Dict[Path, Optional[libcst.Module]], project_root: str
 ) -> List[LegacyError]:
@@ -531,7 +484,7 @@ class Infer(Reporting):
             type_directory = Path(
                 os.path.join(self._configuration.log_directory, "types")
             )
-            annotate_from_existing_stubs(
+            self._annotate_from_stubs(
                 Path(self._original_directory),
                 self._configuration.formatter,
                 type_directory,
@@ -572,7 +525,7 @@ class Infer(Reporting):
             write_stubs_to_disk(stubs, type_directory)
             if self._in_place is not None:
                 LOG.info("Annotating files")
-                annotate_paths(
+                self._annotate_paths(
                     self._configuration.local_root,
                     self._configuration.formatter,
                     stubs,
@@ -618,3 +571,67 @@ class Infer(Reporting):
     def _get_errors_from_stdin(self) -> Result:
         input = sys.stdin.read()
         return Result(0, json.dumps({"errors": json.loads(input)}))
+
+    def _clean_errors(self) -> None:
+        result = self._call_client(command="check")
+        errors = self._get_errors(result)
+        error_json = json.dumps([error.to_json() for error in errors])
+        subprocess.run("pyre-upgrade fixme", input=error_json)
+
+    def _annotate_paths(
+        self,
+        root,
+        formatter: Optional[str],
+        stubs: Sequence[StubFile],
+        type_directory: Path,
+        in_place: Sequence[str],
+        debug_infer: bool,
+    ) -> None:
+        if in_place != []:
+            stubs = filter_paths(stubs, type_directory, in_place)
+
+        for stub in stubs:
+            stub_path = stub.path(type_directory)
+            if not stub._path.resolve().exists():
+                file_path = (root / stub._path).resolve()
+            else:
+                file_path = stub._path.resolve()
+            annotate_path(str(stub_path), file_path, debug_infer)
+        if formatter:
+            subprocess.call(
+                formatter, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+            )
+            self._clean_errors()
+
+    def _annotate_from_stubs(
+        self,
+        root: Path,
+        formatter: Optional[str],
+        type_directory: Path,
+        in_place: Sequence[str],
+        debug_infer: bool,
+    ) -> None:
+        in_place_paths = [Path(path) for path in in_place]
+        for stub_path in type_directory.rglob("*.pyi"):
+            relative_source_path_for_stub = stub_path.relative_to(
+                type_directory
+            ).with_suffix(".py")
+
+            if in_place_paths == [] or any(
+                path
+                in (
+                    relative_source_path_for_stub,
+                    *relative_source_path_for_stub.parents,
+                )
+                for path in in_place_paths
+            ):
+                annotate_path(
+                    str(stub_path),
+                    str(root / relative_source_path_for_stub),
+                    debug_infer,
+                )
+        if formatter:
+            subprocess.call(
+                formatter, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+            )
+            self._clean_errors()

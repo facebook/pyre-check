@@ -11,7 +11,7 @@ import textwrap
 import unittest
 from pathlib import Path
 from typing import Any, Dict, Union
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import MagicMock, patch
 
 import libcst as cst
 
@@ -943,11 +943,30 @@ class InferTest(unittest.TestCase):
     def test_annotate_from_existing_stubs_empty_in_place(
         self, annotate_path: MagicMock, recursive_glob: MagicMock
     ) -> None:
+        original_directory = "/original/directory"
+        arguments = mock_arguments()
+        configuration = mock_configuration()
+        command = Infer(
+            arguments,
+            original_directory,
+            configuration=configuration,
+            analysis_directory=AnalysisDirectory(
+                configuration_module.SimpleSearchPathElement(".")
+            ),
+            print_errors=True,
+            full_only=True,
+            recursive=False,
+            in_place=None,
+            errors_from_stdin=True,
+            annotate_from_existing_stubs=False,
+            debug_infer=False,
+            full_stub_paths=None,
+        )
         root = Path("/root/my-project")
         recursive_glob.return_value = [
             Path("/root/.pyre/my-project/types/foo/bar/baz.pyi")
         ]
-        infer.annotate_from_existing_stubs(
+        command._annotate_from_stubs(
             root,
             None,
             type_directory=Path("/root/.pyre/my-project/types"),
@@ -967,11 +986,31 @@ class InferTest(unittest.TestCase):
     def test_annotate_from_existing_stubs_in_place_directory(
         self, annotate_path: MagicMock, recursive_glob: MagicMock
     ) -> None:
+        original_directory = "/original/directory"
+        arguments = mock_arguments()
+        configuration = mock_configuration()
+        command = Infer(
+            arguments,
+            original_directory,
+            configuration=configuration,
+            analysis_directory=AnalysisDirectory(
+                configuration_module.SimpleSearchPathElement(".")
+            ),
+            print_errors=True,
+            full_only=True,
+            recursive=False,
+            in_place=None,
+            errors_from_stdin=True,
+            annotate_from_existing_stubs=False,
+            debug_infer=False,
+            full_stub_paths=None,
+        )
         root = Path("/root/my-project")
         recursive_glob.return_value = [
             Path("/root/.pyre/my-project/types/foo/bar/baz.pyi")
         ]
-        infer.annotate_from_existing_stubs(
+
+        command._annotate_from_stubs(
             root,
             None,
             type_directory=Path("/root/.pyre/my-project/types"),
@@ -991,11 +1030,30 @@ class InferTest(unittest.TestCase):
     def test_annotate_from_existing_stubs_no_match(
         self, annotate_path: MagicMock, recursive_glob: MagicMock
     ) -> None:
+        original_directory = "/original/directory"
+        arguments = mock_arguments()
+        configuration = mock_configuration()
+        command = Infer(
+            arguments,
+            original_directory,
+            configuration=configuration,
+            analysis_directory=AnalysisDirectory(
+                configuration_module.SimpleSearchPathElement(".")
+            ),
+            print_errors=True,
+            full_only=True,
+            recursive=False,
+            in_place=None,
+            errors_from_stdin=True,
+            annotate_from_existing_stubs=False,
+            debug_infer=False,
+            full_stub_paths=None,
+        )
         root = Path("/root/my-project")
         recursive_glob.return_value = [
             Path("/root/.pyre/my-project/types/foo/bar/baz.pyi")
         ]
-        infer.annotate_from_existing_stubs(
+        command._annotate_from_stubs(
             root,
             None,
             type_directory=Path("/root/.pyre/my-project/types"),
@@ -1011,11 +1069,30 @@ class InferTest(unittest.TestCase):
     def test_annotate_from_existing_stubs_relative_file_path(
         self, annotate_path: MagicMock, recursive_glob: MagicMock
     ) -> None:
+        original_directory = "/original/directory"
+        arguments = mock_arguments()
+        configuration = mock_configuration()
+        command = Infer(
+            arguments,
+            original_directory,
+            configuration=configuration,
+            analysis_directory=AnalysisDirectory(
+                configuration_module.SimpleSearchPathElement(".")
+            ),
+            print_errors=True,
+            full_only=True,
+            recursive=False,
+            in_place=None,
+            errors_from_stdin=True,
+            annotate_from_existing_stubs=False,
+            debug_infer=False,
+            full_stub_paths=None,
+        )
         root = Path("/root/my-project")
         recursive_glob.return_value = [
             Path("/root/.pyre/my-project/types/foo/bar/baz.pyi")
         ]
-        infer.annotate_from_existing_stubs(
+        command._annotate_from_stubs(
             root,
             None,
             type_directory=Path("/root/.pyre/my-project/types"),
@@ -1035,9 +1112,28 @@ class InferTest(unittest.TestCase):
     def test_annotate_from_existing_stubs_relative_file_path_not_local_root(
         self, annotate_path: MagicMock, recursive_glob: MagicMock
     ) -> None:
+        original_directory = "/original/directory"
+        arguments = mock_arguments()
+        configuration = mock_configuration()
+        command = Infer(
+            arguments,
+            original_directory,
+            configuration=configuration,
+            analysis_directory=AnalysisDirectory(
+                configuration_module.SimpleSearchPathElement(".")
+            ),
+            print_errors=True,
+            full_only=True,
+            recursive=False,
+            in_place=None,
+            errors_from_stdin=True,
+            annotate_from_existing_stubs=False,
+            debug_infer=False,
+            full_stub_paths=None,
+        )
         root = Path("/root")
         recursive_glob.return_value = [Path("/root/.pyre/types/foo/bar/types/baz.pyi")]
-        infer.annotate_from_existing_stubs(
+        command._annotate_from_stubs(
             root,
             None,
             type_directory=Path("/root/.pyre/types"),
@@ -1057,11 +1153,30 @@ class InferTest(unittest.TestCase):
     def test_annotate_from_existing_stubs_relative_local_root(
         self, annotate_path: MagicMock, recursive_glob: MagicMock
     ) -> None:
+        original_directory = "/original/directory"
+        arguments = mock_arguments()
+        configuration = mock_configuration()
+        command = Infer(
+            arguments,
+            original_directory,
+            configuration=configuration,
+            analysis_directory=AnalysisDirectory(
+                configuration_module.SimpleSearchPathElement(".")
+            ),
+            print_errors=True,
+            full_only=True,
+            recursive=False,
+            in_place=None,
+            errors_from_stdin=True,
+            annotate_from_existing_stubs=False,
+            debug_infer=False,
+            full_stub_paths=None,
+        )
         root = Path("/root")
         recursive_glob.return_value = [
             Path("/root/.pyre/local-root/types/local-root/foo/bar/baz.pyi")
         ]
-        infer.annotate_from_existing_stubs(
+        command._annotate_from_stubs(
             root,
             None,
             type_directory=Path("/root/.pyre/local-root/types"),
