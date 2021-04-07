@@ -135,7 +135,7 @@ let errors_from_not_found
               ~total:(Type.TypedDictionary.are_fields_total fields)
           then
             match actual with
-            | Type.Literal (Type.String field_name) ->
+            | Type.Literal (Type.String (Type.LiteralValue field_name)) ->
                 let required_field_exists =
                   List.exists
                     ~f:(fun { Type.Record.TypedDictionary.name; required; _ } ->

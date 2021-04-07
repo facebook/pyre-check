@@ -270,10 +270,14 @@ module Primitive : sig
   val is_unit_test : t -> bool
 end
 
-type literal =
+type literal_string =
+  | LiteralValue of string
+  | AnyLiteral
+
+and literal =
   | Boolean of bool
   | Integer of int
-  | String of string
+  | String of literal_string
   | Bytes of string
   | EnumerationMember of {
       enumeration_type: t;

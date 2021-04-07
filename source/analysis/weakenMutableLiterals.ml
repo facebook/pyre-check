@@ -256,7 +256,7 @@ let rec weaken_mutable_literals
           let resolve_entry { Dictionary.Entry.key; value } =
             let key = resolve key in
             match key with
-            | Type.Literal (Type.String name) ->
+            | Type.Literal (Type.String (Type.LiteralValue name)) ->
                 let annotation, required =
                   let resolved = resolve value in
                   let relax { annotation; _ } =

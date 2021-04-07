@@ -385,6 +385,7 @@ let test_create _ =
        ]);
   assert_create "typing_extensions.Literal[ONE]" Type.Top;
   assert_create "typing_extensions.Literal[None]" Type.none;
+  assert_create "typing_extensions.Literal[str]" (Type.Literal (Type.String AnyLiteral));
   assert_create "_NotImplementedType" Type.Any;
 
   (* ParamSpec class. *)
@@ -836,6 +837,7 @@ let test_expression _ =
        (Type.EnumerationMember
           { enumeration_type = Type.Primitive "test.MyEnum"; member_name = "ONE" }))
     "typing_extensions.Literal[test.MyEnum.ONE]";
+  assert_expression (Type.Literal (Type.String AnyLiteral)) "typing_extensions.Literal[str]";
 
   (* Variadic tuples. *)
   let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
@@ -957,6 +959,7 @@ let test_concise _ =
        (Type.EnumerationMember
           { enumeration_type = Type.Primitive "test.MyEnum"; member_name = "ONE" }))
     "typing_extensions.Literal[test.MyEnum.ONE]";
+  assert_concise (Type.Literal (Type.String AnyLiteral)) "typing_extensions.Literal[str]";
   ()
 
 
@@ -966,6 +969,7 @@ let test_weaken_literals _ =
   in
   assert_weakened_literal (Type.literal_integer 1) Type.integer;
   assert_weakened_literal (Type.literal_string "foo") Type.string;
+  assert_weakened_literal (Type.Literal (Type.String AnyLiteral)) Type.string;
   assert_weakened_literal (Type.literal_bytes "foo") Type.bytes;
   assert_weakened_literal (Type.Literal (Type.Boolean true)) Type.bool;
   assert_weakened_literal
@@ -1099,7 +1103,11 @@ let test_elements _ =
     (Type.elements
        (Type.Literal
           (Type.EnumerationMember
-             { enumeration_type = Type.Primitive "A.B.C.MyEnum"; member_name = "ONE" })))
+             { enumeration_type = Type.Primitive "A.B.C.MyEnum"; member_name = "ONE" })));
+  assert_equal
+    ["str"; "typing_extensions.Literal"]
+    (Type.elements (Type.Literal (Type.String AnyLiteral)));
+  ()
 
 
 let test_exists _ =
