@@ -34,8 +34,6 @@ module CriticalFile : sig
     | FullPath of Path.t
   [@@deriving sexp, compare, hash, yojson]
 
-  val base_name_of : t -> string
-
   val matches : path:Path.t -> t -> bool
 
   val matches_any : path:Path.t -> t list -> bool

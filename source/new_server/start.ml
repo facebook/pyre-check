@@ -506,37 +506,12 @@ let get_watchman_subscriber
       get_raw_watchman watchman
       >>= fun raw ->
       let subscriber_setting =
-        let filter =
-          let base_names =
-            List.map critical_files ~f:ServerConfiguration.CriticalFile.base_name_of
-            |> String.Set.of_list
-            |> fun set ->
-            Set.add set ".pyre_configuration"
-            |> fun set ->
-            Set.add set ".pyre_configuration.local"
-            |> fun set ->
-            ( match source_paths with
-            | ServerConfiguration.SourcePaths.Buck _ ->
-                let set = Set.add set "TARGETS" in
-                Set.add set "BUCK"
-            | ServerConfiguration.SourcePaths.Simple _ -> set )
-            |> Set.to_list
-          in
-          let suffixes =
-            String.Set.of_list (List.map ~f:Configuration.Extension.suffix extensions)
-            |> fun set ->
-            Set.add set "py"
-            |> fun set ->
-            Set.add set "pyi"
-            |> fun set ->
-            ( match source_paths with
-            | ServerConfiguration.SourcePaths.Buck _ -> Set.add set "thrift"
-            | ServerConfiguration.SourcePaths.Simple _ -> set )
-            |> Set.to_list
-          in
-          { Watchman.Filter.base_names; suffixes }
-        in
-        { Watchman.Subscriber.Setting.raw; root; filter }
+        {
+          Watchman.Subscriber.Setting.raw;
+          root;
+          filter =
+            Watchman.Filter.from_server_configurations ~critical_files ~extensions ~source_paths ();
+        }
       in
       Watchman.Subscriber.subscribe subscriber_setting >>= Lwt.return_some
 

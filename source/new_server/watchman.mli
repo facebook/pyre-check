@@ -69,6 +69,13 @@ module Filter : sig
   }
   [@@deriving sexp, compare, hash]
 
+  val from_server_configurations
+    :  critical_files:ServerConfiguration.CriticalFile.t list ->
+    extensions:Configuration.Extension.t list ->
+    source_paths:ServerConfiguration.SourcePaths.t ->
+    unit ->
+    t
+
   val watchman_expression_of : t -> Yojson.Safe.t
 end
 

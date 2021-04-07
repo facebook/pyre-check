@@ -175,11 +175,6 @@ module CriticalFile = struct
     | FullPath path -> `Assoc ["full_path", `String (Path.absolute path)]
 
 
-  let base_name_of = function
-    | BaseName name -> name
-    | FullPath path -> Path.last path
-
-
   let matches ~path = function
     | BaseName expect_name ->
         let actual_name = Path.last path in
