@@ -1,0 +1,7 @@
+{
+  "allowDirectMerges": [
+    "gh-pages"
+  ],
+  "allowBotCommands": false,
+  "internalRepository": "fbsource",
+}
