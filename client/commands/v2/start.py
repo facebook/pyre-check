@@ -652,8 +652,7 @@ def server_argument_file(server_arguments: Arguments) -> Iterator[Path]:
         yield Path(argument_file.name)
 
 
-@remote_logging.log_usage(command_name="start")
-def run(
+def run_start(
     configuration: configuration_module.Configuration,
     start_arguments: command_arguments.StartArguments,
 ) -> commands.ExitCode:
@@ -694,3 +693,11 @@ def run(
                     wait_on_initialization=start_arguments.wait_on_initialization
                 ),
             )
+
+
+@remote_logging.log_usage(command_name="start")
+def run(
+    configuration: configuration_module.Configuration,
+    start_arguments: command_arguments.StartArguments,
+) -> commands.ExitCode:
+    return run_start(configuration, start_arguments)
