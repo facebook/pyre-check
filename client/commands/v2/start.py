@@ -10,6 +10,7 @@ import enum
 import json
 import logging
 import os
+import re
 import subprocess
 import tempfile
 from pathlib import Path
@@ -23,6 +24,7 @@ from typing import (
     Mapping,
     Optional,
     Sequence,
+    Set,
     Tuple,
     Union,
 )
@@ -41,6 +43,13 @@ LOG: logging.Logger = logging.getLogger(__name__)
 
 ARTIFACT_ROOT_NAME: str = "link_trees"
 SERVER_LOG_FILE_FORMAT: str = "server.stderr.%Y_%m_%d_%H_%M_%S_%f"
+
+# NOTE(grievejia): This is a very restricted form of target specification used
+# for a hacky heuristic. We should consider moving away from it in the future.
+# Do NOT use it for general-purpose target parsing.
+BUCK_TARGET_PATTERN: str = (
+    r"[A-Za-z0-9._-]*//[A-Za-z0-9/._-]+((:[A-Za-z0-9_/.=,@~+-]+)|(/\.\.\.))"
+)
 
 
 class MatchPolicy(enum.Enum):
@@ -137,6 +146,23 @@ class SimpleSourcePath:
             "paths": [element.command_line_argument() for element in self.elements],
         }
 
+    def get_checked_directory_allowlist(self) -> Set[str]:
+        return {element.path() for element in self.elements}
+
+
+def get_checked_directory_for_target(target: str) -> Optional[str]:
+    match = re.search(BUCK_TARGET_PATTERN, target)
+    if match is None:
+        return None
+
+    result = match[0]
+    root_index = result.find("//")
+    if root_index != -1:
+        result = result[root_index + 2 :]
+    result = result.replace("/...", "")
+    result = result.split(":")[0]
+    return result
+
 
 @dataclasses.dataclass(frozen=True)
 class BuckSourcePath:
@@ -160,6 +186,15 @@ class BuckSourcePath:
             ),
             "source_root": str(self.source_root),
             "artifact_root": str(self.artifact_root),
+        }
+
+    def get_checked_directory_allowlist(self) -> Set[str]:
+        return {
+            str(self.source_root / directory)
+            for directory in (
+                get_checked_directory_for_target(target) for target in self.targets
+            )
+            if directory is not None
         }
 
 
@@ -452,14 +487,14 @@ def create_server_arguments(
         else None
     )
 
-    check_directory_allowlist = [
+    checked_directory_allowlist = [
         search_path.path() for search_path in source_directories
     ] + configuration.get_existent_do_not_ignore_errors_in_paths()
     return Arguments(
         log_path=configuration.log_directory,
         global_root=configuration.project_root,
         additional_logging_sections=additional_logging_sections,
-        checked_directory_allowlist=check_directory_allowlist,
+        checked_directory_allowlist=checked_directory_allowlist,
         checked_directory_blocklist=(
             configuration.get_existent_ignore_all_errors_paths()
         ),

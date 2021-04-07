@@ -29,6 +29,7 @@ from ..start import (
     get_server_identifier,
     get_profiling_log_path,
     get_source_path,
+    get_checked_directory_for_target,
     background_server_log_file,
     ARTIFACT_ROOT_NAME,
 )
@@ -535,6 +536,54 @@ class StartTest(testslide.TestCase):
                     targets=["//ct:ayla"],
                 )
             )
+
+    def test_get_checked_directory_for_target(self) -> None:
+        self.assertEqual(
+            get_checked_directory_for_target(
+                "'//foo/...' - set('//foo/bar/...' '//foo/baz/...')"
+            ),
+            "foo",
+        )
+        self.assertEqual(
+            get_checked_directory_for_target("//path/directory/..."), "path/directory"
+        )
+        self.assertEqual(
+            get_checked_directory_for_target("/path/directory:target"), None
+        )
+        self.assertEqual(
+            get_checked_directory_for_target("prefix//path/directory/..."),
+            "path/directory",
+        )
+        self.assertEqual(
+            get_checked_directory_for_target("prefix//path/directory:target"),
+            "path/directory",
+        )
+
+    def test_get_checked_directory_for_simple_source_path(self) -> None:
+        element0 = configuration.SimpleSearchPathElement("ozzie")
+        element1 = configuration.SubdirectorySearchPathElement("diva", "flea")
+        element2 = configuration.SitePackageSearchPathElement("super", "slash")
+        self.assertCountEqual(
+            SimpleSourcePath(
+                [element0, element1, element2, element0]
+            ).get_checked_directory_allowlist(),
+            [element0.path(), element1.path(), element2.path()],
+        )
+
+    def test_get_checked_directory_for_buck_source_path(self) -> None:
+        self.assertCountEqual(
+            BuckSourcePath(
+                source_root=Path("/source"),
+                artifact_root=Path("/artifact"),
+                targets=[
+                    "//ct:robo",
+                    "//ct:magus",
+                    "future//ct/guardia/...",
+                    "//ct/guardia:schala",
+                ],
+            ).get_checked_directory_allowlist(),
+            ["/source/ct", "/source/ct/guardia"],
+        )
 
     def test_create_server_arguments(self) -> None:
         with tempfile.TemporaryDirectory() as root:
