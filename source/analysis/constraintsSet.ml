@@ -747,6 +747,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
         >>| (fun left -> solve_less_or_equal order ~constraints ~left ~right)
         |> Option.value ~default:impossible
     | Type.Callable _, _ -> impossible
+    | Type.Literal (String (LiteralValue _)), Type.Literal (String AnyLiteral) -> [constraints]
     | _, Type.Literal _ -> impossible
     | Type.Literal _, _ ->
         solve_less_or_equal order ~constraints ~left:(Type.weaken_literals left) ~right
