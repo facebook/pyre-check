@@ -1700,10 +1700,10 @@ let test_qualify _ =
     |};
   assert_qualify
     {|
-      def foo(*args, **kwargs): ...
+      def foo( *args, **kwargs): ...
     |}
     {|
-      def qualifier.foo(*$parameter$args, **$parameter$kwargs): ...
+      def qualifier.foo( *$parameter$args, **$parameter$kwargs): ...
     |};
   (* Class with the same name as the module. *)
   assert_qualify {|
@@ -5603,17 +5603,24 @@ let test_expand_import_python_calls _ =
   |};
   assert_expand
     {|
-    import_python("cubism/shared.cinc", "*")
+      import_python("cubism/shared.cinc", "*")
     |}
     {|
       from cubism.shared.cinc import *
     |};
   assert_expand
     {|
-    import_python("cubism/shared.cinc")
+      import_python("cubism/shared.cinc")
     |}
     {|
       import cubism.shared.cinc
+    |};
+  assert_expand
+    {|
+      import_thrift("cubism/shared.thrift")
+    |}
+    {|
+      import cubism.shared.thrift
     |};
   ()
 

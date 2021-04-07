@@ -3718,6 +3718,7 @@ let expand_starred_type_variable_tuple source =
     source
 
 
+(* Special syntax added to support configerator. *)
 let expand_import_python_calls ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source) =
   let module Transform = Transform.MakeStatementTransformer (struct
     type t = Reference.t
@@ -3730,7 +3731,8 @@ let expand_import_python_calls ({ Source.source_path = { SourcePath.qualifier; _
               Node.value =
                 Call
                   {
-                    callee = { Node.value = Name (Name.Identifier "import_python"); _ };
+                    callee =
+                      { Node.value = Name (Name.Identifier ("import_python" | "import_thrift")); _ };
                     arguments =
                       [
                         {
@@ -3764,7 +3766,8 @@ let expand_import_python_calls ({ Source.source_path = { SourcePath.qualifier; _
               Node.value =
                 Call
                   {
-                    callee = { Node.value = Name (Name.Identifier "import_python"); _ };
+                    callee =
+                      { Node.value = Name (Name.Identifier ("import_python" | "import_thrift")); _ };
                     arguments =
                       {
                         Call.Argument.value =
