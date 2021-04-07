@@ -210,6 +210,7 @@ class Arguments:
 
     log_path: str
     global_root: str
+    source_paths: SourcePath
 
     additional_logging_sections: Sequence[str] = dataclasses.field(default_factory=list)
     checked_directory_allowlist: Sequence[str] = dataclasses.field(default_factory=list)
@@ -232,9 +233,6 @@ class Arguments:
         default_factory=list
     )
     show_error_traces: bool = False
-    source_paths: Sequence[configuration_module.SearchPathElement] = dataclasses.field(
-        default_factory=list
-    )
     store_type_check_resolution: bool = False
     strict: bool = False
     taint_models_path: Sequence[str] = dataclasses.field(default_factory=list)
@@ -249,9 +247,7 @@ class Arguments:
     def serialize(self) -> Dict[str, Any]:
         local_root = self.local_root
         return {
-            "source_paths": [
-                element.command_line_argument() for element in self.source_paths
-            ],
+            "source_paths": self.source_paths.serialize(),
             "search_paths": [
                 element.command_line_argument() for element in self.search_paths
             ],
@@ -452,13 +448,7 @@ def create_server_arguments(
     nonexistent directories. It is idempotent though, since it does not alter
     any filesystem state.
     """
-    source_directories: Sequence[
-        configuration_module.SearchPathElement
-    ] = configuration.get_existent_source_directories()
-    if len(source_directories) == 0:
-        raise configuration_module.InvalidConfiguration(
-            "New server does not have buck support yet."
-        )
+    source_paths = get_source_path(configuration)
 
     logging_sections = start_arguments.logging_sections
     additional_logging_sections = (
@@ -487,14 +477,14 @@ def create_server_arguments(
         else None
     )
 
-    checked_directory_allowlist = [
-        search_path.path() for search_path in source_directories
-    ] + configuration.get_existent_do_not_ignore_errors_in_paths()
     return Arguments(
         log_path=configuration.log_directory,
         global_root=configuration.project_root,
         additional_logging_sections=additional_logging_sections,
-        checked_directory_allowlist=checked_directory_allowlist,
+        checked_directory_allowlist=(
+            list(source_paths.get_checked_directory_allowlist())
+            + configuration.get_existent_do_not_ignore_errors_in_paths()
+        ),
         checked_directory_blocklist=(
             configuration.get_existent_ignore_all_errors_paths()
         ),
@@ -516,7 +506,7 @@ def create_server_arguments(
         ),
         search_paths=configuration.get_existent_search_paths(),
         show_error_traces=start_arguments.show_error_traces,
-        source_paths=source_directories,
+        source_paths=source_paths,
         store_type_check_resolution=start_arguments.store_type_check_resolution,
         strict=configuration.strict,
         taint_models_path=configuration.taint_models_path,

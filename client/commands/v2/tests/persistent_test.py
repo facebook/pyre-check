@@ -524,6 +524,7 @@ class PersistentTest(testslide.TestCase):
             binary_location="/bin/pyre",
             server_identifier="foo",
             pyre_arguments=start.Arguments(
+                source_paths=start.SimpleSourcePath(),
                 log_path="/log/path",
                 global_root="/global/root",
             ),

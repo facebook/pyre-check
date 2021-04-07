@@ -144,18 +144,21 @@ class ArgumentTest(testslide.TestCase):
             Arguments(
                 log_path="foo",
                 global_root="bar",
-                source_paths=[configuration.SimpleSearchPathElement("source")],
+                source_paths=SimpleSourcePath(
+                    [configuration.SimpleSearchPathElement("source")]
+                ),
             ),
             [
                 ("log_path", "foo"),
                 ("global_root", "bar"),
-                ("source_paths", ["source"]),
+                ("source_paths", {"kind": "simple", "paths": ["source"]}),
             ],
         )
         assert_serialized(
             Arguments(
                 log_path="/log",
                 global_root="/project",
+                source_paths=SimpleSourcePath(),
                 excludes=["/excludes"],
                 checked_directory_allowlist=["/allows"],
                 checked_directory_blocklist=["/blocks"],
@@ -174,6 +177,7 @@ class ArgumentTest(testslide.TestCase):
             Arguments(
                 log_path="/log",
                 global_root="/project",
+                source_paths=SimpleSourcePath(),
                 debug=True,
                 strict=True,
                 show_error_traces=True,
@@ -198,6 +202,7 @@ class ArgumentTest(testslide.TestCase):
             Arguments(
                 log_path="/log",
                 global_root="/project",
+                source_paths=SimpleSourcePath(),
                 parallel=True,
                 number_of_workers=20,
             ),
@@ -207,6 +212,7 @@ class ArgumentTest(testslide.TestCase):
             Arguments(
                 log_path="/log",
                 global_root="/project",
+                source_paths=SimpleSourcePath(),
                 relative_local_root="local",
                 watchman_root=Path("/project"),
             ),
@@ -216,6 +222,7 @@ class ArgumentTest(testslide.TestCase):
             Arguments(
                 log_path="/log",
                 global_root="/project",
+                source_paths=SimpleSourcePath(),
                 saved_state_action=LoadSavedStateFromProject(
                     project_name="my_project", project_metadata="my_metadata"
                 ),
@@ -238,6 +245,7 @@ class ArgumentTest(testslide.TestCase):
             Arguments(
                 log_path="/log",
                 global_root="/project",
+                source_paths=SimpleSourcePath(),
                 additional_logging_sections=["foo", "bar"],
                 remote_logging=RemoteLogging(logger="/logger", identifier="baz"),
                 profiling_output=Path("/derp"),
@@ -665,11 +673,13 @@ class StartTest(testslide.TestCase):
                         configuration.SimpleSearchPathElement(str(root_path / "search"))
                     ],
                     show_error_traces=True,
-                    source_paths=[
-                        configuration.SimpleSearchPathElement(
-                            str(root_path / "local/src")
-                        )
-                    ],
+                    source_paths=SimpleSourcePath(
+                        [
+                            configuration.SimpleSearchPathElement(
+                                str(root_path / "local/src")
+                            )
+                        ]
+                    ),
                     store_type_check_resolution=True,
                     strict=True,
                     taint_models_path=[str(root_path / "taint")],
