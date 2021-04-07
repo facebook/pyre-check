@@ -309,6 +309,7 @@ let test_filter_creation context =
          [
            CriticalFile.BaseName "foo.txt";
            CriticalFile.FullPath (Path.create_absolute "/derp/bar.txt");
+           CriticalFile.Extension "bar";
          ]
        ~extensions:[]
        ~source_paths:(SourcePaths.Simple [])
@@ -316,6 +317,17 @@ let test_filter_creation context =
     ~expected:
       {
         base_names = [".pyre_configuration"; ".pyre_configuration.local"; "foo.txt"; "bar.txt"];
+        suffixes = ["py"; "pyi"; "bar"];
+      };
+  assert_filter
+    (from_server_configurations
+       ~critical_files:[CriticalFile.Extension "py"; CriticalFile.Extension "pyi"]
+       ~extensions:[]
+       ~source_paths:(SourcePaths.Simple [])
+       ())
+    ~expected:
+      {
+        base_names = [".pyre_configuration"; ".pyre_configuration.local"];
         suffixes = ["py"; "pyi"];
       };
   assert_filter

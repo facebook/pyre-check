@@ -31,6 +31,7 @@ end
 module CriticalFile : sig
   type t =
     | BaseName of string
+    | Extension of string
     | FullPath of Path.t
   [@@deriving sexp, compare, hash, yojson]
 

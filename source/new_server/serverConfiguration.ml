@@ -157,11 +157,13 @@ end
 module CriticalFile = struct
   type t =
     | BaseName of string
+    | Extension of string
     | FullPath of Path.t
   [@@deriving sexp, compare, hash]
 
   let of_yojson = function
     | `Assoc [("base_name", `String name)] -> Result.Ok (BaseName name)
+    | `Assoc [("extension", `String name)] -> Result.Ok (Extension name)
     | `Assoc [("full_path", `String path)] -> Result.Ok (FullPath (Path.create_absolute path))
     | _ as json ->
         let message =
@@ -172,6 +174,7 @@ module CriticalFile = struct
 
   let to_yojson = function
     | BaseName name -> `Assoc ["base_name", `String name]
+    | Extension name -> `Assoc ["extension", `String name]
     | FullPath path -> `Assoc ["full_path", `String (Path.absolute path)]
 
 
@@ -179,6 +182,9 @@ module CriticalFile = struct
     | BaseName expect_name ->
         let actual_name = Path.last path in
         String.equal expect_name actual_name
+    | Extension extension ->
+        let actual_name = Path.last path in
+        String.is_suffix actual_name ~suffix:("." ^ extension)
     | FullPath expect_path -> Path.equal expect_path path
 
 

@@ -158,11 +158,12 @@ module Filter = struct
   let from_server_configurations ~critical_files ~extensions ~source_paths () =
     let open ServerConfiguration in
     let base_name_of = function
-      | CriticalFile.BaseName name -> name
-      | CriticalFile.FullPath path -> Path.last path
+      | CriticalFile.BaseName name -> Some name
+      | CriticalFile.FullPath path -> Some (Path.last path)
+      | CriticalFile.Extension _ -> None
     in
     let base_names =
-      List.map critical_files ~f:base_name_of
+      List.filter_map critical_files ~f:base_name_of
       |> String.Set.of_list
       |> fun set ->
       Set.add set ".pyre_configuration"
@@ -176,8 +177,19 @@ module Filter = struct
       | SourcePaths.Simple _ -> set )
       |> Set.to_list
     in
+    let extension_of = function
+      | CriticalFile.BaseName _
+      | CriticalFile.FullPath _ ->
+          (* We do not need to track these files by extensions since they are already tracked by
+             base_names. *)
+          None
+      | CriticalFile.Extension suffix -> Some suffix
+    in
     let suffixes =
       String.Set.of_list (List.map ~f:Configuration.Extension.suffix extensions)
+      |> fun set ->
+      List.filter_map critical_files ~f:extension_of
+      |> List.fold ~init:set ~f:String.Set.add
       |> fun set ->
       Set.add set "py"
       |> fun set ->
