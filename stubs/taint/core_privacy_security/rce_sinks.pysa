@@ -10,7 +10,7 @@ def __import__(
   level,
 ): ...
 def pickle.loads(
-  data: TaintSink[RemoteCodeExecution],
+  data: TaintSink[ExecDeserializationSink, RemoteCodeExecution],
   /,
   *,
   fix_imports,
@@ -19,7 +19,7 @@ def pickle.loads(
   buffers,
 ): ...
 def pickle.load(
-    file: TaintSink[RemoteCodeExecution],
+    file: TaintSink[ExecDeserializationSink, RemoteCodeExecution],
     *,
     fix_imports,
     encoding,
@@ -28,16 +28,16 @@ def pickle.load(
   ): ...
 def pickle.Unpickler.__init__(
     self,
-    file: TaintSink[RemoteCodeExecution],
+    file: TaintSink[ExecDeserializationSink, RemoteCodeExecution],
     fix_imports,
     encoding,
     errors
 ): ...
 def yaml.load(
-  stream: TaintSink[RemoteCodeExecution],
+  stream: TaintSink[ExecDeserializationSink, RemoteCodeExecution],
   Loader,
 ): ...
-def yaml.load_all(stream: TaintSink[RemoteCodeExecution], Loader): ...
+def yaml.load_all(stream: TaintSink[ExecDeserializationSink, RemoteCodeExecution], Loader): ...
 # Subprocess
 def subprocess.run(
     args: TaintSink[ExecArgSink, ViaTypeOf[args]],
@@ -187,11 +187,11 @@ def os.spawnvp(mode, file: TaintSink[RemoteCodeExecution], args: TaintSink[ExecA
 def os.system(command: TaintSink[RemoteCodeExecution]): ...
 
 # marshaling
-def marshal.loads(__bytes: TaintSink[RemoteCodeExecution]): ...
+def marshal.loads(__bytes: TaintSink[ExecDeserializationSink, RemoteCodeExecution]): ...
 def marshal.load(__file: TaintSink[FileSystem_Other]): ...
 
 # shelve library https://docs.python.org/3/library/shelve.html
-def shelve.open(filename: TaintSink[RemoteCodeExecution], flag, protocol, writeback): ...
+def shelve.open(filename: TaintSink[ExecDeserializationSink, RemoteCodeExecution], flag, protocol, writeback): ...
 
 # Features https://docs.python.org/3/library/shlex.html#shlex.quote
 def shlex.quote(s: TaintInTaintOut[Via[shell_escape]]): ...
