@@ -109,15 +109,13 @@ module BuckBuildSystem = struct
       Buck.Builder.cleanup state.builder;
       Lwt.return_unit
     in
-    Lwt.return
-      {
-        update;
-        cleanup;
-        lookup_source =
-          Buck.Builder.lookup_source ~index:state.build_map_index ~builder:state.builder;
-        lookup_artifact =
-          Buck.Builder.lookup_artifact ~index:state.build_map_index ~builder:state.builder;
-      }
+    let lookup_source path =
+      Buck.Builder.lookup_source ~index:state.build_map_index ~builder:state.builder path
+    in
+    let lookup_artifact path =
+      Buck.Builder.lookup_artifact ~index:state.build_map_index ~builder:state.builder path
+    in
+    Lwt.return { update; cleanup; lookup_source; lookup_artifact }
 
 
   let initialize_from_options
