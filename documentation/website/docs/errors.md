@@ -152,6 +152,18 @@ print("a" + f())
 
 The best way to silence this error is to add non-`Any` return annotation to every function.
 
+### 6: Incompatible Parameter Type
+Pyre will error if an argument passed into a function call does not match the expected parameter type of that function.
+
+```python
+def takes_int(x: int) -> None:
+  pass
+def f(x: Optional[int]) -> None:
+  takes_int(x) # Incompatible parameter type error
+```
+
+If you are seeing errors with invariant containers where some `Container[T]` is expected but you are passing `Container[S]` where `S < T`, please see [Covariance and Contravariance](errors#covariance-and-contravariance).
+
 ### 9: Incompatible Variable Type
 Pyre will error when assigning incompatible types to local variables and parameters that were explicitly annotated.
 
