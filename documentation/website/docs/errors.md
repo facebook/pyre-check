@@ -493,6 +493,13 @@ def bar(b: Bar) -> None:
 
 To fix this error, change the definition of this attribute to something that is mutable, if it is not intended to be read-only.
 
+### 51: Unused Local Mode
+Pyre only supports two modes of type checking, [unsafe](types-in-python#gradual-typing) and [strict](types-in-python#strict-mode). By default, every file runs in unsafe mode, but you can change this default to strict in your [configuration file](configuration#configuration-files).
+
+You can also change the type checking mode of a single file by adding a local mode in the form of a `# pyre-strict` or `# pyre-unsafe` comment on its own line to the file header. This will ensure that file checks under the specified mode regardless of the default.
+
+If you specify more than one local mode, Pyre will error and ask you to remove all but one.
+
 ### 53: Missing annotation for captured variables
 Pyre makes no attempt at trying to infer the types across function boundaries. The statement holds for nested functions as well.
 From a nested function's perspective, a variable defined in an nesting function behaves not too differently from a global variable. Therefore, Pyre treats such variables in the same way as it treats global variable: an explicit annotation is required if strict mode is turned on.
