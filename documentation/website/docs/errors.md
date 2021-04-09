@@ -199,6 +199,33 @@ def f() -> None:
     foo: Foo[Optional[int]] = Foo[Optional[int]](x=1)
 ```
 
+### 11: Undefined or Invalid Type
+Pyre recognizes class names as valid annotations. Most basic types are imported from the `typing` module or are already available from builtins like `str`, `int`, `bool`, etc. You can also define your own type alias on the global scope, which can be used as annotations:
+
+```python
+from typing_extensions import TypeAlias
+
+INT_OR_STR: TypeAlias = Union[int, str]
+```
+
+If you use a name as an annotation that is not a class name or valid alias, you will see this error:
+
+```python
+GLOBAL_VALUE = "string"
+
+def foo() -> GLOBAL_VALUE: # Undefined or Invalid type error
+  pass
+```
+
+You can fix this error by verifying that your annotation is
+1. properly imported from `typing` if applicable.
+2. properly defined in the module you are importing from. If the module you are importing from has a [stub file](#third-party-libraries), you should check the definition there.
+
+For type aliases, check that your type alias is defined
+1. with a valid type on the RHS. If you provide an annotation for the TypeAlias assignment, it must be `typing_extensions.TypeAlias`.
+2. on the global scope, not nested inside a function or class.
+
+
 ### 14,15: Behavioral Subtyping
 Method overrides should follow
 [Liskov's substitution principle](https://en.wikipedia.org/wiki/Liskov_substitution_principle).
