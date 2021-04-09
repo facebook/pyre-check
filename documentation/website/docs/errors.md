@@ -427,6 +427,28 @@ takes_int_list(float_list)  # this call is OK because MyList is contravariant: M
 # problem with return above is clear
 ```
 
+### 41: Invalid Assignment
+Pyre will error on assignments to final attributes, read-only properties, and class variables from a class instance. For example,
+
+```python
+class Foo:
+  field: Final[Optional[int]] = 1
+
+  def foo() -> None:
+    self.field = 2 # Invalid assignment
+
+class Bar:
+    _x = 1
+    @property
+    def x(self) -> int:
+        return self._x
+
+def bar(b: Bar) -> None:
+    b.x = 1 # Invalid assignment
+```
+
+To fix this error, change the definition of this attribute to something that is mutable, if it is not intended to be read-only.
+
 ### 53: Missing annotation for captured variables
 Pyre makes no attempt at trying to infer the types across function boundaries. The statement holds for nested functions as well.
 From a nested function's perspective, a variable defined in an nesting function behaves not too differently from a global variable. Therefore, Pyre treats such variables in the same way as it treats global variable: an explicit annotation is required if strict mode is turned on.
