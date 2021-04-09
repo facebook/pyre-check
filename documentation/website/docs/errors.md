@@ -493,6 +493,25 @@ def bar(b: Bar) -> None:
 
 To fix this error, change the definition of this attribute to something that is mutable, if it is not intended to be read-only.
 
+### 49: Unsafe Cast
+Pyre supports `typing.cast` to force the type checker to accept a given type for your expression, no matter what it would otherwise infer that type to be. This is a good escape hatch but can also hide type inconsistencies and introduce unsoundness. For example:
+
+```python
+def foo(x: int) -> str:
+    y = cast(str, x)
+    return y # No type error, even though this is unsound.
+```
+
+It is safe to broaden the inferred type of a variable. In other words, casting an expression to a more general type than the type checker thinks it has is sound. If you wish to broaden the inferred type without running the risk of introducing type inconsistencies, you can use `pyre_extensions.safe_cast`. This will warn if the type you are casting to is not greater than or equal to the inferred type of the expression.
+
+```python
+def foo(x: int) -> str:
+    y = safe_cast(str, x) # Unsafe cast error
+    z = safe_cast(Union[int, str], x) # No error
+    return z # Invalid return type error
+```
+
+
 ### 51: Unused Local Mode
 Pyre only supports two modes of type checking, [unsafe](types-in-python#gradual-typing) and [strict](types-in-python#strict-mode). By default, every file runs in unsafe mode, but you can change this default to strict in your [configuration file](configuration#configuration-files).
 
