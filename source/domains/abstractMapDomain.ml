@@ -99,7 +99,7 @@ module Make (Key : KEY) (Element : AbstractDomainCore.S) = struct
             Format.fprintf formatter "@,%a -> %a" Key.pp key Element.pp value
           in
           let pp_pairs formatter = List.iter ~f:(pp_pair formatter) in
-          Format.fprintf formatter "{@[<v 1>%a@]@,}" pp_pairs pairs
+          Format.fprintf formatter "{@[<v 2>%a@]@,}" pp_pairs pairs
 
 
     let show = Format.asprintf "%a" pp

@@ -738,9 +738,9 @@ module IntToStringSet = struct
     let assert_show ~expected map = assert_equal ~printer:Fn.id expected (show map) in
     assert_show ~expected:"{}" (build_map []);
     assert_show ~expected:"{0 -> [a]}" (build_map [0, ["a"]]);
-    assert_show ~expected:"{\n  0 -> [a]\n  1 -> [b]\n}" (build_map [0, ["a"]; 1, ["b"]]);
+    assert_show ~expected:"{\n   0 -> [a]\n   1 -> [b]\n}" (build_map [0, ["a"]; 1, ["b"]]);
     assert_show
-      ~expected:"{\n  0 -> [a]\n  1 -> [b]\n  2 -> [c]\n}"
+      ~expected:"{\n   0 -> [a]\n   1 -> [b]\n   2 -> [c]\n}"
       (build_map [0, ["a"]; 1, ["b"]; 2, ["c"]])
 
 
@@ -2079,9 +2079,9 @@ module TreeOfStringSets = struct
       ~f:Fn.id
       ~expected:
         [
-          "a", "{\n  [a] -> [a]\n}";
-          "aa", "{\n  [a][b] -> [aa]\n}";
-          "bb", "{\n  [a][b] -> [bb]\n}";
+          "a", "{\n   [a] -> [a]\n}";
+          "aa", "{\n   [a][b] -> [aa]\n}";
+          "bb", "{\n   [a][b] -> [bb]\n}";
         ];
     test
       ~initial:
@@ -2091,7 +2091,7 @@ module TreeOfStringSets = struct
         ]
       ~by:Path
       ~f:(fun (path, _) -> List.take path 1 |> AbstractTreeDomain.Label.show_path)
-      ~expected:["[a]", "{\n  [a] -> [a]\n  [a][b] -> [aa, bb]\n}"]
+      ~expected:["[a]", "{\n   [a] -> [a]\n   [a][b] -> [aa, bb]\n}"]
 
 
   let compare left right = less_or_equal ~left ~right && less_or_equal ~left:right ~right:left
@@ -2206,10 +2206,12 @@ module TreeOfStringSets = struct
     assert_show ~expected:"[]" (parse_tree []);
     assert_show ~expected:"[a]" (parse_tree ["", ["a"]]);
     assert_show ~expected:"[a, b]" (parse_tree ["", ["a"; "b"]]);
-    assert_show ~expected:"{\n  [a] -> [a]\n}" (parse_tree ["a", ["a"]]);
-    assert_show ~expected:"{\n  [a] -> [a]\n  [b] -> [b]\n}" (parse_tree ["a", ["a"]; "b", ["b"]]);
+    assert_show ~expected:"{\n   [a] -> [a]\n}" (parse_tree ["a", ["a"]]);
     assert_show
-      ~expected:"{\n  [a]\n  [b] -> [b]\n  [c][d] -> [c]\n}"
+      ~expected:"{\n   [a] -> [a]\n   [b] -> [b]\n}"
+      (parse_tree ["a", ["a"]; "b", ["b"]]);
+    assert_show
+      ~expected:"{\n   [a]\n   [b] -> [b]\n   [c][d] -> [c]\n}"
       (parse_tree ["", ["a"]; "b", ["b"]; "c.d", ["c"]]);
 
     (* limit_to width. *)

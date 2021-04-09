@@ -302,7 +302,7 @@ module Make (Config : CONFIG) (Element : AbstractDomainCore.S) () = struct
         | _ -> Format.fprintf formatter "@,%a -> %a" Label.pp_path path Element.pp element
       in
       let pp _ = fold_tree_paths ~init:() ~f:pp_node in
-      Format.fprintf formatter "{@[<v 1>%a@]@,}" pp tree
+      Format.fprintf formatter "{@[<v 2>%a@]@,}" pp tree
 
 
   let show = Format.asprintf "%a" pp
