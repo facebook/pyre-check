@@ -73,7 +73,11 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
   let log = FunctionContext.log
 
   module rec FixpointState : FixpointState = struct
-    type t = { taint: ForwardState.t } [@@deriving show { with_path = false }]
+    type t = { taint: ForwardState.t }
+
+    let pp formatter { taint } = ForwardState.pp formatter taint
+
+    let show = Format.asprintf "%a" pp
 
     let less_or_equal ~left:{ taint = left } ~right:{ taint = right } =
       ForwardState.less_or_equal ~left ~right
@@ -157,9 +161,9 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           Model.get_callsite_model ~resolution ~call_target ~arguments
         in
         log
-          "Forward analysis of call: %a\nCall site model: %a"
+          "Forward analysis of call: %a@,Call site model:@,%a"
           Expression.pp
-          (Expression.Call { Call.callee; arguments } |> Node.create ~location:Location.any)
+          (Expression.Call { Call.callee; arguments } |> Node.create_with_default_location)
           Model.pp
           taint_model;
         let sink_argument_matches =
@@ -1534,7 +1538,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
 
     let forward ~key state ~statement =
       log
-        "Forward analysis of statement: `%a`\nWith forward state: %a"
+        "Forward analysis of statement: `%a`@,With forward state: %a"
         Statement.pp
         statement
         pp
@@ -1674,9 +1678,9 @@ let run ~environment ~qualifier ~define ~call_graph_of_define ~existing_model =
         | None -> None
       in
       log
-        "Resolved callees for call `%a`: %a"
+        "Resolved callees for call `%a`:@,%a"
         Expression.pp
-        (Node.create ~location:Location.any (Expression.Call call))
+        (Node.create_with_default_location (Expression.Call call))
         Interprocedural.CallGraph.pp_raw_callees_option
         callees;
       callees
@@ -1724,7 +1728,7 @@ let run ~environment ~qualifier ~define ~call_graph_of_define ~existing_model =
           && not (BackwardState.Tree.is_bottom sink_tree)
         then
           log
-            "Sources flowing into sinks at `%a`\nWith sources: %a\nWith sinks: %a"
+            "Sources flowing into sinks at `%a`@,With sources: %a@,With sinks: %a"
             Location.WithModule.pp
             location
             ForwardState.Tree.pp
@@ -1807,7 +1811,7 @@ let run ~environment ~qualifier ~define ~call_graph_of_define ~existing_model =
   in
   let () =
     match exit_state with
-    | Some exit_state -> log "Exit state: %a" FixpointState.pp exit_state
+    | Some exit_state -> log "Exit state:@,%a" FixpointState.pp exit_state
     | None -> log "No exit state found"
   in
   let resolution = TypeEnvironment.ReadOnly.global_resolution environment in
@@ -1819,7 +1823,7 @@ let run ~environment ~qualifier ~define ~call_graph_of_define ~existing_model =
       extract_source_model ~define:define.value ~resolution ~features_to_attach taint
     in
     let model = TaintResult.Forward.{ source_taint } in
-    let () = log "Forward Model:\n%a" TaintResult.Forward.pp_model model in
+    let () = log "Forward Model:@,%a" TaintResult.Forward.pp_model model in
     model
   in
   let issues = Context.generate_issues () in

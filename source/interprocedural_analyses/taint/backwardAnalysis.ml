@@ -100,7 +100,11 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
   let read_tree = BackwardState.Tree.read ~transform_non_leaves
 
   module rec FixpointState : FixpointState = struct
-    type t = { taint: BackwardState.t } [@@deriving show { with_path = false }]
+    type t = { taint: BackwardState.t }
+
+    let pp formatter { taint } = BackwardState.pp formatter taint
+
+    let show = Format.asprintf "%a" pp
 
     let create () = { taint = BackwardState.empty }
 
@@ -153,9 +157,9 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
         in
         let taint_model = Model.get_callsite_model ~resolution ~call_target ~arguments in
         log
-          "Backward analysis of call: %a\nCall site model: %a"
+          "Backward analysis of call: %a@,Call site model:@,%a"
           Expression.pp
-          (Node.create ~location:Location.any call_expression)
+          (Node.create_with_default_location call_expression)
           Model.pp
           taint_model;
         let { TaintResult.backward; mode; _ } = taint_model.model in
@@ -1288,7 +1292,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
 
     let backward ~key state ~statement =
       log
-        "Backward analysis of statement: `%a`\nWith backward state: %a"
+        "Backward analysis of statement: `%a`@,With backward state: %a"
         Statement.pp
         statement
         pp
@@ -1463,9 +1467,9 @@ let run ~environment ~qualifier ~define ~call_graph_of_define ~existing_model ~t
         | None -> None
       in
       log
-        "Resolved callees for call `%a`: %a"
+        "Resolved callees for call `%a`:@,%a"
         Expression.pp
-        (Node.create ~location:Location.any (Expression.Call call))
+        (Node.create_with_default_location (Expression.Call call))
         Interprocedural.CallGraph.pp_raw_callees_option
         callees;
       callees
@@ -1505,7 +1509,7 @@ let run ~environment ~qualifier ~define ~call_graph_of_define ~existing_model ~t
   in
   let () =
     match entry_state with
-    | Some entry_state -> log "Entry state: %a" FixpointState.pp entry_state
+    | Some entry_state -> log "Entry state:@,%a" FixpointState.pp entry_state
     | None -> log "No entry state found"
   in
   let resolution = TypeEnvironment.ReadOnly.global_resolution environment in
@@ -1518,7 +1522,7 @@ let run ~environment ~qualifier ~define ~call_graph_of_define ~existing_model ~t
         ~existing_backward:existing_model.TaintResult.backward
         taint
     in
-    let () = log "Backward Model:\n%a" TaintResult.Backward.pp_model model in
+    let () = log "Backward Model:@,%a" TaintResult.Backward.pp_model model in
     model
   in
   Statistics.performance
