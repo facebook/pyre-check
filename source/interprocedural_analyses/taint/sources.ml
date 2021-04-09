@@ -15,18 +15,19 @@ module T = struct
         source_name: string;
         subkind: string;
       }
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, eq, sexp, hash]
 end
 
 include T
 
-let _ = show (* unused *)
+let pp formatter = function
+  | Attach -> Format.fprintf formatter "Attach"
+  | NamedSource name -> Format.fprintf formatter "%s" name
+  | ParametricSource { source_name; subkind } ->
+      Format.fprintf formatter "%s[%s]" source_name subkind
 
-let show = function
-  | Attach -> "Attach"
-  | NamedSource name -> name
-  | ParametricSource { source_name; subkind } -> Format.sprintf "%s[%s]" source_name subkind
 
+let show = Format.asprintf "%a" pp
 
 let ignore_leaf_at_call = function
   | Attach -> true
