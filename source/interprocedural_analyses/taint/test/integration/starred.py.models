@@ -22,7 +22,11 @@
               "end": 36
             },
             "leaves": [ { "kind": "Test", "name": "__test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+            "features": [
+              { "always-via": "issue-broadening" },
+              { "always-via": "broadening" },
+              { "always-via": "special_source" }
+            ]
           }
         ]
       },
@@ -48,6 +52,8 @@
       }
     ],
     "features": [
+      { "always-via": "issue-broadening" },
+      { "always-via": "broadening" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ]

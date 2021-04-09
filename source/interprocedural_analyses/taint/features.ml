@@ -96,6 +96,10 @@ module Breadcrumb = struct
     (* Via inferred from ViaTypeOf. *)
     | Tito
     | Type of string (* Type constraint *)
+    | Broadening (* Taint tree was collapsed for various reasons *)
+    | WidenBroadening (* Taint tree was collapsed during widening *)
+    | TitoBroadening (* Taint tree was collapsed when applying tito *)
+    | IssueBroadening (* Taint tree was collapsed when matching sources and sinks *)
   [@@deriving show { with_path = false }, compare]
 
   let to_json ~on_all_paths breadcrumb =
@@ -114,6 +118,10 @@ module Breadcrumb = struct
     | ViaType { tag; value } -> via_value_or_type_annotation ~via_kind:"type" ~tag ~value
     | Tito -> `Assoc [prefix ^ "via", `String "tito"]
     | Type name -> `Assoc [prefix ^ "type", `String name]
+    | Broadening -> `Assoc [prefix ^ "via", `String "broadening"]
+    | WidenBroadening -> `Assoc [prefix ^ "via", `String "widen-broadening"]
+    | TitoBroadening -> `Assoc [prefix ^ "via", `String "tito-broadening"]
+    | IssueBroadening -> `Assoc [prefix ^ "via", `String "issue-broadening"]
 
 
   let simple_via ~allowed name =
@@ -204,6 +212,30 @@ let lambda = Simple.Breadcrumb Breadcrumb.Lambda
 let tito = Simple.Breadcrumb Breadcrumb.Tito
 
 let format_string = Simple.Breadcrumb Breadcrumb.FormatString
+
+let widen_broadening =
+  SimpleSet.create
+    [
+      Part (SimpleSet.Element, Simple.Breadcrumb Breadcrumb.Broadening);
+      Part (SimpleSet.Element, Simple.Breadcrumb Breadcrumb.WidenBroadening);
+    ]
+
+
+let tito_broadening =
+  SimpleSet.create
+    [
+      Part (SimpleSet.Element, Simple.Breadcrumb Breadcrumb.Broadening);
+      Part (SimpleSet.Element, Simple.Breadcrumb Breadcrumb.TitoBroadening);
+    ]
+
+
+let issue_broadening =
+  SimpleSet.create
+    [
+      Part (SimpleSet.Element, Simple.Breadcrumb Breadcrumb.Broadening);
+      Part (SimpleSet.Element, Simple.Breadcrumb Breadcrumb.IssueBroadening);
+    ]
+
 
 let type_bool =
   SimpleSet.create

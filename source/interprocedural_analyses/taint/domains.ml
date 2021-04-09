@@ -289,6 +289,10 @@ module type TAINT_DOMAIN = sig
 
   val first_fields : Features.FirstFieldSet.t Abstract.Domain.part
 
+  val add_features : Features.SimpleSet.t -> t -> t
+
+  val transform_on_widening_collapse : t -> t
+
   (* Add trace info at call-site *)
   val apply_call
     :  Location.WithModule.t ->
@@ -469,6 +473,23 @@ end = struct
     create_json ~trace_info_to_json:(TraceInfo.to_external_json ~filename_lookup)
 
 
+  let add_features features =
+    transform FlowDetails.simple_feature_self Abstract.Domain.Add ~f:features
+
+
+  let transform_on_widening_collapse =
+    (* using an always-feature here would break the widening invariant: a <= a widen b *)
+    let open Features in
+    let broadening =
+      SimpleSet.of_approximation
+        [
+          { element = Simple.Breadcrumb Breadcrumb.Broadening; in_under = false };
+          { element = Simple.Breadcrumb Breadcrumb.IssueBroadening; in_under = false };
+        ]
+    in
+    add_features broadening
+
+
   let apply_call location ~callees ~port ~path ~element:taint =
     let apply (trace_info, leaf_taint) =
       let open TraceInfo in
@@ -586,7 +607,7 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
 
 
   let filter_by_leaf ~leaf taint_tree =
-    collapse taint_tree
+    collapse ~transform:Fn.id taint_tree
     |> Taint.partition Taint.leaf ByFilter ~f:(fun candidate ->
            if Taint.equal_leaf leaf candidate then Some true else None)
     |> (fun map -> Map.Poly.find map true)
@@ -683,7 +704,7 @@ module BackwardState = struct
   let compute_features_to_attach ~root taint =
     let gather_features to_add features = Features.SimpleSet.add_set features ~to_add in
     read ~root ~path:[] taint
-    |> Tree.collapse
+    |> Tree.collapse ~transform:Fn.id
     |> BackwardTaint.partition BackwardTaint.leaf ByFilter ~f:(fun sink ->
            if Sinks.equal Sinks.Attach sink then Some true else None)
     |> (fun map -> Map.Poly.find map true)

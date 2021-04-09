@@ -570,6 +570,8 @@
             "tito": [ { "line": 18, "start": 28, "end": 43 } ],
             "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [
+              { "always-via": "issue-broadening" },
+              { "always-via": "broadening" },
               { "always-via": "tito" },
               { "always-via": "special_source" }
             ]
@@ -593,6 +595,8 @@
       }
     ],
     "features": [
+      { "always-via": "issue-broadening" },
+      { "always-via": "broadening" },
       { "always-via": "tito" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }

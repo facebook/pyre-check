@@ -22,7 +22,11 @@
               "end": 55
             },
             "leaves": [ { "kind": "Test", "name": "__test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+            "features": [
+              { "always-via": "issue-broadening" },
+              { "always-via": "broadening" },
+              { "always-via": "special_source" }
+            ]
           }
         ]
       },
@@ -48,6 +52,8 @@
       }
     ],
     "features": [
+      { "always-via": "issue-broadening" },
+      { "always-via": "broadening" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ]
@@ -132,7 +138,11 @@
               "end": 64
             },
             "leaves": [ { "kind": "Test", "name": "__test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+            "features": [
+              { "always-via": "issue-broadening" },
+              { "always-via": "broadening" },
+              { "always-via": "special_source" }
+            ]
           }
         ]
       },
@@ -158,6 +168,8 @@
       }
     ],
     "features": [
+      { "always-via": "issue-broadening" },
+      { "always-via": "broadening" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ]
@@ -479,6 +491,8 @@
             ],
             "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [
+              { "via": "tito-broadening" },
+              { "via": "broadening" },
               { "always-via": "tito" },
               { "always-via": "special_source" },
               { "via": "lambda" },

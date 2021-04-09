@@ -241,6 +241,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                 if collapse_tito then
                   ForwardState.Tree.read path taint_to_propagate
                   |> ForwardState.Tree.collapse
+                       ~transform:(ForwardTaint.add_features Features.tito_broadening)
                   |> ForwardTaint.transform
                        ForwardTaint.flow_details
                        Map
@@ -288,7 +289,9 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           let tito =
             if taint_model.is_obscure then
               let obscure_tito =
-                ForwardState.Tree.collapse taint_to_propagate
+                ForwardState.Tree.collapse
+                  ~transform:(ForwardTaint.add_features Features.tito_broadening)
+                  taint_to_propagate
                 |> ForwardTaint.transform
                      FlowDetails.tito_position_element
                      Add
@@ -371,7 +374,10 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                       roots_and_sinks
                 | _ -> roots_and_sinks
               in
-              BackwardTaint.leaves (BackwardState.Tree.collapse taint)
+              BackwardTaint.leaves
+                (BackwardState.Tree.collapse
+                   ~transform:(BackwardTaint.add_features Features.issue_broadening)
+                   taint)
               |> List.fold ~f:add ~init:roots_and_sinks
             in
             let triggered_sinks =
@@ -1567,7 +1573,7 @@ end
 
 let extract_features_to_attach existing_taint =
   ForwardState.read ~root:AccessPath.Root.LocalResult ~path:[] existing_taint
-  |> ForwardState.Tree.collapse
+  |> ForwardState.Tree.collapse ~transform:Fn.id
   |> ForwardTaint.partition ForwardTaint.leaf ByFilter ~f:(fun source ->
          if Sources.equal Sources.Attach source then Some true else None)
   |> (fun map -> Map.Poly.find map true)
@@ -1606,12 +1612,17 @@ let extract_source_model ~define ~resolution ~features_to_attach exit_taint =
 
   let simplify tree =
     let essential = ForwardState.Tree.essential tree in
-    ForwardState.Tree.shape tree ~mold:essential
+    ForwardState.Tree.shape
+      ~transform:(ForwardTaint.add_features Features.widen_broadening)
+      tree
+      ~mold:essential
     |> ForwardState.Tree.transform
          ForwardTaint.simple_feature_self
          Abstract.Domain.Add
          ~f:return_type_breadcrumbs
-    |> ForwardState.Tree.limit_to ~width:maximum_model_width
+    |> ForwardState.Tree.limit_to
+         ~transform:(ForwardTaint.add_features Features.widen_broadening)
+         ~width:maximum_model_width
     |> ForwardState.Tree.approximate_complex_access_paths ~maximum_complex_access_path_length
   in
   let attach_features taint =

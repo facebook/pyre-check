@@ -9,6 +9,7 @@
 
 module Option = Core_kernel.Option
 module MapPoly = Core_kernel.Map.Poly
+module Fn = Core_kernel.Fn
 
 (* optional transform: 'a option -> ('a -> 'b option) -> 'b option *)
 let ( >>= ) = Option.( >>= )
@@ -17,6 +18,12 @@ module type CONFIG = sig
   val max_tree_depth_after_widening : int
 
   val check_invariants : bool
+end
+
+module type ELEMENT = sig
+  include AbstractDomainCore.S
+
+  val transform_on_widening_collapse : t -> t
 end
 
 module type CHECK = sig
@@ -156,7 +163,7 @@ module Label = struct
   let equal_path = ( = )
 end
 
-module Make (Config : CONFIG) (Element : AbstractDomainCore.S) () = struct
+module Make (Config : CONFIG) (Element : ELEMENT) () = struct
   module Checks = ( val if Config.check_invariants then
                           (module WithChecks)
                         else
@@ -365,15 +372,15 @@ module Make (Config : CONFIG) (Element : AbstractDomainCore.S) () = struct
 
 
   (** Compute join of all element components in tree t. *)
-  let rec collapse_tree ~widen_depth element_accumulator { element; children } =
-    let element_accumulator = element_join ~widen_depth element_accumulator element in
-    let collapse_child ~key:_ ~data:subtree =
-      Core_kernel.Fn.flip (collapse_tree ~widen_depth) subtree
+  let collapse ~transform ~widen_depth { element; children } =
+    let rec collapse_tree { element; children } element_accumulator =
+      let element_accumulator = element_join ~widen_depth element_accumulator (transform element) in
+      let collapse_child ~key:_ ~data:subtree = collapse_tree subtree in
+      LabelMap.fold ~f:collapse_child children ~init:element_accumulator
     in
-    LabelMap.fold ~f:collapse_child children ~init:element_accumulator
+    (* Don't apply `transform` on the root element, only on collapsed elements. *)
+    collapse_tree { element = Element.bottom; children } element
 
-
-  let collapse tree = collapse_tree Element.bottom tree
 
   let create_leaf_option ~ancestors ~element =
     let difference = Element.subtract ancestors ~from:element in
@@ -424,27 +431,36 @@ module Make (Config : CONFIG) (Element : AbstractDomainCore.S) () = struct
 
   (** Widen differs from join in that right side does not extend trees, and Element uses widen.
 
-      widen_depth is less or equal to the max depth allowed in this subtree or None if we don't
-      widen. *)
+      `widen_depth` is less or equal to the max depth allowed in this subtree or None if we don't
+      widen.
+
+      `transform_on_collapse` is applied when collapsing trees during widening. *)
   let rec join_trees
       ancestors
       ~(widen_depth : widen_depth)
+      ~transform_on_collapse
       ({ element = left_element; children = left_children } as left_tree)
       ({ element = right_element; children = right_children } as right_tree)
     =
     if must_widen_depth widen_depth then
       (* Collapse left_tree and right_tree to achieve depth limit. Note that left_tree is a leaf,
          only if the widen depth was exactly the depth of left_tree.  *)
-      let collapsed_left_element = collapse_tree ~widen_depth Element.bottom left_tree in
+      let collapsed_left_element =
+        collapse ~transform:transform_on_collapse ~widen_depth left_tree
+      in
+      let collapsed_right_element =
+        collapse ~transform:transform_on_collapse ~widen_depth right_tree
+      in
       create_leaf_option
         ~ancestors
-        ~element:(collapse_tree ~widen_depth collapsed_left_element right_tree)
+        ~element:(element_join ~widen_depth collapsed_left_element collapsed_right_element)
     else
       let joined_element = element_join ~widen_depth left_element right_element in
       let { new_element; ancestors } = filter_by_ancestors ~ancestors ~element:joined_element in
       let children =
         join_children
           ancestors
+          ~transform_on_collapse
           ~widen_depth:(decrement_widen widen_depth)
           left_children
           right_children
@@ -452,16 +468,16 @@ module Make (Config : CONFIG) (Element : AbstractDomainCore.S) () = struct
       create_node_option new_element children
 
 
-  and join_option_trees ancestors ~widen_depth left right =
+  and join_option_trees ancestors ~transform_on_collapse ~widen_depth left right =
     match left, right with
     | None, None -> None
     | Some left, None -> prune_tree ancestors left
     | None, Some right when widen_depth = None -> prune_tree ancestors right
-    | None, Some right -> join_trees ancestors ~widen_depth empty_tree right
-    | Some left, Some right -> join_trees ancestors ~widen_depth left right
+    | None, Some right -> join_trees ancestors ~transform_on_collapse ~widen_depth empty_tree right
+    | Some left, Some right -> join_trees ancestors ~transform_on_collapse ~widen_depth left right
 
 
-  and join_children ancestors ~widen_depth left_tree right_tree =
+  and join_children ancestors ~transform_on_collapse ~widen_depth left_tree right_tree =
     (* Merging is tricky because of the special meaning of [*] and [f]. We
        have to identify the three sets of indices:
 
@@ -489,7 +505,12 @@ module Make (Config : CONFIG) (Element : AbstractDomainCore.S) () = struct
       | Label.Any ->
           set_or_remove
             element
-            (join_option_trees ancestors ~widen_depth (Some left_subtree) right_star)
+            (join_option_trees
+               ancestors
+               ~transform_on_collapse
+               ~widen_depth
+               (Some left_subtree)
+               right_star)
             accumulator
       | Label.Field _ -> (
           match LabelMap.find_opt element right_tree with
@@ -497,23 +518,45 @@ module Make (Config : CONFIG) (Element : AbstractDomainCore.S) () = struct
               (* f in C *)
               set_or_remove
                 element
-                (join_trees ancestors ~widen_depth left_subtree right_subtree)
+                (join_trees
+                   ancestors
+                   ~transform_on_collapse
+                   ~widen_depth
+                   left_subtree
+                   right_subtree)
                 accumulator
           | None ->
               (* f in L *)
               set_or_remove
                 element
-                (join_option_trees ancestors ~widen_depth (Some left_subtree) right_star)
+                (join_option_trees
+                   ancestors
+                   ~transform_on_collapse
+                   ~widen_depth
+                   (Some left_subtree)
+                   right_star)
                 accumulator )
       | Label.DictionaryKeys -> (
           match LabelMap.find_opt element right_tree with
           | Some right_subtree ->
               set_or_remove
                 element
-                (join_trees ancestors ~widen_depth left_subtree right_subtree)
+                (join_trees
+                   ancestors
+                   ~transform_on_collapse
+                   ~widen_depth
+                   left_subtree
+                   right_subtree)
                 accumulator
           | None ->
-              let join_tree = join_option_trees ancestors ~widen_depth (Some left_subtree) None in
+              let join_tree =
+                join_option_trees
+                  ancestors
+                  ~transform_on_collapse
+                  ~widen_depth
+                  (Some left_subtree)
+                  None
+              in
               set_or_remove element join_tree accumulator )
     in
     (* merge_right takes care of R *)
@@ -526,12 +569,24 @@ module Make (Config : CONFIG) (Element : AbstractDomainCore.S) () = struct
           match element with
           | Label.Field _ ->
               let join_tree =
-                join_option_trees ancestors ~widen_depth left_star (Some right_subtree)
+                join_option_trees
+                  ancestors
+                  ~transform_on_collapse
+                  ~widen_depth
+                  left_star
+                  (Some right_subtree)
               in
               set_or_remove element join_tree accumulator
           | Label.Any
           | Label.DictionaryKeys ->
-              let join_tree = join_option_trees ancestors ~widen_depth None (Some right_subtree) in
+              let join_tree =
+                join_option_trees
+                  ancestors
+                  ~transform_on_collapse
+                  ~widen_depth
+                  None
+                  (Some right_subtree)
+              in
               set_or_remove element join_tree accumulator )
     in
     let left_done = LabelMap.fold ~init:LabelMap.empty left_tree ~f:merge_left in
@@ -552,7 +607,8 @@ module Make (Config : CONFIG) (Element : AbstractDomainCore.S) () = struct
       match path with
       | [] ->
           if do_join then
-            join_trees ancestors ~widen_depth:None tree subtree (* Join point. *)
+            join_trees ancestors ~transform_on_collapse:Fn.id ~widen_depth:None tree subtree
+          (* Join point. *)
           else (* Note: we are overwriting t.element, so no need to add it to the path. *)
             prune_tree ancestors subtree (* Assignment/join point. *)
       | label_element :: rest -> (
@@ -616,7 +672,12 @@ module Make (Config : CONFIG) (Element : AbstractDomainCore.S) () = struct
                   read_raw ~transform_non_leaves ~use_precise_fields ~ancestors rest subtree
                 in
                 let subtree =
-                  join_option_trees Element.bottom ~widen_depth:None tree_accumulator subtree
+                  join_option_trees
+                    Element.bottom
+                    ~transform_on_collapse:Fn.id
+                    ~widen_depth:None
+                    tree_accumulator
+                    subtree
                 in
                 Element.join ancestors_result ancestors_accumulator, subtree
             in
@@ -788,20 +849,26 @@ module Make (Config : CONFIG) (Element : AbstractDomainCore.S) () = struct
     let message () = Format.sprintf "read [%s] from %s" (Label.show_path path) (show tree) in
     (* Important to properly join the trees and not just join ancestors and
        tree.element, as otherwise this could result in non-minimal trees. *)
-    join_trees Element.bottom ~widen_depth:None (create_leaf ancestors) tree
+    join_trees
+      Element.bottom
+      ~transform_on_collapse:Fn.id
+      ~widen_depth:None
+      (create_leaf ancestors)
+      tree
     |> option_node_tree ~message
 
 
   (** Collapses all subtrees at depth. Used to limit amount of detail propagated across function
       boundaries, in particular for scaling. *)
-  let collapse_to ~depth tree =
+  let collapse_to ~transform ~depth tree =
     let message () = Format.sprintf "collapse to %d\n%s\n" depth (show tree) in
-    join_trees Element.bottom ~widen_depth:(Some depth) tree tree |> option_node_tree ~message
+    join_trees Element.bottom ~transform_on_collapse:transform ~widen_depth:(Some depth) tree tree
+    |> option_node_tree ~message
 
 
   (* Makes sure tree has at most ~width leaves by collapsing levels (lowest
      first). Only entire levels are collapsed. *)
-  let limit_to ~width tree =
+  let limit_to ~transform ~width tree =
     let rec compute_max_depth ~depth leaves_left roots =
       if roots = [] then
         raise Exit (* tree does not exceed leaf limit *)
@@ -823,7 +890,7 @@ module Make (Config : CONFIG) (Element : AbstractDomainCore.S) () = struct
     in
     try
       let depth = compute_max_depth ~depth:0 width [tree] in
-      collapse_to ~depth tree
+      collapse_to ~transform ~depth tree
     with
     | Exit -> tree
 
@@ -833,7 +900,7 @@ module Make (Config : CONFIG) (Element : AbstractDomainCore.S) () = struct
     | None -> ()
     | Some witness ->
         Format.sprintf
-          "bad join %s - %s: %s\nvs %s"
+          "bad join %s - %s:\n%s\nvs\n%s"
           message
           witness
           (show left_tree)
@@ -856,13 +923,14 @@ module Make (Config : CONFIG) (Element : AbstractDomainCore.S) () = struct
       let message () =
         Format.sprintf "join trees: left_tree\n%s\nright_tree:\n%s\n" (show left) (show right)
       in
-      join_trees Element.bottom ~widen_depth:None left right
+      join_trees Element.bottom ~transform_on_collapse:Fn.id ~widen_depth:None left right
       |> option_node_tree ~message
       |> check_join_property left right
 
 
   (* Shape tree ~mold transforms the left tree so it only contains branches present in mold. *)
   let rec shape_tree
+      ~transform
       ~ancestors
       { element = left_element; children = left_children }
       ~mold:{ element = _; children = mold_children }
@@ -872,7 +940,7 @@ module Make (Config : CONFIG) (Element : AbstractDomainCore.S) () = struct
       let lift_dead_branches ~key ~data (lifted, result) =
         match data with
         | `Both (left, _mold) -> lifted, LabelMap.add ~key ~data:left result
-        | `Left left -> Element.join lifted (collapse ~widen_depth left), result
+        | `Left left -> Element.join lifted (collapse ~transform ~widen_depth left), result
         | `Right _ -> lifted, result
       in
       LabelMap.fold2
@@ -882,16 +950,16 @@ module Make (Config : CONFIG) (Element : AbstractDomainCore.S) () = struct
         ~f:lift_dead_branches
     in
     let { new_element; ancestors } = filter_by_ancestors ~ancestors ~element:joined_element in
-    let children = shape_children ancestors left_children ~mold:mold_children in
+    let children = shape_children ~transform ancestors left_children ~mold:mold_children in
     create_node_option new_element children
 
 
   (* left_tree already contains only branches that are also in mold. *)
-  and shape_children ancestors left_children ~mold =
+  and shape_children ~transform ancestors left_children ~mold =
     let mold_branch ~key ~data result =
       match data with
       | `Both (left_tree, mold) -> (
-          match shape_tree ~ancestors left_tree ~mold with
+          match shape_tree ~transform ~ancestors left_tree ~mold with
           | Some merged -> LabelMap.add result ~key ~data:merged
           | None -> result )
       | `Right _mold -> failwith "Invariant broken. Mold should not have more branches"
@@ -900,9 +968,9 @@ module Make (Config : CONFIG) (Element : AbstractDomainCore.S) () = struct
     LabelMap.fold2 left_children mold ~init:LabelMap.empty ~f:mold_branch
 
 
-  let shape tree ~mold =
+  let shape ~transform tree ~mold =
     let message () = Format.sprintf "shape tree\n%s\nmold:\n%s\n" (show tree) (show mold) in
-    shape_tree ~ancestors:Element.bottom tree ~mold |> option_node_tree ~message
+    shape_tree ~transform ~ancestors:Element.bottom tree ~mold |> option_node_tree ~message
 
 
   let get_root { element; _ } = element
@@ -977,7 +1045,12 @@ module Make (Config : CONFIG) (Element : AbstractDomainCore.S) () = struct
       let message () =
         Format.sprintf "wident trees: previous\n%s\nnext:\n%s\n" (show prev) (show next)
       in
-      join_trees Element.bottom ~widen_depth:(Some Config.max_tree_depth_after_widening) prev next
+      join_trees
+        Element.bottom
+        ~transform_on_collapse:Element.transform_on_widening_collapse
+        ~widen_depth:(Some Config.max_tree_depth_after_widening)
+        prev
+        next
       |> option_node_tree ~message
       |> check_join_property prev next
 

@@ -54,7 +54,10 @@ type triggered_sinks = String.Hash_set.t
    closure from node at path p in F. *)
 let generate_source_sink_matches ~location ~source_tree ~sink_tree =
   let make_source_sink_matches (path, sink_taint) matches =
-    let source_taint = ForwardState.Tree.collapse (ForwardState.Tree.read path source_tree) in
+    let source_taint =
+      ForwardState.Tree.read path source_tree
+      |> ForwardState.Tree.collapse ~transform:(ForwardTaint.add_features Features.issue_broadening)
+    in
     if ForwardTaint.is_bottom source_taint then
       matches
     else
@@ -325,7 +328,9 @@ let code_metadata () =
 
 let compute_triggered_sinks ~triggered_sinks ~location ~source_tree ~sink_tree =
   let partial_sinks_to_taint =
-    BackwardState.Tree.collapse sink_tree
+    BackwardState.Tree.collapse
+      ~transform:(BackwardTaint.add_features Features.issue_broadening)
+      sink_tree
     |> BackwardTaint.partition BackwardTaint.leaf ByFilter ~f:(function
            | Sinks.PartialSink { Sinks.kind; label } -> Some { Sinks.kind; label }
            | _ -> None)

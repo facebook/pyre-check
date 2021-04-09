@@ -106,7 +106,10 @@ let check_expectation
   let extract_sinks_by_parameter_name (root, sink_tree) sink_map =
     match AccessPath.Root.parameter_name root with
     | Some name ->
-        let sinks = Domains.BackwardState.Tree.collapse sink_tree |> Domains.BackwardTaint.leaves in
+        let sinks =
+          Domains.BackwardState.Tree.collapse ~transform:Fn.id sink_tree
+          |> Domains.BackwardTaint.leaves
+        in
         let sinks =
           String.Map.find sink_map name
           |> Option.value ~default:[]
@@ -119,7 +122,10 @@ let check_expectation
   let extract_sources_by_parameter_name (root, source_tree) sink_map =
     match AccessPath.Root.parameter_name root with
     | Some name ->
-        let sinks = Domains.ForwardState.Tree.collapse source_tree |> Domains.ForwardTaint.leaves in
+        let sinks =
+          Domains.ForwardState.Tree.collapse ~transform:Fn.id source_tree
+          |> Domains.ForwardTaint.leaves
+        in
         let sinks =
           String.Map.find sink_map name
           |> Option.value ~default:[]
@@ -229,7 +235,7 @@ let check_expectation
   (* Check sources. *)
   let returned_sources =
     Domains.ForwardState.read ~root:AccessPath.Root.LocalResult ~path:[] forward.source_taint
-    |> Domains.ForwardState.Tree.collapse
+    |> Domains.ForwardState.Tree.collapse ~transform:Fn.id
     |> Domains.ForwardTaint.leaves
     |> List.map ~f:Sources.show
     |> String.Set.of_list

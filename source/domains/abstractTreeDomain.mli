@@ -11,6 +11,12 @@ module type CONFIG = sig
   val check_invariants : bool
 end
 
+module type ELEMENT = sig
+  include AbstractDomainCore.S
+
+  val transform_on_widening_collapse : t -> t
+end
+
 module Label : sig
   type t =
     | Field of string
@@ -33,7 +39,7 @@ module Label : sig
   val is_prefix : prefix:path -> path -> bool
 end
 
-module Make (Config : CONFIG) (Element : AbstractDomainCore.S) () : sig
+module Make (Config : CONFIG) (Element : ELEMENT) () : sig
   include AbstractDomainCore.S
 
   type _ AbstractDomainCore.part +=
@@ -67,17 +73,17 @@ module Make (Config : CONFIG) (Element : AbstractDomainCore.S) () : sig
 
   val max_depth : t -> int
 
-  val collapse : t -> Element.t
+  val collapse : transform:(Element.t -> Element.t) -> t -> Element.t
 
   (* Collapse subtrees at depth *)
-  val collapse_to : depth:int -> t -> t
+  val collapse_to : transform:(Element.t -> Element.t) -> depth:int -> t -> t
 
   (* Collapses the given tree to a depth that keeps at most `width` leaves. *)
-  val limit_to : width:int -> t -> t
+  val limit_to : transform:(Element.t -> Element.t) -> width:int -> t -> t
 
   (* shape tree ~mold performs a join of tree and mold such that the resulting tree only has
      branches that are already in mold. *)
-  val shape : t -> mold:t -> t
+  val shape : transform:(Element.t -> Element.t) -> t -> mold:t -> t
 
   val cut_tree_after : depth:int -> t -> t
 

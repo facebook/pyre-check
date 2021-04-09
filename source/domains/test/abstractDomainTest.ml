@@ -1955,7 +1955,11 @@ module TreeOfStringSets = struct
 
               let check_invariants = true
             end)
-            (StringSet)
+            (struct
+              include StringSet
+
+              let transform_on_widening_collapse = Fn.id
+            end)
             ()
 
   let parse_path path =
@@ -2147,7 +2151,12 @@ module TreeOfStringSets = struct
             Part (Path, ([], StringSet.of_list ["q"]));
           ]
       in
-      assert_equal expected (shape tree ~mold) ~msg:"molded tree" ~printer:show ~cmp:compare
+      assert_equal
+        expected
+        (shape ~transform:Fn.id tree ~mold)
+        ~msg:"molded tree"
+        ~printer:show
+        ~cmp:compare
     in
     (* Test less or equal. *)
     assert_equal
@@ -2216,7 +2225,7 @@ module TreeOfStringSets = struct
 
     (* limit_to width. *)
     let assert_limit_to ~expected ~width tree =
-      assert_equal ~cmp:compare ~printer:show expected (limit_to ~width tree)
+      assert_equal ~cmp:compare ~printer:show expected (limit_to ~transform:Fn.id ~width tree)
     in
     assert_limit_to
       ~expected:(parse_tree ["a", ["a"]; "b", ["b"]])
@@ -2237,7 +2246,22 @@ module TreeOfStringSets = struct
          ~weak:true
          ~tree:(parse_tree ["a", ["item"]])
          [AbstractTreeDomain.Label.Field "b"]
-         ~subtree:bottom)
+         ~subtree:bottom);
+    (* collapse *)
+    let assert_collapse ~transform ~expected tree =
+      let actual =
+        collapse ~transform tree
+        |> StringSet.fold StringSet.Element ~init:[] ~f:List.cons
+        |> List.sort ~compare:String.compare
+      in
+      assert_equal ~printer:string_list_printer expected actual
+    in
+    let add_suffix = StringSet.transform StringSet.Element Map ~f:(fun s -> s ^ "#") in
+    assert_collapse ~transform:Fn.id ~expected:["a"; "b"] (parse_tree ["a", ["a"]; "b", ["b"]]);
+    assert_collapse
+      ~transform:add_suffix
+      ~expected:["a"; "b#"; "c#"; "de#"]
+      (parse_tree ["", ["a"]; "b", ["b"; "c"]; "d.e", ["de"]])
 
 
   let test_context _ =

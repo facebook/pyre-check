@@ -226,3 +226,63 @@ captures flows from three different sources of user input into a SQL sink, the
 through a conversion to `int` before reaching the sink. Note that **the
 `always-` version of a feature is _exclusive_ with the non-`always-` version**;
 if `always-type:scalar` is present, `type:scalar` will not be present.
+
+### `broadening` Feature
+
+The `broadening` feature is automatically added whenever Pysa makes an
+approximation about a taint flow. This is also refered as "taint collapsing"
+because the taint is internally represented as a tree structure where edges are
+attributes or indexes. Collapsing usually leads to tainting a whole object
+instead of a single attribute of that object.
+
+Pysa also provides more fine grained features for all scenario where we make
+approximations.
+
+#### `widen-broadening` Feature
+
+The `widen-broadening` feature is added when number of tainted attributes of an
+object reaches a certain threshold. For scalability reasons, Pysa cannot track
+an infinite amount of attributes or indexes, and thus makes the approximation
+that the whole object is tainted.
+
+```python
+d = {}
+if condition:
+  d["a"] = source()
+  d["b"] = source()
+  # c, d, e, etc.
+else:
+  d["1"] = source()
+  d["2"] = source()
+  # etc.
+sink(d) # too many indexes, the whole `d` variable becomes tainted.
+```
+
+#### `tito-broadening` Feature
+
+The `tito-broadening` feature is added when an object with tainted attributes is
+propagated through a function to its return value. For correctness reasons, Pysa
+makes the approximation that the whole returned object is tainted. This is
+refered as "Taint-In-Taint-Out collapsing".
+
+```python
+def identity(x):
+  return x
+
+def foo():
+  x = {"a": source(), "b": "foo"} # only `x["a"]` is tainted.
+  y = identity(x)
+  sink(y) # the whole `y` variable is tainted because of tito collapsing.
+  sink(y['b']) # since `y` is tainted, any access to `y` is also tainted.
+```
+
+#### `issue-broadening` Feature
+
+The `issue-broadening` feature is added when an object with a tainted attribute
+reaches a taint sink. Pysa will consider the flow as valid even if the whole
+object is not tainted.
+
+```python
+d = {"a": source(), "b": "foo"}
+sink(d) # `d` itself is not tainted, but `d["a"]` is, thus we emit an issue.
+```

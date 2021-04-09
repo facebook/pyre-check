@@ -233,6 +233,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                 ~f:(fun taint extra_path ->
                   read_tree extra_path taint_to_propagate
                   |> BackwardState.Tree.collapse
+                       ~transform:(BackwardTaint.add_features Features.tito_broadening)
                   |> BackwardTaint.transform
                        BackwardTaint.simple_feature_self
                        Abstract.Domain.Add
@@ -345,7 +346,9 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                 (Some annotation)
               |> Features.SimpleSet.add Features.obscure
             in
-            BackwardState.Tree.collapse call_taint
+            BackwardState.Tree.collapse
+              ~transform:(BackwardTaint.add_features Features.tito_broadening)
+              call_taint
             |> BackwardTaint.transform
                  BackwardTaint.simple_feature_self
                  Abstract.Domain.Add
@@ -384,7 +387,9 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             analyze_expression ~resolution ~taint ~state ~expression:argument
           in
           let obscure_taint =
-            BackwardState.Tree.collapse call_taint
+            BackwardState.Tree.collapse
+              ~transform:(BackwardTaint.add_features Features.tito_broadening)
+              call_taint
             |> BackwardTaint.transform BackwardTaint.simple_feature Add ~f:Features.obscure
             |> BackwardState.Tree.create_leaf
           in
@@ -1343,12 +1348,17 @@ let extract_tito_and_sink_models define ~is_constructor ~resolution ~existing_ba
       else
         BackwardState.Tree.essential tree
     in
-    BackwardState.Tree.shape tree ~mold:essential
+    BackwardState.Tree.shape
+      ~transform:(BackwardTaint.add_features Features.widen_broadening)
+      tree
+      ~mold:essential
     |> BackwardState.Tree.transform
          BackwardTaint.simple_feature_self
          Abstract.Domain.Add
          ~f:type_breadcrumbs
-    |> BackwardState.Tree.limit_to ~width:maximum_model_width
+    |> BackwardState.Tree.limit_to
+         ~transform:(BackwardTaint.add_features Features.widen_broadening)
+         ~width:maximum_model_width
     |> BackwardState.Tree.approximate_complex_access_paths ~maximum_complex_access_path_length
   in
 
@@ -1387,7 +1397,10 @@ let extract_tito_and_sink_models define ~is_constructor ~resolution ~existing_ba
           candidate_tree
       in
       if number_of_paths > Configuration.maximum_tito_leaves then
-        BackwardState.Tree.collapse_to ~depth:0 candidate_tree
+        BackwardState.Tree.collapse_to
+          ~transform:(BackwardTaint.add_features Features.widen_broadening)
+          ~depth:0
+          candidate_tree
       else
         candidate_tree
     in
