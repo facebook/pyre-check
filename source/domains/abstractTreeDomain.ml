@@ -274,28 +274,19 @@ module Make (Config : CONFIG) (Element : AbstractDomainCore.S) () = struct
       Element.join w1 w2
 
 
-  let rec to_string_tree ~show_element indent { element; children } =
-    Format.sprintf
-      "%s\n%s"
-      ( if show_element then
-          Element.show element
-      else
-        "" )
-      (to_string_children ~show_element (indent ^ "  ") children)
+  let rec to_string_tree indent { element; children } =
+    Format.sprintf "%s\n%s" (Element.show element) (to_string_children (indent ^ "  ") children)
 
 
-  and to_string_children ~show_element indent children =
+  and to_string_children indent children =
     let to_string_element ~key ~data:subtree accumulator =
-      Format.sprintf
-        "%s -> %s"
-        (indent ^ Label.show key)
-        (to_string_tree ~show_element indent subtree)
+      Format.sprintf "%s -> %s" (indent ^ Label.show key) (to_string_tree indent subtree)
       :: accumulator
     in
     String.concat "\n" (LabelMap.fold ~f:to_string_element children ~init:[])
 
 
-  let show = to_string_tree ~show_element:true ""
+  let show = to_string_tree ""
 
   let pp formatter map = Format.fprintf formatter "%s" (show map)
 
