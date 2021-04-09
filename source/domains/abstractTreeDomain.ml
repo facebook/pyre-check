@@ -905,7 +905,7 @@ module Make (Config : CONFIG) (Element : AbstractDomainCore.S) () = struct
     shape_tree ~ancestors:Element.bottom tree ~mold |> option_node_tree ~message
 
 
-  let get_root_taint { element; _ } = element
+  let get_root { element; _ } = element
 
   (** Filter map over tree, where each non-bottom element node is visited. The function ~f is passed
       the path to the node, the joined ancestor elements, and the non-bottom element at the node and
@@ -1124,4 +1124,6 @@ module Make (Config : CONFIG) (Element : AbstractDomainCore.S) () = struct
   let collapse = collapse ~widen_depth:None
 
   let prepend = create_tree
+
+  let read_raw = read_tree_raw
 end

@@ -371,13 +371,13 @@ let has_significant_summary root path target =
           let _, tree =
             ForwardState.read_tree_raw ~use_precise_fields:true ~root ~path forward.source_taint
           in
-          let taint = ForwardState.Tree.get_root_taint tree in
+          let taint = ForwardState.Tree.get_root tree in
           not (ForwardTaint.is_bottom taint)
       | _ ->
           let _, tree =
             BackwardState.read_tree_raw ~use_precise_fields:true ~root ~path backward.sink_taint
           in
-          let taint = BackwardState.Tree.get_root_taint tree in
+          let taint = BackwardState.Tree.get_root tree in
           not (BackwardTaint.is_bottom taint) )
 
 

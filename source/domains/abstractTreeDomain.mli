@@ -55,7 +55,7 @@ module Make (Config : CONFIG) (Element : AbstractDomainCore.S) () : sig
 
   (* Read the subtree at the given path. Returns the pair ancestors, tree_at_tip.
    * ~use_precise_fields overrides the default handling of [*] matching all fields. *)
-  val read_tree_raw
+  val read_raw
     :  ?transform_non_leaves:(Label.path -> Element.t -> Element.t) ->
     ?use_precise_fields:bool ->
     Label.path ->
@@ -81,5 +81,5 @@ module Make (Config : CONFIG) (Element : AbstractDomainCore.S) () : sig
 
   val cut_tree_after : depth:int -> t -> t
 
-  val get_root_taint : t -> Element.t
+  val get_root : t -> Element.t
 end
