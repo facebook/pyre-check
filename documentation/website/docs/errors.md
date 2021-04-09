@@ -293,6 +293,70 @@ This is usually caused by failing to import the proper module.
 Pyre will raise error 21 instead ("Undefined import") when the import statement is present, but the module to be imported could not be found in the search path.
 If the module provides stub files, please provide their location via the `--search-path` commandline parameter.
 
+### 24: Invalid Type Parameters
+Pyre will error if a generic type annotation is given with unexpected type parameters.
+
+#### "Generic type expects X type parameters ..."
+Either too few or too many type parameters were provided for the container type. For example,
+```python
+x: List[int, str] = [] # Invalid type parameters error
+```
+In this case, `typing.List` is a generic type taking exactly one type parameter. If we pass a single parameter, this resolves the issue.
+```python
+x: List[Union[int, str]] = [] # No error
+```
+
+If you do not know or do not want to specify the type parameters, use `typing.Any` but still ensure the arity is correct.
+```python
+x: List = [] # Invalid type parameters error
+x: List[Any] = [] # No error
+```
+
+Note: You may see a suggestion to use `typing.List` instead of builtins `list` as the type annotation when providing type parameters. This is to avoid runtime errors, because the builtin `list` does not support subscripting and `list[int]` is therefore not runtime-friendly.
+
+
+#### "Non-generic type cannot take type parameters ..."
+Type parameters are only meaningful if the container type is generic. Passing in the type parameter binds the provided parameter type to the generic in the container class. For example,
+
+```python
+class Container:
+  def add(element: int) -> None: ...
+  def get_element() -> int: ...
+
+x: Container[int] = Container() # Invalid type parameter error
+```
+
+```python
+T = TypeVar('T')
+
+class Container(Generic[T]):
+  def add(element: T) -> None: ...
+  def get_element() -> T: ...
+
+x: Container[int] = Container()
+x.get_element() # returns int
+
+y: Container[str] = Container()
+y.get_element() # returns str
+```
+
+
+#### "Type parameter violates constraints ..."
+If a container class is generic over a type variable with given type bounds, any type parameter used must comply with those type bounds. For example,
+
+```python
+T = TypeVar('T', bound=Union[int, bool])
+
+class Container(Generic[T]):
+  def add(element: T) -> None: ...
+  def get_element() -> T: ...
+
+x: Container[int] = Container() # No error
+
+y: Container[str] = Container() # Invalid type parameter error
+```
+
+
 ### 34: Invalid type variable
 
 Type variables can only be used as types when they have already been placed "in scope".
