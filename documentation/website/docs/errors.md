@@ -134,6 +134,24 @@ test.py:1:0 Incompatible variable type [9]: a is declared to have type `int` but
 
 The `9` in the brackets indicates that we raised an error with code 9.
 
+### 3: Missing Return Annotation
+
+If strict mode is turned on, Pyre will error when a function is either annotated with a return type that contains `typing.Any`, or is not annotated with any return type at all (in which case Pyre will treat it as returning `typing.Any` by default).
+
+This is bad because a return type of `typing.Any` may potentially hiding legitimate type errors that may happen at runtime:
+
+```python
+from typing import Any
+
+def f():
+  return 42
+
+# This line will raise at runtime, but no type error here since `f()` has type `Any`.
+print("a" + f())
+```
+
+The best way to silence this error is to add non-`Any` return annotation to every function.
+
 ### 9: Incompatible Variable Type
 Pyre will error when assigning incompatible types to local variables and parameters that were explicitly annotated.
 
