@@ -8,6 +8,8 @@
 open Core_kernel
 open OUnit2
 open AbstractDomain
+module MapPoly = Map.Poly
+module Fn = Core_kernel.Fn
 
 let ( = ) = Caml.( = )
 
@@ -46,8 +48,6 @@ let rec list_equal a b ~equal =
         false
   | _ -> false
 
-
-module MapPoly = Map.Poly
 
 module type AbstractDomainUnderTest = sig
   include AbstractDomain.S
@@ -530,8 +530,6 @@ module IntToStringSet = struct
       (struct
         include Int
 
-        let show = Int.to_string
-
         let absence_implicitly_maps_to_bottom = true
       end)
       (StringSet)
@@ -737,7 +735,13 @@ module IntToStringSet = struct
              Part (StringSet.Set, []);
            ])
     in
-    ()
+    let assert_show ~expected map = assert_equal ~printer:Fn.id expected (show map) in
+    assert_show ~expected:"{}" (build_map []);
+    assert_show ~expected:"{0 -> [a]}" (build_map [0, ["a"]]);
+    assert_show ~expected:"{\n  0 -> [a]\n  1 -> [b]\n}" (build_map [0, ["a"]; 1, ["b"]]);
+    assert_show
+      ~expected:"{\n  0 -> [a]\n  1 -> [b]\n  2 -> [c]\n}"
+      (build_map [0, ["a"]; 1, ["b"]; 2, ["c"]])
 
 
   let test_context _ =
@@ -756,8 +760,6 @@ module StrictIntToStringSet = struct
     AbstractMapDomain.Make
       (struct
         include Int
-
-        let show = Int.to_string
 
         let absence_implicitly_maps_to_bottom = false
       end)
@@ -1308,9 +1310,9 @@ module AbstractBucketedElement = struct
     | _ -> Rest
 
 
-  let show_bucket = function
-    | CBucket -> "CBucket"
-    | Rest -> "Rest"
+  let pp_bucket formatter = function
+    | CBucket -> Format.fprintf formatter "CBucket"
+    | Rest -> Format.fprintf formatter "Rest"
 
 
   let compare_bucket = Poly.compare

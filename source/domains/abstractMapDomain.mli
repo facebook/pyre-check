@@ -10,7 +10,7 @@ module type KEY = sig
 
   val name : string
 
-  val show : t -> string
+  val pp : Format.formatter -> t -> unit
 
   (* If true, an absent key and a key mapping to bottom are equivalent. Map won't keep elements that
      map to bottom. Presence of keys is still observable via fold, transform, and partition. *)

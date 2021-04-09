@@ -7,7 +7,6 @@
 
 open AbstractDomainCore
 module List = Core_kernel.List
-module String = Core_kernel.String
 module MapPoly = Core_kernel.Map.Poly
 
 module type KEY = sig
@@ -15,7 +14,7 @@ module type KEY = sig
 
   val name : string
 
-  val show : t -> string
+  val pp : Format.formatter -> t -> unit
 
   val absence_implicitly_maps_to_bottom : bool
 end
@@ -91,12 +90,19 @@ module Make (Key : KEY) (Element : AbstractDomainCore.S) = struct
   and Domain : (S with type t = Element.t Map.t) = struct
     type t = Element.t Map.t
 
-    let show map =
-      let show_pair (key, value) = Format.sprintf "%s -> %s" (Key.show key) (Element.show value) in
-      Map.to_alist map |> List.map ~f:show_pair |> String.concat ~sep:"\n"
+    let pp formatter map =
+      match Map.to_alist map with
+      | [] -> Format.fprintf formatter "{}"
+      | [(key, value)] -> Format.fprintf formatter "{%a -> %a}" Key.pp key Element.pp value
+      | pairs ->
+          let pp_pair formatter (key, value) =
+            Format.fprintf formatter "@,%a -> %a" Key.pp key Element.pp value
+          in
+          let pp_pairs formatter = List.iter ~f:(pp_pair formatter) in
+          Format.fprintf formatter "{@[<v 1>%a@]@,}" pp_pairs pairs
 
 
-    let pp formatter map = Format.fprintf formatter "%s" (show map)
+    let show = Format.asprintf "%a" pp
 
     let bottom = Map.empty
 

@@ -12,7 +12,7 @@ module type BUCKETED_ELEMENT = sig
 
   val bucket : t -> bucket
 
-  val show_bucket : bucket -> string
+  val pp_bucket : Format.formatter -> bucket -> unit
 
   val compare_bucket : bucket -> bucket -> int
 end

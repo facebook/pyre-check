@@ -14,7 +14,7 @@ module type BUCKETED_ELEMENT = sig
 
   val bucket : t -> bucket
 
-  val show_bucket : bucket -> string
+  val pp_bucket : Format.formatter -> bucket -> unit
 
   val compare_bucket : bucket -> bucket -> int
 end
@@ -30,7 +30,7 @@ module Make (Element : BUCKETED_ELEMENT) = struct
 
         let compare = Element.compare_bucket
 
-        let show = Element.show_bucket
+        let pp = Element.pp_bucket
 
         let absence_implicitly_maps_to_bottom = true
 
