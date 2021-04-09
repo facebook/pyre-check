@@ -427,6 +427,50 @@ takes_int_list(float_list)  # this call is OK because MyList is contravariant: M
 # problem with return above is clear
 ```
 
+### 39: Invalid Inheritance
+When defining a new class, Pyre will error if the base class given is not a valid parent class. This may be caused by various conditions:
+
+1. The parent class is marked as final which means it explicitly is annotated as not supporting child classes.
+
+```python
+@final
+class Base:
+  ...
+
+class Derived(Base): # Invalid inheritance error
+  ...
+```
+
+2. The expression given in the base class field is not a class at all.
+
+```python
+MY_GLOBAL: str = "string"
+class Foo(MY_GLOBAL): # Invalid inheritance error
+  ...
+```
+
+Pyre does not support dynamic expressions as base classes, even if they may evaluate to a valid class at runtime. This is because the type checker relies on building up a valid class hierarchy before it can resolve types in the Python it is analyzing. On the other hand, type aliases are equivalent to types and are acceptable as base classes.
+
+
+3. You are defining a typed dictionary that does not inherit from another typed dictionary.
+
+```python
+class NonTypedDict:
+  ...
+
+class Movie(TypedDict):
+  name: str
+  year: int
+
+class BookBasedMovie(Movie): # No error
+  based_on: str
+
+class BookBasedMovie(NonTypedDict): # Invalid inheritance error
+  based_on: str
+```
+
+If inheriting from another typed dictionary, fields need to have a consistent type between child and parent, in order for subclassing to be sound. Similarly, a required field in the child must also be required for the parent.
+
 ### 41: Invalid Assignment
 Pyre will error on assignments to final attributes, read-only properties, and class variables from a class instance. For example,
 
