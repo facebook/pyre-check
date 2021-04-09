@@ -241,9 +241,18 @@ module Make (Config : PRODUCT_CONFIG) = struct
         let slot_name = Config.slot_name slot in
         let module D = (val Config.slot_domain slot) in
         let value = get slot product in
-        Format.sprintf "%s: %s" slot_name (D.show value)
+        if D.is_bottom value then
+          None
+        else
+          Some (Format.sprintf "%s: %s" slot_name (D.show value))
       in
-      Array.map show_element slots |> Array.to_list |> String.concat ", "
+      if is_bottom product then
+        "<bottom>"
+      else
+        Array.map show_element slots
+        |> Array.to_list
+        |> List.filter_map Core_kernel.Fn.id
+        |> String.concat ", "
 
 
     let pp formatter map = Format.fprintf formatter "%s" (show map)
