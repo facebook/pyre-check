@@ -1964,7 +1964,9 @@ module TreeOfStringSets = struct
       | "$keys" -> AbstractTreeDomain.Label.DictionaryKeys
       | _ -> AbstractTreeDomain.Label.create_name_field element
     in
-    String.split path ~on:'.' |> List.map ~f:parse_element
+    String.split path ~on:'.'
+    |> List.filter ~f:(fun s -> not (String.is_empty s))
+    |> List.map ~f:parse_element
 
 
   let parse_tree components =
@@ -2077,9 +2079,9 @@ module TreeOfStringSets = struct
       ~f:Fn.id
       ~expected:
         [
-          "a", "[]\n  [a] -> [a]\n";
-          "aa", "[]\n  [a] -> []\n    [b] -> [aa]\n";
-          "bb", "[]\n  [a] -> []\n    [b] -> [bb]\n";
+          "a", "{\n  [a] -> [a]\n}";
+          "aa", "{\n  [a][b] -> [aa]\n}";
+          "bb", "{\n  [a][b] -> [bb]\n}";
         ];
     test
       ~initial:
@@ -2089,7 +2091,7 @@ module TreeOfStringSets = struct
         ]
       ~by:Path
       ~f:(fun (path, _) -> List.take path 1 |> AbstractTreeDomain.Label.show_path)
-      ~expected:["[a]", "[]\n  [a] -> [a]\n    [b] -> [aa, bb]\n"]
+      ~expected:["[a]", "{\n  [a] -> [a]\n  [a][b] -> [aa, bb]\n}"]
 
 
   let compare left right = less_or_equal ~left ~right && less_or_equal ~left:right ~right:left
@@ -2199,6 +2201,17 @@ module TreeOfStringSets = struct
       (parse_tree ["$keys", ["a"]])
       ~expected:(create [Part (Path, ([], StringSet.of_list ["a"]))]);
     ();
+
+    let assert_show ~expected tree = assert_equal ~printer:Fn.id expected (show tree) in
+    assert_show ~expected:"[]" (parse_tree []);
+    assert_show ~expected:"[a]" (parse_tree ["", ["a"]]);
+    assert_show ~expected:"[a, b]" (parse_tree ["", ["a"; "b"]]);
+    assert_show ~expected:"{\n  [a] -> [a]\n}" (parse_tree ["a", ["a"]]);
+    assert_show ~expected:"{\n  [a] -> [a]\n  [b] -> [b]\n}" (parse_tree ["a", ["a"]; "b", ["b"]]);
+    assert_show
+      ~expected:"{\n  [a]\n  [b] -> [b]\n  [c][d] -> [c]\n}"
+      (parse_tree ["", ["a"]; "b", ["b"]; "c.d", ["c"]]);
+
     (* limit_to width. *)
     let assert_limit_to ~expected ~width tree =
       assert_equal ~cmp:compare ~printer:show expected (limit_to ~width tree)

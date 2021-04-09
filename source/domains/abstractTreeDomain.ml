@@ -103,25 +103,22 @@ module Label = struct
     | Field of string
     | DictionaryKeys
     | Any
-  [@@deriving show]
 
   let compare : t -> t -> int = compare
 
-  let _ = show (* shadowed below *)
-
-  let show = function
-    | Field name -> Format.sprintf "[%s]" name
-    | DictionaryKeys -> "[**keys]"
-    | Any -> "[*]"
+  let pp formatter = function
+    | Field name -> Format.fprintf formatter "[%s]" name
+    | DictionaryKeys -> Format.fprintf formatter "[**keys]"
+    | Any -> Format.fprintf formatter "[*]"
 
 
-  type path = t list [@@deriving show]
+  let show = Format.asprintf "%a" pp
 
-  let _ = show_path (* shadowed below *)
+  type path = t list
 
-  let show_path path = ListLabels.map ~f:show path |> String.concat ""
+  let pp_path formatter = ListLabels.iter ~f:(pp formatter)
 
-  let pp_path formatter path = Format.fprintf formatter "%s" (show_path path)
+  let show_path = Format.asprintf "%a" pp_path
 
   let create_name_field name = Field name
 
@@ -274,21 +271,41 @@ module Make (Config : CONFIG) (Element : AbstractDomainCore.S) () = struct
       Element.join w1 w2
 
 
-  let rec to_string_tree indent { element; children } =
-    Format.sprintf "%s\n%s" (Element.show element) (to_string_children (indent ^ "  ") children)
-
-
-  and to_string_children indent children =
-    let to_string_element ~key ~data:subtree accumulator =
-      Format.sprintf "%s -> %s" (indent ^ Label.show key) (to_string_tree indent subtree)
-      :: accumulator
+  (** Fold over tree, where each non-bottom element node is visited. The function ~f is passed the
+      path to the node, the non-bottom element at the node and the accumulator. *)
+  let fold_tree_paths ~init ~f tree =
+    let rec walk_children path { element; children } first_accumulator =
+      let second_accumulator =
+        if Element.is_bottom element then
+          first_accumulator
+        else
+          f ~path ~element first_accumulator
+      in
+      if LabelMap.is_empty children then
+        second_accumulator
+      else
+        let walk ~key:label_element ~data:subtree =
+          walk_children (path @ [label_element]) subtree
+        in
+        LabelMap.fold children ~init:second_accumulator ~f:walk
     in
-    String.concat "\n" (LabelMap.fold ~f:to_string_element children ~init:[])
+    walk_children [] tree init
 
 
-  let show = to_string_tree ""
+  let pp formatter ({ element; children } as tree) =
+    if LabelMap.is_empty children then
+      Element.pp formatter element
+    else
+      let pp_node ~path ~element _ =
+        match path with
+        | [] -> Format.fprintf formatter "@,%a" Element.pp element
+        | _ -> Format.fprintf formatter "@,%a -> %a" Label.pp_path path Element.pp element
+      in
+      let pp _ = fold_tree_paths ~init:() ~f:pp_node in
+      Format.fprintf formatter "{@[<v 1>%a@]@,}" pp tree
 
-  let pp formatter map = Format.fprintf formatter "%s" (show map)
+
+  let show = Format.asprintf "%a" pp
 
   let rec max_depth { children; _ } =
     LabelMap.fold
@@ -889,27 +906,6 @@ module Make (Config : CONFIG) (Element : AbstractDomainCore.S) () = struct
 
 
   let get_root_taint { element; _ } = element
-
-  (** Fold over tree, where each non-bottom element node is visited. The function ~f is passed the
-      path to the node, the joined ancestor elements, and the non-bottom element at the node. *)
-  let fold_tree_paths ~init ~f tree =
-    let rec walk_children path { element; children } first_accumulator =
-      let second_accumulator =
-        if Element.is_bottom element then
-          first_accumulator
-        else
-          f ~path ~element first_accumulator
-      in
-      if LabelMap.is_empty children then
-        second_accumulator
-      else
-        let walk ~key:label_element ~data:subtree =
-          walk_children (path @ [label_element]) subtree
-        in
-        LabelMap.fold children ~init:second_accumulator ~f:walk
-    in
-    walk_children [] tree init
-
 
   (** Filter map over tree, where each non-bottom element node is visited. The function ~f is passed
       the path to the node, the joined ancestor elements, and the non-bottom element at the node and
