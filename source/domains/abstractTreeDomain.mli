@@ -20,7 +20,7 @@ end
 module Label : sig
   type t =
     | Index of string
-    | DictionaryKeys
+    | Field of string
     | AnyIndex
   [@@deriving show]
 

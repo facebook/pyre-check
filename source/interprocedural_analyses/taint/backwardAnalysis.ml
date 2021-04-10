@@ -437,7 +437,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
 
 
     and analyze_dictionary_entry ~resolution taint state { Dictionary.Entry.key; value } =
-      let key_taint = read_tree [Abstract.TreeDomain.Label.DictionaryKeys] taint in
+      let key_taint = read_tree [AccessPath.dictionary_keys] taint in
       let state = analyze_expression ~resolution ~taint:key_taint ~state ~expression:key in
       let field_name = AccessPath.get_index key in
       let value_taint = read_tree [field_name] taint in
@@ -723,7 +723,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             if
               Resolution.resolve_expression_to_type resolution base |> Type.is_dictionary_or_mapping
             then
-              Abstract.TreeDomain.Label.DictionaryKeys
+              AccessPath.dictionary_keys
             else
               Abstract.TreeDomain.Label.AnyIndex
           in
@@ -818,7 +818,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
         ->
           let taint =
             taint
-            |> BackwardState.Tree.read [Abstract.TreeDomain.Label.DictionaryKeys]
+            |> BackwardState.Tree.read [AccessPath.dictionary_keys]
             |> BackwardState.Tree.prepend [Abstract.TreeDomain.Label.AnyIndex]
           in
           analyze_expression ~resolution ~taint ~state ~expression:base
@@ -837,7 +837,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           in
           let taint =
             BackwardState.Tree.join
-              (BackwardState.Tree.prepend [Abstract.TreeDomain.Label.DictionaryKeys] key_taint)
+              (BackwardState.Tree.prepend [AccessPath.dictionary_keys] key_taint)
               (BackwardState.Tree.prepend [Abstract.TreeDomain.Label.AnyIndex] value_taint)
           in
           analyze_expression ~resolution ~taint ~state ~expression:base
@@ -1015,7 +1015,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           let state =
             analyze_expression
               ~resolution
-              ~taint:(read_tree [Abstract.TreeDomain.Label.DictionaryKeys] taint)
+              ~taint:(read_tree [AccessPath.dictionary_keys] taint)
               ~state
               ~expression:key
           in

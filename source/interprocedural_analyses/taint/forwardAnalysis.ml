@@ -509,7 +509,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       in
       let key_taint, state =
         analyze_expression ~resolution ~state ~expression:key
-        |>> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.DictionaryKeys]
+        |>> ForwardState.Tree.prepend [AccessPath.dictionary_keys]
       in
       analyze_expression ~resolution ~state ~expression:value
       |>> ForwardState.Tree.prepend [field_name]
@@ -573,7 +573,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       in
       let key_taint, state =
         analyze_expression ~resolution ~state ~expression:key
-        |>> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.DictionaryKeys]
+        |>> ForwardState.Tree.prepend [AccessPath.dictionary_keys]
       in
       ForwardState.Tree.join key_taint value_taint, state
 
@@ -789,7 +789,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                 Resolution.resolve_expression_to_type resolution base
                 |> Type.is_dictionary_or_mapping
               then
-                Abstract.TreeDomain.Label.DictionaryKeys
+                AccessPath.dictionary_keys
               else
                 Abstract.TreeDomain.Label.AnyIndex
             in
@@ -921,7 +921,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                       (List.map arguments ~f:(fun argument -> argument.Call.Argument.value));
                 }
         (* dictionary .keys(), .values() and .items() functions are special, as they require
-           handling of DictionaryKeys taint. *)
+           handling of dictionary_keys taint. *)
         | {
          callee = { Node.value = Name (Name.Attribute { base; attribute = "values"; _ }); _ };
          _;
@@ -935,16 +935,14 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           when Resolution.resolve_expression_to_type resolution base
                |> Type.is_dictionary_or_mapping ->
             analyze_expression ~resolution ~state ~expression:base
-            |>> ForwardState.Tree.read [Abstract.TreeDomain.Label.DictionaryKeys]
+            |>> ForwardState.Tree.read [AccessPath.dictionary_keys]
             |>> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.AnyIndex]
         | { callee = { Node.value = Name (Name.Attribute { base; attribute = "items"; _ }); _ }; _ }
           when Resolution.resolve_expression_to_type resolution base
                |> Type.is_dictionary_or_mapping ->
             let taint, state = analyze_expression ~resolution ~state ~expression:base in
             let taint =
-              let key_taint =
-                ForwardState.Tree.read [Abstract.TreeDomain.Label.DictionaryKeys] taint
-              in
+              let key_taint = ForwardState.Tree.read [AccessPath.dictionary_keys] taint in
               let value_taint = ForwardState.Tree.read [Abstract.TreeDomain.Label.AnyIndex] taint in
               ForwardState.Tree.join
                 (ForwardState.Tree.prepend [Abstract.TreeDomain.Label.create_int_index 0] key_taint)

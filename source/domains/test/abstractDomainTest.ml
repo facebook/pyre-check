@@ -1980,9 +1980,10 @@ module TreeOfStringSets = struct
 
   let parse_path path =
     let parse_element element =
-      match element with
-      | "$keys" -> AbstractTreeDomain.Label.DictionaryKeys
-      | _ -> AbstractTreeDomain.Label.create_name_index element
+      if String.sub element ~pos:0 ~len:1 = "$" then
+        AbstractTreeDomain.Label.Field element
+      else
+        AbstractTreeDomain.Label.create_name_index element
     in
     String.split path ~on:'.'
     |> List.filter ~f:(fun s -> not (String.is_empty s))
@@ -2005,6 +2006,13 @@ module TreeOfStringSets = struct
           Part (Path, (parse_path "a.b", StringSet.of_list ["ab"]));
           Part (Path, (parse_path "c.d", StringSet.of_list ["cd"]));
         ];
+      create [Part (Path, (parse_path "$a", StringSet.of_list ["aa"]))];
+      create [Part (Path, (parse_path "$b", StringSet.of_list ["bb"]))];
+      create
+        [
+          Part (Path, (parse_path "$a.$b", StringSet.of_list ["ab"]));
+          Part (Path, (parse_path "$c.$d", StringSet.of_list ["cd"]));
+        ];
     ]
 
 
@@ -2012,6 +2020,8 @@ module TreeOfStringSets = struct
     [
       create [Part (Path, (parse_path "a.b", StringSet.of_list ["aa"]))];
       create [Part (Path, (parse_path "b.c", StringSet.of_list ["bb"]))];
+      create [Part (Path, (parse_path "$a.$b", StringSet.of_list ["aa"]))];
+      create [Part (Path, (parse_path "$b.$c", StringSet.of_list ["bb"]))];
       create [Part (Path, ([], StringSet.of_list ["ab"]))];
       create [Part (Path, ([], StringSet.of_list ["cd"]))];
     ]

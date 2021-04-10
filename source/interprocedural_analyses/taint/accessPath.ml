@@ -306,3 +306,6 @@ let of_expression ~resolution = function
       in
       of_expression [] expression
   | _ -> None
+
+
+let dictionary_keys = Abstract.TreeDomain.Label.Field "**keys"

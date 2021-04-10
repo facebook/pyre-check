@@ -61,3 +61,5 @@ val match_actuals_to_formals
   :  Call.Argument.t list ->
   Root.t list ->
   (Expression.t * argument_match list) list
+
+val dictionary_keys : Abstract.TreeDomain.Label.t

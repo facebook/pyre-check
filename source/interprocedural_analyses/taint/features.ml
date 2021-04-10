@@ -317,5 +317,5 @@ let to_first_name label =
   match label with
   | Abstract.TreeDomain.Label.Index name when is_numeric name -> Some "<numeric>"
   | Index name -> Some name
-  | DictionaryKeys -> None
+  | Field _ -> None
   | AnyIndex -> Some "<unknown>"

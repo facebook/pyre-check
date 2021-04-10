@@ -911,20 +911,20 @@
     "sinks": [],
     "tito": [
       {
-        "port": "formal(payload)[**keys]",
-        "taint": [
-          {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "[**keys]" } ]
-          }
-        ]
-      },
-      {
         "port": "formal(payload)[*]",
         "taint": [
           {
             "decl": null,
             "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(payload).**keys",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": ".**keys" } ]
           }
         ]
       }

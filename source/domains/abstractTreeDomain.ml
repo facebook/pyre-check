@@ -108,14 +108,14 @@ end
 module Label = struct
   type t =
     | Index of string
-    | DictionaryKeys
+    | Field of string
     | AnyIndex
 
   let compare : t -> t -> int = compare
 
   let pp formatter = function
     | Index name -> Format.fprintf formatter "[%s]" name
-    | DictionaryKeys -> Format.fprintf formatter "[**keys]"
+    | Field name -> Format.fprintf formatter ".%s" name
     | AnyIndex -> Format.fprintf formatter "[*]"
 
 
@@ -536,7 +536,7 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
                    (Some left_subtree)
                    right_star)
                 accumulator )
-      | Label.DictionaryKeys -> (
+      | Label.Field _ -> (
           match LabelMap.find_opt element right_tree with
           | Some right_subtree ->
               set_or_remove
@@ -578,7 +578,7 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
               in
               set_or_remove element join_tree accumulator
           | Label.AnyIndex
-          | Label.DictionaryKeys ->
+          | Label.Field _ ->
               let join_tree =
                 join_option_trees
                   ancestors
@@ -623,7 +623,7 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
               in
               create_node_option element children
           | Label.Index _
-          | Label.DictionaryKeys ->
+          | Label.Field _ ->
               let children =
                 set_or_remove
                   label_element
@@ -637,7 +637,7 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
     match element with
     | Label.AnyIndex -> assign_or_join_path ~do_join:true ~ancestors ~tree rest ~subtree
     | Label.Index _
-    | Label.DictionaryKeys ->
+    | Label.Field _ ->
         Some tree
 
 
@@ -663,23 +663,23 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
         | Label.AnyIndex when not use_precise_labels ->
             (* lookup all indexes and join result *)
             let find_index_and_join ~key ~data:subtree (ancestors_accumulator, tree_accumulator) =
-              (* Dictionary keys are special - they should be excluded from [*]
+              (* Fields are special - they should be excluded from [*]
                  accesses unconditionally. *)
-              if key = Label.DictionaryKeys then
-                Element.bottom, None
-              else
-                let ancestors_result, subtree =
-                  read_raw ~transform_non_leaves ~use_precise_labels ~ancestors rest subtree
-                in
-                let subtree =
-                  join_option_trees
-                    Element.bottom
-                    ~transform_on_collapse:Fn.id
-                    ~widen_depth:None
-                    tree_accumulator
-                    subtree
-                in
-                Element.join ancestors_result ancestors_accumulator, subtree
+              match key with
+              | Label.Field _ -> Element.bottom, None
+              | _ ->
+                  let ancestors_result, subtree =
+                    read_raw ~transform_non_leaves ~use_precise_labels ~ancestors rest subtree
+                  in
+                  let subtree =
+                    join_option_trees
+                      Element.bottom
+                      ~transform_on_collapse:Fn.id
+                      ~widen_depth:None
+                      tree_accumulator
+                      subtree
+                  in
+                  Element.join ancestors_result ancestors_accumulator, subtree
             in
             LabelMap.fold ~init:(ancestors, None) ~f:find_index_and_join children
         | Label.Index _ when not use_precise_labels -> (
@@ -821,7 +821,7 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
                 (* in common *)
                 less_or_equal_tree left_subtree right_ancestors right_subtree
                 |> Checks.option_construct ~message:(fun () -> Label.show label_element) )
-        | Label.DictionaryKeys -> (
+        | Label.Field _ -> (
             match LabelMap.find_opt label_element right_label_map with
             | Some right_subtree -> less_or_equal_tree left_subtree right_ancestors right_subtree
             | None ->

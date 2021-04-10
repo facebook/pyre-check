@@ -953,7 +953,7 @@
                 "end": 41
               },
               "resolves_to": [ "dictionary.sink_dictionary_through_keys" ],
-              "port": "formal(d)[**keys]",
+              "port": "formal(d).**keys",
               "length": 1
             },
             "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
@@ -1177,7 +1177,7 @@
     "callable": "dictionary.forward_comprehension_key_source",
     "sources": [
       {
-        "port": "result[**keys]",
+        "port": "result.**keys",
         "taint": [
           {
             "root": {
@@ -1254,7 +1254,7 @@
     "sinks": [],
     "tito": [
       {
-        "port": "formal(d)[**keys]",
+        "port": "formal(d).**keys",
         "taint": [
           {
             "decl": null,
@@ -1316,7 +1316,7 @@
     "sources": [],
     "sinks": [
       {
-        "port": "formal(d)[**keys]",
+        "port": "formal(d).**keys",
         "taint": [
           {
             "root": {
