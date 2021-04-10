@@ -93,7 +93,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       | Features.Complex.ReturnAccessPath prefix -> Features.Complex.ReturnAccessPath (prefix @ path)
     in
     match path with
-    | Abstract.TreeDomain.Label.Any :: _ -> taint
+    | Abstract.TreeDomain.Label.AnyIndex :: _ -> taint
     | _ -> BackwardTaint.transform BackwardTaint.complex_feature Map ~f taint
 
 
@@ -446,7 +446,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
 
     and analyze_reverse_list_element ~total ~resolution taint reverse_position state expression =
       let position = total - reverse_position - 1 in
-      let index_name = Abstract.TreeDomain.Label.Field (string_of_int position) in
+      let index_name = Abstract.TreeDomain.Label.Index (string_of_int position) in
       let value_taint = read_tree [index_name] taint in
       analyze_expression ~resolution ~taint:value_taint ~state ~expression
 
@@ -480,7 +480,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
 
     and analyze_comprehension ~resolution taint { Comprehension.element; generators; _ } state =
       let resolution = generator_resolution ~resolution generators in
-      let element_taint = read_tree [Abstract.TreeDomain.Label.Any] taint in
+      let element_taint = read_tree [Abstract.TreeDomain.Label.AnyIndex] taint in
       let state = analyze_expression ~resolution ~taint:element_taint ~state ~expression:element in
       analyze_generators ~resolution ~state generators
 
@@ -725,7 +725,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             then
               Abstract.TreeDomain.Label.DictionaryKeys
             else
-              Abstract.TreeDomain.Label.Any
+              Abstract.TreeDomain.Label.AnyIndex
           in
 
           let taint = BackwardState.Tree.prepend [label] taint in
@@ -792,12 +792,12 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       (* `zip(a, b, ...)` creates a taint object whose first index has a's taint, second index has
          b's taint, etc. *)
       | { callee = { Node.value = Name (Name.Identifier "zip"); _ }; arguments = lists } ->
-          let taint = BackwardState.Tree.read [Abstract.TreeDomain.Label.Any] taint in
+          let taint = BackwardState.Tree.read [Abstract.TreeDomain.Label.AnyIndex] taint in
           let analyze_zipped_list index state { Call.Argument.value; _ } =
-            let index_name = Abstract.TreeDomain.Label.Field (string_of_int index) in
+            let index_name = Abstract.TreeDomain.Label.Index (string_of_int index) in
             let taint =
               BackwardState.Tree.read [index_name] taint
-              |> BackwardState.Tree.prepend [Abstract.TreeDomain.Label.Any]
+              |> BackwardState.Tree.prepend [Abstract.TreeDomain.Label.AnyIndex]
             in
             analyze_expression ~resolution ~state ~taint ~expression:value
           in
@@ -809,8 +809,8 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
         ->
           let taint =
             taint
-            |> BackwardState.Tree.read [Abstract.TreeDomain.Label.Any]
-            |> BackwardState.Tree.prepend [Abstract.TreeDomain.Label.Any]
+            |> BackwardState.Tree.read [Abstract.TreeDomain.Label.AnyIndex]
+            |> BackwardState.Tree.prepend [Abstract.TreeDomain.Label.AnyIndex]
           in
           analyze_expression ~resolution ~taint ~state ~expression:base
       | { callee = { Node.value = Name (Name.Attribute { base; attribute = "keys"; _ }); _ }; _ }
@@ -819,7 +819,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           let taint =
             taint
             |> BackwardState.Tree.read [Abstract.TreeDomain.Label.DictionaryKeys]
-            |> BackwardState.Tree.prepend [Abstract.TreeDomain.Label.Any]
+            |> BackwardState.Tree.prepend [Abstract.TreeDomain.Label.AnyIndex]
           in
           analyze_expression ~resolution ~taint ~state ~expression:base
       | { callee = { Node.value = Name (Name.Attribute { base; attribute = "items"; _ }); _ }; _ }
@@ -828,17 +828,17 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           (* When we're faced with an assign of the form `k, v = d.items().__iter__().__next__()`,
              the taint we analyze d.items() under will be {* -> {0 -> k, 1 -> v} }. We want to
              analyze d itself under the taint of `{* -> v, $keys -> k}`. *)
-          let item_taint = BackwardState.Tree.read [Abstract.TreeDomain.Label.Any] taint in
+          let item_taint = BackwardState.Tree.read [Abstract.TreeDomain.Label.AnyIndex] taint in
           let key_taint =
-            BackwardState.Tree.read [Abstract.TreeDomain.Label.create_int_field 0] item_taint
+            BackwardState.Tree.read [Abstract.TreeDomain.Label.create_int_index 0] item_taint
           in
           let value_taint =
-            BackwardState.Tree.read [Abstract.TreeDomain.Label.create_int_field 1] item_taint
+            BackwardState.Tree.read [Abstract.TreeDomain.Label.create_int_index 1] item_taint
           in
           let taint =
             BackwardState.Tree.join
               (BackwardState.Tree.prepend [Abstract.TreeDomain.Label.DictionaryKeys] key_taint)
-              (BackwardState.Tree.prepend [Abstract.TreeDomain.Label.Any] value_taint)
+              (BackwardState.Tree.prepend [Abstract.TreeDomain.Label.AnyIndex] value_taint)
           in
           analyze_expression ~resolution ~taint ~state ~expression:base
       | {
@@ -1022,7 +1022,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           let state =
             analyze_expression
               ~resolution
-              ~taint:(read_tree [Abstract.TreeDomain.Label.Any] taint)
+              ~taint:(read_tree [Abstract.TreeDomain.Label.AnyIndex] taint)
               ~state
               ~expression:value
           in
@@ -1060,7 +1060,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                 taint
                 targets
           | _ ->
-              let field = Abstract.TreeDomain.Label.Field attribute in
+              let field = Abstract.TreeDomain.Label.Index attribute in
               let expression =
                 Node.create_with_default_location
                   (Expression.Name
@@ -1113,7 +1113,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
               in
               analyze_expression ~resolution ~taint ~state ~expression:base )
       | Set set ->
-          let element_taint = read_tree [Abstract.TreeDomain.Label.Any] taint in
+          let element_taint = read_tree [Abstract.TreeDomain.Label.AnyIndex] taint in
           List.fold
             set
             ~f:(fun state expression ->
@@ -1123,7 +1123,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           analyze_comprehension ~resolution taint comprehension state
       | Starred (Starred.Once expression)
       | Starred (Starred.Twice expression) ->
-          let taint = BackwardState.Tree.prepend [Abstract.TreeDomain.Label.Any] taint in
+          let taint = BackwardState.Tree.prepend [Abstract.TreeDomain.Label.AnyIndex] taint in
           analyze_expression ~resolution ~taint ~state ~expression
       | String string_literal ->
           analyze_string_literal
@@ -1168,7 +1168,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
               if collapse then
                 taint
               else
-                let index_name = Abstract.TreeDomain.Label.Field (string_of_int position) in
+                let index_name = Abstract.TreeDomain.Label.Index (string_of_int position) in
                 BackwardState.Tree.prepend [index_name] taint
             in
             BackwardState.Tree.join index_taint taint_accumulator

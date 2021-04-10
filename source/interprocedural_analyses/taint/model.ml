@@ -294,7 +294,7 @@ let infer_class_models ~environment =
       |> BackwardState.Tree.transform BackwardTaint.complex_feature_set Map ~f:(fun _ ->
              [
                Features.Complex.ReturnAccessPath
-                 [Abstract.TreeDomain.Label.create_name_field attribute];
+                 [Abstract.TreeDomain.Label.create_name_index attribute];
              ])
     in
     BackwardState.assign

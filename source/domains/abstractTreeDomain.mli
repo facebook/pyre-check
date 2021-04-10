@@ -19,9 +19,9 @@ end
 
 module Label : sig
   type t =
-    | Field of string
+    | Index of string
     | DictionaryKeys
-    | Any
+    | AnyIndex
   [@@deriving show]
 
   type path = t list [@@deriving show]
@@ -30,9 +30,9 @@ module Label : sig
 
   val equal_path : path -> path -> bool
 
-  val create_name_field : string -> t
+  val create_name_index : string -> t
 
-  val create_int_field : int -> t
+  val create_int_index : int -> t
 
   val common_prefix : path -> path -> path
 
@@ -60,10 +60,10 @@ module Make (Config : CONFIG) (Element : ELEMENT) () : sig
   val read : ?transform_non_leaves:(Label.path -> Element.t -> Element.t) -> Label.path -> t -> t
 
   (* Read the subtree at the given path. Returns the pair ancestors, tree_at_tip.
-   * ~use_precise_fields overrides the default handling of [*] matching all fields. *)
+   * ~use_precise_labels overrides the default handling of [*] matching all fields. *)
   val read_raw
     :  ?transform_non_leaves:(Label.path -> Element.t -> Element.t) ->
-    ?use_precise_fields:bool ->
+    ?use_precise_labels:bool ->
     Label.path ->
     t ->
     Element.t * t

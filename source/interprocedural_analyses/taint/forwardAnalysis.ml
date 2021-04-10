@@ -504,8 +504,8 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
     and analyze_dictionary_entry ~resolution (taint, state) { Dictionary.Entry.key; value } =
       let field_name =
         match key.Node.value with
-        | String literal -> Abstract.TreeDomain.Label.Field literal.value
-        | _ -> Abstract.TreeDomain.Label.Any
+        | String literal -> Abstract.TreeDomain.Label.Index literal.value
+        | _ -> Abstract.TreeDomain.Label.AnyIndex
       in
       let key_taint, state =
         analyze_expression ~resolution ~state ~expression:key
@@ -518,7 +518,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
 
 
     and analyze_list_element ~resolution position (taint, state) expression =
-      let index_name = Abstract.TreeDomain.Label.Field (string_of_int position) in
+      let index_name = Abstract.TreeDomain.Label.Index (string_of_int position) in
       analyze_expression ~resolution ~state ~expression
       |>> ForwardState.Tree.prepend [index_name]
       |>> ForwardState.Tree.join taint
@@ -527,7 +527,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
     and analyze_set_element ~resolution (taint, state) expression =
       let value_taint, state =
         analyze_expression ~resolution ~state ~expression
-        |>> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.Any]
+        |>> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.AnyIndex]
       in
       ForwardState.Tree.join taint value_taint, state
 
@@ -558,7 +558,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
         analyze_comprehension_generators ~resolution ~state generators
       in
       analyze_expression ~resolution ~state:bound_state ~expression:element
-      |>> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.Any]
+      |>> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.AnyIndex]
 
 
     and analyze_dictionary_comprehension
@@ -569,7 +569,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       let state, resolution = analyze_comprehension_generators ~resolution ~state generators in
       let value_taint, state =
         analyze_expression ~resolution ~state ~expression:value
-        |>> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.Any]
+        |>> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.AnyIndex]
       in
       let key_taint, state =
         analyze_expression ~resolution ~state ~expression:key
@@ -791,7 +791,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
               then
                 Abstract.TreeDomain.Label.DictionaryKeys
               else
-                Abstract.TreeDomain.Label.Any
+                Abstract.TreeDomain.Label.AnyIndex
             in
             ForwardState.Tree.read [label] taint, state
         (* x[0] = value is converted to x.__setitem__(0, value). in parsing. *)
@@ -890,14 +890,14 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
            a[*]'s taint, second index with b[*]'s taint, etc. *)
         | { callee = { Node.value = Name (Name.Identifier "zip"); _ }; arguments = lists } ->
             let add_list_to_taint index (taint, state) { Call.Argument.value; _ } =
-              let index_name = Abstract.TreeDomain.Label.Field (string_of_int index) in
+              let index_name = Abstract.TreeDomain.Label.Index (string_of_int index) in
               analyze_expression ~resolution ~state ~expression:value
-              |>> ForwardState.Tree.read [Abstract.TreeDomain.Label.Any]
+              |>> ForwardState.Tree.read [Abstract.TreeDomain.Label.AnyIndex]
               |>> ForwardState.Tree.prepend [index_name]
               |>> ForwardState.Tree.join taint
             in
             List.foldi lists ~init:(ForwardState.Tree.bottom, state) ~f:add_list_to_taint
-            |>> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.Any]
+            |>> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.AnyIndex]
         | {
          Call.callee =
            {
@@ -929,14 +929,14 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           when Resolution.resolve_expression_to_type resolution base
                |> Type.is_dictionary_or_mapping ->
             analyze_expression ~resolution ~state ~expression:base
-            |>> ForwardState.Tree.read [Abstract.TreeDomain.Label.Any]
-            |>> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.Any]
+            |>> ForwardState.Tree.read [Abstract.TreeDomain.Label.AnyIndex]
+            |>> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.AnyIndex]
         | { callee = { Node.value = Name (Name.Attribute { base; attribute = "keys"; _ }); _ }; _ }
           when Resolution.resolve_expression_to_type resolution base
                |> Type.is_dictionary_or_mapping ->
             analyze_expression ~resolution ~state ~expression:base
             |>> ForwardState.Tree.read [Abstract.TreeDomain.Label.DictionaryKeys]
-            |>> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.Any]
+            |>> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.AnyIndex]
         | { callee = { Node.value = Name (Name.Attribute { base; attribute = "items"; _ }); _ }; _ }
           when Resolution.resolve_expression_to_type resolution base
                |> Type.is_dictionary_or_mapping ->
@@ -945,13 +945,13 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
               let key_taint =
                 ForwardState.Tree.read [Abstract.TreeDomain.Label.DictionaryKeys] taint
               in
-              let value_taint = ForwardState.Tree.read [Abstract.TreeDomain.Label.Any] taint in
+              let value_taint = ForwardState.Tree.read [Abstract.TreeDomain.Label.AnyIndex] taint in
               ForwardState.Tree.join
-                (ForwardState.Tree.prepend [Abstract.TreeDomain.Label.create_int_field 0] key_taint)
+                (ForwardState.Tree.prepend [Abstract.TreeDomain.Label.create_int_index 0] key_taint)
                 (ForwardState.Tree.prepend
-                   [Abstract.TreeDomain.Label.create_int_field 1]
+                   [Abstract.TreeDomain.Label.create_int_index 1]
                    value_taint)
-              |> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.Any]
+              |> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.AnyIndex]
             in
             taint, state
         (* `locals()` is a dictionary from all local names -> values. *)
@@ -960,11 +960,11 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
               let path_of_root =
                 match root with
                 | AccessPath.Root.Variable variable ->
-                    [Abstract.TreeDomain.Label.Field (Identifier.sanitized variable)]
+                    [Abstract.TreeDomain.Label.Index (Identifier.sanitized variable)]
                 | NamedParameter { name }
                 | PositionalParameter { name; _ } ->
-                    [Abstract.TreeDomain.Label.Field (Identifier.sanitized name)]
-                | _ -> [Abstract.TreeDomain.Label.Any]
+                    [Abstract.TreeDomain.Label.Index (Identifier.sanitized name)]
+                | _ -> [Abstract.TreeDomain.Label.AnyIndex]
               in
               let root_taint =
                 ForwardState.read ~root ~path:[] state.taint
@@ -1165,7 +1165,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
         | None -> taint
       in
 
-      let field = Abstract.TreeDomain.Label.Field attribute in
+      let field = Abstract.TreeDomain.Label.Index attribute in
       analyze_expression ~resolution ~state ~expression:base
       |>> add_tito_features
       |>> ForwardState.Tree.read [field]
@@ -1316,7 +1316,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
         | Starred (Starred.Once expression)
         | Starred (Starred.Twice expression) ->
             analyze_expression ~resolution ~state ~expression
-            |>> ForwardState.Tree.read [Abstract.TreeDomain.Label.Any]
+            |>> ForwardState.Tree.read [Abstract.TreeDomain.Label.AnyIndex]
         | String string_literal ->
             analyze_string_literal ~resolution ~state ~location string_literal
         | Ternary { target; test; alternative } ->
@@ -1361,7 +1361,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       | List targets
       | Tuple targets ->
           let analyze_target_element i state target =
-            let index = Abstract.TreeDomain.Label.Field (string_of_int i) in
+            let index = Abstract.TreeDomain.Label.Index (string_of_int i) in
             let indexed_taint = ForwardState.Tree.read [index] taint in
             analyze_assignment ~resolution target indexed_taint taint state
           in

@@ -670,14 +670,14 @@ module MakeTaintEnvironment (Taint : TAINT_DOMAIN) () = struct
 
   let read_tree_raw
       ?(transform_non_leaves = fun _ e -> e)
-      ?(use_precise_fields = false)
+      ?(use_precise_labels = false)
       ~root
       ~path
       environment
     =
     match get root environment with
     | None -> Taint.bottom, Tree.bottom
-    | Some tree -> Tree.read_raw ~transform_non_leaves ~use_precise_fields path tree
+    | Some tree -> Tree.read_raw ~transform_non_leaves ~use_precise_labels path tree
 
 
   let read ?(transform_non_leaves = fun _ e -> e) ~root ~path environment =

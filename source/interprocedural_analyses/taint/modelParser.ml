@@ -480,9 +480,9 @@ let rec parse_annotations
         let extend_path annotation =
           let field =
             match index with
-            | Expression.Integer index -> Ok (Abstract.TreeDomain.Label.create_int_field index)
+            | Expression.Integer index -> Ok (Abstract.TreeDomain.Label.create_int_index index)
             | Expression.String { StringLiteral.value = index; _ } ->
-                Ok (Abstract.TreeDomain.Label.create_name_field index)
+                Ok (Abstract.TreeDomain.Label.create_name_index index)
             | _ ->
                 Error
                   (annotation_error

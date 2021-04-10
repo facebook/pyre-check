@@ -1982,7 +1982,7 @@ module TreeOfStringSets = struct
     let parse_element element =
       match element with
       | "$keys" -> AbstractTreeDomain.Label.DictionaryKeys
-      | _ -> AbstractTreeDomain.Label.create_name_field element
+      | _ -> AbstractTreeDomain.Label.create_name_index element
     in
     String.split path ~on:'.'
     |> List.filter ~f:(fun s -> not (String.is_empty s))
@@ -2074,7 +2074,7 @@ module TreeOfStringSets = struct
           Part (Path, (parse_path "a", StringSet.of_list ["a"]));
         ]
       ~by:Path
-      ~f:(fun (path, element) -> AbstractTreeDomain.Label.Field "prefix" :: path, element)
+      ~f:(fun (path, element) -> AbstractTreeDomain.Label.Index "prefix" :: path, element)
       ~to_result:show_path_element
       ~expected:["path:[prefix][a][b]; tip:[aa, bb]"; "path:[prefix][a]; tip:[a]"]
 
@@ -2133,9 +2133,9 @@ module TreeOfStringSets = struct
       ~cmp:compare;
     let () =
       let open AbstractTreeDomain.Label in
-      let path1 = [create_name_field "foo"; create_name_field "bar"] in
-      let path2 = [create_name_field "foo"; create_name_field "baz"] in
-      let common = [create_name_field "foo"] in
+      let path1 = [create_name_index "foo"; create_name_index "bar"] in
+      let path2 = [create_name_index "foo"; create_name_index "baz"] in
+      let common = [create_name_index "foo"] in
       let path3 = common_prefix path1 path2 in
       let path4 = common_prefix path1 path3 in
       let path5 = common_prefix path3 path2 in
@@ -2202,7 +2202,8 @@ module TreeOfStringSets = struct
       (less_or_equal
          ~left:(parse_tree ["$keys", ["a"]])
          ~right:
-           (create [Part (Path, ([AbstractTreeDomain.Label.Any], StringSet.of_list ["distinct"]))]));
+           (create
+              [Part (Path, ([AbstractTreeDomain.Label.AnyIndex], StringSet.of_list ["distinct"]))]));
     assert_equal
       true
       (less_or_equal ~left:(parse_tree ["a.$keys", ["val"]]) ~right:(parse_tree ["a", ["val"]]));
@@ -2261,7 +2262,7 @@ module TreeOfStringSets = struct
       (assign
          ~weak:true
          ~tree:(parse_tree ["a", ["item"]])
-         [AbstractTreeDomain.Label.Field "b"]
+         [AbstractTreeDomain.Label.Index "b"]
          ~subtree:bottom);
     (* collapse *)
     let assert_collapse ~transform ~expected tree =

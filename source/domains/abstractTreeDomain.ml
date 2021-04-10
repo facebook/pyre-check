@@ -107,16 +107,16 @@ end
 
 module Label = struct
   type t =
-    | Field of string
+    | Index of string
     | DictionaryKeys
-    | Any
+    | AnyIndex
 
   let compare : t -> t -> int = compare
 
   let pp formatter = function
-    | Field name -> Format.fprintf formatter "[%s]" name
+    | Index name -> Format.fprintf formatter "[%s]" name
     | DictionaryKeys -> Format.fprintf formatter "[**keys]"
-    | Any -> Format.fprintf formatter "[*]"
+    | AnyIndex -> Format.fprintf formatter "[*]"
 
 
   let show = Format.asprintf "%a" pp
@@ -127,9 +127,9 @@ module Label = struct
 
   let show_path = Format.asprintf "%a" pp_path
 
-  let create_name_field name = Field name
+  let create_name_index name = Index name
 
-  let create_int_field i = Field (string_of_int i)
+  let create_int_index i = Index (string_of_int i)
 
   let common_prefix left right =
     let rec common_prefix_reversed left right so_far =
@@ -497,12 +497,12 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
          joined.[<keys>] = left_tree[<keys>] merge right_tree[<keys>]
 
     *)
-    let left_star = LabelMap.find_opt Label.Any left_tree in
-    let right_star = LabelMap.find_opt Label.Any right_tree in
+    let left_star = LabelMap.find_opt Label.AnyIndex left_tree in
+    let right_star = LabelMap.find_opt Label.AnyIndex right_tree in
     (* merge_left takes care of C and L, as well as the dictionary keys *)
     let merge_left ~key:element ~data:left_subtree accumulator =
       match element with
-      | Label.Any ->
+      | Label.AnyIndex ->
           set_or_remove
             element
             (join_option_trees
@@ -512,7 +512,7 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
                (Some left_subtree)
                right_star)
             accumulator
-      | Label.Field _ -> (
+      | Label.Index _ -> (
           match LabelMap.find_opt element right_tree with
           | Some right_subtree ->
               (* f in C *)
@@ -567,7 +567,7 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
           accumulator
       | None -> (
           match element with
-          | Label.Field _ ->
+          | Label.Index _ ->
               let join_tree =
                 join_option_trees
                   ancestors
@@ -577,7 +577,7 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
                   (Some right_subtree)
               in
               set_or_remove element join_tree accumulator
-          | Label.Any
+          | Label.AnyIndex
           | Label.DictionaryKeys ->
               let join_tree =
                 join_option_trees
@@ -615,14 +615,14 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
           let ancestors = Element.join ancestors element in
           let existing = lookup_tree_with_default tree label_element in
           match label_element with
-          | Label.Any ->
+          | Label.AnyIndex ->
               (* Special case. Must merge with AnyIndex and also every specific index. *)
-              let augmented = LabelMap.add ~key:Label.Any ~data:existing children in
+              let augmented = LabelMap.add ~key:Label.AnyIndex ~data:existing children in
               let children =
                 LabelMap.filter_mapi ~f:(join_each_index ~ancestors rest ~subtree) augmented
               in
               create_node_option element children
-          | Label.Field _
+          | Label.Index _
           | Label.DictionaryKeys ->
               let children =
                 set_or_remove
@@ -635,8 +635,8 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
 
   and join_each_index ~ancestors rest ~subtree ~key:element ~data:tree =
     match element with
-    | Label.Any -> assign_or_join_path ~do_join:true ~ancestors ~tree rest ~subtree
-    | Label.Field _
+    | Label.AnyIndex -> assign_or_join_path ~do_join:true ~ancestors ~tree rest ~subtree
+    | Label.Index _
     | Label.DictionaryKeys ->
         Some tree
 
@@ -648,20 +648,20 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
       weak assign. *)
   let join_path = assign_or_join_path ~do_join:true
 
-  (** Read the subtree at path within tree and return the ancestors separately. ~use_precise_fields
+  (** Read the subtree at path within tree and return the ancestors separately. ~use_precise_labels
       overrides the default handling of [*] matching all fields. This is used solely in determining
       port connections when emitting json.
 
       ancestors is accumulated down the recursion and returned when we reach the end of that path.
       That way the recursion is tail-recursive. *)
-  let rec read_raw ~transform_non_leaves ~use_precise_fields ~ancestors path { children; element } =
+  let rec read_raw ~transform_non_leaves ~use_precise_labels ~ancestors path { children; element } =
     match path with
     | [] -> ancestors, create_node_option element children
     | label_element :: rest -> (
         let ancestors = transform_non_leaves path element |> Element.join ancestors in
         match label_element with
-        | Label.Any when not use_precise_fields ->
-            (* lookup all index fields and join result *)
+        | Label.AnyIndex when not use_precise_labels ->
+            (* lookup all indexes and join result *)
             let find_index_and_join ~key ~data:subtree (ancestors_accumulator, tree_accumulator) =
               (* Dictionary keys are special - they should be excluded from [*]
                  accesses unconditionally. *)
@@ -669,7 +669,7 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
                 Element.bottom, None
               else
                 let ancestors_result, subtree =
-                  read_raw ~transform_non_leaves ~use_precise_fields ~ancestors rest subtree
+                  read_raw ~transform_non_leaves ~use_precise_labels ~ancestors rest subtree
                 in
                 let subtree =
                   join_option_trees
@@ -682,27 +682,27 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
                 Element.join ancestors_result ancestors_accumulator, subtree
             in
             LabelMap.fold ~init:(ancestors, None) ~f:find_index_and_join children
-        | Label.Field _ when not use_precise_fields -> (
+        | Label.Index _ when not use_precise_labels -> (
             (* read [f] or [*] *)
             match LabelMap.find_opt label_element children with
             | None -> (
-                match LabelMap.find_opt Label.Any children with
+                match LabelMap.find_opt Label.AnyIndex children with
                 | Some subtree ->
-                    read_raw ~transform_non_leaves ~use_precise_fields ~ancestors rest subtree
+                    read_raw ~transform_non_leaves ~use_precise_labels ~ancestors rest subtree
                 | None -> ancestors, None )
             | Some subtree ->
-                read_raw ~transform_non_leaves ~use_precise_fields ~ancestors rest subtree )
+                read_raw ~transform_non_leaves ~use_precise_labels ~ancestors rest subtree )
         | _ -> (
             match LabelMap.find_opt label_element children with
             | None -> ancestors, None
             | Some subtree ->
-                read_raw ~transform_non_leaves ~use_precise_fields ~ancestors rest subtree ) )
+                read_raw ~transform_non_leaves ~use_precise_labels ~ancestors rest subtree ) )
 
 
   (** Read the subtree at path p within t. Returns the pair ancestors, tree_at_tip. *)
   let read_tree_raw
       ?(transform_non_leaves = fun _p element -> element)
-      ?(use_precise_fields = false)
+      ?(use_precise_labels = false)
       path
       tree
     =
@@ -710,7 +710,7 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
       Format.sprintf "read tree_raw: %s :from: %s" (Label.show_path path) (show tree)
     in
     let ancestors, tree_option =
-      read_raw ~transform_non_leaves ~use_precise_fields ~ancestors:Element.bottom path tree
+      read_raw ~transform_non_leaves ~use_precise_labels ~ancestors:Element.bottom path tree
     in
     ancestors, option_node_tree ~message tree_option
 
@@ -804,14 +804,14 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
          that key taint doesn't interfere with value taint),
 
          left_label_map[<keys>] <= right_label_map[<keys>] *)
-      let left_star = LabelMap.find_opt Label.Any left_label_map in
-      let right_star = LabelMap.find_opt Label.Any right_label_map in
+      let left_star = LabelMap.find_opt Label.AnyIndex left_label_map in
+      let right_star = LabelMap.find_opt Label.AnyIndex right_label_map in
       let check_less_or_equal ~key:label_element ~data:left_subtree =
         match label_element with
-        | Label.Any ->
+        | Label.AnyIndex ->
             less_or_equal_option_tree left_star right_ancestors right_star
             |> Checks.option_construct ~message:(fun () -> "[left *]")
-        | Label.Field _ -> (
+        | Label.Index _ -> (
             match LabelMap.find_opt label_element right_label_map with
             | None ->
                 (* in L *)
@@ -828,11 +828,11 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
                 less_or_equal_option_tree (Some left_subtree) right_ancestors None
                 |> Checks.option_construct ~message:(fun () -> "[right <keys>]") )
       in
-      (* Check that all non-star index fields on right are larger than star1,
+      (* Check that all non-star indexes on right are larger than star1,
          unless they were matched directly. *)
       let check_star_left ~key:label_element ~data:right_subtree =
         match label_element with
-        | Label.Field _ when not (LabelMap.mem label_element left_label_map) ->
+        | Label.Index _ when not (LabelMap.mem label_element left_label_map) ->
             less_or_equal_option_tree left_star right_ancestors (Some right_subtree)
             |> Checks.option_construct ~message:(fun () -> "[left *]")
         | _ -> Checks.true_witness
@@ -845,7 +845,7 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
 
 
   let read ?(transform_non_leaves = fun _p element -> element) path tree =
-    let ancestors, tree = read_tree_raw ~transform_non_leaves ~use_precise_fields:false path tree in
+    let ancestors, tree = read_tree_raw ~transform_non_leaves ~use_precise_labels:false path tree in
     let message () = Format.sprintf "read [%s] from %s" (Label.show_path path) (show tree) in
     (* Important to properly join the trees and not just join ancestors and
        tree.element, as otherwise this could result in non-minimal trees. *)

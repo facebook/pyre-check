@@ -315,7 +315,7 @@ let is_numeric name = Str.string_match number_regexp name 0
 
 let to_first_name label =
   match label with
-  | Abstract.TreeDomain.Label.Field name when is_numeric name -> Some "<numeric>"
-  | Field name -> Some name
+  | Abstract.TreeDomain.Label.Index name when is_numeric name -> Some "<numeric>"
+  | Index name -> Some name
   | DictionaryKeys -> None
-  | Any -> Some "<unknown>"
+  | AnyIndex -> Some "<unknown>"

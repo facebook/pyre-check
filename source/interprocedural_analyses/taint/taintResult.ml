@@ -369,13 +369,13 @@ let has_significant_summary root path target =
       match root with
       | AccessPath.Root.LocalResult ->
           let _, tree =
-            ForwardState.read_tree_raw ~use_precise_fields:true ~root ~path forward.source_taint
+            ForwardState.read_tree_raw ~use_precise_labels:true ~root ~path forward.source_taint
           in
           let taint = ForwardState.Tree.get_root tree in
           not (ForwardTaint.is_bottom taint)
       | _ ->
           let _, tree =
-            BackwardState.read_tree_raw ~use_precise_fields:true ~root ~path backward.sink_taint
+            BackwardState.read_tree_raw ~use_precise_labels:true ~root ~path backward.sink_taint
           in
           let taint = BackwardState.Tree.get_root tree in
           not (BackwardTaint.is_bottom taint) )

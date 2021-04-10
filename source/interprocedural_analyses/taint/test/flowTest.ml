@@ -16,22 +16,22 @@ let test_no_errors _ =
   let source_tree_a =
     ForwardTaint.singleton (Sources.NamedSource "Demo")
     |> ForwardState.Tree.create_leaf
-    |> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.Field "a"]
+    |> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.Index "a"]
   in
   let source_tree_b =
     ForwardTaint.singleton (Sources.NamedSource "Test")
     |> ForwardState.Tree.create_leaf
-    |> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.Field "b"]
+    |> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.Index "b"]
   in
   let sink_tree_a =
     BackwardTaint.singleton (Sinks.NamedSink "Test")
     |> BackwardState.Tree.create_leaf
-    |> BackwardState.Tree.prepend [Abstract.TreeDomain.Label.Field "a"]
+    |> BackwardState.Tree.prepend [Abstract.TreeDomain.Label.Index "a"]
   in
   let sink_tree_b =
     BackwardTaint.singleton (Sinks.NamedSink "Demo")
     |> BackwardState.Tree.create_leaf
-    |> BackwardState.Tree.prepend [Abstract.TreeDomain.Label.Field "b"]
+    |> BackwardState.Tree.prepend [Abstract.TreeDomain.Label.Index "b"]
   in
   let assert_no_errors ~source_tree ~sink_tree =
     let location =
@@ -66,12 +66,12 @@ let test_errors _ =
   let source_tree ~field ~source =
     ForwardTaint.singleton (Sources.NamedSource source)
     |> ForwardState.Tree.create_leaf
-    |> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.Field field]
+    |> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.Index field]
   in
   let sink_tree ~field ~sink =
     BackwardTaint.singleton (Sinks.NamedSink sink)
     |> BackwardState.Tree.create_leaf
-    |> BackwardState.Tree.prepend [Abstract.TreeDomain.Label.Field field]
+    |> BackwardState.Tree.prepend [Abstract.TreeDomain.Label.Index field]
   in
 
   let source_tree_a = source_tree ~source:"UserControlled" ~field:"a" in
