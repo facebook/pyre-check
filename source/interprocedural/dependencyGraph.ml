@@ -67,8 +67,8 @@ let depth_first_search edges nodes =
       accumulator
     else (
       Hashtbl.add_exn visited ~key:node ~data:();
-      let successor = Callable.Map.find edges node |> Option.value ~default:[] in
-      node :: List.fold successor ~init:accumulator ~f:visit )
+      let successors = Callable.Map.find edges node |> Option.value ~default:[] in
+      node :: List.fold successors ~init:accumulator ~f:visit )
   in
   let partition accumulator node =
     match visit [] node with
@@ -182,6 +182,17 @@ let union left right =
 
 
 let from_overrides overrides =
+  let override_map, all_overrides =
+    let add ~key:method_name ~data:subtypes (override_map, all_overrides) =
+      let key = Callable.create_override method_name in
+      let data =
+        List.map subtypes ~f:(fun at_type -> Callable.create_derived_override key ~at_type)
+      in
+      ( Callable.Map.set override_map ~key ~data,
+        Callable.Set.union all_overrides (Callable.Set.of_list data) )
+    in
+    Reference.Map.fold overrides ~f:add ~init:(Callable.Map.empty, Callable.Set.empty)
+  in
   let connect_overrides_to_methods override_graph =
     let overrides_to_methods =
       let override_to_method_edge override =
@@ -197,18 +208,7 @@ let from_overrides overrides =
     in
     union overrides_to_methods override_graph
   in
-  let add ~key:method_name ~data:subtypes (override_map, all_overrides) =
-    let key = Callable.create_override method_name in
-    let data =
-      List.map subtypes ~f:(fun at_type -> Callable.create_derived_override key ~at_type)
-    in
-    ( Callable.Map.set override_map ~key ~data,
-      Callable.Set.union all_overrides (Callable.Set.of_list data) )
-  in
-  let override_map, all_overrides =
-    Reference.Map.fold overrides ~f:add ~init:(Callable.Map.empty, Callable.Set.empty)
-  in
-  (* Create empty entries for leaves. *)
+  (* Create empty entries for leaves, so connect_overrides_to_methods can add self-links *)
   Callable.Set.fold
     (fun override override_map ->
       if not (Callable.Map.mem override_map override) then
