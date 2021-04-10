@@ -26,6 +26,8 @@ module Label : sig
 
   type path = t list [@@deriving show]
 
+  val compare : t -> t -> int
+
   val compare_path : path -> path -> int
 
   val equal_path : path -> path -> bool
