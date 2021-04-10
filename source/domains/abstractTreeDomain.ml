@@ -1055,7 +1055,7 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
       |> check_join_property prev next
 
 
-    let transform : type a f. a part -> (transform, a, f, t, t) operation -> f:f -> t -> t =
+    let transform : type a f. a part -> ([ `Transform ], a, f, t, t) operation -> f:f -> t -> t =
      fun part op ~f tree ->
       match part, op with
       | Path, Map ->
@@ -1086,7 +1086,7 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
 
 
     let reduce
-        : type a f b. a part -> using:(reduce, a, f, t, b) operation -> f:f -> init:b -> t -> b
+        : type a f b. a part -> using:([ `Reduce ], a, f, t, b) operation -> f:f -> init:b -> t -> b
       =
      fun part ~using:op ~f ~init tree ->
       match part, op with
@@ -1115,7 +1115,8 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
 
 
     let partition
-        : type a f b. a part -> (partition, a, f, t, b) operation -> f:f -> t -> (b, t) MapPoly.t
+        : type a f b.
+          a part -> ([ `Partition ], a, f, t, b) operation -> f:f -> t -> (b, t) MapPoly.t
       =
      fun part op ~f tree ->
       let update path element existing =

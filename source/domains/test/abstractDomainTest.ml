@@ -744,18 +744,57 @@ module IntToStringSet = struct
       (build_map [0, ["a"]; 1, ["b"]; 2, ["c"]])
 
 
+  let assert_equivalent a b =
+    if not (less_or_equal ~left:a ~right:b && less_or_equal ~left:b ~right:a) then
+      assert_equal a b ~printer:show
+
+
   let test_context _ =
     let v = build_map [0, ["a"; "b"]; 1, ["b"; "c"]; 2, ["c"; "d"]; 3, []] in
     let key_values key value sofar = (key, value) :: sofar in
     assert_equal
       ~printer:int_string_pair_list_printer
       (List.rev [0, "a"; 0, "b"; 1, "b"; 1, "c"; 2, "c"; 2, "d"])
-      (reduce StringSet.Element ~using:(Context (Key, Acc)) ~f:key_values ~init:[] v)
+      (reduce StringSet.Element ~using:(Context (Key, Acc)) ~f:key_values ~init:[] v);
+    let filter key value = key = 1 && value = "b" in
+    let concat key value = Format.sprintf "%d:%s" key value in
+    assert_equivalent
+      (build_map [1, ["b"]])
+      (transform StringSet.Element (Context (Key, Filter)) ~f:(fun key -> filter key) v);
+    assert_equivalent
+      (build_map [1, ["1:b"]])
+      (transform
+         StringSet.Element
+         (Context (Key, Seq (Filter, Map)))
+         ~f:(fun key -> filter key, concat key)
+         v);
+    (* same, but inefficient as we traverse map twice *)
+    assert_equivalent
+      (build_map [1, ["1:b"]])
+      (transform
+         Self
+         (Seq
+            ( Context (Key, Nest (StringSet.Element, Filter)),
+              Context (Key, Nest (StringSet.Element, Map)) ))
+         ~f:(filter, concat)
+         v);
+    (* test multiple folds over different parts *)
+    let acc_ints i acc = Format.sprintf "%d %s" i acc in
+    let acc_strings s acc = Format.sprintf "%s %s" s acc in
+    assert_equal
+      ~printer:Fn.id
+      "d c c b b a 2 1 0 "
+      (reduce
+         Self
+         ~using:(Seq (Nest (Key, Acc), Nest (StringSet.Element, Acc)))
+         ~f:(acc_ints, acc_strings)
+         ~init:""
+         v)
 end
 
 module TestIntToStringSet = TestAbstractDomain (IntToStringSet)
 
-module StrictIntToStringSet = struct
+module NonStrictIntToStringSet = struct
   module Map =
     AbstractMapDomain.Make
       (struct
@@ -883,37 +922,14 @@ module StrictIntToStringSet = struct
 
   let test_context _ =
     let v = build_map [0, ["a"; "b"]; 1, ["b"; "c"]; 2, ["c"; "d"]; 3, []] in
-    let key_values key value sofar = (key, value) :: sofar in
+    let key_values key value acc = (key, value) :: acc in
     assert_equal
       ~printer:int_string_pair_list_printer
       (List.rev [0, "a"; 0, "b"; 1, "b"; 1, "c"; 2, "c"; 2, "d"])
-      (reduce StringSet.Element ~using:(Context (Key, Acc)) ~f:key_values ~init:[] v);
-    let filter key value = key = 1 && value = "b" in
-    assert_equal
-      ~printer:int_string_pair_list_printer
-      [1, "b"]
-      (reduce
-         StringSet.Element
-         ~using:(Context (Key, Seq (Filter, Acc)))
-         ~f:(fun key -> filter key, key_values key)
-         ~init:[]
-         v);
-    (* same, but inefficient as we traverse map twice *)
-    assert_equal
-      ~printer:int_string_pair_list_printer
-      [1, "b"]
-      (reduce
-         Self
-         ~using:
-           (Seq
-              ( Context (Key, Nest (StringSet.Element, Filter)),
-                Context (Key, Nest (StringSet.Element, Acc)) ))
-         ~f:(filter, key_values)
-         ~init:[]
-         v)
+      (reduce StringSet.Element ~using:(Context (Key, Acc)) ~f:key_values ~init:[] v)
 end
 
-module TestStrictIntToStringSet = TestAbstractDomain (StrictIntToStringSet)
+module TestNonStrictIntToStringSet = TestAbstractDomain (NonStrictIntToStringSet)
 
 module PairStringMapIntToString = struct
   module LeftStringSet = AbstractSetDomain.Make (String)
@@ -2579,7 +2595,7 @@ let () =
          "topped_string_set" >::: TestToppedStringSet.suite ();
          "inverted_string_set" >::: TestInvertedStringSet.suite ();
          "map_int_to_string_set" >::: TestIntToStringSet.suite ();
-         "strict_int_to_string_set" >::: TestStrictIntToStringSet.suite ();
+         "nonstrict_int_to_string_set" >::: TestNonStrictIntToStringSet.suite ();
          "string_x_maps_int_to_string_set" >::: TestPair.suite ();
          "dual_string" >::: TestPairStringString.suite ();
          "abstract_element" >::: TestAbstractElement.suite ();

@@ -87,7 +87,7 @@ module Make (Element : BUCKETED_ELEMENT) = struct
 
     let pp formatter map = Format.fprintf formatter "%s" (show map)
 
-    let transform : type a f. a part -> (transform, a, f, t, t) operation -> f:f -> t -> t =
+    let transform : type a f. a part -> ([ `Transform ], a, f, t, t) operation -> f:f -> t -> t =
      fun part op ~f buckets ->
       match part, op with
       | Set, Map ->
@@ -104,7 +104,7 @@ module Make (Element : BUCKETED_ELEMENT) = struct
 
 
     let reduce
-        : type a b f. a part -> using:(reduce, a, f, t, b) operation -> f:f -> init:b -> t -> b
+        : type a b f. a part -> using:([ `Reduce ], a, f, t, b) operation -> f:f -> init:b -> t -> b
       =
      fun part ~using:op ~f ~init buckets ->
       match part, op with
@@ -118,7 +118,11 @@ module Make (Element : BUCKETED_ELEMENT) = struct
 
     let partition
         : type a f b.
-          a part -> (partition, a, f, t, b) operation -> f:f -> t -> (b, t) Core_kernel.Map.Poly.t
+          a part ->
+          ([ `Partition ], a, f, t, b) operation ->
+          f:f ->
+          t ->
+          (b, t) Core_kernel.Map.Poly.t
       =
      fun part op ~f buckets ->
       match part, op with

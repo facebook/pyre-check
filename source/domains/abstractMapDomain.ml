@@ -160,7 +160,7 @@ module Make (Key : KEY) (Element : AbstractDomainCore.S) = struct
         Map.merge ~f:merge prev next
 
 
-    let transform : type a f. a part -> (transform, a, f, t, t) operation -> f:f -> t -> t =
+    let transform : type a f. a part -> ([ `Transform ], a, f, t, t) operation -> f:f -> t -> t =
      fun part op ~f map ->
       match part, op with
       | Key, Map ->
@@ -232,7 +232,7 @@ module Make (Key : KEY) (Element : AbstractDomainCore.S) = struct
 
 
     let reduce
-        : type a b f. a part -> using:(reduce, a, f, t, b) operation -> f:f -> init:b -> t -> b
+        : type a b f. a part -> using:([ `Reduce ], a, f, t, b) operation -> f:f -> init:b -> t -> b
       =
      fun part ~using:op ~f ~init map ->
       match part, op with
@@ -269,7 +269,8 @@ module Make (Key : KEY) (Element : AbstractDomainCore.S) = struct
 
 
     let partition
-        : type a b f. a part -> (partition, a, f, t, b) operation -> f:f -> t -> (b, t) MapPoly.t
+        : type a b f.
+          a part -> ([ `Partition ], a, f, t, b) operation -> f:f -> t -> (b, t) MapPoly.t
       =
      fun part op ~f map ->
       match part, op with
