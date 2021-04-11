@@ -262,24 +262,42 @@ The case for parameters follows analogously.
 Your code is most likely trying to access an attribute that Pyre does not know about.
 Pyre has various ways of inferring what is an attribute of an object:
 
-#### Explicitly Declared
+#### Explicitly Declare the Attribute
+
 ```python
-  class Derp:
-    attribute: int = 1
+class Derp:
+    my_attribute: int = 1
 
     @property
-    def property(self) -> int: ...
+    def my_property(self) -> int: ...
 ```
 
-#### Implicitly Declared
+#### Implicitly Declare the Attribute
+
 ```python
-  class Derp:
-    def __init__(self):
-       self.attribute: int = 1
+class Derp:
+    def __init__(self, foo: str) -> None:
+        self.my_attribute: int = 1
+
+        # The `foo` attribute is inferred to have type `str` because the
+        # parameter `foo` has type `str`.
+        self.foo = foo
 ```
 Pyre does one level of inlining to infer implicit parameters
 We suggest you do not heavily rely on this feature as it is not sound and makes our code brittle.
 Support for this is temporary.
+
+#### Common Reasons
+
++ `Optional type has no attribute foo.`: See [Optional attributes](#optional-attributes).
+
++ `Foo has no attribute bar.`: Check if you have explicitly provided the type for `bar` either in the constructor or as a class attribute.
+
++ `Module foo has no attribute bar`: Check if the library has [stubs](#third-party-libraries). If so, you may need to add the function, class, or global variable to the stub.
+
++ A library class has an attribute but it is not recognized by Pyre: Check if the library has [stubs](#third-party-libraries). If so, you may need to add the attribute to the class in the stub.
+
++ Your class has dynamic attributes: Consider using `__getattr__` in a [stub](gradual_typing.md#when-source-code-is-not-available) so that Pyre doesn't complain about those attributes.
 
 ### 18,21: Undefined Name, Undefined Import
 Error 18 ("Undefined name") is raised when your code tries to access a variable or function that Pyre could not resolve.
