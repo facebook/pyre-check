@@ -415,6 +415,25 @@ Pyre will warn on any usage of `typing.Any` when run in [strict mode](types-in-p
 
 ### 34: Invalid type variable
 
+Example:
+
+```python
+class Base:
+    foo: List[T] = []
+
+$ pyre
+Invalid type variable [34]: The current class isn't generic with respect to the type variable `Variable[T]`.
+```
+
+
+```python
+def foo(x: int) -> List[T]:
+    return [x, x]
+
+$ pyre
+Invalid type variable [34]: The type variable `Variable[T]` isn't present in the function's parameters.
+```
+
 Type variables can only be used as types when they have already been placed "in scope".
 A type variable can be placed into scope via:
 
@@ -423,22 +442,67 @@ A type variable can be placed into scope via:
 * The **parameter** types of a generic function
   * for example, `def foo(x: T)` puts `T` into scope for the body and return type annotation of the function
 
-Something notably absent from this list is "inside of a `typing.Callable` type".
-This means that `Callable[[T], T]` does not spell the type of a generic function, but rather a specific identity function, with the `T` defined by an outer scope.
-Therefore, if you want to spell the signature of a function that takes/returns a generic function, you will need to declare it separately via a callback protocol:
+Suggested fix:
 
 ```python
+class Base(Generic[T]):
+    foo: List[T] = []
+
+base: Base[int]
+
+def foo(x: T) -> List[T]:
+    return [x, x]
+```
+
+#### Decorator Factories
+
+One common error is when defining a generic decorator factory. The Python type system doesn't currently place `T` into scope within a `Callable` type. So, it considers `T` to be a type variable from the outer scope. This can lead to errors for apparently valid code:
+
+```python
+from typing import *
+
 T = TypeVar("T")
+R = TypeVar("R")
 
-def returns_identity() -> Callable[[T], T]: ... # Rejected
+def my_decorator_factory(message: str) -> Callable[[Callable[[T], R]], Callable[[T], R]]:
 
-class IdentityFunction(Protocol):
-  def __call__(self, x: T) -> T: ...
+    def _decorator(f: Callable[[T], R]) -> Callable[[T], R]:
 
-def returns_identity() -> IdentityFunction: # Accepted
-  def inner(x: T) -> T:
-    return x
-  return inner
+        def _inner(x: T) -> R:
+            print(message)
+            return f(x)
+
+        return _inner
+
+    return _decorator
+
+$ pyre
+Invalid type variable [34]: The type variable `Variable[R]` isn't present in the function's parameters.
+Invalid type variable [34]: The type variable `Variable[T]` isn't present in the function's parameters.
+```
+
+Suggested fix: Use a callback protocol to define the return type.
+
+```python
+from typing import *
+
+T = TypeVar("T")
+R = TypeVar("R")
+
+class MyCallableProtocol(Protocol):
+    def __call__(self, __f: Callable[[T], R]) -> Callable[[T], R]: ...
+
+def my_decorator_factory(message: str) -> MyCallableProtocol:
+
+    def _decorator(f: Callable[[T], R]) -> Callable[[T], R]:
+
+        def _inner(x: T) -> R:
+            print(message)
+            return f(x)
+
+        return _inner
+
+    return _decorator
 ```
 
 
