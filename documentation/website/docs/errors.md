@@ -413,6 +413,10 @@ y: Container[str] = Container() # Invalid type parameter error
 Pyre will warn on any usage of `typing.Any` when run in [strict mode](types-in-python#strict-mode). `Any` is an escape hatch that hides type errors and introduces potential type inconsistencies which Pyre strict is designed to make explicit. To resolve this error, replace `Any` with any other annotation. Using builtins `object` is acceptable if you are looking for a supertype of all classes.
 
 
+### 30: Terminating Analysis
+
+This indicates a bug in Pyre. Please open an issue on [Github](https://github.com/facebook/pyre/issues).
+
 ### 34: Invalid type variable
 
 Example:
