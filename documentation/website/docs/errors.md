@@ -227,13 +227,14 @@ For type aliases, check that your type alias is defined
 
 
 ### 14,15: Behavioral Subtyping
+
 Method overrides should follow
 [Liskov's substitution principle](https://en.wikipedia.org/wiki/Liskov_substitution_principle).
 In short, parameter types can't be more restrictive and return types
 can't be more permissive in overridden methods. To see why, consider the following example:
 
 ```python
-  def width(image: Image) -> float:
+def width(image: Image) -> float:
     return image.width()
 ```
 
@@ -241,21 +242,55 @@ Say we now have different implementations of our `Image` class, one of which
 violates the substitution principle:
 
 ```python
-  class Image:
+class Image:
     @abstractmethod:
     def width() -> float: pass
 
-  class JpegImage(Image):
+class JpegImage(Image):
     @override
     def width() -> int: return 10  # this is fine
 
-  class ComplexImage(Image):
+class ComplexImage(Image):
     @override
     def width() -> complex: return 1j
+
+def foo() -> None:
+    image: Image = ComplexImage()
+    print(int(image.width()))
 ```
 
-Clearly our `width` function above breaks when used with a `ComplexImage` instance.
-The case for parameters follows analogously.
+The above code fails at runtime with `TypeError: can't convert complex to int`. The case for parameters follows analogously.
+
+#### Common Reasons
+
++ `Could not find parameter y in overriding signature.`: Check if the overriding function can accept all arguments that the overridden function can.
+
+  ```python
+  class Base:
+      def foo(self, x: int, y: str) -> None:
+          pass
+
+  class Child(Base):
+      def foo(self, x: int) -> None:
+          pass
+  ```
+
++ `Type Foo is not a subtype of the overridden attribute type Bar`:
+
+  ```python
+  class Base:
+      a: int = 0
+  class Child(Base):
+      a: str = ""
+
+  def foo() -> None:
+      base: Base = Child()
+      base.a + 1
+  ```
+
+  This would fail at runtime with `TypeError: can only concatenate str (not "int") to str`.
+
++ `Returned type Foo is not a subtype of the overridden return Bar.`: Check for reasons like [invariance](#covariance-and-contravariance).
 
 ### 16: Missing Attributes
 
