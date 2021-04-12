@@ -773,6 +773,20 @@ def foo(x: str) -> int:
   return 5
 ```
 
+### 57: Incompatible async generator return type
+
+An async generator function is an `async` function that contains at least one `yield` statement. The Python runtime ensures that all async generator would return an async generator object. Therefore, the return type of async generator functions should always be `typing.AsyncGenerator` or one of its supertypes.
+
+```python
+async def f() -> int:  # Error
+  yield 0
+
+from typing import AsyncGenerator
+async def g() -> AsyncGenerator[int, None]:  # OK
+  if False:
+    yield 1
+```
+
 ## Suppression
 It is not always possible to address all errors immediately – some code is too dynamic and should be refactored, other times it's *just not the right time* to deal with a type error. We do encourage people to keep their type check results clean at all times and provide mechanisms to suppress errors that cannot be immediately fixed.
 
