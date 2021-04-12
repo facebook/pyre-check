@@ -17,7 +17,7 @@ let get_analysis_kind = function
       failwith "bad argument"
 
 
-let should_infer analysis = analysis == "type_inference"
+let should_infer analysis = String.equal analysis "type_inference"
 
 let run_analysis
     analysis
