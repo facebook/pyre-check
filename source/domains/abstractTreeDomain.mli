@@ -6,7 +6,7 @@
  *)
 
 module type CONFIG = sig
-  val max_tree_depth_after_widening : int
+  val max_tree_depth_after_widening : unit -> int
 
   val check_invariants : bool
 end
@@ -75,17 +75,17 @@ module Make (Config : CONFIG) (Element : ELEMENT) () : sig
 
   val max_depth : t -> int
 
-  val collapse : transform:(Element.t -> Element.t) -> t -> Element.t
+  val collapse : ?transform:(Element.t -> Element.t) -> t -> Element.t
 
   (* Collapse subtrees at depth *)
-  val collapse_to : transform:(Element.t -> Element.t) -> depth:int -> t -> t
+  val collapse_to : ?transform:(Element.t -> Element.t) -> depth:int -> t -> t
 
   (* Collapses the given tree to a depth that keeps at most `width` leaves. *)
-  val limit_to : transform:(Element.t -> Element.t) -> width:int -> t -> t
+  val limit_to : ?transform:(Element.t -> Element.t) -> width:int -> t -> t
 
   (* shape tree ~mold performs a join of tree and mold such that the resulting tree only has
      branches that are already in mold. *)
-  val shape : transform:(Element.t -> Element.t) -> t -> mold:t -> t
+  val shape : ?transform:(Element.t -> Element.t) -> t -> mold:t -> t
 
   val cut_tree_after : depth:int -> t -> t
 

@@ -542,7 +542,7 @@ module BackwardTaint = MakeTaint (Sinks)
 module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
   include Abstract.TreeDomain.Make
             (struct
-              let max_tree_depth_after_widening = Configuration.maximum_tree_depth_after_widening
+              let max_tree_depth_after_widening () = Configuration.maximum_tree_depth_after_widening
 
               let check_invariants = true
             end)
@@ -675,13 +675,13 @@ module MakeTaintEnvironment (Taint : TAINT_DOMAIN) () = struct
       ~path
       environment
     =
-    match get root environment with
+    match get_opt root environment with
     | None -> Taint.bottom, Tree.bottom
     | Some tree -> Tree.read_raw ~transform_non_leaves ~use_precise_labels path tree
 
 
   let read ?(transform_non_leaves = fun _ e -> e) ~root ~path environment =
-    match get root environment with
+    match get_opt root environment with
     | None -> Tree.bottom
     | Some tree -> Tree.read ~transform_non_leaves path tree
 

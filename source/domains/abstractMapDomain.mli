@@ -29,7 +29,13 @@ module Make (Key : KEY) (Element : AbstractDomainCore.S) : sig
   (* Update map at key with result of ~f, passing possibly existing element. *)
   val update : t -> Key.t -> f:(Element.t option -> Element.t) -> t
 
-  val get : Key.t -> t -> Element.t option
+  val remove : Key.t -> t -> t
+
+  val get_opt : Key.t -> t -> Element.t option
+
+  val get : Key.t -> t -> Element.t
+
+  val of_list : (Key.t * Element.t) list -> t
 
   val to_alist : t -> (Key.t * Element.t) list
 end

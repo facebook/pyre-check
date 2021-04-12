@@ -1967,7 +1967,7 @@ module TestSimpleDomain = TestAbstractDomain (PathDomain)
 module TreeOfStringSets = struct
   include AbstractTreeDomain.Make
             (struct
-              let max_tree_depth_after_widening = 3
+              let max_tree_depth_after_widening () = 3
 
               let check_invariants = true
             end)

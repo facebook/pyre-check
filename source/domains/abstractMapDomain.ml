@@ -417,12 +417,24 @@ module Make (Key : KEY) (Element : AbstractDomainCore.S) = struct
 
   let to_alist = Map.to_alist
 
+  let of_list l =
+    List.fold_left l ~f:(fun acc (key, data) -> Map.set ~key ~data acc) ~init:Map.empty
+
+
   let update map key ~f =
     let data = Map.find map key |> f in
     set map ~key ~data
 
 
-  let get = Map.find_opt
+  let get_opt = Map.find_opt
+
+  let get key map =
+    match Map.find_opt key map with
+    | Some d -> d
+    | None -> Element.bottom
+
+
+  let remove k m = Map.remove m k
 
   let _ = Base.fold (* unused module warning work-around *)
 

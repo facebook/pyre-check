@@ -15,7 +15,7 @@ module Fn = Core_kernel.Fn
 let ( >>= ) = Option.( >>= )
 
 module type CONFIG = sig
-  val max_tree_depth_after_widening : int
+  val max_tree_depth_after_widening : unit -> int
 
   val check_invariants : bool
 end
@@ -372,7 +372,7 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
 
 
   (** Compute join of all element components in tree t. *)
-  let collapse ~transform ~widen_depth { element; children } =
+  let collapse ?(transform = Fn.id) ~widen_depth { element; children } =
     let rec collapse_tree { element; children } element_accumulator =
       let element_accumulator = element_join ~widen_depth element_accumulator (transform element) in
       let collapse_child ~key:_ ~data:subtree = collapse_tree subtree in
@@ -860,7 +860,7 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
 
   (** Collapses all subtrees at depth. Used to limit amount of detail propagated across function
       boundaries, in particular for scaling. *)
-  let collapse_to ~transform ~depth tree =
+  let collapse_to ?(transform = Fn.id) ~depth tree =
     let message () = Format.sprintf "collapse to %d\n%s\n" depth (show tree) in
     join_trees Element.bottom ~transform_on_collapse:transform ~widen_depth:(Some depth) tree tree
     |> option_node_tree ~message
@@ -868,7 +868,7 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
 
   (* Makes sure tree has at most ~width leaves by collapsing levels (lowest
      first). Only entire levels are collapsed. *)
-  let limit_to ~transform ~width tree =
+  let limit_to ?(transform = Fn.id) ~width tree =
     let rec compute_max_depth ~depth leaves_left roots =
       if roots = [] then
         raise Exit (* tree does not exceed leaf limit *)
@@ -968,7 +968,7 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
     LabelMap.fold2 left_children mold ~init:LabelMap.empty ~f:mold_branch
 
 
-  let shape ~transform tree ~mold =
+  let shape ?(transform = Fn.id) tree ~mold =
     let message () = Format.sprintf "shape tree\n%s\nmold:\n%s\n" (show tree) (show mold) in
     shape_tree ~transform ~ancestors:Element.bottom tree ~mold |> option_node_tree ~message
 
@@ -1048,7 +1048,7 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
       join_trees
         Element.bottom
         ~transform_on_collapse:Element.transform_on_widening_collapse
-        ~widen_depth:(Some Config.max_tree_depth_after_widening)
+        ~widen_depth:(Some (Config.max_tree_depth_after_widening ()))
         prev
         next
       |> option_node_tree ~message
