@@ -11,11 +11,12 @@ To get started, you need [Python 3.6 or later](https://www.python.org/getit/) an
 ```bash
 $ brew install python3 watchman
 ```
-On *Ubuntu*, *Mint*, or *Debian*; use `apt-get`:
+On *Ubuntu*, *Mint*, or *Debian*; use `apt-get` and [homebrew](https://brew.sh/):
 ```bash
-$ sudo apt-get install python3 python3-pip watchman
+$ sudo apt-get install python3 python3-pip python3-venv
+$ brew install watchman
 ```
-We tested Pyre on *Ubuntu 16.04 LTS*, *CentOS 7*, as well as *OSX 10.11* and later.
+We tested Pyre on *Ubuntu 18.04.5 LTS*, *CentOS 7*, as well as *OSX 10.11* and later.
 
 ## Setting up a Project
 We start by creating an empty project directory and setting up a virtual environment:
