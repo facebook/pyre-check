@@ -212,7 +212,7 @@ def f() -> None:
     foo: Foo[Optional[int]] = Foo[Optional[int]](x=1)
 ```
 
-### 11: Undefined or Invalid Type
+### 11, 31: Undefined or Invalid Type
 Pyre recognizes class names as valid annotations. Most basic types are imported from the `typing` module or are already available from builtins like `str`, `int`, `bool`, etc. You can also define your own type alias on the global scope, which can be used as annotations:
 
 ```python
@@ -221,20 +221,40 @@ from typing_extensions import TypeAlias
 INT_OR_STR: TypeAlias = Union[int, str]
 ```
 
-If you use a name as an annotation that is not a class name or valid alias, you will see this error:
+If you use a name as an annotation that is not a valid type or valid alias, you will see this error:
 
 ```python
 GLOBAL_VALUE = "string"
 
-def foo() -> GLOBAL_VALUE: # Undefined or Invalid type error
-  pass
+def f0() -> GLOBAL_VALUE: ... # Error! `GLOBAL_VALUE` is a value, not a type.
+
+def f1() -> type(GLOBAL_VALUE): ...   # Error! Static type annotations cannot be dynamically computed.
+
+def f2() -> [int]: ...  # Error! `[int]` is not a valid type. If you mean a list of int, use `typing.List[int]`.
+
+def f3() -> (int, str): ...  # Error! `(int, str)` is not a valid type. If you mean a pair of int and str, use `typing.Tuple[int, str]`.
+
+from typing import Callable
+def f4() -> Callable[[int]]: ...  # Error! `Callable[[int]]` is not a valid type because the return type of the callable is missing. Good example: `Callable[[int], int]`.
+
+def f5() -> Callable[int, int]: ...  # Error! `Callable[int, int]` is not a valid type. The parameter types of the callable must be enclosed in square brackets. Good example: `Callable[[int], int]`.
+
+from typing_extensions import Final
+def f6() -> List[Final[int]]: ...  # Error! `Final` may only be used as the outermost type in annotations. See PEP 591.
+
+from typing_extensions import Literal
+def f7() -> Literal[GLOBAL_VALUE]: ...  # Error! Only literals are allowed as parameters for `Literal`. See PEP586. Good example: `Literal[42]` or `Literal["string"]`.
 ```
 
 You can fix this error by verifying that your annotation is
-1. properly imported from `typing` if applicable.
-2. properly defined in the module you are importing from. If the module you are importing from has a [stub file](#third-party-libraries), you should check the definition there.
+
+1. statically determined.
+2. properly imported from `typing` if applicable.
+3. properly defined in the module you are importing from. If the module you are importing from has a [stub file](#third-party-libraries), you should check the definition there.
+4. properly adhere to the additional rules of special types (e.g. `Callable`, `Final`, and `Literal`).
 
 For type aliases, check that your type alias is defined
+
 1. with a valid type on the RHS. If you provide an annotation for the TypeAlias assignment, it must be `typing_extensions.TypeAlias`.
 2. on the global scope, not nested inside a function or class.
 
