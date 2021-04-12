@@ -164,6 +164,19 @@ def f(x: Optional[int]) -> None:
 
 If you are seeing errors with invariant containers where some `Container[T]` is expected but you are passing `Container[S]` where `S < T`, please see [Covariance and Contravariance](errors#covariance-and-contravariance).
 
+### 8: Incompatible Attribute Type
+Pyre will error if a value is assigned to an attribute that does not match the annotated type of that attribute.
+
+```python
+class Foo:
+  x: int = 0
+
+def f(foo: Foo) -> None:
+  foo.x = "abc" # Incompatible attribute type error
+```
+
+If you are seeing errors with invariant containers where some `Container[T]` is expected but you are passing `Container[S]` where `S < T`, please see [Covariance and Contravariance](errors#covariance-and-contravariance).
+
 ### 9: Incompatible Variable Type
 Pyre will error when assigning incompatible types to local variables and parameters that were explicitly annotated.
 
