@@ -164,6 +164,15 @@ def f(x: Optional[int]) -> None:
 
 If you are seeing errors with invariant containers where some `Container[T]` is expected but you are passing `Container[S]` where `S < T`, please see [Covariance and Contravariance](errors#covariance-and-contravariance).
 
+### 7: Incompatible Return Type
+Pyre will error when the value returned from a function does not match the annotation.
+
+```python
+def foo() -> int:
+  return "" # incompatible return type
+```
+Updating the return annotation, or the value returned from the function will resolve this error.
+
 ### 8: Incompatible Attribute Type
 Pyre will error if a value is assigned to an attribute that does not match the annotated type of that attribute.
 
