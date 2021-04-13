@@ -2,13 +2,13 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "pandas_dataFrame.issue1",
+    "callable": "lineage_analysis.issue1",
     "callable_line": 64,
     "code": 1000,
     "line": 67,
     "start": 9,
     "end": 11,
-    "filename": "pandas_dataFrame.py",
+    "filename": "lineage_analysis.py",
     "message": "source A to sink A",
     "traces": [
       {
@@ -16,13 +16,13 @@
         "roots": [
           {
             "root": {
-              "filename": "pandas_dataFrame.py",
+              "filename": "lineage_analysis.py",
               "line": 65,
               "start": 9,
               "end": 17
             },
             "leaves": [
-              { "kind": "SourceA[KindB]", "name": "pandas_dataFrame.source" }
+              { "kind": "SourceA[KindB]", "name": "lineage_analysis.source" }
             ]
           }
         ]
@@ -32,13 +32,13 @@
         "roots": [
           {
             "root": {
-              "filename": "pandas_dataFrame.py",
+              "filename": "lineage_analysis.py",
               "line": 67,
               "start": 9,
               "end": 11
             },
             "leaves": [
-              { "kind": "SinkA[KindB]", "name": "pandas_dataFrame.sink" }
+              { "kind": "SinkA[KindB]", "name": "lineage_analysis.sink" }
             ]
           }
         ]
@@ -50,13 +50,13 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "pandas_dataFrame.issue1",
+    "callable": "lineage_analysis.issue1",
     "callable_line": 64,
     "code": 1000,
     "line": 67,
     "start": 9,
     "end": 11,
-    "filename": "pandas_dataFrame.py",
+    "filename": "lineage_analysis.py",
     "message": "source A to sink A",
     "traces": [
       {
@@ -64,13 +64,13 @@
         "roots": [
           {
             "root": {
-              "filename": "pandas_dataFrame.py",
+              "filename": "lineage_analysis.py",
               "line": 65,
               "start": 9,
               "end": 17
             },
             "leaves": [
-              { "kind": "SourceA[KindB]", "name": "pandas_dataFrame.source" }
+              { "kind": "SourceA[KindB]", "name": "lineage_analysis.source" }
             ]
           }
         ]
@@ -80,13 +80,13 @@
         "roots": [
           {
             "root": {
-              "filename": "pandas_dataFrame.py",
+              "filename": "lineage_analysis.py",
               "line": 67,
               "start": 9,
               "end": 11
             },
             "leaves": [
-              { "kind": "SinkA[KindA]", "name": "pandas_dataFrame.sink" }
+              { "kind": "SinkA[KindA]", "name": "lineage_analysis.sink" }
             ]
           }
         ]
@@ -98,13 +98,13 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "pandas_dataFrame.issue2",
+    "callable": "lineage_analysis.issue2",
     "callable_line": 70,
     "code": 1000,
     "line": 73,
     "start": 9,
     "end": 12,
-    "filename": "pandas_dataFrame.py",
+    "filename": "lineage_analysis.py",
     "message": "source A to sink A",
     "traces": [
       {
@@ -112,13 +112,13 @@
         "roots": [
           {
             "root": {
-              "filename": "pandas_dataFrame.py",
+              "filename": "lineage_analysis.py",
               "line": 71,
               "start": 9,
               "end": 17
             },
             "leaves": [
-              { "kind": "SourceA[KindB]", "name": "pandas_dataFrame.source" }
+              { "kind": "SourceA[KindB]", "name": "lineage_analysis.source" }
             ]
           }
         ]
@@ -128,13 +128,13 @@
         "roots": [
           {
             "root": {
-              "filename": "pandas_dataFrame.py",
+              "filename": "lineage_analysis.py",
               "line": 73,
               "start": 9,
               "end": 12
             },
             "leaves": [
-              { "kind": "SinkA[KindB]", "name": "pandas_dataFrame.sink" }
+              { "kind": "SinkA[KindB]", "name": "lineage_analysis.sink" }
             ]
           }
         ]
@@ -146,13 +146,13 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "pandas_dataFrame.issue2",
+    "callable": "lineage_analysis.issue2",
     "callable_line": 70,
     "code": 1000,
     "line": 73,
     "start": 9,
     "end": 12,
-    "filename": "pandas_dataFrame.py",
+    "filename": "lineage_analysis.py",
     "message": "source A to sink A",
     "traces": [
       {
@@ -160,13 +160,13 @@
         "roots": [
           {
             "root": {
-              "filename": "pandas_dataFrame.py",
+              "filename": "lineage_analysis.py",
               "line": 71,
               "start": 9,
               "end": 17
             },
             "leaves": [
-              { "kind": "SourceA[KindA]", "name": "pandas_dataFrame.source" }
+              { "kind": "SourceA[KindA]", "name": "lineage_analysis.source" }
             ]
           }
         ]
@@ -176,13 +176,13 @@
         "roots": [
           {
             "root": {
-              "filename": "pandas_dataFrame.py",
+              "filename": "lineage_analysis.py",
               "line": 73,
               "start": 9,
               "end": 12
             },
             "leaves": [
-              { "kind": "SinkA[KindA]", "name": "pandas_dataFrame.sink" }
+              { "kind": "SinkA[KindA]", "name": "lineage_analysis.sink" }
             ]
           }
         ]
@@ -194,13 +194,13 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "pandas_dataFrame.issue3",
+    "callable": "lineage_analysis.issue3",
     "callable_line": 76,
     "code": 1000,
     "line": 80,
     "start": 9,
     "end": 12,
-    "filename": "pandas_dataFrame.py",
+    "filename": "lineage_analysis.py",
     "message": "source A to sink A",
     "traces": [
       {
@@ -208,13 +208,13 @@
         "roots": [
           {
             "root": {
-              "filename": "pandas_dataFrame.py",
+              "filename": "lineage_analysis.py",
               "line": 77,
               "start": 9,
               "end": 17
             },
             "leaves": [
-              { "kind": "SourceA[KindB]", "name": "pandas_dataFrame.source" }
+              { "kind": "SourceA[KindB]", "name": "lineage_analysis.source" }
             ]
           }
         ]
@@ -224,13 +224,13 @@
         "roots": [
           {
             "root": {
-              "filename": "pandas_dataFrame.py",
+              "filename": "lineage_analysis.py",
               "line": 80,
               "start": 9,
               "end": 12
             },
             "leaves": [
-              { "kind": "SinkA[KindA]", "name": "pandas_dataFrame.sink" }
+              { "kind": "SinkA[KindA]", "name": "lineage_analysis.sink" }
             ]
           }
         ]
@@ -242,13 +242,13 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "pandas_dataFrame.issue4",
+    "callable": "lineage_analysis.issue4",
     "callable_line": 83,
     "code": 1000,
     "line": 87,
     "start": 9,
     "end": 12,
-    "filename": "pandas_dataFrame.py",
+    "filename": "lineage_analysis.py",
     "message": "source A to sink A",
     "traces": [
       {
@@ -256,13 +256,13 @@
         "roots": [
           {
             "root": {
-              "filename": "pandas_dataFrame.py",
+              "filename": "lineage_analysis.py",
               "line": 84,
               "start": 9,
               "end": 17
             },
             "leaves": [
-              { "kind": "SourceA[KindA]", "name": "pandas_dataFrame.source" }
+              { "kind": "SourceA[KindA]", "name": "lineage_analysis.source" }
             ]
           }
         ]
@@ -272,13 +272,13 @@
         "roots": [
           {
             "root": {
-              "filename": "pandas_dataFrame.py",
+              "filename": "lineage_analysis.py",
               "line": 87,
               "start": 9,
               "end": 12
             },
             "leaves": [
-              { "kind": "SinkA[KindB]", "name": "pandas_dataFrame.sink" }
+              { "kind": "SinkA[KindB]", "name": "lineage_analysis.sink" }
             ]
           }
         ]
@@ -290,13 +290,13 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "pandas_dataFrame.issue4",
+    "callable": "lineage_analysis.issue4",
     "callable_line": 83,
     "code": 1000,
     "line": 87,
     "start": 9,
     "end": 12,
-    "filename": "pandas_dataFrame.py",
+    "filename": "lineage_analysis.py",
     "message": "source A to sink A",
     "traces": [
       {
@@ -304,13 +304,13 @@
         "roots": [
           {
             "root": {
-              "filename": "pandas_dataFrame.py",
+              "filename": "lineage_analysis.py",
               "line": 84,
               "start": 9,
               "end": 17
             },
             "leaves": [
-              { "kind": "SourceA[KindB]", "name": "pandas_dataFrame.source" }
+              { "kind": "SourceA[KindB]", "name": "lineage_analysis.source" }
             ]
           }
         ]
@@ -320,13 +320,13 @@
         "roots": [
           {
             "root": {
-              "filename": "pandas_dataFrame.py",
+              "filename": "lineage_analysis.py",
               "line": 87,
               "start": 9,
               "end": 12
             },
             "leaves": [
-              { "kind": "SinkA[KindA]", "name": "pandas_dataFrame.sink" }
+              { "kind": "SinkA[KindA]", "name": "lineage_analysis.sink" }
             ]
           }
         ]
@@ -338,13 +338,13 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "pandas_dataFrame.issue5",
+    "callable": "lineage_analysis.issue5",
     "callable_line": 90,
     "code": 1000,
     "line": 94,
     "start": 9,
     "end": 11,
-    "filename": "pandas_dataFrame.py",
+    "filename": "lineage_analysis.py",
     "message": "source A to sink A",
     "traces": [
       {
@@ -352,24 +352,24 @@
         "roots": [
           {
             "root": {
-              "filename": "pandas_dataFrame.py",
+              "filename": "lineage_analysis.py",
               "line": 91,
               "start": 9,
               "end": 17
             },
             "leaves": [
-              { "kind": "SourceA[KindA]", "name": "pandas_dataFrame.source" }
+              { "kind": "SourceA[KindA]", "name": "lineage_analysis.source" }
             ]
           },
           {
             "root": {
-              "filename": "pandas_dataFrame.py",
+              "filename": "lineage_analysis.py",
               "line": 91,
               "start": 9,
               "end": 17
             },
             "leaves": [
-              { "kind": "SourceA[KindB]", "name": "pandas_dataFrame.source" }
+              { "kind": "SourceA[KindB]", "name": "lineage_analysis.source" }
             ]
           }
         ]
@@ -379,13 +379,13 @@
         "roots": [
           {
             "root": {
-              "filename": "pandas_dataFrame.py",
+              "filename": "lineage_analysis.py",
               "line": 94,
               "start": 9,
               "end": 11
             },
             "leaves": [
-              { "kind": "SinkA[KindB]", "name": "pandas_dataFrame.sink" }
+              { "kind": "SinkA[KindB]", "name": "lineage_analysis.sink" }
             ]
           }
         ]
@@ -397,13 +397,13 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "pandas_dataFrame.issue5",
+    "callable": "lineage_analysis.issue5",
     "callable_line": 90,
     "code": 1000,
     "line": 94,
     "start": 9,
     "end": 11,
-    "filename": "pandas_dataFrame.py",
+    "filename": "lineage_analysis.py",
     "message": "source A to sink A",
     "traces": [
       {
@@ -411,13 +411,13 @@
         "roots": [
           {
             "root": {
-              "filename": "pandas_dataFrame.py",
+              "filename": "lineage_analysis.py",
               "line": 91,
               "start": 9,
               "end": 17
             },
             "leaves": [
-              { "kind": "SourceA[KindA]", "name": "pandas_dataFrame.source" }
+              { "kind": "SourceA[KindA]", "name": "lineage_analysis.source" }
             ]
           }
         ]
@@ -427,13 +427,13 @@
         "roots": [
           {
             "root": {
-              "filename": "pandas_dataFrame.py",
+              "filename": "lineage_analysis.py",
               "line": 94,
               "start": 9,
               "end": 11
             },
             "leaves": [
-              { "kind": "SinkA[KindA]", "name": "pandas_dataFrame.sink" }
+              { "kind": "SinkA[KindA]", "name": "lineage_analysis.sink" }
             ]
           }
         ]
@@ -445,13 +445,13 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "pandas_dataFrame.issue6",
+    "callable": "lineage_analysis.issue6",
     "callable_line": 97,
     "code": 1000,
     "line": 101,
     "start": 9,
     "end": 12,
-    "filename": "pandas_dataFrame.py",
+    "filename": "lineage_analysis.py",
     "message": "source A to sink A",
     "traces": [
       {
@@ -459,13 +459,13 @@
         "roots": [
           {
             "root": {
-              "filename": "pandas_dataFrame.py",
+              "filename": "lineage_analysis.py",
               "line": 98,
               "start": 9,
               "end": 17
             },
             "leaves": [
-              { "kind": "SourceA[KindA]", "name": "pandas_dataFrame.source" }
+              { "kind": "SourceA[KindA]", "name": "lineage_analysis.source" }
             ]
           }
         ]
@@ -475,13 +475,13 @@
         "roots": [
           {
             "root": {
-              "filename": "pandas_dataFrame.py",
+              "filename": "lineage_analysis.py",
               "line": 101,
               "start": 9,
               "end": 12
             },
             "leaves": [
-              { "kind": "SinkA[KindA]", "name": "pandas_dataFrame.sink" }
+              { "kind": "SinkA[KindA]", "name": "lineage_analysis.sink" }
             ]
           }
         ]
@@ -493,13 +493,13 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "pandas_dataFrame.issue7",
+    "callable": "lineage_analysis.issue7",
     "callable_line": 104,
     "code": 1000,
     "line": 108,
     "start": 9,
     "end": 12,
-    "filename": "pandas_dataFrame.py",
+    "filename": "lineage_analysis.py",
     "message": "source A to sink A",
     "traces": [
       {
@@ -507,24 +507,24 @@
         "roots": [
           {
             "root": {
-              "filename": "pandas_dataFrame.py",
+              "filename": "lineage_analysis.py",
               "line": 105,
               "start": 9,
               "end": 17
             },
             "leaves": [
-              { "kind": "SourceA[KindA]", "name": "pandas_dataFrame.source" }
+              { "kind": "SourceA[KindA]", "name": "lineage_analysis.source" }
             ]
           },
           {
             "root": {
-              "filename": "pandas_dataFrame.py",
+              "filename": "lineage_analysis.py",
               "line": 105,
               "start": 9,
               "end": 17
             },
             "leaves": [
-              { "kind": "SourceA[KindB]", "name": "pandas_dataFrame.source" }
+              { "kind": "SourceA[KindB]", "name": "lineage_analysis.source" }
             ]
           }
         ]
@@ -534,13 +534,13 @@
         "roots": [
           {
             "root": {
-              "filename": "pandas_dataFrame.py",
+              "filename": "lineage_analysis.py",
               "line": 108,
               "start": 9,
               "end": 12
             },
             "leaves": [
-              { "kind": "SinkA[KindA]", "name": "pandas_dataFrame.sink" }
+              { "kind": "SinkA[KindA]", "name": "lineage_analysis.sink" }
             ]
           }
         ]
@@ -552,13 +552,13 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "pandas_dataFrame.issue8",
+    "callable": "lineage_analysis.issue8",
     "callable_line": 111,
     "code": 1000,
     "line": 115,
     "start": 9,
     "end": 12,
-    "filename": "pandas_dataFrame.py",
+    "filename": "lineage_analysis.py",
     "message": "source A to sink A",
     "traces": [
       {
@@ -566,24 +566,24 @@
         "roots": [
           {
             "root": {
-              "filename": "pandas_dataFrame.py",
+              "filename": "lineage_analysis.py",
               "line": 112,
               "start": 9,
               "end": 17
             },
             "leaves": [
-              { "kind": "SourceA[KindA]", "name": "pandas_dataFrame.source" }
+              { "kind": "SourceA[KindA]", "name": "lineage_analysis.source" }
             ]
           },
           {
             "root": {
-              "filename": "pandas_dataFrame.py",
+              "filename": "lineage_analysis.py",
               "line": 112,
               "start": 9,
               "end": 17
             },
             "leaves": [
-              { "kind": "SourceA[KindB]", "name": "pandas_dataFrame.source" }
+              { "kind": "SourceA[KindB]", "name": "lineage_analysis.source" }
             ]
           }
         ]
@@ -593,13 +593,13 @@
         "roots": [
           {
             "root": {
-              "filename": "pandas_dataFrame.py",
+              "filename": "lineage_analysis.py",
               "line": 115,
               "start": 9,
               "end": 12
             },
             "leaves": [
-              { "kind": "SinkA[KindA]", "name": "pandas_dataFrame.sink" }
+              { "kind": "SinkA[KindA]", "name": "lineage_analysis.sink" }
             ]
           }
         ]
@@ -611,13 +611,13 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "pandas_dataFrame.issue9",
+    "callable": "lineage_analysis.issue9",
     "callable_line": 118,
     "code": 1000,
     "line": 122,
     "start": 9,
     "end": 12,
-    "filename": "pandas_dataFrame.py",
+    "filename": "lineage_analysis.py",
     "message": "source A to sink A",
     "traces": [
       {
@@ -625,24 +625,24 @@
         "roots": [
           {
             "root": {
-              "filename": "pandas_dataFrame.py",
+              "filename": "lineage_analysis.py",
               "line": 119,
               "start": 9,
               "end": 17
             },
             "leaves": [
-              { "kind": "SourceA[KindA]", "name": "pandas_dataFrame.source" }
+              { "kind": "SourceA[KindA]", "name": "lineage_analysis.source" }
             ]
           },
           {
             "root": {
-              "filename": "pandas_dataFrame.py",
+              "filename": "lineage_analysis.py",
               "line": 119,
               "start": 9,
               "end": 17
             },
             "leaves": [
-              { "kind": "SourceA[KindB]", "name": "pandas_dataFrame.source" }
+              { "kind": "SourceA[KindB]", "name": "lineage_analysis.source" }
             ]
           }
         ]
@@ -652,19 +652,57 @@
         "roots": [
           {
             "root": {
-              "filename": "pandas_dataFrame.py",
+              "filename": "lineage_analysis.py",
               "line": 122,
               "start": 9,
               "end": 12
             },
             "leaves": [
-              { "kind": "SinkA[KindA]", "name": "pandas_dataFrame.sink" }
+              { "kind": "SinkA[KindA]", "name": "lineage_analysis.sink" }
             ]
           }
         ]
       }
     ],
     "features": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Ovr{lineage_analysis.DataFrame::__init__}",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Ovr{lineage_analysis.Series::__init__}",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
+        ]
+      }
+    ]
   }
 }
 {
@@ -689,7 +727,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{pandas_dataFrame.DataFrame::__init__}",
+    "callable": "lineage_analysis.DataFrame.__init__",
     "sources": [],
     "sinks": [],
     "tito": [
@@ -708,7 +746,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{pandas_dataFrame.Series::__init__}",
+    "callable": "lineage_analysis.Series.__init__",
     "sources": [],
     "sinks": [],
     "tito": [
@@ -727,45 +765,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "pandas_dataFrame.DataFrame.__init__",
-    "sources": [],
-    "sinks": [],
-    "tito": [
-      {
-        "port": "formal(self)",
-        "taint": [
-          {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "pandas_dataFrame.Series.__init__",
-    "sources": [],
-    "sinks": [],
-    "tito": [
-      {
-        "port": "formal(self)",
-        "taint": [
-          {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "pandas_dataFrame.sink",
+    "callable": "lineage_analysis.sink",
     "sources": [],
     "sinks": [
       {
@@ -787,7 +787,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "pandas_dataFrame.source",
+    "callable": "lineage_analysis.source",
     "sources": [
       {
         "port": "result[a]",
