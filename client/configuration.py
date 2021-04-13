@@ -228,16 +228,17 @@ class ExtensionElement:
         raise InvalidConfiguration(f"Invalid extension element: {json}")
 
 
-def _get_site_roots() -> List[str]:
+def get_site_roots() -> List[str]:
     try:
-        return site.getsitepackages()
+        return site.getsitepackages() + [site.getusersitepackages()]
     except AttributeError:
         # There are a few Python versions that ship with a broken venv,
         # where `getsitepackages` is not available.
         LOG.warning(
-            "`site.getsitepackages()` is not available in your virtualenv. "
-            + "This is a known virtualenv bug and as a workaround please avoid"
-            + 'using `"site-package"` in your search path configuration.'
+            "Either `site.getusersitepackages()` or `site.getsitepackages()` "
+            + "is not available in your virtualenv. This is a known virtualenv "
+            + 'bug and as a workaround please avoid using `"site-package"` in '
+            + "your search path configuration."
         )
         return []
 
@@ -479,12 +480,12 @@ class PartialConfiguration:
                     element
                     for json in search_path_json
                     for element in create_search_paths(
-                        json, site_roots=_get_site_roots()
+                        json, site_roots=get_site_roots()
                     )
                 ]
             else:
                 search_path = create_search_paths(
-                    search_path_json, site_roots=_get_site_roots()
+                    search_path_json, site_roots=get_site_roots()
                 )
 
             python_version_json = configuration_json.pop("python_version", None)
@@ -506,7 +507,7 @@ class PartialConfiguration:
                     element
                     for json in source_directories_json
                     for element in create_search_paths(
-                        json, site_roots=_get_site_roots()
+                        json, site_roots=get_site_roots()
                     )
                 ]
             else:
@@ -785,7 +786,7 @@ class Configuration:
         search_path = partial_configuration.search_path
         if len(search_path) == 0 and _in_virtual_environment(in_virtual_environment):
             LOG.warning("Using virtual environment site-packages in search path...")
-            search_path = [SimpleSearchPathElement(root) for root in _get_site_roots()]
+            search_path = [SimpleSearchPathElement(root) for root in get_site_roots()]
 
         return Configuration(
             project_root=str(project_root),

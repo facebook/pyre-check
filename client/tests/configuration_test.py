@@ -16,7 +16,11 @@ from pathlib import Path
 
 import testslide
 
-from .. import command_arguments, find_directories
+from .. import (
+    command_arguments,
+    find_directories,
+    configuration as configuration_module,
+)
 from ..configuration import (
     PythonVersion,
     InvalidPythonVersion,
@@ -31,6 +35,7 @@ from ..configuration import (
     create_configuration,
     create_search_paths,
     merge_partial_configurations,
+    get_site_roots,
 )
 from ..find_directories import BINARY_NAME
 from .setup import (
@@ -680,13 +685,24 @@ class ConfigurationTest(testslide.TestCase):
         self.assertEqual(configuration.use_command_v2, False)
         self.assertEqual(configuration.version_hash, "abc")
 
+    def test_get_site_roots(self) -> None:
+        global_site_package = "/venv/lib/pythonX/site-packages"
+        user_site_package = "/user/lib/pythonX/site-packages"
+        self.mock_callable(site, "getsitepackages").to_return_value(
+            [global_site_package]
+        ).and_assert_called_once()
+        self.mock_callable(site, "getusersitepackages").to_return_value(
+            user_site_package
+        ).and_assert_called_once()
+        self.assertListEqual(get_site_roots(), [global_site_package, user_site_package])
+
     def test_from_partial_configuration_in_virtual_environment(self) -> None:
         with tempfile.TemporaryDirectory() as root:
             root_path = Path(root).resolve()
             ensure_directories_exists(root_path, ["venv/lib/pythonX/site-packages"])
 
             site_packages = str(root_path / "venv/lib/pythonX/site-packages")
-            self.mock_callable(site, "getsitepackages").to_return_value(
+            self.mock_callable(configuration_module, "get_site_roots").to_return_value(
                 [site_packages]
             ).and_assert_called_once()
 
