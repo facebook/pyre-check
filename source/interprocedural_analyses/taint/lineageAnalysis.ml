@@ -81,6 +81,70 @@ let analyze_dataFrame_setitem resolution base taint index state =
   | _ -> state
 
 
+let analyze_dataFrame_apply analyze_expression_with_state base_taint func_argument axis_argument =
+  let collapsed_taint =
+    ForwardState.Tree.collapse ~transform:Fn.id base_taint |> ForwardState.Tree.create_leaf
+  in
+  (* in the body of a "lambda x"
+   * - using x returns a collapsed taint of 'df'
+   * - using x['a'] is handled with "__getitem__"
+   * - otherwise, using analyze_expression as default case
+   *)
+  let get_argument_taint lambda_parameter inner_call_argument =
+    let is_lambda_parameter expression =
+      match expression with
+      | Expression.Name (Name.Identifier var) when String.equal lambda_parameter.Parameter.name var
+        ->
+          true
+      | _ -> false
+    in
+    match inner_call_argument.Call.Argument.value with
+    | {
+     Node.value =
+       Expression.Call
+         {
+           callee =
+             {
+               Node.value = Expression.Name (Name.Attribute { base; attribute = "__getitem__"; _ });
+               _;
+             };
+           arguments = [{ Call.Argument.value = index; _ }];
+         };
+     _;
+    }
+      when is_lambda_parameter base.Node.value ->
+        analyze_dataFrame_getitem base_taint index
+    | expression when is_lambda_parameter expression.Node.value -> collapsed_taint
+    | expression ->
+        let taint, _ = analyze_expression_with_state expression in
+        taint |> ForwardState.Tree.collapse ~transform:Fn.id |> ForwardState.Tree.create_leaf
+  in
+  match func_argument, axis_argument with
+  (* only support case: `df.apply(lambda x: fun(x,x["a"], ab), axis=1)` *)
+  | ( {
+        Call.Argument.value =
+          {
+            Node.value =
+              Lambda
+                {
+                  Lambda.parameters = [parameter];
+                  body = { Node.value = Call lambda_inner_call; _ };
+                };
+            _;
+          };
+        _;
+      },
+      {
+        Call.Argument.name = Some { Node.value = "$parameter$axis"; _ };
+        Call.Argument.value = { Node.value = Integer 1; _ };
+      } ) ->
+      let fold_taint taint_so_far argument =
+        get_argument_taint parameter.Node.value argument |> ForwardState.Tree.join taint_so_far
+      in
+      List.fold ~init:ForwardState.Tree.empty ~f:fold_taint lambda_inner_call.Call.arguments
+  | _ -> collapsed_taint
+
+
 let analyze_dataFrame analyze_expression resolution callee arguments taint state =
   match callee with
   | { Node.value = Expression.Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ } -> (
@@ -96,6 +160,21 @@ let analyze_dataFrame analyze_expression resolution callee arguments taint state
           let state = analyze_dataFrame_setitem resolution base taint index state in
           ForwardState.Tree.empty, state
       | _ -> taint, state )
+  | { Node.value = Expression.Name (Name.Attribute { base; attribute = "apply"; _ }); _ } -> (
+      let taint, state = analyze_expression ~resolution ~state ~expression:base in
+      match arguments with
+      | [func_argument; axis_argument] ->
+          let taint =
+            analyze_dataFrame_apply
+              (fun expression -> analyze_expression ~resolution ~state ~expression)
+              taint
+              func_argument
+              axis_argument
+          in
+          taint, state
+      | _ ->
+          ForwardState.Tree.collapse ~transform:Fn.id taint |> ForwardState.Tree.create_leaf, state
+      )
   | _ -> taint, state
 
 

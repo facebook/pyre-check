@@ -37,6 +37,9 @@ class DataFrame:
     def __setitem__(self, key, newvalue):
         return None
 
+    def apply(self, func, axis: int = 0) -> Series:
+        pass
+
 
 def sink(arg: DataFrame):
     pass
@@ -47,6 +50,14 @@ def source() -> DataFrame:
 
 
 def clear_df() -> DataFrame:
+    pass
+
+
+def map(arg):
+    pass
+
+
+def map2(arg1, arg2):
     pass
 
 
@@ -81,3 +92,31 @@ def issue5():
     var = "a"
     df["b"] = df[var]
     sink(df)
+
+
+def issue6():
+    df = source()
+    df2 = clear_df()
+    df2["a"] = df.apply(lambda x: map(x["a"]), axis=1)
+    sink(df2)
+
+
+def issue7():
+    df = source()
+    df2 = clear_df()
+    df2["a"] = df.apply(lambda x: map(x), axis=1)
+    sink(df2)
+
+
+def issue8():
+    df = source()
+    df2 = clear_df()
+    df2["a"] = df.apply(lambda x: map2(x["a"], x["b"]), axis=1)
+    sink(df2)
+
+
+def issue9():
+    df = source()
+    df2 = clear_df()
+    df2["a"] = df2.apply(lambda x: map(df), axis=1)
+    sink(df2)
