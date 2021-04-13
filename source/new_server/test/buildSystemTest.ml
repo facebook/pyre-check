@@ -75,15 +75,15 @@ let test_type_errors context =
     let initialize () =
       let lookup_source path =
         if Path.equal path !test_source_path then
-          Some test_artifact_path
+          Lwt.return_some test_artifact_path
         else
-          None
+          Lwt.return_none
       in
       let lookup_artifact path =
         if Path.equal path test_artifact_path then
-          [!test_source_path]
+          Lwt.return [!test_source_path]
         else
-          []
+          Lwt.return_nil
       in
       Lwt.return (BuildSystem.create_for_testing ~lookup_source ~lookup_artifact ())
     in
@@ -152,15 +152,15 @@ let test_update context =
     let initialize () =
       let lookup_source path =
         if Path.equal path !test_artifact_path then
-          Some test_source_path
+          Lwt.return_some test_source_path
         else
-          None
+          Lwt.return_none
       in
       let lookup_artifact path =
         if Path.equal path test_source_path then
-          [!test_artifact_path]
+          Lwt.return [!test_artifact_path]
         else
-          []
+          Lwt.return_nil
       in
       let update actual_paths =
         assert_equal
@@ -285,12 +285,16 @@ let test_buck_renormalize context =
 
 let test_buck_update context =
   let assert_optional_path ~expected actual =
+    let open Lwt.Infix in
+    actual
+    >>= fun actual ->
     assert_equal
       ~ctxt:context
       ~cmp:[%compare.equal: Path.t option]
       ~printer:(Option.value_map ~default:"NONE" ~f:Path.show)
       expected
-      actual
+      actual;
+    Lwt.return_unit
   in
   let source_root = bracket_tmpdir context |> Path.create_absolute in
   let artifact_root = bracket_tmpdir context |> Path.create_absolute in
@@ -347,33 +351,37 @@ let test_buck_update context =
   (* Initially, we build bar.py but not baz.py. *)
   assert_optional_path
     ~expected:(Some bar_source)
-    (BuildSystem.lookup_source buck_build_system bar_artifact);
-  assert_optional_path ~expected:None (BuildSystem.lookup_source buck_build_system baz_artifact);
+    (BuildSystem.lookup_source buck_build_system bar_artifact)
+  >>= fun () ->
+  assert_optional_path ~expected:None (BuildSystem.lookup_source buck_build_system baz_artifact)
+  >>= fun () ->
   assert_optional_path
     ~expected:(Some bar_artifact)
-    (BuildSystem.lookup_artifact buck_build_system bar_source |> List.hd);
+    (BuildSystem.lookup_artifact buck_build_system bar_source >|= List.hd)
+  >>= fun () ->
   assert_optional_path
     ~expected:None
-    (BuildSystem.lookup_artifact buck_build_system baz_source |> List.hd);
-
+    (BuildSystem.lookup_artifact buck_build_system baz_source >|= List.hd)
+  >>= fun () ->
   (* Rebuild the project. *)
   BuildSystem.update buck_build_system [bar_source; baz_source]
   >>= fun _ ->
   (* After the rebuild, both bar.py and baz.py should be included in build map. *)
   assert_optional_path
     ~expected:(Some bar_source)
-    (BuildSystem.lookup_source buck_build_system bar_artifact);
+    (BuildSystem.lookup_source buck_build_system bar_artifact)
+  >>= fun () ->
   assert_optional_path
     ~expected:(Some baz_source)
-    (BuildSystem.lookup_source buck_build_system baz_artifact);
+    (BuildSystem.lookup_source buck_build_system baz_artifact)
+  >>= fun () ->
   assert_optional_path
     ~expected:(Some bar_artifact)
-    (BuildSystem.lookup_artifact buck_build_system bar_source |> List.hd);
+    (BuildSystem.lookup_artifact buck_build_system bar_source >|= List.hd)
+  >>= fun () ->
   assert_optional_path
     ~expected:(Some baz_artifact)
-    (BuildSystem.lookup_artifact buck_build_system baz_source |> List.hd);
-
-  Lwt.return_unit
+    (BuildSystem.lookup_artifact buck_build_system baz_source >|= List.hd)
 
 
 let () =

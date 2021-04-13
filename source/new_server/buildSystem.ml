@@ -11,8 +11,8 @@ module Path = Pyre.Path
 type t = {
   update: Path.t list -> Path.t list Lwt.t;
   cleanup: unit -> unit Lwt.t;
-  lookup_source: Path.t -> Path.t option;
-  lookup_artifact: Path.t -> Path.t list;
+  lookup_source: Path.t -> Path.t option Lwt.t;
+  lookup_artifact: Path.t -> Path.t list Lwt.t;
 }
 
 let update { update; _ } = update
@@ -26,8 +26,8 @@ let lookup_artifact { lookup_artifact; _ } = lookup_artifact
 let create_for_testing
     ?(update = fun _ -> Lwt.return [])
     ?(cleanup = fun () -> Lwt.return_unit)
-    ?(lookup_source = fun path -> Some path)
-    ?(lookup_artifact = fun path -> [path])
+    ?(lookup_source = fun path -> Lwt.return_some path)
+    ?(lookup_artifact = fun path -> Lwt.return [path])
     ()
   =
   { update; cleanup; lookup_source; lookup_artifact }
@@ -110,10 +110,12 @@ module BuckBuildSystem = struct
       Lwt.return_unit
     in
     let lookup_source path =
-      Buck.Builder.lookup_source ~index:state.build_map_index ~builder:state.builder path
+      Lwt.return
+        (Buck.Builder.lookup_source ~index:state.build_map_index ~builder:state.builder path)
     in
     let lookup_artifact path =
-      Buck.Builder.lookup_artifact ~index:state.build_map_index ~builder:state.builder path
+      Lwt.return
+        (Buck.Builder.lookup_artifact ~index:state.build_map_index ~builder:state.builder path)
     in
     Lwt.return { update; cleanup; lookup_source; lookup_artifact }
 

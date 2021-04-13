@@ -81,6 +81,8 @@ module WithModule : sig
 
   val instantiate : lookup:(Reference.t -> string option) -> t -> WithPath.t
 
+  val async_instantiate : lookup:(Reference.t -> string option Lwt.t) -> t -> WithPath.t Lwt.t
+
   include Hashable with type t := t
 end
 
