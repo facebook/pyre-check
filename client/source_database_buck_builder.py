@@ -109,21 +109,23 @@ def _query_targets(
     return [target for target in targets if not _ignore_target(target)]
 
 
-def _get_buck_build_arguments(targets: List[str]) -> List[str]:
+def _get_buck_build_arguments(mode: Optional[str], targets: List[str]) -> List[str]:
     # NOTE(agallagher): We could potentially use flags like
     # `-c fbcode.py_version=3 -c fbcode.platform=platform007` to force everything
     # onto a consistent set of platforms, but this has a cost of invalidating the
     # parser cache, which may not be worth it.
+    mode_sublist = ["@mode/" + mode] if mode is not None else []
     return [
+        *mode_sublist,
         "--show-full-json-output",
         *(f"{target}#source-db" for target in targets),
     ]
 
 
 def _build_targets(
-    targets: List[str], isolation_prefix: Optional[str]
+    targets: List[str], mode: Optional[str], isolation_prefix: Optional[str]
 ) -> Dict[str, str]:
-    build_arguments = _get_buck_build_arguments(targets)
+    build_arguments = _get_buck_build_arguments(mode, targets)
     LOG.info("Running `buck build`...")
     with tempfile.NamedTemporaryFile(
         "w+", prefix="pyre_buck_build_arguments"
@@ -197,7 +199,7 @@ def build(
         mode,
         isolation_prefix,
     )
-    target_path_dictionary = _build_targets(targets, isolation_prefix)
+    target_path_dictionary = _build_targets(targets, mode, isolation_prefix)
     source_databases = _load_source_databases(target_path_dictionary)
     link_map = _merge_source_databases(source_databases)
     _build_link_tree(link_map, output_directory, buck_root)

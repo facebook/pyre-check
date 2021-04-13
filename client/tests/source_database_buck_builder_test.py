@@ -75,9 +75,10 @@ class SourceDatabaseBuckBuilderTest(unittest.TestCase):
     def test_buck_build_arguments(self) -> None:
         self.assertEqual(
             source_database_buck_builder._get_buck_build_arguments(
-                ["//foo/bar:baz", "//foo/bar:tests-library"]
+                mode="opt", targets=["//foo/bar:baz", "//foo/bar:tests-library"]
             ),
             [
+                "@mode/opt",
                 "--show-full-json-output",
                 "//foo/bar:baz#source-db",
                 "//foo/bar:tests-library#source-db",
