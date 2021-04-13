@@ -16,8 +16,6 @@ import traceback
 from pathlib import Path
 from typing import Optional, AsyncIterator, Sequence, Dict
 
-import async_generator
-
 from ... import (
     json_rpc,
     error,
@@ -120,7 +118,7 @@ class PysaServerHandler(connection.BackgroundTask):
                     self.client_output_channel, path, diagnostics
                 )
 
-    @async_generator.asynccontextmanager
+    @connection.asynccontextmanager
     async def _read_server_response(
         self, server_input_channel: connection.TextReader
     ) -> AsyncIterator[str]:
