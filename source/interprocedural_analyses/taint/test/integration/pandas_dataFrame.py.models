@@ -1,0 +1,583 @@
+@generated
+{
+  "kind": "issue",
+  "data": {
+    "callable": "pandas_dataFrame.issue1",
+    "callable_line": 53,
+    "code": 1000,
+    "line": 56,
+    "start": 9,
+    "end": 11,
+    "filename": "pandas_dataFrame.py",
+    "message": "source A to sink A",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "pandas_dataFrame.py",
+              "line": 54,
+              "start": 9,
+              "end": 17
+            },
+            "leaves": [
+              { "kind": "SourceA[KindB]", "name": "pandas_dataFrame.source" }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "pandas_dataFrame.py",
+              "line": 56,
+              "start": 9,
+              "end": 11
+            },
+            "leaves": [
+              { "kind": "SinkA[KindB]", "name": "pandas_dataFrame.sink" }
+            ]
+          }
+        ]
+      }
+    ],
+    "features": []
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "pandas_dataFrame.issue1",
+    "callable_line": 53,
+    "code": 1000,
+    "line": 56,
+    "start": 9,
+    "end": 11,
+    "filename": "pandas_dataFrame.py",
+    "message": "source A to sink A",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "pandas_dataFrame.py",
+              "line": 54,
+              "start": 9,
+              "end": 17
+            },
+            "leaves": [
+              { "kind": "SourceA[KindB]", "name": "pandas_dataFrame.source" }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "pandas_dataFrame.py",
+              "line": 56,
+              "start": 9,
+              "end": 11
+            },
+            "leaves": [
+              { "kind": "SinkA[KindA]", "name": "pandas_dataFrame.sink" }
+            ]
+          }
+        ]
+      }
+    ],
+    "features": []
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "pandas_dataFrame.issue2",
+    "callable_line": 59,
+    "code": 1000,
+    "line": 62,
+    "start": 9,
+    "end": 12,
+    "filename": "pandas_dataFrame.py",
+    "message": "source A to sink A",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "pandas_dataFrame.py",
+              "line": 60,
+              "start": 9,
+              "end": 17
+            },
+            "leaves": [
+              { "kind": "SourceA[KindB]", "name": "pandas_dataFrame.source" }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "pandas_dataFrame.py",
+              "line": 62,
+              "start": 9,
+              "end": 12
+            },
+            "leaves": [
+              { "kind": "SinkA[KindB]", "name": "pandas_dataFrame.sink" }
+            ]
+          }
+        ]
+      }
+    ],
+    "features": []
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "pandas_dataFrame.issue2",
+    "callable_line": 59,
+    "code": 1000,
+    "line": 62,
+    "start": 9,
+    "end": 12,
+    "filename": "pandas_dataFrame.py",
+    "message": "source A to sink A",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "pandas_dataFrame.py",
+              "line": 60,
+              "start": 9,
+              "end": 17
+            },
+            "leaves": [
+              { "kind": "SourceA[KindA]", "name": "pandas_dataFrame.source" }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "pandas_dataFrame.py",
+              "line": 62,
+              "start": 9,
+              "end": 12
+            },
+            "leaves": [
+              { "kind": "SinkA[KindA]", "name": "pandas_dataFrame.sink" }
+            ]
+          }
+        ]
+      }
+    ],
+    "features": []
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "pandas_dataFrame.issue3",
+    "callable_line": 65,
+    "code": 1000,
+    "line": 69,
+    "start": 9,
+    "end": 12,
+    "filename": "pandas_dataFrame.py",
+    "message": "source A to sink A",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "pandas_dataFrame.py",
+              "line": 66,
+              "start": 9,
+              "end": 17
+            },
+            "leaves": [
+              { "kind": "SourceA[KindB]", "name": "pandas_dataFrame.source" }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "pandas_dataFrame.py",
+              "line": 69,
+              "start": 9,
+              "end": 12
+            },
+            "leaves": [
+              { "kind": "SinkA[KindA]", "name": "pandas_dataFrame.sink" }
+            ]
+          }
+        ]
+      }
+    ],
+    "features": []
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "pandas_dataFrame.issue4",
+    "callable_line": 72,
+    "code": 1000,
+    "line": 76,
+    "start": 9,
+    "end": 12,
+    "filename": "pandas_dataFrame.py",
+    "message": "source A to sink A",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "pandas_dataFrame.py",
+              "line": 73,
+              "start": 9,
+              "end": 17
+            },
+            "leaves": [
+              { "kind": "SourceA[KindA]", "name": "pandas_dataFrame.source" }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "pandas_dataFrame.py",
+              "line": 76,
+              "start": 9,
+              "end": 12
+            },
+            "leaves": [
+              { "kind": "SinkA[KindB]", "name": "pandas_dataFrame.sink" }
+            ]
+          }
+        ]
+      }
+    ],
+    "features": []
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "pandas_dataFrame.issue4",
+    "callable_line": 72,
+    "code": 1000,
+    "line": 76,
+    "start": 9,
+    "end": 12,
+    "filename": "pandas_dataFrame.py",
+    "message": "source A to sink A",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "pandas_dataFrame.py",
+              "line": 73,
+              "start": 9,
+              "end": 17
+            },
+            "leaves": [
+              { "kind": "SourceA[KindB]", "name": "pandas_dataFrame.source" }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "pandas_dataFrame.py",
+              "line": 76,
+              "start": 9,
+              "end": 12
+            },
+            "leaves": [
+              { "kind": "SinkA[KindA]", "name": "pandas_dataFrame.sink" }
+            ]
+          }
+        ]
+      }
+    ],
+    "features": []
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "pandas_dataFrame.issue5",
+    "callable_line": 79,
+    "code": 1000,
+    "line": 83,
+    "start": 9,
+    "end": 11,
+    "filename": "pandas_dataFrame.py",
+    "message": "source A to sink A",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "pandas_dataFrame.py",
+              "line": 80,
+              "start": 9,
+              "end": 17
+            },
+            "leaves": [
+              { "kind": "SourceA[KindA]", "name": "pandas_dataFrame.source" }
+            ]
+          },
+          {
+            "root": {
+              "filename": "pandas_dataFrame.py",
+              "line": 80,
+              "start": 9,
+              "end": 17
+            },
+            "leaves": [
+              { "kind": "SourceA[KindB]", "name": "pandas_dataFrame.source" }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "pandas_dataFrame.py",
+              "line": 83,
+              "start": 9,
+              "end": 11
+            },
+            "leaves": [
+              { "kind": "SinkA[KindB]", "name": "pandas_dataFrame.sink" }
+            ]
+          }
+        ]
+      }
+    ],
+    "features": []
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "pandas_dataFrame.issue5",
+    "callable_line": 79,
+    "code": 1000,
+    "line": 83,
+    "start": 9,
+    "end": 11,
+    "filename": "pandas_dataFrame.py",
+    "message": "source A to sink A",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "pandas_dataFrame.py",
+              "line": 80,
+              "start": 9,
+              "end": 17
+            },
+            "leaves": [
+              { "kind": "SourceA[KindA]", "name": "pandas_dataFrame.source" }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "pandas_dataFrame.py",
+              "line": 83,
+              "start": 9,
+              "end": 11
+            },
+            "leaves": [
+              { "kind": "SinkA[KindA]", "name": "pandas_dataFrame.sink" }
+            ]
+          }
+        ]
+      }
+    ],
+    "features": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Ovr{object::__init__}",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Ovr{pandas_dataFrame.DataFrame::__init__}",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Ovr{pandas_dataFrame.Series::__init__}",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "pandas_dataFrame.DataFrame.__init__",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "pandas_dataFrame.Series.__init__",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "pandas_dataFrame.sink",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(arg)[a]",
+        "taint": [
+          { "decl": null, "leaves": [ { "kind": "SinkA[KindA]" } ] }
+        ]
+      },
+      {
+        "port": "formal(arg)[b]",
+        "taint": [
+          { "decl": null, "leaves": [ { "kind": "SinkA[KindB]" } ] }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "pandas_dataFrame.source",
+    "sources": [
+      {
+        "port": "result[a]",
+        "taint": [
+          { "decl": null, "leaves": [ { "kind": "SourceA[KindA]" } ] }
+        ]
+      },
+      {
+        "port": "result[b]",
+        "taint": [
+          { "decl": null, "leaves": [ { "kind": "SourceA[KindB]" } ] }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}

@@ -1078,8 +1078,18 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       if not configuration.lineage_analysis then
         taint, state
       else
+        let analyze_expression_unwrap ~resolution ~state ~expression =
+          let taint, state = analyze_expression ~resolution ~state:{ taint = state } ~expression in
+          taint, state.taint
+        in
         let taint, forward_state =
-          LineageAnalysis.forward_analyze_call callee arguments taint state.taint
+          LineageAnalysis.forward_analyze_call
+            ~analyze_expression:analyze_expression_unwrap
+            ~resolution
+            ~callee
+            ~arguments
+            ~taint
+            ~state:state.taint
         in
         taint, { taint = forward_state }
 

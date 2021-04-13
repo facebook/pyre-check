@@ -1,0 +1,5 @@
+@generated
+Overrides
+object::__init__ (override) -> [object::__init__ (method) pandas_dataFrame.DataFrame::__init__ (override) pandas_dataFrame.Series::__init__ (override)]
+pandas_dataFrame.DataFrame::__init__ (override) -> [pandas_dataFrame.DataFrame::__init__ (method)]
+pandas_dataFrame.Series::__init__ (override) -> [pandas_dataFrame.Series::__init__ (method)]

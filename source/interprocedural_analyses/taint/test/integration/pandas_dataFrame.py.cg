@@ -1,0 +1,14 @@
+@generated
+Call dependencies
+pandas_dataFrame.DataFrame::__getitem__ (method) -> []
+pandas_dataFrame.DataFrame::__init__ (method) -> []
+pandas_dataFrame.DataFrame::__setitem__ (method) -> []
+pandas_dataFrame.Series::__init__ (method) -> []
+pandas_dataFrame.clear_df (fun) -> []
+pandas_dataFrame.issue1 (fun) -> [pandas_dataFrame.DataFrame::__getitem__ (method) pandas_dataFrame.DataFrame::__setitem__ (method) pandas_dataFrame.sink (fun) pandas_dataFrame.source (fun)]
+pandas_dataFrame.issue2 (fun) -> [pandas_dataFrame.DataFrame::__getitem__ (method) pandas_dataFrame.sink (fun) pandas_dataFrame.source (fun)]
+pandas_dataFrame.issue3 (fun) -> [pandas_dataFrame.DataFrame::__getitem__ (method) pandas_dataFrame.DataFrame::__setitem__ (method) pandas_dataFrame.clear_df (fun) pandas_dataFrame.sink (fun) pandas_dataFrame.source (fun)]
+pandas_dataFrame.issue4 (fun) -> [pandas_dataFrame.DataFrame::__getitem__ (method) pandas_dataFrame.DataFrame::__setitem__ (method) pandas_dataFrame.clear_df (fun) pandas_dataFrame.sink (fun) pandas_dataFrame.source (fun)]
+pandas_dataFrame.issue5 (fun) -> [pandas_dataFrame.DataFrame::__getitem__ (method) pandas_dataFrame.DataFrame::__setitem__ (method) pandas_dataFrame.sink (fun) pandas_dataFrame.source (fun)]
+pandas_dataFrame.sink (fun) -> []
+pandas_dataFrame.source (fun) -> []
