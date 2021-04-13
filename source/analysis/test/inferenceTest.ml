@@ -707,6 +707,18 @@ let test_check_missing_attribute context =
   assert_inference_errors
     {|
       class Foo:
+        x = None
+        def __init__(self) -> None:
+          self.x = 1 + 1
+    |}
+    ~expected:
+      [
+        "Missing attribute annotation [4]: Attribute `x` of class `Foo` has type \
+         `typing.Optional[int]` but no type is specified.";
+      ];
+  assert_inference_errors
+    {|
+      class Foo:
         def __init__(self) -> None:
           self.x = self.foo()
 
