@@ -38,10 +38,10 @@ module BuckBuildSystem = struct
     type t = {
       builder: Buck.Builder.t;
       targets: string list;
-      mutable normalized_targets: Buck.Target.t list;
-      mutable build_map: Buck.BuildMap.t;
+      normalized_targets: Buck.Target.t list;
+      build_map: Buck.BuildMap.t;
       (* Derived field of `build_map`. Do not update manually. *)
-      mutable build_map_index: Buck.BuildMap.Indexed.t;
+      build_map_index: Buck.BuildMap.Indexed.t;
     }
 
     let create ~builder ~targets ~normalized_targets ~build_map () =
@@ -54,11 +54,14 @@ module BuckBuildSystem = struct
       }
 
 
-    let update ~normalized_targets ~build_map state =
-      state.normalized_targets <- normalized_targets;
-      state.build_map <- build_map;
-      state.build_map_index <- Buck.BuildMap.index build_map;
-      ()
+    let update ~normalized_targets ~build_map { builder; targets; _ } =
+      {
+        builder;
+        targets;
+        normalized_targets;
+        build_map;
+        build_map_index = Buck.BuildMap.index build_map;
+      }
 
 
     let create_from_scratch ~builder ~targets () =
@@ -78,44 +81,49 @@ module BuckBuildSystem = struct
     | Result.Ok () -> ()
 
 
-  let initialize_from_state (state : State.t) =
+  let initialize_from_state initial_state =
+    let state = ExclusiveLock.create initial_state in
     let update paths =
-      let incremental_build =
-        let should_renormalize paths =
-          let f path =
-            let file_name = Path.last path in
-            String.equal file_name "TARGETS" || String.equal file_name "BUCK"
+      ExclusiveLock.write
+        state
+        ~f:(fun ({ State.build_map; targets; normalized_targets; builder; _ } as state) ->
+          let incremental_build =
+            let should_renormalize paths =
+              let f path =
+                let file_name = Path.last path in
+                String.equal file_name "TARGETS" || String.equal file_name "BUCK"
+              in
+              List.exists paths ~f
+            in
+            if should_renormalize paths then
+              Buck.Builder.full_incremental_build ~old_build_map:build_map ~targets
+            else
+              Buck.Builder.incremental_build_with_normalized_targets
+                ~old_build_map:build_map
+                ~targets:normalized_targets
           in
-          List.exists paths ~f
-        in
-        if should_renormalize paths then
-          Buck.Builder.full_incremental_build ~old_build_map:state.build_map ~targets:state.targets
-        else
-          Buck.Builder.incremental_build_with_normalized_targets
-            ~old_build_map:state.build_map
-            ~targets:state.normalized_targets
-      in
-      let open Lwt.Infix in
-      incremental_build state.builder
-      >>= fun {
-                Buck.Builder.IncrementalBuildResult.targets = normalized_targets;
-                build_map;
-                changed_artifacts;
-              } ->
-      State.update ~normalized_targets ~build_map state;
-      Lwt.return changed_artifacts
+          let open Lwt.Infix in
+          incremental_build builder
+          >>= fun {
+                    Buck.Builder.IncrementalBuildResult.targets = normalized_targets;
+                    build_map;
+                    changed_artifacts;
+                  } ->
+          let new_state = State.update ~normalized_targets ~build_map state in
+          Lwt.return (new_state, changed_artifacts))
     in
     let cleanup () =
-      Buck.Builder.cleanup state.builder;
-      Lwt.return_unit
+      ExclusiveLock.read state ~f:(fun { State.builder; _ } ->
+          Buck.Builder.cleanup builder;
+          Lwt.return_unit)
     in
     let lookup_source path =
-      Lwt.return
-        (Buck.Builder.lookup_source ~index:state.build_map_index ~builder:state.builder path)
+      ExclusiveLock.read state ~f:(fun { State.build_map_index; builder; _ } ->
+          Lwt.return (Buck.Builder.lookup_source ~index:build_map_index ~builder path))
     in
     let lookup_artifact path =
-      Lwt.return
-        (Buck.Builder.lookup_artifact ~index:state.build_map_index ~builder:state.builder path)
+      ExclusiveLock.read state ~f:(fun { State.build_map_index; builder; _ } ->
+          Lwt.return (Buck.Builder.lookup_artifact ~index:build_map_index ~builder path))
     in
     Lwt.return { update; cleanup; lookup_source; lookup_artifact }
 

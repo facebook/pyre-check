@@ -283,7 +283,7 @@ let test_buck_renormalize context =
   Lwt.return_unit
 
 
-let test_buck_update context =
+let test_buck_update_build_map context =
   let assert_optional_path ~expected actual =
     let open Lwt.Infix in
     actual
@@ -384,6 +384,84 @@ let test_buck_update context =
     (BuildSystem.lookup_artifact buck_build_system baz_source >|= List.hd)
 
 
+let test_buck_update_atomicity context =
+  let source_root = bracket_tmpdir context |> Path.create_absolute in
+  let artifact_root = bracket_tmpdir context |> Path.create_absolute in
+
+  let open Lwt.Infix in
+  let get_buck_build_system () =
+    let source_database_path =
+      let root = bracket_tmpdir context |> Path.create_absolute in
+      Path.create_relative ~root ~relative:"foo_target_sourcedb.json"
+    in
+    let raw =
+      (* Here's the set up: we have only 1 file `foo/bar.py`. If `is_rebuild` is false, the target
+         is empty. If `is_rebuild` is true, we'll include the file in the target. The `is_rebuild`
+         flag is initially false but will be set to true after the first build. This setup emulates
+         an incremental Buck update where the user adds a file to a given target. *)
+      let is_rebuild = ref false in
+      let query _ = Lwt.return {| { "//foo:target": ["//foo:target"] } |} in
+      let build _ =
+        (* Intentionally yield control to other threads. If the buck state is not properly
+           protected, other threads may exploit this chance to observe the state that is yet to be
+           updated. *)
+        Lwt.pause ()
+        >>= fun () ->
+        let content =
+          if !is_rebuild then
+            {| { "sources": { "bar.py": "foo/bar.py" }, "dependencies": {} } |}
+          else
+            {| { "sources": {}, "dependencies": {} } |}
+        in
+        File.create source_database_path ~content |> File.write;
+        is_rebuild := true;
+        Format.asprintf {| { "//foo:bar#source-db": "%a" } |} Path.pp source_database_path
+        |> Lwt.return
+      in
+      Buck.Raw.create_for_testing ~query ~build ()
+    in
+    {
+      ServerConfiguration.Buck.mode = None;
+      isolation_prefix = None;
+      targets = ["//foo:target"];
+      source_root;
+      artifact_root;
+    }
+    |> BuildSystem.Initializer.buck ~raw
+    |> BuildSystem.Initializer.run
+  in
+  let bar_source = Path.create_relative ~root:source_root ~relative:"foo/bar.py" in
+  let bar_artifact = Path.create_relative ~root:artifact_root ~relative:"bar.py" in
+
+  get_buck_build_system ()
+  >>= fun buck_build_system ->
+  (* We spawn 2 threads here: rebuilder and observer. The rebuilder tries to perform a buck rebuild,
+     and the observer tries to observe the result of the rebuild. We also use a `Lwt_mvar` as a
+     semaphore to ensure that the observer can only start to observe AFTER the rebuilder starts to
+     rebuild. *)
+  (* Although internally the rebuilder may be blocked during its rebuild, the observer should not be
+     allowed to switch in and peek into the partially-updated buck state when the rebuilder is
+     blocked. In other words, the only correct outcome for the observer is to either block (while
+     the rebuild is in-progress) or to actually observe the rebuilt state (after the rebuild is
+     done). It should never observe the initial buck state. *)
+  let rebuilder semaphore =
+    Lwt_mvar.put semaphore ()
+    >>= fun () -> BuildSystem.update buck_build_system [bar_source] >>= fun _ -> Lwt.return_unit
+  in
+  let observer semaphore =
+    Lwt_mvar.take semaphore
+    >>= fun () ->
+    BuildSystem.lookup_source buck_build_system bar_artifact
+    >>= function
+    | None -> assert_failure "Failed to observe the update. A race condition is detected."
+    | Some actual ->
+        assert_equal ~ctxt:context ~cmp:Path.equal ~printer:Path.show bar_source actual;
+        Lwt.return_unit
+  in
+  let semaphore = Lwt_mvar.create_empty () in
+  Lwt.join [rebuilder semaphore; observer semaphore]
+
+
 let () =
   "build_system_test"
   >::: [
@@ -392,6 +470,7 @@ let () =
          "type_errors" >:: OUnitLwt.lwt_wrapper test_type_errors;
          "update" >:: OUnitLwt.lwt_wrapper test_update;
          "buck_renormalize" >:: OUnitLwt.lwt_wrapper test_buck_renormalize;
-         "buck_update" >:: OUnitLwt.lwt_wrapper test_buck_update;
+         "buck_update_build_map" >:: OUnitLwt.lwt_wrapper test_buck_update_build_map;
+         "buck_update_atmoicity" >:: OUnitLwt.lwt_wrapper test_buck_update_atomicity;
        ]
   |> Test.run
