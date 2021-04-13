@@ -1898,7 +1898,7 @@ let rec messages ~concise ~signature location kind =
   | UnsafeCast { expression; annotation } ->
       [
         Format.asprintf
-          "`safe_cast` is only permitted to loosen the type of `%s`. `%a` is not a super type of \
+          "`safe_cast` is only permitted to widen the type of `%s`. `%a` is not a super type of \
            `%s`."
           (show_sanitized_expression expression)
           pp_type

@@ -2421,7 +2421,7 @@ module State (Context : Context) = struct
             emit_error
               ~errors
               ~location
-              ~kind:(Error.UnsafeCast { expression = value; annotation = resolved })
+              ~kind:(Error.UnsafeCast { expression = value; annotation = cast_annotation })
           else
             errors
         in
