@@ -152,6 +152,20 @@ print("a" + f())
 
 The best way to silence this error is to add non-`Any` return annotation to every function.
 
+### 4: Missing Attribute Annotation
+In strict mode, Pyre will error when an attribute does not have an annotation.
+
+```python
+class A:
+    b = foo() # Missing attribute annotation
+```
+Adding a type annotation will resolve this error.
+
+```python
+class A:
+  b: int = foo()
+```
+
 ### 6: Incompatible Parameter Type
 Pyre will error if an argument passed into a function call does not match the expected parameter type of that function.
 
