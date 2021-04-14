@@ -254,7 +254,18 @@ def print_json(data: object) -> None:
             __warned_missing_jq = True
 
 
-def print_model(callable: str, **kwargs: Any) -> None:
+def print_model(
+    callable: str,
+    *,
+    kind: Optional[str] = None,
+    caller_port: Optional[str] = None,
+    remove_sources: bool = False,
+    remove_sinks: bool = False,
+    remove_tito: bool = False,
+    remove_tito_positions: bool = False,
+    remove_features: bool = False,
+    remove_leaf_names: bool = False,
+) -> None:
     """
     Pretty print the model for the given callable.
     Optional parameters:
@@ -267,7 +278,19 @@ def print_model(callable: str, **kwargs: Any) -> None:
       remove_features=True
       remove_leaf_names=True
     """
-    print_json(get_model(callable, **kwargs))
+    print_json(
+        get_model(
+            callable,
+            kind=kind,
+            caller_port=caller_port,
+            remove_sources=remove_sources,
+            remove_sinks=remove_sinks,
+            remove_tito=remove_tito,
+            remove_tito_positions=remove_tito_positions,
+            remove_features=remove_features,
+            remove_leaf_names=remove_leaf_names,
+        )
+    )
 
 
 def get_issues(callable: str) -> List[Dict[str, Any]]:
