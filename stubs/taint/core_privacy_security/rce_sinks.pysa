@@ -1,16 +1,16 @@
 # RCE sinks
 def eval(__source: TaintSink[RemoteCodeExecution], __globals, __locals): ...
 def exec(__object: TaintSink[RemoteCodeExecution], __globals, __locals): ...
-def importlib.import_module(name: TaintSink[ExecImportSink, RemoteCodeExecution], package): ...
+def importlib.import_module(name: TaintSink[ExecImportSink], package): ...
 def __import__(
-  name: TaintSink[ExecImportSink, RemoteCodeExecution],
+  name: TaintSink[ExecImportSink],
   globals,
   locals,
   fromlist,
   level,
 ): ...
 def pickle.loads(
-  data: TaintSink[ExecDeserializationSink, RemoteCodeExecution],
+  data: TaintSink[ExecDeserializationSink],
   /,
   *,
   fix_imports,
@@ -19,7 +19,7 @@ def pickle.loads(
   buffers,
 ): ...
 def pickle.load(
-    file: TaintSink[ExecDeserializationSink, RemoteCodeExecution],
+    file: TaintSink[ExecDeserializationSink],
     *,
     fix_imports,
     encoding,
@@ -28,16 +28,16 @@ def pickle.load(
   ): ...
 def pickle.Unpickler.__init__(
     self,
-    file: TaintSink[ExecDeserializationSink, RemoteCodeExecution],
+    file: TaintSink[ExecDeserializationSink],
     fix_imports,
     encoding,
     errors
 ): ...
 def yaml.load(
-  stream: TaintSink[ExecDeserializationSink, RemoteCodeExecution],
+  stream: TaintSink[ExecDeserializationSink],
   Loader,
 ): ...
-def yaml.load_all(stream: TaintSink[ExecDeserializationSink, RemoteCodeExecution], Loader): ...
+def yaml.load_all(stream: TaintSink[ExecDeserializationSink], Loader): ...
 # Subprocess
 def subprocess.run(
     args: TaintSink[ExecArgSink, ViaTypeOf[args]],
@@ -187,11 +187,11 @@ def os.spawnvp(mode, file: TaintSink[ExecArgSink], args: TaintSink[ExecArgSink])
 def os.system(command: TaintSink[RemoteCodeExecution]): ...
 
 # marshaling
-def marshal.loads(__bytes: TaintSink[ExecDeserializationSink, RemoteCodeExecution]): ...
+def marshal.loads(__bytes: TaintSink[ExecDeserializationSink]): ...
 def marshal.load(__file: TaintSink[FileSystem_Other]): ...
 
 # shelve library https://docs.python.org/3/library/shelve.html
-def shelve.open(filename: TaintSink[ExecDeserializationSink, RemoteCodeExecution], flag, protocol, writeback): ...
+def shelve.open(filename: TaintSink[ExecDeserializationSink], flag, protocol, writeback): ...
 
 # Features https://docs.python.org/3/library/shlex.html#shlex.quote
 def shlex.quote(s: TaintInTaintOut[Via[shell_escape]]): ...
