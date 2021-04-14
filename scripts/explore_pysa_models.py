@@ -32,26 +32,27 @@ def _iter_with_offset(lines: Iterable[bytes]) -> Iterable[Tuple[bytes, int]]:
         offset += len(line)
 
 
-def _resolve_taint_output_path(taint_output_path: str) -> Path:
-    taint_output_path = Path(taint_output_path)
+def _resolve_taint_output_path(taint_output_filename: str) -> Path:
+    taint_output_path = Path(taint_output_filename)
     if taint_output_path.is_dir():
         taint_output_path = taint_output_path / "taint-output.json"
     return taint_output_path
 
 
-def index(taint_output_path: str = "taint-output.json") -> None:
+def index(taint_output_filename: str = "taint-output.json") -> None:
     """Index all available models in the given taint output file or directory."""
     global __handle, __model_index, __issue_index
 
-    print(f"Indexing `{taint_output_path}`")
-    taint_output_path = _resolve_taint_output_path(taint_output_path)
-    __handle = open(taint_output_path, "rb")
+    print(f"Indexing `{taint_output_filename}`")
+    taint_output_path = _resolve_taint_output_path(taint_output_filename)
+    handle = open(taint_output_path, "rb")
+    __handle = handle
     __model_index = {}
     __issue_index = collections.defaultdict(list)
 
     count_models = 0
     count_issues = 0
-    for line, offset in _iter_with_offset(__handle):
+    for line, offset in _iter_with_offset(handle):
         message = json.loads(line)
         if "kind" not in message:
             continue
@@ -71,9 +72,11 @@ def index(taint_output_path: str = "taint-output.json") -> None:
     print(f"Indexed {count_models} models and {count_issues} issues")
 
 
-def _assert_loaded() -> None:
-    if __handle is None or len(__model_index) == 0:
+def _assert_loaded() -> io.BufferedReader:
+    handle = __handle
+    if handle is None or len(__model_index) == 0:
         raise AssertionError("call index() first")
+    return handle
 
 
 def callables_containing(string: str) -> List[str]:
@@ -90,9 +93,9 @@ def callables_matching(pattern: str) -> List[str]:
 
 
 def _read(position: FilePosition) -> bytes:
-    _assert_loaded()
-    __handle.seek(position.offset)
-    return __handle.read(position.length)
+    handle = _assert_loaded()
+    handle.seek(position.offset)
+    return handle.read(position.length)
 
 
 def _filter_taint_tree(
@@ -103,7 +106,7 @@ def _filter_taint_tree(
         new_taint_taint = [
             flow_details
             for flow_details in taint["taint"]
-            if predicate(caller_port=taint["port"], flow_details=flow_details)
+            if predicate(taint["port"], flow_details)
         ]
 
         if len(new_taint_taint) > 0:
@@ -125,14 +128,14 @@ def filter_model(
 
 
 def filter_model_caller_port(model: Dict[str, Any], port: str) -> Dict[str, Any]:
-    def predicate(caller_port, flow_details):
+    def predicate(caller_port: str, flow_details: Dict[str, Any]) -> bool:
         return port == caller_port
 
     return filter_model(model, predicate)
 
 
 def filter_model_kind(model: Dict[str, Any], kind: str) -> Dict[str, Any]:
-    def predicate(caller_port, flow_details):
+    def predicate(caller_port: str, flow_details: Dict[str, Any]) -> bool:
         return any(leaf["kind"] == kind for leaf in flow_details["leaves"])
 
     return filter_model(model, predicate)
@@ -146,7 +149,7 @@ def _map_taint_tree(
         new_taint_taint = []
         for flow_details in taint["taint"]:
             flow_details = flow_details.copy()
-            map(caller_port=taint["port"], flow_details=flow_details)
+            map(taint["port"], flow_details)
             new_taint_taint.append(flow_details)
 
         new_taint = taint.copy()
@@ -167,7 +170,7 @@ def map_model(
 
 
 def model_remove_tito_positions(model: Dict[str, Any]) -> Dict[str, Any]:
-    def map(caller_port, flow_details):
+    def map(caller_port: str, flow_details: Dict[str, Any]) -> None:
         if "tito" in flow_details:
             del flow_details["tito"]
 
@@ -175,7 +178,7 @@ def model_remove_tito_positions(model: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def model_remove_features(model: Dict[str, Any]) -> Dict[str, Any]:
-    def map(caller_port, flow_details):
+    def map(caller_port: str, flow_details: Dict[str, Any]) -> None:
         if "features" in flow_details:
             del flow_details["features"]
 
@@ -183,7 +186,7 @@ def model_remove_features(model: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def model_remove_leaf_names(model: Dict[str, Any]) -> Dict[str, Any]:
-    def map(caller_port, flow_details):
+    def map(caller_port: str, flow_details: Dict[str, Any]) -> None:
         if "leaves" in flow_details:
             kinds = {leaf["kind"] for leaf in flow_details["leaves"]}
             del flow_details["leaves"]
@@ -197,12 +200,12 @@ def get_model(
     *,
     kind: Optional[str] = None,
     caller_port: Optional[str] = None,
-    remove_sources = False,
-    remove_sinks = False,
-    remove_tito = False,
-    remove_tito_positions = False,
-    remove_features = False,
-    remove_leaf_names = False,
+    remove_sources: bool = False,
+    remove_sinks: bool = False,
+    remove_tito: bool = False,
+    remove_tito_positions: bool = False,
+    remove_features: bool = False,
+    remove_leaf_names: bool = False,
 ) -> Dict[str, Any]:
     """Get the model for the given callable."""
     _assert_loaded()
@@ -300,7 +303,7 @@ def print_help() -> None:
     ]
     max_width = max(len(command[1]) for command in commands)
     for command, example in commands:
-        doc = textwrap.dedent(command.__doc__)
+        doc = textwrap.dedent(command.__doc__ or "")
         doc = textwrap.indent(doc, prefix=" " * (max_width + 3)).strip()
         print(f"  {example:<{max_width}} {doc}")
 
