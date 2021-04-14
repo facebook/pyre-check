@@ -138,8 +138,71 @@ def filter_model_kind(model: Dict[str, Any], kind: str) -> Dict[str, Any]:
     return filter_model(model, predicate)
 
 
+def _map_taint_tree(
+    taint_tree: List[Dict[str, Any]], map: Callable[[str, Dict[str, Any]], None]
+) -> List[Dict[str, Any]]:
+    new_taint_tree = []
+    for taint in taint_tree:
+        new_taint_taint = []
+        for flow_details in taint["taint"]:
+            flow_details = flow_details.copy()
+            map(caller_port=taint["port"], flow_details=flow_details)
+            new_taint_taint.append(flow_details)
+
+        new_taint = taint.copy()
+        new_taint["taint"] = new_taint_taint
+        new_taint_tree.append(new_taint)
+
+    return new_taint_tree
+
+
+def map_model(
+    model: Dict[str, Any], map: Callable[[str, Dict[str, Any]], None]
+) -> Dict[str, Any]:
+    model = model.copy()
+    model["sources"] = _map_taint_tree(model.get("sources", []), map)
+    model["sinks"] = _map_taint_tree(model.get("sinks", []), map)
+    model["tito"] = _map_taint_tree(model.get("tito", []), map)
+    return model
+
+
+def model_remove_tito_positions(model: Dict[str, Any]) -> Dict[str, Any]:
+    def map(caller_port, flow_details):
+        if "tito" in flow_details:
+            del flow_details["tito"]
+
+    return map_model(model, map)
+
+
+def model_remove_features(model: Dict[str, Any]) -> Dict[str, Any]:
+    def map(caller_port, flow_details):
+        if "features" in flow_details:
+            del flow_details["features"]
+
+    return map_model(model, map)
+
+
+def model_remove_leaf_names(model: Dict[str, Any]) -> Dict[str, Any]:
+    def map(caller_port, flow_details):
+        if "leaves" in flow_details:
+            kinds = {leaf["kind"] for leaf in flow_details["leaves"]}
+            del flow_details["leaves"]
+            flow_details["kinds"] = sorted(kinds)
+
+    return map_model(model, map)
+
+
 def get_model(
-    callable: str, *, kind: Optional[str] = None, caller_port: Optional[str] = None
+    callable: str,
+    *,
+    kind: Optional[str] = None,
+    caller_port: Optional[str] = None,
+    remove_sources = False,
+    remove_sinks = False,
+    remove_tito = False,
+    remove_tito_positions = False,
+    remove_features = False,
+    remove_leaf_names = False,
 ) -> Dict[str, Any]:
     """Get the model for the given callable."""
     _assert_loaded()
@@ -151,10 +214,22 @@ def get_model(
     assert message["kind"] == "model"
 
     model = message["data"]
+    if remove_sources and "sources" in model:
+        del model["sources"]
+    if remove_sinks and "sinks" in model:
+        del model["sinks"]
+    if remove_tito and "tito" in model:
+        del model["tito"]
     if kind is not None:
         model = filter_model_kind(model, kind)
     if caller_port is not None:
         model = filter_model_caller_port(model, caller_port)
+    if remove_tito_positions:
+        model = model_remove_tito_positions(model)
+    if remove_features:
+        model = model_remove_features(model)
+    if remove_leaf_names:
+        model = model_remove_leaf_names(model)
     return model
 
 
@@ -180,8 +255,14 @@ def print_model(callable: str, **kwargs: Any) -> None:
     """
     Pretty print the model for the given callable.
     Optional parameters:
-      kind='UserControlled'  Filter by taint kind.
-      caller_port='result'   Filter by caller port.
+      kind='UserControlled'      Filter by taint kind.
+      caller_port='result'       Filter by caller port.
+      remove_sources=False
+      remove_sinks=False
+      remove_tito=False
+      remove_tito_positions=True
+      remove_features=True
+      remove_leaf_names=True
     """
     print_json(get_model(callable, **kwargs))
 
