@@ -158,7 +158,11 @@ def get_model(
     return model
 
 
-def _print_json(data: object) -> None:
+def print_json(data: object) -> None:
+    """Pretty print json objects with syntax highlighting."""
+    if isinstance(data, str):
+        data = json.loads(data)
+
     try:
         subprocess.run(["jq", "-C"], input=json.dumps(data).encode(), check=True)
     except FileNotFoundError:
@@ -179,7 +183,7 @@ def print_model(callable: str, **kwargs: Any) -> None:
       kind='UserControlled'  Filter by taint kind.
       caller_port='result'   Filter by caller port.
     """
-    _print_json(get_model(callable, **kwargs))
+    print_json(get_model(callable, **kwargs))
 
 
 def get_issues(callable: str) -> List[Dict[str, Any]]:
@@ -197,7 +201,7 @@ def get_issues(callable: str) -> List[Dict[str, Any]]:
 
 def print_issues(callable: str) -> None:
     """Pretty print the issues within the given callable."""
-    _print_json(get_issues(callable))
+    print_json(get_issues(callable))
 
 
 def print_help() -> None:
@@ -211,6 +215,7 @@ def print_help() -> None:
         (print_model, "print_model('foo.bar')"),
         (get_issues, "get_issues('foo.bar')"),
         (print_issues, "print_issues('foo.bar')"),
+        (print_json, "print_json({'a': 'b'})"),
     ]
     max_width = max(len(command[1]) for command in commands)
     for command, example in commands:
