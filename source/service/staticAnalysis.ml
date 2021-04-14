@@ -627,6 +627,33 @@ let analyze
     (List.length callables_to_analyze);
   let callables_to_analyze = List.rev_append override_targets callables_to_analyze in
   let timer = Timer.start () in
+  let run_analysis () =
+    let iterations =
+      Interprocedural.Analysis.compute_fixpoint
+        ~scheduler
+        ~environment
+        ~analyses
+        ~dependencies
+        ~filtered_callables
+        ~all_callables:callables_to_analyze
+        Interprocedural.Fixpoint.Epoch.initial
+    in
+    let errors = Interprocedural.Analysis.extract_errors scheduler callables_to_analyze in
+    Log.info "Fixpoint iterations: %d" iterations;
+    Statistics.performance
+      ~name:"Analysis fixpoint complete"
+      ~phase_name:"Static analysis fixpoint"
+      ~timer
+      ~integers:
+        [
+          "pysa fixpoint iterations", iterations;
+          "pysa heap size", SharedMem.heap_size ();
+          "pysa issues", List.length errors;
+        ]
+      ();
+    Log.info "Found %d issues" (List.length errors);
+    errors
+  in
   let save_results () =
     let all_callables =
       Callable.Set.of_list (List.rev_append initial_models_callables callables_to_analyze)
@@ -638,42 +665,15 @@ let analyze
       ~skipped_overrides
       all_callables
   in
-  let errors =
-    try
-      let iterations =
-        Interprocedural.Analysis.compute_fixpoint
-          ~scheduler
-          ~environment
-          ~analyses
-          ~dependencies
-          ~filtered_callables
-          ~all_callables:callables_to_analyze
-          Interprocedural.Fixpoint.Epoch.initial
-      in
-      let errors = Interprocedural.Analysis.extract_errors scheduler callables_to_analyze in
-      Log.info "Fixpoint iterations: %d" iterations;
-      Statistics.performance
-        ~name:"Analysis fixpoint complete"
-        ~phase_name:"Static analysis fixpoint"
-        ~timer
-        ~integers:
-          [
-            "pysa fixpoint iterations", iterations;
-            "pysa heap size", SharedMem.heap_size ();
-            "pysa issues", List.length errors;
-          ]
-        ();
-      Log.info "Found %d issues" (List.length errors);
+  try
+    let errors = run_analysis () in
+    save_results ();
+    (* If saving to a file, don't return errors. Thousands of errors on output is inconvenient *)
+    if Option.is_some static_analysis_configuration.result_json_path then
+      []
+    else
       errors
-    with
-    | exn ->
-        save_results ();
-        raise exn
-  in
-  save_results ();
-
-  (* If saving to a file, don't return errors. Thousands of errors on output is inconvenient *)
-  if Option.is_some static_analysis_configuration.result_json_path then
-    []
-  else
-    errors
+  with
+  | exn ->
+      save_results ();
+      raise exn
