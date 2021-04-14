@@ -9,8 +9,9 @@ import io
 import json
 import re
 import subprocess
+import textwrap
 from pathlib import Path
-from typing import Optional, Any, Dict, List, Tuple, Iterable, NamedTuple
+from typing import Optional, Any, Dict, List, Tuple, Iterable, NamedTuple, Callable
 
 
 class FilePosition(NamedTuple):
@@ -94,7 +95,52 @@ def _read(position: FilePosition) -> bytes:
     return __handle.read(position.length)
 
 
-def get_model(callable: str) -> Dict[str, Any]:
+def _filter_taint_tree(
+    taint_tree: List[Dict[str, Any]], predicate: Callable[[str, Dict[str, Any]], bool]
+) -> List[Dict[str, Any]]:
+    new_taint_tree = []
+    for taint in taint_tree:
+        new_taint_taint = [
+            flow_details
+            for flow_details in taint["taint"]
+            if predicate(caller_port=taint["port"], flow_details=flow_details)
+        ]
+
+        if len(new_taint_taint) > 0:
+            new_taint = taint.copy()
+            new_taint["taint"] = new_taint_taint
+            new_taint_tree.append(new_taint)
+
+    return new_taint_tree
+
+
+def filter_model(
+    model: Dict[str, Any], predicate: Callable[[str, Dict[str, Any]], bool]
+) -> Dict[str, Any]:
+    model = model.copy()
+    model["sources"] = _filter_taint_tree(model.get("sources", []), predicate)
+    model["sinks"] = _filter_taint_tree(model.get("sinks", []), predicate)
+    model["tito"] = _filter_taint_tree(model.get("tito", []), predicate)
+    return model
+
+
+def filter_model_caller_port(model: Dict[str, Any], port: str) -> Dict[str, Any]:
+    def predicate(caller_port, flow_details):
+        return port == caller_port
+
+    return filter_model(model, predicate)
+
+
+def filter_model_kind(model: Dict[str, Any], kind: str) -> Dict[str, Any]:
+    def predicate(caller_port, flow_details):
+        return any(leaf["kind"] == kind for leaf in flow_details["leaves"])
+
+    return filter_model(model, predicate)
+
+
+def get_model(
+    callable: str, *, kind: Optional[str] = None, caller_port: Optional[str] = None
+) -> Dict[str, Any]:
     """Get the model for the given callable."""
     _assert_loaded()
 
@@ -103,7 +149,13 @@ def get_model(callable: str) -> Dict[str, Any]:
 
     message = json.loads(_read(__model_index[callable]))
     assert message["kind"] == "model"
-    return message["data"]
+
+    model = message["data"]
+    if kind is not None:
+        model = filter_model_kind(model, kind)
+    if caller_port is not None:
+        model = filter_model_caller_port(model, caller_port)
+    return model
 
 
 def _print_json(data: object) -> None:
@@ -120,9 +172,14 @@ def _print_json(data: object) -> None:
             __warned_missing_jq = True
 
 
-def print_model(callable: str) -> None:
-    """Pretty print the model for the given callable."""
-    _print_json(get_model(callable))
+def print_model(callable: str, **kwargs: Any) -> None:
+    """
+    Pretty print the model for the given callable.
+    Optional parameters:
+      kind='UserControlled'  Filter by taint kind.
+      caller_port='result'   Filter by caller port.
+    """
+    _print_json(get_model(callable, **kwargs))
 
 
 def get_issues(callable: str) -> List[Dict[str, Any]]:
@@ -157,7 +214,9 @@ def print_help() -> None:
     ]
     max_width = max(len(command[1]) for command in commands)
     for command, example in commands:
-        print(f"  {example:<{max_width}} {command.__doc__}")
+        doc = textwrap.dedent(command.__doc__)
+        doc = textwrap.indent(doc, prefix=" " * (max_width + 3)).strip()
+        print(f"  {example:<{max_width}} {doc}")
 
 
 if __name__ == "__main__":
