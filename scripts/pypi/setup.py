@@ -78,7 +78,7 @@ def run(
         maintainer_email="pyre@fb.com",
         license="MIT",
         classifiers=[
-            "Development Status :: 3 - Alpha",
+            "Development Status :: 5 - Production/Stable",
             "Environment :: Console",
             "Intended Audience :: Developers",
             "License :: OSI Approved :: MIT License",
