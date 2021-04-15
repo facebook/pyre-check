@@ -26,7 +26,7 @@ module.exports = {
     'querying-pyre',
   ],
   pysa: [
-    ...fbInternalOnly(['fb/pysa-quick-start']),
+    ...fbInternalOnly(['fb/pysa-quickstart']),
     {
       'How Pysa Works': [
         'pysa-basics',
