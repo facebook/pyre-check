@@ -166,6 +166,23 @@ class A:
   b: int = foo()
 ```
 
+### 5: Missing Global Annotation
+
+If strict mode is turned on, Pyre will error when a globally accessible variable is not annotated. If pyre was able to infer a type for the
+variable, it will emit this type in the error message. The fix is usually to add an annotation to the variable.
+
+Note: This error has also arisen when there is some ambiguity of whether a declaration is a global expression or a type alias, in these cases pyre assumes it is an expression. Adding a `: TypeAlias` annotation lets pyre know that it is a type alias and solves the problem.
+
+```python
+from typing_extensions import TypeAlias
+
+# This declaration would result in an error
+MyTypeAlias = Dict[str, "AnotherTypeAlias"]
+
+# This declaration ensures that pyre knows MyTypeAlias is a type alias
+MyTypeAlias: TypeAlias = Dict[str, "AnotherTypeAlias"]
+```
+
 ### 6: Incompatible Parameter Type
 Pyre will error if an argument passed into a function call does not match the expected parameter type of that function.
 
