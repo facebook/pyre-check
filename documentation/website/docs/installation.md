@@ -86,6 +86,43 @@ $ echo 'PATH="/path/to/pyre-check/scripts:$PATH"' >> ~/.bashrc
 $ source ~/.bashrc
 ```
 
+## Building from Docker
+
+If you're having issues setting up or your OS is not yet supported, you can also use a Docker image. It runs [Debian GNU/Linux 10 (buster)](https://www.debian.org/) and builds pyre-check from source.
+
+Before starting, ensure that [Docker](https://docs.docker.com/get-docker/) is installed on your computer.
+
+1. Clone the pyre-check repository and navigate to the root directory.
+   ```bash
+   git clone https://github.com/facebook/pyre-check.git
+   cd pyre-check
+   ```
+
+2. Build the Docker image with the tag `pyre-check` (or another tag if you wish)
+   ```bash
+   docker build -t pyre-docker .
+   ```
+
+3. Run the new image in a new container `pyre-container` (or another name if you wish)
+   ```bash
+   docker run \
+   --name pyre-container \
+   -v /path/to/your/directory:/src \
+   -t -i \
+   pyre-check
+   ```
+   *Note: Launching the container will build and run all tests.*
+
+4. Inside the container, run any Pyre command now with `pyre`!
+
+   *Note: When initializing Pyre with `pyre init`, you may have to enter the following paths for the binary and typeshed:*
+   ```bash
+   ƛ No `pyre.bin` found, enter the path manually: /home/opam/pyre-check/source/_build/default/main.exe
+   ƛ Unable to locate typeshed, please enter its root: /home/opam/pyre-check/stubs/typeshed/typeshed-master
+   ```
+
+**For contributors:** Inside the Docker container, the added pyre-check directory is only editable by the root user. To contribute to Pyre, make edits in your local filesystem and rebuild the Docker by running Step 2, then running a new Docker container in Steps 3-4.
+
 ## Windows Subsystem for Linux (WSL) Install
 
 On *x86_64* Windows `pyre` can run via *Linux* using [WSL](https://en.wikipedia.org/wiki/Windows_Subsystem_for_Linux).
