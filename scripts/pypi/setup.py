@@ -89,6 +89,7 @@ def run(
             "Programming Language :: Python :: 3.5",
             "Programming Language :: Python :: 3.6",
             "Topic :: Software Development",
+            "Typing :: Typed",
         ],
         keywords="typechecker development",
         packages=find_packages(exclude=["tests", "pyre-check"]),
