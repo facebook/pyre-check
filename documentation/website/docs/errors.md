@@ -713,6 +713,35 @@ You can also change the type checking mode of a single file by adding a local mo
 
 If you specify more than one local mode, Pyre will error and ask you to remove all but one.
 
+### 40: Invalid Override
+Pyre will error when methods in a child class override those in a parent class inconsistently.
+Static methods cannot be overwritten by non-static methods, and final methods cannot be overwritten.
+
+```python
+class A:
+    @staticmethod
+    def foo(self) -> int:
+        pass
+
+class B(A):
+    @classmethod # Non-static method `B.foo` cannot override a static method defined in `A`.
+    def foo(cls) -> int:
+        pass
+```
+
+
+```python
+  from typing import final
+  class Foo:
+    @final
+    def bar(self) -> None:
+      pass
+
+  class Bar(Foo):
+    def bar(self) -> None: # Invalid override [40]: `Bar.bar` cannot override final method defined in `Foo`.
+      pass
+```
+
 ### 53: Missing annotation for captured variables
 Pyre makes no attempt at trying to infer the types across function boundaries. The statement holds for nested functions as well.
 From a nested function's perspective, a variable defined in an nesting function behaves not too differently from a global variable. Therefore, Pyre treats such variables in the same way as it treats global variable: an explicit annotation is required if strict mode is turned on.
