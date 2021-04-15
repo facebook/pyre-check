@@ -134,6 +134,16 @@ test.py:1:0 Incompatible variable type [9]: a is declared to have type `int` but
 
 The `9` in the brackets indicates that we raised an error with code 9.
 
+
+### 0: Unused Ignore
+Pyre fixmes and ignores allow you to ignore specific type errors by their code until you are able to fix them. In order to avoid outdated fixme comments in your project, Pyre will also error when a fixme is no longer needed. Removing the fixme comment will resolve the error.
+
+```python
+# pyre-fixme[7] # unused ignore
+def foo() -> int:
+  return 1
+```
+
 ### 3: Missing Return Annotation
 
 If strict mode is turned on, Pyre will error when a function is either annotated with a return type that contains `typing.Any`, or is not annotated with any return type at all (in which case Pyre will treat it as returning `typing.Any` by default).
