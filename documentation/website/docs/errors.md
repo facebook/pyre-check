@@ -593,43 +593,6 @@ def my_decorator_factory(message: str) -> MyCallableProtocol:
 ```
 
 
-### 35: Invalid type variance
-In brief, read-only data types can be covariant, write-only data types can be contravariant, and data types that support both reads and writes must be invariant.
-If a data type implements any functions accepting parameters of that type, we cannot guarantee that writes are not happening. If a data type implements any functions returning values of that type, we cannot guarantee that reads are not happening.
-For example (note: int is a subclass of float in the type system and in these examples):
-Writes taking covariants:
-
-```python
-_T_co = typing.TypeVar("_T_co", covariant=True)
-
-class MyList(typing.Generic[_T_co]):
-    def write(self, element: _T_co) -> None:
-        ... # adds element to list
-
-def takes_float_list(float_list: MyList[float]) -> None:
-    float_list.write(1.0)
-
-int_list: MyList[int] = ...
-takes_float_list(int_list)  # this call is OK because MyList is covariant: MyList[int] < MyList[float]
-# int_list contains floats
-```
-
-Reads returning contravariants:
-
-```python
-_T_cont = typing.TypeVar("_T_cont", contravariant=True)
-
-class MyList(typing.Generic[_T_cont]):
-    def read(self) -> _T_cont:
-        ... # returns first element from list
-
-def takes_int_list(int_list: MyList[int]) -> int:
-   return int_list.read()
-
-float_list: MyList[float] = ...
-takes_int_list(float_list)  # this call is OK because MyList is contravariant: MyList[float] < MyList[int]
-# problem with return above is clear
-```
 
 ### 39: Invalid Inheritance
 When defining a new class, Pyre will error if the base class given is not a valid parent class. This may be caused by various conditions:
@@ -696,6 +659,44 @@ def bar(b: Bar) -> None:
 ```
 
 To fix this error, change the definition of this attribute to something that is mutable, if it is not intended to be read-only.
+
+### 46: Invalid type variance
+In brief, read-only data types can be covariant, write-only data types can be contravariant, and data types that support both reads and writes must be invariant.
+If a data type implements any functions accepting parameters of that type, we cannot guarantee that writes are not happening. If a data type implements any functions returning values of that type, we cannot guarantee that reads are not happening.
+For example (note: int is a subclass of float in the type system and in these examples):
+Writes taking covariants:
+
+```python
+_T_co = typing.TypeVar("_T_co", covariant=True)
+
+class MyList(typing.Generic[_T_co]):
+    def write(self, element: _T_co) -> None:
+        ... # adds element to list
+
+def takes_float_list(float_list: MyList[float]) -> None:
+    float_list.write(1.0)
+
+int_list: MyList[int] = ...
+takes_float_list(int_list)  # this call is OK because MyList is covariant: MyList[int] < MyList[float]
+# int_list contains floats
+```
+
+Reads returning contravariants:
+
+```python
+_T_cont = typing.TypeVar("_T_cont", contravariant=True)
+
+class MyList(typing.Generic[_T_cont]):
+    def read(self) -> _T_cont:
+        ... # returns first element from list
+
+def takes_int_list(int_list: MyList[int]) -> int:
+   return int_list.read()
+
+float_list: MyList[float] = ...
+takes_int_list(float_list)  # this call is OK because MyList is contravariant: MyList[float] < MyList[int]
+# problem with return above is clear
+```
 
 ### 49: Unsafe Cast
 Pyre supports `typing.cast` to force the type checker to accept a given type for your expression, no matter what it would otherwise infer that type to be. This is a good escape hatch but can also hide type inconsistencies and introduce unsoundness. For example:
