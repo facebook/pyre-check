@@ -3166,7 +3166,7 @@ module State (Context : Context) = struct
           let reference = name_to_reference name in
           let access_as_attribute () =
             let find_attribute
-                ({ Type.instantiated; accessed_through_class; class_name } as resolved)
+                ({ Type.instantiated; accessed_through_class; class_name } as class_data)
               =
               let name = attribute in
               match
@@ -3199,7 +3199,7 @@ module State (Context : Context) = struct
                   in
                   (* Collect @property's in the call graph. *)
                   Some
-                    ( resolved,
+                    ( class_data,
                       (attribute, undefined_target),
                       Annotated.Attribute.annotation attribute )
               | None -> None
@@ -3232,8 +3232,8 @@ module State (Context : Context) = struct
                 }
             | Some (head :: tail) ->
                 let name = attribute in
-                let head_resolved_class, head_definition, head_resolved = head in
-                let tail_resolved_classes, tail_definitions, tail_resolveds = List.unzip3 tail in
+                let head_class_data, head_definition, head_annotation = head in
+                let tail_class_datas, tail_definitions, tail_annotations = List.unzip3 tail in
                 begin
                   let attributes =
                     List.map (head_definition :: tail_definitions) ~f:fst
@@ -3241,7 +3241,7 @@ module State (Context : Context) = struct
                     List.zip_exn
                       definitions
                       (List.map
-                         (head_resolved_class :: tail_resolved_classes)
+                         (head_class_data :: tail_class_datas)
                          ~f:(fun { Type.instantiated; _ } -> instantiated))
                   in
                   Context.Builder.add_property_callees
@@ -3304,19 +3304,19 @@ module State (Context : Context) = struct
                       else
                         errors
                 in
-                let resolved =
-                  let apply_global_override resolved =
-                    let annotation =
+                let resolved_annotation =
+                  let apply_local_override global_annotation =
+                    let local_override =
                       reference
                       >>= fun reference ->
                       Resolution.get_local_with_attributes
                         resolution
                         ~name:(create_name_from_reference ~location:Location.any reference)
-                        ~global_fallback:(Type.is_meta (Annotation.annotation resolved))
+                        ~global_fallback:(Type.is_meta (Annotation.annotation global_annotation))
                     in
-                    match annotation with
-                    | Some local -> local
-                    | None -> resolved
+                    match local_override with
+                    | Some local_annotation -> local_annotation
+                    | None -> global_annotation
                   in
                   let join sofar element =
                     let refined =
@@ -3329,13 +3329,13 @@ module State (Context : Context) = struct
                     in
                     { refined with annotation = Type.union [sofar.annotation; element.annotation] }
                   in
-                  List.fold tail_resolveds ~init:head_resolved ~f:join |> apply_global_override
+                  List.fold tail_annotations ~init:head_annotation ~f:join |> apply_local_override
                 in
                 {
                   resolution;
                   errors;
-                  resolved = Annotation.annotation resolved;
-                  resolved_annotation = Some resolved;
+                  resolved = Annotation.annotation resolved_annotation;
+                  resolved_annotation = Some resolved_annotation;
                   base = None;
                 }
           in
