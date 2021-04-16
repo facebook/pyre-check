@@ -44,11 +44,12 @@ from .persistent import (
     StartFailure,
     _publish_diagnostics,
     type_errors_to_diagnostics,
+    invalid_models_to_diagnostics,
     InitializationExit,
     InitializationSuccess,
     InitializationFailure,
 )
-
+from api import query, connection as api_connection
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -100,19 +101,25 @@ class PysaServerHandler(connection.BackgroundTask):
             LOG.debug(message)
         await self.show_message_to_client(message, level)
 
-    def update_type_errors(self, type_errors: Sequence[error.Error]) -> None:
+    # ** NEW **
+    # Updating model errors from Pysa
+    def update_model_errors(self, model_errors: Sequence[query.InvalidModel]) -> None:
         LOG.info(
             (
-                "Refereshing type errors received from Pysa server. "
-                + f"Total number of type errors is {len(type_errors)}."
+                "Refereshing errors received from Pysa server. "
+                + f"Total number of errors is {len(model_errors)}."
             )
         )
-        self.server_state.diagnostics = type_errors_to_diagnostics(type_errors)
+        self.server_state.diagnostics = invalid_models_to_diagnostics(model_errors)
 
-    async def show_type_errors_to_client(self) -> None:
+    # ** NEW **
+    # Show invalid model errors from Pysa to the client
+    async def show_model_errors_to_client(self) -> None:
+        LOG.info(f"server_state.opened_documents = {self.server_state.opened_documents}")
         for path in self.server_state.opened_documents:
             await _publish_diagnostics(self.client_output_channel, path, [])
             diagnostics = self.server_state.diagnostics.get(path, None)
+            LOG.info(f"show_model_errors_to_client(): diagnostics = {diagnostics}")
             if diagnostics is not None:
                 await _publish_diagnostics(
                     self.client_output_channel, path, diagnostics
@@ -126,41 +133,52 @@ class PysaServerHandler(connection.BackgroundTask):
             raw_response = await server_input_channel.read_until(separator="\n")
             yield raw_response
         except incremental.InvalidServerResponse as error:
-            LOG.error(f"Pysa  server returns invalid response: {error}")
+            LOG.error(f"Pysa server returns invalid response: {error}")
 
-    async def _subscribe_to_type_error(
+    # ** NEW **
+    # Subscribe and read the server response
+    async def _subscribe_to_model_error(
         self,
         server_input_channel: connection.TextReader,
         server_output_channel: connection.TextWriter,
     ) -> None:
+        pyre_connection = api_connection.PyreConnection(Path(self.pyre_arguments.global_root))
         subscription_name = f"persistent_{os.getpid()}"
         await server_output_channel.write(
-            f'["SubscribeToTypeErrors", "{subscription_name}"]\n'
+            f'["SubscribeToModelErrors", "{subscription_name}"]\n'
         )
-
-        async with self._read_server_response(server_input_channel) as first_response:
-            initial_type_errors = incremental.parse_type_error_response(first_response)
-            self.update_type_errors(initial_type_errors)
-            await self.show_type_errors_to_client()
-
         while True:
             async with self._read_server_response(
                 server_input_channel
-            ) as raw_subscription_response:
-                subscription_response = parse_subscription_response(
-                    raw_subscription_response
-                )
-                if subscription_name == subscription_response.name:
-                    self.update_type_errors(subscription_response.body)
-                    await self.show_type_errors_to_client()
+            ):
+                initial_model_errors = query.get_invalid_taint_models(pyre_connection)
+                self.update_model_errors(initial_model_errors)
+                await self.show_model_errors_to_client()
+        # async with self._read_server_response(server_input_channel):
+        #     initial_model_errors = query.get_invalid_taint_models(pyre_connection)
+        #     self.update_model_errors(initial_model_errors)
+        #     await self.show_model_errors_to_client()
 
-    async def subscribe_to_type_error(
+        # while True:
+        #     async with self._read_server_response(
+        #         server_input_channel
+        #     ) as raw_subscription_response:
+        #         subscription_response = parse_subscription_response(
+        #             raw_subscription_response
+        #         )
+        #         if subscription_name == subscription_response.name:
+        #             self.update_model_errors(subscription_response.body)
+        #             await self.show_model_errors_to_client()
+
+    # ** NEW **
+    # Call the above method to read the server response
+    async def subscribe_to_model_error(
         self,
         server_input_channel: connection.TextReader,
         server_output_channel: connection.TextWriter,
     ) -> None:
         try:
-            await self._subscribe_to_type_error(
+            await self._subscribe_to_model_error(
                 server_input_channel, server_output_channel
             )
         finally:
@@ -169,7 +187,7 @@ class PysaServerHandler(connection.BackgroundTask):
                 level=lsp.MessageType.WARNING,
             )
             self.server_state.diagnostics = {}
-            await self.show_type_errors_to_client()
+            await self.show_model_errors_to_client()
 
     def _auxiliary_logging_info(self) -> Dict[str, Optional[str]]:
         return {
@@ -207,7 +225,7 @@ class PysaServerHandler(connection.BackgroundTask):
                         **self._auxiliary_logging_info(),
                     },
                 )
-                await self.subscribe_to_type_error(input_channel, output_channel)
+                await self.subscribe_to_model_error(input_channel, output_channel)
         except connection.ConnectionFailure:
             await self.log_and_show_message_to_client(
                 (
@@ -237,7 +255,7 @@ class PysaServerHandler(connection.BackgroundTask):
                             **self._auxiliary_logging_info(),
                         },
                     )
-                    await self.subscribe_to_type_error(input_channel, output_channel)
+                    await self.subscribe_to_model_error(input_channel, output_channel)
             elif isinstance(start_status, StartFailure):
                 self.server_state.consecutive_start_failure += 1
                 if (
