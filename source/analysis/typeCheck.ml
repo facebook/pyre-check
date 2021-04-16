@@ -3274,21 +3274,21 @@ module State (Context : Context) = struct
                             (Error.UndefinedAttribute
                                { attribute = name; origin = Error.Class target })
                   | _ ->
-                      let enclosing_class_reference =
-                        let open Annotated in
-                        Define.parent_definition
-                          ~resolution:(Resolution.global_resolution resolution)
-                          (Define.create Context.define)
-                        >>| Node.value
-                        >>| ClassSummary.name
-                      in
-                      let base_class =
-                        if Type.is_meta resolved_base then
-                          Type.class_name (Type.single_parameter resolved_base)
-                        else
-                          Type.class_name resolved_base
-                      in
                       let is_accessed_in_base_class =
+                        let enclosing_class_reference =
+                          let open Annotated in
+                          Define.parent_definition
+                            ~resolution:(Resolution.global_resolution resolution)
+                            (Define.create Context.define)
+                          >>| Node.value
+                          >>| ClassSummary.name
+                        in
+                        let base_class =
+                          if Type.is_meta resolved_base then
+                            Type.class_name (Type.single_parameter resolved_base)
+                          else
+                            Type.class_name resolved_base
+                        in
                         Option.value_map
                           ~default:false
                           ~f:(Reference.equal_sanitized base_class)
