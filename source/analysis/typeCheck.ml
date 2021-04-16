@@ -3198,10 +3198,7 @@ module State (Context : Context) = struct
                       Some instantiated
                   in
                   (* Collect @property's in the call graph. *)
-                  Some
-                    ( class_data,
-                      (attribute, undefined_target),
-                      Annotated.Attribute.annotation attribute )
+                  Some (class_data, attribute, undefined_target)
               | None -> None
             in
             match
@@ -3230,38 +3227,30 @@ module State (Context : Context) = struct
                   resolved_annotation = None;
                   base = None;
                 }
-            | Some (head :: tail) ->
+            | Some (_ :: _ as attribute_info) ->
                 let name = attribute in
-                let head_class_data, head_definition, head_annotation = head in
-                let tail_class_datas, tail_definitions, tail_annotations = List.unzip3 tail in
+                let class_datas, attributes, undefined_targets = List.unzip3 attribute_info in
+                let head_annotation, tail_annotations =
+                  let annotations = attributes |> List.map ~f:Annotated.Attribute.annotation in
+                  List.hd_exn annotations, List.tl_exn annotations
+                in
                 begin
-                  let attributes =
-                    List.map (head_definition :: tail_definitions) ~f:fst
-                    |> fun definitions ->
+                  let attributes_with_instantiated =
                     List.zip_exn
-                      definitions
-                      (List.map
-                         (head_class_data :: tail_class_datas)
-                         ~f:(fun { Type.instantiated; _ } -> instantiated))
+                      attributes
+                      (class_datas |> List.map ~f:(fun { Type.instantiated; _ } -> instantiated))
                   in
                   Context.Builder.add_property_callees
                     ~global_resolution
                     ~resolved_base
-                    ~attributes
+                    ~attributes:attributes_with_instantiated
                     ~location
                     ~qualifier:Context.qualifier
                     ~name
                 end;
                 let errors =
-                  let definition =
-                    List.find (head_definition :: tail_definitions) ~f:(fun (_, undefined_target) ->
-                        match undefined_target with
-                        | None -> false
-                        | _ -> true)
-                    |> Option.value ~default:head_definition
-                  in
-                  match definition with
-                  | _, Some target ->
+                  match List.find undefined_targets ~f:Option.is_some |> Option.join with
+                  | Some target ->
                       if Option.is_some (inverse_operator name) then
                         (* Defer any missing attribute error until the inverse operator has been
                            typechecked. *)
@@ -3329,7 +3318,7 @@ module State (Context : Context) = struct
                     in
                     { refined with annotation = Type.union [sofar.annotation; element.annotation] }
                   in
-                  List.fold tail_annotations ~init:head_annotation ~f:join |> apply_local_override
+                  List.fold ~init:head_annotation ~f:join tail_annotations |> apply_local_override
                 in
                 {
                   resolution;
