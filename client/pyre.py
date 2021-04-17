@@ -114,8 +114,10 @@ def run_pyre_command(
     except (buck.BuckException, EnvironmentException) as error:
         client_exception_message = str(error)
         exit_code = ExitCode.FAILURE
-        if isinstance(error, buck.BuckException):
-            exit_code = ExitCode.BUCK_ERROR
+        if isinstance(error, buck.BuckUserError):
+            exit_code = ExitCode.BUCK_USER_ERROR
+        elif isinstance(error, buck.BuckException):
+            exit_code = ExitCode.BUCK_INTERNAL_ERROR
     except (configuration_module.InvalidConfiguration) as error:
         client_exception_message = str(error)
         exit_code = ExitCode.CONFIGURATION_ERROR

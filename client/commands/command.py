@@ -43,10 +43,11 @@ class ExitCode(enum.IntEnum):
     SUCCESS = 0
     FOUND_ERRORS = 1
     FAILURE = 2
-    BUCK_ERROR = 3
+    BUCK_INTERNAL_ERROR = 3
     SERVER_NOT_FOUND = 4
     INCONSISTENT_SERVER = 5
     CONFIGURATION_ERROR = 6
+    BUCK_USER_ERROR = 7
     # If the process exited due to a signal, this will be the negative signal number.
     SIGSEGV = -signal.SIGSEGV
 
