@@ -5,5 +5,10 @@
 
 import typing
 
+from collections.abc import Mapping
+
 class MultiValueDict(typing.Dict[typing.Any, typing.Any]):
     def copy(self) -> MultiValueDict: ...
+
+class CaseInsensitiveMapping(Mapping):
+    def copy(self) -> CaseInsensitiveMapping: ...

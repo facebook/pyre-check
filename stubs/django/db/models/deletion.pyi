@@ -5,7 +5,7 @@
 
 from typing import Collection
 
-from django.db.models import Model
+from django.db.models.base import Model as Model
 from django.db.models.fields import Field
 
 class Collector: ...

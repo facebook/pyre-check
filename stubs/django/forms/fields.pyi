@@ -20,7 +20,7 @@ class Field:
         required: bool = ...,
         widget: Optional[Widget] = ...,
         label: Optional[str] = ...,
-        initial: Optional[Any] = ...,
+        initial: Any = ...,
         help_text: str = ...,
         error_messages: Optional[Dict[str, str]] = ...,
         show_hidden_initial: bool = ...,

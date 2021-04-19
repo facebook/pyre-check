@@ -54,18 +54,5 @@ class RegexURLPattern:
     callback: Callable[..., Any]
     name: Optional[str]
 
-class RegexURLResolver:
-    url_patterns: Iterable[Union[RegexURLPattern, "RegexURLResolver"]]
-    urlconf_module: Any
-    urlconf_name: Union[str, ModuleType]
-    regex: Pattern
-    def resolve(self, path: str) -> ResolverMatch: ...
-    def resolve_error_handler(
-        self, status_code: int
-    ) -> Tuple[Callable[[HttpRequest, ...], HttpResponse], Dict]: ...
-    # this is not in Django but we add it on
-    _re_set: Union[bool, Optional[re2.Set]]
-
 def get_urlconf(default: Any = None) -> Any: ...
-def get_resolver(urlconf: Any) -> RegexURLResolver: ...
 def get_callable(view_name: str) -> Callable[..., Awaitable[HttpResponse]]: ...

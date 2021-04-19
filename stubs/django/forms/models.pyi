@@ -14,7 +14,7 @@ class ModelForm(Form):
     def __init__(
         self,
         data: Optional[Dict[str, Any]] = ...,
-        files: Optional[Any] = ...,
+        files: Any = ...,
         auto_id: str = ...,
         prefix: Optional[str] = ...,
         initial: Optional[Dict[str, Any]] = ...,
@@ -23,6 +23,6 @@ class ModelForm(Form):
         empty_permitted: bool = ...,
         instance: Optional[Model] = ...,
         use_required_attribute: Optional[bool] = ...,
-        renderer: Optional[Any] = ...,
+        renderer: Any = ...,
     ) -> None: ...
     def save(self, commit: bool = ...) -> Model: ...
