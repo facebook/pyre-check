@@ -67,12 +67,6 @@ module type Error = sig
     lookup:(Reference.t -> string option) ->
     t ->
     Instantiated.t
-
-  val async_instantiate
-    :  show_error_traces:bool ->
-    lookup:(Reference.t -> string option Lwt.t) ->
-    t ->
-    Instantiated.t Lwt.t
 end
 
 module Make (Kind : Kind) = struct
@@ -187,11 +181,4 @@ module Make (Kind : Kind) = struct
       ~signature
       ~show_error_traces
       ()
-
-
-  let async_instantiate ~show_error_traces ~lookup { location; kind; signature } =
-    let open Lwt.Infix in
-    Location.WithModule.async_instantiate ~lookup location
-    >>= fun location ->
-    Lwt.return (Instantiated.create ~location ~kind ~signature ~show_error_traces ())
 end

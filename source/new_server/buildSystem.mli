@@ -31,11 +31,11 @@ val cleanup : t -> unit Lwt.t
 (** This API allows the build system to perform additional work (e.g. removing temporary files) when
     the Pyre server is about to shut down. *)
 
-val lookup_source : t -> PyrePath.t -> PyrePath.t option Lwt.t
+val lookup_source : t -> PyrePath.t -> PyrePath.t option
 (** Given an artifact path, return the corresponding source path, which is guaranteed to be unique
     if exists. Return [None] if no such source path exists. *)
 
-val lookup_artifact : t -> PyrePath.t -> PyrePath.t list Lwt.t
+val lookup_artifact : t -> PyrePath.t -> PyrePath.t list
 (** Given an source path, return the corresponding artifact paths. Return the empty list if no such
     artifact path exists. *)
 
@@ -46,8 +46,8 @@ val lookup_artifact : t -> PyrePath.t -> PyrePath.t list Lwt.t
 val create_for_testing
   :  ?update:(PyrePath.t list -> PyrePath.t list Lwt.t) ->
   ?cleanup:(unit -> unit Lwt.t) ->
-  ?lookup_source:(PyrePath.t -> PyrePath.t option Lwt.t) ->
-  ?lookup_artifact:(PyrePath.t -> PyrePath.t list Lwt.t) ->
+  ?lookup_source:(PyrePath.t -> PyrePath.t option) ->
+  ?lookup_artifact:(PyrePath.t -> PyrePath.t list) ->
   unit ->
   t
 

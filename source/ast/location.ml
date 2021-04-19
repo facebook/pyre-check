@@ -125,14 +125,6 @@ module WithModule = struct
     let instantiate ~lookup { path; start; stop } =
       let path = Option.value (lookup path) ~default:"*" in
       { WithPath.path; start; stop }
-
-
-    let async_instantiate ~lookup { path; start; stop } =
-      let open Lwt.Infix in
-      lookup path
-      >>= function
-      | None -> Lwt.return { WithPath.path = "*"; start; stop }
-      | Some path -> Lwt.return { WithPath.path; start; stop }
   end
 
   include T

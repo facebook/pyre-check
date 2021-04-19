@@ -23,18 +23,15 @@ let instantiate_error
     error
   =
   let lookup qualifier =
-    match AstEnvironment.ReadOnly.get_real_path ~configuration ast_environment qualifier with
-    | None -> Lwt.return_none
-    | Some path ->
-        let open Lwt.Infix in
-        BuildSystem.lookup_source build_system path
-        >>= fun path -> Lwt.return (Option.map path ~f:Path.absolute)
+    AstEnvironment.ReadOnly.get_real_path ~configuration ast_environment qualifier
+    |> Option.bind ~f:(BuildSystem.lookup_source build_system)
+    |> Option.map ~f:Path.absolute
   in
-  AnalysisError.async_instantiate ~show_error_traces ~lookup error
+  AnalysisError.instantiate ~show_error_traces ~lookup error
 
 
 let instantiate_errors ~build_system ~configuration ~ast_environment errors =
-  List.map errors ~f:(instantiate_error ~build_system ~configuration ~ast_environment) |> Lwt.all
+  List.map errors ~f:(instantiate_error ~build_system ~configuration ~ast_environment)
 
 
 let find_critical_file ~server_configuration:{ ServerConfiguration.critical_files; _ } paths =
@@ -45,16 +42,14 @@ let process_display_type_error_request
     ~state:{ ServerState.configuration; type_environment; error_table; build_system; _ }
     paths
   =
-  let open Lwt.Infix in
-  let get_changed_modules paths =
+  let modules =
     match paths with
-    | [] -> Lwt.return (Hashtbl.keys error_table)
+    | [] -> Hashtbl.keys error_table
     | _ ->
         let get_module_for_source_path path =
           let path = Path.create_absolute path in
-          BuildSystem.lookup_artifact build_system path
-          >>= function
-          | [] -> Lwt.return_none
+          match BuildSystem.lookup_artifact build_system path with
+          | [] -> None
           | artifact_path :: _ ->
               (* If the same source file is mapped to more than one artifact paths, all of the
                  artifact paths will likely contain the same set of type errors. It does not matter
@@ -62,35 +57,24 @@ let process_display_type_error_request
 
                  NOTE (grievejia): It is possible for the type errors to differ. We may need to
                  reconsider how this is handled in the future. *)
-              Lwt.return
-                (module_of_path
-                   ~configuration
-                   ~module_tracker:(TypeEnvironment.module_tracker type_environment)
-                   artifact_path)
+              module_of_path
+                ~configuration
+                ~module_tracker:(TypeEnvironment.module_tracker type_environment)
+                artifact_path
         in
-        List.map paths ~f:get_module_for_source_path
-        |> Lwt.all
-        >>= fun modules -> Lwt.return (List.filter_opt modules)
+        List.filter_map paths ~f:get_module_for_source_path
   in
-  get_changed_modules paths
-  >>= fun modules ->
   let errors =
     let get_type_error qualifier = Hashtbl.find error_table qualifier |> Option.value ~default:[] in
     List.concat_map modules ~f:get_type_error |> List.sort ~compare:AnalysisError.compare
   in
-  instantiate_errors
-    errors
-    ~build_system
-    ~configuration
-    ~ast_environment:(TypeEnvironment.ast_environment type_environment |> AstEnvironment.read_only)
-  >>= fun errors -> Lwt.return (Response.TypeErrors errors)
-
-
-let translate_changed_paths ~build_system paths =
-  let open Lwt.Infix in
-  List.map paths ~f:(BuildSystem.lookup_artifact build_system)
-  |> Lwt.all
-  >>= fun changed_paths -> Lwt.return (List.concat changed_paths)
+  Response.TypeErrors
+    (instantiate_errors
+       errors
+       ~build_system
+       ~configuration
+       ~ast_environment:
+         (TypeEnvironment.ast_environment type_environment |> AstEnvironment.read_only))
 
 
 let process_incremental_update_request
@@ -119,10 +103,9 @@ let process_incremental_update_request
   | None -> (
       BuildSystem.update build_system paths
       >>= fun changed_paths_from_rebuild ->
-      translate_changed_paths ~build_system paths
-      >>= fun changed_paths_from_filesystem ->
       let changed_paths =
-        List.append changed_paths_from_rebuild changed_paths_from_filesystem
+        List.concat_map paths ~f:(BuildSystem.lookup_artifact build_system)
+        |> List.append changed_paths_from_rebuild
         |> List.dedup_and_sort ~compare:Path.compare
       in
       let _ =
@@ -137,19 +120,20 @@ let process_incremental_update_request
       match ServerState.Subscriptions.all subscriptions with
       | [] -> Lwt.return state
       | _ as subscriptions ->
-          let errors =
-            Hashtbl.data error_table
-            |> List.concat_no_order
-            |> List.sort ~compare:AnalysisError.compare
+          let response =
+            let errors =
+              Hashtbl.data error_table
+              |> List.concat_no_order
+              |> List.sort ~compare:AnalysisError.compare
+            in
+            Response.TypeErrors
+              (instantiate_errors
+                 errors
+                 ~build_system
+                 ~configuration
+                 ~ast_environment:
+                   (TypeEnvironment.ast_environment type_environment |> AstEnvironment.read_only))
           in
-          instantiate_errors
-            errors
-            ~build_system
-            ~configuration
-            ~ast_environment:
-              (TypeEnvironment.ast_environment type_environment |> AstEnvironment.read_only)
-          >>= fun errors ->
-          let response = Response.TypeErrors errors in
           List.map subscriptions ~f:(fun subscription -> Subscription.send ~response subscription)
           |> Lwt.join
           >>= fun () -> Lwt.return state )
@@ -161,7 +145,6 @@ let process_request
       state )
     request
   =
-  let open Lwt.Infix in
   match request with
   | Request.GetInfo ->
       let response =
@@ -175,9 +158,10 @@ let process_request
       in
       Lwt.return (state, response)
   | Request.DisplayTypeError paths ->
-      process_display_type_error_request ~state paths
-      >>= fun response -> Lwt.return (state, response)
+      let response = process_display_type_error_request ~state paths in
+      Lwt.return (state, response)
   | Request.IncrementalUpdate paths ->
+      let open Lwt.Infix in
       process_incremental_update_request ~state paths
       >>= fun new_state -> Lwt.return (new_state, Response.Ok)
   | Request.Query query_text ->

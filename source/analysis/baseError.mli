@@ -67,12 +67,6 @@ module type Error = sig
     lookup:(Reference.t -> string option) ->
     t ->
     Instantiated.t
-
-  val async_instantiate
-    :  show_error_traces:bool ->
-    lookup:(Reference.t -> string option Lwt.t) ->
-    t ->
-    Instantiated.t Lwt.t
 end
 
 module Make (Kind : Kind) : Error with type kind := Kind.t
