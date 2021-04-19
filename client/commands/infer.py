@@ -552,6 +552,10 @@ class Infer(Reporting):
         if search_path:
             flags.extend(["-search-path", ",".join(search_path)])
 
+        excludes = self._configuration.excludes
+        for exclude in excludes:
+            flags.extend(["-exclude", exclude])
+
         if len(self._ignore_infer) > 0:
             flags.extend(["-ignore-infer", ";".join(self._ignore_infer)])
         return flags
