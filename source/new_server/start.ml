@@ -138,8 +138,6 @@ end
 
 let handle_connection ~server_state _client_address (input_channel, output_channel) =
   let open Lwt.Infix in
-  Lazy.force server_state
-  >>= fun server_state ->
   Log.log ~section:`Server "Connection established";
   (* Raw request messages are processed line-by-line. *)
   let rec handle_line connection_state =
@@ -505,27 +503,20 @@ let with_server
      filesystem updates during server establishment. *)
   get_watchman_subscriber ?watchman server_configuration
   >>= fun watchman_subscriber ->
-  let server_state =
-    (* We do not want the expensive server initialization to happen before we start to listen on the
-       socket. Hence the use of `lazy` here to delay the initialization. *)
-    lazy
-      (initialize_server_state ?watchman_subscriber ?build_system_initializer server_configuration)
-  in
   LwtSocketServer.PreparedSocket.create_from_path socket_path
   >>= fun prepared_socket ->
+  (* We do not want the expensive server initialization to happen before we start to accept client
+     requests. *)
+  initialize_server_state ?watchman_subscriber ?build_system_initializer server_configuration
+  >>= fun server_state ->
   LwtSocketServer.establish prepared_socket ~f:(handle_connection ~server_state)
   >>= fun server ->
   let server_waiter () = f (socket_path, server_state) in
   let server_destructor () =
     Log.info "Server is going down. Cleaning up...";
     let build_system_cleanup () =
-      if Lazy.is_val server_state then
-        Lazy.force server_state
-        >>= fun server_state ->
-        let { ServerState.build_system; _ } = !server_state in
-        BuildSystem.cleanup build_system
-      else
-        Lwt.return_unit
+      let { ServerState.build_system; _ } = !server_state in
+      BuildSystem.cleanup build_system
     in
     build_system_cleanup () >>= fun () -> LwtSocketServer.shutdown server
   in
@@ -538,8 +529,6 @@ let with_server
           server_waiter ()
       | Some subscriber ->
           let watchman_waiter =
-            Lazy.force server_state
-            >>= fun server_state ->
             Watchman.Subscriber.listen ~f:(on_watchman_update ~server_state) subscriber
             >>= fun () ->
             (* Lost watchman connection is considered an error. *)
@@ -573,9 +562,8 @@ let start_server
     server_configuration
   =
   let open Lwt in
-  let f (socket_path, uninitialized_server_state) =
-    on_server_socket_ready socket_path
-    >>= fun _ -> Lazy.force uninitialized_server_state >>= on_started
+  let f (socket_path, server_state) =
+    on_server_socket_ready socket_path >>= fun _ -> on_started server_state
   in
   catch
     (fun () -> with_server ?watchman ?build_system_initializer server_configuration ~f)
