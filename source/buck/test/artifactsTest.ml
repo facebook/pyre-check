@@ -92,6 +92,14 @@ let test_artifacts_populate_ok context =
     ["foo/a.py", "a"; "foo/b.py", "b"]
     ~build_map:["a.py", "foo/a.py"; "bar/b.py", "foo/b.py"]
     ~expected:["a.py", "a"; "bar/b.py", "b"]
+  >>= fun () ->
+  (* Notice that the build map may point some artifacts to a nonexistent source file -- `populate`
+     will NOT fail when that happens and we do rely on this behavior downstream. *)
+  assert_populate
+    ~context
+    ["foo/a.py", "a"]
+    ~build_map:["a.py", "foo/a.py"; "bar/b.py", "foo/b.py"]
+    ~expected:["a.py", "a"]
   >>= fun () -> Lwt.return_unit
 
 

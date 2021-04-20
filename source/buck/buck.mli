@@ -345,6 +345,27 @@ module Builder : sig
       cleaness of the artifact directory is desirable, it is expected that the caller would take
       care of that before its invocation. *)
 
+  val restore : build_map:BuildMap.t -> t -> unit Lwt.t
+  (** Given a build map, create the corresponding Python link tree at the given artifact root
+      accordingly.
+
+      In most cases, downstream clients are discouraged from invoking this API. {!val:Builder.build}
+      should be used instead, since it does not force the clients to construct a build map by
+      themselves and risk having the build map and the link tree inconsistent with what the target
+      specification says. The only scenario where it makes sense to prefer {!val:restore} over
+      {!val:build} is saved state loading: in that case, we already load the old build map from
+      saved state so it is not needed (and not possible as well) to re-construct that build map from
+      scratch all over again.
+
+      The following exceptions may be raised by this API:
+
+      - {!exception: LinkTreeConstructionError} if any error is encountered when constructing the
+        link tree from the build map.
+
+      Note this API does not ensure the artifact root to be empty before the build starts. If
+      cleaness of the artifact directory is desirable, it is expected that the caller would take
+      care of that before its invocation. *)
+
   val full_incremental_build
     :  old_build_map:BuildMap.t ->
     targets:string list ->

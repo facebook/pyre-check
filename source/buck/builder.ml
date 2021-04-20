@@ -249,6 +249,14 @@ let build ~targets { buck_options; source_root; artifact_root } =
   | Result.Ok () -> Lwt.return { BuildResult.targets; build_map }
 
 
+let restore ~build_map { source_root; artifact_root; _ } =
+  let open Lwt.Infix in
+  Artifacts.populate ~source_root ~artifact_root build_map
+  >>= function
+  | Result.Error message -> raise (LinkTreeConstructionError message)
+  | Result.Ok () -> Lwt.return_unit
+
+
 let do_incremental_build ~source_root ~artifact_root ~old_build_map ~new_build_map () =
   let open Lwt.Infix in
   Log.info "Calculating the scope of the re-build...";
