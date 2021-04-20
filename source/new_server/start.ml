@@ -82,19 +82,18 @@ module ClientRequest = struct
     | Yojson.Json_error message -> Error message
 end
 
-let handle_request ~server_state request =
+let handle_request ~state request =
   let open Lwt.Infix in
   let on_uncaught_server_exception exn =
     Log.info "Uncaught server exception: %s" (Exn.to_string exn);
-    let server_state = !server_state in
     let () =
-      let { ServerState.server_configuration; _ } = server_state in
+      let { ServerState.server_configuration; _ } = state in
       StartupNotification.produce_for_configuration
         ~server_configuration
         "Restarting Pyre server due to unexpected crash"
     in
     Statistics.log_exception exn ~fatal:true ~origin:"server";
-    Stop.log_and_stop_waiting_server ~reason:"uncaught exception" ~state:server_state ()
+    Stop.log_and_stop_waiting_server ~reason:"uncaught exception" ~state ()
   in
   Lwt.catch
     (fun () ->
@@ -102,15 +101,14 @@ let handle_request ~server_state request =
       with_performance_logging
         ~normals:["request kind", Request.name_of request]
         ~name:"server request"
-        (fun () -> RequestHandler.process_request ~state:!server_state request))
+        (fun () -> RequestHandler.process_request ~state request))
     on_uncaught_server_exception
   >>= fun (new_state, response) ->
-  Log.log ~section:`Server "Request processed";
-  server_state := new_state;
-  Lwt.return response
+  Log.log ~section:`Server "Request `%a` processed" Sexp.pp (Request.sexp_of_t request);
+  Lwt.return (new_state, response)
 
 
-let handle_subscription ~server_state:{ ServerState.subscriptions; _ } ~output_channel request =
+let handle_subscription ~state:{ ServerState.subscriptions; _ } ~output_channel request =
   match request with
   | Subscription.Request.SubscribeToTypeErrors subscriber_name ->
       let subscription = Subscription.create ~name:subscriber_name ~output_channel () in
@@ -145,28 +143,31 @@ let handle_connection ~server_state _client_address (input_channel, output_chann
     >>= function
     | None ->
         Log.log ~section:`Server "Connection closed";
-        ConnectionState.cleanup ~server_state:!server_state connection_state;
-        Lwt.return_unit
+        ExclusiveLock.write server_state ~f:(fun server_state ->
+            ConnectionState.cleanup ~server_state connection_state;
+            Lwt.return (server_state, ()))
     | Some message ->
         let result =
           match ClientRequest.of_string message with
           | ClientRequest.Error message -> Lwt.return (connection_state, Response.Error message)
           | ClientRequest.Request request ->
-              handle_request ~server_state request
-              >>= fun response -> Lwt.return (connection_state, response)
+              ExclusiveLock.write server_state ~f:(fun state ->
+                  handle_request ~state request
+                  >>= fun (new_state, response) ->
+                  Lwt.return (new_state, (connection_state, response)))
           | ClientRequest.Subscription subscription ->
-              let subscription =
-                handle_subscription ~server_state:!server_state ~output_channel subscription
-              in
-              (* We send back the initial set of type errors when a subscription first gets
-                 established. *)
-              handle_request ~server_state (Request.DisplayTypeError [])
-              >>= fun response ->
-              Lwt.return
-                ( ConnectionState.add_subscription
-                    ~name:(Subscription.name_of subscription)
-                    connection_state,
-                  response )
+              ExclusiveLock.write server_state ~f:(fun state ->
+                  let subscription = handle_subscription ~state ~output_channel subscription in
+                  (* We send back the initial set of type errors when a subscription first gets
+                     established. *)
+                  handle_request ~state (Request.DisplayTypeError [])
+                  >>= fun (new_state, response) ->
+                  Lwt.return
+                    ( new_state,
+                      ( ConnectionState.add_subscription
+                          ~name:(Subscription.name_of subscription)
+                          connection_state,
+                        response ) ))
         in
         result
         >>= fun (new_connection_state, response) ->
@@ -454,7 +455,7 @@ let initialize_server_state
   >>= fun state ->
   Log.info "Server state initialized.";
   store_initial_state state;
-  Lwt.return (ref state)
+  Lwt.return (ExclusiveLock.create state)
 
 
 let get_watchman_subscriber
@@ -485,10 +486,11 @@ let get_watchman_subscriber
 let on_watchman_update ~server_state paths =
   let open Lwt.Infix in
   let update_request = Request.IncrementalUpdate (List.map paths ~f:Path.absolute) in
-  handle_request ~server_state update_request
-  >>= fun _ok_response ->
-  (* File watcher does not care about the content of the the response. *)
-  Lwt.return_unit
+  ExclusiveLock.write server_state ~f:(fun state ->
+      handle_request ~state update_request
+      >>= fun (new_state, _ok_response) ->
+      (* File watcher does not care about the content of the the response. *)
+      Lwt.return (new_state, ()))
 
 
 let with_server
@@ -515,7 +517,11 @@ let with_server
   let server_destructor () =
     Log.info "Server is going down. Cleaning up...";
     let build_system_cleanup () =
-      let { ServerState.build_system; _ } = !server_state in
+      (* We can't use `ExclusiveLock.read` here because when we reach this point, some other thread
+         might still hold the lock on the server state (e.g. this can happen when the server
+         destructor is initiated from a request handler that received a `stop` request). In those
+         cases, trying to grab the lock on the server state would cause a deadlock. *)
+      let { ServerState.build_system; _ } = ExclusiveLock.unsafe_read server_state in
       BuildSystem.cleanup build_system
     in
     build_system_cleanup () >>= fun () -> LwtSocketServer.shutdown server
@@ -600,7 +606,12 @@ let start_server_and_wait ?event_channel server_configuration =
           wait_on_signals
             [Signal.abrt; Signal.term; Signal.pipe; Signal.quit; Signal.segv]
             ~on_caught:(fun signal ->
-              let { ServerState.start_time; _ } = !state in
+              let { ServerState.start_time; _ } =
+                (* The use of `unsafe_read` is justified because (1) we really do not want to block
+                   here, and (2) `start_time` is immutable anyway, which means no race condition can
+                   occur in the first place. *)
+                ExclusiveLock.unsafe_read state
+              in
               Stop.log_stopped_server ~reason:(Signal.to_string signal) ~start_time ();
               return ExitStatus.Error);
         ])

@@ -21,3 +21,6 @@ let write ~f { mutex; value } =
       >>= fun (new_value, result) ->
       value := new_value;
       Lwt.return result)
+
+
+let unsafe_read { value; _ } = !value

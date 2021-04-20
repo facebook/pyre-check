@@ -39,7 +39,7 @@ val start_server
   :  ?watchman:Watchman.Raw.t ->
   ?build_system_initializer:BuildSystem.Initializer.t ->
   ?on_server_socket_ready:(Pyre.Path.t -> unit Lwt.t) ->
-  on_started:(ServerState.t ref -> ExitStatus.t Lwt.t) ->
+  on_started:(ServerState.t ExclusiveLock.t -> ExitStatus.t Lwt.t) ->
   on_exception:(exn -> ExitStatus.t Lwt.t) ->
   ServerConfiguration.t ->
   ExitStatus.t Lwt.t

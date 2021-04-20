@@ -40,3 +40,11 @@ val write : f:('a -> ('a * 'b) Lwt.t) -> 'a t -> 'b Lwt.t
     If [exclusive_lock] is already locked by another Lwt thread, this API will wait until the
     locking thread releases that lock. If there are multiple threads competing on the same lock, the
     lock will be granted in the same order in which they attempt to grab the lock. *)
+
+val unsafe_read : 'a t -> 'a
+(** [unsafe_read exclusive_lock] returns the containing state of [exclusive_lock] directly.
+
+    WARNING: This function is unsafe since it allows its caller to get access to the locked state
+    without obtaining the lock first. Such a blatant violation of the locking protocol would defeat
+    the point of using a lock in the first place. Only use this API if you have very strict
+    non-blocking requirement and very loose consistency requirements. *)
