@@ -600,7 +600,8 @@ let start_server_and_wait ?event_channel server_configuration =
           wait_on_signals
             [Signal.abrt; Signal.term; Signal.pipe; Signal.quit; Signal.segv]
             ~on_caught:(fun signal ->
-              Stop.log_stopped_server ~reason:(Signal.to_string signal) ~state:!state ();
+              let { ServerState.start_time; _ } = !state in
+              Stop.log_stopped_server ~reason:(Signal.to_string signal) ~start_time ();
               return ExitStatus.Error);
         ])
     ~on_exception:(fun exn ->
