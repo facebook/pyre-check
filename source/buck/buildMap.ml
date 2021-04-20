@@ -128,20 +128,25 @@ let create artifact_to_source = { artifact_to_source }
 
 let index { artifact_to_source } =
   let source_to_artifact =
-    let result =
-      let size = Hashtbl.length artifact_to_source in
-      Hashtbl.create (module String) ~size
-    in
-    let add_item ~key ~data =
-      Hashtbl.update result data ~f:(function
-          | None -> [key]
-          | Some values -> key :: values)
-    in
-    Hashtbl.iteri artifact_to_source ~f:add_item;
-    result
+    (* Delay source-to-artifact map computation till the first invocation of `lookup_artifact`. *)
+    lazy
+      (let result =
+         let size = Hashtbl.length artifact_to_source in
+         Hashtbl.create (module String) ~size
+       in
+       let add_item ~key ~data =
+         Hashtbl.update result data ~f:(function
+             | None -> [key]
+             | Some values -> key :: values)
+       in
+       Hashtbl.iteri artifact_to_source ~f:add_item;
+       result)
   in
   let lookup_source = Hashtbl.find artifact_to_source in
-  let lookup_artifact source = Hashtbl.find source_to_artifact source |> Option.value ~default:[] in
+  let lookup_artifact source =
+    let source_to_artifact = Lazy.force source_to_artifact in
+    Hashtbl.find source_to_artifact source |> Option.value ~default:[]
+  in
   { Indexed.lookup_source; lookup_artifact }
 
 
