@@ -24,6 +24,8 @@ module type S = sig
 
   val empty : t
 
+  val is_empty : t -> bool
+
   val inject : element -> element approximation
 
   val to_approximation : t -> element approximation list
@@ -380,6 +382,11 @@ module Make (Element : AbstractSetDomain.ELEMENT) = struct
             let over = Set.union left_over right_over in
             let under = Set.union left_under right_under in
             make ~old:left ~over ~under
+
+
+    let is_empty = function
+      | Bottom -> true
+      | BiSet { over; _ } -> Set.is_empty over
 
 
     let singleton element =

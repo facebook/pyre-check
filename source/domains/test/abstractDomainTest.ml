@@ -2530,7 +2530,12 @@ module OverUnderStringSet = struct
       (of_approximation [{ element = "c"; in_under = false }])
       (subtract set_b ~from:set_a_over)
       ~printer:show
-      ~cmp:compare
+      ~cmp:compare;
+
+    (* Test empty *)
+    assert_bool "bottom is empty" (is_empty bottom);
+    assert_bool "empty is empty" (is_empty empty);
+    assert_bool "subtraction is empty" (is_empty (subtract set_a ~from:set_a_over))
 
 
   let test_context _ = ()

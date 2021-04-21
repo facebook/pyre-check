@@ -21,6 +21,9 @@ module type S = sig
      over-approximate *)
   val empty : t
 
+  (* true if the set is bottom or empty *)
+  val is_empty : t -> bool
+
   val inject : element -> element approximation
 
   val to_approximation : t -> element approximation list
