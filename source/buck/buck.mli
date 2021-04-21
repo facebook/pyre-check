@@ -95,6 +95,10 @@ module BuildMap : sig
     val empty : t
     (** An empty map. *)
 
+    val of_alist_exn : (string * string) list -> t
+    (** Create a partial build map from an associative list. The list must conform to `(source_path,
+        artifact_path)` format. Raise an exception if the given list contains duplicated keys. *)
+
     val of_json_exn : Yojson.Safe.t -> t
     (** Create a partial build map from a JSON. The JSON must conform to Buck's Python source-db
         format. Raise an exception if the creation fails. *)

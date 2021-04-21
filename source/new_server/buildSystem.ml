@@ -13,6 +13,7 @@ type t = {
   cleanup: unit -> unit Lwt.t;
   lookup_source: Path.t -> Path.t option;
   lookup_artifact: Path.t -> Path.t list;
+  store: unit -> unit;
 }
 
 let update { update; _ } = update
@@ -23,14 +24,17 @@ let lookup_source { lookup_source; _ } = lookup_source
 
 let lookup_artifact { lookup_artifact; _ } = lookup_artifact
 
+let store { store; _ } = store ()
+
 let create_for_testing
     ?(update = fun _ -> Lwt.return [])
     ?(cleanup = fun () -> Lwt.return_unit)
     ?(lookup_source = fun path -> Some path)
     ?(lookup_artifact = fun path -> [path])
+    ?(store = fun () -> ())
     ()
   =
-  { update; cleanup; lookup_source; lookup_artifact }
+  { update; cleanup; lookup_source; lookup_artifact; store }
 
 
 module BuckBuildSystem = struct
@@ -66,7 +70,46 @@ module BuckBuildSystem = struct
       Buck.Builder.build builder ~targets
       >>= fun { Buck.Builder.BuildResult.targets = normalized_targets; build_map } ->
       Lwt.return (create ~targets ~builder ~normalized_targets ~build_map ())
+
+
+    let create_from_saved_state ~builder ~targets ~normalized_targets ~build_map () =
+      let open Lwt.Infix in
+      (* NOTE (grievejia): This may not be a 100% faithful restore, since there is no guarantee that
+         the source directory contains exactly the same set of files when saved state gets stored
+         and saved state gets loaded. It is possible that we might be creating some dead symlinks by
+         calling `restore` here.
+
+         But that should be fine -- it is guaranteed that after saved state loading, the server will
+         process another incremental update request to bring everything up-to-date again. If that
+         incremental update is correctly handled, the dead links will be properly cleaned up. *)
+      Buck.Builder.restore builder ~build_map
+      >>= fun () -> Lwt.return (create ~targets ~builder ~normalized_targets ~build_map ())
   end
+
+  (* This module defines how `State.t` will be preserved in the saved state. *)
+  module SerializableState = struct
+    type t = {
+      targets: string list;
+      normalized_targets: Buck.Target.t list;
+      serialized_build_map: (string * string) list;
+    }
+
+    module Serialized = struct
+      type nonrec t = t
+
+      let prefix = Prefix.make ()
+
+      let description = "Buck Builder States"
+
+      let unmarshall value = Marshal.from_string value 0
+    end
+
+    let serialize = Fn.id
+
+    let deserialize = Fn.id
+  end
+
+  module SavedState = Memory.Serializer (SerializableState)
 
   let ensure_directory_exist_and_clean path =
     let result =
@@ -115,7 +158,15 @@ module BuckBuildSystem = struct
     let lookup_artifact path =
       Buck.Builder.lookup_artifact ~index:state.build_map_index ~builder:state.builder path
     in
-    Lwt.return { update; cleanup; lookup_source; lookup_artifact }
+    let store () =
+      {
+        SerializableState.targets = state.targets;
+        normalized_targets = state.normalized_targets;
+        serialized_build_map = Buck.BuildMap.to_alist state.build_map;
+      }
+      |> SavedState.store
+    in
+    { update; cleanup; lookup_source; lookup_artifact; store }
 
 
   let initialize_from_options
@@ -128,21 +179,58 @@ module BuckBuildSystem = struct
     ensure_directory_exist_and_clean artifact_root;
     let builder = Buck.Builder.create ?mode ?isolation_prefix ~source_root ~artifact_root raw in
     State.create_from_scratch ~builder ~targets ()
-    >>= fun initial_state -> initialize_from_state initial_state
+    >>= fun initial_state -> Lwt.return (initialize_from_state initial_state)
+
+
+  let initialize_from_saved_state
+      ~raw
+      ~buck_options:
+        { ServerConfiguration.Buck.mode; isolation_prefix; source_root; artifact_root; _ }
+      ()
+    =
+    let open Lwt.Infix in
+    (* NOTE (grievejia): For saved state loading, are still using the passed-in `mode`,
+       `isolation_prefix`, `source_root`, and `artifact_root`, instead of preserving these options
+       in saved state itself. For `source_root` and `artifact_root`, this is actually mandatory
+       since these roots may legitimately change when loading states on a different machine. But for
+       `mode` and `isolation_prefix`, an argument can be made that in the future we should indeed
+       store them into saved state and check for potential changes when loading the state. *)
+    let { SerializableState.targets; normalized_targets; serialized_build_map } =
+      SavedState.load ()
+    in
+    let builder = Buck.Builder.create ?mode ?isolation_prefix ~source_root ~artifact_root raw in
+    let build_map =
+      Buck.BuildMap.Partial.of_alist_exn serialized_build_map |> Buck.BuildMap.create
+    in
+    State.create_from_saved_state ~builder ~targets ~normalized_targets ~build_map ()
+    >>= fun initial_state -> Lwt.return (initialize_from_state initial_state)
 end
 
 module Initializer = struct
   type build_system = t
 
-  type t = { initialize: unit -> build_system Lwt.t }
+  type t = {
+    initialize: unit -> build_system Lwt.t;
+    load: unit -> build_system Lwt.t;
+  }
 
-  let run { initialize } = initialize ()
+  let run { initialize; _ } = initialize ()
 
-  let null = { initialize = (fun () -> Lwt.return (create_for_testing ())) }
+  let load { load; _ } = load ()
+
+  let null =
+    {
+      initialize = (fun () -> Lwt.return (create_for_testing ()));
+      load = (fun () -> Lwt.return (create_for_testing ()));
+    }
+
 
   let buck ~raw buck_options =
-    { initialize = BuckBuildSystem.initialize_from_options ~raw ~buck_options }
+    {
+      initialize = BuckBuildSystem.initialize_from_options ~raw ~buck_options;
+      load = BuckBuildSystem.initialize_from_saved_state ~raw ~buck_options;
+    }
 
 
-  let create_for_testing ~initialize () = { initialize }
+  let create_for_testing ~initialize ~load () = { initialize; load }
 end

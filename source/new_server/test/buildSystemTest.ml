@@ -18,7 +18,8 @@ let test_initialize context =
       internal_state := "initialized";
       Lwt.return (BuildSystem.create_for_testing ())
     in
-    BuildSystem.Initializer.create_for_testing ~initialize ()
+    let load () = failwith "saved state loading is not supported" in
+    BuildSystem.Initializer.create_for_testing ~initialize ~load ()
   in
   let test_initialize _ =
     (* Verify that the build system has indeed been initiailzed. *)
@@ -44,7 +45,8 @@ let test_cleanup context =
       in
       Lwt.return (BuildSystem.create_for_testing ~cleanup ())
     in
-    BuildSystem.Initializer.create_for_testing ~initialize ()
+    let load () = failwith "saved state loading is not supported" in
+    BuildSystem.Initializer.create_for_testing ~initialize ~load ()
   in
   let open Lwt.Infix in
   let server_configuration =
@@ -87,7 +89,8 @@ let test_type_errors context =
       in
       Lwt.return (BuildSystem.create_for_testing ~lookup_source ~lookup_artifact ())
     in
-    BuildSystem.Initializer.create_for_testing ~initialize ()
+    let load () = failwith "saved state loading is not supported" in
+    BuildSystem.Initializer.create_for_testing ~initialize ~load ()
   in
   let test_type_errors client =
     let open Lwt.Infix in
@@ -174,7 +177,8 @@ let test_update context =
       in
       Lwt.return (BuildSystem.create_for_testing ~update ~lookup_source ~lookup_artifact ())
     in
-    BuildSystem.Initializer.create_for_testing ~initialize ()
+    let load () = failwith "saved state loading is not supported" in
+    BuildSystem.Initializer.create_for_testing ~initialize ~load ()
   in
   let test_update client =
     let open Lwt.Infix in
