@@ -214,6 +214,11 @@ let initialize_server_state
       ~error_table
       ()
   in
+  let build_and_start_from_scratch ~build_system_initializer () =
+    let open Lwt.Infix in
+    BuildSystem.Initializer.run build_system_initializer
+    >>= fun build_system -> Lwt.return (start_from_scratch ~build_system ())
+  in
   let fetch_saved_state_from_files ~shared_memory_path ~changed_files_path () =
     try
       let open Pyre in
@@ -335,11 +340,11 @@ let initialize_server_state
     try Result.Ok (Memory.load_shared_memory ~path:(Path.absolute path) ~configuration) with
     | Memory.SavedStateLoadingFailure message -> Result.Error message
   in
-  let load_from_saved_state ~build_system = function
+  let load_from_saved_state ~build_system_initializer = function
     | Result.Error message ->
         Log.warning "%s" message;
         Statistics.event ~name:"saved state failure" ~normals:["reason", message] ();
-        Lwt.return (start_from_scratch ~build_system ())
+        build_and_start_from_scratch ~build_system_initializer ()
     | Result.Ok { SavedState.Fetched.path; changed_files } -> (
         Log.info "Restoring environments from saved state...";
         match load_from_shared_memory path with
@@ -350,7 +355,7 @@ let initialize_server_state
               ~normals:["reason", "shared memory loading failure"]
               ();
             Memory.reset_shared_memory ();
-            Lwt.return (start_from_scratch ~build_system ())
+            build_and_start_from_scratch ~build_system_initializer ()
         | Result.Ok () -> (
             match
               configuration_equal configuration (Server.SavedState.StoredConfiguration.load ())
@@ -368,8 +373,11 @@ let initialize_server_state
                   ~normals:["reason", "configuration change"]
                   ();
                 Memory.reset_shared_memory ();
-                Lwt.return (start_from_scratch ~build_system ())
+                build_and_start_from_scratch ~build_system_initializer ()
             | true ->
+                let open Lwt.Infix in
+                BuildSystem.Initializer.load build_system_initializer
+                >>= fun build_system ->
                 let loaded_state =
                   let module_tracker = Analysis.ModuleTracker.SharedMemory.load () in
                   let ast_environment = Analysis.AstEnvironment.load module_tracker in
@@ -387,7 +395,6 @@ let initialize_server_state
                     ~error_table
                     ()
                 in
-                let open Lwt.Infix in
                 Log.info "Processing recent updates not included in saved state...";
                 Statistics.event ~name:"saved state success" ();
                 Request.IncrementalUpdate (List.map changed_files ~f:Path.absolute)
@@ -396,8 +403,6 @@ let initialize_server_state
   in
   let open Lwt.Infix in
   let get_initial_state ~build_system_initializer () =
-    BuildSystem.Initializer.run build_system_initializer
-    >>= fun build_system ->
     match saved_state_action with
     | Some
         (ServerConfiguration.SavedStateAction.LoadFromFile
@@ -407,7 +412,7 @@ let initialize_server_state
           ~name:"initialization"
           (fun _ ->
             fetch_saved_state_from_files ~shared_memory_path ~changed_files_path ()
-            >>= load_from_saved_state ~build_system)
+            >>= load_from_saved_state ~build_system_initializer)
     | Some (ServerConfiguration.SavedStateAction.LoadFromProject { project_name; project_metadata })
       ->
         let normals =
@@ -420,14 +425,16 @@ let initialize_server_state
         in
         with_performance_logging ~normals ~name:"initialization" (fun _ ->
             fetch_saved_state_from_project ~project_name ~project_metadata ()
-            >>= load_from_saved_state ~build_system)
+            >>= load_from_saved_state ~build_system_initializer)
     | _ ->
         with_performance_logging
           ~normals:["initialization method", "cold start"]
           ~name:"initialization"
-          (fun _ -> Lwt.return (start_from_scratch ~build_system ()))
+          (fun _ -> build_and_start_from_scratch ~build_system_initializer ())
   in
-  let store_initial_state { ServerState.configuration; type_environment; error_table; _ } =
+  let store_initial_state
+      { ServerState.configuration; type_environment; error_table; build_system; _ }
+    =
     match saved_state_action with
     | Some (ServerConfiguration.SavedStateAction.SaveToFile { shared_memory_path }) ->
         Memory.SharedMemory.collect `aggressive;
@@ -436,6 +443,7 @@ let initialize_server_state
         Analysis.TypeEnvironment.ast_environment type_environment |> Analysis.AstEnvironment.store;
         Server.SavedState.StoredConfiguration.store configuration;
         Server.SavedState.ServerErrors.store error_table;
+        BuildSystem.store build_system;
         Analysis.SharedMemoryKeys.DependencyKey.Registry.store ();
         Memory.save_shared_memory ~path:(Path.absolute shared_memory_path) ~configuration;
         Log.info "Initial server state written to %a" Path.pp shared_memory_path
