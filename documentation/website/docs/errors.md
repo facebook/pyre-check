@@ -592,7 +592,43 @@ def my_decorator_factory(message: str) -> MyCallableProtocol:
     return _decorator
 ```
 
+### 35: Illegal Annotation Target
+Pyre will error when a type annotation is applied to something that can't be annotated. This could happen when:
 
+1. A variable is re-annotated after first declaration or an explicity annotated function parameter is re-annotated within the function body. This is not allowed as re-annotating variables reduces readability and causes the annotation of a variable to depend on the position in control flow.
+
+```python
+def transformation(p: int) -> str:
+  return str(p + 1)
+
+def foo(x: int) -> None:
+  y: int = x + 2
+  z = x + 3
+
+  # Each of the following will produce an error
+  x: str = transformation(x)
+  y: str = transformation(y)
+  z: int = 4
+```
+An easy fix for the first two errors is to use a new variable rather than re-annotating the old variable so it can hold a new type. For the third error, `z` should have been annotated at first declaration.
+
+2. Trying to annotate non-self attributes, i.e annotating the attributes of a different class than the one whose scope you are in:
+
+```python
+class Foo:
+  attribute: int = 1
+
+class Bar:
+  def __init__(self):
+    Foo.attribute: str = "hello"
+
+def some_method() -> None:
+  Foo.attribute: int = 5
+```
+
+This is not allowed as Pyre needs to be able to statically determine the type of globally accessible values, including class attributes. Even if Pyre followed control flow across functions to determine class attribute annotations, such re-annotations imply very dynamic behavior that makes the code difficult to work with.
+
+The fix for this situation, similar to the case above, is to annotate the class attribute at its definition in the class that owns it and remove any annotations elsewhere. If this attribute is from a third party library, then you can add a [stub](errors#third-party-libraries) for the class and annotate the attribute there.
 
 ### 39: Invalid Inheritance
 When defining a new class, Pyre will error if the base class given is not a valid parent class. This may be caused by various conditions:
