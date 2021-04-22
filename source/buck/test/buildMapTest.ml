@@ -23,13 +23,13 @@ let assert_mapping_equal ~context ~expected actual =
 let test_partial_build_map_from_json context =
   let assert_parsed ~expected input =
     Yojson.Safe.from_string input
-    |> BuildMap.Partial.of_json_exn
+    |> BuildMap.Partial.of_json_exn_ignoring_duplicates
     |> BuildMap.Partial.to_alist
     |> assert_mapping_equal ~context ~expected
   in
   let assert_not_parsed input =
     try
-      let _ = Yojson.Safe.from_string input |> BuildMap.Partial.of_json_exn in
+      let _ = Yojson.Safe.from_string input |> BuildMap.Partial.of_json_exn_ignoring_duplicates in
       assert_failure "Expected JSON parsing to fail but it unexpectedly succeeded"
     with
     | _ -> ()
@@ -61,6 +61,17 @@ let test_partial_build_map_from_json context =
       }
   }|}
     ~expected:["foo.py", "source/foo.py"; "bar.py", "source/bar.py"];
+  (* Duplicated entries are ignored. *)
+  assert_parsed
+    {| {
+      "sources": {
+        "foo.py": "source/foo.py"
+      },
+      "dependencies": {
+        "foo.py": "source/dupliate/foo.py"
+      }
+  }|}
+    ~expected:["foo.py", "source/foo.py"];
   ()
 
 

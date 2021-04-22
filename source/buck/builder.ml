@@ -135,10 +135,14 @@ let load_partial_build_map path =
   Lwt_io.(with_file ~mode:Input path read)
   >>= fun content ->
   try
-    match BuildMap.Partial.of_json (Yojson.Safe.from_string ~fname:path content) with
-    | Result.Error message -> raise (JsonError message)
-    | Result.Ok build_map -> Lwt.return build_map
+    let build_map =
+      BuildMap.Partial.of_json_exn_ignoring_duplicates (Yojson.Safe.from_string ~fname:path content)
+    in
+    Lwt.return build_map
   with
+  | Yojson.Safe.Util.Type_error (message, _)
+  | Yojson.Safe.Util.Undefined (message, _) ->
+      raise (JsonError message)
   | Yojson.Json_error message -> raise (JsonError message)
 
 

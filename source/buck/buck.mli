@@ -99,19 +99,13 @@ module BuildMap : sig
     (** Create a partial build map from an associative list. The list must conform to `(source_path,
         artifact_path)` format. Raise an exception if the given list contains duplicated keys. *)
 
-    val of_json_exn : Yojson.Safe.t -> t
+    val of_alist_ignoring_duplicates : (string * string) list -> t
+    (** Create a partial build map from an associative list. The list must conform to `(source_path,
+        artifact_path)` format. If duplicated keys exists, first item in the input list wins. *)
+
+    val of_json_exn_ignoring_duplicates : Yojson.Safe.t -> t
     (** Create a partial build map from a JSON. The JSON must conform to Buck's Python source-db
-        format. Raise an exception if the creation fails. *)
-
-    val of_json : Yojson.Safe.t -> (t, string) Result.t
-    (** Same as [of_json_exn] except failures are wrapped in a [Result.t]. *)
-
-    val of_json_file_exn : Pyre.Path.t -> t
-    (** Read JSON from the file at the given path, and invoke [of_json_exn] on it. Raise an
-        exception if the file reading fails. *)
-
-    val of_json_file : Pyre.Path.t -> (t, string) Result.t
-    (** Same as [of_json_file] except failures are wrapped in a [Result.t]. *)
+        format. Raise an exception if the input JSON is malformed. *)
 
     val merge : t -> t -> MergeResult.t
     (** Given two partial build maps [l] and [r], [merge l r] returns [MergeResult.Ok m] where [m]

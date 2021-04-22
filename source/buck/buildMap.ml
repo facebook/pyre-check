@@ -26,50 +26,38 @@ module Partial = struct
       | Incompatible of IncompatibleItem.t
   end
 
-  let of_alist_exn items =
+  let of_alist_implementation ~add items =
     let result =
       let size = List.length items in
       Hashtbl.create (module String) ~size
     in
     let add_mapping (key, value) =
       if String.is_suffix key ~suffix:".py" or String.is_suffix key ~suffix:".pyi" then
-        Hashtbl.add_exn result ~key ~data:value
+        add result ~key ~data:value
     in
     List.iter items ~f:add_mapping;
     result
 
 
+  let of_alist_exn items = of_alist_implementation items ~add:Hashtbl.add_exn
+
+  let of_alist_ignoring_duplicates items =
+    let add table ~key ~data =
+      (* First entry wins. *)
+      Hashtbl.add table ~key ~data |> ignore
+    in
+    of_alist_implementation items ~add
+
+
   let empty : t = of_alist_exn []
 
-  let of_json_exn json =
+  let of_json_exn_ignoring_duplicates json =
     let open Yojson.Safe.Util in
     let sources = member "sources" json |> to_assoc in
     let dependencies = member "dependencies" json |> to_assoc in
     List.append sources dependencies
     |> List.map ~f:(fun (key, value) -> key, to_string value)
-    |> of_alist_exn
-
-
-  let of_json json =
-    try Result.Ok (of_json_exn json) with
-    | Yojson.Safe.Util.Type_error (message, _)
-    | Yojson.Safe.Util.Undefined (message, _) ->
-        Result.Error message
-    | other_exception -> Result.Error (Exn.to_string other_exception)
-
-
-  let of_json_file_exn path =
-    let path = Path.absolute path in
-    Yojson.Safe.from_file ~fname:path path |> of_json_exn
-
-
-  let of_json_file path =
-    try Result.Ok (of_json_file_exn path) with
-    | Yojson.Safe.Util.Type_error (message, _)
-    | Yojson.Safe.Util.Undefined (message, _)
-    | Sys_error message ->
-        Result.Error message
-    | other_exception -> Result.Error (Exn.to_string other_exception)
+    |> of_alist_ignoring_duplicates
 
 
   exception FoundIncompatibleItem of MergeResult.IncompatibleItem.t
