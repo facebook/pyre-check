@@ -1200,4 +1200,7 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
   let prepend = create_tree
 
   let read_raw = read_tree_raw
+
+  let labels { children; _ } =
+    LabelMap.fold ~init:[] ~f:(fun ~key ~data:_ acc -> key :: acc) children
 end

@@ -90,4 +90,7 @@ module Make (Config : CONFIG) (Element : ELEMENT) () : sig
   val cut_tree_after : depth:int -> t -> t
 
   val get_root : t -> Element.t
+
+  (* Returns the set of labels rooted in the tree that lead to non-trivial subtrees *)
+  val labels : t -> Label.t list
 end

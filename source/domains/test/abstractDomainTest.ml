@@ -2288,7 +2288,12 @@ module TreeOfStringSets = struct
     assert_collapse
       ~transform:add_suffix
       ~expected:["a"; "b#"; "c#"; "de#"]
-      (parse_tree ["", ["a"]; "b", ["b"; "c"]; "d.e", ["de"]])
+      (parse_tree ["", ["a"]; "b", ["b"; "c"]; "d.e", ["de"]]);
+    (* labels *)
+    assert_equal
+      ["[b]"; "[a]"]
+      (labels (parse_tree ["a", ["x"]; "b", ["y"]]) |> List.map ~f:AbstractTreeDomain.Label.show)
+      ~printer:string_list_printer
 
 
   let test_context _ =
