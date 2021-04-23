@@ -34,6 +34,14 @@ module T = struct
         actual_name: Reference.t;
       }
     | InvalidModelQueryClauses of Expression.Call.Argument.t list
+    | InvalidModelQueryWhereClause of {
+        expression: Expression.t;
+        find_clause_kind: string;
+      }
+    | InvalidModelQueryModelClause of {
+        expression: Expression.t;
+        find_clause_kind: string;
+      }
     | InvalidParameterExclude of Expression.t
     | InvalidTaintAnnotation of {
         taint_annotation: Expression.t;
@@ -103,6 +111,16 @@ let description error =
       Format.asprintf
         "The model query arguments at `%s` are invalid: expected a find, where and model clause."
         (List.map clause_list ~f:Expression.Call.Argument.show |> String.concat ~sep:", ")
+  | InvalidModelQueryWhereClause { expression; find_clause_kind } ->
+      Format.asprintf
+        "`%s` is not a valid constraint for model queries with find clause of kind `%s`."
+        (Expression.show expression)
+        find_clause_kind
+  | InvalidModelQueryModelClause { expression; find_clause_kind } ->
+      Format.asprintf
+        "`%s` is not a valid model for model queries with find clause of kind `%s`."
+        (Expression.show expression)
+        find_clause_kind
   | InvalidParameterExclude expression ->
       Format.asprintf
         "The AllParameters exclude must be either a string or a list of strings, got: `%s`."
@@ -154,6 +172,8 @@ let code { kind; _ } =
   | InvalidParameterExclude _ -> 8
   | InvalidTaintAnnotation _ -> 9
   | ModelingClassAsDefine _ -> 10
+  | InvalidModelQueryWhereClause _ -> 11
+  | InvalidModelQueryModelClause _ -> 12
 
 
 let display { kind = error; path; location } =

@@ -911,8 +911,26 @@ let parse_find_clause ~path ({ Node.value; location } as expression) =
            (Format.sprintf "Find clauses must be strings, got: `%s`" (Expression.show expression)))
 
 
-let parse_where_clause ~path ({ Node.value; location } as expression) =
+let get_find_clause_kind find_clause =
+  match find_clause with
+  | Ok ModelQuery.AttributeModel -> "attributes"
+  | Ok ModelQuery.MethodModel -> "methods"
+  | Ok ModelQuery.FunctionModel -> "functions"
+  | _ -> "unsupported"
+
+
+let parse_where_clause ~path ~find_clause ({ Node.value; location } as expression) =
   let open Core.Result in
+  let find_clause_kind = get_find_clause_kind find_clause in
+  let invalid_model_query_where_clause ~path ~location callee =
+    {
+      ModelVerificationError.T.kind =
+        ModelVerificationError.T.InvalidModelQueryWhereClause
+          { expression = callee; find_clause_kind };
+      path;
+      location;
+    }
+  in
   let parse_annotation_constraint ~name ~arguments =
     match name, arguments with
     | "is_annotated_type", [] -> Ok ModelQuery.IsAnnotatedTypeConstraint
@@ -998,7 +1016,7 @@ let parse_where_clause ~path ({ Node.value; location } as expression) =
                       _;
                     });
               _;
-            };
+            } as callee;
           arguments =
             [
               {
@@ -1008,7 +1026,10 @@ let parse_where_clause ~path ({ Node.value; location } as expression) =
               };
             ];
         } ->
-        Ok (ModelQuery.DecoratorNameConstraint name_constraint)
+        if String.equal find_clause_kind "attributes" then
+          Error (invalid_model_query_where_clause ~path ~location callee)
+        else
+          Ok (ModelQuery.DecoratorNameConstraint name_constraint)
     | Expression.Call
         {
           Call.callee =
@@ -1022,13 +1043,16 @@ let parse_where_clause ~path ({ Node.value; location } as expression) =
                       _;
                     });
               _;
-            };
+            } as callee;
           arguments = annotation_constraint_arguments;
         } ->
-        parse_annotation_constraint
-          ~name:annotation_constraint_name
-          ~arguments:annotation_constraint_arguments
-        >>= fun annotation_constraint -> Ok (ModelQuery.ReturnConstraint annotation_constraint)
+        if String.equal find_clause_kind "attributes" then
+          Error (invalid_model_query_where_clause ~path ~location callee)
+        else
+          parse_annotation_constraint
+            ~name:annotation_constraint_name
+            ~arguments:annotation_constraint_arguments
+          >>= fun annotation_constraint -> Ok (ModelQuery.ReturnConstraint annotation_constraint)
     | Expression.Call
         {
           Call.callee =
@@ -1053,14 +1077,18 @@ let parse_where_clause ~path ({ Node.value; location } as expression) =
                       _;
                     });
               _;
-            };
+            } as callee;
           arguments = parameter_constraint_arguments;
         } ->
-        parse_parameter_constraint
-          ~parameter_constraint_kind
-          ~parameter_constraint
-          ~parameter_constraint_arguments
-        >>= fun parameter_constraint -> Ok (ModelQuery.AnyParameterConstraint parameter_constraint)
+        if String.equal find_clause_kind "attributes" then
+          Error (invalid_model_query_where_clause ~path ~location callee)
+        else
+          parse_parameter_constraint
+            ~parameter_constraint_kind
+            ~parameter_constraint
+            ~parameter_constraint_arguments
+          >>= fun parameter_constraint ->
+          Ok (ModelQuery.AnyParameterConstraint parameter_constraint)
     | Expression.Call
         {
           Call.callee = { Node.value = Expression.Name (Name.Identifier "AnyOf"); _ };
@@ -1120,8 +1148,18 @@ let parse_where_clause ~path ({ Node.value; location } as expression) =
   | _ -> parse_constraint expression >>| List.return
 
 
-let parse_model_clause ~path ~configuration ({ Node.value; location } as expression) =
+let parse_model_clause ~path ~configuration ~find_clause ({ Node.value; location } as expression) =
   let open Core.Result in
+  let find_clause_kind = get_find_clause_kind find_clause in
+  let invalid_model_query_model_clause ~path ~location callee =
+    {
+      ModelVerificationError.T.kind =
+        ModelVerificationError.T.InvalidModelQueryModelClause
+          { expression = callee; find_clause_kind };
+      path;
+      location;
+    }
+  in
   let parse_model ({ Node.value; _ } as model_expression) =
     let parse_taint taint_expression =
       let parse_produced_taint expression =
@@ -1181,19 +1219,25 @@ let parse_model_clause ~path ~configuration ({ Node.value; location } as express
     match value with
     | Expression.Call
         {
-          Call.callee = { Node.value = Name (Name.Identifier "Returns"); _ };
+          Call.callee = { Node.value = Name (Name.Identifier "Returns"); _ } as callee;
           arguments = [{ Call.Argument.value = taint; _ }];
         } ->
-        parse_taint taint >>| fun taint -> ModelQuery.ReturnTaint taint
+        if String.equal find_clause_kind "attributes" then
+          Error (invalid_model_query_model_clause ~path ~location callee)
+        else
+          parse_taint taint >>| fun taint -> ModelQuery.ReturnTaint taint
     | Expression.Call
         {
-          Call.callee = { Node.value = Name (Name.Identifier "AttributeModel"); _ };
+          Call.callee = { Node.value = Name (Name.Identifier "AttributeModel"); _ } as callee;
           arguments = [{ Call.Argument.value = taint; _ }];
         } ->
-        parse_taint taint >>| fun taint -> ModelQuery.AttributeTaint taint
+        if String.equal find_clause_kind "methods" || String.equal find_clause_kind "functions" then
+          Error (invalid_model_query_model_clause ~path ~location callee)
+        else
+          parse_taint taint >>| fun taint -> ModelQuery.AttributeTaint taint
     | Expression.Call
         {
-          Call.callee = { Node.value = Name (Name.Identifier "NamedParameter"); _ };
+          Call.callee = { Node.value = Name (Name.Identifier "NamedParameter"); _ } as callee;
           arguments =
             [
               {
@@ -1203,10 +1247,13 @@ let parse_model_clause ~path ~configuration ({ Node.value; location } as express
               { Call.Argument.value = taint; name = Some { Node.value = "taint"; _ } };
             ];
         } ->
-        parse_taint taint >>| fun taint -> ModelQuery.ParameterTaint { name; taint }
+        if String.equal find_clause_kind "attributes" then
+          Error (invalid_model_query_model_clause ~path ~location callee)
+        else
+          parse_taint taint >>| fun taint -> ModelQuery.ParameterTaint { name; taint }
     | Expression.Call
         {
-          Call.callee = { Node.value = Name (Name.Identifier "PositionalParameter"); _ };
+          Call.callee = { Node.value = Name (Name.Identifier "PositionalParameter"); _ } as callee;
           arguments =
             [
               {
@@ -1216,43 +1263,52 @@ let parse_model_clause ~path ~configuration ({ Node.value; location } as express
               { Call.Argument.value = taint; name = Some { Node.value = "taint"; _ } };
             ];
         } ->
-        parse_taint taint >>| fun taint -> ModelQuery.PositionalParameterTaint { index; taint }
+        if String.equal find_clause_kind "attributes" then
+          Error (invalid_model_query_model_clause ~path ~location callee)
+        else
+          parse_taint taint >>| fun taint -> ModelQuery.PositionalParameterTaint { index; taint }
     | Expression.Call
         {
-          Call.callee = { Node.value = Name (Name.Identifier "AllParameters"); _ };
+          Call.callee = { Node.value = Name (Name.Identifier "AllParameters"); _ } as callee;
           arguments = [{ Call.Argument.value = taint; _ }];
         } ->
-        parse_taint taint >>| fun taint -> ModelQuery.AllParametersTaint { excludes = []; taint }
+        if String.equal find_clause_kind "attributes" then
+          Error (invalid_model_query_model_clause ~path ~location callee)
+        else
+          parse_taint taint >>| fun taint -> ModelQuery.AllParametersTaint { excludes = []; taint }
     | Expression.Call
         {
-          Call.callee = { Node.value = Name (Name.Identifier "AllParameters"); _ };
+          Call.callee = { Node.value = Name (Name.Identifier "AllParameters"); _ } as callee;
           arguments =
             [
               { Call.Argument.value = taint; _ };
               { Call.Argument.name = Some { Node.value = "exclude"; _ }; value = excludes };
             ];
         } ->
-        let excludes =
-          let parse_string_to_exclude ({ Node.value; location } as exclude) =
-            match value with
-            | Expression.String { StringLiteral.value; _ } -> Core.Result.Ok value
-            | _ ->
-                Error
-                  {
-                    ModelVerificationError.T.kind =
-                      ModelVerificationError.T.InvalidParameterExclude exclude;
-                    path;
-                    location;
-                  }
+        if String.equal find_clause_kind "attributes" then
+          Error (invalid_model_query_model_clause ~path ~location callee)
+        else
+          let excludes =
+            let parse_string_to_exclude ({ Node.value; location } as exclude) =
+              match value with
+              | Expression.String { StringLiteral.value; _ } -> Core.Result.Ok value
+              | _ ->
+                  Error
+                    {
+                      ModelVerificationError.T.kind =
+                        ModelVerificationError.T.InvalidParameterExclude exclude;
+                      path;
+                      location;
+                    }
+            in
+            match Node.value excludes with
+            | Expression.List exclude_strings ->
+                List.map exclude_strings ~f:parse_string_to_exclude |> Core.Result.all
+            | _ -> parse_string_to_exclude excludes >>| fun exclude -> [exclude]
           in
-          match Node.value excludes with
-          | Expression.List exclude_strings ->
-              List.map exclude_strings ~f:parse_string_to_exclude |> Core.Result.all
-          | _ -> parse_string_to_exclude excludes >>| fun exclude -> [exclude]
-        in
-        excludes
-        >>= fun excludes ->
-        parse_taint taint >>| fun taint -> ModelQuery.AllParametersTaint { excludes; taint }
+          excludes
+          >>= fun excludes ->
+          parse_taint taint >>| fun taint -> ModelQuery.AllParametersTaint { excludes; taint }
     | _ ->
         Error
           (invalid_model_error
@@ -2024,11 +2080,16 @@ let create ~resolution ~path ~configuration ~rule_filter source =
              { Call.Argument.name = Some { Node.value = "where"; _ }; value = where_clause };
              { Call.Argument.name = Some { Node.value = "model"; _ }; value = model_clause };
             ] ->
+                let parsed_find_clause = parse_find_clause ~path find_clause in
                 Ok
                   ( None,
-                    parse_find_clause ~path find_clause,
-                    parse_where_clause ~path where_clause,
-                    parse_model_clause ~path ~configuration model_clause )
+                    parsed_find_clause,
+                    parse_where_clause ~path ~find_clause:parsed_find_clause where_clause,
+                    parse_model_clause
+                      ~path
+                      ~configuration
+                      ~find_clause:parsed_find_clause
+                      model_clause )
             | [
              {
                Call.Argument.name = Some { Node.value = "name"; _ };
@@ -2038,11 +2099,16 @@ let create ~resolution ~path ~configuration ~rule_filter source =
              { Call.Argument.name = Some { Node.value = "where"; _ }; value = where_clause };
              { Call.Argument.name = Some { Node.value = "model"; _ }; value = model_clause };
             ] ->
+                let parsed_find_clause = parse_find_clause ~path find_clause in
                 Ok
                   ( Some name,
-                    parse_find_clause ~path find_clause,
-                    parse_where_clause ~path where_clause,
-                    parse_model_clause ~path ~configuration model_clause )
+                    parsed_find_clause,
+                    parse_where_clause ~path ~find_clause:parsed_find_clause where_clause,
+                    parse_model_clause
+                      ~path
+                      ~configuration
+                      ~find_clause:parsed_find_clause
+                      model_clause )
             | _ ->
                 Error
                   (model_verification_error

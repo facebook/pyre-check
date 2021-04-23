@@ -32,6 +32,14 @@ module T : sig
         actual_name: Reference.t;
       }
     | InvalidModelQueryClauses of Expression.Call.Argument.t list
+    | InvalidModelQueryWhereClause of {
+        expression: Expression.t;
+        find_clause_kind: string;
+      }
+    | InvalidModelQueryModelClause of {
+        expression: Expression.t;
+        find_clause_kind: string;
+      }
     | InvalidParameterExclude of Expression.t
     | InvalidTaintAnnotation of {
         taint_annotation: Expression.t;

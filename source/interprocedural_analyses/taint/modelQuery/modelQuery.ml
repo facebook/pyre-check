@@ -39,7 +39,11 @@ let matches_pattern ~pattern = Re2.matches (Re2.create_exn pattern)
 
 let rec callable_matches_constraint query_constraint ~resolution ~callable =
   let get_callable_type =
-    Memo.unit (fun () -> Callable.get_module_and_definition ~resolution callable >>| snd)
+    Memo.unit (fun () ->
+        let callable_type = Callable.get_module_and_definition ~resolution callable >>| snd in
+        if Option.is_none callable_type then
+          Log.error "Could not find callable type for callable: `%s`" (Callable.show callable);
+        callable_type)
   in
   let matches_annotation_constraint ~annotation_constraint ~annotation =
     match annotation_constraint with
@@ -264,7 +268,7 @@ let apply_callable_productions ~resolution ~productions ~callable =
             in
             List.cartesian_product normalized_parameters taint
             |> List.filter_map ~f:apply_parameter_production
-        | ModelQuery.AttributeTaint _ -> []
+        | ModelQuery.AttributeTaint _ -> failwith "impossible case"
       in
       List.concat_map productions ~f:apply_production
 
@@ -311,7 +315,7 @@ let rec attribute_matches_constraint query_constraint ~resolution ~attribute =
       |> Option.value ~default:false
   | ModelQuery.ParentConstraint (Matches class_pattern) ->
       class_name >>| Re2.matches class_pattern |> Option.value ~default:false
-  | _ -> false
+  | _ -> failwith "impossible case"
 
 
 let apply_attribute_productions ~productions =
@@ -321,7 +325,7 @@ let apply_attribute_productions ~productions =
   in
   let apply_production = function
     | ModelQuery.AttributeTaint productions -> List.filter_map productions ~f:production_to_taint
-    | _ -> []
+    | _ -> failwith "impossible case"
   in
   List.concat_map productions ~f:apply_production
 

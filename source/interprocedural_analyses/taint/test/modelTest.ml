@@ -1257,6 +1257,113 @@ let test_invalid_models context =
     ~expect:"`PartialSink[X[b]]` is an invalid taint annotation: Unrecognized partial sink `X`."
     ();
 
+  (* Test invalid model queries. *)
+  assert_invalid_model
+    ~model_source:
+      {|
+      ModelQuery(
+        find = "attributes",
+        where = name.matches("foo"),
+        model = Returns(TaintSource[Test])
+      )
+    |}
+    ~expect:
+      "`Returns` is not a valid model for model queries with find clause of kind `attributes`."
+    ();
+  assert_invalid_model
+    ~model_source:
+      {|
+      ModelQuery(
+        find = "attributes",
+        where = name.matches("foo"),
+        model = NamedParameter(name="x", taint = TaintSource[Test, Via[foo]])
+      )
+    |}
+    ~expect:
+      "`NamedParameter` is not a valid model for model queries with find clause of kind \
+       `attributes`."
+    ();
+  assert_invalid_model
+    ~model_source:
+      {|
+      ModelQuery(
+        find = "attributes",
+        where = name.matches("foo"),
+        model = AllParameters(TaintSource[Test])
+      )
+    |}
+    ~expect:
+      "`AllParameters` is not a valid model for model queries with find clause of kind \
+       `attributes`."
+    ();
+  assert_invalid_model
+    ~model_source:
+      {|
+      ModelQuery(
+        find = "functions",
+        where = return_annotation.is_annotated_type(),
+        model = AttributeModel(TaintSource[Test])
+      )
+    |}
+    ~expect:
+      "`AttributeModel` is not a valid model for model queries with find clause of kind \
+       `functions`."
+    ();
+  assert_invalid_model
+    ~model_source:
+      {|
+      ModelQuery(
+        find = "methods",
+        where = return_annotation.is_annotated_type(),
+        model = AttributeModel(TaintSource[Test])
+      )
+    |}
+    ~expect:
+      "`AttributeModel` is not a valid model for model queries with find clause of kind `methods`."
+    ();
+  assert_invalid_model
+    ~model_source:
+      {|
+      ModelQuery(
+        find = "attributes",
+        where = any_parameter.annotation.is_annotated_type(),
+        model = AttributeModel(TaintSource[Test])
+      )
+    |}
+    ~expect:
+      "`any_parameter.annotation.is_annotated_type` is not a valid constraint for model queries \
+       with find clause of kind `attributes`."
+    ();
+  assert_invalid_model
+    ~model_source:
+      {|
+      ModelQuery(
+        find = "attributes",
+        where = AnyOf(
+          parent.matches("foo"),
+          any_parameter.annotation.is_annotated_type()
+        ),
+        model = AttributeModel(TaintSource[Test])
+      )
+    |}
+    ~expect:
+      "`any_parameter.annotation.is_annotated_type` is not a valid constraint for model queries \
+       with find clause of kind `attributes`."
+    ();
+  assert_invalid_model
+    ~model_source:
+      {|
+      ModelQuery(
+        find = "attributes",
+        where = any_decorator.name.matches("app.route"),
+        model = AttributeModel(TaintSource[Test])
+      )
+    |}
+    ~expect:
+      "`any_decorator.name.matches` is not a valid constraint for model queries with find clause \
+       of kind `attributes`."
+    ();
+
   assert_valid_model
     ~model_source:"def test.partial_sink(x: PartialSink[Test[a]], y: PartialSink[Test[b]]): ..."
     ();
