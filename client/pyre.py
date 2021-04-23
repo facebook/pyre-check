@@ -353,7 +353,10 @@ def _check_configuration(configuration: configuration_module.Configuration) -> N
     "--enable-memory-profiling/--no-enable-memory-profiling", default=False, hidden=True
 )
 @click.option(
-    "-n", "--noninteractive", is_flag=True, help="Disable interactive logging."
+    "-n",
+    "--noninteractive",
+    is_flag=True,
+    help="Enable verbose non-interactive logging.",
 )
 @click.option("--logging-sections", type=str, hidden=True)
 @click.option("--log-identifier", type=str, default=None, hidden=True)
