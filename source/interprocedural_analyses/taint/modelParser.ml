@@ -89,6 +89,7 @@ module T = struct
       | AnyOf of model_constraint list
       | ParentConstraint of class_constraint
       | DecoratorNameConstraint of string
+      | Not of model_constraint
     [@@deriving compare, show]
 
     type kind =
@@ -1097,6 +1098,12 @@ let parse_where_clause ~path ~find_clause ({ Node.value; location } as expressio
         List.map constraints ~f:(fun { Call.Argument.value; _ } -> parse_constraint value)
         |> all
         >>| fun constraints -> ModelQuery.AnyOf constraints
+    | Expression.Call
+        {
+          Call.callee = { Node.value = Expression.Name (Name.Identifier "Not"); _ };
+          arguments = [{ Call.Argument.value; _ }];
+        } ->
+        parse_constraint value >>= fun model_constraint -> Ok (ModelQuery.Not model_constraint)
     | Expression.Call
         {
           Call.callee =

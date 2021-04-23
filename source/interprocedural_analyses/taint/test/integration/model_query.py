@@ -192,3 +192,47 @@ def no_alarm_1(x: AttributeTestClass7):
 def no_alarm_2(x: AttributeTestClass8):
     __test_sink(x.nomatch_instance2)
     __test_sink(x.nomatch_instance2)
+
+
+def function_test1_alarm1():
+    return 0
+
+
+def function_test1_alarm2():
+    return 0
+
+
+def function_test1_noalarm1():
+    return 0
+
+
+def function_test1_noalarm2():
+    return 0
+
+
+class ClassTest1:
+    def method_test1_alarm1():
+        return 0
+
+    def method_test1_noalarm1():
+        return 0
+
+
+class NoAlarmClass:
+    ...
+
+
+class ClassTest2_Alarm1:
+    def method1():
+        return 0
+
+    def method2():
+        return 0
+
+
+class ClassTest2_NoAlarm1(NoAlarmClass):
+    def method1():
+        return 0
+
+    def method2():
+        return 0

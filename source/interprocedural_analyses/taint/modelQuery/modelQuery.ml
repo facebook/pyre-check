@@ -111,6 +111,8 @@ let rec callable_matches_constraint query_constraint ~resolution ~callable =
       | _ -> false )
   | ModelQuery.AnyOf constraints ->
       List.exists constraints ~f:(callable_matches_constraint ~resolution ~callable)
+  | ModelQuery.Not query_constraint ->
+      not (callable_matches_constraint ~resolution ~callable query_constraint)
   | ModelQuery.ParentConstraint (Equals class_name) ->
       Callable.class_name callable >>| String.equal class_name |> Option.value ~default:false
   | ModelQuery.ParentConstraint (Extends class_name) ->
@@ -306,6 +308,8 @@ let rec attribute_matches_constraint query_constraint ~resolution ~attribute =
   | ModelQuery.NameConstraint pattern -> matches_pattern ~pattern (Reference.show attribute)
   | ModelQuery.AnyOf constraints ->
       List.exists constraints ~f:(attribute_matches_constraint ~resolution ~attribute)
+  | ModelQuery.Not query_constraint ->
+      not (attribute_matches_constraint ~resolution ~attribute query_constraint)
   | ModelQuery.ParentConstraint (Equals query_class_name) ->
       class_name >>| String.equal query_class_name |> Option.value ~default:false
   | ModelQuery.ParentConstraint (Extends query_class_name) ->

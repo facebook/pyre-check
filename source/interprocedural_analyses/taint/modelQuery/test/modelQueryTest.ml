@@ -771,6 +771,169 @@ let test_apply_rule context =
       }
     ~attribute_name:"test.E.z"
     ~expected:[];
+
+  (* Test 'Not' clause *)
+  assert_applied_rules
+    ~source:{|
+      def foo(): ...
+      def barfoo(): ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query = [NameConstraint "foo"; Not (NameConstraint "bar")];
+        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
+        rule_kind = FunctionModel;
+      }
+    ~callable:(`Function "test.foo")
+    ~expected:[Taint.Model.ReturnAnnotation, source "Test"];
+  assert_applied_rules
+    ~source:{|
+      def foo(): ...
+      def barfoo(): ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query = [NameConstraint "foo"; Not (NameConstraint "bar")];
+        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
+        rule_kind = FunctionModel;
+      }
+    ~callable:(`Function "test.barfoo")
+    ~expected:[];
+  assert_applied_rules
+    ~source:
+      {|
+       def foo(a) -> typing.Annotated[int, DynamicSource(B)]: ...
+       def bar(b): ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query = [Not (ReturnConstraint IsAnnotatedTypeConstraint)];
+        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
+        rule_kind = FunctionModel;
+      }
+    ~callable:(`Function "test.foo")
+    ~expected:[];
+  assert_applied_rules
+    ~source:
+      {|
+      class C:
+        def foo(): ...
+      class D:
+        def foo(): ...
+      class DC:
+        def foo(): ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query =
+          [
+            ParentConstraint (Matches (Re2.create_exn "C"));
+            Not (ParentConstraint (Matches (Re2.create_exn "D")));
+          ];
+        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
+        rule_kind = MethodModel;
+      }
+    ~callable:(`Method { Interprocedural.Callable.class_name = "test.C"; method_name = "foo" })
+    ~expected:[Taint.Model.ReturnAnnotation, source "Test"];
+  assert_applied_rules
+    ~source:
+      {|
+      class C:
+        def foo(): ...
+      class D:
+        def foo(): ...
+      class DC:
+        def foo(): ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query =
+          [
+            ParentConstraint (Matches (Re2.create_exn "C"));
+            Not (ParentConstraint (Matches (Re2.create_exn "D")));
+          ];
+        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
+        rule_kind = MethodModel;
+      }
+    ~callable:(`Method { Interprocedural.Callable.class_name = "test.DC"; method_name = "foo" })
+    ~expected:[];
+  assert_applied_rules
+    ~source:
+      {|
+       def foo(a) -> typing.Annotated[int, DynamicSource(B)]: ...
+       def bar(b): ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query = [Not (ReturnConstraint IsAnnotatedTypeConstraint)];
+        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
+        rule_kind = FunctionModel;
+      }
+    ~callable:(`Function "test.bar")
+    ~expected:[Taint.Model.ReturnAnnotation, source "Test"];
+  assert_applied_rules_for_attribute
+    ~source:
+      {|
+      class C:
+        x: ...
+      class D(C):
+        y: ...
+      class E:
+        z: ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query = [Not (ParentConstraint (Extends "test.C"))];
+        productions = [AttributeTaint [TaintAnnotation (source "Test")]];
+        rule_kind = AttributeModel;
+      }
+    ~attribute_name:"test.C.x"
+    ~expected:[source "Test"];
+  assert_applied_rules_for_attribute
+    ~source:
+      {|
+      class C:
+        x: ...
+      class D(C):
+        y: ...
+      class E:
+        z: ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query = [Not (ParentConstraint (Extends "test.C"))];
+        productions = [AttributeTaint [TaintAnnotation (source "Test")]];
+        rule_kind = AttributeModel;
+      }
+    ~attribute_name:"test.D.y"
+    ~expected:[];
+  assert_applied_rules_for_attribute
+    ~source:
+      {|
+      class C:
+        x: ...
+      class D(C):
+        y: ...
+      class E:
+        z: ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query = [Not (ParentConstraint (Extends "test.C"))];
+        productions = [AttributeTaint [TaintAnnotation (source "Test")]];
+        rule_kind = AttributeModel;
+      }
+    ~attribute_name:"test.E.z"
+    ~expected:[source "Test"];
   ()
 
 

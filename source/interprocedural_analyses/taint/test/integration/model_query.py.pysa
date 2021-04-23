@@ -123,3 +123,37 @@ ModelQuery(
     AttributeModel(TaintSource[Test])
   ]
 )
+
+
+ModelQuery(
+  find = "functions",
+  where = [name.matches("function_test1"), Not(name.matches("noalarm"))],
+  model = [
+    Returns(TaintSource[SourceA]),
+  ]
+)
+
+
+ModelQuery(
+  find = "methods",
+  where = [
+    parent.matches("model_query.ClassTest1"),
+    name.matches("method_test1"),
+    Not(name.matches("noalarm"))
+  ],
+  model = [
+    Returns(TaintSource[SourceB]),
+  ]
+)
+
+
+ModelQuery(
+  find = "methods",
+  where = [
+    parent.matches("ClassTest2"),
+    Not(parent.extends("model_query.NoAlarmClass"))
+  ],
+  model = [
+    Returns(TaintSource[SourceC]),
+  ]
+)

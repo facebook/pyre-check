@@ -70,6 +70,7 @@ module T : sig
       | AnyOf of model_constraint list
       | ParentConstraint of class_constraint
       | DecoratorNameConstraint of string
+      | Not of model_constraint
     [@@deriving compare, show]
 
     type kind =
