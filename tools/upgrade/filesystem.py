@@ -4,6 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import ast as builtin_ast
+import functools
 import logging
 import re
 import subprocess
@@ -11,7 +12,6 @@ from enum import Enum
 from pathlib import Path
 from typing import Dict, List, NamedTuple, Optional
 
-from ...client.filesystem import get_filesystem
 from . import ast
 
 
@@ -77,7 +77,7 @@ class TargetCollector(builtin_ast.NodeVisitor):
 def path_exists(filename: str) -> Path:
     path = Path(filename)
     if not path.exists():
-        raise ValueError("No file at {}".format(filename))
+        raise ValueError(f"No file at {filename}")
     return path
 
 
@@ -97,9 +97,8 @@ def find_targets(search_root: Path, pyre_only: bool = False) -> Dict[str, List[T
                 total_targets += len(targets)
 
     LOG.info(
-        "Found {} typecheck targets in {} TARGETS files to analyze".format(
-            total_targets, len(target_names)
-        )
+        f"Found {total_targets} typecheck targets in {len(target_names)} "
+        + "TARGETS files to analyze"
     )
     return target_names
 
@@ -142,6 +141,67 @@ def add_local_mode(filename: str, mode: LocalMode) -> None:
     new_text = "\n".join(new_lines)
     ast.check_stable(text, new_text)
     path.write_text(new_text)
+
+
+class Filesystem:
+    def list(
+        self, root: str, patterns: List[str], exclude: Optional[List[str]] = None
+    ) -> List[str]:
+        """
+        Return the list of files that match any of the patterns within root.
+        If exclude is provided, files that match an exclude pattern are omitted.
+
+        Note: The `find` command does not understand globs properly.
+            e.g. 'a/*.py' will match 'a/b/c.py'
+        For this reason, avoid calling this method with glob patterns.
+        """
+
+        command = ["find", "."]
+        command += self._match_any(patterns)
+        if exclude:
+            command += ["-and", "!"]
+            command += self._match_any(exclude)
+        return (
+            subprocess.run(command, stdout=subprocess.PIPE, cwd=root)
+            .stdout.decode("utf-8")
+            .split()
+        )
+
+    def _match_any(self, patterns: List[str]) -> List[str]:
+        expression = []
+        for pattern in patterns:
+            if expression:
+                expression.append("-or")
+            expression.extend(["-path", f"./{pattern}"])
+        return ["(", *expression, ")"]
+
+
+class MercurialBackedFilesystem(Filesystem):
+    def list(
+        self, root: str, patterns: List[str], exclude: Optional[List[str]] = None
+    ) -> List[str]:
+        command = ["hg", "files"]
+        for pattern in patterns:
+            command += ["--include", pattern]
+        if exclude:
+            for pattern in exclude:
+                command += ["--exclude", pattern]
+        return (
+            subprocess.run(
+                command, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, cwd=root
+            )
+            .stdout.decode("utf-8")
+            .split()
+        )
+
+
+@functools.lru_cache(1)
+def get_filesystem() -> Filesystem:
+    try:
+        subprocess.check_output(["hg", "status"], stderr=subprocess.DEVNULL)
+        return MercurialBackedFilesystem()
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return Filesystem()
 
 
 def remove_non_pyre_ignores(subdirectory: Path) -> None:

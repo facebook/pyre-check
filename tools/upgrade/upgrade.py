@@ -4,12 +4,12 @@
 # LICENSE file in the root directory of this source tree.
 
 import argparse
+import enum
 import logging
 import sys
 import traceback
 from logging import Logger
 
-from ...client.commands import ExitCode
 from . import UserError
 from .ast import UnstableAST
 from .commands.codemods import (
@@ -32,6 +32,12 @@ from .repository import Repository
 
 
 LOG: Logger = logging.getLogger(__name__)
+
+
+class ExitCode(enum.IntEnum):
+    SUCCESS = 0
+    FOUND_ERRORS = 1
+    FAILURE = 2
 
 
 def run(repository: Repository) -> None:
