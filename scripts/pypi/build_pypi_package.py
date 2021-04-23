@@ -285,7 +285,6 @@ def build_pypi_package(
         _sync_typeshed(build_path, typeshed_path)
         _sync_binary(pyre_directory, build_path)
         _sync_documentation_files(pyre_directory, build_path)
-        _sync_stubs(pyre_directory, build_path)
 
         _run_setup_command(pyre_directory, build_root, version, "sdist", nightly)
         _create_dist_directory(pyre_directory)
