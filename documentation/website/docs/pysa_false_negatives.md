@@ -13,7 +13,7 @@ source to a sink, but Pysa fails to catch it.
 
 Pysa relies on type information from Pyre to identify sources and sinks, and to
 build the call graph needed to follow the propagation of taint between the two.
-Just becasue type information is available *somewhere* in the code, does not
+Just because type information is available *somewhere* in the code, does not
 mean Pyre will know the type of an object in the exact place where Pysa needs
 it. See the documentation on [Coverage Increasing
 Strategies](pysa_increasing_coverage.md) for tips on how to increase type

@@ -230,7 +230,7 @@ if `always-type:scalar` is present, `type:scalar` will not be present.
 ### `broadening` Feature
 
 The `broadening` feature is automatically added whenever Pysa makes an
-approximation about a taint flow. This is also refered as "taint collapsing"
+approximation about a taint flow. This is also referred as "taint collapsing"
 because the taint is internally represented as a tree structure where edges are
 attributes or indexes. Collapsing usually leads to tainting a whole object
 instead of a single attribute of that object.
@@ -263,7 +263,7 @@ sink(d) # too many indexes, the whole `d` variable becomes tainted.
 The `tito-broadening` feature is added when an object with tainted attributes is
 propagated through a function to its return value. For correctness reasons, Pysa
 makes the approximation that the whole returned object is tainted. This is
-refered as "Taint-In-Taint-Out collapsing".
+referred as "Taint-In-Taint-Out collapsing".
 
 ```python
 def identity(x):
