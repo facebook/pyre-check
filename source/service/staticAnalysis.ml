@@ -510,8 +510,9 @@ let analyze
   let stubs = (stubs :> Callable.t list) in
   let analyses = [analysis_kind] in
   let timer = Timer.start () in
+  (* Initialize and add initial models of analyses to shared mem. We do this prior to computing
+     overrides because models can optionally specify overrides to skip *)
   Log.info "Initializing analysis...";
-  (* Initialize and add initial models of analyses to shared mem. *)
   let skip_overrides, initial_models_callables =
     let functions = (List.map callables_with_dependency_information ~f:fst :> Callable.t list) in
     let { Interprocedural.Analysis.initial_models = models; skip_overrides } =
@@ -531,6 +532,9 @@ let analyze
     ~phase_name:"Computing initial analysis state"
     ~timer
     ();
+  (* Compute the override graph, which maps overide_targets (parent methods which are overridden) to
+     all concrete methods overriding them. We also save data used for callgraph construction into
+     shared memory. *)
   Log.info "Computing overrides...";
   let timer = Timer.start () in
   let { DependencyGraphSharedMemory.overrides; skipped_overrides } =
@@ -544,10 +548,9 @@ let analyze
   in
   let override_dependencies = DependencyGraph.from_overrides overrides in
   Statistics.performance ~name:"Overrides computed" ~phase_name:"Computing overrides" ~timer ();
-  (* It's imperative that the call graph is built after the overrides are, due to a hidden global
-     state dependency. We rely on shared memory to tell us which methods are overridden to
-     accurately model the call graph's overrides. Without it, we'll underanalyze and have an
-     inconsistent fixpoint. *)
+  (* Build the callgraph, a map from caller to callees. The overrides must be computed first because
+     we depend on a global shared memory graph to include overrides in the call graph. Without it,
+     we'll underanalyze and have an inconsistent fixpoint. *)
   let callgraph =
     let cached_callgraph = if use_cache then Cache.load_call_graph ~configuration else None in
     match cached_callgraph with
@@ -590,6 +593,10 @@ let analyze
           DependencyGraph.from_callgraph new_callgraph |> DependencyGraph.dump ~configuration;
         new_callgraph
   in
+  (* Merge overrides and callgraph into a combined dependency graph, and prune anything not linked
+     to the callables we are actually analyzing. Then reverse the graph, which maps dependers to
+     dependees (i.e. override targets to overrides + callers to callees) into a scheduling graph
+     that maps dependees to dependers. *)
   Log.info "Computing dependencies...";
   let timer = Timer.start () in
   let override_targets = (Callable.Map.keys override_dependencies :> Callable.t list) in
@@ -605,6 +612,8 @@ let analyze
     in
     DependencyGraph.reverse dependencies, pruned_callables
   in
+  (* Create an empty callable for each override target (on each iteration, the framework will update
+     these by joining models for all overrides *)
   let () =
     let add_predefined callable =
       Fixpoint.add_predefined Fixpoint.Epoch.initial callable Result.empty_model
@@ -621,6 +630,7 @@ let analyze
     ~phase_name:"Pre-fixpoint computation for static analysis"
     ~timer:pre_fixpoint_timer
     ();
+  (* Run the analysis and save results *)
   Log.info
     "Analysis fixpoint started for %d overrides and %d functions..."
     (List.length override_targets)
