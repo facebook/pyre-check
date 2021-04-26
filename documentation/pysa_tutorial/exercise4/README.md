@@ -26,7 +26,7 @@ The [_Static Analysis Post Processor
 (SAPP)_](https://pyre-check.org/docs/static-analysis-post-processor.html) ships
 in a separate package from Pysa, which you should have already installed during
 the initial setup of this tutorial. For projects larger than the toy examples in
-these tutorials, SAPP is the prefered way to browse issues.
+these tutorials, SAPP is the preferred way to browse issues.
 
 ## Instructions
 

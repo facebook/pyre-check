@@ -151,7 +151,7 @@ def wraps_tito(arg):
 ```
 
 From this code, Pysa can infer a model documenting that `wraps_tito`'s `arg`
-will also end up (indirectly) propagated to the return value of the fucntion:
+will also end up (indirectly) propagated to the return value of the function:
 
 ```python
 def wraps_tito(arg: TaintInTaintOut): ...

@@ -35,7 +35,7 @@ While `Any` is a necessary escape hatch when annotating large codebases over tim
 
 - run on all functions, whether they are annotated or not,
 - error on functions, globals, or attributes that are missing annotations,
-- and error on annotations containing `Any` (with some exceptions to accomodate for common patterns).
+- and error on annotations containing `Any` (with some exceptions to accommodate for common patterns).
 
 In our previous example,
 ```python

@@ -927,7 +927,7 @@ async def g() -> AsyncGenerator[int, None]:  # OK
 It is not always possible to address all errors immediately – some code is too dynamic and should be refactored, other times it's *just not the right time* to deal with a type error. We do encourage people to keep their type check results clean at all times and provide mechanisms to suppress errors that cannot be immediately fixed.
 
 ### Suppressing Individual Errors
-Pyre supports error suppression of individual errors with comments that can be placed on the line of the error or on the line preceeding the error.
+Pyre supports error suppression of individual errors with comments that can be placed on the line of the error or on the line preceding the error.
 
 - `# pyre-fixme` indicates there is an issue in the code that will be revisited later.
 - `# pyre-ignore` indicates there's an issue with the type checker or the code is too dynamic and we have decided to not fix this. If this is a Pyre bug, make sure you [open an issue](https://github.com/facebook/pyre/issues) on our tracker.
