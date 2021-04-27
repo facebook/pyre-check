@@ -1563,55 +1563,17 @@ module State (Context : Context) = struct
                              { Type.Callable.Parameter.name; annotation; default = false })
                       |> Type.Callable.Parameter.create
                     in
-                    let check_parameter errors overridden_parameter =
-                      let validate_match ~expected = function
-                        | Some actual -> (
-                            let is_compatible =
-                              let expected = Type.Variable.mark_all_variables_as_bound expected in
-                              GlobalResolution.constraints_solution_exists
-                                global_resolution
-                                ~left:expected
-                                ~right:actual
-                            in
-                            try
-                              if (not (Type.is_top expected)) && not is_compatible then
-                                emit_error
-                                  ~errors
-                                  ~location
-                                  ~kind:
-                                    (Error.InconsistentOverride
-                                       {
-                                         overridden_method = StatementDefine.unqualified_name define;
-                                         parent =
-                                           Attribute.parent overridden_attribute |> Reference.create;
-                                         override_kind = Method;
-                                         override =
-                                           Error.StrengthenedPrecondition
-                                             (Error.Found
-                                                (Error.create_mismatch
-                                                   ~resolution:global_resolution
-                                                   ~actual
-                                                   ~expected
-                                                   ~covariant:false));
-                                       })
-                              else
-                                errors
-                            with
-                            | ClassHierarchy.Untracked _ ->
-                                (* TODO(T27409168): Error here. *)
-                                errors )
-                        | None ->
-                            let has_keyword_and_anonymous_starred_parameters =
-                              List.exists overriding_parameters ~f:(function
-                                  | Keywords _ -> true
-                                  | _ -> false)
-                              && List.exists overriding_parameters ~f:(function
-                                     | Variable _ -> true
-                                     | _ -> false)
-                            in
-                            if has_keyword_and_anonymous_starred_parameters then
-                              errors
-                            else
+                    let validate_match ~errors ~overridden_parameter ~expected = function
+                      | Some actual -> (
+                          let is_compatible =
+                            let expected = Type.Variable.mark_all_variables_as_bound expected in
+                            GlobalResolution.constraints_solution_exists
+                              global_resolution
+                              ~left:expected
+                              ~right:actual
+                          in
+                          try
+                            if (not (Type.is_top expected)) && not is_compatible then
                               emit_error
                                 ~errors
                                 ~location
@@ -1619,61 +1581,75 @@ module State (Context : Context) = struct
                                   (Error.InconsistentOverride
                                      {
                                        overridden_method = StatementDefine.unqualified_name define;
-                                       override_kind = Method;
                                        parent =
                                          Attribute.parent overridden_attribute |> Reference.create;
+                                       override_kind = Method;
                                        override =
                                          Error.StrengthenedPrecondition
-                                           (Error.NotFound overridden_parameter);
+                                           (Error.Found
+                                              (Error.create_mismatch
+                                                 ~resolution:global_resolution
+                                                 ~actual
+                                                 ~expected
+                                                 ~covariant:false));
                                      })
-                      in
-                      match overridden_parameter with
-                      | Type.Callable.Parameter.PositionalOnly { index; annotation; _ } ->
-                          List.nth overriding_parameters index
-                          >>= (function
-                                | PositionalOnly { annotation; _ }
-                                | Named { annotation; _ } ->
-                                    Some annotation
-                                | _ -> None)
-                          |> validate_match ~expected:annotation
-                      | KeywordOnly { name = overridden_name; annotation; _ }
-                      | Named { name = overridden_name; annotation; _ } ->
-                          (* TODO(T44178876): ensure index match as well for named parameters *)
-                          let equal_name = function
-                            | Type.Callable.Parameter.KeywordOnly { name; annotation; _ }
-                            | Type.Callable.Parameter.Named { name; annotation; _ } ->
-                                Option.some_if
-                                  (Identifier.equal
-                                     (Identifier.remove_leading_underscores name)
-                                     (Identifier.remove_leading_underscores overridden_name))
-                                  annotation
-                            | _ -> None
+                            else
+                              errors
+                          with
+                          | ClassHierarchy.Untracked _ ->
+                              (* TODO(T27409168): Error here. *)
+                              errors )
+                      | None ->
+                          let has_keyword_and_anonymous_starred_parameters =
+                            List.exists overriding_parameters ~f:(function
+                                | Keywords _ -> true
+                                | _ -> false)
+                            && List.exists overriding_parameters ~f:(function
+                                   | Variable _ -> true
+                                   | _ -> false)
                           in
-                          List.find_map overriding_parameters ~f:equal_name
-                          |> validate_match ~expected:annotation
-                      | Variable (Concrete annotation) ->
-                          let find_variable_parameter = function
-                            | Type.Callable.Parameter.Variable (Concrete annotation) ->
-                                Some annotation
-                            | _ -> None
-                          in
-                          List.find_map overriding_parameters ~f:find_variable_parameter
-                          |> validate_match ~expected:annotation
-                      | Variable (Concatenation _) ->
-                          (* TODO(T53997072): There is no reasonable way to compare either of these
-                             alone, which is the central issue with this comparison strategy. For
-                             now, let's just ignore this. *)
-                          errors
-                      | Keywords annotation ->
-                          let find_variable_parameter = function
-                            | Type.Callable.Parameter.Keywords annotation -> Some annotation
-                            | _ -> None
-                          in
-                          List.find_map overriding_parameters ~f:find_variable_parameter
-                          |> validate_match ~expected:annotation
+                          if has_keyword_and_anonymous_starred_parameters then
+                            errors
+                          else
+                            emit_error
+                              ~errors
+                              ~location
+                              ~kind:
+                                (Error.InconsistentOverride
+                                   {
+                                     overridden_method = StatementDefine.unqualified_name define;
+                                     override_kind = Method;
+                                     parent =
+                                       Attribute.parent overridden_attribute |> Reference.create;
+                                     override =
+                                       Error.StrengthenedPrecondition
+                                         (Error.NotFound overridden_parameter);
+                                   })
                     in
-                    Type.Callable.Overload.parameters implementation
-                    |> Option.value ~default:[]
+                    let check_parameter errors = function
+                      | `Both (overridden_parameter, overriding_parameter) -> (
+                          match
+                            ( Type.Callable.RecordParameter.annotation overridden_parameter,
+                              Type.Callable.RecordParameter.annotation overriding_parameter )
+                          with
+                          | Some expected, Some actual ->
+                              validate_match ~errors ~overridden_parameter ~expected (Some actual)
+                          | None, _
+                          | _, None ->
+                              (* TODO(T53997072): There is no reasonable way to compare Variable
+                                 (Concatenation _). For now, let's just ignore this. *)
+                              errors )
+                      | `Left overridden_parameter -> (
+                          match Type.Callable.RecordParameter.annotation overridden_parameter with
+                          | Some expected ->
+                              validate_match ~errors ~overridden_parameter ~expected None
+                          | None -> errors )
+                      | `Right _ -> errors
+                    in
+                    let overriden_parameters =
+                      Type.Callable.Overload.parameters implementation |> Option.value ~default:[]
+                    in
+                    Type.Callable.Parameter.zip overriden_parameters overriding_parameters
                     |> List.fold ~init:errors ~f:check_parameter
                 | _ -> errors )
             | _ -> None

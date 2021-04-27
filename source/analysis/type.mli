@@ -475,6 +475,11 @@ module Callable : sig
     val default : parameter -> bool
 
     val names_compatible : parameter -> parameter -> bool
+
+    val zip
+      :  'a t list ->
+      'b t list ->
+      [ `Both of 'a t * 'b t | `Left of 'a t | `Right of 'b t ] list
   end
 
   include module type of struct

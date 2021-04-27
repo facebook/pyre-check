@@ -2229,6 +2229,66 @@ module Callable = struct
           let right = Identifier.remove_leading_underscores right in
           Identifier.equal left right
       | _ -> false
+
+
+    (* Match parameters from two parameter lists `left_parameters` and `right_parameters`.
+     *
+     * This returns a list of [`Both | `Left | `Right], where:
+     * `Both (left, right)` means the parameter `left` from `left_parameters` matches the parameter `right` from `right_parameters`.
+     * `Left left` means the parameter `left` from `left_parameters` does not match any parameter in `right_parameters`.
+     * `Right right` means the parameter `right` from `right_parameters` does not match any parameters in `left_parameters`.
+     *
+     * All parameters from `left_parameters` and `right_parameters` only appear once in the result.
+     *)
+    let zip left_parameters right_parameters =
+      let find_positional_parameter index parameters = List.nth parameters index in
+      let find_named_parameter name =
+        let equal_name parameter =
+          match parameter with
+          | KeywordOnly { name = parameter_name; _ }
+          | Named { name = parameter_name; _ }
+            when Identifier.equal
+                   (Identifier.remove_leading_underscores parameter_name)
+                   (Identifier.remove_leading_underscores name) ->
+              Some parameter
+          | _ -> None
+        in
+        List.find_map ~f:equal_name
+      in
+      let find_variable_parameter =
+        let is_variable = function
+          | Variable _ as parameter -> Some parameter
+          | _ -> None
+        in
+        List.find_map ~f:is_variable
+      in
+      let find_keywords_parameter =
+        let is_keywords = function
+          | Keywords _ as parameter -> Some parameter
+          | _ -> None
+        in
+        List.find_map ~f:is_keywords
+      in
+      let find_matching_parameter given_parameters = function
+        | PositionalOnly { index; _ } -> find_positional_parameter index given_parameters
+        | KeywordOnly { name; _ }
+        | Named { name; _ } ->
+            (* TODO(T44178876): ensure index match as well for named parameters *)
+            find_named_parameter name given_parameters
+        | Variable _ -> find_variable_parameter given_parameters
+        | Keywords _ -> find_keywords_parameter given_parameters
+      in
+      let process_left left_parameter =
+        match find_matching_parameter right_parameters left_parameter with
+        | Some right_parameter -> `Both (left_parameter, right_parameter)
+        | None -> `Left left_parameter
+      in
+      let process_right right_parameter =
+        match find_matching_parameter left_parameters right_parameter with
+        | Some _ -> None
+        | None -> Some (`Right right_parameter)
+      in
+      List.map ~f:process_left left_parameters @ List.filter_map ~f:process_right right_parameters
   end
 
   include Record.Callable
