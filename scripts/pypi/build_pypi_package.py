@@ -135,6 +135,19 @@ def _sync_stubs(pyre_directory: Path, build_root: Path) -> None:
     )
 
 
+def _sync_sapp_filters(pyre_directory: Path, build_root: Path) -> None:
+    _rsync_files(
+        [],
+        pyre_directory / "tools" / "sapp" / "pysa_filters",
+        build_root,
+        [
+            "--recursive",
+            "--prune-empty-dirs",
+            "--verbose",
+        ],
+    )
+
+
 def _sync_typeshed(build_root: Path, typeshed_path: Path) -> None:
     typeshed_target = build_root / "typeshed"
     _rsync_files(
@@ -279,6 +292,7 @@ def build_pypi_package(
         _sync_pysa_stubs(pyre_directory, build_path)
         _sync_stubs(pyre_directory, build_path)
         _sync_typeshed(build_path, typeshed_path)
+        _sync_sapp_filters(pyre_directory, build_path)
         _sync_binary(pyre_directory, build_path)
         _sync_documentation_files(pyre_directory, build_path)
 
