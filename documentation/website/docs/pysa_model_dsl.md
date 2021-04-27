@@ -144,11 +144,26 @@ ModelQuery(
   ...
 )
 ```
-### `parent.matches` clause
+
+### `parent.equals` clause
 
 You may use the `parent` clause to specify predicates on the parent class. This predicate can only be used when the find clause specifies methods or attributes.
 
-The `parent.matches` clause is used to model entities when the parent's name matches the provided regex.
+The `parent.equals` clause is used to model entities when the parent's fully qualified name is an exact match for the specified string.
+
+Example:
+
+```python
+ModelQuery(
+  find = "methods",
+  where = parent.equals("foo.Bar"),
+  ...
+)
+```
+
+### `parent.matches` clause
+
+The `parent.matches` clause is used to model entities when the parent's fully qualified name matches the provided regex.
 
 Example:
 
@@ -159,6 +174,48 @@ ModelQuery(
   ...
 )
 ```
+
+### `parent.extends` clause
+
+The `parent.extends` clause is used to model entities when the parent's class is a subclass of the provided class name.
+
+Example:
+
+```python
+ModelQuery(
+  find = "attributes",
+  where = parent.extends("C"),
+  ...
+)
+```
+
+The default behavior is that it will only match if the parent class is a direct subclass of the specified class. For example, with classes:
+```python
+class C:
+  x = ...
+
+class D(C):
+  y = ...
+
+class E(D):
+  z = ...
+```
+
+the above query will only model the attribute `D.y`, since `D` is a direct subclass of `C`, but not `C` itself, or `E`, which is a sub-subclass of `C`.
+
+If you would like to model a class and all subclasses transitively, you can use the `is_transitive` flag to get this behavior.
+
+Example:
+
+```python
+ModelQuery(
+  find = "attributes",
+  where = parent.extends("C", is_transitive=True),
+  ...
+)
+```
+
+This query will model `C.x`, `D.y` and `E.z`.
 
 ### `Not` clauses
 
