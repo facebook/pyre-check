@@ -141,9 +141,6 @@ def _sync_typeshed(build_root: Path, typeshed_path: Path) -> None:
         ["+ */", "-! *.pyi"], typeshed_path / "stdlib", typeshed_target, ["-avm"]
     )
     _rsync_files(
-        ["+ */", "-! *.pyi"], typeshed_path / "third_party", typeshed_target, ["-avm"]
-    )
-    _rsync_files(
         ["+ */", "-! *.pyi"], typeshed_path / "stubs", typeshed_target, ["-avm"]
     )
     _rsync_files(
@@ -157,7 +154,6 @@ def _sync_typeshed(build_root: Path, typeshed_path: Path) -> None:
             "--verbose",
             "--chmod='+w'",
             "--include='stdlib/***'",
-            "--include='third_party/***'",
             "--exclude='*'",
         ],
     )
