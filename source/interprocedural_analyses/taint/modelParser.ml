@@ -68,14 +68,18 @@ module T = struct
 
     type class_constraint =
       | Equals of string
-      | Extends of string
+      | Extends of {
+          class_name: string;
+          is_transitive: bool;
+        }
       | Matches of Re2.t
     [@@deriving compare]
 
     let pp_class_constraint formatter class_constraint =
       match class_constraint with
       | Equals equals -> Format.fprintf formatter "Equals(%s)" equals
-      | Extends extends -> Format.fprintf formatter "Extends(%s)" extends
+      | Extends { class_name; is_transitive } ->
+          Format.fprintf formatter "Extends(%s, is_transitive=%b)" class_name is_transitive
       | Matches regular_expression ->
           Format.fprintf formatter "Matches(%s)" (Re2.to_string regular_expression)
 
@@ -1113,7 +1117,7 @@ let parse_where_clause ~path ~find_clause ({ Node.value; location } as expressio
                   (Name.Attribute
                     {
                       base = { Node.value = Name (Name.Identifier "parent"); _ };
-                      attribute = ("equals" | "extends" | "matches") as attribute;
+                      attribute = ("equals" | "matches") as attribute;
                       _;
                     });
               _;
@@ -1130,11 +1134,69 @@ let parse_where_clause ~path ~find_clause ({ Node.value; location } as expressio
         let constraint_type =
           match attribute with
           | "equals" -> ModelQuery.Equals class_name
-          | "extends" -> Extends class_name
           | "matches" -> Matches (Re2.create_exn class_name)
           | _ -> failwith "impossible case"
         in
         Ok (ModelQuery.ParentConstraint constraint_type)
+    | Expression.Call
+        {
+          Call.callee =
+            {
+              Node.value =
+                Expression.Name
+                  (Name.Attribute
+                    {
+                      base = { Node.value = Name (Name.Identifier "parent"); _ };
+                      attribute = "extends";
+                      _;
+                    });
+              _;
+            } as callee;
+          arguments;
+        } -> (
+        match arguments with
+        | [
+         {
+           Call.Argument.value =
+             { Node.value = Expression.String { StringLiteral.value = class_name; _ }; _ };
+           _;
+         };
+        ] ->
+            Ok (ModelQuery.ParentConstraint (Extends { class_name; is_transitive = false }))
+        | [
+         {
+           Call.Argument.value =
+             { Node.value = Expression.String { StringLiteral.value = class_name; _ }; _ };
+           _;
+         };
+         {
+           Call.Argument.name = Some { Node.value = "is_transitive"; _ };
+           value = { Node.value = is_transitive_value; _ } as is_transitive_expression;
+         };
+        ] ->
+            ( match is_transitive_value with
+            | Expression.True -> Ok true
+            | Expression.False -> Ok false
+            | _ ->
+                Error
+                  {
+                    ModelVerificationError.T.kind =
+                      ModelVerificationError.T.InvalidExtendsIsTransitive is_transitive_expression;
+                    path;
+                    location;
+                  } )
+            >>= fun is_transitive ->
+            Ok (ModelQuery.ParentConstraint (Extends { class_name; is_transitive }))
+        | _ ->
+            Error
+              (invalid_model_error
+                 ~path
+                 ~location
+                 ~name:"model query"
+                 (Format.sprintf
+                    "Invalid arguments for `%s`: %s"
+                    (Expression.show callee)
+                    (List.map arguments ~f:Call.Argument.show |> String.concat ~sep:", "))) )
     | Expression.Call { Call.callee; arguments = _ } ->
         Error
           (invalid_model_error

@@ -37,6 +37,21 @@ end
 
 let matches_pattern ~pattern = Re2.matches (Re2.create_exn pattern)
 
+let is_ancestor ~resolution ~is_transitive ancestor_class child_class =
+  if is_transitive then
+    try
+      GlobalResolution.is_transitive_successor
+        ~placeholder_subclass_extends_all:false
+        resolution
+        ~predecessor:child_class
+        ~successor:ancestor_class
+    with
+    | ClassHierarchy.Untracked _ -> false
+  else
+    let parents = GlobalResolution.immediate_parents ~resolution child_class in
+    List.mem parents ancestor_class ~equal:String.equal
+
+
 let rec callable_matches_constraint query_constraint ~resolution ~callable =
   let get_callable_type =
     Memo.unit (fun () ->
@@ -115,10 +130,9 @@ let rec callable_matches_constraint query_constraint ~resolution ~callable =
       not (callable_matches_constraint ~resolution ~callable query_constraint)
   | ModelQuery.ParentConstraint (Equals class_name) ->
       Callable.class_name callable >>| String.equal class_name |> Option.value ~default:false
-  | ModelQuery.ParentConstraint (Extends class_name) ->
+  | ModelQuery.ParentConstraint (Extends { class_name; is_transitive }) ->
       Callable.class_name callable
-      >>| GlobalResolution.immediate_parents ~resolution
-      >>| (fun parents -> List.mem parents class_name ~equal:String.equal)
+      >>| is_ancestor ~resolution ~is_transitive class_name
       |> Option.value ~default:false
   | ModelQuery.ParentConstraint (Matches class_pattern) ->
       Callable.class_name callable >>| Re2.matches class_pattern |> Option.value ~default:false
@@ -303,22 +317,21 @@ let apply_callable_query_rule
 
 
 let rec attribute_matches_constraint query_constraint ~resolution ~attribute =
-  let class_name = Reference.prefix attribute >>| Reference.show in
+  let attribute_class_name = Reference.prefix attribute >>| Reference.show in
   match query_constraint with
   | ModelQuery.NameConstraint pattern -> matches_pattern ~pattern (Reference.show attribute)
   | ModelQuery.AnyOf constraints ->
       List.exists constraints ~f:(attribute_matches_constraint ~resolution ~attribute)
   | ModelQuery.Not query_constraint ->
       not (attribute_matches_constraint ~resolution ~attribute query_constraint)
-  | ModelQuery.ParentConstraint (Equals query_class_name) ->
-      class_name >>| String.equal query_class_name |> Option.value ~default:false
-  | ModelQuery.ParentConstraint (Extends query_class_name) ->
-      class_name
-      >>| GlobalResolution.immediate_parents ~resolution
-      >>| (fun parents -> List.mem parents query_class_name ~equal:String.equal)
+  | ModelQuery.ParentConstraint (Equals class_name) ->
+      attribute_class_name >>| String.equal class_name |> Option.value ~default:false
+  | ModelQuery.ParentConstraint (Extends { class_name; is_transitive }) ->
+      attribute_class_name
+      >>| is_ancestor ~resolution ~is_transitive class_name
       |> Option.value ~default:false
   | ModelQuery.ParentConstraint (Matches class_pattern) ->
-      class_name >>| Re2.matches class_pattern |> Option.value ~default:false
+      attribute_class_name >>| Re2.matches class_pattern |> Option.value ~default:false
   | _ -> failwith "impossible case"
 
 

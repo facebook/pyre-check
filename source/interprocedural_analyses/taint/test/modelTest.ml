@@ -1364,6 +1364,43 @@ let test_invalid_models context =
        of kind `attributes`."
     ();
 
+  assert_invalid_model
+    ~model_source:
+      {|
+      ModelQuery(
+        find = "methods",
+        where = parent.extends("foo", is_transitive=foobar),
+        model = ReturnModel(TaintSource[Test])
+      )
+    |}
+    ~expect:"The Extends is_transitive must be either True or False, got: `foobar`."
+    ();
+  assert_invalid_model
+    ~model_source:
+      {|
+      ModelQuery(
+        find = "methods",
+        where = parent.extends("foo", foobar),
+        model = ReturnModel(TaintSource[Test])
+      )
+    |}
+    ~expect:
+      "Invalid model for `model query`: Invalid arguments for `parent.extends`: { \
+       Expression.Call.Argument.name = None; value = \"foo\" }, { Expression.Call.Argument.name = \
+       None; value = foobar }"
+    ();
+  assert_invalid_model
+    ~model_source:
+      {|
+      ModelQuery(
+        find = "methods",
+        where = parent.matches("foo", is_transitive=foobar),
+        model = ReturnModel(TaintSource[Test])
+      )
+    |}
+    ~expect:"Invalid model for `model query`: Unsupported callee: parent.matches"
+    ();
+
   assert_valid_model
     ~model_source:"def test.partial_sink(x: PartialSink[Test[a]], y: PartialSink[Test[b]]): ..."
     ();
@@ -2624,7 +2661,7 @@ let test_query_parsing context =
       [
         {
           name = None;
-          query = [ParentConstraint (Extends "Foo")];
+          query = [ParentConstraint (Extends { class_name = "Foo"; is_transitive = false })];
           rule_kind = MethodModel;
           productions =
             [
@@ -2643,6 +2680,74 @@ let test_query_parsing context =
                     (Model.Sink
                        {
                          sink = Sinks.NamedSink "Test";
+                         breadcrumbs = [];
+                         path = [];
+                         leaf_names = [];
+                         leaf_name_provided = false;
+                       });
+                ];
+            ];
+        };
+      ]
+    ();
+  assert_queries
+    ~context
+    ~model_source:
+      {|
+    ModelQuery(
+     find = "methods",
+     where = parent.extends("Foo", is_transitive=False),
+     model = [Returns([TaintSource[Test]])]
+    )
+  |}
+    ~expect:
+      [
+        {
+          name = None;
+          query = [ParentConstraint (Extends { class_name = "Foo"; is_transitive = false })];
+          rule_kind = MethodModel;
+          productions =
+            [
+              ReturnTaint
+                [
+                  TaintAnnotation
+                    (Model.Source
+                       {
+                         source = Sources.NamedSource "Test";
+                         breadcrumbs = [];
+                         path = [];
+                         leaf_names = [];
+                         leaf_name_provided = false;
+                       });
+                ];
+            ];
+        };
+      ]
+    ();
+  assert_queries
+    ~context
+    ~model_source:
+      {|
+    ModelQuery(
+     find = "methods",
+     where = parent.extends("Foo", is_transitive=True),
+     model = [Returns([TaintSource[Test]])]
+    )
+  |}
+    ~expect:
+      [
+        {
+          name = None;
+          query = [ParentConstraint (Extends { class_name = "Foo"; is_transitive = true })];
+          rule_kind = MethodModel;
+          productions =
+            [
+              ReturnTaint
+                [
+                  TaintAnnotation
+                    (Model.Source
+                       {
+                         source = Sources.NamedSource "Test";
                          breadcrumbs = [];
                          path = [];
                          leaf_names = [];

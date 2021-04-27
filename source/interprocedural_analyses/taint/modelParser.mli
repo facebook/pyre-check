@@ -59,7 +59,10 @@ module T : sig
 
     type class_constraint =
       | Equals of string
-      | Extends of string
+      | Extends of {
+          class_name: string;
+          is_transitive: bool;
+        }
       | Matches of Re2.t
     [@@deriving compare, show]
 

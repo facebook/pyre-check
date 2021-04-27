@@ -43,6 +43,7 @@ module T = struct
         find_clause_kind: string;
       }
     | InvalidParameterExclude of Expression.t
+    | InvalidExtendsIsTransitive of Expression.t
     | InvalidTaintAnnotation of {
         taint_annotation: Expression.t;
         reason: string;
@@ -125,6 +126,10 @@ let description error =
       Format.asprintf
         "The AllParameters exclude must be either a string or a list of strings, got: `%s`."
         (Expression.show expression)
+  | InvalidExtendsIsTransitive expression ->
+      Format.asprintf
+        "The Extends is_transitive must be either True or False, got: `%s`."
+        (Expression.show expression)
   | InvalidTaintAnnotation { taint_annotation; reason } ->
       Format.asprintf
         "`%s` is an invalid taint annotation: %s"
@@ -174,6 +179,7 @@ let code { kind; _ } =
   | ModelingClassAsDefine _ -> 10
   | InvalidModelQueryWhereClause _ -> 11
   | InvalidModelQueryModelClause _ -> 12
+  | InvalidExtendsIsTransitive _ -> 13
 
 
 let display { kind = error; path; location } =

@@ -41,6 +41,7 @@ module T : sig
         find_clause_kind: string;
       }
     | InvalidParameterExclude of Expression.t
+    | InvalidExtendsIsTransitive of Expression.t
     | InvalidTaintAnnotation of {
         taint_annotation: Expression.t;
         reason: string;
