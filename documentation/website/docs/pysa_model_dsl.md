@@ -160,6 +160,25 @@ ModelQuery(
 )
 ```
 
+### `Not` clauses
+
+The `Not` clause negates any existing clause that is valid for the entity being modelled.
+
+Example:
+
+```python
+ModelQuery(
+  find = "methods",
+  where = [
+    Not(
+      name.matches("foo.*"),
+      parent.matches("testing.unittest.UnitTest"),
+    )
+  ],
+  model = ...
+)
+```
+
 
 ## Generated models (Model clauses)
 
