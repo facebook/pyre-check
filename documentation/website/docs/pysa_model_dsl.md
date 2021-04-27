@@ -31,9 +31,9 @@ ModelQuery(
 
 Things to note in this example:
 
-1. The `find` clause lets you pick what kinds of callables  you're looking to model.
-1. The `where` clause is how you filter down the callables you're modeling - in this example, we're filtering functionos by names.
-1. The `model` clause is a list of models to attach to the functions. Here, the syntax means that we model `foo` as returning `TaintSource[Test]`.
+1. The `find` clause lets you pick whether you want to model functions, methods or attributes.
+1. The `where` clause is how you refine your criteria for when a model should be generated - in this example, we're filtering for functions where the name matches `"foo"`.
+1. The `model` clause is a list of models to generate. Here, the syntax means that the functions matching the where clause should be modelled as returning `TaintSource[Test]`.
 
 When invoking Pysa, if you add the `--dump-model-query-results` flag to your invocation, the generated models will be written to a file in JSON format.
 
@@ -47,15 +47,24 @@ You can then view this file to see the generated models.
 
 ## Find clauses
 
-The `find` clause currently supports `"functions"` and `"methods"`. `"functions"` indicates that you're querying for free functions, whereas `"methods"` indicates that you're only querying methods.
+The `find` clause specifies what entities to model, and currently supports `"functions"`, `"methods"` and `"attributes"`. `"functions"` indicates that you're querying for free functions, `"methods"` indicates that you're only querying class methods, and `"attributes"` indicates that you're querying for attributes on classes.
+
+Note that `"attributes"` also includes constructor-initialized attributes, such as `C.y` in the following case:
+```python
+class C:
+  x = ...
+
+  def __init__(self):
+    self.y = ...
+```
 
 ## Where clauses
 
-Where clauses are a list of predicates, all of which must match for a function to be modelled.
+Where clauses are a list of predicates, all of which must match for an entity to be modelled. Note that certain predicates are only compatible with specific find clause kinds.
 
 ### `name.matches`
 
-The most basic query predicate is a name match - the name you're searching for is compiled as a regex, and the function names are compared against this.
+The most basic query predicate is a name match - the name you're searching for is compiled as a regex, and the entity's fully qualified name is compared against it. A fully qualified name includes the module and class - for example, for a method `foo` in class `C` which is part of module `bar`, the fully qualified name is `bar.C.foo`.
 
 Example:
 
@@ -74,6 +83,7 @@ ModelQuery(
 Model queries allow for querying based on the return annotation of a function. Pysa currently only allows querying whether a function type is `typing.Annotated`.
 
 Example:
+
 ```python
 ModelQuery(
   find = ...,
@@ -103,7 +113,7 @@ This model query will taint all functions which have one parameter with type `ty
 
 ### `AnyOf` clauses
 
-There are cases when we want to model functions which match any of a set of clauses. The `AnyOf` clause represents exactly this case.
+There are cases when we want to model entities which match any of a set of clauses. The `AnyOf` clause represents exactly this case.
 
 Example:
 
@@ -122,9 +132,10 @@ ModelQuery(
 
 ### `any_decorator` clauses
 
-`any_decorator` clauses are used to find functions decorated with decorators that match a pattern.
-Pysa currently only supports matching on the name of any decorator. If you wanted to find all
-functions which are decorated by `@app.route()`, you can write:
+`any_decorator` clauses are used to find callables decorated with decorators that match a pattern.
+
+Pysa currently only supports matching on the name of any decorator. For example, if you wanted to find all functions which are decorated by `@app.route()`, you can write:
+
 
 ```python
 ModelQuery(
@@ -135,7 +146,11 @@ ModelQuery(
 ```
 ### `parent.matches` clause
 
-You may use the `parent.matches` clause to matches methods whose parent's name corresponds to the provided regex.
+You may use the `parent` clause to specify predicates on the parent class. This predicate can only be used when the find clause specifies methods or attributes.
+
+The `parent.matches` clause is used to model entities when the parent's name matches the provided regex.
+
+Example:
 
 ```python
 ModelQuery(
@@ -146,9 +161,9 @@ ModelQuery(
 ```
 
 
-## Generated models
+## Generated models (Model clauses)
 
-The last bit of model queries is actually generating models for all callables that match the provided where clauses. We support generating models for parameters by name or position, as well as generating models for all paramaters. Additionally, we support generating models for the return annotation.
+The last bit of model queries is actually generating models for all entities that match the provided where clauses. For callables, we support generating models for parameters by name or position, as well as generating models for all paramaters. Additionally, we support generating models for the return annotation.
 
 
 ### Returned taint
@@ -212,6 +227,22 @@ ModelQuery(
   where = ...,
   model = [
     AllParameters(TaintSource[Test], exclude=["self", "other"])
+  ]
+)
+```
+
+### Models for attributes
+
+Taint for attribute models requires a `AttributeModel` model clause, which can only be used when the find clause specifies attributes.
+
+Example:
+
+```python
+ModelQuery(
+  find = "attributes",
+  where = ...,
+  model = [
+    AttributeModel(TaintSource[Test], TaintSink[Test])
   ]
 )
 ```
