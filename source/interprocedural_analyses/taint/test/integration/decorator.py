@@ -193,6 +193,11 @@ class Foo:
     def self_has_generic_type(self: T, other: T, x: str) -> None:
         other.bar(x)
 
+    @classmethod
+    @with_logging_args_kwargs_no_sink
+    def some_class_method(cls, x: str) -> None:
+        __test_sink(x)
+
 
 def main() -> None:
     foo(__test_source())
@@ -219,3 +224,5 @@ def main() -> None:
     Foo().bar(__test_source())
 
     Foo().self_has_generic_type(Foo(), __test_source())
+
+    Foo.some_class_method(__test_source())
