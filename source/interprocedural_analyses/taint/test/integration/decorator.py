@@ -171,6 +171,18 @@ async def foo_with_helper_function(x: int, y: str) -> None:
     print(x, y)
 
 
+class Foo:
+    @with_logging_args_kwargs_no_sink
+    def foo(self, x: str) -> None:
+        __test_sink(x)
+
+    @with_logging_args_kwargs_no_sink
+    @with_logging_args_kwargs
+    @with_logging_args_kwargs_no_sink
+    def bar(self, x: str) -> None:
+        print(x)
+
+
 def main() -> None:
     foo(__test_source())
     foo_with_sink(__test_source())
@@ -190,3 +202,7 @@ def main() -> None:
     foo_log_first_parameter(__test_source(), "hello")
 
     foo_with_helper_function(__test_source(), "hello")
+
+    Foo().foo(__test_source())
+
+    Foo().bar(__test_source())

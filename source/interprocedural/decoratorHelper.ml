@@ -59,11 +59,18 @@ let all_decorator_bodies environment =
 (* Pysa doesn't care about metadata like `unbound_names`. So, strip them. *)
 let sanitize_define
     ?(strip_decorators = true)
-    ({ Define.signature = { decorators; _ } as signature; _ } as define)
+    ?(strip_parent = false)
+    ({ Define.signature = { decorators; parent; _ } as signature; _ } as define)
   =
+  strip_parent |> ignore;
   {
     define with
-    signature = { signature with decorators = (if strip_decorators then [] else decorators) };
+    signature =
+      {
+        signature with
+        decorators = (if strip_decorators then [] else decorators);
+        parent = parent >>= Option.some_if (not strip_parent);
+      };
     unbound_names = [];
   }
 
@@ -448,7 +455,7 @@ let replace_signature_if_always_passing_on_arguments
 let inline_decorator_in_define
     ~location
     ~qualifier
-    ~define:({ Define.signature = original_signature; _ } as define)
+    ~define:({ Define.signature = { parent; _ } as original_signature; _ } as define)
     {
       wrapper_define =
         {
@@ -463,7 +470,7 @@ let inline_decorator_in_define
   =
   let decorator_reference = Reference.delocalize decorator_reference in
   let inlined_original_define_statement =
-    sanitize_define define
+    sanitize_define ~strip_parent:true define
     |> rename_define ~new_name:(Reference.create inlined_original_function_name)
     |> requalify_define
          ~old_qualifier:qualifier
@@ -480,10 +487,11 @@ let inline_decorator_in_define
     | Some ({ Define.signature; _ } as wrapper_define) -> wrapper_define, signature
     | None -> wrapper_define, wrapper_signature
   in
+  let outer_signature = { outer_signature with parent } in
   let ( { Define.signature = { name = { Node.value = inlined_wrapper_define_name; _ }; _ }; _ } as
       inlined_wrapper_define )
     =
-    sanitize_define wrapper_define
+    sanitize_define ~strip_parent:true wrapper_define
     |> rename_define ~new_name:(Reference.create inlined_wrapper_function_name)
     |> requalify_define
          ~old_qualifier:(Reference.delocalize wrapper_define_name)
@@ -507,7 +515,7 @@ let inline_decorator_in_define
         qualifier
         (Reference.drop_prefix ~prefix:decorator_reference helper_function_reference)
     in
-    sanitize_define helper_define
+    sanitize_define ~strip_parent:true helper_define
     |> rename_define
          ~new_name:
            (Reference.create

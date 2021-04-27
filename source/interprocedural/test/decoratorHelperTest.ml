@@ -897,6 +897,63 @@ let test_inline_decorators context =
 
       return __wrapper(x, y, z)
   |};
+  (* Decorator used on a method. *)
+  assert_inlined
+    {|
+    from typing import Callable
+    from builtins import __test_sink
+
+    def with_logging(f: Callable) -> Callable:
+      def helper(args) -> None:
+        __test_sink(args)
+
+      def inner( *args, **kwargs) -> None:
+        helper(args)
+        f( *args, **kwargs)
+
+      return inner
+
+    class Foo:
+      def bar(self, x: str) -> None:
+        print(x)
+
+      @with_logging
+      def foo(self, x: str) -> None:
+        self.bar(x)
+  |}
+    {|
+    from typing import Callable
+    from builtins import __test_sink
+
+    def with_logging(f: Callable) -> Callable:
+      def helper(args) -> None:
+        __test_sink(args)
+
+      def inner( *args, **kwargs) -> None:
+        helper(args)
+        f( *args, **kwargs)
+
+      return inner
+
+    class Foo:
+      def bar(self, x: str) -> None:
+        print(x)
+
+      def foo(self, x: str) -> None:
+        def __original_function(self, x: str) -> None:
+          self.bar(x)
+
+        def __wrapper(self, x: str) -> None:
+          __args = (self, x)
+          __kwargs = {"self": self, "x": x}
+          helper(__args)
+          __original_function(self, x)
+
+        def helper(args) -> None:
+          __test_sink(args)
+
+        return __wrapper(self, x)
+  |};
   ()
 
 
