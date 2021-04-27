@@ -6,7 +6,7 @@
 # flake8: noqa
 
 from builtins import __test_sink, __test_source
-from typing import Awaitable, Callable
+from typing import Awaitable, Callable, TypeVar
 
 from pyre_extensions import ParameterSpecification
 from pyre_extensions.type_variable_operators import Concatenate
@@ -171,16 +171,27 @@ async def foo_with_helper_function(x: int, y: str) -> None:
     print(x, y)
 
 
+T = TypeVar("T", bound="Foo")
+
+
 class Foo:
+    def sink_method(self, x: str) -> None:
+        print(x)
+        __test_sink(x)
+
     @with_logging_args_kwargs_no_sink
     def foo(self, x: str) -> None:
-        __test_sink(x)
+        self.sink_method(x)
 
     @with_logging_args_kwargs_no_sink
     @with_logging_args_kwargs
     @with_logging_args_kwargs_no_sink
     def bar(self, x: str) -> None:
         print(x)
+
+    @with_logging_args_kwargs_no_sink
+    def self_has_generic_type(self: T, other: T, x: str) -> None:
+        other.bar(x)
 
 
 def main() -> None:
@@ -206,3 +217,5 @@ def main() -> None:
     Foo().foo(__test_source())
 
     Foo().bar(__test_source())
+
+    Foo().self_has_generic_type(Foo(), __test_source())

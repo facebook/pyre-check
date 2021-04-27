@@ -173,6 +173,35 @@ let rename_define ~new_name ({ Define.signature = { name; _ } as signature; _ } 
   { define with Define.signature = { signature with name = { name with Node.value = new_name } } }
 
 
+let set_first_parameter_type
+    ~original_define:({ Define.signature = { parent; _ }; _ } as original_define)
+    ({ Define.signature = { parameters; _ } as signature; _ } as define)
+  =
+  match parameters, parent with
+  | { Node.value = { annotation; _ } as first_parameter; location } :: rest, Some parent
+    when (not (Define.is_class_method original_define))
+         && not (Define.is_static_method original_define) ->
+      {
+        define with
+        Define.signature =
+          {
+            signature with
+            parameters =
+              {
+                Node.location;
+                value =
+                  {
+                    first_parameter with
+                    annotation =
+                      Option.first_some annotation (Some (from_reference ~location parent));
+                  };
+              }
+              :: rest;
+          };
+      }
+  | _ -> define
+
+
 type decorator_data = {
   wrapper_define: Define.t;
   helper_defines: Define.t list;
@@ -471,6 +500,7 @@ let inline_decorator_in_define
   let decorator_reference = Reference.delocalize decorator_reference in
   let inlined_original_define_statement =
     sanitize_define ~strip_parent:true define
+    |> set_first_parameter_type ~original_define:define
     |> rename_define ~new_name:(Reference.create inlined_original_function_name)
     |> requalify_define
          ~old_qualifier:qualifier
@@ -492,6 +522,7 @@ let inline_decorator_in_define
       inlined_wrapper_define )
     =
     sanitize_define ~strip_parent:true wrapper_define
+    |> set_first_parameter_type ~original_define:define
     |> rename_define ~new_name:(Reference.create inlined_wrapper_function_name)
     |> requalify_define
          ~old_qualifier:(Reference.delocalize wrapper_define_name)

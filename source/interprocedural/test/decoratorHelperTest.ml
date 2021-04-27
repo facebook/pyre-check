@@ -900,8 +900,10 @@ let test_inline_decorators context =
   (* Decorator used on a method. *)
   assert_inlined
     {|
-    from typing import Callable
+    from typing import Callable, TypeVar
     from builtins import __test_sink
+
+    T = TypeVar("T", bound="Foo")
 
     def with_logging(f: Callable) -> Callable:
       def helper(args) -> None:
@@ -913,17 +915,30 @@ let test_inline_decorators context =
 
       return inner
 
-    class Foo:
+    class Base: ...
+
+    class Foo(Base):
       def bar(self, x: str) -> None:
         print(x)
 
       @with_logging
       def foo(self, x: str) -> None:
         self.bar(x)
+
+      @with_logging
+      def self_has_type(self: Base, x: str) -> None:
+        self.bar(x)
+
+      @with_logging
+      def self_has_generic_type(self: T, other: T, x: str) -> None:
+        self.bar(x)
+        other.bar(x)
   |}
     {|
-    from typing import Callable
+    from typing import Callable, TypeVar
     from builtins import __test_sink
+
+    T = TypeVar("T", bound="Foo")
 
     def with_logging(f: Callable) -> Callable:
       def helper(args) -> None:
@@ -935,15 +950,17 @@ let test_inline_decorators context =
 
       return inner
 
-    class Foo:
+    class Base: ...
+
+    class Foo(Base):
       def bar(self, x: str) -> None:
         print(x)
 
       def foo(self, x: str) -> None:
-        def __original_function(self, x: str) -> None:
+        def __original_function(self: Foo, x: str) -> None:
           self.bar(x)
 
-        def __wrapper(self, x: str) -> None:
+        def __wrapper(self: Foo, x: str) -> None:
           __args = (self, x)
           __kwargs = {"self": self, "x": x}
           helper(__args)
@@ -953,6 +970,153 @@ let test_inline_decorators context =
           __test_sink(args)
 
         return __wrapper(self, x)
+
+      def self_has_type(self: Base, x: str) -> None:
+        def __original_function(self: Base, x: str) -> None:
+          self.bar(x)
+
+        def __wrapper(self: Base, x: str) -> None:
+          __args = (self, x)
+          __kwargs = {"self": self, "x": x}
+          helper(__args)
+          __original_function(self, x)
+
+        def helper(args) -> None:
+          __test_sink(args)
+
+        return __wrapper(self, x)
+
+      def self_has_generic_type(self: T, other: T, x: str) -> None:
+        def __original_function(self: T, other: T, x: str) -> None:
+          self.bar(x)
+          other.bar(x)
+
+        def __wrapper(self: T, other: T, x: str) -> None:
+          __args = (self, other, x)
+          __kwargs = {"self": self, "other": other, "x": x}
+          helper(__args)
+          __original_function(self, other, x)
+
+        def helper(args) -> None:
+          __test_sink(args)
+
+        return __wrapper(self, other, x)
+  |};
+  (* TODO(T69755379): Correctly inline decorator used on a classmethod. Right now, we're missing the
+     @classmethod decorator. *)
+  assert_inlined
+    {|
+    from typing import Callable
+    from builtins import __test_sink
+
+    def with_logging(f: Callable) -> Callable:
+
+      def inner( *args, **kwargs) -> None:
+        __test_sink(args)
+        f( *args, **kwargs)
+
+      return inner
+
+    class Foo:
+      def some_method(self, x: int) -> None:
+        print(self, x)
+
+      @classmethod
+      def some_class_method(cls, x: int) -> None:
+        print(cls, x)
+
+      @classmethod
+      @with_logging
+      def foo(cls, x: int) -> None:
+        cls.some_class_method(x)
+        cls().some_method(x)
+  |}
+    {|
+    from typing import Callable
+    from builtins import __test_sink
+
+    def with_logging(f: Callable) -> Callable:
+
+      def inner( *args, **kwargs) -> None:
+        __test_sink(args)
+        f( *args, **kwargs)
+
+      return inner
+
+    class Foo:
+      def some_method(self, x: int) -> None:
+        print(self, x)
+
+      @classmethod
+      def some_class_method(cls, x: int) -> None:
+        print(cls, x)
+
+      def foo(cls, x: int) -> None:
+
+        def __original_function(cls, x: int) -> None:
+          cls.some_class_method(x)
+          cls().some_method(x)
+
+        def __wrapper(cls, x: int) -> None:
+          __args = (cls, x)
+          __kwargs = {"cls": cls, "x": x}
+          __test_sink(__args)
+          __original_function(cls, x)
+
+        return __wrapper(cls, x)
+  |};
+  (* TODO(T69755379): Correctly inline decorator used on a staticmethod. Right now, we're missing
+     the @staticmethod decorator. *)
+  assert_inlined
+    {|
+    from typing import Callable
+    from builtins import __test_sink
+
+    def with_logging(f: Callable) -> Callable:
+
+      def inner( *args, **kwargs) -> None:
+        __test_sink(args)
+        f( *args, **kwargs)
+
+      return inner
+
+    class Foo:
+      def some_method(self, x: int) -> None:
+        print(self, x)
+
+      @staticmethod
+      @with_logging
+      def foo(x: int) -> None:
+        print(x)
+  |}
+    {|
+    from typing import Callable
+    from builtins import __test_sink
+
+    def with_logging(f: Callable) -> Callable:
+
+      def inner( *args, **kwargs) -> None:
+        __test_sink(args)
+        f( *args, **kwargs)
+
+      return inner
+
+    class Foo:
+      def some_method(self, x: int) -> None:
+        print(self, x)
+
+      def foo(x: int) -> None:
+
+        def __original_function(x: int) -> None:
+          print(x)
+
+        def __wrapper(x: int) -> None:
+          __args = (x,)
+          __kwargs = {"x": x}
+          __test_sink(__args)
+          __original_function(x)
+
+        return __wrapper(x)
   |};
   ()
 
