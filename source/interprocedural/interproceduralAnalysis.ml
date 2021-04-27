@@ -13,6 +13,63 @@ module Json = Yojson.Safe
 module Kind = AnalysisKind
 module Result = InterproceduralResult
 
+type initialize_result = {
+  initial_models: InterproceduralResult.model_t Callable.Map.t;
+  skip_overrides: Ast.Reference.Set.t;
+}
+
+let initialize kinds ~configuration ~scheduler ~environment ~functions ~stubs =
+  let initialize_each
+      { initial_models = models; skip_overrides }
+      (Result.Analysis { kind; analysis })
+    =
+    let module Analysis = (val analysis) in
+    let { Result.initial_models = new_models; skip_overrides = new_skip_overrides } =
+      Analysis.init ~configuration ~scheduler ~environment ~functions ~stubs
+    in
+    let add_analysis_model existing model =
+      let open Result in
+      let package = Pkg { kind = ModelPart kind; value = model } in
+      { existing with models = Kind.Map.add (Kind.abstract kind) package existing.models }
+    in
+    let merge ~key:_ = function
+      | `Both (existing, new_model) -> Some (add_analysis_model existing new_model)
+      | `Left existing -> Some existing
+      | `Right new_model -> Some (add_analysis_model Result.empty_model new_model)
+    in
+    {
+      initial_models = Callable.Map.merge models new_models ~f:merge;
+      skip_overrides = Reference.Set.union skip_overrides new_skip_overrides;
+    }
+  in
+  let accumulate model kind = initialize_each model (Result.get_abstract_analysis kind) in
+  List.fold
+    kinds
+    ~init:{ initial_models = Callable.Map.empty; skip_overrides = Reference.Set.empty }
+    ~f:accumulate
+
+
+let record_initial_models ~functions ~stubs models =
+  let record_models models =
+    let add_model_to_memory ~key:call_target ~data:model =
+      Fixpoint.add_predefined Fixpoint.Epoch.initial call_target model
+    in
+    Callable.Map.iteri models ~f:add_model_to_memory
+  in
+  (* Augment models with initial inferred and obscure models *)
+  let add_missing_initial_models models =
+    List.filter functions ~f:(fun callable -> not (Callable.Map.mem models callable))
+    |> List.fold ~init:models ~f:(fun models callable ->
+           Callable.Map.set models ~key:callable ~data:Result.empty_model)
+  in
+  let add_missing_obscure_models models =
+    List.filter stubs ~f:(fun callable -> not (Callable.Map.mem models callable))
+    |> List.fold ~init:models ~f:(fun models callable ->
+           Callable.Map.set models ~key:callable ~data:Result.obscure_model)
+  in
+  models |> add_missing_initial_models |> add_missing_obscure_models |> record_models
+
+
 let analysis_failed step ~exn callable ~message =
   let callable = (callable :> Callable.t) in
   Log.error
@@ -216,42 +273,6 @@ let widen_if_necessary step callable ~old_model ~new_model result =
     Fixpoint.{ is_partial = true; model; result }
 
 
-type initialize_result = {
-  initial_models: InterproceduralResult.model_t Callable.Map.t;
-  skip_overrides: Ast.Reference.Set.t;
-}
-
-let initialize kinds ~configuration ~scheduler ~environment ~functions ~stubs =
-  let initialize_each
-      { initial_models = models; skip_overrides }
-      (Result.Analysis { kind; analysis })
-    =
-    let module Analysis = (val analysis) in
-    let { Result.initial_models = new_models; skip_overrides = new_skip_overrides } =
-      Analysis.init ~configuration ~scheduler ~environment ~functions ~stubs
-    in
-    let add_analysis_model existing model =
-      let open Result in
-      let package = Pkg { kind = ModelPart kind; value = model } in
-      { existing with models = Kind.Map.add (Kind.abstract kind) package existing.models }
-    in
-    let merge ~key:_ = function
-      | `Both (existing, new_model) -> Some (add_analysis_model existing new_model)
-      | `Left existing -> Some existing
-      | `Right new_model -> Some (add_analysis_model Result.empty_model new_model)
-    in
-    {
-      initial_models = Callable.Map.merge models new_models ~f:merge;
-      skip_overrides = Reference.Set.union skip_overrides new_skip_overrides;
-    }
-  in
-  let accumulate model kind = initialize_each model (Result.get_abstract_analysis kind) in
-  List.fold
-    kinds
-    ~init:{ initial_models = Callable.Map.empty; skip_overrides = Reference.Set.empty }
-    ~f:accumulate
-
-
 let analyze_define
     step
     analyses
@@ -421,60 +442,6 @@ let analyze_callable analyses step callable environment =
   | #Callable.override_target as callable -> analyze_overrides step callable
   | #Callable.object_target as path ->
       Format.asprintf "Found object %a in fixpoint analysis" Callable.pp path |> failwith
-
-
-let get_errors results =
-  let open Result in
-  let get_diagnostics (Pkg { kind = ResultPart kind; value }) =
-    let module Analysis = (val get_analysis kind) in
-    Analysis.get_errors value
-  in
-  Kind.Map.bindings results
-  |> List.map ~f:snd
-  |> List.map ~f:get_diagnostics
-  |> List.concat_no_order
-
-
-let externalize_analysis ~filename_lookup kind callable models results =
-  let open Result in
-  let merge kind_candidate model_opt result_opt =
-    if Poly.equal kind_candidate kind then
-      match model_opt, result_opt with
-      | Some model, _ -> Some (model, result_opt)
-      | None, Some (Pkg { kind = ResultPart kind; _ }) ->
-          let module Analysis = (val Result.get_analysis kind) in
-          let model = Pkg { kind = ModelPart kind; value = Analysis.empty_model } in
-          Some (model, result_opt)
-      | _ -> None
-    else
-      None
-  in
-  let merged = Kind.Map.merge merge models results in
-  let get_summaries (_key, (Pkg { kind = ModelPart kind1; value = model }, result_option)) =
-    match result_option with
-    | None ->
-        let module Analysis = (val Result.get_analysis kind1) in
-        Analysis.externalize ~filename_lookup callable None model
-    | Some (Pkg { kind = ResultPart kind2; value = result }) -> (
-        match Result.Kind.are_equal kind1 kind2 with
-        | Kind.Equal ->
-            let module Analysis = (val Result.get_analysis kind1) in
-            Analysis.externalize ~filename_lookup callable (Some result) model
-        | Kind.Distinct -> failwith "kind mismatch" )
-  in
-  Kind.Map.bindings merged |> List.concat_map ~f:get_summaries
-
-
-let externalize ~filename_lookup kind callable =
-  match Fixpoint.get_model callable with
-  | Some model ->
-      let results = Fixpoint.get_result callable in
-      externalize_analysis ~filename_lookup kind callable model.models results
-  | None -> []
-
-
-let emit_externalization ~filename_lookup kind emitter callable =
-  externalize ~filename_lookup kind callable |> List.iter ~f:emitter
 
 
 type expensive_callable = {
@@ -733,6 +700,18 @@ let compute_fixpoint
       raise exn
 
 
+let get_errors results =
+  let open Result in
+  let get_diagnostics (Pkg { kind = ResultPart kind; value }) =
+    let module Analysis = (val get_analysis kind) in
+    Analysis.get_errors value
+  in
+  Kind.Map.bindings results
+  |> List.map ~f:snd
+  |> List.map ~f:get_diagnostics
+  |> List.concat_no_order
+
+
 let extract_errors scheduler all_callables =
   let extract_errors callables =
     List.fold
@@ -750,6 +729,48 @@ let extract_errors scheduler all_callables =
     ~inputs:all_callables
     ()
   |> List.concat_no_order
+
+
+let externalize_analysis ~filename_lookup kind callable models results =
+  let open Result in
+  let merge kind_candidate model_opt result_opt =
+    if Poly.equal kind_candidate kind then
+      match model_opt, result_opt with
+      | Some model, _ -> Some (model, result_opt)
+      | None, Some (Pkg { kind = ResultPart kind; _ }) ->
+          let module Analysis = (val Result.get_analysis kind) in
+          let model = Pkg { kind = ModelPart kind; value = Analysis.empty_model } in
+          Some (model, result_opt)
+      | _ -> None
+    else
+      None
+  in
+  let merged = Kind.Map.merge merge models results in
+  let get_summaries (_key, (Pkg { kind = ModelPart kind1; value = model }, result_option)) =
+    match result_option with
+    | None ->
+        let module Analysis = (val Result.get_analysis kind1) in
+        Analysis.externalize ~filename_lookup callable None model
+    | Some (Pkg { kind = ResultPart kind2; value = result }) -> (
+        match Result.Kind.are_equal kind1 kind2 with
+        | Kind.Equal ->
+            let module Analysis = (val Result.get_analysis kind1) in
+            Analysis.externalize ~filename_lookup callable (Some result) model
+        | Kind.Distinct -> failwith "kind mismatch" )
+  in
+  Kind.Map.bindings merged |> List.concat_map ~f:get_summaries
+
+
+let externalize ~filename_lookup kind callable =
+  match Fixpoint.get_model callable with
+  | Some model ->
+      let results = Fixpoint.get_result callable in
+      externalize_analysis ~filename_lookup kind callable model.models results
+  | None -> []
+
+
+let emit_externalization ~filename_lookup kind emitter callable =
+  externalize ~filename_lookup kind callable |> List.iter ~f:emitter
 
 
 let save_results
@@ -835,24 +856,3 @@ let save_results
         ~phase_name:"Writing analysis results"
         ~timer
         ()
-
-
-let record_initial_models ~functions ~stubs models =
-  let record_models models =
-    let add_model_to_memory ~key:call_target ~data:model =
-      Fixpoint.add_predefined Fixpoint.Epoch.initial call_target model
-    in
-    Callable.Map.iteri models ~f:add_model_to_memory
-  in
-  (* Augment models with initial inferred and obscure models *)
-  let add_missing_initial_models models =
-    List.filter functions ~f:(fun callable -> not (Callable.Map.mem models callable))
-    |> List.fold ~init:models ~f:(fun models callable ->
-           Callable.Map.set models ~key:callable ~data:Result.empty_model)
-  in
-  let add_missing_obscure_models models =
-    List.filter stubs ~f:(fun callable -> not (Callable.Map.mem models callable))
-    |> List.fold ~init:models ~f:(fun models callable ->
-           Callable.Map.set models ~key:callable ~data:Result.obscure_model)
-  in
-  models |> add_missing_initial_models |> add_missing_obscure_models |> record_models
