@@ -447,6 +447,10 @@
     "callable": "model_query.Base.foo",
     "sources": [
       {
+        "port": "formal(x)",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+      },
+      {
         "port": "formal(self)",
         "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
       },

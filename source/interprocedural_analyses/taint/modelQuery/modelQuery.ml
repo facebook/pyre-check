@@ -49,7 +49,7 @@ let is_ancestor ~resolution ~is_transitive ancestor_class child_class =
     | ClassHierarchy.Untracked _ -> false
   else
     let parents = GlobalResolution.immediate_parents ~resolution child_class in
-    List.mem parents ancestor_class ~equal:String.equal
+    List.mem (child_class :: parents) ancestor_class ~equal:String.equal
 
 
 let rec callable_matches_constraint query_constraint ~resolution ~callable =

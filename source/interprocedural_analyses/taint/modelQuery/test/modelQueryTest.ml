@@ -734,7 +734,7 @@ let test_apply_rule context =
         rule_kind = AttributeModel;
       }
     ~attribute_name:"test.C.x"
-    ~expected:[];
+    ~expected:[source "Test"];
   ();
   assert_applied_rules_for_attribute
     ~source:{|
@@ -895,7 +895,7 @@ let test_apply_rule context =
         rule_kind = AttributeModel;
       }
     ~attribute_name:"test.C.x"
-    ~expected:[source "Test"];
+    ~expected:[];
   assert_applied_rules_for_attribute
     ~source:
       {|

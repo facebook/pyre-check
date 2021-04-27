@@ -189,7 +189,7 @@ ModelQuery(
 )
 ```
 
-The default behavior is that it will only match if the parent class is a direct subclass of the specified class. For example, with classes:
+The default behavior is that it will only match if the parent class is an instance of, or a direct subclass of the specified class. For example, with classes:
 ```python
 class C:
   x = ...
@@ -201,7 +201,7 @@ class E(D):
   z = ...
 ```
 
-the above query will only model the attribute `D.y`, since `D` is a direct subclass of `C`, but not `C` itself, or `E`, which is a sub-subclass of `C`.
+the above query will only model the attributes `C.z` and `D.y`, since `C` is considered to extend itself, and `D` is a direct subclass of `C`. However, it will not model `E.z`, since `E` is a sub-subclass of `C`.
 
 If you would like to model a class and all subclasses transitively, you can use the `is_transitive` flag to get this behavior.
 
