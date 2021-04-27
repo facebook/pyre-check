@@ -10,7 +10,7 @@ $local_decorator?Foo?foo$__original_function (fun) -> [decorator.Foo::sink_metho
 $local_decorator?Foo?foo$__wrapper (fun) -> [$local_decorator?Foo?foo$__original_function (fun)]
 $local_decorator?Foo?self_has_generic_type$__original_function (fun) -> [decorator.Foo::bar (method)]
 $local_decorator?Foo?self_has_generic_type$__wrapper (fun) -> [$local_decorator?Foo?self_has_generic_type$__original_function (fun)]
-$local_decorator?Foo?some_class_method$__original_function (fun) -> [__test_sink (fun)]
+$local_decorator?Foo?some_class_method$__original_function (fun) -> [decorator.Foo::sink_method (method) object::__init__ (method) object::__new__ (method)]
 $local_decorator?Foo?some_class_method$__wrapper (fun) -> [$local_decorator?Foo?some_class_method$__original_function (fun)]
 $local_decorator?foo$__original_function (fun) -> [print (fun)]
 $local_decorator?foo$__wrapper (fun) -> [$local_decorator?foo$__original_function (fun) __test_sink (fun)]

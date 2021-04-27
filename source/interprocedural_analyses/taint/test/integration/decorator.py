@@ -196,7 +196,7 @@ class Foo:
     @classmethod
     @with_logging_args_kwargs_no_sink
     def some_class_method(cls, x: str) -> None:
-        __test_sink(x)
+        cls().sink_method(x)
 
 
 def main() -> None:

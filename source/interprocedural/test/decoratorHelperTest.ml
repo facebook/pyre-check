@@ -1072,11 +1072,11 @@ let test_inline_decorators context =
       @classmethod
       def foo(cls, x: int) -> None:
 
-        def __original_function(cls, x: int) -> None:
+        def __original_function(cls: typing.Type[Foo], x: int) -> None:
           cls.some_class_method(x)
           cls().some_method(x)
 
-        def __wrapper(cls, x: int) -> None:
+        def __wrapper(cls: typing.Type[Foo], x: int) -> None:
           __args = (cls, x)
           __kwargs = {"cls": cls, "x": x}
           __test_sink(__args)

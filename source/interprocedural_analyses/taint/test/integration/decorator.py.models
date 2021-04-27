@@ -653,7 +653,7 @@
               },
               "resolves_to": [ "decorator.Foo.some_class_method" ],
               "port": "formal(x)",
-              "length": 3
+              "length": 4
             },
             "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
@@ -1179,7 +1179,7 @@
               },
               "resolves_to": [ "decorator.Foo.some_class_method.__wrapper" ],
               "port": "formal(x)",
-              "length": 2
+              "length": 3
             },
             "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
@@ -1200,11 +1200,16 @@
         "port": "formal(x)",
         "taint": [
           {
-            "root": {
-              "filename": "decorator.py",
-              "line": 199,
-              "start": 20,
-              "end": 21
+            "call": {
+              "position": {
+                "filename": "decorator.py",
+                "line": 199,
+                "start": 26,
+                "end": 27
+              },
+              "resolves_to": [ "decorator.Foo.sink_method" ],
+              "port": "formal(x)",
+              "length": 1
             },
             "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
@@ -1236,7 +1241,7 @@
                 "decorator.Foo.some_class_method.__original_function"
               ],
               "port": "formal(x)",
-              "length": 1
+              "length": 2
             },
             "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]

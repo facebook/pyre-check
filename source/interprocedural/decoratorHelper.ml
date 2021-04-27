@@ -179,8 +179,14 @@ let set_first_parameter_type
   =
   match parameters, parent with
   | { Node.value = { annotation; _ } as first_parameter; location } :: rest, Some parent
-    when (not (Define.is_class_method original_define))
-         && not (Define.is_static_method original_define) ->
+    when not (Define.is_static_method original_define) ->
+      let new_annotation =
+        if Define.is_class_method original_define then
+          get_item_call ~location "typing.Type" [from_reference ~location parent]
+          |> Node.create ~location
+        else
+          from_reference ~location parent
+      in
       {
         define with
         Define.signature =
@@ -192,8 +198,7 @@ let set_first_parameter_type
                 value =
                   {
                     first_parameter with
-                    annotation =
-                      Option.first_some annotation (Some (from_reference ~location parent));
+                    annotation = Option.first_some annotation (Some new_annotation);
                   };
               }
               :: rest;
