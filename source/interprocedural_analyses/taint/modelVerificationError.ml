@@ -44,6 +44,10 @@ module T = struct
       }
     | InvalidParameterExclude of Expression.t
     | InvalidExtendsIsTransitive of Expression.t
+    | InvalidModelQueryClauseArguments of {
+        callee: Expression.t;
+        arguments: Expression.Call.Argument.t list;
+      }
     | InvalidTaintAnnotation of {
         taint_annotation: Expression.t;
         reason: string;
@@ -130,6 +134,11 @@ let description error =
       Format.asprintf
         "The Extends is_transitive must be either True or False, got: `%s`."
         (Expression.show expression)
+  | InvalidModelQueryClauseArguments { callee; arguments } ->
+      Format.asprintf
+        "Unsupported arguments for callee `%s`: `%s`."
+        (Expression.show callee)
+        (List.map arguments ~f:Expression.Call.Argument.show |> String.concat ~sep:", ")
   | InvalidTaintAnnotation { taint_annotation; reason } ->
       Format.asprintf
         "`%s` is an invalid taint annotation: %s"
@@ -180,6 +189,7 @@ let code { kind; _ } =
   | InvalidModelQueryWhereClause _ -> 11
   | InvalidModelQueryModelClause _ -> 12
   | InvalidExtendsIsTransitive _ -> 13
+  | InvalidModelQueryClauseArguments _ -> 14
 
 
 let display { kind = error; path; location } =

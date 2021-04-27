@@ -1121,23 +1121,32 @@ let parse_where_clause ~path ~find_clause ({ Node.value; location } as expressio
                       _;
                     });
               _;
-            };
-          arguments =
-            [
+            } as callee;
+          arguments;
+        } -> (
+        match arguments with
+        | [
+         {
+           Call.Argument.value =
+             { Node.value = Expression.String { StringLiteral.value = class_name; _ }; _ };
+           _;
+         };
+        ] ->
+            let constraint_type =
+              match attribute with
+              | "equals" -> ModelQuery.Equals class_name
+              | "matches" -> Matches (Re2.create_exn class_name)
+              | _ -> failwith "impossible case"
+            in
+            Ok (ModelQuery.ParentConstraint constraint_type)
+        | _ ->
+            Error
               {
-                Call.Argument.value =
-                  { Node.value = Expression.String { StringLiteral.value = class_name; _ }; _ };
-                _;
-              };
-            ];
-        } ->
-        let constraint_type =
-          match attribute with
-          | "equals" -> ModelQuery.Equals class_name
-          | "matches" -> Matches (Re2.create_exn class_name)
-          | _ -> failwith "impossible case"
-        in
-        Ok (ModelQuery.ParentConstraint constraint_type)
+                ModelVerificationError.T.kind =
+                  ModelVerificationError.T.InvalidModelQueryClauseArguments { callee; arguments };
+                path;
+                location;
+              } )
     | Expression.Call
         {
           Call.callee =
@@ -1189,14 +1198,12 @@ let parse_where_clause ~path ~find_clause ({ Node.value; location } as expressio
             Ok (ModelQuery.ParentConstraint (Extends { class_name; is_transitive }))
         | _ ->
             Error
-              (invalid_model_error
-                 ~path
-                 ~location
-                 ~name:"model query"
-                 (Format.sprintf
-                    "Invalid arguments for `%s`: %s"
-                    (Expression.show callee)
-                    (List.map arguments ~f:Call.Argument.show |> String.concat ~sep:", "))) )
+              {
+                ModelVerificationError.T.kind =
+                  ModelVerificationError.T.InvalidModelQueryClauseArguments { callee; arguments };
+                path;
+                location;
+              } )
     | Expression.Call { Call.callee; arguments = _ } ->
         Error
           (invalid_model_error

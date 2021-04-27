@@ -1385,9 +1385,8 @@ let test_invalid_models context =
       )
     |}
     ~expect:
-      "Invalid model for `model query`: Invalid arguments for `parent.extends`: { \
-       Expression.Call.Argument.name = None; value = \"foo\" }, { Expression.Call.Argument.name = \
-       None; value = foobar }"
+      "Unsupported arguments for callee `parent.extends`: `{ Expression.Call.Argument.name = None; \
+       value = \"foo\" }, { Expression.Call.Argument.name = None; value = foobar }`."
     ();
   assert_invalid_model
     ~model_source:
@@ -1398,9 +1397,11 @@ let test_invalid_models context =
         model = ReturnModel(TaintSource[Test])
       )
     |}
-    ~expect:"Invalid model for `model query`: Unsupported callee: parent.matches"
+    ~expect:
+      "Unsupported arguments for callee `parent.matches`: `{ Expression.Call.Argument.name = None; \
+       value = \"foo\" }, { Expression.Call.Argument.name = (Some is_transitive); value = foobar \
+       }`."
     ();
-
   assert_valid_model
     ~model_source:"def test.partial_sink(x: PartialSink[Test[a]], y: PartialSink[Test[b]]): ..."
     ();

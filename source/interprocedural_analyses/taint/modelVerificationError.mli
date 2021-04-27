@@ -42,6 +42,10 @@ module T : sig
       }
     | InvalidParameterExclude of Expression.t
     | InvalidExtendsIsTransitive of Expression.t
+    | InvalidModelQueryClauseArguments of {
+        callee: Expression.t;
+        arguments: Expression.Call.Argument.t list;
+      }
     | InvalidTaintAnnotation of {
         taint_annotation: Expression.t;
         reason: string;
