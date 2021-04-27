@@ -77,15 +77,18 @@ let test_parse_buck_query_output context =
   ()
 
 
+let assert_mapping_equal ~context ~expected actual =
+  assert_equal
+    ~ctxt:context
+    ~cmp:[%compare.equal: (string * string) list]
+    ~printer:(fun items -> [%sexp_of: (string * string) list] items |> Sexp.to_string_hum)
+    (expected |> List.sort ~compare:[%compare: string * string])
+    (actual |> List.sort ~compare:[%compare: string * string])
+
+
 let test_parse_buck_build_output context =
   let assert_parsed ~expected output =
-    let actual = Builder.parse_buck_build_output output in
-    assert_equal
-      ~ctxt:context
-      ~cmp:[%compare.equal: (string * string) list]
-      ~printer:(fun items -> Sexp.to_string_hum ([%sexp_of: (string * string) list] items))
-      expected
-      actual
+    Builder.parse_buck_build_output output |> assert_mapping_equal ~context ~expected
   in
   let assert_not_parsed output =
     try
@@ -120,6 +123,58 @@ let test_parse_buck_build_output context =
   assert_not_parsed {| { "foo": { "bar": 42 } } |};
   assert_not_parsed {| { "foo": "derp", "bar": 42 } |};
   assert_not_parsed {| { "foo": [ "bar" ] } |};
+  ()
+
+
+let test_load_partial_build_map context =
+  let assert_loaded ~expected input =
+    Yojson.Safe.from_string input
+    |> Builder.load_partial_build_map_from_json
+    |> BuildMap.Partial.to_alist
+    |> assert_mapping_equal ~context ~expected
+  in
+  assert_loaded
+    {| {
+      "sources": {
+        "foo.py": "source/foo.py"
+      },
+      "dependencies": {
+        "bar.py": "source/bar.py"
+      }
+  }|}
+    ~expected:["foo.py", "source/foo.py"; "bar.py", "source/bar.py"];
+  (* Special-cased entries are ignored. *)
+  assert_loaded
+    {| {
+      "sources": {
+        "foo.py": "source/foo.py",
+        "__manifest__.py": "generated/__manifest__.py"
+      },
+      "dependencies": {
+      }
+  }|}
+    ~expected:["foo.py", "source/foo.py"];
+  assert_loaded
+    {| {
+      "sources": {
+        "foo.py": "source/foo.py",
+        "__test_main__.py": "generated/__test_main__.py"
+      },
+      "dependencies": {
+      }
+  }|}
+    ~expected:["foo.py", "source/foo.py"];
+  assert_loaded
+    {| {
+      "sources": {
+        "foo.py": "source/foo.py",
+        "__test_modules__.py": "generated/__test_modules__.py"
+      },
+      "dependencies": {
+        "__test_modules__.py": "generated/__test_modules__.py"
+      }
+  }|}
+    ~expected:["foo.py", "source/foo.py"];
   ()
 
 
@@ -354,6 +409,7 @@ let () =
   >::: [
          "parse_buck_query_output" >:: test_parse_buck_query_output;
          "parse_buck_build_output" >:: test_parse_buck_build_output;
+         "load_parital_build_map" >:: test_load_partial_build_map;
          "merge_build_map" >:: test_merge_build_map;
          "lookup_source" >:: test_lookup_source;
          "lookup_artifact" >:: test_lookup_artifact;

@@ -107,6 +107,10 @@ module BuildMap : sig
     (** Create a partial build map from a JSON. The JSON must conform to Buck's Python source-db
         format. Raise an exception if the input JSON is malformed. *)
 
+    val filter : t -> f:(key:string -> data:string -> bool) -> t
+    (** [filter ~f m] returns a new partial build map [m'] that contains all mappings in [m] except
+        the ones on which [f ~key ~data] returns [false]. *)
+
     val merge : t -> t -> MergeResult.t
     (** Given two partial build maps [l] and [r], [merge l r] returns [MergeResult.Ok m] where [m]
         is a new partial build map containing items in both maps, if the merging process succeeds.

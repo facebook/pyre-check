@@ -60,6 +60,8 @@ module Partial = struct
     |> of_alist_ignoring_duplicates
 
 
+  let filter = Hashtbl.filteri
+
   exception FoundIncompatibleItem of MergeResult.IncompatibleItem.t
 
   let merge left right =

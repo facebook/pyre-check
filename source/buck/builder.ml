@@ -129,16 +129,27 @@ let parse_buck_build_output query_output =
       raise (JsonError message)
 
 
+let load_partial_build_map_from_json json =
+  let filter_mapping ~key ~data:_ =
+    match key with
+    | "__manifest__.py"
+    | "__test_main__.py"
+    | "__test_modules__.py" ->
+        (* These files are not useful for type checking but create many conflicts when merging
+           different targets. *)
+        false
+    | _ -> true
+  in
+  BuildMap.Partial.of_json_exn_ignoring_duplicates json |> BuildMap.Partial.filter ~f:filter_mapping
+
+
 let load_partial_build_map path =
   let open Lwt.Infix in
   let path = Path.absolute path in
   Lwt_io.(with_file ~mode:Input path read)
   >>= fun content ->
   try
-    let build_map =
-      BuildMap.Partial.of_json_exn_ignoring_duplicates (Yojson.Safe.from_string ~fname:path content)
-    in
-    Lwt.return build_map
+    Yojson.Safe.from_string ~fname:path content |> load_partial_build_map_from_json |> Lwt.return
   with
   | Yojson.Safe.Util.Type_error (message, _)
   | Yojson.Safe.Util.Undefined (message, _) ->
