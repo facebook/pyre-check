@@ -614,6 +614,60 @@
   }
 }
 {
+  "kind": "issue",
+  "data": {
+    "callable": "decorator.main",
+    "callable_line": 202,
+    "code": 5002,
+    "line": 228,
+    "start": 26,
+    "end": 41,
+    "filename": "decorator.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "decorator.py",
+              "line": 228,
+              "start": 26,
+              "end": 41
+            },
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "features": [ { "always-via": "special_source" } ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "call": {
+              "position": {
+                "filename": "decorator.py",
+                "line": 228,
+                "start": 26,
+                "end": 41
+              },
+              "resolves_to": [ "decorator.Foo.some_class_method" ],
+              "port": "formal(x)",
+              "length": 3
+            },
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
+    ]
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable":

@@ -135,6 +135,12 @@ let test_inline_decorators context =
     @fails_to_apply
     def foo(z: str) -> None:
       print(z)
+
+    class Foo:
+      @classmethod
+      @fails_to_apply
+      def some_method(cls, z: str) -> None:
+        print(z)
   |}
     {|
     from builtins import __test_sink, __test_source
@@ -146,6 +152,12 @@ let test_inline_decorators context =
     @fails_to_apply
     def foo(z: str) -> None:
       print(z)
+
+    class Foo:
+      @classmethod
+      @fails_to_apply
+      def some_method(cls, z: str) -> None:
+        print(z)
   |};
   assert_inlined
     {|
@@ -1002,8 +1014,7 @@ let test_inline_decorators context =
 
         return __wrapper(self, other, x)
   |};
-  (* TODO(T69755379): Correctly inline decorator used on a classmethod. Right now, we're missing the
-     @classmethod decorator. *)
+  (* Decorator used on a classmethod. *)
   assert_inlined
     {|
     from typing import Callable
@@ -1017,6 +1028,9 @@ let test_inline_decorators context =
 
       return inner
 
+    def fails_to_apply(f):
+      return f
+
     class Foo:
       def some_method(self, x: int) -> None:
         print(self, x)
@@ -1027,6 +1041,7 @@ let test_inline_decorators context =
 
       @classmethod
       @with_logging
+      @fails_to_apply
       def foo(cls, x: int) -> None:
         cls.some_class_method(x)
         cls().some_method(x)
@@ -1043,6 +1058,9 @@ let test_inline_decorators context =
 
       return inner
 
+    def fails_to_apply(f):
+      return f
+
     class Foo:
       def some_method(self, x: int) -> None:
         print(self, x)
@@ -1051,6 +1069,7 @@ let test_inline_decorators context =
       def some_class_method(cls, x: int) -> None:
         print(cls, x)
 
+      @classmethod
       def foo(cls, x: int) -> None:
 
         def __original_function(cls, x: int) -> None:

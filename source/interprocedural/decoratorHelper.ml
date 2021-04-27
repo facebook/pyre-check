@@ -600,41 +600,73 @@ let inline_decorators ~environment:_ ~decorator_bodies source =
         | {
          Node.value =
            Statement.Define
-             ({ signature = { name = { Node.value = name; _ }; decorators; _ }; _ } as define);
+             ( {
+                 signature = { name = { Node.value = name; _ }; decorators = original_decorators; _ };
+                 _;
+               } as define );
          location;
-        } ->
-            let postprocess decorated_define =
-              let statement = { statement with value = Statement.Define decorated_define } in
-              Source.create [statement]
-              |> Preprocessing.qualify
-              |> Preprocessing.populate_nesting_defines
-              |> Preprocessing.populate_captures
-              |> Source.statements
-              |> function
-              | [statement] -> Some statement
-              | _ -> None
-            in
-            let decorator_data_list =
+        } -> (
+            let inlinable_decorators =
               List.filter_map
-                decorators
+                original_decorators
                 ~f:(fun { Decorator.name = { Node.value = decorator_name; _ }; arguments } ->
                   Map.find decorator_bodies decorator_name
                   >>= extract_decorator_data ~is_decorator_factory:(Option.is_some arguments))
             in
-            let apply_decorator_with_qualifier index define_sofar decorator_data =
-              let qualifier =
-                Reference.combine
-                  name
-                  (Reference.create_from_list
-                     (List.init
-                        (List.length decorator_data_list - index - 1)
-                        ~f:(fun _ -> inlined_original_function_name)))
-              in
-              inline_decorator_in_define ~location ~qualifier ~define:define_sofar decorator_data
-            in
-            List.foldi (List.rev decorator_data_list) ~init:define ~f:apply_decorator_with_qualifier
-            |> postprocess
-            |> Option.value ~default:statement
+            match inlinable_decorators with
+            | [] -> statement
+            | _ ->
+                let postprocess
+                    ({ Define.signature = { decorators; _ } as signature; _ } as decorated_define)
+                  =
+                  let signature =
+                    if Define.is_class_method define then
+                      {
+                        signature with
+                        decorators =
+                          {
+                            Decorator.name =
+                              Node.create_with_default_location (Reference.create "classmethod");
+                            arguments = None;
+                          }
+                          :: decorators;
+                      }
+                    else
+                      signature
+                  in
+                  let statement =
+                    { statement with value = Statement.Define { decorated_define with signature } }
+                  in
+                  Source.create [statement]
+                  |> Preprocessing.qualify
+                  |> Preprocessing.populate_nesting_defines
+                  |> Preprocessing.populate_captures
+                  |> Source.statements
+                  |> function
+                  | [statement] -> Some statement
+                  | _ -> None
+                in
+                let apply_decorator_with_qualifier index define_sofar decorator_data =
+                  let qualifier =
+                    Reference.combine
+                      name
+                      (Reference.create_from_list
+                         (List.init
+                            (List.length inlinable_decorators - index - 1)
+                            ~f:(fun _ -> inlined_original_function_name)))
+                  in
+                  inline_decorator_in_define
+                    ~location
+                    ~qualifier
+                    ~define:define_sofar
+                    decorator_data
+                in
+                List.foldi
+                  (List.rev inlinable_decorators)
+                  ~init:define
+                  ~f:apply_decorator_with_qualifier
+                |> postprocess
+                |> Option.value ~default:statement )
         | _ -> statement
       in
       (), [statement]
