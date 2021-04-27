@@ -788,15 +788,11 @@ end
 
 let name = "Inference"
 
-let run_local
+(* Perform a local type analysis to infer parameter and return type annotations. *)
+let infer_local
     ~configuration
     ~global_resolution
-    ~source:
-      ( {
-          Source.source_path = { SourcePath.qualifier; relative; _ };
-          metadata = { local_mode; ignore_codes; _ };
-          _;
-        } as source )
+    ~source:{ Source.source_path = { SourcePath.qualifier; relative; _ }; _ }
     ~define:
       ( {
           Node.location;
@@ -857,22 +853,7 @@ let run_local
       >>| print_state "Entry"
       >>| State.check_entry
     in
-    let errors =
-      let errors = exit >>| State.errors |> Option.value ~default:[] in
-      if configuration.debug then
-        errors
-      else
-        let mode = Source.mode ~configuration ~local_mode in
-        let keep_error error = not (Error.suppress ~mode ~ignore_codes error) in
-        List.filter ~f:keep_error errors
-    in
-    let dequalify_map = Preprocessing.dequalify_map source in
-    errors
-    |> List.map ~f:(Error.dequalify dequalify_map ~resolution:global_resolution)
-    |> List.map ~f:(fun ({ Error.kind; _ } as error) ->
-           { error with kind = Error.weaken_literals kind })
-    |> Error.join_at_source ~resolution:global_resolution
-    |> List.sort ~compare:Error.compare
+    exit >>| State.errors |> Option.value ~default:[]
   with
   | ClassHierarchy.Untracked annotation ->
       Statistics.event
@@ -891,20 +872,123 @@ let run_local
         []
 
 
+(* Infer parameter types of an overriding method when the base method is annotated. *)
+let infer_parameters_from_parent
+    ~global_resolution
+    ~source:{ Source.source_path = { SourcePath.qualifier; _ }; _ }
+    ~define:({ Node.value = { Define.signature = { parent; parameters; _ }; _ }; _ } as define)
+  =
+  let overridden_callable =
+    parent
+    >>| Reference.show
+    >>= GlobalResolution.overrides
+          ~resolution:global_resolution
+          ~name:(Define.unqualified_name (Node.value define))
+  in
+  let missing_parameter_errors overridden_attribute =
+    match Annotation.annotation (AnnotatedAttribute.annotation overridden_attribute) with
+    | Type.Parametric
+        {
+          name = "BoundMethod";
+          parameters =
+            [
+              Single
+                (Type.Callable
+                  { implementation = { parameters = Defined overridden_parameters; _ }; _ });
+              _;
+            ];
+        }
+    | Type.Callable
+        { Type.Callable.implementation = { parameters = Defined overridden_parameters; _ }; _ } ->
+        let should_annotate name =
+          match Identifier.sanitized name with
+          | "self"
+          | "cls" ->
+              false
+          | _ -> true
+        in
+        let missing_parameter_error = function
+          | `Both (overridden_parameter, overriding_parameter) -> (
+              match
+                ( Type.Callable.RecordParameter.annotation overridden_parameter,
+                  Type.Callable.RecordParameter.annotation overriding_parameter )
+              with
+              | ( Some overridden_annotation,
+                  Some { Node.value = { Parameter.name; annotation = None; _ }; location } )
+                when (not (Type.is_any overridden_annotation))
+                     && (not (Type.contains_variable overridden_annotation))
+                     && should_annotate name ->
+                  Some
+                    (Error.create
+                       ~location:(Location.with_module ~qualifier location)
+                       ~kind:
+                         (Error.MissingParameterAnnotation
+                            {
+                              name = Reference.create name;
+                              annotation = Some overridden_annotation;
+                              given_annotation = None;
+                              evidence_locations = [];
+                              thrown_at_source = true;
+                            })
+                       ~define)
+              | _ -> None )
+          | `Left _ -> None
+          | `Right _ -> None
+        in
+        let overriding_parameters =
+          let to_type_parameter ({ Node.value = { Parameter.name; _ }; _ } as parameter) =
+            { Type.Callable.RecordParameter.name; annotation = parameter; default = false }
+          in
+          List.map parameters ~f:to_type_parameter |> Type.Callable.Parameter.create
+        in
+        Type.Callable.Parameter.zip overridden_parameters overriding_parameters
+        |> List.filter_map ~f:missing_parameter_error
+    | _ -> []
+  in
+  overridden_callable >>| missing_parameter_errors |> Option.value ~default:[]
+
+
+let merge_errors
+    ~configuration:({ Configuration.Analysis.debug; _ } as configuration)
+    ~global_resolution
+    ~source:({ Source.metadata = { local_mode; ignore_codes; _ }; _ } as source)
+    errors
+  =
+  let errors =
+    if debug then
+      errors
+    else
+      let mode = Source.mode ~configuration ~local_mode in
+      let keep_error error = not (Error.suppress ~mode ~ignore_codes error) in
+      List.filter ~f:keep_error errors
+  in
+  let dequalify_map = Preprocessing.dequalify_map source in
+  errors
+  |> List.map ~f:(Error.dequalify dequalify_map ~resolution:global_resolution)
+  |> List.map ~f:(fun ({ Error.kind; _ } as error) ->
+         { error with kind = Error.weaken_literals kind })
+  |> Error.join_at_source ~resolution:global_resolution
+  |> List.sort ~compare:Error.compare
+
+
+let infer_for_define ~configuration ~global_resolution ~source ~define =
+  let local_errors = infer_local ~configuration ~global_resolution ~source ~define in
+  let global_errors = infer_parameters_from_parent ~global_resolution ~source ~define in
+  let errors = List.rev_append global_errors local_errors in
+  merge_errors ~configuration ~global_resolution ~source errors
+
+
 let run
     ~configuration
     ~global_resolution
     ~source:({ Source.source_path = { relative; is_stub; _ }; _ } as source)
   =
   Log.debug "Checking %s..." relative;
-  let check define = run_local ~configuration ~global_resolution ~source ~define in
+  let check define = infer_for_define ~configuration ~global_resolution ~source ~define in
   if is_stub then
     []
   else
     let results = source |> Preprocessing.defines ~include_toplevels:true |> List.map ~f:check in
-    let errors =
-      List.concat results
-      |> Error.join_at_source ~resolution:global_resolution
-      |> List.sort ~compare:Error.compare
-    in
-    errors
+    List.concat results
+    |> Error.join_at_source ~resolution:global_resolution
+    |> List.sort ~compare:Error.compare

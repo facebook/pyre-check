@@ -30,8 +30,7 @@ include TypeInferenceResult.Register (struct
       match maybe_source with
       | None -> []
       | Some source ->
-          let result = Inference.run_local ~configuration ~global_resolution ~source ~define in
-          result
+          Inference.infer_for_define ~configuration ~global_resolution ~source ~define
           |> List.map
                ~f:
                  (AnalysisError.instantiate
