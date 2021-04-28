@@ -45,4 +45,4 @@ val analyze
   environment:TypeEnvironment.ReadOnly.t ->
   qualifiers:Reference.t list ->
   unit ->
-  Interprocedural.Error.t list
+  unit

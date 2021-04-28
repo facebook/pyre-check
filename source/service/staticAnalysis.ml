@@ -467,6 +467,51 @@ let record_overrides_for_qualifiers
   cap_override_result
 
 
+let report_results
+    ~initial_models_callables
+    ~callables_to_analyze
+    ~scheduler
+    ~static_analysis_configuration:
+      {
+        Configuration.StaticAnalysis.result_json_path;
+        configuration = { local_root; show_error_traces; _ };
+        _;
+      }
+    ~filename_lookup
+    ~analyses
+    ~skipped_overrides
+    ~iterations
+  =
+  let all_callables =
+    Callable.Set.of_list (List.rev_append initial_models_callables callables_to_analyze)
+  in
+  let errors = Interprocedural.Analysis.extract_errors scheduler callables_to_analyze in
+  Log.info "Found %d issues" (List.length errors);
+  ( match result_json_path with
+  | Some result_directory ->
+      Interprocedural.Analysis.save_results_to_directory
+        ~result_directory
+        ~local_root
+        ~filename_lookup
+        ~analyses
+        ~skipped_overrides
+        all_callables
+  | None ->
+      List.map errors ~f:(fun error ->
+          Interprocedural.Error.instantiate ~show_error_traces ~lookup:filename_lookup error
+          |> Interprocedural.Error.Instantiated.to_yojson)
+      |> (fun result -> Yojson.Safe.pretty_to_string (`List result))
+      |> Log.print "%s" );
+  match iterations with
+  | Some iterations ->
+      [
+        "pysa fixpoint iterations", iterations;
+        "pysa heap size", SharedMem.heap_size ();
+        "pysa issues", List.length errors;
+      ]
+  | None -> []
+
+
 let analyze
     ~scheduler
     ~analysis_kind
@@ -637,53 +682,38 @@ let analyze
     (List.length callables_to_analyze);
   let callables_to_analyze = List.rev_append override_targets callables_to_analyze in
   let timer = Timer.start () in
-  let run_analysis () =
-    let iterations =
-      Interprocedural.Analysis.compute_fixpoint
-        ~scheduler
-        ~environment
-        ~analyses
-        ~dependencies
-        ~filtered_callables
-        ~all_callables:callables_to_analyze
-        Interprocedural.Fixpoint.Epoch.initial
-    in
-    let errors = Interprocedural.Analysis.extract_errors scheduler callables_to_analyze in
+  let compute_fixpoint () =
+    Interprocedural.Analysis.compute_fixpoint
+      ~scheduler
+      ~environment
+      ~analyses
+      ~dependencies
+      ~filtered_callables
+      ~all_callables:callables_to_analyze
+      Interprocedural.Fixpoint.Epoch.initial
+  in
+  let report_results iterations =
+    report_results
+      ~initial_models_callables
+      ~callables_to_analyze
+      ~scheduler
+      ~static_analysis_configuration
+      ~filename_lookup
+      ~analyses
+      ~skipped_overrides
+      ~iterations
+  in
+  try
+    let iterations = compute_fixpoint () in
     Log.info "Fixpoint iterations: %d" iterations;
+    let analysis_stats_integers = report_results (Some iterations) in
     Statistics.performance
       ~name:"Analysis fixpoint complete"
       ~phase_name:"Static analysis fixpoint"
       ~timer
-      ~integers:
-        [
-          "pysa fixpoint iterations", iterations;
-          "pysa heap size", SharedMem.heap_size ();
-          "pysa issues", List.length errors;
-        ]
-      ();
-    Log.info "Found %d issues" (List.length errors);
-    errors
-  in
-  let save_results () =
-    let all_callables =
-      Callable.Set.of_list (List.rev_append initial_models_callables callables_to_analyze)
-    in
-    Interprocedural.Analysis.save_results
-      ~configuration:static_analysis_configuration
-      ~filename_lookup
-      ~analyses
-      ~skipped_overrides
-      all_callables
-  in
-  try
-    let errors = run_analysis () in
-    save_results ();
-    (* If saving to a file, don't return errors. Thousands of errors on output is inconvenient *)
-    if Option.is_some static_analysis_configuration.result_json_path then
-      []
-    else
-      errors
+      ~integers:analysis_stats_integers
+      ()
   with
   | exn ->
-      save_results ();
+      let _ = report_results None in
       raise exn

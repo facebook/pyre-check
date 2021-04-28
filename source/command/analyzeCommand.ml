@@ -171,26 +171,24 @@ let run_analysis
                   ast_environment
                   path_reference
           in
-          let errors =
-            Service.StaticAnalysis.analyze
-              ~scheduler
-              ~analysis_kind:(get_analysis_kind analysis)
-              ~configuration:
-                {
-                  Configuration.StaticAnalysis.configuration;
-                  result_json_path;
-                  dump_call_graph;
-                  verify_models = not no_verify;
-                  rule_filter;
-                  find_missing_flows;
-                  dump_model_query_results;
-                  use_cache;
-                }
-              ~filename_lookup
-              ~environment:(Analysis.TypeEnvironment.read_only environment)
-              ~qualifiers
-              ()
-          in
+          Service.StaticAnalysis.analyze
+            ~scheduler
+            ~analysis_kind:(get_analysis_kind analysis)
+            ~configuration:
+              {
+                Configuration.StaticAnalysis.configuration;
+                result_json_path;
+                dump_call_graph;
+                verify_models = not no_verify;
+                rule_filter;
+                find_missing_flows;
+                dump_model_query_results;
+                use_cache;
+              }
+            ~filename_lookup
+            ~environment:(Analysis.TypeEnvironment.read_only environment)
+            ~qualifiers
+            ();
           let { Caml.Gc.minor_collections; major_collections; compactions; _ } = Caml.Gc.stat () in
           Statistics.performance
             ~name:"analyze"
@@ -201,13 +199,7 @@ let run_analysis
                 "gc_major_collections", major_collections;
                 "gc_compactions", compactions;
               ]
-            ();
-          (* Print results. *)
-          List.map errors ~f:(fun error ->
-              Interprocedural.Error.instantiate ~show_error_traces ~lookup:filename_lookup error
-              |> Interprocedural.Error.Instantiated.to_yojson)
-          |> (fun result -> Yojson.Safe.pretty_to_string (`List result))
-          |> Log.print "%s"))
+            ()))
     |> Scheduler.run_process
   with
   | error ->

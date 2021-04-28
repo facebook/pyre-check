@@ -773,8 +773,9 @@ let emit_externalization ~filename_lookup kind emitter callable =
   externalize ~filename_lookup kind callable |> List.iter ~f:emitter
 
 
-let save_results
-    ~configuration:{ Configuration.StaticAnalysis.result_json_path; configuration; _ }
+let save_results_to_directory
+    ~result_directory
+    ~local_root
     ~filename_lookup
     ~analyses
     ~skipped_overrides
@@ -790,69 +791,66 @@ let save_results
         seen_element := true;
         Json.to_outbuf out_buffer json )
   in
-  match result_json_path with
-  | None -> ()
-  | Some directory ->
-      let timer = Timer.start () in
-      let models_path analysis_name = Format.sprintf "%s-output.json" analysis_name in
-      let root = configuration.local_root |> Path.absolute in
-      let save_models (Result.Analysis { Result.analysis; kind }) =
-        let kind = Result.Kind.abstract kind in
-        let module Analysis = (val analysis) in
-        let filename = models_path Analysis.name in
-        let output_path = Path.append directory ~element:filename in
-        let out_channel = open_out (Path.absolute output_path) in
-        let out_buffer = Bi_outbuf.create_channel_writer out_channel in
-        let array_emitter = emit_json_array_elements out_buffer in
-        let header_with_version =
-          `Assoc ["file_version", `Int 2; "config", `Assoc ["repo", `String root]]
-        in
-        Json.to_outbuf out_buffer header_with_version;
-        Bi_outbuf.add_string out_buffer "\n";
-        Callable.Set.iter (emit_externalization ~filename_lookup kind array_emitter) all_callables;
-        Bi_outbuf.flush_output_writer out_buffer;
-        close_out out_channel
+  let timer = Timer.start () in
+  let models_path analysis_name = Format.sprintf "%s-output.json" analysis_name in
+  let root = local_root |> Path.absolute in
+  let save_models (Result.Analysis { Result.analysis; kind }) =
+    let kind = Result.Kind.abstract kind in
+    let module Analysis = (val analysis) in
+    let filename = models_path Analysis.name in
+    let output_path = Path.append result_directory ~element:filename in
+    let out_channel = open_out (Path.absolute output_path) in
+    let out_buffer = Bi_outbuf.create_channel_writer out_channel in
+    let array_emitter = emit_json_array_elements out_buffer in
+    let header_with_version =
+      `Assoc ["file_version", `Int 2; "config", `Assoc ["repo", `String root]]
+    in
+    Json.to_outbuf out_buffer header_with_version;
+    Bi_outbuf.add_string out_buffer "\n";
+    Callable.Set.iter (emit_externalization ~filename_lookup kind array_emitter) all_callables;
+    Bi_outbuf.flush_output_writer out_buffer;
+    close_out out_channel
+  in
+  let analyses = List.map ~f:Result.get_abstract_analysis analyses in
+  let save_metadata (Result.Analysis { Result.analysis; _ }) =
+    let module Analysis = (val analysis) in
+    let filename = Format.sprintf "%s-metadata.json" Analysis.name in
+    let output_path = Path.append result_directory ~element:filename in
+    let out_channel = open_out (Path.absolute output_path) in
+    let out_buffer = Bi_outbuf.create_channel_writer out_channel in
+    let filename_spec = models_path Analysis.name in
+    let statistics =
+      let global_statistics =
+        `Assoc
+          [
+            ( "skipped_overrides",
+              `List
+                (List.map skipped_overrides ~f:(fun override -> `String (Reference.show override)))
+            );
+          ]
       in
-      let analyses = List.map ~f:Result.get_abstract_analysis analyses in
-      let save_metadata (Result.Analysis { Result.analysis; _ }) =
-        let module Analysis = (val analysis) in
-        let filename = Format.sprintf "%s-metadata.json" Analysis.name in
-        let output_path = Path.append directory ~element:filename in
-        let out_channel = open_out (Path.absolute output_path) in
-        let out_buffer = Bi_outbuf.create_channel_writer out_channel in
-        let filename_spec = models_path Analysis.name in
-        let statistics =
-          let global_statistics =
-            `Assoc
-              [
-                ( "skipped_overrides",
-                  `List
-                    (List.map skipped_overrides ~f:(fun override ->
-                         `String (Reference.show override))) );
-              ]
-          in
-          Json.Util.combine global_statistics (Analysis.statistics ())
-        in
-        let toplevel_metadata =
-          `Assoc
-            [
-              "filename_spec", `String filename_spec;
-              "root", `String root;
-              "tool", `String "pysa";
-              "version", `String (Version.version ());
-              "stats", statistics;
-            ]
-        in
-        let analysis_metadata = Analysis.metadata () in
-        Json.Util.combine toplevel_metadata analysis_metadata |> Json.to_outbuf out_buffer;
-        Bi_outbuf.flush_output_writer out_buffer;
-        close_out out_channel
-      in
-      List.iter analyses ~f:save_models;
-      List.iter analyses ~f:save_metadata;
-      Log.info "Analysis results were written to `%s`." (Path.absolute directory);
-      Statistics.performance
-        ~name:"Wrote analysis results"
-        ~phase_name:"Writing analysis results"
-        ~timer
-        ()
+      Json.Util.combine global_statistics (Analysis.statistics ())
+    in
+    let toplevel_metadata =
+      `Assoc
+        [
+          "filename_spec", `String filename_spec;
+          "root", `String root;
+          "tool", `String "pysa";
+          "version", `String (Version.version ());
+          "stats", statistics;
+        ]
+    in
+    let analysis_metadata = Analysis.metadata () in
+    Json.Util.combine toplevel_metadata analysis_metadata |> Json.to_outbuf out_buffer;
+    Bi_outbuf.flush_output_writer out_buffer;
+    close_out out_channel
+  in
+  List.iter analyses ~f:save_models;
+  List.iter analyses ~f:save_metadata;
+  Log.info "Analysis results were written to `%s`." (Path.absolute result_directory);
+  Statistics.performance
+    ~name:"Wrote analysis results"
+    ~phase_name:"Writing analysis results"
+    ~timer
+    ()

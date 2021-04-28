@@ -67,8 +67,9 @@ val externalize
 
 val extract_errors : Scheduler.t -> Callable.t list -> InterproceduralError.t list
 
-val save_results
-  :  configuration:Configuration.StaticAnalysis.t ->
+val save_results_to_directory
+  :  result_directory:PyrePath.t ->
+  local_root:PyrePath.t ->
   filename_lookup:(Ast.Reference.t -> string option) ->
   analyses:AnalysisKind.abstract list ->
   skipped_overrides:Ast.Reference.t list ->
