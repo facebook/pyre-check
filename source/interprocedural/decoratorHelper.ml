@@ -141,7 +141,7 @@ let requalify_define ~old_qualifier ~new_qualifier define =
   | _ -> failwith "expected define"
 
 
-let convert_parameter_to_argument { Node.value = { Parameter.name; _ }; location } =
+let convert_parameter_to_argument ~location { Node.value = { Parameter.name; _ }; _ } =
   let name_expression name =
     Expression.Name (create_name ~location name) |> Node.create ~location
   in
@@ -163,7 +163,10 @@ let create_function_call_to ~location ~callee_name { Define.Signature.parameters
           |> Node.create ~location;
         arguments =
           List.map parameters ~f:(fun parameter ->
-              { Call.Argument.name = None; value = convert_parameter_to_argument parameter });
+              {
+                Call.Argument.name = None;
+                value = convert_parameter_to_argument ~location parameter;
+              });
       }
   in
   if async then Expression.Await (Node.create ~location call) else call
@@ -212,9 +215,14 @@ type decorator_data = {
   helper_defines: Define.t list;
   higher_order_function_parameter_name: Identifier.t;
   decorator_reference: Reference.t;
+  decorator_call_location: Location.t;
 }
 
-let extract_decorator_data ~is_decorator_factory ({ Define.body; _ } as decorator_define) =
+let extract_decorator_data
+    ~decorator_call_location
+    ~is_decorator_factory
+    ({ Define.body; _ } as decorator_define)
+  =
   let get_nested_defines body =
     List.filter_map body ~f:(function
         | { Node.value = Statement.Define wrapper_define; _ } -> Some wrapper_define
@@ -238,8 +246,8 @@ let extract_decorator_data ~is_decorator_factory ({ Define.body; _ } as decorato
   in
   let extract_decorator_data
       {
-        Define.body;
-        signature = { parameters; name = { Node.value = decorator_reference; _ }; _ };
+        Define.signature = { parameters; name = { Node.value = decorator_reference; _ }; _ };
+        body;
         _;
       }
     =
@@ -260,6 +268,7 @@ let extract_decorator_data ~is_decorator_factory ({ Define.body; _ } as decorato
             helper_defines;
             higher_order_function_parameter_name = name;
             decorator_reference;
+            decorator_call_location;
           }
     | _ -> None
   in
@@ -274,7 +283,7 @@ let extract_decorator_data ~is_decorator_factory ({ Define.body; _ } as decorato
 let make_args_assignment_from_parameters ~args_local_variable_name parameters =
   let location = Location.any in
   let elements =
-    List.map parameters ~f:convert_parameter_to_argument
+    List.map parameters ~f:(convert_parameter_to_argument ~location)
     |> List.filter_map ~f:(function
            | { Node.value = Expression.Starred (Twice _); _ } -> None
            | element -> Some element)
@@ -295,7 +304,7 @@ let make_args_assignment_from_parameters ~args_local_variable_name parameters =
 let make_kwargs_assignment_from_parameters ~kwargs_local_variable_name parameters =
   let location = Location.any in
   let parameter_to_keyword_or_entry parameter =
-    match convert_parameter_to_argument parameter with
+    match convert_parameter_to_argument ~location parameter with
     | { Node.value = Expression.Starred (Twice keyword); _ } -> `Fst keyword
     | { Node.value = Expression.Starred (Once _); _ } -> `Snd ()
     | argument ->
@@ -492,6 +501,7 @@ let inline_decorator_in_define
       helper_defines;
       higher_order_function_parameter_name;
       decorator_reference;
+      decorator_call_location;
     }
   =
   let decorator_reference = Reference.delocalize decorator_reference in
@@ -564,7 +574,7 @@ let inline_decorator_in_define
         expression =
           Some
             ( create_function_call_to
-                ~location
+                ~location:decorator_call_location
                 ~callee_name:inlined_wrapper_define_name
                 inlined_wrapper_define.signature
             |> Node.create ~location );
@@ -606,9 +616,16 @@ let inline_decorators ~environment:_ ~decorator_bodies source =
             let inlinable_decorators =
               List.filter_map
                 original_decorators
-                ~f:(fun { Decorator.name = { Node.value = decorator_name; _ }; arguments } ->
+                ~f:(fun {
+                          Decorator.name =
+                            { Node.value = decorator_name; location = decorator_call_location };
+                          arguments;
+                        }
+                        ->
                   Map.find decorator_bodies decorator_name
-                  >>= extract_decorator_data ~is_decorator_factory:(Option.is_some arguments))
+                  >>= extract_decorator_data
+                        ~decorator_call_location
+                        ~is_decorator_factory:(Option.is_some arguments))
             in
             match inlinable_decorators with
             | [] -> statement

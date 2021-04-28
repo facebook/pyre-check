@@ -706,9 +706,9 @@
             "call": {
               "position": {
                 "filename": "decorator.py",
-                "line": 189,
-                "start": 18,
-                "end": 19
+                "line": 186,
+                "start": 5,
+                "end": 37
               },
               "resolves_to": [ "decorator.Foo.bar.__wrapper" ],
               "port": "formal(x)",
@@ -726,9 +726,9 @@
             "call": {
               "position": {
                 "filename": "decorator.py",
-                "line": 189,
-                "start": 12,
-                "end": 16
+                "line": 186,
+                "start": 5,
+                "end": 37
               },
               "resolves_to": [ "decorator.Foo.bar.__wrapper" ],
               "port": "formal(self)",
@@ -756,9 +756,9 @@
             "call": {
               "position": {
                 "filename": "decorator.py",
-                "line": 189,
-                "start": 18,
-                "end": 19
+                "line": 187,
+                "start": 5,
+                "end": 29
               },
               "resolves_to": [
                 "decorator.Foo.bar.__original_function.__wrapper"
@@ -778,9 +778,9 @@
             "call": {
               "position": {
                 "filename": "decorator.py",
-                "line": 189,
-                "start": 12,
-                "end": 16
+                "line": 187,
+                "start": 5,
+                "end": 29
               },
               "resolves_to": [
                 "decorator.Foo.bar.__original_function.__wrapper"
@@ -850,9 +850,9 @@
             "call": {
               "position": {
                 "filename": "decorator.py",
-                "line": 189,
-                "start": 18,
-                "end": 19
+                "line": 75,
+                "start": 8,
+                "end": 9
               },
               "resolves_to": [ "decorator.Foo.bar.__original_function" ],
               "port": "formal(x)",
@@ -870,9 +870,9 @@
             "call": {
               "position": {
                 "filename": "decorator.py",
-                "line": 189,
-                "start": 12,
-                "end": 16
+                "line": 75,
+                "start": 8,
+                "end": 9
               },
               "resolves_to": [ "decorator.Foo.bar.__original_function" ],
               "port": "formal(self)",
@@ -900,9 +900,9 @@
             "call": {
               "position": {
                 "filename": "decorator.py",
-                "line": 183,
-                "start": 18,
-                "end": 19
+                "line": 182,
+                "start": 5,
+                "end": 37
               },
               "resolves_to": [ "decorator.Foo.foo.__wrapper" ],
               "port": "formal(x)",
@@ -960,9 +960,9 @@
             "call": {
               "position": {
                 "filename": "decorator.py",
-                "line": 183,
-                "start": 18,
-                "end": 19
+                "line": 75,
+                "start": 8,
+                "end": 9
               },
               "resolves_to": [ "decorator.Foo.foo.__original_function" ],
               "port": "formal(x)",
@@ -990,9 +990,9 @@
             "call": {
               "position": {
                 "filename": "decorator.py",
-                "line": 193,
-                "start": 49,
-                "end": 50
+                "line": 192,
+                "start": 5,
+                "end": 37
               },
               "resolves_to": [
                 "decorator.Foo.self_has_generic_type.__wrapper"
@@ -1012,9 +1012,9 @@
             "call": {
               "position": {
                 "filename": "decorator.py",
-                "line": 193,
-                "start": 39,
-                "end": 44
+                "line": 192,
+                "start": 5,
+                "end": 37
               },
               "resolves_to": [
                 "decorator.Foo.self_has_generic_type.__wrapper"
@@ -1094,9 +1094,9 @@
             "call": {
               "position": {
                 "filename": "decorator.py",
-                "line": 193,
-                "start": 49,
-                "end": 50
+                "line": 75,
+                "start": 8,
+                "end": 9
               },
               "resolves_to": [
                 "decorator.Foo.self_has_generic_type.__original_function"
@@ -1116,9 +1116,9 @@
             "call": {
               "position": {
                 "filename": "decorator.py",
-                "line": 193,
-                "start": 39,
-                "end": 44
+                "line": 75,
+                "start": 8,
+                "end": 9
               },
               "resolves_to": [
                 "decorator.Foo.self_has_generic_type.__original_function"
@@ -1173,9 +1173,9 @@
             "call": {
               "position": {
                 "filename": "decorator.py",
-                "line": 198,
-                "start": 31,
-                "end": 32
+                "line": 197,
+                "start": 5,
+                "end": 37
               },
               "resolves_to": [ "decorator.Foo.some_class_method.__wrapper" ],
               "port": "formal(x)",
@@ -1233,9 +1233,9 @@
             "call": {
               "position": {
                 "filename": "decorator.py",
-                "line": 198,
-                "start": 31,
-                "end": 32
+                "line": 75,
+                "start": 8,
+                "end": 9
               },
               "resolves_to": [
                 "decorator.Foo.some_class_method.__original_function"
@@ -1284,9 +1284,9 @@
             "call": {
               "position": {
                 "filename": "decorator.py",
-                "line": 18,
-                "start": 14,
-                "end": 15
+                "line": 25,
+                "start": 1,
+                "end": 13
               },
               "resolves_to": [ "decorator.foo.__wrapper" ],
               "port": "formal(x)",
@@ -1345,9 +1345,9 @@
             "call": {
               "position": {
                 "filename": "decorator.py",
-                "line": 69,
-                "start": 20,
-                "end": 21
+                "line": 68,
+                "start": 1,
+                "end": 25
               },
               "resolves_to": [ "decorator.foo_args_kwargs.__wrapper" ],
               "port": "formal(x)",
@@ -1400,9 +1400,9 @@
             "call": {
               "position": {
                 "filename": "decorator.py",
-                "line": 81,
-                "start": 38,
-                "end": 39
+                "line": 80,
+                "start": 1,
+                "end": 33
               },
               "resolves_to": [
                 "decorator.foo_args_kwargs_with_sink.__wrapper"
@@ -1463,9 +1463,9 @@
             "call": {
               "position": {
                 "filename": "decorator.py",
-                "line": 81,
-                "start": 38,
-                "end": 39
+                "line": 75,
+                "start": 8,
+                "end": 9
               },
               "resolves_to": [
                 "decorator.foo_args_kwargs_with_sink.__original_function"
@@ -1498,9 +1498,9 @@
             "call": {
               "position": {
                 "filename": "decorator.py",
-                "line": 46,
-                "start": 20,
-                "end": 21
+                "line": 55,
+                "start": 1,
+                "end": 19
               },
               "resolves_to": [ "decorator.foo_async.__wrapper" ],
               "port": "formal(y)",
@@ -1553,8 +1553,8 @@
             "call": {
               "position": {
                 "filename": "decorator.py",
-                "line": 144,
-                "start": 28,
+                "line": 143,
+                "start": 1,
                 "end": 29
               },
               "resolves_to": [
@@ -1616,9 +1616,9 @@
             "call": {
               "position": {
                 "filename": "decorator.py",
-                "line": 126,
-                "start": 32,
-                "end": 33
+                "line": 125,
+                "start": 1,
+                "end": 18
               },
               "resolves_to": [
                 "decorator.foo_using_decorator_factory.__wrapper"
@@ -1673,9 +1673,9 @@
             "call": {
               "position": {
                 "filename": "decorator.py",
-                "line": 170,
-                "start": 43,
-                "end": 44
+                "line": 169,
+                "start": 1,
+                "end": 30
               },
               "resolves_to": [
                 "decorator.foo_with_helper_function.__wrapper"
@@ -1695,9 +1695,9 @@
             "call": {
               "position": {
                 "filename": "decorator.py",
-                "line": 170,
-                "start": 35,
-                "end": 36
+                "line": 169,
+                "start": 1,
+                "end": 30
               },
               "resolves_to": [
                 "decorator.foo_with_helper_function.__wrapper"
@@ -1808,9 +1808,9 @@
             "call": {
               "position": {
                 "filename": "decorator.py",
-                "line": 94,
-                "start": 14,
-                "end": 15
+                "line": 105,
+                "start": 1,
+                "end": 20
               },
               "resolves_to": [
                 "decorator.foo_with_shady_decorators.__wrapper"
@@ -1844,9 +1844,9 @@
             "call": {
               "position": {
                 "filename": "decorator.py",
-                "line": 86,
-                "start": 14,
-                "end": 15
+                "line": 107,
+                "start": 1,
+                "end": 18
               },
               "resolves_to": [
                 "decorator.foo_with_shady_decorators.__original_function.__wrapper"
@@ -1976,9 +1976,9 @@
             "call": {
               "position": {
                 "filename": "decorator.py",
-                "line": 31,
-                "start": 14,
-                "end": 15
+                "line": 37,
+                "start": 1,
+                "end": 21
               },
               "resolves_to": [ "decorator.foo_with_sink.__wrapper" ],
               "port": "formal(x)",
