@@ -11,7 +11,9 @@ let asyncio_contextmanager_decorators = String.Set.of_list ["contextlib.asynccon
 
 let classmethod_decorators = String.Set.of_list ["classmethod"]
 
-let property_decorators = String.Set.of_list ["abc.abstractproperty"; "__property__"; "property"]
+let property_decorators =
+  String.Set.of_list ["abc.abstractproperty"; "__property__"; "property"; "builtins.property"]
+
 
 let classproperty_decorators = String.Set.of_list ["pyre_extensions.classproperty"]
 
