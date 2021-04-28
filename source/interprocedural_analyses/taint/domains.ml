@@ -542,7 +542,9 @@ module BackwardTaint = MakeTaint (Sinks)
 module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
   include Abstract.TreeDomain.Make
             (struct
-              let max_tree_depth_after_widening () = Configuration.maximum_tree_depth_after_widening
+              let max_tree_depth_after_widening () =
+                TaintConfiguration.maximum_tree_depth_after_widening
+
 
               let check_invariants = true
             end)

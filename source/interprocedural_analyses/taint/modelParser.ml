@@ -272,7 +272,7 @@ let rec parse_annotations
         | None -> Error (annotation_error (Format.sprintf "No such parameter `%s`" name)) )
   in
   let rec extract_breadcrumbs ?(is_dynamic = false) expression =
-    let open Configuration in
+    let open TaintConfiguration in
     match expression.Node.value with
     | Expression.Name (Name.Identifier breadcrumb) ->
         let feature =
@@ -402,7 +402,7 @@ let rec parse_annotations
     >>| fun (kinds, breadcrumbs) -> kinds, List.concat breadcrumbs
   in
   let get_source_kinds expression =
-    let open Configuration in
+    let open TaintConfiguration in
     extract_leafs expression
     >>= fun (kinds, breadcrumbs) ->
     List.map kinds ~f:(fun (kind, subkind) ->
@@ -413,7 +413,7 @@ let rec parse_annotations
     |> map_error ~f:annotation_error
   in
   let get_sink_kinds expression =
-    let open Configuration in
+    let open TaintConfiguration in
     extract_leafs expression
     >>= fun (kinds, breadcrumbs) ->
     List.map kinds ~f:(fun (kind, subkind) ->
@@ -424,7 +424,7 @@ let rec parse_annotations
     |> map_error ~f:annotation_error
   in
   let get_taint_in_taint_out expression =
-    let open Configuration in
+    let open TaintConfiguration in
     extract_leafs expression
     >>= fun (kinds, breadcrumbs) ->
     match kinds with
@@ -1825,7 +1825,7 @@ let compute_sources_and_sinks_to_keep ~configuration ~rule_filter =
   | Some rule_filter ->
       let rule_filter = Int.Set.of_list rule_filter in
       let sources_to_keep, sinks_to_keep =
-        let { Configuration.rules; _ } = configuration in
+        let { TaintConfiguration.rules; _ } = configuration in
         let rules =
           (* The user annotations for partial sinks will be the untriggered ones, even though the
              rule expects triggered sinks. *)
@@ -1834,7 +1834,7 @@ let compute_sources_and_sinks_to_keep ~configuration ~rule_filter =
             | Sinks.TriggeredPartialSink { kind; label } -> Sinks.PartialSink { kind; label }
             | _ -> sink
           in
-          List.filter_map rules ~f:(fun { Configuration.Rule.code; sources; sinks; _ } ->
+          List.filter_map rules ~f:(fun { TaintConfiguration.Rule.code; sources; sinks; _ } ->
               if Core.Set.mem rule_filter code then
                 Some (sources, List.map sinks ~f:untrigger_partial_sinks)
               else

@@ -7,7 +7,7 @@
 
 open Core
 open Ast
-open Configuration
+open TaintConfiguration
 open Domains
 
 type flow = {
@@ -214,7 +214,7 @@ let generate_issues ~define { location; flows } =
       let issue = { code = rule.code; flow; features; issue_location = location; define } in
       Some issue
   in
-  let configuration = Configuration.get () in
+  let configuration = TaintConfiguration.get () in
   if configuration.lineage_analysis then
     (* Create different issues for same access path, e.g, Issue{[a] -> [b]}, Issue {[c] -> [d]}. *)
     List.fold configuration.rules ~init:[] ~f:apply_rule_separate_access_path
@@ -227,7 +227,7 @@ let sinks_regexp = Str.regexp_string "{$sinks}"
 let sources_regexp = Str.regexp_string "{$sources}"
 
 let get_name_and_detailed_message { code; flow; _ } =
-  let configuration = Configuration.get () in
+  let configuration = TaintConfiguration.get () in
   match List.find ~f:(fun { code = rule_code; _ } -> code = rule_code) configuration.rules with
   | None -> failwith "issue with code that has no rule"
   | Some { name; message_format; _ } ->
@@ -249,7 +249,7 @@ let get_name_and_detailed_message { code; flow; _ } =
 
 
 let generate_error ({ code; issue_location; define; _ } as issue) =
-  let configuration = Configuration.get () in
+  let configuration = TaintConfiguration.get () in
   match List.find ~f:(fun { code = rule_code; _ } -> code = rule_code) configuration.rules with
   | None -> failwith "issue with code that has no rule"
   | Some _ ->
@@ -321,7 +321,7 @@ let to_json ~filename_lookup callable issue =
 
 
 let code_metadata () =
-  let configuration = Configuration.get () in
+  let configuration = TaintConfiguration.get () in
   `Assoc
     (List.map configuration.rules ~f:(fun rule -> Format.sprintf "%d" rule.code, `String rule.name))
 
@@ -341,7 +341,7 @@ let compute_triggered_sinks ~triggered_sinks ~location ~source_tree ~sink_tree =
     in
     let add_triggered_sinks (triggered, candidates) sink =
       let add_triggered_sinks_for_source source =
-        Configuration.get_triggered_sink ~partial_sink:sink ~source
+        TaintConfiguration.get_triggered_sink ~partial_sink:sink ~source
         |> function
         | Some (Sinks.TriggeredPartialSink triggered_sink) ->
             if Hash_set.mem triggered_sinks (Sinks.show_partial_sink sink) then

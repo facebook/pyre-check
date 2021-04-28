@@ -449,7 +449,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       in
       let call_targets =
         match call_targets with
-        | [] when Configuration.is_missing_flow_analysis Type ->
+        | [] when TaintConfiguration.is_missing_flow_analysis Type ->
             let callable =
               Model.unknown_callee
                 ~location:call_location
@@ -1074,7 +1074,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             taint, state
       in
       let taint, state = assign_super_constructor_taint_to_self_if_necessary taint state in
-      let configuration = Configuration.get () in
+      let configuration = TaintConfiguration.get () in
       if not configuration.lineage_analysis then
         taint, state
       else
@@ -1186,11 +1186,11 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
 
     and analyze_string_literal ~resolution ~state ~location { StringLiteral.value; kind } =
       let value_taint =
-        let literal_string_regular_expressions = Configuration.literal_string_sources () in
+        let literal_string_regular_expressions = TaintConfiguration.literal_string_sources () in
         if List.is_empty literal_string_regular_expressions then
           ForwardState.Tree.empty
         else
-          let add_matching_source_kind tree { Configuration.pattern; source_kind = kind } =
+          let add_matching_source_kind tree { TaintConfiguration.pattern; source_kind = kind } =
             if Re2.matches pattern value then
               ForwardState.Tree.join
                 tree
@@ -1219,14 +1219,14 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           in
           (* Compute flows of user-controlled data -> literal string sinks if applicable. *)
           let () =
-            let literal_string_sinks = Configuration.literal_string_sinks () in
+            let literal_string_sinks = TaintConfiguration.literal_string_sinks () in
             (* We try to be a bit clever about bailing out early and not computing the matches. *)
             if (not (List.is_empty literal_string_sinks)) && not (ForwardState.Tree.is_bottom taint)
             then
               let backwards_taint =
                 List.fold
                   literal_string_sinks
-                  ~f:(fun taint { Configuration.sink_kind; pattern } ->
+                  ~f:(fun taint { TaintConfiguration.sink_kind; pattern } ->
                     if Re2.matches pattern value then
                       BackwardState.Tree.join
                         taint
@@ -1414,7 +1414,9 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       let location = Location.with_module ~qualifier:FunctionContext.qualifier location in
       let taint, state = analyze_expression ~resolution ~state ~expression in
       (* There maybe configured sinks for conditionals, so test them here. *)
-      let sink_taint = Configuration.conditional_test_sinks () |> BackwardTaint.of_list ~location in
+      let sink_taint =
+        TaintConfiguration.conditional_test_sinks () |> BackwardTaint.of_list ~location
+      in
       let sink_tree = BackwardState.Tree.create_leaf sink_taint in
       FunctionContext.check_flow ~location ~source_tree:taint ~sink_tree;
       state
@@ -1610,12 +1612,12 @@ let extract_source_model ~define ~resolution ~features_to_attach exit_taint =
   in
   let return_type_breadcrumbs = Features.type_breadcrumbs ~resolution return_annotation in
   let {
-    Configuration.analysis_model_constraints =
+    TaintConfiguration.analysis_model_constraints =
       { maximum_model_width; maximum_complex_access_path_length; _ };
     _;
   }
     =
-    Configuration.get ()
+    TaintConfiguration.get ()
   in
 
   let simplify tree =

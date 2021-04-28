@@ -361,7 +361,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       in
       let call_targets =
         match call_targets with
-        | [] when Configuration.is_missing_flow_analysis Type ->
+        | [] when TaintConfiguration.is_missing_flow_analysis Type ->
             (* Create a symbolic callable, using the location as the name *)
             let callable =
               Model.unknown_callee
@@ -943,13 +943,13 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       match kind with
       | StringLiteral.Format expressions ->
           let taint =
-            let literal_string_sinks = Configuration.literal_string_sinks () in
+            let literal_string_sinks = TaintConfiguration.literal_string_sinks () in
             if List.is_empty literal_string_sinks then
               taint
             else
               List.fold
                 literal_string_sinks
-                ~f:(fun taint { Configuration.sink_kind; pattern } ->
+                ~f:(fun taint { TaintConfiguration.sink_kind; pattern } ->
                   if Re2.matches pattern value then
                     BackwardState.Tree.join
                       taint
@@ -1329,12 +1329,12 @@ end
 let extract_tito_and_sink_models define ~is_constructor ~resolution ~existing_backward entry_taint =
   let { Statement.Define.signature = { parameters; _ }; _ } = define in
   let {
-    Configuration.analysis_model_constraints =
+    TaintConfiguration.analysis_model_constraints =
       { maximum_model_width; maximum_complex_access_path_length; _ };
     _;
   }
     =
-    Configuration.get ()
+    TaintConfiguration.get ()
   in
   let normalized_parameters = AccessPath.Root.normalize_parameters parameters in
   (* Simplify trees by keeping only essential structure and merging details back into that. *)
@@ -1396,7 +1396,7 @@ let extract_tito_and_sink_models define ~is_constructor ~resolution ~existing_ba
           ~f:(fun _ count -> count + 1)
           candidate_tree
       in
-      if number_of_paths > Configuration.maximum_tito_leaves then
+      if number_of_paths > TaintConfiguration.maximum_tito_leaves then
         BackwardState.Tree.collapse_to
           ~transform:(BackwardTaint.add_features Features.widen_broadening)
           ~depth:0

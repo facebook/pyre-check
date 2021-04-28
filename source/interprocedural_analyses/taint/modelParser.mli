@@ -133,14 +133,14 @@ val parse
   ?path:Path.t ->
   ?rule_filter:int list ->
   source:string ->
-  configuration:Configuration.t ->
+  configuration:TaintConfiguration.t ->
   TaintResult.call_model Interprocedural.Callable.Map.t ->
   T.parse_result
 
 val verify_model_syntax : path:Path.t -> source:string -> unit
 
 val compute_sources_and_sinks_to_keep
-  :  configuration:Configuration.t ->
+  :  configuration:TaintConfiguration.t ->
   rule_filter:int list option ->
   Sources.Set.t option * Sinks.Set.t option
 

@@ -45,7 +45,7 @@ module TitoPosition = struct
 
   type t = Location.t [@@deriving show, compare]
 
-  let max_count () = Configuration.maximum_tito_positions
+  let max_count () = TaintConfiguration.maximum_tito_positions
 end
 
 module TitoPositionSet = Abstract.ToppedSetDomain.Make (TitoPosition)
@@ -193,11 +193,12 @@ module Complex = struct
 
   let widen set =
     let truncate = function
-      | ReturnAccessPath p when List.length p > Configuration.maximum_return_access_path_depth ->
-          ReturnAccessPath (List.take p Configuration.maximum_return_access_path_depth)
+      | ReturnAccessPath p when List.length p > TaintConfiguration.maximum_return_access_path_depth
+        ->
+          ReturnAccessPath (List.take p TaintConfiguration.maximum_return_access_path_depth)
       | x -> x
     in
-    if List.length set > Configuration.maximum_return_access_path_width then
+    if List.length set > TaintConfiguration.maximum_return_access_path_width then
       [ReturnAccessPath []]
     else
       List.map ~f:truncate set

@@ -9,7 +9,7 @@ open Core
 module AccessPath = AccessPath
 module BackwardAnalysis = BackwardAnalysis
 module CallGraphBuilder = CallGraphBuilder
-module TaintConfiguration = Configuration
+module TaintConfiguration = TaintConfiguration
 module PartialSinkConverter = PartialSinkConverter
 module Domains = Domains
 module Features = Features
