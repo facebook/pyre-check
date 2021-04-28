@@ -103,7 +103,7 @@
                 "start": 1,
                 "end": 13
               },
-              "resolves_to": [ "decorator_location.foo.__wrapper" ],
+              "resolves_to": [ "decorator_location.foo.inner" ],
               "port": "formal(x)",
               "length": 1
             },
@@ -137,7 +137,7 @@
                 "end": 14
               },
               "resolves_to": [
-                "decorator_location.foo.__original_function.__wrapper"
+                "decorator_location.foo.__original_function.inner"
               ],
               "port": "formal(x)",
               "length": 1
@@ -157,7 +157,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "decorator_location.foo.__original_function.__wrapper",
+    "callable": "decorator_location.foo.__original_function.inner",
     "sources": [],
     "sinks": [
       {
@@ -205,7 +205,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "decorator_location.foo.__wrapper",
+    "callable": "decorator_location.foo.inner",
     "sources": [],
     "sinks": [
       {

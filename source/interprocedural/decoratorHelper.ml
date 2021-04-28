@@ -14,8 +14,6 @@ open Expression
 
 let inlined_original_function_name = "__original_function"
 
-let inlined_wrapper_function_name = "__wrapper"
-
 let args_local_variable_name = "__args"
 
 let kwargs_local_variable_name = "__kwargs"
@@ -528,12 +526,13 @@ let inline_decorator_in_define
   let ( { Define.signature = { name = { Node.value = inlined_wrapper_define_name; _ }; _ }; _ } as
       inlined_wrapper_define )
     =
+    let wrapper_function_name = Reference.last (Reference.delocalize wrapper_define_name) in
     sanitize_define ~strip_parent:true wrapper_define
     |> set_first_parameter_type ~original_define:define
-    |> rename_define ~new_name:(Reference.create inlined_wrapper_function_name)
+    |> rename_define ~new_name:(Reference.create wrapper_function_name)
     |> requalify_define
          ~old_qualifier:(Reference.delocalize wrapper_define_name)
-         ~new_qualifier:(Reference.create ~prefix:qualifier inlined_wrapper_function_name)
+         ~new_qualifier:(Reference.create ~prefix:qualifier wrapper_function_name)
     (* Requalify references to other nested functions within the decorator. *)
     |> requalify_define ~old_qualifier:decorator_reference ~new_qualifier:qualifier
     |> rename_local_variable
