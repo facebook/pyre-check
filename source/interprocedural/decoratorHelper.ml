@@ -214,14 +214,7 @@ type decorator_data = {
   decorator_reference: Reference.t;
 }
 
-let extract_decorator_data
-    ~is_decorator_factory
-    {
-      Define.signature = { parameters; name = { Node.value = decorator_reference; _ }; _ };
-      body;
-      _;
-    }
-  =
+let extract_decorator_data ~is_decorator_factory ({ Define.body; _ } as decorator_define) =
   let get_nested_defines body =
     List.filter_map body ~f:(function
         | { Node.value = Statement.Define wrapper_define; _ } -> Some wrapper_define
@@ -243,7 +236,13 @@ let extract_decorator_data
         Some wrapper_function_name
     | _ -> None
   in
-  let extract_decorator_data_from_decorator_body ~parameters ~decorator_reference body =
+  let extract_decorator_data
+      {
+        Define.body;
+        signature = { parameters; name = { Node.value = decorator_reference; _ }; _ };
+        _;
+      }
+    =
     let partition_wrapper_helpers body =
       match wrapper_function_name body with
       | Some wrapper_name ->
@@ -266,17 +265,10 @@ let extract_decorator_data
   in
   if is_decorator_factory then
     match get_nested_defines body with
-    | [
-     {
-       Define.body;
-       signature = { parameters; name = { Node.value = decorator_reference; _ }; _ };
-       _;
-     };
-    ] ->
-        extract_decorator_data_from_decorator_body ~parameters ~decorator_reference body
+    | [decorator_define] -> extract_decorator_data decorator_define
     | _ -> None
   else
-    extract_decorator_data_from_decorator_body ~parameters ~decorator_reference body
+    extract_decorator_data decorator_define
 
 
 let make_args_assignment_from_parameters ~args_local_variable_name parameters =
