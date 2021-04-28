@@ -280,7 +280,27 @@ include Taint.Result.Register (struct
     result, model
 
 
-  let analyze ~callable ~environment ~qualifier ~define ~existing =
+  let analyze
+      ~callable
+      ~environment
+      ~qualifier
+      ~define:
+        ( {
+            Ast.Node.value =
+              { Ast.Statement.Define.signature = { name = { Ast.Node.value = name; _ }; _ }; _ };
+            _;
+          } as define )
+      ~existing
+    =
+    let define_qualifier = Ast.Reference.delocalize name in
+    let qualifier =
+      (* Pysa inlines decorators when a function is decorated. However, we want issues and models to
+         point to the lines in the module where the decorator was defined, not the module where it
+         was inlined. So, look up the originating module, if any, and use that as the module
+         qualifier. *)
+      Interprocedural.DecoratorHelper.DecoratorModule.get define_qualifier
+      |> Option.value ~default:qualifier
+    in
     match existing with
     | Some ({ mode = SkipAnalysis; _ } as model) ->
         let () = Log.info "Skipping taint analysis of %a" Callable.pretty_print callable in

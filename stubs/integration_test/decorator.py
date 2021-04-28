@@ -7,7 +7,9 @@
 
 from typing import Callable
 
-from django.http import HttpRequest, HttpResponse
+from django.http import HttpRequest
+
+from .logging_decorator import with_logging_with_helper, with_logging_without_helper
 
 
 def with_logging(f: Callable[[str], None]) -> Callable[[str], None]:
@@ -23,5 +25,12 @@ def foo(x: str) -> None:
     print(x)
 
 
+@with_logging_with_helper
+@with_logging_without_helper
+def foo2(x: int) -> None:
+    eval(x)
+
+
 def bar(request: HttpRequest) -> None:
     foo(request.GET["bad"])
+    foo2(request.GET["bad"])
