@@ -8,12 +8,14 @@
 import functools
 import json
 import logging
+import multiprocessing
 import os
 import re
 import shutil
 import subprocess
 import sys
 from collections import defaultdict
+from dataclasses import dataclass
 from logging import Logger
 from pathlib import Path
 from typing import IO, Dict, List, Optional, Sequence, Set, Union
@@ -407,6 +409,17 @@ def annotate_path(stub_path: str, file_path: str, debug_infer: bool) -> None:
             LOG.warning(f"\tError: {error}")
 
 
+@dataclass
+class AnnotatePathArguments:
+    stub_path: str
+    file_path: str
+    debug_infer: bool
+
+
+def annotate_path_from_arguments(arguments: AnnotatePathArguments) -> None:
+    annotate_path(arguments.stub_path, arguments.file_path, arguments.debug_infer)
+
+
 def _existing_annotations_as_errors(
     modules: Dict[Path, Optional[libcst.Module]], project_root: str
 ) -> List[LegacyError]:
@@ -594,13 +607,20 @@ class Infer(Reporting):
         if in_place != []:
             stubs = filter_paths(stubs, type_directory, in_place)
 
+        tasks = []
         for stub in stubs:
             stub_path = stub.path(type_directory)
             if not stub._path.resolve().exists():
                 file_path = (root / stub._path).resolve()
             else:
                 file_path = stub._path.resolve()
-            annotate_path(str(stub_path), file_path, debug_infer)
+            tasks.append(AnnotatePathArguments(str(stub_path), file_path, debug_infer))
+
+        number_workers = self._configuration.get_number_of_workers()
+        with multiprocessing.Pool(number_workers) as pool:
+            for _ in pool.imap_unordered(annotate_path_from_arguments, tasks):
+                pass
+
         if formatter:
             subprocess.call(
                 formatter, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
