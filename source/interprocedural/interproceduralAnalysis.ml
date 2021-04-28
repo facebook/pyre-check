@@ -779,7 +779,7 @@ let save_results_to_directory
     ~filename_lookup
     ~analyses
     ~skipped_overrides
-    all_callables
+    callables
   =
   let emit_json_array_elements out_buffer =
     let seen_element = ref false in
@@ -807,7 +807,7 @@ let save_results_to_directory
     in
     Json.to_outbuf out_buffer header_with_version;
     Bi_outbuf.add_string out_buffer "\n";
-    Callable.Set.iter (emit_externalization ~filename_lookup kind array_emitter) all_callables;
+    Callable.Set.iter (emit_externalization ~filename_lookup kind array_emitter) callables;
     Bi_outbuf.flush_output_writer out_buffer;
     close_out out_channel
   in
@@ -865,27 +865,22 @@ let report_results
       }
     ~filename_lookup
     ~analyses
-    ~callables_to_analyze
-    ~initial_models_callables
+    ~callables
     ~skipped_overrides
     ~iterations
   =
-  let all_callables =
-    Callable.Set.of_list (List.rev_append initial_models_callables callables_to_analyze)
-  in
-  let errors = extract_errors scheduler callables_to_analyze in
+  let errors = extract_errors scheduler (Callable.Set.elements callables) in
   Log.info "Found %d issues" (List.length errors);
   ( match result_json_path with
   | Some result_directory ->
       let analyses = List.map ~f:Result.get_abstract_analysis analyses in
-
       save_results_to_directory
         ~result_directory
         ~local_root
         ~filename_lookup
         ~analyses
         ~skipped_overrides
-        all_callables
+        callables
   | None ->
       List.map errors ~f:(fun error ->
           InterproceduralError.instantiate ~show_error_traces ~lookup:filename_lookup error

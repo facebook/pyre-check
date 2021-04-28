@@ -648,13 +648,15 @@ let analyze
       Interprocedural.Fixpoint.Epoch.initial
   in
   let report_results iterations =
+    let callables =
+      Callable.Set.of_list (List.rev_append initial_models_callables callables_to_analyze)
+    in
     Interprocedural.Analysis.report_results
       ~scheduler
       ~static_analysis_configuration
       ~filename_lookup
       ~analyses
-      ~callables_to_analyze
-      ~initial_models_callables
+      ~callables
       ~skipped_overrides
       ~iterations
   in

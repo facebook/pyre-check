@@ -70,8 +70,7 @@ val report_results
   static_analysis_configuration:Configuration.StaticAnalysis.t ->
   filename_lookup:(Ast.Reference.t -> string option) ->
   analyses:Kind.abstract list ->
-  callables_to_analyze:Callable.t list ->
-  initial_models_callables:Callable.t list ->
+  callables:Callable.Set.t ->
   skipped_overrides:Ast.Reference.t list ->
   iterations:int option ->
   (string * int) list
