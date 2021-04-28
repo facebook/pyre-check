@@ -29,6 +29,7 @@ let run_analysis
     find_missing_flows
     dump_model_query_results
     use_cache
+    inline_decorators
     _verbose
     expected_version
     sections
@@ -122,6 +123,10 @@ let run_analysis
         ~rule_filter:None
         ~paths:configuration.Configuration.Analysis.taint_model_paths
       |> ignore;
+
+      if inline_decorators then
+        Log.info "Inlining decorators for taint analysis...";
+
       Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->
           let cached_environment =
             if use_cache then Service.StaticAnalysis.Cache.load_environment ~configuration else None
@@ -236,5 +241,9 @@ let command =
            ~doc:"Perform a taint analysis to find missing flows."
       +> flag "-dump-model-query-results" no_arg ~doc:"Provide debugging output for model queries."
       +> flag "-use-cache" no_arg ~doc:"Store information in .pyre/pysa.cache for faster runs."
+      +> flag
+           "-inline-decorators"
+           no_arg
+           ~doc:"Inline decorators at use sites to catch flows through the decorators."
       ++ Specification.base_command_line_arguments)
     run_analysis

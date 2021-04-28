@@ -578,6 +578,12 @@ def pyre(
     default=False,
     help="Store information in .pyre/pysa.cache for faster runs.",
 )
+@click.option(
+    "--inline-decorators",
+    is_flag=True,
+    default=False,
+    help="Inline decorators at use sites to catch flows through decorators.",
+)
 @click.pass_context
 def analyze(
     context: click.Context,
@@ -591,6 +597,7 @@ def analyze(
     find_missing_flows: Optional[str],
     dump_model_query_results: bool,
     use_cache: bool,
+    inline_decorators: bool,
 ) -> int:
     """
     Run Pysa, the inter-procedural static analysis tool.
@@ -617,6 +624,7 @@ def analyze(
             ),
             dump_model_query_results=dump_model_query_results,
             use_cache=use_cache,
+            inline_decorators=inline_decorators,
         ),
         configuration,
         command_argument.noninteractive,
