@@ -48,3 +48,10 @@ val replace_signature_if_always_passing_on_arguments
   Define.t option
 
 val rename_local_variables : pairs:(Identifier.t * Identifier.t) list -> Define.t -> Define.t
+
+module DecoratorModuleValue : Memory.ValueType with type t = Ast.Reference.t
+
+module DecoratorModule :
+  Memory.WithCache.S
+    with type t = DecoratorModuleValue.t
+     and type key = Analysis.SharedMemoryKeys.ReferenceKey.t

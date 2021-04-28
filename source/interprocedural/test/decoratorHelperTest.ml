@@ -1159,6 +1159,160 @@ let test_inline_decorators context =
   ()
 
 
+let test_decorator_location context =
+  let assert_inlined
+      ?(additional_sources = [])
+      ?(handle = "test.py")
+      ~expected_function_module_pairs
+      source
+      expected
+    =
+    let source, environment = setup ~additional_sources ~context ~handle source in
+    let decorator_bodies = DecoratorHelper.all_decorator_bodies environment in
+    let actual = DecoratorHelper.inline_decorators ~environment ~decorator_bodies source in
+    (* Using the same setup code instead of `parse` because the SourcePath `priority` is different
+       otherwise. *)
+    let expected =
+      setup ~additional_sources ~context ~handle expected
+      |> fst
+      |> DecoratorHelper.sanitize_defines ~strip_decorators:false
+    in
+    assert_source_equal ~location_insensitive:true expected actual;
+    List.iter expected_function_module_pairs ~f:(fun (function_reference, decorator_module) ->
+        assert_equal
+          ~printer:[%show: Reference.t option]
+          ~cmp:[%equal: Reference.t option]
+          decorator_module
+          (DecoratorHelper.DecoratorModule.get function_reference))
+  in
+  let additional_sources =
+    [
+      ( "logging_decorator.py",
+        {|
+            from typing import Callable
+            def with_logging(callable: Callable[[str], None]) -> Callable[[str], None]:
+              def helper(y: str) -> None:
+                print(y)
+
+              def inner(y: str) -> None:
+                __test_sink(y)
+                callable(y)
+                helper(y)
+
+              return inner
+
+            def fails_to_apply(f):
+              return f
+      |}
+      );
+      ( "some_module/identity_decorator.py",
+        {|
+            from typing import Callable
+            def identity(callable: Callable[[str], None]) -> Callable[[str], None]:
+              def inner(y: str) -> None:
+                callable(y)
+
+              return inner
+      |}
+      );
+    ]
+  in
+  assert_inlined
+    ~additional_sources
+    {|
+    from builtins import __test_sink
+    from typing import Callable
+    from logging_decorator import with_logging, fails_to_apply
+    from some_module.identity_decorator import identity
+
+    def same_module_decorator(callable: Callable[[str], None]) -> Callable[[str], None]:
+      def inner(y: str) -> None:
+        callable(y)
+
+      return inner
+
+    @with_logging
+    def foo(z: str) -> None:
+      print(z)
+
+    @with_logging
+    @fails_to_apply
+    @identity
+    def bar(z: str) -> None:
+      print(z)
+
+    @same_module_decorator
+    def baz(z: str) -> None:
+      print(z)
+  |}
+    ~expected_function_module_pairs:
+      [
+        !&"test.baz.inner", Some !&"test";
+        !&"test.bar.inner", Some !&"logging_decorator";
+        !&"test.bar.__original_function.inner", Some !&"some_module.identity_decorator";
+        !&"test.foo.inner", Some !&"logging_decorator";
+        !&"test.foo", None;
+        !&"test.foo.__original_function", None;
+      ]
+    {|
+    from builtins import __test_sink
+    from typing import Callable
+    from logging_decorator import with_logging, fails_to_apply
+    from some_module.identity_decorator import identity
+
+    def same_module_decorator(callable: Callable[[str], None]) -> Callable[[str], None]:
+      def inner(y: str) -> None:
+        callable(y)
+
+      return inner
+
+    def foo(y: str) -> None:
+      def __original_function(z: str) -> None:
+        print(z)
+
+      def inner(y: str) -> None:
+        __test_sink(y)
+        __original_function(y)
+        helper(y)
+
+      def helper(y: str) -> None:
+        print(y)
+
+      return inner(y)
+
+    def bar(y: str) -> None:
+      def __original_function(y: str) -> None:
+
+        def __original_function(z: str) -> None:
+          print(z)
+
+        def inner(y: str) -> None:
+          __original_function(y)
+
+        return inner(y)
+
+      def inner(y: str) -> None:
+        __test_sink(y)
+        __original_function(y)
+        helper(y)
+
+      def helper(y: str) -> None:
+        print(y)
+      return inner(y)
+
+
+    def baz(y: str) -> None:
+      def __original_function(z: str) -> None:
+        print(z)
+
+      def inner(y: str) -> None:
+        __original_function(y)
+
+      return inner(y)
+  |};
+  ()
+
+
 let test_requalify_name _ =
   let open Expression in
   let assert_requalified ~old_qualifier ~new_qualifier name expected =
@@ -1469,6 +1623,7 @@ let () =
   >::: [
          "all_decorators" >:: test_all_decorators;
          "inline_decorators" >:: test_inline_decorators;
+         "decorator_location" >:: test_decorator_location;
          "requalify_name" >:: test_requalify_name;
          "replace_signature" >:: test_replace_signature;
          "rename_local_variables" >:: test_rename_local_variables;

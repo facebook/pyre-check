@@ -30,6 +30,20 @@ type define_and_originating_module = {
 }
 [@@deriving compare, hash, sexp, eq, show]
 
+module DecoratorModuleValue = struct
+  type t = Ast.Reference.t
+
+  let prefix = Prefix.make ()
+
+  let description = "Module for a decorator that has been inlined."
+
+  let unmarshall value = Marshal.from_string value 0
+end
+
+module DecoratorModule =
+  Memory.WithCache.Make (Analysis.SharedMemoryKeys.ReferenceKey) (DecoratorModuleValue)
+(** Mapping from an inlined decorator function to its original module. *)
+
 let all_decorators environment =
   let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
   let unannotated_global_environment =
@@ -532,7 +546,7 @@ let inline_decorator_in_define
       higher_order_function_parameter_name;
       decorator_reference;
       decorator_call_location;
-      module_reference = _;
+      module_reference;
     }
   =
   let decorator_reference = Reference.delocalize decorator_reference in
@@ -613,6 +627,13 @@ let inline_decorator_in_define
       }
     |> Node.create ~location
   in
+  let add_function_decorator_module_mapping
+      { Define.signature = { name = { Node.value = name; _ }; _ }; _ }
+    =
+    let qualified_inlined_name = Reference.combine qualifier name in
+    Option.iter module_reference ~f:(DecoratorModule.add qualified_inlined_name)
+  in
+  List.iter (inlined_wrapper_define :: helper_defines) ~f:add_function_decorator_module_mapping;
   let body =
     [inlined_original_define_statement; inlined_wrapper_define_statement]
     @ List.map helper_defines ~f:make_helper_define_statement
