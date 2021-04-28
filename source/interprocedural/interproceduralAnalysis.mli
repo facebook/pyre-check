@@ -65,13 +65,13 @@ val externalize
   Callable.t ->
   Yojson.Safe.json list
 
-val extract_errors : Scheduler.t -> Callable.t list -> InterproceduralError.t list
-
-val save_results_to_directory
-  :  result_directory:PyrePath.t ->
-  local_root:PyrePath.t ->
+val report_results
+  :  scheduler:Scheduler.t ->
+  static_analysis_configuration:Configuration.StaticAnalysis.t ->
   filename_lookup:(Ast.Reference.t -> string option) ->
-  analyses:AnalysisKind.abstract list ->
+  analyses:Kind.abstract list ->
+  callables_to_analyze:Callable.t list ->
+  initial_models_callables:Callable.t list ->
   skipped_overrides:Ast.Reference.t list ->
-  Callable.Set.t ->
-  unit
+  iterations:int option ->
+  (string * int) list

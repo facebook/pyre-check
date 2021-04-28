@@ -811,7 +811,6 @@ let save_results_to_directory
     Bi_outbuf.flush_output_writer out_buffer;
     close_out out_channel
   in
-  let analyses = List.map ~f:Result.get_abstract_analysis analyses in
   let save_metadata (Result.Analysis { Result.analysis; _ }) =
     let module Analysis = (val analysis) in
     let filename = Format.sprintf "%s-metadata.json" Analysis.name in
@@ -854,3 +853,50 @@ let save_results_to_directory
     ~phase_name:"Writing analysis results"
     ~timer
     ()
+
+
+let report_results
+    ~scheduler
+    ~static_analysis_configuration:
+      {
+        Configuration.StaticAnalysis.result_json_path;
+        configuration = { local_root; show_error_traces; _ };
+        _;
+      }
+    ~filename_lookup
+    ~analyses
+    ~callables_to_analyze
+    ~initial_models_callables
+    ~skipped_overrides
+    ~iterations
+  =
+  let all_callables =
+    Callable.Set.of_list (List.rev_append initial_models_callables callables_to_analyze)
+  in
+  let errors = extract_errors scheduler callables_to_analyze in
+  Log.info "Found %d issues" (List.length errors);
+  ( match result_json_path with
+  | Some result_directory ->
+      let analyses = List.map ~f:Result.get_abstract_analysis analyses in
+
+      save_results_to_directory
+        ~result_directory
+        ~local_root
+        ~filename_lookup
+        ~analyses
+        ~skipped_overrides
+        all_callables
+  | None ->
+      List.map errors ~f:(fun error ->
+          InterproceduralError.instantiate ~show_error_traces ~lookup:filename_lookup error
+          |> InterproceduralError.Instantiated.to_yojson)
+      |> (fun result -> Yojson.Safe.pretty_to_string (`List result))
+      |> Log.print "%s" );
+  match iterations with
+  | Some iterations ->
+      [
+        "pysa fixpoint iterations", iterations;
+        "pysa heap size", SharedMem.heap_size ();
+        "pysa issues", List.length errors;
+      ]
+  | None -> []

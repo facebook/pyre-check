@@ -467,51 +467,6 @@ let record_overrides_for_qualifiers
   cap_override_result
 
 
-let report_results
-    ~initial_models_callables
-    ~callables_to_analyze
-    ~scheduler
-    ~static_analysis_configuration:
-      {
-        Configuration.StaticAnalysis.result_json_path;
-        configuration = { local_root; show_error_traces; _ };
-        _;
-      }
-    ~filename_lookup
-    ~analyses
-    ~skipped_overrides
-    ~iterations
-  =
-  let all_callables =
-    Callable.Set.of_list (List.rev_append initial_models_callables callables_to_analyze)
-  in
-  let errors = Interprocedural.Analysis.extract_errors scheduler callables_to_analyze in
-  Log.info "Found %d issues" (List.length errors);
-  ( match result_json_path with
-  | Some result_directory ->
-      Interprocedural.Analysis.save_results_to_directory
-        ~result_directory
-        ~local_root
-        ~filename_lookup
-        ~analyses
-        ~skipped_overrides
-        all_callables
-  | None ->
-      List.map errors ~f:(fun error ->
-          Interprocedural.Error.instantiate ~show_error_traces ~lookup:filename_lookup error
-          |> Interprocedural.Error.Instantiated.to_yojson)
-      |> (fun result -> Yojson.Safe.pretty_to_string (`List result))
-      |> Log.print "%s" );
-  match iterations with
-  | Some iterations ->
-      [
-        "pysa fixpoint iterations", iterations;
-        "pysa heap size", SharedMem.heap_size ();
-        "pysa issues", List.length errors;
-      ]
-  | None -> []
-
-
 let analyze
     ~scheduler
     ~analysis_kind
@@ -693,13 +648,13 @@ let analyze
       Interprocedural.Fixpoint.Epoch.initial
   in
   let report_results iterations =
-    report_results
-      ~initial_models_callables
-      ~callables_to_analyze
+    Interprocedural.Analysis.report_results
       ~scheduler
       ~static_analysis_configuration
       ~filename_lookup
       ~analyses
+      ~callables_to_analyze
+      ~initial_models_callables
       ~skipped_overrides
       ~iterations
   in
