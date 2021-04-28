@@ -589,7 +589,7 @@ let inline_decorator_in_define
   let inlined_wrapper_define_statement =
     Statement.Define inlined_wrapper_define |> Node.create ~location
   in
-  let make_helper_define_statement
+  let make_helper_define
       ( { Define.signature = { name = { Node.value = helper_function_name; _ }; _ }; _ } as
       helper_define )
     =
@@ -600,18 +600,16 @@ let inline_decorator_in_define
         (Reference.drop_prefix ~prefix:decorator_reference helper_function_reference)
     in
     sanitize_define ~strip_parent:true helper_define
-    |> rename_define
-         ~new_name:
-           (Reference.create
-              (Preprocessing.qualify_local_identifier
-                 ~qualifier
-                 (Reference.last helper_function_reference)))
+    |> rename_define ~new_name:(Reference.create (Reference.last helper_function_reference))
     |> requalify_define
          ~old_qualifier:helper_function_reference
          ~new_qualifier:new_helper_function_reference
     (* Requalify references to other nested functions within the decorator. *)
     |> requalify_define ~old_qualifier:decorator_reference ~new_qualifier:qualifier
-    |> fun define -> Statement.Define define |> Node.create ~location
+  in
+  let helper_defines = List.map helper_defines ~f:make_helper_define in
+  let helper_define_statements =
+    List.map helper_defines ~f:(fun define -> Statement.Define define |> Node.create ~location)
   in
   let return_call_to_wrapper =
     Statement.Return
@@ -636,7 +634,7 @@ let inline_decorator_in_define
   List.iter (inlined_wrapper_define :: helper_defines) ~f:add_function_decorator_module_mapping;
   let body =
     [inlined_original_define_statement; inlined_wrapper_define_statement]
-    @ List.map helper_defines ~f:make_helper_define_statement
+    @ helper_define_statements
     @ [return_call_to_wrapper]
   in
   { define with body; signature = outer_signature }
