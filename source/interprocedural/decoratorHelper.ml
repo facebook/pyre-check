@@ -18,15 +18,45 @@ let args_local_variable_name = "__args"
 
 let kwargs_local_variable_name = "__kwargs"
 
+type decorator_reference_and_module = {
+  decorator: Reference.t;
+  module_reference: Reference.t option;
+}
+[@@deriving compare, hash, sexp, eq, show]
+
+type define_and_originating_module = {
+  decorator_define: Define.t;
+  module_reference: Reference.t option;
+}
+[@@deriving compare, hash, sexp, eq, show]
+
 let all_decorators environment =
+  let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
   let unannotated_global_environment =
-    TypeEnvironment.ReadOnly.global_resolution environment
-    |> GlobalResolution.unannotated_global_environment
+    GlobalResolution.unannotated_global_environment global_resolution
   in
-  let decorator_set = Reference.Hash_set.create () in
+  let annotated_global_environment =
+    GlobalResolution.annotated_global_environment global_resolution
+  in
+  let module DecoratorReferenceAndModule = struct
+    module T = struct
+      type t = decorator_reference_and_module [@@deriving compare, hash, sexp]
+    end
+
+    include T
+    include Hashable.Make (T)
+  end
+  in
+  let decorator_set = DecoratorReferenceAndModule.Hash_set.create () in
   let add_decorators define_reference =
-    let add_decorator_to_set { Decorator.name = { Node.value; _ }; _ } =
-      Base.Hash_set.add decorator_set value
+    let add_decorator_to_set { Decorator.name = { Node.value = decorator; _ }; _ } =
+      let module_reference =
+        AnnotatedGlobalEnvironment.ReadOnly.get_global_location
+          annotated_global_environment
+          decorator
+        >>| fun { Location.WithModule.path; _ } -> path
+      in
+      Base.Hash_set.add decorator_set { decorator; module_reference }
     in
     UnannotatedGlobalEnvironment.ReadOnly.get_define_body
       unannotated_global_environment
@@ -43,11 +73,11 @@ let all_decorators environment =
 
 let all_decorator_bodies environment =
   all_decorators environment
-  |> List.filter_map ~f:(fun decorator_name ->
+  |> List.filter_map ~f:(fun { decorator; module_reference } ->
          GlobalResolution.get_decorator_define
            (TypeEnvironment.ReadOnly.global_resolution environment)
-           decorator_name
-         >>| fun decorator_define -> decorator_name, decorator_define)
+           decorator
+         >>| fun decorator_define -> decorator, { decorator_define; module_reference })
   |> Reference.Map.of_alist
   |> function
   | `Ok map -> map
@@ -214,12 +244,13 @@ type decorator_data = {
   higher_order_function_parameter_name: Identifier.t;
   decorator_reference: Reference.t;
   decorator_call_location: Location.t;
+  module_reference: Reference.t option;
 }
 
 let extract_decorator_data
     ~decorator_call_location
     ~is_decorator_factory
-    ({ Define.body; _ } as decorator_define)
+    { decorator_define = { Define.body; _ } as decorator_define; module_reference }
   =
   let get_nested_defines body =
     List.filter_map body ~f:(function
@@ -267,6 +298,7 @@ let extract_decorator_data
             higher_order_function_parameter_name = name;
             decorator_reference;
             decorator_call_location;
+            module_reference;
           }
     | _ -> None
   in
@@ -500,6 +532,7 @@ let inline_decorator_in_define
       higher_order_function_parameter_name;
       decorator_reference;
       decorator_call_location;
+      module_reference = _;
     }
   =
   let decorator_reference = Reference.delocalize decorator_reference in

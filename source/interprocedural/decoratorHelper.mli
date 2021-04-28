@@ -9,13 +9,27 @@ open Ast
 open Analysis
 open Statement
 
-val all_decorators : TypeEnvironment.ReadOnly.t -> Reference.t list
+type decorator_reference_and_module = {
+  decorator: Reference.t;
+  module_reference: Reference.t option;
+}
+[@@deriving compare, hash, sexp, eq, show]
 
-val all_decorator_bodies : TypeEnvironment.ReadOnly.t -> Define.t Reference.Map.t
+type define_and_originating_module = {
+  decorator_define: Define.t;
+  module_reference: Reference.t option;
+}
+[@@deriving compare, hash, sexp, eq, show]
+
+val all_decorators : TypeEnvironment.ReadOnly.t -> decorator_reference_and_module list
+
+val all_decorator_bodies
+  :  TypeEnvironment.ReadOnly.t ->
+  define_and_originating_module Reference.Map.t
 
 val inline_decorators
   :  environment:TypeEnvironment.ReadOnly.t ->
-  decorator_bodies:Define.t Reference.Map.t ->
+  decorator_bodies:define_and_originating_module Reference.Map.t ->
   Source.t ->
   Source.t
 

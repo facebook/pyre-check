@@ -15,9 +15,6 @@ open Test
 
 let setup ?(additional_sources = []) ~context ~handle source =
   let project =
-    let additional_sources =
-      List.map additional_sources ~f:(fun { handle; source } -> handle, source)
-    in
     ScratchProject.setup ~context ~external_sources:[] ([handle, source] @ additional_sources)
   in
   let { ScratchProject.BuiltTypeEnvironment.sources; type_environment; _ } =
@@ -32,41 +29,63 @@ let setup ?(additional_sources = []) ~context ~handle source =
 
 let test_all_decorators context =
   let assert_decorators source expected =
-    let _, environment = setup ~context ~handle:"test.py" source in
+    let additional_sources =
+      [
+        ( "file1.py",
+          {|
+            from typing import Callable
+            def decorator1(callable: Callable[[str], None]) -> Callable[[str], None]: ...
+      |}
+        );
+        ( "some_module/file2.py",
+          {|
+            from typing import Callable
+            def decorator2(callable: Callable[[str], None]) -> Callable[[str], None]: ...
+      |}
+        );
+      ]
+    in
+    let _, environment = setup ~additional_sources ~context ~handle:"test.py" source in
     assert_equal
-      ~cmp:[%equal: Reference.t list]
-      ~printer:[%show: Reference.t list]
-      expected
-      (DecoratorHelper.all_decorators environment |> List.sort ~compare:[%compare: Reference.t])
+      ~cmp:[%equal: DecoratorHelper.decorator_reference_and_module list]
+      ~printer:[%show: DecoratorHelper.decorator_reference_and_module list]
+      (List.map expected ~f:(fun (decorator, module_reference) ->
+           { DecoratorHelper.decorator; module_reference }))
+      ( DecoratorHelper.all_decorators environment
+      |> List.sort ~compare:[%compare: DecoratorHelper.decorator_reference_and_module] )
   in
   assert_decorators
     {|
-    @decorator1
+    @file1.decorator1
     def foo(z: str) -> None:
       print(z)
 
-    @decorator2
-    @decorator3(1, 2)
+    @some_module.file2.decorator2
+    @decorator_with_no_module(1, 2)
     def bar(z: str) -> None:
       print(z)
   |}
-    [!&"decorator1"; !&"decorator2"; !&"decorator3"];
+    [
+      !&"decorator_with_no_module", None;
+      !&"file1.decorator1", Some !&"file1";
+      !&"some_module.file2.decorator2", Some !&"some_module.file2";
+    ];
   assert_decorators
     {|
     def outer(z: str) -> None:
-      @decorator1
+      @file1.decorator1
       def inner(z: str) -> None:
         print(z)
   |}
-    [!&"decorator1"];
+    [!&"file1.decorator1", Some !&"file1"];
   assert_decorators
     {|
     class Foo:
-      @decorator1
+      @file1.decorator1
       def some_method(self, z: str) -> None:
         print(z)
   |}
-    [!&"decorator1"];
+    [!&"file1.decorator1", Some !&"file1"];
   ()
 
 
