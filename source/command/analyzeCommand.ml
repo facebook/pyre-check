@@ -19,6 +19,43 @@ let get_analysis_kind = function
 
 let should_infer analysis = String.equal analysis "type_inference"
 
+let type_environment_with_decorators_inlined ~configuration ~scheduler environment =
+  let open Analysis in
+  let open Interprocedural in
+  let open Ast in
+  let decorator_bodies =
+    DecoratorHelper.all_decorator_bodies (TypeEnvironment.read_only environment)
+  in
+  let environment =
+    AstEnvironment.create
+      ~additional_preprocessing:
+        (DecoratorHelper.inline_decorators
+           ~environment:(TypeEnvironment.read_only environment)
+           ~decorator_bodies)
+      (AstEnvironment.module_tracker (TypeEnvironment.ast_environment environment))
+    |> AnnotatedGlobalEnvironment.create
+    |> TypeEnvironment.create
+  in
+  let all_internal_paths =
+    let get_internal_path source_path =
+      let path = SourcePath.full_path ~configuration source_path in
+      Option.some_if (SourcePath.is_internal_path ~configuration path) path
+    in
+    ModuleTracker.source_paths
+      (AstEnvironment.module_tracker (TypeEnvironment.ast_environment environment))
+    |> List.filter_map ~f:get_internal_path
+  in
+  let _ =
+    Server.IncrementalCheck.recheck
+      ~configuration
+      ~scheduler
+      ~environment
+      ~errors:(Ast.Reference.Table.create ())
+      all_internal_paths
+  in
+  environment
+
+
 let run_analysis
     analysis
     result_json_path
@@ -123,10 +160,6 @@ let run_analysis
         ~rule_filter:None
         ~paths:configuration.Configuration.Analysis.taint_model_paths
       |> ignore;
-
-      if inline_decorators then
-        Log.info "Inlining decorators for taint analysis...";
-
       Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->
           let cached_environment =
             if use_cache then Service.StaticAnalysis.Cache.load_environment ~configuration else None
@@ -152,7 +185,13 @@ let run_analysis
                   Service.StaticAnalysis.Cache.save_environment ~configuration ~environment;
                 environment
           in
-
+          let environment =
+            if inline_decorators then (
+              Log.info "Inlining decorators for taint analysis...";
+              type_environment_with_decorators_inlined ~configuration ~scheduler environment )
+            else
+              environment
+          in
           let ast_environment =
             Analysis.TypeEnvironment.ast_environment environment
             |> Analysis.AstEnvironment.read_only
