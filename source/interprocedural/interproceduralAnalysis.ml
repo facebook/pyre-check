@@ -880,7 +880,9 @@ let report_results
         ~filename_lookup
         ~analyses
         ~skipped_overrides
-        callables
+        callables;
+      (* Print an empty list as json because the python client currently requires it *)
+      Log.print "%s" (Yojson.Safe.pretty_to_string (`List []))
   | None ->
       List.map errors ~f:(fun error ->
           InterproceduralError.instantiate ~show_error_traces ~lookup:filename_lookup error
