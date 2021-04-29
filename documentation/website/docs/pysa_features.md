@@ -87,9 +87,9 @@ See the Automatic Features section for details.
 
 The `via-value` feature is similar to the `via` feature, however, it captures
 *the value of the specified argument, rather than a feature name*. Note that
-this only works for string literals, numeric literals, and enums. For example,
-`via-value:Access-Control-Allow-Origin` might indicate that the string literal
-`Access-Control-Allow-Origin` was used to set a header in a Django response.
+this only works for string literals, boolean literals, numeric literals, and enums.
+For example, `via-value:Access-Control-Allow-Origin` might indicate that the string
+literal `Access-Control-Allow-Origin` was used to set a header in a Django response.
 
 The `via-value` feature can be added anywhere that the `via` feature can be
 added. It is added by specifying `ViaValueOf[PARAMETER_NAME]`, where
@@ -104,6 +104,10 @@ def django.http.response.HttpResponse.__setitem__(
     value: TaintSink[ResponseHeaderValue, ViaValueOf[header]]
 ): ...
 ```
+
+In cases where the argument is not a constant, the feature will appear as
+`via-value:<unknown>`. If the argument is not provided at the call site (e.g,
+using the default value), the feature will appear as `via-value:<missing>`.
 
 You can also associate a tag with a `via-value` feature to ensure that different
 `via-value` annotations don't interfere with each other. Here's how you can retain
