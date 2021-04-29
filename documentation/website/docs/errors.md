@@ -492,6 +492,34 @@ x: Container[int] = Container() # No error
 y: Container[str] = Container() # Invalid type parameter error
 ```
 
+### 29: Call Error
+
+Pyre will emit an error on seeing a call of one of the following types:
+
+1. The called object is not a function. This means that its inferred type is not Callable and it is not an instance of a class which implements a `__call__` method. This could happen due to user error (the object is indeed not a function) or due to an incorrect or incomplete type stub for the object's class causing pyre to infer the wrong type.
+
+2. The call cannot be safely typed since the types and kinds of its parameters depend on a type variable. This is seen when the callable is typed using a ParameterSpecification type variable and the `*args` and `**kwargs` are not passed into the call correctly, i.e. together and in order. (For more details see [PEP 612](https://www.python.org/dev/peps/pep-0612/#the-components-of-a-paramspec))
+
+```python
+from pyre_extensions import ParameterSpecification
+
+P = ParameterSpecification("P")
+
+def decorator(f: Callable[P, int]) -> Callable[P, None]:
+
+  def foo(*args: P.args, **kwargs: P.kwargs) -> None:
+
+    f(*args, **kwargs)    # Accepted, should resolve to int
+
+    f(*args)              # Rejected
+
+    f(*kwargs, **args)    # Rejected
+
+    f(1, *args, **kwargs) # Rejected
+
+  return foo
+```
+
 ### 33: Prohibited Any
 Pyre will warn on any usage of `typing.Any` when run in [strict mode](types-in-python#strict-mode). `Any` is an escape hatch that hides type errors and introduces potential type inconsistencies which Pyre strict is designed to make explicit. To resolve this error, replace `Any` with any other annotation. Using builtins `object` is acceptable if you are looking for a supertype of all classes.
 
