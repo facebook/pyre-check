@@ -17,6 +17,8 @@ let extract_constant_name { Node.value = expression; _ } =
   match expression with
   | Expression.String literal -> Some literal.value
   | Integer i -> Some (string_of_int i)
+  | False -> Some "False"
+  | True -> Some "True"
   | Name name -> (
       let name = name_to_reference name >>| Reference.delocalize >>| Reference.last in
       match name with

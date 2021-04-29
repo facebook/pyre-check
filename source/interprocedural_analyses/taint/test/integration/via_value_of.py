@@ -23,6 +23,10 @@ def test_numerals():
     return return_via_parameter_name(1)
 
 
+def test_bool():
+    return return_via_parameter_name(False)
+
+
 def test_enums():
     return return_via_parameter_name(MyEnum.FOO)
 
