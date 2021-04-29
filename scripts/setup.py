@@ -162,10 +162,6 @@ class Setup(NamedTuple):
         opam_environment_variables = self.opam_environment_variables()
 
         self.run(
-            ["opam", "update"],
-            add_environment_variables=opam_environment_variables,
-        )
-        self.run(
             ["opam", "install", "--yes"] + DEPENDENCIES,
             add_environment_variables=opam_environment_variables,
         )
