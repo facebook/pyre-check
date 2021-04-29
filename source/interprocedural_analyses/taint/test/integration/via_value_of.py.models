@@ -12,7 +12,7 @@
           {
             "root": {
               "filename": "via_value_of.py",
-              "line": 80,
+              "line": 84,
               "start": 16,
               "end": 25
             },
@@ -37,7 +37,7 @@
           {
             "root": {
               "filename": "via_value_of.py",
-              "line": 72,
+              "line": 76,
               "start": 11,
               "end": 26
             },
@@ -62,7 +62,7 @@
           {
             "root": {
               "filename": "via_value_of.py",
-              "line": 35,
+              "line": 39,
               "start": 11,
               "end": 47
             },
@@ -93,7 +93,7 @@
           {
             "root": {
               "filename": "via_value_of.py",
-              "line": 64,
+              "line": 68,
               "start": 22,
               "end": 31
             },
@@ -177,7 +177,7 @@
             "call": {
               "position": {
                 "filename": "via_value_of.py",
-                "line": 84,
+                "line": 88,
                 "start": 19,
                 "end": 28
               },
@@ -209,7 +209,7 @@
             "call": {
               "position": {
                 "filename": "via_value_of.py",
-                "line": 76,
+                "line": 80,
                 "start": 11,
                 "end": 49
               },
@@ -242,7 +242,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 60, "start": 16, "end": 25 } ],
+            "tito": [ { "line": 64, "start": 16, "end": 25 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
             "features": [
               { "always-via": "tito" },
@@ -317,6 +317,36 @@
 {
   "kind": "model",
   "data": {
+    "callable": "via_value_of.test_missing",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "via_value_of.py",
+              "line": 35,
+              "start": 11,
+              "end": 38
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "via_value_of.return_via_parameter_name"
+              }
+            ],
+            "features": [ { "always-via-value": "<missing>" } ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "via_value_of.test_numerals",
     "sources": [
       {
@@ -355,7 +385,7 @@
           {
             "root": {
               "filename": "via_value_of.py",
-              "line": 92,
+              "line": 96,
               "start": 11,
               "end": 51
             },
@@ -387,7 +417,7 @@
           {
             "root": {
               "filename": "via_value_of.py",
-              "line": 100,
+              "line": 104,
               "start": 11,
               "end": 44
             },
@@ -417,7 +447,7 @@
           {
             "root": {
               "filename": "via_value_of.py",
-              "line": 104,
+              "line": 108,
               "start": 11,
               "end": 57
             },
@@ -448,7 +478,7 @@
           {
             "root": {
               "filename": "via_value_of.py",
-              "line": 56,
+              "line": 60,
               "start": 29,
               "end": 36
             },
@@ -476,7 +506,7 @@
             "call": {
               "position": {
                 "filename": "via_value_of.py",
-                "line": 68,
+                "line": 72,
                 "start": 14,
                 "end": 23
               },
@@ -536,11 +566,11 @@
           {
             "root": {
               "filename": "via_value_of.py",
-              "line": 47,
+              "line": 51,
               "start": 13,
               "end": 28
             },
-            "tito": [ { "line": 47, "start": 13, "end": 28 } ],
+            "tito": [ { "line": 51, "start": 13, "end": 28 } ],
             "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [
               { "always-via": "tito" },
@@ -567,7 +597,7 @@
             "call": {
               "position": {
                 "filename": "via_value_of.py",
-                "line": 39,
+                "line": 43,
                 "start": 11,
                 "end": 23
               },

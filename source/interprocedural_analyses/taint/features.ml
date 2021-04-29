@@ -156,9 +156,11 @@ module Simple = struct
 
   let via_value_of_breadcrumb ?tag ~argument =
     let feature =
-      argument
-      >>= Interprocedural.CallResolution.extract_constant_name
-      |> Option.value ~default:"<unknown>"
+      match argument with
+      | None -> "<missing>"
+      | Some argument ->
+          Interprocedural.CallResolution.extract_constant_name argument
+          |> Option.value ~default:"<unknown>"
     in
     Breadcrumb (Breadcrumb.ViaValue { value = feature; tag })
 
