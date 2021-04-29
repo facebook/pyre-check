@@ -700,31 +700,26 @@ let compute_fixpoint
       raise exn
 
 
-let get_errors results =
-  let open Result in
-  let get_diagnostics (Pkg { kind = ResultPart kind; value }) =
-    let module Analysis = (val get_analysis kind) in
-    Analysis.get_errors value
-  in
-  Kind.Map.bindings results
-  |> List.map ~f:snd
-  |> List.map ~f:get_diagnostics
-  |> List.concat_no_order
-
-
-let extract_errors scheduler all_callables =
-  let extract_errors callables =
-    List.fold
-      ~f:(fun errors callable -> (Fixpoint.get_result callable |> get_errors) :: errors)
-      ~init:[]
-      callables
-    |> List.concat_no_order
+let extract_errors scheduler all_callables (Result.Analysis { Result.kind; _ }) =
+  let get_errors _ callables =
+    (* Note that we *must* rely on kind here, which is a serializable storable_kind. We cannot
+       expand the Analysis module until we're inside of the map_reduce worker. Beware that if you
+       get the order wrong ocaml will happily typecheck your code, but Result.get_result
+       Analysis.kind will always fail in the worker processes. *)
+    let (Result.Analysis { Result.analysis; _ }) =
+      kind |> Kind.abstract |> Result.get_abstract_analysis
+    in
+    let module Analysis = (val analysis) in
+    let get_callable_errors callable =
+      callable |> Fixpoint.get_result |> Result.get_result Analysis.kind >>| Analysis.get_errors
+    in
+    callables |> List.filter_map ~f:get_callable_errors |> List.concat_no_order
   in
   Scheduler.map_reduce
     scheduler
     ~policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
     ~initial:[]
-    ~map:(fun _ callables -> extract_errors callables)
+    ~map:get_errors
     ~reduce:List.cons
     ~inputs:all_callables
     ()
@@ -777,9 +772,9 @@ let save_results_to_directory
     ~result_directory
     ~local_root
     ~filename_lookup
-    ~analyses
     ~skipped_overrides
-    callables
+    ~callables
+    (Result.Analysis { Result.analysis; kind })
   =
   let emit_json_array_elements out_buffer =
     let seen_element = ref false in
@@ -791,12 +786,12 @@ let save_results_to_directory
         seen_element := true;
         Json.to_outbuf out_buffer json )
   in
+  let module Analysis = (val analysis) in
   let timer = Timer.start () in
   let models_path analysis_name = Format.sprintf "%s-output.json" analysis_name in
   let root = local_root |> Path.absolute in
-  let save_models (Result.Analysis { Result.analysis; kind }) =
+  let save_models () =
     let kind = Result.Kind.abstract kind in
-    let module Analysis = (val analysis) in
     let filename = models_path Analysis.name in
     let output_path = Path.append result_directory ~element:filename in
     let out_channel = open_out (Path.absolute output_path) in
@@ -811,8 +806,7 @@ let save_results_to_directory
     Bi_outbuf.flush_output_writer out_buffer;
     close_out out_channel
   in
-  let save_metadata (Result.Analysis { Result.analysis; _ }) =
-    let module Analysis = (val analysis) in
+  let save_metadata () =
     let filename = Format.sprintf "%s-metadata.json" Analysis.name in
     let output_path = Path.append result_directory ~element:filename in
     let out_channel = open_out (Path.absolute output_path) in
@@ -845,8 +839,8 @@ let save_results_to_directory
     Bi_outbuf.flush_output_writer out_buffer;
     close_out out_channel
   in
-  List.iter analyses ~f:save_models;
-  List.iter analyses ~f:save_metadata;
+  save_models ();
+  save_metadata ();
   Log.info "Analysis results were written to `%s`." (Path.absolute result_directory);
   Statistics.performance
     ~name:"Wrote analysis results"
@@ -855,7 +849,7 @@ let save_results_to_directory
     ()
 
 
-let report_results
+let report_analysis
     ~scheduler
     ~static_analysis_configuration:
       {
@@ -864,36 +858,70 @@ let report_results
         _;
       }
     ~filename_lookup
-    ~analyses
     ~callables
     ~skipped_overrides
-    ~iterations
+    ~fixpoint_timer
+    ~fixpoint_iterations_if_success
+    analysis
   =
-  let errors = extract_errors scheduler (Callable.Set.elements callables) in
+  let errors = extract_errors scheduler (Callable.Set.elements callables) analysis in
+  (* Log and record stats *)
   Log.info "Found %d issues" (List.length errors);
-  ( match result_json_path with
+  ( match fixpoint_iterations_if_success with
+  | Some iterations ->
+      Log.info "Fixpoint iterations: %d" iterations;
+      Statistics.performance
+        ~name:"Analysis fixpoint complete"
+        ~phase_name:"Static analysis fixpoint"
+        ~timer:fixpoint_timer
+        ~integers:
+          [
+            "pysa fixpoint iterations", iterations;
+            "pysa heap size", SharedMem.heap_size ();
+            "pysa issues", List.length errors;
+          ]
+        ()
+  | None -> () );
+  (* Dump results to output directory if one was provided, and return a list of json (empty whenever
+     we dumped to a directory) to summarize *)
+  match result_json_path with
   | Some result_directory ->
-      let analyses = List.map ~f:Result.get_abstract_analysis analyses in
       save_results_to_directory
         ~result_directory
         ~local_root
         ~filename_lookup
-        ~analyses
         ~skipped_overrides
-        callables;
-      (* Print an empty list as json because the python client currently requires it *)
-      Log.print "%s" (Yojson.Safe.pretty_to_string (`List []))
-  | None ->
-      List.map errors ~f:(fun error ->
-          InterproceduralError.instantiate ~show_error_traces ~lookup:filename_lookup error
-          |> InterproceduralError.Instantiated.to_yojson)
-      |> (fun result -> Yojson.Safe.pretty_to_string (`List result))
-      |> Log.print "%s" );
-  match iterations with
-  | Some iterations ->
-      [
-        "pysa fixpoint iterations", iterations;
-        "pysa heap size", SharedMem.heap_size ();
-        "pysa issues", List.length errors;
-      ]
-  | None -> []
+        ~callables
+        analysis;
+      []
+  | _ ->
+      let error_to_json error =
+        error
+        |> InterproceduralError.instantiate ~show_error_traces ~lookup:filename_lookup
+        |> InterproceduralError.Instantiated.to_yojson
+      in
+      List.map errors ~f:error_to_json
+
+
+let report_results
+    ~scheduler
+    ~static_analysis_configuration
+    ~filename_lookup
+    ~analyses
+    ~callables
+    ~skipped_overrides
+    ~fixpoint_timer
+    ~fixpoint_iterations_if_success
+  =
+  let report_analysis =
+    report_analysis
+      ~scheduler
+      ~static_analysis_configuration
+      ~filename_lookup
+      ~callables
+      ~skipped_overrides
+      ~fixpoint_timer
+      ~fixpoint_iterations_if_success
+  in
+  let analyses = List.map ~f:Result.get_abstract_analysis analyses in
+  analyses |> List.concat_map ~f:report_analysis

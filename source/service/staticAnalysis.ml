@@ -636,7 +636,7 @@ let analyze
     (List.length override_targets)
     (List.length callables_to_analyze);
   let callables_to_analyze = List.rev_append override_targets callables_to_analyze in
-  let timer = Timer.start () in
+  let fixpoint_timer = Timer.start () in
   let compute_fixpoint () =
     Interprocedural.Analysis.compute_fixpoint
       ~scheduler
@@ -647,7 +647,7 @@ let analyze
       ~all_callables:callables_to_analyze
       Interprocedural.Fixpoint.Epoch.initial
   in
-  let report_results iterations =
+  let report_results fixpoint_iterations_if_success =
     let callables =
       Callable.Set.of_list (List.rev_append initial_models_callables callables_to_analyze)
     in
@@ -658,18 +658,13 @@ let analyze
       ~analyses
       ~callables
       ~skipped_overrides
-      ~iterations
+      ~fixpoint_timer
+      ~fixpoint_iterations_if_success
   in
   try
-    let iterations = compute_fixpoint () in
-    Log.info "Fixpoint iterations: %d" iterations;
-    let analysis_stats_integers = report_results (Some iterations) in
-    Statistics.performance
-      ~name:"Analysis fixpoint complete"
-      ~phase_name:"Static analysis fixpoint"
-      ~timer
-      ~integers:analysis_stats_integers
-      ()
+    let fixpoint_iterations = compute_fixpoint () in
+    let summary = report_results (Some fixpoint_iterations) in
+    Yojson.Safe.pretty_to_string (`List summary) |> Log.print "%s"
   with
   | exn ->
       let _ = report_results None in

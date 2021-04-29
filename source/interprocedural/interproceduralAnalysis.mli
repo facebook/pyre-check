@@ -72,5 +72,6 @@ val report_results
   analyses:Kind.abstract list ->
   callables:Callable.Set.t ->
   skipped_overrides:Ast.Reference.t list ->
-  iterations:int option ->
-  (string * int) list
+  fixpoint_timer:Timer.t ->
+  fixpoint_iterations_if_success:int option ->
+  Yojson.Safe.json list
