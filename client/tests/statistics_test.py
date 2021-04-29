@@ -118,6 +118,15 @@ class StatisticsCollectorTest(unittest.TestCase):
             """,
             {"strict_count": 1, "unsafe_count": 0},
         )
+        self.assert_strict_count_equal(
+            """
+            #  pyre-ignore-all-errors[56]
+            def foo(x: str) -> int:
+                return x  # FIXME[7]
+            """,
+            {"strict_count": 1, "unsafe_count": 0},
+            True,
+        )
 
     def assert_annotation_count_equal(
         self,

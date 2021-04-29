@@ -190,6 +190,9 @@ class StrictCountCollector(StatisticsCollector):
         self.unsafe_regex: Pattern[str] = compile(r" ?#+ *pyre-unsafe")
         self.strict_regex: Pattern[str] = compile(r" ?#+ *pyre-strict")
         self.ignore_all_regex: Pattern[str] = compile(r" ?#+ *pyre-ignore-all-errors")
+        self.ignore_all_by_code_regex: Pattern[str] = compile(
+            r" ?#+ *pyre-ignore-all-errors\[[0-9]+[0-9, ]*\]"
+        )
 
     def is_unsafe_module(self) -> bool:
         if self.is_unsafe:
@@ -203,12 +206,15 @@ class StrictCountCollector(StatisticsCollector):
         self.is_unsafe = False
 
     def visit_Comment(self, node: cst.Comment) -> None:
-        strict_match = self.strict_regex.match(node.value)
-        if strict_match:
+        if self.strict_regex.match(node.value):
             self.is_strict = True
-        unsafe_match = self.unsafe_regex.match(node.value)
-        ignore_all_match = self.ignore_all_regex.match(node.value)
-        if unsafe_match or ignore_all_match:
+            return
+        if self.unsafe_regex.match(node.value):
+            self.is_unsafe = True
+            return
+        if self.ignore_all_regex.match(
+            node.value
+        ) and not self.ignore_all_by_code_regex.match(node.value):
             self.is_unsafe = True
 
     def leave_Module(self, original_node: cst.Module) -> None:
