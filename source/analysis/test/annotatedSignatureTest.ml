@@ -90,6 +90,7 @@ let test_unresolved_select context =
                   meta: typing.Type[typing.List[int]] = ...
                   union: typing.Union[int, str] = ...
                   int_to_int_dictionary: typing.Dict[int, int] = ...
+                  union_list: typing.Union[typing.List[int], typing.List[str]] = ...
 
                   unknown: $unknown = ...
                   g: typing.Callable[[int], bool]
@@ -589,6 +590,11 @@ let test_unresolved_select context =
     "[[_T_bound_by_float_str_union], _T_bound_by_float_str_union]"
     "(union)"
     (`Found "typing.Union[int, str]");
+  (* T44393553 : typing.Union[typing.List[int], typing.List[str]] desired. *)
+  assert_select
+    "[[typing.Iterable[_T]], typing.List[_T]]"
+    "(union_list)"
+    (`Found "typing.List[typing.Union[int, str]]");
 
   let assert_marks_as_escaped_with_argument ~constraints =
     let variable, escaped_variable = make_normal_and_escaped_variable ~constraints "_S" in
