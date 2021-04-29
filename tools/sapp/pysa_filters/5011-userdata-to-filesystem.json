@@ -1,0 +1,39 @@
+{
+    "name": "User data to filesystem operation",
+    "description": "High signal filter for 5011 User data to filesystem operation",
+    "features":[
+        {
+            "mode":"any of",
+            "features":[
+                "always-via-file-open-mode-value:r",
+                "always-via-file-open-mode-value:w",
+                "always-via-file-open-mode-value:wb",
+                "always-via-file-open-mode-value:rb",
+                "always-via-file-open-mode-value:<unknown>",
+                "always-via-file-open-mode-value:<missing>"
+            ]
+        },
+        {
+            "mode":"none of",
+            "features":[
+                "always-type:scalar",
+                "always-type:bool",
+                "always-via:bytesio",
+                "always-via:format-string",
+                "always-via:string_concat_rhs",
+                "always-via:string_concat_lhs"
+            ]
+        }
+    ],
+    "codes": [
+        5011
+    ],
+    "traceLengthFromSources": [
+        0,
+        3
+    ],
+    "traceLengthToSinks": [
+        0,
+        3
+    ]
+}

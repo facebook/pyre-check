@@ -1,0 +1,25 @@
+{
+    "name": "Unsafe Deserialization",
+    "description": "High signal filter for 6066 Unsafe Deserialization",
+    "features": [
+        {
+            "mode": "none of",
+            "features": [
+                "always-type:bool",
+                "always-type:scalar",
+                "always-via:external_query"
+            ]
+        }
+    ],
+    "codes": [
+        6066
+    ],
+    "traceLengthFromSources": [
+        0,
+        3
+    ],
+    "traceLengthToSinks": [
+        0,
+        4
+    ]
+}

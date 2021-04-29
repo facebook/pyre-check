@@ -1,0 +1,26 @@
+{
+    "name": "Command and Code Injection",
+    "description": "High signal filter for 5001 Shell Injection",
+    "features": [
+        {
+            "mode": "none of",
+            "features": [
+                "always-type:scalar",
+                "always-type:bool",
+                "via:shell_escape",
+                "always-via:shell_escape"
+            ]
+        }
+    ],
+    "codes": [
+        5001
+      ],
+    "traceLengthFromSources": [
+        0,
+        3
+    ],
+    "traceLengthToSinks": [
+        0,
+        4
+    ]
+}
