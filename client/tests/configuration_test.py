@@ -97,6 +97,7 @@ class PartialConfigurationTest(unittest.TestCase):
         self.assertListEqual(list(configuration.excludes), ["excludes"])
         self.assertEqual(configuration.formatter, "formatter")
         self.assertEqual(configuration.logger, "logger")
+        self.assertEqual(configuration.oncall, None)
         self.assertListEqual(
             list(configuration.search_path),
             [SimpleSearchPathElement("x"), SimpleSearchPathElement("y")],
@@ -219,6 +220,10 @@ class PartialConfigurationTest(unittest.TestCase):
         )
         self.assertEqual(
             PartialConfiguration.from_string(json.dumps({"logger": "foo"})).logger,
+            "foo",
+        )
+        self.assertEqual(
+            PartialConfiguration.from_string(json.dumps({"oncall": "foo"})).oncall,
             "foo",
         )
         self.assertEqual(
@@ -396,6 +401,7 @@ class PartialConfigurationTest(unittest.TestCase):
         assert_raises(json.dumps({"ignore_all_errors": [1, 2, 3]}))
         assert_raises(json.dumps({"ignore_infer": [False, "bc"]}))
         assert_raises(json.dumps({"logger": []}))
+        assert_raises(json.dumps({"oncall": []}))
         assert_raises(json.dumps({"workers": "abc"}))
         assert_raises(json.dumps({"critical_files": "abc"}))
         assert_raises(json.dumps({"source_directories": "abc"}))
@@ -511,6 +517,7 @@ class PartialConfigurationTest(unittest.TestCase):
         assert_prepended("ignore_infer")
         assert_overwritten("logger")
         assert_overwritten("number_of_workers")
+        assert_overwritten("oncall")
         assert_prepended("other_critical_files")
         assert_overwritten("python_version")
         assert_prepended("search_path")
@@ -636,6 +643,7 @@ class ConfigurationTest(testslide.TestCase):
                 ignore_infer=["baz"],
                 logger="logger",
                 number_of_workers=3,
+                oncall="oncall",
                 other_critical_files=["critical"],
                 python_version=PythonVersion(major=3, minor=6, micro=7),
                 search_path=[SimpleSearchPathElement("search_path")],
@@ -668,6 +676,7 @@ class ConfigurationTest(testslide.TestCase):
         self.assertListEqual(list(configuration.ignore_infer), ["baz"])
         self.assertEqual(configuration.logger, "logger")
         self.assertEqual(configuration.number_of_workers, 3)
+        self.assertEqual(configuration.oncall, "oncall")
         self.assertListEqual(list(configuration.other_critical_files), ["critical"])
         self.assertListEqual(
             list(configuration.search_path), [SimpleSearchPathElement("search_path")]

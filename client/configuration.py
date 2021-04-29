@@ -329,6 +329,7 @@ class PartialConfiguration:
     isolation_prefix: Optional[str] = None
     logger: Optional[str] = None
     number_of_workers: Optional[int] = None
+    oncall: Optional[str] = None
     other_critical_files: Sequence[str] = field(default_factory=list)
     python_version: Optional[PythonVersion] = None
     search_path: Sequence[SearchPathElement] = field(default_factory=list)
@@ -352,7 +353,6 @@ class PartialConfiguration:
             "accept_command_v2",
             "create_open_source_configuration",
             "differential",
-            "oncall",
             "saved_state",
             "stable_client",
             "taint_models_path",
@@ -388,6 +388,7 @@ class PartialConfiguration:
             isolation_prefix=arguments.isolation_prefix,
             logger=arguments.logger,
             number_of_workers=None,
+            oncall=None,
             other_critical_files=[],
             python_version=(
                 PythonVersion.from_string(python_version_string)
@@ -549,6 +550,7 @@ class PartialConfiguration:
                 number_of_workers=ensure_option_type(
                     configuration_json, "workers", int
                 ),
+                oncall=ensure_option_type(configuration_json, "oncall", str),
                 other_critical_files=ensure_string_list(
                     configuration_json, "critical_files"
                 ),
@@ -646,6 +648,7 @@ class PartialConfiguration:
             isolation_prefix=self.isolation_prefix,
             logger=logger,
             number_of_workers=self.number_of_workers,
+            oncall=self.oncall,
             other_critical_files=[
                 expand_relative_path(root, path) for path in self.other_critical_files
             ],
@@ -715,6 +718,7 @@ def merge_partial_configurations(
         number_of_workers=overwrite_base(
             base.number_of_workers, override.number_of_workers
         ),
+        oncall=overwrite_base(base.oncall, override.oncall),
         other_critical_files=prepend_base(
             base.other_critical_files, override.other_critical_files
         ),
@@ -762,6 +766,7 @@ class Configuration:
     isolation_prefix: Optional[str] = None
     logger: Optional[str] = None
     number_of_workers: Optional[int] = None
+    oncall: Optional[str] = None
     other_critical_files: Sequence[str] = field(default_factory=list)
     python_version: Optional[PythonVersion] = None
     relative_local_root: Optional[str] = None
@@ -810,6 +815,7 @@ class Configuration:
             isolation_prefix=partial_configuration.isolation_prefix,
             logger=partial_configuration.logger,
             number_of_workers=partial_configuration.number_of_workers,
+            oncall=partial_configuration.oncall,
             other_critical_files=partial_configuration.other_critical_files,
             python_version=partial_configuration.python_version,
             relative_local_root=relative_local_root,
@@ -857,6 +863,7 @@ class Configuration:
         isolation_prefix = self.isolation_prefix
         logger = self.logger
         number_of_workers = self.number_of_workers
+        oncall = self.oncall
         python_version = self.python_version
         relative_local_root = self.relative_local_root
         source_directories = self.source_directories
@@ -887,6 +894,7 @@ class Configuration:
                 else {}
             ),
             **({"logger": logger} if logger is not None else {}),
+            **({"oncall": oncall} if oncall is not None else {}),
             **({"workers": number_of_workers} if number_of_workers is not None else {}),
             "other_critical_files": list(self.other_critical_files),
             **(
