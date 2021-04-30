@@ -15,7 +15,7 @@ type initialize_result = {
 (* Calls init on all specified analyses to get initial models *)
 val initialize
   :  Kind.abstract list ->
-  configuration:Configuration.StaticAnalysis.t ->
+  static_analysis_configuration:Configuration.StaticAnalysis.t ->
   scheduler:Scheduler.t ->
   environment:Analysis.TypeEnvironment.ReadOnly.t ->
   functions:Callable.t list ->

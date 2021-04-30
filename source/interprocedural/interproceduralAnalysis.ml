@@ -17,14 +17,14 @@ type initialize_result = {
   skip_overrides: Ast.Reference.Set.t;
 }
 
-let initialize kinds ~configuration ~scheduler ~environment ~functions ~stubs =
+let initialize kinds ~static_analysis_configuration ~scheduler ~environment ~functions ~stubs =
   let initialize_each
       { initial_models = models; skip_overrides }
       (Result.Analysis { kind; analysis })
     =
     let module Analysis = (val analysis) in
     let { Result.initial_models = new_models; skip_overrides = new_skip_overrides } =
-      Analysis.init ~configuration ~scheduler ~environment ~functions ~stubs
+      Analysis.init ~static_analysis_configuration ~scheduler ~environment ~functions ~stubs
     in
     let add_analysis_model existing model =
       let open Result in

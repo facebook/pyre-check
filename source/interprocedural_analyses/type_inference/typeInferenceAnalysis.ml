@@ -11,7 +11,7 @@ open Interprocedural
 
 include TypeInferenceResult.Register (struct
   let init
-      ~configuration:{ Configuration.StaticAnalysis.configuration = c; _ }
+      ~static_analysis_configuration:{ Configuration.StaticAnalysis.configuration = c; _ }
       ~scheduler:_
       ~environment:_
       ~functions:_

@@ -218,7 +218,7 @@ let run_analysis
           Service.StaticAnalysis.analyze
             ~scheduler
             ~analysis_kind:(get_analysis_kind analysis)
-            ~configuration:
+            ~static_analysis_configuration:
               {
                 Configuration.StaticAnalysis.configuration;
                 result_json_path;

@@ -470,7 +470,7 @@ let record_overrides_for_qualifiers
 let analyze
     ~scheduler
     ~analysis_kind
-    ~configuration:
+    ~static_analysis_configuration:
       ({ Configuration.StaticAnalysis.configuration; use_cache; _ } as static_analysis_configuration)
     ~filename_lookup
     ~environment
@@ -518,7 +518,7 @@ let analyze
     let { Interprocedural.Analysis.initial_models = models; skip_overrides } =
       Analysis.initialize
         analyses
-        ~configuration:static_analysis_configuration
+        ~static_analysis_configuration
         ~scheduler
         ~environment
         ~functions

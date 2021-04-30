@@ -40,7 +40,7 @@ val regular_and_filtered_callables
 val analyze
   :  scheduler:Scheduler.t ->
   analysis_kind:Interprocedural.AnalysisKind.abstract ->
-  configuration:Configuration.StaticAnalysis.t ->
+  static_analysis_configuration:Configuration.StaticAnalysis.t ->
   filename_lookup:(Reference.t -> string option) ->
   environment:TypeEnvironment.ReadOnly.t ->
   qualifiers:Reference.t list ->
