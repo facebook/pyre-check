@@ -46,34 +46,11 @@ module ResultA = Interprocedural.Result.Make (struct
 
   let obscure_model = -1
 
-  let get_errors _ = []
-
   let join ~iteration:_ a b = a + b
 
   let widen ~iteration ~previous ~next = join ~iteration previous next
 
   let reached_fixpoint ~iteration:_ ~previous ~next = next <= previous
-
-  let externalize ~filename_lookup:_ callable result_option model =
-    let result_json =
-      match result_option with
-      | None -> `Null
-      | Some result -> `String result
-    in
-    [
-      `Assoc
-        [
-          "analysis", `String name;
-          "name", `String (Callable.show callable);
-          "model", `Int model;
-          "result", result_json;
-        ];
-    ]
-
-
-  let metadata () = `Assoc ["codes", `List [`String "A"]]
-
-  let statistics () = `Assoc ["model_verification_errors", `Int 0]
 
   let strip_for_callsite model = model
 end)
@@ -129,34 +106,11 @@ module ResultB = Interprocedural.Result.Make (struct
 
   let obscure_model = "obscure"
 
-  let get_errors _ = []
-
   let join ~iteration:_ a b = a ^ b
 
   let widen ~iteration ~previous ~next = join ~iteration previous next
 
   let reached_fixpoint ~iteration:_ ~previous ~next = String.(next <= previous)
-
-  let externalize ~filename_lookup:_ callable result_option model =
-    let result_json =
-      match result_option with
-      | None -> `Null
-      | Some result -> `Int result
-    in
-    [
-      `Assoc
-        [
-          "analysis", `String name;
-          "name", `String (Callable.show callable);
-          "model", `String model;
-          "result", result_json;
-        ];
-    ]
-
-
-  let metadata () = `Assoc ["codes", `List [`String "B"]]
-
-  let statistics () = `Assoc ["errors", `Int 1]
 
   let strip_for_callsite model = model
 end)

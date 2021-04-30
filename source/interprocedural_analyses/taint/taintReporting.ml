@@ -11,13 +11,38 @@ open Ast
 open Interprocedural
 module Json = Yojson.Safe
 
+let get_result callable = Fixpoint.get_result callable |> Result.get_result TaintResult.kind
+
 let get_model callable = Fixpoint.get_model callable >>= Result.get_model TaintResult.kind
 
-let get_result callable = Fixpoint.get_result callable |> Result.get_result TaintResult.kind
+let get_errors result = List.map ~f:Flow.generate_error result
+
+let issues_to_json ~filename_lookup callable result_opt =
+  match result_opt with
+  | None -> []
+  | Some issues ->
+      let issue_to_json issue =
+        let json = Flow.to_json ~filename_lookup callable issue in
+        `Assoc ["kind", `String "issue"; "data", json]
+      in
+      List.map ~f:issue_to_json issues
+
+
+let metadata () =
+  let codes = Flow.code_metadata () in
+  `Assoc ["codes", codes]
+
+
+let statistics () =
+  let model_verification_errors =
+    ModelVerificationError.get () |> List.map ~f:ModelVerificationError.to_json
+  in
+  `Assoc ["model_verification_errors", `List model_verification_errors]
+
 
 let extract_errors scheduler callables =
   let extract_errors callables =
-    List.filter_map ~f:(fun callable -> get_result callable >>| TaintResult.get_errors) callables
+    List.filter_map ~f:(fun callable -> get_result callable >>| get_errors) callables
     |> List.concat_no_order
   in
   Scheduler.map_reduce
@@ -31,14 +56,22 @@ let extract_errors scheduler callables =
   |> List.concat_no_order
 
 
-let externalize ~filename_lookup callable =
+let externalize ~filename_lookup callable result_option model =
+  let issues = issues_to_json ~filename_lookup callable result_option in
+  if TaintResult.is_empty_model model then
+    issues
+  else
+    TaintResult.model_to_json ~filename_lookup callable model :: issues
+
+
+let fetch_and_externalize ~filename_lookup callable =
   let model = get_model callable |> Option.value ~default:TaintResult.empty_model in
   let result_option = get_result callable in
-  TaintResult.externalize ~filename_lookup callable result_option model
+  externalize ~filename_lookup callable result_option model
 
 
 let emit_externalization ~filename_lookup emitter callable =
-  externalize ~filename_lookup callable |> List.iter ~f:emitter
+  fetch_and_externalize ~filename_lookup callable |> List.iter ~f:emitter
 
 
 let save_results_to_directory
@@ -92,7 +125,7 @@ let save_results_to_directory
             );
           ]
       in
-      Json.Util.combine global_statistics (TaintResult.statistics ())
+      Json.Util.combine global_statistics (statistics ())
     in
     let toplevel_metadata =
       `Assoc
@@ -104,7 +137,7 @@ let save_results_to_directory
           "stats", statistics;
         ]
     in
-    let analysis_metadata = TaintResult.metadata () in
+    let analysis_metadata = metadata () in
     Json.Util.combine toplevel_metadata analysis_metadata |> Json.to_outbuf out_buffer;
     Bi_outbuf.flush_output_writer out_buffer;
     close_out out_channel

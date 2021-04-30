@@ -24,8 +24,8 @@ end = struct
           [
             "callable", `String (Callable.external_target_name callable);
             ( "model",
-              `List (Taint.Result.externalize ~filename_lookup:(fun _ -> None) callable None model)
-            );
+              `List
+                (Taint.Reporting.externalize ~filename_lookup:(fun _ -> None) callable None model) );
           ]
       in
       models

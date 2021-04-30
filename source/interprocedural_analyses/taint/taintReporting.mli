@@ -10,7 +10,14 @@ module Json = Yojson.Safe
 
 val externalize
   :  filename_lookup:(Ast.Reference.t -> string option) ->
-  Callable.t ->
+  Interprocedural.Callable.t ->
+  TaintResult.result option ->
+  TaintResult.call_model ->
+  Yojson.Safe.json list
+
+val fetch_and_externalize
+  :  filename_lookup:(Ast.Reference.t -> string option) ->
+  Interprocedural.Callable.t ->
   Yojson.Safe.json list
 
 val report

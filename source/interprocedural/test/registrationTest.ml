@@ -20,19 +20,11 @@ module SimpleAnalysis = Interprocedural.Result.Make (struct
 
   let obscure_model = -1
 
-  let get_errors _ = []
-
   let join ~iteration:_ a b = a + b
 
   let widen ~iteration ~previous ~next = join ~iteration previous next
 
   let reached_fixpoint ~iteration:_ ~previous ~next = next <= previous
-
-  let externalize ~filename_lookup:_ _ _ _ = []
-
-  let metadata () = `Assoc ["foo", `String "bar"]
-
-  let statistics () = `Assoc ["foos", `Int 1]
 
   let strip_for_callsite model = model
 end)

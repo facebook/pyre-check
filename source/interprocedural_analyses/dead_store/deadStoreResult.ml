@@ -6,7 +6,6 @@
  *)
 
 open Core
-open Interprocedural
 
 module ResultArgument = struct
   type result = string
@@ -19,34 +18,11 @@ module ResultArgument = struct
 
   let obscure_model = -1
 
-  let get_errors _ = []
-
   let join ~iteration:_ a b = a + b
 
   let widen ~iteration ~previous ~next = join ~iteration previous next
 
   let reached_fixpoint ~iteration:_ ~previous ~next = next <= previous
-
-  let externalize ~filename_lookup:_ callable result_option model =
-    let result_json =
-      match result_option with
-      | None -> `Null
-      | Some result -> `String result
-    in
-    [
-      `Assoc
-        [
-          "analysis", `String name;
-          "name", `String (Callable.show callable);
-          "model", `Int model;
-          "result", result_json;
-        ];
-    ]
-
-
-  let metadata () = `Assoc ["codes", `List [`String "A"]]
-
-  let statistics () = `Assoc []
 
   let strip_for_callsite model = model
 end

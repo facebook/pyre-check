@@ -31,21 +31,6 @@ module type ANALYSIS_PROVIDED = sig
 
   val reached_fixpoint : iteration:int -> previous:call_model -> next:call_model -> bool
 
-  val get_errors : result -> InterproceduralError.t list
-
-  val externalize
-    :  filename_lookup:(Reference.t -> string option) ->
-    Callable.t ->
-    result option ->
-    call_model ->
-    Yojson.Safe.json list
-
-  (* Additional metadata an analysis wants to save, e.g., warning code explanation. *)
-  val metadata : unit -> Yojson.Safe.json
-
-  (* Additional statistics an analysis wants to report. *)
-  val statistics : unit -> Yojson.Safe.json
-
   (* remove aspects from the model that are not needed at call sites. Just for optimization. *)
   val strip_for_callsite : call_model -> call_model
 end
