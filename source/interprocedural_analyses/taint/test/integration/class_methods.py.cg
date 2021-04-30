@@ -1,0 +1,4 @@
+@generated
+Call dependencies
+class_methods.Test::foo (method) -> [__test_sink (fun)]
+class_methods.bar (fun) -> [__test_source (fun) class_methods.Test::foo (method)]
