@@ -3415,6 +3415,9 @@ let suppress ~mode ~ignore_codes error =
     | InconsistentOverride
         { override = StrengthenedPrecondition (Found { expected = Type.Variable _; _ }); _ } ->
         true
+    | InvalidDecoration { reason = CouldNotResolve; _ }
+    | InvalidDecoration { reason = CouldNotResolveArgument _; _ } ->
+        true
     | InvalidTypeParameters
         { kind = AttributeResolution.IncorrectNumberOfParameters { actual = 0; _ }; _ } ->
         true
