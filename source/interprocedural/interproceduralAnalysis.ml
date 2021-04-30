@@ -9,7 +9,6 @@ open Core
 open Ast
 open Pyre
 open Statement
-module Json = Yojson.Safe
 module Kind = AnalysisKind
 module Result = InterproceduralResult
 
@@ -700,209 +699,6 @@ let compute_fixpoint
       raise exn
 
 
-let extract_errors scheduler all_callables (Result.Analysis { Result.kind; _ }) =
-  let get_errors _ callables =
-    (* Note that we *must* rely on kind here, which is a serializable storable_kind. We cannot
-       expand the Analysis module until we're inside of the map_reduce worker. Beware that if you
-       get the order wrong ocaml will happily typecheck your code, but Result.get_result
-       Analysis.kind will always fail in the worker processes. *)
-    let (Result.Analysis { Result.analysis; _ }) =
-      kind |> Kind.abstract |> Result.get_abstract_analysis
-    in
-    let module Analysis = (val analysis) in
-    let get_callable_errors callable =
-      callable |> Fixpoint.get_result |> Result.get_result Analysis.kind >>| Analysis.get_errors
-    in
-    callables |> List.filter_map ~f:get_callable_errors |> List.concat_no_order
-  in
-  Scheduler.map_reduce
-    scheduler
-    ~policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
-    ~initial:[]
-    ~map:get_errors
-    ~reduce:List.cons
-    ~inputs:all_callables
-    ()
-  |> List.concat_no_order
-
-
-let externalize_analysis ~filename_lookup kind callable models results =
-  let open Result in
-  let merge kind_candidate model_opt result_opt =
-    if Poly.equal kind_candidate kind then
-      match model_opt, result_opt with
-      | Some model, _ -> Some (model, result_opt)
-      | None, Some (Pkg { kind = ResultPart kind; _ }) ->
-          let module Analysis = (val Result.get_analysis kind) in
-          let model = Pkg { kind = ModelPart kind; value = Analysis.empty_model } in
-          Some (model, result_opt)
-      | _ -> None
-    else
-      None
-  in
-  let merged = Kind.Map.merge merge models results in
-  let get_summaries (_key, (Pkg { kind = ModelPart kind1; value = model }, result_option)) =
-    match result_option with
-    | None ->
-        let module Analysis = (val Result.get_analysis kind1) in
-        Analysis.externalize ~filename_lookup callable None model
-    | Some (Pkg { kind = ResultPart kind2; value = result }) -> (
-        match Result.Kind.are_equal kind1 kind2 with
-        | Kind.Equal ->
-            let module Analysis = (val Result.get_analysis kind1) in
-            Analysis.externalize ~filename_lookup callable (Some result) model
-        | Kind.Distinct -> failwith "kind mismatch" )
-  in
-  Kind.Map.bindings merged |> List.concat_map ~f:get_summaries
-
-
-let externalize ~filename_lookup kind callable =
-  match Fixpoint.get_model callable with
-  | Some model ->
-      let results = Fixpoint.get_result callable in
-      externalize_analysis ~filename_lookup kind callable model.models results
-  | None -> []
-
-
-let emit_externalization ~filename_lookup kind emitter callable =
-  externalize ~filename_lookup kind callable |> List.iter ~f:emitter
-
-
-let save_results_to_directory
-    ~result_directory
-    ~local_root
-    ~filename_lookup
-    ~skipped_overrides
-    ~callables
-    (Result.Analysis { Result.analysis; kind })
-  =
-  let emit_json_array_elements out_buffer =
-    let seen_element = ref false in
-    fun json ->
-      if !seen_element then (
-        Bi_outbuf.add_string out_buffer "\n";
-        Json.to_outbuf out_buffer json )
-      else (
-        seen_element := true;
-        Json.to_outbuf out_buffer json )
-  in
-  let module Analysis = (val analysis) in
-  let timer = Timer.start () in
-  let models_path analysis_name = Format.sprintf "%s-output.json" analysis_name in
-  let root = local_root |> Path.absolute in
-  let save_models () =
-    let kind = Result.Kind.abstract kind in
-    let filename = models_path Analysis.name in
-    let output_path = Path.append result_directory ~element:filename in
-    let out_channel = open_out (Path.absolute output_path) in
-    let out_buffer = Bi_outbuf.create_channel_writer out_channel in
-    let array_emitter = emit_json_array_elements out_buffer in
-    let header_with_version =
-      `Assoc ["file_version", `Int 2; "config", `Assoc ["repo", `String root]]
-    in
-    Json.to_outbuf out_buffer header_with_version;
-    Bi_outbuf.add_string out_buffer "\n";
-    Callable.Set.iter (emit_externalization ~filename_lookup kind array_emitter) callables;
-    Bi_outbuf.flush_output_writer out_buffer;
-    close_out out_channel
-  in
-  let save_metadata () =
-    let filename = Format.sprintf "%s-metadata.json" Analysis.name in
-    let output_path = Path.append result_directory ~element:filename in
-    let out_channel = open_out (Path.absolute output_path) in
-    let out_buffer = Bi_outbuf.create_channel_writer out_channel in
-    let filename_spec = models_path Analysis.name in
-    let statistics =
-      let global_statistics =
-        `Assoc
-          [
-            ( "skipped_overrides",
-              `List
-                (List.map skipped_overrides ~f:(fun override -> `String (Reference.show override)))
-            );
-          ]
-      in
-      Json.Util.combine global_statistics (Analysis.statistics ())
-    in
-    let toplevel_metadata =
-      `Assoc
-        [
-          "filename_spec", `String filename_spec;
-          "root", `String root;
-          "tool", `String "pysa";
-          "version", `String (Version.version ());
-          "stats", statistics;
-        ]
-    in
-    let analysis_metadata = Analysis.metadata () in
-    Json.Util.combine toplevel_metadata analysis_metadata |> Json.to_outbuf out_buffer;
-    Bi_outbuf.flush_output_writer out_buffer;
-    close_out out_channel
-  in
-  save_models ();
-  save_metadata ();
-  Log.info "Analysis results were written to `%s`." (Path.absolute result_directory);
-  Statistics.performance
-    ~name:"Wrote analysis results"
-    ~phase_name:"Writing analysis results"
-    ~timer
-    ()
-
-
-let report_analysis
-    ~scheduler
-    ~static_analysis_configuration:
-      {
-        Configuration.StaticAnalysis.result_json_path;
-        configuration = { local_root; show_error_traces; _ };
-        _;
-      }
-    ~filename_lookup
-    ~callables
-    ~skipped_overrides
-    ~fixpoint_timer
-    ~fixpoint_iterations_if_success
-    analysis
-  =
-  let errors = extract_errors scheduler (Callable.Set.elements callables) analysis in
-  (* Log and record stats *)
-  Log.info "Found %d issues" (List.length errors);
-  ( match fixpoint_iterations_if_success with
-  | Some iterations ->
-      Log.info "Fixpoint iterations: %d" iterations;
-      Statistics.performance
-        ~name:"Analysis fixpoint complete"
-        ~phase_name:"Static analysis fixpoint"
-        ~timer:fixpoint_timer
-        ~integers:
-          [
-            "pysa fixpoint iterations", iterations;
-            "pysa heap size", SharedMem.heap_size ();
-            "pysa issues", List.length errors;
-          ]
-        ()
-  | None -> () );
-  (* Dump results to output directory if one was provided, and return a list of json (empty whenever
-     we dumped to a directory) to summarize *)
-  match result_json_path with
-  | Some result_directory ->
-      save_results_to_directory
-        ~result_directory
-        ~local_root
-        ~filename_lookup
-        ~skipped_overrides
-        ~callables
-        analysis;
-      []
-  | _ ->
-      let error_to_json error =
-        error
-        |> InterproceduralError.instantiate ~show_error_traces ~lookup:filename_lookup
-        |> InterproceduralError.Instantiated.to_yojson
-      in
-      List.map errors ~f:error_to_json
-
-
 let report_results
     ~scheduler
     ~static_analysis_configuration
@@ -911,17 +707,18 @@ let report_results
     ~callables
     ~skipped_overrides
     ~fixpoint_timer
-    ~fixpoint_iterations_if_success
+    ~fixpoint_iterations
   =
-  let report_analysis =
-    report_analysis
+  let report_analysis (Result.Analysis { analysis; _ }) =
+    let module Analysis = (val analysis) in
+    Analysis.report
       ~scheduler
       ~static_analysis_configuration
       ~filename_lookup
       ~callables
       ~skipped_overrides
       ~fixpoint_timer
-      ~fixpoint_iterations_if_success
+      ~fixpoint_iterations
   in
   let analyses = List.map ~f:Result.get_abstract_analysis analyses in
   analyses |> List.concat_map ~f:report_analysis

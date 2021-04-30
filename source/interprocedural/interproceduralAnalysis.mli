@@ -59,12 +59,6 @@ val compute_fixpoint
 
 val strip_for_callsite : InterproceduralResult.model_t -> InterproceduralResult.model_t
 
-val externalize
-  :  filename_lookup:(Ast.Reference.t -> string option) ->
-  AnalysisKind.abstract ->
-  Callable.t ->
-  Yojson.Safe.json list
-
 val report_results
   :  scheduler:Scheduler.t ->
   static_analysis_configuration:Configuration.StaticAnalysis.t ->
@@ -73,5 +67,5 @@ val report_results
   callables:Callable.Set.t ->
   skipped_overrides:Ast.Reference.t list ->
   fixpoint_timer:Timer.t ->
-  fixpoint_iterations_if_success:int option ->
+  fixpoint_iterations:int option ->
   Yojson.Safe.json list

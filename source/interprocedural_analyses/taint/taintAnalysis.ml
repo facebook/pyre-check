@@ -307,4 +307,7 @@ include Taint.Result.Register (struct
         [], model
     | Some ({ mode; _ } as model) -> analyze ~callable ~environment ~qualifier ~define ~mode model
     | None -> analyze ~callable ~environment ~qualifier ~define ~mode:Normal empty_model
+
+
+  let report = Taint.Reporting.report
 end)

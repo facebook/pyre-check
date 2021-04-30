@@ -121,7 +121,7 @@ let test_integration path context =
           TypeEnvironment.ReadOnly.ast_environment environment
           |> AstEnvironment.ReadOnly.get_relative
         in
-        Interprocedural.Analysis.externalize ~filename_lookup TaintAnalysis.abstract_kind callable
+        Taint.Reporting.externalize ~filename_lookup callable
         |> List.map ~f:(fun json -> Yojson.Safe.pretty_to_string ~std:true json ^ "\n")
         |> String.concat ~sep:""
       in

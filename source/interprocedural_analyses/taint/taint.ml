@@ -69,5 +69,6 @@ module Model = struct
 end
 
 module Result = TaintResult
+module Reporting = TaintReporting
 module Sinks = Sinks
 module Sources = Sources

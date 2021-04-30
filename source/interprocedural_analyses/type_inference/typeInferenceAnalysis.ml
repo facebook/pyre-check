@@ -41,4 +41,16 @@ include TypeInferenceResult.Register (struct
                          ast_environment))
     in
     result, TypeInferenceDomain.bottom
+
+
+  let report
+      ~scheduler:_
+      ~static_analysis_configuration:_
+      ~filename_lookup:_
+      ~callables:_
+      ~skipped_overrides:_
+      ~fixpoint_timer:_
+      ~fixpoint_iterations:_
+    =
+    []
 end)

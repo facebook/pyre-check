@@ -12,11 +12,26 @@ module TypeAnalysis = Analysis
 open Interprocedural
 open Test
 
-let setup_environment ~context ?(sources = []) () =
+let setup_scratch_project ~context ?(sources = []) () = ScratchProject.setup ~context sources
+
+let setup_environment scratch_project =
   let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
-    ScratchProject.setup ~context sources |> ScratchProject.build_global_environment
+    scratch_project |> ScratchProject.build_global_environment
   in
   global_environment
+
+
+let static_analysis_configuration { ScratchProject.configuration; _ } =
+  {
+    Configuration.StaticAnalysis.result_json_path = None;
+    dump_call_graph = false;
+    verify_models = false;
+    configuration;
+    rule_filter = None;
+    find_missing_flows = None;
+    dump_model_query_results = false;
+    use_cache = false;
+  }
 
 
 let analyses = [TypeInference.Analysis.abstract_kind]
@@ -28,31 +43,29 @@ let assert_summaries ~expected summaries =
 
 
 let test_fixpoint_wiring context =
-  let targets =
-    List.map ~f:Reference.create ["fun_a"; "fun_b"; "fun_c"]
-    |> List.map ~f:(fun name -> Callable.create_function name)
-  in
+  let callable_of_string name : Callable.t = name |> Reference.create |> Callable.create_function in
+  let targets = List.map ["fun_a"; "fun_b"; "fun_c"] ~f:callable_of_string in
   let step = Fixpoint.{ epoch = 1; iteration = 0 } in
+  let scratch_project = setup_scratch_project ~context () in
   let environment =
-    setup_environment ~context ()
+    setup_environment scratch_project
     |> TypeAnalysis.TypeEnvironment.create
     |> TypeAnalysis.TypeEnvironment.read_only
   in
   let _ = Analysis.one_analysis_pass ~step ~analyses ~environment ~callables:targets in
-  let externalized =
-    List.concat_map
-      ~f:
-        (Analysis.externalize ~filename_lookup:(fun _ -> None) TypeInference.Analysis.abstract_kind)
-      targets
+  let report =
+    let static_analysis_configuration = static_analysis_configuration scratch_project in
+    Analysis.report_results
+      ~scheduler:(Test.mock_scheduler ())
+      ~static_analysis_configuration
+      ~analyses
+      ~filename_lookup:(fun _ -> None)
+      ~callables:(targets |> Callable.Set.of_list)
+      ~skipped_overrides:[]
+      ~fixpoint_timer:(Timer.start ())
+      ~fixpoint_iterations:None
   in
-  assert_summaries
-    externalized
-    ~expected:
-      [
-        {| {"analysis":"type_inference","name":"fun_a (fun)","model":"TypeInferenceDomain.Bottom","result":null} |};
-        {| {"analysis":"type_inference","name":"fun_b (fun)","model":"TypeInferenceDomain.Bottom","result":null} |};
-        {| {"analysis":"type_inference","name":"fun_c (fun)","model":"TypeInferenceDomain.Bottom","result":null} |};
-      ]
+  assert_equal report []
 
 
 let () =

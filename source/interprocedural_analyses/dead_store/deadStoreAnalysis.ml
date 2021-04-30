@@ -14,4 +14,15 @@ include DeadStoreResult.Register (struct
 
 
   let analyze ~callable:_ ~environment:_ ~qualifier:_ ~define:_ ~existing:_ = "A", 5
+
+  let report
+      ~scheduler:_
+      ~static_analysis_configuration:_
+      ~filename_lookup:_
+      ~callables:_
+      ~skipped_overrides:_
+      ~fixpoint_timer:_
+      ~fixpoint_iterations:_
+    =
+    []
 end)

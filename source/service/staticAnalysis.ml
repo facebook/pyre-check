@@ -647,7 +647,7 @@ let analyze
       ~all_callables:callables_to_analyze
       Interprocedural.Fixpoint.Epoch.initial
   in
-  let report_results fixpoint_iterations_if_success =
+  let report_results fixpoint_iterations =
     let callables =
       Callable.Set.of_list (List.rev_append initial_models_callables callables_to_analyze)
     in
@@ -659,7 +659,7 @@ let analyze
       ~callables
       ~skipped_overrides
       ~fixpoint_timer
-      ~fixpoint_iterations_if_success
+      ~fixpoint_iterations
   in
   try
     let fixpoint_iterations = compute_fixpoint () in
