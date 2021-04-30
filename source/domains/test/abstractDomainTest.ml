@@ -151,10 +151,9 @@ module TestAbstractDomain (Domain : AbstractDomainUnderTest) = struct
       assert_bool
         (Format.sprintf "%s: difference is less or equal to original" title)
         (Domain.less_or_equal ~left:value ~right:from);
-      if not (Domain.is_bottom value) then
-        assert_bool
-          (Format.sprintf "%s: original is less or equal to reconstitued" title)
-          (Domain.less_or_equal ~left:from ~right:reconstituted)
+      assert_bool
+        (Format.sprintf "%s: original is less or equal to reconstitued" title)
+        (Domain.less_or_equal ~left:from ~right:reconstituted)
     in
     let v1_minus_v2 = Domain.subtract v2 ~from:v1 in
     check_difference ~title:"v1_minus_v2" v1_minus_v2 ~from:v1 ~removed:v2;
@@ -741,7 +740,10 @@ module IntToStringSet = struct
     assert_show ~expected:"{\n   0 -> [a]\n   1 -> [b]\n}" (build_map [0, ["a"]; 1, ["b"]]);
     assert_show
       ~expected:"{\n   0 -> [a]\n   1 -> [b]\n   2 -> [c]\n}"
-      (build_map [0, ["a"]; 1, ["b"]; 2, ["c"]])
+      (build_map [0, ["a"]; 1, ["b"]; 2, ["c"]]);
+    assert_bool
+      "of_list mapping to bottom removed in strict map"
+      (of_list [0, StringSet.bottom] = bottom)
 
 
   let assert_equivalent a b =
@@ -1605,7 +1607,12 @@ module PairStringString = struct
     assert_bool "product of bottoms is bottom" (is_bottom (build [] []));
     assert_bool
       "product of bottoms is less equal to bottom"
-      (less_or_equal ~left:(build [] []) ~right:bottom)
+      (less_or_equal ~left:(build [] []) ~right:bottom);
+    let a = build ["a"] ["b"; "c"] in
+    let b = build ["a"] ["b"; "c"; "d"] in
+    assert_bool
+      "subtraction of all slots leads to bottom"
+      (less_or_equal ~left:(subtract b ~from:a) ~right:bottom)
 
 
   let test_context _ = ()

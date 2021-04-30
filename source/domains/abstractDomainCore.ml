@@ -65,8 +65,7 @@ module type S = sig
 
   val widen : iteration:int -> prev:t -> next:t -> t
 
-  (* subtract a from = b, s.t. b <= from and from <= b |_| a or b is bottom. The latter case (b =
-     bottom) arises for strict domains. *)
+  (* subtract a from = b, s.t. b <= from and from <= b |_| a *)
   val subtract : t -> from:t -> t
 
   (* Reduce specific parts of composed abstract domains with a given operation. *)

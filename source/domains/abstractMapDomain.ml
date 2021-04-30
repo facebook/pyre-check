@@ -417,9 +417,7 @@ module Make (Key : KEY) (Element : AbstractDomainCore.S) = struct
 
   let to_alist = Map.to_alist
 
-  let of_list l =
-    List.fold_left l ~f:(fun acc (key, data) -> Map.set ~key ~data acc) ~init:Map.empty
-
+  let of_list l = List.fold_left l ~f:(fun acc (key, data) -> set ~key ~data acc) ~init:Map.empty
 
   let update map key ~f =
     let data = Map.find map key |> f in

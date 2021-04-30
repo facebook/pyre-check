@@ -220,20 +220,28 @@ module Make (Config : PRODUCT_CONFIG) = struct
       else if is_bottom to_remove || is_bottom from then
         from
       else
-        try
-          let sub (Slot slot) =
-            let module D = (val Config.slot_domain slot) in
-            let to_remove = get slot to_remove in
-            let from = get slot from in
-            let result = D.subtract to_remove ~from in
-            if Config.strict slot && D.is_bottom result then
-              raise Strict
+        let nonbottom_slots = ref (Array.length from) in
+        let sub (Slot slot) =
+          let module D = (val Config.slot_domain slot) in
+          let to_remove = get slot to_remove in
+          let from = get slot from in
+          let result = D.subtract to_remove ~from in
+          if D.is_bottom result then begin
+            decr nonbottom_slots;
+            if Config.strict slot then
+              (* Cannot collapse or subtraction isn't a proper overapproximation *)
+              Element from
             else
               Element result
-          in
-          Array.map sub slots
-        with
-        | Strict -> bottom
+          end
+          else
+            Element result
+        in
+        let result = Array.map sub slots in
+        if !nonbottom_slots = 0 then
+          bottom
+        else
+          result
 
 
     let show product =
