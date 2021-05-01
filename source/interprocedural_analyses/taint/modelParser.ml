@@ -1852,570 +1852,557 @@ let compute_sources_and_sinks_to_keep ~configuration ~rule_filter =
       Some sources_to_keep, Some sinks_to_keep
 
 
-let create ~resolution ~path ~configuration ~rule_filter source =
+let parse_statement ~resolution ~path ~configuration statement =
   let open Core.Result in
+  let global_resolution = Resolution.global_resolution resolution in
+  match statement with
+  | {
+   Node.value =
+     Statement.Define { signature = { name = { Node.value = name; _ }; _ } as signature; _ };
+   location;
+  } ->
+      let class_candidate =
+        Reference.prefix name
+        |> Option.map ~f:(GlobalResolution.parse_reference global_resolution)
+        |> Option.bind ~f:(GlobalResolution.class_definition global_resolution)
+      in
+      let call_target =
+        match class_candidate with
+        | Some _ when Define.Signature.is_property_setter signature ->
+            Callable.create_property_setter name
+        | Some _ -> Callable.create_method name
+        | None -> Callable.create_function name
+      in
+      Ok [ParsedSignature (signature, location, call_target)]
+  | {
+   Node.value =
+     Class
+       {
+         Class.name = { Node.value = name; _ };
+         bases;
+         body = [{ Node.value = Statement.Expression { Node.value = Expression.Ellipsis; _ }; _ }];
+         _;
+       };
+   _;
+  } ->
+      let sink_annotations =
+        let class_sink_base { Call.Argument.value; _ } =
+          if Expression.show value |> String.is_prefix ~prefix:"TaintSink[" then
+            Some value
+          else
+            None
+        in
+        List.filter_map bases ~f:class_sink_base
+      in
+      let source_annotations, extra_decorators =
+        let decorator_with_name name =
+          {
+            Decorator.name = Node.create_with_default_location (Reference.create name);
+            arguments = None;
+          }
+        in
+        let class_source_base { Call.Argument.value; _ } =
+          let name = Expression.show value in
+          if String.is_prefix name ~prefix:"TaintSource[" then
+            Some (Either.First value)
+          else if String.equal name "SkipAnalysis" then
+            Some (Either.Second (decorator_with_name "SkipAnalysis"))
+          else if String.equal name "SkipOverrides" then
+            Some (Either.Second (decorator_with_name "SkipOverrides"))
+          else
+            None
+        in
+        List.filter_map bases ~f:class_source_base
+        |> List.fold ~init:([], []) ~f:(fun (source_annotations, decorators) ->
+             function
+             | Either.First source_annotation -> source_annotation :: source_annotations, decorators
+             | Either.Second decorator -> source_annotations, decorator :: decorators)
+      in
+      if
+        (not (List.is_empty sink_annotations))
+        || (not (List.is_empty source_annotations))
+        || not (List.is_empty extra_decorators)
+      then
+        class_definitions global_resolution name
+        |> Option.bind ~f:List.hd
+        |> Option.map ~f:(fun { Node.value = { Class.body; _ }; _ } ->
+               let signature { Node.value; location } =
+                 match value with
+                 | Statement.Define
+                     {
+                       Define.signature =
+                         {
+                           Define.Signature.name = { Node.value = name; _ };
+                           parameters;
+                           decorators;
+                           _;
+                         } as signature;
+                       _;
+                     } ->
+                     let signature ~extra_decorators ~source_annotation ~sink_annotation =
+                       let parameters =
+                         let sink_parameter parameter =
+                           let update_annotation { Parameter.name; value; _ } =
+                             let value =
+                               match value with
+                               | None -> None
+                               | Some _ ->
+                                   Some (Node.create_with_default_location Expression.Ellipsis)
+                             in
+                             { Parameter.name; annotation = sink_annotation; value }
+                           in
+                           Node.map parameter ~f:update_annotation
+                         in
+                         List.map parameters ~f:sink_parameter
+                       in
+                       let decorators =
+                         if
+                           signature_is_property signature
+                           || Define.Signature.is_property_setter signature
+                         then
+                           decorators
+                         else
+                           []
+                       in
+                       let decorators = List.rev_append extra_decorators decorators in
+                       ParsedSignature
+                         ( {
+                             signature with
+                             Define.Signature.parameters;
+                             return_annotation = source_annotation;
+                             decorators;
+                           },
+                           location,
+                           Callable.create_method name )
+                     in
+                     let sources =
+                       List.map source_annotations ~f:(fun source_annotation ->
+                           signature
+                             ~extra_decorators:[]
+                             ~source_annotation:(Some source_annotation)
+                             ~sink_annotation:None)
+                     in
+                     let sinks =
+                       List.map sink_annotations ~f:(fun sink_annotation ->
+                           signature
+                             ~extra_decorators:[]
+                             ~source_annotation:None
+                             ~sink_annotation:(Some sink_annotation))
+                     in
+                     let skip_analysis_or_overrides_defines =
+                       if not (List.is_empty extra_decorators) then
+                         [signature ~extra_decorators ~source_annotation:None ~sink_annotation:None]
+                       else
+                         []
+                     in
+                     skip_analysis_or_overrides_defines @ sources @ sinks
+                 | _ -> []
+               in
+
+               List.concat_map body ~f:signature)
+        |> Option.value ~default:[]
+        |> return
+      else
+        Ok []
+  | { Node.value = Class { Class.name = { Node.value = name; _ }; _ }; location } ->
+      Error
+        (invalid_model_error
+           ~path
+           ~location
+           ~name:(Reference.show name)
+           "Class model must have a body of `...`.")
+  | {
+   Node.value =
+     Assign
+       {
+         Assign.target = { Node.value = Name name; location = name_location } as target;
+         annotation = Some annotation;
+         _;
+       };
+   location;
+  } ->
+      if not (is_simple_name name) then
+        Error
+          (model_verification_error
+             ~path
+             ~location
+             (ModelVerificationError.T.InvalidIdentifier target))
+      else if Expression.show annotation |> String.is_prefix ~prefix:"Sanitize[TaintInTaintOut["
+      then
+        Error
+          (model_verification_error
+             ~path
+             ~location
+             (ModelVerificationError.T.InvalidTaintAnnotation
+                {
+                  taint_annotation = annotation;
+                  reason = "TaintInTaintOut sanitizers cannot be modelled on attributes";
+                }))
+      else if
+        Expression.show annotation |> String.equal "Sanitize"
+        || Expression.show annotation |> String.is_prefix ~prefix:"Sanitize[TaintSource"
+        || Expression.show annotation |> String.is_prefix ~prefix:"Sanitize[TaintSink"
+      then
+        let name = name_to_reference_exn name in
+        ModelVerifier.verify_global ~path ~location ~resolution ~name
+        >>| fun () ->
+        let arguments =
+          match annotation.Node.value with
+          | Expression.Call { arguments; _ } -> Some arguments
+          | _ -> None
+        in
+        let signature =
+          {
+            Define.Signature.name = Node.create ~location:name_location name;
+            parameters = [Parameter.create ~location:Location.any ~name:"$global" ()];
+            decorators =
+              [
+                {
+                  Decorator.name = Node.create_with_default_location (Reference.create "Sanitize");
+                  arguments;
+                };
+              ];
+            return_annotation = None;
+            async = false;
+            generator = false;
+            parent = None;
+            nesting_define = None;
+          }
+        in
+        [ParsedSignature (signature, location, Callable.create_object name)]
+      else if Expression.show annotation |> String.is_substring ~substring:"TaintSource[" then
+        let name = name_to_reference_exn name in
+        ModelVerifier.verify_global ~path ~location ~resolution ~name
+        >>| fun () ->
+        let signature =
+          {
+            Define.Signature.name = Node.create ~location:name_location name;
+            parameters = [];
+            decorators = [];
+            return_annotation = Some annotation;
+            async = false;
+            generator = false;
+            parent = None;
+            nesting_define = None;
+          }
+        in
+        [ParsedSignature (signature, location, Callable.create_object name)]
+      else if
+        Expression.show annotation |> String.is_substring ~substring:"TaintSink["
+        || Expression.show annotation |> String.is_substring ~substring:"TaintInTaintOut["
+      then
+        let name = name_to_reference_exn name in
+        ModelVerifier.verify_global ~path ~location ~resolution ~name
+        >>| fun () ->
+        let signature =
+          {
+            Define.Signature.name = Node.create ~location:name_location name;
+            parameters = [Parameter.create ~location:Location.any ~annotation ~name:"$global" ()];
+            decorators = [];
+            return_annotation = None;
+            async = false;
+            generator = false;
+            parent = None;
+            nesting_define = None;
+          }
+        in
+        [ParsedSignature (signature, location, Callable.create_object name)]
+      else
+        Error
+          (model_verification_error
+             ~path
+             ~location
+             (ModelVerificationError.T.InvalidTaintAnnotation
+                { taint_annotation = annotation; reason = "Unsupported annotation for attributes" }))
+  | {
+   Node.value =
+     Expression
+       {
+         Node.value =
+           Expression.Call
+             {
+               Call.callee = { Node.value = Expression.Name (Name.Identifier "ModelQuery"); _ };
+               arguments;
+             };
+         _;
+       };
+   location;
+  } ->
+      let clauses =
+        match arguments with
+        | [
+         { Call.Argument.name = Some { Node.value = "find"; _ }; value = find_clause };
+         { Call.Argument.name = Some { Node.value = "where"; _ }; value = where_clause };
+         { Call.Argument.name = Some { Node.value = "model"; _ }; value = model_clause };
+        ] ->
+            let parsed_find_clause = parse_find_clause ~path find_clause in
+            Ok
+              ( None,
+                parsed_find_clause,
+                parse_where_clause ~path ~find_clause:parsed_find_clause where_clause,
+                parse_model_clause ~path ~configuration ~find_clause:parsed_find_clause model_clause
+              )
+        | [
+         {
+           Call.Argument.name = Some { Node.value = "name"; _ };
+           value = { Node.value = Expression.String { StringLiteral.value = name; _ }; _ };
+         };
+         { Call.Argument.name = Some { Node.value = "find"; _ }; value = find_clause };
+         { Call.Argument.name = Some { Node.value = "where"; _ }; value = where_clause };
+         { Call.Argument.name = Some { Node.value = "model"; _ }; value = model_clause };
+        ] ->
+            let parsed_find_clause = parse_find_clause ~path find_clause in
+            Ok
+              ( Some name,
+                parsed_find_clause,
+                parse_where_clause ~path ~find_clause:parsed_find_clause where_clause,
+                parse_model_clause ~path ~configuration ~find_clause:parsed_find_clause model_clause
+              )
+        | _ ->
+            Error
+              (model_verification_error
+                 ~path
+                 ~location
+                 (ModelVerificationError.T.InvalidModelQueryClauses arguments))
+      in
+
+      clauses
+      >>= fun (name, find_clause, where_clause, model_clause) ->
+      find_clause
+      >>= fun rule_kind ->
+      where_clause
+      >>= fun query ->
+      model_clause
+      >>| fun productions -> [ParsedQuery { ModelQuery.rule_kind; query; productions; name }]
+  | { Node.location; _ } ->
+      Error
+        (model_verification_error
+           ~path
+           ~location
+           (ModelVerificationError.T.UnexpectedStatement statement))
+
+
+let create_model
+    ~resolution
+    ~path
+    ~configuration
+    ~sources_to_keep
+    ~sinks_to_keep
+    ( {
+        Define.Signature.name = { Node.value = callable_name; _ };
+        parameters;
+        return_annotation;
+        decorators;
+        _;
+      } as define )
+    location
+    call_target
+  =
+  let open Core.Result in
+  (* Strip off the decorators only used for taint annotations. *)
+  let top_level_decorators, define =
+    let is_taint_decorator decorator =
+      match Reference.show (Node.value decorator.Decorator.name) with
+      | "Sanitize"
+      | "SkipAnalysis"
+      | "SkipOverrides" ->
+          true
+      | _ -> false
+    in
+    let sanitizers, nonsanitizers = List.partition_tf define.decorators ~f:is_taint_decorator in
+    sanitizers, { define with decorators = nonsanitizers }
+  in
+  (* To ensure that the start/stop lines can be used for commenting out models,
+   * we include the earliest decorator location. *)
+  let location =
+    let start =
+      match decorators with
+      | [] -> location.Location.start
+      | first :: _ -> first.name.location.start
+    in
+    { location with start }
+  in
+  (* Make sure we know about what we model. *)
+  let callable_annotation =
+    callable_annotation ~path ~location ~verify_decorators:true ~resolution define
+  in
+  let call_target = (call_target :> Callable.t) in
+  let callable_annotation =
+    callable_annotation
+    >>= fun callable_annotation ->
+    if
+      Type.is_top (Annotation.annotation callable_annotation)
+      (* FIXME: We are relying on the fact that nonexistent functions&attributes resolve to mutable
+         callable annotation, while existing ones resolve to immutable callable annotation. This is
+         fragile! *)
+      && not (Annotation.is_immutable callable_annotation)
+    then
+      Error
+        {
+          ModelVerificationError.T.kind =
+            ModelVerificationError.T.NotInEnvironment (Reference.show callable_name);
+          path;
+          location;
+        }
+    else if Type.is_meta (Annotation.annotation callable_annotation) then
+      Error
+        {
+          ModelVerificationError.T.kind =
+            ModelVerificationError.T.ModelingClassAsDefine (Reference.show callable_name);
+          path;
+          location;
+        }
+    else
+      Ok callable_annotation
+  in
+  (* Check model matches callables primary signature. *)
+  let callable_annotation =
+    callable_annotation
+    >>| Annotation.annotation
+    >>| function
+    | Type.Callable t -> Some t
+    | Type.Parametric
+        { name = "BoundMethod"; parameters = [Type.Parameter.Single (Type.Callable t); _] } ->
+        Some t
+    | _ -> None
+  in
+  let callable_parameter_names_to_positions =
+    match callable_annotation with
+    | Ok
+        (Some
+          {
+            Type.Callable.implementation =
+              { Type.Callable.parameters = Type.Callable.Defined parameters; _ };
+            _;
+          }) ->
+        let add_parameter_to_position position map parameter =
+          match parameter with
+          | Type.Callable.Parameter.Named { name; _ }
+          | Type.Callable.Parameter.KeywordOnly { name; _ } ->
+              Map.set map ~key:(Identifier.sanitized name) ~data:position
+          | _ -> map
+        in
+        Some (List.foldi parameters ~f:add_parameter_to_position ~init:String.Map.empty)
+    | _ -> None
+  in
+  (* If there were parameters omitted from the model, the positioning will be off in the access path
+     conversion. Let's fix the positions after the fact to make sure that our models aren't off. *)
+  let normalized_model_parameters =
+    let parameters = AccessPath.Root.normalize_parameters parameters in
+    match callable_parameter_names_to_positions with
+    | None -> Ok parameters
+    | Some names_to_positions ->
+        let adjust_position (root, name, parameter) =
+          match root with
+          | AccessPath.Root.PositionalParameter { name; positional_only = false; _ }
+            when not (String.is_prefix ~prefix:"__" name) -> (
+              match Map.find names_to_positions name with
+              | Some accurate_position ->
+                  Ok
+                    ( AccessPath.Root.PositionalParameter
+                        { position = accurate_position; name; positional_only = false },
+                      name,
+                      parameter )
+              | None ->
+                  Error
+                    {
+                      ModelVerificationError.T.kind =
+                        IncompatibleModelError
+                          {
+                            name = Reference.show callable_name;
+                            callable_type =
+                              Option.value_exn (Caml.Result.value callable_annotation ~default:None);
+                            reasons = [UnexpectedPositionalParameter name];
+                          };
+                      path;
+                      location;
+                    } )
+          | _ -> Ok (root, name, parameter)
+        in
+        List.map parameters ~f:adjust_position |> all
+  in
+  let annotations () =
+    normalized_model_parameters
+    >>= fun normalized_model_parameters ->
+    List.map
+      normalized_model_parameters
+      ~f:
+        (parse_parameter_taint
+           ~path
+           ~location
+           ~model_name:(Reference.show callable_name)
+           ~configuration
+           ~parameters
+           ~callable_parameter_names_to_positions)
+    |> all
+    >>| List.concat
+    >>= fun parameter_taint ->
+    return_annotation
+    |> Option.map
+         ~f:
+           (parse_return_taint
+              ~path
+              ~location
+              ~model_name:(Reference.show callable_name)
+              ~configuration
+              ~parameters
+              ~callable_parameter_names_to_positions)
+    |> Option.value ~default:(Ok [])
+    >>| fun return_taint -> List.rev_append parameter_taint return_taint
+  in
+  let model =
+    callable_annotation
+    >>= fun callable_annotation ->
+    normalized_model_parameters
+    >>= fun normalized_model_parameters ->
+    ModelVerifier.verify_signature
+      ~path
+      ~location
+      ~normalized_model_parameters
+      ~name:callable_name
+      callable_annotation
+    >>= fun () ->
+    annotations ()
+    >>= fun annotations ->
+    List.fold_result
+      annotations
+      ~init:TaintResult.empty_model
+      ~f:(fun accumulator (annotation, annotation_kind) ->
+        add_taint_annotation_to_model
+          ~path
+          ~location
+          ~model_name:(Reference.show callable_name)
+          ~resolution:(Resolution.global_resolution resolution)
+          ~annotation_kind
+          ~callable_annotation
+          ~sources_to_keep
+          ~sinks_to_keep
+          accumulator
+          annotation)
+  in
+  model
+  >>= adjust_mode_and_skipped_overrides
+        ~path
+        ~location
+        ~configuration
+        ~top_level_decorators
+        ~define_name:callable_name
+  >>| fun (model, skipped_override) ->
+  Model ({ model; call_target; is_obscure = false }, skipped_override)
+
+
+let create ~resolution ~path ~configuration ~rule_filter source =
   let sources_to_keep, sinks_to_keep =
     compute_sources_and_sinks_to_keep ~configuration ~rule_filter
   in
-  let global_resolution = Resolution.global_resolution resolution in
-
   let signatures_and_queries, errors =
-    let filter_define_signature signature =
-      match signature with
-      | {
-       Node.value =
-         Statement.Define { signature = { name = { Node.value = name; _ }; _ } as signature; _ };
-       location;
-      } ->
-          let class_candidate =
-            Reference.prefix name
-            |> Option.map ~f:(GlobalResolution.parse_reference global_resolution)
-            |> Option.bind ~f:(GlobalResolution.class_definition global_resolution)
-          in
-          let call_target =
-            match class_candidate with
-            | Some _ when Define.Signature.is_property_setter signature ->
-                Callable.create_property_setter name
-            | Some _ -> Callable.create_method name
-            | None -> Callable.create_function name
-          in
-          Ok [ParsedSignature (signature, location, call_target)]
-      | {
-       Node.value =
-         Class
-           {
-             Class.name = { Node.value = name; _ };
-             bases;
-             body =
-               [{ Node.value = Statement.Expression { Node.value = Expression.Ellipsis; _ }; _ }];
-             _;
-           };
-       _;
-      } ->
-          let sink_annotations =
-            let class_sink_base { Call.Argument.value; _ } =
-              if Expression.show value |> String.is_prefix ~prefix:"TaintSink[" then
-                Some value
-              else
-                None
-            in
-            List.filter_map bases ~f:class_sink_base
-          in
-          let source_annotations, extra_decorators =
-            let decorator_with_name name =
-              {
-                Decorator.name = Node.create_with_default_location (Reference.create name);
-                arguments = None;
-              }
-            in
-            let class_source_base { Call.Argument.value; _ } =
-              let name = Expression.show value in
-              if String.is_prefix name ~prefix:"TaintSource[" then
-                Some (Either.First value)
-              else if String.equal name "SkipAnalysis" then
-                Some (Either.Second (decorator_with_name "SkipAnalysis"))
-              else if String.equal name "SkipOverrides" then
-                Some (Either.Second (decorator_with_name "SkipOverrides"))
-              else
-                None
-            in
-            List.filter_map bases ~f:class_source_base
-            |> List.fold ~init:([], []) ~f:(fun (source_annotations, decorators) ->
-                 function
-                 | Either.First source_annotation ->
-                     source_annotation :: source_annotations, decorators
-                 | Either.Second decorator -> source_annotations, decorator :: decorators)
-          in
-          if
-            (not (List.is_empty sink_annotations))
-            || (not (List.is_empty source_annotations))
-            || not (List.is_empty extra_decorators)
-          then
-            class_definitions global_resolution name
-            |> Option.bind ~f:List.hd
-            |> Option.map ~f:(fun { Node.value = { Class.body; _ }; _ } ->
-                   let signature { Node.value; location } =
-                     match value with
-                     | Statement.Define
-                         {
-                           Define.signature =
-                             {
-                               Define.Signature.name = { Node.value = name; _ };
-                               parameters;
-                               decorators;
-                               _;
-                             } as signature;
-                           _;
-                         } ->
-                         let signature ~extra_decorators ~source_annotation ~sink_annotation =
-                           let parameters =
-                             let sink_parameter parameter =
-                               let update_annotation { Parameter.name; value; _ } =
-                                 let value =
-                                   match value with
-                                   | None -> None
-                                   | Some _ ->
-                                       Some (Node.create_with_default_location Expression.Ellipsis)
-                                 in
-                                 { Parameter.name; annotation = sink_annotation; value }
-                               in
-                               Node.map parameter ~f:update_annotation
-                             in
-                             List.map parameters ~f:sink_parameter
-                           in
-                           let decorators =
-                             if
-                               signature_is_property signature
-                               || Define.Signature.is_property_setter signature
-                             then
-                               decorators
-                             else
-                               []
-                           in
-                           let decorators = List.rev_append extra_decorators decorators in
-                           ParsedSignature
-                             ( {
-                                 signature with
-                                 Define.Signature.parameters;
-                                 return_annotation = source_annotation;
-                                 decorators;
-                               },
-                               location,
-                               Callable.create_method name )
-                         in
-                         let sources =
-                           List.map source_annotations ~f:(fun source_annotation ->
-                               signature
-                                 ~extra_decorators:[]
-                                 ~source_annotation:(Some source_annotation)
-                                 ~sink_annotation:None)
-                         in
-                         let sinks =
-                           List.map sink_annotations ~f:(fun sink_annotation ->
-                               signature
-                                 ~extra_decorators:[]
-                                 ~source_annotation:None
-                                 ~sink_annotation:(Some sink_annotation))
-                         in
-                         let skip_analysis_or_overrides_defines =
-                           if not (List.is_empty extra_decorators) then
-                             [
-                               signature
-                                 ~extra_decorators
-                                 ~source_annotation:None
-                                 ~sink_annotation:None;
-                             ]
-                           else
-                             []
-                         in
-                         skip_analysis_or_overrides_defines @ sources @ sinks
-                     | _ -> []
-                   in
-
-                   List.concat_map body ~f:signature)
-            |> Option.value ~default:[]
-            |> return
-          else
-            Ok []
-      | { Node.value = Class { Class.name = { Node.value = name; _ }; _ }; location } ->
-          Error
-            (invalid_model_error
-               ~path
-               ~location
-               ~name:(Reference.show name)
-               "Class model must have a body of `...`.")
-      | {
-       Node.value =
-         Assign
-           {
-             Assign.target = { Node.value = Name name; location = name_location } as target;
-             annotation = Some annotation;
-             _;
-           };
-       location;
-      } ->
-          if not (is_simple_name name) then
-            Error
-              (model_verification_error
-                 ~path
-                 ~location
-                 (ModelVerificationError.T.InvalidIdentifier target))
-          else if Expression.show annotation |> String.is_prefix ~prefix:"Sanitize[TaintInTaintOut["
-          then
-            Error
-              (model_verification_error
-                 ~path
-                 ~location
-                 (ModelVerificationError.T.InvalidTaintAnnotation
-                    {
-                      taint_annotation = annotation;
-                      reason = "TaintInTaintOut sanitizers cannot be modelled on attributes";
-                    }))
-          else if
-            Expression.show annotation |> String.equal "Sanitize"
-            || Expression.show annotation |> String.is_prefix ~prefix:"Sanitize[TaintSource"
-            || Expression.show annotation |> String.is_prefix ~prefix:"Sanitize[TaintSink"
-          then
-            let name = name_to_reference_exn name in
-            ModelVerifier.verify_global ~path ~location ~resolution ~name
-            >>| fun () ->
-            let arguments =
-              match annotation.Node.value with
-              | Expression.Call { arguments; _ } -> Some arguments
-              | _ -> None
-            in
-            let signature =
-              {
-                Define.Signature.name = Node.create ~location:name_location name;
-                parameters = [Parameter.create ~location:Location.any ~name:"$global" ()];
-                decorators =
-                  [
-                    {
-                      Decorator.name =
-                        Node.create_with_default_location (Reference.create "Sanitize");
-                      arguments;
-                    };
-                  ];
-                return_annotation = None;
-                async = false;
-                generator = false;
-                parent = None;
-                nesting_define = None;
-              }
-            in
-            [ParsedSignature (signature, location, Callable.create_object name)]
-          else if Expression.show annotation |> String.is_substring ~substring:"TaintSource[" then
-            let name = name_to_reference_exn name in
-            ModelVerifier.verify_global ~path ~location ~resolution ~name
-            >>| fun () ->
-            let signature =
-              {
-                Define.Signature.name = Node.create ~location:name_location name;
-                parameters = [];
-                decorators = [];
-                return_annotation = Some annotation;
-                async = false;
-                generator = false;
-                parent = None;
-                nesting_define = None;
-              }
-            in
-            [ParsedSignature (signature, location, Callable.create_object name)]
-          else if
-            Expression.show annotation |> String.is_substring ~substring:"TaintSink["
-            || Expression.show annotation |> String.is_substring ~substring:"TaintInTaintOut["
-          then
-            let name = name_to_reference_exn name in
-            ModelVerifier.verify_global ~path ~location ~resolution ~name
-            >>| fun () ->
-            let signature =
-              {
-                Define.Signature.name = Node.create ~location:name_location name;
-                parameters =
-                  [Parameter.create ~location:Location.any ~annotation ~name:"$global" ()];
-                decorators = [];
-                return_annotation = None;
-                async = false;
-                generator = false;
-                parent = None;
-                nesting_define = None;
-              }
-            in
-            [ParsedSignature (signature, location, Callable.create_object name)]
-          else
-            Error
-              (model_verification_error
-                 ~path
-                 ~location
-                 (ModelVerificationError.T.InvalidTaintAnnotation
-                    {
-                      taint_annotation = annotation;
-                      reason = "Unsupported annotation for attributes";
-                    }))
-      | {
-       Node.value =
-         Expression
-           {
-             Node.value =
-               Expression.Call
-                 {
-                   Call.callee = { Node.value = Expression.Name (Name.Identifier "ModelQuery"); _ };
-                   arguments;
-                 };
-             _;
-           };
-       location;
-      } ->
-          let clauses =
-            match arguments with
-            | [
-             { Call.Argument.name = Some { Node.value = "find"; _ }; value = find_clause };
-             { Call.Argument.name = Some { Node.value = "where"; _ }; value = where_clause };
-             { Call.Argument.name = Some { Node.value = "model"; _ }; value = model_clause };
-            ] ->
-                let parsed_find_clause = parse_find_clause ~path find_clause in
-                Ok
-                  ( None,
-                    parsed_find_clause,
-                    parse_where_clause ~path ~find_clause:parsed_find_clause where_clause,
-                    parse_model_clause
-                      ~path
-                      ~configuration
-                      ~find_clause:parsed_find_clause
-                      model_clause )
-            | [
-             {
-               Call.Argument.name = Some { Node.value = "name"; _ };
-               value = { Node.value = Expression.String { StringLiteral.value = name; _ }; _ };
-             };
-             { Call.Argument.name = Some { Node.value = "find"; _ }; value = find_clause };
-             { Call.Argument.name = Some { Node.value = "where"; _ }; value = where_clause };
-             { Call.Argument.name = Some { Node.value = "model"; _ }; value = model_clause };
-            ] ->
-                let parsed_find_clause = parse_find_clause ~path find_clause in
-                Ok
-                  ( Some name,
-                    parsed_find_clause,
-                    parse_where_clause ~path ~find_clause:parsed_find_clause where_clause,
-                    parse_model_clause
-                      ~path
-                      ~configuration
-                      ~find_clause:parsed_find_clause
-                      model_clause )
-            | _ ->
-                Error
-                  (model_verification_error
-                     ~path
-                     ~location
-                     (ModelVerificationError.T.InvalidModelQueryClauses arguments))
-          in
-
-          clauses
-          >>= fun (name, find_clause, where_clause, model_clause) ->
-          find_clause
-          >>= fun rule_kind ->
-          where_clause
-          >>= fun query ->
-          model_clause
-          >>| fun productions -> [ParsedQuery { ModelQuery.rule_kind; query; productions; name }]
-      | { Node.location; _ } ->
-          Error
-            (model_verification_error
-               ~path
-               ~location
-               (ModelVerificationError.T.UnexpectedStatement signature))
-    in
     String.split ~on:'\n' source
     |> Parser.parse
     |> Source.create
     |> Source.statements
-    |> List.map ~f:filter_define_signature
+    |> List.map ~f:(parse_statement ~resolution ~path ~configuration)
     |> List.partition_result
     |> fun (results, errors) -> List.concat results, errors
-  in
-  let create_model
-      ( ( {
-            Define.Signature.name = { Node.value = callable_name; _ };
-            parameters;
-            return_annotation;
-            decorators;
-            _;
-          } as define ),
-        location,
-        call_target )
-    =
-    (* Strip off the decorators only used for taint annotations. *)
-    let top_level_decorators, define =
-      let is_taint_decorator decorator =
-        match Reference.show (Node.value decorator.Decorator.name) with
-        | "Sanitize"
-        | "SkipAnalysis"
-        | "SkipOverrides" ->
-            true
-        | _ -> false
-      in
-      let sanitizers, nonsanitizers = List.partition_tf define.decorators ~f:is_taint_decorator in
-      sanitizers, { define with decorators = nonsanitizers }
-    in
-    (* To ensure that the start/stop lines can be used for commenting out models,
-     * we include the earliest decorator location. *)
-    let location =
-      let start =
-        match decorators with
-        | [] -> location.Location.start
-        | first :: _ -> first.name.location.start
-      in
-      { location with start }
-    in
-    (* Make sure we know about what we model. *)
-    let callable_annotation =
-      callable_annotation ~path ~location ~verify_decorators:true ~resolution define
-    in
-    let call_target = (call_target :> Callable.t) in
-    let callable_annotation =
-      callable_annotation
-      >>= fun callable_annotation ->
-      if
-        Type.is_top (Annotation.annotation callable_annotation)
-        (* FIXME: We are relying on the fact that nonexistent functions&attributes resolve to
-           mutable callable annotation, while existing ones resolve to immutable callable
-           annotation. This is fragile! *)
-        && not (Annotation.is_immutable callable_annotation)
-      then
-        Error
-          {
-            ModelVerificationError.T.kind =
-              ModelVerificationError.T.NotInEnvironment (Reference.show callable_name);
-            path;
-            location;
-          }
-      else if Type.is_meta (Annotation.annotation callable_annotation) then
-        Error
-          {
-            ModelVerificationError.T.kind =
-              ModelVerificationError.T.ModelingClassAsDefine (Reference.show callable_name);
-            path;
-            location;
-          }
-      else
-        Ok callable_annotation
-    in
-    (* Check model matches callables primary signature. *)
-    let callable_annotation =
-      callable_annotation
-      >>| Annotation.annotation
-      >>| function
-      | Type.Callable t -> Some t
-      | Type.Parametric
-          { name = "BoundMethod"; parameters = [Type.Parameter.Single (Type.Callable t); _] } ->
-          Some t
-      | _ -> None
-    in
-    let callable_parameter_names_to_positions =
-      match callable_annotation with
-      | Ok
-          (Some
-            {
-              Type.Callable.implementation =
-                { Type.Callable.parameters = Type.Callable.Defined parameters; _ };
-              _;
-            }) ->
-          let add_parameter_to_position position map parameter =
-            match parameter with
-            | Type.Callable.Parameter.Named { name; _ }
-            | Type.Callable.Parameter.KeywordOnly { name; _ } ->
-                Map.set map ~key:(Identifier.sanitized name) ~data:position
-            | _ -> map
-          in
-          Some (List.foldi parameters ~f:add_parameter_to_position ~init:String.Map.empty)
-      | _ -> None
-    in
-    (* If there were parameters omitted from the model, the positioning will be off in the access
-       path conversion. Let's fix the positions after the fact to make sure that our models aren't
-       off. *)
-    let normalized_model_parameters =
-      let parameters = AccessPath.Root.normalize_parameters parameters in
-      match callable_parameter_names_to_positions with
-      | None -> Ok parameters
-      | Some names_to_positions ->
-          let adjust_position (root, name, parameter) =
-            match root with
-            | AccessPath.Root.PositionalParameter { name; positional_only = false; _ }
-              when not (String.is_prefix ~prefix:"__" name) -> (
-                match Map.find names_to_positions name with
-                | Some accurate_position ->
-                    Ok
-                      ( AccessPath.Root.PositionalParameter
-                          { position = accurate_position; name; positional_only = false },
-                        name,
-                        parameter )
-                | None ->
-                    Error
-                      {
-                        ModelVerificationError.T.kind =
-                          IncompatibleModelError
-                            {
-                              name = Reference.show callable_name;
-                              callable_type =
-                                Option.value_exn
-                                  (Caml.Result.value callable_annotation ~default:None);
-                              reasons = [UnexpectedPositionalParameter name];
-                            };
-                        path;
-                        location;
-                      } )
-            | _ -> Ok (root, name, parameter)
-          in
-          List.map parameters ~f:adjust_position |> all
-    in
-    let annotations () =
-      normalized_model_parameters
-      >>= fun normalized_model_parameters ->
-      List.map
-        normalized_model_parameters
-        ~f:
-          (parse_parameter_taint
-             ~path
-             ~location
-             ~model_name:(Reference.show callable_name)
-             ~configuration
-             ~parameters
-             ~callable_parameter_names_to_positions)
-      |> all
-      >>| List.concat
-      >>= fun parameter_taint ->
-      return_annotation
-      |> Option.map
-           ~f:
-             (parse_return_taint
-                ~path
-                ~location
-                ~model_name:(Reference.show callable_name)
-                ~configuration
-                ~parameters
-                ~callable_parameter_names_to_positions)
-      |> Option.value ~default:(Ok [])
-      >>| fun return_taint -> List.rev_append parameter_taint return_taint
-    in
-    let model =
-      callable_annotation
-      >>= fun callable_annotation ->
-      normalized_model_parameters
-      >>= fun normalized_model_parameters ->
-      ModelVerifier.verify_signature
-        ~path
-        ~location
-        ~normalized_model_parameters
-        ~name:callable_name
-        callable_annotation
-      >>= fun () ->
-      annotations ()
-      >>= fun annotations ->
-      List.fold_result
-        annotations
-        ~init:TaintResult.empty_model
-        ~f:(fun accumulator (annotation, annotation_kind) ->
-          add_taint_annotation_to_model
-            ~path
-            ~location
-            ~model_name:(Reference.show callable_name)
-            ~resolution:(Resolution.global_resolution resolution)
-            ~annotation_kind
-            ~callable_annotation
-            ~sources_to_keep
-            ~sinks_to_keep
-            accumulator
-            annotation)
-    in
-    model
-    >>= adjust_mode_and_skipped_overrides
-          ~path
-          ~location
-          ~configuration
-          ~top_level_decorators
-          ~define_name:callable_name
-    >>| fun (model, skipped_override) ->
-    Model ({ model; call_target; is_obscure = false }, skipped_override)
   in
   let signatures, queries =
     List.fold signatures_and_queries ~init:([], []) ~f:(fun (signatures, queries) ->
@@ -2424,10 +2411,21 @@ let create ~resolution ~path ~configuration ~rule_filter source =
           (signature, location, callable) :: signatures, queries
       | ParsedQuery query -> signatures, query :: queries)
   in
+  let create_model (signature, location, callable) =
+    create_model
+      ~resolution
+      ~path
+      ~configuration
+      ~sources_to_keep
+      ~sinks_to_keep
+      signature
+      location
+      callable
+  in
   List.rev_append
     (List.map errors ~f:(fun error -> Error error))
     ( List.map signatures ~f:create_model
-    |> List.rev_append (List.map queries ~f:(fun query -> return (Query query))) )
+    |> List.rev_append (List.map queries ~f:(fun query -> Core.Result.return (Query query))) )
 
 
 let parse ~resolution ?path ?rule_filter ~source ~configuration models =
