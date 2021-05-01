@@ -108,6 +108,10 @@ class SearchPathElement(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
+    def get_subdirectory(self) -> Optional[str]:
+        raise NotImplementedError
+
+    @abc.abstractmethod
     def command_line_argument(self) -> str:
         raise NotImplementedError
 
@@ -129,6 +133,9 @@ class SimpleSearchPathElement(SearchPathElement):
 
     def get_root(self) -> str:
         return self.root
+
+    def get_subdirectory(self) -> Optional[str]:
+        return None
 
     def command_line_argument(self) -> str:
         return self.root
@@ -154,6 +161,9 @@ class SubdirectorySearchPathElement(SearchPathElement):
 
     def get_root(self) -> str:
         return self.root
+
+    def get_subdirectory(self) -> Optional[str]:
+        return self.subdirectory
 
     def command_line_argument(self) -> str:
         return self.root + "$" + self.subdirectory
@@ -181,6 +191,9 @@ class SitePackageSearchPathElement(SearchPathElement):
 
     def get_root(self) -> str:
         return self.site_root
+
+    def get_subdirectory(self) -> Optional[str]:
+        return self.package_name
 
     def command_line_argument(self) -> str:
         return self.site_root + "$" + self.package_name
@@ -673,6 +686,24 @@ class PartialConfiguration:
             version_hash=self.version_hash,
         )
 
+    def warn_on_nonexistent_paths(self) -> None:
+        source_directories = self.source_directories
+        if not source_directories:
+            return
+        for source_directory in source_directories:
+            if not os.path.exists(source_directory.path()):
+                relative_path_warning = ""
+                if source_directory.get_subdirectory():
+                    relative_path_warning = (
+                        "Be sure the `source` path is relative to the "
+                        + "`import_root`."
+                    )
+                LOG.warning(
+                    f"Source directory `{source_directory.path()}` does not "
+                    + "exist. "
+                    + relative_path_warning
+                )
+
 
 def merge_partial_configurations(
     base: PartialConfiguration, override: PartialConfiguration
@@ -1155,6 +1186,7 @@ def create_configuration(
         partial_configuration = merge_partial_configurations(
             base=partial_configuration, override=command_argument_configuration
         )
+        partial_configuration.warn_on_nonexistent_paths()
 
     return Configuration.from_partial_configuration(
         project_root, relative_local_root, partial_configuration
