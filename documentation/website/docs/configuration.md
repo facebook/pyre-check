@@ -29,9 +29,11 @@ The configuration is a `JSON` file. For example,
 specifies that the code Pyre checks is in the directory of the configuration and that Pyre should look in an additional directory for library code.
 
 
-You can extend this configuration to configure Pyre. The following configuration options are supported:
+You specify additional information to configure Pyre. The following fields are supported:
 
 - `source_directories`: List of paths to type check.
+
+ Note: Pyre assumes that all imports are relative to the given source directory. For example, if your source directory is `root/directory`, then an import statement `import module` will be looking to import `root.directory.module`. If you wish to set a different import root for your source directory, you can provide an object `{"import_root": "root", "source": "directory"}` instead of `"root/directory"`. In this case, `import module` will be looking to import `root.module`.
 
 - `search_path`: List of paths to Python modules to include in the typing
 environment. **Note**: `search_path` takes precendence over `source_directories` and the order within the search path indicates precedence.
