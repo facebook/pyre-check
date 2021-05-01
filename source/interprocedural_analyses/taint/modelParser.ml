@@ -2026,115 +2026,112 @@ let create ~resolution ~path ~configuration ~rule_filter source =
                "Class model must have a body of `...`.")
       | {
        Node.value =
-         Assign { Assign.target = { Node.value = Name name; _ }; annotation = Some annotation; _ };
-       location;
-      }
-        when is_simple_name name
-             && Expression.show annotation |> String.is_prefix ~prefix:"Sanitize[TaintInTaintOut["
-        ->
-          Error
-            (invalid_model_error
-               ~path
-               ~location
-               ~name:(Reference.show (name_to_reference_exn name))
-               "TaintInTaintOut sanitizers cannot be modelled on attributes.")
-      | {
-       Node.value =
          Assign
            {
-             Assign.target = { Node.value = Name name; location = name_location };
+             Assign.target = { Node.value = Name name; location = name_location } as target;
              annotation = Some annotation;
              _;
            };
        location;
-      }
-        when (is_simple_name name && Expression.show annotation |> String.equal "Sanitize")
-             || Expression.show annotation |> String.is_prefix ~prefix:"Sanitize[TaintSource"
-             || Expression.show annotation |> String.is_prefix ~prefix:"Sanitize[TaintSink" ->
-          let name = name_to_reference_exn name in
-          ModelVerifier.verify_global ~path ~location ~resolution ~name
-          >>| fun () ->
-          let arguments =
-            match annotation.Node.value with
-            | Expression.Call { arguments; _ } -> Some arguments
-            | _ -> None
-          in
-          let signature =
-            {
-              Define.Signature.name = Node.create ~location:name_location name;
-              parameters = [Parameter.create ~location:Location.any ~name:"$global" ()];
-              decorators =
-                [
-                  {
-                    Decorator.name = Node.create_with_default_location (Reference.create "Sanitize");
-                    arguments;
-                  };
-                ];
-              return_annotation = None;
-              async = false;
-              generator = false;
-              parent = None;
-              nesting_define = None;
-            }
-          in
-          [ParsedSignature (signature, location, Callable.create_object name)]
-      | {
-       Node.value =
-         Assign
-           {
-             Assign.target = { Node.value = Name name; location = name_location };
-             annotation = Some annotation;
-             _;
-           };
-       location;
-      }
-        when is_simple_name name
-             && Expression.show annotation |> String.is_substring ~substring:"TaintSource[" ->
-          let name = name_to_reference_exn name in
-          ModelVerifier.verify_global ~path ~location ~resolution ~name
-          >>| fun () ->
-          let signature =
-            {
-              Define.Signature.name = Node.create ~location:name_location name;
-              parameters = [];
-              decorators = [];
-              return_annotation = Some annotation;
-              async = false;
-              generator = false;
-              parent = None;
-              nesting_define = None;
-            }
-          in
-          [ParsedSignature (signature, location, Callable.create_object name)]
-      | {
-       Node.value =
-         Assign
-           {
-             Assign.target = { Node.value = Name name; location = name_location };
-             annotation = Some annotation;
-             _;
-           };
-       location;
-      }
-        when is_simple_name name
-             && Expression.show annotation |> String.is_substring ~substring:"TaintSink["
-             || Expression.show annotation |> String.is_substring ~substring:"TaintInTaintOut[" ->
-          let name = name_to_reference_exn name in
-          ModelVerifier.verify_global ~path ~location ~resolution ~name
-          >>| fun () ->
-          let signature =
-            {
-              Define.Signature.name = Node.create ~location:name_location name;
-              parameters = [Parameter.create ~location:Location.any ~annotation ~name:"$global" ()];
-              decorators = [];
-              return_annotation = None;
-              async = false;
-              generator = false;
-              parent = None;
-              nesting_define = None;
-            }
-          in
-          [ParsedSignature (signature, location, Callable.create_object name)]
+      } ->
+          if not (is_simple_name name) then
+            Error
+              (model_verification_error
+                 ~path
+                 ~location
+                 (ModelVerificationError.T.InvalidIdentifier target))
+          else if Expression.show annotation |> String.is_prefix ~prefix:"Sanitize[TaintInTaintOut["
+          then
+            Error
+              (model_verification_error
+                 ~path
+                 ~location
+                 (ModelVerificationError.T.InvalidTaintAnnotation
+                    {
+                      taint_annotation = annotation;
+                      reason = "TaintInTaintOut sanitizers cannot be modelled on attributes";
+                    }))
+          else if
+            Expression.show annotation |> String.equal "Sanitize"
+            || Expression.show annotation |> String.is_prefix ~prefix:"Sanitize[TaintSource"
+            || Expression.show annotation |> String.is_prefix ~prefix:"Sanitize[TaintSink"
+          then
+            let name = name_to_reference_exn name in
+            ModelVerifier.verify_global ~path ~location ~resolution ~name
+            >>| fun () ->
+            let arguments =
+              match annotation.Node.value with
+              | Expression.Call { arguments; _ } -> Some arguments
+              | _ -> None
+            in
+            let signature =
+              {
+                Define.Signature.name = Node.create ~location:name_location name;
+                parameters = [Parameter.create ~location:Location.any ~name:"$global" ()];
+                decorators =
+                  [
+                    {
+                      Decorator.name =
+                        Node.create_with_default_location (Reference.create "Sanitize");
+                      arguments;
+                    };
+                  ];
+                return_annotation = None;
+                async = false;
+                generator = false;
+                parent = None;
+                nesting_define = None;
+              }
+            in
+            [ParsedSignature (signature, location, Callable.create_object name)]
+          else if Expression.show annotation |> String.is_substring ~substring:"TaintSource[" then
+            let name = name_to_reference_exn name in
+            ModelVerifier.verify_global ~path ~location ~resolution ~name
+            >>| fun () ->
+            let signature =
+              {
+                Define.Signature.name = Node.create ~location:name_location name;
+                parameters = [];
+                decorators = [];
+                return_annotation = Some annotation;
+                async = false;
+                generator = false;
+                parent = None;
+                nesting_define = None;
+              }
+            in
+            [ParsedSignature (signature, location, Callable.create_object name)]
+          else if
+            Expression.show annotation |> String.is_substring ~substring:"TaintSink["
+            || Expression.show annotation |> String.is_substring ~substring:"TaintInTaintOut["
+          then
+            let name = name_to_reference_exn name in
+            ModelVerifier.verify_global ~path ~location ~resolution ~name
+            >>| fun () ->
+            let signature =
+              {
+                Define.Signature.name = Node.create ~location:name_location name;
+                parameters =
+                  [Parameter.create ~location:Location.any ~annotation ~name:"$global" ()];
+                decorators = [];
+                return_annotation = None;
+                async = false;
+                generator = false;
+                parent = None;
+                nesting_define = None;
+              }
+            in
+            [ParsedSignature (signature, location, Callable.create_object name)]
+          else
+            Error
+              (model_verification_error
+                 ~path
+                 ~location
+                 (ModelVerificationError.T.InvalidTaintAnnotation
+                    {
+                      taint_annotation = annotation;
+                      reason = "Unsupported annotation for attributes";
+                    }))
       | {
        Node.value =
          Expression

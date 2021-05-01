@@ -1524,6 +1524,15 @@ let test_invalid_models context =
     ~expect:"Class `test.C` has no attribute `missing`."
     ();
   assert_invalid_model
+    ~model_source:"test.C().unannotated_class_variable: TaintSink[Test]"
+    ~expect:
+      "Invalid identifier: `test.C().unannotated_class_variable`. Expected a fully-qualified name."
+    ();
+  assert_invalid_model
+    ~model_source:"test.C.unannotated_class_variable: Foo"
+    ~expect:"`Foo` is an invalid taint annotation: Unsupported annotation for attributes"
+    ();
+  assert_invalid_model
     ~model_source:
       {|
       class test.ClassSinkWithMethod(TaintSink[TestSink]):
@@ -1986,7 +1995,8 @@ let test_invalid_models context =
       test.C.x: Sanitize[TaintInTaintOut[TaintSource[Test]]] = ...
     |}
     ~expect:
-      "Invalid model for `test.C.x`: TaintInTaintOut sanitizers cannot be modelled on attributes."
+      "`Sanitize[TaintInTaintOut[TaintSource[Test]]]` is an invalid taint annotation: \
+       TaintInTaintOut sanitizers cannot be modelled on attributes"
     ();
   assert_invalid_model
     ~source:{|
@@ -1997,7 +2007,8 @@ let test_invalid_models context =
       test.C.x: Sanitize[TaintInTaintOut[TaintSink[Test]]] = ...
     |}
     ~expect:
-      "Invalid model for `test.C.x`: TaintInTaintOut sanitizers cannot be modelled on attributes."
+      "`Sanitize[TaintInTaintOut[TaintSink[Test]]]` is an invalid taint annotation: \
+       TaintInTaintOut sanitizers cannot be modelled on attributes"
     ();
   ()
 

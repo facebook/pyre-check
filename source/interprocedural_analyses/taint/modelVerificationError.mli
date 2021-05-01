@@ -60,6 +60,7 @@ module T : sig
         name: Reference.t;
         unexpected_decorators: Statement.Decorator.t list;
       }
+    | InvalidIdentifier of Expression.t
     | UnclassifiedError of {
         model_name: string;
         message: string;

@@ -62,6 +62,7 @@ module T = struct
         name: Reference.t;
         unexpected_decorators: Statement.Decorator.t list;
       }
+    | InvalidIdentifier of Expression.t
     (* TODO(T81363867): Remove this variant. *)
     | UnclassifiedError of {
         model_name: string;
@@ -161,6 +162,10 @@ let description error =
         name
         (String.concat decorators ~sep:", ")
         property_decorator_message
+  | InvalidIdentifier expression ->
+      Format.sprintf
+        "Invalid identifier: `%s`. Expected a fully-qualified name."
+        (Expression.show expression)
   | UnclassifiedError { model_name; message } ->
       Format.sprintf "Invalid model for `%s`: %s" model_name message
   | MissingAttribute { class_name; attribute_name } ->
@@ -190,6 +195,7 @@ let code { kind; _ } =
   | InvalidModelQueryModelClause _ -> 12
   | InvalidExtendsIsTransitive _ -> 13
   | InvalidModelQueryClauseArguments _ -> 14
+  | InvalidIdentifier _ -> 15
 
 
 let display { kind = error; path; location } =
