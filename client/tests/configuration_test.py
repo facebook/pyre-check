@@ -363,6 +363,24 @@ class PartialConfigurationTest(unittest.TestCase):
                 SubdirectorySearchPathElement("bar", "baz"),
             ],
         )
+        source_directories = PartialConfiguration.from_string(
+            json.dumps(
+                {
+                    "source_directories": [
+                        "foo",
+                        {"import_root": "bar", "source": "baz"},
+                    ]
+                }
+            )
+        ).source_directories
+        self.assertIsNotNone(source_directories)
+        self.assertListEqual(
+            list(source_directories),
+            [
+                SimpleSearchPathElement("foo"),
+                SubdirectorySearchPathElement("bar", "baz"),
+            ],
+        )
 
         self.assertIsNone(PartialConfiguration.from_string("{}").targets)
         targets = PartialConfiguration.from_string(
@@ -1375,6 +1393,10 @@ class SearchPathElementTest(unittest.TestCase):
         )
         self.assertListEqual(
             create_search_paths({"root": "foo", "subdirectory": "bar"}, site_roots=[]),
+            [SubdirectorySearchPathElement("foo", "bar")],
+        )
+        self.assertListEqual(
+            create_search_paths({"import_root": "foo", "source": "bar"}, site_roots=[]),
             [SubdirectorySearchPathElement("foo", "bar")],
         )
         self.assertListEqual(

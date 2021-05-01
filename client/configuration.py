@@ -255,6 +255,12 @@ def create_search_paths(
                     root=json["root"], subdirectory=json["subdirectory"]
                 )
             ]
+        if "import_root" in json and "source" in json:
+            return [
+                SubdirectorySearchPathElement(
+                    root=json["import_root"], subdirectory=json["source"]
+                )
+            ]
         elif "site-package" in json:
             return [
                 SitePackageSearchPathElement(
