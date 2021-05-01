@@ -1199,6 +1199,7 @@ let test_invalid_models context =
   let assert_valid_model ?source ~model_source () =
     assert_invalid_model ?source ~model_source ~expect:"no failure" ()
   in
+  assert_invalid_model ~model_source:"import foo" ~expect:"Unexpected statement" ();
   assert_invalid_model
     ~model_source:"def test.sink(parameter: TaintSink[X, Unsupported]) -> TaintSource[A]: ..."
     ~expect:

@@ -2198,7 +2198,12 @@ let create ~resolution ~path ~configuration ~rule_filter source =
           >>= fun query ->
           model_clause
           >>| fun productions -> [ParsedQuery { ModelQuery.rule_kind; query; productions; name }]
-      | _ -> Ok []
+      | { Node.location; _ } ->
+          Error
+            (model_verification_error
+               ~path
+               ~location
+               (ModelVerificationError.T.UnexpectedStatement signature))
     in
     String.split ~on:'\n' source
     |> Parser.parse

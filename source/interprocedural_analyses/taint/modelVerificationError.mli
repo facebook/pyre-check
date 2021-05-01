@@ -61,6 +61,7 @@ module T : sig
         unexpected_decorators: Statement.Decorator.t list;
       }
     | InvalidIdentifier of Expression.t
+    | UnexpectedStatement of Statement.t
     | UnclassifiedError of {
         model_name: string;
         message: string;
