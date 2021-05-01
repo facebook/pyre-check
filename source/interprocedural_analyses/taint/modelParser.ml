@@ -1580,8 +1580,24 @@ let parse_return_taint
   |> map ~f:(List.map ~f:(fun annotation -> annotation, ReturnAnnotation))
 
 
-type parsed_signature_or_query =
-  | ParsedSignature of Define.Signature.t * Location.t * Callable.t
+type parsed_signature = {
+  signature: Define.Signature.t;
+  location: Location.t;
+  call_target: Callable.real_target;
+}
+
+type parsed_attribute = {
+  name: Reference.t;
+  source_annotation: Expression.t option;
+  sink_annotation: Expression.t option;
+  decorators: Decorator.t list;
+  location: Location.t;
+  call_target: Callable.object_target;
+}
+
+type parsed_statement =
+  | ParsedSignature of parsed_signature
+  | ParsedAttribute of parsed_attribute
   | ParsedQuery of ModelQuery.rule
 
 type model_or_query =
@@ -1873,7 +1889,7 @@ let parse_statement ~resolution ~path ~configuration statement =
         | Some _ -> Callable.create_method name
         | None -> Callable.create_function name
       in
-      Ok [ParsedSignature (signature, location, call_target)]
+      Ok [ParsedSignature { signature; location; call_target }]
   | {
    Node.value =
      Class
@@ -1966,14 +1982,17 @@ let parse_statement ~resolution ~path ~configuration statement =
                        in
                        let decorators = List.rev_append extra_decorators decorators in
                        ParsedSignature
-                         ( {
-                             signature with
-                             Define.Signature.parameters;
-                             return_annotation = source_annotation;
-                             decorators;
-                           },
-                           location,
-                           Callable.create_method name )
+                         {
+                           signature =
+                             {
+                               signature with
+                               Define.Signature.parameters;
+                               return_annotation = source_annotation;
+                               decorators;
+                             };
+                           location;
+                           call_target = Callable.create_method name;
+                         }
                      in
                      let sources =
                        List.map source_annotations ~f:(fun source_annotation ->
@@ -2014,11 +2033,7 @@ let parse_statement ~resolution ~path ~configuration statement =
   | {
    Node.value =
      Assign
-       {
-         Assign.target = { Node.value = Name name; location = name_location } as target;
-         annotation = Some annotation;
-         _;
-       };
+       { Assign.target = { Node.value = Name name; _ } as target; annotation = Some annotation; _ };
    location;
   } ->
       if not (is_simple_name name) then
@@ -2044,69 +2059,60 @@ let parse_statement ~resolution ~path ~configuration statement =
         || Expression.show annotation |> String.is_prefix ~prefix:"Sanitize[TaintSink"
       then
         let name = name_to_reference_exn name in
-        ModelVerifier.verify_global ~path ~location ~resolution ~name
-        >>| fun () ->
         let arguments =
           match annotation.Node.value with
           | Expression.Call { arguments; _ } -> Some arguments
           | _ -> None
         in
-        let signature =
+        let decorator =
           {
-            Define.Signature.name = Node.create ~location:name_location name;
-            parameters = [Parameter.create ~location:Location.any ~name:"$global" ()];
-            decorators =
-              [
-                {
-                  Decorator.name = Node.create_with_default_location (Reference.create "Sanitize");
-                  arguments;
-                };
-              ];
-            return_annotation = None;
-            async = false;
-            generator = false;
-            parent = None;
-            nesting_define = None;
+            Decorator.name = Node.create_with_default_location (Reference.create "Sanitize");
+            arguments;
           }
         in
-        [ParsedSignature (signature, location, Callable.create_object name)]
+        Ok
+          [
+            ParsedAttribute
+              {
+                name;
+                source_annotation = None;
+                sink_annotation = None;
+                decorators = [decorator];
+                location;
+                call_target = Callable.create_object name;
+              };
+          ]
       else if Expression.show annotation |> String.is_substring ~substring:"TaintSource[" then
         let name = name_to_reference_exn name in
-        ModelVerifier.verify_global ~path ~location ~resolution ~name
-        >>| fun () ->
-        let signature =
-          {
-            Define.Signature.name = Node.create ~location:name_location name;
-            parameters = [];
-            decorators = [];
-            return_annotation = Some annotation;
-            async = false;
-            generator = false;
-            parent = None;
-            nesting_define = None;
-          }
-        in
-        [ParsedSignature (signature, location, Callable.create_object name)]
+        Ok
+          [
+            ParsedAttribute
+              {
+                name;
+                source_annotation = Some annotation;
+                sink_annotation = None;
+                decorators = [];
+                location;
+                call_target = Callable.create_object name;
+              };
+          ]
       else if
         Expression.show annotation |> String.is_substring ~substring:"TaintSink["
         || Expression.show annotation |> String.is_substring ~substring:"TaintInTaintOut["
       then
         let name = name_to_reference_exn name in
-        ModelVerifier.verify_global ~path ~location ~resolution ~name
-        >>| fun () ->
-        let signature =
-          {
-            Define.Signature.name = Node.create ~location:name_location name;
-            parameters = [Parameter.create ~location:Location.any ~annotation ~name:"$global" ()];
-            decorators = [];
-            return_annotation = None;
-            async = false;
-            generator = false;
-            parent = None;
-            nesting_define = None;
-          }
-        in
-        [ParsedSignature (signature, location, Callable.create_object name)]
+        Ok
+          [
+            ParsedAttribute
+              {
+                name;
+                source_annotation = None;
+                sink_annotation = Some annotation;
+                decorators = [];
+                location;
+                call_target = Callable.create_object name;
+              };
+          ]
       else
         Error
           (model_verification_error
@@ -2182,21 +2188,24 @@ let parse_statement ~resolution ~path ~configuration statement =
            (ModelVerificationError.T.UnexpectedStatement statement))
 
 
-let create_model
+let create_model_from_signature
     ~resolution
     ~path
     ~configuration
     ~sources_to_keep
     ~sinks_to_keep
-    ( {
-        Define.Signature.name = { Node.value = callable_name; _ };
-        parameters;
-        return_annotation;
-        decorators;
-        _;
-      } as define )
-    location
-    call_target
+    {
+      signature =
+        {
+          Define.Signature.name = { Node.value = callable_name; _ };
+          parameters;
+          return_annotation;
+          decorators;
+          _;
+        } as define;
+      location;
+      call_target;
+    }
   =
   let open Core.Result in
   (* Strip off the decorators only used for taint annotations. *)
@@ -2391,6 +2400,77 @@ let create_model
   Model ({ model; call_target; is_obscure = false }, skipped_override)
 
 
+let create_model_from_attribute
+    ~resolution
+    ~path
+    ~configuration
+    ~sources_to_keep
+    ~sinks_to_keep
+    { name; source_annotation; sink_annotation; decorators; location; call_target }
+  =
+  let open Core.Result in
+  let call_target = (call_target :> Callable.t) in
+  ModelVerifier.verify_global ~path ~location ~resolution ~name
+  >>= fun () ->
+  source_annotation
+  |> Option.map
+       ~f:
+         (parse_return_taint
+            ~path
+            ~location
+            ~model_name:(Reference.show name)
+            ~configuration
+            ~parameters:[]
+            ~callable_parameter_names_to_positions:None)
+  |> Option.value ~default:(Ok [])
+  >>= fun source_taint ->
+  let parse_sink_taint annotation =
+    let parameter_name = "$global" in
+    let root =
+      AccessPath.Root.PositionalParameter
+        { position = 0; name = parameter_name; positional_only = false }
+    in
+    let parameter = Parameter.create ~location:Location.any ~annotation ~name:parameter_name () in
+    parse_parameter_taint
+      ~path
+      ~location
+      ~model_name:(Reference.show name)
+      ~configuration
+      ~parameters:[]
+      ~callable_parameter_names_to_positions:None
+      (root, parameter_name, parameter)
+  in
+  sink_annotation
+  |> Option.map ~f:parse_sink_taint
+  |> Option.value ~default:(Ok [])
+  >>= fun sink_taint ->
+  Ok (List.rev_append source_taint sink_taint)
+  >>= fun annotations ->
+  List.fold_result
+    annotations
+    ~init:TaintResult.empty_model
+    ~f:(fun accumulator (annotation, annotation_kind) ->
+      add_taint_annotation_to_model
+        ~path
+        ~location
+        ~model_name:(Reference.show name)
+        ~resolution:(Resolution.global_resolution resolution)
+        ~annotation_kind
+        ~callable_annotation:None
+        ~sources_to_keep
+        ~sinks_to_keep
+        accumulator
+        annotation)
+  >>= adjust_mode_and_skipped_overrides
+        ~path
+        ~location
+        ~configuration
+        ~top_level_decorators:decorators
+        ~define_name:name
+  >>| fun (model, skipped_override) ->
+  Model ({ model; call_target; is_obscure = false }, skipped_override)
+
+
 let create ~resolution ~path ~configuration ~rule_filter source =
   let sources_to_keep, sinks_to_keep =
     compute_sources_and_sinks_to_keep ~configuration ~rule_filter
@@ -2404,28 +2484,28 @@ let create ~resolution ~path ~configuration ~rule_filter source =
     |> List.partition_result
     |> fun (results, errors) -> List.concat results, errors
   in
-  let signatures, queries =
-    List.fold signatures_and_queries ~init:([], []) ~f:(fun (signatures, queries) ->
-      function
-      | ParsedSignature (signature, location, callable) ->
-          (signature, location, callable) :: signatures, queries
-      | ParsedQuery query -> signatures, query :: queries)
-  in
-  let create_model (signature, location, callable) =
-    create_model
-      ~resolution
-      ~path
-      ~configuration
-      ~sources_to_keep
-      ~sinks_to_keep
-      signature
-      location
-      callable
+  let create_model_or_query = function
+    | ParsedSignature parsed_signature ->
+        create_model_from_signature
+          ~resolution
+          ~path
+          ~configuration
+          ~sources_to_keep
+          ~sinks_to_keep
+          parsed_signature
+    | ParsedAttribute parsed_attribute ->
+        create_model_from_attribute
+          ~resolution
+          ~path
+          ~configuration
+          ~sources_to_keep
+          ~sinks_to_keep
+          parsed_attribute
+    | ParsedQuery query -> Core.Result.return (Query query)
   in
   List.rev_append
     (List.map errors ~f:(fun error -> Error error))
-    ( List.map signatures ~f:create_model
-    |> List.rev_append (List.map queries ~f:(fun query -> Core.Result.return (Query query))) )
+    (List.map signatures_and_queries ~f:create_model_or_query)
 
 
 let parse ~resolution ?path ?rule_filter ~source ~configuration models =
