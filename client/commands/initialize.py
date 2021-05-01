@@ -39,9 +39,7 @@ class Initialize(CommandParser):
     def __init__(self) -> None:
         super().__init__()
 
-    def _get_configuration(self) -> Dict[str, Any]:
-        configuration: Dict[str, Any] = {}
-
+    def _create_watchman_configuration(self) -> None:
         watchman_configuration_path = os.path.abspath(".watchmanconfig")
         watchman_path = shutil.which("watchman")
         if watchman_path is not None and log.get_yes_no_input(
@@ -68,6 +66,10 @@ class Initialize(CommandParser):
             except subprocess.CalledProcessError:
                 LOG.warning("Failed to run `watchman watch-project .`.")
 
+    def _get_configuration(self) -> Dict[str, Any]:
+        configuration: Dict[str, Any] = {}
+
+        self._create_watchman_configuration()
         binary_path = shutil.which(BINARY_NAME)
         if binary_path is None:
             binary_path = shutil.which(
@@ -100,11 +102,12 @@ class Initialize(CommandParser):
         if taint_models_path is not None:
             configuration["taint_models_path"] = str(taint_models_path)
 
-        analysis_directory = log.get_optional_input(
-            "Which directory should pyre be initialized in?", "."
+        source_directories = log.get_optional_input(
+            "Which directory(ies) should pyre analyze?", "."
         )
-
-        configuration["source_directories"] = [analysis_directory]
+        configuration["source_directories"] = [
+            directory.strip() for directory in source_directories.split(",")
+        ]
         return configuration
 
     def _get_local_configuration(
