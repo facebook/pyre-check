@@ -552,6 +552,61 @@
   }
 }
 {
+  "kind": "issue",
+  "data": {
+    "callable": "attributes.test_issue_with_text_key_of_dictionary",
+    "callable_line": 89,
+    "code": 5002,
+    "line": 90,
+    "start": 16,
+    "end": 36,
+    "filename": "attributes.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "attributes.py",
+              "line": 90,
+              "start": 16,
+              "end": 28
+            },
+            "leaves": [
+              { "kind": "Test", "name": "Obj{attributes.C.dictionary}" }
+            ],
+            "features": [
+              { "has": "first-index" },
+              { "first-index": "text" }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "attributes.py",
+              "line": 90,
+              "start": 16,
+              "end": 36
+            },
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "text" },
+      { "always-via": "special_sink" }
+    ]
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "attributes.test_no_issue_with_other_key_of_dictionary",

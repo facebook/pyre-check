@@ -2026,63 +2026,6 @@ let create ~resolution ~path ~configuration ~rule_filter source =
                "Class model must have a body of `...`.")
       | {
        Node.value =
-         Assign
-           {
-             Assign.target = { Node.value = Name name; location = name_location };
-             annotation = Some annotation;
-             _;
-           };
-       location;
-      }
-        when is_simple_name name
-             && Expression.show annotation |> String.is_prefix ~prefix:"TaintSource[" ->
-          let name = name_to_reference_exn name in
-          ModelVerifier.verify_global ~path ~location ~resolution ~name
-          >>| fun () ->
-          let signature =
-            {
-              Define.Signature.name = Node.create ~location:name_location name;
-              parameters = [];
-              decorators = [];
-              return_annotation = Some annotation;
-              async = false;
-              generator = false;
-              parent = None;
-              nesting_define = None;
-            }
-          in
-          [ParsedSignature (signature, location, Callable.create_object name)]
-      | {
-       Node.value =
-         Assign
-           {
-             Assign.target = { Node.value = Name name; location = name_location };
-             annotation = Some annotation;
-             _;
-           };
-       location;
-      }
-        when is_simple_name name
-             && Expression.show annotation |> String.is_prefix ~prefix:"TaintSink["
-             || Expression.show annotation |> String.is_prefix ~prefix:"TaintInTaintOut[" ->
-          let name = name_to_reference_exn name in
-          ModelVerifier.verify_global ~path ~location ~resolution ~name
-          >>| fun () ->
-          let signature =
-            {
-              Define.Signature.name = Node.create ~location:name_location name;
-              parameters = [Parameter.create ~location:Location.any ~annotation ~name:"$global" ()];
-              decorators = [];
-              return_annotation = None;
-              async = false;
-              generator = false;
-              parent = None;
-              nesting_define = None;
-            }
-          in
-          [ParsedSignature (signature, location, Callable.create_object name)]
-      | {
-       Node.value =
          Assign { Assign.target = { Node.value = Name name; _ }; annotation = Some annotation; _ };
        location;
       }
@@ -2127,6 +2070,63 @@ let create ~resolution ~path ~configuration ~rule_filter source =
                     arguments;
                   };
                 ];
+              return_annotation = None;
+              async = false;
+              generator = false;
+              parent = None;
+              nesting_define = None;
+            }
+          in
+          [ParsedSignature (signature, location, Callable.create_object name)]
+      | {
+       Node.value =
+         Assign
+           {
+             Assign.target = { Node.value = Name name; location = name_location };
+             annotation = Some annotation;
+             _;
+           };
+       location;
+      }
+        when is_simple_name name
+             && Expression.show annotation |> String.is_substring ~substring:"TaintSource[" ->
+          let name = name_to_reference_exn name in
+          ModelVerifier.verify_global ~path ~location ~resolution ~name
+          >>| fun () ->
+          let signature =
+            {
+              Define.Signature.name = Node.create ~location:name_location name;
+              parameters = [];
+              decorators = [];
+              return_annotation = Some annotation;
+              async = false;
+              generator = false;
+              parent = None;
+              nesting_define = None;
+            }
+          in
+          [ParsedSignature (signature, location, Callable.create_object name)]
+      | {
+       Node.value =
+         Assign
+           {
+             Assign.target = { Node.value = Name name; location = name_location };
+             annotation = Some annotation;
+             _;
+           };
+       location;
+      }
+        when is_simple_name name
+             && Expression.show annotation |> String.is_substring ~substring:"TaintSink["
+             || Expression.show annotation |> String.is_substring ~substring:"TaintInTaintOut[" ->
+          let name = name_to_reference_exn name in
+          ModelVerifier.verify_global ~path ~location ~resolution ~name
+          >>| fun () ->
+          let signature =
+            {
+              Define.Signature.name = Node.create ~location:name_location name;
+              parameters = [Parameter.create ~location:Location.any ~annotation ~name:"$global" ()];
+              decorators = [];
               return_annotation = None;
               async = false;
               generator = false;
