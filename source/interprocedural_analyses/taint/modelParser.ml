@@ -2400,6 +2400,10 @@ let create_model_from_signature
   Model ({ model; call_target; is_obscure = false }, skipped_override)
 
 
+(* We don't have real models for attributes, so we make a fake callable model with a 'parameter'
+   $global which acts as the taint sink whenever attributes are marked as sinks. *)
+let attribute_symbolic_parameter = "$global"
+
 let create_model_from_attribute
     ~resolution
     ~path
@@ -2425,12 +2429,13 @@ let create_model_from_attribute
   |> Option.value ~default:(Ok [])
   >>= fun source_taint ->
   let parse_sink_taint annotation =
-    let parameter_name = "$global" in
     let root =
       AccessPath.Root.PositionalParameter
-        { position = 0; name = parameter_name; positional_only = false }
+        { position = 0; name = attribute_symbolic_parameter; positional_only = false }
     in
-    let parameter = Parameter.create ~location:Location.any ~annotation ~name:parameter_name () in
+    let parameter =
+      Parameter.create ~location:Location.any ~annotation ~name:attribute_symbolic_parameter ()
+    in
     parse_parameter_taint
       ~path
       ~location
@@ -2438,7 +2443,7 @@ let create_model_from_attribute
       ~configuration
       ~parameters:[]
       ~callable_parameter_names_to_positions:None
-      (root, parameter_name, parameter)
+      (root, attribute_symbolic_parameter, parameter)
   in
   sink_annotation
   |> Option.map ~f:parse_sink_taint
@@ -2611,47 +2616,6 @@ let create_attribute_model_from_annotations
   =
   let open Core.Result in
   let global_resolution = Resolution.global_resolution resolution in
-  let global_parameter_annotation =
-    (* We don't have real models for attributes, so we make a fake callable model with a 'parameter'
-       $global which acts as the taint sink whenever attributes are marked as sinks. This needs to
-       be annotated with something arbitrary so that add_taint_annotation_to_model works correctly
-       later on. *)
-    Node.create_with_default_location
-      (Expression.Name (Ast.Expression.create_name ~location:Location.any "$global"))
-  in
-  let signature =
-    {
-      Define.Signature.name = Node.create ~location:Location.any name;
-      parameters =
-        [
-          Parameter.create
-            ~location:Location.any
-            ~annotation:global_parameter_annotation
-            ~name:"$global"
-            ();
-        ];
-      decorators = [];
-      return_annotation = None;
-      async = false;
-      generator = false;
-      parent = None;
-      nesting_define = None;
-    }
-  in
-  let callable_annotation =
-    callable_annotation
-      ~path:None
-      ~location:Location.any
-      ~resolution
-      ~verify_decorators:false
-      signature
-    >>| Annotation.annotation
-    >>| function
-    | Type.Callable t -> Some t
-    | _ -> None
-  in
-  callable_annotation
-  >>= fun callable_annotation ->
   List.fold annotations ~init:(Ok TaintResult.empty_model) ~f:(fun accumulator annotation ->
       accumulator
       >>= fun accumulator ->
@@ -2663,7 +2627,7 @@ let create_attribute_model_from_annotations
             Ok
               (ParameterAnnotation
                  (AccessPath.Root.PositionalParameter
-                    { position = 0; name = "$global"; positional_only = false }))
+                    { position = 0; name = attribute_symbolic_parameter; positional_only = false }))
         | _ ->
             Error
               (invalid_model_query_error
@@ -2680,7 +2644,7 @@ let create_attribute_model_from_annotations
         ~model_name:"Model query"
         ~resolution:global_resolution
         ~annotation_kind
-        ~callable_annotation
+        ~callable_annotation:None
         ~sources_to_keep
         ~sinks_to_keep
         accumulator
