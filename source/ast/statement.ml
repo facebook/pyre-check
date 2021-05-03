@@ -496,8 +496,6 @@ and Class : sig
 
   val is_frozen : t -> bool
 
-  val explicitly_assigned_attributes : t -> Attribute.t Identifier.SerializableMap.t
-
   type class_t = t [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
   module AttributeComponents : sig
@@ -618,104 +616,6 @@ end = struct
     List.exists decorators ~f:is_frozen_dataclass
 
 
-  let explicitly_assigned_attributes ({ name = { Node.value = name; _ }; body; _ } as definition) =
-    let assigned_attributes map { Node.location; value } =
-      let open Expression in
-      match value with
-      (* Handle multiple assignments on same line *)
-      | Statement.Assign
-          {
-            Assign.target = { Node.value = Tuple targets; _ };
-            value = { Node.value = Tuple values; _ };
-            _;
-          } ->
-          let add_attribute map ({ Node.location; _ } as target) value =
-            Attribute.name ~parent:name target
-            |> function
-            | Some name ->
-                let attribute =
-                  Attribute.create_simple
-                    ~location
-                    ~name
-                    ~value_and_origin:{ value; origin = Explicit }
-                    ~primitive:true
-                    ()
-                in
-                Identifier.SerializableMap.set map ~key:name ~data:attribute
-            | _ -> map
-          in
-          if List.length targets = List.length values then
-            List.fold2_exn ~init:map ~f:add_attribute targets values
-          else
-            map
-      | Assign { Assign.target = { Node.value = Tuple targets; _ }; value; _ } ->
-          let add_attribute index map ({ Node.location; _ } as target) =
-            Attribute.name ~parent:name target
-            |> function
-            | Some name ->
-                let value =
-                  let index = Node.create ~location (Expression.Integer index) in
-                  match value with
-                  | { Node.value = Call _; _ }
-                  | { Node.value = Name _; _ } ->
-                      Some
-                        {
-                          value with
-                          Node.value =
-                            Expression.Call
-                              {
-                                callee =
-                                  {
-                                    Node.location;
-                                    value =
-                                      Name
-                                        (Name.Attribute
-                                           {
-                                             base = value;
-                                             attribute = "__getitem__";
-                                             special = true;
-                                           });
-                                  };
-                                arguments = [{ Call.Argument.name = None; value = index }];
-                              };
-                        }
-                  | _ -> None
-                in
-                value
-                >>| (fun value ->
-                      Attribute.create_simple
-                        ~location
-                        ~name
-                        ~value_and_origin:{ value; origin = Explicit }
-                        ~primitive:true
-                        ())
-                >>| (fun data -> Identifier.SerializableMap.set map ~key:name ~data)
-                |> Option.value ~default:map
-            | _ -> map
-          in
-          List.foldi ~init:map ~f:add_attribute targets
-      | Assign { Assign.target; annotation; value; _ } -> (
-          Attribute.name ~parent:name target
-          |> function
-          | Some name ->
-              let frozen = is_frozen definition in
-              let attribute =
-                Attribute.create_simple
-                  ~location
-                  ~name
-                  ~value_and_origin:{ value; origin = Explicit }
-                  ?annotation
-                  ~primitive:true
-                  ~frozen
-                  ()
-              in
-              Identifier.SerializableMap.set map ~key:name ~data:attribute
-          | _ -> map )
-      | _ -> map
-    in
-    List.fold ~init:Identifier.SerializableMap.empty ~f:assigned_attributes body
-
-
   module PropertyDefine = struct
     type getter = {
       name: string;
@@ -816,6 +716,103 @@ end = struct
     [@@deriving compare, eq, sexp, show, hash]
 
     let create ({ name = { Node.value = name; _ }; body; _ } as definition) =
+      let explicitly_assigned_attributes =
+        let assigned_attributes map { Node.location; value } =
+          let open Expression in
+          match value with
+          (* Handle multiple assignments on same line *)
+          | Statement.Assign
+              {
+                Assign.target = { Node.value = Tuple targets; _ };
+                value = { Node.value = Tuple values; _ };
+                _;
+              } ->
+              let add_attribute map ({ Node.location; _ } as target) value =
+                Attribute.name ~parent:name target
+                |> function
+                | Some name ->
+                    let attribute =
+                      Attribute.create_simple
+                        ~location
+                        ~name
+                        ~value_and_origin:{ value; origin = Explicit }
+                        ~primitive:true
+                        ()
+                    in
+                    Identifier.SerializableMap.set map ~key:name ~data:attribute
+                | _ -> map
+              in
+              if List.length targets = List.length values then
+                List.fold2_exn ~init:map ~f:add_attribute targets values
+              else
+                map
+          | Assign { Assign.target = { Node.value = Tuple targets; _ }; value; _ } ->
+              let add_attribute index map ({ Node.location; _ } as target) =
+                Attribute.name ~parent:name target
+                |> function
+                | Some name ->
+                    let value =
+                      let index = Node.create ~location (Expression.Integer index) in
+                      match value with
+                      | { Node.value = Call _; _ }
+                      | { Node.value = Name _; _ } ->
+                          Some
+                            {
+                              value with
+                              Node.value =
+                                Expression.Call
+                                  {
+                                    callee =
+                                      {
+                                        Node.location;
+                                        value =
+                                          Name
+                                            (Name.Attribute
+                                               {
+                                                 base = value;
+                                                 attribute = "__getitem__";
+                                                 special = true;
+                                               });
+                                      };
+                                    arguments = [{ Call.Argument.name = None; value = index }];
+                                  };
+                            }
+                      | _ -> None
+                    in
+                    value
+                    >>| (fun value ->
+                          Attribute.create_simple
+                            ~location
+                            ~name
+                            ~value_and_origin:{ value; origin = Explicit }
+                            ~primitive:true
+                            ())
+                    >>| (fun data -> Identifier.SerializableMap.set map ~key:name ~data)
+                    |> Option.value ~default:map
+                | _ -> map
+              in
+              List.foldi ~init:map ~f:add_attribute targets
+          | Assign { Assign.target; annotation; value; _ } -> (
+              Attribute.name ~parent:name target
+              |> function
+              | Some name ->
+                  let frozen = is_frozen definition in
+                  let attribute =
+                    Attribute.create_simple
+                      ~location
+                      ~name
+                      ~value_and_origin:{ value; origin = Explicit }
+                      ?annotation
+                      ~primitive:true
+                      ~frozen
+                      ()
+                  in
+                  Identifier.SerializableMap.set map ~key:name ~data:attribute
+              | _ -> map )
+          | _ -> map
+        in
+        List.fold ~init:Identifier.SerializableMap.empty ~f:assigned_attributes body
+      in
       let get_implicits defines =
         List.map defines ~f:(Define.implicit_attributes ~definition)
         |> List.fold
@@ -1096,7 +1093,7 @@ end = struct
         |> Identifier.SerializableMap.merge merge_attribute_maps slots_attributes
       in
       {
-        explicitly_assigned_attributes = explicitly_assigned_attributes definition;
+        explicitly_assigned_attributes;
         constructor_attributes;
         test_setup_attributes;
         additional_attributes;

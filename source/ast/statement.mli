@@ -189,8 +189,6 @@ and Class : sig
 
   val is_frozen : t -> bool
 
-  val explicitly_assigned_attributes : t -> Attribute.t Identifier.SerializableMap.t
-
   type class_t = t [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
   module AttributeComponents : sig
