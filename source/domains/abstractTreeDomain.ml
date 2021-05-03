@@ -1171,7 +1171,7 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
           match part with
           | Path -> Format.sprintf "Tree.Path"
           | Self -> Format.sprintf "Tree.Self"
-          | _ -> Base.introspect op )
+          | _ -> Element.introspect op )
 
 
     let create parts =
