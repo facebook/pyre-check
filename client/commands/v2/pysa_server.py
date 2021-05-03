@@ -106,24 +106,26 @@ class PysaServerHandler(connection.BackgroundTask):
     def update_model_errors(self, model_errors: Sequence[query.InvalidModel]) -> None:
         LOG.info(
             (
-                "Refereshing errors received from Pysa server. "
+                "Refreshing errors received from Pysa server. "
                 + f"Total number of errors is {len(model_errors)}."
             )
         )
         self.server_state.diagnostics = invalid_models_to_diagnostics(model_errors)
+        LOG.info(f"update_model_errors(): server_state.diagnostics = {self.server_state.diagnostics}")
 
     # ** NEW **
     # Show invalid model errors from Pysa to the client
     async def show_model_errors_to_client(self) -> None:
         LOG.info(f"server_state.opened_documents = {self.server_state.opened_documents}")
-        for path in self.server_state.opened_documents:
-            await _publish_diagnostics(self.client_output_channel, path, [])
-            diagnostics = self.server_state.diagnostics.get(path, None)
-            LOG.info(f"show_model_errors_to_client(): diagnostics = {diagnostics}")
-            if diagnostics is not None:
-                await _publish_diagnostics(
-                    self.client_output_channel, path, diagnostics
-                )
+        # for path in self.server_state.opened_documents:
+        path = "/home/momo/Documents/Programs/pyre-check/documentation/pysa_tutorial/exercise2/sources_sinks.pysa"
+        await _publish_diagnostics(self.client_output_channel, path, [])
+        diagnostics = self.server_state.diagnostics.get(path, None)
+        LOG.info(f"show_model_errors_to_client(): diagnostics = {diagnostics}")
+        if diagnostics is not None:
+            await _publish_diagnostics(
+                self.client_output_channel, path, diagnostics
+            )
 
     @connection.asynccontextmanager
     async def _read_server_response(
@@ -370,6 +372,7 @@ class PysaServer:
     async def process_open_request(
         self, parameters: lsp.DidOpenTextDocumentParameters
     ) -> None:
+        print("A document was just opened!")
         document_path = parameters.text_document.document_uri().to_file_path()
         if document_path is None:
             raise json_rpc.InvalidRequestError(
@@ -392,6 +395,7 @@ class PysaServer:
     async def process_close_request(
         self, parameters: lsp.DidCloseTextDocumentParameters
     ) -> None:
+        print("A document was just closed!")
         document_path = parameters.text_document.document_uri().to_file_path()
         if document_path is None:
             raise json_rpc.InvalidRequestError(
@@ -410,6 +414,7 @@ class PysaServer:
     async def process_did_save_request(
         self, parameters: lsp.DidSaveTextDocumentParameters
     ) -> None:
+        print("A document was just saved!")
         document_path = parameters.text_document.document_uri().to_file_path()
         if document_path is None:
             raise json_rpc.InvalidRequestError(
