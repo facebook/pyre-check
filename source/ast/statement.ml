@@ -1160,8 +1160,9 @@ and Define : sig
       return_annotation: Expression.t option;
       async: bool;
       generator: bool;
-      parent: Reference.t option;
       (* The class owning the method. *)
+      parent: Reference.t option;
+      (* If the define is nested, this is the name of the nesting define. *)
       nesting_define: Reference.t option;
     }
     [@@deriving compare, eq, sexp, show, hash, to_yojson]
@@ -1320,8 +1321,9 @@ end = struct
       return_annotation: Expression.t option;
       async: bool;
       generator: bool;
+      (* The class owning the method *)
       parent: Reference.t option;
-      (* The class owning the method. *)
+      (* If the define is nested, this is the name of the nesting define. *)
       nesting_define: Reference.t option;
     }
     [@@deriving compare, eq, sexp, show, hash, to_yojson]
