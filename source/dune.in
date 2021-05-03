@@ -176,7 +176,7 @@
     ppx_compare ppx_sexp_conv))
  (libraries pyrelib.pyreParser pyrelib.analysis pyrelib.ast pyrelib.service
    pyrelib.commands pyrelib.configuration pyrelib.pyre pyrelib.taint
-   pyrelib.deadStore pyrelib.timer pyrelib.path pyrelib.file pyrelib.version))
+   pyrelib.timer pyrelib.path pyrelib.file pyrelib.version))
 
 (tests
  (names
