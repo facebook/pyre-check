@@ -101,6 +101,7 @@ class PysaServer:
     async def process_open_request(
         self, parameters: lsp.DidOpenTextDocumentParameters
     ) -> None:
+        print("A document was just opened!")
         document_path = parameters.text_document.document_uri().to_file_path()
         if document_path is None:
             raise json_rpc.InvalidRequestError(
@@ -110,6 +111,7 @@ class PysaServer:
     async def process_close_request(
         self, parameters: lsp.DidCloseTextDocumentParameters
     ) -> None:
+        print("A document was just closed!")
         document_path = parameters.text_document.document_uri().to_file_path()
         if document_path is None:
             raise json_rpc.InvalidRequestError(
@@ -124,6 +126,7 @@ class PysaServer:
     async def process_did_save_request(
         self, parameters: lsp.DidSaveTextDocumentParameters
     ) -> None:
+        print("A document was just saved!")
         document_path = parameters.text_document.document_uri().to_file_path()
         if document_path is None:
             raise json_rpc.InvalidRequestError(
