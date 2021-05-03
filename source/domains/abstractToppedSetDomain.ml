@@ -36,6 +36,11 @@ module Make (Element : ELEMENT) = struct
     | ASet set -> make (Set.add element set)
 
 
+  let is_top = function
+    | Top -> true
+    | _ -> false
+
+
   let elements = function
     | Top -> []
     | ASet set -> Set.elements set
@@ -43,7 +48,7 @@ module Make (Element : ELEMENT) = struct
 
   let of_list l = make (Set.of_list l)
 
-  type _ part += Element : Element.t part | Set : Element.t list with_top part
+  type _ part += Element : Element.t part
 
   module rec Base : (BASE with type t := Set.t with_top) = MakeBase (Domain)
 
@@ -129,21 +134,7 @@ module Make (Element : ELEMENT) = struct
       | ASet set, Element, Add -> Set.add f set |> make_transformed ~old:set ~old_topped:topped_set
       | ASet set, Element, Filter ->
           Set.filter f set |> make_transformed ~old:set ~old_topped:topped_set
-      | ASet set, Set, Map -> (
-          let value = ASet (Set.elements set) in
-          match f value with
-          | Top -> Top
-          | ASet l -> make (Set.of_list l) )
-      | ASet set, Set, Add -> (
-          match f with
-          | Top -> Top
-          | ASet l -> make (Set.union set (Set.of_list l)) )
-      | ASet set_elements, Set, Filter ->
-          if f (ASet (Set.elements set_elements)) then
-            topped_set
-          else
-            bottom
-      | Top, (Element | Set), _ -> Top
+      | Top, Element, _ -> Top
       | _ -> Base.transform part op ~f topped_set
 
 
@@ -154,12 +145,8 @@ module Make (Element : ELEMENT) = struct
       match set, part, op with
       | Top, Element, Acc -> init
       | Top, Element, Exists -> init
-      | Top, Set, Acc -> f Top init
-      | Top, Set, Exists -> init || f Top
       | ASet set, Element, Acc -> Set.fold f set init
       | ASet set, Element, Exists -> init || Set.exists f set
-      | ASet set, Set, Acc -> f (ASet (Set.elements set)) init
-      | ASet set, Set, Exists -> init || f (ASet (Set.elements set))
       | _ -> Base.reduce part ~using:op ~f ~init set
 
 
@@ -192,23 +179,6 @@ module Make (Element : ELEMENT) = struct
           in
           Set.fold f set Core_kernel.Map.Poly.empty
       | Top, Element, _ -> failwith "Topped set cannot be partitioned by Element"
-      | _, Set, By ->
-          let value =
-            match set with
-            | Top -> Top
-            | ASet set -> ASet (Set.elements set)
-          in
-          let partition_key = f value in
-          Core_kernel.Map.Poly.singleton partition_key set
-      | _, Set, ByFilter -> (
-          let value =
-            match set with
-            | Top -> Top
-            | ASet set -> ASet (Set.elements set)
-          in
-          match f value with
-          | None -> Core_kernel.Map.Poly.empty
-          | Some partition_key -> Core_kernel.Map.Poly.singleton partition_key set )
       | _ -> Base.partition part op ~f set
 
 
@@ -216,13 +186,11 @@ module Make (Element : ELEMENT) = struct
       match op with
       | GetParts f ->
           f#report Self;
-          f#report Element;
-          f#report Set
+          f#report Element
       | Structure -> [Format.sprintf "ToppedSet(%s)" Element.name]
       | Name part -> (
           match part with
           | Element -> Format.sprintf "ToppedSet(%s).Element" Element.name
-          | Set -> Format.sprintf "ToppedSet(%s).Set" Element.name
           | Self -> Format.sprintf "ToppedSet(%s).Self" Element.name
           | _ -> Base.introspect op )
 
@@ -230,10 +198,6 @@ module Make (Element : ELEMENT) = struct
     let create parts =
       let create_part so_far (Part (part, value)) =
         match part with
-        | Set -> (
-            match value with
-            | Top -> Top
-            | ASet l -> join so_far (of_list l) )
         | Element -> add value so_far
         | _ -> Base.create part value so_far
       in

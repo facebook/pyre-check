@@ -233,7 +233,7 @@ module FlowDetails = struct
         Features.TitoPositionSet.bottom)
 
 
-  let leaf_name_set = Features.LeafNameSet.Set
+  let leaf_name_set = Features.LeafNameSet.Self
 
   let simple_feature = Features.SimpleSet.Element
 
@@ -245,7 +245,7 @@ module FlowDetails = struct
 
   let complex_feature = Features.ComplexSet.Element
 
-  let complex_feature_set = Features.ComplexSet.Set
+  let complex_feature_set = Features.ComplexSet.Self
 
   let tito_position_element = Features.TitoPositionSet.Element
 
@@ -269,7 +269,7 @@ module type TAINT_DOMAIN = sig
 
   val flow_details : FlowDetails.t Abstract.Domain.part
 
-  val leaf_name_set : Features.LeafName.t list Abstract.Domain.part
+  val leaf_name_set : Features.LeafNameSet.t Abstract.Domain.part
 
   val simple_feature : Features.Simple.t Abstract.Domain.part
 
@@ -283,7 +283,7 @@ module type TAINT_DOMAIN = sig
 
   val complex_feature : Features.Complex.t Abstract.Domain.part
 
-  val complex_feature_set : Features.Complex.t list Abstract.Domain.part
+  val complex_feature_set : Features.ComplexSet.t Abstract.Domain.part
 
   val first_indices : Features.FirstIndexSet.t Abstract.Domain.part
 
@@ -512,23 +512,22 @@ end = struct
           trace_info, leaf_taint
       | Declaration { leaf_name_provided } ->
           let trace_info = Origin location in
-          let add_leaf_names info_set =
+          let new_leaf_names =
             if leaf_name_provided then
-              info_set
+              Features.LeafNameSet.bottom
             else
               let open Features in
-              let add_leaf_name info_set callee =
+              let make_leaf_name callee =
                 LeafName.
                   { leaf = Interprocedural.Callable.external_target_name callee; port = None }
-                :: info_set
               in
-              List.fold callees ~f:add_leaf_name ~init:info_set
+              List.map ~f:make_leaf_name callees |> Features.LeafNameSet.of_list
           in
           let leaf_taint =
             LeafDomain.transform
-              FlowDetails.leaf_name_set
-              Abstract.Domain.Map
-              ~f:add_leaf_names
+              Features.LeafNameSet.Self
+              Abstract.Domain.Add
+              ~f:new_leaf_names
               leaf_taint
           in
           trace_info, leaf_taint
@@ -600,8 +599,8 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
 
   let approximate_complex_access_paths ~maximum_complex_access_path_length tree =
     let cut_off features =
-      if List.length features > maximum_complex_access_path_length then
-        [Features.Complex.ReturnAccessPath []]
+      if Features.ComplexSet.count features > maximum_complex_access_path_length then
+        Features.ComplexSet.singleton (Features.Complex.ReturnAccessPath [])
       else
         features
     in

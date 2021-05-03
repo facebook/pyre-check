@@ -20,8 +20,7 @@ module type S = sig
 
   type element
 
-  type _ AbstractDomainCore.part +=
-    | Element : element AbstractDomainCore.part | Set : element list AbstractDomainCore.part
+  type _ AbstractDomainCore.part += Element : element AbstractDomainCore.part
 
   val add : element -> t -> t
 
@@ -44,7 +43,7 @@ module Make (Element : ELEMENT) = struct
 
     type element = Element.t
 
-    type _ part += Self : t part | Element : Element.t part | Set : Element.t list part
+    type _ part += Self : t part | Element : Element.t part
 
     let bottom = Set.empty
 
@@ -99,13 +98,6 @@ module Make (Element : ELEMENT) = struct
       | Element, Map -> Set.map f set
       | Element, Add -> Set.add f set
       | Element, Filter -> Set.filter f set
-      | Set, Map -> f (Set.elements set) |> Set.of_list
-      | Set, Add -> Set.elements set |> List.rev_append f |> Set.of_list
-      | Set, Filter ->
-          if f (Set.elements set) then
-            set
-          else
-            bottom
       | _ -> Base.transform part op ~f set
 
 
@@ -116,8 +108,6 @@ module Make (Element : ELEMENT) = struct
       match part, op with
       | Element, Acc -> Set.fold f set init
       | Element, Exists -> init || Set.exists f set
-      | Set, Acc -> f (Set.elements set) init
-      | Set, Exists -> init || f (Set.elements set)
       | _ -> Base.reduce part ~using:op ~f ~init set
 
 
@@ -140,9 +130,6 @@ module Make (Element : ELEMENT) = struct
             Core_kernel.Map.Poly.update result (f element) ~f:(update element)
           in
           Set.fold f set Core_kernel.Map.Poly.empty
-      | Set, By ->
-          let key = f (Set.elements set) in
-          Core_kernel.Map.Poly.singleton key set
       | Element, ByFilter ->
           let f element result =
             match f element with
@@ -150,10 +137,6 @@ module Make (Element : ELEMENT) = struct
             | Some key -> Core_kernel.Map.Poly.update result key ~f:(update element)
           in
           Set.fold f set Core_kernel.Map.Poly.empty
-      | Set, ByFilter -> (
-          match f (Set.elements set) with
-          | None -> Core_kernel.Map.Poly.empty
-          | Some key -> Core_kernel.Map.Poly.singleton key set )
       | _ -> Base.partition part op ~f set
 
 
@@ -161,13 +144,11 @@ module Make (Element : ELEMENT) = struct
       match op with
       | GetParts f ->
           f#report Self;
-          f#report Element;
-          f#report Set
+          f#report Element
       | Structure -> [Format.sprintf "Set(%s)" Element.name]
       | Name part -> (
           match part with
           | Element -> Format.sprintf "Set(%s).Element" Element.name
-          | Set -> Format.sprintf "Set(%s).Set" Element.name
           | Self -> Format.sprintf "Set(%s).Self" Element.name
           | _ -> Base.introspect op )
 
@@ -175,7 +156,6 @@ module Make (Element : ELEMENT) = struct
     let create parts =
       let create_part so_far (Part (part, value)) =
         match part with
-        | Set -> join so_far (Set.of_list value)
         | Element -> Set.add value so_far
         | _ -> Base.create part value so_far
       in

@@ -21,8 +21,7 @@ end
 module Make (Element : BUCKETED_ELEMENT) : sig
   include AbstractDomainCore.S
 
-  type _ AbstractDomainCore.part +=
-    | Element : Element.t AbstractDomainCore.part | Set : Element.t list AbstractDomainCore.part
+  type _ AbstractDomainCore.part += Element : Element.t AbstractDomainCore.part
 
   val add : Element.t -> t -> t
 

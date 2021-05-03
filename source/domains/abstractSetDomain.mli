@@ -18,8 +18,7 @@ module type S = sig
 
   type element
 
-  type _ AbstractDomainCore.part +=
-    | Element : element AbstractDomainCore.part | Set : element list AbstractDomainCore.part
+  type _ AbstractDomainCore.part += Element : element AbstractDomainCore.part
 
   val add : element -> t -> t
 

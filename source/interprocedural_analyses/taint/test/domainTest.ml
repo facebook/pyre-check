@@ -75,7 +75,8 @@ let test_approximate_complex_access_paths _ =
   in
   let create ~features =
     ForwardState.Tree.create_leaf (ForwardTaint.singleton (Sources.NamedSource "Demo"))
-    |> ForwardState.Tree.transform ForwardTaint.complex_feature_set Map ~f:(fun _ -> features)
+    |> ForwardState.Tree.transform ForwardTaint.complex_feature_set Map ~f:(fun _ ->
+           Features.ComplexSet.of_list features)
   in
   assert_approximate_complex_access_paths
     ~expected:

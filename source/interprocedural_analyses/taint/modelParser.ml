@@ -161,8 +161,6 @@ let invalid_model_error ~path ~location ~name message =
     (ModelVerificationError.T.UnclassifiedError { model_name = name; message })
 
 
-let add_leaf_names leaf_names init = List.rev_append leaf_names init
-
 let add_breadcrumbs breadcrumbs init = List.rev_append breadcrumbs init
 
 module DefinitionsCache (Type : sig
@@ -775,12 +773,10 @@ let introduce_sink_taint
             else
               taint
           in
+          let leaf_names = Features.LeafNameSet.of_list leaf_names in
           let leaf_taint =
             BackwardTaint.singleton taint_sink_kind
-            |> BackwardTaint.transform
-                 BackwardTaint.leaf_name_set
-                 Map
-                 ~f:(add_leaf_names leaf_names)
+            |> BackwardTaint.transform BackwardTaint.leaf_name_set Add ~f:leaf_names
             |> BackwardTaint.transform
                  BackwardTaint.simple_feature_set
                  Map
@@ -877,8 +873,9 @@ let introduce_source_taint
       in
 
       let leaf_taint =
+        let leaf_names = Features.LeafNameSet.of_list leaf_names in
         ForwardTaint.singleton taint_source_kind
-        |> ForwardTaint.transform ForwardTaint.leaf_name_set Map ~f:(add_leaf_names leaf_names)
+        |> ForwardTaint.transform ForwardTaint.leaf_name_set Add ~f:leaf_names
         |> ForwardTaint.transform
              ForwardTaint.simple_feature_set
              Map

@@ -292,10 +292,9 @@ let infer_class_models ~environment =
     let leaf =
       BackwardState.Tree.create_leaf (BackwardTaint.singleton Sinks.LocalReturn)
       |> BackwardState.Tree.transform BackwardTaint.complex_feature_set Map ~f:(fun _ ->
-             [
-               Features.Complex.ReturnAccessPath
-                 [Abstract.TreeDomain.Label.create_name_index attribute];
-             ])
+             Features.ComplexSet.singleton
+               (Features.Complex.ReturnAccessPath
+                  [Abstract.TreeDomain.Label.create_name_index attribute]))
     in
     BackwardState.assign
       ~root:

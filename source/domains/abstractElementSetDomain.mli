@@ -18,8 +18,7 @@ end
 module Make (Element : ELEMENT) : sig
   include AbstractDomainCore.S
 
-  type _ AbstractDomainCore.part +=
-    | Element : Element.t AbstractDomainCore.part | Set : Element.t list AbstractDomainCore.part
+  type _ AbstractDomainCore.part += Element : Element.t AbstractDomainCore.part
 
   val add : Element.t -> t -> t
 
@@ -28,4 +27,6 @@ module Make (Element : ELEMENT) : sig
   val singleton : Element.t -> t
 
   val of_list : Element.t list -> t
+
+  val count : t -> int
 end

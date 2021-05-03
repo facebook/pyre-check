@@ -19,7 +19,7 @@ end
 module Make (Element : ELEMENT) = struct
   module Set = Set.Make (Element)
 
-  type _ part += Element : Element.t part | Set : Element.t list part
+  type _ part += Element : Element.t part
 
   let is_subsumed left set = Set.exists (fun right -> Element.less_or_equal ~left ~right) set
 
@@ -90,13 +90,6 @@ module Make (Element : ELEMENT) = struct
           |> ListLabels.fold_left ~f:(fun result element -> add (f element) result) ~init:Set.empty
       | Element, Add -> add f set
       | Element, Filter -> Set.filter f set
-      | Set, Map -> f (Set.elements set) |> of_list
-      | Set, Add -> ListLabels.fold_left f ~f:(fun result element -> add element result) ~init:set
-      | Set, Filter ->
-          if f (Set.elements set) then
-            set
-          else
-            bottom
       | _ -> Base.transform part op ~f set
 
 
@@ -107,8 +100,6 @@ module Make (Element : ELEMENT) = struct
       match part, op with
       | Element, Acc -> Set.fold f set init
       | Element, Exists -> init || Set.exists f set
-      | Set, Acc -> f (Set.elements set) init
-      | Set, Exists -> init || f (Set.elements set)
       | _ -> Base.reduce part ~using:op ~f ~init set
 
 
@@ -132,9 +123,6 @@ module Make (Element : ELEMENT) = struct
             Core_kernel.Map.Poly.update result key ~f:(update element)
           in
           Set.fold f set Core_kernel.Map.Poly.empty
-      | Set, By ->
-          let key = f (Set.elements set) in
-          Core_kernel.Map.Poly.singleton key set
       | Element, ByFilter ->
           let f element result =
             match f element with
@@ -142,10 +130,6 @@ module Make (Element : ELEMENT) = struct
             | Some key -> Core_kernel.Map.Poly.update result key ~f:(update element)
           in
           Set.fold f set Core_kernel.Map.Poly.empty
-      | Set, ByFilter -> (
-          match f (Set.elements set) with
-          | None -> Core_kernel.Map.Poly.empty
-          | Some key -> Core_kernel.Map.Poly.singleton key set )
       | _ -> Base.partition part op ~f set
 
 
@@ -153,13 +137,11 @@ module Make (Element : ELEMENT) = struct
       match op with
       | GetParts f ->
           f#report Self;
-          f#report Element;
-          f#report Set
+          f#report Element
       | Structure -> [Format.sprintf "AbstractElementSet(%s)" Element.name]
       | Name part -> (
           match part with
           | Element -> Format.sprintf "AbstractElementSet(%s).Element" Element.name
-          | Set -> Format.sprintf "AbstractElementSet(%s).Set" Element.name
           | Self -> Format.sprintf "AbstractElementSet(%s).Self" Element.name
           | _ -> Base.introspect op )
 
@@ -167,7 +149,6 @@ module Make (Element : ELEMENT) = struct
     let create parts =
       let create_part so_far (Part (part, value)) =
         match part with
-        | Set -> join so_far (of_list value)
         | Element -> add value so_far
         | _ -> Base.create part value so_far
       in
@@ -182,4 +163,6 @@ module Make (Element : ELEMENT) = struct
   let _ = Base.fold (* unused module warning work-around *)
 
   include Domain
+
+  let count = Set.cardinal
 end

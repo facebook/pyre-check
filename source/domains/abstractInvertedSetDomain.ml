@@ -24,7 +24,7 @@ module Make (Element : ELEMENT) = struct
     elements: Element.t list;
   }
 
-  type _ part += Element : Element.t part | Set : elements part
+  type _ part += Element : Element.t part
 
   let singleton element =
     let singleton = Set.singleton element in
@@ -105,20 +105,6 @@ module Make (Element : ELEMENT) = struct
           match set with
           | Universe -> Universe
           | InvertedSet set -> InvertedSet (Set.filter f set) )
-      | Set, Map -> elements set |> f |> of_elements
-      | Set, Add -> (
-          let { is_universe; elements = new_elements } = f in
-          if is_universe then
-            Universe
-          else
-            match set with
-            | Universe -> Universe
-            | InvertedSet set -> InvertedSet (Set.union set (Set.of_list new_elements)) )
-      | Set, Filter ->
-          if f (elements set) then
-            set
-          else
-            bottom
       | _ -> Base.transform part op ~f set
 
 
@@ -135,14 +121,6 @@ module Make (Element : ELEMENT) = struct
           match set with
           | Universe -> init
           | InvertedSet set -> init || Set.exists f set )
-      | Set, Acc -> (
-          match set with
-          | Universe -> f { is_universe = true; elements = [] } init
-          | InvertedSet set -> f { is_universe = false; elements = Set.elements set } init )
-      | Set, Exists -> (
-          match set with
-          | Universe -> init || f { is_universe = true; elements = [] }
-          | InvertedSet set -> init || f { is_universe = false; elements = Set.elements set } )
       | _ -> Base.reduce part ~using:op ~f ~init set
 
 
@@ -169,9 +147,6 @@ module Make (Element : ELEMENT) = struct
                 Core_kernel.Map.Poly.update result key ~f:(update element)
               in
               Set.fold f set Core_kernel.Map.Poly.empty )
-      | Set, By ->
-          let key = f (elements set) in
-          Core_kernel.Map.Poly.singleton key set
       | Element, ByFilter -> (
           match set with
           | Universe -> Core_kernel.Map.Poly.empty
@@ -182,10 +157,6 @@ module Make (Element : ELEMENT) = struct
                 | Some key -> Core_kernel.Map.Poly.update result key ~f:(update element)
               in
               Set.fold f set Core_kernel.Map.Poly.empty )
-      | Set, ByFilter -> (
-          match f (elements set) with
-          | None -> Core_kernel.Map.Poly.empty
-          | Some key -> Core_kernel.Map.Poly.singleton key set )
       | _ -> Base.partition part op ~f set
 
 
@@ -193,13 +164,11 @@ module Make (Element : ELEMENT) = struct
       match op with
       | GetParts f ->
           f#report Self;
-          f#report Element;
-          f#report Set
+          f#report Element
       | Structure -> [Format.sprintf "InvertedSet(%s)" Element.name]
       | Name part -> (
           match part with
           | Element -> Format.sprintf "InvertedSet(%s).Element" Element.name
-          | Set -> Format.sprintf "InvertedSet(%s).Set" Element.name
           | Self -> Format.sprintf "InvertedSet(%s).Self" Element.name
           | _ -> Base.introspect op )
 
@@ -207,7 +176,6 @@ module Make (Element : ELEMENT) = struct
     let create parts =
       let create_part so_far (Part (part, value)) =
         match part with
-        | Set -> join so_far (of_elements value)
         | Element -> add value so_far
         | _ -> Base.create part value so_far
       in
