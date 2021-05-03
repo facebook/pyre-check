@@ -239,8 +239,6 @@ module FlowDetails = struct
 
   let simple_feature_element = Features.SimpleSet.ElementAndUnder
 
-  let simple_feature_set = Features.SimpleSet.SetAndUnder
-
   let simple_feature_self = Features.SimpleSet.Self
 
   let complex_feature = Features.ComplexSet.Element
@@ -275,9 +273,6 @@ module type TAINT_DOMAIN = sig
 
   val simple_feature_element
     : Features.Simple.t Abstract.OverUnderSetDomain.approximation Abstract.Domain.part
-
-  val simple_feature_set
-    : Features.Simple.t Abstract.OverUnderSetDomain.approximation list Abstract.Domain.part
 
   val simple_feature_self : Features.SimpleSet.t Abstract.Domain.part
 
@@ -370,8 +365,6 @@ end = struct
   let leaf_name_set = FlowDetails.leaf_name_set
 
   let simple_feature = FlowDetails.simple_feature
-
-  let simple_feature_set = FlowDetails.simple_feature_set
 
   let simple_feature_self = FlowDetails.simple_feature_self
 

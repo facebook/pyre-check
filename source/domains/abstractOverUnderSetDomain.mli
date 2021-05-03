@@ -15,7 +15,6 @@ module type S = sig
 
   type _ AbstractDomainCore.part +=
     | ElementAndUnder : element approximation AbstractDomainCore.part
-    | SetAndUnder : element approximation list AbstractDomainCore.part
 
   (* Distinct from bottom in that it has no elements present, which will cause joins to
      over-approximate *)

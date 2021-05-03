@@ -20,7 +20,6 @@ module type S = sig
 
   type _ AbstractDomainCore.part +=
     | ElementAndUnder : element approximation AbstractDomainCore.part
-    | SetAndUnder : element approximation list AbstractDomainCore.part
 
   val empty : t
 
@@ -57,10 +56,7 @@ module Make (Element : AbstractSetDomain.ELEMENT) = struct
     type element = Element.t
 
     type _ part +=
-      | Self : t part
-      | Element : Element.t part
-      | ElementAndUnder : Element.t approximation part
-      | SetAndUnder : Element.t approximation list part
+      | Self : t part | Element : Element.t part | ElementAndUnder : Element.t approximation part
 
     let bottom = Bottom
 
@@ -222,16 +218,6 @@ module Make (Element : AbstractSetDomain.ELEMENT) = struct
       | ElementAndUnder, Filter, Bottom -> Bottom
       | ElementAndUnder, Filter, BiSet _ ->
           to_approximation set |> ListLabels.filter ~f |> of_approximation
-      | SetAndUnder, Map, set -> of_approximation (f (to_approximation set))
-      | SetAndUnder, Add, _ ->
-          let to_add = of_approximation f in
-          add_set set ~to_add
-      | SetAndUnder, Filter, Bottom -> set
-      | SetAndUnder, Filter, _ ->
-          if f (to_approximation set) then
-            set
-          else
-            bottom
       | Self, Add, _ ->
           (* Special handling of Add here, as we don't want to use the join of the common
              implementation. *)
@@ -260,8 +246,6 @@ module Make (Element : AbstractSetDomain.ELEMENT) = struct
           let element_of = element_of ~under in
           let f element = f (element_of element) in
           Set.exists f over
-      | SetAndUnder, Acc, set -> f (to_approximation set) init
-      | SetAndUnder, Exists, set -> init || f (to_approximation set)
       | _ -> Base.reduce part ~using:op ~f ~init set
 
 
@@ -295,9 +279,6 @@ module Make (Element : AbstractSetDomain.ELEMENT) = struct
             Core_kernel.Map.Poly.update result key ~f:(update_element element)
           in
           Set.fold f over Core_kernel.Map.Poly.empty
-      | SetAndUnder, By, _ ->
-          let key = f (to_approximation set) in
-          Core_kernel.Map.Poly.singleton key set
       | Element, ByFilter, _ ->
           let f result element =
             match f element.element with
@@ -314,10 +295,6 @@ module Make (Element : AbstractSetDomain.ELEMENT) = struct
             | None -> result
           in
           Set.fold f over Core_kernel.Map.Poly.empty
-      | SetAndUnder, ByFilter, _ -> (
-          match f (to_approximation set) with
-          | None -> Core_kernel.Map.Poly.empty
-          | Some key -> Core_kernel.Map.Poly.singleton key set )
       | _ -> Base.partition part op ~f set
 
 
@@ -326,14 +303,12 @@ module Make (Element : AbstractSetDomain.ELEMENT) = struct
       | GetParts f ->
           f#report Self;
           f#report Element;
-          f#report ElementAndUnder;
-          f#report SetAndUnder
+          f#report ElementAndUnder
       | Structure -> [Format.sprintf "OverAndUnderSet(%s)" Element.name]
       | Name part -> (
           match part with
           | Element -> Format.sprintf "OverAndUnderSet(%s).Element" Element.name
           | ElementAndUnder -> Format.sprintf "OverAndUnderSet(%s).ElementAndUnder" Element.name
-          | SetAndUnder -> Format.sprintf "OverAndUnderSet(%s).SetAndUnder" Element.name
           | Self -> Format.sprintf "OverAndUnderSet(%s).Self" Element.name
           | _ -> Base.introspect op )
 
@@ -343,7 +318,6 @@ module Make (Element : AbstractSetDomain.ELEMENT) = struct
         match part with
         | ElementAndUnder -> add_element so_far value
         | Element -> add so_far value
-        | SetAndUnder -> ListLabels.fold_left ~f:add_element value ~init:so_far
         | Self -> add_set so_far ~to_add:(value : t)
         | _ -> Base.create part value so_far
       in

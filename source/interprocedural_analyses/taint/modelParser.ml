@@ -161,8 +161,6 @@ let invalid_model_error ~path ~location ~name message =
     (ModelVerificationError.T.UnclassifiedError { model_name = name; message })
 
 
-let add_breadcrumbs breadcrumbs init = List.rev_append breadcrumbs init
-
 module DefinitionsCache (Type : sig
   type t
 end) =
@@ -774,13 +772,11 @@ let introduce_sink_taint
               taint
           in
           let leaf_names = Features.LeafNameSet.of_list leaf_names in
+          let breadcrumbs = Features.SimpleSet.of_approximation breadcrumbs in
           let leaf_taint =
             BackwardTaint.singleton taint_sink_kind
             |> BackwardTaint.transform BackwardTaint.leaf_name_set Add ~f:leaf_names
-            |> BackwardTaint.transform
-                 BackwardTaint.simple_feature_set
-                 Map
-                 ~f:(add_breadcrumbs breadcrumbs)
+            |> BackwardTaint.transform BackwardTaint.simple_feature_self Add ~f:breadcrumbs
             |> transform_trace_information
             |> BackwardState.Tree.create_leaf
           in
@@ -804,28 +800,23 @@ let introduce_taint_in_taint_out
     let assign_backward_taint environment taint =
       BackwardState.assign ~weak:true ~root ~path taint environment
     in
+    let breadcrumbs = Features.SimpleSet.of_approximation breadcrumbs in
     match taint_sink_kind with
     | Sinks.LocalReturn ->
         let return_taint =
           Domains.local_return_taint
-          |> BackwardTaint.transform
-               BackwardTaint.simple_feature_set
-               Map
-               ~f:(add_breadcrumbs breadcrumbs)
+          |> BackwardTaint.transform BackwardTaint.simple_feature_self Add ~f:breadcrumbs
           |> BackwardState.Tree.create_leaf
         in
         let taint_in_taint_out = assign_backward_taint taint_in_taint_out return_taint in
         Ok { taint.backward with taint_in_taint_out }
-    | Sinks.Attach when List.is_empty breadcrumbs ->
+    | Sinks.Attach when Features.SimpleSet.is_empty breadcrumbs ->
         Error "`Attach` must be accompanied by a list of features to attach."
     | Sinks.ParameterUpdate _
     | Sinks.Attach ->
         let update_taint =
           BackwardTaint.singleton taint_sink_kind
-          |> BackwardTaint.transform
-               BackwardTaint.simple_feature_set
-               Map
-               ~f:(add_breadcrumbs breadcrumbs)
+          |> BackwardTaint.transform BackwardTaint.simple_feature_self Add ~f:breadcrumbs
           |> BackwardState.Tree.create_leaf
         in
         let taint_in_taint_out = assign_backward_taint taint_in_taint_out update_taint in
@@ -858,6 +849,7 @@ let introduce_source_taint
   if Sources.equal taint_source_kind Sources.Attach && List.is_empty breadcrumbs then
     Error "`Attach` must be accompanied by a list of features to attach."
   else if should_keep_taint then
+    let breadcrumbs = Features.SimpleSet.of_approximation breadcrumbs in
     let source_taint =
       let transform_trace_information taint =
         if leaf_name_provided then
@@ -876,10 +868,7 @@ let introduce_source_taint
         let leaf_names = Features.LeafNameSet.of_list leaf_names in
         ForwardTaint.singleton taint_source_kind
         |> ForwardTaint.transform ForwardTaint.leaf_name_set Add ~f:leaf_names
-        |> ForwardTaint.transform
-             ForwardTaint.simple_feature_set
-             Map
-             ~f:(add_breadcrumbs breadcrumbs)
+        |> ForwardTaint.transform ForwardTaint.simple_feature_self Add ~f:breadcrumbs
         |> transform_trace_information
         |> ForwardState.Tree.create_leaf
       in

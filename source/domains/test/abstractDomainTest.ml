@@ -2405,13 +2405,13 @@ module OverUnderStringSet = struct
       ~expected:["t.a"; "t.b"];
     test_elements
       ~initial:["a"; "b"]
-      ~by:SetAndUnder
-      ~f:(fun set -> { element = "c"; in_under = false } :: set)
+      ~by:Self
+      ~f:(fun set -> add_set ~to_add:(of_approximation [{ element = "c"; in_under = false }]) set)
       ~expected:["a"; "b"; "c-"];
     test_elements
       ~initial:[]
-      ~by:SetAndUnder
-      ~f:(fun set -> { element = "c"; in_under = false } :: set)
+      ~by:Self
+      ~f:(fun set -> add_set ~to_add:(of_approximation [{ element = "c"; in_under = false }]) set)
       ~expected:["c-"]
 
 
@@ -2461,12 +2461,13 @@ module OverUnderStringSet = struct
       (create
          [
            Part
-             ( SetAndUnder,
-               [
-                 { element = "a"; in_under = true };
-                 { element = "b"; in_under = true };
-                 { element = "c"; in_under = false };
-               ] );
+             ( Self,
+               of_approximation
+                 [
+                   { element = "a"; in_under = true };
+                   { element = "b"; in_under = true };
+                   { element = "c"; in_under = false };
+                 ] );
          ])
       ~printer:show;
     assert_equal
