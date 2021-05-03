@@ -59,17 +59,13 @@ let get_pyre_locks () =
   | Unix.Unix_error _ -> []
 
 
-let run_rage log_directory local_root () =
+let run_rage log_directory _unused_source_directory () =
   try
     Out_channel.printf
       "Actual binary version: %s\nBinary build info: %s\n"
       (Version.version ())
       (Version.build_info ());
-    let configuration =
-      let source_path = [SearchPath.create_normalized local_root] in
-      let local_root = SearchPath.create local_root |> SearchPath.get_root in
-      Configuration.Analysis.create ?log_directory ~local_root ~source_path ()
-    in
+    let configuration = Configuration.Analysis.create ?log_directory ~source_path:[] () in
     let logs =
       get_mercurial_base ()
       :: get_mercurial_status ()

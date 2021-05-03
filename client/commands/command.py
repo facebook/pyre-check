@@ -289,11 +289,13 @@ class Command(CommandParser, ABC):
         command: str,
         capture_output: bool = True,
         stdout: Optional[IO[str]] = None,
+        check_analysis_directory: bool = True,
     ) -> Result:
-        if not os.path.isdir(self._analysis_directory.get_root()):
-            raise EnvironmentException(
-                f"`{self._analysis_directory.get_root()}` is not a link tree."
-            )
+        if check_analysis_directory:
+            if not os.path.isdir(self._analysis_directory.get_root()):
+                raise EnvironmentException(
+                    f"`{self._analysis_directory.get_root()}` is not a link tree."
+                )
 
         binary = self._configuration.get_binary_respecting_override()
         if binary is None:
