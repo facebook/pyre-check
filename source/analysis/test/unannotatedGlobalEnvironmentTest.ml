@@ -393,7 +393,7 @@ let test_updates context =
             class_name
           >>| Node.value
           >>| (fun { ClassSummary.attribute_components; _ } -> attribute_components)
-          >>| Ast.Statement.Class.attributes
+          >>| ClassSummary.ClassAttributes.attributes
           >>| Identifier.SerializableMap.bindings
           >>| List.length
           |> assert_equal ~printer expected_number_of_statements

@@ -5929,7 +5929,9 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
           errors
         =
         let components =
-          Ast.Statement.Class.attributes ~include_generated_attributes:true attribute_components
+          ClassSummary.ClassAttributes.attributes
+            ~include_generated_attributes:true
+            attribute_components
         in
 
         let override_errors_for_typed_dictionary class_name =

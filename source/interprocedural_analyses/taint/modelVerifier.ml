@@ -207,8 +207,10 @@ let verify_global ~path ~location ~resolution ~name =
     match class_summary with
     | Some { ClassSummary.attribute_components; name = class_name; _ } ->
         let attributes, constructor_attributes =
-          ( Statement.Class.attributes ~include_generated_attributes:false attribute_components,
-            Statement.Class.constructor_attributes attribute_components )
+          ( ClassSummary.ClassAttributes.attributes
+              ~include_generated_attributes:false
+              attribute_components,
+            ClassSummary.ClassAttributes.constructor_attributes attribute_components )
         in
         if
           Identifier.SerializableMap.mem attribute_name attributes

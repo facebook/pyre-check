@@ -10,6 +10,7 @@ open Pyre
 open Ast
 open Statement
 open Assumptions
+open ClassSummary
 
 module Global = struct
   type t = {
@@ -529,7 +530,7 @@ module ClassDecorators = struct
                   let compare_by_location left right =
                     Ast.Location.compare (Node.location left) (Node.location right)
                   in
-                  Class.attributes
+                  ClassAttributes.attributes
                     ~include_generated_attributes:false
                     ~in_test:false
                     attribute_components
@@ -1081,7 +1082,7 @@ class base class_metadata_environment dependency =
           { Node.value = { ClassSummary.attribute_components; _ }; _ }
         =
         let attributes =
-          Class.attributes ~include_generated_attributes ~in_test attribute_components
+          ClassAttributes.attributes ~include_generated_attributes ~in_test attribute_components
           |> Identifier.SerializableMap.bindings
           |> List.map ~f:(fun (_, attribute) -> attribute)
         in
@@ -1269,7 +1270,7 @@ class base class_metadata_environment dependency =
                      (Expression.show value)
                      (Type.TypedDictionary.class_name ~total:false)))
           in
-          Class.attributes ~include_generated_attributes ~in_test attribute_components
+          ClassAttributes.attributes ~include_generated_attributes ~in_test attribute_components
           |> Identifier.SerializableMap.bindings
           |> List.map ~f:(fun (_, field_attribute) ->
                  ( self#create_attribute
@@ -1380,7 +1381,7 @@ class base class_metadata_environment dependency =
               ~accessed_via_metaclass
             |> UninstantiatedAttributeTable.add table
           in
-          Class.attributes ~include_generated_attributes ~in_test attribute_components
+          ClassAttributes.attributes ~include_generated_attributes ~in_test attribute_components
           |> fun attribute_map ->
           Identifier.SerializableMap.iter (fun _ data -> collect_attributes data) attribute_map
         in

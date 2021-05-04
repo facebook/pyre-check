@@ -380,8 +380,10 @@ let get_class_attributes ~global_resolution ~class_name =
   | None -> []
   | Some { ClassSummary.attribute_components; name = class_name_reference; _ } ->
       let attributes, constructor_attributes =
-        ( Statement.Class.attributes ~include_generated_attributes:false attribute_components,
-          Statement.Class.constructor_attributes attribute_components )
+        ( ClassSummary.ClassAttributes.attributes
+            ~include_generated_attributes:false
+            attribute_components,
+          ClassSummary.ClassAttributes.constructor_attributes attribute_components )
       in
       let all_attributes =
         Identifier.SerializableMap.union (fun _ x _ -> Some x) attributes constructor_attributes
