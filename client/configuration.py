@@ -108,10 +108,6 @@ class SearchPathElement(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def get_subdirectory(self) -> Optional[str]:
-        raise NotImplementedError
-
-    @abc.abstractmethod
     def command_line_argument(self) -> str:
         raise NotImplementedError
 
@@ -133,9 +129,6 @@ class SimpleSearchPathElement(SearchPathElement):
 
     def get_root(self) -> str:
         return self.root
-
-    def get_subdirectory(self) -> Optional[str]:
-        return None
 
     def command_line_argument(self) -> str:
         return self.root
@@ -161,9 +154,6 @@ class SubdirectorySearchPathElement(SearchPathElement):
 
     def get_root(self) -> str:
         return self.root
-
-    def get_subdirectory(self) -> Optional[str]:
-        return self.subdirectory
 
     def command_line_argument(self) -> str:
         return self.root + "$" + self.subdirectory
@@ -191,9 +181,6 @@ class SitePackageSearchPathElement(SearchPathElement):
 
     def get_root(self) -> str:
         return self.site_root
-
-    def get_subdirectory(self) -> Optional[str]:
-        return self.package_name
 
     def command_line_argument(self) -> str:
         return self.site_root + "$" + self.package_name
@@ -693,7 +680,7 @@ class PartialConfiguration:
         for source_directory in source_directories:
             if not os.path.exists(source_directory.path()):
                 relative_path_warning = ""
-                if source_directory.get_subdirectory():
+                if isinstance(source_directory, SubdirectorySearchPathElement):
                     relative_path_warning = (
                         "Be sure the `source` path is relative to the "
                         + "`import_root`."
