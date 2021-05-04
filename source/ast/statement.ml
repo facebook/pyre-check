@@ -1141,11 +1141,10 @@ end = struct
       ?(in_test = false)
       ({ AttributeComponents.explicitly_assigned_attributes; _ } as components)
     =
-    let explicit_attributes = explicitly_assigned_attributes in
     if not include_generated_attributes then
-      explicit_attributes
+      explicitly_assigned_attributes
     else
-      explicit_attributes
+      explicitly_assigned_attributes
       |> Identifier.SerializableMap.merge
            merge_attribute_maps
            (implicit_attributes ~in_test components)
