@@ -21,8 +21,6 @@ class AnalyzeTest(unittest.TestCase):
     )
     @patch("subprocess.check_output")
     @patch("os.path.realpath")
-    # pyre-fixme[56]: Argument `set()` to decorator factory
-    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(commands.Reporting, "_get_directories_to_analyze", return_value=set())
     def test_analyze(
         self, directories_to_analyze, realpath, check_output, find_global_and_local_root

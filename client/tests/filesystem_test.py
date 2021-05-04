@@ -141,8 +141,6 @@ class FilesystemTest(unittest.TestCase):
                 pass
 
     @patch.object(builtins, "open")
-    # pyre-ignore[56]: Argument `fcntl` to decorator factory
-    # `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(fcntl, "lockf")
     def test_acquire_lock__release_even_on_exception(
         self, lock_file: MagicMock, open_file: MagicMock
@@ -177,15 +175,11 @@ class FilesystemTest(unittest.TestCase):
             fcntl.LOCK_EX | fcntl.LOCK_NB,
         )
 
-    # pyre-fixme[56]: Argument `tools.pyre.client.filesystem` to decorator factory
-    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(filesystem, "acquire_lock")
     def test_acquire_lock_if_needed(self, acquire_lock: MagicMock) -> None:
         acquire_lock_if_needed("/some/path", blocking=True, needed=True)
         acquire_lock.assert_called_once()
 
-    # pyre-fixme[56]: Argument `tools.pyre.client.filesystem` to decorator factory
-    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(filesystem, "acquire_lock")
     def test_acquire_lock_if_needed__not_needed(self, acquire_lock: MagicMock) -> None:
         acquire_lock_if_needed("/some/path", blocking=True, needed=False)
@@ -282,9 +276,6 @@ class FilesystemTest(unittest.TestCase):
             clear.assert_has_calls([call()])
 
     @patch(f"{command_name}.Path.mkdir")
-    # pyre-fixme[56]: Pyre was not able to infer the type of argument `lambda
-    #  ($parameter$path) ("realpath({path})"($parameter$path))` to decorator factory
-    #  `unittest.mock.patch`.
     @patch("os.path.realpath", side_effect=lambda path: f"realpath({path})")
     @patch("os.getcwd", return_value="/root")
     @patch("os.path.exists", return_value=True)

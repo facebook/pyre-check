@@ -20,9 +20,6 @@ class InitializeTest(unittest.TestCase):
     @patch.object(os, "getcwd", return_value="/original/directory")
     @patch.object(log, "get_yes_no_input", return_value=True)
     @patch.object(log, "get_optional_input", return_value="")
-    # pyre-fixme[56]: Argument `tools.pyre.client.commands.initialize.log` to
-    #  decorator factory `unittest.mock.patch.object` could not be resolved in a global
-    #  scope.
     @patch.object(log, "get_input", return_value="")
     @patch("shutil.which")
     @patch("os.path.isfile")

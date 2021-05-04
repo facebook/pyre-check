@@ -175,7 +175,6 @@ class ErrorsTest(unittest.TestCase):
             [],
         )
 
-    # pyre-fixme[56]: Pyre was not able to infer the type of argument `errors`.
     @patch.object(errors, "_get_unused_ignore_codes")
     def test_remove_unused_ignores(self, get_unused_ignore_codes) -> None:
         get_unused_ignore_codes.return_value = [1, 3, 4]

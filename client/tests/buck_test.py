@@ -33,9 +33,6 @@ class BuckTest(unittest.TestCase):
             buck.presumed_target_root("prefix//path/directory:target"), "path/directory"
         )
 
-    # pyre-fixme[56]: Argument
-    #  `"{}.find_buck_root".format(tools.pyre.client.buck.__name__)` to decorator
-    #  factory `unittest.mock.patch` could not be resolved in a global scope.
     @patch("{}.find_buck_root".format(buck.__name__), return_value="/root")
     def test_find_built_source_directories(
         self, find_parent_directory_containing_file
@@ -107,9 +104,6 @@ class BuckTest(unittest.TestCase):
                 any_order=True,
             )
 
-    # pyre-fixme[56]: Argument `"%s.open".__mod__(tools.pyre.client.buck.__name__)`
-    #  to decorator factory `unittest.mock.patch` could not be resolved in a global
-    #  scope.
     @patch("%s.open" % buck.__name__, new_callable=mock_open, read_data="")
     def test_normalize(self, mock_open) -> None:
         with patch.object(subprocess, "check_output") as buck_targets:
@@ -154,8 +148,6 @@ class BuckTest(unittest.TestCase):
 
     @patch.object(buck, "_build_targets")
     @patch.object(buck, "_normalize")
-    # pyre-fixme[56]: Argument `tools.pyre.client.buck` to decorator factory
-    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(buck, "_find_built_source_directories")
     def test_generate_source_directories(
         self, mock_find_built_source_directories, mock_normalize, build_targets
@@ -179,8 +171,6 @@ class BuckTest(unittest.TestCase):
                 buck.generate_source_directories(["target"])
                 mock_build.assert_has_calls([call(["normalized"], ["target"])])
 
-    # pyre-fixme[56]: Argument `tools.pyre.client.buck` to decorator factory
-    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(buck, "find_buck_root", return_value="/BUCK_ROOT")
     def test_query_buck_relative_paths(self, find_buck_root: MagicMock) -> None:
         with patch.object(subprocess, "check_output") as check_output:
@@ -252,8 +242,6 @@ class BuckTest(unittest.TestCase):
                 buck.BuckException, buck.query_buck_relative_paths, [], ["targetA"]
             )
 
-    # pyre-fixme[56]: Argument `tools.pyre.client.buck` to decorator factory
-    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(buck, "find_buck_root", return_value="/BUCK_ROOT")
     def test_query_buck_relative_paths_base_module(
         self, find_buck_root: MagicMock
@@ -276,9 +264,6 @@ class BuckTest(unittest.TestCase):
                 {"/BUCK_ROOT/src/python/package.py": "package.py"},
             )
 
-    # pyre-fixme[56]: Pyre was not able to infer the type of argument
-    #  `tools.pyre.client.source_database_buck_builder` to decorator factory
-    #  `unittest.mock.patch.object`.
     @patch.object(
         source_database_buck_builder, "build", side_effect=Exception("some exception")
     )

@@ -24,8 +24,6 @@ class RestartTest(unittest.TestCase):
     @patch("{}.ProjectFilesMonitor".format(project_files_monitor.__name__))
     @patch.object(restart, "Start")
     @patch.object(restart, "Stop")
-    # pyre-fixme[56]: Argument `tools.pyre.client.commands.restart` to decorator
-    #  factory `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(restart, "Incremental")
     @patch.object(configuration_monitor.ConfigurationMonitor, "daemonize")
     def test_restart(

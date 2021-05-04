@@ -23,8 +23,6 @@ from .command_test import mock_arguments, mock_configuration
 class ReportingTest(unittest.TestCase):
     @patch.object(os.path, "realpath", side_effect=lambda path: path)
     @patch.object(os.path, "isdir", side_effect=lambda path: True)
-    # pyre-fixme[56]: Pyre was not able to infer the type of argument `os.path` to
-    #  decorator factory `unittest.mock.patch.object`.
     @patch.object(os.path, "exists", side_effect=lambda path: True)
     @patch(
         f"{find_directories.__name__}.find_global_and_local_root",
@@ -159,8 +157,6 @@ class ReportingTest(unittest.TestCase):
             [error] = errors
             self.assertTrue(error.ignore_error)
 
-    # pyre-fixme[56]: Argument `json` to decorator factory
-    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(json, "loads")
     def test_load_errors_from_json(self, loads: MagicMock) -> None:
         error_list = [{"one": 1}, {"two": 2}]
@@ -168,8 +164,6 @@ class ReportingTest(unittest.TestCase):
         actual = commands.Reporting._load_errors_from_json("<some json string>")
         self.assertEqual(actual, error_list)
 
-    # pyre-fixme[56]: Argument `json` to decorator factory
-    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(json, "loads")
     def test_load_errors_from_json_unexpected_format(self, loads: MagicMock) -> None:
         error_list = [{"one": 1}, {"two": 2}]
@@ -177,8 +171,6 @@ class ReportingTest(unittest.TestCase):
         actual = commands.Reporting._load_errors_from_json("<some json string>")
         self.assertEqual(actual, [])
 
-    # pyre-fixme[56]: Argument `json` to decorator factory
-    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(json, "loads")
     def test_load_errors_from_json_list(self, loads: MagicMock) -> None:
         error_list = [{"one": 1}, {"two": 2}]
@@ -187,8 +179,6 @@ class ReportingTest(unittest.TestCase):
         actual = commands.Reporting._load_errors_from_json("<some json string>")
         self.assertEqual(actual, [])
 
-    # pyre-fixme[56]: Argument `json` to decorator factory
-    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(json, "loads")
     def test_load_errors_from_json_decode_error(self, loads: MagicMock) -> None:
         def raise_error(input: str) -> Dict[str, Any]:
@@ -199,9 +189,6 @@ class ReportingTest(unittest.TestCase):
             commands.Reporting._load_errors_from_json("<some json string>")
 
     @patch.object(subprocess, "run")
-    # pyre-fixme[56]: Pyre was not able to infer the type of argument
-    #  `"{}.find_global_and_local_root".format(tools.pyre.client.commands.command.__name__)`
-    #  to decorator factory `unittest.mock.patch`.
     @patch("{}.find_global_and_local_root".format(find_directories.__name__))
     def test_get_directories_to_analyze(self, find_global_and_local_root, run) -> None:
         original_directory = "/"

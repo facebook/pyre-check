@@ -25,8 +25,6 @@ class CheckTest(unittest.TestCase):
     )
     @patch("subprocess.check_output")
     @patch("os.path.realpath")
-    # pyre-fixme[56]: Argument `set()` to decorator factory
-    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(commands.Reporting, "_get_directories_to_analyze", return_value=set())
     def test_check(
         self,
@@ -101,8 +99,6 @@ class CheckTest(unittest.TestCase):
     )
     @patch("subprocess.check_output")
     @patch("os.path.realpath")
-    # pyre-fixme[56]: Argument `set()` to decorator factory
-    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(commands.Reporting, "_get_directories_to_analyze", return_value=set())
     def test_sequential_check(
         self, directories_to_analyze, realpath, check_output, find_global_and_local_root
@@ -211,8 +207,6 @@ class CheckTest(unittest.TestCase):
     )
     @patch("subprocess.check_output")
     @patch("os.path.realpath")
-    # pyre-fixme[56]: Argument `set()` to decorator factory
-    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(commands.Reporting, "_get_directories_to_analyze", return_value=set())
     def test_check_dumb_terminal(
         self, directories_to_analyze, realpath, check_output, find_global_and_local_root
@@ -265,8 +259,6 @@ class CheckTest(unittest.TestCase):
     )
     @patch("subprocess.check_output")
     @patch("os.path.realpath")
-    # pyre-fixme[56]: Argument `set()` to decorator factory
-    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(commands.Reporting, "_get_directories_to_analyze", return_value=set())
     def test_check_strict(
         self, directories_to_analyze, realpath, check_output, find_global_and_local_root
