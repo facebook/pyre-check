@@ -974,6 +974,6 @@ Pyre also supports `# type: ignore` comments for backwards-compatibility with *m
 You can use the [Pyre upgrade tool](types-in-python#upgrade) to add inline error suppressions for all errors in your project.
 
 ### Suppressing Errors Across Files
-You can suppress all errors in entire sections of your code by adding the path to the [`ignore_all_errors` section of your configuration](configuration#global).
+You can suppress all errors in entire sections of your code by adding the path to the [`ignore_all_errors` section of your configuration](configuration.md#the-global-configuration).
 
 Furthermore Pyre supports suppressing all errors in an individual file if you add a `# pyre-ignore-all-errors` to your file. Like the other suppression comments, you can use square brackets to chose to only ignore one or more particular error types.
