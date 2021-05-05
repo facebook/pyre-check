@@ -123,7 +123,7 @@ class CommandParser(ABC):
 
     @abstractmethod
     def _run(self) -> None:
-        """ Abstract method expected to be overridden by subclasses. """
+        """Abstract method expected to be overridden by subclasses."""
         pass
 
     def run(self) -> "CommandParser":
