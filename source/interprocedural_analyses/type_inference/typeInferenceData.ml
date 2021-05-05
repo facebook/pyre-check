@@ -6,6 +6,7 @@
  *)
 
 open Core
+open Pyre
 open Ast
 open Analysis
 
@@ -59,6 +60,14 @@ module TypeAnnotation = struct
   let join ~global_resolution = combine_with ~f:(GlobalResolution.join global_resolution)
 
   let meet ~global_resolution = combine_with ~f:(GlobalResolution.meet global_resolution)
+
+  let from_given ~global_resolution given_annotation =
+    let parser = GlobalResolution.annotation_parser global_resolution in
+    let given = given_annotation >>| parser.parse_annotation in
+    { inferred = None; given }
+
+
+  let from_inferred inferred = { inferred = Some inferred; given = None }
 end
 
 module AnnotationsByName = struct
@@ -186,6 +195,28 @@ module DefineAnnotation = struct
 
   let is_inferred { return; parameters; _ } =
     TypeAnnotation.is_inferred return || Parameters.any_inferred parameters
+
+
+  let add_inferred_return ~global_resolution define annotation =
+    {
+      define with
+      return =
+        TypeAnnotation.join
+          ~global_resolution
+          define.return
+          (TypeAnnotation.from_inferred annotation);
+    }
+
+
+  let add_inferred_parameter ~global_resolution define name annotation =
+    {
+      define with
+      parameters =
+        Parameters.ByName.add
+          ~global_resolution
+          define.parameters
+          { name; annotation = TypeAnnotation.from_inferred annotation; value = None };
+    }
 end
 
 module InferenceResult = struct
@@ -197,4 +228,127 @@ module InferenceResult = struct
     errors: AnalysisError.Instantiated.t list;
   }
   [@@deriving show]
+
+  let from_signature
+      ~global_resolution
+      ~lookup
+      ~qualifier
+      {
+        Node.value =
+          {
+            Statement.Define.signature =
+              {
+                name = { Node.value = define_name; _ };
+                parameters;
+                return_annotation;
+                decorators;
+                parent;
+                async;
+                _;
+              } as signature;
+            _;
+          };
+        Node.location = define_location;
+      }
+    =
+    let define =
+      let open DefineAnnotation in
+      let return = TypeAnnotation.from_given ~global_resolution return_annotation in
+      let parameters =
+        let initialize_parameter
+            { Node.value = Expression.Parameter.{ name; annotation; value }; _ }
+          =
+          DefineAnnotation.Parameters.Value.
+            {
+              name = name |> Reference.create;
+              annotation = TypeAnnotation.from_given ~global_resolution annotation;
+              value;
+            }
+        in
+        parameters
+        |> List.map ~f:initialize_parameter
+        |> List.fold ~init:Parameters.ByName.empty ~f:(Parameters.ByName.add ~global_resolution)
+      in
+      {
+        name = define_name;
+        parent;
+        return;
+        parameters;
+        decorators;
+        location = define_location |> AnnotationLocation.from_location ~lookup ~qualifier;
+        async;
+        abstract = Statement.Define.Signature.is_abstract_method signature;
+      }
+    in
+    {
+      globals = GlobalAnnotation.ByName.empty;
+      attributes = AttributeAnnotation.ByName.empty;
+      define;
+      errors = [];
+    }
+
+
+  let add_missing_annotation_error
+      ~global_resolution
+      ~lookup
+      ({ globals; attributes; define; errors } as result)
+      error
+    =
+    let result =
+      {
+        result with
+        errors = AnalysisError.instantiate ~show_error_traces:true ~lookup error :: errors;
+      }
+    in
+    let ignore annotation =
+      Type.is_untyped annotation
+      || Type.contains_unknown annotation
+      || Type.Variable.convert_all_escaped_free_variables_to_anys annotation
+         |> Type.contains_prohibited_any
+    in
+    let open AnalysisError in
+    match error.kind with
+    | MissingReturnAnnotation { annotation = Some annotation; _ }
+      when not (ignore annotation || define.abstract) ->
+        {
+          result with
+          define = DefineAnnotation.add_inferred_return ~global_resolution define annotation;
+        }
+    | MissingParameterAnnotation { name; annotation = Some annotation; _ }
+      when not (ignore annotation || Type.equal annotation NoneType) ->
+        {
+          result with
+          define = DefineAnnotation.add_inferred_parameter ~global_resolution define name annotation;
+        }
+    | MissingAttributeAnnotation
+        { parent; missing_annotation = { name; annotation = Some annotation; _ } }
+      when not (ignore annotation) ->
+        {
+          result with
+          attributes =
+            AttributeAnnotation.ByName.add
+              ~global_resolution
+              attributes
+              {
+                parent = parent_reference parent;
+                name;
+                annotation = TypeAnnotation.from_inferred annotation;
+                location = error.location |> AnnotationLocation.from_location_with_module ~lookup;
+              };
+        }
+    | MissingGlobalAnnotation { name; annotation = Some annotation; _ } when not (ignore annotation)
+      ->
+        {
+          result with
+          globals =
+            GlobalAnnotation.ByName.add
+              ~global_resolution
+              globals
+              {
+                name;
+                annotation = TypeAnnotation.from_inferred annotation;
+                location = error.location |> AnnotationLocation.from_location_with_module ~lookup;
+              };
+        }
+    | _ -> result
 end
