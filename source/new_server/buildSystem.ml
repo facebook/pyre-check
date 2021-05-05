@@ -131,12 +131,31 @@ module BuckBuildSystem = struct
           in
           List.exists paths ~f
         in
+        let should_reconstruct_build_map paths =
+          let f path =
+            List.is_empty
+              (Buck.Builder.lookup_artifact
+                 ~index:state.build_map_index
+                 ~builder:state.builder
+                 path)
+            (* TODO (T90174546): This check may lead to temporary inconsistent view of the
+               filesystem with `ModuleTracker`. *)
+            || not (Path.file_exists path)
+          in
+          List.exists paths ~f
+        in
         if should_renormalize paths then
           Buck.Builder.full_incremental_build ~old_build_map:state.build_map ~targets:state.targets
-        else
+        else if should_reconstruct_build_map paths then
           Buck.Builder.incremental_build_with_normalized_targets
             ~old_build_map:state.build_map
             ~targets:state.normalized_targets
+        else
+          Buck.Builder.incremental_build_with_unchanged_build_map
+            ~build_map:state.build_map
+            ~build_map_index:state.build_map_index
+            ~targets:state.normalized_targets
+            ~changed_sources:paths
       in
       let open Lwt.Infix in
       incremental_build state.builder

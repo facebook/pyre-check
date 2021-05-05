@@ -393,7 +393,7 @@ module Builder : sig
       and incrementally update the Python link tree at the given artifact root according to how the
       new build map changed compared to the old build map. Return the new build map along with a
       list of targets that are covered by the build map. This API may raise the same set of
-      exceptions as {!full_build}.
+      exceptions as {!full_incremental_build}.
 
       The difference between this API and {!full_incremental_build} is that this API makes an
       additional assumption that the given incremental update does not change the set of targets to
@@ -401,6 +401,23 @@ module Builder : sig
       optimization. Such an assumption usually holds when the incremental update does not touch any
       `BUCK` or `TARGETS` file -- callers are encouraged to verify this before deciding which
       incremental build API to invoke. *)
+
+  val incremental_build_with_unchanged_build_map
+    :  build_map:BuildMap.t ->
+    build_map_index:BuildMap.Indexed.t ->
+    targets:Target.t list ->
+    changed_sources:PyrePath.t list ->
+    t ->
+    IncrementalBuildResult.t Lwt.t
+  (** Compute the incremental check result, assuming that the corresponding update does not change
+      the build map in any way. The return value is intended to be compatible with that of
+      {!full_incremental_build} and {!incremental_build_with_normalized_targets}.
+
+      Obviously, this API makes even stronger assumption than
+      {!incremental_build_with_normalized_targets} -- the assumption virtually allows it to
+      completely skip the rebuild. Callers are therefore strongly encouraged to verify the
+      assumption, by checking that all changed sources exists and are already included in the old
+      build map. *)
 
   (** {1 Lookup} *)
 
