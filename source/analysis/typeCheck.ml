@@ -5924,8 +5924,8 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
         |> Option.value ~default:errors
       in
       let check_protocol definition errors = check_protocol_properties definition errors in
-      let check_overrides ({ ClassSummary.name = class_name; _ } as definition) errors =
-        let components = ClassSummary.attributes ~include_generated_attributes:true definition in
+      let check_overrides class_summary errors =
+        let attributes = ClassSummary.attributes ~include_generated_attributes:true class_summary in
 
         let override_errors_for_typed_dictionary class_name =
           let open Type.Record.TypedDictionary in
@@ -5982,7 +5982,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
                 }
             in
             let location =
-              Identifier.SerializableMap.find_opt class_name components
+              Identifier.SerializableMap.find_opt class_name attributes
               >>| Node.location
               |> Option.value ~default:location
             in
@@ -5995,7 +5995,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
         in
         let override_errors =
           let open Annotated in
-          let class_name = Reference.show class_name in
+          let class_name = ClassSummary.name class_summary |> Reference.show in
           if
             GlobalResolution.is_typed_dictionary
               ~resolution:global_resolution
@@ -6006,7 +6006,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
             GlobalResolution.attributes
               ~include_generated_attributes:false
               ~resolution:global_resolution
-              (Reference.show (ClassSummary.name definition))
+              class_name
             >>| List.filter_map ~f:(fun attribute ->
                     let annotation =
                       GlobalResolution.instantiate_attribute
@@ -6063,7 +6063,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
                               }
                         in
                         let location =
-                          Identifier.SerializableMap.find_opt name components
+                          Identifier.SerializableMap.find_opt name attributes
                           >>| Node.location
                           |> Option.value ~default:location
                         in
