@@ -67,6 +67,7 @@ module T : sig
       }
     | InvalidIdentifier of Expression.t
     | UnexpectedStatement of Statement.t
+    | ClassBodyNotEllipsis of string
     | UnclassifiedError of {
         model_name: string;
         message: string;

@@ -1539,7 +1539,7 @@ let test_invalid_models context =
       class test.ClassSinkWithMethod(TaintSink[TestSink]):
           def method(self): ...
       |}
-    ~expect:"Invalid model for `test.ClassSinkWithMethod`: Class model must have a body of `...`."
+    ~expect:"Class model for `test.ClassSinkWithMethod` must have a body of `...`."
     ();
   (* Attach syntax. *)
   assert_invalid_model

@@ -1899,12 +1899,7 @@ let parse_statement ~resolution ~path ~configuration statement =
       else
         Ok []
   | { Node.value = Class { Class.name = { Node.value = name; _ }; _ }; location } ->
-      Error
-        (invalid_model_error
-           ~path
-           ~location
-           ~name:(Reference.show name)
-           "Class model must have a body of `...`.")
+      Error (model_verification_error ~path ~location (ClassBodyNotEllipsis (Reference.show name)))
   | {
    Node.value =
      Assign
