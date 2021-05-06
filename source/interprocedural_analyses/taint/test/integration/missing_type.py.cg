@@ -1,0 +1,10 @@
+@generated
+Call dependencies
+missing_type.UnknownSinkAttribute::sink (method) -> []
+missing_type.UnknownSinkDef::sink (method) -> []
+missing_type.UnknownSourceAttribute::source (method) -> []
+missing_type.UnknownSourceDef::source (method) -> []
+missing_type.test_unknown_sink_attribute (fun) -> [__test_source (fun)]
+missing_type.test_unknown_sink_def (fun) -> [__test_source (fun)]
+missing_type.test_unknown_source_attribute (fun) -> [__test_sink (fun)]
+missing_type.test_unknown_source_def (fun) -> [__test_sink (fun)]
