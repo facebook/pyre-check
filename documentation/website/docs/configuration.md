@@ -4,7 +4,7 @@ title: Configuration
 sidebar_label: Configuration
 ---
 
-Pyre can be run without a configuration (see [Command Line Arguments](configuration#command-line-arguments)) but we do recommend that you create a configuration (see [Getting Started](getting-started)) and commit that to your version control system to make sure everyone working on your project is using the same settings.
+Pyre can be run without a configuration (see [Command Line Arguments](configuration.md#command-line-arguments)) but we do recommend that you create a configuration (see [Getting Started](getting_started.md)) and commit that to your version control system to make sure everyone working on your project is using the same settings.
 
 ## Configuration Files
 Pyre has two types of configurations: a *global* configuration covering the full project, and *local* configurations that apply to subdirectories of the project. In most cases you will only need a global configuration but local configurations can be useful if you are dealing with a big repository containing heterogeneous projects.
@@ -62,7 +62,7 @@ provides typed stubs for library functions.
 - `extensions`: Consider extensions in this list equivalent to `.py` for type checking.
 Empty string indicates extensionless files.
 
-- `strict`: Setting this to `true` will make [strict mode](types-in-python#strict-mode) the default in your project.
+- `strict`: Setting this to `true` will make [strict mode](gradual_typing.md#strict-mode) the default in your project.
 
 
 ### Local Configurations
@@ -84,7 +84,7 @@ $ pyre -l project
 #### Nested Local Configurations
 Nesting local configurations is not supported. The configuration should live at the root of your
 project unit and inclusion/exclusion of files from type checking can be done by specifying sources, using
-`ignore_all_errors`, or by adding [local suppression](errors#suppressing-individual-errors).
+`ignore_all_errors`, or by adding [local suppression](errors.md#suppressing-individual-errors).
 
 ## Command Line Arguments
 You can get a full and current list of options to run Pyre by running `pyre --help`. The following is a list of commonly used commands and options.

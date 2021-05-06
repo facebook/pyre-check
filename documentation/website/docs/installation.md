@@ -11,7 +11,7 @@ You can get Pyre through [pypi](https://pypi.org/) by running:
 ```bash
 $ (venv) $ pip install pyre-check
 ```
-See our [Getting Started](getting-started) section for a more detailed example, including setup for a virtual environment.
+See our [Getting Started](getting_started.md) section for a more detailed example, including setup for a virtual environment.
 
 ## IDE Integration
 Pyre supports the [Language Server Protocol](https://en.wikipedia.org/wiki/Language_Server_Protocol). We provide an [extension for *VSCode*](https://marketplace.visualstudio.com/items?itemName=fb-pyre-check.pyre-vscode) that will automatically try to connect to a running server. You can also directly interact with the LSP by piping the appropriate `JSON` into `pyre persistent`.
@@ -22,7 +22,7 @@ Sierra* through *OSX 10.13* - even though binaries are compatible with versions
 as old as *10.11*) and *Linux* (tested on *Ubuntu 16.04 LTS* and *CentOS 7*).
 
 ### Requirements
-In addition to [Python and watchman](getting-started#requirements), we need a working *OCaml* compiler. We use
+In addition to [Python and watchman](getting_started.md#requirements), we need a working *OCaml* compiler. We use
 [Opam](https://opam.ocaml.org/) to manage our compiler and libraries. You can get Opam via various
 package management systems. Please follow their instructions for your particular operating system.
 

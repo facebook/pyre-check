@@ -203,7 +203,7 @@ def f(x: Optional[int]) -> None:
   takes_int(x) # Incompatible parameter type error
 ```
 
-If you are seeing errors with invariant containers where some `Container[T]` is expected but you are passing `Container[S]` where `S < T`, please see [Covariance and Contravariance](errors#covariance-and-contravariance).
+If you are seeing errors with invariant containers where some `Container[T]` is expected but you are passing `Container[S]` where `S < T`, please see [Covariance and Contravariance](errors.md#covariance-and-contravariance).
 
 ### 7: Incompatible Return Type
 Pyre will error when the value returned from a function does not match the annotation.
@@ -225,7 +225,7 @@ def f(foo: Foo) -> None:
   foo.x = "abc" # Incompatible attribute type error
 ```
 
-If you are seeing errors with invariant containers where some `Container[T]` is expected but you are passing `Container[S]` where `S < T`, please see [Covariance and Contravariance](errors#covariance-and-contravariance).
+If you are seeing errors with invariant containers where some `Container[T]` is expected but you are passing `Container[S]` where `S < T`, please see [Covariance and Contravariance](errors.md#covariance-and-contravariance).
 
 ### 9: Incompatible Variable Type
 Pyre will error when assigning incompatible types to local variables and parameters that were explicitly annotated.
@@ -300,7 +300,7 @@ You can fix this error by verifying that your annotation is
 
 1. statically determined.
 2. properly imported from `typing` if applicable.
-3. properly defined in the module you are importing from. If the module you are importing from has a [stub file](#third-party-libraries), you should check the definition there.
+3. properly defined in the module you are importing from. If the module you are importing from has a [stub file](errors.md#third-party-libraries), you should check the definition there.
 4. properly adhere to the additional rules of special types (e.g. `Callable`, `Final`, and `Literal`).
 
 For type aliases, check that your type alias is defined
@@ -373,7 +373,7 @@ The above code fails at runtime with `TypeError: can't convert complex to int`. 
 
   This would fail at runtime with `TypeError: can only concatenate str (not "int") to str`.
 
-+ `Returned type Foo is not a subtype of the overridden return Bar.`: Check for reasons like [invariance](#covariance-and-contravariance).
++ `Returned type Foo is not a subtype of the overridden return Bar.`: Check for reasons like [invariance](errors.md#covariance-and-contravariance).
 
 ### 16: Missing Attributes
 
@@ -407,13 +407,13 @@ Support for this is temporary.
 
 #### Common Reasons
 
-+ `Optional type has no attribute foo.`: See [Optional attributes](#optional-attributes).
++ `Optional type has no attribute foo.`: See [Optional attributes](errors.md#optional-attributes).
 
 + `Foo has no attribute bar.`: Check if you have explicitly provided the type for `bar` either in the constructor or as a class attribute.
 
-+ `Module foo has no attribute bar`: Check if the library has [stubs](#third-party-libraries). If so, you may need to add the function, class, or global variable to the stub.
++ `Module foo has no attribute bar`: Check if the library has [stubs](errors.md#third-party-libraries). If so, you may need to add the function, class, or global variable to the stub.
 
-+ A library class has an attribute but it is not recognized by Pyre: Check if the library has [stubs](#third-party-libraries). If so, you may need to add the attribute to the class in the stub.
++ A library class has an attribute but it is not recognized by Pyre: Check if the library has [stubs](errors.md#third-party-libraries). If so, you may need to add the attribute to the class in the stub.
 
 + Your class has dynamic attributes: Consider using `__getattr__` in a [stub](gradual_typing.md#when-source-code-is-not-available) so that Pyre doesn't complain about those attributes.
 
@@ -521,7 +521,7 @@ def decorator(f: Callable[P, int]) -> Callable[P, None]:
 ```
 
 ### 33: Prohibited Any
-Pyre will warn on any usage of `typing.Any` when run in [strict mode](types-in-python#strict-mode). `Any` is an escape hatch that hides type errors and introduces potential type inconsistencies which Pyre strict is designed to make explicit. To resolve this error, replace `Any` with any other annotation. Using builtins `object` is acceptable if you are looking for a supertype of all classes.
+Pyre will warn on any usage of `typing.Any` when run in [strict mode](gradual_typing.md#strict-mode). `Any` is an escape hatch that hides type errors and introduces potential type inconsistencies which Pyre strict is designed to make explicit. To resolve this error, replace `Any` with any other annotation. Using builtins `object` is acceptable if you are looking for a supertype of all classes.
 
 
 ### 30: Terminating Analysis
@@ -656,7 +656,7 @@ def some_method() -> None:
 
 This is not allowed as Pyre needs to be able to statically determine the type of globally accessible values, including class attributes. Even if Pyre followed control flow across functions to determine class attribute annotations, such re-annotations imply very dynamic behavior that makes the code difficult to work with.
 
-The fix for this situation, similar to the case above, is to annotate the class attribute at its definition in the class that owns it and remove any annotations elsewhere. If this attribute is from a third party library, then you can add a [stub](errors#third-party-libraries) for the class and annotate the attribute there.
+The fix for this situation, similar to the case above, is to annotate the class attribute at its definition in the class that owns it and remove any annotations elsewhere. If this attribute is from a third party library, then you can add a [stub](errors.md#third-party-libraries) for the class and annotate the attribute there.
 
 ### 39: Invalid Inheritance
 When defining a new class, Pyre will error if the base class given is not a valid parent class. This may be caused by various conditions:
@@ -782,7 +782,7 @@ def foo(x: int) -> str:
 
 
 ### 51: Unused Local Mode
-Pyre only supports two modes of type checking, [unsafe](types-in-python#gradual-typing) and [strict](types-in-python#strict-mode). By default, every file runs in unsafe mode, but you can change this default to strict in your [configuration file](configuration#configuration-files).
+Pyre only supports two modes of type checking, [unsafe](gradual_typing.md#gradual-typing) and [strict](gradual_typing.md#strict-mode). By default, every file runs in unsafe mode, but you can change this default to strict in your [configuration file](configuration.md#configuration-files).
 
 You can also change the type checking mode of a single file by adding a local mode in the form of a `# pyre-strict` or `# pyre-unsafe` comment on its own line to the file header. This will ensure that file checks under the specified mode regardless of the default.
 
@@ -971,7 +971,7 @@ def foo() -> int:
 Pyre also supports `# type: ignore` comments for backwards-compatibility with *mypy*.
 
 ### Suppressing All Errors
-You can use the [Pyre upgrade tool](types-in-python#upgrade) to add inline error suppressions for all errors in your project.
+You can use the [Pyre upgrade tool](gradual_typing.md#upgrade) to add inline error suppressions for all errors in your project.
 
 ### Suppressing Errors Across Files
 You can suppress all errors in entire sections of your code by adding the path to the [`ignore_all_errors` section of your configuration](configuration.md#the-global-configuration).

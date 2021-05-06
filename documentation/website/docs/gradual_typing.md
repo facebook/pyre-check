@@ -86,7 +86,7 @@ reveal_type(my_stub.undefined)  # Reveals `Any`
 Pyre comes with tooling to make it easy to increase type coverage in your project.
 
 ### Upgrade
-When upgrading the type checker, new errors inevitably get surfaced. In order to keep a codebase clean through upgrades we've built `pyre-upgrade`, which automatically [suppresses](errors#suppression) newly surfaced type errors. It takes Pyre's output and adds supression comments to the code explaining what's wrong so that developers can easily address the issues individually.
+When upgrading the type checker, new errors inevitably get surfaced. In order to keep a codebase clean through upgrades we've built `pyre-upgrade`, which automatically [suppresses](errors.md#suppression) newly surfaced type errors. It takes Pyre's output and adds supression comments to the code explaining what's wrong so that developers can easily address the issues individually.
 
 You can run `pyre-upgrade` with
 ```bash
