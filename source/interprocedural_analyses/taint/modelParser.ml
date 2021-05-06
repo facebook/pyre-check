@@ -1590,7 +1590,7 @@ type model_or_query =
   | Model of (Model.t * Reference.t option)
   | Query of ModelQuery.rule
 
-let callable_annotation
+let resolve_global_callable
     ~path
     ~location
     ~verify_decorators
@@ -1598,20 +1598,10 @@ let callable_annotation
     ({ Define.Signature.name = { Node.value = name; _ }; decorators; _ } as define)
   =
   (* Since properties and setters share the same undecorated name, we need to special-case them. *)
-  let global_resolution = Resolution.global_resolution resolution in
-  let global_type () =
-    match GlobalResolution.global global_resolution name with
-    | Some { AttributeResolution.Global.undecorated_signature; annotation; _ } -> (
-        match undecorated_signature with
-        | Some signature -> Type.Callable signature |> Annotation.create
-        | None -> annotation )
-    | None ->
-        (* Fallback for fields, which are not globals. *)
-        from_reference name ~location:Location.any
-        |> Resolution.resolve_expression_to_annotation resolution
-  in
-  let parent = Option.value_exn (Reference.prefix name) in
+  let open ModelVerifier in
   let get_matching_method ~predicate =
+    let parent = Option.value_exn (Reference.prefix name) in
+    let global_resolution = Resolution.global_resolution resolution in
     let get_matching_define = function
       | { Node.value = Statement.Define ({ signature; _ } as define); _ } ->
           if
@@ -1625,6 +1615,7 @@ let callable_annotation
               ~variables
               signature
             |> Type.Callable.create_from_implementation
+            |> (fun callable -> Global.Attribute callable)
             |> Option.some
           else
             None
@@ -1635,21 +1626,13 @@ let callable_annotation
     >>= List.hd
     >>| (fun definition -> definition.Node.value.Class.body)
     >>= List.find_map ~f:get_matching_define
-    >>| Annotation.create
-    |> function
-    | Some annotation -> Ok annotation
-    | None ->
-        Error
-          (model_verification_error
-             ~path
-             ~location
-             (ModelVerificationError.T.NotInEnvironment (Reference.show name)))
+    |> Core.Result.return
   in
   if signature_is_property define then
     get_matching_method ~predicate:is_property
   else if Define.Signature.is_property_setter define then
     get_matching_method ~predicate:Define.is_property_setter
-  else if (not (List.is_empty decorators)) && verify_decorators then
+  else if verify_decorators && not (List.is_empty decorators) then
     (* Ensure that models don't declare decorators that our taint analyses doesn't understand. We
        check for the verify_decorators flag, as defines originating from
        `create_model_from_annotation` are not user-specified models that we're parsing. *)
@@ -1659,7 +1642,7 @@ let callable_annotation
          ~location
          (ModelVerificationError.T.UnexpectedDecorators { name; unexpected_decorators = decorators }))
   else
-    Ok (global_type ())
+    Ok (resolve_global ~resolution name)
 
 
 let adjust_mode_and_skipped_overrides
@@ -2194,6 +2177,8 @@ let create_model_from_signature
     }
   =
   let open Core.Result in
+  let open ModelVerifier in
+  let call_target = (call_target :> Callable.t) in
   (* Strip off the decorators only used for taint annotations. *)
   let top_level_decorators, define =
     let is_taint_decorator decorator =
@@ -2218,49 +2203,32 @@ let create_model_from_signature
     { location with start }
   in
   (* Make sure we know about what we model. *)
+  let model_verification_error kind = Error { ModelVerificationError.T.kind; path; location } in
   let callable_annotation =
-    callable_annotation ~path ~location ~verify_decorators:true ~resolution define
-  in
-  let call_target = (call_target :> Callable.t) in
-  let callable_annotation =
-    callable_annotation
-    >>= fun callable_annotation ->
-    if
-      Type.is_top (Annotation.annotation callable_annotation)
-      (* FIXME: We are relying on the fact that nonexistent functions&attributes resolve to mutable
-         callable annotation, while existing ones resolve to immutable callable annotation. This is
-         fragile! *)
-      && not (Annotation.is_immutable callable_annotation)
-    then
-      Error
-        {
-          ModelVerificationError.T.kind =
-            ModelVerificationError.T.NotInEnvironment (Reference.show callable_name);
-          path;
-          location;
-        }
-    else if Type.is_meta (Annotation.annotation callable_annotation) then
-      Error
-        {
-          ModelVerificationError.T.kind =
-            ModelVerificationError.T.ModelingClassAsDefine (Reference.show callable_name);
-          path;
-          location;
-        }
-    else
-      Ok callable_annotation
+    resolve_global_callable ~path ~location ~verify_decorators:true ~resolution define
+    >>= function
+    | None ->
+        model_verification_error
+          (ModelVerificationError.T.NotInEnvironment (Reference.show callable_name))
+    | Some Global.Class ->
+        model_verification_error
+          (ModelVerificationError.T.ModelingClassAsDefine (Reference.show callable_name))
+    | Some Global.Module ->
+        model_verification_error
+          (ModelVerificationError.T.ModelingModuleAsDefine (Reference.show callable_name))
+    | Some (Global.Attribute (Type.Callable t))
+    | Some
+        (Global.Attribute
+          (Type.Parametric
+            { name = "BoundMethod"; parameters = [Type.Parameter.Single (Type.Callable t); _] })) ->
+        Ok (Some t)
+    | Some (Global.Attribute Type.Any) -> Ok None
+    | Some (Global.Attribute Type.Top) -> Ok None
+    | Some (Global.Attribute _) ->
+        model_verification_error
+          (ModelVerificationError.T.ModelingAttributeAsDefine (Reference.show callable_name))
   in
   (* Check model matches callables primary signature. *)
-  let callable_annotation =
-    callable_annotation
-    >>| Annotation.annotation
-    >>| function
-    | Type.Callable t -> Some t
-    | Type.Parametric
-        { name = "BoundMethod"; parameters = [Type.Parameter.Single (Type.Callable t); _] } ->
-        Some t
-    | _ -> None
-  in
   let callable_parameter_names_to_positions =
     match callable_annotation with
     | Ok
@@ -2306,7 +2274,7 @@ let create_model_from_signature
                           {
                             name = Reference.show callable_name;
                             callable_type =
-                              Option.value_exn (Caml.Result.value callable_annotation ~default:None);
+                              Option.value_exn (Caml.Result.get_ok callable_annotation);
                             reasons = [UnexpectedPositionalParameter name];
                           };
                       path;
@@ -2548,6 +2516,7 @@ let create_callable_model_from_annotations
     annotations
   =
   let open Core.Result in
+  let open ModelVerifier in
   let global_resolution = Resolution.global_resolution resolution in
   match
     Interprocedural.Callable.get_module_and_definition ~resolution:global_resolution callable
@@ -2557,22 +2526,23 @@ let create_callable_model_from_annotations
         (invalid_model_query_error
            (Format.sprintf "No callable corresponding to `%s` found." (Callable.show callable)))
   | Some (_, { Node.value = { Define.signature = define; _ }; _ }) ->
-      let callable_annotation =
-        callable_annotation
-          ~path:None
-          ~location:Location.any
-          ~resolution
-          ~verify_decorators:false
-          define
-        >>| Annotation.annotation
-        >>| function
-        | Type.Callable t -> Some t
-        | Type.Parametric
-            { name = "BoundMethod"; parameters = [Type.Parameter.Single (Type.Callable t); _] } ->
-            Some t
-        | _ -> None
-      in
-      callable_annotation
+      resolve_global_callable
+        ~path:None
+        ~location:Location.any
+        ~resolution
+        ~verify_decorators:false
+        define
+      >>| (function
+            | Some (Global.Attribute (Type.Callable t))
+            | Some
+                (Global.Attribute
+                  (Type.Parametric
+                    {
+                      name = "BoundMethod";
+                      parameters = [Type.Parameter.Single (Type.Callable t); _];
+                    })) ->
+                Some t
+            | _ -> None)
       >>= fun callable_annotation ->
       List.fold
         annotations

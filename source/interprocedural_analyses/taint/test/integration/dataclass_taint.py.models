@@ -697,7 +697,8 @@
             "leaves": [
               {
                 "kind": "Test",
-                "name": "dataclass_taint.DataClassWithOtherSource.tainted"
+                "name":
+                  "Obj{dataclass_taint.DataClassWithOtherSource.tainted}"
               }
             ]
           }

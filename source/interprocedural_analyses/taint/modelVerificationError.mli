@@ -55,6 +55,8 @@ module T : sig
         attribute_name: string;
       }
     | ModelingClassAsDefine of string
+    | ModelingModuleAsDefine of string
+    | ModelingAttributeAsDefine of string
     | NotInEnvironment of string
     | UnexpectedDecorators of {
         name: Reference.t;

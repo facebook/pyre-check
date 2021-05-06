@@ -1958,6 +1958,46 @@ let test_invalid_models context =
     ~expect:"`not_in_the_environment.derp` is not part of the environment!"
     ();
   assert_invalid_model
+    ~model_source:"def test(parameter: InvalidTaintDirection[Test]): ..."
+    ~expect:"The module `test` is not a valid define."
+    ();
+  assert_invalid_model
+    ~source:{|
+      class Foo:
+        x: int = 1
+    |}
+    ~model_source:{|
+      def test.Foo.x(self) -> TaintSource[Test]: ...
+    |}
+    ~expect:
+      "The attribute `test.Foo.x` is not a valid define - did you mean to use `test.Foo.x: ...`?"
+    ();
+  (* Accept callable models for Any or Top because of type error. *)
+  assert_valid_model
+    ~source:
+      {|
+        class Foo:
+          @unknown_decorator
+          def bar(self):
+            pass
+      |}
+    ~model_source:{|
+      def test.Foo.bar() -> TaintSource[A]: ...
+    |}
+    ();
+  assert_valid_model
+    ~source:
+      {|
+        class Foo:
+          def bar(self):
+            pass
+          baz = bar
+      |}
+    ~model_source:{|
+      def test.Foo.baz() -> TaintSource[A]: ...
+    |}
+    ();
+  assert_invalid_model
     ~source:
       {|
       class Parent:

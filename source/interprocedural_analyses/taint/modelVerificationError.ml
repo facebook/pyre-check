@@ -57,6 +57,8 @@ module T = struct
         attribute_name: string;
       }
     | ModelingClassAsDefine of string
+    | ModelingModuleAsDefine of string
+    | ModelingAttributeAsDefine of string
     | NotInEnvironment of string
     | UnexpectedDecorators of {
         name: Reference.t;
@@ -177,6 +179,13 @@ let description error =
         "The class `%s` is not a valid define - did you mean to model `%s.__init__()`?"
         class_name
         class_name
+  | ModelingModuleAsDefine module_name ->
+      Format.sprintf "The module `%s` is not a valid define." module_name
+  | ModelingAttributeAsDefine attribute_name ->
+      Format.sprintf
+        "The attribute `%s` is not a valid define - did you mean to use `%s: ...`?"
+        attribute_name
+        attribute_name
   | NotInEnvironment name -> Format.sprintf "`%s` is not part of the environment!" name
 
 
@@ -199,6 +208,8 @@ let code { kind; _ } =
   | InvalidModelQueryClauseArguments _ -> 14
   | InvalidIdentifier _ -> 15
   | UnexpectedStatement _ -> 16
+  | ModelingModuleAsDefine _ -> 17
+  | ModelingAttributeAsDefine _ -> 18
 
 
 let display { kind = error; path; location } =
