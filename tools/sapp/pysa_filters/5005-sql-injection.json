@@ -1,0 +1,37 @@
+{
+    "name": "SQL Injection",
+    "description": "High signal filter for 5005 SQL Injection",
+    "features": [
+        {
+            "mode": "any of",
+            "features": [
+                "via:string_concat_rhs",
+                "via:string_concat_lhs",
+                "via:format-string",
+                "always-via:format-string",
+                "always-via:string_concat_rhs",
+                "always-via:string_concat_lhs"
+            ]
+        },
+        {
+            "mode": "none of",
+            "features": [
+                "always-type:scalar",
+                "type:scalar",
+                "type:bool",
+                "always-type:bool"
+            ]
+        }
+    ],
+    "codes": [
+        5005
+      ],
+    "traceLengthFromSources": [
+        0,
+        3
+    ],
+    "traceLengthToSinks": [
+        0,
+        5
+    ]
+}
