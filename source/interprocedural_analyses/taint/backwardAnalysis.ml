@@ -864,16 +864,25 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
               }
       | {
        Call.callee = { Node.value = Name (Name.Identifier "reveal_taint"); _ };
-       arguments =
-         [{ Call.Argument.value = { Node.value = Name (Name.Identifier identifier); _ }; _ }];
+       arguments = [{ Call.Argument.value = expression; _ }];
       } ->
-          let taint = BackwardState.read state.taint ~root:(Root.Variable identifier) ~path:[] in
-          Log.dump
-            "%a: Revealed backward taint for `%s`: %s"
-            Location.WithModule.pp
-            (Location.with_module location ~qualifier:FunctionContext.qualifier)
-            (Identifier.sanitized identifier)
-            (BackwardState.Tree.show taint);
+          begin
+            match of_expression ~resolution expression with
+            | None ->
+                Log.dump
+                  "%a: Revealed backward taint for `%s`: expression is too complex"
+                  Location.WithModule.pp
+                  (Location.with_module location ~qualifier:FunctionContext.qualifier)
+                  (Transform.sanitize_expression expression |> Expression.show)
+            | access_path ->
+                let taint = get_taint access_path state in
+                Log.dump
+                  "%a: Revealed backward taint for `%s`: %s"
+                  Location.WithModule.pp
+                  (Location.with_module location ~qualifier:FunctionContext.qualifier)
+                  (Transform.sanitize_expression expression |> Expression.show)
+                  (BackwardState.Tree.show taint)
+          end;
           state
       | { Call.callee = { Node.value = Name (Name.Identifier "super"); _ }; arguments } -> (
           match arguments with
