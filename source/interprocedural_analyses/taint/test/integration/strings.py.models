@@ -374,6 +374,36 @@
 {
   "kind": "model",
   "data": {
+    "callable": "str.__add__",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(other)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "features": [ { "always-via": "string_concat_rhs" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "features": [ { "always-via": "string_concat_lhs" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "strings.concatenate_lhs",
     "sources": [],
     "sinks": [],

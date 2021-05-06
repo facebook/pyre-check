@@ -149,3 +149,31 @@
     "features": [ { "always-via": "special_sink" } ]
   }
 }
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{django.http.request.HttpRequest.GET}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{django.http.request.HttpRequest.POST}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}

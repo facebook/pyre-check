@@ -98,7 +98,7 @@ let test_integration path context =
       let actual = Format.asprintf "@%s\nOverrides\n%a" "generated" DependencyGraph.pp overrides in
       create_expected_and_actual_files ~suffix:".overrides" actual
     in
-    let { callgraph; all_callables; environment; overrides } =
+    let { callgraph; callables_to_analyze; initial_models_callables; environment; overrides } =
       initialize ~handle ?models:model_source ~taint_configuration ~context source
     in
     let dependencies =
@@ -112,7 +112,7 @@ let test_integration path context =
       ~analyses:[TaintAnalysis.abstract_kind]
       ~dependencies
       ~filtered_callables:Callable.Set.empty
-      ~all_callables
+      ~all_callables:callables_to_analyze
       Fixpoint.Epoch.initial
     |> ignore;
     let serialized_model callable : string =
@@ -130,7 +130,10 @@ let test_integration path context =
 
     let divergent_files = [create_call_graph_files callgraph; create_overrides_files overrides] in
     ( divergent_files,
-      List.map all_callables ~f:serialized_model
+      List.rev_append initial_models_callables callables_to_analyze
+      |> Callable.Set.of_list
+      |> Callable.Set.elements
+      |> List.map ~f:serialized_model
       |> List.sort ~compare:String.compare
       |> String.concat ~sep:"" )
   in

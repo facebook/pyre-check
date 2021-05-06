@@ -320,6 +320,31 @@
 {
   "kind": "model",
   "data": {
+    "callable": "Obj{taint_in_taint_out.FieldIsTITO.add_tito}",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal($global)",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal($global)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "features": [ { "always-via": "string_concat_lhs" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "Ovr{object::__init__}",
     "sources": [],
     "sinks": [],

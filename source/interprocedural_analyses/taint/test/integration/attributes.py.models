@@ -118,6 +118,34 @@
 {
   "kind": "model",
   "data": {
+    "callable": "Obj{attributes.C.dictionary}",
+    "sources": [
+      {
+        "port": "result[text]",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{attributes.Token.token}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "Ovr{attributes.UseViaDict::__init__}",
     "sources": [],
     "sinks": [],

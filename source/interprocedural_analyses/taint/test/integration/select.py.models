@@ -2,6 +2,41 @@
 {
   "kind": "model",
   "data": {
+    "callable": "Obj{django.http.Request.GET}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          { "decl": null, "leaves": [ { "kind": "UserControlled" } ] }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "dict.get",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "select.first_index",
     "sources": [
       {

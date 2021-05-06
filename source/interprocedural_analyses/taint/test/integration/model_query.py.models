@@ -102,6 +102,186 @@
 {
   "kind": "model",
   "data": {
+    "callable": "Obj{model_query.AttributeTestClass1.attribute}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "SourceA" } ] } ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{model_query.AttributeTestClass1.instance}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "SourceA" } ] } ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{model_query.AttributeTestClass2.attribute}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "SourceA" } ] } ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{model_query.AttributeTestClass2.instance}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "SourceA" } ] } ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{model_query.AttributeTestClass3.attribute}",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal($global)",
+        "taint": [
+          { "decl": null, "leaves": [ { "kind": "SinkA" } ] },
+          { "decl": null, "leaves": [ { "kind": "SinkB" } ] }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{model_query.AttributeTestClass3.instance}",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal($global)",
+        "taint": [
+          { "decl": null, "leaves": [ { "kind": "SinkA" } ] },
+          { "decl": null, "leaves": [ { "kind": "SinkC" } ] }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{model_query.AttributeTestClass4.attribute}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          { "decl": null, "leaves": [ { "kind": "SourceC" } ] },
+          { "decl": null, "leaves": [ { "kind": "SourceD" } ] }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{model_query.AttributeTestClass4.instance}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          { "decl": null, "leaves": [ { "kind": "SourceC" } ] },
+          { "decl": null, "leaves": [ { "kind": "SourceE" } ] }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{model_query.AttributeTestClass5.foo_attribute}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "SourceB" } ] } ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{model_query.AttributeTestClass5.foo_instance}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "SourceB" } ] } ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{model_query.AttributeTestClass6.foo_attribute}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "SourceB" } ] } ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{model_query.AttributeTestClass6.foo_instance}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "SourceB" } ] } ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "Ovr{model_query.AttributeTestClass1::__init__}",
     "sources": [],
     "sinks": [],

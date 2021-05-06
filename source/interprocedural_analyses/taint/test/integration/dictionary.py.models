@@ -764,6 +764,20 @@
 {
   "kind": "model",
   "data": {
+    "callable": "Obj{dictionary.tainted_dictionary}",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal($global)",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "Ovr{dict::__setitem__}",
     "sources": [],
     "sinks": [
@@ -809,6 +823,22 @@
       }
     ],
     "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "dict.update",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(__m)",
+        "taint": [
+          { "decl": null, "leaves": [ { "kind": "ParameterUpdate0" } ] }
+        ]
+      }
+    ]
   }
 }
 {
@@ -1547,5 +1577,24 @@
       }
     ],
     "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "typing.Mapping.get",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
+        ]
+      }
+    ]
   }
 }

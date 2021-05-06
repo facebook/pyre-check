@@ -380,7 +380,8 @@ let run_with_taint_models tests ~name =
 type test_environment = {
   callgraph: DependencyGraph.callgraph;
   overrides: DependencyGraph.t;
-  all_callables: Callable.t list;
+  callables_to_analyze: Callable.t list;
+  initial_models_callables: Callable.t list;
   environment: TypeEnvironment.ReadOnly.t;
 }
 
@@ -547,15 +548,16 @@ let initialize
 
   let callables = List.map ~f:fst callables |> List.rev_append (Callable.Map.keys overrides) in
   let stubs = List.map ~f:fst stubs in
-  let all_callables = List.rev_append stubs callables in
+  let callables_to_analyze = List.rev_append stubs callables in
+  let initial_models_callables = Callable.Map.keys initial_models in
   (* Initialize models *)
   let () = TaintConfiguration.register taint_configuration in
   let () =
-    let keys = Fixpoint.KeySet.of_list all_callables in
+    let keys = Fixpoint.KeySet.of_list callables_to_analyze in
     Fixpoint.remove_new keys;
     Fixpoint.remove_old keys;
     initial_models
     |> Callable.Map.map ~f:(Interprocedural.Result.make_model Taint.Result.kind)
     |> Interprocedural.Analysis.record_initial_models ~functions:callables ~stubs
   in
-  { callgraph; overrides; all_callables; environment }
+  { callgraph; overrides; callables_to_analyze; initial_models_callables; environment }
