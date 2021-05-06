@@ -11,6 +11,38 @@ open Ast
 open Analysis
 open Expression
 
+module Global = struct
+  type t =
+    | Class
+    | Module
+    | Attribute of Type.t
+  [@@deriving show]
+end
+
+(* Resolve global symbols, ignoring decorators. *)
+let resolve_global ~resolution name =
+  let global_resolution = Resolution.global_resolution resolution in
+  match GlobalResolution.global global_resolution name with
+  | Some { AttributeResolution.Global.undecorated_signature = Some signature; _ } ->
+      Some (Global.Attribute (Type.Callable signature))
+  | _ -> (
+      let annotation =
+        from_reference name ~location:Location.any
+        |> Resolution.resolve_expression_to_annotation resolution
+      in
+      match Annotation.annotation annotation with
+      | Type.Parametric { name = "type"; _ }
+        when GlobalResolution.class_exists global_resolution (Reference.show name) ->
+          Some Global.Class
+      | Type.Top when GlobalResolution.module_exists global_resolution name -> Some Global.Module
+      | Type.Top when not (Annotation.is_immutable annotation) ->
+          (* FIXME: We are relying on the fact that nonexistent functions & attributes resolve to
+             mutable annotation, while existing ones resolve to immutable annotation. This is
+             fragile! *)
+          None
+      | annotation -> Some (Global.Attribute annotation) )
+
+
 type parameter_requirements = {
   anonymous_parameters_count: int;
   parameter_set: String.Set.t;

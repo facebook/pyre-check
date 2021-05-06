@@ -9,6 +9,16 @@ open Core
 open Ast
 open Analysis
 
+module Global : sig
+  type t =
+    | Class
+    | Module
+    | Attribute of Type.t
+  [@@deriving show]
+end
+
+val resolve_global : resolution:Resolution.t -> Reference.t -> Global.t option
+
 (* Exposed for testing. *)
 val demangle_class_attribute : string -> string
 
