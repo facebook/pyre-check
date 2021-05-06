@@ -1749,7 +1749,12 @@ let parse_statement ~resolution ~path ~configuration statement =
   match statement with
   | {
    Node.value =
-     Statement.Define { signature = { name = { Node.value = name; _ }; _ } as signature; _ };
+     Statement.Define
+       {
+         signature = { name = { Node.value = name; _ }; _ } as signature;
+         body = [{ value = Statement.Expression { value = Expression.Ellipsis; _ }; _ }];
+         _;
+       };
    location;
   } ->
       let class_candidate =
@@ -1765,6 +1770,11 @@ let parse_statement ~resolution ~path ~configuration statement =
         | None -> Callable.create_function name
       in
       Ok [ParsedSignature { signature; location; call_target }]
+  | {
+   Node.value = Statement.Define { signature = { name = { Node.value = name; _ }; _ }; _ };
+   location;
+  } ->
+      Error (model_verification_error ~path ~location (DefineBodyNotEllipsis (Reference.show name)))
   | {
    Node.value =
      Class

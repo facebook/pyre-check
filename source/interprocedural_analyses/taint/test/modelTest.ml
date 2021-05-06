@@ -1541,6 +1541,12 @@ let test_invalid_models context =
       |}
     ~expect:"Class model for `test.ClassSinkWithMethod` must have a body of `...`."
     ();
+  assert_invalid_model
+    ~model_source:{|
+      def foo(): TaintSource[A]
+    |}
+    ~expect:"Callable model for `foo` must have a body of `...`."
+    ();
   (* Attach syntax. *)
   assert_invalid_model
     ~model_source:"def test.sink(parameter: AttachToSink): ..."

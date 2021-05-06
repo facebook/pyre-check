@@ -70,6 +70,7 @@ module T = struct
     | InvalidIdentifier of Expression.t
     | UnexpectedStatement of Statement.t
     | ClassBodyNotEllipsis of string
+    | DefineBodyNotEllipsis of string
     (* TODO(T81363867): Remove this variant. *)
     | UnclassifiedError of {
         model_name: string;
@@ -176,6 +177,8 @@ let description error =
   | UnexpectedStatement _ -> "Unexpected statement"
   | ClassBodyNotEllipsis class_name ->
       Format.sprintf "Class model for `%s` must have a body of `...`." class_name
+  | DefineBodyNotEllipsis model_name ->
+      Format.sprintf "Callable model for `%s` must have a body of `...`." model_name
   | UnclassifiedError { model_name; message } ->
       Format.sprintf "Invalid model for `%s`: %s" model_name message
   | MissingAttribute { class_name; attribute_name } ->
@@ -233,6 +236,7 @@ let code { kind; _ } =
   | ModelingModuleAsAttribute _ -> 20
   | ModelingCallableAsAttribute _ -> 21
   | ClassBodyNotEllipsis _ -> 22
+  | DefineBodyNotEllipsis _ -> 23
 
 
 let display { kind = error; path; location } =
