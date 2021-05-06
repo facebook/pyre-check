@@ -976,4 +976,11 @@ You can use the [Pyre upgrade tool](gradual_typing.md#upgrade) to add inline err
 ### Suppressing Errors Across Files
 You can suppress all errors in entire sections of your code by adding the path to the [`ignore_all_errors` section of your configuration](configuration.md#the-global-configuration).
 
-Furthermore Pyre supports suppressing all errors in an individual file if you add a `# pyre-ignore-all-errors` to your file. Like the other suppression comments, you can use square brackets to chose to only ignore one or more particular error types.
+Furthermore Pyre supports suppressing all errors in an individual file if you add a `# pyre-ignore-all-errors` to your file. Like the other suppression comments, you can use square brackets to chose to only ignore one or more particular error types. For example, you can suppress all incompatible return type errors by adding:
+
+```python
+# pyre-ignore-all-errors[7]
+
+def foo(x: int) -> str:
+  return x  # pyre will not error here
+```
