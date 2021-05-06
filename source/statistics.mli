@@ -37,7 +37,6 @@ val performance
   ?randomly_log_every:int ->
   ?always_log_time_threshold:float ->
   ?section:Log.section ->
-  ?category:string ->
   name:string ->
   timer:Timer.t ->
   ?phase_name:string ->

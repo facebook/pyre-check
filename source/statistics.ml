@@ -172,7 +172,6 @@ let performance
     ?randomly_log_every
     ?always_log_time_threshold
     ?(section = `Performance)
-    ?(category = "perfpipe_pyre_performance")
     ~name
     ~timer
     ?phase_name
@@ -204,7 +203,7 @@ let performance
     ~integers:(("elapsed_time", microseconds) :: integers)
     ~normals:(("name", name) :: normals)
     ()
-  |> log ~flush ?randomly_log_every category
+  |> log ~flush ?randomly_log_every "perfpipe_pyre_performance"
 
 
 let event
