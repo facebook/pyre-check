@@ -9,6 +9,21 @@ open Core
 open Ast
 open Analysis
 
+module ClassDefinitionsCache : sig
+  val invalidate : unit -> unit
+end
+
+val class_definitions
+  :  resolution:Resolution.t ->
+  Reference.t ->
+  Statement.Class.t Node.t list option
+
+val find_method
+  :  resolution:Resolution.t ->
+  ?predicate:(Statement.Define.t -> bool) ->
+  Reference.t ->
+  Type.t option
+
 module Global : sig
   type t =
     | Class

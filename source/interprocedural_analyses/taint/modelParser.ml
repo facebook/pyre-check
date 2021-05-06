@@ -158,55 +158,7 @@ let invalid_model_error ~path ~location ~name message =
   model_verification_error ~path ~location (UnclassifiedError { model_name = name; message })
 
 
-module DefinitionsCache (Type : sig
-  type t
-end) =
-struct
-  let cache : Type.t Reference.Table.t = Reference.Table.create ()
-
-  let set key value = Hashtbl.set cache ~key ~data:value
-
-  let get = Hashtbl.find cache
-
-  let invalidate () = Hashtbl.clear cache
-end
-
-module ClassDefinitionsCache = DefinitionsCache (struct
-  type t = Class.t Node.t list option
-end)
-
-let containing_source resolution reference =
-  let ast_environment = GlobalResolution.ast_environment resolution in
-  let rec qualifier ~lead ~tail =
-    match tail with
-    | head :: (_ :: _ as tail) ->
-        let new_lead = Reference.create ~prefix:lead head in
-        if not (GlobalResolution.module_exists resolution new_lead) then
-          lead
-        else
-          qualifier ~lead:new_lead ~tail
-    | _ -> lead
-  in
-  qualifier ~lead:Reference.empty ~tail:(Reference.as_list reference)
-  |> AstEnvironment.ReadOnly.get_processed_source ast_environment
-
-
-let class_definitions resolution reference =
-  match ClassDefinitionsCache.get reference with
-  | Some result -> result
-  | None ->
-      let open Option in
-      let result =
-        containing_source resolution reference
-        >>| Preprocessing.classes
-        >>| List.filter ~f:(fun { Node.value = { Class.name; _ }; _ } ->
-                Reference.equal reference (Node.value name))
-        (* Prefer earlier definitions. *)
-        >>| List.rev
-      in
-      ClassDefinitionsCache.set reference result;
-      result
-
+module ClassDefinitionsCache = ModelVerifier.ClassDefinitionsCache
 
 (* Don't propagate inferred model of methods with Sanitize *)
 
@@ -1578,39 +1530,14 @@ let resolve_global_callable
   =
   (* Since properties and setters share the same undecorated name, we need to special-case them. *)
   let open ModelVerifier in
-  let get_matching_method ~predicate =
-    let parent = Option.value_exn (Reference.prefix name) in
-    let global_resolution = Resolution.global_resolution resolution in
-    let get_matching_define = function
-      | { Node.value = Statement.Define ({ signature; _ } as define); _ } ->
-          if
-            predicate define
-            && Reference.equal (Node.value define.Define.signature.Define.Signature.name) name
-          then
-            let parser = GlobalResolution.annotation_parser global_resolution in
-            let variables = GlobalResolution.variables global_resolution in
-            Annotated.Define.Callable.create_overload_without_applying_decorators
-              ~parser
-              ~variables
-              signature
-            |> Type.Callable.create_from_implementation
-            |> (fun callable -> Global.Attribute callable)
-            |> Option.some
-          else
-            None
-      | _ -> None
-    in
-    let open Option in
-    class_definitions global_resolution parent
-    >>= List.hd
-    >>| (fun definition -> definition.Node.value.Class.body)
-    >>= List.find_map ~f:get_matching_define
-    |> Core.Result.return
-  in
   if signature_is_property define then
-    get_matching_method ~predicate:is_property
+    find_method ~resolution ~predicate:is_property name
+    >>| (fun callable -> Global.Attribute callable)
+    |> Core.Result.return
   else if Define.Signature.is_property_setter define then
-    get_matching_method ~predicate:Define.is_property_setter
+    find_method ~resolution ~predicate:Define.is_property_setter name
+    >>| (fun callable -> Global.Attribute callable)
+    |> Core.Result.return
   else if verify_decorators && not (List.is_empty decorators) then
     (* Ensure that models don't declare decorators that our taint analyses doesn't understand. We
        check for the verify_decorators flag, as defines originating from
@@ -1887,7 +1814,7 @@ let parse_statement ~resolution ~path ~configuration statement =
         || (not (List.is_empty source_annotations))
         || not (List.is_empty extra_decorators)
       then
-        class_definitions global_resolution name
+        ModelVerifier.class_definitions ~resolution name
         |> Option.bind ~f:List.hd
         |> Option.map ~f:(fun { Node.value = { Class.body; _ }; _ } ->
                let signature { Node.value; location } =

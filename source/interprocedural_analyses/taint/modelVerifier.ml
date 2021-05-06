@@ -11,6 +11,86 @@ open Ast
 open Analysis
 open Expression
 
+module DefinitionsCache (Type : sig
+  type t
+end) =
+struct
+  let cache : Type.t Reference.Table.t = Reference.Table.create ()
+
+  let set key value = Hashtbl.set cache ~key ~data:value
+
+  let get = Hashtbl.find cache
+
+  let invalidate () = Hashtbl.clear cache
+end
+
+module ClassDefinitionsCache = DefinitionsCache (struct
+  type t = Statement.Class.t Node.t list option
+end)
+
+let containing_source ~resolution reference =
+  let global_resolution = Resolution.global_resolution resolution in
+  let ast_environment = GlobalResolution.ast_environment global_resolution in
+  let rec qualifier ~lead ~tail =
+    match tail with
+    | head :: (_ :: _ as tail) ->
+        let new_lead = Reference.create ~prefix:lead head in
+        if not (GlobalResolution.module_exists global_resolution new_lead) then
+          lead
+        else
+          qualifier ~lead:new_lead ~tail
+    | _ -> lead
+  in
+  qualifier ~lead:Reference.empty ~tail:(Reference.as_list reference)
+  |> AstEnvironment.ReadOnly.get_processed_source ast_environment
+
+
+let class_definitions ~resolution reference =
+  match ClassDefinitionsCache.get reference with
+  | Some result -> result
+  | None ->
+      let open Option in
+      let result =
+        containing_source ~resolution reference
+        >>| Preprocessing.classes
+        >>| List.filter ~f:(fun { Node.value = { Statement.Class.name; _ }; _ } ->
+                Reference.equal reference (Node.value name))
+        (* Prefer earlier definitions. *)
+        >>| List.rev
+      in
+      ClassDefinitionsCache.set reference result;
+      result
+
+
+(* Find a method definition matching the given predicate. *)
+let find_method ~resolution ?(predicate = fun _ -> true) name =
+  let open Statement in
+  let get_matching_define = function
+    | { Node.value = Statement.Define ({ signature; _ } as define); _ } ->
+        if
+          Reference.equal (Node.value define.Define.signature.Define.Signature.name) name
+          && predicate define
+        then
+          let global_resolution = Resolution.global_resolution resolution in
+          let parser = GlobalResolution.annotation_parser global_resolution in
+          let variables = GlobalResolution.variables global_resolution in
+          Annotated.Define.Callable.create_overload_without_applying_decorators
+            ~parser
+            ~variables
+            signature
+          |> Type.Callable.create_from_implementation
+          |> Option.some
+        else
+          None
+    | _ -> None
+  in
+  Reference.prefix name
+  >>= class_definitions ~resolution
+  >>= List.hd
+  >>| (fun definition -> definition.Node.value.Class.body)
+  >>= List.find_map ~f:get_matching_define
+
+
 module Global = struct
   type t =
     | Class
