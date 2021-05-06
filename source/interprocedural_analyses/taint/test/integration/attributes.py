@@ -74,12 +74,24 @@ class Untainted:
     token: str = ""
 
 
-def test_attribute_union(t: Union[Token, Untainted]):
+def test_attribute_union_source(t: Union[Token, Untainted]):
     __test_sink(t.token)
     if isinstance(t, Token):
         __test_sink(t.token)
     elif isinstance(t, Untainted):
         __test_sink(t.token)
+
+
+class Sink:
+    token: str = ""
+
+
+def test_attribute_union_sink(t: Union[Sink, Untainted]):
+    t.token = __test_source()
+    if isinstance(t, Sink):
+        t.token = __test_source()
+    elif isinstance(t, Untainted):
+        t.token = __test_source()
 
 
 class C:

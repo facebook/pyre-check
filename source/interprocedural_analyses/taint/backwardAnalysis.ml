@@ -180,17 +180,15 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           |> BackwardState.Tree.join taint_tree
         in
         let get_argument_taint ~resolution ~argument:{ Call.Argument.value = argument; _ } state =
-          match
+          let global_sink =
             Model.get_global_sink_model
               ~resolution
               ~location:
                 (Location.with_module ~qualifier:FunctionContext.qualifier (Node.location argument))
               ~expression:argument
-          with
-          | Some global_taint -> global_taint
-          | None ->
-              let access_path = of_expression ~resolution argument in
-              get_taint access_path state
+          in
+          let access_path = of_expression ~resolution argument in
+          get_taint access_path state |> BackwardState.Tree.join global_sink
         in
         let combine_tito location taint_tree { AccessPath.root; actual_path; formal_path } =
           let translate_tito (tito_path, element) argument_taint =
@@ -1070,42 +1068,37 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                 Model.get_global_tito_model_and_mode ~resolution ~expression
               in
               let add_tito_features taint =
-                let attribute_features =
-                  global_tito_model >>| BackwardState.Tree.get_all_features
-                in
-                match attribute_features with
-                | Some features when not (Features.SimpleSet.is_bottom features) ->
-                    BackwardState.Tree.transform
-                      BackwardTaint.simple_feature_self
-                      Abstract.Domain.Add
-                      ~f:features
-                      taint
-                | _ -> taint
+                let attribute_features = global_tito_model |> BackwardState.Tree.get_all_features in
+                if not (Features.SimpleSet.is_bottom attribute_features) then
+                  BackwardState.Tree.transform
+                    BackwardTaint.simple_feature_self
+                    Abstract.Domain.Add
+                    ~f:attribute_features
+                    taint
+                else
+                  taint
               in
 
               let apply_attribute_sanitizers taint =
                 match global_analysis_mode with
-                | Some mode -> (
-                    match mode with
-                    | Sanitize { sinks = sanitize_sinks; _ } -> (
-                        match sanitize_sinks with
-                        | Some TaintResult.Mode.AllSinks -> BackwardState.Tree.empty
-                        | Some (TaintResult.Mode.SpecificSinks sanitized_sinks) ->
-                            BackwardState.Tree.partition
-                              BackwardTaint.leaf
-                              ByFilter
-                              ~f:(fun sink ->
-                                Option.some_if
-                                  (not (List.mem ~equal:Sinks.equal sanitized_sinks sink))
-                                  sink)
-                              taint
-                            |> Core.Map.Poly.fold
-                                 ~init:BackwardState.Tree.bottom
-                                 ~f:(fun ~key:_ ~data:sink_state state ->
-                                   BackwardState.Tree.join sink_state state)
-                        | None -> taint )
-                    | _ -> taint )
-                | None -> taint
+                | Sanitize { sinks = sanitize_sinks; _ } -> (
+                    match sanitize_sinks with
+                    | Some TaintResult.Mode.AllSinks -> BackwardState.Tree.empty
+                    | Some (TaintResult.Mode.SpecificSinks sanitized_sinks) ->
+                        BackwardState.Tree.partition
+                          BackwardTaint.leaf
+                          ByFilter
+                          ~f:(fun sink ->
+                            Option.some_if
+                              (not (List.mem ~equal:Sinks.equal sanitized_sinks sink))
+                              sink)
+                          taint
+                        |> Core.Map.Poly.fold
+                             ~init:BackwardState.Tree.bottom
+                             ~f:(fun ~key:_ ~data:sink_state state ->
+                               BackwardState.Tree.join sink_state state)
+                    | None -> taint )
+                | _ -> taint
               in
               let taint =
                 BackwardState.Tree.prepend [field] (add_tito_features taint)
@@ -1200,7 +1193,6 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                 Location.with_module ~qualifier:FunctionContext.qualifier target.Node.location
               in
               Model.get_global_sink_model ~resolution ~location ~expression:target
-              |> Option.value ~default:BackwardState.Tree.empty
             in
             BackwardState.Tree.join local_taint global_taint
           in

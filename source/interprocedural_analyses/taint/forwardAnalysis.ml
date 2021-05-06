@@ -397,11 +397,10 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             let location =
               Location.with_module ~qualifier:FunctionContext.qualifier argument.Node.location
             in
-            begin
-              match Model.get_global_sink_model ~resolution ~location ~expression:argument with
-              | None -> ()
-              | Some sink_tree -> FunctionContext.check_flow ~location ~source_tree ~sink_tree
-            end;
+            let sink_tree =
+              Model.get_global_sink_model ~resolution ~location ~expression:argument
+            in
+            FunctionContext.check_flow ~location ~source_tree ~sink_tree;
             let access_path = AccessPath.of_expression ~resolution argument in
             log
               "Propagating taint to argument `%a`: %a"
@@ -1138,39 +1137,36 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
         Model.get_global_tito_model_and_mode ~resolution ~expression
       in
       let add_tito_features taint =
-        let attribute_features = global_tito_model >>| BackwardState.Tree.get_all_features in
-        match attribute_features with
-        | Some features when not (Features.SimpleSet.is_bottom features) ->
-            ForwardState.Tree.transform
-              ForwardTaint.simple_feature_self
-              Abstract.Domain.Add
-              ~f:features
-              taint
-        | _ -> taint
+        let attribute_features = global_tito_model |> BackwardState.Tree.get_all_features in
+        if not (Features.SimpleSet.is_bottom attribute_features) then
+          ForwardState.Tree.transform
+            ForwardTaint.simple_feature_self
+            Abstract.Domain.Add
+            ~f:attribute_features
+            taint
+        else
+          taint
       in
       let apply_attribute_sanitizers taint =
         match global_analysis_mode with
-        | Some mode -> (
-            match mode with
-            | Sanitize { sources = sanitize_sources; _ } -> (
-                match sanitize_sources with
-                | Some TaintResult.Mode.AllSources -> ForwardState.Tree.empty
-                | Some (TaintResult.Mode.SpecificSources sanitized_sources) ->
-                    ForwardState.Tree.partition
-                      ForwardTaint.leaf
-                      ByFilter
-                      ~f:(fun source ->
-                        Option.some_if
-                          (not (List.mem ~equal:Sources.equal sanitized_sources source))
-                          source)
-                      taint
-                    |> Core.Map.Poly.fold
-                         ~init:ForwardState.Tree.bottom
-                         ~f:(fun ~key:_ ~data:source_state state ->
-                           ForwardState.Tree.join source_state state)
-                | None -> taint )
-            | _ -> taint )
-        | None -> taint
+        | Sanitize { sources = sanitize_sources; _ } -> (
+            match sanitize_sources with
+            | Some TaintResult.Mode.AllSources -> ForwardState.Tree.empty
+            | Some (TaintResult.Mode.SpecificSources sanitized_sources) ->
+                ForwardState.Tree.partition
+                  ForwardTaint.leaf
+                  ByFilter
+                  ~f:(fun source ->
+                    Option.some_if
+                      (not (List.mem ~equal:Sources.equal sanitized_sources source))
+                      source)
+                  taint
+                |> Core.Map.Poly.fold
+                     ~init:ForwardState.Tree.bottom
+                     ~f:(fun ~key:_ ~data:source_state state ->
+                       ForwardState.Tree.join source_state state)
+            | None -> taint )
+        | _ -> taint
       in
 
       let field = Abstract.TreeDomain.Label.Index attribute in
@@ -1396,10 +1392,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           (* Check flows to tainted globals/attributes. *)
           let location = Location.with_module ~qualifier:FunctionContext.qualifier location in
           let source_tree = taint in
-          let sink_tree =
-            Model.get_global_sink_model ~resolution ~location ~expression:target
-            |> Option.value ~default:BackwardState.Tree.empty
-          in
+          let sink_tree = Model.get_global_sink_model ~resolution ~location ~expression:target in
           FunctionContext.check_flow ~location ~source_tree ~sink_tree;
 
           (* Propagate taint. *)

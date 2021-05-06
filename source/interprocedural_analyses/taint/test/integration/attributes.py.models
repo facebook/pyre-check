@@ -2,6 +2,96 @@
 {
   "kind": "issue",
   "data": {
+    "callable": "attributes.test_attribute_union_sink",
+    "callable_line": 89,
+    "code": 5002,
+    "line": 92,
+    "start": 8,
+    "end": 15,
+    "filename": "attributes.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "attributes.py",
+              "line": 92,
+              "start": 18,
+              "end": 33
+            },
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "features": [ { "always-via": "special_source" } ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "attributes.py",
+              "line": 92,
+              "start": 8,
+              "end": 15
+            },
+            "leaves": [ { "kind": "Test", "name": "attributes.Sink.token" } ]
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_source" } ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "attributes.test_attribute_union_sink",
+    "callable_line": 89,
+    "code": 5002,
+    "line": 90,
+    "start": 4,
+    "end": 11,
+    "filename": "attributes.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "attributes.py",
+              "line": 90,
+              "start": 14,
+              "end": 29
+            },
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "features": [ { "always-via": "special_source" } ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "attributes.py",
+              "line": 90,
+              "start": 4,
+              "end": 11
+            },
+            "leaves": [ { "kind": "Test", "name": "attributes.Sink.token" } ]
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_source" } ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
     "callable": "attributes.test_attribute_via_dunder_dict",
     "callable_line": 65,
     "code": 5002,
@@ -126,6 +216,20 @@
       }
     ],
     "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{attributes.Sink.token}",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal($global)",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+      }
+    ],
     "tito": []
   }
 }
@@ -293,7 +397,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "attributes.test_attribute_union",
+    "callable": "attributes.test_attribute_union_source",
     "sources": [],
     "sinks": [
       {
@@ -338,7 +442,7 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "attributes.test_attribute_union",
+    "callable": "attributes.test_attribute_union_source",
     "callable_line": 77,
     "code": 5002,
     "line": 78,
@@ -385,7 +489,7 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "attributes.test_attribute_union",
+    "callable": "attributes.test_attribute_union_source",
     "callable_line": 77,
     "code": 5002,
     "line": 80,
@@ -562,7 +666,7 @@
           {
             "root": {
               "filename": "attributes.py",
-              "line": 90,
+              "line": 102,
               "start": 16,
               "end": 36
             },
@@ -583,9 +687,9 @@
   "kind": "issue",
   "data": {
     "callable": "attributes.test_issue_with_text_key_of_dictionary",
-    "callable_line": 89,
+    "callable_line": 101,
     "code": 5002,
-    "line": 90,
+    "line": 102,
     "start": 16,
     "end": 36,
     "filename": "attributes.py",
@@ -597,7 +701,7 @@
           {
             "root": {
               "filename": "attributes.py",
-              "line": 90,
+              "line": 102,
               "start": 16,
               "end": 28
             },
@@ -617,7 +721,7 @@
           {
             "root": {
               "filename": "attributes.py",
-              "line": 90,
+              "line": 102,
               "start": 16,
               "end": 36
             },
@@ -646,7 +750,7 @@
           {
             "root": {
               "filename": "attributes.py",
-              "line": 94,
+              "line": 106,
               "start": 16,
               "end": 37
             },

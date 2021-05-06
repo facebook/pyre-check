@@ -29,12 +29,12 @@ val get_global_sink_model
   :  resolution:Resolution.t ->
   location:Location.WithModule.t ->
   expression:Expression.t ->
-  Domains.BackwardState.Tree.t option
+  Domains.BackwardState.Tree.t
 
 val get_global_tito_model_and_mode
   :  resolution:Resolution.t ->
   expression:Expression.t ->
-  Domains.BackwardState.Tree.t option * TaintResult.Mode.t option
+  Domains.BackwardState.Tree.t * TaintResult.Mode.t
 
 val global_is_sanitized : resolution:Resolution.t -> expression:Expression.t -> bool
 
