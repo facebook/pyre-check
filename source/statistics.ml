@@ -179,15 +179,15 @@ let performance
     ?(normals = [])
     ()
   =
-  let microseconds = Timer.stop_in_us timer in
+  let time_span = Timer.stop timer in
+  let time_in_seconds = Time.Span.to_sec time_span in
+  let integer_time_in_microseconds = Time.Span.to_us time_span |> Int.of_float in
   let randomly_log_every =
     match always_log_time_threshold with
-    | Some threshold ->
-        let threshold_microseconds = Int.of_float (threshold *. 1000000.0) in
-        if microseconds > threshold_microseconds then None else randomly_log_every
+    | Some threshold -> if Float.(time_in_seconds > threshold) then None else randomly_log_every
     | None -> randomly_log_every
   in
-  Log.log ~section "%s: %.2fs" (String.capitalize name) (Int.to_float microseconds /. 1000000.0);
+  Log.log ~section "%s: %.2fs" (String.capitalize name) time_in_seconds;
   Profiling.log_performance_event (fun () ->
       let tags =
         List.map ~f:(fun (name, value) -> name, string_of_int value) integers
@@ -198,9 +198,9 @@ let performance
         | None -> tags
         | Some name -> ("phase_name", name) :: tags
       in
-      Profiling.Event.create name ~event_type:(Duration microseconds) ~tags);
+      Profiling.Event.create name ~event_type:(Duration integer_time_in_microseconds) ~tags);
   sample
-    ~integers:(("elapsed_time", microseconds) :: integers)
+    ~integers:(("elapsed_time", integer_time_in_microseconds) :: integers)
     ~normals:(("name", name) :: normals)
     ()
   |> log ~flush ?randomly_log_every "perfpipe_pyre_performance"
