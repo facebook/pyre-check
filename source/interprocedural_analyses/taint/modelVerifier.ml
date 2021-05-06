@@ -63,14 +63,16 @@ let class_definitions ~resolution reference =
 
 
 (* Find a method definition matching the given predicate. *)
-let find_method ~resolution ?(predicate = fun _ -> true) name =
+let find_method_definitions ~resolution ?(predicate = fun _ -> true) name =
   let open Statement in
   let get_matching_define = function
-    | { Node.value = Statement.Define ({ signature; _ } as define); _ } ->
-        if
-          Reference.equal (Node.value define.Define.signature.Define.Signature.name) name
-          && predicate define
-        then
+    | {
+        Node.value =
+          Statement.Define
+            ({ signature = { name = { value = define_name; _ }; _ } as signature; _ } as define);
+        _;
+      } ->
+        if Reference.equal define_name name && predicate define then
           let global_resolution = Resolution.global_resolution resolution in
           let parser = GlobalResolution.annotation_parser global_resolution in
           let variables = GlobalResolution.variables global_resolution in
@@ -78,7 +80,6 @@ let find_method ~resolution ?(predicate = fun _ -> true) name =
             ~parser
             ~variables
             signature
-          |> Type.Callable.create_from_implementation
           |> Option.some
         else
           None
@@ -88,7 +89,8 @@ let find_method ~resolution ?(predicate = fun _ -> true) name =
   >>= class_definitions ~resolution
   >>= List.hd
   >>| (fun definition -> definition.Node.value.Class.body)
-  >>= List.find_map ~f:get_matching_define
+  >>| List.filter_map ~f:get_matching_define
+  |> Option.value ~default:[]
 
 
 module Global = struct
@@ -102,25 +104,41 @@ end
 (* Resolve global symbols, ignoring decorators. *)
 let resolve_global ~resolution name =
   let global_resolution = Resolution.global_resolution resolution in
+  (* Resolve undecorated functions. *)
   match GlobalResolution.global global_resolution name with
   | Some { AttributeResolution.Global.undecorated_signature = Some signature; _ } ->
       Some (Global.Attribute (Type.Callable signature))
   | _ -> (
-      let annotation =
-        from_reference name ~location:Location.any
-        |> Resolution.resolve_expression_to_annotation resolution
-      in
-      match Annotation.annotation annotation with
-      | Type.Parametric { name = "type"; _ }
-        when GlobalResolution.class_exists global_resolution (Reference.show name) ->
-          Some Global.Class
-      | Type.Top when GlobalResolution.module_exists global_resolution name -> Some Global.Module
-      | Type.Top when not (Annotation.is_immutable annotation) ->
-          (* FIXME: We are relying on the fact that nonexistent functions & attributes resolve to
-             mutable annotation, while existing ones resolve to immutable annotation. This is
-             fragile! *)
-          None
-      | annotation -> Some (Global.Attribute annotation) )
+      (* Resolve undecorated methods. *)
+      match find_method_definitions ~resolution name with
+      | [callable] -> Some (Global.Attribute (Type.Callable.create_from_implementation callable))
+      | first :: _ :: _ as overloads ->
+          (* Note that we use the first overload as the base implementation, which might be unsound. *)
+          Some
+            (Global.Attribute
+               (Type.Callable.create
+                  ~overloads
+                  ~parameters:first.parameters
+                  ~annotation:first.annotation
+                  ()))
+      | [] -> (
+          (* Fall back for anything else. *)
+          let annotation =
+            from_reference name ~location:Location.any
+            |> Resolution.resolve_expression_to_annotation resolution
+          in
+          match Annotation.annotation annotation with
+          | Type.Parametric { name = "type"; _ }
+            when GlobalResolution.class_exists global_resolution (Reference.show name) ->
+              Some Global.Class
+          | Type.Top when GlobalResolution.module_exists global_resolution name ->
+              Some Global.Module
+          | Type.Top when not (Annotation.is_immutable annotation) ->
+              (* FIXME: We are relying on the fact that nonexistent functions & attributes resolve
+                 to mutable annotation, while existing ones resolve to immutable annotation. This is
+                 fragile! *)
+              None
+          | annotation -> Some (Global.Attribute annotation) ) )
 
 
 type parameter_requirements = {
@@ -280,6 +298,7 @@ let verify_signature ~path ~location ~normalized_model_parameters ~name callable
           Type.Callable.implementation =
             { Type.Callable.parameters = Type.Callable.Defined implementation_parameters; _ };
           kind;
+          overloads = [];
           _;
         } as callable ) -> (
       match kind with

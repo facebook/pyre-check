@@ -1337,6 +1337,7 @@ let add_signature_based_breadcrumbs ~resolution root ~callable_annotation =
           {
             Type.Callable.implementation =
               { Type.Callable.parameters = Type.Callable.Defined implementation_parameters; _ };
+            overloads = [];
             _;
           } ) ->
         let parameter_annotation =
@@ -1348,6 +1349,7 @@ let add_signature_based_breadcrumbs ~resolution root ~callable_annotation =
           {
             Type.Callable.implementation =
               { Type.Callable.parameters = Type.Callable.Defined implementation_parameters; _ };
+            overloads = [];
             _;
           } ) ->
         let parameter_annotation = find_named_parameter_annotation name implementation_parameters in
@@ -1531,11 +1533,15 @@ let resolve_global_callable
   (* Since properties and setters share the same undecorated name, we need to special-case them. *)
   let open ModelVerifier in
   if signature_is_property define then
-    find_method ~resolution ~predicate:is_property name
+    find_method_definitions ~resolution ~predicate:is_property name
+    |> List.hd
+    >>| Type.Callable.create_from_implementation
     >>| (fun callable -> Global.Attribute callable)
     |> Core.Result.return
   else if Define.Signature.is_property_setter define then
-    find_method ~resolution ~predicate:Define.is_property_setter name
+    find_method_definitions ~resolution ~predicate:Define.is_property_setter name
+    |> List.hd
+    >>| Type.Callable.create_from_implementation
     >>| (fun callable -> Global.Attribute callable)
     |> Core.Result.return
   else if verify_decorators && not (List.is_empty decorators) then
@@ -2129,6 +2135,7 @@ let create_model_from_signature
           {
             Type.Callable.implementation =
               { Type.Callable.parameters = Type.Callable.Defined parameters; _ };
+            overloads = [];
             _;
           }) ->
         let add_parameter_to_position position map parameter =

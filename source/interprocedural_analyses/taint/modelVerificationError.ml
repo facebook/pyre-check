@@ -204,8 +204,8 @@ let description error =
       Format.sprintf "The module `%s` is not a valid attribute." module_name
   | ModelingCallableAsAttribute callable_name ->
       Format.sprintf
-        "The function or method `%s` is not a valid attribute - did you mean to use `def %s(): \
-         ...`?"
+        "The function, method or property `%s` is not a valid attribute - did you mean to use `def \
+         %s(): ...`?"
         callable_name
         callable_name
   | NotInEnvironment name -> Format.sprintf "`%s` is not part of the environment!" name

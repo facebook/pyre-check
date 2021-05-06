@@ -57,7 +57,6 @@ let test_resolve context =
       (Some
          (Global.Attribute
             (create_callable
-               ~name:"test.Foo.bar"
                ~parameters:[create_parameter ~annotation:(Type.Primitive "test.Foo") "self"]
                ())));
   assert_resolve
@@ -179,21 +178,121 @@ let test_resolve context =
     ~expect:None;
   assert_resolve ~context ["foo.py", "x: int = 1"] "bar" ~expect:None;
 
-  (* Type error. *)
+  (* Decorators. *)
   assert_resolve
     ~context
     [
       ( "test.py",
         {|
-          class Foo:
-            @unknown_decorator
-            def bar(self):
+          class Memoize:
+            def __init__(self, f):
+              self.f = f
+            def __call__(self, *args, **kwargs):
               pass
+
+          def memoize(f) -> Memoize:
+            return Memoize(f)
+
+          @memoize
+          def foo(x: int) -> int:
+            return x
+        |}
+      );
+    ]
+    "test.foo"
+    ~expect:
+      (Some
+         (Global.Attribute
+            (create_callable
+               ~annotation:Type.integer
+               ~name:"test.foo"
+               ~parameters:[create_parameter ~annotation:Type.integer "x"]
+               ())));
+  assert_resolve
+    ~context
+    [
+      ( "test.py",
+        {|
+          class Memoize:
+            def __init__(self, f):
+              self.f = f
+            def __call__(self, *args, **kwargs):
+              pass
+
+          def memoize(f) -> Memoize:
+            return Memoize(f)
+
+          class Foo:
+            @memoize
+            def bar(self, x: int) -> int:
+              return x
         |}
       );
     ]
     "test.Foo.bar"
-    ~expect:(Some (Global.Attribute Type.Any));
+    ~expect:
+      (Some
+         (Global.Attribute
+            (create_callable
+               ~annotation:Type.integer
+               ~parameters:
+                 [
+                   create_parameter ~annotation:(Type.Primitive "test.Foo") "self";
+                   create_parameter ~annotation:Type.integer "x";
+                 ]
+               ())));
+
+  (* Overloads *)
+  assert_resolve
+    ~context
+    [
+      ( "test.py",
+        {|
+          from typing import overload
+          class Foo:
+            @overload
+            def bar(self, x: int) -> str: ...
+            @overload
+            def bar(self, x: str) -> int: ...
+        |}
+      );
+    ]
+    "test.Foo.bar"
+    ~expect:
+      (Some
+         (Global.Attribute
+            (Type.Callable.create
+               ~parameters:
+                 (Type.Callable.Defined
+                    [
+                      create_parameter ~annotation:(Type.Primitive "test.Foo") "self";
+                      create_parameter ~annotation:Type.integer "x";
+                    ])
+               ~annotation:Type.string
+               ~overloads:
+                 [
+                   {
+                     parameters =
+                       Defined
+                         [
+                           create_parameter ~annotation:(Type.Primitive "test.Foo") "self";
+                           create_parameter ~annotation:Type.integer "x";
+                         ];
+                     annotation = Type.string;
+                   };
+                   {
+                     parameters =
+                       Defined
+                         [
+                           create_parameter ~annotation:(Type.Primitive "test.Foo") "self";
+                           create_parameter ~annotation:Type.string "x";
+                         ];
+                     annotation = Type.integer;
+                   };
+                 ]
+               ())));
+
+  (* Top. *)
   assert_resolve
     ~context
     [
@@ -229,7 +328,6 @@ let test_resolve context =
       (Some
          (Global.Attribute
             (create_callable
-               ~name:"test.Foo.bar"
                ~annotation:Type.NoneType
                ~parameters:[create_parameter ~annotation:(Type.Primitive "test.Foo") "self"]
                ())));

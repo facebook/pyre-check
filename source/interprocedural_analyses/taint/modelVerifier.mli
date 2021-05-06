@@ -18,11 +18,11 @@ val class_definitions
   Reference.t ->
   Statement.Class.t Node.t list option
 
-val find_method
+val find_method_definitions
   :  resolution:Resolution.t ->
   ?predicate:(Statement.Define.t -> bool) ->
   Reference.t ->
-  Type.t option
+  Type.type_t Type.Callable.overload list
 
 module Global : sig
   type t =

@@ -1147,7 +1147,7 @@ let test_partial_sinks context =
 
 
 let test_invalid_models context =
-  let assert_invalid_model ?path ?source ~model_source ~expect () =
+  let assert_invalid_model ?path ?source ?(sources = []) ~model_source ~expect () =
     let source =
       match source with
       | Some source -> source
@@ -1166,9 +1166,8 @@ let test_invalid_models context =
                 unannotated_class_variable = source()
             |}
     in
-    let resolution =
-      ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_resolution
-    in
+    let sources = ("test.py", source) :: sources in
+    let resolution = ScratchProject.setup ~context sources |> ScratchProject.build_resolution in
     let configuration =
       TaintConfiguration.
         {
@@ -1196,8 +1195,8 @@ let test_invalid_models context =
     in
     assert_equal ~printer:ident expect error_message
   in
-  let assert_valid_model ?source ~model_source () =
-    assert_invalid_model ?source ~model_source ~expect:"no failure" ()
+  let assert_valid_model ?source ?sources ~model_source () =
+    assert_invalid_model ?source ?sources ~model_source ~expect:"no failure" ()
   in
   assert_invalid_model ~model_source:"import foo" ~expect:"Unexpected statement" ();
   assert_invalid_model
@@ -1788,7 +1787,9 @@ let test_invalid_models context =
         def foo(self) -> int: ...
     |}
     ~model_source:"test.C.foo: TaintSource[A] = ..."
-    ~expect:"Class `test.C` has no attribute `foo`."
+    ~expect:
+      "The function, method or property `test.C.foo` is not a valid attribute - did you mean to \
+       use `def test.C.foo(): ...`?"
     ();
   assert_invalid_model
     ~source:{|
@@ -2002,10 +2003,10 @@ let test_invalid_models context =
       test.foo: TaintSource[Test]
     |}
     ~expect:
-      "The function or method `test.foo` is not a valid attribute - did you mean to use `def \
-       test.foo(): ...`?"
+      "The function, method or property `test.foo` is not a valid attribute - did you mean to use \
+       `def test.foo(): ...`?"
     ();
-  (* Accept callable models for Any or Top because of type error. *)
+  (* Decorators. *)
   assert_valid_model
     ~source:
       {|
@@ -2029,8 +2030,11 @@ let test_invalid_models context =
     ~model_source:{|
       test.Foo.bar: TaintSource[A]
     |}
-    ~expect:"Class `test.Foo` has no attribute `bar`."
+    ~expect:
+      "The function, method or property `test.Foo.bar` is not a valid attribute - did you mean to \
+       use `def test.Foo.bar(): ...`?"
     ();
+  (* Accept callable models for Any or Top because of type error. *)
   assert_valid_model
     ~source:
       {|
@@ -2054,6 +2058,46 @@ let test_invalid_models context =
     ~model_source:{|
       test.Foo.baz: TaintSource[A]
     |}
+    ();
+  (* Overloads *)
+  assert_valid_model
+    ~sources:
+      [
+        ( "test.pyi",
+          {|
+            from typing import overload
+            class Foo:
+              @overload
+              def bar(self, x: int) -> str: ...
+              @overload
+              def bar(self, x: str) -> int: ...
+          |}
+        );
+      ]
+    ~model_source:{|
+      def test.Foo.bar(self, x: TaintSink[Test]): ...
+    |}
+    ();
+  assert_invalid_model
+    ~sources:
+      [
+        ( "test.pyi",
+          {|
+            from typing import overload
+            class Foo:
+              @overload
+              def bar(self, x: int) -> str: ...
+              @overload
+              def bar(self, x: str) -> int: ...
+          |}
+        );
+      ]
+    ~model_source:{|
+      test.Foo.bar: TaintSink[Test]
+    |}
+    ~expect:
+      "The function, method or property `test.Foo.bar` is not a valid attribute - did you mean to \
+       use `def test.Foo.bar(): ...`?"
     ();
   assert_invalid_model
     ~source:
