@@ -431,7 +431,7 @@ class StartTest(testslide.TestCase):
                         project_root=str(root_path / "project"),
                         dot_pyre_directory=(root_path / ".pyre"),
                         source_directories=[element],
-                    )
+                    ).filter_nonexistent_paths()
                 ),
                 SimpleSourcePath([element]),
             )
@@ -447,7 +447,7 @@ class StartTest(testslide.TestCase):
                         project_root=str(root_path / "project"),
                         dot_pyre_directory=(root_path / ".pyre"),
                         source_directories=[element],
-                    )
+                    ).filter_nonexistent_paths()
                 ),
                 SimpleSourcePath([]),
             )
@@ -529,7 +529,7 @@ class StartTest(testslide.TestCase):
                         project_root=str(root_path / "project"),
                         dot_pyre_directory=(root_path / ".pyre"),
                         targets=["//ct:frog"],
-                    )
+                    ).filter_nonexistent_paths()
                 )
 
     def test_get_source_path__no_source_specified(self) -> None:
@@ -540,7 +540,7 @@ class StartTest(testslide.TestCase):
                     dot_pyre_directory=Path(".pyre"),
                     source_directories=None,
                     targets=None,
-                )
+                ).filter_nonexistent_paths()
             )
 
     def test_get_source_path__confliciting_source_specified(self) -> None:
@@ -551,7 +551,7 @@ class StartTest(testslide.TestCase):
                     dot_pyre_directory=Path(".pyre"),
                     source_directories=[configuration.SimpleSearchPathElement("src")],
                     targets=["//ct:ayla"],
-                )
+                ).filter_nonexistent_paths()
             )
 
     def test_get_checked_directory_for_target(self) -> None:

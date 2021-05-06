@@ -390,7 +390,7 @@ def get_source_path(configuration: configuration_module.Configuration) -> Source
     if source_directories is not None and targets is None:
         elements: Sequence[
             configuration_module.SearchPathElement
-        ] = configuration.get_existent_source_directories()
+        ] = configuration.get_source_directories()
         if len(elements) == 0:
             LOG.warning("Pyre did not find an existent source directory.")
         return SimpleSourcePath(elements)

@@ -288,6 +288,17 @@ def _in_virtual_environment(override: Optional[bool] = None) -> bool:
     return sys.prefix != sys.base_prefix
 
 
+def _get_existent_paths(paths: Sequence[SearchPathElement]) -> List[SearchPathElement]:
+    existent_paths = []
+    for search_path_element in paths:
+        search_path = search_path_element.path()
+        if os.path.exists(search_path):
+            existent_paths.append(search_path_element)
+        else:
+            LOG.warning(f"Path does not exist: {search_path}")
+    return existent_paths
+
+
 @dataclass(frozen=True)
 class PythonVersion:
     major: int
@@ -929,11 +940,13 @@ class Configuration:
             **({"version_hash": version_hash} if version_hash is not None else {}),
         }
 
-    def get_existent_source_directories(self) -> List[SearchPathElement]:
-        return self._get_existent_paths(self.source_directories or [])
+    def get_source_directories(self) -> List[SearchPathElement]:
+        return list(self.source_directories or [])
 
+    # Validation of search paths cannot happen at Configuration creation
+    # because link trees need to be built first.
     def get_existent_search_paths(self) -> List[SearchPathElement]:
-        existent_paths = self._get_existent_paths(self.search_path)
+        existent_paths = _get_existent_paths(self.search_path)
 
         typeshed_root = self.get_typeshed_respecting_override()
         typeshed_paths = (
@@ -952,17 +965,44 @@ class Configuration:
         # List[SimpleSearchPathElement]]`
         return existent_paths + typeshed_paths
 
-    def _get_existent_paths(
-        self, paths: Sequence[SearchPathElement]
-    ) -> List[SearchPathElement]:
-        existent_paths = []
-        for search_path_element in paths:
-            search_path = search_path_element.path()
-            if os.path.exists(search_path):
-                existent_paths.append(search_path_element)
-            else:
-                LOG.debug(f"Filtering out nonexistent search path: {search_path}")
-        return existent_paths
+    def filter_nonexistent_paths(self) -> "Configuration":
+        source_directories = self.source_directories
+
+        return Configuration(
+            project_root=self.project_root,
+            dot_pyre_directory=self.dot_pyre_directory,
+            autocomplete=self.autocomplete,
+            binary=self.binary,
+            buck_builder_binary=self.buck_builder_binary,
+            buck_mode=self.buck_mode,
+            disabled=self.disabled,
+            do_not_ignore_all_errors_in=self.do_not_ignore_all_errors_in,
+            excludes=self.excludes,
+            extensions=self.extensions,
+            file_hash=self.file_hash,
+            formatter=self.formatter,
+            ignore_all_errors=self.ignore_all_errors,
+            ignore_infer=self.ignore_infer,
+            isolation_prefix=self.isolation_prefix,
+            logger=self.logger,
+            number_of_workers=self.number_of_workers,
+            oncall=self.oncall,
+            other_critical_files=self.other_critical_files,
+            python_version=self.python_version,
+            relative_local_root=self.relative_local_root,
+            search_path=self.search_path,
+            source_directories=_get_existent_paths(source_directories)
+            if source_directories
+            else None,
+            strict=self.strict,
+            taint_models_path=self.taint_models_path,
+            targets=self.targets,
+            typeshed=self.typeshed,
+            use_buck_builder=self.use_buck_builder,
+            use_buck_source_database=self.use_buck_source_database,
+            use_command_v2=self.use_command_v2,
+            version_hash=self.version_hash,
+        )
 
     def get_existent_ignore_infer_paths(self) -> List[str]:
         existent_paths = []
@@ -1102,24 +1142,6 @@ class Configuration:
                 micro=version_info.micro,
             )
 
-    def warn_on_nonexistent_paths(self) -> None:
-        source_directories = self.source_directories
-        if not source_directories:
-            return
-        for source_directory in source_directories:
-            if not os.path.exists(source_directory.path()):
-                relative_path_warning = ""
-                if isinstance(source_directory, SubdirectorySearchPathElement):
-                    relative_path_warning = (
-                        "Be sure the `source` path is relative to the "
-                        + "`import_root`."
-                    )
-                LOG.warning(
-                    f"Source directory `{source_directory.path()}` does not "
-                    + "exist. "
-                    + relative_path_warning
-                )
-
 
 def create_configuration(
     arguments: command_arguments.CommandArguments, base_directory: Path
@@ -1177,8 +1199,7 @@ def create_configuration(
     configuration = Configuration.from_partial_configuration(
         project_root, relative_local_root, partial_configuration
     )
-    configuration.warn_on_nonexistent_paths()
-    return configuration
+    return configuration.filter_nonexistent_paths()
 
 
 def check_nested_local_configuration(configuration: Configuration) -> None:
