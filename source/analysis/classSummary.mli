@@ -91,8 +91,6 @@ module ClassAttributes : sig
 
   val empty : unit -> t
 
-  val implicit_attributes : ?in_test:bool -> t -> Attribute.t Identifier.SerializableMap.t
-
   val constructor_attributes : t -> Attribute.t Identifier.SerializableMap.t
 
   val attributes
