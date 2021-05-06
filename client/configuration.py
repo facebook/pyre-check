@@ -673,24 +673,6 @@ class PartialConfiguration:
             version_hash=self.version_hash,
         )
 
-    def warn_on_nonexistent_paths(self) -> None:
-        source_directories = self.source_directories
-        if not source_directories:
-            return
-        for source_directory in source_directories:
-            if not os.path.exists(source_directory.path()):
-                relative_path_warning = ""
-                if isinstance(source_directory, SubdirectorySearchPathElement):
-                    relative_path_warning = (
-                        "Be sure the `source` path is relative to the "
-                        + "`import_root`."
-                    )
-                LOG.warning(
-                    f"Source directory `{source_directory.path()}` does not "
-                    + "exist. "
-                    + relative_path_warning
-                )
-
 
 def merge_partial_configurations(
     base: PartialConfiguration, override: PartialConfiguration
@@ -1120,6 +1102,24 @@ class Configuration:
                 micro=version_info.micro,
             )
 
+    def warn_on_nonexistent_paths(self) -> None:
+        source_directories = self.source_directories
+        if not source_directories:
+            return
+        for source_directory in source_directories:
+            if not os.path.exists(source_directory.path()):
+                relative_path_warning = ""
+                if isinstance(source_directory, SubdirectorySearchPathElement):
+                    relative_path_warning = (
+                        "Be sure the `source` path is relative to the "
+                        + "`import_root`."
+                    )
+                LOG.warning(
+                    f"Source directory `{source_directory.path()}` does not "
+                    + "exist. "
+                    + relative_path_warning
+                )
+
 
 def create_configuration(
     arguments: command_arguments.CommandArguments, base_directory: Path
@@ -1173,11 +1173,12 @@ def create_configuration(
         partial_configuration = merge_partial_configurations(
             base=partial_configuration, override=command_argument_configuration
         )
-        partial_configuration.warn_on_nonexistent_paths()
 
-    return Configuration.from_partial_configuration(
+    configuration = Configuration.from_partial_configuration(
         project_root, relative_local_root, partial_configuration
     )
+    configuration.warn_on_nonexistent_paths()
+    return configuration
 
 
 def check_nested_local_configuration(configuration: Configuration) -> None:
