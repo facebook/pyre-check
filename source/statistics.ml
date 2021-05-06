@@ -69,6 +69,15 @@ end
 
 let disable () = GlobalState.global_state.logger <- None
 
+let format_as_json ~integers ~normals () =
+  Yojson.Safe.to_string
+    (`Assoc
+      [
+        "int", `Assoc (List.map ~f:(fun (label, data) -> label, `Int data) integers);
+        "normal", `Assoc (List.map ~f:(fun (label, data) -> label, `String data) normals);
+      ])
+
+
 let sample ?(integers = []) ?(normals = []) ?(metadata = true) () =
   let server_configuration_metadata =
     match Configuration.Server.get_global () with
@@ -120,12 +129,7 @@ let sample ?(integers = []) ?(normals = []) ?(metadata = true) () =
     else
       integers
   in
-  Yojson.Safe.to_string
-    (`Assoc
-      [
-        "int", `Assoc (List.map ~f:(fun (label, data) -> label, `Int data) integers);
-        "normal", `Assoc (List.map ~f:(fun (label, data) -> label, `String data) normals);
-      ])
+  format_as_json ~integers ~normals ()
 
 
 let flush () =
@@ -249,6 +253,24 @@ let log_exception caught_exception ~fatal ~origin =
         ("fatal", if fatal then "true" else "false");
       ]
     ()
+
+
+let buck_event ?(flush = false) ?(integers = []) ?(normals = []) () =
+  let default_normals =
+    [
+      "buck_builder_type", "new_server";
+      "host", GlobalState.hostname;
+      "user", GlobalState.username;
+      "project_root", GlobalState.global_state.project_root;
+      "root", GlobalState.global_state.project_name;
+    ]
+  in
+  let default_integers = ["time", Unix.time () |> Int.of_float] in
+  format_as_json
+    ~integers:(List.append default_integers integers)
+    ~normals:(List.append default_normals normals)
+    ()
+  |> log ~flush "perfpipe_pyre_buck_events"
 
 
 let log_worker_exception ~pid ~origin status =

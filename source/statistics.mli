@@ -57,6 +57,13 @@ val event
 
 val log_exception : exn -> fatal:bool -> origin:string -> unit
 
+val buck_event
+  :  ?flush:bool ->
+  ?integers:(string * int) list ->
+  ?normals:(string * string) list ->
+  unit ->
+  unit
+
 val log_worker_exception : pid:int -> origin:string -> Unix.process_status -> unit
 
 val server_telemetry : (string * string) list -> unit

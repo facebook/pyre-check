@@ -121,9 +121,30 @@ module BuckBuildSystem = struct
     | Result.Ok () -> ()
 
 
+  (* Both `integers` and `normals` are functions that return a list instead of a list directly,
+     since some of the logging may depend on the return value of `f`. *)
+  let with_logging ?(integers = fun _ -> []) ?(normals = fun _ -> []) f =
+    let open Lwt.Infix in
+    let timer = Timer.start () in
+    f ()
+    >>= fun result ->
+    let millisecond = Timer.stop_in_ms timer in
+    let normals = ("version", Version.version ()) :: normals result in
+    let integers = ("runtime", millisecond) :: integers result in
+    Statistics.buck_event ~normals ~integers ();
+    Lwt.return result
+
+
+  module IncrementalBuilder = struct
+    type t = {
+      name: string;
+      run: Buck.Builder.t -> Buck.Builder.IncrementalBuildResult.t Lwt.t;
+    }
+  end
+
   let initialize_from_state (state : State.t) =
     let update paths =
-      let incremental_build =
+      let incremental_builder =
         let should_renormalize paths =
           let f path =
             let file_name = Path.last path in
@@ -145,27 +166,49 @@ module BuckBuildSystem = struct
           List.exists paths ~f
         in
         if should_renormalize paths then
-          Buck.Builder.full_incremental_build ~old_build_map:state.build_map ~targets:state.targets
+          {
+            IncrementalBuilder.name = "full";
+            run =
+              Buck.Builder.full_incremental_build
+                ~old_build_map:state.build_map
+                ~targets:state.targets;
+          }
         else if should_reconstruct_build_map paths then
-          Buck.Builder.incremental_build_with_normalized_targets
-            ~old_build_map:state.build_map
-            ~targets:state.normalized_targets
+          {
+            IncrementalBuilder.name = "skip_renormalize";
+            run =
+              Buck.Builder.incremental_build_with_normalized_targets
+                ~old_build_map:state.build_map
+                ~targets:state.normalized_targets;
+          }
         else
-          Buck.Builder.incremental_build_with_unchanged_build_map
-            ~build_map:state.build_map
-            ~build_map_index:state.build_map_index
-            ~targets:state.normalized_targets
-            ~changed_sources:paths
+          {
+            IncrementalBuilder.name = "skip_rebuild";
+            run =
+              Buck.Builder.incremental_build_with_unchanged_build_map
+                ~build_map:state.build_map
+                ~build_map_index:state.build_map_index
+                ~targets:state.normalized_targets
+                ~changed_sources:paths;
+          }
       in
       let open Lwt.Infix in
-      incremental_build state.builder
-      >>= fun {
-                Buck.Builder.IncrementalBuildResult.targets = normalized_targets;
-                build_map;
-                changed_artifacts;
-              } ->
-      State.update ~normalized_targets ~build_map state;
-      Lwt.return changed_artifacts
+      with_logging
+        ~integers:(fun changed_artifacts ->
+          [
+            "number_of_user_changed_files", List.length paths;
+            "number_of_updated_files", List.length changed_artifacts;
+          ])
+        ~normals:(fun _ -> ["event_type", "rebuild"; "event_subtype", incremental_builder.name])
+        (fun () ->
+          incremental_builder.run state.builder
+          >>= fun {
+                    Buck.Builder.IncrementalBuildResult.targets = normalized_targets;
+                    build_map;
+                    changed_artifacts;
+                  } ->
+          State.update ~normalized_targets ~build_map state;
+          Lwt.return changed_artifacts)
     in
     let cleanup () =
       Buck.Builder.cleanup state.builder;
@@ -197,7 +240,14 @@ module BuckBuildSystem = struct
     let open Lwt.Infix in
     ensure_directory_exist_and_clean artifact_root;
     let builder = Buck.Builder.create ?mode ?isolation_prefix ~source_root ~artifact_root raw in
-    State.create_from_scratch ~builder ~targets ()
+    with_logging
+      ~integers:(fun { State.build_map; _ } ->
+        [
+          "number_of_user_changed_files", 0;
+          "number_of_updated_files", Buck.BuildMap.artifact_count build_map;
+        ])
+      ~normals:(fun _ -> ["event_type", "build"; "event_subtype", "cold_start"])
+      (fun () -> State.create_from_scratch ~builder ~targets ())
     >>= fun initial_state -> Lwt.return (initialize_from_state initial_state)
 
 
@@ -218,10 +268,18 @@ module BuckBuildSystem = struct
       SavedState.load ()
     in
     let builder = Buck.Builder.create ?mode ?isolation_prefix ~source_root ~artifact_root raw in
-    let build_map =
-      Buck.BuildMap.Partial.of_alist_exn serialized_build_map |> Buck.BuildMap.create
-    in
-    State.create_from_saved_state ~builder ~targets ~normalized_targets ~build_map ()
+    with_logging
+      ~integers:(fun { State.build_map; _ } ->
+        [
+          "number_of_user_changed_files", 0;
+          "number_of_updated_files", Buck.BuildMap.artifact_count build_map;
+        ])
+      ~normals:(fun _ -> ["event_type", "build"; "event_subtype", "saved_state"])
+      (fun () ->
+        let build_map =
+          Buck.BuildMap.Partial.of_alist_exn serialized_build_map |> Buck.BuildMap.create
+        in
+        State.create_from_saved_state ~builder ~targets ~normalized_targets ~build_map ())
     >>= fun initial_state -> Lwt.return (initialize_from_state initial_state)
 end
 
