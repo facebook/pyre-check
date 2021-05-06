@@ -155,10 +155,7 @@ let model_verification_error ~path ~location kind =
 
 
 let invalid_model_error ~path ~location ~name message =
-  model_verification_error
-    ~path
-    ~location
-    (ModelVerificationError.T.UnclassifiedError { model_name = name; message })
+  model_verification_error ~path ~location (UnclassifiedError { model_name = name; message })
 
 
 module DefinitionsCache (Type : sig
@@ -247,7 +244,7 @@ let rec parse_annotations
     model_verification_error
       ~path
       ~location
-      (ModelVerificationError.T.InvalidTaintAnnotation { taint_annotation = annotation; reason })
+      (InvalidTaintAnnotation { taint_annotation = annotation; reason })
   in
   let get_parameter_position name =
     let callable_parameter_names_to_positions =
@@ -914,13 +911,10 @@ let parse_where_clause ~path ~find_clause ({ Node.value; location } as expressio
   let open Core.Result in
   let find_clause_kind = get_find_clause_kind find_clause in
   let invalid_model_query_where_clause ~path ~location callee =
-    {
-      ModelVerificationError.T.kind =
-        ModelVerificationError.T.InvalidModelQueryWhereClause
-          { expression = callee; find_clause_kind };
-      path;
-      location;
-    }
+    model_verification_error
+      ~path
+      ~location
+      (InvalidModelQueryWhereClause { expression = callee; find_clause_kind })
   in
   let parse_annotation_constraint ~name ~arguments =
     match name, arguments with
@@ -1127,12 +1121,10 @@ let parse_where_clause ~path ~find_clause ({ Node.value; location } as expressio
             Ok (ModelQuery.ParentConstraint constraint_type)
         | _ ->
             Error
-              {
-                ModelVerificationError.T.kind =
-                  ModelVerificationError.T.InvalidModelQueryClauseArguments { callee; arguments };
-                path;
-                location;
-              } )
+              (model_verification_error
+                 ~path
+                 ~location
+                 (InvalidModelQueryClauseArguments { callee; arguments })) )
     | Expression.Call
         {
           Call.callee =
@@ -1174,22 +1166,18 @@ let parse_where_clause ~path ~find_clause ({ Node.value; location } as expressio
             | Expression.False -> Ok false
             | _ ->
                 Error
-                  {
-                    ModelVerificationError.T.kind =
-                      ModelVerificationError.T.InvalidExtendsIsTransitive is_transitive_expression;
-                    path;
-                    location;
-                  } )
+                  (model_verification_error
+                     ~path
+                     ~location
+                     (InvalidExtendsIsTransitive is_transitive_expression)) )
             >>= fun is_transitive ->
             Ok (ModelQuery.ParentConstraint (Extends { class_name; is_transitive }))
         | _ ->
             Error
-              {
-                ModelVerificationError.T.kind =
-                  ModelVerificationError.T.InvalidModelQueryClauseArguments { callee; arguments };
-                path;
-                location;
-              } )
+              (model_verification_error
+                 ~path
+                 ~location
+                 (InvalidModelQueryClauseArguments { callee; arguments })) )
     | Expression.Call { Call.callee; arguments = _ } ->
         Error
           (invalid_model_error
@@ -1214,13 +1202,10 @@ let parse_model_clause ~path ~configuration ~find_clause ({ Node.value; location
   let open Core.Result in
   let find_clause_kind = get_find_clause_kind find_clause in
   let invalid_model_query_model_clause ~path ~location callee =
-    {
-      ModelVerificationError.T.kind =
-        ModelVerificationError.T.InvalidModelQueryModelClause
-          { expression = callee; find_clause_kind };
-      path;
-      location;
-    }
+    model_verification_error
+      ~path
+      ~location
+      (InvalidModelQueryModelClause { expression = callee; find_clause_kind })
   in
   let parse_model ({ Node.value; _ } as model_expression) =
     let parse_taint taint_expression =
@@ -1355,13 +1340,7 @@ let parse_model_clause ~path ~configuration ~find_clause ({ Node.value; location
               match value with
               | Expression.String { StringLiteral.value; _ } -> Core.Result.Ok value
               | _ ->
-                  Error
-                    {
-                      ModelVerificationError.T.kind =
-                        ModelVerificationError.T.InvalidParameterExclude exclude;
-                      path;
-                      location;
-                    }
+                  Error (model_verification_error ~path ~location (InvalidParameterExclude exclude))
             in
             match Node.value excludes with
             | Expression.List exclude_strings ->
@@ -1640,7 +1619,7 @@ let resolve_global_callable
       (model_verification_error
          ~path
          ~location
-         (ModelVerificationError.T.UnexpectedDecorators { name; unexpected_decorators = decorators }))
+         (UnexpectedDecorators { name; unexpected_decorators = decorators }))
   else
     Ok (resolve_global ~resolution name)
 
@@ -2006,18 +1985,14 @@ let parse_statement ~resolution ~path ~configuration statement =
    location;
   } ->
       if not (is_simple_name name) then
-        Error
-          (model_verification_error
-             ~path
-             ~location
-             (ModelVerificationError.T.InvalidIdentifier target))
+        Error (model_verification_error ~path ~location (InvalidIdentifier target))
       else if Expression.show annotation |> String.is_prefix ~prefix:"Sanitize[TaintInTaintOut["
       then
         Error
           (model_verification_error
              ~path
              ~location
-             (ModelVerificationError.T.InvalidTaintAnnotation
+             (InvalidTaintAnnotation
                 {
                   taint_annotation = annotation;
                   reason = "TaintInTaintOut sanitizers cannot be modelled on attributes";
@@ -2087,7 +2062,7 @@ let parse_statement ~resolution ~path ~configuration statement =
           (model_verification_error
              ~path
              ~location
-             (ModelVerificationError.T.InvalidTaintAnnotation
+             (InvalidTaintAnnotation
                 { taint_annotation = annotation; reason = "Unsupported annotation for attributes" }))
   | {
    Node.value =
@@ -2133,12 +2108,7 @@ let parse_statement ~resolution ~path ~configuration statement =
                 parse_where_clause ~path ~find_clause:parsed_find_clause where_clause,
                 parse_model_clause ~path ~configuration ~find_clause:parsed_find_clause model_clause
               )
-        | _ ->
-            Error
-              (model_verification_error
-                 ~path
-                 ~location
-                 (ModelVerificationError.T.InvalidModelQueryClauses arguments))
+        | _ -> Error (model_verification_error ~path ~location (InvalidModelQueryClauses arguments))
       in
 
       clauses
@@ -2150,11 +2120,7 @@ let parse_statement ~resolution ~path ~configuration statement =
       model_clause
       >>| fun productions -> [ParsedQuery { ModelQuery.rule_kind; query; productions; name }]
   | { Node.location; _ } ->
-      Error
-        (model_verification_error
-           ~path
-           ~location
-           (ModelVerificationError.T.UnexpectedStatement statement))
+      Error (model_verification_error ~path ~location (UnexpectedStatement statement))
 
 
 let create_model_from_signature
@@ -2207,15 +2173,11 @@ let create_model_from_signature
   let callable_annotation =
     resolve_global_callable ~path ~location ~verify_decorators:true ~resolution define
     >>= function
-    | None ->
-        model_verification_error
-          (ModelVerificationError.T.NotInEnvironment (Reference.show callable_name))
+    | None -> model_verification_error (NotInEnvironment (Reference.show callable_name))
     | Some Global.Class ->
-        model_verification_error
-          (ModelVerificationError.T.ModelingClassAsDefine (Reference.show callable_name))
+        model_verification_error (ModelingClassAsDefine (Reference.show callable_name))
     | Some Global.Module ->
-        model_verification_error
-          (ModelVerificationError.T.ModelingModuleAsDefine (Reference.show callable_name))
+        model_verification_error (ModelingModuleAsDefine (Reference.show callable_name))
     | Some (Global.Attribute (Type.Callable t))
     | Some
         (Global.Attribute
@@ -2225,8 +2187,7 @@ let create_model_from_signature
     | Some (Global.Attribute Type.Any) -> Ok None
     | Some (Global.Attribute Type.Top) -> Ok None
     | Some (Global.Attribute _) ->
-        model_verification_error
-          (ModelVerificationError.T.ModelingAttributeAsDefine (Reference.show callable_name))
+        model_verification_error (ModelingAttributeAsDefine (Reference.show callable_name))
   in
   (* Check model matches callables primary signature. *)
   let callable_parameter_names_to_positions =

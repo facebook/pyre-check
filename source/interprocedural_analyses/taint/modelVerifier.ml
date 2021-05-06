@@ -88,6 +88,10 @@ let demangle_class_attribute name =
     name
 
 
+let model_verification_error ~path ~location kind =
+  { ModelVerificationError.T.kind; path; location }
+
+
 let model_compatible
     ~path
     ~location
@@ -103,22 +107,21 @@ let model_compatible
   let validate_model_parameter errors_and_requirements (model_parameter, _, original) =
     (* Ensure that the parameter's default value is either not present or `...` to catch common
        errors when declaring models. *)
-    let open ModelVerificationError.T in
     let errors_and_requirements =
       match Node.value original with
       | { Parameter.value = Some expression; name; _ } ->
           if not (Expression.equal_expression (Node.value expression) Expression.Ellipsis) then
             Error
-              {
-                ModelVerificationError.T.path;
-                location;
-                kind = InvalidDefaultValue { callable_name; name; expression };
-              }
+              (model_verification_error
+                 ~path
+                 ~location
+                 (InvalidDefaultValue { callable_name; name; expression }))
           else
             errors_and_requirements
       | _ -> errors_and_requirements
     in
     let open AccessPath.Root in
+    let open ModelVerificationError.T in
     errors_and_requirements
     >>| fun (errors, requirements) ->
     match model_parameter with
@@ -184,11 +187,10 @@ let model_compatible
     Result.Ok ()
   else
     Result.Error
-      {
-        path;
-        location;
-        kind = IncompatibleModelError { name = callable_name; callable_type; reasons = errors };
-      }
+      (model_verification_error
+         ~path
+         ~location
+         (IncompatibleModelError { name = callable_name; callable_type; reasons = errors }))
 
 
 let verify_signature ~path ~location ~normalized_model_parameters ~name callable_annotation =
@@ -203,11 +205,7 @@ let verify_signature ~path ~location ~normalized_model_parameters ~name callable
       match kind with
       | Type.Callable.Named actual_name when not (Reference.equal name actual_name) ->
           Error
-            {
-              ModelVerificationError.T.location;
-              path;
-              kind = ImportedFunctionModel { name; actual_name };
-            }
+            (model_verification_error ~path ~location (ImportedFunctionModel { name; actual_name }))
       | _ ->
           model_compatible
             ~path
@@ -251,11 +249,10 @@ let verify_global ~path ~location ~resolution ~name =
           Result.Ok ()
         else
           Result.Error
-            {
-              ModelVerificationError.T.path;
-              location;
-              kind = MissingAttribute { class_name = Reference.show class_name; attribute_name };
-            }
+            (model_verification_error
+               ~path
+               ~location
+               (MissingAttribute { class_name = Reference.show class_name; attribute_name }))
     | _ ->
         Result.Error
-          { ModelVerificationError.T.path; location; kind = NotInEnvironment (Reference.show name) }
+          (model_verification_error ~path ~location (NotInEnvironment (Reference.show name)))
