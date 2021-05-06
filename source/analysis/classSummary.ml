@@ -1034,7 +1034,7 @@ module ClassSummary = struct
     qualifier: Reference.t;
     bases: Expression.Call.Argument.t list;
     decorators: Decorator.t list;
-    attribute_components: ClassAttributes.t;
+    class_attributes: ClassAttributes.t;
   }
   [@@deriving compare, eq, sexp, show, hash]
 
@@ -1048,7 +1048,7 @@ module ClassSummary = struct
       qualifier;
       bases;
       decorators;
-      attribute_components = ClassAttributes.create class_definition;
+      class_attributes = ClassAttributes.create class_definition;
     }
 
 
@@ -1125,12 +1125,9 @@ module ClassSummary = struct
     List.exists bases ~f:abstract_metaclass
 
 
-  let fields_tuple_value { attribute_components; _ } =
+  let fields_tuple_value { class_attributes; _ } =
     let attributes =
-      ClassAttributes.attributes
-        ~include_generated_attributes:false
-        ~in_test:false
-        attribute_components
+      ClassAttributes.attributes ~include_generated_attributes:false ~in_test:false class_attributes
     in
     match Identifier.SerializableMap.find_opt "_fields" attributes with
     | Some
@@ -1161,18 +1158,13 @@ module ClassSummary = struct
 
   let bases { bases; _ } = bases
 
-  let constructor_attributes
-      { attribute_components = { ClassAttributes.constructor_attributes; _ }; _ }
+  let constructor_attributes { class_attributes = { ClassAttributes.constructor_attributes; _ }; _ }
     =
     constructor_attributes
 
 
-  let attributes
-      ?(include_generated_attributes = true)
-      ?(in_test = false)
-      { attribute_components; _ }
-    =
-    ClassAttributes.attributes ~include_generated_attributes ~in_test attribute_components
+  let attributes ?(include_generated_attributes = true) ?(in_test = false) { class_attributes; _ } =
+    ClassAttributes.attributes ~include_generated_attributes ~in_test class_attributes
 end
 
 include ClassSummary

@@ -105,7 +105,7 @@ type t = {
   qualifier: Reference.t;
   bases: Expression.Call.Argument.t list;
   decorators: Decorator.t list;
-  attribute_components: ClassAttributes.t;
+  class_attributes: ClassAttributes.t;
 }
 [@@deriving compare, eq, sexp, show, hash]
 
