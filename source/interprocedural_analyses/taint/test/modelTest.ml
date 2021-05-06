@@ -1935,6 +1935,17 @@ let test_invalid_models context =
     |}
     ~expect:"The class `test.C` is not a valid define - did you mean to model `test.C.__init__()`?"
     ();
+  assert_invalid_model
+    ~source:{|
+      class C:
+        pass
+    |}
+    ~model_source:{|
+      test.C: Sanitize
+    |}
+    ~expect:
+      "The class `test.C` is not a valid attribute - did you mean to model `test.C.__init__()`?"
+    ();
   (* Class models don't error. *)
   assert_valid_model
     ~source:{|
@@ -1962,6 +1973,10 @@ let test_invalid_models context =
     ~expect:"The module `test` is not a valid define."
     ();
   assert_invalid_model
+    ~model_source:"test: Sanitize"
+    ~expect:"The module `test` is not a valid attribute."
+    ();
+  assert_invalid_model
     ~source:{|
       class Foo:
         x: int = 1
@@ -1971,6 +1986,18 @@ let test_invalid_models context =
     |}
     ~expect:
       "The attribute `test.Foo.x` is not a valid define - did you mean to use `test.Foo.x: ...`?"
+    ();
+  assert_invalid_model
+    ~source:{|
+      def foo():
+        return
+    |}
+    ~model_source:{|
+      test.foo: TaintSource[Test]
+    |}
+    ~expect:
+      "The function or method `test.foo` is not a valid attribute - did you mean to use `def \
+       test.foo(): ...`?"
     ();
   (* Accept callable models for Any or Top because of type error. *)
   assert_valid_model
@@ -1985,6 +2012,19 @@ let test_invalid_models context =
       def test.Foo.bar() -> TaintSource[A]: ...
     |}
     ();
+  assert_invalid_model
+    ~source:
+      {|
+        class Foo:
+          @unknown_decorator
+          def bar(self):
+            pass
+      |}
+    ~model_source:{|
+      test.Foo.bar: TaintSource[A]
+    |}
+    ~expect:"Class `test.Foo` has no attribute `bar`."
+    ();
   assert_valid_model
     ~source:
       {|
@@ -1995,6 +2035,18 @@ let test_invalid_models context =
       |}
     ~model_source:{|
       def test.Foo.baz() -> TaintSource[A]: ...
+    |}
+    ();
+  assert_valid_model
+    ~source:
+      {|
+        class Foo:
+          def bar(self):
+            pass
+          baz = bar
+      |}
+    ~model_source:{|
+      test.Foo.baz: TaintSource[A]
     |}
     ();
   assert_invalid_model

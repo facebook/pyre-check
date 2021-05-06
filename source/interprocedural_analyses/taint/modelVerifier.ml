@@ -219,40 +219,58 @@ let verify_signature ~path ~location ~normalized_model_parameters ~name callable
 
 let verify_global ~path ~location ~resolution ~name =
   let name = demangle_class_attribute (Reference.show name) |> Reference.create in
-  let global_resolution = Resolution.global_resolution resolution in
-  let global = GlobalResolution.global global_resolution name in
-  if Option.is_some global then
-    Result.Ok ()
-  else
-    let class_summary, attribute_name =
-      ( Reference.as_list name
-        |> List.drop_last
-        >>| Reference.create_from_list
+  let global = resolve_global ~resolution name in
+  match global with
+  | Some Global.Class ->
+      Error
+        (model_verification_error ~path ~location (ModelingClassAsAttribute (Reference.show name)))
+  | Some Global.Module ->
+      Error
+        (model_verification_error ~path ~location (ModelingModuleAsAttribute (Reference.show name)))
+  | Some (Global.Attribute (Type.Callable _))
+  | Some
+      (Global.Attribute
+        (Type.Parametric
+          { name = "BoundMethod"; parameters = [Type.Parameter.Single (Type.Callable _); _] })) ->
+      Error
+        (model_verification_error
+           ~path
+           ~location
+           (ModelingCallableAsAttribute (Reference.show name)))
+  | Some (Global.Attribute _)
+  | None -> (
+      let global_resolution = Resolution.global_resolution resolution in
+      let class_summary =
+        Reference.prefix name
         >>| Reference.show
         >>| (fun class_name -> Type.Primitive class_name)
         >>= GlobalResolution.class_definition global_resolution
-        >>| Node.value,
-        Reference.last name )
-    in
-    match class_summary with
-    | Some { ClassSummary.attribute_components; name = class_name; _ } ->
-        let attributes, constructor_attributes =
-          ( ClassSummary.ClassAttributes.attributes
+        >>| Node.value
+      in
+      match class_summary, global with
+      | Some { attribute_components; name = class_name; _ }, _ ->
+          let attributes =
+            ClassSummary.ClassAttributes.attributes
               ~include_generated_attributes:false
-              attribute_components,
-            ClassSummary.ClassAttributes.constructor_attributes attribute_components )
-        in
-        if
-          Identifier.SerializableMap.mem attribute_name attributes
-          || Identifier.SerializableMap.mem attribute_name constructor_attributes
-        then
-          Result.Ok ()
-        else
+              attribute_components
+          in
+          let constructor_attributes =
+            ClassSummary.ClassAttributes.constructor_attributes attribute_components
+          in
+          let attribute_name = Reference.last name in
+          if
+            Identifier.SerializableMap.mem attribute_name attributes
+            || Identifier.SerializableMap.mem attribute_name constructor_attributes
+          then
+            Result.Ok ()
+          else
+            Result.Error
+              (model_verification_error
+                 ~path
+                 ~location
+                 (MissingAttribute
+                    { class_name = Reference.show class_name; attribute_name = Reference.last name }))
+      | None, Some _ -> Ok ()
+      | None, None ->
           Result.Error
-            (model_verification_error
-               ~path
-               ~location
-               (MissingAttribute { class_name = Reference.show class_name; attribute_name }))
-    | _ ->
-        Result.Error
-          (model_verification_error ~path ~location (NotInEnvironment (Reference.show name)))
+            (model_verification_error ~path ~location (NotInEnvironment (Reference.show name))) )

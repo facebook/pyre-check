@@ -59,6 +59,9 @@ module T = struct
     | ModelingClassAsDefine of string
     | ModelingModuleAsDefine of string
     | ModelingAttributeAsDefine of string
+    | ModelingClassAsAttribute of string
+    | ModelingModuleAsAttribute of string
+    | ModelingCallableAsAttribute of string
     | NotInEnvironment of string
     | UnexpectedDecorators of {
         name: Reference.t;
@@ -186,6 +189,19 @@ let description error =
         "The attribute `%s` is not a valid define - did you mean to use `%s: ...`?"
         attribute_name
         attribute_name
+  | ModelingClassAsAttribute class_name ->
+      Format.sprintf
+        "The class `%s` is not a valid attribute - did you mean to model `%s.__init__()`?"
+        class_name
+        class_name
+  | ModelingModuleAsAttribute module_name ->
+      Format.sprintf "The module `%s` is not a valid attribute." module_name
+  | ModelingCallableAsAttribute callable_name ->
+      Format.sprintf
+        "The function or method `%s` is not a valid attribute - did you mean to use `def %s(): \
+         ...`?"
+        callable_name
+        callable_name
   | NotInEnvironment name -> Format.sprintf "`%s` is not part of the environment!" name
 
 
@@ -210,6 +226,9 @@ let code { kind; _ } =
   | UnexpectedStatement _ -> 16
   | ModelingModuleAsDefine _ -> 17
   | ModelingAttributeAsDefine _ -> 18
+  | ModelingClassAsAttribute _ -> 19
+  | ModelingModuleAsAttribute _ -> 20
+  | ModelingCallableAsAttribute _ -> 21
 
 
 let display { kind = error; path; location } =
