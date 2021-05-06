@@ -148,12 +148,11 @@ let flush () =
 
 let flush_cache = flush
 
-let log ?(flush = false) ?(randomly_log_every = 1) category sample =
+let log ?(flush = false) category sample =
   Cache.with_cache ~f:(fun cache ->
-      if Random.int randomly_log_every = 0 then
-        match Hashtbl.find cache category with
-        | Some samples -> Hashtbl.set ~key:category ~data:(sample :: samples) cache
-        | _ -> Hashtbl.set ~key:category ~data:[sample] cache);
+      match Hashtbl.find cache category with
+      | Some samples -> Hashtbl.set ~key:category ~data:(sample :: samples) cache
+      | _ -> Hashtbl.set ~key:category ~data:[sample] cache);
   let samples_count () =
     Cache.with_cache ~f:(fun cache ->
         Hashtbl.fold cache ~init:0 ~f:(fun ~key:_ ~data count -> count + List.length data))
@@ -165,6 +164,11 @@ let log ?(flush = false) ?(randomly_log_every = 1) category sample =
   in
   if flush || samples_count () >= GlobalState.flush_size || exceeds_timeout () then
     flush_cache ()
+
+
+let should_log = function
+  | None -> true
+  | Some randomly_log_every -> Int.equal (Random.int randomly_log_every) 0
 
 
 let performance
@@ -182,11 +186,6 @@ let performance
   let time_span = Timer.stop timer in
   let time_in_seconds = Time.Span.to_sec time_span in
   let integer_time_in_microseconds = Time.Span.to_us time_span |> Int.of_float in
-  let randomly_log_every =
-    match always_log_time_threshold with
-    | Some threshold -> if Float.(time_in_seconds > threshold) then None else randomly_log_every
-    | None -> randomly_log_every
-  in
   Log.log ~section "%s: %.2fs" (String.capitalize name) time_in_seconds;
   Profiling.log_performance_event (fun () ->
       let tags =
@@ -199,11 +198,19 @@ let performance
         | Some name -> ("phase_name", name) :: tags
       in
       Profiling.Event.create name ~event_type:(Duration integer_time_in_microseconds) ~tags);
-  sample
-    ~integers:(("elapsed_time", integer_time_in_microseconds) :: integers)
-    ~normals:(("name", name) :: normals)
-    ()
-  |> log ~flush ?randomly_log_every "perfpipe_pyre_performance"
+  let randomly_log_every =
+    match always_log_time_threshold with
+    | Some threshold -> if Float.(time_in_seconds > threshold) then None else randomly_log_every
+    | None -> randomly_log_every
+  in
+  match should_log randomly_log_every with
+  | false -> ()
+  | true ->
+      sample
+        ~integers:(("elapsed_time", integer_time_in_microseconds) :: integers)
+        ~normals:(("name", name) :: normals)
+        ()
+      |> log ~flush "perfpipe_pyre_performance"
 
 
 let event
@@ -222,8 +229,10 @@ let event
     "%s (%s)"
     (String.capitalize name)
     (List.map ~f:integer integers @ List.map ~f:normal normals |> String.concat ~sep:", ");
-  sample ~integers ~normals:(("name", name) :: normals) ()
-  |> log ?randomly_log_every ~flush "perfpipe_pyre_events"
+  match should_log randomly_log_every with
+  | false -> ()
+  | true ->
+      sample ~integers ~normals:(("name", name) :: normals) () |> log ~flush "perfpipe_pyre_events"
 
 
 let log_exception caught_exception ~fatal ~origin =
