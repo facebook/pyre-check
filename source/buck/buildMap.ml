@@ -140,6 +140,8 @@ let index { artifact_to_source } =
   { Indexed.lookup_source; lookup_artifact }
 
 
+let artifact_count { artifact_to_source } = Hashtbl.length artifact_to_source
+
 let to_alist { artifact_to_source } = Hashtbl.to_alist artifact_to_source
 
 let difference ~original:{ artifact_to_source = original } { artifact_to_source = current } =

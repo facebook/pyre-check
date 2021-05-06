@@ -162,6 +162,9 @@ module BuildMap : sig
   (** Create a index for the given build map and return a pair of constant-time lookup functions
       that utilizes the index. *)
 
+  val artifact_count : t -> int
+  (** Return the number of artifact files stored in the build map. *)
+
   val to_alist : t -> (string * string) list
   (** Convert a partial build map into an associated list. Each element in the list represent an
       (artifact_path, source_path) mapping. *)

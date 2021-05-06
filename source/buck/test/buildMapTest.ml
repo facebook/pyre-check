@@ -176,6 +176,20 @@ let test_build_map_lookup context =
   ()
 
 
+let test_build_map_artifact_count context =
+  let assert_count ~expected mappings =
+    let actual =
+      BuildMap.Partial.of_alist_exn mappings |> BuildMap.create |> BuildMap.artifact_count
+    in
+    assert_equal ~ctxt:context ~cmp:Int.equal ~printer:Int.to_string expected actual
+  in
+  assert_count [] ~expected:0;
+  assert_count ["foo.py", "source/foo.py"] ~expected:1;
+  assert_count ["foo.py", "source/foo.py"; "bar.py", "source/bar.py"] ~expected:2;
+  assert_count ["foo.py", "source/foo.py"; "bar.py", "source/foo.py"] ~expected:2;
+  ()
+
+
 let test_build_map_difference context =
   let assert_difference ~expected ~original ~current () =
     let original = BuildMap.Partial.of_alist_exn original |> BuildMap.create in
@@ -256,6 +270,7 @@ let () =
   >::: [
          "partial_build_map_from_json" >:: test_partial_build_map_from_json;
          "partial_build_map_merge" >:: test_partial_build_map_merge;
+         "build_map_artifact_count" >:: test_build_map_artifact_count;
          "build_map_lookup" >:: test_build_map_lookup;
          "build_map_difference" >:: test_build_map_difference;
        ]
