@@ -91,14 +91,6 @@ module ClassAttributes : sig
 
   val empty : unit -> t
 
-  val constructor_attributes : t -> Attribute.t Identifier.SerializableMap.t
-
-  val attributes
-    :  ?include_generated_attributes:bool ->
-    ?in_test:bool ->
-    t ->
-    Attribute.t Identifier.SerializableMap.t
-
   (* Exposed for testing only *)
   module Private : sig
     val assigned_by_define
@@ -132,3 +124,11 @@ val fields_tuple_value : t -> string list option
 val name : t -> Reference.t
 
 val bases : t -> Expression.Call.Argument.t list
+
+val constructor_attributes : t -> Attribute.t Identifier.SerializableMap.t
+
+val attributes
+  :  ?include_generated_attributes:bool ->
+  ?in_test:bool ->
+  t ->
+  Attribute.t Identifier.SerializableMap.t

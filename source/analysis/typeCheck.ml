@@ -5924,15 +5924,8 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
         |> Option.value ~default:errors
       in
       let check_protocol definition errors = check_protocol_properties definition errors in
-      let check_overrides
-          ({ ClassSummary.attribute_components; name = class_name; _ } as definition)
-          errors
-        =
-        let components =
-          ClassSummary.ClassAttributes.attributes
-            ~include_generated_attributes:true
-            attribute_components
-        in
+      let check_overrides ({ ClassSummary.name = class_name; _ } as definition) errors =
+        let components = ClassSummary.attributes ~include_generated_attributes:true definition in
 
         let override_errors_for_typed_dictionary class_name =
           let open Type.Record.TypedDictionary in

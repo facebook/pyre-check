@@ -328,15 +328,11 @@ let verify_global ~path ~location ~resolution ~name =
         >>| Node.value
       in
       match class_summary, global with
-      | Some { attribute_components; name = class_name; _ }, _ ->
+      | Some ({ name = class_name; _ } as class_summary), _ ->
           let attributes =
-            ClassSummary.ClassAttributes.attributes
-              ~include_generated_attributes:false
-              attribute_components
+            ClassSummary.attributes ~include_generated_attributes:false class_summary
           in
-          let constructor_attributes =
-            ClassSummary.ClassAttributes.constructor_attributes attribute_components
-          in
+          let constructor_attributes = ClassSummary.constructor_attributes class_summary in
           let attribute_name = Reference.last name in
           if
             Identifier.SerializableMap.mem attribute_name attributes

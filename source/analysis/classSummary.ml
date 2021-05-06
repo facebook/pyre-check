@@ -991,7 +991,7 @@ module ClassAttributes = struct
 
 
   let implicit_attributes
-      ?(in_test = false)
+      ~in_test
       { constructor_attributes; test_setup_attributes; additional_attributes; _ }
     =
     let implicitly_assigned_attributes =
@@ -1008,11 +1008,9 @@ module ClassAttributes = struct
     |> Identifier.SerializableMap.merge merge_attribute_maps implicitly_assigned_attributes
 
 
-  let constructor_attributes { constructor_attributes; _ } = constructor_attributes
-
   let attributes
-      ?(include_generated_attributes = true)
-      ?(in_test = false)
+      ~include_generated_attributes
+      ~in_test
       ({ explicitly_assigned_attributes; _ } as components)
     =
     if not include_generated_attributes then
@@ -1162,6 +1160,19 @@ module ClassSummary = struct
   let name { name; _ } = name
 
   let bases { bases; _ } = bases
+
+  let constructor_attributes
+      { attribute_components = { ClassAttributes.constructor_attributes; _ }; _ }
+    =
+    constructor_attributes
+
+
+  let attributes
+      ?(include_generated_attributes = true)
+      ?(in_test = false)
+      { attribute_components; _ }
+    =
+    ClassAttributes.attributes ~include_generated_attributes ~in_test attribute_components
 end
 
 include ClassSummary
