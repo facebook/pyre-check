@@ -67,7 +67,7 @@
           {
             "root": {
               "filename": "missing_type.py",
-              "line": 30,
+              "line": 31,
               "start": 16,
               "end": 17
             },
@@ -87,9 +87,9 @@
   "kind": "issue",
   "data": {
     "callable": "missing_type.test_unknown_source_attribute",
-    "callable_line": 28,
+    "callable_line": 29,
     "code": 5002,
-    "line": 30,
+    "line": 31,
     "start": 16,
     "end": 17,
     "filename": "missing_type.py",
@@ -101,11 +101,11 @@
           {
             "root": {
               "filename": "missing_type.py",
-              "line": 29,
+              "line": 30,
               "start": 8,
               "end": 17
             },
-            "tito": [ { "line": 29, "start": 8, "end": 17 } ],
+            "tito": [ { "line": 30, "start": 8, "end": 17 } ],
             "leaves": [
               {
                 "kind": "Test",
@@ -122,7 +122,7 @@
           {
             "root": {
               "filename": "missing_type.py",
-              "line": 30,
+              "line": 31,
               "start": 16,
               "end": 17
             },
@@ -150,7 +150,7 @@
           {
             "root": {
               "filename": "missing_type.py",
-              "line": 18,
+              "line": 19,
               "start": 16,
               "end": 17
             },
@@ -164,60 +164,5 @@
       }
     ],
     "tito": []
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "missing_type.test_unknown_source_def",
-    "callable_line": 16,
-    "code": 5002,
-    "line": 18,
-    "start": 16,
-    "end": 17,
-    "filename": "missing_type.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "root": {
-              "filename": "missing_type.py",
-              "line": 17,
-              "start": 8,
-              "end": 17
-            },
-            "tito": [ { "line": 17, "start": 8, "end": 17 } ],
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "missing_type.UnknownSourceDef.unknown"
-              }
-            ],
-            "features": [ { "always-via": "obscure" } ]
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "root": {
-              "filename": "missing_type.py",
-              "line": 18,
-              "start": 16,
-              "end": 17
-            },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-via": "special_sink" },
-      { "always-via": "obscure" }
-    ]
   }
 }

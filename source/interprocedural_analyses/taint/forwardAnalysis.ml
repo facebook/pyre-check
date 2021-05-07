@@ -121,27 +121,19 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
 
     let global_model ~location reference =
       (* Fields are handled like methods *)
-      let target_candidates =
-        [
-          Interprocedural.Callable.create_method reference;
-          Interprocedural.Callable.create_object reference;
-        ]
+      let target = Interprocedural.Callable.create_object reference in
+      let model =
+        Interprocedural.Fixpoint.get_model target
+        >>= Interprocedural.Result.get_model TaintResult.kind
       in
-      let merge_models result candidate =
-        let model =
-          Interprocedural.Fixpoint.get_model candidate
-          >>= Interprocedural.Result.get_model TaintResult.kind
-        in
-        match model with
-        | None -> result
-        | Some { forward = { source_taint }; _ } ->
-            ForwardState.read ~root:AccessPath.Root.LocalResult ~path:[] source_taint
-            |> ForwardState.Tree.apply_call
-                 location
-                 ~callees:[candidate]
-                 ~port:AccessPath.Root.LocalResult
-      in
-      List.fold target_candidates ~f:merge_models ~init:ForwardState.Tree.empty
+      match model with
+      | None -> ForwardState.Tree.bottom
+      | Some { forward = { source_taint }; _ } ->
+          ForwardState.read ~root:AccessPath.Root.LocalResult ~path:[] source_taint
+          |> ForwardState.Tree.apply_call
+               location
+               ~callees:[target]
+               ~port:AccessPath.Root.LocalResult
 
 
     let rec apply_call_targets
