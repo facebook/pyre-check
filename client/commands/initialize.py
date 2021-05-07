@@ -11,7 +11,7 @@ import subprocess
 import sys
 from logging import Logger
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Union
 
 from .. import log
 from ..find_directories import (
@@ -27,6 +27,20 @@ from .command import CommandParser
 
 
 LOG: Logger = logging.getLogger(__name__)
+
+
+def _create_source_directory_element(source: str) -> Union[str, Dict[str, str]]:
+    if source == ".":
+        return source
+    # Imports are likely relative to the parent of the package.
+    package_root = find_parent_directory_containing_file(Path(source), "__init__.py")
+    if package_root is not None:
+        return {
+            "import_root": os.path.relpath(str(package_root.parent), "."),
+            "source": source,
+        }
+    else:
+        return source
 
 
 class InitializationException(Exception):
@@ -102,11 +116,14 @@ class Initialize(CommandParser):
         if taint_models_path is not None:
             configuration["taint_models_path"] = str(taint_models_path)
 
-        source_directories = log.get_optional_input(
+        source_directory_input = log.get_optional_input(
             "Which directory(ies) should pyre analyze?", "."
         )
+        source_directory_paths = [
+            directory.strip() for directory in source_directory_input.split(",")
+        ]
         configuration["source_directories"] = [
-            directory.strip() for directory in source_directories.split(",")
+            _create_source_directory_element(path) for path in source_directory_paths
         ]
         return configuration
 

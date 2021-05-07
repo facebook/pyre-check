@@ -8,12 +8,18 @@
 import os
 import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import call, mock_open, patch
 
 from ...commands import initialize
-from ...commands.initialize import log
+from ...commands.initialize import log, _create_source_directory_element
+from ...tests.setup import (
+    ensure_directories_exists,
+    ensure_files_exist,
+    switch_working_directory,
+)
 
 
 class InitializeTest(unittest.TestCase):
@@ -86,6 +92,26 @@ class InitializeTest(unittest.TestCase):
             which.assert_has_calls(
                 [call("watchman"), call("pyre.bin"), call("/tmp/pyre/bin/pyre.bin")]
             )
+
+    def test_create_source_directory_element(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root).resolve()
+            with switch_working_directory(root_path):
+                ensure_directories_exists(root_path, "a")
+                ensure_files_exist(root_path, ["a/__init__.py"])
+                self.assertEqual(
+                    _create_source_directory_element("a"),
+                    {"import_root": ".", "source": "a"},
+                )
+
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root).resolve()
+            with switch_working_directory(root_path):
+                ensure_directories_exists(root_path, "a")
+                self.assertEqual(
+                    _create_source_directory_element("a"),
+                    "a",
+                )
 
     def test_get_local_configuration(self) -> None:
         command = initialize.Initialize()
