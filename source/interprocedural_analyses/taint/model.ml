@@ -245,7 +245,7 @@ let get_global_sink_model ~resolution ~location ~expression =
     BackwardState.read ~root:global_root ~path:[] sink_taint
     |> BackwardState.Tree.apply_call
          location
-         ~callees:[`Function (Reference.show name)]
+         ~callees:[`Object (Reference.show name)]
          ~port:AccessPath.Root.LocalResult
     |> BackwardState.Tree.join existing
   in

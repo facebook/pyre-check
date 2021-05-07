@@ -36,7 +36,9 @@
               "start": 8,
               "end": 15
             },
-            "leaves": [ { "kind": "Test", "name": "attributes.Sink.token" } ]
+            "leaves": [
+              { "kind": "Test", "name": "Obj{attributes.Sink.token}" }
+            ]
           }
         ]
       }
@@ -81,7 +83,9 @@
               "start": 4,
               "end": 11
             },
-            "leaves": [ { "kind": "Test", "name": "attributes.Sink.token" } ]
+            "leaves": [
+              { "kind": "Test", "name": "Obj{attributes.Sink.token}" }
+            ]
           }
         ]
       }

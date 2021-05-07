@@ -39,7 +39,7 @@
             "leaves": [
               {
                 "kind": "SinkA",
-                "name": "model_query.AttributeTestClass3.instance"
+                "name": "Obj{model_query.AttributeTestClass3.instance}"
               }
             ]
           }
@@ -89,7 +89,7 @@
             "leaves": [
               {
                 "kind": "SinkC",
-                "name": "model_query.AttributeTestClass3.instance"
+                "name": "Obj{model_query.AttributeTestClass3.instance}"
               }
             ]
           }
@@ -1332,7 +1332,7 @@
             "leaves": [
               {
                 "kind": "SinkA",
-                "name": "model_query.AttributeTestClass3.attribute"
+                "name": "Obj{model_query.AttributeTestClass3.attribute}"
               }
             ]
           },
@@ -1346,7 +1346,7 @@
             "leaves": [
               {
                 "kind": "SinkB",
-                "name": "model_query.AttributeTestClass3.attribute"
+                "name": "Obj{model_query.AttributeTestClass3.attribute}"
               }
             ]
           }
@@ -1395,7 +1395,7 @@
             "leaves": [
               {
                 "kind": "SinkA",
-                "name": "model_query.AttributeTestClass3.attribute"
+                "name": "Obj{model_query.AttributeTestClass3.attribute}"
               }
             ]
           }
@@ -1444,7 +1444,7 @@
             "leaves": [
               {
                 "kind": "SinkB",
-                "name": "model_query.AttributeTestClass3.attribute"
+                "name": "Obj{model_query.AttributeTestClass3.attribute}"
               }
             ]
           }

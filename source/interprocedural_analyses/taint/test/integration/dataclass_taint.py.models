@@ -206,7 +206,7 @@
             "leaves": [
               {
                 "kind": "Test",
-                "name": "dataclass_taint.WeirdDataClass.bad_sink"
+                "name": "Obj{dataclass_taint.WeirdDataClass.bad_sink}"
               }
             ],
             "features": [ { "always-type": "scalar" } ]
@@ -315,7 +315,7 @@
             "leaves": [
               {
                 "kind": "Test",
-                "name": "dataclass_taint.WeirdDataClass.bad_sink"
+                "name": "Obj{dataclass_taint.WeirdDataClass.bad_sink}"
               }
             ],
             "features": [ { "always-type": "scalar" } ]
@@ -583,7 +583,7 @@
             "leaves": [
               {
                 "kind": "Test",
-                "name": "dataclass_taint.WeirdDataClass.bad_sink"
+                "name": "Obj{dataclass_taint.WeirdDataClass.bad_sink}"
               }
             ],
             "features": [ { "always-type": "scalar" } ]

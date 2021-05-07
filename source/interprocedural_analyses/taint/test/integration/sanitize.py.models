@@ -351,7 +351,7 @@
             "leaves": [
               {
                 "kind": "Test",
-                "name": "sanitize.C_sanitized_all_sinks.attribute"
+                "name": "Obj{sanitize.C_sanitized_all_sinks.attribute}"
               }
             ]
           }
@@ -401,7 +401,7 @@
             "leaves": [
               {
                 "kind": "Test",
-                "name": "sanitize.C_sanitized_all_sinks.instance"
+                "name": "Obj{sanitize.C_sanitized_all_sinks.instance}"
               }
             ]
           }
@@ -747,11 +747,11 @@
             "leaves": [
               {
                 "kind": "Test",
-                "name": "sanitize.C_sanitized_all_sinks.attribute"
+                "name": "Obj{sanitize.C_sanitized_all_sinks.attribute}"
               },
               {
                 "kind": "Test",
-                "name": "sanitize.C_sanitized_all_sinks.instance"
+                "name": "Obj{sanitize.C_sanitized_all_sinks.instance}"
               }
             ]
           }
@@ -926,11 +926,11 @@
             "leaves": [
               {
                 "kind": "Test",
-                "name": "sanitize.C_sanitized_all_sinks.attribute"
+                "name": "Obj{sanitize.C_sanitized_all_sinks.attribute}"
               },
               {
                 "kind": "Test",
-                "name": "sanitize.C_sanitized_all_sinks.instance"
+                "name": "Obj{sanitize.C_sanitized_all_sinks.instance}"
               }
             ]
           }
@@ -1198,7 +1198,7 @@
             "leaves": [
               {
                 "kind": "Test",
-                "name": "sanitize.C_sanitized_all_sinks.instance"
+                "name": "Obj{sanitize.C_sanitized_all_sinks.instance}"
               }
             ]
           },
@@ -1212,7 +1212,7 @@
             "leaves": [
               {
                 "kind": "Test",
-                "name": "sanitize.C_sanitized_all_sinks.attribute"
+                "name": "Obj{sanitize.C_sanitized_all_sinks.attribute}"
               }
             ]
           }

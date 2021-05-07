@@ -210,7 +210,10 @@
               "length": 1
             },
             "leaves": [
-              { "kind": "Test", "name": "dictionary.tainted_dictionary" }
+              {
+                "kind": "Test",
+                "name": "Obj{dictionary.tainted_dictionary}"
+              }
             ],
             "features": [ { "always-via": "tito" } ]
           }
@@ -747,7 +750,10 @@
               "end": 22
             },
             "leaves": [
-              { "kind": "Test", "name": "dictionary.tainted_dictionary" }
+              {
+                "kind": "Test",
+                "name": "Obj{dictionary.tainted_dictionary}"
+              }
             ]
           }
         ]
@@ -1569,7 +1575,10 @@
             },
             "tito": [ { "line": 68, "start": 30, "end": 33 } ],
             "leaves": [
-              { "kind": "Test", "name": "dictionary.tainted_dictionary" }
+              {
+                "kind": "Test",
+                "name": "Obj{dictionary.tainted_dictionary}"
+              }
             ],
             "features": [ { "always-via": "tito" } ]
           }
