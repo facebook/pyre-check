@@ -76,10 +76,7 @@ module.exports = {
           items: [
             {
               label: 'Type Checking (Pyre)',
-              to: fbContent({
-                internal: 'docs/fb/getting-started',
-                external: 'docs/getting-started',
-              }),
+              to: 'docs/getting-started',
             },
             {
               label: 'Static Analysis (Pysa)',

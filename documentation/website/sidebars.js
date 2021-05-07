@@ -11,10 +11,7 @@ const {fbContent, fbInternalOnly} = require('internaldocs-fb-helpers');
 
 module.exports = {
   pyre: [
-    ...fbContent({
-      internal: ['fb/getting-started'],
-      external: ['getting-started'],
-    }),
+    'getting-started',
     ...fbContent({
       external: ['installation'],
     }),

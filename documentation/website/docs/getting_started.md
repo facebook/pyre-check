@@ -3,6 +3,16 @@ id: getting-started
 title: Getting Started
 sidebar_label: Getting Started
 ---
+import {OssOnly, FbInternalOnly} from 'internaldocs-fb-helpers';
+import FbGettingStarted from './fb/getting_started.md';
+
+<FbInternalOnly>
+
+<FbGettingStarted />
+
+</FbInternalOnly>
+
+<OssOnly>
 
 Welcome to the wonderful world of static typing! This guide will get you from zero to a simple project that is type checked with Pyre.
 
@@ -43,3 +53,5 @@ We are now ready to run Pyre:
 test.py:1:0 Incompatible variable type [9]: i is declared to have type `int` but is used as type `str`.
 ```
 This first invocation will start a daemon listening for filesystem changes – type checking your project incrementally as you make edits to the code. You will notice that subsequent invocations of `pyre` will be faster than the first one.
+
+</OssOnly>
