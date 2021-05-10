@@ -267,18 +267,35 @@ let test_class_model context =
   assert_taint
     ~context
     ~models:{|
-      qualifier.Data.ATTRIBUTE: TaintSource[Test] = ...
+      qualifier.A.ATTRIBUTE: TaintSource[Test] = ...
     |}
     {|
-      class Data:
+      class A:
         ATTRIBUTE = 1
-      def as_instance_attribute(data: Data):
-        return data.ATTRIBUTE
+      def as_instance_attribute(a: A):
+        return a.ATTRIBUTE
       def as_class_attribute():
-        return Data.ATTRIBUTE
+        return A.ATTRIBUTE
     |}
     [
       outcome ~kind:`Function ~returns:[Sources.NamedSource "Test"] "qualifier.as_instance_attribute";
+      outcome ~kind:`Function ~returns:[] "qualifier.as_class_attribute";
+    ];
+  assert_taint
+    ~context
+    ~models:{|
+      qualifier.B.__class__.ATTRIBUTE: TaintSource[Test] = ...
+    |}
+    {|
+      class B:
+        ATTRIBUTE = 1
+      def as_instance_attribute(b: B):
+        return b.ATTRIBUTE
+      def as_class_attribute():
+        return B.ATTRIBUTE
+    |}
+    [
+      outcome ~kind:`Function ~returns:[] "qualifier.as_instance_attribute";
       outcome ~kind:`Function ~returns:[Sources.NamedSource "Test"] "qualifier.as_class_attribute";
     ];
 

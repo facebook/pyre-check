@@ -119,23 +119,6 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
         fields
 
 
-    let global_model ~location reference =
-      (* Fields are handled like methods *)
-      let target = Interprocedural.Callable.create_object reference in
-      let model =
-        Interprocedural.Fixpoint.get_model target
-        >>= Interprocedural.Result.get_model TaintResult.kind
-      in
-      match model with
-      | None -> ForwardState.Tree.bottom
-      | Some { forward = { source_taint }; _ } ->
-          ForwardState.read ~root:AccessPath.Root.LocalResult ~path:[] source_taint
-          |> ForwardState.Tree.apply_call
-               location
-               ~callees:[target]
-               ~port:AccessPath.Root.LocalResult
-
-
     let rec apply_call_targets
         ~resolution
         ~callee
@@ -1087,46 +1070,12 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
 
 
     and analyze_attribute_access ~resolution ~state ~location base attribute =
-      let annotation = Interprocedural.CallGraph.resolve_ignoring_optional ~resolution base in
-      let rec attribute_taint annotation =
-        match annotation with
-        | Type.Union annotations ->
-            List.fold
-              annotations
-              ~f:(fun existing annotation ->
-                ForwardState.Tree.join existing (attribute_taint annotation))
-              ~init:ForwardState.Tree.bottom
-        | _ ->
-            let annotations =
-              let successors =
-                GlobalResolution.class_metadata (Resolution.global_resolution resolution) annotation
-                >>| (fun { ClassMetadataEnvironment.successors; _ } -> successors)
-                |> Option.value ~default:[]
-                |> List.map ~f:(fun name -> Type.Primitive name)
-              in
-              let base_annotation =
-                (* Our model definitions are ambiguous. Models could either refer to a class
-                   variable or an instance variable. We explore both. *)
-                if Type.is_meta annotation then
-                  [Type.single_parameter annotation]
-                else
-                  []
-              in
-              (annotation :: successors) @ base_annotation
-            in
-            let attribute_taint sofar annotation =
-              Reference.create ~prefix:(Type.class_name annotation) attribute
-              |> global_model ~location
-              |> ForwardState.Tree.join sofar
-            in
-            List.fold annotations ~init:ForwardState.Tree.empty ~f:attribute_taint
-      in
-      let attribute_taint = attribute_taint annotation in
       let expression =
         Node.create_with_default_location
           (Expression.Name (Name.Attribute { Name.Attribute.base; attribute; special = false }))
       in
       let global_model = Model.get_global_model ~resolution ~location ~expression in
+      let attribute_taint = Model.GlobalModel.get_source global_model in
       let add_tito_features taint =
         let attribute_features =
           global_model |> Model.GlobalModel.get_tito |> BackwardState.Tree.get_all_features
@@ -1288,8 +1237,11 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
               ~init:(ForwardState.Tree.empty, state)
         | ListComprehension comprehension -> analyze_comprehension ~resolution comprehension state
         | Name _ when AccessPath.is_global ~resolution expression ->
-            let global = Option.value_exn (AccessPath.get_global ~resolution expression) in
-            global_model ~location global, state
+            let taint =
+              Model.get_global_model ~resolution ~location ~expression
+              |> Model.GlobalModel.get_source
+            in
+            taint, state
         | Name (Name.Identifier identifier) ->
             ( ForwardState.read ~root:(AccessPath.Root.Variable identifier) ~path:[] state.taint,
               state )
