@@ -105,7 +105,12 @@ class PyreConnection:
 
     def query_server(self, query: str) -> PyreQueryResult:
         if not self.server_initialized:
-            self.start_server()
+            result = self.start_server()
+            if result.exit_code != 0:
+                raise PyreQueryError(
+                    f"Error while starting a pyre server, Pyre exited with a code of {result.exit_code}."
+                )
+
         LOG.debug(f"Running query: `pyre query '{query}'`")
         result = subprocess.run(
             ["pyre", "--noninteractive", *self.pyre_arguments, "query", query],
