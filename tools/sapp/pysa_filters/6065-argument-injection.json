@@ -1,0 +1,35 @@
+{
+    "name": "Commandline arguments injection",
+    "description": "High signal filter for 6065 Commandline arguments injection",
+    "features":[
+        {
+            "mode":"any of",
+            "features":[
+                "always-via-shell-value:True",
+                "via-shell-value:True"
+            ]
+        },
+        {
+            "mode":"none of",
+            "features":[
+                "always-type:scalar",
+                "always-type:bool",
+                "always-via:shell_escape",
+                "type:scalar",
+                "type:bool",
+                "via:shell_escape"
+            ]
+        }
+    ],
+    "codes": [
+        6065
+    ],
+    "traceLengthFromSources": [
+        0,
+        3
+    ],
+    "traceLengthToSinks": [
+        0,
+        4
+    ]
+}
