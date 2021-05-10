@@ -181,11 +181,12 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
         in
         let get_argument_taint ~resolution ~argument:{ Call.Argument.value = argument; _ } state =
           let global_sink =
-            Model.get_global_sink_model
+            Model.get_global_model
               ~resolution
               ~location:
                 (Location.with_module ~qualifier:FunctionContext.qualifier (Node.location argument))
               ~expression:argument
+            |> Model.GlobalModel.get_sink
           in
           let access_path = of_expression ~resolution argument in
           get_taint access_path state |> BackwardState.Tree.join global_sink
@@ -1073,11 +1074,12 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                   (Expression.Name
                      (Name.Attribute { Name.Attribute.base; attribute; special = false }))
               in
-              let global_tito_model, global_analysis_mode =
-                Model.get_global_tito_model_and_mode ~resolution ~expression
-              in
+              let location = Location.with_module ~qualifier:FunctionContext.qualifier location in
+              let global_model = Model.get_global_model ~resolution ~expression ~location in
               let add_tito_features taint =
-                let attribute_features = global_tito_model |> BackwardState.Tree.get_all_features in
+                let attribute_features =
+                  global_model |> Model.GlobalModel.get_tito |> BackwardState.Tree.get_all_features
+                in
                 if not (Features.SimpleSet.is_bottom attribute_features) then
                   BackwardState.Tree.transform
                     BackwardTaint.simple_feature_self
@@ -1089,7 +1091,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
               in
 
               let apply_attribute_sanitizers taint =
-                match global_analysis_mode with
+                match Model.GlobalModel.get_mode global_model with
                 | Sanitize { sinks = sanitize_sinks; _ } -> (
                     match sanitize_sinks with
                     | Some TaintResult.Mode.AllSinks -> BackwardState.Tree.empty
@@ -1201,7 +1203,8 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
               let location =
                 Location.with_module ~qualifier:FunctionContext.qualifier target.Node.location
               in
-              Model.get_global_sink_model ~resolution ~location ~expression:target
+              Model.get_global_model ~resolution ~location ~expression:target
+              |> Model.GlobalModel.get_sink
             in
             BackwardState.Tree.join local_taint global_taint
           in
@@ -1238,7 +1241,12 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       | Assign { target = { Node.location; value = target_value } as target; value; _ } -> (
           let target_is_sanitized =
             match target_value with
-            | Name (Name.Attribute _) -> Model.global_is_sanitized ~resolution ~expression:target
+            | Name (Name.Attribute _) ->
+                let location =
+                  Location.with_module ~qualifier:FunctionContext.qualifier target.Node.location
+                in
+                Model.get_global_model ~resolution ~location ~expression:target
+                |> Model.GlobalModel.is_sanitized
             | _ -> false
           in
           if target_is_sanitized then

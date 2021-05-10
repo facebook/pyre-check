@@ -25,18 +25,25 @@ val get_callsite_model
   arguments:Expression.Call.Argument.t list ->
   t
 
-val get_global_sink_model
+module GlobalModel : sig
+  type t
+
+  val get_source : t -> Domains.ForwardState.Tree.t
+
+  val get_sink : t -> Domains.BackwardState.Tree.t
+
+  val get_tito : t -> Domains.BackwardState.Tree.t
+
+  val get_mode : t -> TaintResult.Mode.t
+
+  val is_sanitized : t -> bool
+end
+
+val get_global_model
   :  resolution:Resolution.t ->
   location:Location.WithModule.t ->
   expression:Expression.t ->
-  Domains.BackwardState.Tree.t
-
-val get_global_tito_model_and_mode
-  :  resolution:Resolution.t ->
-  expression:Expression.t ->
-  Domains.BackwardState.Tree.t * TaintResult.Mode.t
-
-val global_is_sanitized : resolution:Resolution.t -> expression:Expression.t -> bool
+  GlobalModel.t
 
 val get_model_sources : paths:Path.t list -> (Path.t * string) list
 

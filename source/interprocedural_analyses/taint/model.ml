@@ -23,6 +23,8 @@ type t = {
 }
 [@@deriving show]
 
+type model_t = t
+
 let remove_sinks model =
   { model with backward = { model.backward with sink_taint = BackwardState.empty } }
 
@@ -224,11 +226,8 @@ let get_global_targets ~resolution ~expression =
 
 let get_global_models ~resolution ~expression =
   let fetch_model target =
-    let model =
-      Callable.create_object target
-      |> fun call_target -> get_callsite_model ~resolution ~call_target ~arguments:[]
-    in
-    target, model
+    let call_target = Callable.create_object target in
+    get_callsite_model ~resolution ~call_target ~arguments:[]
   in
   get_global_targets ~resolution ~expression |> List.map ~f:fetch_model
 
@@ -237,50 +236,84 @@ let global_root =
   AccessPath.Root.PositionalParameter { position = 0; name = "$global"; positional_only = false }
 
 
-let get_global_sink_model ~resolution ~location ~expression =
-  let to_sink
-      existing
-      (name, { model = { TaintResult.backward = { TaintResult.Backward.sink_taint; _ }; _ }; _ })
-    =
-    BackwardState.read ~root:global_root ~path:[] sink_taint
-    |> BackwardState.Tree.apply_call
-         location
-         ~callees:[`Object (Reference.show name)]
-         ~port:AccessPath.Root.LocalResult
-    |> BackwardState.Tree.join existing
-  in
-  get_global_models ~resolution ~expression |> List.fold ~init:BackwardState.Tree.bottom ~f:to_sink
+module GlobalModel = struct
+  type t = {
+    models: model_t list;
+    location: Location.WithModule.t;
+  }
 
-
-let get_global_tito_model_and_mode ~resolution ~expression =
-  let to_tito
-      existing
-      ( _,
-        { model = { TaintResult.backward = { TaintResult.Backward.taint_in_taint_out; _ }; _ }; _ }
-      )
-    =
-    BackwardState.read ~root:global_root ~path:[] taint_in_taint_out
-    |> BackwardState.Tree.join existing
-  in
-  let get_mode existing (_, { model = { TaintResult.mode; _ }; _ }) = Mode.join mode existing in
-  let global_model = get_global_models ~resolution ~expression in
-  ( global_model |> List.fold ~init:BackwardState.Tree.bottom ~f:to_tito,
-    global_model |> List.fold ~init:Mode.Normal ~f:get_mode )
-
-
-let global_is_sanitized ~resolution ~expression =
-  let is_sanitized (_, { model = { TaintResult.mode; _ }; _ }) =
-    match mode with
-    | TaintResult.Mode.Sanitize
+  let get_source { models; location } =
+    let to_source
+        existing
         {
-          sources = Some TaintResult.Mode.AllSources;
-          sinks = Some TaintResult.Mode.AllSinks;
-          tito = Some AllTito;
-        } ->
-        true
-    | _ -> false
-  in
-  get_global_models ~resolution ~expression |> List.exists ~f:is_sanitized
+          call_target;
+          model = { TaintResult.forward = { TaintResult.Forward.source_taint }; _ };
+          _;
+        }
+      =
+      ForwardState.read ~root:AccessPath.Root.LocalResult ~path:[] source_taint
+      |> ForwardState.Tree.apply_call
+           location
+           ~callees:[call_target]
+           ~port:AccessPath.Root.LocalResult
+      |> ForwardState.Tree.join existing
+    in
+    List.fold ~init:ForwardState.Tree.bottom ~f:to_source models
+
+
+  let get_sink { models; location } =
+    let to_sink
+        existing
+        {
+          call_target;
+          model = { TaintResult.backward = { TaintResult.Backward.sink_taint; _ }; _ };
+          _;
+        }
+      =
+      BackwardState.read ~root:global_root ~path:[] sink_taint
+      |> BackwardState.Tree.apply_call
+           location
+           ~callees:[call_target]
+           ~port:AccessPath.Root.LocalResult
+      |> BackwardState.Tree.join existing
+    in
+    List.fold ~init:BackwardState.Tree.bottom ~f:to_sink models
+
+
+  let get_tito { models; _ } =
+    let to_tito
+        existing
+        { model = { TaintResult.backward = { TaintResult.Backward.taint_in_taint_out; _ }; _ }; _ }
+      =
+      BackwardState.read ~root:global_root ~path:[] taint_in_taint_out
+      |> BackwardState.Tree.join existing
+    in
+    List.fold ~init:BackwardState.Tree.bottom ~f:to_tito models
+
+
+  let get_mode { models; _ } =
+    let get_mode existing { model = { TaintResult.mode; _ }; _ } = Mode.join mode existing in
+    List.fold ~init:Mode.Normal ~f:get_mode models
+
+
+  let is_sanitized { models; _ } =
+    let is_sanitized_model { model = { TaintResult.mode; _ }; _ } =
+      match mode with
+      | TaintResult.Mode.Sanitize
+          {
+            sources = Some TaintResult.Mode.AllSources;
+            sinks = Some TaintResult.Mode.AllSinks;
+            tito = Some AllTito;
+          } ->
+          true
+      | _ -> false
+    in
+    List.exists ~f:is_sanitized_model models
+end
+
+let get_global_model ~resolution ~location ~expression =
+  let models = get_global_models ~resolution ~expression in
+  { GlobalModel.models; location }
 
 
 let get_model_sources ~paths =

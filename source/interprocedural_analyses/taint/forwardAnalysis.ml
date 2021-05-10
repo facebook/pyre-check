@@ -390,7 +390,8 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
               Location.with_module ~qualifier:FunctionContext.qualifier argument.Node.location
             in
             let sink_tree =
-              Model.get_global_sink_model ~resolution ~location ~expression:argument
+              Model.get_global_model ~resolution ~location ~expression:argument
+              |> Model.GlobalModel.get_sink
             in
             FunctionContext.check_flow ~location ~source_tree ~sink_tree;
             let access_path = AccessPath.of_expression ~resolution argument in
@@ -1125,11 +1126,11 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
         Node.create_with_default_location
           (Expression.Name (Name.Attribute { Name.Attribute.base; attribute; special = false }))
       in
-      let global_tito_model, global_analysis_mode =
-        Model.get_global_tito_model_and_mode ~resolution ~expression
-      in
+      let global_model = Model.get_global_model ~resolution ~location ~expression in
       let add_tito_features taint =
-        let attribute_features = global_tito_model |> BackwardState.Tree.get_all_features in
+        let attribute_features =
+          global_model |> Model.GlobalModel.get_tito |> BackwardState.Tree.get_all_features
+        in
         if not (Features.SimpleSet.is_bottom attribute_features) then
           ForwardState.Tree.transform
             ForwardTaint.simple_feature_self
@@ -1140,7 +1141,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           taint
       in
       let apply_attribute_sanitizers taint =
-        match global_analysis_mode with
+        match Model.GlobalModel.get_mode global_model with
         | Sanitize { sources = sanitize_sources; _ } -> (
             match sanitize_sources with
             | Some TaintResult.Mode.AllSources -> ForwardState.Tree.empty
@@ -1384,7 +1385,10 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           (* Check flows to tainted globals/attributes. *)
           let location = Location.with_module ~qualifier:FunctionContext.qualifier location in
           let source_tree = taint in
-          let sink_tree = Model.get_global_sink_model ~resolution ~location ~expression:target in
+          let sink_tree =
+            Model.get_global_model ~resolution ~location ~expression:target
+            |> Model.GlobalModel.get_sink
+          in
           FunctionContext.check_flow ~location ~source_tree ~sink_tree;
 
           (* Propagate taint. *)
@@ -1425,11 +1429,16 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                 state
           | _ -> state )
       | Assign { target = { Node.location; value = target_value } as target; value; _ } -> (
+          let location_with_module =
+            Location.with_module ~qualifier:FunctionContext.qualifier location
+          in
           let target_is_sanitized =
             (* Optimization: We only view names as being sanitizable to avoid unnecessary type
                checking. *)
             match Node.value target with
-            | Name (Name.Attribute _) -> Model.global_is_sanitized ~resolution ~expression:target
+            | Name (Name.Attribute _) ->
+                Model.get_global_model ~resolution ~location:location_with_module ~expression:target
+                |> Model.GlobalModel.is_sanitized
             | _ -> false
           in
           if target_is_sanitized then
@@ -1447,7 +1456,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                       apply_call_targets
                         ~resolution
                         ~callee:target
-                        (Location.with_module ~qualifier:FunctionContext.qualifier location)
+                        location_with_module
                         arguments
                         state
                         targets
