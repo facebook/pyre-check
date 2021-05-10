@@ -61,10 +61,7 @@ class PyreConnection:
         self.pyre_arguments += arguments
 
     def start_server(self) -> PyreCheckResult:
-        subprocess.run(
-            ["pyre", "--noninteractive", *self.pyre_arguments, "start"],
-            cwd=str(self.pyre_directory),
-        )
+        # incremental will start a new server when needed.
         result = subprocess.run(
             ["pyre", "--noninteractive", *self.pyre_arguments, "incremental"],
             stdout=subprocess.PIPE,
