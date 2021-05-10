@@ -28,6 +28,28 @@ def eval_and_log(*, eval: TaintSink[RemoteCodeExecution], **kwargs): ...
 
 This allows us to catch flows only into the `eval` keyword argument.
 
+## Instance attributes versus class attributes
+
+Models can specify sources and sinks on attributes, following the type annotation
+syntax:
+
+```python
+django.http.request.HttpRequest.GET: TaintSource[UserControlled]
+```
+
+Any access to `request.GET` will be tainted when `request` is an instance of
+`HttpRequest` or any of its children. However, note that the access to the class
+attribute (i.e, `HttpRequest.GET`) won't be considered tainted.
+
+To specify sources and sinks on class attributes, use the `__class__` prefix:
+
+```python
+django.http.request.HttpRequest.__class__.GET: TaintSource[UserControlled]
+```
+
+To specify a source on both the class attribute and instance attribute, simply
+use both lines.
+
 ## Literal String Sources And Sinks
 
 Some security vulnerabilities are best captured by modelling strings of a given
