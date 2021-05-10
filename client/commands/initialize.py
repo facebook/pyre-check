@@ -32,6 +32,8 @@ LOG: Logger = logging.getLogger(__name__)
 def _create_source_directory_element(source: str) -> Union[str, Dict[str, str]]:
     if source == ".":
         return source
+    if not Path(source).is_dir():
+        raise InitializationException(f"No directory found at `{source}`.")
     # Imports are likely relative to the parent of the package.
     package_root = find_parent_directory_containing_file(Path(source), "__init__.py")
     if package_root is not None:
