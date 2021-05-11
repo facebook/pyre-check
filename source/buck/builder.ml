@@ -212,10 +212,10 @@ let merge_build_maps target_and_build_maps =
     let open BuildMap.Partial in
     match merge build_map_sofar next_build_map with
     | MergeResult.Incompatible { MergeResult.IncompatibleItem.key; left_value; right_value } ->
-        Log.warning
-          "Cannot include target %s for type checking: file `%s` has already been mapped to `%s` \
-           but the target maps it to `%s` instead. "
-          (Target.show next_target)
+        Log.warning "Cannot include target for type checking: %s" (Target.show next_target);
+        Log.log
+          ~section:`Server
+          "... file `%s` has already been mapped to `%s` but the target maps it to `%s` instead. "
           key
           left_value
           right_value;
