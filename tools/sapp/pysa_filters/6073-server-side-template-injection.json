@@ -1,5 +1,5 @@
 {
-    "name": "SSTI",
+    "name": "Server Side Template Injection",
     "description": "High signal filter for 6073 Server Side Template Injection",
     "features": [
         {
