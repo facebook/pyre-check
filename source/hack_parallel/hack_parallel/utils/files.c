@@ -24,7 +24,7 @@ void hh_lutimes(value filename_v) {
   /* Not implemented */
   CAMLreturn0;
 #else
-  char* filename = String_val(filename_v);
+  const char* filename = String_val(filename_v);
   int success = lutimes(filename, NULL);
   if (success != 0) {
     caml_failwith("lutimes failed");
