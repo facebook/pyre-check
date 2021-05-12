@@ -272,10 +272,8 @@ let restore ~build_map { source_root; artifact_root; _ } =
   | Result.Ok () -> Lwt.return_unit
 
 
-let do_incremental_build ~source_root ~artifact_root ~old_build_map ~new_build_map () =
+let update_artifacts ~source_root ~artifact_root difference =
   let open Lwt.Infix in
-  Log.info "Calculating the scope of the re-build...";
-  let difference = BuildMap.difference ~original:old_build_map new_build_map in
   Log.info "Incrementally updating Python link-tree for type checking...";
   Artifacts.update ~source_root ~artifact_root difference
   >>= function
@@ -283,6 +281,14 @@ let do_incremental_build ~source_root ~artifact_root ~old_build_map ~new_build_m
   | Result.Ok () ->
       let to_artifact_path (relative, _) = Path.create_relative ~root:artifact_root ~relative in
       BuildMap.Difference.to_alist difference |> List.map ~f:to_artifact_path |> Lwt.return
+
+
+let do_incremental_build ~source_root ~artifact_root ~old_build_map ~new_build_map () =
+  let difference =
+    Log.info "Calculating the scope of the re-build...";
+    BuildMap.difference ~original:old_build_map new_build_map
+  in
+  update_artifacts ~source_root ~artifact_root difference
 
 
 let full_incremental_build ~old_build_map ~targets { buck_options; source_root; artifact_root } =
@@ -309,16 +315,43 @@ let incremental_build_with_normalized_targets
   Lwt.return { IncrementalBuildResult.targets; build_map; changed_artifacts }
 
 
-let fast_incremental_build_with_normalized_targets
-    ~old_build_map
+let build_map_and_difference_from_paths
+    ~old_build_map:_
     ~old_build_map_index:_
-    ~targets
+    ~targets:_
     ~changed_paths:_
     ~removed_paths:_
-    builder
+    _
   =
-  (* TODO: Implement a faster version of this. *)
-  incremental_build_with_normalized_targets ~old_build_map ~targets builder
+  Lwt.return_error "Not implemented yet"
+
+
+let fast_incremental_build_with_normalized_targets
+    ~old_build_map
+    ~old_build_map_index
+    ~targets
+    ~changed_paths
+    ~removed_paths
+    ({ source_root; artifact_root; _ } as builder)
+  =
+  let open Lwt.Infix in
+  Log.info "Attempting to perform fast incremental rebuild...";
+  build_map_and_difference_from_paths
+    ~old_build_map
+    ~old_build_map_index
+    ~targets
+    ~changed_paths
+    ~removed_paths
+    builder
+  >>= function
+  | Result.Error message ->
+      Log.info "Fast incremental rebuild failed: %s. Falling back to the slow path..." message;
+      incremental_build_with_normalized_targets ~old_build_map ~targets builder
+  | Result.Ok (build_map, difference) ->
+      let open Lwt.Infix in
+      update_artifacts ~source_root ~artifact_root difference
+      >>= fun changed_artifacts ->
+      Lwt.return { IncrementalBuildResult.targets; build_map; changed_artifacts }
 
 
 let incremental_build_with_unchanged_build_map
