@@ -25,7 +25,6 @@ DEVELOPMENT_COMPILER: str = COMPILER_VERSION
 RELEASE_COMPILER = f"{COMPILER_VERSION}+flambda"
 DEPENDENCIES = [
     "base64.3.5.0",
-    "conf-sqlite3",
     "core.v0.14.1",
     "re2.v0.14.0",
     "dune.2.8.2",
