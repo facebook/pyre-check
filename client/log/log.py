@@ -365,3 +365,10 @@ def get_optional_input(prompt: str, default: str) -> str:
 def get_input(prompt: str, suffix: str = "") -> str:
     LOG.log(PROMPT, prompt + suffix)
     return input().strip()
+
+
+def truncate(message: str, size: int) -> str:
+    if len(message) <= size:
+        return message
+
+    return f"{message[:size]}..[truncated {len(message) - size} characters]"

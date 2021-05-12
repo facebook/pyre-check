@@ -19,4 +19,5 @@ from .log import (  # noqa: F401
     initialize,
     start_logging_to_directory,
     stdout,
+    truncate,
 )
