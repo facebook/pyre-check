@@ -732,6 +732,7 @@ let missing_builtin_classes, missing_typing_classes, missing_typing_extensions_c
       make "typing.ClassMethod" ~bases:single_unary_generic ~body:classmethod_body;
       make "typing.StaticMethod" ~bases:single_unary_generic ~body:staticmethod_body;
       make "typing.GenericMeta" ~bases:[Primitive "type"] ~body:generic_meta_body;
+      make "typing.TypeGuard" ~bases:(Type.bool :: single_unary_generic);
     ]
   in
   let typing_extension_classes =

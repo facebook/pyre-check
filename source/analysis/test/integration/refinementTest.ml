@@ -984,6 +984,37 @@ let test_check_final_attribute_refinement context =
   ()
 
 
+let test_type_guard context =
+  let assert_type_errors = assert_type_errors ~context in
+
+  (* From PEP 647: https://www.python.org/dev/peps/pep-0647/.
+
+     TODO(T90609807): This is not implemented yet in Pyre. This is mainly to unblock use of
+     TypeGuard in typeshed. *)
+  assert_type_errors
+    {|
+      from typing import Any, List, TypeGuard
+
+      # pyre-ignore[2]: Should not have Any.
+      def is_str_list(val: List[Any]) -> TypeGuard[List[str]]:
+        """Determines whether all objects in the list are strings"""
+        # pyre-ignore[7]: Returning bool expected TypeGuard.
+        return all(isinstance(x, str) for x in val)
+
+      def foo(xs: List[int | str]) -> None:
+        my_bool: bool = is_str_list(xs)
+        if my_bool:
+          reveal_type(xs)
+        else:
+          reveal_type(xs)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `xs` is `List[typing.Union[int, str]]`.";
+      "Revealed type [-1]: Revealed type for `xs` is `List[typing.Union[int, str]]`.";
+    ];
+  ()
+
+
 let () =
   "refinement"
   >::: [
@@ -995,5 +1026,6 @@ let () =
          "check_assert_contains_none" >:: test_assert_contains_none;
          "check_callable" >:: test_check_callable;
          "check_final_attribute_refinement" >:: test_check_final_attribute_refinement;
+         "type_guard" >:: test_type_guard;
        ]
   |> Test.run
