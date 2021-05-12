@@ -405,6 +405,25 @@ module Builder : sig
       `BUCK` or `TARGETS` file -- callers are encouraged to verify this before deciding which
       incremental build API to invoke. *)
 
+  val fast_incremental_build_with_normalized_targets
+    :  old_build_map:BuildMap.t ->
+    old_build_map_index:BuildMap.Indexed.t ->
+    targets:Target.t list ->
+    changed_paths:PyrePath.t list ->
+    removed_paths:PyrePath.t list ->
+    t ->
+    IncrementalBuildResult.t Lwt.t
+  (** Given a list of normalized targets and changed/removed files, incrementally construct a new
+      build map for the targets and incrementally update the Python link tree at the given artifact
+      root accordingly. Return the new build map along with a list of targets that are covered by
+      the build map. This API may raise the same set of exceptions as
+      {!incremental_build_with_normalized_targets}.
+
+      The difference between this API and {!incremental_build_with_normalized_targets} is that this
+      API makes an additional assumption that the given incremental update does not change the
+      contents of any generated file. As a result, it can skip both the target normalizing step and
+      the `buck build` step, which is usually a huge performance bottleneck for incremental checks. *)
+
   val incremental_build_with_unchanged_build_map
     :  build_map:BuildMap.t ->
     build_map_index:BuildMap.Indexed.t ->

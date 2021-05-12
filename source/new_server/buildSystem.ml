@@ -159,9 +159,6 @@ module BuckBuildSystem = struct
                  ~index:state.build_map_index
                  ~builder:state.builder
                  path)
-            (* TODO (T90174546): This check may lead to temporary inconsistent view of the
-               filesystem with `ModuleTracker`. *)
-            || not (Path.file_exists path)
           in
           List.exists paths ~f
         in
@@ -173,24 +170,33 @@ module BuckBuildSystem = struct
                 ~old_build_map:state.build_map
                 ~targets:state.targets;
           }
-        else if should_reconstruct_build_map paths then
-          {
-            IncrementalBuilder.name = "skip_renormalize";
-            run =
-              Buck.Builder.incremental_build_with_normalized_targets
-                ~old_build_map:state.build_map
-                ~targets:state.normalized_targets;
-          }
         else
-          {
-            IncrementalBuilder.name = "skip_rebuild";
-            run =
-              Buck.Builder.incremental_build_with_unchanged_build_map
-                ~build_map:state.build_map
-                ~build_map_index:state.build_map_index
-                ~targets:state.normalized_targets
-                ~changed_sources:paths;
-          }
+          let changed_paths, removed_paths =
+            (* TODO (T90174546): This check may lead to temporary inconsistent view of the
+               filesystem with `ModuleTracker`. *)
+            List.partition_tf paths ~f:Path.file_exists
+          in
+          if List.is_empty removed_paths && not (should_reconstruct_build_map changed_paths) then
+            {
+              IncrementalBuilder.name = "skip_rebuild";
+              run =
+                Buck.Builder.incremental_build_with_unchanged_build_map
+                  ~build_map:state.build_map
+                  ~build_map_index:state.build_map_index
+                  ~targets:state.normalized_targets
+                  ~changed_sources:paths;
+            }
+          else
+            {
+              IncrementalBuilder.name = "skip_renormalize_optimized";
+              run =
+                Buck.Builder.fast_incremental_build_with_normalized_targets
+                  ~old_build_map:state.build_map
+                  ~old_build_map_index:state.build_map_index
+                  ~targets:state.normalized_targets
+                  ~changed_paths
+                  ~removed_paths;
+            }
       in
       let open Lwt.Infix in
       with_logging

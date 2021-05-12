@@ -309,6 +309,18 @@ let incremental_build_with_normalized_targets
   Lwt.return { IncrementalBuildResult.targets; build_map; changed_artifacts }
 
 
+let fast_incremental_build_with_normalized_targets
+    ~old_build_map
+    ~old_build_map_index:_
+    ~targets
+    ~changed_paths:_
+    ~removed_paths:_
+    builder
+  =
+  (* TODO: Implement a faster version of this. *)
+  incremental_build_with_normalized_targets ~old_build_map ~targets builder
+
+
 let incremental_build_with_unchanged_build_map
     ~build_map
     ~build_map_index
