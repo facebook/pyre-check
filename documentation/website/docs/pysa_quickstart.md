@@ -63,12 +63,7 @@ $ python3.8 -m venv ~/.venvs/pysa
 $ source ~/.venvs/pysa/bin/activate
 ```
 
-2. Install Pyre and SAPP in the virtual environment:
-```shell
-(pysa) $ pip install pyre-check fb-sapp
-```
-
-3. Install dependencies for your project
+2. Install dependencies for your project
 
 You can check which packages are installed in your virtual environment by looking at the files in:
 ```shell
@@ -82,6 +77,11 @@ If you already have dependencies installed for your project in your virtual envi
 
 Installing your project dependencies in your virtual environment will allow Pysa to provide you better results, because it allows Pysa to use [models](pysa_basics.md#model-files) that correspond to those dependencies and detect [sources](pysa_basics.md#sources) and [sinks](pysa_basics.md#sinks) that might be hidden in your dependencies' code
 
+3. Install Pyre and SAPP in the virtual environment:
+```shell
+(pysa) $ pip install pyre-check fb-sapp
+```
+
 4. Create Pyre configuration file in the project directory you want to run Pysa on:
 
 `pyre init` will set up a [configuration file for Pyre (`.pyre_configuration`)](configuration.md) in your project's directory. The defaults for `pyre init` should cover most projects.
@@ -94,7 +94,7 @@ Installing your project dependencies in your virtual environment will allow Pysa
 
 If your project isn't type annotated, running Pyre's type inference might improve your Pysa results. Note: this command will modify your code, but don't worry the type annotations won't affect your code at runtime.
 ```shell
-(pysa) $ pyre -l . infer -r -i
+(pysa) $ pyre infer -r -i
 ```
 
 6. Set up SAPP with some high signal filters
@@ -137,12 +137,9 @@ We've provided you with some filters in SAPP to help you find a small subset of 
  - [Introduction to Pysa](pysa_basics.md)
  - [DEF CON 28 Pysa Tutorial](https://www.youtube.com/watch?v=8I3zlvtpOww)
  - [Pysa Debugging Tips](pysa_false_negatives.md)
- - [SAPP Documentation](static_analysis_post_processor.md)
-<!-- TODO(edq) update SAPP docs  -->
+ - [SAPP Documentation](https://github.com/facebook/sapp#readme)
 
 ## Common Issues
-<!-- TODO(edq) If SAPP traces don't show the corresponding code for my project, that means the user  you likely need to use --source-directory flag -->
-<!-- TODO(edq) Users will need to specific source directory if they have run pysa and sapp from outside their project folder -->
 
 **Problem**: Running Pysa results in `ƛ Error: Could not find a pyre client.`
 
@@ -212,6 +209,11 @@ $ (pysa) pip3 install wheel
 $ (pysa) python3.8 -m pip install --upgrade setuptools
 ```
 ----
+**Problem**: `pyre init` shows `ƛ Source directory path/to/dir does not exist. Be sure the source path is relative to the import_root`.
+
+**Solution**: You will need to manually update `source_directories` in `.pyre_configuration`. Refer to [Pyre Global configuration section](configuration.md#the-global-configuration) to set up `source_directories`.
+
+----
 **Problem**: Running `pyre analyze` results in a bunch of errors and Pysa stops running
 
 **Solution**: Run `pyre analyze --no-verify` to skip model validation.
@@ -221,21 +223,17 @@ $ (pysa) python3.8 -m pip install --upgrade setuptools
 
 **Solution**: Unfortunately, it is likely the case that your machine doesn't have enough memory to run Pysa on projects with similar size to yours.
 
----
-**Problem**: Running any `sapp` command results in `SyntaxError: future feature annotations is not defined`
+----
+**Problem**: `pyre analyze --no-verify` exits with error `ƛ Uncaught exception: (Invalid_argument "~/.venvs/pysa/lib/pyre_check/typeshed/stdlib/zlib.pyi is not a directory")`
 
-**Solution**: SAPP requires Python 3.7. Ensure you are running a Python version later than Python 3.7
+**Solution**: Delete your virtual environment and recreate your virtual environment by following the steps in the [Initial configuration](#initial-configuration) section
 ```shell
-$ python3 --version
+(pysa) $ deactivate
+$ rm -rf ~/.venvs/pysa
 ```
----
-**Problem**: I can't connect to the Web UI and it displays an error related to SSL. The SAPP server log displays a bunch of `400 Bad Request` error codes
-
-**Solution**: Make sure you are visiting [`http://localhost:5000`](http://localhost:5000) and not `https://localhost:5000`
-
----
-**Problem**: I'm seeing a bunch of errors like `~/.venvs/pysa/lib/pyre_check/taint/filename.pysa: module.path.function_name is not part of the environment!`
+----
 <!-- TODO(T89279545) Update `not part of environment` sections after this task is done -->
+**Problem**: I'm seeing a bunch of errors like `~/.venvs/pysa/lib/pyre_check/taint/filename.pysa: module.path.function_name is not part of the environment!`
 
 **Solution**:
 If you don't use the `module.path.function_name` mentioned in your project, you can ignore them. Pysa ships with many taint models for code that isn't present in all projects. The errors you are seeing is Pysa informing you that Pysa hasn't found the source code for that particular function in your project or your venv.
@@ -252,6 +250,28 @@ If you do use the `module.path.function_name` mentioned in your project and the 
   "taint_models_path": "~/.venvs/pysa/lib",
 }
 ```
+----
+**Problem**: Running any `sapp` command results in `SyntaxError: future feature annotations is not defined`
+
+**Solution**: SAPP requires Python 3.7. Ensure you are running a Python version later than Python 3.7
+```shell
+$ python3 --version
+```
+----
+
+<!-- TODO(T83001415) remove the section below after the todo is completed -->
+**Problem**: Running any `sapp` command results in a bunch of `SAWarning`s like
+```
+SAWarning: SAWarning: relationship 'Child.parent' will copy column parent.id to column child.parent_id, which conflicts with relationship(s): 'Parent.children' (copies parent.id to child.parent_id). If this is not the intention, consider if these relationships should be linked with back_populates, or if viewonly=True should be applied to one or more if they are read-only. For the less common case that foreign key constraints are partially overlapping, the orm.foreign() annotation can be used to isolate the columns that should be written towards. The 'overlaps' parameter may be used to remove this warning.
+```
+**Solution**: Please ignore the `SAWarning`s. They don't affect the functionality of SAPP and everything should be working as intended.
+
+----
+
+**Problem**: I can't connect to the Web UI and it displays an error related to SSL. The SAPP server log displays a bunch of `400 Bad Request` error codes
+
+**Solution**: Make sure you are visiting [`http://localhost:5000`](http://localhost:5000) and not `https://localhost:5000`
+
 ----
 **Problem**: If your SAPP server shows `404 Not found` and the webpage shows `The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.`
 
@@ -277,17 +297,12 @@ Checking which issues SAPP imported - you should expect the following lines to a
 ```
 
 ----
-**Problem**: `pyre analyze --no-verify` exits with error `ƛ Uncaught exception: (Invalid_argument "~/.venvs/pysa/lib/pyre_check/typeshed/stdlib/zlib.pyi is not a directory")`
+**Problem**: The issues on SAPP Web UI have boxes with `No file found for filename.py`, so I cannot see the source code related to the trace for my issues
 
-**Solution**: Delete your virtual environment and recreate your virtual environment by following the steps in the [Initial configuration](#initial-configuration) section
+**Solution**: Try passing the path to your project source code with `--source-directory` to `sapp server`
 ```shell
-(pysa) $ deactivate
-$ rm -rf ~/.venvs/pysa
+(pysa) $ sapp server --source-directory path/to/project_source_code
 ```
-----
-**Problem**: `pyre init` shows `ƛ Source directory path/to/dir does not exist. Be sure the source path is relative to the import_root`.
-
-**Solution**: You will need to manually update `source_directories` in `.pyre_configuration`. Refer to [Pyre Global configuration section](configuration.md#the-global-configuration) to set up `source_directories`.
 
 ----
 **Problem**: Pysa still doesn't work despite trying everything above
