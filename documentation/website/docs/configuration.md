@@ -3,6 +3,16 @@ id: configuration
 title: Configuration
 sidebar_label: Configuration
 ---
+import {OssOnly, FbInternalOnly} from 'internaldocs-fb-helpers';
+import FbConfiguration from './fb/configuration.md';
+
+<FbInternalOnly>
+
+<FbConfiguration />
+
+</FbInternalOnly>
+
+<OssOnly>
 
 Pyre can be run without a configuration (see [Command Line Arguments](configuration.md#command-line-arguments)) but we do recommend that you create a configuration (see [Getting Started](getting_started.md)) and commit that to your version control system to make sure everyone working on your project is using the same settings.
 
@@ -86,6 +96,7 @@ Nesting local configurations is not supported. The configuration should live at 
 project unit and inclusion/exclusion of files from type checking can be done by specifying sources, using
 `ignore_all_errors`, or by adding [local suppression](errors.md#suppressing-individual-errors).
 
+
 ## Command Line Arguments
 You can get a full and current list of options to run Pyre by running `pyre --help`. The following is a list of commonly used commands and options.
 
@@ -137,3 +148,5 @@ which provides typed stubs for library functions. This can also be set in `.pyre
 - `--verbose`: Enable verbose logging. Most useful when used in conjunction with `--noninteractive`.
 
 - `--version`: Print the current version of Pyre.
+
+</OssOnly>
