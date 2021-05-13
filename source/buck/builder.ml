@@ -47,7 +47,10 @@ let create ?mode ?isolation_prefix ~source_root ~artifact_root raw =
   { buck_options = { BuckOptions.raw; mode; isolation_prefix }; source_root; artifact_root }
 
 
-let query_buck_for_targets { BuckOptions.raw; mode; isolation_prefix } target_specifications =
+let query_buck_for_normalized_targets
+    { BuckOptions.raw; mode; isolation_prefix }
+    target_specifications
+  =
   match target_specifications with
   | [] -> Lwt.return "{}"
   | _ ->
@@ -76,6 +79,34 @@ let query_buck_for_targets { BuckOptions.raw; mode; isolation_prefix } target_sp
       |> Raw.query raw
 
 
+let query_buck_for_changed_targets ~targets { BuckOptions.raw; mode; isolation_prefix } source_paths
+  =
+  match targets with
+  | [] -> Lwt.return "{}"
+  | targets -> (
+      match source_paths with
+      | [] -> Lwt.return "{}"
+      | source_paths ->
+          let target_string = List.map targets ~f:Target.show |> String.concat ~sep:" " in
+          List.concat
+            [
+              ["--json"];
+              ["--config"; "client.id=pyre"];
+              Option.value_map isolation_prefix ~default:[] ~f:(fun isolation_prefix ->
+                  ["--isolation_prefix"; isolation_prefix]);
+              Option.value_map mode ~default:[] ~f:(fun mode -> ["@mode/" ^ mode]);
+              [
+                (* This will get only those owner targets that are beneath our targets or the
+                   dependencies of our targets. *)
+                Format.sprintf "owner(%%s) ^ deps(set(%s))" target_string;
+              ];
+              List.map source_paths ~f:Path.show;
+              (* These attributes are all we need to locate the source and artifact relative paths. *)
+              ["--output-attributes"; "srcs"; "buck.base_path"; "buck.base_module"; "base_module"];
+            ]
+          |> Raw.query raw )
+
+
 let run_buck_build_for_targets { BuckOptions.raw; mode; isolation_prefix } targets =
   match targets with
   | [] -> Lwt.return "{}"
@@ -95,7 +126,7 @@ let run_buck_build_for_targets { BuckOptions.raw; mode; isolation_prefix } targe
       |> Raw.build raw
 
 
-let parse_buck_query_output query_output =
+let parse_buck_normalized_targets_query_output query_output =
   let is_ignored_target target =
     (* We should probably tag these targets as `no_pyre` in the long run. *)
     String.is_suffix target ~suffix:"-mypy_ini"
@@ -164,9 +195,11 @@ let load_partial_build_map path =
 let normalize_targets buck_options target_specifications =
   let open Lwt.Infix in
   Log.info "Collecting buck targets to build...";
-  query_buck_for_targets buck_options target_specifications
+  query_buck_for_normalized_targets buck_options target_specifications
   >>= fun query_output ->
-  let targets = parse_buck_query_output query_output |> List.map ~f:Target.of_string in
+  let targets =
+    parse_buck_normalized_targets_query_output query_output |> List.map ~f:Target.of_string
+  in
   Log.info "Collected %d targets" (List.length targets);
   Lwt.return targets
 
@@ -313,6 +346,53 @@ let incremental_build_with_normalized_targets
   do_incremental_build ~source_root ~artifact_root ~old_build_map ~new_build_map:build_map ()
   >>= fun changed_artifacts ->
   Lwt.return { IncrementalBuildResult.targets; build_map; changed_artifacts }
+
+
+module BuckChangedTargetsQueryOutput = struct
+  type t = {
+    source_base_path: string;
+    artifact_base_path: string;
+    artifacts_to_sources: (string * string) list;
+  }
+  [@@deriving sexp, compare]
+end
+
+let parse_buck_changed_targets_query_output query_output =
+  let open Yojson.Safe in
+  try
+    let parse_target_json target_json =
+      let source_base_path = Util.member "buck.base_path" target_json |> Util.to_string in
+      let artifact_base_path =
+        match Util.member "buck.base_module" target_json with
+        | `String base_module -> String.tr ~target:'.' ~replacement:'/' base_module
+        | _ -> source_base_path
+      in
+      let artifact_base_path =
+        match Util.member "base_module" target_json with
+        | `String base_module -> String.tr ~target:'.' ~replacement:'/' base_module
+        | _ -> artifact_base_path
+      in
+      let artifacts_to_sources =
+        match Util.member "srcs" target_json with
+        | `Assoc targets_to_sources ->
+            List.map targets_to_sources ~f:(fun (target, source_json) ->
+                target, Util.to_string source_json)
+            |> List.filter ~f:(function
+                   | _, source when String.is_prefix ~prefix:"//" source ->
+                       (* This can happen for custom rules. *)
+                       false
+                   | _ -> true)
+        | _ -> []
+      in
+      { BuckChangedTargetsQueryOutput.source_base_path; artifact_base_path; artifacts_to_sources }
+    in
+    from_string ~fname:"buck changed paths query output" query_output
+    |> Util.to_assoc
+    |> List.map ~f:(fun (_, target_json) -> parse_target_json target_json)
+  with
+  | Yojson.Json_error message
+  | Util.Type_error (message, _) ->
+      raise (JsonError message)
 
 
 let to_relative_path ~root path = Path.get_relative_to_root ~root ~path

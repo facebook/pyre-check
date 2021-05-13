@@ -14,9 +14,9 @@ module BuildMap = Buck__BuildMap
 module Builder = Buck__Builder
 module Target = Buck__Target
 
-let test_parse_buck_query_output context =
+let test_parse_buck_normalized_targets_query_output context =
   let assert_parsed ~expected output =
-    let actual = Builder.parse_buck_query_output output in
+    let actual = Builder.parse_buck_normalized_targets_query_output output in
     assert_equal
       ~ctxt:context
       ~cmp:[%compare.equal: string list]
@@ -26,7 +26,7 @@ let test_parse_buck_query_output context =
   in
   let assert_not_parsed output =
     try
-      let _ = Builder.parse_buck_query_output output in
+      let _ = Builder.parse_buck_normalized_targets_query_output output in
       let message = Format.sprintf "Unexpected parsing success: %s" output in
       assert_failure message
     with
@@ -74,6 +74,141 @@ let test_parse_buck_query_output context =
   assert_not_parsed {| { "foo": [], "bar": 42 } |};
   assert_not_parsed {| { "foo": [ 42 ] } |};
   assert_not_parsed {| { "foo": [ { "bar": 42 } ] } |};
+  ()
+
+
+let test_parse_buck_changed_targets_query_output context =
+  let assert_parsed ~expected output =
+    let actual = Builder.parse_buck_changed_targets_query_output output in
+    assert_equal
+      ~ctxt:context
+      ~cmp:[%compare.equal: Builder.BuckChangedTargetsQueryOutput.t list]
+      ~printer:(fun results ->
+        Sexp.to_string_hum ([%sexp_of: Builder.BuckChangedTargetsQueryOutput.t list] results))
+      expected
+      actual
+  in
+  let assert_not_parsed output =
+    try
+      let _ = Builder.parse_buck_changed_targets_query_output output in
+      let message = Format.sprintf "Unexpected parsing success: %s" output in
+      assert_failure message
+    with
+    | Builder.JsonError _ -> ()
+  in
+  let module Output = Builder.BuckChangedTargetsQueryOutput in
+  assert_parsed "{}" ~expected:[];
+  assert_parsed
+    {|
+        {
+          "//foo:bar": {
+            "srcs": { "a.py": "b.py" },
+            "buck.base_path" : "foo/bar"
+          }
+        }
+      |}
+    ~expected:
+      [
+        {
+          Output.source_base_path = "foo/bar";
+          artifact_base_path = "foo/bar";
+          artifacts_to_sources = ["a.py", "b.py"];
+        };
+      ];
+  assert_parsed
+    {|
+        {
+          "//foo:bar": {
+            "srcs": { "a.py": "b.py" },
+            "buck.base_path": "foo/bar",
+            "buck.base_module": "foo.baz"
+          }
+        }
+      |}
+    ~expected:
+      [
+        {
+          Output.source_base_path = "foo/bar";
+          artifact_base_path = "foo/baz";
+          artifacts_to_sources = ["a.py", "b.py"];
+        };
+      ];
+  assert_parsed
+    {|
+        {
+          "//foo:bar": {
+            "srcs": { "a.py": "b.py", "c.py": "d.py" },
+            "buck.base_path": "foo/bar",
+            "base_module": "foo.baz"
+          }
+        }
+      |}
+    ~expected:
+      [
+        {
+          Output.source_base_path = "foo/bar";
+          artifact_base_path = "foo/baz";
+          artifacts_to_sources = ["a.py", "b.py"; "c.py", "d.py"];
+        };
+      ];
+  assert_parsed
+    {|
+        {
+          "//foo:bar": {
+            "srcs": { "a.py": "b.py", "c.py": "//derp:generate-version=version.py" },
+            "buck.base_path": "foo/bar"
+          }
+        }
+      |}
+    ~expected:
+      [
+        {
+          Output.source_base_path = "foo/bar";
+          artifact_base_path = "foo/bar";
+          artifacts_to_sources = ["a.py", "b.py"];
+        };
+      ];
+  assert_parsed
+    {|
+        {
+          "//foo:bar": {
+            "srcs": { "a.py": "b.py" },
+            "buck.base_path": "foo/bar"
+          },
+          "//foo:baz": {
+            "srcs": { "c.py": "d.py" },
+            "buck.base_path": "foo/baz"
+          }
+        }
+      |}
+    ~expected:
+      [
+        {
+          Output.source_base_path = "foo/bar";
+          artifact_base_path = "foo/bar";
+          artifacts_to_sources = ["a.py", "b.py"];
+        };
+        {
+          Output.source_base_path = "foo/baz";
+          artifact_base_path = "foo/baz";
+          artifacts_to_sources = ["c.py", "d.py"];
+        };
+      ];
+
+  assert_not_parsed "42";
+  assert_not_parsed "derp";
+  assert_not_parsed {|"abc"|};
+  assert_not_parsed "[]";
+  assert_not_parsed {| { foo: 42 } |};
+  assert_not_parsed {| { "foo": 42 } |};
+  assert_not_parsed {| { "foo": { "bar": 42 } } |};
+  assert_not_parsed {| {"//foo:bar":[]} |};
+  assert_not_parsed {| { "foo": [], "bar": 42 } |};
+  assert_not_parsed {| { "foo": [ 42 ] } |};
+  assert_not_parsed {| { "foo": [ { "bar": 42 } ] } |};
+  assert_not_parsed {| { "foo": [ { "srcs": 42 } ] } |};
+  assert_not_parsed {| { "foo": [ { "srcs": { "a": "b" } } ] } |};
+  assert_not_parsed {| { "foo": [ { "srcs": { "a": "b" }, "buck.base_path": 42 } ] } |};
   ()
 
 
@@ -446,7 +581,9 @@ let test_difference_from_removed_relative_paths context =
 let () =
   "builder_test"
   >::: [
-         "parse_buck_query_output" >:: test_parse_buck_query_output;
+         "parse_buck_normalized_targets_query_output"
+         >:: test_parse_buck_normalized_targets_query_output;
+         "parse_buck_changed_targets_query_output" >:: test_parse_buck_changed_targets_query_output;
          "parse_buck_build_output" >:: test_parse_buck_build_output;
          "load_parital_build_map" >:: test_load_partial_build_map;
          "merge_build_map" >:: test_merge_build_map;
