@@ -20,6 +20,17 @@ let assert_mapping_equal ~context ~expected actual =
     (actual |> List.sort ~compare:[%compare: string * string])
 
 
+let assert_difference_equal ~context ~expected actual =
+  let sort_alist = List.sort ~compare:[%compare: string * BuildMap.Difference.Kind.t] in
+  assert_equal
+    ~ctxt:context
+    ~cmp:[%compare.equal: (string * BuildMap.Difference.Kind.t) list]
+    ~printer:(fun elements ->
+      [%sexp_of: (string * BuildMap.Difference.Kind.t) list] elements |> Sexp.to_string_hum)
+    (sort_alist expected)
+    (sort_alist actual)
+
+
 let test_partial_build_map_from_json context =
   let assert_parsed ~expected input =
     Yojson.Safe.from_string input
@@ -195,14 +206,7 @@ let test_build_map_difference context =
     let original = BuildMap.Partial.of_alist_exn original |> BuildMap.create in
     let current = BuildMap.Partial.of_alist_exn current |> BuildMap.create in
     let actual = BuildMap.difference ~original current |> BuildMap.Difference.to_alist in
-    let sort_alist = List.sort ~compare:[%compare: string * BuildMap.Difference.Kind.t] in
-    assert_equal
-      ~ctxt:context
-      ~cmp:[%compare.equal: (string * BuildMap.Difference.Kind.t) list]
-      ~printer:(fun elements ->
-        [%sexp_of: (string * BuildMap.Difference.Kind.t) list] elements |> Sexp.to_string_hum)
-      (sort_alist expected)
-      (sort_alist actual)
+    assert_difference_equal ~context ~expected actual
   in
 
   let open BuildMap.Difference.Kind in
@@ -265,6 +269,61 @@ let test_build_map_difference context =
   ()
 
 
+let test_build_map_difference_merge context =
+  let assert_merged ~left ~right ~expected () =
+    match BuildMap.Difference.(merge (of_alist_exn left) (of_alist_exn right)) with
+    | Result.Ok merged ->
+        assert_difference_equal ~context ~expected (BuildMap.Difference.to_alist merged)
+    | _ -> assert_failure "Expected diff merging to succeed but it unexpectedly failed."
+  in
+  let assert_not_merged ~left ~right ~key () =
+    match BuildMap.Difference.(merge (of_alist_exn left) (of_alist_exn right)) with
+    | Result.Error actual_key ->
+        assert_equal ~ctxt:context ~cmp:String.equal ~printer:Fn.id key actual_key
+    | _ -> assert_failure "Expected partial map merging to succeed but it unexpectedly failed."
+  in
+
+  let open BuildMap.Difference.Kind in
+  assert_merged ~left:[] ~right:[] ~expected:[] ();
+  assert_merged
+    ~left:["foo.py", New "source/foo.py"]
+    ~right:[]
+    ~expected:["foo.py", New "source/foo.py"]
+    ();
+  assert_merged
+    ~left:[]
+    ~right:["foo.py", Changed "source/foo.py"]
+    ~expected:["foo.py", Changed "source/foo.py"]
+    ();
+  assert_merged
+    ~left:["foo.py", New "source/foo.py"]
+    ~right:["bar.py", Deleted]
+    ~expected:["foo.py", New "source/foo.py"; "bar.py", Deleted]
+    ();
+  assert_merged
+    ~left:["foo.py", New "source/foo.py"]
+    ~right:["bar.py", New "source/foo.py"]
+    ~expected:["foo.py", New "source/foo.py"; "bar.py", New "source/foo.py"]
+    ();
+  assert_merged
+    ~left:["foo.py", New "source/foo.py"]
+    ~right:["foo.py", New "source/foo.py"; "bar.py", Deleted]
+    ~expected:["foo.py", New "source/foo.py"; "bar.py", Deleted]
+    ();
+
+  assert_not_merged
+    ~left:["foo.py", New "source/foo0.py"; "bar.py", Changed "source/bar.py"]
+    ~right:["foo.py", New "source/foo1.py"; "bar.py", Changed "source/bar.py"]
+    ~key:"foo.py"
+    ();
+  assert_not_merged
+    ~left:["foo.py", New "source/foo0.py"]
+    ~right:["foo.py", Deleted]
+    ~key:"foo.py"
+    ();
+  ()
+
+
 let () =
   "build_map_test"
   >::: [
@@ -273,5 +332,6 @@ let () =
          "build_map_artifact_count" >:: test_build_map_artifact_count;
          "build_map_lookup" >:: test_build_map_lookup;
          "build_map_difference" >:: test_build_map_difference;
+         "build_map_difference_merge" >:: test_build_map_difference_merge;
        ]
   |> Test.run

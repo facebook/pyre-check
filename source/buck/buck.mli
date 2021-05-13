@@ -149,6 +149,11 @@ module BuildMap : sig
     val to_alist : t -> (string * Kind.t) list
     (** Convert a build map difference into an associated list. Each element in the list is a pair
         consisting of both the artifact path and the kind of the update. *)
+
+    val merge : t -> t -> (t, string) Result.t
+    (** [merge a b] returns [Result.Ok c] where [c] includes artifact paths from both [a] and [b].
+        If an artifact [path] is included in both [a] and [b] but the associated tags are different,
+        [Result.Error path] will be returned instead. *)
   end
 
   type t

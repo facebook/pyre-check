@@ -110,6 +110,21 @@ module Difference = struct
   let of_alist_exn items = Hashtbl.of_alist_exn (module String) items
 
   let to_alist = Hashtbl.to_alist
+
+  exception DuplicatedKey of string
+
+  let merge left right =
+    try
+      let f ~key = function
+        | `Left value
+        | `Right value ->
+            Some value
+        | `Both (left, right) when [%compare.equal: Kind.t] left right -> Some left
+        | `Both _ -> raise (DuplicatedKey key)
+      in
+      Result.Ok (Hashtbl.merge left right ~f)
+    with
+    | DuplicatedKey key -> Result.Error key
 end
 
 type t = { artifact_to_source: Partial.t }
