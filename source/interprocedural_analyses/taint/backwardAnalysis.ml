@@ -1339,7 +1339,7 @@ let extract_tito_and_sink_models define ~is_constructor ~resolution ~existing_ba
   let { Statement.Define.signature = { parameters; _ }; _ } = define in
   let {
     TaintConfiguration.analysis_model_constraints =
-      { maximum_model_width; maximum_complex_access_path_length; _ };
+      { maximum_model_width; maximum_complex_access_path_length; maximum_trace_length; _ };
     _;
   }
     =
@@ -1351,6 +1351,12 @@ let extract_tito_and_sink_models define ~is_constructor ~resolution ~existing_ba
     let annotation = Option.map ~f:(GlobalResolution.parse_annotation resolution) annotation in
     let type_breadcrumbs = Features.type_breadcrumbs ~resolution annotation in
 
+    let tree =
+      match maximum_trace_length with
+      | Some maximum_trace_length ->
+          BackwardState.Tree.prune_maximum_length maximum_trace_length tree
+      | _ -> tree
+    in
     let essential =
       if is_constructor then
         BackwardState.Tree.essential_for_constructor tree

@@ -40,6 +40,7 @@ type analysis_model_constraints = {
   maximum_model_width: int;
   maximum_complex_access_path_length: int;
   maximum_overrides_to_analyze: int option;
+  maximum_trace_length: int option;
 }
 
 type partial_sink_converter = (Sources.t list * Sinks.t) list String.Map.Tree.t
@@ -86,6 +87,7 @@ val create
   :  rule_filter:int list option ->
   find_missing_flows:missing_flows_kind option ->
   dump_model_query_results_path:Path.t option ->
+  maximum_trace_length:int option ->
   paths:Path.t list ->
   t
 

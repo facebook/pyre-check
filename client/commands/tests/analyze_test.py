@@ -55,6 +55,7 @@ class AnalyzeTest(unittest.TestCase):
                 rules=None,
                 use_cache=False,
                 inline_decorators=False,
+                maximum_trace_length=None,
             )
             self.assertEqual(
                 command._flags(),
@@ -101,6 +102,7 @@ class AnalyzeTest(unittest.TestCase):
                 rules=None,
                 use_cache=False,
                 inline_decorators=False,
+                maximum_trace_length=None,
             )
             self.assertEqual(
                 command._flags(),
@@ -149,6 +151,7 @@ class AnalyzeTest(unittest.TestCase):
                 rules=None,
                 use_cache=False,
                 inline_decorators=False,
+                maximum_trace_length=None,
             )
             self.assertEqual(
                 command._flags(),
@@ -199,6 +202,7 @@ class AnalyzeTest(unittest.TestCase):
                 rules=None,
                 use_cache=False,
                 inline_decorators=False,
+                maximum_trace_length=None,
             )
             self.assertEqual(
                 command._flags(),
@@ -248,6 +252,7 @@ class AnalyzeTest(unittest.TestCase):
                 rules=None,
                 use_cache=False,
                 inline_decorators=False,
+                maximum_trace_length=None,
             )
             self.assertEqual(
                 command._flags(),
@@ -298,6 +303,7 @@ class AnalyzeTest(unittest.TestCase):
                 rules=None,
                 use_cache=False,
                 inline_decorators=False,
+                maximum_trace_length=None,
             )
             self.assertEqual(
                 command._flags(),
@@ -348,6 +354,7 @@ class AnalyzeTest(unittest.TestCase):
                 rules=None,
                 use_cache=False,
                 inline_decorators=False,
+                maximum_trace_length=None,
             )
             self.assertEqual(
                 command._flags(),
@@ -398,6 +405,7 @@ class AnalyzeTest(unittest.TestCase):
                 rules=None,
                 use_cache=False,
                 inline_decorators=False,
+                maximum_trace_length=None,
             )
             self.assertEqual(
                 command._flags(),
@@ -451,6 +459,7 @@ class AnalyzeTest(unittest.TestCase):
                 rules=[5021, 5022],
                 use_cache=False,
                 inline_decorators=False,
+                maximum_trace_length=None,
             )
             self.assertEqual(
                 command._flags(),
@@ -501,6 +510,7 @@ class AnalyzeTest(unittest.TestCase):
                 rules=None,
                 use_cache=False,
                 inline_decorators=False,
+                maximum_trace_length=None,
             )
             self.assertEqual(
                 command._flags(),
@@ -549,6 +559,7 @@ class AnalyzeTest(unittest.TestCase):
                 rules=None,
                 use_cache=True,
                 inline_decorators=False,
+                maximum_trace_length=None,
             )
             self.assertEqual(
                 command._flags(),
@@ -598,6 +609,7 @@ class AnalyzeTest(unittest.TestCase):
                 rules=None,
                 use_cache=True,
                 inline_decorators=True,
+                maximum_trace_length=None,
             )
             self.assertEqual(
                 command._flags(),

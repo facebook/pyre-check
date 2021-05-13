@@ -173,6 +173,7 @@ module StaticAnalysis : sig
     find_missing_flows: string option;
     dump_model_query_results: bool;
     use_cache: bool;
+    maximum_trace_length: int option;
   }
 
   val to_json : t -> Yojson.Safe.json

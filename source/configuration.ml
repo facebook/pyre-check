@@ -277,10 +277,19 @@ module StaticAnalysis = struct
     find_missing_flows: string option;
     dump_model_query_results: bool;
     use_cache: bool;
+    maximum_trace_length: int option;
   }
 
   let to_json
-      { configuration; verify_models; rule_filter; find_missing_flows; dump_model_query_results; _ }
+      {
+        configuration;
+        verify_models;
+        rule_filter;
+        find_missing_flows;
+        dump_model_query_results;
+        maximum_trace_length;
+        _;
+      }
     =
     let taint_model_paths =
       configuration.taint_model_paths
@@ -295,6 +304,11 @@ module StaticAnalysis = struct
     let find_missing_flows_settings =
       match find_missing_flows with
       | Some missing_flow -> ["find_missing_flows", `String missing_flow]
+      | None -> []
+    in
+    let maximum_trace_length_settings =
+      match maximum_trace_length with
+      | Some maximum_trace_length -> ["maximum_trace_length", `Int maximum_trace_length]
       | None -> []
     in
     let dump_model_query_results_path =
@@ -315,6 +329,7 @@ module StaticAnalysis = struct
                 "dump_model_query_results_path", dump_model_query_results_path;
               ]
             @ rule_settings
-            @ find_missing_flows_settings ) );
+            @ find_missing_flows_settings
+            @ maximum_trace_length_settings ) );
       ]
 end

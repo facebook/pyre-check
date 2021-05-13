@@ -66,6 +66,7 @@ let run_analysis
     dump_model_query_results
     use_cache
     inline_decorators
+    maximum_trace_length
     _verbose
     expected_version
     sections
@@ -227,6 +228,7 @@ let run_analysis
                 find_missing_flows;
                 dump_model_query_results;
                 use_cache;
+                maximum_trace_length;
               }
             ~filename_lookup
             ~environment:(Analysis.TypeEnvironment.read_only environment)
@@ -283,5 +285,6 @@ let command =
            "-inline-decorators"
            no_arg
            ~doc:"Inline decorators at use sites to catch flows through the decorators."
+      +> flag "-maximum-trace-length" (optional int) ~doc:"Limit the trace length of taint flows."
       ++ Specification.base_command_line_arguments)
     run_analysis

@@ -235,3 +235,30 @@ method.
 By default, Pysa skips overrides on some functions that are typically
 problematic. You can find the full list of default-skipped functions in
 [`stubs/taint/skipped_overrides.pysa`](https://github.com/facebook/pyre-check/blob/master/stubs/taint/skipped_overrides.pysa)
+
+## Limit the trace length for better signal and performance
+
+By default, Pysa will find all flows from sources to sinks matching a rule.
+This can lead to very long traces which are hard to understand and tend to be
+false positives. This also brings down the performance a lot.
+
+Pysa provides a `--maximum-trace-length <integer>` command line argument which
+limits the length of traces that it finds. In general, this will also make Pysa
+faster.
+
+This option can also be added in the `taint.config` as follows:
+
+```json
+{
+  "sources": [],
+  "sinks": [],
+  "features": [],
+  "rules": [],
+  "options": {
+    "maximum_trace_length": 20
+  }
+}
+```
+
+Note that this is not a silver lining and that this might hide security
+vulnerabilities. Use it with caution.

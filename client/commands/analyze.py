@@ -45,6 +45,7 @@ class Analyze(Check):
         dump_model_query_results: bool = False,
         use_cache: bool,
         inline_decorators: bool,
+        maximum_trace_length: Optional[int],
     ) -> None:
         super(Analyze, self).__init__(
             command_arguments,
@@ -65,6 +66,7 @@ class Analyze(Check):
         self._dump_model_query_results = dump_model_query_results
         self._use_cache: bool = use_cache
         self._inline_decorators: bool = inline_decorators
+        self._maximum_trace_length: Optional[int] = maximum_trace_length
 
     def generate_analysis_directory(self) -> AnalysisDirectory:
         return resolve_analysis_directory(
@@ -104,6 +106,10 @@ class Analyze(Check):
             flags.append("-use-cache")
         if self._inline_decorators:
             flags.append("-inline-decorators")
+        maximum_trace_length = self._maximum_trace_length
+        if maximum_trace_length:
+            flags.extend(["-maximum-trace-length", str(maximum_trace_length)])
+
         return flags
 
     def _run(self, retries: int = 1) -> None:

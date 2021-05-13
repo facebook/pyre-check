@@ -584,7 +584,7 @@ let test_validate _ =
     }
     |};
   assert_validation_error_with_multiple_configurations
-    ~error:"Multiple values were passed in for overrides to analyze."
+    ~error:"Multiple values were passed in for `maximum_overrides_to_analyze`."
     [
       {|
       {
@@ -605,6 +605,32 @@ let test_validate _ =
         rules: [],
         options: {
           maximum_overrides_to_analyze: 60
+        }
+      }
+      |};
+    ];
+  assert_validation_error_with_multiple_configurations
+    ~error:"Multiple values were passed in for `maximum_trace_length`."
+    [
+      {|
+      {
+        sources: [],
+        sinks: [],
+        features: [],
+        rules: [],
+        options: {
+          maximum_trace_length: 10
+        }
+      }
+      |};
+      {|
+      {
+        sources: [],
+        sinks: [],
+        features: [],
+        rules: [],
+        options: {
+          maximum_trace_length: 20
         }
       }
       |};

@@ -14,7 +14,14 @@ open Taint
 include Taint.Result.Register (struct
   include Taint.Result
 
-  let init ~static_analysis_configuration ~scheduler ~environment ~functions ~stubs =
+  let init
+      ~static_analysis_configuration:
+        ({ Configuration.StaticAnalysis.maximum_trace_length; _ } as static_analysis_configuration)
+      ~scheduler
+      ~environment
+      ~functions
+      ~stubs
+    =
     let configuration = Configuration.StaticAnalysis.to_json static_analysis_configuration in
     let global_resolution = Analysis.TypeEnvironment.ReadOnly.global_resolution environment in
     let resolution =
@@ -151,6 +158,7 @@ include Taint.Result.Register (struct
                 ~rule_filter
                 ~find_missing_flows
                 ~dump_model_query_results_path
+                ~maximum_trace_length
                 ~paths
             in
             TaintConfiguration.register configuration;

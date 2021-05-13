@@ -1559,7 +1559,7 @@ let extract_source_model ~define ~resolution ~features_to_attach exit_taint =
   let return_type_breadcrumbs = Features.type_breadcrumbs ~resolution return_annotation in
   let {
     TaintConfiguration.analysis_model_constraints =
-      { maximum_model_width; maximum_complex_access_path_length; _ };
+      { maximum_model_width; maximum_complex_access_path_length; maximum_trace_length; _ };
     _;
   }
     =
@@ -1567,6 +1567,12 @@ let extract_source_model ~define ~resolution ~features_to_attach exit_taint =
   in
 
   let simplify tree =
+    let tree =
+      match maximum_trace_length with
+      | Some maximum_trace_length ->
+          ForwardState.Tree.prune_maximum_length maximum_trace_length tree
+      | _ -> tree
+    in
     let essential = ForwardState.Tree.essential tree in
     ForwardState.Tree.shape
       ~transform:(ForwardTaint.add_features Features.widen_broadening)

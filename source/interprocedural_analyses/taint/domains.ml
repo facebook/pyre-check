@@ -288,6 +288,8 @@ module type TAINT_DOMAIN = sig
 
   val transform_on_widening_collapse : t -> t
 
+  val prune_maximum_length : TraceLength.t -> t -> t
+
   (* Add trace info at call-site *)
   val apply_call
     :  Location.WithModule.t ->
@@ -483,6 +485,14 @@ end = struct
     add_features broadening
 
 
+  let prune_maximum_length maximum_length =
+    let filter_flow (_, flow_details) =
+      let length = FlowDetails.get FlowDetails.Slots.TraceLength flow_details in
+      TraceLength.is_bottom length || TraceLength.less_or_equal ~left:maximum_length ~right:length
+    in
+    transform LeafDomain.KeyValue Filter ~f:filter_flow
+
+
   let apply_call location ~callees ~port ~path ~element:taint =
     let apply (trace_info, leaf_taint) =
       let open TraceInfo in
@@ -598,6 +608,10 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
         features
     in
     transform Taint.complex_feature_set Map ~f:cut_off tree
+
+
+  let prune_maximum_length maximum_length =
+    transform Taint.Self Map ~f:(Taint.prune_maximum_length maximum_length)
 
 
   let filter_by_leaf ~leaf taint_tree =

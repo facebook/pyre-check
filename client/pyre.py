@@ -584,6 +584,11 @@ def pyre(
     default=False,
     help="Inline decorators at use sites to catch flows through decorators.",
 )
+@click.option(
+    "--maximum-trace-length",
+    type=int,
+    help="Limit the trace length of taint flows.",
+)
 @click.pass_context
 def analyze(
     context: click.Context,
@@ -598,6 +603,7 @@ def analyze(
     dump_model_query_results: bool,
     use_cache: bool,
     inline_decorators: bool,
+    maximum_trace_length: Optional[int],
 ) -> int:
     """
     Run Pysa, the inter-procedural static analysis tool.
@@ -625,6 +631,7 @@ def analyze(
             dump_model_query_results=dump_model_query_results,
             use_cache=use_cache,
             inline_decorators=inline_decorators,
+            maximum_trace_length=maximum_trace_length,
         ),
         configuration,
         command_argument.noninteractive,

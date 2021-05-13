@@ -46,6 +46,7 @@ type analysis_model_constraints = {
   maximum_model_width: int;
   maximum_complex_access_path_length: int;
   maximum_overrides_to_analyze: int option;
+  maximum_trace_length: int option;
 }
 
 let default_analysis_model_constraints =
@@ -53,6 +54,7 @@ let default_analysis_model_constraints =
     maximum_model_width = 25;
     maximum_complex_access_path_length = 10;
     maximum_overrides_to_analyze = None;
+    maximum_trace_length = None;
   }
 
 
@@ -401,21 +403,23 @@ let parse source_jsons =
     List.map source_jsons ~f:(parse_implicit_sinks ~allowed_sinks:sinks)
     |> List.fold ~init:empty_implicit_sinks ~f:merge_implicit_sinks
   in
-  let maximum_overrides_to_analyze =
-    let parse_overrides_to_analyze json =
+  let parse_integer_option name =
+    let parse_single_json json =
       match member "options" json with
       | `Null -> None
       | options -> (
-          match member "maximum_overrides_to_analyze" options with
+          match member name options with
           | `Null -> None
-          | overrides_to_analyze -> Some (Json.Util.to_int overrides_to_analyze) )
+          | value -> Some (Json.Util.to_int value) )
     in
-    List.filter_map source_jsons ~f:parse_overrides_to_analyze
+    List.filter_map source_jsons ~f:parse_single_json
     |> function
     | [] -> None
-    | [maximum_overrides_to_analyze] -> Some maximum_overrides_to_analyze
-    | _ -> failwith "Multiple values were passed in for overrides to analyze."
+    | [value] -> Some value
+    | _ -> failwith (Format.asprintf "Multiple values were passed in for `%s`." name)
   in
+  let maximum_overrides_to_analyze = parse_integer_option "maximum_overrides_to_analyze" in
+  let maximum_trace_length = parse_integer_option "maximum_trace_length" in
   let merge_implicit_sources left right =
     { literal_strings = left.literal_strings @ right.literal_strings }
   in
@@ -436,7 +440,7 @@ let parse source_jsons =
     find_missing_flows = None;
     dump_model_query_results_path = None;
     analysis_model_constraints =
-      { default_analysis_model_constraints with maximum_overrides_to_analyze };
+      { default_analysis_model_constraints with maximum_overrides_to_analyze; maximum_trace_length };
     lineage_analysis;
   }
 
@@ -628,7 +632,13 @@ let get () =
   | Some configuration -> configuration
 
 
-let create ~rule_filter ~find_missing_flows ~dump_model_query_results_path ~paths =
+let create
+    ~rule_filter
+    ~find_missing_flows
+    ~dump_model_query_results_path
+    ~maximum_trace_length
+    ~paths
+  =
   let file_paths = Path.get_matching_files_recursively ~suffix:".config" ~paths in
   let parse_configuration config_file =
     if not (Path.file_exists config_file) then
@@ -659,6 +669,15 @@ let create ~rule_filter ~find_missing_flows ~dump_model_query_results_path ~path
     | None -> configuration
   in
   let configuration = { configuration with dump_model_query_results_path } in
+  let configuration =
+    match maximum_trace_length with
+    | None -> configuration
+    | Some _ ->
+        let analysis_model_constraints =
+          { configuration.analysis_model_constraints with maximum_trace_length }
+        in
+        { configuration with analysis_model_constraints }
+  in
   match rule_filter with
   | None -> configuration
   | Some rule_filter ->
