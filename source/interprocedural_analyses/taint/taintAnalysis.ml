@@ -16,13 +16,19 @@ include Taint.Result.Register (struct
 
   let init
       ~static_analysis_configuration:
-        ({ Configuration.StaticAnalysis.maximum_trace_length; _ } as static_analysis_configuration)
+        ( {
+            Configuration.StaticAnalysis.verify_models;
+            configuration = { taint_model_paths; _ };
+            rule_filter;
+            find_missing_flows;
+            maximum_trace_length;
+            _;
+          } as static_analysis_configuration )
       ~scheduler
       ~environment
       ~functions
       ~stubs
     =
-    let configuration = Configuration.StaticAnalysis.to_json static_analysis_configuration in
     let global_resolution = Analysis.TypeEnvironment.ReadOnly.global_resolution environment in
     let resolution =
       Analysis.TypeCheck.resolution
@@ -31,29 +37,8 @@ include Taint.Result.Register (struct
         (module Analysis.TypeCheck.DummyContext)
     in
     let models = Model.infer_class_models ~environment in
-    let taint = Yojson.Safe.Util.member "taint" configuration in
-    let json_bool_member key value ~default =
-      Yojson.Safe.Util.member key value |> Yojson.Safe.Util.to_bool_option |> Option.value ~default
-    in
-    let verify = json_bool_member "verify_models" taint ~default:true in
     let find_missing_flows =
-      Yojson.Safe.Util.member "find_missing_flows" taint
-      |> Yojson.Safe.Util.to_string_option
-      >>= TaintConfiguration.missing_flows_kind_from_string
-    in
-    let dump_model_query_results_path =
-      Yojson.Safe.Util.member "dump_model_query_results_path" taint
-      |> Yojson.Safe.Util.to_string_option
-      >>| Path.create_absolute
-    in
-    let rule_filter =
-      if List.mem ~equal:String.equal (Yojson.Safe.Util.keys taint) "rule_filter" then
-        Some
-          ( Yojson.Safe.Util.member "rule_filter" taint
-          |> Yojson.Safe.Util.to_list
-          |> List.map ~f:Yojson.Safe.Util.to_int )
-      else
-        None
+      find_missing_flows >>= TaintConfiguration.missing_flows_kind_from_string
     in
 
     let create_models ~configuration sources =
@@ -140,18 +125,14 @@ include Taint.Result.Register (struct
       List.filter stubs ~f:(fun callable -> not (Callable.Map.mem models callable))
       |> List.fold ~init:models ~f:add_obscure_sink
     in
-    let model_paths =
-      Yojson.Safe.Util.member "model_paths" taint
-      |> Yojson.Safe.Util.to_list
-      |> List.map ~f:Yojson.Safe.Util.to_string
-    in
     let models, skip_overrides =
-      match model_paths with
+      match taint_model_paths with
       | [] -> models, Ast.Reference.Set.empty
       | _ -> (
           try
-            let paths =
-              List.map model_paths ~f:(Path.create_absolute ~follow_symbolic_links:true)
+            let dump_model_query_results_path =
+              Configuration.StaticAnalysis.dump_model_query_results_path
+                static_analysis_configuration
             in
             let configuration =
               TaintConfiguration.create
@@ -159,17 +140,17 @@ include Taint.Result.Register (struct
                 ~find_missing_flows
                 ~dump_model_query_results_path
                 ~maximum_trace_length
-                ~paths
+                ~taint_model_paths
             in
             TaintConfiguration.register configuration;
             let models, errors, skip_overrides, queries =
-              Model.get_model_sources ~paths |> create_models ~configuration
+              Model.get_model_sources ~paths:taint_model_paths |> create_models ~configuration
             in
             Model.register_verification_errors errors;
             let () =
               if not (List.is_empty errors) then
                 (* Exit or log errors, depending on whether models need to be verified. *)
-                if not verify then begin
+                if not verify_models then begin
                   Log.error "Found %d model verification errors!" (List.length errors);
                   List.iter errors ~f:(fun error ->
                       Log.error "%s" (Taint.Model.display_verification_error error))

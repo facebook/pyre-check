@@ -88,7 +88,7 @@ val create
   find_missing_flows:missing_flows_kind option ->
   dump_model_query_results_path:Path.t option ->
   maximum_trace_length:int option ->
-  paths:Path.t list ->
+  taint_model_paths:Path.t list ->
   t
 
 val validate : t -> unit

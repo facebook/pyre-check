@@ -156,10 +156,14 @@ let run_analysis
       Log.info "Verifying model syntax and configuration.";
       Taint.Model.get_model_sources ~paths:configuration.Configuration.Analysis.taint_model_paths
       |> List.iter ~f:(fun (path, source) -> Taint.Model.verify_model_syntax ~path ~source);
-      Taint.TaintConfiguration.create
-        ~rule_filter:None
-        ~paths:configuration.Configuration.Analysis.taint_model_paths
-      |> ignore;
+      let (_ : Taint.TaintConfiguration.t) =
+        Taint.TaintConfiguration.create
+          ~rule_filter:None
+          ~find_missing_flows:None
+          ~dump_model_query_results_path:None
+          ~maximum_trace_length:None
+          ~taint_model_paths:configuration.Configuration.Analysis.taint_model_paths
+      in
       Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->
           let cached_environment =
             if use_cache then Service.StaticAnalysis.Cache.load_environment ~configuration else None

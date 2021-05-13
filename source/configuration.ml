@@ -280,56 +280,9 @@ module StaticAnalysis = struct
     maximum_trace_length: int option;
   }
 
-  let to_json
-      {
-        configuration;
-        verify_models;
-        rule_filter;
-        find_missing_flows;
-        dump_model_query_results;
-        maximum_trace_length;
-        _;
-      }
+  let dump_model_query_results_path
+      { configuration = { log_directory; _ }; dump_model_query_results; _ }
     =
-    let taint_model_paths =
-      configuration.taint_model_paths
-      |> List.map ~f:Path.absolute
-      |> List.map ~f:(fun directory -> `String directory)
-    in
-    let rule_settings =
-      match rule_filter with
-      | Some rule_filter -> ["rule_filter", `List (List.map rule_filter ~f:(fun rule -> `Int rule))]
-      | None -> []
-    in
-    let find_missing_flows_settings =
-      match find_missing_flows with
-      | Some missing_flow -> ["find_missing_flows", `String missing_flow]
-      | None -> []
-    in
-    let maximum_trace_length_settings =
-      match maximum_trace_length with
-      | Some maximum_trace_length -> ["maximum_trace_length", `Int maximum_trace_length]
-      | None -> []
-    in
-    let dump_model_query_results_path =
-      if dump_model_query_results then
-        Path.create_relative ~root:configuration.log_directory ~relative:"model_query_results.pysa"
-        |> Path.absolute
-        |> fun path -> `String path
-      else
-        `Null
-    in
-    `Assoc
-      [
-        ( "taint",
-          `Assoc
-            ( [
-                "model_paths", `List taint_model_paths;
-                "verify_models", `Bool verify_models;
-                "dump_model_query_results_path", dump_model_query_results_path;
-              ]
-            @ rule_settings
-            @ find_missing_flows_settings
-            @ maximum_trace_length_settings ) );
-      ]
+    Path.create_relative ~root:log_directory ~relative:"model_query_results.pysa"
+    |> Option.some_if dump_model_query_results
 end

@@ -637,9 +637,9 @@ let create
     ~find_missing_flows
     ~dump_model_query_results_path
     ~maximum_trace_length
-    ~paths
+    ~taint_model_paths
   =
-  let file_paths = Path.get_matching_files_recursively ~suffix:".config" ~paths in
+  let file_paths = Path.get_matching_files_recursively ~suffix:".config" ~paths:taint_model_paths in
   let parse_configuration config_file =
     if not (Path.file_exists config_file) then
       raise

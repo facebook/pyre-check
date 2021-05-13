@@ -176,5 +176,5 @@ module StaticAnalysis : sig
     maximum_trace_length: int option;
   }
 
-  val to_json : t -> Yojson.Safe.json
+  val dump_model_query_results_path : t -> Path.t option
 end
