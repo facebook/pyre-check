@@ -184,3 +184,35 @@ let difference ~original:{ artifact_to_source = original } { artifact_to_source 
   Hashtbl.iteri original ~f:scan_original_item;
   Hashtbl.iteri current ~f:scan_current_item;
   result
+
+
+exception CannotApplyDifference of string
+
+let strict_apply_difference ~difference { artifact_to_source = original } =
+  try
+    let artifact_to_source = Hashtbl.copy original in
+    let apply_difference ~key:artifact ~data:kind =
+      let f key =
+        match kind, key with
+        | Difference.Kind.Deleted, Some _ ->
+            (* Remove an existing artifact. *)
+            None
+        | Difference.Kind.Deleted, None ->
+            (* Remove a nonexistent artifact. *)
+            raise (CannotApplyDifference artifact)
+        | Difference.Kind.(New value | Changed value), None ->
+            (* Add a new artifact. *)
+            Some value
+        | Difference.Kind.(New value | Changed value), Some key when String.equal value key ->
+            (* Add the same source. *)
+            Some value
+        | Difference.Kind.(New _ | Changed _), Some _ ->
+            (* Redirect an existing artifact. *)
+            raise (CannotApplyDifference artifact)
+      in
+      Hashtbl.change artifact_to_source artifact ~f
+    in
+    Hashtbl.iteri difference ~f:apply_difference;
+    Result.Ok { artifact_to_source }
+  with
+  | CannotApplyDifference artifact -> Result.Error artifact

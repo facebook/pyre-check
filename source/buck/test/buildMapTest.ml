@@ -324,6 +324,109 @@ let test_build_map_difference_merge context =
   ()
 
 
+let test_build_map_strict_apply_difference context =
+  let assert_applied ~expected ~original ~difference () =
+    let original = BuildMap.Partial.of_alist_exn original |> BuildMap.create in
+    let difference = BuildMap.Difference.of_alist_exn difference in
+    match BuildMap.strict_apply_difference ~difference original with
+    | Result.Error _ ->
+        assert_failure "Expected diff application to succeed but it unexpectedly failed."
+    | Result.Ok build_map -> assert_mapping_equal ~context ~expected (BuildMap.to_alist build_map)
+  in
+  let assert_not_applied ~key ~original ~difference () =
+    let original = BuildMap.Partial.of_alist_exn original |> BuildMap.create in
+    let difference = BuildMap.Difference.of_alist_exn difference in
+    match BuildMap.strict_apply_difference ~difference original with
+    | Result.Ok _ ->
+        assert_failure "Expected diff application to fail but it unexpectedly succeeded."
+    | Result.Error actual -> assert_equal ~ctxt:context ~cmp:String.equal ~printer:Fn.id key actual
+  in
+
+  assert_applied
+    ~original:[]
+    ~difference:["foo.py", New "source/foo.py"]
+    ~expected:["foo.py", "source/foo.py"]
+    ();
+  assert_applied
+    ~original:[]
+    ~difference:["foo.py", Changed "source/foo.py"]
+    ~expected:["foo.py", "source/foo.py"]
+    ();
+  assert_applied
+    ~original:["foo.py", "source/foo.py"]
+    ~difference:["foo.py", New "source/foo.py"]
+    ~expected:["foo.py", "source/foo.py"]
+    ();
+  assert_applied
+    ~original:["foo.py", "source/foo.py"]
+    ~difference:["foo.py", Changed "source/foo.py"]
+    ~expected:["foo.py", "source/foo.py"]
+    ();
+  assert_applied
+    ~original:["foo.py", "source/foo.py"]
+    ~difference:["foo.py", Deleted]
+    ~expected:[]
+    ();
+  assert_applied
+    ~original:["foo.py", "source/foo.py"; "bar.py", "source/bar.py"]
+    ~difference:["foo.py", Deleted]
+    ~expected:["bar.py", "source/bar.py"]
+    ();
+  assert_applied
+    ~original:["foo.py", "source/foo.py"]
+    ~difference:["bar.py", New "source/bar.py"; "baz.py", New "source/baz.py"]
+    ~expected:["foo.py", "source/foo.py"; "bar.py", "source/bar.py"; "baz.py", "source/baz.py"]
+    ();
+  assert_applied
+    ~original:["foo.py", "source/foo.py"]
+    ~difference:["bar.py", New "source/bar.py"; "foo.py", Deleted]
+    ~expected:["bar.py", "source/bar.py"]
+    ();
+  assert_applied
+    ~original:["foo.py", "source/foo.py"]
+    ~difference:["bar.py", New "source/bar.py"; "baz.py", Changed "source/baz.py"]
+    ~expected:["foo.py", "source/foo.py"; "bar.py", "source/bar.py"; "baz.py", "source/baz.py"]
+    ();
+  assert_applied
+    ~original:["foo.py", "source/foo.py"; "bar.py", "source/bar.py"]
+    ~difference:["foo.py", Deleted; "bar.py", Deleted]
+    ~expected:[]
+    ();
+  assert_applied
+    ~original:["foo.py", "source/foo.py"; "bar.py", "source/bar.py"]
+    ~difference:["foo.py", Deleted; "bar.py", Changed "source/bar.py"]
+    ~expected:["bar.py", "source/bar.py"]
+    ();
+  assert_applied
+    ~original:["foo.py", "source/foo.py"]
+    ~difference:["bar.py", Changed "source/bar.py"; "baz.py", Changed "source/baz.py"]
+    ~expected:["foo.py", "source/foo.py"; "bar.py", "source/bar.py"; "baz.py", "source/baz.py"]
+    ();
+
+  assert_not_applied
+    ~original:["foo.py", "source/foo.py"]
+    ~difference:["foo.py", New "source/bar.py"]
+    ~key:"foo.py"
+    ();
+  assert_not_applied ~original:[] ~difference:["foo.py", Deleted] ~key:"foo.py" ();
+  assert_not_applied
+    ~original:["foo.py", "source/foo.py"]
+    ~difference:["bar.py", Deleted]
+    ~key:"bar.py"
+    ();
+  assert_not_applied
+    ~original:["foo.py", "source/foo.py"]
+    ~difference:["foo.py", Changed "source/bar.py"]
+    ~key:"foo.py"
+    ();
+  assert_not_applied
+    ~original:["foo.py", "source/foo.py"]
+    ~difference:["bar.py", Changed "source/bar.py"; "foo.py", Changed "source/baz.py"]
+    ~key:"foo.py"
+    ();
+  ()
+
+
 let () =
   "build_map_test"
   >::: [
@@ -333,5 +436,6 @@ let () =
          "build_map_lookup" >:: test_build_map_lookup;
          "build_map_difference" >:: test_build_map_difference;
          "build_map_difference_merge" >:: test_build_map_difference_merge;
+         "build_map_strict_apply_difference" >:: test_build_map_strict_apply_difference;
        ]
   |> Test.run

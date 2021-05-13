@@ -178,6 +178,26 @@ module BuildMap : sig
   (** [difference ~original current] computes the difference between the [original] build map and
       the [current] build map. Time complexity of this operation is O(n + m), where n and m are the
       sizes of the two build maps. *)
+
+  val strict_apply_difference : difference:Difference.t -> t -> (t, string) Result.t
+  (** [strict_apply_difference ~difference:d original] tries to compute a new build map [current],
+      such that [difference ~original current] equals [d]. It can be seen as an inverse operation of
+      {!difference}.
+
+      If the computation succeeds, [Result.Ok d] is returned. Otherwise, [Result.Error p] is
+      returned, where [p] represents the artifact path that causes the operation to fail.
+
+      Potentail reasons of failure:
+
+      - [d] contains an artifact path [p] with tag [Deleted], but [p] cannot be found in [original].
+      - [d] contains an artifact path [p] with tag [New], but [p] already has an associated source
+        path in [original].
+      - [d] contains an aritfact path [p] with tag [Changed], but [p] already has an associated
+        source path in [original]. This is what makes this operation "strict": we do not allow {b
+        any} pre-existing bindings in [original] to be redirected, even with the [Changed] tag.
+
+      Time complexity of this operation is O(n + m), where n is the size of the original build map
+      and m is the size of the difference. *)
 end
 
 (** This module provide utility functions for populating and incrementally updating artifact roots.
