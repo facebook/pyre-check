@@ -315,8 +315,20 @@ let incremental_build_with_normalized_targets
   Lwt.return { IncrementalBuildResult.targets; build_map; changed_artifacts }
 
 
-let compute_difference_from_removed_paths ~source_root:_ ~build_map_index:_ _ =
-  failwith "not implemented yet"
+let to_relative_path ~root path = Path.get_relative_to_root ~root ~path
+
+let to_relative_paths ~root paths = List.filter_map paths ~f:(to_relative_path ~root)
+
+let compute_difference_from_removed_relative_paths ~build_map_index removed_paths =
+  List.concat_map removed_paths ~f:(BuildMap.Indexed.lookup_artifact build_map_index)
+  |> List.map ~f:(fun artifact -> artifact, BuildMap.Difference.Kind.Deleted)
+  (* This `of_alist_exn` won't raise because build map never hold duplicated artifact paths. *)
+  |> BuildMap.Difference.of_alist_exn
+
+
+let compute_difference_from_removed_paths ~source_root ~build_map_index removed_paths =
+  to_relative_paths ~root:source_root removed_paths
+  |> compute_difference_from_removed_relative_paths ~build_map_index
 
 
 let compute_difference_from_changed_paths ~source_root:_ ~buck_options:_ ~targets:_ _ =
@@ -396,8 +408,7 @@ let incremental_build_with_unchanged_build_map
     { source_root; artifact_root; _ }
   =
   let changed_artifacts =
-    List.filter_map changed_sources ~f:(fun path ->
-        Path.get_relative_to_root ~root:source_root ~path)
+    to_relative_paths ~root:source_root changed_sources
     |> List.concat_map ~f:(BuildMap.Indexed.lookup_artifact build_map_index)
     |> List.map ~f:(fun relative -> Path.create_relative ~root:artifact_root ~relative)
   in
@@ -405,7 +416,7 @@ let incremental_build_with_unchanged_build_map
 
 
 let do_lookup_source ~index ~source_root ~artifact_root path =
-  match Path.get_relative_to_root ~root:artifact_root ~path with
+  match to_relative_path ~root:artifact_root path with
   | None -> None
   | Some relative_artifact_path ->
       BuildMap.Indexed.lookup_source index relative_artifact_path
@@ -417,7 +428,7 @@ let lookup_source ~index ~builder:{ source_root; artifact_root; _ } path =
 
 
 let do_lookup_artifact ~index ~source_root ~artifact_root path =
-  match Path.get_relative_to_root ~root:source_root ~path with
+  match to_relative_path ~root:source_root path with
   | None -> []
   | Some relative_source_path ->
       BuildMap.Indexed.lookup_artifact index relative_source_path

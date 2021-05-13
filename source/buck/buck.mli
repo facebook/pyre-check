@@ -146,6 +146,11 @@ module BuildMap : sig
 
     type t [@@deriving sexp]
 
+    val of_alist_exn : (string * Kind.t) list -> t
+    (** Create a build map difference from an associative list. The list must conform to
+        `(artifact_path, kind)` format. Raise an exception if the given list contains duplicated
+        keys. *)
+
     val to_alist : t -> (string * Kind.t) list
     (** Convert a build map difference into an associated list. Each element in the list is a pair
         consisting of both the artifact path and the kind of the update. *)
