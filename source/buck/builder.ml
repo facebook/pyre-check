@@ -438,8 +438,32 @@ let compute_difference_from_removed_paths ~source_root ~build_map_index removed_
   |> compute_difference_from_removed_relative_paths ~build_map_index
 
 
-let compute_difference_from_changed_paths ~source_root:_ ~buck_options:_ ~targets:_ _ =
-  Lwt.return_error "Not implemented yet"
+let compute_difference_from_changed_relative_paths ~build_map_index changed_paths =
+  List.concat_map changed_paths ~f:(fun source_path ->
+      BuildMap.Indexed.lookup_artifact build_map_index source_path
+      |> List.map ~f:(fun artifact_path ->
+             artifact_path, BuildMap.Difference.Kind.Changed source_path))
+  (* This `of_alist_exn` won't raise because build map never hold duplicated artifact paths. *)
+  |> BuildMap.Difference.of_alist_exn
+
+
+let compute_difference_from_changed_paths ~source_root ~buck_options ~targets changed_paths =
+  let open Lwt.Infix in
+  try
+    Log.info "Running `buck query`...";
+    query_buck_for_changed_targets ~targets buck_options changed_paths
+    >>= fun query_output ->
+    let changed_targets = parse_buck_changed_targets_query_output query_output in
+    Log.info "Constructing local build map for changed files...";
+    match BuckChangedTargetsQueryOutput.to_build_map_batch changed_targets with
+    | Result.Error _ as error -> Lwt.return error
+    | Result.Ok build_map ->
+        to_relative_paths ~root:source_root changed_paths
+        |> compute_difference_from_changed_relative_paths
+             ~build_map_index:(BuildMap.index build_map)
+        |> Lwt.return_ok
+  with
+  | JsonError message -> Lwt.return_error message
 
 
 let build_map_and_difference_from_paths
