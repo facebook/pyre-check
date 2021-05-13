@@ -578,6 +578,78 @@ let test_difference_from_removed_relative_paths context =
   ()
 
 
+let test_buck_changed_targets_to_build_map context =
+  let assert_build_map ~expected changed_targets =
+    let actual =
+      Builder.BuckChangedTargetsQueryOutput.to_build_map_batch changed_targets
+      |> Result.ok_or_failwith
+      |> BuildMap.to_alist
+    in
+    assert_mapping_equal ~context ~expected actual
+  in
+  let assert_no_build_map changed_targets =
+    match Builder.BuckChangedTargetsQueryOutput.to_build_map_batch changed_targets with
+    | Result.Error _ -> ()
+    | Result.Ok _ ->
+        let message =
+          Format.asprintf
+            "Unexpected parsing success: %a"
+            Sexp.pp
+            ([%sexp_of: Builder.BuckChangedTargetsQueryOutput.t list] changed_targets)
+        in
+        assert_failure message
+  in
+  let module Output = Builder.BuckChangedTargetsQueryOutput in
+  assert_build_map
+    [
+      {
+        Output.source_base_path = "foo";
+        Output.artifact_base_path = "bar";
+        artifacts_to_sources = ["a.py", "b.py"];
+      };
+    ]
+    ~expected:["bar/a.py", "foo/b.py"];
+  assert_build_map
+    [
+      {
+        Output.source_base_path = "foo";
+        Output.artifact_base_path = "bar";
+        artifacts_to_sources = ["a.py", "b.py"];
+      };
+      {
+        Output.source_base_path = "foo";
+        Output.artifact_base_path = "baz";
+        artifacts_to_sources = ["c.py", "d.py"];
+      };
+    ]
+    ~expected:["bar/a.py", "foo/b.py"; "baz/c.py", "foo/d.py"];
+
+  (* Single partial build map conflicting on `bar/a.py`. *)
+  assert_no_build_map
+    [
+      {
+        Output.source_base_path = "foo";
+        Output.artifact_base_path = "bar";
+        artifacts_to_sources = ["a.py", "b.py"; "a.py", "c.py"];
+      };
+    ];
+  (* Different partial build maps conflicting on `bar/a.py`. *)
+  assert_no_build_map
+    [
+      {
+        Output.source_base_path = "foo";
+        Output.artifact_base_path = "bar";
+        artifacts_to_sources = ["a.py", "b.py"];
+      };
+      {
+        Output.source_base_path = "foo";
+        Output.artifact_base_path = "bar";
+        artifacts_to_sources = ["a.py", "c.py"];
+      };
+    ];
+  ()
+
+
 let () =
   "builder_test"
   >::: [
@@ -590,5 +662,6 @@ let () =
          "lookup_source" >:: test_lookup_source;
          "lookup_artifact" >:: test_lookup_artifact;
          "difference_from_removed_relative_paths" >:: test_difference_from_removed_relative_paths;
+         "buck_changed_targets_to_build_map" >:: test_buck_changed_targets_to_build_map;
        ]
   |> Test.run

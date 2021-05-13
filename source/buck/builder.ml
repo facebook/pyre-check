@@ -355,6 +355,33 @@ module BuckChangedTargetsQueryOutput = struct
     artifacts_to_sources: (string * string) list;
   }
   [@@deriving sexp, compare]
+
+  let to_partial_build_map { source_base_path; artifact_base_path; artifacts_to_sources } =
+    let to_build_mapping (artifact, source) =
+      Filename.concat artifact_base_path artifact, Filename.concat source_base_path source
+    in
+    match BuildMap.Partial.of_alist (List.map artifacts_to_sources ~f:to_build_mapping) with
+    | `Duplicate_key artifact ->
+        let message = Format.sprintf "Overlapping artifact file detected: %s" artifact in
+        Result.Error message
+    | `Ok partial_build_map -> Result.Ok partial_build_map
+
+
+  let to_build_map_batch outputs =
+    let rec merge ~sofar = function
+      | [] -> Result.Ok (BuildMap.create sofar)
+      | output :: rest -> (
+          match to_partial_build_map output with
+          | Result.Error _ as error -> error
+          | Result.Ok next_build_map -> (
+              match BuildMap.Partial.merge sofar next_build_map with
+              | BuildMap.Partial.MergeResult.Incompatible
+                  { BuildMap.Partial.MergeResult.IncompatibleItem.key; _ } ->
+                  let message = Format.sprintf "Overlapping artifact file detected: %s" key in
+                  Result.Error message
+              | BuildMap.Partial.MergeResult.Ok sofar -> merge ~sofar rest ) )
+    in
+    merge ~sofar:BuildMap.Partial.empty outputs
 end
 
 let parse_buck_changed_targets_query_output query_output =

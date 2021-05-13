@@ -41,6 +41,20 @@ module Partial = struct
 
   let of_alist_exn items = of_alist_implementation items ~add:Hashtbl.add_exn
 
+  exception DuplicatedKey of string
+
+  let of_alist items =
+    try
+      let add table ~key ~data =
+        match Hashtbl.add table ~key ~data with
+        | `Duplicate -> raise (DuplicatedKey key)
+        | `Ok -> ()
+      in
+      `Ok (of_alist_implementation items ~add)
+    with
+    | DuplicatedKey key -> `Duplicate_key key
+
+
   let of_alist_ignoring_duplicates items =
     let add table ~key ~data =
       (* First entry wins. *)
