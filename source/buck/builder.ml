@@ -315,15 +315,49 @@ let incremental_build_with_normalized_targets
   Lwt.return { IncrementalBuildResult.targets; build_map; changed_artifacts }
 
 
-let build_map_and_difference_from_paths
-    ~old_build_map:_
-    ~old_build_map_index:_
-    ~targets:_
-    ~changed_paths:_
-    ~removed_paths:_
-    _
-  =
+let compute_difference_from_removed_paths ~source_root:_ ~build_map_index:_ _ =
+  failwith "not implemented yet"
+
+
+let compute_difference_from_changed_paths ~source_root:_ ~buck_options:_ ~targets:_ _ =
   Lwt.return_error "Not implemented yet"
+
+
+let build_map_and_difference_from_paths
+    ~old_build_map
+    ~old_build_map_index
+    ~targets
+    ~changed_paths
+    ~removed_paths
+    { buck_options; source_root; _ }
+  =
+  let open Lwt.Infix in
+  Log.info "Computing build map deltas from changed paths...";
+  compute_difference_from_changed_paths ~source_root ~buck_options ~targets changed_paths
+  >>= function
+  | Result.Error _ as error -> Lwt.return error
+  | Result.Ok difference_from_changed_paths -> (
+      Log.info "Computing build map deltas from removed paths...";
+      let difference_from_removed_paths =
+        compute_difference_from_removed_paths
+          ~source_root
+          ~build_map_index:old_build_map_index
+          removed_paths
+      in
+      Log.info "Merging build map deltas...";
+      match
+        BuildMap.Difference.merge difference_from_changed_paths difference_from_removed_paths
+      with
+      | Result.Error artifact_path ->
+          Format.sprintf "Conflicting source updates on artifact `%s`" artifact_path
+          |> Lwt.return_error
+      | Result.Ok difference -> (
+          Log.info "Updating old build map...";
+          match BuildMap.strict_apply_difference ~difference old_build_map with
+          | Result.Ok build_map -> Lwt.return_ok (build_map, difference)
+          | Result.Error artifact_path ->
+              Format.sprintf "Cannot determine source path for artifact `%s`" artifact_path
+              |> Lwt.return_error ) )
 
 
 let fast_incremental_build_with_normalized_targets
