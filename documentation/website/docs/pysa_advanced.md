@@ -260,5 +260,5 @@ This option can also be added in the `taint.config` as follows:
 }
 ```
 
-Note that this is not a silver lining and that this might hide security
+Note that this is not a silver bullet and that this might hide security
 vulnerabilities. Use it with caution.
