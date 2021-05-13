@@ -1124,6 +1124,36 @@ module PairStringMapIntToString = struct
            end));
       assert_equal 8 (List.length !parts) ~printer:Int.to_string
     in
+    let a =
+      create
+        [
+          Part (left_set, LeftStringSet.of_list ["A"; "B"]);
+          Part (right_key, 0);
+          Part (right_set, StringSet.of_list ["X"]);
+          Part (right_key, 1);
+          Part (right_set, StringSet.of_list ["Y"]);
+        ]
+    in
+    let b =
+      create
+        [
+          Part (left_set, LeftStringSet.of_list ["A"]);
+          Part (right_key, 0);
+          Part (right_set, StringSet.of_list ["X"]);
+        ]
+    in
+    let () =
+      assert_equal
+        (create
+           [
+             Part (left_set, LeftStringSet.of_list ["B"]);
+             Part (right_key, 1);
+             Part (right_set, StringSet.of_list ["Y"]);
+           ])
+        (subtract b ~from:a)
+        ~cmp
+        ~printer:show
+    in
     ()
 
 
@@ -1614,9 +1644,21 @@ module PairStringString = struct
       (less_or_equal ~left:(build [] []) ~right:bottom);
     let a = build ["a"] ["b"; "c"] in
     let b = build ["a"] ["b"; "c"; "d"] in
-    assert_bool
-      "subtraction of all slots leads to bottom"
-      (less_or_equal ~left:(subtract b ~from:a) ~right:bottom)
+    let () =
+      assert_bool
+        "subtraction of all slots leads to bottom"
+        (less_or_equal ~left:(subtract b ~from:a) ~right:bottom)
+    in
+    let a = build ["a"; "b"] ["x"; "y"] in
+    let b = build ["a"] ["x"] in
+    let c = build ["a"] ["x"; "y"] in
+    let d = build ["a"; "b"] ["x"] in
+    let e = build ["b"] ["x"; "y"] in
+    let f = build ["a"; "b"] ["y"] in
+    let () = assert_equal a (subtract b ~from:a) ~cmp:compare ~printer:show in
+    let () = assert_equal e (subtract c ~from:a) ~cmp:compare ~printer:show in
+    let () = assert_equal f (subtract d ~from:a) ~cmp:compare ~printer:show in
+    ()
 
 
   let test_context _ = ()
@@ -1817,6 +1859,19 @@ module ProductDomain = struct
       let actual = fold YearSet.Element ~f:List.cons ~init:[] unmaterialized_slot in
       assert_equal [] actual ~printer:int_list_printer
     in
+    let a = build (["Lausanne"; "Fribourg"], [280; 1157], ["Flon"; "Louve"; "Sarine"]) in
+    let b = build (["Fribourg"], [280; 1157], ["Flon"; "Louve"; "Sarine"]) in
+    let c = build ([], [280; 1157], []) in
+    let d = build (["Lausanne"], [280; 1157], ["Flon"]) in
+    let () =
+      assert_equal
+        (build (["Lausanne"], [280; 1157], ["Flon"; "Louve"; "Sarine"]))
+        (subtract b ~from:a)
+        ~printer:show
+        ~cmp:compare
+    in
+    let () = assert_equal a (subtract c ~from:a) ~printer:show ~cmp:compare in
+    let () = assert_equal a (subtract d ~from:a) ~printer:show ~cmp:compare in
     ()
 
 

@@ -214,34 +214,54 @@ module Make (Config : PRODUCT_CONFIG) = struct
         | Strict -> bottom
 
 
+    type strict_subtract =
+      | SingleStrict : 'a Config.slot * 'a -> strict_subtract
+      | AllBottom
+
     let subtract to_remove ~from =
       if to_remove == from then
         bottom
-      else if is_bottom to_remove || is_bottom from then
+      else if is_bottom to_remove then
         from
-      else
-        let nonbottom_slots = ref (Array.length from) in
+      else if less_or_equal ~left:from ~right:to_remove then
+        bottom
+      else if
+        (* Handle cases depending on strictness of slots. If all slots are non-strict, then
+           subtraction is pointwise. *)
+        Array.length strict_slots = 0
+      then (* point-wise *)
         let sub (Slot slot) =
           let module D = (val Config.slot_domain slot) in
           let to_remove = get slot to_remove in
           let from = get slot from in
-          let result = D.subtract to_remove ~from in
-          if D.is_bottom result then begin
-            decr nonbottom_slots;
-            if Config.strict slot then
-              (* Cannot collapse or subtraction isn't a proper overapproximation *)
-              Element from
-            else
-              Element result
-          end
-          else
-            Element result
+          Element (D.subtract to_remove ~from)
         in
-        let result = Array.map sub slots in
-        if !nonbottom_slots = 0 then
-          bottom
-        else
-          result
+        Array.map sub slots
+      else
+        (* If pointwise subtraction results in bottom in all but one strict slot, then we can keep
+           that strict slot's subtraction and leave all other slots unchanged. *)
+        let find_single_strict_slot so_far (Slot slot) =
+          let module D = (val Config.slot_domain slot) in
+          let to_remove = get slot to_remove in
+          let from = get slot from in
+          let result = D.subtract to_remove ~from in
+          if D.is_bottom result then
+            so_far
+          else if Config.strict slot then
+            match so_far with
+            | AllBottom -> SingleStrict (slot, result)
+            | _ ->
+                (* multiple slots are non-bottom *)
+                raise Exit
+          else (* non-strict slot non-bottom *)
+            raise Exit
+        in
+        try
+          match Array.fold_left find_single_strict_slot AllBottom slots with
+          | SingleStrict (slot, new_value) -> update slot new_value from
+          | AllBottom -> bottom
+        with
+        | Exit -> from
 
 
     let show product =
