@@ -578,7 +578,7 @@ static HANDLE memfd;
  * Committing the whole shared heap at once would require the same
  * amount of free space in memory (or in swap file).
  **************************************************************************/
-void memfd_init(char *shm_dir, size_t shared_mem_size, uint64_t minimum_avail) {
+void memfd_init(const char *shm_dir, size_t shared_mem_size, uint64_t minimum_avail) {
   memfd = CreateFileMapping(
     INVALID_HANDLE_VALUE,
     NULL,
@@ -614,7 +614,7 @@ static void raise_less_than_minimum_available(uint64_t avail) {
 }
 
 #include <sys/statvfs.h>
-void assert_avail_exceeds_minimum(char *shm_dir, uint64_t minimum_avail) {
+void assert_avail_exceeds_minimum(const char *shm_dir, uint64_t minimum_avail) {
   struct statvfs stats;
   uint64_t avail;
   if (statvfs(shm_dir, &stats)) {
@@ -642,7 +642,7 @@ void assert_avail_exceeds_minimum(char *shm_dir, uint64_t minimum_avail) {
  * The resulting file descriptor should be mmaped with the memfd_map
  * function (see below).
  ****************************************************************************/
-void memfd_init(char *shm_dir, size_t shared_mem_size, uint64_t minimum_avail) {
+void memfd_init(const char *shm_dir, size_t shared_mem_size, uint64_t minimum_avail) {
   if (shm_dir == NULL) {
     // This means that we should try to use the anonymous-y system calls
 #if defined(MEMFD_CREATE)
@@ -982,10 +982,9 @@ CAMLprim value hh_shared_init(
 
   // None -> NULL
   // Some str -> String_val(str)
-  char *shm_dir = NULL;
-  if (shm_dir_val != Val_int(0)) {
-    shm_dir = String_val(Field(shm_dir_val, 0));
-  }
+  const char *shm_dir = (shm_dir_val == Val_int(0))
+    ? NULL
+    : String_val(Field(shm_dir_val, 0));
 
   memfd_init(
     shm_dir,
