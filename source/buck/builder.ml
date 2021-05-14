@@ -258,6 +258,10 @@ let merge_build_maps target_and_build_maps =
   let reversed_targets, merged_build_map =
     List.fold target_and_build_maps ~init:([], BuildMap.Partial.empty) ~f:merge
   in
+  if List.length reversed_targets < List.length target_and_build_maps then
+    Log.warning
+      "One or more targets get dropped by Pyre due to potential conflicts. For more details, see \
+       https://fburl.com/pyre-target-conflict";
   List.rev reversed_targets, BuildMap.create merged_build_map
 
 
