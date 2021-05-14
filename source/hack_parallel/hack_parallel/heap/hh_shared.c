@@ -1656,7 +1656,7 @@ static heap_entry_t* hh_store_ocaml(
   // If the data is an Ocaml string it is more efficient to copy its contents
   // directly in our heap instead of serializing it.
   if (Is_block(data) && Tag_val(data) == String_tag) {
-    value = String_val(data);
+    value = (char *)String_val(data);
     size = caml_string_length(data);
     kind = KIND_STRING;
   } else {
@@ -1943,7 +1943,7 @@ CAMLprim value hh_deserialize(heap_entry_t *elt) {
 
   if (Entry_kind(elt->header) == KIND_STRING) {
     result = caml_alloc_string(size);
-    memcpy(String_val(result), data, size);
+    memcpy((char *)String_val(result), data, size);
   } else {
     result = caml_input_value_from_block(data, size);
   }
