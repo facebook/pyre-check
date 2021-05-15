@@ -264,6 +264,7 @@ module BuckBuildSystem = struct
       ()
     =
     let open Lwt.Infix in
+    ensure_directory_exist_and_clean artifact_root;
     (* NOTE (grievejia): For saved state loading, are still using the passed-in `mode`,
        `isolation_prefix`, `source_root`, and `artifact_root`, instead of preserving these options
        in saved state itself. For `source_root` and `artifact_root`, this is actually mandatory
