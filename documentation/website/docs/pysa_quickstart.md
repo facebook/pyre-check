@@ -13,7 +13,7 @@ import TabItem from '@theme/TabItem';
 
 By the end of this guide, you will be able to run Pysa to find bugs on most Python web servers, and view those bugs on [Static Analysis Post Processor (SAPP)](https://github.com/facebook/sapp).
 
-This guide was tested on _Ubuntu 18.04.5 LTS_ and _macOS 10.15.7_
+This guide was tested on _Ubuntu 18.04.5 LTS_, _macOS 10.15.7_, and _Ubuntu 20.04 LTS on WSL1_
 
 If you run into any issues along the way, please refer to the [common issues](#common-issues) section to help you debug
 
@@ -92,7 +92,7 @@ Installing your project dependencies in your virtual environment will allow Pysa
 
 5. Optional, but recommended - Add type annotations automatically to your project:
 
-If your project isn't type annotated, running Pyre's type inference might improve your Pysa results. Note: this command will modify your code, but don't worry the type annotations won't affect your code at runtime.
+If your project uses Python 3.5 or later and isn't type annotated, running Pyre's type inference might improve your Pysa results. Note: this command will modify your code, but don't worry the type annotations won't affect your code at runtime if your project is running Python 3.5 or later.
 ```shell
 (pysa) $ pyre infer -r -i
 ```
@@ -141,32 +141,9 @@ We've provided you with some filters in SAPP to help you find a small subset of 
 
 ## Common Issues
 
-**Problem**: Running Pysa results in `ƛ Error: Could not find a pyre client.`
+**Problem**: Installing my project dependencies while in my virtual environment gives me errors, because some of my project dependencies are not compatible with Python 3+.
 
-**Solution**: Some shells (e.g. `zsh`) require a restart to pick up updated PATH variables.
-
-For example:
-```zsh
-(pysa) $ pip install pyre-check
-(pysa) $ cd demo-project
-(pysa) $ pyre analyze --no-verify
-ƛ Error: Could not find a pyre client.
-(pysa) $ which pyre
-/usr/local/bin/pyre
-```
-`which pyre` points to a path not within the virtual environment (e.g. `/usr/local/bin`)
-
-```zsh
-(pysa) $ deactivate
-(pysa) $ zsh
-$ source ~/.venvs/pysa/bin/activate
-(pysa) $ which pyre
-/Users/unixname/.venvs/pysa/bin/
-```
-
-`which pyre` now points to a path in the virtual environment (e.g. `~/.venvs/pysa/bin/`)
-
-Ideally, if you have a local installation of Pyre, it would be best to remove the installation and only install Pyre in a virtual environment.
+**Solution**: Fortunately, you can still run Pysa and SAPP on your project, so feel free to continue with the Quickstart instructions. However, Pysa may miss some taint flows.
 
 ----
 **Problem**: `pip install fb-sapp` or `pip install pyre-check` results in `ERROR: Could not install packages due to an OSError: [Error 13] Permission denied`
@@ -212,6 +189,34 @@ $ (pysa) python3.8 -m pip install --upgrade setuptools
 **Problem**: `pyre init` shows `ƛ Source directory path/to/dir does not exist. Be sure the source path is relative to the import_root`.
 
 **Solution**: You will need to manually update `source_directories` in `.pyre_configuration`. Refer to [Pyre Global configuration section](configuration.md#the-global-configuration) to set up `source_directories`.
+
+----
+**Problem**: Running `pyre analyze --no-verify` command results in `ƛ Error: Could not find a pyre client.`
+
+**Solution**: Some shells (e.g. `zsh`) require a restart to pick up updated PATH variables.
+
+For example:
+```zsh
+(pysa) $ pip install pyre-check
+(pysa) $ cd demo-project
+(pysa) $ pyre analyze --no-verify
+ƛ Error: Could not find a pyre client.
+(pysa) $ which pyre
+/usr/local/bin/pyre
+```
+`which pyre` points to a path not within the virtual environment (e.g. `/usr/local/bin`)
+
+```zsh
+(pysa) $ deactivate
+(pysa) $ zsh
+$ source ~/.venvs/pysa/bin/activate
+(pysa) $ which pyre
+/Users/unixname/.venvs/pysa/bin/
+```
+
+`which pyre` now points to a path in the virtual environment (e.g. `~/.venvs/pysa/bin/`)
+
+Ideally, if you have a local installation of Pyre, it would be best to remove the installation and only install Pyre in a virtual environment.
 
 ----
 **Problem**: Running `pyre analyze` results in a bunch of errors and Pysa stops running
