@@ -196,10 +196,14 @@ async def try_initialize(
 async def _read_lsp_request(
     input_channel: connection.TextReader, output_channel: connection.TextWriter
 ) -> AsyncIterator[json_rpc.Request]:
+    LOG.info("** Inside the read lsp function ** ")
     try:
+        LOG.info("** Inside the try and except ** ")
         message = await lsp.read_json_rpc(input_channel)
+        LOG.info(f"** {message} **")
         yield message
     except json_rpc.JSONRPCException as json_rpc_error:
+        LOG.info("** Inside the except ** ")
         await lsp.write_json_rpc(
             output_channel,
             json_rpc.ErrorResponse(
