@@ -434,6 +434,7 @@ let test_qualify _ =
   assert_qualify "from a import b as c; c" "from a import b as c; a.b";
   assert_qualify "from builtins import b; b" "from builtins import b; b";
   assert_qualify "b; import a as b; b" "b; import a as b; a";
+  assert_qualify "import builtins; builtins.b" "import builtins; b";
 
   (* Qualification in different places. *)
   let assert_qualify_statement actual expected =

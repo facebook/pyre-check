@@ -1007,6 +1007,10 @@ let qualify
             else
               Node.value (from_reference ~location name)
         | _ -> Name (Name.Identifier identifier) )
+    | Name
+        (Name.Attribute
+          { base = { Node.value = Name (Name.Identifier "builtins"); _ }; attribute; _ }) ->
+        Name (Name.Identifier attribute)
     | Name (Name.Attribute ({ base; _ } as name)) ->
         Name (Name.Attribute { name with base = qualify_expression ~qualify_strings ~scope base })
     | expression -> expression
