@@ -37,7 +37,7 @@ value hh_is_nfs(value filename_v) {
   CAMLparam1(filename_v);
 #ifdef __linux__
   struct statfs buf;
-  char* filename = String_val(filename_v);
+  const char* filename = String_val(filename_v);
   int success = statfs(filename, &buf);
   if (success != 0) {
     caml_failwith("statfs failed");
