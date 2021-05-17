@@ -101,7 +101,7 @@ class PysaServer:
     async def process_open_request(
         self, parameters: lsp.DidOpenTextDocumentParameters
     ) -> None:
-        print("A document was just opened!")
+        LOG.info("** Inside process_open_request() **")
         document_path = parameters.text_document.document_uri().to_file_path()
         if document_path is None:
             raise json_rpc.InvalidRequestError(
@@ -111,7 +111,7 @@ class PysaServer:
     async def process_close_request(
         self, parameters: lsp.DidCloseTextDocumentParameters
     ) -> None:
-        print("A document was just closed!")
+        LOG.info("** Inside process_close_request() **")
         document_path = parameters.text_document.document_uri().to_file_path()
         if document_path is None:
             raise json_rpc.InvalidRequestError(
@@ -126,7 +126,7 @@ class PysaServer:
     async def process_did_save_request(
         self, parameters: lsp.DidSaveTextDocumentParameters
     ) -> None:
-        print("A document was just saved!")
+        LOG.info("** Inside process_did_save_request() **")
         document_path = parameters.text_document.document_uri().to_file_path()
         if document_path is None:
             raise json_rpc.InvalidRequestError(
@@ -148,6 +148,7 @@ class PysaServer:
                     )
                     return await self.wait_for_exit()
                 elif request.method == "textDocument/didOpen":
+                    LOG.info("** A Document just opened! **")
                     parameters = request.parameters
                     if parameters is None:
                         raise json_rpc.InvalidRequestError(
@@ -159,6 +160,7 @@ class PysaServer:
                         )
                     )
                 elif request.method == "textDocument/didClose":
+                    LOG.info("** A Document just closed! **")
                     parameters = request.parameters
                     if parameters is None:
                         raise json_rpc.InvalidRequestError(
@@ -170,6 +172,7 @@ class PysaServer:
                         )
                     )
                 elif request.method == "textDocument/didSave":
+                    LOG.info("** A Document just saved! **")
                     parameters = request.parameters
                     if parameters is None:
                         raise json_rpc.InvalidRequestError(
@@ -182,6 +185,8 @@ class PysaServer:
                     )
                 elif request.id is not None:
                     raise lsp.RequestCancelledError("Request not supported yet")
+                else:
+                    LOG.info("** Hmmm I guess nothing seems to be happening **")
 
 
 async def run_persistent(
