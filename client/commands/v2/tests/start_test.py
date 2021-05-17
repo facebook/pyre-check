@@ -29,7 +29,6 @@ from ..start import (
     get_server_identifier,
     get_profiling_log_path,
     get_source_path,
-    get_checked_directory_for_target,
     background_server_log_file,
     ARTIFACT_ROOT_NAME,
 )
@@ -106,6 +105,7 @@ class ArgumentTest(testslide.TestCase):
             BuckSourcePath(
                 source_root=Path("/source"),
                 artifact_root=Path("/artifact"),
+                checked_directory=Path("/source"),
                 targets=["//foo:bar", "//foo:baz"],
             ).serialize(),
             {
@@ -119,6 +119,7 @@ class ArgumentTest(testslide.TestCase):
             BuckSourcePath(
                 source_root=Path("/source"),
                 artifact_root=Path("/artifact"),
+                checked_directory=Path("/source"),
                 targets=["//foo:bar"],
                 mode="opt",
                 isolation_prefix=".lsp",
@@ -477,6 +478,7 @@ class StartTest(testslide.TestCase):
                 BuckSourcePath(
                     source_root=root_path / "buck_root",
                     artifact_root=root_path / ".pyre" / ARTIFACT_ROOT_NAME,
+                    checked_directory=root_path / "buck_root",
                     targets=["//ct:marle", "//ct:lucca"],
                     mode="opt",
                     isolation_prefix=".lsp",
@@ -513,6 +515,7 @@ class StartTest(testslide.TestCase):
                 BuckSourcePath(
                     source_root=root_path / "project/local",
                     artifact_root=root_path / ".pyre" / ARTIFACT_ROOT_NAME / "local",
+                    checked_directory=root_path / "project/local",
                     targets=["//ct:chrono"],
                     mode="opt",
                     isolation_prefix=".lsp",
@@ -554,28 +557,6 @@ class StartTest(testslide.TestCase):
                 ).filter_nonexistent_paths()
             )
 
-    def test_get_checked_directory_for_target(self) -> None:
-        self.assertEqual(
-            get_checked_directory_for_target(
-                "'//foo/...' - set('//foo/bar/...' '//foo/baz/...')"
-            ),
-            "foo",
-        )
-        self.assertEqual(
-            get_checked_directory_for_target("//path/directory/..."), "path/directory"
-        )
-        self.assertEqual(
-            get_checked_directory_for_target("/path/directory:target"), None
-        )
-        self.assertEqual(
-            get_checked_directory_for_target("prefix//path/directory/..."),
-            "path/directory",
-        )
-        self.assertEqual(
-            get_checked_directory_for_target("prefix//path/directory:target"),
-            "path/directory",
-        )
-
     def test_get_checked_directory_for_simple_source_path(self) -> None:
         element0 = configuration.SimpleSearchPathElement("ozzie")
         element1 = configuration.SubdirectorySearchPathElement("diva", "flea")
@@ -592,6 +573,7 @@ class StartTest(testslide.TestCase):
             BuckSourcePath(
                 source_root=Path("/source"),
                 artifact_root=Path("/artifact"),
+                checked_directory=Path("/source/ct"),
                 targets=[
                     "//ct:robo",
                     "//ct:magus",
@@ -599,7 +581,7 @@ class StartTest(testslide.TestCase):
                     "//ct/guardia:schala",
                 ],
             ).get_checked_directory_allowlist(),
-            ["/source/ct", "/source/ct/guardia"],
+            ["/source/ct"],
         )
 
     def test_create_server_arguments(self) -> None:

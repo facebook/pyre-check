@@ -44,13 +44,6 @@ LOG: logging.Logger = logging.getLogger(__name__)
 ARTIFACT_ROOT_NAME: str = "link_trees"
 SERVER_LOG_FILE_FORMAT: str = "server.stderr.%Y_%m_%d_%H_%M_%S_%f"
 
-# NOTE(grievejia): This is a very restricted form of target specification used
-# for a hacky heuristic. We should consider moving away from it in the future.
-# Do NOT use it for general-purpose target parsing.
-BUCK_TARGET_PATTERN: str = (
-    r"[A-Za-z0-9._-]*//[A-Za-z0-9/._-]+((:[A-Za-z0-9_/.=,@~+-]+)|(/\.\.\.))"
-)
-
 
 class MatchPolicy(enum.Enum):
     BASE_NAME = "base_name"
@@ -151,24 +144,11 @@ class SimpleSourcePath:
         return {element.path() for element in self.elements}
 
 
-def get_checked_directory_for_target(target: str) -> Optional[str]:
-    match = re.search(BUCK_TARGET_PATTERN, target)
-    if match is None:
-        return None
-
-    result = match[0]
-    root_index = result.find("//")
-    if root_index != -1:
-        result = result[root_index + 2 :]
-    result = result.replace("/...", "")
-    result = result.split(":")[0]
-    return result
-
-
 @dataclasses.dataclass(frozen=True)
 class BuckSourcePath:
     source_root: Path
     artifact_root: Path
+    checked_directory: Path
     targets: Sequence[str] = dataclasses.field(default_factory=list)
     mode: Optional[str] = None
     isolation_prefix: Optional[str] = None
@@ -190,13 +170,7 @@ class BuckSourcePath:
         }
 
     def get_checked_directory_allowlist(self) -> Set[str]:
-        return {
-            str(self.source_root / directory)
-            for directory in (
-                get_checked_directory_for_target(target) for target in self.targets
-            )
-            if directory is not None
-        }
+        return {str(self.checked_directory)}
 
 
 SourcePath = Union[SimpleSourcePath, BuckSourcePath]
@@ -417,6 +391,7 @@ def get_source_path(configuration: configuration_module.Configuration) -> Source
         return BuckSourcePath(
             source_root=source_root,
             artifact_root=artifact_root,
+            checked_directory=search_base,
             targets=targets,
             mode=configuration.buck_mode,
             isolation_prefix=configuration.isolation_prefix,
