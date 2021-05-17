@@ -43,7 +43,6 @@ from .persistent import (
     StartSuccess,
     StartFailure,
     _publish_diagnostics,
-    type_errors_to_diagnostics,
     invalid_models_to_diagnostics,
     InitializationExit,
     InitializationSuccess,
@@ -52,6 +51,13 @@ from .persistent import (
 from api import query, connection as api_connection
 
 LOG: logging.Logger = logging.getLogger(__name__)
+
+
+async def update_errors() -> None:
+    pyre_connection = api_connection.PyreConnection(Path(PysaServerHandler.pyre_arguments.global_root))
+    initial_model_errors = query.get_invalid_taint_models(pyre_connection)
+    PysaServerHandler.update_model_errors(initial_model_errors)
+    await PysaServerHandler.show_model_errors_to_client()
 
 
 class PysaServerHandler(connection.BackgroundTask):
@@ -104,28 +110,29 @@ class PysaServerHandler(connection.BackgroundTask):
     # ** NEW **
     # Updating model errors from Pysa
     def update_model_errors(self, model_errors: Sequence[query.InvalidModel]) -> None:
-        LOG.info(
-            (
-                "Refreshing errors received from Pysa server. "
-                + f"Total number of errors is {len(model_errors)}."
-            )
-        )
+        # LOG.info(
+        #     (
+        #         "Refreshing errors received from Pysa server. "
+        #         + f"Total number of errors is {len(model_errors)}."
+        #     )
+        # )
         self.server_state.diagnostics = invalid_models_to_diagnostics(model_errors)
-        LOG.info(f"update_model_errors(): server_state.diagnostics = {self.server_state.diagnostics}")
+        # LOG.info(f"update_model_errors(): server_state.diagnostics = {self.server_state.diagnostics}")
 
     # ** NEW **
     # Show invalid model errors from Pysa to the client
     async def show_model_errors_to_client(self) -> None:
-        LOG.info(f"server_state.opened_documents = {self.server_state.opened_documents}")
-        # for path in self.server_state.opened_documents:
-        path = "/home/momo/Documents/Programs/pyre-check/documentation/pysa_tutorial/exercise2/sources_sinks.pysa"
-        await _publish_diagnostics(self.client_output_channel, path, [])
-        diagnostics = self.server_state.diagnostics.get(path, None)
-        LOG.info(f"show_model_errors_to_client(): diagnostics = {diagnostics}")
-        if diagnostics is not None:
-            await _publish_diagnostics(
-                self.client_output_channel, path, diagnostics
-            )
+        # LOG.info(f"server_state.opened_documents = {self.server_state.opened_documents}")
+        for path in self.server_state.opened_documents:
+            path_str = str(path.resolve())
+        # path = "/home/momo/Documents/Programs/pyre-check/documentation/pysa_tutorial/exercise2/sources_sinks.pysa"
+            await _publish_diagnostics(self.client_output_channel, path_str, [])
+            diagnostics = self.server_state.diagnostics.get(path_str, None)
+            LOG.info(f"show_model_errors_to_client(): diagnostics = {diagnostics}")
+            if diagnostics is not None:
+                await _publish_diagnostics(
+                    self.client_output_channel, path_str, diagnostics
+                )
 
     @connection.asynccontextmanager
     async def _read_server_response(
@@ -144,7 +151,7 @@ class PysaServerHandler(connection.BackgroundTask):
         server_input_channel: connection.TextReader,
         server_output_channel: connection.TextWriter,
     ) -> None:
-        pyre_connection = api_connection.PyreConnection(Path(self.pyre_arguments.global_root))
+        # pyre_connection = api_connection.PyreConnection(Path(self.pyre_arguments.global_root))
         subscription_name = f"persistent_{os.getpid()}"
         await server_output_channel.write(
             f'["SubscribeToModelErrors", "{subscription_name}"]\n'
@@ -153,9 +160,10 @@ class PysaServerHandler(connection.BackgroundTask):
             async with self._read_server_response(
                 server_input_channel
             ):
-                initial_model_errors = query.get_invalid_taint_models(pyre_connection)
-                self.update_model_errors(initial_model_errors)
-                await self.show_model_errors_to_client()
+                await update_errors()
+                # initial_model_errors = query.get_invalid_taint_models(pyre_connection)
+                # self.update_model_errors(initial_model_errors)
+                # await self.show_model_errors_to_client()
         # async with self._read_server_response(server_input_channel):
         #     initial_model_errors = query.get_invalid_taint_models(pyre_connection)
         #     self.update_model_errors(initial_model_errors)
@@ -339,12 +347,76 @@ class PysaServer:
         client_capabilities: lsp.ClientCapabilities,
         state: ServerState,
         pyre_manager: connection.BackgroundTaskManager,
+        # binary_location: str,
+        # server_identifier: str,
+        # pyre_arguments: start.Arguments,
+        # client_output_channel: connection.TextWriter,
+        # server_state: ServerState,
     ) -> None:
         self.input_channel = input_channel
         self.output_channel = output_channel
         self.client_capabilities = client_capabilities
         self.state = state
         self.pyre_manager = pyre_manager
+
+    # async def update_errors() -> None:
+    #     pyre_connection = api_connection.PyreConnection(Path(PysaServerHandler.pyre_arguments.global_root))
+    #     initial_model_errors = query.get_invalid_taint_models(pyre_connection)
+    #     PysaServerHandler.update_model_errors(initial_model_errors)
+    #     await PysaServerHandler.show_model_errors_to_client()
+
+    # async def show_message_to_client(
+    #     self, message: str, level: lsp.MessageType = lsp.MessageType.INFO
+    # ) -> None:
+    #     await lsp.write_json_rpc(
+    #         self.client_output_channel,
+    #         json_rpc.Request(
+    #             method="window/showMessage",
+    #             parameters=json_rpc.ByNameParameters(
+    #                 {"type": int(level), "message": message}
+    #             ),
+    #         ),
+    #     )
+
+    # async def log_and_show_message_to_client(
+    #     self, message: str, level: lsp.MessageType = lsp.MessageType.INFO
+    # ) -> None:
+    #     if level == lsp.MessageType.ERROR:
+    #         LOG.error(message)
+    #     elif level == lsp.MessageType.WARNING:
+    #         LOG.warning(message)
+    #     elif level == lsp.MessageType.INFO:
+    #         LOG.info(message)
+    #     else:
+    #         LOG.debug(message)
+    #     await self.show_message_to_client(message, level)
+
+    # # ** NEW **
+    # # Updating model errors from Pysa
+    # def update_model_errors(self, model_errors: Sequence[query.InvalidModel]) -> None:
+    #     # LOG.info(
+    #     #     (
+    #     #         "Refreshing errors received from Pysa server. "
+    #     #         + f"Total number of errors is {len(model_errors)}."
+    #     #     )
+    #     # )
+    #     self.server_state.diagnostics = invalid_models_to_diagnostics(model_errors)
+    #     # LOG.info(f"update_model_errors(): server_state.diagnostics = {self.server_state.diagnostics}")
+
+    # # ** NEW **
+    # # Show invalid model errors from Pysa to the client
+    # async def show_model_errors_to_client(self) -> None:
+    #     # LOG.info(f"server_state.opened_documents = {self.server_state.opened_documents}")
+    #     for path in self.server_state.opened_documents:
+    #         path_str = str(path.resolve())
+    #     # path = "/home/momo/Documents/Programs/pyre-check/documentation/pysa_tutorial/exercise2/sources_sinks.pysa"
+    #         await _publish_diagnostics(self.client_output_channel, path_str, [])
+    #         diagnostics = self.server_state.diagnostics.get(path_str, None)
+    #         LOG.info(f"show_model_errors_to_client(): diagnostics = {diagnostics}")
+    #         if diagnostics is not None:
+    #             await _publish_diagnostics(
+    #                 self.client_output_channel, path_str, diagnostics
+    #             )
 
     async def wait_for_exit(self) -> int:
         while True:
@@ -372,7 +444,7 @@ class PysaServer:
     async def process_open_request(
         self, parameters: lsp.DidOpenTextDocumentParameters
     ) -> None:
-        print("A document was just opened!")
+        LOG.info("** Inside process_open_request() **")
         document_path = parameters.text_document.document_uri().to_file_path()
         if document_path is None:
             raise json_rpc.InvalidRequestError(
@@ -381,6 +453,7 @@ class PysaServer:
         self.state.opened_documents.add(document_path)
         LOG.info(f"File opened: {document_path}")
 
+        await update_errors()
         # Attempt to trigger a background Pyre server start on each file open
         if not self.pyre_manager.is_task_running():
             await self._try_restart_pyre_server()
@@ -395,7 +468,7 @@ class PysaServer:
     async def process_close_request(
         self, parameters: lsp.DidCloseTextDocumentParameters
     ) -> None:
-        print("A document was just closed!")
+        LOG.info("** Inside process_close_request() **")
         document_path = parameters.text_document.document_uri().to_file_path()
         if document_path is None:
             raise json_rpc.InvalidRequestError(
@@ -414,13 +487,13 @@ class PysaServer:
     async def process_did_save_request(
         self, parameters: lsp.DidSaveTextDocumentParameters
     ) -> None:
-        print("A document was just saved!")
+        LOG.info("** Inside process_did_save_request() **")
         document_path = parameters.text_document.document_uri().to_file_path()
         if document_path is None:
             raise json_rpc.InvalidRequestError(
                 f"Document URI is not a file: {parameters.text_document.uri}"
             )
-
+        await update_errors()
         # Attempt to trigger a background Pyre server start on each file save
         if (
             not self.pyre_manager.is_task_running()
@@ -429,11 +502,12 @@ class PysaServer:
             await self._try_restart_pyre_server()
 
     async def _run(self) -> int:
+        LOG.info("** Inside _run function now. **")
         while True:
             async with _read_lsp_request(
                 self.input_channel, self.output_channel
             ) as request:
-                LOG.debug(f"Received LSP request: {request}")
+                LOG.info(f"Received LSP request: {request}")
 
                 if request.method == "exit":
                     return commands.ExitCode.FAILURE
@@ -444,6 +518,7 @@ class PysaServer:
                     )
                     return await self.wait_for_exit()
                 elif request.method == "textDocument/didOpen":
+                    LOG.info("** A Document just opened! **")
                     parameters = request.parameters
                     if parameters is None:
                         raise json_rpc.InvalidRequestError(
@@ -455,6 +530,7 @@ class PysaServer:
                         )
                     )
                 elif request.method == "textDocument/didClose":
+                    LOG.info("** A Document just closed! **")
                     parameters = request.parameters
                     if parameters is None:
                         raise json_rpc.InvalidRequestError(
@@ -466,6 +542,7 @@ class PysaServer:
                         )
                     )
                 elif request.method == "textDocument/didSave":
+                    LOG.info("** A Document just saved! **")
                     parameters = request.parameters
                     if parameters is None:
                         raise json_rpc.InvalidRequestError(
@@ -478,8 +555,11 @@ class PysaServer:
                     )
                 elif request.id is not None:
                     raise lsp.RequestCancelledError("Request not supported yet")
+                else:
+                    LOG.info("** Hmmm I guess nothing seems to be happening **")
 
     async def run(self) -> int:
+        LOG.info("** Inside run function now. **")
         try:
             await self.pyre_manager.ensure_task_running()
             return await self._run()
@@ -520,6 +600,11 @@ async def run_persistent(
                 output_channel=stdout,
                 client_capabilities=client_capabilities,
                 state=initial_server_state,
+                # binary_location=binary_location,
+                # server_identifier=server_identifier,
+                # pyre_arguments=pysa_arguments,
+                # client_output_channel=stdout,
+                # server_state=initial_server_state,
                 pyre_manager=connection.BackgroundTaskManager(
                     PysaServerHandler(
                         binary_location=binary_location,
