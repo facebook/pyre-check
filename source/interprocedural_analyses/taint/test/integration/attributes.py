@@ -4,7 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 from builtins import __test_sink, __test_source
-from typing import Optional, Union
+from typing import Optional, Union, List
 
 
 class Token:
@@ -104,3 +104,11 @@ def test_issue_with_text_key_of_dictionary(c: C):
 
 def test_no_issue_with_other_key_of_dictionary(c: C):
     __test_sink(c.dictionary["other"])
+
+
+class D:
+    buffer: List[str] = []
+
+
+def test_issue_with_update_to_self_attribute(d: D):
+    d.buffer.append(__test_source())

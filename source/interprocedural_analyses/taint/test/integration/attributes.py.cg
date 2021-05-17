@@ -10,6 +10,7 @@ attributes.test_getattr_backwards_default (fun) -> [__test_sink (fun) getattr (f
 attributes.test_getattr_default (fun) -> [__test_source (fun) getattr (fun)]
 attributes.test_getattr_forward (fun) -> [getattr (fun)]
 attributes.test_issue_with_text_key_of_dictionary (fun) -> [__test_sink (fun) dict::__getitem__ (method)]
+attributes.test_issue_with_update_to_self_attribute (fun) -> [__test_source (fun) list::append (method)]
 attributes.test_no_issue_with_other_key_of_dictionary (fun) -> [__test_sink (fun) dict::__getitem__ (method)]
 attributes.test_via_non_optional (fun) -> []
 attributes.test_via_optional (fun) -> []

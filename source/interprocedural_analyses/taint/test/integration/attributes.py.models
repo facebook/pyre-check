@@ -210,6 +210,60 @@
   }
 }
 {
+  "kind": "issue",
+  "data": {
+    "callable": "attributes.test_issue_with_update_to_self_attribute",
+    "callable_line": 113,
+    "code": 5002,
+    "line": 114,
+    "start": 4,
+    "end": 12,
+    "filename": "attributes.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "attributes.py",
+              "line": 114,
+              "start": 20,
+              "end": 35
+            },
+            "tito": [ { "line": 114, "start": 20, "end": 35 } ],
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "features": [
+              { "always-via": "tito" },
+              { "always-via": "special_source" }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "attributes.py",
+              "line": 114,
+              "start": 4,
+              "end": 12
+            },
+            "leaves": [
+              { "kind": "Test", "name": "Obj{attributes.D.buffer}" }
+            ]
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "tito" },
+      { "always-via": "special_source" }
+    ]
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "Obj{attributes.C.dictionary}",
@@ -220,6 +274,20 @@
       }
     ],
     "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{attributes.D.buffer}",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal($global)",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+      }
+    ],
     "tito": []
   }
 }
@@ -838,6 +906,22 @@
             "decl": null,
             "leaves": [ { "kind": "LocalReturn", "name": "" } ]
           }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "list.append",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(element)",
+        "taint": [
+          { "decl": null, "leaves": [ { "kind": "ParameterUpdate0" } ] }
         ]
       }
     ]
