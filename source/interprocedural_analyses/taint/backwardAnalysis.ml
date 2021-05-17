@@ -1351,12 +1351,6 @@ let extract_tito_and_sink_models define ~is_constructor ~resolution ~existing_ba
     let annotation = Option.map ~f:(GlobalResolution.parse_annotation resolution) annotation in
     let type_breadcrumbs = Features.type_breadcrumbs ~resolution annotation in
 
-    let tree =
-      match maximum_trace_length with
-      | Some maximum_trace_length ->
-          BackwardState.Tree.prune_maximum_length maximum_trace_length tree
-      | _ -> tree
-    in
     let essential =
       if is_constructor then
         BackwardState.Tree.essential_for_constructor tree
@@ -1427,7 +1421,14 @@ let extract_tito_and_sink_models define ~is_constructor ~resolution ~existing_ba
         | Sinks.PartialSink _
         | Sinks.Attach ->
             accumulator
-        | _ -> simplify annotation sink_tree |> BackwardState.Tree.join accumulator
+        | _ ->
+            let sink_tree =
+              match maximum_trace_length with
+              | Some maximum_trace_length ->
+                  BackwardState.Tree.prune_maximum_length maximum_trace_length sink_tree
+              | _ -> sink_tree
+            in
+            simplify annotation sink_tree |> BackwardState.Tree.join accumulator
       in
       Map.Poly.fold ~init:BackwardState.Tree.empty ~f:simplify_sink_taint partition
     in
