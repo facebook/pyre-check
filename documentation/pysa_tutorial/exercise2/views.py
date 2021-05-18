@@ -7,6 +7,7 @@ import subprocess
 
 from django.http import HttpRequest, HttpResponse
 
+
 def operate_on_twos(request: HttpRequest) -> HttpResponse:
     operator = request.POST["operator"]
 
@@ -19,8 +20,9 @@ def operate_on_threes(request: HttpRequest) -> HttpResponse:
     operator = request.GET["operator"]
 
     exec(f"result = 3 {operator} 3")
- 
+
     return result  # noqa: F82 1
+
 
 def operate_on_fours(request: HttpRequest) -> HttpResponse:
     operator = request.GET["operator"]
