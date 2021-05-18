@@ -514,7 +514,9 @@ def invalid_model_to_diagnostic(
 ) -> lsp.Diagnostic:
     return lsp.Diagnostic(
         range=lsp.Range(
-            start=lsp.Position(line=invalid_model.line - 1, character=invalid_model.column),
+            start=lsp.Position(
+                line=invalid_model.line - 1, character=invalid_model.column
+            ),
             end=lsp.Position(
                 line=invalid_model.stop_line - 1, character=invalid_model.stop_column
             ),
