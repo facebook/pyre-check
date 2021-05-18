@@ -230,13 +230,20 @@ module Make (Config : PRODUCT_CONFIG) = struct
            subtraction is pointwise. *)
         Array.length strict_slots = 0
       then (* point-wise *)
+        let nonbottom_slots = ref (Array.length from) in
         let sub (Slot slot) =
           let module D = (val Config.slot_domain slot) in
           let to_remove = get slot to_remove in
           let from = get slot from in
-          Element (D.subtract to_remove ~from)
+          let result = D.subtract to_remove ~from in
+          if D.is_bottom result then decr nonbottom_slots;
+          Element result
         in
-        Array.map sub slots
+        let result = Array.map sub slots in
+        if !nonbottom_slots = 0 then
+          bottom
+        else
+          result
       else
         (* If pointwise subtraction results in bottom in all but one strict slot, then we can keep
            that strict slot's subtraction and leave all other slots unchanged. *)
