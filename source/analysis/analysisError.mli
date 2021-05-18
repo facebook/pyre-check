@@ -238,11 +238,6 @@ and kind =
       target: Expression.t;
       kind: illegal_annotation_target_kind;
     }
-  | ImpossibleAssertion of {
-      expression: Expression.t;
-      annotation: Type.t;
-      test: Expression.t;
-    }
   | IncompatibleAsyncGeneratorReturnType of Type.t
   | IncompatibleAttributeType of {
       parent: Type.t;
