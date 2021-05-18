@@ -191,4 +191,7 @@ class EnableNewServer(Command):
         )
 
     def run(self) -> None:
-        LOG.warning("Not implemented yet")
+        for local_root in self._local_roots:
+            configuration = Configuration(local_root / ".pyre_configuration.local")
+            configuration.enable_new_server()
+            configuration.write()
