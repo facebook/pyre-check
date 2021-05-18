@@ -285,7 +285,7 @@ module Make (Config : PRODUCT_CONFIG) = struct
 
     let pp formatter map = Format.fprintf formatter "%s" (show map)
 
-    let transform : type a f. a part -> ([ `Transform ], a, f, t, t) operation -> f:f -> t -> t =
+    let transform : type a f. a part -> ([ `Transform ], a, f, _) operation -> f:f -> t -> t =
      fun part op ~f product ->
       match part with
       | Self -> Base.transform part op ~f product
@@ -293,7 +293,7 @@ module Make (Config : PRODUCT_CONFIG) = struct
           let transform (Slot slot) =
             let value = get slot product in
             let module D = (val Config.slot_domain slot) in
-            let new_value = D.transform part (Base.freshen_transform op) ~f value in
+            let new_value = D.transform part op ~f value in
             update slot new_value product
           in
           let route = get_route part in
@@ -301,7 +301,7 @@ module Make (Config : PRODUCT_CONFIG) = struct
 
 
     let reduce
-        : type a f b. a part -> using:([ `Reduce ], a, f, t, b) operation -> f:f -> init:b -> t -> b
+        : type a f b. a part -> using:([ `Reduce ], a, f, b) operation -> f:f -> init:b -> t -> b
       =
      fun part ~using:op ~f ~init product ->
       match part with
@@ -310,7 +310,7 @@ module Make (Config : PRODUCT_CONFIG) = struct
           let fold (Slot slot) =
             let value = get slot product in
             let module D = (val Config.slot_domain slot) in
-            D.reduce part ~using:(Base.freshen_reduce op) ~f ~init value
+            D.reduce part ~using:op ~f ~init value
           in
           let route = get_route part in
           fold slots.(route)
@@ -318,11 +318,7 @@ module Make (Config : PRODUCT_CONFIG) = struct
 
     let partition
         : type a f b.
-          a part ->
-          ([ `Partition ], a, f, t, b) operation ->
-          f:f ->
-          t ->
-          (b, t) Core_kernel.Map.Poly.t
+          a part -> ([ `Partition ], a, f, b) operation -> f:f -> t -> (b, t) Core_kernel.Map.Poly.t
       =
      fun part op ~f product ->
       match part with
@@ -331,7 +327,7 @@ module Make (Config : PRODUCT_CONFIG) = struct
           let partition (Slot slot) : (b, t) Core_kernel.Map.Poly.t =
             let value = get slot product in
             let module D = (val Config.slot_domain slot) in
-            D.partition part (Base.freshen_partition op) ~f value
+            D.partition part op ~f value
             |> Core_kernel.Map.Poly.map ~f:(fun value -> update slot value product)
           in
           let route = get_route part in

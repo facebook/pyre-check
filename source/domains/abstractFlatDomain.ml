@@ -83,7 +83,7 @@ module Make (Element : ELEMENT) = struct
 
     let widen ~iteration:_ ~prev ~next = join prev next
 
-    let transform : type a f. a part -> ([ `Transform ], a, f, t, t) operation -> f:f -> t -> t =
+    let transform : type a f. a part -> ([ `Transform ], a, f, _) operation -> f:f -> t -> t =
      fun part op ~f p ->
       match part with
       | Element -> (
@@ -99,7 +99,7 @@ module Make (Element : ELEMENT) = struct
 
 
     let reduce
-        : type a f b. a part -> using:([ `Reduce ], a, f, t, b) operation -> f:f -> init:b -> t -> b
+        : type a f b. a part -> using:([ `Reduce ], a, f, b) operation -> f:f -> init:b -> t -> b
       =
      fun part ~using:op ~f ~init p ->
       match part, op, p with
@@ -112,11 +112,7 @@ module Make (Element : ELEMENT) = struct
 
     let partition
         : type a f b.
-          a part ->
-          ([ `Partition ], a, f, t, b) operation ->
-          f:f ->
-          t ->
-          (b, t) Core_kernel.Map.Poly.t
+          a part -> ([ `Partition ], a, f, b) operation -> f:f -> t -> (b, t) Core_kernel.Map.Poly.t
       =
      fun part op ~f flat ->
       match part, op with

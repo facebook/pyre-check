@@ -90,7 +90,7 @@ module Make (Element : ELEMENT) = struct
 
     let pp formatter set = Format.fprintf formatter "%s" (show set)
 
-    let transform : type a f. a part -> ([ `Transform ], a, f, t, t) operation -> f:f -> t -> t =
+    let transform : type a f. a part -> ([ `Transform ], a, f, _) operation -> f:f -> t -> t =
      fun part op ~f set ->
       match part, op with
       | Element, Map -> (
@@ -109,7 +109,7 @@ module Make (Element : ELEMENT) = struct
 
 
     let reduce
-        : type a f b. a part -> using:([ `Reduce ], a, f, t, b) operation -> f:f -> init:b -> t -> b
+        : type a f b. a part -> using:([ `Reduce ], a, f, b) operation -> f:f -> init:b -> t -> b
       =
      fun part ~using:op ~f ~init set ->
       match part, op with
@@ -126,11 +126,7 @@ module Make (Element : ELEMENT) = struct
 
     let partition
         : type a f b.
-          a part ->
-          ([ `Partition ], a, f, t, b) operation ->
-          f:f ->
-          t ->
-          (b, t) Core_kernel.Map.Poly.t
+          a part -> ([ `Partition ], a, f, b) operation -> f:f -> t -> (b, t) Core_kernel.Map.Poly.t
       =
      fun part op ~f set ->
       let update element = function

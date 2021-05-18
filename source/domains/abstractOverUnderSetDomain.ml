@@ -197,7 +197,7 @@ module Make (Element : AbstractSetDomain.ELEMENT) = struct
               make ~old:from ~over:(Set.union over under) ~under
 
 
-    let transform : type a f. a part -> ([ `Transform ], a, f, t, t) operation -> f:f -> t -> t =
+    let transform : type a f. a part -> ([ `Transform ], a, f, _) operation -> f:f -> t -> t =
      fun part op ~f set ->
       match part, op, set with
       | Element, Map, Bottom -> set
@@ -226,7 +226,7 @@ module Make (Element : AbstractSetDomain.ELEMENT) = struct
 
 
     let reduce
-        : type a f b. a part -> using:([ `Reduce ], a, f, t, b) operation -> f:f -> init:b -> t -> b
+        : type a f b. a part -> using:([ `Reduce ], a, f, b) operation -> f:f -> init:b -> t -> b
       =
      fun part ~using:op ~f ~init set ->
       match part, op, set with
@@ -251,11 +251,7 @@ module Make (Element : AbstractSetDomain.ELEMENT) = struct
 
     let partition
         : type a f b.
-          a part ->
-          ([ `Partition ], a, f, t, b) operation ->
-          f:f ->
-          t ->
-          (b, t) Core_kernel.Map.Poly.t
+          a part -> ([ `Partition ], a, f, b) operation -> f:f -> t -> (b, t) Core_kernel.Map.Poly.t
       =
      fun part op ~f set ->
       let update_element element = function
