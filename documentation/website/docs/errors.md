@@ -520,13 +520,12 @@ def decorator(f: Callable[P, int]) -> Callable[P, None]:
   return foo
 ```
 
-### 33: Prohibited Any
-Pyre will warn on any usage of `typing.Any` when run in [strict mode](gradual_typing.md#strict-mode). `Any` is an escape hatch that hides type errors and introduces potential type inconsistencies which Pyre strict is designed to make explicit. To resolve this error, replace `Any` with any other annotation. Using builtins `object` is acceptable if you are looking for a supertype of all classes.
-
-
 ### 30: Terminating Analysis
 
 This indicates a bug in Pyre. Please open an issue on [Github](https://github.com/facebook/pyre/issues).
+
+### 33: Prohibited Any
+Pyre will warn on any usage of `typing.Any` when run in [strict mode](gradual_typing.md#strict-mode). `Any` is an escape hatch that hides type errors and introduces potential type inconsistencies which Pyre strict is designed to make explicit. To resolve this error, replace `Any` with any other annotation. Using builtins `object` is acceptable if you are looking for a supertype of all classes.
 
 ### 34: Invalid type variable
 
@@ -702,6 +701,35 @@ class BookBasedMovie(NonTypedDict): # Invalid inheritance error
 
 If inheriting from another typed dictionary, fields need to have a consistent type between child and parent, in order for subclassing to be sound. Similarly, a required field in the child must also be required for the parent.
 
+### 40: Invalid Override
+Pyre will error when methods in a child class override those in a parent class inconsistently.
+Static methods cannot be overwritten by non-static methods, and final methods cannot be overwritten.
+
+```python
+class A:
+    @staticmethod
+    def foo(self) -> int:
+        pass
+
+class B(A):
+    @classmethod # Non-static method `B.foo` cannot override a static method defined in `A`.
+    def foo(cls) -> int:
+        pass
+```
+
+
+```python
+  from typing import final
+  class Foo:
+    @final
+    def bar(self) -> None:
+      pass
+
+  class Bar(Foo):
+    def bar(self) -> None: # Invalid override [40]: `Bar.bar` cannot override final method defined in `Foo`.
+      pass
+```
+
 ### 41: Invalid Assignment
 Pyre will error on assignments to final attributes, read-only properties, and class variables from a class instance. For example,
 
@@ -788,34 +816,6 @@ You can also change the type checking mode of a single file by adding a local mo
 
 If you specify more than one local mode, Pyre will error and ask you to remove all but one.
 
-### 40: Invalid Override
-Pyre will error when methods in a child class override those in a parent class inconsistently.
-Static methods cannot be overwritten by non-static methods, and final methods cannot be overwritten.
-
-```python
-class A:
-    @staticmethod
-    def foo(self) -> int:
-        pass
-
-class B(A):
-    @classmethod # Non-static method `B.foo` cannot override a static method defined in `A`.
-    def foo(cls) -> int:
-        pass
-```
-
-
-```python
-  from typing import final
-  class Foo:
-    @final
-    def bar(self) -> None:
-      pass
-
-  class Bar(Foo):
-    def bar(self) -> None: # Invalid override [40]: `Bar.bar` cannot override final method defined in `Foo`.
-      pass
-```
 
 ### 53: Missing annotation for captured variables
 Pyre makes no attempt at trying to infer the types across function boundaries. The statement holds for nested functions as well.
