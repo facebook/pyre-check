@@ -536,7 +536,7 @@ def invalid_models_to_diagnostics(
 ) -> Dict[Path, List[lsp.Diagnostic]]:
     result: Dict[Path, List[lsp.Diagnostic]] = {}
     for model in invalid_models:
-        result.setdefault(model.path, []).append(invalid_model_to_diagnostic(model))
+        result.setdefault(Path(model.path), []).append(invalid_model_to_diagnostic(model))
     # LOG.info(f"invalid_models_to_diagnostics(): result = {result}")
     return result
 

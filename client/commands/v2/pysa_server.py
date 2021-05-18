@@ -52,7 +52,7 @@ from api import query, connection as api_connection
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
-PYSA_HANDLER_OBJ = None
+PYSA_HANDLER_OBJ: None
 
 
 async def update_errors() -> None:
@@ -128,14 +128,14 @@ class PysaServerHandler(connection.BackgroundTask):
     async def show_model_errors_to_client(self) -> None:
         # LOG.info(f"server_state.opened_documents = {self.server_state.opened_documents}")
         for path in self.server_state.opened_documents:
-            path_str = str(path.resolve())
+            # path_str = str(path.resolve())
             # path = "/home/momo/Documents/Programs/pyre-check/documentation/pysa_tutorial/exercise2/sources_sinks.pysa"
-            await _publish_diagnostics(self.client_output_channel, path_str, [])
-            diagnostics = self.server_state.diagnostics.get(path_str, None)
+            await _publish_diagnostics(self.client_output_channel, path, [])
+            diagnostics = self.server_state.diagnostics.get(path, None)
             # LOG.info(f"show_model_errors_to_client(): diagnostics = {diagnostics}")
             if diagnostics is not None:
                 await _publish_diagnostics(
-                    self.client_output_channel, path_str, diagnostics
+                    self.client_output_channel, path, diagnostics
                 )
 
     @connection.asynccontextmanager
