@@ -480,7 +480,7 @@ def create_server_arguments(
         else get_saved_state_action(
             start_arguments, relative_local_root=configuration.relative_local_root
         ),
-        search_paths=configuration.get_existent_search_paths(),
+        search_paths=configuration.expand_and_get_existent_search_paths(),
         show_error_traces=start_arguments.show_error_traces,
         source_paths=source_paths,
         store_type_check_resolution=start_arguments.store_type_check_resolution,

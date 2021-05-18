@@ -821,7 +821,7 @@ class ConfigurationTest(testslide.TestCase):
                             site_root=str(root_path / "u/v"), package_name="w"
                         ),
                     ],
-                ).get_existent_search_paths(),
+                ).expand_and_get_existent_search_paths(),
                 [
                     SimpleSearchPathElement(str(root_path / "a")),
                     SubdirectorySearchPathElement(
@@ -830,6 +830,22 @@ class ConfigurationTest(testslide.TestCase):
                     SitePackageSearchPathElement(
                         site_root=str(root_path / "d/e"), package_name="f"
                     ),
+                ],
+            )
+
+    def test_existent_search_path_glob(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root).resolve()
+            ensure_directories_exists(root_path, ["a1", "a2", "b"])
+            self.assertListEqual(
+                Configuration(
+                    project_root="irrelevant",
+                    dot_pyre_directory=Path(".pyre"),
+                    search_path=[SimpleSearchPathElement(str(root_path / "a?"))],
+                ).expand_and_get_existent_search_paths(),
+                [
+                    SimpleSearchPathElement(str(root_path / "a1")),
+                    SimpleSearchPathElement(str(root_path / "a2")),
                 ],
             )
 
@@ -849,7 +865,7 @@ class ConfigurationTest(testslide.TestCase):
                         SimpleSearchPathElement(str(root_path / "a")),
                     ],
                     typeshed=str(root_path / "typeshed"),
-                ).get_existent_search_paths(),
+                ).expand_and_get_existent_search_paths(),
                 [
                     SimpleSearchPathElement(str(root_path / "a")),
                     SimpleSearchPathElement(str(root_path / "typeshed/stdlib")),
@@ -1385,6 +1401,32 @@ class ConfigurationTest(testslide.TestCase):
             except InvalidConfiguration:
                 self.fail("Nested local configuration check fails unexpectedly!")
 
+    def test_source_directories_glob(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root)
+            ensure_directories_exists(root_path, ["a1", "a2", "b", "c"])
+            source_directories = (
+                Configuration(
+                    project_root="irrelevant",
+                    dot_pyre_directory=Path(".pyre"),
+                    source_directories=[
+                        SimpleSearchPathElement(str(root_path / "a*")),
+                        SimpleSearchPathElement(str(root_path / "b")),
+                    ],
+                )
+                .expand_and_filter_nonexistent_paths()
+                .source_directories
+            )
+            self.assertIsNotNone(source_directories)
+            self.assertListEqual(
+                list(source_directories),
+                [
+                    SimpleSearchPathElement(str(root_path / "a1")),
+                    SimpleSearchPathElement(str(root_path / "a2")),
+                    SimpleSearchPathElement(str(root_path / "b")),
+                ],
+            )
+
 
 class SearchPathElementTest(unittest.TestCase):
     def test_create(self) -> None:
@@ -1474,3 +1516,18 @@ class SearchPathElementTest(unittest.TestCase):
             ),
             SitePackageSearchPathElement("site_root", "package"),
         )
+
+    def test_expand_glob(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root)
+            ensure_directories_exists(root_path, ["a1", "a2", "b"])
+
+            search_path = SimpleSearchPathElement(str(root_path / "a*"))
+
+            self.assertListEqual(
+                search_path.expand_glob(),
+                [
+                    SimpleSearchPathElement(str(root_path / "a1")),
+                    SimpleSearchPathElement(str(root_path / "a2")),
+                ],
+            )

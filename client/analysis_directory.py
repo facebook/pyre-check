@@ -880,7 +880,7 @@ def resolve_analysis_directory(
             filter_paths=filter_paths,
             search_path=[
                 search_path.path()
-                for search_path in configuration.get_existent_search_paths()
+                for search_path in configuration.expand_and_get_existent_search_paths()
             ],
         )
     else:
@@ -899,7 +899,7 @@ def resolve_analysis_directory(
             extensions=configuration.get_valid_extension_suffixes(),
             search_path=[
                 search_path.path()
-                for search_path in configuration.get_existent_search_paths()
+                for search_path in configuration.expand_and_get_existent_search_paths()
             ],
             isolate=isolate,
             configuration=configuration,

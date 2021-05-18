@@ -119,6 +119,10 @@ class SearchPathElement(abc.ABC):
     def expand_relative_root(self, relative_root: str) -> "SearchPathElement":
         raise NotImplementedError
 
+    @abc.abstractmethod
+    def expand_glob(self) -> List["SearchPathElement"]:
+        raise NotImplementedError
+
 
 @dataclasses.dataclass(frozen=True)
 class SimpleSearchPathElement(SearchPathElement):
@@ -142,6 +146,14 @@ class SimpleSearchPathElement(SearchPathElement):
         return SimpleSearchPathElement(
             _expand_relative_root(self.root, relative_root=relative_root)
         )
+
+    def expand_glob(self) -> List[SearchPathElement]:
+        expanded = sorted(glob.glob(self.get_root()))
+        if expanded:
+            return [SimpleSearchPathElement(path) for path in expanded]
+        else:
+            LOG.warning(f"'{self.path()}' does not match any paths.")
+            return []
 
 
 @dataclasses.dataclass(frozen=True)
@@ -170,6 +182,9 @@ class SubdirectorySearchPathElement(SearchPathElement):
             subdirectory=self.subdirectory,
         )
 
+    def expand_glob(self) -> List["SearchPathElement"]:
+        return [self]
+
 
 @dataclasses.dataclass(frozen=True)
 class SitePackageSearchPathElement(SearchPathElement):
@@ -192,6 +207,9 @@ class SitePackageSearchPathElement(SearchPathElement):
     def expand_relative_root(self, relative_root: str) -> SearchPathElement:
         # Site package does not participate in root expansion.
         return self
+
+    def expand_glob(self) -> List["SearchPathElement"]:
+        return [self]
 
 
 @dataclasses.dataclass
@@ -288,9 +306,16 @@ def _in_virtual_environment(override: Optional[bool] = None) -> bool:
     return sys.prefix != sys.base_prefix
 
 
-def _get_existent_paths(paths: Sequence[SearchPathElement]) -> List[SearchPathElement]:
+def _expand_and_get_existent_paths(
+    paths: Sequence[SearchPathElement],
+) -> List[SearchPathElement]:
+    expanded_search_paths = [
+        expanded_path
+        for search_path_element in paths
+        for expanded_path in search_path_element.expand_glob()
+    ]
     existent_paths = []
-    for search_path_element in paths:
+    for search_path_element in expanded_search_paths:
         search_path = search_path_element.path()
         if os.path.exists(search_path):
             existent_paths.append(search_path_element)
@@ -943,10 +968,10 @@ class Configuration:
     def get_source_directories(self) -> List[SearchPathElement]:
         return list(self.source_directories or [])
 
-    # Validation of search paths cannot happen at Configuration creation
+    # Expansion and validation of search paths cannot happen at Configuration creation
     # because link trees need to be built first.
-    def get_existent_search_paths(self) -> List[SearchPathElement]:
-        existent_paths = _get_existent_paths(self.search_path)
+    def expand_and_get_existent_search_paths(self) -> List[SearchPathElement]:
+        existent_paths = _expand_and_get_existent_paths(self.search_path)
 
         typeshed_root = self.get_typeshed_respecting_override()
         typeshed_paths = (
@@ -965,7 +990,7 @@ class Configuration:
         # List[SimpleSearchPathElement]]`
         return existent_paths + typeshed_paths
 
-    def filter_nonexistent_paths(self) -> "Configuration":
+    def expand_and_filter_nonexistent_paths(self) -> "Configuration":
         source_directories = self.source_directories
 
         return Configuration(
@@ -991,7 +1016,7 @@ class Configuration:
             python_version=self.python_version,
             relative_local_root=self.relative_local_root,
             search_path=self.search_path,
-            source_directories=_get_existent_paths(source_directories)
+            source_directories=_expand_and_get_existent_paths(source_directories)
             if source_directories
             else None,
             strict=self.strict,
@@ -1199,7 +1224,7 @@ def create_configuration(
     configuration = Configuration.from_partial_configuration(
         project_root, relative_local_root, partial_configuration
     )
-    return configuration.filter_nonexistent_paths()
+    return configuration.expand_and_filter_nonexistent_paths()
 
 
 def check_nested_local_configuration(configuration: Configuration) -> None:
