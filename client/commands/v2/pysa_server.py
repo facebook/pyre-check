@@ -56,7 +56,9 @@ PYSA_HANDLER_OBJ = None
 
 
 async def update_errors() -> None:
-    pyre_connection = api_connection.PyreConnection(Path(PYSA_HANDLER_OBJ.pyre_arguments.global_root))
+    pyre_connection = api_connection.PyreConnection(
+        Path(PYSA_HANDLER_OBJ.pyre_arguments.global_root)
+    )
     initial_model_errors = query.get_invalid_taint_models(pyre_connection)
     PYSA_HANDLER_OBJ.update_model_errors(initial_model_errors)
     await PYSA_HANDLER_OBJ.show_model_errors_to_client()
@@ -127,7 +129,7 @@ class PysaServerHandler(connection.BackgroundTask):
         # LOG.info(f"server_state.opened_documents = {self.server_state.opened_documents}")
         for path in self.server_state.opened_documents:
             path_str = str(path.resolve())
-        # path = "/home/momo/Documents/Programs/pyre-check/documentation/pysa_tutorial/exercise2/sources_sinks.pysa"
+            # path = "/home/momo/Documents/Programs/pyre-check/documentation/pysa_tutorial/exercise2/sources_sinks.pysa"
             await _publish_diagnostics(self.client_output_channel, path_str, [])
             diagnostics = self.server_state.diagnostics.get(path_str, None)
             # LOG.info(f"show_model_errors_to_client(): diagnostics = {diagnostics}")
@@ -159,9 +161,7 @@ class PysaServerHandler(connection.BackgroundTask):
             f'["SubscribeToModelErrors", "{subscription_name}"]\n'
         )
         while True:
-            async with self._read_server_response(
-                server_input_channel
-            ):
+            async with self._read_server_response(server_input_channel):
                 await update_errors()
                 # initial_model_errors = query.get_invalid_taint_models(pyre_connection)
                 # self.update_model_errors(initial_model_errors)
@@ -613,9 +613,7 @@ async def run_persistent(
                 # pyre_arguments=pysa_arguments,
                 # client_output_channel=stdout,
                 # server_state=initial_server_state,
-                pyre_manager=connection.BackgroundTaskManager(
-                    PYSA_HANDLER_OBJ
-                ),
+                pyre_manager=connection.BackgroundTaskManager(PYSA_HANDLER_OBJ),
             )
             return await server.run()
         elif isinstance(initialize_result, InitializationFailure):
