@@ -976,8 +976,8 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
   let get_root { element; _ } = element
 
   (** Filter map over tree, where each non-bottom element node is visited. The function ~f is passed
-      the path to the node, the joined ancestor elements, and the non-bottom element at the node and
-      returns a new Element to substitute (possibly bottom). *)
+      the path to the node and the non-bottom element at the node and returns a new Element to
+      substitute (possibly bottom). *)
   let filter_map_tree_paths ~f tree =
     let build ~path ~element access_path_tree =
       let new_path, element = f ~path ~element in
