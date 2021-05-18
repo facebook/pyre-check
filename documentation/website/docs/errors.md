@@ -309,6 +309,41 @@ For type aliases, check that your type alias is defined
 2. on the global scope, not nested inside a function or class.
 
 
+### 12: Incompatible Awaitable Type
+
+In strict mode, pyre will verify that all calls to `await` are on awaitable values, to ensure that you cannot get a runtime error awaiting an object that is not a coroutine.
+
+A common situation where working code will produce this error is when pyre cannot statically verify that an awaitable is non-Null, for example:
+```python
+import asyncio
+
+async def f(flag: bool) -> None:
+    if flag:
+        task = asyncio.create_task(asyncio.sleep(1))
+    else:
+        task = None
+    await task  # would throw a ValueError if flag were false
+
+asyncio.run(f(True))
+```
+
+In this example, `task` will always be a valid awaitable unless some other module overwrites the global `flag`, but pyre cannot prove that this does not happen. The error we get has the message
+```
+Expected an awaitable but got `typing.Optional[asyncio.tasks.Task[None]]`
+```
+
+You can fix this error by ensuring that the awaited object has an awaitable type. In the case of optional values, you can use refinement to rule out `None`. The example above can be fixed by tweaking the definition of `main`:
+```python
+async def f(flag: bool) -> None:
+    if flag:
+        task = asyncio.create_task(asyncio.sleep(1))
+    else:
+        task = None
+    if task is not None:
+      await task
+```
+
+
 ### 14,15: Behavioral Subtyping
 
 Method overrides should follow
