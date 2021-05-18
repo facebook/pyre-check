@@ -369,7 +369,7 @@ module Make (Key : KEY) (Element : AbstractDomainCore.S) = struct
         | `Both (to_remove, from) ->
             let difference = Element.subtract to_remove ~from in
             if Element.is_bottom difference then
-              Map.remove result key
+              result
             else
               Map.set result ~key ~data:difference
         | `Left _ -> result
