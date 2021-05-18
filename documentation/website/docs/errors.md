@@ -485,6 +485,11 @@ This is usually caused by failing to import the proper module.
 Pyre will raise error 21 instead ("Undefined import") when the import statement is present, but the module to be imported could not be found in the search path.
 If the module provides stub files, please provide their location via the `--search-path` commandline parameter.
 
+### 22: Redundant Cast
+Pyre will warn when you attempt to use `typing.cast` to cast a variable to a type that the type checker already knows that variable has. This is because `typing.cast` is purely a tool for communicating with the static type checker, and will not provide any runtime guarantees. Therefore a redundant cast provides no value and is likely a mistake.
+
+If you are trying to document the type of the variable, you can provide an explicit annotation where it is declared. If you are trying to add a sanity check at runtime that the type of a variable is what you already believe it must be, use `isinstance`.
+
 ### 24: Invalid Type Parameters
 Pyre will error if a generic type annotation is given with unexpected type parameters.
 
