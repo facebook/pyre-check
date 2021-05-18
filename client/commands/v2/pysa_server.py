@@ -35,7 +35,7 @@ from .persistent import (
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
-PYSA_HANDLER_OBJ = None
+PYSA_HANDLER_OBJ: None
 
 
 class PysaServer:
