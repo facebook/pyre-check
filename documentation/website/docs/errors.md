@@ -344,6 +344,27 @@ async def f(flag: bool) -> None:
 ```
 
 
+### 13: Uninitialized Attribute
+
+In strict mode, pyre will throw an error for class attributes which are declared without default values if they are not initialized in a constructor, for example:
+```python
+class A:
+    x : int
+
+    def __init__(self) -> None:
+        pass
+```
+For a case like this, you can fix the error either by setting a default value like `x : int = 0` at the class level, or by setting `x` in the constructor e.g. `self.x = 0`.
+
+#### Dataclass-like classes
+
+One case where this can occur is when using a library providing a "dataclass-like" decorator that, for example, autogenerates a constructor setting attributes.
+
+Pyre currently knows that that uninitialized attributes of classes wrapped in `dataclass` and `attrs` decorators will generate constructors that set the attributes. But it does not understand many custom libraries that do similar things, for example test frameworks, or new decorators that wrap the dataclass decorator and add more logic.
+
+There is not currently a way to fix this other than via `pyre-ignore` or `pyre-fixme` directives. The python typing community is aware of this problem but has not yet settled on a solution, you can see discussion [here](https://mail.python.org/archives/list/typing-sig@python.org/thread/TXL5LEHYX5ZJAZPZ7YHZU7MVFXMVUVWL/).
+
+
 ### 14,15: Behavioral Subtyping
 
 Method overrides should follow
