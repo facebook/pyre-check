@@ -9,5 +9,5 @@ open Analysis
 
 include
   Interprocedural.Result.ANALYSIS_RESULT_WITH_REGISTRATION
-    with type result := AnalysisError.Instantiated.t list
-     and type call_model := TypeInferenceDomain.t
+    with type result = AnalysisError.Instantiated.t list
+     and type call_model = TypeInferenceDomain.t

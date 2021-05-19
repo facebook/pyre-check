@@ -9,7 +9,7 @@ open Core
 open Analysis
 open Interprocedural
 
-include TypeInferenceResult.Register (struct
+module Analyzer = struct
   let init
       ~static_analysis_configuration:{ Configuration.StaticAnalysis.configuration = c; _ }
       ~scheduler:_
@@ -53,4 +53,8 @@ include TypeInferenceResult.Register (struct
       ~fixpoint_iterations:_
     =
     []
-end)
+end
+
+include TypeInferenceResult
+include Analyzer
+include TypeInferenceResult.Register (Analyzer)

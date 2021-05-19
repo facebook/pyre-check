@@ -2672,6 +2672,7 @@ module ScratchProject = struct
       ?(show_error_traces = false)
       ?(include_typeshed_stubs = true)
       ?(include_helper_builtins = true)
+      ?(infer = false)
       sources
     =
     let add_source ~root (relative, content) =
@@ -2697,6 +2698,7 @@ module ScratchProject = struct
         ~features:{ Configuration.Features.default with go_to_definition = true }
         ~show_error_traces
         ~parallel:false
+        ~infer
         ()
     in
     let external_sources =

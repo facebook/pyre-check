@@ -29,4 +29,5 @@ module ResultArgument = struct
   let strip_for_callsite model = model
 end
 
+include ResultArgument
 include Interprocedural.Result.Make (ResultArgument)

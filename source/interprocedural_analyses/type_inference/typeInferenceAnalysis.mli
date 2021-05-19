@@ -6,3 +6,8 @@
  *)
 
 val abstract_kind : Interprocedural.AnalysisKind.abstract
+
+include
+  Interprocedural.Result.ANALYSIS
+    with type result := TypeInferenceResult.result
+     and type call_model := TypeInferenceResult.call_model

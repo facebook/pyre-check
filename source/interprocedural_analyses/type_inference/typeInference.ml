@@ -8,3 +8,7 @@
 module Domain = TypeInferenceDomain
 module Result = TypeInferenceResult
 module Analysis = TypeInferenceAnalysis
+
+module Private = struct
+  module SharedMemory = TypeInferenceSharedMemory
+end
