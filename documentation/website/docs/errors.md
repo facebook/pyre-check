@@ -485,6 +485,30 @@ This is usually caused by failing to import the proper module.
 Pyre will raise error 21 instead ("Undefined import") when the import statement is present, but the module to be imported could not be found in the search path.
 If the module provides stub files, please provide their location via the `--search-path` commandline parameter.
 
+### 19: Too Many Argument
+
+Pyre verifies that you pass a legal number of arguments to functions.
+
+The most obvious way to encounter this error is to just pass too many arguments to a function:
+```python
+def f(x: int) -> int:
+    return x
+
+f(5, 6)  # this would throw a TypeError at runtime, and pyre complains
+```
+To fix this, make sure you pass the correct number of parameters. In some cases you may encounter this error if you intended to use a variadic argument (`*args`) or to set a default value.
+
+Pyre will also throw this error if you pass too many positional arguments to
+a function that uses python's ability restrict arguments to be keyword-only
+specified by [PEP 3102](https://www.python.org/dev/peps/pep-3102/):
+```python
+def f(*, x: int) -> int:
+    return x
+
+f(5)  # As before, this throws a TypeError because x is positional-only
+f(x=5)  # this line will typecheck and run without error
+```
+
 ### 20: Missing Argument
 
 Pyre verifies that function calls provide all the expected arguments, so it will complain about code like this:
