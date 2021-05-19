@@ -29,7 +29,9 @@ class SourceDatabase(TypedDict):
 
 def _buck(arguments: List[str], isolation_prefix: Optional[str]) -> str:
     isolation_prefix_arguments = (
-        ["--isolation_prefix", isolation_prefix] if isolation_prefix is not None else []
+        ["--isolation_prefix", isolation_prefix]
+        if isolation_prefix is not None and len(isolation_prefix) > 0
+        else []
     )
     command = (
         ["buck"]
