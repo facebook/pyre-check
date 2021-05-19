@@ -673,6 +673,29 @@ def decorator(f: Callable[P, int]) -> Callable[P, None]:
 
 This indicates a bug in Pyre. Please open an issue on [Github](https://github.com/facebook/pyre/issues).
 
+### 32: Invalid Argument
+
+This error usually means you are using a variable in a way that is incompatible with its structure, either as an argument to a function call or as part of a data structure.
+
+This could be from using an invalid variadic parameter (informally a "splat"):
+```python
+x: int = 5
+
+print(*x)   # invalid use of x, which is not iterable
+```
+or using an invalid keyword parameter (informally a "double-splat"):
+```python
+import typing
+
+x: int = 5
+
+d: typing.Dict[int, int] = {**x}  # invalid use of x, which is not a mapping
+
+dict(**d)  # invalid use of d; function kwargs must be a mapping with string keys
+```
+
+It's also possible to hit this error code on constraint mismatches when using tuple variadic variables as specified in [PEP 646](https://www.python.org/dev/peps/pep-0646/), which are an advanced feature of pyre.
+
 ### 33: Prohibited Any
 Pyre will warn on any usage of `typing.Any` when run in [strict mode](gradual_typing.md#strict-mode). `Any` is an escape hatch that hides type errors and introduces potential type inconsistencies which Pyre strict is designed to make explicit. To resolve this error, replace `Any` with any other annotation. Using builtins `object` is acceptable if you are looking for a supertype of all classes.
 
