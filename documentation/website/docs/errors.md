@@ -1029,6 +1029,21 @@ def outer_function2() -> int:
     return inner_function(x)
 ```
 
+### 54: Invalid TypedDict Operation
+
+In accordance with [PEP 598](https://www.python.org/dev/peps/pep-0589/), code that tries to assign a value of the wrong type to a field of a `TypedDict` will not typecheck:
+```python
+from typing import TypedDict
+
+class MyDict(TypedDict):
+    value: str
+
+d: MyDict = {"value": "hello"}
+d["value"] = 5  # Invalid TypedDict operation
+```
+
+To fix this you may need to change your field type to a `Union`, if variable types are actually needed for a field.
+
 ### 56: Invalid decoration
 
 This error code is a catch-all for a variety of problems that can arise in the course of resolving the type of a decorated function.
