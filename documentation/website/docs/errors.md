@@ -281,6 +281,38 @@ def f() -> None:
     foo: Foo[Optional[int]] = Foo[Optional[int]](x=1)
 ```
 
+
+### 10: Unbound Name
+
+Pyre produces an Unbound Name error when your code access a variable (local or global) that pyre believes is not defined.
+
+In most cases code that does this is invalid and will always fail. For example this code will always fail at runtime:
+```python
+def f() -> int:
+    return x  # use of an unbound name x
+```
+
+There are some cases where python code that works fine at runtime could produce this error, for example if a function implicitly sets a module-level global variable that is not declared in the toplevel. Pyre will not accept this because module-level globals require type annotations, and if they have no declaration there is nowhere to put the annotation:
+```python
+def set_x() -> None:
+    global x
+    x = 42
+
+def use_x() -> None:
+    print(x)
+
+
+# this code will run fine, but pyre cannot analyze the type or use of the
+# implicitly-defined global x and will complain about an unbound name.
+set_x()
+use_x()
+```
+
+You can fix this by explicitly adding a declaration of the top-level variable `x`, for example:
+```python
+x : Optional[int] = None
+```
+
 ### 11, 31: Undefined or Invalid Type
 Pyre recognizes class names as valid annotations. Most basic types are imported from the `typing` module or are already available from builtins like `str`, `int`, `bool`, etc. You can also define your own type alias on the global scope, which can be used as annotations:
 
