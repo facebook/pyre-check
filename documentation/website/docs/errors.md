@@ -745,7 +745,7 @@ def foo(x: T) -> List[T]:
 One common error is when defining a generic decorator factory. The Python type system doesn't currently place `T` into scope within a `Callable` type. So, it considers `T` to be a type variable from the outer scope. This can lead to errors for apparently valid code:
 
 ```python
-from typing import *
+from typing import Callable, TypeVar
 
 T = TypeVar("T")
 R = TypeVar("R")
@@ -770,13 +770,13 @@ Invalid type variable [34]: The type variable `Variable[T]` isn't present in the
 Suggested fix: Use a callback protocol to define the return type.
 
 ```python
-from typing import *
+from typing import Callable, Protocol, TypeVar
 
 T = TypeVar("T")
 R = TypeVar("R")
 
 class MyCallableProtocol(Protocol):
-    def __call__(self, __f: Callable[[T], R]) -> Callable[[T], R]: ...
+    def __call__(self, f: Callable[[T], R]) -> Callable[[T], R]: ...
 
 def my_decorator_factory(message: str) -> MyCallableProtocol:
 
@@ -790,6 +790,33 @@ def my_decorator_factory(message: str) -> MyCallableProtocol:
 
     return _decorator
 ```
+
+If you are using a `ParamSpec` in your decorator, use the following:
+
+```python
+from typing import Awaitable, Callable, Protocol, TypeVar
+from pyre_extensions import ParameterSpecification
+
+R = TypeVar("R")
+P = ParameterSpecification("P")
+
+class MyCallableProtocol(Protocol):
+    def __call__(self, f: Callable[P, Awaitable[R]]) -> Callable[P, Awaitable[R]]: ...
+
+def my_decorator_factory(message: str) -> MyCallableProtocol:
+
+    def _decorator(f: Callable[P, Awaitable[R]]) -> Callable[P, Awaitable[R]]:
+
+        async def _inner(*args: P.args, **kwargs: P.kwargs) -> R:
+            print(message)
+            return await f(*args, **kwargs)
+
+        return _inner
+
+    return _decorator
+```
+
+Note: Support for such callables is currently **experimental** and varies from one typechecker to another. This behavior may change in the future.
 
 ### 35: Illegal Annotation Target
 Pyre will error when a type annotation is applied to something that can't be annotated. This could happen when:
