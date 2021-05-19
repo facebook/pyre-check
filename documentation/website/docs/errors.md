@@ -144,6 +144,25 @@ def foo() -> int:
   return 1
 ```
 
+
+### 2: Missing Parameter Annotation
+
+If strict mode is turned on, Pyre will error when a function argument is either annotated with a return type that contains `typing.Any`, or is not annotated with any type at all (in which case Pyre will treat it as `typing.Any` by default). It will also error when a method argument is not annotated, unless that argument is the first argument of a bound or static method (i.e. `self`, whose type pyre can infer).
+
+We enforce typed argument because `typing.Any` can hide type errors that will happen at runtime:
+```python
+from typing import Any
+
+def say_hello(name) -> None:
+    print("Hello " + name)
+
+
+# This line will raise at runtime, but no type error since `say_hello`s `name` has type `Any`.
+say_hello(42)
+```
+
+You can silence this by adding a non-`Any` annotation to all parameters of functions and methods (other than `self` and `cls` for bound and class methods, which you may omit).
+
 ### 3: Missing Return Annotation
 
 If strict mode is turned on, Pyre will error when a function is either annotated with a return type that contains `typing.Any`, or is not annotated with any return type at all (in which case Pyre will treat it as returning `typing.Any` by default).
