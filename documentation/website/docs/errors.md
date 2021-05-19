@@ -851,6 +851,22 @@ takes_int_list(float_list)  # this call is OK because MyList is contravariant: M
 # problem with return above is clear
 ```
 
+### 48: Invalid Exception
+
+In python, you can only raise objects that derive from `BaseException` (it's more common to subtype `Exception` or one of the standard library-defined errors like `ValueError`), attempting to raise another object such as a bare string will result in a `TypeError`. As a result, pyre will flag code like this:
+```python
+def f(x: int) -> None:
+    if x > 1:
+        raise "x is too big"
+```
+
+To fix this, wrap the information you are trying to raise (usually an error message) in some exception type, for example:
+```python
+def f(x: int) -> None:
+    if x > 1:
+        raise ValueError("x is too big")
+```
+
 ### 49: Unsafe Cast
 Pyre supports `typing.cast` to force the type checker to accept a given type for your expression, no matter what it would otherwise infer that type to be. This is a good escape hatch but can also hide type inconsistencies and introduce unsoundness. For example:
 
