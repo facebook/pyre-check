@@ -1137,6 +1137,43 @@ d["value"] = 5  # Invalid TypedDict operation
 
 To fix this you may need to change your field type to a `Union`, if variable types are actually needed for a field.
 
+### 55: TypedDict Initialization Error
+
+Pyre will warn you when initializing a TypedDict with:
+
++ Missing required fields
+
+  ```python
+  from typing import TypedDict
+
+  class Movie(TypedDict):
+      name: str
+      year: int
+
+  movie: Movie = {"name": "The Matrix"}
+
+  $ pyre
+  TypedDict initialization error [55]: Missing required field `year` for TypedDict `Movie`.
+  ```
+
++ Incorrect field type
+
+  ```python
+  movie: Movie = {"name": "The Matrix", "year": "1999"}
+
+  $ pyre
+  TypedDict initialization error [55]: Expected type `int` for `Movie` field `year` but got `str`.
+  ```
+
++ Undefined fields
+
+  ```python
+  movie: Movie = {"name": "The Matrix", "year": 1999, "extra_field": "hello"}
+
+  $ pyre
+  TypedDict initialization error [55]: TypedDict `Movie` has no field `extra_field`.
+  ```
+
 ### 56: Invalid decoration
 
 This error code is a catch-all for a variety of problems that can arise in the course of resolving the type of a decorated function.
