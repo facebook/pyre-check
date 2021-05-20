@@ -641,6 +641,32 @@ x: Container[int] = Container() # No error
 y: Container[str] = Container() # Invalid type parameter error
 ```
 
+### 26: Typed Dictionary Access With Non-Literal
+
+In python, [typed dictionaries can only be accessed using literal strings](https://www.python.org/dev/peps/pep-0589/#id21) that can be statically verified as valid. As a result, code like this will not typecheck even though it works at runtime, because we cannot statically verify that `key` in `print_value` is a valid `Shape` key:
+```python
+from typing import TypedDict
+
+class Shape(TypedDict):
+    sides: int
+    color: str
+
+shape: Shape = {"sides": 4, "color": "blue"}
+
+print(shape["sides"])  # this is fine because "sides" is a literal
+
+for key in ["sides", "color"]:
+    print(key, shapes[key]) . # pyre will complain here because it can't prove `key` is valid
+```
+
+The example above shows a situation where you might hit this error: when you want to iterate over the fields of a typed dict. A suggested fix is to use type-safe operations like `dictionary.items` instead. For example the following code produces the same results but typechecks:
+```python
+for key, value  in shapes.items():
+    print(key, value)
+```
+
+In other cases where you need to access a `TypedDict` using a variable as a key, you can use `dictionary.get(key)`.
+
 ### 29: Call Error
 
 Pyre will emit an error on seeing a call of one of the following types:
