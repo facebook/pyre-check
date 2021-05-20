@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+module Data = TypeInferenceData
 module Domain = TypeInferenceDomain
 module Result = TypeInferenceResult
 module Analysis = TypeInferenceAnalysis

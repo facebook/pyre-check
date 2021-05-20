@@ -11,13 +11,13 @@ open Interprocedural
 
 module Analyzer = struct
   let init
-      ~static_analysis_configuration:{ Configuration.StaticAnalysis.configuration = c; _ }
+      ~static_analysis_configuration:{ Configuration.StaticAnalysis.configuration; _ }
       ~scheduler:_
       ~environment:_
       ~functions:_
       ~stubs:_
     =
-    TypeInferenceSharedMemory.register_configuration c;
+    TypeInferenceSharedMemory.register_configuration configuration;
     { Result.initial_models = Callable.Map.empty; skip_overrides = Ast.Reference.Set.empty }
 
 
@@ -26,19 +26,26 @@ module Analyzer = struct
     let ast_environment = GlobalResolution.ast_environment global_resolution in
     let maybe_source = AstEnvironment.ReadOnly.get_processed_source ast_environment qualifier in
     let configuration = TypeInferenceSharedMemory.get_configuration () in
+    let lookup = TypeInferenceData.lookup ~configuration ~global_resolution in
     let result =
-      match maybe_source with
-      | None -> []
-      | Some source ->
-          Inference.infer_for_define ~configuration ~global_resolution ~source ~define
-          |> List.map
-               ~f:
-                 (AnalysisError.instantiate
-                    ~show_error_traces:configuration.show_error_traces
-                    ~lookup:
-                      (AstEnvironment.ReadOnly.get_real_path_relative
-                         ~configuration
-                         ast_environment))
+      let errors =
+        match maybe_source with
+        | None -> []
+        | Some source ->
+            Inference.infer_for_define ~configuration ~global_resolution ~source ~define
+      in
+      List.fold
+        ~init:
+          (TypeInferenceData.InferenceResult.from_signature
+             ~global_resolution
+             ~lookup
+             ~qualifier
+             define)
+        ~f:
+          (TypeInferenceData.InferenceResult.add_missing_annotation_error
+             ~global_resolution
+             ~lookup)
+        errors
     in
     result, TypeInferenceDomain.bottom
 

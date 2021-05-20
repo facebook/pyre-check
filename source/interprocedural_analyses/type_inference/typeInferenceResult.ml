@@ -5,10 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-open Analysis
-
 module ResultArgument = struct
-  type result = AnalysisError.Instantiated.t list
+  type result = TypeInferenceData.InferenceResult.t
 
   type call_model = TypeInferenceDomain.t [@@deriving show]
 

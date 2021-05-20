@@ -10,21 +10,44 @@ open Pyre
 open Ast
 open Analysis
 
-let parent_reference parent_type =
-  parent_type
+let type_to_string type_ =
+  type_
   |> Type.Variable.convert_all_escaped_free_variables_to_anys
   |> Type.infer_transform
   |> Format.asprintf "%a" Type.pp
-  |> Reference.create
 
+
+let type_to_reference type_ = type_ |> type_to_string |> Reference.create
+
+let expression_to_json expression = `String (expression |> Expression.sanitized |> Expression.show)
+
+let lookup ~configuration ~global_resolution reference =
+  GlobalResolution.ast_environment global_resolution
+  |> fun ast_environment ->
+  AstEnvironment.ReadOnly.get_real_path_relative ~configuration ast_environment reference
+
+
+module SerializableReference = struct
+  type t = Reference.t [@@deriving compare, eq, sexp, hash, show]
+
+  let to_yojson reference = `String (Reference.show_sanitized reference)
+
+  module Map = Reference.Map.Tree
+end
+
+module DefaultValue = struct
+  type t = Expression.t option [@@deriving show, eq]
+
+  let to_yojson value = value >>| expression_to_json |> Option.value ~default:`Null
+end
 
 module AnnotationLocation = struct
   type t = {
-    qualifier: Reference.t;
+    qualifier: SerializableReference.t;
     path: string;
     line: int;
   }
-  [@@deriving show]
+  [@@deriving show, eq, to_yojson]
 
   let create ~lookup ~qualifier ~line =
     { qualifier; path = lookup qualifier |> Option.value ~default:"*"; line }
@@ -46,13 +69,17 @@ module TypeAnnotation = struct
     inferred: Type.t option;
     given: Type.t option;
   }
-  [@@deriving show]
+  [@@deriving show, eq]
 
   let is_inferred annotation = Option.is_some annotation.inferred
 
   let combine_with ~f left right =
     {
-      inferred = Option.map2 ~f left.inferred right.inferred;
+      inferred =
+        ( match left.inferred, right.inferred with
+        | Some left, Some right -> Some (f left right)
+        | None, right -> right
+        | left, None -> left );
       given = (if Option.is_some left.given then left.given else right.given);
     }
 
@@ -68,35 +95,45 @@ module TypeAnnotation = struct
 
 
   let from_inferred inferred = { inferred = Some inferred; given = None }
+
+  let to_yojson { inferred; given } =
+    match inferred, given with
+    | Some inferred, _ -> `String (type_to_string inferred)
+    | None, Some given -> `String (type_to_string given)
+    | _ -> `Null
 end
 
 module AnnotationsByName = struct
   module type S = sig
-    type t [@@deriving show]
+    type t [@@deriving show, eq, to_yojson]
 
-    val identifying_name : t -> Reference.t
+    val identifying_name : t -> SerializableReference.t
 
     val combine : global_resolution:GlobalResolution.t -> t -> t -> t
   end
 
   module Make (Value : S) = struct
-    type t = Value.t Reference.Map.Tree.t
+    type t = Value.t SerializableReference.Map.t
 
-    let empty = Reference.Map.Tree.empty
+    let empty = SerializableReference.Map.empty
 
-    let find = Reference.Map.Tree.find
+    let find = SerializableReference.Map.find
 
-    let data = Reference.Map.Tree.data
+    let data = SerializableReference.Map.data
 
     let show map =
       map |> data |> List.map ~f:Value.show |> String.concat ~sep:"," |> Format.asprintf "[%s]"
 
 
+    let equal = SerializableReference.Map.equal Value.equal
+
+    let to_yojson map = `List (map |> data |> List.map ~f:Value.to_yojson)
+
     let pp format map = show map |> Format.fprintf format "%s"
 
     let add ~global_resolution map annotation =
       let identifying_name = Value.identifying_name annotation in
-      Reference.Map.Tree.update map identifying_name ~f:(function
+      SerializableReference.Map.update map identifying_name ~f:(function
           | Some existing -> Value.combine ~global_resolution annotation existing
           | None -> annotation)
   end
@@ -105,11 +142,11 @@ end
 module GlobalAnnotation = struct
   module Value = struct
     type t = {
-      name: Reference.t;
+      name: SerializableReference.t;
       location: AnnotationLocation.t;
       annotation: TypeAnnotation.t;
     }
-    [@@deriving show]
+    [@@deriving show, eq, to_yojson]
 
     let qualified_name { name; location = { qualifier; _ }; _ } =
       [qualifier; name] |> List.bind ~f:Reference.as_list |> Reference.create_from_list
@@ -131,12 +168,12 @@ end
 module AttributeAnnotation = struct
   module Value = struct
     type t = {
-      parent: Reference.t;
-      name: Reference.t;
+      parent: SerializableReference.t;
+      name: SerializableReference.t;
       location: AnnotationLocation.t;
       annotation: TypeAnnotation.t;
     }
-    [@@deriving show]
+    [@@deriving show, eq, to_yojson]
 
     let qualified_name { parent; name; location = { qualifier; _ }; _ } =
       [qualifier; parent; name] |> List.bind ~f:Reference.as_list |> Reference.create_from_list
@@ -159,11 +196,11 @@ module DefineAnnotation = struct
   module Parameters = struct
     module Value = struct
       type t = {
-        name: Reference.t;
+        name: SerializableReference.t;
         annotation: TypeAnnotation.t;
-        value: Expression.t option;
+        value: DefaultValue.t;
       }
-      [@@deriving show]
+      [@@deriving show, eq, to_yojson]
 
       let identifying_name parameter = parameter.name
 
@@ -181,17 +218,17 @@ module DefineAnnotation = struct
   end
 
   type t = {
-    name: Reference.t;
-    parent: Reference.t option;
+    name: SerializableReference.t;
+    parent: SerializableReference.t option;
     return: TypeAnnotation.t;
     parameters: Parameters.ByName.t;
-    decorators: Statement.Decorator.t list;
+    decorators: Ast.Statement.Decorator.t list;
     location: AnnotationLocation.t;
     async: bool;
     (* Only needed on the ocaml side, not to generate a stub *)
     abstract: bool;
   }
-  [@@deriving show]
+  [@@deriving show, eq, to_yojson]
 
   let is_inferred { return; parameters; _ } =
     TypeAnnotation.is_inferred return || Parameters.any_inferred parameters
@@ -227,7 +264,7 @@ module InferenceResult = struct
     (* Temporary: keep the errors for compatiblity as we roll this out *)
     errors: AnalysisError.Instantiated.t list;
   }
-  [@@deriving show]
+  [@@deriving show, to_yojson]
 
   let from_signature
       ~global_resolution
@@ -330,7 +367,7 @@ module InferenceResult = struct
               ~global_resolution
               attributes
               {
-                parent = parent_reference parent;
+                parent = type_to_reference parent;
                 name;
                 annotation = TypeAnnotation.from_inferred annotation;
                 location = error.location |> AnnotationLocation.from_location_with_module ~lookup;
@@ -351,4 +388,7 @@ module InferenceResult = struct
               };
         }
     | _ -> result
+
+
+  let get_errors { errors; _ } = List.rev errors
 end

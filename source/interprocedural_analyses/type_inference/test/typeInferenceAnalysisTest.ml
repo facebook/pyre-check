@@ -9,6 +9,7 @@ open Core
 open OUnit2
 open Ast
 open Analysis
+open TypeInference.Data
 open Test
 module Callable = Interprocedural.Callable
 
@@ -92,6 +93,42 @@ module Setup = struct
     targets |> List.map ~f:analyze
 end
 
+module Asserts = struct
+  type type_option = Type.t option [@@deriving show, eq]
+
+  let assert_inference_result ~source ~result ~details ~context ~expected ~actual =
+    let msg =
+      Format.asprintf
+        {| Mismatch in inference result
+         ---
+         %a
+         ---
+         %s
+         ---
+         %s |}
+        InferenceResult.pp
+        result
+        source
+        details
+    in
+    assert_equal ~ctxt:context ~cmp:equal_type_option ~printer:show_type_option ~msg expected actual
+
+
+  let find_by_name name map =
+    match name |> Reference.create |> SerializableReference.Map.find map with
+    | Some value -> value
+    | None ->
+        raise
+          (Failure
+             (Format.asprintf
+                "No such name %s in %s"
+                name
+                ( map
+                |> SerializableReference.Map.keys
+                |> List.map ~f:Reference.show
+                |> String.concat ~sep:"," )))
+end
+
 let check_inference_results ~context ~checks source =
   let targets, _ = List.unzip checks in
   let results = Setup.run_inference ~context ~targets source in
@@ -99,23 +136,52 @@ let check_inference_results ~context ~checks source =
     let check = List.Assoc.find_exn ~equal:Callable.equal_real_target checks target in
     check result
   in
-  results |> List.iter ~f:check_result
+  results |> List.iter ~f:check_result;
+  Memory.reset_shared_memory ()
 
 
 let test_inferred_returns context =
-  let check_return_annotation ~define_name source =
-    let check errors = assert_equal (List.length errors) 1 in
+  let check_return_annotation ~define_name ~expected source =
+    let check
+        ( {
+            InferenceResult.define = { DefineAnnotation.return = { TypeAnnotation.inferred; _ }; _ };
+            _;
+          } as result )
+      =
+      Asserts.assert_inference_result
+        ~context
+        ~result
+        ~details:"Checking inferred return annotation"
+        ~source
+        ~expected:(Some expected)
+        ~actual:inferred
+    in
     check_inference_results ~context ~checks:[Setup.make_function define_name, check] source
   in
-  check_return_annotation {|
+  check_return_annotation
+    {|
       def foo(x: int):
         return x
-    |} ~define_name:"test.foo"
+    |}
+    ~define_name:"test.foo"
+    ~expected:(Type.Primitive "int")
 
 
 let test_inferred_parameters context =
-  let check_parameter_annotation ~define_name source =
-    let check errors = assert_equal (List.length errors) 1 in
+  let open DefineAnnotation.Parameters in
+  let check_parameter_annotation ~define_name ~parameter_name ~expected source =
+    let check ({ InferenceResult.define = { DefineAnnotation.parameters; _ }; _ } as result) =
+      let { Value.annotation = { TypeAnnotation.inferred; _ }; _ } =
+        Asserts.find_by_name ("$parameter$" ^ parameter_name) parameters
+      in
+      Asserts.assert_inference_result
+        ~context
+        ~result
+        ~details:("Checking inferred annotation for parameter " ^ parameter_name)
+        ~source
+        ~expected:(Some expected)
+        ~actual:inferred
+    in
     check_inference_results ~context ~checks:[Setup.make_function define_name, check] source
   in
   check_parameter_annotation
@@ -124,23 +190,52 @@ let test_inferred_parameters context =
         return x
     |}
     ~define_name:"test.foo"
+    ~parameter_name:"x"
+    ~expected:(Type.Primitive "int")
 
 
 let test_inferred_globals context =
-  let check_global_annotation ~define_name source =
-    let check errors = assert_equal (List.length errors) 1 in
+  let check_global_annotation ~define_name ~global_name ~expected source =
+    let open GlobalAnnotation in
+    let check ({ InferenceResult.globals; _ } as result) =
+      let { Value.annotation = { TypeAnnotation.inferred; _ }; _ } =
+        Asserts.find_by_name global_name globals
+      in
+      Asserts.assert_inference_result
+        ~context
+        ~result
+        ~details:("Checking inferred annotation for global " ^ global_name)
+        ~source
+        ~expected:(Some expected)
+        ~actual:inferred
+    in
     check_inference_results ~context ~checks:[Setup.make_function define_name, check] source
   in
-  check_global_annotation {|
+  check_global_annotation
+    {|
       x = None
-    |} ~define_name:"test.$toplevel"
+    |}
+    ~define_name:"test.$toplevel"
+    ~global_name:"test.$local_test$x"
+    ~expected:Type.NoneType
 
 
 let test_inferred_attributes context =
-  let check_attribute_annotation ~define_name source =
-    let check errors = assert_equal (List.length errors) 1 in
-    check_inference_results ~context ~checks:[Setup.make_function define_name, check] source;
-    Memory.reset_shared_memory ()
+  let check_attribute_annotation ~define_name ~attribute_name ~expected source =
+    let open AttributeAnnotation in
+    let check ({ InferenceResult.attributes; _ } as result) =
+      let { Value.annotation = { TypeAnnotation.inferred; _ }; _ } =
+        Asserts.find_by_name attribute_name attributes
+      in
+      Asserts.assert_inference_result
+        ~context
+        ~result
+        ~details:("Checking inferred annotation for attribute " ^ attribute_name)
+        ~source
+        ~expected:(Some expected)
+        ~actual:inferred
+    in
+    check_inference_results ~context ~checks:[Setup.make_function define_name, check] source
   in
   check_attribute_annotation
     {|
@@ -148,6 +243,8 @@ let test_inferred_attributes context =
           x = None
     |}
     ~define_name:"test.C.$class_toplevel"
+    ~attribute_name:"test.C.x"
+    ~expected:Type.NoneType
 
 
 let () =
