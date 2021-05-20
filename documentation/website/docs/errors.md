@@ -578,6 +578,46 @@ Pyre will warn when you attempt to use `typing.cast` to cast a variable to a typ
 If you are trying to document the type of the variable, you can provide an explicit annotation where it is declared. If you are trying to add a sanity check at runtime that the type of a variable is what you already believe it must be, use `isinstance`.
 
 
+### 23: Unable to Unpack
+
+Pyre will warn you when trying to assign a value to a tuple with the wrong number of items.
+
+```python
+def foo() -> None:
+    a, b = (1, 2, 3)
+    x, y = 42
+
+$ pyre
+Unable to unpack [23]: Unable to unpack 3 values, 2 were expected.
+Unable to unpack [23]: Unable to unpack `int` into 2 values.
+```
+
+Common reasons:
+
++ Trying to assign an `Optional` value to a tuple:
+
+  ```python
+  def bar() -> None:
+      x = None
+      if 2 + 2 == 4:
+          x = ("a", "b")
+
+      a, b = x
+
+  $ pyre
+  Unable to unpack [23]: Unable to unpack `typing.Optional[typing.Tuple[str, str]]` into 2 values.
+  ```
+
++ Unpacking an incorrect number of elements when looping over a list:
+
+  ```python
+  for a, b in [1, 2, 3]:
+      print(a, b)
+
+  $ pyre
+  Unable to unpack [23]: Unable to unpack `int` into 2 values.
+  ```
+
 ### 24: Invalid Type Parameters
 Pyre will error if a generic type annotation is given with unexpected type parameters.
 
