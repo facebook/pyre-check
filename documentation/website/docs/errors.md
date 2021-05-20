@@ -1207,6 +1207,22 @@ async def g() -> AsyncGenerator[int, None]:  # OK
     yield 1
 ```
 
+### 59 : Duplicate type variables
+
+This occurs when the same type variable is provided more than once to a `Generic` or `Protocol`.
+
+```python
+from typing import TypeVar, Generic
+
+T = TypeVar("T")
+S = TypeVar("S")
+class A(Generic[T, S, T]):  # Error
+    pass
+
+class B(Generic[T, S]):  # OK
+    pass
+```
+
 ## Suppression
 It is not always possible to address all errors immediately – some code is too dynamic and should be refactored, other times it's *just not the right time* to deal with a type error. We do encourage people to keep their type check results clean at all times and provide mechanisms to suppress errors that cannot be immediately fixed.
 
