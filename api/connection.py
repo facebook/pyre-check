@@ -4,6 +4,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import enum
 import json
 import logging
 import subprocess
@@ -15,6 +16,12 @@ from typing_extensions import TypedDict
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
+
+
+class ExitCode(enum.IntEnum):
+    SUCCESS = 0
+    FOUND_ERRORS = 1
+    # See client/commands/command.py for more exit codes.
 
 
 # We use NamedTuple instead of dataclasses for Python3.5/6 support.
@@ -106,7 +113,7 @@ class PyreConnection:
     def query_server(self, query: str) -> PyreQueryResult:
         if not self.server_initialized:
             result = self.start_server()
-            if result.exit_code != 0:
+            if result.exit_code not in (ExitCode.SUCCESS, ExitCode.FOUND_ERRORS):
                 raise PyreQueryError(
                     f"Error while starting a pyre server, Pyre exited with a code of {result.exit_code}."
                 )
