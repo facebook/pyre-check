@@ -88,9 +88,9 @@ module TypeAnnotation = struct
 
   let meet ~global_resolution = combine_with ~f:(GlobalResolution.meet global_resolution)
 
-  let from_given ~global_resolution given_annotation =
+  let from_given ~global_resolution given =
     let parser = GlobalResolution.annotation_parser global_resolution in
-    let given = given_annotation >>| parser.parse_annotation in
+    let given = given >>| parser.parse_annotation in
     { inferred = None; given }
 
 
@@ -131,11 +131,11 @@ module AnnotationsByName = struct
 
     let pp format map = show map |> Format.fprintf format "%s"
 
-    let add ~global_resolution map annotation =
-      let identifying_name = Value.identifying_name annotation in
+    let add ~global_resolution map value =
+      let identifying_name = Value.identifying_name value in
       SerializableReference.Map.update map identifying_name ~f:(function
-          | Some existing -> Value.combine ~global_resolution annotation existing
-          | None -> annotation)
+          | Some existing -> Value.combine ~global_resolution value existing
+          | None -> value)
   end
 end
 
@@ -234,25 +234,22 @@ module DefineAnnotation = struct
     TypeAnnotation.is_inferred return || Parameters.any_inferred parameters
 
 
-  let add_inferred_return ~global_resolution define annotation =
+  let add_inferred_return ~global_resolution define type_ =
     {
       define with
       return =
-        TypeAnnotation.join
-          ~global_resolution
-          define.return
-          (TypeAnnotation.from_inferred annotation);
+        TypeAnnotation.join ~global_resolution define.return (TypeAnnotation.from_inferred type_);
     }
 
 
-  let add_inferred_parameter ~global_resolution define name annotation =
+  let add_inferred_parameter ~global_resolution define name type_ =
     {
       define with
       parameters =
         Parameters.ByName.add
           ~global_resolution
           define.parameters
-          { name; annotation = TypeAnnotation.from_inferred annotation; value = None };
+          { name; annotation = TypeAnnotation.from_inferred type_; value = None };
     }
 end
 
@@ -337,29 +334,29 @@ module InferenceResult = struct
         errors = AnalysisError.instantiate ~show_error_traces:true ~lookup error :: errors;
       }
     in
-    let ignore annotation =
-      Type.is_untyped annotation
-      || Type.contains_unknown annotation
-      || Type.Variable.convert_all_escaped_free_variables_to_anys annotation
+    let ignore type_ =
+      Type.is_untyped type_
+      || Type.contains_unknown type_
+      || Type.Variable.convert_all_escaped_free_variables_to_anys type_
          |> Type.contains_prohibited_any
     in
     let open AnalysisError in
     match error.kind with
-    | MissingReturnAnnotation { annotation = Some annotation; _ }
-      when not (ignore annotation || define.abstract) ->
+    | MissingReturnAnnotation { annotation = Some type_; _ }
+      when not (ignore type_ || define.abstract) ->
         {
           result with
-          define = DefineAnnotation.add_inferred_return ~global_resolution define annotation;
+          define = DefineAnnotation.add_inferred_return ~global_resolution define type_;
         }
-    | MissingParameterAnnotation { name; annotation = Some annotation; _ }
-      when not (ignore annotation || Type.equal annotation NoneType) ->
+    | MissingParameterAnnotation { name; annotation = Some type_; _ }
+      when not (ignore type_ || Type.equal type_ NoneType) ->
         {
           result with
-          define = DefineAnnotation.add_inferred_parameter ~global_resolution define name annotation;
+          define = DefineAnnotation.add_inferred_parameter ~global_resolution define name type_;
         }
     | MissingAttributeAnnotation
-        { parent; missing_annotation = { name; annotation = Some annotation; _ } }
-      when not (ignore annotation) ->
+        { parent; missing_annotation = { name; annotation = Some type_; _ } }
+      when not (ignore type_) ->
         {
           result with
           attributes =
@@ -369,12 +366,11 @@ module InferenceResult = struct
               {
                 parent = type_to_reference parent;
                 name;
-                annotation = TypeAnnotation.from_inferred annotation;
+                annotation = TypeAnnotation.from_inferred type_;
                 location = error.location |> AnnotationLocation.from_location_with_module ~lookup;
               };
         }
-    | MissingGlobalAnnotation { name; annotation = Some annotation; _ } when not (ignore annotation)
-      ->
+    | MissingGlobalAnnotation { name; annotation = Some type_; _ } when not (ignore type_) ->
         {
           result with
           globals =
@@ -383,7 +379,7 @@ module InferenceResult = struct
               globals
               {
                 name;
-                annotation = TypeAnnotation.from_inferred annotation;
+                annotation = TypeAnnotation.from_inferred type_;
                 location = error.location |> AnnotationLocation.from_location_with_module ~lookup;
               };
         }
