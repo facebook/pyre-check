@@ -1126,7 +1126,7 @@ def test1() -> None:
 ```
 
 ### 46: Invalid Type Variance
->>>>>>> source: 94756d4d9cc7 - grievejia: [pyre] [doc] Consistently Capitaliz...
+
 In brief, read-only data types can be covariant, write-only data types can be contravariant, and data types that support both reads and writes must be invariant.
 If a data type implements any functions accepting parameters of that type, we cannot guarantee that writes are not happening. If a data type implements any functions returning values of that type, we cannot guarantee that reads are not happening.
 For example (note: int is a subclass of float in the type system and in these examples):
@@ -1451,7 +1451,6 @@ def bar(x: Optional[int]) -> bool:
 
 
 ### 59 : Duplicate Type Variables
->>>>>>> source: 94756d4d9cc7 - grievejia: [pyre] [doc] Consistently Capitaliz...
 
 This occurs when the same type variable is provided more than once to a `Generic` or `Protocol`.
 
