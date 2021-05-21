@@ -823,7 +823,7 @@ It's also possible to hit this error code on constraint mismatches when using tu
 ### 33: Prohibited Any
 Pyre will warn on any usage of `typing.Any` when run in [strict mode](gradual_typing.md#strict-mode). `Any` is an escape hatch that hides type errors and introduces potential type inconsistencies which Pyre strict is designed to make explicit. To resolve this error, replace `Any` with any other annotation. Using builtins `object` is acceptable if you are looking for a supertype of all classes.
 
-### 34: Invalid type variable
+### 34: Invalid Type Variable
 
 Example:
 
@@ -1125,7 +1125,8 @@ def test1() -> None:
     object1 = MyClass()  # OK
 ```
 
-### 46: Invalid type variance
+### 46: Invalid Type Variance
+>>>>>>> source: 94756d4d9cc7 - grievejia: [pyre] [doc] Consistently Capitaliz...
 In brief, read-only data types can be covariant, write-only data types can be contravariant, and data types that support both reads and writes must be invariant.
 If a data type implements any functions accepting parameters of that type, we cannot guarantee that writes are not happening. If a data type implements any functions returning values of that type, we cannot guarantee that reads are not happening.
 For example (note: int is a subclass of float in the type system and in these examples):
@@ -1244,7 +1245,7 @@ You can also change the type checking mode of a single file by adding a local mo
 If you specify more than one local mode, Pyre will error and ask you to remove all but one.
 
 
-### 53: Missing annotation for captured variables
+### 53: Missing Annotation For Captured Variables
 Pyre makes no attempt at trying to infer the types across function boundaries. The statement holds for nested functions as well.
 From a nested function's perspective, a variable defined in an nesting function behaves not too differently from a global variable. Therefore, Pyre treats such variables in the same way as it treats global variable: an explicit annotation is required if strict mode is turned on.
 
@@ -1320,7 +1321,7 @@ Pyre will warn you when initializing a TypedDict with:
   TypedDict initialization error [55]: TypedDict `Movie` has no field `extra_field`.
   ```
 
-### 56: Invalid decoration
+### 56: Invalid Decoration
 
 This error code is a catch-all for a variety of problems that can arise in the course of resolving the type of a decorated function.
 In all of these cases, these decoration failures will lead to the function being registered with type `Any` to avoid any spurious downstream errors.
@@ -1416,7 +1417,7 @@ def foo(x: str) -> int:
   return 5
 ```
 
-### 57: Incompatible async generator return type
+### 57: Incompatible Async Generator Return Type
 
 An async generator function is an `async` function that contains at least one `yield` statement. The Python runtime ensures that all async generator would return an async generator object. Therefore, the return type of async generator functions should always be `typing.AsyncGenerator` or one of its supertypes.
 
@@ -1449,7 +1450,8 @@ def bar(x: Optional[int]) -> bool:
 ```
 
 
-### 59: Duplicate type variables
+### 59 : Duplicate Type Variables
+>>>>>>> source: 94756d4d9cc7 - grievejia: [pyre] [doc] Consistently Capitaliz...
 
 This occurs when the same type variable is provided more than once to a `Generic` or `Protocol`.
 
