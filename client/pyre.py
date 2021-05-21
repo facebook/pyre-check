@@ -37,6 +37,10 @@ from .version import __version__
 LOG: logging.Logger = logging.getLogger(__name__)
 
 
+def foo() -> int:
+    return ""
+
+
 def _log_statistics(
     command: Command,
     start_time: float,
