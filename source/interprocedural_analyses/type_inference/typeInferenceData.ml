@@ -225,8 +225,6 @@ module DefineAnnotation = struct
     decorators: Ast.Statement.Decorator.t list;
     location: AnnotationLocation.t;
     async: bool;
-    (* Only needed on the ocaml side, not to generate a stub *)
-    abstract: bool;
   }
   [@@deriving show, eq, to_yojson]
 
@@ -260,8 +258,10 @@ module InferenceResult = struct
     define: DefineAnnotation.t;
     (* Temporary: keep the errors for compatiblity as we roll this out *)
     errors: AnalysisError.Instantiated.t list;
+    (* Used to skip inferring abstract return types *)
+    abstract: bool;
   }
-  [@@deriving show, to_yojson]
+  [@@deriving show]
 
   let from_signature
       ~global_resolution
@@ -311,7 +311,6 @@ module InferenceResult = struct
         decorators;
         location = define_location |> AnnotationLocation.from_location ~lookup ~qualifier;
         async;
-        abstract = Statement.Define.Signature.is_abstract_method signature;
       }
     in
     {
@@ -319,13 +318,14 @@ module InferenceResult = struct
       attributes = AttributeAnnotation.ByName.empty;
       define;
       errors = [];
+      abstract = Statement.Define.Signature.is_abstract_method signature;
     }
 
 
   let add_missing_annotation_error
       ~global_resolution
       ~lookup
-      ({ globals; attributes; define; errors } as result)
+      ({ globals; attributes; define; errors; abstract } as result)
       error
     =
     let result =
@@ -342,8 +342,7 @@ module InferenceResult = struct
     in
     let open AnalysisError in
     match error.kind with
-    | MissingReturnAnnotation { annotation = Some type_; _ }
-      when not (ignore type_ || define.abstract) ->
+    | MissingReturnAnnotation { annotation = Some type_; _ } when not (ignore type_ || abstract) ->
         {
           result with
           define = DefineAnnotation.add_inferred_return ~global_resolution define type_;
