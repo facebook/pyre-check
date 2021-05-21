@@ -724,6 +724,18 @@ for key, value  in shapes.items():
 
 In other cases where you need to access a `TypedDict` using a variable as a key, you can use `dictionary.get(key)`.
 
+### 28: Unexpected Keyword
+
+Pyre will error if attempting to pass an argument by name and there are no parameters with a matching name. For example,
+
+```python
+def foo(integer: int, string: str) -> None: ...
+
+foo(1, "one")  # no error
+foo(string="one", integer=1)  # no error
+foo(integer=1, undefined="one")  # type error
+```
+
 ### 29: Call Error
 
 Pyre will emit an error on seeing a call of one of the following types:
