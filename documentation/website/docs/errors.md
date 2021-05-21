@@ -1134,6 +1134,44 @@ takes_int_list(float_list)  # this call is OK because MyList is contravariant: M
 # problem with return above is clear
 ```
 
+### 47: Invalid Method Signature
+
+Pyre will error if a non-static method fails to specify an expected implicit parameter like `self` for an instance method or `cls` for a class method, as this argument is always implicitly passed in a call and will cause a runtime crash if not specified. Additionally, Pyre will warn if this parameter is specified but typed as something incompatible with the type of the parent class.
+
+Often times, the method may not need a `self` or `cls` and should be decorated with `@staticmethod` to resolve this error. For example,
+
+```python
+class Foo:
+  def foo() -> None: ...  # type error
+
+class Foo:
+  @staticmethod
+  def foo() -> None: ... # no type error
+
+class Foo:
+  def foo(self) -> None: ... # no type error
+```
+
+Only type variables with compatible bounds can be used to annotate the `self` or `cls` parameter. For example,
+
+```python
+P = TypeVar("T", bound="Parent")
+A = TypeVar("S", bound="ChildA")
+B = TypeVar("S", bound="ChildB")
+
+class Parent: ...
+
+class ChildA(Parent):
+  @classmethod
+  def foo(cls: Type[A]) -> A: ...  # no type error
+
+class ChildB(Parent):
+  def foo(self: A) -> A: ...  # type error
+  def bar(self: B) -> B: ...  # no type error
+  def baz(self: P) -> P: ...  # no type error
+```
+
+
 ### 48: Invalid Exception
 
 In python, you can only raise objects that derive from `BaseException` (it's more common to subtype `Exception` or one of the standard library-defined errors like `ValueError`), attempting to raise another object such as a bare string will result in a `TypeError`. As a result, pyre will flag code like this:
