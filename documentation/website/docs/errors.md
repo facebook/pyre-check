@@ -768,6 +768,35 @@ def decorator(f: Callable[P, int]) -> Callable[P, None]:
 
 This indicates a bug in Pyre. Please open an issue on [Github](https://github.com/facebook/pyre/issues).
 
+
+### 31: Invalid Type
+
+This indicates that you are using some expression that pyre does not understand as a type.
+
+Some situations where you might run into this:
+
++ Using a list of types rather than `List[type]`:
+ ```python
+ x: [str] = ["a string"]
+ ```
+ You can fix this by using the `List` type:
+ ```python
+ x: list[str] = ["a string"]
+ ```
+
++ Using a constructor call rather than a bare class name:
+  ```python
+  class A:
+      ...
+
+  a: A() = A()
+  ```
+  You can fix this by using a bare type name:
+  ```python
+  a: A = A()
+  ```
+
+
 ### 32: Invalid Argument
 
 This error usually means you are using a variable in a way that is incompatible with its structure, either as an argument to a function call or as part of a data structure.
