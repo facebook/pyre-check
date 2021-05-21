@@ -638,8 +638,11 @@ let compute_fixpoint
             ~section:`Performance
             "Expensive callables for iteration %d: %s"
             iteration
-            ( List.map iteration_expensive_callables ~f:(fun { time_to_analyze_in_ms; callable } ->
-                  Format.sprintf "`%s`: %d ms" (Callable.show callable) time_to_analyze_in_ms)
+            ( iteration_expensive_callables
+            |> List.sort ~compare:(fun left right ->
+                   Int.compare right.time_to_analyze_in_ms left.time_to_analyze_in_ms)
+            |> List.map ~f:(fun { time_to_analyze_in_ms; callable } ->
+                   Format.sprintf "`%s`: %d ms" (Callable.show callable) time_to_analyze_in_ms)
             |> String.concat ~sep:", " )
       in
       let callables_to_analyze =
