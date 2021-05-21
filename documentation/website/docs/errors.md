@@ -1351,7 +1351,26 @@ async def g() -> AsyncGenerator[int, None]:  # OK
     yield 1
 ```
 
-### 59 : Duplicate type variables
+### 58: Unsupported Operand
+
+Pyre will warn if an infix operator is not supported for the right or left operands provided.
+
+In Python, an infix operator is converted to a method call on either of the operands - for example, `a < b` is equivalent to `a.__lt__(b)`. Therefore, this type error can also be considered sugar for an error that method `a.__lt__` does not accept the type of `b` as an argument.
+
+For example,
+
+```python
+def foo(x: Optional[int]) -> bool:
+  return x < 0  # type error: Optional[int] is not a supported operand
+
+def bar(x: Optional[int]) -> bool:
+  if x:
+    return x < 0  # no type error
+  return False
+```
+
+
+### 59: Duplicate type variables
 
 This occurs when the same type variable is provided more than once to a `Generic` or `Protocol`.
 
