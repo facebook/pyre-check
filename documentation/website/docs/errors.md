@@ -524,6 +524,23 @@ Support for this is temporary.
 
 + Your class has dynamic attributes: Consider using `__getattr__` in a [stub](gradual_typing.md#when-source-code-is-not-available) so that Pyre doesn't complain about those attributes.
 
+
+### 17: Incompatible Constructor Annotation
+
+[PEP 484](https://www.python.org/dev/peps/pep-0484/#the-meaning-of-annotations) specifies that `__init__` method of any class must be annotated to return `None`. Pyre will emit an error if the user's annotation does not conform to the specification.
+
+```python
+# pyre-strict
+
+class A:
+    def __init__(self) -> "A":  # Error 17: Invalid return annotation of `__init__`.
+        ...
+
+class B:
+    def __init__(self) -> None:  # OK
+        ...
+```
+
 ### 18,21: Undefined Name, Undefined Import
 Error 18 ("Undefined name") is raised when your code tries to access a variable or function that Pyre could not resolve.
 This is usually caused by failing to import the proper module.
