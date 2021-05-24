@@ -1323,8 +1323,42 @@ You can also change the type checking mode of a single file by adding a local mo
 
 If you specify more than one local mode, Pyre will error and ask you to remove all but one.
 
+### 52: Private Protocol Property
+
+Python [Protocols](https://www.python.org/dev/peps/pep-0544/) provide a way to statically check "duck typing", what many languages would refer to as `interfaces`.
+
+Because protocols specify only an interface, they should not include [private fields and methods](https://docs.python.org/3/tutorial/classes.html#private-variables), which may not be accessed outside of the class where they are defines. Pyre will complain about the following:
+```python
+from typing import Protocol
+
+class Duck(Protocol):
+
+    def __quack(self) -> str:
+        ...
+
+class SomeDuck:
+
+    def __quack(self) -> str:
+        return "quack"
+```
+
+Usually if you are attempting to do this you have some reason not to make the protocol property public, but you can use a protected (single-leading-underscore) property instead:
+```python
+from typing import Protocol
+
+class Duck(Protocol):
+
+    def _quack(self) -> str:
+        ...
+
+class SomeDuck:
+
+    def _quack(self) -> str:
+        return "quack"
+```
 
 ### 53: Missing Annotation For Captured Variables
+
 Pyre makes no attempt at trying to infer the types across function boundaries. The statement holds for nested functions as well.
 From a nested function's perspective, a variable defined in an nesting function behaves not too differently from a global variable. Therefore, Pyre treats such variables in the same way as it treats global variable: an explicit annotation is required if strict mode is turned on.
 
