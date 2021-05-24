@@ -724,6 +724,41 @@ for key, value  in shapes.items():
 
 In other cases where you need to access a `TypedDict` using a variable as a key, you can use `dictionary.get(key)`.
 
+### 27: Typed Dictionary Key Not Found
+
+If you try to access a typed dictionary with a string literal that pyre knows is not a valid key, pyre will emit an error:
+```python
+from typing import TypedDict
+
+class Shape(TypedDict):
+    sides: int
+    color: str
+
+def f(shape: Shape) -> None:
+    print(shape["location"])  # error here
+```
+
+A possible fix: pyre considers instances of any `TypedDict` with additional fields to be a subtype of `Shape`, so in many cases you could handle the need for a `location` field in some `Shape` dicts by creating a new type as follows:
+```python
+from typing import TypedDict
+
+class Shape(TypedDict):
+    sides: int
+    color: str
+
+class ShapeWithLocation(TypedDict):
+    sides: int
+    color: str
+    location: str
+
+def f(shape: ShapeWithLocation) -> None:
+    print(shape["location"])  # okay
+    g(shape)  # also okay: ShapeWithLocation is a subtype of Shape
+
+def g(shape: Shape) -> None:
+    print(shape)
+```
+
 ### 28: Unexpected Keyword
 
 Pyre will error if attempting to pass an argument by name and there are no parameters with a matching name. For example,
