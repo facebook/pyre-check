@@ -764,10 +764,9 @@ def decorator(f: Callable[P, int]) -> Callable[P, None]:
   return foo
 ```
 
-### 30: Terminating Analysis
+### 30, 36: Terminating Analysis, Mutually Recursive Type Variables
 
-This indicates a bug in Pyre. Please open an issue on [Github](https://github.com/facebook/pyre/issues).
-
+Either of these errors indicates a bug in Pyre. Please open an issue on [Github](https://github.com/facebook/pyre/issues).
 
 ### 31: Invalid Type
 
