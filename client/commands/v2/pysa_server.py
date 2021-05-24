@@ -64,7 +64,9 @@ class PysaServer:
         self.server_identifier = server_identifier
 
     async def update_errors(self) -> None:
-        pyre_connection = api_connection.PyreConnection(Path(self.pyre_arguments.global_root))
+        pyre_connection = api_connection.PyreConnection(
+            Path(self.pyre_arguments.global_root)
+        )
         model_errors = query.get_invalid_taint_models(pyre_connection)
         diagnostics = invalid_models_to_diagnostics(model_errors)
         await self.show_model_errors_to_client(diagnostics)
@@ -99,9 +101,7 @@ class PysaServer:
         for path, diagnostic in diagnostics.items():
             await _publish_diagnostics(self.output_channel, path, [])
             if diagnostic is not None:
-                await _publish_diagnostics(
-                    self.output_channel, path, diagnostic
-                )
+                await _publish_diagnostics(self.output_channel, path, diagnostic)
 
     async def wait_for_exit(self) -> int:
         while True:
