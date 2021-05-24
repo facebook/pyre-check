@@ -1075,6 +1075,45 @@ def bar(b: Bar) -> None:
 
 To fix this error, change the definition of this attribute to something that is mutable, if it is not intended to be read-only.
 
+### 42: Missing Overload Implementation
+
+Pyre will throw this error if a source module specifies one or more overloads via [`typing.overload`](https://fburl.com/d7b8cd2h) but fails to provide an implementation, for example:
+```python
+import typing overload
+
+@overload
+def f(x: int) -> float:
+    ...
+
+@overload
+def f(x: str) -> str:
+    ...
+```
+Missing implementations are allowed in `.pyi` stub files.
+
+To fix it, provide exactly one implementation (a function of the same name without the `typing.overload` decorator). For example above we could implement `f` as follows:
+```python
+import typing overload, Union
+
+@overload
+def f(x: int) -> float:
+    ...
+
+@overload
+def f(x: str) -> str:
+    ...
+
+@overload
+def f(x: str) -> str:
+    ...
+
+def f(x: Union[int, str]) -> Union[float, str]:
+    if isinstance(x, int):
+        return float(x)
+    else:
+        return x
+```
+
 ### 45: Invalid Class Instantiation
 
 In typed Python, certain classes are intended to represent abstract interfaces. These classes are not meant to be instantiated directly at runtime, and therefore Pyre will error on any attempt to perform such instantiations.
