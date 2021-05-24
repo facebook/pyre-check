@@ -30,6 +30,9 @@ val base_command_line_arguments
       int option ->
       int option ->
       int option ->
+      int option ->
+      int option ->
+      int option ->
       string ->
       unit ->
       unit,

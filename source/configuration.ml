@@ -14,6 +14,12 @@ let default_python_minor_version = 10
 
 let default_python_micro_version = 10
 
+let default_shared_memory_heap_size = 16 * 1024 * 1024 * 1024 (* 16 GiB *)
+
+let default_shared_memory_dependency_table_power = 27
+
+let default_shared_memory_hash_table_power = 26
+
 module Features = struct
   type t = {
     click_to_fix: bool;
@@ -94,6 +100,13 @@ module Analysis = struct
     | FineGrained
   [@@deriving show]
 
+  type shared_memory = {
+    heap_size: int;
+    dependency_table_power: int;
+    hash_table_power: int;
+  }
+  [@@deriving show]
+
   type t = {
     infer: bool;
     configuration_file_hash: string option;
@@ -123,6 +136,7 @@ module Analysis = struct
     python_major_version: int;
     python_minor_version: int;
     python_micro_version: int;
+    shared_memory: shared_memory;
   }
   [@@deriving show]
 
@@ -160,6 +174,9 @@ module Analysis = struct
       ?(python_major_version = default_python_major_version)
       ?(python_minor_version = default_python_minor_version)
       ?(python_micro_version = default_python_micro_version)
+      ?(shared_memory_heap_size = default_shared_memory_heap_size)
+      ?(shared_memory_dependency_table_power = default_shared_memory_dependency_table_power)
+      ?(shared_memory_hash_table_power = default_shared_memory_hash_table_power)
       ~source_path
       ()
     =
@@ -201,6 +218,12 @@ module Analysis = struct
       python_major_version;
       python_minor_version;
       python_micro_version;
+      shared_memory =
+        {
+          heap_size = shared_memory_heap_size;
+          dependency_table_power = shared_memory_dependency_table_power;
+          hash_table_power = shared_memory_hash_table_power;
+        };
     }
 
 

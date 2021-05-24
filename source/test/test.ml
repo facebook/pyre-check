@@ -14,8 +14,8 @@ open PyreParser
 open Statement
 
 let initialize () =
-  Memory.initialize_for_tests ();
   Log.GlobalState.initialize_for_tests ();
+  Memory.initialize_for_tests ();
   Statistics.disable ()
 
 

@@ -75,6 +75,17 @@ module PythonVersion : sig
   val default : t
 end
 
+module SharedMemory : sig
+  type t = {
+    heap_size: int;
+    dependency_table_power: int;
+    hash_table_power: int;
+  }
+  [@@deriving sexp, compare, hash, yojson]
+
+  val default : t
+end
+
 type t = {
   (* Source file discovery *)
   source_paths: SourcePaths.t;
@@ -100,6 +111,8 @@ type t = {
   (* Parallelism controls *)
   parallel: bool;
   number_of_workers: int;
+  (* Memory controls *)
+  shared_memory: SharedMemory.t;
   (* Logging controls *)
   additional_logging_sections: string list;
   remote_logging: RemoteLogging.t option;

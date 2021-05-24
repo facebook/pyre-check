@@ -129,6 +129,7 @@ module ScratchProject = struct
         saved_state_action = None;
         parallel = false;
         number_of_workers = 1;
+        shared_memory = ServerConfiguration.SharedMemory.default;
         additional_logging_sections = [];
         remote_logging = None;
         profiling_output = None;

@@ -91,4 +91,16 @@ let base_command_line_arguments =
          "-python-micro-version"
          (optional int)
          ~doc:"Micro version of the Python runtime under which code will be analyzed."
+    +> flag
+         "-shared-memory-heap-size"
+         (optional int)
+         ~doc:"Size of the shared memory heap, in bytes."
+    +> flag
+         "-shared-memory-dependency-table-power"
+         (optional int)
+         ~doc:"Power of the dependency table in shared memory."
+    +> flag
+         "-shared-memory-hash-table-power"
+         (optional int)
+         ~doc:"Power of the hash table in shared memory."
     +> anon (maybe_with_default "." ("local-root" %: string)))

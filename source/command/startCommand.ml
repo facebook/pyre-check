@@ -612,6 +612,9 @@ let run_start_command
     python_major_version
     python_minor_version
     python_micro_version
+    shared_memory_heap_size
+    shared_memory_dependency_table_power
+    shared_memory_hash_table_power
     local_root
     ()
   =
@@ -671,6 +674,9 @@ let run_start_command
       ?python_major_version
       ?python_minor_version
       ?python_micro_version
+      ?shared_memory_heap_size
+      ?shared_memory_dependency_table_power
+      ?shared_memory_hash_table_power
       ()
   in
   let log_path = log_path >>| Path.create_absolute ~follow_symbolic_links:true in

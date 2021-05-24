@@ -91,6 +91,9 @@ let run_analysis
     python_major_version
     python_minor_version
     python_micro_version
+    shared_memory_heap_size
+    shared_memory_dependency_table_power
+    shared_memory_hash_table_power
     local_root
     ()
   =
@@ -138,6 +141,9 @@ let run_analysis
         ?python_major_version
         ?python_minor_version
         ?python_micro_version
+        ?shared_memory_heap_size
+        ?shared_memory_dependency_table_power
+        ?shared_memory_hash_table_power
         ~local_root
         ~source_path:(List.map source_path ~f:SearchPath.create_normalized)
         ()
