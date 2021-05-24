@@ -508,8 +508,6 @@ def type_errors_to_diagnostics(
     return result
 
 
-# ** NEW **
-# Convert InvalidModel to Diagnostic object
 def invalid_model_to_diagnostic(
     invalid_model: query.InvalidModel,
 ) -> lsp.Diagnostic:
@@ -529,15 +527,14 @@ def invalid_model_to_diagnostic(
     )
 
 
-# ** NEW **
-# Convert list of InvalidModels to list of Diagnostics
 def invalid_models_to_diagnostics(
     invalid_models: Sequence[query.InvalidModel],
 ) -> Dict[Path, List[lsp.Diagnostic]]:
     result: Dict[Path, List[lsp.Diagnostic]] = {}
     for model in invalid_models:
-        result.setdefault(Path(model.path), []).append(invalid_model_to_diagnostic(model))
-    # LOG.info(f"invalid_models_to_diagnostics(): result = {result}")
+        result.setdefault(Path(model.path), []).append(
+            invalid_model_to_diagnostic(model)
+        )
     return result
 
 
