@@ -1114,6 +1114,47 @@ def f(x: Union[int, str]) -> Union[float, str]:
         return x
 ```
 
+### 43: Incompatible Overload Implementation
+
+Pyre will error if you define one or more overloads using [`typing.overload`](https://fburl.com/d7b8cd2h), and your concrete implementation has an incompatible type signature.
+
+For example, this code will produce an incompatible overload implementation error
+```python
+# pyre-strict
+
+from typing import overload, Union
+
+@overload
+def f(x: int) -> float:
+    ...
+
+@overload
+def f(x: float) -> int:
+    ...
+
+@overload
+def f(x: str) -> str:
+    ...
+
+def f(x: Union[int, float, str]) -> Union[int, str]:
+    if isinstance(x, float):
+        return int(x)
+    elif isinstance(x, int):
+        return float(x)
+    else:
+        return x
+```
+The problem here is that the return type `Union[int, str]` is too narrow to
+permit `f` to return `float` when called on an `int` argument.
+
+You can fix this by either removing incorrect overload delcarations or making
+sure all parameters and return type annotations on the concrete
+implementation are general enough to be consistent with the overloads:
+```python
+def f(x: Union[int, float, str]) -> Union[int, float, str]:
+    <same implementation>
+```
+
 ### 45: Invalid Class Instantiation
 
 In typed Python, certain classes are intended to represent abstract interfaces. These classes are not meant to be instantiated directly at runtime, and therefore Pyre will error on any attempt to perform such instantiations.
