@@ -8,11 +8,10 @@
 open Core
 open OUnit2
 open Ast
-module TypeAnalysis = Analysis
-open Interprocedural
+module TypeEnvironment = Analysis.TypeEnvironment
+open TypeInference.Data
 open Test
-
-let setup_scratch_project ~context ?(sources = []) () = ScratchProject.setup ~context sources
+open Interprocedural
 
 let setup_environment scratch_project =
   let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
@@ -37,36 +36,125 @@ let static_analysis_configuration { ScratchProject.configuration; _ } =
 
 let analyses = [TypeInference.Analysis.abstract_kind]
 
-let assert_summaries ~expected summaries =
-  let json_printer jsons = String.concat ~sep:"\n" (List.map ~f:Yojson.Safe.to_string jsons) in
-  let expected = List.map ~f:Yojson.Safe.from_string expected in
-  assert_equal ~printer:json_printer ~msg:"json summaries" expected summaries
-
-
-let test_fixpoint_wiring context =
-  let callable_of_string name : Callable.t = name |> Reference.create |> Callable.create_function in
-  let targets = List.map ["fun_a"; "fun_b"; "fun_c"] ~f:callable_of_string in
-  let step = Fixpoint.{ epoch = 1; iteration = 0 } in
-  let scratch_project = setup_scratch_project ~context () in
+let fixpoint_result ~context ~callables ~sources =
+  let scratch_project = ScratchProject.setup ~context ~infer:true sources in
+  let filtered_callables = Callable.Set.of_list callables in
   let environment =
-    setup_environment scratch_project
-    |> TypeAnalysis.TypeEnvironment.create
-    |> TypeAnalysis.TypeEnvironment.read_only
+    setup_environment scratch_project |> TypeEnvironment.create |> TypeEnvironment.read_only
   in
-  let _ = Analysis.one_analysis_pass ~step ~analyses ~environment ~callables:targets in
-  let report =
-    let static_analysis_configuration = static_analysis_configuration scratch_project in
+  let scheduler = Test.mock_scheduler () in
+  let static_analysis_configuration = static_analysis_configuration scratch_project in
+  let _ =
+    Analysis.initialize
+      ~static_analysis_configuration
+      ~scheduler
+      ~environment
+      ~functions:callables
+      ~stubs:[]
+      analyses
+  in
+  Analysis.record_initial_models ~functions:callables ~stubs:[] Callable.Map.empty;
+  let fixpoint_iterations =
+    let iteration_limit = 1 in
+    Some
+      (Analysis.compute_fixpoint
+         ~scheduler
+         ~environment
+         ~analyses
+         ~dependencies:DependencyGraph.empty
+         ~filtered_callables
+         ~all_callables:callables
+         iteration_limit)
+  in
+  let summary =
     Analysis.report_results
-      ~scheduler:(Test.mock_scheduler ())
+      ~scheduler
       ~static_analysis_configuration
       ~analyses
       ~filename_lookup:(fun _ -> None)
-      ~callables:(targets |> Callable.Set.of_list)
+      ~callables:filtered_callables
       ~skipped_overrides:[]
       ~fixpoint_timer:(Timer.start ())
-      ~fixpoint_iterations:None
+      ~fixpoint_iterations
   in
-  assert_equal report []
+  assert_equal ~ctxt:context [] summary;
+  let global_resolution = environment |> TypeEnvironment.ReadOnly.global_resolution in
+  TypeInference.Reporting.make_global_result ~global_resolution ~callables
 
 
-let () = "typeInferenceAnalysisTest" >::: ["fixpoint_wiring" >:: test_fixpoint_wiring] |> Test.run
+let assert_global_result ~context ~expected result =
+  let expected = Yojson.Safe.from_string expected in
+  assert_equal
+    ~ctxt:context
+    ~printer:Yojson.Safe.pretty_to_string
+    ~msg:"GlobalResult json"
+    expected
+    result
+
+
+let type_inference_integration_test context =
+  let sources =
+    [
+      ( "test.py",
+        {|
+          x = 1 + 1
+
+          class C:
+              x = None
+
+          def no_errors(x: int) -> int:
+              return x
+
+          def needs_return(x: int):
+              return x
+        |}
+      );
+    ]
+  in
+  let callables =
+    let callable_of_string name : Callable.t =
+      name |> Reference.create |> Callable.create_function
+    in
+    List.map
+      ["test.no_errors"; "test.needs_return"; "test.$toplevel"; "test.C.$class_toplevel"]
+      ~f:callable_of_string
+  in
+  let result = fixpoint_result ~context ~callables ~sources |> GlobalResult.to_yojson in
+  assert_global_result
+    ~context
+    result
+    ~expected:
+      {|
+        {
+          "globals": [
+            {
+              "name": "x",
+              "location": { "qualifier": "test", "path": "test.py", "line": 2 },
+              "annotation": "int"
+            }
+          ],
+          "attributes": [
+            {
+              "parent": "C",
+              "name": "x",
+              "location": { "qualifier": "test", "path": "test.py", "line": 5 },
+              "annotation": "None"
+            }
+          ],
+          "defines": [
+            {
+              "name": "test.needs_return",
+              "parent": null,
+              "return": "int",
+              "parameters": [ { "name": "x", "annotation": "int", "value": null } ],
+              "decorators": [],
+              "location": { "qualifier": "test", "path": "test.py", "line": 10 },
+              "async": false
+            }
+          ]
+        }
+    |}
+
+
+let () =
+  "typeInferenceAnalysisTest" >::: ["integration" >:: type_inference_integration_test] |> Test.run
