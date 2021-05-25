@@ -1,5 +1,5 @@
 (tests
- (names typeInferenceAnalysisTest typeInferenceAnalysisKindTest)
+ (names typeInferenceAnalysisTest typeInferenceLocalTest)
  (modules :standard)
  (preprocess
   (pps ppx_sexp_message ppx_deriving.show ppx_deriving.eq))
