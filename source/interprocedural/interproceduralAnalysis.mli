@@ -15,8 +15,8 @@ type initialize_result = {
 (* Calls init on all specified analyses to get initial models *)
 val initialize
   :  Kind.abstract list ->
-  static_analysis_configuration:Configuration.StaticAnalysis.t ->
   scheduler:Scheduler.t ->
+  static_analysis_configuration:Configuration.StaticAnalysis.t ->
   environment:Analysis.TypeEnvironment.ReadOnly.t ->
   functions:Callable.t list ->
   stubs:Callable.t list ->
@@ -62,6 +62,7 @@ val strip_for_callsite : InterproceduralResult.model_t -> InterproceduralResult.
 val report_results
   :  scheduler:Scheduler.t ->
   static_analysis_configuration:Configuration.StaticAnalysis.t ->
+  environment:Analysis.TypeEnvironment.ReadOnly.t ->
   filename_lookup:(Ast.Reference.t -> string option) ->
   analyses:Kind.abstract list ->
   callables:Callable.Set.t ->

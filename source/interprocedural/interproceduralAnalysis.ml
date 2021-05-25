@@ -17,7 +17,7 @@ type initialize_result = {
   skip_overrides: Ast.Reference.Set.t;
 }
 
-let initialize kinds ~static_analysis_configuration ~scheduler ~environment ~functions ~stubs =
+let initialize kinds ~scheduler ~static_analysis_configuration ~environment ~functions ~stubs =
   let initialize_each
       { initial_models = models; skip_overrides }
       (Result.Analysis { kind; analysis })
@@ -705,6 +705,7 @@ let compute_fixpoint
 let report_results
     ~scheduler
     ~static_analysis_configuration
+    ~environment
     ~filename_lookup
     ~analyses
     ~callables
@@ -717,6 +718,7 @@ let report_results
     Analysis.report
       ~scheduler
       ~static_analysis_configuration
+      ~environment
       ~filename_lookup
       ~callables
       ~skipped_overrides

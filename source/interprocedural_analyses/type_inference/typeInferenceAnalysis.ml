@@ -11,8 +11,8 @@ open Interprocedural
 
 module Analyzer = struct
   let init
-      ~static_analysis_configuration:{ Configuration.StaticAnalysis.configuration; _ }
       ~scheduler:_
+      ~static_analysis_configuration:{ Configuration.StaticAnalysis.configuration; _ }
       ~environment:_
       ~functions:_
       ~stubs:_
@@ -21,7 +21,7 @@ module Analyzer = struct
     { Result.initial_models = Callable.Map.empty; skip_overrides = Ast.Reference.Set.empty }
 
 
-  let analyze ~callable:_ ~environment ~qualifier ~define ~existing:_ =
+  let analyze ~environment ~callable:_ ~qualifier ~define ~existing:_ =
     let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
     let ast_environment = GlobalResolution.ast_environment global_resolution in
     let maybe_source = AstEnvironment.ReadOnly.get_processed_source ast_environment qualifier in
@@ -50,6 +50,7 @@ module Analyzer = struct
   let report
       ~scheduler:_
       ~static_analysis_configuration:_
+      ~environment:_
       ~filename_lookup:_
       ~callables:_
       ~skipped_overrides:_

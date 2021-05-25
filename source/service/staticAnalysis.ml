@@ -654,6 +654,7 @@ let analyze
     Interprocedural.Analysis.report_results
       ~scheduler
       ~static_analysis_configuration
+      ~environment
       ~filename_lookup
       ~analyses
       ~callables

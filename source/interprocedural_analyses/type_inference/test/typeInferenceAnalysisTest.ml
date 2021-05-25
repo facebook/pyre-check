@@ -70,6 +70,7 @@ let fixpoint_result ~context ~callables ~sources =
     Analysis.report_results
       ~scheduler
       ~static_analysis_configuration
+      ~environment
       ~analyses
       ~filename_lookup:(fun _ -> None)
       ~callables:filtered_callables

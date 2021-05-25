@@ -23,6 +23,7 @@ val fetch_and_externalize
 val report
   :  scheduler:Scheduler.t ->
   static_analysis_configuration:Configuration.StaticAnalysis.t ->
+  environment:'e ->
   filename_lookup:(Ast.Reference.t -> string option) ->
   callables:Callable.Set.t ->
   skipped_overrides:Ast.Reference.t list ->

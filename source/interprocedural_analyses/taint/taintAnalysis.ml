@@ -15,6 +15,7 @@ include Taint.Result.Register (struct
   include Taint.Result
 
   let init
+      ~scheduler
       ~static_analysis_configuration:
         ( {
             Configuration.StaticAnalysis.verify_models;
@@ -24,7 +25,6 @@ include Taint.Result.Register (struct
             maximum_trace_length;
             _;
           } as static_analysis_configuration )
-      ~scheduler
       ~environment
       ~functions
       ~stubs
@@ -197,7 +197,7 @@ include Taint.Result.Register (struct
     { Interprocedural.Result.initial_models = models; skip_overrides }
 
 
-  let analyze ~callable ~environment ~qualifier ~define ~mode existing_model =
+  let analyze ~environment ~callable ~qualifier ~define ~mode existing_model =
     let call_graph_of_define =
       Interprocedural.CallGraph.SharedMemory.get_or_compute
         ~callable
@@ -270,8 +270,8 @@ include Taint.Result.Register (struct
 
 
   let analyze
-      ~callable
       ~environment
+      ~callable
       ~qualifier
       ~define:
         ( {

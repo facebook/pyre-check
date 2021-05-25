@@ -30,15 +30,16 @@ module SimpleAnalysis = Interprocedural.Result.Make (struct
 end)
 
 include SimpleAnalysis.Register (struct
-  let init ~static_analysis_configuration:_ ~scheduler:_ ~environment:_ ~functions:_ ~stubs:_ =
+  let init ~scheduler:_ ~static_analysis_configuration:_ ~environment:_ ~functions:_ ~stubs:_ =
     { Result.initial_models = Callable.Map.empty; skip_overrides = Ast.Reference.Set.empty }
 
 
-  let analyze ~callable:_ ~environment:_ ~qualifier:_ ~define:_ ~existing:_ = "some result", 5
+  let analyze ~environment:_ ~callable:_ ~qualifier:_ ~define:_ ~existing:_ = "some result", 5
 
   let report
       ~scheduler:_
       ~static_analysis_configuration:_
+      ~environment:_
       ~filename_lookup:_
       ~callables:_
       ~skipped_overrides:_

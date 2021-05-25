@@ -160,6 +160,7 @@ let report
         configuration = { local_root; show_error_traces; _ };
         _;
       }
+    ~environment:_
     ~filename_lookup
     ~callables
     ~skipped_overrides
