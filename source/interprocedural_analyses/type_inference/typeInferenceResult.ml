@@ -6,7 +6,7 @@
  *)
 
 module ResultArgument = struct
-  type result = TypeInferenceData.InferenceResult.t
+  type result = TypeInferenceData.LocalResult.t
 
   type call_model = TypeInferenceDomain.t [@@deriving show]
 

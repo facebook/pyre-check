@@ -106,7 +106,7 @@ module Asserts = struct
          %s
          ---
          %s |}
-        InferenceResult.pp
+        LocalResult.pp
         result
         source
         details
@@ -143,10 +143,8 @@ let check_inference_results ~context ~checks source =
 let test_inferred_returns context =
   let check_return_annotation ~define_name ~expected source =
     let check
-        ( {
-            InferenceResult.define = { DefineAnnotation.return = { TypeAnnotation.inferred; _ }; _ };
-            _;
-          } as result )
+        ( { LocalResult.define = { DefineAnnotation.return = { TypeAnnotation.inferred; _ }; _ }; _ }
+        as result )
       =
       Asserts.assert_inference_result
         ~context
@@ -170,7 +168,7 @@ let test_inferred_returns context =
 let test_inferred_parameters context =
   let open DefineAnnotation.Parameters in
   let check_parameter_annotation ~define_name ~parameter_name ~expected source =
-    let check ({ InferenceResult.define = { DefineAnnotation.parameters; _ }; _ } as result) =
+    let check ({ LocalResult.define = { DefineAnnotation.parameters; _ }; _ } as result) =
       let { Value.annotation = { TypeAnnotation.inferred; _ }; _ } =
         Asserts.find_by_name ("$parameter$" ^ parameter_name) parameters
       in
@@ -197,7 +195,7 @@ let test_inferred_parameters context =
 let test_inferred_globals context =
   let check_global_annotation ~define_name ~global_name ~expected source =
     let open GlobalAnnotation in
-    let check ({ InferenceResult.globals; _ } as result) =
+    let check ({ LocalResult.globals; _ } as result) =
       let { Value.annotation = { TypeAnnotation.inferred; _ }; _ } =
         Asserts.find_by_name global_name globals
       in
@@ -223,7 +221,7 @@ let test_inferred_globals context =
 let test_inferred_attributes context =
   let check_attribute_annotation ~define_name ~attribute_name ~expected source =
     let open AttributeAnnotation in
-    let check ({ InferenceResult.attributes; _ } as result) =
+    let check ({ LocalResult.attributes; _ } as result) =
       let { Value.annotation = { TypeAnnotation.inferred; _ }; _ } =
         Asserts.find_by_name attribute_name attributes
       in

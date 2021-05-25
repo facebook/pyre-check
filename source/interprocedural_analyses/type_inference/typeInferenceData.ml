@@ -104,39 +104,69 @@ module TypeAnnotation = struct
 end
 
 module AnnotationsByName = struct
-  module type S = sig
-    type t [@@deriving show, eq, to_yojson]
+  module Base = struct
+    module type S = sig
+      type t [@@deriving show, eq, to_yojson]
 
-    val identifying_name : t -> SerializableReference.t
+      val identifying_name : t -> SerializableReference.t
+    end
 
-    val combine : global_resolution:GlobalResolution.t -> t -> t -> t
+    module Make (Value : S) = struct
+      type t = Value.t SerializableReference.Map.t
+
+      let empty = SerializableReference.Map.empty
+
+      let length = SerializableReference.Map.length
+
+      let find = SerializableReference.Map.find
+
+      let data = SerializableReference.Map.data
+
+      let show map =
+        map |> data |> List.map ~f:Value.show |> String.concat ~sep:"," |> Format.asprintf "[%s]"
+
+
+      let equal = SerializableReference.Map.equal Value.equal
+
+      let to_yojson map = `List (map |> data |> List.map ~f:Value.to_yojson)
+
+      let pp format map = show map |> Format.fprintf format "%s"
+
+      let add_exn map value =
+        let identifying_name = Value.identifying_name value in
+        SerializableReference.Map.add_exn map ~key:identifying_name ~data:value
+    end
   end
 
-  module Make (Value : S) = struct
-    type t = Value.t SerializableReference.Map.t
+  module Combineable = struct
+    module type S = sig
+      include Base.S
 
-    let empty = SerializableReference.Map.empty
+      val combine : global_resolution:GlobalResolution.t -> t -> t -> t
+    end
 
-    let find = SerializableReference.Map.find
+    module Make (Value : S) = struct
+      include Base.Make (Value)
 
-    let data = SerializableReference.Map.data
+      let add ~global_resolution map value =
+        let identifying_name = Value.identifying_name value in
+        SerializableReference.Map.update map identifying_name ~f:(function
+            | Some existing -> Value.combine ~global_resolution value existing
+            | None -> value)
 
-    let show map =
-      map |> data |> List.map ~f:Value.show |> String.concat ~sep:"," |> Format.asprintf "[%s]"
 
-
-    let equal = SerializableReference.Map.equal Value.equal
-
-    let to_yojson map = `List (map |> data |> List.map ~f:Value.to_yojson)
-
-    let pp format map = show map |> Format.fprintf format "%s"
-
-    let add ~global_resolution map value =
-      let identifying_name = Value.identifying_name value in
-      SerializableReference.Map.update map identifying_name ~f:(function
-          | Some existing -> Value.combine ~global_resolution value existing
-          | None -> value)
+      let merge ~global_resolution left right =
+        let combine ~key:_ = function
+          | `Left value
+          | `Right value ->
+              Some value
+          | `Both (left, right) -> Some (Value.combine ~global_resolution left right)
+        in
+        SerializableReference.Map.merge ~f:combine left right
+    end
   end
+
+  include Combineable
 end
 
 module GlobalAnnotation = struct
@@ -251,7 +281,7 @@ module DefineAnnotation = struct
     }
 end
 
-module InferenceResult = struct
+module LocalResult = struct
   type t = {
     globals: GlobalAnnotation.ByName.t;
     attributes: AttributeAnnotation.ByName.t;
@@ -386,4 +416,60 @@ module InferenceResult = struct
 
 
   let get_errors { errors; _ } = List.rev errors
+end
+
+module GlobalResult = struct
+  module DefineAnnotationsByName = struct
+    module Value = struct
+      type t = DefineAnnotation.t [@@deriving show, eq, to_yojson]
+
+      let identifying_name { DefineAnnotation.name; _ } = name
+    end
+
+    include AnnotationsByName.Base.Make (Value)
+  end
+
+  type t = {
+    globals: GlobalAnnotation.ByName.t;
+    attributes: AttributeAnnotation.ByName.t;
+    defines: DefineAnnotationsByName.t;
+  }
+  [@@deriving show, eq, to_yojson]
+
+  let inference_count { globals; attributes; defines } =
+    GlobalAnnotation.ByName.length globals
+    + AttributeAnnotation.ByName.length attributes
+    + DefineAnnotationsByName.length defines
+
+
+  let empty =
+    {
+      globals = GlobalAnnotation.ByName.empty;
+      attributes = AttributeAnnotation.ByName.empty;
+      defines = DefineAnnotationsByName.empty;
+    }
+
+
+  let add_local_result
+      ~global_resolution
+      { globals; attributes; defines }
+      {
+        LocalResult.globals = globals_from_local;
+        LocalResult.attributes = attributes_from_local;
+        LocalResult.define;
+        _;
+      }
+    =
+    let defines =
+      if DefineAnnotation.is_inferred define then
+        DefineAnnotationsByName.add_exn defines define
+      else
+        defines
+    in
+    {
+      globals = GlobalAnnotation.ByName.merge ~global_resolution globals globals_from_local;
+      attributes =
+        AttributeAnnotation.ByName.merge ~global_resolution attributes attributes_from_local;
+      defines;
+    }
 end

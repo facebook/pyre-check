@@ -7,5 +7,5 @@
 
 include
   Interprocedural.Result.ANALYSIS_RESULT_WITH_REGISTRATION
-    with type result = TypeInferenceData.InferenceResult.t
+    with type result = TypeInferenceData.LocalResult.t
      and type call_model = TypeInferenceDomain.t

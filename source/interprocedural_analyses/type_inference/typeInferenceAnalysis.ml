@@ -36,15 +36,12 @@ module Analyzer = struct
       in
       List.fold
         ~init:
-          (TypeInferenceData.InferenceResult.from_signature
+          (TypeInferenceData.LocalResult.from_signature
              ~global_resolution
              ~lookup
              ~qualifier
              define)
-        ~f:
-          (TypeInferenceData.InferenceResult.add_missing_annotation_error
-             ~global_resolution
-             ~lookup)
+        ~f:(TypeInferenceData.LocalResult.add_missing_annotation_error ~global_resolution ~lookup)
         errors
     in
     result, TypeInferenceDomain.bottom
