@@ -9,7 +9,6 @@ open Core
 open OUnit2
 open Ast
 module TypeEnvironment = Analysis.TypeEnvironment
-open TypeInference.Data
 open Test
 open Interprocedural
 
@@ -66,24 +65,19 @@ let fixpoint_result ~context ~callables ~sources =
          ~all_callables:callables
          iteration_limit)
   in
-  let summary =
-    Analysis.report_results
-      ~scheduler
-      ~static_analysis_configuration
-      ~environment
-      ~analyses
-      ~filename_lookup:(fun _ -> None)
-      ~callables:filtered_callables
-      ~skipped_overrides:[]
-      ~fixpoint_timer:(Timer.start ())
-      ~fixpoint_iterations
-  in
-  assert_equal ~ctxt:context [] summary;
-  let global_resolution = environment |> TypeEnvironment.ReadOnly.global_resolution in
-  TypeInference.Reporting.make_global_result ~global_resolution ~callables
+  Analysis.report_results
+    ~scheduler
+    ~static_analysis_configuration
+    ~environment
+    ~analyses
+    ~filename_lookup:(fun _ -> None)
+    ~callables:filtered_callables
+    ~skipped_overrides:[]
+    ~fixpoint_timer:(Timer.start ())
+    ~fixpoint_iterations
 
 
-let assert_global_result ~context ~expected result =
+let assert_json_equal ~context ~expected result =
   let expected = Yojson.Safe.from_string expected in
   assert_equal
     ~ctxt:context
@@ -120,10 +114,11 @@ let type_inference_integration_test context =
       ["test.no_errors"; "test.needs_return"; "test.$toplevel"; "test.C.$class_toplevel"]
       ~f:callable_of_string
   in
-  let result = fixpoint_result ~context ~callables ~sources |> GlobalResult.to_yojson in
-  assert_global_result
+  let result = fixpoint_result ~context ~callables ~sources in
+  assert_equal ~ctxt:context 1 (List.length result) ~msg:"Expected length-1 list for result";
+  assert_json_equal
     ~context
-    result
+    (List.hd_exn result)
     ~expected:
       {|
         {

@@ -47,17 +47,7 @@ module Analyzer = struct
     result, TypeInferenceDomain.bottom
 
 
-  let report
-      ~scheduler:_
-      ~static_analysis_configuration:_
-      ~environment:_
-      ~filename_lookup:_
-      ~callables:_
-      ~skipped_overrides:_
-      ~fixpoint_timer:_
-      ~fixpoint_iterations:_
-    =
-    []
+  let report = TypeInferenceReporting.report
 end
 
 include TypeInferenceResult
