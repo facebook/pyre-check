@@ -257,12 +257,10 @@ type decorator_data = {
   helper_defines: Define.t list;
   higher_order_function_parameter_name: Identifier.t;
   decorator_reference: Reference.t;
-  decorator_call_location: Location.t;
   module_reference: Reference.t option;
 }
 
 let extract_decorator_data
-    ~decorator_call_location
     ~is_decorator_factory
     { decorator_define = { Define.body; _ } as decorator_define; module_reference }
   =
@@ -311,7 +309,6 @@ let extract_decorator_data
             helper_defines;
             higher_order_function_parameter_name = name;
             decorator_reference;
-            decorator_call_location;
             module_reference;
           }
     | _ -> None
@@ -545,7 +542,6 @@ let inline_decorator_in_define
       helper_defines;
       higher_order_function_parameter_name;
       decorator_reference;
-      decorator_call_location;
       module_reference;
     }
   =
@@ -570,24 +566,16 @@ let inline_decorator_in_define
     | None -> wrapper_define, wrapper_signature
   in
   let outer_signature = { outer_signature with parent } in
-  let ( { Define.signature = { name = { Node.value = inlined_wrapper_define_name; _ }; _ }; _ } as
-      inlined_wrapper_define )
-    =
-    let wrapper_function_name = Reference.last (Reference.delocalize wrapper_define_name) in
-    sanitize_define ~strip_parent:true wrapper_define
-    |> set_first_parameter_type ~original_define:define
-    |> rename_define ~new_name:(Reference.create wrapper_function_name)
-    |> requalify_define
-         ~old_qualifier:(Reference.delocalize wrapper_define_name)
-         ~new_qualifier:(Reference.create ~prefix:qualifier wrapper_function_name)
+  let { Define.body = wrapper_body; _ } =
+    requalify_define
+      ~old_qualifier:(Reference.delocalize wrapper_define_name)
+      ~new_qualifier:qualifier
+      wrapper_define
     (* Requalify references to other nested functions within the decorator. *)
     |> requalify_define ~old_qualifier:decorator_reference ~new_qualifier:qualifier
     |> rename_local_variable
          ~from:higher_order_function_parameter_name
          ~to_:(Preprocessing.qualify_local_identifier ~qualifier inlined_original_function_name)
-  in
-  let inlined_wrapper_define_statement =
-    Statement.Define inlined_wrapper_define |> Node.create ~location
   in
   let make_helper_define
       ( { Define.signature = { name = { Node.value = helper_function_name; _ }; _ }; _ } as
@@ -611,32 +599,16 @@ let inline_decorator_in_define
   let helper_define_statements =
     List.map helper_defines ~f:(fun define -> Statement.Define define |> Node.create ~location)
   in
-  let return_call_to_wrapper =
-    Statement.Return
-      {
-        is_implicit = false;
-        expression =
-          Some
-            ( create_function_call_to
-                ~location:decorator_call_location
-                ~callee_name:inlined_wrapper_define_name
-                inlined_wrapper_define.signature
-            |> Node.create ~location );
-      }
-    |> Node.create ~location
-  in
   let add_function_decorator_module_mapping
       { Define.signature = { name = { Node.value = name; _ }; _ }; _ }
     =
     let qualified_inlined_name = Reference.combine qualifier name in
     Option.iter module_reference ~f:(DecoratorModule.add qualified_inlined_name)
   in
-  List.iter (inlined_wrapper_define :: helper_defines) ~f:add_function_decorator_module_mapping;
-  let body =
-    [inlined_original_define_statement; inlined_wrapper_define_statement]
-    @ helper_define_statements
-    @ [return_call_to_wrapper]
-  in
+  List.iter helper_defines ~f:add_function_decorator_module_mapping;
+  (* Make the outer function point to the decorator module since its body is that of the decorator. *)
+  Option.iter module_reference ~f:(DecoratorModule.add qualifier);
+  let body = [inlined_original_define_statement] @ helper_define_statements @ wrapper_body in
   { define with body; signature = outer_signature }
   |> sanitize_define
   |> rename_define ~new_name:qualifier
@@ -667,16 +639,9 @@ let inline_decorators ~environment:_ ~decorator_bodies source =
             let inlinable_decorators =
               List.filter_map
                 original_decorators
-                ~f:(fun {
-                          Decorator.name =
-                            { Node.value = decorator_name; location = decorator_call_location };
-                          arguments;
-                        }
-                        ->
+                ~f:(fun { Decorator.name = { Node.value = decorator_name; _ }; arguments } ->
                   Map.find decorator_bodies decorator_name
-                  >>= extract_decorator_data
-                        ~decorator_call_location
-                        ~is_decorator_factory:(Option.is_some arguments))
+                  >>= extract_decorator_data ~is_decorator_factory:(Option.is_some arguments))
             in
             match inlinable_decorators with
             | [] -> statement
