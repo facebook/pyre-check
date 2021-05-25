@@ -41,6 +41,7 @@ module.exports = {
             'fb/pysa-on-fbcode-internal',
             'fb/pysa-running-opensource-internal',
             'fb/pysa-running-common-internal',
+            'fb/pysa-running-sandcastle',
           ],
         },
       ],
