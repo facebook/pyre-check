@@ -1402,10 +1402,49 @@ let test_invalid_models context =
        value = \"foo\" }, { Expression.Call.Argument.name = (Some is_transitive); value = foobar \
        }`."
     ();
+  assert_invalid_model
+    ~model_source:
+      {|
+      ModelQuery(
+        find = "methods",
+        where = name.foo("foo"),
+        model = ReturnModel(TaintSource[Test])
+      )
+    |}
+    ~expect:"`name.foo(\"foo\")` is not a valid name clause."
+    ();
+  assert_invalid_model
+    ~model_source:
+      {|
+      ModelQuery(
+        find = "methods",
+        where = name.matches(foobar, 1, 2),
+        model = ReturnModel(TaintSource[Test])
+      )
+    |}
+    ~expect:
+      "Unsupported arguments for callee `name.matches`: `{ Expression.Call.Argument.name = None; \
+       value = foobar }, { Expression.Call.Argument.name = None; value = 1 }, { \
+       Expression.Call.Argument.name = None; value = 2 }`."
+    ();
+  assert_invalid_model
+    ~model_source:
+      {|
+      ModelQuery(
+        find = "methods",
+        where = name.equals(foobar, 1, 2),
+        model = ReturnModel(TaintSource[Test])
+      )
+    |}
+    ~expect:
+      "Unsupported arguments for callee `name.equals`: `{ Expression.Call.Argument.name = None; \
+       value = foobar }, { Expression.Call.Argument.name = None; value = 1 }, { \
+       Expression.Call.Argument.name = None; value = 2 }`."
+    ();
+
   assert_valid_model
     ~model_source:"def test.partial_sink(x: PartialSink[Test[a]], y: PartialSink[Test[b]]): ..."
     ();
-
   assert_valid_model ~model_source:"def test.sink(): ..." ();
   assert_valid_model ~model_source:"def test.sink_with_optional(): ..." ();
   assert_valid_model ~model_source:"def test.sink_with_optional(parameter): ..." ();
@@ -2280,7 +2319,7 @@ let test_query_parsing context =
       [
         {
           name = None;
-          query = [NameConstraint "foo"];
+          query = [NameConstraint (Matches (Re2.create_exn "foo"))];
           rule_kind = FunctionModel;
           productions =
             [
@@ -2314,7 +2353,7 @@ let test_query_parsing context =
       [
         {
           name = None;
-          query = [NameConstraint "foo"];
+          query = [NameConstraint (Matches (Re2.create_exn "foo"))];
           rule_kind = FunctionModel;
           productions =
             [
@@ -2348,7 +2387,11 @@ let test_query_parsing context =
       [
         {
           name = None;
-          query = [NameConstraint "foo"; NameConstraint "bar"];
+          query =
+            [
+              NameConstraint (Matches (Re2.create_exn "foo"));
+              NameConstraint (Matches (Re2.create_exn "bar"));
+            ];
           rule_kind = FunctionModel;
           productions =
             [
@@ -2382,7 +2425,50 @@ let test_query_parsing context =
       [
         {
           name = None;
-          query = [NameConstraint "foo"];
+          query = [NameConstraint (Matches (Re2.create_exn "foo"))];
+          rule_kind = FunctionModel;
+          productions =
+            [
+              ReturnTaint
+                [
+                  TaintAnnotation
+                    (Model.Source
+                       {
+                         source = Sources.NamedSource "Test";
+                         breadcrumbs = [];
+                         path = [];
+                         leaf_names = [];
+                         leaf_name_provided = false;
+                       });
+                  TaintAnnotation
+                    (Model.Sink
+                       {
+                         sink = Sinks.NamedSink "Test";
+                         breadcrumbs = [];
+                         path = [];
+                         leaf_names = [];
+                         leaf_name_provided = false;
+                       });
+                ];
+            ];
+        };
+      ]
+    ();
+  assert_queries
+    ~context
+    ~model_source:
+      {|
+    ModelQuery(
+     find = "functions",
+     where = name.equals("test.foo"),
+     model = [Returns([TaintSource[Test], TaintSink[Test]])]
+    )
+  |}
+    ~expect:
+      [
+        {
+          name = None;
+          query = [NameConstraint (Equals "test.foo")];
           rule_kind = FunctionModel;
           productions =
             [
@@ -2426,7 +2512,7 @@ let test_query_parsing context =
       [
         {
           name = Some "foo_finders";
-          query = [NameConstraint "foo"];
+          query = [NameConstraint (Matches (Re2.create_exn "foo"))];
           rule_kind = FunctionModel;
           productions =
             [
@@ -2586,7 +2672,7 @@ let test_query_parsing context =
       [
         {
           name = Some "foo_finders";
-          query = [NameConstraint "foo"];
+          query = [NameConstraint (Matches (Re2.create_exn "foo"))];
           rule_kind = FunctionModel;
           productions =
             [
@@ -2625,7 +2711,7 @@ let test_query_parsing context =
       [
         {
           name = Some "foo_finders";
-          query = [NameConstraint "foo"];
+          query = [NameConstraint (Matches (Re2.create_exn "foo"))];
           rule_kind = FunctionModel;
           productions =
             [
@@ -2664,7 +2750,7 @@ let test_query_parsing context =
       [
         {
           name = Some "foo_finders";
-          query = [NameConstraint "foo"];
+          query = [NameConstraint (Matches (Re2.create_exn "foo"))];
           rule_kind = FunctionModel;
           productions =
             [

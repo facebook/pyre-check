@@ -99,7 +99,7 @@ module T = struct
     let show_class_constraint = Format.asprintf "%a" pp_class_constraint
 
     type model_constraint =
-      | NameConstraint of string
+      | NameConstraint of name_constraint
       | ReturnConstraint of annotation_constraint
       | AnyParameterConstraint of parameter_constraint
       | AnyOf of model_constraint list
@@ -915,7 +915,7 @@ let parse_where_clause ~path ~find_clause ({ Node.value; location } as expressio
                 "Unsupported constraint kind for parameters: `%s`"
                 parameter_constraint_kind))
   in
-  let rec parse_constraint ({ Node.value; _ } as constraint_expression) =
+  let parse_name_constraint ({ Node.value; _ } as constraint_expression) =
     match value with
     | Expression.Call
         {
@@ -926,21 +926,49 @@ let parse_where_clause ~path ~find_clause ({ Node.value; location } as expressio
                   (Name.Attribute
                     {
                       base = { Node.value = Name (Name.Identifier "name"); _ };
-                      attribute = "matches";
+                      attribute = ("matches" | "equals") as attribute;
                       _;
                     });
               _;
+            } as callee;
+          arguments;
+        } -> (
+        match arguments with
+        | [
+         {
+           Call.Argument.value =
+             { Node.value = Expression.String { StringLiteral.value = name_constraint; _ }; _ };
+           _;
+         };
+        ] -> (
+            match attribute with
+            | "matches" -> Ok (ModelQuery.Matches (Re2.create_exn name_constraint))
+            | "equals" -> Ok (ModelQuery.Equals name_constraint)
+            | _ -> failwith "impossible case" )
+        | _ ->
+            Error
+              (model_verification_error
+                 ~path
+                 ~location
+                 (InvalidModelQueryClauseArguments { callee; arguments })) )
+    | _ ->
+        Error (model_verification_error ~path ~location (InvalidNameClause constraint_expression))
+  in
+  let rec parse_constraint ({ Node.value; _ } as constraint_expression) =
+    match value with
+    | Expression.Call
+        {
+          Call.callee =
+            {
+              Node.value =
+                Expression.Name
+                  (Name.Attribute { base = { Node.value = Name (Name.Identifier "name"); _ }; _ });
+              _;
             };
-          arguments =
-            [
-              {
-                Call.Argument.value =
-                  { Node.value = Expression.String { StringLiteral.value = name_constraint; _ }; _ };
-                _;
-              };
-            ];
+          _;
         } ->
-        Ok (ModelQuery.NameConstraint name_constraint)
+        parse_name_constraint constraint_expression
+        >>= fun name_constraint -> Ok (ModelQuery.NameConstraint name_constraint)
     | Expression.Call
         {
           Call.callee =

@@ -92,8 +92,8 @@ let rec callable_matches_constraint query_constraint ~resolution ~callable =
           in
           List.exists decorators ~f:decorator_name_matches
       | _ -> false )
-  | ModelQuery.NameConstraint pattern ->
-      matches_pattern ~pattern (Callable.external_target_name callable)
+  | ModelQuery.NameConstraint name_constraint ->
+      matches_name_constraint ~name_constraint (Callable.external_target_name callable)
   | ModelQuery.ReturnConstraint annotation_constraint -> (
       let callable_type = get_callable_type () in
       match callable_type with
@@ -325,7 +325,8 @@ let apply_callable_query_rule
 let rec attribute_matches_constraint query_constraint ~resolution ~attribute =
   let attribute_class_name = Reference.prefix attribute >>| Reference.show in
   match query_constraint with
-  | ModelQuery.NameConstraint pattern -> matches_pattern ~pattern (Reference.show attribute)
+  | ModelQuery.NameConstraint name_constraint ->
+      matches_name_constraint ~name_constraint (Reference.show attribute)
   | ModelQuery.AnyOf constraints ->
       List.exists constraints ~f:(attribute_matches_constraint ~resolution ~attribute)
   | ModelQuery.Not query_constraint ->

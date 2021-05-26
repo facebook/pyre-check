@@ -48,6 +48,7 @@ module T = struct
         callee: Expression.t;
         arguments: Expression.Call.Argument.t list;
       }
+    | InvalidNameClause of Expression.t
     | InvalidTaintAnnotation of {
         taint_annotation: Expression.t;
         reason: string;
@@ -135,6 +136,8 @@ let description error =
         "`%s` is not a valid model for model queries with find clause of kind `%s`."
         (Expression.show expression)
         find_clause_kind
+  | InvalidNameClause expression ->
+      Format.asprintf "`%s` is not a valid name clause." (Expression.show expression)
   | InvalidParameterExclude expression ->
       Format.asprintf
         "The AllParameters exclude must be either a string or a list of strings, got: `%s`."
@@ -237,6 +240,7 @@ let code { kind; _ } =
   | ModelingCallableAsAttribute _ -> 21
   | ClassBodyNotEllipsis _ -> 22
   | DefineBodyNotEllipsis _ -> 23
+  | InvalidNameClause _ -> 24
 
 
 let display { kind = error; path; location } =

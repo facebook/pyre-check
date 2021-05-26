@@ -71,7 +71,7 @@ module T : sig
     [@@deriving compare, show]
 
     type model_constraint =
-      | NameConstraint of string
+      | NameConstraint of name_constraint
       | ReturnConstraint of annotation_constraint
       | AnyParameterConstraint of parameter_constraint
       | AnyOf of model_constraint list
