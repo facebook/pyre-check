@@ -9,6 +9,7 @@ exception
   BuckError of {
     arguments: string list;
     description: string;
+    exit_code: int option;
   }
 
 type t = {
@@ -47,15 +48,17 @@ let create () =
         LwtSubprocess.run "buck" ~arguments:[Format.sprintf "@%s" filename] ~consume_stderr)
     >>= function
     | { LwtSubprocess.Completed.status; stdout; _ } -> (
-        let fail_with_error description = Lwt.fail (BuckError { arguments; description }) in
+        let fail_with_error ?exit_code description =
+          Lwt.fail (BuckError { arguments; description; exit_code })
+        in
         match status with
         | Unix.WEXITED 0 -> Lwt.return stdout
         | WEXITED 127 ->
             let description = Format.sprintf "Cannot find buck exectuable under PATH." in
-            fail_with_error description
+            fail_with_error ~exit_code:127 description
         | WEXITED code ->
             let description = Format.sprintf "Buck exited with code %d" code in
-            fail_with_error description
+            fail_with_error ~exit_code:code description
         | WSIGNALED signal ->
             let description =
               Format.sprintf "Buck signaled with %s signal" (PrintSignal.string_of_signal signal)

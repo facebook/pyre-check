@@ -288,8 +288,10 @@ module Raw : sig
     BuckError of {
       arguments: string list;
       description: string;
+      exit_code: int option;
     }
-  (** Raised when external invocation of `buck` returns an error. *)
+  (** Raised when external invocation of `buck` returns an error. The [exit_code] field is set to
+      [None] if the external `buck` process gets stopped by a signal. *)
 
   type t
 

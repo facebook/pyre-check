@@ -626,7 +626,7 @@ let start_server_and_wait ?event_channel server_configuration =
     ~on_exception:(fun exn ->
       let message =
         match exn with
-        | Buck.Raw.BuckError { arguments; description } ->
+        | Buck.Raw.BuckError { arguments; description; _ } ->
             Format.sprintf
               "Cannot build the project: %s. To reproduce this error, run `%s`."
               description
