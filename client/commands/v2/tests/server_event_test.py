@@ -11,6 +11,7 @@ import testslide
 from ....tests import setup
 from ..async_server_connection import create_memory_text_reader
 from ..server_event import (
+    ErrorKind,
     ServerException,
     ServerInitialized,
     SocketCreated,
@@ -21,6 +22,14 @@ from ..server_event import (
 
 
 class ServerEventTest(testslide.TestCase):
+    def test_error_kind(self) -> None:
+        self.assertEqual(ErrorKind.from_string("Watchman"), ErrorKind.WATCHMAN)
+        self.assertEqual(ErrorKind.from_string("BuckInternal"), ErrorKind.BUCK_INTERNAL)
+        self.assertEqual(ErrorKind.from_string("BuckUser"), ErrorKind.BUCK_USER)
+        self.assertEqual(ErrorKind.from_string("Pyre"), ErrorKind.PYRE)
+        self.assertEqual(ErrorKind.from_string("Unknown"), ErrorKind.UNKNOWN)
+        self.assertEqual(ErrorKind.from_string("derp"), ErrorKind.UNKNOWN)
+
     def test_create(self) -> None:
         self.assertIsNone(create_from_string("derp"))
         self.assertIsNone(create_from_string("[]"))
@@ -36,7 +45,16 @@ class ServerEventTest(testslide.TestCase):
             create_from_string('["Exception", "Burn baby burn!"]'),
             ServerException("Burn baby burn!"),
         )
+        self.assertEqual(
+            create_from_string('["Exception", "Burn baby burn!", ["BuckUser"]]'),
+            ServerException(message="Burn baby burn!", kind=ErrorKind.BUCK_USER),
+        )
+        self.assertEqual(
+            create_from_string('["Exception", "Burn baby burn!", "derp"]'),
+            ServerException(message="Burn baby burn!", kind=ErrorKind.UNKNOWN),
+        )
         self.assertIsNone(create_from_string('["Exception"]'))
+        self.assertIsNone(create_from_string('["Exception", 42]'))
         self.assertIsNone(create_from_string('["UNRECOGNIZABLE", "message"]'))
 
     def test_waiter(self) -> None:
