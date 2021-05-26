@@ -1598,7 +1598,7 @@ def bar(x: Optional[int]) -> bool:
 ```
 
 
-### 59 : Duplicate Type Variables
+### 59: Duplicate Type Variables
 
 This occurs when the same type variable is provided more than once to a `Generic` or `Protocol`. A type variable needs to be bound to a single value. Thus, if one wants two independent type variables with perhaps the same bounds or same properties, they have to be different variables.
 
@@ -1612,6 +1612,33 @@ class A(Generic[T, S, T]):  # Error
 
 class B(Generic[T, S]):  # OK
     pass
+```
+
+### 60: Unable to Concatenate Tuple
+
+#### "Expected to unpack an iterable ..."
+
+This can occur if during concatenation of a tuple one tries to unpack a non-iterable since non-iterables can't be unpacked. Either try to unpack an iterable, or concatenate without unpacking.
+
+```python
+def foo(x: int, not_iterable: int, iterable: list[int]) -> None:
+  y = (x, *not_iterable)  # Error
+  z = (x, not_iterable) # OK
+  w = (x, *iterable)  # OK
+```
+
+#### "Concatenation not yet supported for multiple variadic tuples ..."
+
+This can occur if during concatenation one tries to use multiple variadic tuples. This is due the limitations of the current type system and there is no workaround currently. One may use `# pyre-ignore[60]` to suppress.
+
+```python
+from typing import Tuple
+from pyre_extensions import TypeVarTuple
+
+Ts = TypeVarTuple("Ts")
+
+def foo(xs: Tuple[*Ts]) -> None:
+  y = (*xs, *xs)  # Error
 ```
 
 ## Suppression
