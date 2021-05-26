@@ -16,7 +16,7 @@ from ... import (
     configuration as configuration_module,
     error,
 )
-from . import server_connection, start, remote_logging
+from . import server_connection, server_event, start, remote_logging
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -128,5 +128,7 @@ def run(
 ) -> remote_logging.ExitCodeWithAdditionalLogging:
     try:
         return run_incremental(configuration, incremental_arguments)
+    except server_event.ServerStartException as error:
+        raise commands.ClientException(f"{error}") from error
     except Exception as error:
         raise commands.ClientException(f"{error}") from error

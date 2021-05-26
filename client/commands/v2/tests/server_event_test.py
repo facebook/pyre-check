@@ -5,6 +5,7 @@
 
 import io
 from pathlib import Path
+from typing import Type
 
 import testslide
 
@@ -18,6 +19,7 @@ from ..server_event import (
     create_from_string,
     Waiter,
     EventParsingException,
+    ServerStartException,
 )
 
 
@@ -63,8 +65,12 @@ class ServerEventTest(testslide.TestCase):
                 io.StringIO(event_output)
             )
 
-        def assert_raises(event_output: str, wait_on_initialization: bool) -> None:
-            with self.assertRaises(EventParsingException):
+        def assert_raises(
+            event_output: str,
+            wait_on_initialization: bool,
+            exception: Type[Exception] = EventParsingException,
+        ) -> None:
+            with self.assertRaises(exception):
                 Waiter(wait_on_initialization=wait_on_initialization).wait_on(
                     io.StringIO(event_output)
                 )
@@ -73,14 +79,22 @@ class ServerEventTest(testslide.TestCase):
         assert_raises("[]", wait_on_initialization=False)
         assert_ok('["SocketCreated", "/path/to/socket"]', wait_on_initialization=False)
         assert_raises('["ServerInitialized"]', wait_on_initialization=False)
-        assert_raises('["ServerException", "message"]', wait_on_initialization=False)
+        assert_raises(
+            '["Exception", "message"]',
+            wait_on_initialization=False,
+            exception=ServerStartException,
+        )
 
         assert_raises("garbage", wait_on_initialization=True)
         assert_raises("[]", wait_on_initialization=True)
         assert_raises(
             '["SocketCreated", "/path/to/socket"]', wait_on_initialization=True
         )
-        assert_raises('["ServerException", "message"]', wait_on_initialization=True)
+        assert_raises(
+            '["Exception", "message"]',
+            wait_on_initialization=True,
+            exception=ServerStartException,
+        )
         assert_raises(
             '["SocketCreated", "/path/to/socket"]\n' + '["ServerException", "message"]',
             wait_on_initialization=True,
@@ -103,9 +117,11 @@ class ServerEventTest(testslide.TestCase):
             )
 
         async def assert_raises(
-            event_output: str, wait_on_initialization: bool
+            event_output: str,
+            wait_on_initialization: bool,
+            exception: Type[Exception] = EventParsingException,
         ) -> None:
-            with self.assertRaises(EventParsingException):
+            with self.assertRaises(exception):
                 await Waiter(
                     wait_on_initialization=wait_on_initialization
                 ).async_wait_on(create_memory_text_reader(event_output))
@@ -117,7 +133,9 @@ class ServerEventTest(testslide.TestCase):
         )
         await assert_raises('["ServerInitialized"]', wait_on_initialization=False)
         await assert_raises(
-            '["ServerException", "message"]', wait_on_initialization=False
+            '["Exception", "message"]',
+            wait_on_initialization=False,
+            exception=ServerStartException,
         )
 
         await assert_raises("garbage", wait_on_initialization=True)
@@ -126,7 +144,9 @@ class ServerEventTest(testslide.TestCase):
             '["SocketCreated", "/path/to/socket"]', wait_on_initialization=True
         )
         await assert_raises(
-            '["ServerException", "message"]', wait_on_initialization=True
+            '["Exception", "message"]',
+            wait_on_initialization=True,
+            exception=ServerStartException,
         )
         await assert_raises(
             '["SocketCreated", "/path/to/socket"]\n' + '["ServerException", "message"]',

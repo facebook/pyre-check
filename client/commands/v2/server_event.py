@@ -88,6 +88,14 @@ class EventParsingException(Exception):
     pass
 
 
+class ServerStartException(Exception):
+    kind: ErrorKind
+
+    def __init__(self, exception_event: ServerException) -> None:
+        super().__init__(exception_event.message)
+        self.kind = exception_event.kind
+
+
 def _parse_server_event(event_string: str) -> Event:
     event = create_from_string(event_string)
     if event is None:
@@ -95,7 +103,7 @@ def _parse_server_event(event_string: str) -> Event:
             f"Unrecognized status update from server: {event_string}"
         )
     elif isinstance(event, ServerException):
-        raise EventParsingException(f"Failed to start server: {event.message}")
+        raise ServerStartException(event)
     return event
 
 
@@ -112,8 +120,8 @@ class Waiter:
         creation and returns.
         Otherwise, block until server initialization has finished and returns.
         If data obtained from the input channel does not conform to the server
-        event format, or if an error event is received, raise
-        `EventParsingException`.
+        event format, raise `EventParsingException`. If an error event is received,
+        raise `ServerStartException`.
         """
         # The first event is expected to be socket creation
         initial_event = _parse_server_event(event_stream.readline().strip())
