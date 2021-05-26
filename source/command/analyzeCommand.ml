@@ -148,29 +148,34 @@ let run_analysis
         ~source_path:(List.map source_path ~f:SearchPath.create_normalized)
         ()
     in
-    let result_json_path = result_json_path >>| Path.create_absolute in
-    let () =
-      match result_json_path with
-      | Some path when not (Path.is_directory path) ->
-          Log.error "--save-results-to path must be a directory.";
-          failwith "bad argument"
-      | _ -> ()
+    let static_analysis_configuration =
+      let result_json_path = result_json_path >>| Path.create_absolute in
+      let () =
+        match result_json_path with
+        | Some path when not (Path.is_directory path) ->
+            Log.error "--save-results-to path must be a directory.";
+            failwith "bad argument"
+        | _ -> ()
+      in
+      {
+        Configuration.StaticAnalysis.configuration;
+        result_json_path;
+        dump_call_graph;
+        verify_models = not no_verify;
+        rule_filter;
+        find_missing_flows;
+        dump_model_query_results;
+        use_cache;
+        maximum_trace_length;
+      }
     in
+    let analysis_kind = get_analysis_kind analysis in
     (fun () ->
       let timer = Timer.start () in
-      (* In order to save time, sanity check models before starting the analysis. *)
-      Log.info "Verifying model syntax and configuration.";
-      Taint.Model.get_model_sources ~paths:configuration.Configuration.Analysis.taint_model_paths
-      |> List.iter ~f:(fun (path, source) -> Taint.Model.verify_model_syntax ~path ~source);
-      let (_ : Taint.TaintConfiguration.t) =
-        Taint.TaintConfiguration.create
-          ~rule_filter:None
-          ~find_missing_flows:None
-          ~dump_model_query_results_path:None
-          ~maximum_trace_length:None
-          ~taint_model_paths:configuration.Configuration.Analysis.taint_model_paths
-      in
       Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->
+          Interprocedural.Analysis.initialize_configuration
+            ~static_analysis_configuration
+            [analysis_kind];
           let cached_environment =
             if use_cache then Service.StaticAnalysis.Cache.load_environment ~configuration else None
           in
@@ -227,19 +232,8 @@ let run_analysis
           in
           Service.StaticAnalysis.analyze
             ~scheduler
-            ~analysis_kind:(get_analysis_kind analysis)
-            ~static_analysis_configuration:
-              {
-                Configuration.StaticAnalysis.configuration;
-                result_json_path;
-                dump_call_graph;
-                verify_models = not no_verify;
-                rule_filter;
-                find_missing_flows;
-                dump_model_query_results;
-                use_cache;
-                maximum_trace_length;
-              }
+            ~analysis_kind
+            ~static_analysis_configuration
             ~filename_lookup
             ~environment:(Analysis.TypeEnvironment.read_only environment)
             ~qualifiers

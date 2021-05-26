@@ -14,7 +14,26 @@ open Taint
 include Taint.Result.Register (struct
   include Taint.Result
 
-  let init
+  let initialize_configuration
+      ~static_analysis_configuration:
+        { Configuration.StaticAnalysis.configuration = { taint_model_paths; _ }; _ }
+    =
+    (* In order to save time, sanity check models before starting the analysis. *)
+    Log.info "Verifying model syntax and configuration.";
+    Taint.Model.get_model_sources ~paths:taint_model_paths
+    |> List.iter ~f:(fun (path, source) -> Taint.Model.verify_model_syntax ~path ~source);
+    let (_ : Taint.TaintConfiguration.t) =
+      Taint.TaintConfiguration.create
+        ~rule_filter:None
+        ~find_missing_flows:None
+        ~dump_model_query_results_path:None
+        ~maximum_trace_length:None
+        ~taint_model_paths
+    in
+    ()
+
+
+  let initialize_models
       ~scheduler
       ~static_analysis_configuration:
         ( {

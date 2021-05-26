@@ -12,19 +12,34 @@ open Statement
 module Kind = AnalysisKind
 module Result = InterproceduralResult
 
+let initialize_configuration kinds ~static_analysis_configuration =
+  let initialize_kind kind =
+    let (Result.Analysis { analysis; _ }) = Result.get_abstract_analysis kind in
+    let module Analysis = (val analysis) in
+    Analysis.initialize_configuration ~static_analysis_configuration
+  in
+  List.iter kinds ~f:initialize_kind
+
+
 type initialize_result = {
   initial_models: InterproceduralResult.model_t Callable.Map.t;
   skip_overrides: Ast.Reference.Set.t;
 }
 
-let initialize kinds ~scheduler ~static_analysis_configuration ~environment ~functions ~stubs =
+let initialize_models kinds ~scheduler ~static_analysis_configuration ~environment ~functions ~stubs
+  =
   let initialize_each
       { initial_models = models; skip_overrides }
       (Result.Analysis { kind; analysis })
     =
     let module Analysis = (val analysis) in
     let { Result.initial_models = new_models; skip_overrides = new_skip_overrides } =
-      Analysis.init ~static_analysis_configuration ~scheduler ~environment ~functions ~stubs
+      Analysis.initialize_models
+        ~static_analysis_configuration
+        ~scheduler
+        ~environment
+        ~functions
+        ~stubs
     in
     let add_analysis_model existing model =
       let open Result in

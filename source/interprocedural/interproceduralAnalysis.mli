@@ -12,8 +12,13 @@ type initialize_result = {
   skip_overrides: Ast.Reference.Set.t;
 }
 
+val initialize_configuration
+  :  Kind.abstract list ->
+  static_analysis_configuration:Configuration.StaticAnalysis.t ->
+  unit
+
 (* Calls init on all specified analyses to get initial models *)
-val initialize
+val initialize_models
   :  Kind.abstract list ->
   scheduler:Scheduler.t ->
   static_analysis_configuration:Configuration.StaticAnalysis.t ->

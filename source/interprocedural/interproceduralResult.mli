@@ -99,8 +99,13 @@ module type ANALYZER = sig
     existing:call_model option ->
     result * call_model
 
+  (* Called prior to typechecking, so we can fail fast on bad config *)
+  val initialize_configuration
+    :  static_analysis_configuration:Configuration.StaticAnalysis.t ->
+    unit
+
   (* Called once on master before analysis of individual callables. *)
-  val init
+  val initialize_models
     :  scheduler:Scheduler.t ->
     static_analysis_configuration:Configuration.StaticAnalysis.t ->
     environment:Analysis.TypeEnvironment.ReadOnly.t ->

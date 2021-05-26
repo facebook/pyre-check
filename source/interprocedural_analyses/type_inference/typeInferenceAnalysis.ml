@@ -10,14 +10,19 @@ open Analysis
 open Interprocedural
 
 module Analyzer = struct
-  let init
-      ~scheduler:_
+  let initialize_configuration
       ~static_analysis_configuration:{ Configuration.StaticAnalysis.configuration; _ }
+    =
+    TypeInferenceSharedMemory.register_configuration configuration
+
+
+  let initialize_models
+      ~scheduler:_
+      ~static_analysis_configuration:_
       ~environment:_
       ~functions:_
       ~stubs:_
     =
-    TypeInferenceSharedMemory.register_configuration configuration;
     { Result.initial_models = Callable.Map.empty; skip_overrides = Ast.Reference.Set.empty }
 
 

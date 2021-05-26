@@ -43,15 +43,7 @@ let fixpoint_result ~context ~callables ~sources =
   in
   let scheduler = Test.mock_scheduler () in
   let static_analysis_configuration = static_analysis_configuration scratch_project in
-  let _ =
-    Analysis.initialize
-      ~static_analysis_configuration
-      ~scheduler
-      ~environment
-      ~functions:callables
-      ~stubs:[]
-      analyses
-  in
+  Analysis.initialize_configuration ~static_analysis_configuration analyses;
   Analysis.record_initial_models ~functions:callables ~stubs:[] Callable.Map.empty;
   let fixpoint_iterations =
     let iteration_limit = 1 in

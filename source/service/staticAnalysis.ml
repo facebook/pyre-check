@@ -516,7 +516,7 @@ let analyze
   let skip_overrides, initial_models_callables =
     let functions = (List.map callables_with_dependency_information ~f:fst :> Callable.t list) in
     let { Interprocedural.Analysis.initial_models = models; skip_overrides } =
-      Analysis.initialize
+      Analysis.initialize_models
         analyses
         ~static_analysis_configuration
         ~scheduler
