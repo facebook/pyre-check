@@ -1836,14 +1836,15 @@ let rec messages ~concise ~signature location kind =
       let annotation, detail =
         match mutability with
         | Mutable -> Format.asprintf "%a" pp_type annotation, ""
-        | Immutable { Annotation.original; _ } ->
+        | Immutable { Annotation.original; Annotation.final; _ } ->
+            let if_final display = if final then display else "" in
             if Type.contains_unknown original then
-              Format.asprintf "%a" pp_type annotation, ""
+              Format.asprintf "%a" pp_type annotation, if_final " (final)"
             else if Type.equal annotation original then
-              Format.asprintf "%a" pp_type original, ""
+              Format.asprintf "%a" pp_type original, if_final " (final)"
             else
               ( Format.asprintf "%a" pp_type original,
-                Format.asprintf " (inferred: `%a`)" pp_type annotation )
+                Format.asprintf " (inferred: `%a`%s)" pp_type annotation (if_final ", final") )
       in
       [
         Format.asprintf
