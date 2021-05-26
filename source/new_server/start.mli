@@ -6,11 +6,21 @@
  *)
 
 module ServerEvent : sig
+  module ErrorKind : sig
+    type t =
+      | Watchman
+      | BuckInternal
+      | BuckUser
+      | Pyre
+      | Unknown
+    [@@deriving sexp, compare, hash, to_yojson]
+  end
+
   type t =
-    | SocketCreated of Pyre.Path.t
+    | SocketCreated of PyrePath.t
     | ServerInitialized
-    | Exception of string
-  [@@deriving sexp, compare, hash]
+    | Exception of string * ErrorKind.t
+  [@@deriving sexp, compare, hash, to_yojson]
 
   val serialize : t -> string
 
