@@ -26,6 +26,7 @@ let checks : (module Signature) String.Map.t =
       "deobfuscation", (module DeobfuscationCheck);
       "immutable_collection", (module ImmutableCollectionCheck);
       "liveness", (module LivenessCheck);
+      "uninitialized_local", (module UninitializedLocalCheck);
     ]
   in
   String.Map.of_alist_exn checks
