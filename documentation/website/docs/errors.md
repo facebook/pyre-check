@@ -1600,7 +1600,7 @@ def bar(x: Optional[int]) -> bool:
 
 ### 59 : Duplicate Type Variables
 
-This occurs when the same type variable is provided more than once to a `Generic` or `Protocol`.
+This occurs when the same type variable is provided more than once to a `Generic` or `Protocol`. A type variable needs to be bound to a single value. Thus, if one wants two independent type variables with perhaps the same bounds or same properties, they have to be different variables.
 
 ```python
 from typing import TypeVar, Generic
@@ -1615,7 +1615,7 @@ class B(Generic[T, S]):  # OK
 ```
 
 ## Suppression
-It is not always possible to address all errors immediately – some code is too dynamic and should be refactored, other times it's *just not the right time* to deal with a type error. We do encourage people to keep their type check results clean at all times and provide mechanisms to suppress errors that cannot be immediately fixed.
+It is not always possible to address all errors immediately – some code is too dynamic and should be refactored, other times it's *just not the right time* to deal with a type error. We do encourage people to keep their type check results clean at all times and provide mechanisms to suppress errors that cannot be immediately fixed.
 
 ### Suppressing Individual Errors
 Pyre supports error suppression of individual errors with comments that can be placed on the line of the error or on the line preceding the error.
