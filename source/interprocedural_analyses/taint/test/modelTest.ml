@@ -2773,7 +2773,7 @@ let test_query_parsing context =
       [
         {
           name = None;
-          query = [ParentConstraint (Equals "Foo")];
+          query = [ParentConstraint (NameSatisfies (Equals "Foo"))];
           rule_kind = MethodModel;
           productions =
             [
@@ -2927,7 +2927,7 @@ let test_query_parsing context =
       [
         {
           name = None;
-          query = [ParentConstraint (Matches (Re2.create_exn "Foo.*"))];
+          query = [ParentConstraint (NameSatisfies (Matches (Re2.create_exn "Foo.*")))];
           rule_kind = MethodModel;
           productions =
             [

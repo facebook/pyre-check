@@ -624,7 +624,7 @@ let test_apply_rule context =
     ~rule:
       {
         name = None;
-        query = [ParentConstraint (Matches (Re2.create_exn "C"))];
+        query = [ParentConstraint (NameSatisfies (Matches (Re2.create_exn "C")))];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = MethodModel;
       }
@@ -643,7 +643,7 @@ let test_apply_rule context =
     ~rule:
       {
         name = None;
-        query = [ParentConstraint (Matches (Re2.create_exn "C"))];
+        query = [ParentConstraint (NameSatisfies (Matches (Re2.create_exn "C")))];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = MethodModel;
       }
@@ -663,7 +663,7 @@ let test_apply_rule context =
     ~rule:
       {
         name = None;
-        query = [ParentConstraint (Matches (Re2.create_exn "C"))];
+        query = [ParentConstraint (NameSatisfies (Matches (Re2.create_exn "C")))];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = MethodModel;
       }
@@ -681,7 +681,7 @@ let test_apply_rule context =
     ~rule:
       {
         name = None;
-        query = [ParentConstraint (Matches (Re2.create_exn "C"))];
+        query = [ParentConstraint (NameSatisfies (Matches (Re2.create_exn "C")))];
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
         rule_kind = AttributeModel;
       }
@@ -697,7 +697,7 @@ let test_apply_rule context =
     ~rule:
       {
         name = None;
-        query = [ParentConstraint (Matches (Re2.create_exn "C"))];
+        query = [ParentConstraint (NameSatisfies (Matches (Re2.create_exn "C")))];
         productions = [AttributeTaint [TaintAnnotation (sink "Test")]];
         rule_kind = AttributeModel;
       }
@@ -713,7 +713,7 @@ let test_apply_rule context =
     ~rule:
       {
         name = None;
-        query = [ParentConstraint (Matches (Re2.create_exn "C"))];
+        query = [ParentConstraint (NameSatisfies (Matches (Re2.create_exn "C")))];
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
         rule_kind = AttributeModel;
       }
@@ -831,8 +831,8 @@ let test_apply_rule context =
         name = None;
         query =
           [
-            ParentConstraint (Matches (Re2.create_exn "C"));
-            Not (ParentConstraint (Matches (Re2.create_exn "D")));
+            ParentConstraint (NameSatisfies (Matches (Re2.create_exn "C")));
+            Not (ParentConstraint (NameSatisfies (Matches (Re2.create_exn "D"))));
           ];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = MethodModel;
@@ -854,8 +854,8 @@ let test_apply_rule context =
         name = None;
         query =
           [
-            ParentConstraint (Matches (Re2.create_exn "C"));
-            Not (ParentConstraint (Matches (Re2.create_exn "D")));
+            ParentConstraint (NameSatisfies (Matches (Re2.create_exn "C")));
+            Not (ParentConstraint (NameSatisfies (Matches (Re2.create_exn "D"))));
           ];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = MethodModel;

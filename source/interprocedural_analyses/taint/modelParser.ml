@@ -66,22 +66,34 @@ module T = struct
     type parameter_constraint = AnnotationConstraint of annotation_constraint
     [@@deriving compare, show]
 
-    type class_constraint =
+    type name_constraint =
       | Equals of string
+      | Matches of Re2.t
+    [@@deriving compare]
+
+    let pp_name_constraint formatter name_constraint =
+      match name_constraint with
+      | Equals equals -> Format.fprintf formatter "Equals(%s)" equals
+      | Matches regular_expression ->
+          Format.fprintf formatter "Matches(%s)" (Re2.to_string regular_expression)
+
+
+    let show_name_constraint = Format.asprintf "%a" pp_name_constraint
+
+    type class_constraint =
+      | NameSatisfies of name_constraint
       | Extends of {
           class_name: string;
           is_transitive: bool;
         }
-      | Matches of Re2.t
     [@@deriving compare]
 
     let pp_class_constraint formatter class_constraint =
       match class_constraint with
-      | Equals equals -> Format.fprintf formatter "Equals(%s)" equals
+      | NameSatisfies name_constraint ->
+          Format.fprintf formatter "NameSatisfies(%s)" (show_name_constraint name_constraint)
       | Extends { class_name; is_transitive } ->
           Format.fprintf formatter "Extends(%s, is_transitive=%b)" class_name is_transitive
-      | Matches regular_expression ->
-          Format.fprintf formatter "Matches(%s)" (Re2.to_string regular_expression)
 
 
     let show_class_constraint = Format.asprintf "%a" pp_class_constraint
@@ -1064,13 +1076,13 @@ let parse_where_clause ~path ~find_clause ({ Node.value; location } as expressio
            _;
          };
         ] ->
-            let constraint_type =
+            let name_constraint =
               match attribute with
               | "equals" -> ModelQuery.Equals class_name
-              | "matches" -> Matches (Re2.create_exn class_name)
+              | "matches" -> ModelQuery.Matches (Re2.create_exn class_name)
               | _ -> failwith "impossible case"
             in
-            Ok (ModelQuery.ParentConstraint constraint_type)
+            Ok (ModelQuery.ParentConstraint (ModelQuery.NameSatisfies name_constraint))
         | _ ->
             Error
               (model_verification_error
