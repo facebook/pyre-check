@@ -2,7 +2,10 @@
 Call dependencies
 higher_order_functions.C::method_to_sink (method) -> [__test_sink (fun)]
 higher_order_functions.C::self_to_sink (method) -> [__test_sink (fun)]
+higher_order_functions.Callable::__call__ (method) -> []
+higher_order_functions.Callable::__init__ (method) -> []
 higher_order_functions.apply (fun) -> []
+higher_order_functions.callable_class (fun) -> [__test_sink (fun) __test_source (fun) higher_order_functions.Callable::__call__ (method) higher_order_functions.Callable::__init__ (method) object::__new__ (method)]
 higher_order_functions.goes_to_sink (fun) -> [__test_sink (fun)]
 higher_order_functions.has_tito (fun) -> []
 higher_order_functions.higher_order_function (fun) -> []

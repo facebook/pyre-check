@@ -639,30 +639,36 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
         =
         (* If we have a lambda `fn` getting passed into `hof`, we use the following strategy:
          * hof(q, fn, x, y) gets translated into the following block: (analyzed backwards)
-         * $all = {q, x, y}
-         * $result = fn( *all, **all)
-         * hof(q, $result, x, y)
+         * if rand():
+         *   $all = {q, x, y}
+         *   $result = fn( *all, **all)
+         * else:
+         *   $result = fn
+         * hof(q, fn, x, y)
          *)
         let lambda_index, { Call.Argument.value = lambda_callee; name = lambda_name } =
           lambda_argument
         in
         let location = lambda_callee.Node.location in
-        let all_argument = Node.create ~location (Expression.Name (Name.Identifier "$all")) in
-        (* Simulate `$all = {q, x, y}`. *)
-        let state =
-          let all_assignee =
-            Node.create
-              ~location
-              (Expression.Set
-                 (List.map non_lambda_arguments ~f:(fun (_, argument) ->
-                      argument.Call.Argument.value)))
-          in
-          let taint, state = analyze_expression ~resolution ~state ~expression:all_assignee in
-          analyze_assignment ~resolution all_argument taint taint state
-        in
-        (* Simulate `$result = fn( *all, **all)`. *)
         let result = Node.create ~location (Expression.Name (Name.Identifier "$result")) in
-        let state =
+
+        (* Simulate if branch. *)
+        let if_branch_state =
+          (* Simulate `$all = {q, x, y}`. *)
+          let all_argument = Node.create ~location (Expression.Name (Name.Identifier "$all")) in
+          let state =
+            let all_assignee =
+              Node.create
+                ~location
+                (Expression.Set
+                   (List.map non_lambda_arguments ~f:(fun (_, argument) ->
+                        argument.Call.Argument.value)))
+            in
+            let taint, state = analyze_expression ~resolution ~state ~expression:all_assignee in
+            analyze_assignment ~resolution all_argument taint taint state
+          in
+
+          (* Simulate `$result = fn( *all, **all)`. *)
           let arguments =
             List.map non_lambda_arguments ~f:(fun (_, argument) ->
                 { argument with Call.Argument.value = all_argument })
@@ -678,6 +684,14 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           in
           analyze_assignment ~resolution result taint taint state
         in
+
+        (* Simulate else branch. *)
+        let else_branch_state =
+          let taint, state = analyze_expression ~resolution ~state ~expression:lambda_callee in
+          analyze_assignment ~resolution result taint taint state
+        in
+        let state = join if_branch_state else_branch_state in
+
         (* Simulate `hof(q, $result, x, y)`. *)
         let higher_order_function_arguments =
           let lambda_argument_with_index =
@@ -696,6 +710,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           ~arguments:higher_order_function_arguments
           higher_order_function
       in
+
       let assign_super_constructor_taint_to_self_if_necessary taint state =
         match Node.value callee, FunctionContext.definition with
         | ( Expression.Name (Name.Attribute { base; attribute = "__init__"; _ }),

@@ -587,8 +587,11 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
         in
         (* If we have a lambda `fn` getting passed into `hof`, we use the following strategy:
          * hof(q, fn, x, y) gets translated into (analyzed backwards)
-         * $all = {q, x, y}
-         * $result = fn( *all, **all)
+         * if rand():
+         *   $all = {q, x, y}
+         *   $result = fn( *all, **all)
+         * else:
+         *   $result = fn
          * hof(q, $result, x, y)
          *)
         (* Simulate hof(q, $result, x, y). *)
@@ -623,34 +626,46 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             (get_taint (Some (AccessPath.create (Root.Variable result) [])) state)
         in
 
-        (* Simulate $result = fn( all, all). *)
-        let all_argument = Node.create ~location (Expression.Name (Name.Identifier "$all")) in
-        let arguments_with_all_value =
-          List.map non_lambda_arguments ~f:snd
-          |> List.map ~f:(fun argument -> { argument with Call.Argument.value = all_argument })
+        (* Simulate else branch. *)
+        let else_branch_state =
+          (* Simulate $result = fn. *)
+          analyze_expression ~resolution ~taint:result_taint ~state ~expression:lambda_callee
         in
-        let state =
-          analyze_regular_targets
-            ~state
-            ~taint:result_taint
-            ~callee:lambda_callee
-            ~arguments:arguments_with_all_value
-            (Some callable_argument)
+
+        (* Simulate if branch. *)
+        let if_branch_state =
+          (* Simulate $result = fn( all, all). *)
+          let all_argument = Node.create ~location (Expression.Name (Name.Identifier "$all")) in
+          let arguments_with_all_value =
+            List.map non_lambda_arguments ~f:snd
+            |> List.map ~f:(fun argument -> { argument with Call.Argument.value = all_argument })
+          in
+          let state =
+            analyze_regular_targets
+              ~state
+              ~taint:result_taint
+              ~callee:lambda_callee
+              ~arguments:arguments_with_all_value
+              (Some callable_argument)
+          in
+
+          (* Simulate `$all = {q, x, y}`. *)
+          let all_taint =
+            BackwardState.Tree.join
+              taint
+              (get_taint (Some (AccessPath.create (Root.Variable "$all") [])) state)
+            |> BackwardState.Tree.transform BackwardTaint.simple_feature Add ~f:Features.lambda
+          in
+          let all_assignee =
+            Node.create
+              ~location
+              (Expression.Set
+                 (List.map non_lambda_arguments ~f:(fun (_, argument) ->
+                      argument.Call.Argument.value)))
+          in
+          analyze_expression ~resolution ~taint:all_taint ~state ~expression:all_assignee
         in
-        (* Simulate `$all = {q, x, y}`. *)
-        let all_taint =
-          BackwardState.Tree.join
-            taint
-            (get_taint (Some (AccessPath.create (Root.Variable "$all") [])) state)
-          |> BackwardState.Tree.transform BackwardTaint.simple_feature Add ~f:Features.lambda
-        in
-        let all_assignee =
-          Node.create
-            ~location
-            (Expression.Set
-               (List.map non_lambda_arguments ~f:(fun (_, argument) -> argument.Call.Argument.value)))
-        in
-        analyze_expression ~resolution ~taint:all_taint ~state ~expression:all_assignee
+        join if_branch_state else_branch_state
       in
       match { Call.callee; arguments } with
       | {

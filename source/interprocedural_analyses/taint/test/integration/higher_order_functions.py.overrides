@@ -1,2 +1,6 @@
 @generated
 Overrides
+higher_order_functions.Callable::__call__ (override) -> [higher_order_functions.Callable::__call__ (method)]
+higher_order_functions.Callable::__init__ (override) -> [higher_order_functions.Callable::__init__ (method)]
+object::__init__ (override) -> [higher_order_functions.Callable::__init__ (override) object::__init__ (method)]
+type::__call__ (override) -> [higher_order_functions.Callable::__call__ (override) type::__call__ (method)]
