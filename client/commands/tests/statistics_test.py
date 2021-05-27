@@ -123,7 +123,7 @@ class AnnotationCountCollectorTest(unittest.TestCase):
         source_module.visit(collector)
         self.assertEqual(collector.build_json(), expected)
 
-    def test_annotate_functions(self) -> None:
+    def test_count_annotations(self) -> None:
         self.assert_counts(
             """
             def foo(x) -> int:
@@ -391,7 +391,7 @@ class FixmeCountCollectorTest(unittest.TestCase):
         source_module.visit(collector)
         self.assertEqual(collector.build_json(), expected)
 
-    def test_annotate_functions(self) -> None:
+    def test_count_fixmes(self) -> None:
         self.assert_counts("# pyre-fixme[2]: Example Error Message", {"2": 1})
         self.assert_counts(
             "# pyre-fixme[3]: Example Error Message \n\n\n # pyre-fixme[34]: Example",
@@ -414,7 +414,7 @@ class IgnoreCountCollectorTest(unittest.TestCase):
         source_module.visit(collector)
         self.assertEqual(collector.build_json(), expected)
 
-    def test_annotate_functions(self) -> None:
+    def test_count_modes(self) -> None:
         self.assert_counts("# pyre-ignore[2]: Example Error Message", {"2": 1})
         self.assert_counts(
             "# pyre-ignore[3]: Example Error Message \n\n\n # pyre-ignore[34]: Example",
