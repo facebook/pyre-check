@@ -107,12 +107,14 @@ class Statistics(Command):
         analysis_directory: Optional[AnalysisDirectory] = None,
         filter_paths: List[str],
         log_results: bool,
+        aggregate: bool,
     ) -> None:
         super(Statistics, self).__init__(
             command_arguments, original_directory, configuration, analysis_directory
         )
         self._filter_paths: Set[str] = set(filter_paths)
         self._log_results: bool = log_results
+        self._aggregate: bool = aggregate
 
     def _collect_statistics(self, modules: Mapping[str, cst.Module]) -> Dict[str, Any]:
         modules_with_metadata: Mapping[str, cst.MetadataWrapper] = {
@@ -147,6 +149,8 @@ class Statistics(Command):
             if module is not None:
                 modules[path] = module
         data = self._collect_statistics(modules)
+        if self._aggregate:
+            data = self._aggregate_data(data)
         log.stdout.write(json.dumps(data, indent=4))
         if self._log_results:
             self._log_to_scuba(run_id, data)
@@ -190,3 +194,33 @@ class Statistics(Command):
 
     def _find_paths(self) -> List[Path]:
         return _find_paths(self._configuration.local_root, self._filter_paths)
+
+    def _aggregate_data(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        aggregate_annotations = {
+            "return_count": 0,
+            "annotated_return_count": 0,
+            "globals_count": 0,
+            "annotated_globals_count": 0,
+            "parameter_count": 0,
+            "annotated_parameter_count": 0,
+            "attribute_count": 0,
+            "annotated_attribute_count": 0,
+            "partially_annotated_function_count": 0,
+            "fully_annotated_function_count": 0,
+            "line_count": 0,
+        }
+        for annotation_data in data["annotations"].values():
+            for key in aggregate_annotations.keys():
+                aggregate_annotations[key] += annotation_data[key]
+
+        return {
+            "annotations": aggregate_annotations,
+            "fixmes": sum(len(fixmes) for fixmes in data["fixmes"].values()),
+            "ignores": sum(len(ignores) for ignores in data["ignores"].values()),
+            "strict": sum(
+                strictness["strict_count"] for strictness in data["strict"].values()
+            ),
+            "unsafe": sum(
+                strictness["unsafe_count"] for strictness in data["strict"].values()
+            ),
+        }
