@@ -2887,6 +2887,30 @@ let test_polynomial_create_from_list _ =
   ()
 
 
+let test_polynomial_to_type _ =
+  let x = Type.Variable.Unary.create "x" in
+  let y = Type.Variable.Unary.create "y" in
+  let aliases ?replace_unbound_parameters_with_any:_ = function
+    | "x" -> Some (Type.TypeAlias (Type.Variable x))
+    | "y" -> Some (Type.TypeAlias (Type.Variable y))
+    | _ -> None
+  in
+  let assert_to_type given expected =
+    let expected_type = Type.create ~aliases (parse_single_expression ~preprocess:true expected) in
+    let given = polynomial_create_from_variables_list given in
+    let result = Type.polynomial_to_type given in
+    assert_equal ~printer:Type.show ~cmp:Type.equal expected_type result
+  in
+  assert_to_type [] "typing_extensions.Literal[0]";
+  assert_to_type [2, []] "typing_extensions.Literal[2]";
+  assert_to_type [1, [x, 1]] "x";
+  assert_to_type
+    [2, [x, 1; y, 3]]
+    "pyre_extensions.Multiply[pyre_extensions.Multiply[typing_extensions.Literal[2], \
+     pyre_extensions.Multiply[x, y]], pyre_extensions.Multiply[y, y]]";
+  ()
+
+
 let test_add_polynomials _ =
   let assert_add given1 given2 expected =
     let given1 = polynomial_create_from_variables_list given1 in
@@ -3215,6 +3239,7 @@ let () =
          "map_callable_annotation" >:: test_map_callable_annotation;
          "type_parameters_for_bounded_tuple_union" >:: test_type_parameters_for_bounded_tuple_union;
          "polynomial_create_from_list" >:: test_polynomial_create_from_list;
+         "polynomial_to_type" >:: test_polynomial_to_type;
          "add_polynomials" >:: test_add_polynomials;
          "subtract_polynomials" >:: test_subtract_polynomials;
          "multiply_polynomial" >:: test_multiply_polynomial;
