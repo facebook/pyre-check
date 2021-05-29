@@ -62,7 +62,8 @@ class PysaServer:
         self.binary_location = binary_location
         self.server_identifier = server_identifier
 
-    async def update_errors(self) -> None:
+    async def update_errors(self, document_path) -> None:
+        await _publish_diagnostics(self.output_channel, document_path, [])
         pyre_connection = api_connection.PyreConnection(
             Path(self.pyre_arguments.global_root)
         )
@@ -120,6 +121,8 @@ class PysaServer:
                 f"Document URI is not a file: {parameters.text_document.uri}"
             )
 
+        await self.update_errors(document_path)
+
     async def process_close_request(
         self, parameters: lsp.DidCloseTextDocumentParameters
     ) -> None:
@@ -142,6 +145,7 @@ class PysaServer:
             raise json_rpc.InvalidRequestError(
                 f"Document URI is not a file: {parameters.text_document.uri}"
             )
+        await self.update_errors(document_path)
 
     async def run(self) -> int:
         while True:
