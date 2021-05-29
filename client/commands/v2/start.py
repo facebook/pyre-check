@@ -501,7 +501,7 @@ def get_server_identifier(configuration: configuration_module.Configuration) -> 
 
 
 def _write_argument_file(output_file: IO[str], arguments: Arguments) -> None:
-    # LOG.info(f"Writing server startup configurations into {output_file.name}...")
+    LOG.info(f"Writing server startup configurations into {output_file.name}...")
     serialized_arguments = arguments.serialize()
     LOG.debug(f"Arguments:\n{json.dumps(serialized_arguments, indent=2)}")
     output_file.write(json.dumps(serialized_arguments))
