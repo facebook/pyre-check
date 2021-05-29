@@ -21,7 +21,7 @@ def operate_on_threes(request: HttpRequest) -> HttpResponse:
 
     exec(f"result = 3 {operator} 3")
 
-    return result  # noqa: F82 1
+    return result  # noqa: F821
 
 
 def operate_on_fours(request: HttpRequest) -> HttpResponse:
