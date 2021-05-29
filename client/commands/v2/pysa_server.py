@@ -32,8 +32,6 @@ from .persistent import (
     InitializationSuccess,
     InitializationFailure,
 )
-from api import query, connection as api_connection
-from api.connection import PyreQueryError
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -61,18 +59,6 @@ class PysaServer:
         self.pyre_arguments = pyre_arguments
         self.binary_location = binary_location
         self.server_identifier = server_identifier
-
-    async def update_errors(self, document_path) -> None:
-        await _publish_diagnostics(self.output_channel, document_path, [])
-        pyre_connection = api_connection.PyreConnection(
-            Path(self.pyre_arguments.global_root)
-        )
-        try:
-            model_errors = query.get_invalid_taint_models(pyre_connection)
-            diagnostics = invalid_models_to_diagnostics(model_errors)
-            await self.show_model_errors_to_client(diagnostics)
-        except PyreQueryError as e:
-            await self.log_and_show_message_to_client(f"Error querying Pyre: {e}", lsp.MessageType.WARNING)
 
     async def show_message_to_client(
         self, message: str, level: lsp.MessageType = lsp.MessageType.INFO
@@ -121,8 +107,6 @@ class PysaServer:
                 f"Document URI is not a file: {parameters.text_document.uri}"
             )
 
-        await self.update_errors(document_path)
-
     async def process_close_request(
         self, parameters: lsp.DidCloseTextDocumentParameters
     ) -> None:
@@ -145,7 +129,6 @@ class PysaServer:
             raise json_rpc.InvalidRequestError(
                 f"Document URI is not a file: {parameters.text_document.uri}"
             )
-        await self.update_errors(document_path)
 
     async def run(self) -> int:
         while True:
@@ -233,7 +216,7 @@ async def run_persistent(
                 server_identifier=server_identifier,
                 pyre_arguments=pysa_arguments,
             )
-            return await server._run()
+            return await server.run()
         elif isinstance(initialize_result, InitializationFailure):
             exception = initialize_result.exception
             message = (
