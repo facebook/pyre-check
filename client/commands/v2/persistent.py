@@ -33,7 +33,6 @@ from . import (
     incremental,
     server_event,
 )
-from api import query
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -500,36 +499,6 @@ def type_errors_to_diagnostics(
     for type_error in type_errors:
         result.setdefault(type_error.path, []).append(
             type_error_to_diagnostic(type_error)
-        )
-    return result
-
-
-def invalid_model_to_diagnostic(
-    invalid_model: query.InvalidModel,
-) -> lsp.Diagnostic:
-    return lsp.Diagnostic(
-        range=lsp.Range(
-            start=lsp.Position(
-                line=invalid_model.line - 1, character=invalid_model.column
-            ),
-            end=lsp.Position(
-                line=invalid_model.stop_line - 1, character=invalid_model.stop_column
-            ),
-        ),
-        message=invalid_model.full_error_message,
-        severity=lsp.DiagnosticSeverity.ERROR,
-        code=None,
-        source="Pysa",
-    )
-
-
-def invalid_models_to_diagnostics(
-    invalid_models: Sequence[query.InvalidModel],
-) -> Dict[Path, List[lsp.Diagnostic]]:
-    result: Dict[Path, List[lsp.Diagnostic]] = {}
-    for model in invalid_models:
-        result.setdefault(Path(model.path), []).append(
-            invalid_model_to_diagnostic(model)
         )
     return result
 
