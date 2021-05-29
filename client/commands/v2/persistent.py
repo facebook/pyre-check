@@ -34,7 +34,6 @@ from . import (
     incremental,
     server_event,
 )
-from api import query
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
