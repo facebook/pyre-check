@@ -32,6 +32,7 @@ from .persistent import (
     InitializationFailure,
 )
 from api import query, connection as api_connection
+from api.connection import PyreQueryError
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -67,9 +68,12 @@ class PysaServer:
         pyre_connection = api_connection.PyreConnection(
             Path(self.pyre_arguments.global_root)
         )
-        model_errors = query.get_invalid_taint_models(pyre_connection)
-        diagnostics = invalid_models_to_diagnostics(model_errors)
-        await self.show_model_errors_to_client(diagnostics)
+        try:
+            model_errors = query.get_invalid_taint_models(pyre_connection)
+            diagnostics = invalid_models_to_diagnostics(model_errors)
+            await self.show_model_errors_to_client(diagnostics)
+        except PyreQueryError as e:
+            await self.log_and_show_message_to_client(f"Error querying Pyre: {e}", lsp.MessageType.WARNING)
 
     async def show_message_to_client(
         self, message: str, level: lsp.MessageType = lsp.MessageType.INFO
