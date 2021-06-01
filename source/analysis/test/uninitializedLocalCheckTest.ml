@@ -23,14 +23,30 @@ let assert_uninitialized_errors ~context =
 let test_simple context =
   let assert_uninitialized_errors = assert_uninitialized_errors ~context in
 
-  (* TODO (T69630394): Tests below document errors we do not report, but would like this check to. *)
-
-  (* line 2, in f: local variable 'y' referenced before assignment *)
-  assert_uninitialized_errors {|
+  assert_uninitialized_errors
+    {|
       def f():
         x = y
         y = 5
+    |}
+    ["Unbound name [10]: Name `y` is used but not defined in the current scope."];
+
+  assert_uninitialized_errors {|
+      def f(y):
+        x = y
+        y = 5
     |} [];
+
+  assert_uninitialized_errors
+    {|
+      def f(x):
+        if x > 5:
+          return y   # Error
+        y = 5
+        z = 5
+        return z   # OK
+    |}
+    ["Unbound name [10]: Name `y` is used but not defined in the current scope."];
 
   (* line 4, in f: local variable 'y' referenced before assignment *)
   assert_uninitialized_errors
@@ -40,7 +56,9 @@ let test_simple context =
           y = 2
         return y
     |}
-    [];
+    ["Unbound name [10]: Name `y` is used but not defined in the current scope."];
+
+  (* TODO (T69630394): Tests below document errors we do not report, but would like this check to. *)
 
   (* line 4, in increment: local variable 'counter' referenced before assignment *)
   assert_uninitialized_errors
@@ -92,7 +110,9 @@ let test_simple context =
                       harness_config = task.harness_config
                   foo(harness_config)
       |}
-    []
+    [];
+
+  ()
 
 
 let () = "uninitializedCheck" >::: ["simple" >:: test_simple] |> Test.run
