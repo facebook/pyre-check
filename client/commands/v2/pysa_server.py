@@ -25,11 +25,9 @@ from . import (
 )
 from .persistent import (
     LSPEvent,
-    ServerState,
     _read_lsp_request,
     try_initialize,
     _log_lsp_event,
-    _publish_diagnostics,
     InitializationExit,
     InitializationSuccess,
     InitializationFailure,
@@ -45,9 +43,6 @@ class PysaServer:
 
     # Immutable States
     client_capabilities: lsp.ClientCapabilities
-
-    # Mutable States
-    state: ServerState
 
     def __init__(
         self,
