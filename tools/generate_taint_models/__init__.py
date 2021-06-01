@@ -61,7 +61,10 @@ class GenerationArguments:
     mode: Final[Optional[List[str]]]
     verbose: bool
     output_directory: Final[Optional[str]]
+
+    # Pyre arguments.
     no_saved_state: bool = False
+    isolation_prefix: Optional[str] = None
 
 
 def _file_exists(path: str) -> str:
@@ -80,6 +83,9 @@ def _parse_arguments(
         "--no-saved-state", action="store_true", help="Disable pyre saved state"
     )
     parser.add_argument(
+        "--isolation-prefix", type=str, help="Buck isolation prefix when running pyre"
+    )
+    parser.add_argument(
         "--output-directory", type=_file_exists, help="Directory to write models to"
     )
     arguments: argparse.Namespace = parser.parse_args()
@@ -88,6 +94,7 @@ def _parse_arguments(
         verbose=arguments.verbose,
         output_directory=arguments.output_directory,
         no_saved_state=arguments.no_saved_state,
+        isolation_prefix=arguments.isolation_prefix,
     )
 
 
@@ -138,6 +145,9 @@ def run_from_parsed_arguments(
 
     if pyre_connection is not None and arguments.no_saved_state:
         pyre_connection.add_arguments("--no-saved-state")
+    isolation_prefix = arguments.isolation_prefix
+    if pyre_connection is not None and isolation_prefix is not None:
+        pyre_connection.add_arguments("--isolation-prefix", isolation_prefix)
 
     generated_models: Dict[str, Set[Model]] = {}
     for mode in modes:
