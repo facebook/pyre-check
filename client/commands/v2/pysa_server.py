@@ -95,7 +95,7 @@ class PysaServer:
             )
         return result
 
-    async def update_errors(self, document_path) -> None:
+    async def update_errors(self, document_path: Path) -> None:
         await _publish_diagnostics(self.output_channel, document_path, [])
         pyre_connection = api_connection.PyreConnection(
             Path(self.pyre_arguments.global_root)
@@ -134,6 +134,14 @@ class PysaServer:
         else:
             LOG.debug(message)
         await self.show_message_to_client(message, level)
+
+    async def show_model_errors_to_client(
+        self, diagnostics: Dict[Path, List[lsp.Diagnostic]]
+    ) -> None:
+        for path, diagnostic in diagnostics.items():
+            await _publish_diagnostics(self.output_channel, path, [])
+            if diagnostic is not None:
+                await _publish_diagnostics(self.output_channel, path, diagnostic)
 
     async def wait_for_exit(self) -> int:
         while True:
