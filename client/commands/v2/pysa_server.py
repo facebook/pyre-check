@@ -6,7 +6,7 @@
 
 """
 This is an implementation of Pysa's language server. It is a refactored
-version of persistent.py, preparing for upcoming Pysa specific changes.
+version of persistent.py.
 """
 
 import asyncio
@@ -90,12 +90,6 @@ class PysaServer:
         else:
             LOG.debug(message)
         await self.show_message_to_client(message, level)
-
-    async def show_model_errors_to_client(self, diagnostics) -> None:
-        for path, diagnostic in diagnostics.items():
-            await _publish_diagnostics(self.output_channel, path, [])
-            if diagnostic is not None:
-                await _publish_diagnostics(self.output_channel, path, diagnostic)
 
     async def wait_for_exit(self) -> int:
         while True:
