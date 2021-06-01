@@ -5,7 +5,7 @@
 
 
 """
-This is a tempororary implementation of Pysa's language server. It is a refactored
+This is an implementation of Pysa's language server. It is a refactored
 version of persistent.py, preparing for upcoming Pysa specific changes.
 """
 
