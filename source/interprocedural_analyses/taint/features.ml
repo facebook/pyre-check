@@ -45,7 +45,7 @@ module TitoPosition = struct
 
   type t = Location.t [@@deriving show, compare]
 
-  let max_count () = Configuration.maximum_tito_positions
+  let max_count () = TaintConfiguration.maximum_tito_positions
 end
 
 module TitoPositionSet = Abstract.ToppedSetDomain.Make (TitoPosition)
@@ -96,6 +96,10 @@ module Breadcrumb = struct
     (* Via inferred from ViaTypeOf. *)
     | Tito
     | Type of string (* Type constraint *)
+    | Broadening (* Taint tree was collapsed for various reasons *)
+    | WidenBroadening (* Taint tree was collapsed during widening *)
+    | TitoBroadening (* Taint tree was collapsed when applying tito *)
+    | IssueBroadening (* Taint tree was collapsed when matching sources and sinks *)
   [@@deriving show { with_path = false }, compare]
 
   let to_json ~on_all_paths breadcrumb =
@@ -114,6 +118,10 @@ module Breadcrumb = struct
     | ViaType { tag; value } -> via_value_or_type_annotation ~via_kind:"type" ~tag ~value
     | Tito -> `Assoc [prefix ^ "via", `String "tito"]
     | Type name -> `Assoc [prefix ^ "type", `String name]
+    | Broadening -> `Assoc [prefix ^ "via", `String "broadening"]
+    | WidenBroadening -> `Assoc [prefix ^ "via", `String "widen-broadening"]
+    | TitoBroadening -> `Assoc [prefix ^ "via", `String "tito-broadening"]
+    | IssueBroadening -> `Assoc [prefix ^ "via", `String "issue-broadening"]
 
 
   let simple_via ~allowed name =
@@ -148,9 +156,11 @@ module Simple = struct
 
   let via_value_of_breadcrumb ?tag ~argument =
     let feature =
-      argument
-      >>= Interprocedural.CallResolution.extract_constant_name
-      |> Option.value ~default:"<unknown>"
+      match argument with
+      | None -> "<missing>"
+      | Some argument ->
+          Interprocedural.CallResolution.extract_constant_name argument
+          |> Option.value ~default:"<unknown>"
     in
     Breadcrumb (Breadcrumb.ViaValue { value = feature; tag })
 
@@ -185,11 +195,12 @@ module Complex = struct
 
   let widen set =
     let truncate = function
-      | ReturnAccessPath p when List.length p > Configuration.maximum_return_access_path_depth ->
-          ReturnAccessPath (List.take p Configuration.maximum_return_access_path_depth)
+      | ReturnAccessPath p when List.length p > TaintConfiguration.maximum_return_access_path_depth
+        ->
+          ReturnAccessPath (List.take p TaintConfiguration.maximum_return_access_path_depth)
       | x -> x
     in
-    if List.length set > Configuration.maximum_return_access_path_width then
+    if List.length set > TaintConfiguration.maximum_return_access_path_width then
       [ReturnAccessPath []]
     else
       List.map ~f:truncate set
@@ -204,6 +215,30 @@ let lambda = Simple.Breadcrumb Breadcrumb.Lambda
 let tito = Simple.Breadcrumb Breadcrumb.Tito
 
 let format_string = Simple.Breadcrumb Breadcrumb.FormatString
+
+let widen_broadening =
+  SimpleSet.create
+    [
+      Part (SimpleSet.Element, Simple.Breadcrumb Breadcrumb.Broadening);
+      Part (SimpleSet.Element, Simple.Breadcrumb Breadcrumb.WidenBroadening);
+    ]
+
+
+let tito_broadening =
+  SimpleSet.create
+    [
+      Part (SimpleSet.Element, Simple.Breadcrumb Breadcrumb.Broadening);
+      Part (SimpleSet.Element, Simple.Breadcrumb Breadcrumb.TitoBroadening);
+    ]
+
+
+let issue_broadening =
+  SimpleSet.create
+    [
+      Part (SimpleSet.Element, Simple.Breadcrumb Breadcrumb.Broadening);
+      Part (SimpleSet.Element, Simple.Breadcrumb Breadcrumb.IssueBroadening);
+    ]
+
 
 let type_bool =
   SimpleSet.create
@@ -283,7 +318,7 @@ let is_numeric name = Str.string_match number_regexp name 0
 
 let to_first_name label =
   match label with
-  | Abstract.TreeDomain.Label.Field name when is_numeric name -> Some "<numeric>"
-  | Field name -> Some name
-  | DictionaryKeys -> None
-  | Any -> Some "<unknown>"
+  | Abstract.TreeDomain.Label.Index name when is_numeric name -> Some "<numeric>"
+  | Index name -> Some name
+  | Field _ -> None
+  | AnyIndex -> Some "<unknown>"

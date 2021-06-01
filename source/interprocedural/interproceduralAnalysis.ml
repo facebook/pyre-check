@@ -9,9 +9,80 @@ open Core
 open Ast
 open Pyre
 open Statement
-module Json = Yojson.Safe
 module Kind = AnalysisKind
 module Result = InterproceduralResult
+
+let initialize_configuration kinds ~static_analysis_configuration =
+  let initialize_kind kind =
+    let (Result.Analysis { analysis; _ }) = Result.get_abstract_analysis kind in
+    let module Analysis = (val analysis) in
+    Analysis.initialize_configuration ~static_analysis_configuration
+  in
+  List.iter kinds ~f:initialize_kind
+
+
+type initialize_result = {
+  initial_models: InterproceduralResult.model_t Callable.Map.t;
+  skip_overrides: Ast.Reference.Set.t;
+}
+
+let initialize_models kinds ~scheduler ~static_analysis_configuration ~environment ~functions ~stubs
+  =
+  let initialize_each
+      { initial_models = models; skip_overrides }
+      (Result.Analysis { kind; analysis })
+    =
+    let module Analysis = (val analysis) in
+    let { Result.initial_models = new_models; skip_overrides = new_skip_overrides } =
+      Analysis.initialize_models
+        ~static_analysis_configuration
+        ~scheduler
+        ~environment
+        ~functions
+        ~stubs
+    in
+    let add_analysis_model existing model =
+      let open Result in
+      let package = Pkg { kind = ModelPart kind; value = model } in
+      { existing with models = Kind.Map.add (Kind.abstract kind) package existing.models }
+    in
+    let merge ~key:_ = function
+      | `Both (existing, new_model) -> Some (add_analysis_model existing new_model)
+      | `Left existing -> Some existing
+      | `Right new_model -> Some (add_analysis_model Result.empty_model new_model)
+    in
+    {
+      initial_models = Callable.Map.merge models new_models ~f:merge;
+      skip_overrides = Reference.Set.union skip_overrides new_skip_overrides;
+    }
+  in
+  let accumulate model kind = initialize_each model (Result.get_abstract_analysis kind) in
+  List.fold
+    kinds
+    ~init:{ initial_models = Callable.Map.empty; skip_overrides = Reference.Set.empty }
+    ~f:accumulate
+
+
+let record_initial_models ~functions ~stubs models =
+  let record_models models =
+    let add_model_to_memory ~key:call_target ~data:model =
+      Fixpoint.add_predefined Fixpoint.Epoch.initial call_target model
+    in
+    Callable.Map.iteri models ~f:add_model_to_memory
+  in
+  (* Augment models with initial inferred and obscure models *)
+  let add_missing_initial_models models =
+    List.filter functions ~f:(fun callable -> not (Callable.Map.mem models callable))
+    |> List.fold ~init:models ~f:(fun models callable ->
+           Callable.Map.set models ~key:callable ~data:Result.empty_model)
+  in
+  let add_missing_obscure_models models =
+    List.filter stubs ~f:(fun callable -> not (Callable.Map.mem models callable))
+    |> List.fold ~init:models ~f:(fun models callable ->
+           Callable.Map.set models ~key:callable ~data:Result.obscure_model)
+  in
+  models |> add_missing_initial_models |> add_missing_obscure_models |> record_models
+
 
 let analysis_failed step ~exn callable ~message =
   let callable = (callable :> Callable.t) in
@@ -216,42 +287,6 @@ let widen_if_necessary step callable ~old_model ~new_model result =
     Fixpoint.{ is_partial = true; model; result }
 
 
-type initialize_result = {
-  initial_models: InterproceduralResult.model_t Callable.Map.t;
-  skip_overrides: Ast.Reference.Set.t;
-}
-
-let initialize kinds ~configuration ~scheduler ~environment ~functions ~stubs =
-  let initialize_each
-      { initial_models = models; skip_overrides }
-      (Result.Analysis { kind; analysis })
-    =
-    let module Analysis = (val analysis) in
-    let { Result.initial_models = new_models; skip_overrides = new_skip_overrides } =
-      Analysis.init ~configuration ~scheduler ~environment ~functions ~stubs
-    in
-    let add_analysis_model existing model =
-      let open Result in
-      let package = Pkg { kind = ModelPart kind; value = model } in
-      { existing with models = Kind.Map.add (Kind.abstract kind) package existing.models }
-    in
-    let merge ~key:_ = function
-      | `Both (existing, new_model) -> Some (add_analysis_model existing new_model)
-      | `Left existing -> Some existing
-      | `Right new_model -> Some (add_analysis_model Result.empty_model new_model)
-    in
-    {
-      initial_models = Callable.Map.merge models new_models ~f:merge;
-      skip_overrides = Reference.Set.union skip_overrides new_skip_overrides;
-    }
-  in
-  let accumulate model kind = initialize_each model (Result.get_abstract_analysis kind) in
-  List.fold
-    kinds
-    ~init:{ initial_models = Callable.Map.empty; skip_overrides = Reference.Set.empty }
-    ~f:accumulate
-
-
 let analyze_define
     step
     analyses
@@ -421,60 +456,6 @@ let analyze_callable analyses step callable environment =
   | #Callable.override_target as callable -> analyze_overrides step callable
   | #Callable.object_target as path ->
       Format.asprintf "Found object %a in fixpoint analysis" Callable.pp path |> failwith
-
-
-let get_errors results =
-  let open Result in
-  let get_diagnostics (Pkg { kind = ResultPart kind; value }) =
-    let module Analysis = (val get_analysis kind) in
-    Analysis.get_errors value
-  in
-  Kind.Map.bindings results
-  |> List.map ~f:snd
-  |> List.map ~f:get_diagnostics
-  |> List.concat_no_order
-
-
-let externalize_analysis ~filename_lookup kind callable models results =
-  let open Result in
-  let merge kind_candidate model_opt result_opt =
-    if Poly.equal kind_candidate kind then
-      match model_opt, result_opt with
-      | Some model, _ -> Some (model, result_opt)
-      | None, Some (Pkg { kind = ResultPart kind; _ }) ->
-          let module Analysis = (val Result.get_analysis kind) in
-          let model = Pkg { kind = ModelPart kind; value = Analysis.empty_model } in
-          Some (model, result_opt)
-      | _ -> None
-    else
-      None
-  in
-  let merged = Kind.Map.merge merge models results in
-  let get_summaries (_key, (Pkg { kind = ModelPart kind1; value = model }, result_option)) =
-    match result_option with
-    | None ->
-        let module Analysis = (val Result.get_analysis kind1) in
-        Analysis.externalize ~filename_lookup callable None model
-    | Some (Pkg { kind = ResultPart kind2; value = result }) -> (
-        match Result.Kind.are_equal kind1 kind2 with
-        | Kind.Equal ->
-            let module Analysis = (val Result.get_analysis kind1) in
-            Analysis.externalize ~filename_lookup callable (Some result) model
-        | Kind.Distinct -> failwith "kind mismatch" )
-  in
-  Kind.Map.bindings merged |> List.concat_map ~f:get_summaries
-
-
-let externalize ~filename_lookup kind callable =
-  match Fixpoint.get_model callable with
-  | Some model ->
-      let results = Fixpoint.get_result callable in
-      externalize_analysis ~filename_lookup kind callable model.models results
-  | None -> []
-
-
-let emit_externalization ~filename_lookup kind emitter callable =
-  externalize ~filename_lookup kind callable |> List.iter ~f:emitter
 
 
 type expensive_callable = {
@@ -672,8 +653,11 @@ let compute_fixpoint
             ~section:`Performance
             "Expensive callables for iteration %d: %s"
             iteration
-            ( List.map iteration_expensive_callables ~f:(fun { time_to_analyze_in_ms; callable } ->
-                  Format.sprintf "`%s`: %d ms" (Callable.show callable) time_to_analyze_in_ms)
+            ( iteration_expensive_callables
+            |> List.sort ~compare:(fun left right ->
+                   Int.compare right.time_to_analyze_in_ms left.time_to_analyze_in_ms)
+            |> List.map ~f:(fun { time_to_analyze_in_ms; callable } ->
+                   Format.sprintf "`%s`: %d ms" (Callable.show callable) time_to_analyze_in_ms)
             |> String.concat ~sep:", " )
       in
       let callables_to_analyze =
@@ -733,126 +717,28 @@ let compute_fixpoint
       raise exn
 
 
-let extract_errors scheduler all_callables =
-  let extract_errors callables =
-    List.fold
-      ~f:(fun errors callable -> (Fixpoint.get_result callable |> get_errors) :: errors)
-      ~init:[]
-      callables
-    |> List.concat_no_order
-  in
-  Scheduler.map_reduce
-    scheduler
-    ~policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
-    ~initial:[]
-    ~map:(fun _ callables -> extract_errors callables)
-    ~reduce:List.cons
-    ~inputs:all_callables
-    ()
-  |> List.concat_no_order
-
-
-let save_results
-    ~configuration:{ Configuration.StaticAnalysis.result_json_path; configuration; _ }
+let report_results
+    ~scheduler
+    ~static_analysis_configuration
+    ~environment
     ~filename_lookup
     ~analyses
+    ~callables
     ~skipped_overrides
-    all_callables
+    ~fixpoint_timer
+    ~fixpoint_iterations
   =
-  let emit_json_array_elements out_buffer =
-    let seen_element = ref false in
-    fun json ->
-      if !seen_element then (
-        Bi_outbuf.add_string out_buffer "\n";
-        Json.to_outbuf out_buffer json )
-      else (
-        seen_element := true;
-        Json.to_outbuf out_buffer json )
+  let report_analysis (Result.Analysis { analysis; _ }) =
+    let module Analysis = (val analysis) in
+    Analysis.report
+      ~scheduler
+      ~static_analysis_configuration
+      ~environment
+      ~filename_lookup
+      ~callables
+      ~skipped_overrides
+      ~fixpoint_timer
+      ~fixpoint_iterations
   in
-  match result_json_path with
-  | None -> ()
-  | Some directory ->
-      let timer = Timer.start () in
-      let models_path analysis_name = Format.sprintf "%s-output.json" analysis_name in
-      let root = configuration.local_root |> Path.absolute in
-      let save_models (Result.Analysis { Result.analysis; kind }) =
-        let kind = Result.Kind.abstract kind in
-        let module Analysis = (val analysis) in
-        let filename = models_path Analysis.name in
-        let output_path = Path.append directory ~element:filename in
-        let out_channel = open_out (Path.absolute output_path) in
-        let out_buffer = Bi_outbuf.create_channel_writer out_channel in
-        let array_emitter = emit_json_array_elements out_buffer in
-        let header_with_version =
-          `Assoc ["file_version", `Int 2; "config", `Assoc ["repo", `String root]]
-        in
-        Json.to_outbuf out_buffer header_with_version;
-        Bi_outbuf.add_string out_buffer "\n";
-        Callable.Set.iter (emit_externalization ~filename_lookup kind array_emitter) all_callables;
-        Bi_outbuf.flush_output_writer out_buffer;
-        close_out out_channel
-      in
-      let analyses = List.map ~f:Result.get_abstract_analysis analyses in
-      let save_metadata (Result.Analysis { Result.analysis; _ }) =
-        let module Analysis = (val analysis) in
-        let filename = Format.sprintf "%s-metadata.json" Analysis.name in
-        let output_path = Path.append directory ~element:filename in
-        let out_channel = open_out (Path.absolute output_path) in
-        let out_buffer = Bi_outbuf.create_channel_writer out_channel in
-        let filename_spec = models_path Analysis.name in
-        let statistics =
-          let global_statistics =
-            `Assoc
-              [
-                ( "skipped_overrides",
-                  `List
-                    (List.map skipped_overrides ~f:(fun override ->
-                         `String (Reference.show override))) );
-              ]
-          in
-          Json.Util.combine global_statistics (Analysis.statistics ())
-        in
-        let toplevel_metadata =
-          `Assoc
-            [
-              "filename_spec", `String filename_spec;
-              "root", `String root;
-              "tool", `String "pysa";
-              "version", `String (Version.version ());
-              "stats", statistics;
-            ]
-        in
-        let analysis_metadata = Analysis.metadata () in
-        Json.Util.combine toplevel_metadata analysis_metadata |> Json.to_outbuf out_buffer;
-        Bi_outbuf.flush_output_writer out_buffer;
-        close_out out_channel
-      in
-      List.iter analyses ~f:save_models;
-      List.iter analyses ~f:save_metadata;
-      Log.info "Analysis results were written to `%s`." (Path.absolute directory);
-      Statistics.performance
-        ~name:"Wrote analysis results"
-        ~phase_name:"Writing analysis results"
-        ~timer
-        ()
-
-
-let record_initial_models ~functions ~stubs models =
-  let record_models models =
-    let add_model_to_memory ~key:call_target ~data:model =
-      Fixpoint.add_predefined Fixpoint.Epoch.initial call_target model
-    in
-    Callable.Map.iteri models ~f:add_model_to_memory
-  in
-  (* Augment models with initial inferred and obscure models *)
-  let add_missing_initial_models models =
-    List.filter functions ~f:(fun callable -> not (Callable.Map.mem models callable))
-    |> List.fold ~init:models ~f:(fun models callable ->
-           Callable.Map.set models ~key:callable ~data:Result.empty_model)
-  in
-  let add_missing_obscure_models models =
-    List.filter stubs ~f:(fun callable -> not (Callable.Map.mem models callable))
-    |> List.fold ~init:models ~f:(fun models callable ->
-           Callable.Map.set models ~key:callable ~data:Result.obscure_model)
-  in
-  models |> add_missing_initial_models |> add_missing_obscure_models |> record_models
+  let analyses = List.map ~f:Result.get_abstract_analysis analyses in
+  analyses |> List.concat_map ~f:report_analysis

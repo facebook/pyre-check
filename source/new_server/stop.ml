@@ -17,7 +17,7 @@ let stop_waiting_server () =
   wait_forever
 
 
-let log_stopped_server ~reason ~state:{ ServerState.start_time; _ } () =
+let log_stopped_server ~reason ~start_time () =
   let version =
     (* HACK: Use `Version.version ()` directly when all servers are migrated. *)
     Format.sprintf "newserver-%s" (Version.version ())
@@ -30,6 +30,6 @@ let log_stopped_server ~reason ~state:{ ServerState.start_time; _ } () =
     ()
 
 
-let log_and_stop_waiting_server ~reason ~state () =
-  log_stopped_server ~reason ~state ();
+let log_and_stop_waiting_server ~reason ~state:{ ServerState.start_time; _ } () =
+  log_stopped_server ~reason ~start_time ();
   stop_waiting_server ()

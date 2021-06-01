@@ -26,5 +26,31 @@ jobs:
           python -m pip install pyre-check-nightly==$VERSION
 
       - name: Run Pyre
+        continue-on-error: true
         run: |
-          pyre check
+          pyre --output=json check > errors.json
+
+      - name: Expose Pyre Results
+        uses: actions/upload-artifact@v2
+        with:
+          name: Pyre Results
+          path: errors.json
+
+      - name: Convert to SARIF
+        run: |
+          cat errors.json | ./scripts/convert_results_to_sarif.py > sarif.json
+
+      - name: Expose SARIF Results
+        uses: actions/upload-artifact@v2
+        with:
+          name: SARIF Results
+          path: sarif.json
+
+      - name: Upload SARIF Results
+        uses: github/codeql-action/upload-sarif@v1
+        with:
+          sarif_file: sarif.json
+
+      - name: Fail Command On Errors
+        run: |
+          if [ "$(cat errors.json)" != "[]" ]; then exit 1; fi

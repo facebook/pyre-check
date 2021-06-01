@@ -13,6 +13,12 @@ val default_python_minor_version : int
 
 val default_python_micro_version : int
 
+val default_shared_memory_heap_size : int
+
+val default_shared_memory_dependency_table_power : int
+
+val default_shared_memory_hash_table_power : int
+
 module Features : sig
   type t = {
     click_to_fix: bool;
@@ -44,6 +50,13 @@ module Analysis : sig
     | FineGrained
   [@@deriving show]
 
+  type shared_memory = {
+    heap_size: int;
+    dependency_table_power: int;
+    hash_table_power: int;
+  }
+  [@@deriving show]
+
   type t = {
     infer: bool;
     configuration_file_hash: string option;
@@ -73,6 +86,7 @@ module Analysis : sig
     python_major_version: int;
     python_minor_version: int;
     python_micro_version: int;
+    shared_memory: shared_memory;
   }
   [@@deriving show, eq]
 
@@ -104,6 +118,9 @@ module Analysis : sig
     ?python_major_version:int ->
     ?python_minor_version:int ->
     ?python_micro_version:int ->
+    ?shared_memory_heap_size:int ->
+    ?shared_memory_dependency_table_power:int ->
+    ?shared_memory_hash_table_power:int ->
     source_path:SearchPath.t list ->
     unit ->
     t
@@ -173,7 +190,8 @@ module StaticAnalysis : sig
     find_missing_flows: string option;
     dump_model_query_results: bool;
     use_cache: bool;
+    maximum_trace_length: int option;
   }
 
-  val to_json : t -> Yojson.Safe.json
+  val dump_model_query_results_path : t -> Path.t option
 end

@@ -1356,7 +1356,7 @@ let test_attribute_type_variable_resolution context =
       def foo(self) -> None:
         reveal_type(self.property)
   |}
-    ["Revealed type [-1]: Revealed type for `self.property` is `B`."];
+    ["Revealed type [-1]: Revealed type for `self.property` is `B` (final)."];
   assert_type_errors
     {|
     import typing
@@ -1369,7 +1369,7 @@ let test_attribute_type_variable_resolution context =
     def foo(a : A) -> None:
       reveal_type(a.property)
   |}
-    ["Revealed type [-1]: Revealed type for `a.property` is `int`."];
+    ["Revealed type [-1]: Revealed type for `a.property` is `int` (final)."];
   assert_type_errors
     {|
     import typing
@@ -1381,7 +1381,7 @@ let test_attribute_type_variable_resolution context =
     def foo(a : A) -> None:
       reveal_type(a.property)
   |}
-    ["Revealed type [-1]: Revealed type for `a.property` is `str`."];
+    ["Revealed type [-1]: Revealed type for `a.property` is `str` (final)."];
   assert_type_errors
     {|
     import typing
@@ -1395,7 +1395,9 @@ let test_attribute_type_variable_resolution context =
     def foo(a : A) -> None:
       reveal_type(a.property)
   |}
-    ["Revealed type [-1]: Revealed type for `a.property` is `typing.Callable[[int], bool]`."];
+    [
+      "Revealed type [-1]: Revealed type for `a.property` is `typing.Callable[[int], bool]` (final).";
+    ];
   assert_type_errors
     {|
       import typing
@@ -1457,7 +1459,7 @@ let test_attribute_type_variable_resolution context =
     class Foo(metaclass=FooMeta): ...
     reveal_type(Foo.__members__)
   |}
-    ["Revealed type [-1]: Revealed type for `test.Foo.__members__` is `Foo`."];
+    ["Revealed type [-1]: Revealed type for `test.Foo.__members__` is `Foo` (final)."];
   assert_type_errors
     {|
     import typing

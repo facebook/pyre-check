@@ -60,6 +60,48 @@
 {
   "kind": "model",
   "data": {
+    "callable": "Obj{dataclass_taint.DataClassWithOtherSource.tainted}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{dataclass_taint.DataClassWithSource.tainted}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{dataclass_taint.WeirdDataClass.bad_sink}",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal($global)",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "Ovr{dataclass_taint.DataClassWIthInit::__init__}",
     "sources": [],
     "sinks": [
@@ -164,7 +206,7 @@
             "leaves": [
               {
                 "kind": "Test",
-                "name": "dataclass_taint.WeirdDataClass.bad_sink"
+                "name": "Obj{dataclass_taint.WeirdDataClass.bad_sink}"
               }
             ],
             "features": [ { "always-type": "scalar" } ]
@@ -273,7 +315,7 @@
             "leaves": [
               {
                 "kind": "Test",
-                "name": "dataclass_taint.WeirdDataClass.bad_sink"
+                "name": "Obj{dataclass_taint.WeirdDataClass.bad_sink}"
               }
             ],
             "features": [ { "always-type": "scalar" } ]
@@ -353,6 +395,34 @@
 {
   "kind": "model",
   "data": {
+    "callable": "dataclass_taint.DataClass.__init__",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(benign)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "[benign]" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(bad)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "[bad]" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "dataclass_taint.DataClassWIthInit.__init__",
     "sources": [],
     "sinks": [
@@ -410,6 +480,62 @@
 {
   "kind": "model",
   "data": {
+    "callable": "dataclass_taint.DataClassWithOtherSource.__init__",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(tainted)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "[tainted]" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(not_tainted)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "[not_tainted]" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "dataclass_taint.DataClassWithSource.__init__",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(tainted)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "[tainted]" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(not_tainted)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "[not_tainted]" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "dataclass_taint.WeirdDataClass.__init__",
     "sources": [
       {
@@ -457,7 +583,7 @@
             "leaves": [
               {
                 "kind": "Test",
-                "name": "dataclass_taint.WeirdDataClass.bad_sink"
+                "name": "Obj{dataclass_taint.WeirdDataClass.bad_sink}"
               }
             ],
             "features": [ { "always-type": "scalar" } ]
@@ -570,6 +696,8 @@
             "tito": [ { "line": 18, "start": 28, "end": 43 } ],
             "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [
+              { "always-via": "issue-broadening" },
+              { "always-via": "broadening" },
               { "always-via": "tito" },
               { "always-via": "special_source" }
             ]
@@ -593,6 +721,8 @@
       }
     ],
     "features": [
+      { "always-via": "issue-broadening" },
+      { "always-via": "broadening" },
       { "always-via": "tito" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
@@ -693,7 +823,8 @@
             "leaves": [
               {
                 "kind": "Test",
-                "name": "dataclass_taint.DataClassWithOtherSource.tainted"
+                "name":
+                  "Obj{dataclass_taint.DataClassWithOtherSource.tainted}"
               }
             ]
           }

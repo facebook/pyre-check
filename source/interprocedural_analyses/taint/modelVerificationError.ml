@@ -34,7 +34,21 @@ module T = struct
         actual_name: Reference.t;
       }
     | InvalidModelQueryClauses of Expression.Call.Argument.t list
+    | InvalidModelQueryWhereClause of {
+        expression: Expression.t;
+        find_clause_kind: string;
+      }
+    | InvalidModelQueryModelClause of {
+        expression: Expression.t;
+        find_clause_kind: string;
+      }
     | InvalidParameterExclude of Expression.t
+    | InvalidExtendsIsTransitive of Expression.t
+    | InvalidModelQueryClauseArguments of {
+        callee: Expression.t;
+        arguments: Expression.Call.Argument.t list;
+      }
+    | InvalidNameClause of Expression.t
     | InvalidTaintAnnotation of {
         taint_annotation: Expression.t;
         reason: string;
@@ -44,11 +58,20 @@ module T = struct
         attribute_name: string;
       }
     | ModelingClassAsDefine of string
+    | ModelingModuleAsDefine of string
+    | ModelingAttributeAsDefine of string
+    | ModelingClassAsAttribute of string
+    | ModelingModuleAsAttribute of string
+    | ModelingCallableAsAttribute of string
     | NotInEnvironment of string
     | UnexpectedDecorators of {
         name: Reference.t;
         unexpected_decorators: Statement.Decorator.t list;
       }
+    | InvalidIdentifier of Expression.t
+    | UnexpectedStatement of Statement.t
+    | ClassBodyNotEllipsis of string
+    | DefineBodyNotEllipsis of string
     (* TODO(T81363867): Remove this variant. *)
     | UnclassifiedError of {
         model_name: string;
@@ -103,10 +126,31 @@ let description error =
       Format.asprintf
         "The model query arguments at `%s` are invalid: expected a find, where and model clause."
         (List.map clause_list ~f:Expression.Call.Argument.show |> String.concat ~sep:", ")
+  | InvalidModelQueryWhereClause { expression; find_clause_kind } ->
+      Format.asprintf
+        "`%s` is not a valid constraint for model queries with find clause of kind `%s`."
+        (Expression.show expression)
+        find_clause_kind
+  | InvalidModelQueryModelClause { expression; find_clause_kind } ->
+      Format.asprintf
+        "`%s` is not a valid model for model queries with find clause of kind `%s`."
+        (Expression.show expression)
+        find_clause_kind
+  | InvalidNameClause expression ->
+      Format.asprintf "`%s` is not a valid name clause." (Expression.show expression)
   | InvalidParameterExclude expression ->
       Format.asprintf
         "The AllParameters exclude must be either a string or a list of strings, got: `%s`."
         (Expression.show expression)
+  | InvalidExtendsIsTransitive expression ->
+      Format.asprintf
+        "The Extends is_transitive must be either True or False, got: `%s`."
+        (Expression.show expression)
+  | InvalidModelQueryClauseArguments { callee; arguments } ->
+      Format.asprintf
+        "Unsupported arguments for callee `%s`: `%s`."
+        (Expression.show callee)
+        (List.map arguments ~f:Expression.Call.Argument.show |> String.concat ~sep:", ")
   | InvalidTaintAnnotation { taint_annotation; reason } ->
       Format.asprintf
         "`%s` is an invalid taint annotation: %s"
@@ -129,6 +173,15 @@ let description error =
         name
         (String.concat decorators ~sep:", ")
         property_decorator_message
+  | InvalidIdentifier expression ->
+      Format.sprintf
+        "Invalid identifier: `%s`. Expected a fully-qualified name."
+        (Expression.show expression)
+  | UnexpectedStatement _ -> "Unexpected statement"
+  | ClassBodyNotEllipsis class_name ->
+      Format.sprintf "Class model for `%s` must have a body of `...`." class_name
+  | DefineBodyNotEllipsis model_name ->
+      Format.sprintf "Callable model for `%s` must have a body of `...`." model_name
   | UnclassifiedError { model_name; message } ->
       Format.sprintf "Invalid model for `%s`: %s" model_name message
   | MissingAttribute { class_name; attribute_name } ->
@@ -138,6 +191,26 @@ let description error =
         "The class `%s` is not a valid define - did you mean to model `%s.__init__()`?"
         class_name
         class_name
+  | ModelingModuleAsDefine module_name ->
+      Format.sprintf "The module `%s` is not a valid define." module_name
+  | ModelingAttributeAsDefine attribute_name ->
+      Format.sprintf
+        "The attribute `%s` is not a valid define - did you mean to use `%s: ...`?"
+        attribute_name
+        attribute_name
+  | ModelingClassAsAttribute class_name ->
+      Format.sprintf
+        "The class `%s` is not a valid attribute - did you mean to model `%s.__init__()`?"
+        class_name
+        class_name
+  | ModelingModuleAsAttribute module_name ->
+      Format.sprintf "The module `%s` is not a valid attribute." module_name
+  | ModelingCallableAsAttribute callable_name ->
+      Format.sprintf
+        "The function, method or property `%s` is not a valid attribute - did you mean to use `def \
+         %s(): ...`?"
+        callable_name
+        callable_name
   | NotInEnvironment name -> Format.sprintf "`%s` is not part of the environment!" name
 
 
@@ -154,6 +227,20 @@ let code { kind; _ } =
   | InvalidParameterExclude _ -> 8
   | InvalidTaintAnnotation _ -> 9
   | ModelingClassAsDefine _ -> 10
+  | InvalidModelQueryWhereClause _ -> 11
+  | InvalidModelQueryModelClause _ -> 12
+  | InvalidExtendsIsTransitive _ -> 13
+  | InvalidModelQueryClauseArguments _ -> 14
+  | InvalidIdentifier _ -> 15
+  | UnexpectedStatement _ -> 16
+  | ModelingModuleAsDefine _ -> 17
+  | ModelingAttributeAsDefine _ -> 18
+  | ModelingClassAsAttribute _ -> 19
+  | ModelingModuleAsAttribute _ -> 20
+  | ModelingCallableAsAttribute _ -> 21
+  | ClassBodyNotEllipsis _ -> 22
+  | DefineBodyNotEllipsis _ -> 23
+  | InvalidNameClause _ -> 24
 
 
 let display { kind = error; path; location } =

@@ -18,10 +18,8 @@ from .. import (
     configuration,
     pyre,
     recently_used_configurations,
-    statistics,
 )
 from ..exceptions import EnvironmentException
-from .mocks import mock_incremental_command
 from .setup import (
     ensure_directories_exists,
     switch_working_directory,
@@ -62,7 +60,7 @@ class CreateConfigurationWithRetryTest(testslide.TestCase):
                         base_directory=Path(root),
                     )
                 except configuration.InvalidConfiguration:
-                    self.fail("Unexpected InvalicConfiguration failure!")
+                    self.fail("Unexpected InvalidConfiguration failure!")
 
     def test_create_configuration_with_retry__no_recent_configuration(self) -> None:
         with tempfile.TemporaryDirectory() as root:

@@ -846,9 +846,7 @@ def resolve_analysis_directory(
 
     # Only read from the configuration if no explicit targets are passed in.
     if not source_directories and not targets:
-        source_paths: List[
-            SearchPathElement
-        ] = configuration.get_existent_source_directories()
+        source_paths: List[SearchPathElement] = configuration.get_source_directories()
         targets = list(configuration.targets or [])
     else:
         source_paths: List[SearchPathElement] = [
@@ -882,7 +880,7 @@ def resolve_analysis_directory(
             filter_paths=filter_paths,
             search_path=[
                 search_path.path()
-                for search_path in configuration.get_existent_search_paths()
+                for search_path in configuration.expand_and_get_existent_search_paths()
             ],
         )
     else:
@@ -901,7 +899,7 @@ def resolve_analysis_directory(
             extensions=configuration.get_valid_extension_suffixes(),
             search_path=[
                 search_path.path()
-                for search_path in configuration.get_existent_search_paths()
+                for search_path in configuration.expand_and_get_existent_search_paths()
             ],
             isolate=isolate,
             configuration=configuration,

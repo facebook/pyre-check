@@ -98,6 +98,8 @@
               { "kind": "Test", "name": "multi_sink_ports.source" }
             ],
             "features": [
+              { "always-via": "issue-broadening" },
+              { "always-via": "broadening" },
               { "always-via": "tito" },
               { "always-via": "a_feature" }
             ]
@@ -138,6 +140,8 @@
       }
     ],
     "features": [
+      { "always-via": "issue-broadening" },
+      { "always-via": "broadening" },
       { "always-via": "tito" },
       { "via": "split" },
       { "via": "d_feature" },

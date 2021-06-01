@@ -76,7 +76,11 @@
               "end": 24
             },
             "leaves": [ { "kind": "Test", "name": "__test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+            "features": [
+              { "always-via": "issue-broadening" },
+              { "always-via": "broadening" },
+              { "always-via": "special_source" }
+            ]
           }
         ]
       },
@@ -97,6 +101,8 @@
       }
     ],
     "features": [
+      { "always-via": "issue-broadening" },
+      { "always-via": "broadening" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ]
@@ -180,7 +186,11 @@
               "end": 54
             },
             "leaves": [ { "kind": "Test", "name": "__test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+            "features": [
+              { "always-via": "issue-broadening" },
+              { "always-via": "broadening" },
+              { "always-via": "special_source" }
+            ]
           }
         ]
       },
@@ -200,7 +210,10 @@
               "length": 1
             },
             "leaves": [
-              { "kind": "Test", "name": "dictionary.tainted_dictionary" }
+              {
+                "kind": "Test",
+                "name": "Obj{dictionary.tainted_dictionary}"
+              }
             ],
             "features": [ { "always-via": "tito" } ]
           }
@@ -208,6 +221,8 @@
       }
     ],
     "features": [
+      { "always-via": "issue-broadening" },
+      { "always-via": "broadening" },
       { "always-via": "tito" },
       { "always-via": "special_source" }
     ]
@@ -443,7 +458,11 @@
               "end": 35
             },
             "leaves": [ { "kind": "Test", "name": "__test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+            "features": [
+              { "always-via": "issue-broadening" },
+              { "always-via": "broadening" },
+              { "always-via": "special_source" }
+            ]
           }
         ]
       },
@@ -464,6 +483,8 @@
       }
     ],
     "features": [
+      { "always-via": "issue-broadening" },
+      { "always-via": "broadening" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ]
@@ -492,7 +513,11 @@
               "end": 58
             },
             "leaves": [ { "kind": "Test", "name": "__test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+            "features": [
+              { "always-via": "issue-broadening" },
+              { "always-via": "broadening" },
+              { "always-via": "special_source" }
+            ]
           }
         ]
       },
@@ -513,6 +538,8 @@
       }
     ],
     "features": [
+      { "always-via": "issue-broadening" },
+      { "always-via": "broadening" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ]
@@ -704,6 +731,8 @@
             "tito": [ { "line": 64, "start": 30, "end": 52 } ],
             "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [
+              { "always-via": "tito-broadening" },
+              { "always-via": "broadening" },
               { "always-via": "tito" },
               { "always-via": "special_source" }
             ]
@@ -721,16 +750,35 @@
               "end": 22
             },
             "leaves": [
-              { "kind": "Test", "name": "dictionary.tainted_dictionary" }
+              {
+                "kind": "Test",
+                "name": "Obj{dictionary.tainted_dictionary}"
+              }
             ]
           }
         ]
       }
     ],
     "features": [
+      { "always-via": "tito-broadening" },
+      { "always-via": "broadening" },
       { "always-via": "tito" },
       { "always-via": "special_source" }
     ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{dictionary.tainted_dictionary}",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal($global)",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+      }
+    ],
+    "tito": []
   }
 }
 {
@@ -781,6 +829,22 @@
       }
     ],
     "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "dict.update",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(__m)",
+        "taint": [
+          { "decl": null, "leaves": [ { "kind": "ParameterUpdate0" } ] }
+        ]
+      }
+    ]
   }
 }
 {
@@ -925,7 +989,7 @@
                 "end": 41
               },
               "resolves_to": [ "dictionary.sink_dictionary_through_keys" ],
-              "port": "formal(d)[**keys]",
+              "port": "formal(d).**keys",
               "length": 1
             },
             "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
@@ -1149,7 +1213,7 @@
     "callable": "dictionary.forward_comprehension_key_source",
     "sources": [
       {
-        "port": "result[**keys]",
+        "port": "result.**keys",
         "taint": [
           {
             "root": {
@@ -1226,7 +1290,7 @@
     "sinks": [],
     "tito": [
       {
-        "port": "formal(d)[**keys]",
+        "port": "formal(d).**keys",
         "taint": [
           {
             "decl": null,
@@ -1288,7 +1352,7 @@
     "sources": [],
     "sinks": [
       {
-        "port": "formal(d)[**keys]",
+        "port": "formal(d).**keys",
         "taint": [
           {
             "root": {
@@ -1511,7 +1575,10 @@
             },
             "tito": [ { "line": 68, "start": 30, "end": 33 } ],
             "leaves": [
-              { "kind": "Test", "name": "dictionary.tainted_dictionary" }
+              {
+                "kind": "Test",
+                "name": "Obj{dictionary.tainted_dictionary}"
+              }
             ],
             "features": [ { "always-via": "tito" } ]
           }
@@ -1519,5 +1586,24 @@
       }
     ],
     "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "typing.Mapping.get",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
+        ]
+      }
+    ]
   }
 }

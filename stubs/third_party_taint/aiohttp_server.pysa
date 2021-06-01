@@ -46,7 +46,6 @@ def aiohttp.web_exceptions.HTTPException.__init__(
     text: TaintSink[ReturnedToUser],
     content_type: TaintSink[ReturnedToUser],
 ): ...
-def aiohttp.web_exceptions.HTTPException.headers(self) -> TaintSource[HeaderData]: ...
 def aiohttp.web_exceptions.HTTPMethodNotAllowed.__init__(
     self,
     method: TaintSink[ReturnedToUser],

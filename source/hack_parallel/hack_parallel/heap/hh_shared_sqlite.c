@@ -70,7 +70,7 @@ void assert_sql_with_line(
           line_number,
           correct_result,
           result);
-  static value *exn = NULL;
+  static const value *exn = NULL;
   if (!exn) exn = caml_named_value("sql_assertion_failure");
   caml_raise_with_arg(*exn, Val_long(result));
 }

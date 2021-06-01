@@ -39,6 +39,10 @@ class BuckException(Exception):
     pass
 
 
+class BuckUserError(BuckException):
+    pass
+
+
 class BuckBuilder:
     def build(self, targets: Iterable[str]) -> BuckBuildOutput:
         raise NotImplementedError
@@ -73,11 +77,17 @@ class SourceDatabaseBuckBuilder(BuckBuilder):
                 output_directories=[self._output_directory], unsupported_files=[]
             )
         except subprocess.CalledProcessError as exception:
+            returncode = exception.returncode
             stderr = exception.stderr
             reason = stderr.decode().strip() if stderr else exception
-            raise BuckException(
-                f"Failed to build targets because of buck error: {reason}"
+            message = (
+                "Failed to build targets because of buck error "
+                + f"[{returncode}]: {reason}"
             )
+            if returncode < 10:
+                raise BuckUserError(message)
+            else:
+                raise BuckException(message)
         except Exception as exception:
             raise BuckException(
                 f"Failed to build targets because of exception: {exception}"

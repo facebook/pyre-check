@@ -16,7 +16,7 @@ from ... import (
     configuration as configuration_module,
     error,
 )
-from . import server_connection, start, remote_logging
+from . import server_connection, server_event, start, remote_logging
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -85,7 +85,7 @@ def _show_progress_and_display_type_errors(
 def run_incremental(
     configuration: configuration_module.Configuration,
     incremental_arguments: command_arguments.IncrementalArguments,
-) -> None:
+) -> remote_logging.ExitCodeWithAdditionalLogging:
     socket_path = server_connection.get_default_socket_path(
         log_directory=Path(configuration.log_directory)
     )
@@ -94,26 +94,41 @@ def run_incremental(
     output = incremental_arguments.output
     try:
         _show_progress_and_display_type_errors(log_path, socket_path, output)
+        return remote_logging.ExitCodeWithAdditionalLogging(
+            exit_code=commands.ExitCode.SUCCESS,
+            additional_logging={
+                "connected_to": "already_running_server",
+            },
+        )
     except server_connection.ConnectionFailure:
         if incremental_arguments.no_start:
             raise commands.ClientException("Cannot find a running Pyre server.")
 
         LOG.info("Cannot find a running Pyre server. Starting a new one...")
-        start_status = start.run(configuration, incremental_arguments.start_arguments)
+        start_status = start.run_start(
+            configuration, incremental_arguments.start_arguments
+        )
         if start_status != commands.ExitCode.SUCCESS:
             raise commands.ClientException(
                 f"`pyre start` failed with non-zero exit code: {start_status}"
             )
         _show_progress_and_display_type_errors(log_path, socket_path, output)
+        return remote_logging.ExitCodeWithAdditionalLogging(
+            exit_code=commands.ExitCode.SUCCESS,
+            additional_logging={
+                "connected_to": "newly_started_server",
+            },
+        )
 
 
-@remote_logging.log_usage(command_name="incremental")
+@remote_logging.log_usage_with_additional_info(command_name="incremental")
 def run(
     configuration: configuration_module.Configuration,
     incremental_arguments: command_arguments.IncrementalArguments,
-) -> commands.ExitCode:
+) -> remote_logging.ExitCodeWithAdditionalLogging:
     try:
-        run_incremental(configuration, incremental_arguments)
-        return commands.ExitCode.SUCCESS
+        return run_incremental(configuration, incremental_arguments)
+    except server_event.ServerStartException as error:
+        raise commands.ClientException(f"{error}") from error
     except Exception as error:
         raise commands.ClientException(f"{error}") from error

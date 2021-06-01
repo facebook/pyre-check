@@ -385,6 +385,7 @@ let test_create _ =
        ]);
   assert_create "typing_extensions.Literal[ONE]" Type.Top;
   assert_create "typing_extensions.Literal[None]" Type.none;
+  assert_create "typing_extensions.Literal[str]" (Type.Literal (Type.String AnyLiteral));
   assert_create "_NotImplementedType" Type.Any;
 
   (* ParamSpec class. *)
@@ -836,6 +837,7 @@ let test_expression _ =
        (Type.EnumerationMember
           { enumeration_type = Type.Primitive "test.MyEnum"; member_name = "ONE" }))
     "typing_extensions.Literal[test.MyEnum.ONE]";
+  assert_expression (Type.Literal (Type.String AnyLiteral)) "typing_extensions.Literal[str]";
 
   (* Variadic tuples. *)
   let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
@@ -957,6 +959,7 @@ let test_concise _ =
        (Type.EnumerationMember
           { enumeration_type = Type.Primitive "test.MyEnum"; member_name = "ONE" }))
     "typing_extensions.Literal[test.MyEnum.ONE]";
+  assert_concise (Type.Literal (Type.String AnyLiteral)) "typing_extensions.Literal[str]";
   ()
 
 
@@ -966,6 +969,7 @@ let test_weaken_literals _ =
   in
   assert_weakened_literal (Type.literal_integer 1) Type.integer;
   assert_weakened_literal (Type.literal_string "foo") Type.string;
+  assert_weakened_literal (Type.Literal (Type.String AnyLiteral)) Type.string;
   assert_weakened_literal (Type.literal_bytes "foo") Type.bytes;
   assert_weakened_literal (Type.Literal (Type.Boolean true)) Type.bool;
   assert_weakened_literal
@@ -1099,7 +1103,11 @@ let test_elements _ =
     (Type.elements
        (Type.Literal
           (Type.EnumerationMember
-             { enumeration_type = Type.Primitive "A.B.C.MyEnum"; member_name = "ONE" })))
+             { enumeration_type = Type.Primitive "A.B.C.MyEnum"; member_name = "ONE" })));
+  assert_equal
+    ["str"; "typing_extensions.Literal"]
+    (Type.elements (Type.Literal (Type.String AnyLiteral)));
+  ()
 
 
 let test_exists _ =
@@ -2879,6 +2887,30 @@ let test_polynomial_create_from_list _ =
   ()
 
 
+let test_polynomial_to_type _ =
+  let x = Type.Variable.Unary.create "x" in
+  let y = Type.Variable.Unary.create "y" in
+  let aliases ?replace_unbound_parameters_with_any:_ = function
+    | "x" -> Some (Type.TypeAlias (Type.Variable x))
+    | "y" -> Some (Type.TypeAlias (Type.Variable y))
+    | _ -> None
+  in
+  let assert_to_type given expected =
+    let expected_type = Type.create ~aliases (parse_single_expression ~preprocess:true expected) in
+    let given = polynomial_create_from_variables_list given in
+    let result = Type.polynomial_to_type given in
+    assert_equal ~printer:Type.show ~cmp:Type.equal expected_type result
+  in
+  assert_to_type [] "typing_extensions.Literal[0]";
+  assert_to_type [2, []] "typing_extensions.Literal[2]";
+  assert_to_type [1, [x, 1]] "x";
+  assert_to_type
+    [2, [x, 1; y, 3]]
+    "pyre_extensions.Multiply[pyre_extensions.Multiply[typing_extensions.Literal[2], \
+     pyre_extensions.Multiply[x, y]], pyre_extensions.Multiply[y, y]]";
+  ()
+
+
 let test_add_polynomials _ =
   let assert_add given1 given2 expected =
     let given1 = polynomial_create_from_variables_list given1 in
@@ -3207,6 +3239,7 @@ let () =
          "map_callable_annotation" >:: test_map_callable_annotation;
          "type_parameters_for_bounded_tuple_union" >:: test_type_parameters_for_bounded_tuple_union;
          "polynomial_create_from_list" >:: test_polynomial_create_from_list;
+         "polynomial_to_type" >:: test_polynomial_to_type;
          "add_polynomials" >:: test_add_polynomials;
          "subtract_polynomials" >:: test_subtract_polynomials;
          "multiply_polynomial" >:: test_multiply_polynomial;

@@ -427,6 +427,27 @@ let test_call_graph_of_define context =
                }) );
       ];
   assert_call_graph_of_define
+    ~source:
+      {|
+        class C:
+          @classmethod
+          def f(cls, a: int) -> int: ...
+        def foo():
+          C.f()
+      |}
+    ~define_name:"test.foo"
+    ~expected:
+      [
+        ( "6:2-6:7",
+          CallGraph.Callees
+            (CallGraph.RegularTargets
+               {
+                 collapse_tito = true;
+                 implicit_self = true;
+                 targets = [`Method { Callable.class_name = "test.C"; method_name = "f" }];
+               }) );
+      ];
+  assert_call_graph_of_define
     ~source:{|
         def foo():
           1 > 2

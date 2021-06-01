@@ -32,7 +32,7 @@ let test_of_expression context =
     (Some
        {
          AccessPath.root = AccessPath.Root.Variable "a";
-         path = [Abstract.TreeDomain.Label.Field "b"];
+         path = [Abstract.TreeDomain.Label.Index "b"];
        });
   assert_of_expression
     ~resolution
@@ -40,7 +40,7 @@ let test_of_expression context =
     (Some
        {
          AccessPath.root = AccessPath.Root.Variable "a";
-         path = [Abstract.TreeDomain.Label.Field "b"; Abstract.TreeDomain.Label.Field "c"];
+         path = [Abstract.TreeDomain.Label.Index "b"; Abstract.TreeDomain.Label.Index "c"];
        });
   assert_of_expression ~resolution !+"a.b.call()" None;
 
@@ -54,7 +54,7 @@ let test_of_expression context =
     (Some
        {
          AccessPath.root = AccessPath.Root.Variable "qualifier";
-         path = [Abstract.TreeDomain.Label.Field "unannotated"];
+         path = [Abstract.TreeDomain.Label.Index "unannotated"];
        });
   assert_of_expression
     ~resolution
@@ -77,14 +77,14 @@ let test_match_actuals_to_formals _ =
     {
       AccessPath.root = AccessPath.Root.StarParameter { position };
       actual_path = [];
-      formal_path = [Abstract.TreeDomain.Label.Field (Int.to_string formal_path)];
+      formal_path = [Abstract.TreeDomain.Label.Index (Int.to_string formal_path)];
     }
   in
   let double_starred ?(excluded = []) formal_path =
     {
       AccessPath.root = AccessPath.Root.StarStarParameter { excluded };
       actual_path = [];
-      formal_path = [Abstract.TreeDomain.Label.Field formal_path];
+      formal_path = [Abstract.TreeDomain.Label.Index formal_path];
     }
   in
   let named ?(actual_path = []) name =
@@ -147,8 +147,8 @@ let test_match_actuals_to_formals _ =
       [
         ( "*[1, 2, 3, 4]",
           [
-            positional ~actual_path:[Abstract.TreeDomain.Label.Field "1"] (1, "y");
-            positional ~actual_path:[Abstract.TreeDomain.Label.Field "0"] (0, "x");
+            positional ~actual_path:[Abstract.TreeDomain.Label.Index "1"] (1, "y");
+            positional ~actual_path:[Abstract.TreeDomain.Label.Index "0"] (0, "x");
           ] );
       ];
   assert_match
@@ -176,7 +176,7 @@ let test_match_actuals_to_formals _ =
             {
               AccessPath.root = AccessPath.Root.StarParameter { position = 2 };
               actual_path = [];
-              formal_path = [Abstract.TreeDomain.Label.Any];
+              formal_path = [Abstract.TreeDomain.Label.AnyIndex];
             };
           ] );
         "6", [named "c"];
@@ -189,14 +189,14 @@ let test_match_actuals_to_formals _ =
               actual_path = [];
               formal_path = [];
             };
-            named ~actual_path:[Abstract.TreeDomain.Label.Field "d"] "d";
+            named ~actual_path:[Abstract.TreeDomain.Label.Index "d"] "d";
           ] );
       ];
   assert_match
     ~signature:"def foo(x): ..."
     ~call:"foo(**{'x': 1})"
     ~expected:
-      [{|**{ "x":1 }|}, [positional ~actual_path:[Abstract.TreeDomain.Label.Field "x"] (0, "x")]];
+      [{|**{ "x":1 }|}, [positional ~actual_path:[Abstract.TreeDomain.Label.Index "x"] (0, "x")]];
   assert_match
     ~signature:"def foo(x, /): ..."
     ~call:"foo(1)"

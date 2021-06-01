@@ -1487,7 +1487,7 @@ let test_typed_dictionary_individual_attributes context =
                          Type.Record.Callable.RecordParameter.Named
                            {
                              Type.Record.Callable.RecordParameter.name = "k";
-                             annotation = Type.Literal (Type.String "name");
+                             annotation = Type.Literal (Type.String (LiteralValue "name"));
                              default = false;
                            };
                        ];
@@ -1506,7 +1506,7 @@ let test_typed_dictionary_individual_attributes context =
                          Type.Record.Callable.RecordParameter.Named
                            {
                              Type.Record.Callable.RecordParameter.name = "k";
-                             annotation = Type.Literal (Type.String "year");
+                             annotation = Type.Literal (Type.String (LiteralValue "year"));
                              default = false;
                            };
                        ];

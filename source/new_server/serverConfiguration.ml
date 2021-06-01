@@ -157,11 +157,13 @@ end
 module CriticalFile = struct
   type t =
     | BaseName of string
+    | Extension of string
     | FullPath of Path.t
   [@@deriving sexp, compare, hash]
 
   let of_yojson = function
     | `Assoc [("base_name", `String name)] -> Result.Ok (BaseName name)
+    | `Assoc [("extension", `String name)] -> Result.Ok (Extension name)
     | `Assoc [("full_path", `String path)] -> Result.Ok (FullPath (Path.create_absolute path))
     | _ as json ->
         let message =
@@ -172,18 +174,17 @@ module CriticalFile = struct
 
   let to_yojson = function
     | BaseName name -> `Assoc ["base_name", `String name]
+    | Extension name -> `Assoc ["extension", `String name]
     | FullPath path -> `Assoc ["full_path", `String (Path.absolute path)]
-
-
-  let base_name_of = function
-    | BaseName name -> name
-    | FullPath path -> Path.last path
 
 
   let matches ~path = function
     | BaseName expect_name ->
         let actual_name = Path.last path in
         String.equal expect_name actual_name
+    | Extension extension ->
+        let actual_name = Path.last path in
+        String.is_suffix actual_name ~suffix:("." ^ extension)
     | FullPath expect_path -> Path.equal expect_path path
 
 
@@ -308,6 +309,33 @@ module PythonVersion = struct
     }
 end
 
+module SharedMemory = struct
+  type t = {
+    heap_size: int;
+    dependency_table_power: int;
+    hash_table_power: int;
+  }
+  [@@deriving sexp, compare, hash, yojson]
+
+  let default =
+    {
+      heap_size = Configuration.default_shared_memory_heap_size;
+      dependency_table_power = Configuration.default_shared_memory_dependency_table_power;
+      hash_table_power = Configuration.default_shared_memory_hash_table_power;
+    }
+
+
+  let of_yojson json =
+    let open JsonParsing in
+    Ok
+      {
+        heap_size = int_member "heap_size" ~default:default.heap_size json;
+        dependency_table_power =
+          int_member "dependency_table_power" ~default:default.dependency_table_power json;
+        hash_table_power = int_member "hash_table_power" ~default:default.hash_table_power json;
+      }
+end
+
 type t = {
   (* Source file discovery *)
   source_paths: SourcePaths.t;
@@ -333,6 +361,8 @@ type t = {
   (* Parallelism controls *)
   parallel: bool;
   number_of_workers: int;
+  (* Memory controls *)
+  shared_memory: SharedMemory.t;
   (* Logging controls *)
   additional_logging_sections: string list;
   remote_logging: RemoteLogging.t option;
@@ -401,6 +431,13 @@ let of_yojson json =
     in
     let parallel = json |> bool_member "parallel" ~default:false in
     let number_of_workers = json |> int_member "number_of_workers" ~default:1 in
+    let shared_memory =
+      json
+      |> member "shared_memory"
+      |> function
+      | `Null -> SharedMemory.default
+      | _ as json -> SharedMemory.of_yojson json |> Result.ok_or_failwith
+    in
     let additional_logging_sections =
       json |> string_list_member "additional_logging_sections" ~default:[]
     in
@@ -435,6 +472,7 @@ let of_yojson json =
         store_type_check_resolution;
         parallel;
         number_of_workers;
+        shared_memory;
         additional_logging_sections;
         remote_logging;
         profiling_output;
@@ -469,6 +507,7 @@ let to_yojson
       store_type_check_resolution;
       parallel;
       number_of_workers;
+      shared_memory;
       additional_logging_sections;
       remote_logging;
       profiling_output;
@@ -496,6 +535,7 @@ let to_yojson
       "store_type_check_resolution", [%to_yojson: bool] store_type_check_resolution;
       "parallel", [%to_yojson: bool] parallel;
       "number_of_workers", [%to_yojson: int] number_of_workers;
+      "shared_memory", [%to_yojson: SharedMemory.t] shared_memory;
       "additional_logging_sections", [%to_yojson: string list] additional_logging_sections;
     ]
   in
@@ -557,6 +597,7 @@ let analysis_configuration_of
       store_type_check_resolution;
       parallel;
       number_of_workers;
+      shared_memory = { SharedMemory.heap_size; dependency_table_power; hash_table_power };
       additional_logging_sections = _;
       remote_logging = _;
       profiling_output = _;
@@ -592,5 +633,8 @@ let analysis_configuration_of
     ~python_major_version:major
     ~python_minor_version:minor
     ~python_micro_version:micro
+    ~shared_memory_heap_size:heap_size
+    ~shared_memory_dependency_table_power:dependency_table_power
+    ~shared_memory_hash_table_power:hash_table_power
     ~source_path
     ()

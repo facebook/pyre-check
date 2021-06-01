@@ -186,11 +186,12 @@ let test_assert_is_none context =
     [
       "Revealed type [-1]: Revealed type for `normal_class.x` is `Optional[int]`.";
       "Revealed type [-1]: Revealed type for `class_with_final_attribute.x` is `Optional[int]` \
-       (inferred: `int`).";
+       (inferred: `int`, final).";
       "Revealed type [-1]: Revealed type for `unfrozen_dataclass.x` is `Optional[int]`.";
       "Revealed type [-1]: Revealed type for `frozen_dataclass.x` is `Optional[int]` (inferred: \
-       `int`).";
-      "Revealed type [-1]: Revealed type for `read_only_property_class.x` is `Optional[int]`.";
+       `int`, final).";
+      "Revealed type [-1]: Revealed type for `read_only_property_class.x` is `Optional[int]` \
+       (final).";
     ];
   assert_type_errors
     {|
@@ -238,7 +239,8 @@ let test_assert_is_none context =
       "Revealed type [-1]: Revealed type for `class_with_final_attribute.x` is `None`.";
       "Revealed type [-1]: Revealed type for `unfrozen_dataclass.x` is `Optional[int]`.";
       "Revealed type [-1]: Revealed type for `frozen_dataclass.x` is `None`.";
-      "Revealed type [-1]: Revealed type for `read_only_property_class.x` is `Optional[int]`.";
+      "Revealed type [-1]: Revealed type for `read_only_property_class.x` is `Optional[int]` \
+       (final).";
     ];
   assert_type_errors
     {|
@@ -286,7 +288,7 @@ let test_assert_is_none context =
       "Revealed type [-1]: Revealed type for `class_with_final_attribute.x` is `int`.";
       "Revealed type [-1]: Revealed type for `unfrozen_dataclass.x` is `float`.";
       "Revealed type [-1]: Revealed type for `frozen_dataclass.x` is `int`.";
-      "Revealed type [-1]: Revealed type for `read_only_property_class.x` is `float`.";
+      "Revealed type [-1]: Revealed type for `read_only_property_class.x` is `float` (final).";
     ];
   assert_type_errors
     {|
@@ -310,9 +312,10 @@ let test_assert_is_none context =
           reveal_type(frozen_dataclass.inner.x)
     |}
     [
-      "Revealed type [-1]: Revealed type for `unfrozen_dataclass.inner.x` is `Optional[int]`.";
+      "Revealed type [-1]: Revealed type for `unfrozen_dataclass.inner.x` is `Optional[int]` \
+       (final).";
       "Revealed type [-1]: Revealed type for `frozen_dataclass.inner.x` is `Optional[int]` \
-       (inferred: `int`).";
+       (inferred: `int`, final).";
     ];
   ()
 
@@ -713,11 +716,12 @@ let test_check_final_attribute_refinement context =
           reveal_type(foo.x.y)
     |}
     [
-      "Revealed type [-1]: Revealed type for `foo.x` is `Optional[Bar]` (inferred: `Bar`).";
-      "Revealed type [-1]: Revealed type for `foo.x.y` is `Optional[Baz]` (inferred: `Baz`).";
-      "Revealed type [-1]: Revealed type for `foo.x.y.z` is `Optional[Boo]` (inferred: `Boo`).";
-      "Revealed type [-1]: Revealed type for `foo.x` is `Optional[Bar]` (inferred: `Bar`).";
-      "Revealed type [-1]: Revealed type for `foo.x.y` is `Optional[Baz]` (inferred: `Baz`).";
+      "Revealed type [-1]: Revealed type for `foo.x` is `Optional[Bar]` (inferred: `Bar`, final).";
+      "Revealed type [-1]: Revealed type for `foo.x.y` is `Optional[Baz]` (inferred: `Baz`, final).";
+      "Revealed type [-1]: Revealed type for `foo.x.y.z` is `Optional[Boo]` (inferred: `Boo`, \
+       final).";
+      "Revealed type [-1]: Revealed type for `foo.x` is `Optional[Bar]` (inferred: `Bar`, final).";
+      "Revealed type [-1]: Revealed type for `foo.x.y` is `Optional[Baz]` (inferred: `Baz`, final).";
     ];
   assert_type_errors
     {|
@@ -815,8 +819,8 @@ let test_check_final_attribute_refinement context =
           reveal_type(a.name)
     |}
     [
-      "Revealed type [-1]: Revealed type for `a.name` is `Optional[str]` (inferred: `str`).";
-      "Revealed type [-1]: Revealed type for `a.name` is `Optional[str]`.";
+      "Revealed type [-1]: Revealed type for `a.name` is `Optional[str]` (inferred: `str`, final).";
+      "Revealed type [-1]: Revealed type for `a.name` is `Optional[str]` (final).";
     ];
   assert_type_errors
     {|
@@ -916,7 +920,7 @@ let test_check_final_attribute_refinement context =
           expects_int(a.x)
         reveal_type(a.x)
     |}
-    ["Revealed type [-1]: Revealed type for `a.x` is `Union[int, str]`."];
+    ["Revealed type [-1]: Revealed type for `a.x` is `Union[int, str]` (final)."];
   assert_type_errors
     {|
       from typing import Union, Callable
@@ -959,8 +963,10 @@ let test_check_final_attribute_refinement context =
         reveal_type(a.x)
     |}
     [
-      "Revealed type [-1]: Revealed type for `a.x` is `Union[typing.Callable[[], int], int]`.";
-      "Revealed type [-1]: Revealed type for `a.x` is `Union[typing.Callable[[], int], int]`.";
+      "Revealed type [-1]: Revealed type for `a.x` is `Union[typing.Callable[[], int], int]` \
+       (final).";
+      "Revealed type [-1]: Revealed type for `a.x` is `Union[typing.Callable[[], int], int]` \
+       (final).";
     ];
   assert_type_errors
     {|
@@ -978,8 +984,40 @@ let test_check_final_attribute_refinement context =
             reveal_type(foo.value)
     |}
     [
-      "Revealed type [-1]: Revealed type for `foo.value` is `Optional[int]`.";
-      "Revealed type [-1]: Revealed type for `foo.value` is `Optional[int]` (inferred: `int`).";
+      "Revealed type [-1]: Revealed type for `foo.value` is `Optional[int]` (final).";
+      "Revealed type [-1]: Revealed type for `foo.value` is `Optional[int]` (inferred: `int`, \
+       final).";
+    ];
+  ()
+
+
+let test_type_guard context =
+  let assert_type_errors = assert_type_errors ~context in
+
+  (* From PEP 647: https://www.python.org/dev/peps/pep-0647/.
+
+     TODO(T90609807): This is not implemented yet in Pyre. This is mainly to unblock use of
+     TypeGuard in typeshed. *)
+  assert_type_errors
+    {|
+      from typing import Any, List, TypeGuard
+
+      # pyre-ignore[2]: Should not have Any.
+      def is_str_list(val: List[Any]) -> TypeGuard[List[str]]:
+        """Determines whether all objects in the list are strings"""
+        # pyre-ignore[7]: Returning bool expected TypeGuard.
+        return all(isinstance(x, str) for x in val)
+
+      def foo(xs: List[int | str]) -> None:
+        my_bool: bool = is_str_list(xs)
+        if my_bool:
+          reveal_type(xs)
+        else:
+          reveal_type(xs)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `xs` is `List[typing.Union[int, str]]`.";
+      "Revealed type [-1]: Revealed type for `xs` is `List[typing.Union[int, str]]`.";
     ];
   ()
 
@@ -995,5 +1033,6 @@ let () =
          "check_assert_contains_none" >:: test_assert_contains_none;
          "check_callable" >:: test_check_callable;
          "check_final_attribute_refinement" >:: test_check_final_attribute_refinement;
+         "type_guard" >:: test_type_guard;
        ]
   |> Test.run

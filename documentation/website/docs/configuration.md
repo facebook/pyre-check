@@ -3,11 +3,21 @@ id: configuration
 title: Configuration
 sidebar_label: Configuration
 ---
+import {OssOnly, FbInternalOnly} from 'internaldocs-fb-helpers';
+import FbConfiguration from './fb/configuration.md';
 
-Pyre can be run without a configuration (see [Command Line Arguments](configuration#command-line-arguments)) but we do recommend that you create a configuration (see [Getting Started](getting-started)) and commit that to your version control system to make sure everyone working on your project is using the same settings.
+<FbInternalOnly>
+
+<FbConfiguration />
+
+</FbInternalOnly>
+
+<OssOnly>
+
+Pyre can be run without a configuration (see [Command Line Arguments](configuration.md#command-line-arguments)) but we do recommend that you create a configuration (see [Getting Started](getting_started.md)) and commit that to your version control system to make sure everyone working on your project is using the same settings.
 
 ## Configuration Files
-Pyre has two types of configurations: a *global* configuration covering the full project, and *local* configurations that apply to subdirectories of the project. In most cases you will only need a global configuration but local configurations can be useful if you are dealing with a big repository containing heterogenous projects.
+Pyre has two types of configurations: a *global* configuration covering the full project, and *local* configurations that apply to subdirectories of the project. In most cases you will only need a global configuration but local configurations can be useful if you are dealing with a big repository containing heterogeneous projects.
 
 ### The Global Configuration
 The global configuration is a `.pyre_configuration` file sitting at the root of your project. Running Pyre anywhere inside your project directory will use the settings in this global configuration. You can generate an initial configuration in your project directory with
@@ -29,9 +39,11 @@ The configuration is a `JSON` file. For example,
 specifies that the code Pyre checks is in the directory of the configuration and that Pyre should look in an additional directory for library code.
 
 
-You can extend this configuration to configure Pyre. The following configuration options are supported:
+You specify additional information to configure Pyre. The following fields are supported:
 
 - `source_directories`: List of paths to type check.
+
+ Note: Pyre assumes that all imports are relative to the given source directory. For example, if your source directory is `root/directory`, then an import statement `import module` will be looking to import `root.directory.module`. If you wish to set a different import root for your source directory, you can provide an object `{"import_root": "root", "source": "directory"}` instead of `"root/directory"`. In this case, `import module` will be looking to import `root.module`.
 
 - `search_path`: List of paths to Python modules to include in the typing
 environment. **Note**: `search_path` takes precendence over `source_directories` and the order within the search path indicates precedence.
@@ -60,7 +72,7 @@ provides typed stubs for library functions.
 - `extensions`: Consider extensions in this list equivalent to `.py` for type checking.
 Empty string indicates extensionless files.
 
-- `strict`: Setting this to `true` will make [strict mode](types-in-python#strict-mode) the default in your project.
+- `strict`: Setting this to `true` will make [strict mode](gradual_typing.md#strict-mode) the default in your project.
 
 
 ### Local Configurations
@@ -82,7 +94,8 @@ $ pyre -l project
 #### Nested Local Configurations
 Nesting local configurations is not supported. The configuration should live at the root of your
 project unit and inclusion/exclusion of files from type checking can be done by specifying sources, using
-`ignore_all_errors`, or by adding [local suppression](errors#suppressing-individual-errors).
+`ignore_all_errors`, or by adding [local suppression](errors.md#suppressing-individual-errors).
+
 
 ## Command Line Arguments
 You can get a full and current list of options to run Pyre by running `pyre --help`. The following is a list of commonly used commands and options.
@@ -135,3 +148,5 @@ which provides typed stubs for library functions. This can also be set in `.pyre
 - `--verbose`: Enable verbose logging. Most useful when used in conjunction with `--noninteractive`.
 
 - `--version`: Print the current version of Pyre.
+
+</OssOnly>

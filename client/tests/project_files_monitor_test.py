@@ -23,9 +23,6 @@ from ..tests.mocks import mock_configuration
 class MonitorTest(unittest.TestCase):
     @patch.object(SocketConnection, "connect")
     @patch.object(json_rpc, "perform_handshake")
-    # pyre-fixme[56]: Argument `tools.pyre.client.project_files_monitor` to
-    #  decorator factory `unittest.mock.patch.object` could not be resolved in a global
-    #  scope.
     @patch.object(project_files_monitor, "find_parent_directory_containing_file")
     def test_subscriptions(
         self,
@@ -171,8 +168,6 @@ class MonitorTest(unittest.TestCase):
 
         self.assertEqual(errors, [])
 
-    # pyre-fixme[56]: Argument `os.path` to decorator factory
-    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(os.path, "realpath")
     def test_socket_connection(self, realpath) -> None:
         server_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)

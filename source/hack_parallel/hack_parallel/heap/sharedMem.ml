@@ -739,7 +739,7 @@ end
 
 (* Same as new, but for old values *)
 module Old : functor (Key : Key) -> functor (Value : Value.Type) ->
-  functor (Raw : module type of Raw (Key) (Value)) -> sig
+  functor (_ : module type of Raw (Key) (Value)) -> sig
 
     val get         : Key.old -> Value.t option
     val remove      : Key.old -> unit

@@ -118,18 +118,18 @@ let match_actuals_to_formals arguments roots =
         Some { root = formal; actual_path = []; formal_path = [] }
     | `Name actual_name, StarStarParameter { excluded }
       when not (List.exists ~f:(Identifier.equal actual_name) excluded) ->
-        let field_name = Root.chop_parameter_prefix actual_name in
+        let index = Root.chop_parameter_prefix actual_name in
         Some
           {
             root = formal;
             actual_path = [];
-            formal_path = [Abstract.TreeDomain.Label.create_name_field field_name];
+            formal_path = [Abstract.TreeDomain.Label.create_name_index index];
           }
     | `StarStar, NamedParameter { name }
     | `StarStar, PositionalParameter { name; _ }
       when not (Set.mem matched_names name) ->
         Some
-          { root = formal; actual_path = [Abstract.TreeDomain.Label.Field name]; formal_path = [] }
+          { root = formal; actual_path = [Abstract.TreeDomain.Label.Index name]; formal_path = [] }
     | `StarStar, StarStarParameter _ ->
         (* assume entire structure is passed. We can't just pick all but X fields. *)
         Some { root = formal; actual_path = []; formal_path = [] }
@@ -149,18 +149,18 @@ let match_actuals_to_formals arguments roots =
         Some
           {
             root = formal;
-            actual_path = [Abstract.TreeDomain.Label.create_int_field (position - actual_position)];
+            actual_path = [Abstract.TreeDomain.Label.create_int_index (position - actual_position)];
             formal_path = [];
           }
     | `Star (`Approximate minimal_position), PositionalParameter { position; _ }
       when minimal_position <= position ->
-        Some { root = formal; actual_path = [Abstract.TreeDomain.Label.Any]; formal_path = [] }
+        Some { root = formal; actual_path = [Abstract.TreeDomain.Label.AnyIndex]; formal_path = [] }
     | `Precise actual_position, StarParameter { position } when actual_position >= position ->
         Some
           {
             root = formal;
             actual_path = [];
-            formal_path = [Abstract.TreeDomain.Label.create_int_field (actual_position - position)];
+            formal_path = [Abstract.TreeDomain.Label.create_int_index (actual_position - position)];
           }
     | `Approximate _, StarParameter _ ->
         (* Approximate: We can't filter by minimal position in either direction here. Think about
@@ -171,7 +171,7 @@ let match_actuals_to_formals arguments roots =
 
            2. ```def f( *z): ... f( *[], 1, approx) ``` In this case, we'll have approx, which has a
            minimal position > the starred parameter, flow to z. *)
-        Some { root = formal; actual_path = []; formal_path = [Abstract.TreeDomain.Label.Any] }
+        Some { root = formal; actual_path = []; formal_path = [Abstract.TreeDomain.Label.AnyIndex] }
     | `Star _, StarParameter _ ->
         (* Approximate: can't match up ranges, so pass entire structure *)
         Some { root = formal; actual_path = []; formal_path = [] }
@@ -246,8 +246,8 @@ let extend { root; path = original_path } ~path = { root; path = original_path @
 
 let get_index expression =
   match Interprocedural.CallResolution.extract_constant_name expression with
-  | Some name -> Abstract.TreeDomain.Label.Field name
-  | None -> Abstract.TreeDomain.Label.Any
+  | Some name -> Abstract.TreeDomain.Label.Index name
+  | None -> Abstract.TreeDomain.Label.AnyIndex
 
 
 let to_json { root; path } =
@@ -300,9 +300,12 @@ let of_expression ~resolution = function
         | { Node.value = Expression.Name (Name.Identifier identifier); _ } ->
             Some { root = Root.Variable identifier; path }
         | { Node.value = Name (Name.Attribute { base; attribute; _ }); _ } ->
-            let path = Abstract.TreeDomain.Label.Field attribute :: path in
+            let path = Abstract.TreeDomain.Label.Index attribute :: path in
             of_expression path base
         | _ -> None
       in
       of_expression [] expression
   | _ -> None
+
+
+let dictionary_keys = Abstract.TreeDomain.Label.Field "**keys"

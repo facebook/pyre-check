@@ -741,6 +741,24 @@ let test_add_constraint context =
     ~right:(parse_annotation "typing.Mapping[str, object]")
     [[]];
   assert_add_direct ~left:keyword_component ~right:(parse_annotation "typing.Mapping[str, int]") [];
+
+  (* Literals. *)
+  assert_add ~left:{| typing_extensions.Literal["hello"] |} ~right:"str" [[]];
+  assert_add
+    ~left:{| typing_extensions.Literal["hello"] |}
+    ~right:{| typing_extensions.Literal["world"] |}
+    [];
+  assert_add
+    ~left:{| typing_extensions.Literal["hello"] |}
+    ~right:"typing_extensions.Literal[str]"
+    [[]];
+  assert_add
+    ~left:{| typing_extensions.Literal[str] |}
+    ~right:{| typing_extensions.Literal[str] |}
+    [[]];
+  assert_add ~left:{| typing_extensions.Literal[str] |} ~right:"str" [[]];
+  assert_add ~left:"str" ~right:{| typing_extensions.Literal["hello"] |} [];
+  assert_add ~left:"str" ~right:{| typing_extensions.Literal[str] |} [];
   ()
 
 

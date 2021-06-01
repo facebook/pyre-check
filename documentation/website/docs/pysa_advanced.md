@@ -6,48 +6,6 @@ sidebar_label: Advanced Topics
 
 This page documents less straightforward bits of Pysa.
 
-## Annotating `dataclass` Models
-
-In Pysa, [`dataclasses`](https://docs.python.org/3/library/dataclasses.html?)
-are defined via attributes, which are converted to properties under the hood. If
-you want to taint the attributes of a `dataclass`, you might try to do the
-following:
-
-```python
-# tainted.py
-@dataclass(frozen=True)
-class MyDataClass:
-    attribute: str = ""
-```
-
-
-```python
-# stubs/taint/tainted.py.pysa
-# This won't work
-tainted.MyDataClass.attribute: TaintSource[SensitiveData]
-```
-
-This doesn't work, because during analysis Pysa's understanding of the data
-class is of how the class looks after the property is expanded; that is:
-
-```python
-# Pysa's view of tainted.py
-class MyDataClass:
-  @property
-  def attribute(self) -> str: ...
-  @attribute.setter
-  def attribute(self, value) -> None: ...
-```
-
-Therefore, to annotate a `dataclass` attribute, you can use the `@property`
-annotations:
-
-```python
-# stubs/taint/tainted.py.pysa
-@property
-def tainted.MyDataClass.attribute(self) -> TaintSource[SensitiveData]: ...
-```
-
 ## Tainting Specific `kwargs`
 
 Sometimes, a function can have potential sinks mixed together with benign
@@ -69,6 +27,28 @@ def eval_and_log(*, eval: TaintSink[RemoteCodeExecution], **kwargs): ...
 ```
 
 This allows us to catch flows only into the `eval` keyword argument.
+
+## Instance attributes versus class attributes
+
+Models can specify sources and sinks on attributes, following the type annotation
+syntax:
+
+```python
+django.http.request.HttpRequest.GET: TaintSource[UserControlled]
+```
+
+Any access to `request.GET` will be tainted when `request` is an instance of
+`HttpRequest` or any of its children. However, note that the access to the class
+attribute (i.e, `HttpRequest.GET`) won't be considered tainted.
+
+To specify sources and sinks on class attributes, use the `__class__` prefix:
+
+```python
+django.http.request.HttpRequest.__class__.GET: TaintSource[UserControlled]
+```
+
+To specify a source on both the class attribute and instance attribute, simply
+use both lines.
 
 ## Literal String Sources And Sinks
 
@@ -255,3 +235,30 @@ method.
 By default, Pysa skips overrides on some functions that are typically
 problematic. You can find the full list of default-skipped functions in
 [`stubs/taint/skipped_overrides.pysa`](https://github.com/facebook/pyre-check/blob/master/stubs/taint/skipped_overrides.pysa)
+
+## Limit the trace length for better signal and performance
+
+By default, Pysa will find all flows from sources to sinks matching a rule.
+This can lead to very long traces which are hard to understand and tend to be
+false positives. This also brings down the performance a lot.
+
+Pysa provides a `--maximum-trace-length <integer>` command line argument which
+limits the length of traces that it finds. In general, this will also make Pysa
+faster.
+
+This option can also be added in the `taint.config` as follows:
+
+```json
+{
+  "sources": [],
+  "sinks": [],
+  "features": [],
+  "rules": [],
+  "options": {
+    "maximum_trace_length": 20
+  }
+}
+```
+
+Note that this is not a silver bullet and that this might hide security
+vulnerabilities. Use it with caution.

@@ -34,7 +34,7 @@ module State (Context : Context) : Signature
 
 val name : string
 
-val run_local
+val infer_for_define
   :  configuration:Configuration.Analysis.t ->
   global_resolution:GlobalResolution.t ->
   source:Source.t ->

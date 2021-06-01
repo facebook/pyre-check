@@ -12,7 +12,7 @@ module type BUCKETED_ELEMENT = sig
 
   val bucket : t -> bucket
 
-  val show_bucket : bucket -> string
+  val pp_bucket : Format.formatter -> bucket -> unit
 
   val compare_bucket : bucket -> bucket -> int
 end
@@ -21,8 +21,7 @@ end
 module Make (Element : BUCKETED_ELEMENT) : sig
   include AbstractDomainCore.S
 
-  type _ AbstractDomainCore.part +=
-    | Element : Element.t AbstractDomainCore.part | Set : Element.t list AbstractDomainCore.part
+  type _ AbstractDomainCore.part += Element : Element.t AbstractDomainCore.part
 
   val add : Element.t -> t -> t
 

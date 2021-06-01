@@ -25,7 +25,6 @@ DEVELOPMENT_COMPILER: str = COMPILER_VERSION
 RELEASE_COMPILER = f"{COMPILER_VERSION}+flambda"
 DEPENDENCIES = [
     "base64.3.5.0",
-    "conf-sqlite3",
     "core.v0.14.1",
     "re2.v0.14.0",
     "dune.2.8.2",
@@ -161,10 +160,6 @@ class Setup(NamedTuple):
         )
         opam_environment_variables = self.opam_environment_variables()
 
-        self.run(
-            ["opam", "update"],
-            add_environment_variables=opam_environment_variables,
-        )
         self.run(
             ["opam", "install", "--yes"] + DEPENDENCIES,
             add_environment_variables=opam_environment_variables,

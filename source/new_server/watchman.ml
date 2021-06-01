@@ -155,6 +155,54 @@ module Filter = struct
   }
   [@@deriving sexp, compare, hash]
 
+  let from_server_configurations ~critical_files ~extensions ~source_paths () =
+    let open ServerConfiguration in
+    let base_name_of = function
+      | CriticalFile.BaseName name -> Some name
+      | CriticalFile.FullPath path -> Some (Path.last path)
+      | CriticalFile.Extension _ -> None
+    in
+    let base_names =
+      List.filter_map critical_files ~f:base_name_of
+      |> String.Set.of_list
+      |> fun set ->
+      Set.add set ".pyre_configuration"
+      |> fun set ->
+      Set.add set ".pyre_configuration.local"
+      |> fun set ->
+      ( match source_paths with
+      | SourcePaths.Buck _ ->
+          let set = Set.add set "TARGETS" in
+          Set.add set "BUCK"
+      | SourcePaths.Simple _ -> set )
+      |> Set.to_list
+    in
+    let extension_of = function
+      | CriticalFile.BaseName _
+      | CriticalFile.FullPath _ ->
+          (* We do not need to track these files by extensions since they are already tracked by
+             base_names. *)
+          None
+      | CriticalFile.Extension suffix -> Some suffix
+    in
+    let suffixes =
+      String.Set.of_list (List.map ~f:Configuration.Extension.suffix extensions)
+      |> fun set ->
+      List.filter_map critical_files ~f:extension_of
+      |> List.fold ~init:set ~f:String.Set.add
+      |> fun set ->
+      Set.add set "py"
+      |> fun set ->
+      Set.add set "pyi"
+      |> fun set ->
+      ( match source_paths with
+      | SourcePaths.Buck _ -> Set.add set "thrift"
+      | SourcePaths.Simple _ -> set )
+      |> Set.to_list
+    in
+    { base_names; suffixes }
+
+
   let watchman_expression_of { base_names; suffixes; _ } =
     let base_names =
       List.map base_names ~f:(fun base_name -> `List [`String "match"; `String base_name])

@@ -17,7 +17,11 @@
             },
             "tito": [ { "line": 41, "start": 24, "end": 27 } ],
             "leaves": [ { "kind": "GetAttr", "name": "getattr" } ],
-            "features": [ { "always-via": "obscure" } ]
+            "features": [
+              { "always-via": "tito-broadening" },
+              { "always-via": "broadening" },
+              { "always-via": "obscure" }
+            ]
           },
           {
             "call": {
@@ -34,6 +38,8 @@
             "tito": [ { "line": 42, "start": 42, "end": 45 } ],
             "leaves": [ { "kind": "GetAttr", "name": "getattr" } ],
             "features": [
+              { "always-via": "tito-broadening" },
+              { "always-via": "broadening" },
               { "always-via": "tito" },
               { "always-via": "object" },
               { "always-via": "obscure" }
@@ -53,6 +59,8 @@
             },
             "leaves": [ { "kind": "GetAttr", "name": "getattr" } ],
             "features": [
+              { "always-via": "tito-broadening" },
+              { "always-via": "broadening" },
               { "via": "tito" },
               { "via": "object" },
               { "always-via": "obscure" }
@@ -72,6 +80,8 @@
             },
             "leaves": [ { "kind": "GetAttr", "name": "getattr" } ],
             "features": [
+              { "always-via": "tito-broadening" },
+              { "always-via": "broadening" },
               { "via": "tito" },
               { "via": "object" },
               { "always-via": "obscure" }
@@ -91,6 +101,8 @@
             },
             "leaves": [ { "kind": "GetAttr", "name": "getattr" } ],
             "features": [
+              { "always-via": "tito-broadening" },
+              { "always-via": "broadening" },
               { "via": "tito" },
               { "via": "object" },
               { "always-via": "obscure" }
@@ -158,6 +170,8 @@
             },
             "leaves": [ { "kind": "GetAttr", "name": "getattr" } ],
             "features": [
+              { "always-via": "tito-broadening" },
+              { "always-via": "broadening" },
               { "via": "tito" },
               { "via": "object" },
               { "always-via": "obscure" }
@@ -218,6 +232,8 @@
             },
             "leaves": [ { "kind": "GetAttr", "name": "getattr" } ],
             "features": [
+              { "always-via": "tito-broadening" },
+              { "always-via": "broadening" },
               { "via": "tito" },
               { "via": "object" },
               { "always-via": "obscure" }

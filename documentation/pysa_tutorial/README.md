@@ -47,6 +47,10 @@ project.
       You can use our Docker container. First install Docker by following the steps
       on https://docs.docker.com/engine/install/ and then enter the following in
       your terminal.
+
+      NOTE: You will want to make sure you allow Docker at least 6GB of memory.
+      This can be configured in Docker > Preferences > Resources > Memory.
+
       ```
       docker build -f documentation/pysa_tutorial/Dockerfile -t pyre-check-docker .
       docker run --rm --name pyre-check -it pyre-check-docker /bin/bash

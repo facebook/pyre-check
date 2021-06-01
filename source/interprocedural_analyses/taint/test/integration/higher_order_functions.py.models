@@ -2,6 +2,64 @@
 {
   "kind": "issue",
   "data": {
+    "callable": "higher_order_functions.callable_class",
+    "callable_line": 77,
+    "code": 5002,
+    "line": 80,
+    "start": 16,
+    "end": 17,
+    "filename": "higher_order_functions.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "higher_order_functions.py",
+              "line": 78,
+              "start": 17,
+              "end": 32
+            },
+            "tito": [ { "line": 78, "start": 17, "end": 32 } ],
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "features": [
+              { "always-via": "issue-broadening" },
+              { "always-via": "broadening" },
+              { "always-via": "tito" },
+              { "always-via": "special_source" }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "higher_order_functions.py",
+              "line": 80,
+              "start": 16,
+              "end": 17
+            },
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "issue-broadening" },
+      { "always-via": "broadening" },
+      { "always-via": "tito" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
     "callable": "higher_order_functions.test_higher_order_function",
     "callable_line": 21,
     "code": 5002,
@@ -22,7 +80,11 @@
               "end": 55
             },
             "leaves": [ { "kind": "Test", "name": "__test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+            "features": [
+              { "always-via": "issue-broadening" },
+              { "always-via": "broadening" },
+              { "always-via": "special_source" }
+            ]
           }
         ]
       },
@@ -48,6 +110,8 @@
       }
     ],
     "features": [
+      { "always-via": "issue-broadening" },
+      { "always-via": "broadening" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ]
@@ -132,7 +196,11 @@
               "end": 64
             },
             "leaves": [ { "kind": "Test", "name": "__test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+            "features": [
+              { "always-via": "issue-broadening" },
+              { "always-via": "broadening" },
+              { "always-via": "special_source" }
+            ]
           }
         ]
       },
@@ -158,6 +226,8 @@
       }
     ],
     "features": [
+      { "always-via": "issue-broadening" },
+      { "always-via": "broadening" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ]
@@ -278,6 +348,62 @@
 {
   "kind": "model",
   "data": {
+    "callable": "Ovr{higher_order_functions.Callable::__init__}",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(value)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "[value]" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Ovr{object::__init__}",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(value)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "[value]" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "higher_order_functions.C.method_to_sink",
     "sources": [],
     "sinks": [
@@ -323,6 +449,34 @@
       }
     ],
     "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "higher_order_functions.Callable.__init__",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(value)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "[value]" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
+        ]
+      }
+    ]
   }
 }
 {
@@ -479,6 +633,8 @@
             ],
             "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [
+              { "via": "tito-broadening" },
+              { "via": "broadening" },
               { "always-via": "tito" },
               { "always-via": "special_source" },
               { "via": "lambda" },

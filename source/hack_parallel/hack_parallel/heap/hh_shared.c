@@ -578,7 +578,7 @@ static HANDLE memfd;
  * Committing the whole shared heap at once would require the same
  * amount of free space in memory (or in swap file).
  **************************************************************************/
-void memfd_init(char *shm_dir, size_t shared_mem_size, uint64_t minimum_avail) {
+void memfd_init(const char *shm_dir, size_t shared_mem_size, uint64_t minimum_avail) {
   memfd = CreateFileMapping(
     INVALID_HANDLE_VALUE,
     NULL,
@@ -600,21 +600,21 @@ void memfd_init(char *shm_dir, size_t shared_mem_size, uint64_t minimum_avail) {
 static int memfd = -1;
 
 static void raise_failed_anonymous_memfd_init(void) {
-  static value *exn = NULL;
+  static const value *exn = NULL;
   if (!exn) exn = caml_named_value("failed_anonymous_memfd_init");
   caml_raise_constant(*exn);
 }
 
 static void raise_less_than_minimum_available(uint64_t avail) {
   value arg;
-  static value *exn = NULL;
+  static const value *exn = NULL;
   if (!exn) exn = caml_named_value("less_than_minimum_available");
   arg = Val_long(avail);
   caml_raise_with_arg(*exn, arg);
 }
 
 #include <sys/statvfs.h>
-void assert_avail_exceeds_minimum(char *shm_dir, uint64_t minimum_avail) {
+void assert_avail_exceeds_minimum(const char *shm_dir, uint64_t minimum_avail) {
   struct statvfs stats;
   uint64_t avail;
   if (statvfs(shm_dir, &stats)) {
@@ -642,7 +642,7 @@ void assert_avail_exceeds_minimum(char *shm_dir, uint64_t minimum_avail) {
  * The resulting file descriptor should be mmaped with the memfd_map
  * function (see below).
  ****************************************************************************/
-void memfd_init(char *shm_dir, size_t shared_mem_size, uint64_t minimum_avail) {
+void memfd_init(const char *shm_dir, size_t shared_mem_size, uint64_t minimum_avail) {
   if (shm_dir == NULL) {
     // This means that we should try to use the anonymous-y system calls
 #if defined(MEMFD_CREATE)
@@ -755,7 +755,7 @@ static char *memfd_map(size_t shared_mem_size) {
 
 static void raise_out_of_shared_memory(void)
 {
-  static value *exn = NULL;
+  static const value *exn = NULL;
   if (!exn) exn = caml_named_value("out_of_shared_memory");
   caml_raise_constant(*exn);
 }
@@ -982,10 +982,9 @@ CAMLprim value hh_shared_init(
 
   // None -> NULL
   // Some str -> String_val(str)
-  char *shm_dir = NULL;
-  if (shm_dir_val != Val_int(0)) {
-    shm_dir = String_val(Field(shm_dir_val, 0));
-  }
+  const char *shm_dir = (shm_dir_val == Val_int(0))
+    ? NULL
+    : String_val(Field(shm_dir_val, 0));
 
   memfd_init(
     shm_dir,
@@ -1178,7 +1177,7 @@ CAMLprim value hh_assert_allow_dependency_table_reads (void) {
 void check_should_exit(void) {
   assert(workers_should_exit != NULL);
   if(worker_can_exit && *workers_should_exit) {
-    static value *exn = NULL;
+    static const value *exn = NULL;
     if (!exn) exn = caml_named_value("worker_should_exit");
     caml_raise_constant(*exn);
   }
@@ -1246,7 +1245,7 @@ static void raise_dep_table_full(void) {
     dep_size
   );
 
-  static value *exn = NULL;
+  static const value *exn = NULL;
   if (!exn) exn = caml_named_value("dep_table_full");
   caml_raise_constant(*exn);
 }
@@ -1616,7 +1615,7 @@ CAMLprim value hh_collect(void) {
 }
 
 static void raise_heap_full(void) {
-  static value *exn = NULL;
+  static const value *exn = NULL;
   if (!exn) exn = caml_named_value("heap_full");
   caml_raise_constant(*exn);
 }
@@ -1657,7 +1656,7 @@ static heap_entry_t* hh_store_ocaml(
   // If the data is an Ocaml string it is more efficient to copy its contents
   // directly in our heap instead of serializing it.
   if (Is_block(data) && Tag_val(data) == String_tag) {
-    value = String_val(data);
+    value = (char *)String_val(data);
     size = caml_string_length(data);
     kind = KIND_STRING;
   } else {
@@ -1760,7 +1759,7 @@ static value write_at(unsigned int slot, value data) {
 }
 
 static void raise_hash_table_full(void) {
-  static value *exn = NULL;
+  static const value *exn = NULL;
   if (!exn) exn = caml_named_value("hash_table_full");
   caml_raise_constant(*exn);
 }
@@ -1944,7 +1943,7 @@ CAMLprim value hh_deserialize(heap_entry_t *elt) {
 
   if (Entry_kind(elt->header) == KIND_STRING) {
     result = caml_alloc_string(size);
-    memcpy(String_val(result), data, size);
+    memcpy((char *)String_val(result), data, size);
   } else {
     result = caml_input_value_from_block(data, size);
   }
@@ -2537,8 +2536,8 @@ CAMLprim value hh_save_dep_table_sqlite(
     value build_revision
 ) {
   CAMLparam2(out_filename, build_revision);
-  char *out_filename_raw = String_val(out_filename);
-  char *build_revision_raw = String_val(build_revision);
+  const char *out_filename_raw = String_val(out_filename);
+  const char *build_revision_raw = String_val(build_revision);
   size_t edges_added =
     hh_save_dep_table_helper_sqlite(out_filename_raw, build_revision_raw);
   CAMLreturn(Val_long(edges_added));
@@ -2549,8 +2548,8 @@ CAMLprim value hh_update_dep_table_sqlite(
     value build_revision
 ) {
   CAMLparam2(out_filename, build_revision);
-  char *out_filename_raw = String_val(out_filename);
-  char *build_revision_raw = String_val(build_revision);
+  const char *out_filename_raw = String_val(out_filename);
+  const char *build_revision_raw = String_val(build_revision);
   sqlite3 *db_out = NULL;
 
   // This can only happen in the master

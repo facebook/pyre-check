@@ -1,6 +1,7 @@
 [![lint](https://github.com/facebook/pyre-check/workflows/lint/badge.svg)](https://github.com/facebook/pyre-check/actions/workflows/lint.yml)
 [![tests](https://github.com/facebook/pyre-check/workflows/tests/badge.svg)](https://github.com/facebook/pyre-check/actions/workflows/tests.yml)
 [![pyre](https://github.com/facebook/pyre-check/workflows/pyre/badge.svg)](https://github.com/facebook/pyre-check/actions/workflows/pyre.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/facebook/pyre-check/master/logo.png">
@@ -8,18 +9,19 @@
 
 Pyre is a performant type checker for Python compliant with [PEP 484](https://www.python.org/dev/peps/pep-0484/). Pyre can analyze codebases with millions of lines of code incrementally – providing instantaneous feedback to developers as they write code.
 
-Pyre ships with **Pysa**, a security focused static analysis tool we've built on top of Pyre that reasons about data flows in Python applications. Please refer to our [documentation](https://pyre-check.org/docs/pysa-basics.html) to get started with our security analysis.
+Pyre ships with **Pysa**, a security focused static analysis tool we've built on top of Pyre that reasons about data flows in Python applications. Please refer to our [documentation](https://pyre-check.org/docs/pysa-quickstart) to get started with our security analysis.
 
 ## Requirements
 To get started, you need [Python 3.6 or later](https://www.python.org/getit/) and [watchman](https://facebook.github.io/watchman/) working on your system. On *MacOS* you can get everything with [homebrew](https://brew.sh/):
 ```bash
 $ brew install python3 watchman
 ```
-On *Ubuntu*, *Mint*, or *Debian*; use `apt-get`:
+On *Ubuntu*, *Mint*, or *Debian*; use `apt-get` and [homebrew](https://brew.sh/):
 ```bash
-$ sudo apt-get install python3 python3-pip watchman
+$ sudo apt-get install python3 python3-pip python3-venv
+$ brew install watchman
 ```
-We tested Pyre on *Ubuntu 16.04 LTS*, *CentOS 7*, as well as *OSX 10.11* and later.
+We tested Pyre on *Ubuntu 18.04.5 LTS*, *CentOS 7*, as well as *OSX 10.11* and later.
 
 ## Setting up a Project
 We start by creating an empty project directory and setting up a virtual environment:

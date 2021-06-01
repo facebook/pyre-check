@@ -21,8 +21,6 @@ class AnalyzeTest(unittest.TestCase):
     )
     @patch("subprocess.check_output")
     @patch("os.path.realpath")
-    # pyre-fixme[56]: Argument `set()` to decorator factory
-    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(commands.Reporting, "_get_directories_to_analyze", return_value=set())
     def test_analyze(
         self, directories_to_analyze, realpath, check_output, find_global_and_local_root
@@ -56,6 +54,8 @@ class AnalyzeTest(unittest.TestCase):
                 repository_root=None,
                 rules=None,
                 use_cache=False,
+                inline_decorators=False,
+                maximum_trace_length=None,
             )
             self.assertEqual(
                 command._flags(),
@@ -101,6 +101,8 @@ class AnalyzeTest(unittest.TestCase):
                 repository_root=None,
                 rules=None,
                 use_cache=False,
+                inline_decorators=False,
+                maximum_trace_length=None,
             )
             self.assertEqual(
                 command._flags(),
@@ -148,6 +150,8 @@ class AnalyzeTest(unittest.TestCase):
                 repository_root=None,
                 rules=None,
                 use_cache=False,
+                inline_decorators=False,
+                maximum_trace_length=None,
             )
             self.assertEqual(
                 command._flags(),
@@ -197,6 +201,8 @@ class AnalyzeTest(unittest.TestCase):
                 repository_root=None,
                 rules=None,
                 use_cache=False,
+                inline_decorators=False,
+                maximum_trace_length=None,
             )
             self.assertEqual(
                 command._flags(),
@@ -245,6 +251,8 @@ class AnalyzeTest(unittest.TestCase):
                 repository_root=None,
                 rules=None,
                 use_cache=False,
+                inline_decorators=False,
+                maximum_trace_length=None,
             )
             self.assertEqual(
                 command._flags(),
@@ -294,6 +302,8 @@ class AnalyzeTest(unittest.TestCase):
                 repository_root=None,
                 rules=None,
                 use_cache=False,
+                inline_decorators=False,
+                maximum_trace_length=None,
             )
             self.assertEqual(
                 command._flags(),
@@ -343,6 +353,8 @@ class AnalyzeTest(unittest.TestCase):
                 repository_root=None,
                 rules=None,
                 use_cache=False,
+                inline_decorators=False,
+                maximum_trace_length=None,
             )
             self.assertEqual(
                 command._flags(),
@@ -392,6 +404,8 @@ class AnalyzeTest(unittest.TestCase):
                 repository_root="/home/username/root",
                 rules=None,
                 use_cache=False,
+                inline_decorators=False,
+                maximum_trace_length=None,
             )
             self.assertEqual(
                 command._flags(),
@@ -444,6 +458,8 @@ class AnalyzeTest(unittest.TestCase):
                 repository_root=None,
                 rules=[5021, 5022],
                 use_cache=False,
+                inline_decorators=False,
+                maximum_trace_length=None,
             )
             self.assertEqual(
                 command._flags(),
@@ -493,6 +509,8 @@ class AnalyzeTest(unittest.TestCase):
                 repository_root=None,
                 rules=None,
                 use_cache=False,
+                inline_decorators=False,
+                maximum_trace_length=None,
             )
             self.assertEqual(
                 command._flags(),
@@ -540,6 +558,8 @@ class AnalyzeTest(unittest.TestCase):
                 repository_root=None,
                 rules=None,
                 use_cache=True,
+                inline_decorators=False,
+                maximum_trace_length=None,
             )
             self.assertEqual(
                 command._flags(),
@@ -564,6 +584,57 @@ class AnalyzeTest(unittest.TestCase):
                     "taint_models",
                     "-dump-call-graph",
                     "-use-cache",
+                ],
+            )
+            command.run()
+            call_client.assert_called_once_with(command=commands.Analyze.NAME)
+
+        arguments = mock_arguments()
+        with patch.object(
+            commands.Command, "_call_client", return_value=result
+        ) as call_client, patch("json.loads", return_value=[]):
+            command = commands.Analyze(
+                arguments,
+                original_directory,
+                configuration=configuration,
+                analysis_directory=AnalysisDirectory(
+                    configuration_module.SimpleSearchPathElement(".")
+                ),
+                analysis="taint",
+                taint_models_path=[],
+                no_verify=False,
+                save_results_to=None,
+                dump_call_graph=True,
+                repository_root=None,
+                rules=None,
+                use_cache=True,
+                inline_decorators=True,
+                maximum_trace_length=None,
+            )
+            self.assertEqual(
+                command._flags(),
+                [
+                    "-logging-sections",
+                    "-progress",
+                    "-project-root",
+                    "/root",
+                    "-log-directory",
+                    ".pyre",
+                    "-python-major-version",
+                    "3",
+                    "-python-minor-version",
+                    "6",
+                    "-python-micro-version",
+                    "0",
+                    "-workers",
+                    "5",
+                    "-analysis",
+                    "taint",
+                    "-taint-models",
+                    "taint_models",
+                    "-dump-call-graph",
+                    "-use-cache",
+                    "-inline-decorators",
                 ],
             )
             command.run()

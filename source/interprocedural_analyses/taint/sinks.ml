@@ -27,23 +27,24 @@ module T = struct
     | ParameterUpdate of int (* Special marker to describe side effect in-out behavior *)
     | AddFeatureToArgument
       (* Special marker to designate modifying the state the parameter passed in. *)
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, eq, sexp, hash]
 end
 
 include T
 
-let _ = show (* unused but derived *)
+let pp formatter = function
+  | Attach -> Format.fprintf formatter "Attach"
+  | PartialSink { kind; label } -> Format.fprintf formatter "PartialSink[%s[%s]]" kind label
+  | TriggeredPartialSink { kind; label } ->
+      Format.fprintf formatter "TriggeredPartialSink[%s[%s]]" kind label
+  | LocalReturn -> Format.fprintf formatter "LocalReturn"
+  | NamedSink name -> Format.fprintf formatter "%s" name
+  | ParametricSink { sink_name; subkind } -> Format.fprintf formatter "%s[%s]" sink_name subkind
+  | ParameterUpdate index -> Format.fprintf formatter "ParameterUpdate%d" index
+  | AddFeatureToArgument -> Format.fprintf formatter "AddFeatureToArgument"
 
-let show = function
-  | Attach -> "Attach"
-  | PartialSink { kind; label } -> Format.sprintf "PartialSink[%s[%s]]" kind label
-  | TriggeredPartialSink { kind; label } -> Format.sprintf "TriggeredPartialSink[%s[%s]]" kind label
-  | LocalReturn -> "LocalReturn"
-  | NamedSink name -> name
-  | ParametricSink { sink_name; subkind } -> Format.sprintf "%s[%s]" sink_name subkind
-  | ParameterUpdate index -> Format.sprintf "ParameterUpdate%d" index
-  | AddFeatureToArgument -> "AddFeatureToArgument"
 
+let show = Format.asprintf "%a" pp
 
 let ignore_leaf_at_call = function
   | Attach -> true

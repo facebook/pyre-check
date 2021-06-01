@@ -57,24 +57,33 @@ module T : sig
     type parameter_constraint = AnnotationConstraint of annotation_constraint
     [@@deriving compare, show]
 
-    type class_constraint =
+    type name_constraint =
       | Equals of string
-      | Extends of string
       | Matches of Re2.t
     [@@deriving compare, show]
 
+    type class_constraint =
+      | NameSatisfies of name_constraint
+      | Extends of {
+          class_name: string;
+          is_transitive: bool;
+        }
+    [@@deriving compare, show]
+
     type model_constraint =
-      | NameConstraint of string
+      | NameConstraint of name_constraint
       | ReturnConstraint of annotation_constraint
       | AnyParameterConstraint of parameter_constraint
       | AnyOf of model_constraint list
       | ParentConstraint of class_constraint
       | DecoratorNameConstraint of string
+      | Not of model_constraint
     [@@deriving compare, show]
 
     type kind =
       | FunctionModel
       | MethodModel
+      | AttributeModel
     [@@deriving show, compare]
 
     type produced_taint =
@@ -103,6 +112,7 @@ module T : sig
           taint: produced_taint list;
         }
       | ReturnTaint of produced_taint list
+      | AttributeTaint of produced_taint list
     [@@deriving show, compare]
 
     type rule = {
@@ -127,21 +137,29 @@ val parse
   ?path:Path.t ->
   ?rule_filter:int list ->
   source:string ->
-  configuration:Configuration.t ->
+  configuration:TaintConfiguration.t ->
   TaintResult.call_model Interprocedural.Callable.Map.t ->
   T.parse_result
 
 val verify_model_syntax : path:Path.t -> source:string -> unit
 
 val compute_sources_and_sinks_to_keep
-  :  configuration:Configuration.t ->
+  :  configuration:TaintConfiguration.t ->
   rule_filter:int list option ->
   Sources.Set.t option * Sinks.Set.t option
 
-val create_model_from_annotations
+val create_callable_model_from_annotations
   :  resolution:Analysis.Resolution.t ->
   callable:Interprocedural.Callable.real_target ->
   sources_to_keep:Sources.Set.t option ->
   sinks_to_keep:Sinks.Set.t option ->
   (T.annotation_kind * T.taint_annotation) list ->
+  (TaintResult.call_model, ModelVerificationError.t) result
+
+val create_attribute_model_from_annotations
+  :  resolution:Analysis.Resolution.t ->
+  name:Ast.Reference.t ->
+  sources_to_keep:Sources.Set.t option ->
+  sinks_to_keep:Sinks.Set.t option ->
+  T.taint_annotation list ->
   (TaintResult.call_model, ModelVerificationError.t) result

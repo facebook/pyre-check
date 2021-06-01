@@ -22,36 +22,30 @@ type _ introspect =
   (* Get multi-line description of entire domain structure *)
   | Structure : string list introspect
 
-type transform = T
-
-type reduce = R
-
-type partition = P
-
-type ('k, 'a, _, 'd, _) operation =
+type ('k, 'a, _, _) operation =
   (* transforms *)
-  | Map : (transform, 'a, 'a -> 'a, 'd, 'd) operation
-  | Add : (transform, 'a, 'a, 'd, 'd) operation
-  | Filter : (transform, 'a, 'a -> bool, 'd, 'd) operation
+  | Map : ([< `Transform ], 'a, 'a -> 'a, _) operation
+  | Add : ([< `Transform ], 'a, 'a, _) operation
+  | Filter : ([ `Transform ], 'a, 'a -> bool, _) operation
   (* expand a part into multiple parts. Typically, just join, but different for keys etc *)
-  | Expand : (transform, 'a, 'a -> 'a list, 'd, 'd) operation
-  (* Perform the given transform before the second operation on the same part *)
+  | Expand : ([ `Transform ], 'a, 'a -> 'a list, _) operation
+  (* Perform two operations in sequence. *)
   | Seq :
-      (transform, 'a, 'f, 'd, 'd) operation * ('k, 'a, 'g, 'd, 'b) operation
-      -> ('k, 'a, 'f * 'g, 'd, 'b) operation
+      (([< `Transform | `Reduce ] as 'k), 'a, 'f, 'r) operation * ('k, 'a, 'g, 'r) operation
+      -> ('k, 'a, 'f * 'g, 'r) operation
   (* context grabs an arbitrary outer part and passes it to an inner operation. 'c part must be on
      the path to 'a part in the structure. Only applies to non-leaf domain parts (like Map.Key,
      Tree.Path, ..., or Self) *)
-  | Context : 'c part * ('k, 'a, 'f, 'd, 'b) operation -> ('k, 'a, 'c -> 'f, 'd, 'b) operation
+  | Context : 'c part * ('k, 'a, 'f, 'r) operation -> ('k, 'a, 'c -> 'f, 'r) operation
   (* Used to reroot the traversal, in conjunction with OpSeq. The operation is applied not to 'a
      part but to 'c part, which must occur structurally under 'a part *)
-  | Nest : 'c part * ('k, 'c, 'f, 'd, 'b) operation -> ('k, 'a, 'f, 'd, 'b) operation
+  | Nest : 'c part * ('k, 'c, 'f, 'r) operation -> ('k, 'a, 'f, 'r) operation
   (* reductions *)
-  | Acc : (reduce, 'a, 'a -> 'b -> 'b, 'd, 'b) operation
-  | Exists : (reduce, 'a, 'a -> bool, 'd, bool) operation
+  | Acc : ([< `Reduce ], 'a, 'a -> 'b -> 'b, 'b) operation
+  | Exists : ([< `Reduce ], 'a, 'a -> bool, bool) operation
   (* partitioning *)
-  | By : (partition, 'a, 'a -> 'b, 'd, 'b) operation
-  | ByFilter : (partition, 'a, 'a -> 'b option, 'd, 'b) operation
+  | By : ([ `Partition ], 'a, 'a -> 'b, 'b) operation
+  | ByFilter : ([ `Partition ], 'a, 'a -> 'b option, 'b) operation
 
 module type S = sig
   type t [@@deriving show]
@@ -64,18 +58,18 @@ module type S = sig
 
   val join : t -> t -> t
 
+  (* meet a b is an over-approximation of the intersection of 'a' and 'b' *)
   val meet : t -> t -> t
 
   val less_or_equal : left:t -> right:t -> bool
 
   val widen : iteration:int -> prev:t -> next:t -> t
 
-  (* subtract a from = b, s.t. b <= from and from <= b |_| a or b is bottom. The latter case (b =
-     bottom) arises for strict domains. *)
+  (* subtract a from = b, s.t. b <= from and from <= b |_| a *)
   val subtract : t -> from:t -> t
 
   (* Reduce specific parts of composed abstract domains with a given operation. *)
-  val reduce : 'a part -> using:(reduce, 'a, 'f, t, 'b) operation -> f:'f -> init:'b -> t -> 'b
+  val reduce : 'a part -> using:([ `Reduce ], 'a, 'f, 'b) operation -> f:'f -> init:'b -> t -> 'b
 
   (* Classic reduction using an accumulator. *)
   val fold : 'a part -> f:('a -> 'b -> 'b) -> init:'b -> t -> 'b
@@ -83,12 +77,12 @@ module type S = sig
   (* Partition the domain according to function. None partitions are dropped *)
   val partition
     :  'a part ->
-    (partition, 'a, 'f, t, 'b) operation ->
+    ([ `Partition ], 'a, 'f, 'b) operation ->
     f:'f ->
     t ->
     ('b, t) Core_kernel.Map.Poly.t
 
-  val transform : 'a part -> (transform, 'a, 'f, t, t) operation -> f:'f -> t -> t
+  val transform : 'a part -> ([ `Transform ], 'a, 'f, _) operation -> f:'f -> t -> t
 
   (* Return insights about the abstract domain structure *)
   val introspect : 'a introspect -> 'a
@@ -117,7 +111,7 @@ let part_name (part : 'a part) =
     (part_id part)
 
 
-let rec operation_name : type k a f d b. (k, a, f, d, b) operation -> string =
+let rec operation_name : type k a f b. (k, a, f, b) operation -> string =
  fun op ->
   match op with
   | Map -> "Map"
@@ -139,25 +133,15 @@ let rec operation_name : type k a f d b. (k, a, f, d, b) operation -> string =
 module type BASE = sig
   type t
 
-  val freshen_transform
-    :  (transform, 'a, 'f, 'd, 'd) operation ->
-    (transform, 'a, 'f, 'e, 'e) operation
+  val transform : 'a part -> ([ `Transform ], 'a, 'f, _) operation -> f:'f -> t -> t
 
-  val freshen_reduce : (reduce, 'a, 'f, 'd, 'b) operation -> (reduce, 'a, 'f, 'e, 'b) operation
-
-  val freshen_partition
-    :  (partition, 'a, 'f, 'd, 'b) operation ->
-    (partition, 'a, 'f, 'e, 'b) operation
-
-  val transform : 'a part -> (transform, 'a, 'f, t, t) operation -> f:'f -> t -> t
-
-  val reduce : 'a part -> using:(reduce, 'a, 'f, t, 'b) operation -> f:'f -> init:'b -> t -> 'b
+  val reduce : 'a part -> using:([ `Reduce ], 'a, 'f, 'b) operation -> f:'f -> init:'b -> t -> 'b
 
   val fold : 'a part -> f:('a -> 'b -> 'b) -> init:'b -> t -> 'b
 
   val partition
     :  'a part ->
-    (partition, 'a, 'f, t, 'b) operation ->
+    ([ `Partition ], 'a, 'f, 'b) operation ->
     f:'f ->
     t ->
     ('b, t) Core_kernel.Map.Poly.t
@@ -180,13 +164,13 @@ module MakeBase (D : sig
 
   type _ part += Self : t part
 
-  val transform : 'a part -> (transform, 'a, 'f, t, t) operation -> f:'f -> t -> t
+  val transform : 'a part -> ([ `Transform ], 'a, 'f, _) operation -> f:'f -> t -> t
 
-  val reduce : 'a part -> using:(reduce, 'a, 'f, t, 'b) operation -> f:'f -> init:'b -> t -> 'b
+  val reduce : 'a part -> using:([ `Reduce ], 'a, 'f, 'b) operation -> f:'f -> init:'b -> t -> 'b
 
   val partition
     :  'a part ->
-    (partition, 'a, 'f, t, 'b) operation ->
+    ([ `Partition ], 'a, 'f, 'b) operation ->
     f:'f ->
     t ->
     ('b, t) Core_kernel.Map.Poly.t
@@ -205,7 +189,7 @@ end) : BASE with type t := D.t = struct
     |> failwith
 
 
-  let unhandled_part_op (type a b f d k) (part : a part) (op : (k, a, f, d, b) operation) what =
+  let unhandled_part_op (type a b f k) (part : a part) (op : (k, a, f, b) operation) what =
     let part_name = part_name part in
     let op_name = operation_name op in
     Format.sprintf
@@ -217,45 +201,7 @@ end) : BASE with type t := D.t = struct
     |> failwith
 
 
-  let rec freshen_transform
-      : type a f d e. (transform, a, f, d, d) operation -> (transform, a, f, e, e) operation
-    =
-   fun op ->
-    match op with
-    | Map -> Map
-    | Add -> Add
-    | Filter -> Filter
-    | Expand -> Expand
-    | Context (part, op) -> Context (part, freshen_transform op)
-    | Seq (op1, op2) -> Seq (freshen_transform op1, freshen_transform op2)
-    | Nest (p, op) -> Nest (p, freshen_transform op)
-
-
-  let rec freshen_reduce
-      : type a b f d e. (reduce, a, f, d, b) operation -> (reduce, a, f, e, b) operation
-    =
-   fun op ->
-    match op with
-    | Acc -> Acc
-    | Exists -> Exists
-    | Context (part, op) -> Context (part, freshen_reduce op)
-    | Seq (op1, op2) -> Seq (freshen_transform op1, freshen_reduce op2)
-    | Nest (p, op) -> Nest (p, freshen_reduce op)
-
-
-  let rec freshen_partition
-      : type a b f d e. (partition, a, f, d, b) operation -> (partition, a, f, e, b) operation
-    =
-   fun op ->
-    match op with
-    | By -> By
-    | ByFilter -> ByFilter
-    | Context (part, op) -> Context (part, freshen_partition op)
-    | Seq (op1, op2) -> Seq (freshen_transform op1, freshen_partition op2)
-    | Nest (p, op) -> Nest (p, freshen_partition op)
-
-
-  let transform : type a f. a part -> (transform, a, f, D.t, D.t) operation -> f:f -> D.t -> D.t =
+  let transform : type a f. a part -> ([ `Transform ], a, f, _) operation -> f:f -> D.t -> D.t =
    fun part op ~f d ->
     match part, op with
     | D.Self, Map -> f d
@@ -273,7 +219,7 @@ end) : BASE with type t := D.t = struct
 
 
   let reduce
-      : type a b f. a part -> using:(reduce, a, f, D.t, b) operation -> f:f -> init:b -> D.t -> b
+      : type a b f. a part -> using:([ `Reduce ], a, f, b) operation -> f:f -> init:b -> D.t -> b
     =
    fun part ~using:op ~f ~init d ->
     match part, op with
@@ -281,7 +227,7 @@ end) : BASE with type t := D.t = struct
     | D.Self, Exists -> init || f d
     | _, Seq (op1, op2) ->
         let f1, f2 = f in
-        let d = D.transform part op1 ~f:f1 d in
+        let init = D.reduce part ~using:op1 ~f:f1 ~init d in
         D.reduce part ~using:op2 ~f:f2 ~init d
     | _, Nest (nested_part, op) -> D.reduce nested_part ~using:op ~f ~init d
     | _, Context (D.Self, op) -> D.reduce part ~using:op ~f:(f d) ~init d
@@ -294,7 +240,7 @@ end) : BASE with type t := D.t = struct
   let partition
       : type a b f.
         a part ->
-        (partition, a, f, D.t, b) operation ->
+        ([ `Partition ], a, f, b) operation ->
         f:f ->
         D.t ->
         (b, D.t) Core_kernel.Map.Poly.t
@@ -306,10 +252,6 @@ end) : BASE with type t := D.t = struct
         match f d with
         | None -> Core_kernel.Map.Poly.empty
         | Some key -> Core_kernel.Map.Poly.singleton key d )
-    | _, Seq (op1, op2) ->
-        let f1, f2 = f in
-        let d = D.transform part op1 ~f:f1 d in
-        D.partition part (freshen_partition op2) ~f:f2 d
     | _, Nest (nested_part, op) -> D.partition nested_part op ~f d
     | _, Context (D.Self, op) -> D.partition part op ~f:(f d) d
     | _, Context (p, _) -> unhandled_context p "partition"

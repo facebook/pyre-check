@@ -138,7 +138,9 @@ class Incremental(Reporting):
 
         search_path = [
             search_path.command_line_argument()
-            for search_path in self._configuration.get_existent_search_paths()
+            for search_path in (
+                self._configuration.expand_and_get_existent_search_paths()
+            )
         ]
         if search_path:
             flags.extend(["-search-path", ",".join(search_path)])

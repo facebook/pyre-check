@@ -33,7 +33,14 @@ let create_symlink ~target link =
   catch_unix_error (fun () -> Lwt_unix.symlink (Path.absolute target) (Path.absolute link))
 
 
-let remove path = catch_unix_error (fun () -> Lwt_unix.unlink (Path.absolute path))
+let remove_if_exists path =
+  catch_unix_error (fun () ->
+      Lwt.catch
+        (fun () -> Lwt_unix.unlink (Path.absolute path))
+        (function
+          | Unix.Unix_error (Unix.ENOENT, _, _) -> Lwt.return_unit
+          | _ as exn -> Lwt.fail exn))
+
 
 let create_parent_directory_and_symlink ~target link =
   let open Lwt.Infix in
@@ -75,12 +82,10 @@ let update ~source_root ~artifact_root difference =
     let process_update (artifact, kind) =
       let artifact_path = Path.create_relative ~root:artifact_root ~relative:artifact in
       match kind with
-      | BuildMap.Difference.Kind.Deleted -> remove artifact_path
-      | New source ->
-          let source_path = Path.create_relative ~root:source_root ~relative:source in
-          create_parent_directory_and_symlink ~target:source_path artifact_path
+      | BuildMap.Difference.Kind.Deleted -> remove_if_exists artifact_path
+      | New source
       | Changed source -> (
-          remove artifact_path
+          remove_if_exists artifact_path
           >>= function
           | Result.Error _ as error -> Lwt.return error
           | Result.Ok () ->

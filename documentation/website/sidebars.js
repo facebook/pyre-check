@@ -11,10 +11,7 @@ const {fbContent, fbInternalOnly} = require('internaldocs-fb-helpers');
 
 module.exports = {
   pyre: [
-    ...fbContent({
-      internal: ['fb/getting-started'],
-      external: ['getting-started'],
-    }),
+    'getting-started',
     ...fbContent({
       external: ['installation'],
     }),
@@ -26,6 +23,7 @@ module.exports = {
     'querying-pyre',
   ],
   pysa: [
+    'pysa-quickstart',
     {
       'How Pysa Works': [
         'pysa-basics',
@@ -43,6 +41,7 @@ module.exports = {
             'fb/pysa-on-fbcode-internal',
             'fb/pysa-running-opensource-internal',
             'fb/pysa-running-common-internal',
+            'fb/pysa-running-sandcastle',
           ],
         },
       ],
@@ -108,10 +107,16 @@ module.exports = {
           'fb/warning_codes/code-5116',
           'fb/warning_codes/code-5117',
           'fb/warning_codes/code-5120',
+          'fb/warning_codes/code-5132',
+          'fb/warning_codes/code-6064',
+          'fb/warning_codes/code-6065',
+          'fb/warning_codes/code-6066',
           'fb/warning_codes/code-6073',
           'fb/warning_codes/code-6074',
           'fb/warning_codes/code-6107',
+          'fb/warning_codes/code-6308',
           'fb/warning_codes/code-6310',
+          'fb/warning_codes/code-6312',
           'fb/warning_codes/code-6445',
           'fb/warning_codes/code-6446',
           'fb/warning_codes/code-6449',

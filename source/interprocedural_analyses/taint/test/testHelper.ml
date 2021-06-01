@@ -106,7 +106,10 @@ let check_expectation
   let extract_sinks_by_parameter_name (root, sink_tree) sink_map =
     match AccessPath.Root.parameter_name root with
     | Some name ->
-        let sinks = Domains.BackwardState.Tree.collapse sink_tree |> Domains.BackwardTaint.leaves in
+        let sinks =
+          Domains.BackwardState.Tree.collapse ~transform:Fn.id sink_tree
+          |> Domains.BackwardTaint.leaves
+        in
         let sinks =
           String.Map.find sink_map name
           |> Option.value ~default:[]
@@ -119,7 +122,10 @@ let check_expectation
   let extract_sources_by_parameter_name (root, source_tree) sink_map =
     match AccessPath.Root.parameter_name root with
     | Some name ->
-        let sinks = Domains.ForwardState.Tree.collapse source_tree |> Domains.ForwardTaint.leaves in
+        let sinks =
+          Domains.ForwardState.Tree.collapse ~transform:Fn.id source_tree
+          |> Domains.ForwardTaint.leaves
+        in
         let sinks =
           String.Map.find sink_map name
           |> Option.value ~default:[]
@@ -229,7 +235,7 @@ let check_expectation
   (* Check sources. *)
   let returned_sources =
     Domains.ForwardState.read ~root:AccessPath.Root.LocalResult ~path:[] forward.source_taint
-    |> Domains.ForwardState.Tree.collapse
+    |> Domains.ForwardState.Tree.collapse ~transform:Fn.id
     |> Domains.ForwardTaint.leaves
     |> List.map ~f:Sources.show
     |> String.Set.of_list
@@ -374,7 +380,8 @@ let run_with_taint_models tests ~name =
 type test_environment = {
   callgraph: DependencyGraph.callgraph;
   overrides: DependencyGraph.t;
-  all_callables: Callable.t list;
+  callables_to_analyze: Callable.t list;
+  initial_models_callables: Callable.t list;
   environment: TypeEnvironment.ReadOnly.t;
 }
 
@@ -498,6 +505,7 @@ let initialize
                   | (`Function _ as callable), _ -> Some (callable :> Callable.real_target)
                   | (`Method _ as callable), _ -> Some (callable :> Callable.real_target)
                   | _ -> None))
+            ~environment
         in
         let remove_sinks models = Callable.Map.map ~f:Model.remove_sinks models in
         let add_obscure_sinks models =
@@ -540,15 +548,16 @@ let initialize
 
   let callables = List.map ~f:fst callables |> List.rev_append (Callable.Map.keys overrides) in
   let stubs = List.map ~f:fst stubs in
-  let all_callables = List.rev_append stubs callables in
+  let callables_to_analyze = List.rev_append stubs callables in
+  let initial_models_callables = Callable.Map.keys initial_models in
   (* Initialize models *)
   let () = TaintConfiguration.register taint_configuration in
   let () =
-    let keys = Fixpoint.KeySet.of_list all_callables in
+    let keys = Fixpoint.KeySet.of_list callables_to_analyze in
     Fixpoint.remove_new keys;
     Fixpoint.remove_old keys;
     initial_models
     |> Callable.Map.map ~f:(Interprocedural.Result.make_model Taint.Result.kind)
     |> Interprocedural.Analysis.record_initial_models ~functions:callables ~stubs
   in
-  { callgraph; overrides; all_callables; environment }
+  { callgraph; overrides; callables_to_analyze; initial_models_callables; environment }

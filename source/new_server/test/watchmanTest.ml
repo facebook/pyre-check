@@ -265,6 +265,110 @@ let test_filter_expression context =
   ()
 
 
+let test_filter_creation context =
+  let assert_filter
+      ~expected:{ Watchman.Filter.base_names = expected_base_names; suffixes = expected_suffixes }
+      { Watchman.Filter.base_names = actual_base_names; suffixes = actual_suffixes }
+    =
+    let cmp = [%compare.equal: string list] in
+    let printer contents = Base.Sexp.to_string_hum ([%sexp_of: string list] contents) in
+    let sorted = List.sort ~compare:String.compare in
+    assert_equal ~ctxt:context ~cmp ~printer (sorted expected_base_names) (sorted actual_base_names);
+    assert_equal ~ctxt:context ~cmp ~printer (sorted expected_suffixes) (sorted actual_suffixes)
+  in
+
+  let open ServerConfiguration in
+  let open Watchman.Filter in
+  assert_filter
+    (from_server_configurations
+       ~critical_files:[]
+       ~extensions:[]
+       ~source_paths:(SourcePaths.Simple [])
+       ())
+    ~expected:
+      {
+        base_names = [".pyre_configuration"; ".pyre_configuration.local"];
+        suffixes = ["py"; "pyi"];
+      };
+  let open ServerConfiguration in
+  let open Watchman.Filter in
+  assert_filter
+    (from_server_configurations
+       ~critical_files:[]
+       ~extensions:[Configuration.Extension.create_extension "foo"]
+       ~source_paths:(SourcePaths.Simple [])
+       ())
+    ~expected:
+      {
+        base_names = [".pyre_configuration"; ".pyre_configuration.local"];
+        suffixes = ["py"; "pyi"; "foo"];
+      };
+  assert_filter
+    (from_server_configurations
+       ~critical_files:
+         [
+           CriticalFile.BaseName "foo.txt";
+           CriticalFile.FullPath (Path.create_absolute "/derp/bar.txt");
+           CriticalFile.Extension "bar";
+         ]
+       ~extensions:[]
+       ~source_paths:(SourcePaths.Simple [])
+       ())
+    ~expected:
+      {
+        base_names = [".pyre_configuration"; ".pyre_configuration.local"; "foo.txt"; "bar.txt"];
+        suffixes = ["py"; "pyi"; "bar"];
+      };
+  assert_filter
+    (from_server_configurations
+       ~critical_files:[CriticalFile.Extension "py"; CriticalFile.Extension "pyi"]
+       ~extensions:[]
+       ~source_paths:(SourcePaths.Simple [])
+       ())
+    ~expected:
+      {
+        base_names = [".pyre_configuration"; ".pyre_configuration.local"];
+        suffixes = ["py"; "pyi"];
+      };
+  assert_filter
+    (from_server_configurations
+       ~critical_files:
+         [
+           CriticalFile.BaseName ".pyre_configuration";
+           CriticalFile.BaseName ".pyre_configuration.local";
+           CriticalFile.FullPath (Path.create_absolute "/foo/bar.txt");
+           CriticalFile.BaseName "bar.txt";
+         ]
+       ~extensions:[]
+       ~source_paths:(SourcePaths.Simple [])
+       ())
+    ~expected:
+      {
+        base_names = [".pyre_configuration"; ".pyre_configuration.local"; "bar.txt"];
+        suffixes = ["py"; "pyi"];
+      };
+  assert_filter
+    (from_server_configurations
+       ~critical_files:[]
+       ~extensions:[]
+       ~source_paths:
+         (SourcePaths.Buck
+            {
+              Buck.mode = None;
+              isolation_prefix = None;
+              targets = [];
+              source_root = Path.create_absolute "/source";
+              artifact_root = Path.create_absolute "/artifact";
+            })
+       ())
+    ~expected:
+      {
+        base_names = [".pyre_configuration"; ".pyre_configuration.local"; "TARGETS"; "BUCK"];
+        suffixes = ["py"; "pyi"; "thrift"];
+      };
+  ()
+
+
 let test_since_query_request context =
   let open Watchman.SinceQuery in
   let root = Path.create_absolute "/fake/root" in
@@ -498,6 +602,7 @@ let () =
          "low_level" >:: OUnitLwt.lwt_wrapper test_low_level_apis;
          "subscription" >:: OUnitLwt.lwt_wrapper test_subscription;
          "filter_expression" >:: test_filter_expression;
+         "filter_creation" >:: test_filter_creation;
          "since_query_request" >:: test_since_query_request;
          "since_query_response" >:: test_since_query_response;
          "since_query" >:: OUnitLwt.lwt_wrapper test_since_query;

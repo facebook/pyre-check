@@ -434,6 +434,7 @@ let test_qualify _ =
   assert_qualify "from a import b as c; c" "from a import b as c; a.b";
   assert_qualify "from builtins import b; b" "from builtins import b; b";
   assert_qualify "b; import a as b; b" "b; import a as b; a";
+  assert_qualify "import builtins; builtins.b" "import builtins; b";
 
   (* Qualification in different places. *)
   let assert_qualify_statement actual expected =
@@ -470,6 +471,15 @@ let test_qualify _ =
   assert_qualify_statement
     "b = 1\nfor b in []: pass"
     "$local_qualifier$b = 1\nfor $local_qualifier$b in []: pass";
+  assert_qualify_statement
+    "b = 1\n[b for b in []]"
+    "$local_qualifier$b = 1\n[$target$b for $target$b in []]";
+  assert_qualify_statement
+    "b = 1\n[b for a in []]"
+    "$local_qualifier$b = 1\n[$local_qualifier$b for $target$a in []]";
+  assert_qualify_statement
+    "b = 1\n[b for b in []]"
+    "$local_qualifier$b = 1\n[$target$b for $target$b in []]";
   assert_qualify_statement "\nif b:\n\tb\nelse:\n\tb" "\nif a:\n\ta\nelse:\n\ta";
   assert_qualify_statement "raise b" "raise a";
   assert_qualify_statement "return b" "return a";
@@ -1700,10 +1710,10 @@ let test_qualify _ =
     |};
   assert_qualify
     {|
-      def foo(*args, **kwargs): ...
+      def foo( *args, **kwargs): ...
     |}
     {|
-      def qualifier.foo(*$parameter$args, **$parameter$kwargs): ...
+      def qualifier.foo( *$parameter$args, **$parameter$kwargs): ...
     |};
   (* Class with the same name as the module. *)
   assert_qualify {|
@@ -5603,17 +5613,24 @@ let test_expand_import_python_calls _ =
   |};
   assert_expand
     {|
-    import_python("cubism/shared.cinc", "*")
+      import_python("cubism/shared.cinc", "*")
     |}
     {|
       from cubism.shared.cinc import *
     |};
   assert_expand
     {|
-    import_python("cubism/shared.cinc")
+      import_python("cubism/shared.cinc")
     |}
     {|
       import cubism.shared.cinc
+    |};
+  assert_expand
+    {|
+      import_thrift("cubism/shared.thrift")
+    |}
+    {|
+      import cubism.shared.thrift
     |};
   ()
 

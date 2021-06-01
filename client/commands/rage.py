@@ -12,7 +12,7 @@ from .. import command_arguments, recently_used_configurations
 from ..analysis_directory import AnalysisDirectory
 from ..configuration import Configuration, SimpleSearchPathElement
 from ..version import __version__
-from .command import Command
+from .command import Command, State
 from .servers import Servers
 
 
@@ -84,9 +84,7 @@ class Rage(Command):
                 self._log_directory_for_binary = str(
                     self._configuration.dot_pyre_directory / local_root
                 )
-                self._call_client(
-                    command=self.NAME, capture_output=False, stdout=output_file
-                ).check()
+                self._call_rage(output_file)
                 print(f"\n{RAGE_DELIMITER}\n", file=output_file, flush=True)
 
     def _rage(self, output_file: IO[str]) -> None:
@@ -106,8 +104,23 @@ class Rage(Command):
             flush=True,
         )
         if self._configuration.local_root is not None:
-            self._call_client(
-                command=self.NAME, capture_output=False, stdout=output_file
-            ).check()
+            self._call_rage(output_file)
         else:
             self._call_client_for_root_project(output_file)
+
+    def _call_rage(
+        self,
+        output_file: IO[str],
+    ) -> None:
+        if self._state() != State.RUNNING:
+            print(
+                f"{RAGE_DELIMITER}\nNo server running!\n{RAGE_DELIMITER}\n",
+                file=output_file,
+                flush=True,
+            )
+        self._call_client(
+            command=self.NAME,
+            capture_output=False,
+            stdout=output_file,
+            check_analysis_directory=False,
+        ).check()

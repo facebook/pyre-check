@@ -2593,7 +2593,7 @@ let test_recursive_aliases context =
     |}
     [
       "Revealed type [-1]: Revealed type for `x` is `str` (inferred: \
-       `typing_extensions.Literal['x']`).";
+       `typing_extensions.Literal['x']`, final).";
       "Revealed type [-1]: Revealed type for `y` is `typing_extensions.Literal['y']`.";
     ];
   assert_type_errors

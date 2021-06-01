@@ -39,6 +39,9 @@ val lookup_artifact : t -> PyrePath.t -> PyrePath.t list
 (** Given an source path, return the corresponding artifact paths. Return the empty list if no such
     artifact path exists. *)
 
+val store : t -> unit
+(** Store the current build system into saved state. *)
+
 (** {2 Construction & Initialization} *)
 
 (* This function allows the client to fully tweak the behavior of a build system. Expose for testing
@@ -48,6 +51,7 @@ val create_for_testing
   ?cleanup:(unit -> unit Lwt.t) ->
   ?lookup_source:(PyrePath.t -> PyrePath.t option) ->
   ?lookup_artifact:(PyrePath.t -> PyrePath.t list) ->
+  ?store:(unit -> unit) ->
   unit ->
   t
 
@@ -63,6 +67,12 @@ module Initializer : sig
   val run : t -> build_system Lwt.t
   (** Construct a {!type:BuildSystem.t}. Additional work can be performed (e.g. copying or indexing
       files) to establish the source-to-artifact mapping, before the build system gets created.
+
+      This API may or may not raise exceptions, depending on the behavior of each individual
+      initializer. *)
+
+  val load : t -> build_system Lwt.t
+  (** Load a {!type:BuildSystem.t} from saved state.
 
       This API may or may not raise exceptions, depending on the behavior of each individual
       initializer. *)
@@ -87,5 +97,9 @@ module Initializer : sig
 
   (* This function allows the client to fully tweak the behavior of an initializer. Expose for
      testing purpose only. *)
-  val create_for_testing : initialize:(unit -> build_system Lwt.t) -> unit -> t
+  val create_for_testing
+    :  initialize:(unit -> build_system Lwt.t) ->
+    load:(unit -> build_system Lwt.t) ->
+    unit ->
+    t
 end

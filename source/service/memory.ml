@@ -115,6 +115,11 @@ let initialize ~heap_size ~dep_table_pow ~hash_table_pow ~log_level () =
           log_level;
         }
       in
+      Log.info
+        "Initializing shared memory [heap_size=%d, dep_table_pow=%d, hash_table_pow=%d]"
+        heap_size
+        dep_table_pow
+        hash_table_pow;
       let heap_handle = SharedMemory.init shared_mem_config in
       configuration := Some { heap_handle; minor_heap_size };
       { heap_handle; minor_heap_size }
@@ -133,20 +138,27 @@ let initialize_for_tests () =
   ()
 
 
-let get_heap_handle { Configuration.Analysis.debug; _ } =
+let get_heap_handle
+    {
+      Configuration.Analysis.debug;
+      shared_memory = { heap_size; dependency_table_power; hash_table_power };
+      _;
+    }
+  =
   let log_level =
     if debug then
       1
     else
       0
   in
-  let heap_size =
-    (* 8 GB *)
-    8192 * 1024 * 1024
+  let { heap_handle; _ } =
+    initialize
+      ~heap_size
+      ~dep_table_pow:dependency_table_power
+      ~hash_table_pow:hash_table_power
+      ~log_level
+      ()
   in
-  let dep_table_pow = 27 in
-  let hash_table_pow = 26 in
-  let { heap_handle; _ } = initialize ~heap_size ~dep_table_pow ~hash_table_pow ~log_level () in
   heap_handle
 
 

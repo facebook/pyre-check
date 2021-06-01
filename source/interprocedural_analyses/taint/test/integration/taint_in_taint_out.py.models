@@ -140,6 +140,8 @@
             "tito": [ { "line": 190, "start": 48, "end": 63 } ],
             "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [
+              { "always-via": "tito-broadening" },
+              { "always-via": "broadening" },
               { "always-via": "tito" },
               { "always-via": "special_source" },
               { "always-via": "obscure" }
@@ -164,6 +166,8 @@
       }
     ],
     "features": [
+      { "always-via": "tito-broadening" },
+      { "always-via": "broadening" },
       { "always-via": "tito" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" },
@@ -301,7 +305,37 @@
               { "line": 184, "start": 44, "end": 49 }
             ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
-            "features": [ { "always-via": "tito" }, { "via": "obscure" } ]
+            "features": [
+              { "via": "tito-broadening" },
+              { "via": "broadening" },
+              { "always-via": "tito" },
+              { "via": "obscure" }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{taint_in_taint_out.FieldIsTITO.add_tito}",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal($global)",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal($global)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "features": [ { "always-via": "string_concat_lhs" } ]
           }
         ]
       }
@@ -344,6 +378,8 @@
             "features": [
               { "has": "first-index" },
               { "first-index": "<numeric>" },
+              { "via": "issue-broadening" },
+              { "via": "broadening" },
               { "via": "tito" }
             ]
           }
@@ -505,6 +541,8 @@
             "features": [
               { "has": "first-index" },
               { "first-index": "<numeric>" },
+              { "via": "issue-broadening" },
+              { "via": "broadening" },
               { "via": "tito" }
             ]
           }
@@ -556,7 +594,12 @@
             "decl": null,
             "tito": [ { "line": 186, "start": 31, "end": 36 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
-            "features": [ { "via": "tito" }, { "always-via": "obscure" } ]
+            "features": [
+              { "always-via": "tito-broadening" },
+              { "always-via": "broadening" },
+              { "via": "tito" },
+              { "always-via": "obscure" }
+            ]
           }
         ]
       }
@@ -688,6 +731,8 @@
             "features": [
               { "has": "first-index" },
               { "first-index": "<numeric>" },
+              { "via": "issue-broadening" },
+              { "via": "broadening" },
               { "via": "tito" }
             ]
           }
@@ -872,7 +917,11 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "features": [
+              { "always-via": "widen-broadening" },
+              { "always-via": "broadening" }
+            ]
           }
         ]
       }
@@ -887,20 +936,20 @@
     "sinks": [],
     "tito": [
       {
-        "port": "formal(payload)[**keys]",
-        "taint": [
-          {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "[**keys]" } ]
-          }
-        ]
-      },
-      {
         "port": "formal(payload)[*]",
         "taint": [
           {
             "decl": null,
             "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(payload).**keys",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": ".**keys" } ]
           }
         ]
       }
@@ -954,7 +1003,11 @@
               { "kind": "LocalReturn", "name": "[related][init_list]" },
               { "kind": "LocalReturn", "name": "[init_list]" }
             ],
-            "features": [ { "always-via": "tito" } ]
+            "features": [
+              { "via": "issue-broadening" },
+              { "via": "broadening" },
+              { "always-via": "tito" }
+            ]
           }
         ]
       }

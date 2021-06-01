@@ -26,13 +26,13 @@ Val_some( value v )
 
 CAMLprim value
 hh_realpath(value v) {
-  char *input;
+  const char *input;
 #ifndef _WIN32
   char output[PATH_MAX];
 #else
   char output[_MAX_PATH];
 #endif
-  char *result;
+  const char *result;
 
   CAMLparam1(v);
 

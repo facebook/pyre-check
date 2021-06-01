@@ -177,7 +177,7 @@ let test_final_attributes context =
         x = 2
     |}
     [
-      "Revealed type [-1]: Revealed type for `x` is `typing_extensions.Literal[1]`.";
+      "Revealed type [-1]: Revealed type for `x` is `typing_extensions.Literal[1]` (final).";
       "Invalid assignment [41]: Cannot reassign final attribute `x`.";
     ];
   assert_type_errors

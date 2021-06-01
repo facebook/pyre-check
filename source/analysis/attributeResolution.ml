@@ -10,6 +10,7 @@ open Pyre
 open Ast
 open Statement
 open Assumptions
+open ClassSummary
 
 module Global = struct
   type t = {
@@ -506,9 +507,7 @@ module ClassDecorators = struct
                       override_existing_parameters parameters
                   | _ -> parameters
                 in
-                let get_table
-                    ({ Node.value = { ClassSummary.attribute_components; _ }; _ } as parent)
-                  =
+                let get_table ({ Node.value = class_summary; _ } as parent) =
                   let create attribute : uninstantiated_attribute * Expression.t =
                     let value =
                       match attribute with
@@ -529,10 +528,10 @@ module ClassDecorators = struct
                   let compare_by_location left right =
                     Ast.Location.compare (Node.location left) (Node.location right)
                   in
-                  Class.attributes
+                  ClassSummary.attributes
                     ~include_generated_attributes:false
                     ~in_test:false
-                    attribute_components
+                    class_summary
                   |> Identifier.SerializableMap.bindings
                   |> List.unzip
                   |> snd
@@ -1078,10 +1077,10 @@ class base class_metadata_environment dependency =
       let unannotated_attributes
           ~include_generated_attributes
           ~in_test
-          { Node.value = { ClassSummary.attribute_components; _ }; _ }
+          { Node.value = class_summary; _ }
         =
         let attributes =
-          Class.attributes ~include_generated_attributes ~in_test attribute_components
+          ClassSummary.attributes ~include_generated_attributes ~in_test class_summary
           |> Identifier.SerializableMap.bindings
           |> List.map ~f:(fun (_, attribute) -> attribute)
         in
@@ -1260,7 +1259,7 @@ class base class_metadata_environment dependency =
         in
         let get_field_attributes
             ~include_generated_attributes
-            { Node.value = { ClassSummary.attribute_components; bases; _ }; _ }
+            { Node.value = { bases; _ } as class_summary; _ }
           =
           let required =
             not
@@ -1269,7 +1268,7 @@ class base class_metadata_environment dependency =
                      (Expression.show value)
                      (Type.TypedDictionary.class_name ~total:false)))
           in
-          Class.attributes ~include_generated_attributes ~in_test attribute_components
+          ClassSummary.attributes ~include_generated_attributes ~in_test class_summary
           |> Identifier.SerializableMap.bindings
           |> List.map ~f:(fun (_, field_attribute) ->
                  ( self#create_attribute
@@ -1369,7 +1368,7 @@ class base class_metadata_environment dependency =
         ~include_generated_attributes
         ~accessed_via_metaclass
         class_name =
-      let handle ({ Node.value = { ClassSummary.attribute_components; _ }; _ } as parent) ~in_test =
+      let handle ({ Node.value = class_summary; _ } as parent) ~in_test =
         let table = UninstantiatedAttributeTable.create () in
         let add_actual () =
           let collect_attributes attribute =
@@ -1380,7 +1379,7 @@ class base class_metadata_environment dependency =
               ~accessed_via_metaclass
             |> UninstantiatedAttributeTable.add table
           in
-          Class.attributes ~include_generated_attributes ~in_test attribute_components
+          ClassSummary.attributes ~include_generated_attributes ~in_test class_summary
           |> fun attribute_map ->
           Identifier.SerializableMap.iter (fun _ data -> collect_attributes data) attribute_map
         in

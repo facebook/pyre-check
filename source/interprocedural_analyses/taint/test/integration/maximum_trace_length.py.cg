@@ -1,0 +1,14 @@
+@generated
+Call dependencies
+maximum_trace_length.issue_source_one_sink_one (fun) -> [maximum_trace_length.sink_distance_one (fun) maximum_trace_length.source_distance_one (fun)]
+maximum_trace_length.issue_source_one_sink_two (fun) -> [maximum_trace_length.sink_distance_two (fun) maximum_trace_length.source_distance_one (fun)]
+maximum_trace_length.issue_source_one_sink_zero (fun) -> [maximum_trace_length.sink_distance_zero (fun) maximum_trace_length.source_distance_one (fun)]
+maximum_trace_length.issue_source_two_sink_one (fun) -> [maximum_trace_length.sink_distance_one (fun) maximum_trace_length.source_distance_two (fun)]
+maximum_trace_length.issue_source_zero_sink_zero (fun) -> [maximum_trace_length.sink_distance_zero (fun) maximum_trace_length.source_distance_zero (fun)]
+maximum_trace_length.multi_sink (fun) -> [__tito (fun) maximum_trace_length.sink_distance_one (fun)]
+maximum_trace_length.sink_distance_one (fun) -> [maximum_trace_length.sink_distance_zero (fun)]
+maximum_trace_length.sink_distance_two (fun) -> [maximum_trace_length.sink_distance_one (fun)]
+maximum_trace_length.sink_distance_zero (fun) -> [__test_sink (fun)]
+maximum_trace_length.source_distance_one (fun) -> [maximum_trace_length.source_distance_zero (fun)]
+maximum_trace_length.source_distance_two (fun) -> [maximum_trace_length.source_distance_one (fun)]
+maximum_trace_length.source_distance_zero (fun) -> [__test_source (fun)]

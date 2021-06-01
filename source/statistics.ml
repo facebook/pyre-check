@@ -69,6 +69,15 @@ end
 
 let disable () = GlobalState.global_state.logger <- None
 
+let format_as_json ~integers ~normals () =
+  Yojson.Safe.to_string
+    (`Assoc
+      [
+        "int", `Assoc (List.map ~f:(fun (label, data) -> label, `Int data) integers);
+        "normal", `Assoc (List.map ~f:(fun (label, data) -> label, `String data) normals);
+      ])
+
+
 let sample ?(integers = []) ?(normals = []) ?(metadata = true) () =
   let server_configuration_metadata =
     match Configuration.Server.get_global () with
@@ -120,12 +129,7 @@ let sample ?(integers = []) ?(normals = []) ?(metadata = true) () =
     else
       integers
   in
-  Yojson.Safe.to_string
-    (`Assoc
-      [
-        "int", `Assoc (List.map ~f:(fun (label, data) -> label, `Int data) integers);
-        "normal", `Assoc (List.map ~f:(fun (label, data) -> label, `String data) normals);
-      ])
+  format_as_json ~integers ~normals ()
 
 
 let flush () =
@@ -148,12 +152,11 @@ let flush () =
 
 let flush_cache = flush
 
-let log ?(flush = false) ?(randomly_log_every = 1) category sample =
+let log ?(flush = false) category sample =
   Cache.with_cache ~f:(fun cache ->
-      if Random.int randomly_log_every = 0 then
-        match Hashtbl.find cache category with
-        | Some samples -> Hashtbl.set ~key:category ~data:(sample :: samples) cache
-        | _ -> Hashtbl.set ~key:category ~data:[sample] cache);
+      match Hashtbl.find cache category with
+      | Some samples -> Hashtbl.set ~key:category ~data:(sample :: samples) cache
+      | _ -> Hashtbl.set ~key:category ~data:[sample] cache);
   let samples_count () =
     Cache.with_cache ~f:(fun cache ->
         Hashtbl.fold cache ~init:0 ~f:(fun ~key:_ ~data count -> count + List.length data))
@@ -167,12 +170,16 @@ let log ?(flush = false) ?(randomly_log_every = 1) category sample =
     flush_cache ()
 
 
+let should_log = function
+  | None -> true
+  | Some randomly_log_every -> Int.equal (Random.int randomly_log_every) 0
+
+
 let performance
     ?(flush = false)
     ?randomly_log_every
     ?always_log_time_threshold
     ?(section = `Performance)
-    ?(category = "perfpipe_pyre_performance")
     ~name
     ~timer
     ?phase_name
@@ -180,15 +187,10 @@ let performance
     ?(normals = [])
     ()
   =
-  let microseconds = Timer.stop_in_us timer in
-  let randomly_log_every =
-    match always_log_time_threshold with
-    | Some threshold ->
-        let threshold_microseconds = Int.of_float (threshold *. 1000000.0) in
-        if microseconds > threshold_microseconds then None else randomly_log_every
-    | None -> randomly_log_every
-  in
-  Log.log ~section "%s: %.2fs" (String.capitalize name) (Int.to_float microseconds /. 1000000.0);
+  let time_span = Timer.stop timer in
+  let time_in_seconds = Time.Span.to_sec time_span in
+  let integer_time_in_microseconds = Time.Span.to_us time_span |> Int.of_float in
+  Log.log ~section "%s: %.2fs" (String.capitalize name) time_in_seconds;
   Profiling.log_performance_event (fun () ->
       let tags =
         List.map ~f:(fun (name, value) -> name, string_of_int value) integers
@@ -199,12 +201,20 @@ let performance
         | None -> tags
         | Some name -> ("phase_name", name) :: tags
       in
-      Profiling.Event.create name ~event_type:(Duration microseconds) ~tags);
-  sample
-    ~integers:(("elapsed_time", microseconds) :: integers)
-    ~normals:(("name", name) :: normals)
-    ()
-  |> log ~flush ?randomly_log_every category
+      Profiling.Event.create name ~event_type:(Duration integer_time_in_microseconds) ~tags);
+  let randomly_log_every =
+    match always_log_time_threshold with
+    | Some threshold -> if Float.(time_in_seconds > threshold) then None else randomly_log_every
+    | None -> randomly_log_every
+  in
+  match should_log randomly_log_every with
+  | false -> ()
+  | true ->
+      sample
+        ~integers:(("elapsed_time", integer_time_in_microseconds) :: integers)
+        ~normals:(("name", name) :: normals)
+        ()
+      |> log ~flush "perfpipe_pyre_performance"
 
 
 let event
@@ -223,8 +233,10 @@ let event
     "%s (%s)"
     (String.capitalize name)
     (List.map ~f:integer integers @ List.map ~f:normal normals |> String.concat ~sep:", ");
-  sample ~integers ~normals:(("name", name) :: normals) ()
-  |> log ?randomly_log_every ~flush "perfpipe_pyre_events"
+  match should_log randomly_log_every with
+  | false -> ()
+  | true ->
+      sample ~integers ~normals:(("name", name) :: normals) () |> log ~flush "perfpipe_pyre_events"
 
 
 let log_exception caught_exception ~fatal ~origin =
@@ -241,6 +253,24 @@ let log_exception caught_exception ~fatal ~origin =
         ("fatal", if fatal then "true" else "false");
       ]
     ()
+
+
+let buck_event ?(flush = false) ?(integers = []) ?(normals = []) () =
+  let default_normals =
+    [
+      "buck_builder_type", "new_server";
+      "host", GlobalState.hostname;
+      "user", GlobalState.username;
+      "project_root", GlobalState.global_state.project_root;
+      "root", GlobalState.global_state.project_name;
+    ]
+  in
+  let default_integers = ["time", Unix.time () |> Int.of_float] in
+  format_as_json
+    ~integers:(List.append default_integers integers)
+    ~normals:(List.append default_normals normals)
+    ()
+  |> log ~flush "perfpipe_pyre_buck_events"
 
 
 let log_worker_exception ~pid ~origin status =

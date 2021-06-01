@@ -88,6 +88,12 @@
  (libraries pyrelib.analysis))
 
 (library
+ (name lwtSocketServer)
+ (modules lwtSocketServer)
+ (public_name pyrelib.lwtsocketserver)
+ (libraries core.lock_file_blocking lwt lwt.unix pyrelib.path))
+
+(library
  (name lwtSubprocess)
  (modules lwtSubprocess)
  (public_name pyrelib.lwtsubprocess)
@@ -170,7 +176,7 @@
     ppx_compare ppx_sexp_conv))
  (libraries pyrelib.pyreParser pyrelib.analysis pyrelib.ast pyrelib.service
    pyrelib.commands pyrelib.configuration pyrelib.pyre pyrelib.taint
-   pyrelib.deadStore pyrelib.timer pyrelib.path pyrelib.file pyrelib.version))
+   pyrelib.timer pyrelib.path pyrelib.file pyrelib.version))
 
 (tests
  (names

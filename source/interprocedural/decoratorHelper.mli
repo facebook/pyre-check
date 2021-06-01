@@ -9,13 +9,27 @@ open Ast
 open Analysis
 open Statement
 
-val all_decorators : TypeEnvironment.ReadOnly.t -> Reference.t list
+type decorator_reference_and_module = {
+  decorator: Reference.t;
+  module_reference: Reference.t option;
+}
+[@@deriving compare, hash, sexp, eq, show]
 
-val all_decorator_bodies : TypeEnvironment.ReadOnly.t -> Define.t Reference.Map.t
+type define_and_originating_module = {
+  decorator_define: Define.t;
+  module_reference: Reference.t option;
+}
+[@@deriving compare, hash, sexp, eq, show]
+
+val all_decorators : TypeEnvironment.ReadOnly.t -> decorator_reference_and_module list
+
+val all_decorator_bodies
+  :  TypeEnvironment.ReadOnly.t ->
+  define_and_originating_module Reference.Map.t
 
 val inline_decorators
   :  environment:TypeEnvironment.ReadOnly.t ->
-  decorator_bodies:Define.t Reference.Map.t ->
+  decorator_bodies:define_and_originating_module Reference.Map.t ->
   Source.t ->
   Source.t
 
@@ -34,3 +48,10 @@ val replace_signature_if_always_passing_on_arguments
   Define.t option
 
 val rename_local_variables : pairs:(Identifier.t * Identifier.t) list -> Define.t -> Define.t
+
+module DecoratorModuleValue : Memory.ValueType with type t = Ast.Reference.t
+
+module DecoratorModule :
+  Memory.WithCache.S
+    with type t = DecoratorModuleValue.t
+     and type key = Analysis.SharedMemoryKeys.ReferenceKey.t

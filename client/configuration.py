@@ -119,6 +119,10 @@ class SearchPathElement(abc.ABC):
     def expand_relative_root(self, relative_root: str) -> "SearchPathElement":
         raise NotImplementedError
 
+    @abc.abstractmethod
+    def expand_glob(self) -> List["SearchPathElement"]:
+        raise NotImplementedError
+
 
 @dataclasses.dataclass(frozen=True)
 class SimpleSearchPathElement(SearchPathElement):
@@ -142,6 +146,14 @@ class SimpleSearchPathElement(SearchPathElement):
         return SimpleSearchPathElement(
             _expand_relative_root(self.root, relative_root=relative_root)
         )
+
+    def expand_glob(self) -> List[SearchPathElement]:
+        expanded = sorted(glob.glob(self.get_root()))
+        if expanded:
+            return [SimpleSearchPathElement(path) for path in expanded]
+        else:
+            LOG.warning(f"'{self.path()}' does not match any paths.")
+            return []
 
 
 @dataclasses.dataclass(frozen=True)
@@ -170,6 +182,9 @@ class SubdirectorySearchPathElement(SearchPathElement):
             subdirectory=self.subdirectory,
         )
 
+    def expand_glob(self) -> List["SearchPathElement"]:
+        return [self]
+
 
 @dataclasses.dataclass(frozen=True)
 class SitePackageSearchPathElement(SearchPathElement):
@@ -192,6 +207,9 @@ class SitePackageSearchPathElement(SearchPathElement):
     def expand_relative_root(self, relative_root: str) -> SearchPathElement:
         # Site package does not participate in root expansion.
         return self
+
+    def expand_glob(self) -> List["SearchPathElement"]:
+        return [self]
 
 
 @dataclasses.dataclass
@@ -228,16 +246,17 @@ class ExtensionElement:
         raise InvalidConfiguration(f"Invalid extension element: {json}")
 
 
-def _get_site_roots() -> List[str]:
+def get_site_roots() -> List[str]:
     try:
-        return site.getsitepackages()
+        return site.getsitepackages() + [site.getusersitepackages()]
     except AttributeError:
         # There are a few Python versions that ship with a broken venv,
         # where `getsitepackages` is not available.
         LOG.warning(
-            "`site.getsitepackages()` is not available in your virtualenv. "
-            + "This is a known virtualenv bug and as a workaround please avoid"
-            + 'using `"site-package"` in your search path configuration.'
+            "Either `site.getusersitepackages()` or `site.getsitepackages()` "
+            + "is not available in your virtualenv. This is a known virtualenv "
+            + 'bug and as a workaround please avoid using `"site-package"` in '
+            + "your search path configuration."
         )
         return []
 
@@ -252,6 +271,12 @@ def create_search_paths(
             return [
                 SubdirectorySearchPathElement(
                     root=json["root"], subdirectory=json["subdirectory"]
+                )
+            ]
+        if "import_root" in json and "source" in json:
+            return [
+                SubdirectorySearchPathElement(
+                    root=json["import_root"], subdirectory=json["source"]
                 )
             ]
         elif "site-package" in json:
@@ -279,6 +304,24 @@ def _in_virtual_environment(override: Optional[bool] = None) -> bool:
         return override
 
     return sys.prefix != sys.base_prefix
+
+
+def _expand_and_get_existent_paths(
+    paths: Sequence[SearchPathElement],
+) -> List[SearchPathElement]:
+    expanded_search_paths = [
+        expanded_path
+        for search_path_element in paths
+        for expanded_path in search_path_element.expand_glob()
+    ]
+    existent_paths = []
+    for search_path_element in expanded_search_paths:
+        search_path = search_path_element.path()
+        if os.path.exists(search_path):
+            existent_paths.append(search_path_element)
+        else:
+            LOG.warning(f"Path does not exist: {search_path}")
+    return existent_paths
 
 
 @dataclass(frozen=True)
@@ -328,6 +371,7 @@ class PartialConfiguration:
     isolation_prefix: Optional[str] = None
     logger: Optional[str] = None
     number_of_workers: Optional[int] = None
+    oncall: Optional[str] = None
     other_critical_files: Sequence[str] = field(default_factory=list)
     python_version: Optional[PythonVersion] = None
     search_path: Sequence[SearchPathElement] = field(default_factory=list)
@@ -351,7 +395,6 @@ class PartialConfiguration:
             "accept_command_v2",
             "create_open_source_configuration",
             "differential",
-            "oncall",
             "saved_state",
             "stable_client",
             "taint_models_path",
@@ -387,6 +430,7 @@ class PartialConfiguration:
             isolation_prefix=arguments.isolation_prefix,
             logger=arguments.logger,
             number_of_workers=None,
+            oncall=None,
             other_critical_files=[],
             python_version=(
                 PythonVersion.from_string(python_version_string)
@@ -479,12 +523,12 @@ class PartialConfiguration:
                     element
                     for json in search_path_json
                     for element in create_search_paths(
-                        json, site_roots=_get_site_roots()
+                        json, site_roots=get_site_roots()
                     )
                 ]
             else:
                 search_path = create_search_paths(
-                    search_path_json, site_roots=_get_site_roots()
+                    search_path_json, site_roots=get_site_roots()
                 )
 
             python_version_json = configuration_json.pop("python_version", None)
@@ -506,7 +550,7 @@ class PartialConfiguration:
                     element
                     for json in source_directories_json
                     for element in create_search_paths(
-                        json, site_roots=_get_site_roots()
+                        json, site_roots=get_site_roots()
                     )
                 ]
             else:
@@ -548,6 +592,7 @@ class PartialConfiguration:
                 number_of_workers=ensure_option_type(
                     configuration_json, "workers", int
                 ),
+                oncall=ensure_option_type(configuration_json, "oncall", str),
                 other_critical_files=ensure_string_list(
                     configuration_json, "critical_files"
                 ),
@@ -645,6 +690,7 @@ class PartialConfiguration:
             isolation_prefix=self.isolation_prefix,
             logger=logger,
             number_of_workers=self.number_of_workers,
+            oncall=self.oncall,
             other_critical_files=[
                 expand_relative_path(root, path) for path in self.other_critical_files
             ],
@@ -714,6 +760,7 @@ def merge_partial_configurations(
         number_of_workers=overwrite_base(
             base.number_of_workers, override.number_of_workers
         ),
+        oncall=overwrite_base(base.oncall, override.oncall),
         other_critical_files=prepend_base(
             base.other_critical_files, override.other_critical_files
         ),
@@ -761,6 +808,7 @@ class Configuration:
     isolation_prefix: Optional[str] = None
     logger: Optional[str] = None
     number_of_workers: Optional[int] = None
+    oncall: Optional[str] = None
     other_critical_files: Sequence[str] = field(default_factory=list)
     python_version: Optional[PythonVersion] = None
     relative_local_root: Optional[str] = None
@@ -785,7 +833,7 @@ class Configuration:
         search_path = partial_configuration.search_path
         if len(search_path) == 0 and _in_virtual_environment(in_virtual_environment):
             LOG.warning("Using virtual environment site-packages in search path...")
-            search_path = [SimpleSearchPathElement(root) for root in _get_site_roots()]
+            search_path = [SimpleSearchPathElement(root) for root in get_site_roots()]
 
         return Configuration(
             project_root=str(project_root),
@@ -809,6 +857,7 @@ class Configuration:
             isolation_prefix=partial_configuration.isolation_prefix,
             logger=partial_configuration.logger,
             number_of_workers=partial_configuration.number_of_workers,
+            oncall=partial_configuration.oncall,
             other_critical_files=partial_configuration.other_critical_files,
             python_version=partial_configuration.python_version,
             relative_local_root=relative_local_root,
@@ -856,6 +905,7 @@ class Configuration:
         isolation_prefix = self.isolation_prefix
         logger = self.logger
         number_of_workers = self.number_of_workers
+        oncall = self.oncall
         python_version = self.python_version
         relative_local_root = self.relative_local_root
         source_directories = self.source_directories
@@ -886,6 +936,7 @@ class Configuration:
                 else {}
             ),
             **({"logger": logger} if logger is not None else {}),
+            **({"oncall": oncall} if oncall is not None else {}),
             **({"workers": number_of_workers} if number_of_workers is not None else {}),
             "other_critical_files": list(self.other_critical_files),
             **(
@@ -914,11 +965,13 @@ class Configuration:
             **({"version_hash": version_hash} if version_hash is not None else {}),
         }
 
-    def get_existent_source_directories(self) -> List[SearchPathElement]:
-        return self._get_existent_paths(self.source_directories or [])
+    def get_source_directories(self) -> List[SearchPathElement]:
+        return list(self.source_directories or [])
 
-    def get_existent_search_paths(self) -> List[SearchPathElement]:
-        existent_paths = self._get_existent_paths(self.search_path)
+    # Expansion and validation of search paths cannot happen at Configuration creation
+    # because link trees need to be built first.
+    def expand_and_get_existent_search_paths(self) -> List[SearchPathElement]:
+        existent_paths = _expand_and_get_existent_paths(self.search_path)
 
         typeshed_root = self.get_typeshed_respecting_override()
         typeshed_paths = (
@@ -937,17 +990,44 @@ class Configuration:
         # List[SimpleSearchPathElement]]`
         return existent_paths + typeshed_paths
 
-    def _get_existent_paths(
-        self, paths: Sequence[SearchPathElement]
-    ) -> List[SearchPathElement]:
-        existent_paths = []
-        for search_path_element in paths:
-            search_path = search_path_element.path()
-            if os.path.exists(search_path):
-                existent_paths.append(search_path_element)
-            else:
-                LOG.debug(f"Filtering out nonexistent search path: {search_path}")
-        return existent_paths
+    def expand_and_filter_nonexistent_paths(self) -> "Configuration":
+        source_directories = self.source_directories
+
+        return Configuration(
+            project_root=self.project_root,
+            dot_pyre_directory=self.dot_pyre_directory,
+            autocomplete=self.autocomplete,
+            binary=self.binary,
+            buck_builder_binary=self.buck_builder_binary,
+            buck_mode=self.buck_mode,
+            disabled=self.disabled,
+            do_not_ignore_all_errors_in=self.do_not_ignore_all_errors_in,
+            excludes=self.excludes,
+            extensions=self.extensions,
+            file_hash=self.file_hash,
+            formatter=self.formatter,
+            ignore_all_errors=self.ignore_all_errors,
+            ignore_infer=self.ignore_infer,
+            isolation_prefix=self.isolation_prefix,
+            logger=self.logger,
+            number_of_workers=self.number_of_workers,
+            oncall=self.oncall,
+            other_critical_files=self.other_critical_files,
+            python_version=self.python_version,
+            relative_local_root=self.relative_local_root,
+            search_path=self.search_path,
+            source_directories=_expand_and_get_existent_paths(source_directories)
+            if source_directories
+            else None,
+            strict=self.strict,
+            taint_models_path=self.taint_models_path,
+            targets=self.targets,
+            typeshed=self.typeshed,
+            use_buck_builder=self.use_buck_builder,
+            use_buck_source_database=self.use_buck_source_database,
+            use_command_v2=self.use_command_v2,
+            version_hash=self.version_hash,
+        )
 
     def get_existent_ignore_infer_paths(self) -> List[str]:
         existent_paths = []
@@ -1141,9 +1221,10 @@ def create_configuration(
             base=partial_configuration, override=command_argument_configuration
         )
 
-    return Configuration.from_partial_configuration(
+    configuration = Configuration.from_partial_configuration(
         project_root, relative_local_root, partial_configuration
     )
+    return configuration.expand_and_filter_nonexistent_paths()
 
 
 def check_nested_local_configuration(configuration: Configuration) -> None:

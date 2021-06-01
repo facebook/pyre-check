@@ -7,7 +7,7 @@ import enum
 from builtins import __test_sink, __test_source
 
 
-def return_via_parameter_name(parameter):
+def return_via_parameter_name(parameter=None):
     return 0
 
 
@@ -23,8 +23,16 @@ def test_numerals():
     return return_via_parameter_name(1)
 
 
+def test_bool():
+    return return_via_parameter_name(False)
+
+
 def test_enums():
     return return_via_parameter_name(MyEnum.FOO)
+
+
+def test_missing():
+    return return_via_parameter_name()
 
 
 def meta(parameter):

@@ -10,14 +10,50 @@ open Pyre
 
 let get_analysis_kind = function
   | "taint" -> TaintAnalysis.abstract_kind
-  | "liveness" -> DeadStore.Analysis.abstract_kind
   | "type_inference" -> TypeInference.Analysis.abstract_kind
   | _ ->
       Log.error "Invalid analysis kind specified.";
       failwith "bad argument"
 
 
-let should_infer analysis = analysis == "type_inference"
+let should_infer analysis = String.equal analysis "type_inference"
+
+let type_environment_with_decorators_inlined ~configuration ~scheduler environment =
+  let open Analysis in
+  let open Interprocedural in
+  let open Ast in
+  let decorator_bodies =
+    DecoratorHelper.all_decorator_bodies (TypeEnvironment.read_only environment)
+  in
+  let environment =
+    AstEnvironment.create
+      ~additional_preprocessing:
+        (DecoratorHelper.inline_decorators
+           ~environment:(TypeEnvironment.read_only environment)
+           ~decorator_bodies)
+      (AstEnvironment.module_tracker (TypeEnvironment.ast_environment environment))
+    |> AnnotatedGlobalEnvironment.create
+    |> TypeEnvironment.create
+  in
+  let all_internal_paths =
+    let get_internal_path source_path =
+      let path = SourcePath.full_path ~configuration source_path in
+      Option.some_if (SourcePath.is_internal_path ~configuration path) path
+    in
+    ModuleTracker.source_paths
+      (AstEnvironment.module_tracker (TypeEnvironment.ast_environment environment))
+    |> List.filter_map ~f:get_internal_path
+  in
+  let _ =
+    Server.IncrementalCheck.recheck
+      ~configuration
+      ~scheduler
+      ~environment
+      ~errors:(Ast.Reference.Table.create ())
+      all_internal_paths
+  in
+  environment
+
 
 let run_analysis
     analysis
@@ -29,6 +65,8 @@ let run_analysis
     find_missing_flows
     dump_model_query_results
     use_cache
+    inline_decorators
+    maximum_trace_length
     _verbose
     expected_version
     sections
@@ -53,6 +91,9 @@ let run_analysis
     python_major_version
     python_minor_version
     python_micro_version
+    shared_memory_heap_size
+    shared_memory_dependency_table_power
+    shared_memory_hash_table_power
     local_root
     ()
   =
@@ -100,29 +141,41 @@ let run_analysis
         ?python_major_version
         ?python_minor_version
         ?python_micro_version
+        ?shared_memory_heap_size
+        ?shared_memory_dependency_table_power
+        ?shared_memory_hash_table_power
         ~local_root
         ~source_path:(List.map source_path ~f:SearchPath.create_normalized)
         ()
     in
-    let result_json_path = result_json_path >>| Path.create_absolute in
-    let () =
-      match result_json_path with
-      | Some path when not (Path.is_directory path) ->
-          Log.error "--save-results-to path must be a directory.";
-          failwith "bad argument"
-      | _ -> ()
+    let static_analysis_configuration =
+      let result_json_path = result_json_path >>| Path.create_absolute in
+      let () =
+        match result_json_path with
+        | Some path when not (Path.is_directory path) ->
+            Log.error "--save-results-to path must be a directory.";
+            failwith "bad argument"
+        | _ -> ()
+      in
+      {
+        Configuration.StaticAnalysis.configuration;
+        result_json_path;
+        dump_call_graph;
+        verify_models = not no_verify;
+        rule_filter;
+        find_missing_flows;
+        dump_model_query_results;
+        use_cache;
+        maximum_trace_length;
+      }
     in
+    let analysis_kind = get_analysis_kind analysis in
     (fun () ->
       let timer = Timer.start () in
-      (* In order to save time, sanity check models before starting the analysis. *)
-      Log.info "Verifying model syntax and configuration.";
-      Taint.Model.get_model_sources ~paths:configuration.Configuration.Analysis.taint_model_paths
-      |> List.iter ~f:(fun (path, source) -> Taint.Model.verify_model_syntax ~path ~source);
-      Taint.TaintConfiguration.create
-        ~rule_filter:None
-        ~paths:configuration.Configuration.Analysis.taint_model_paths
-      |> ignore;
       Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->
+          Interprocedural.Analysis.initialize_configuration
+            ~static_analysis_configuration
+            [analysis_kind];
           let cached_environment =
             if use_cache then Service.StaticAnalysis.Cache.load_environment ~configuration else None
           in
@@ -147,7 +200,13 @@ let run_analysis
                   Service.StaticAnalysis.Cache.save_environment ~configuration ~environment;
                 environment
           in
-
+          let environment =
+            if inline_decorators then (
+              Log.info "Inlining decorators for taint analysis...";
+              type_environment_with_decorators_inlined ~configuration ~scheduler environment )
+            else
+              environment
+          in
           let ast_environment =
             Analysis.TypeEnvironment.ast_environment environment
             |> Analysis.AstEnvironment.read_only
@@ -171,26 +230,14 @@ let run_analysis
                   ast_environment
                   path_reference
           in
-          let errors =
-            Service.StaticAnalysis.analyze
-              ~scheduler
-              ~analysis_kind:(get_analysis_kind analysis)
-              ~configuration:
-                {
-                  Configuration.StaticAnalysis.configuration;
-                  result_json_path;
-                  dump_call_graph;
-                  verify_models = not no_verify;
-                  rule_filter;
-                  find_missing_flows;
-                  dump_model_query_results;
-                  use_cache;
-                }
-              ~filename_lookup
-              ~environment:(Analysis.TypeEnvironment.read_only environment)
-              ~qualifiers
-              ()
-          in
+          Service.StaticAnalysis.analyze
+            ~scheduler
+            ~analysis_kind
+            ~static_analysis_configuration
+            ~filename_lookup
+            ~environment:(Analysis.TypeEnvironment.read_only environment)
+            ~qualifiers
+            ();
           let { Caml.Gc.minor_collections; major_collections; compactions; _ } = Caml.Gc.stat () in
           Statistics.performance
             ~name:"analyze"
@@ -201,13 +248,7 @@ let run_analysis
                 "gc_major_collections", major_collections;
                 "gc_compactions", compactions;
               ]
-            ();
-          (* Print results. *)
-          List.map errors ~f:(fun error ->
-              Interprocedural.Error.instantiate ~show_error_traces ~lookup:filename_lookup error
-              |> Interprocedural.Error.Instantiated.to_yojson)
-          |> (fun result -> Yojson.Safe.pretty_to_string (`List result))
-          |> Log.print "%s"))
+            ()))
     |> Scheduler.run_process
   with
   | error ->
@@ -244,5 +285,10 @@ let command =
            ~doc:"Perform a taint analysis to find missing flows."
       +> flag "-dump-model-query-results" no_arg ~doc:"Provide debugging output for model queries."
       +> flag "-use-cache" no_arg ~doc:"Store information in .pyre/pysa.cache for faster runs."
+      +> flag
+           "-inline-decorators"
+           no_arg
+           ~doc:"Inline decorators at use sites to catch flows through the decorators."
+      +> flag "-maximum-trace-length" (optional int) ~doc:"Limit the trace length of taint flows."
       ++ Specification.base_command_line_arguments)
     run_analysis

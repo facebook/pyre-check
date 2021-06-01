@@ -230,6 +230,34 @@ let test_reveal_type context =
       "Revealed type [-1]: Revealed type for `args[0]` is `str`.";
       "Revealed type [-1]: Revealed type for `kwargs[\"key\"]` is `int`.";
     ];
+  assert_type_errors
+    {|
+      import builtins
+      def foo(x: builtins.int) -> int:
+        return x
+    |}
+    [];
+  assert_type_errors
+    {|
+      import builtins
+      def foo(x: builtins.int) -> str:
+        return builtins.str(x)
+    |}
+    [];
+  assert_type_errors
+    {|
+      import builtins
+      class MyInt:
+        pass
+      int = MyInt
+      def f(x:int, y:builtins.int) -> None:
+        reveal_type(x)
+        reveal_type(y)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `MyInt`.";
+      "Revealed type [-1]: Revealed type for `y` is `int`.";
+    ];
   ()
 
 

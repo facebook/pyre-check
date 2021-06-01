@@ -33,7 +33,6 @@ class ConnectionApiTest(unittest.TestCase):
         self.assertEqual(
             run.call_args_list,
             [
-                call(["pyre", "--noninteractive", "start"], cwd="/tmp"),
                 call(
                     ["pyre", "--noninteractive", "incremental"],
                     cwd="/tmp",
@@ -53,7 +52,6 @@ class ConnectionApiTest(unittest.TestCase):
         self.assertEqual(
             run.call_args_list,
             [
-                call(["pyre", "--noninteractive", "start"], cwd="/tmp"),
                 call(
                     ["pyre", "--noninteractive", "incremental"],
                     cwd="/tmp",
@@ -74,7 +72,6 @@ class ConnectionApiTest(unittest.TestCase):
         self.assertEqual(
             run.call_args_list,
             [
-                call(["pyre", "--noninteractive", "start"], cwd="/tmp"),
                 call(
                     ["pyre", "--noninteractive", "incremental"],
                     cwd="/tmp",
@@ -99,7 +96,6 @@ class ConnectionApiTest(unittest.TestCase):
         self.assertEqual(
             run.call_args_list,
             [
-                call(["pyre", "--noninteractive", "start"], cwd="/tmp"),
                 call(
                     ["pyre", "--noninteractive", "incremental"],
                     cwd="/tmp",

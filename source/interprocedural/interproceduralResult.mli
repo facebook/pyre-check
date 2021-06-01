@@ -31,21 +31,6 @@ module type ANALYSIS_PROVIDED = sig
 
   val reached_fixpoint : iteration:int -> previous:call_model -> next:call_model -> bool
 
-  val get_errors : result -> InterproceduralError.t list
-
-  val externalize
-    :  filename_lookup:(Reference.t -> string option) ->
-    Callable.t ->
-    result option ->
-    call_model ->
-    Yojson.Safe.json list
-
-  (* Additional metadata an analysis wants to save, e.g., warning code explanation. *)
-  val metadata : unit -> Yojson.Safe.json
-
-  (* Additional statistics an analysis wants to report. *)
-  val statistics : unit -> Yojson.Safe.json
-
   (* remove aspects from the model that are not needed at call sites. Just for optimization. *)
   val strip_for_callsite : call_model -> call_model
 end
@@ -107,21 +92,37 @@ module type ANALYZER = sig
   type call_model
 
   val analyze
-    :  callable:Callable.real_target ->
-    environment:Analysis.TypeEnvironment.ReadOnly.t ->
+    :  environment:Analysis.TypeEnvironment.ReadOnly.t ->
+    callable:Callable.real_target ->
     qualifier:Reference.t ->
     define:Statement.Define.t Node.t ->
     existing:call_model option ->
     result * call_model
 
+  (* Called prior to typechecking, so we can fail fast on bad config *)
+  val initialize_configuration
+    :  static_analysis_configuration:Configuration.StaticAnalysis.t ->
+    unit
+
   (* Called once on master before analysis of individual callables. *)
-  val init
-    :  configuration:Configuration.StaticAnalysis.t ->
-    scheduler:Scheduler.t ->
+  val initialize_models
+    :  scheduler:Scheduler.t ->
+    static_analysis_configuration:Configuration.StaticAnalysis.t ->
     environment:Analysis.TypeEnvironment.ReadOnly.t ->
     functions:Callable.t list ->
     stubs:Callable.t list ->
     call_model initialize_result
+
+  val report
+    :  scheduler:Scheduler.t ->
+    static_analysis_configuration:Configuration.StaticAnalysis.t ->
+    environment:Analysis.TypeEnvironment.ReadOnly.t ->
+    filename_lookup:(Ast.Reference.t -> string option) ->
+    callables:Callable.Set.t ->
+    skipped_overrides:Ast.Reference.t list ->
+    fixpoint_timer:Timer.t ->
+    fixpoint_iterations:int option ->
+    Yojson.Safe.json list
 end
 
 module type ANALYSIS_RESULT = sig

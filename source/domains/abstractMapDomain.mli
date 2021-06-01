@@ -10,7 +10,7 @@ module type KEY = sig
 
   val name : string
 
-  val show : t -> string
+  val pp : Format.formatter -> t -> unit
 
   (* If true, an absent key and a key mapping to bottom are equivalent. Map won't keep elements that
      map to bottom. Presence of keys is still observable via fold, transform, and partition. *)
@@ -29,7 +29,13 @@ module Make (Key : KEY) (Element : AbstractDomainCore.S) : sig
   (* Update map at key with result of ~f, passing possibly existing element. *)
   val update : t -> Key.t -> f:(Element.t option -> Element.t) -> t
 
-  val get : Key.t -> t -> Element.t option
+  val remove : Key.t -> t -> t
+
+  val get_opt : Key.t -> t -> Element.t option
+
+  val get : Key.t -> t -> Element.t
+
+  val of_list : (Key.t * Element.t) list -> t
 
   val to_alist : t -> (Key.t * Element.t) list
 end

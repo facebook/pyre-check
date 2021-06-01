@@ -247,11 +247,6 @@ and kind =
       target: Expression.t;
       kind: illegal_annotation_target_kind;
     }
-  | ImpossibleAssertion of {
-      expression: Expression.t;
-      annotation: Type.t;
-      test: Expression.t;
-    }
   | IncompatibleAsyncGeneratorReturnType of Type.t
   | IncompatibleAttributeType of {
       parent: Type.t;
@@ -437,7 +432,6 @@ let code = function
   | RedundantCast _ -> 22
   | Unpack _ -> 23
   | InvalidTypeParameters _ -> 24
-  | ImpossibleAssertion _ -> 25
   | TypedDictionaryAccessWithNonLiteral _ -> 26
   | TypedDictionaryKeyNotFound _ -> 27
   | UnexpectedKeyword _ -> 28
@@ -485,7 +479,6 @@ let name = function
   | DeadStore _ -> "Dead store"
   | Deobfuscation _ -> "Deobfuscation"
   | IllegalAnnotationTarget _ -> "Illegal annotation target"
-  | ImpossibleAssertion _ -> "Impossible assertion"
   | IncompatibleAsyncGeneratorReturnType _ -> "Incompatible async generator return type"
   | IncompatibleAttributeType _ -> "Incompatible attribute type"
   | IncompatibleAwaitableType _ -> "Incompatible awaitable type"
@@ -726,16 +719,6 @@ let rec messages ~concise ~signature location kind =
           inferred
           (show_sanitized_expression target)
           consequence;
-      ]
-  | ImpossibleAssertion _ when concise -> ["Assertion will always fail."]
-  | ImpossibleAssertion { expression; annotation; test } ->
-      [
-        Format.asprintf
-          "`%s` has type `%a`, assertion `%s` will always fail."
-          (show_sanitized_expression expression)
-          pp_type
-          annotation
-          (show_sanitized_expression test);
       ]
   | IncompatibleAsyncGeneratorReturnType annotation ->
       [
@@ -1853,14 +1836,15 @@ let rec messages ~concise ~signature location kind =
       let annotation, detail =
         match mutability with
         | Mutable -> Format.asprintf "%a" pp_type annotation, ""
-        | Immutable { Annotation.original; _ } ->
+        | Immutable { Annotation.original; Annotation.final; _ } ->
+            let if_final display = if final then display else "" in
             if Type.contains_unknown original then
-              Format.asprintf "%a" pp_type annotation, ""
+              Format.asprintf "%a" pp_type annotation, if_final " (final)"
             else if Type.equal annotation original then
-              Format.asprintf "%a" pp_type original, ""
+              Format.asprintf "%a" pp_type original, if_final " (final)"
             else
               ( Format.asprintf "%a" pp_type original,
-                Format.asprintf " (inferred: `%a`)" pp_type annotation )
+                Format.asprintf " (inferred: `%a`%s)" pp_type annotation (if_final ", final") )
       in
       [
         Format.asprintf
@@ -1898,7 +1882,7 @@ let rec messages ~concise ~signature location kind =
   | UnsafeCast { expression; annotation } ->
       [
         Format.asprintf
-          "`safe_cast` is only permitted to loosen the type of `%s`. `%a` is not a super type of \
+          "`safe_cast` is only permitted to widen the type of `%s`. `%a` is not a super type of \
            `%s`."
           (show_sanitized_expression expression)
           pp_type
@@ -2360,7 +2344,6 @@ let due_to_analysis_limitations { kind; _ } =
     Type.contains_unknown annotation || Type.is_unbound annotation || Type.is_type_alias annotation
   in
   match kind with
-  | ImpossibleAssertion { annotation = actual; _ }
   | IncompatibleAwaitableType actual
   | IncompatibleParameterType { mismatch = { actual; _ }; _ }
   | TypedDictionaryInvalidOperation { mismatch = { actual; _ }; _ }
@@ -2460,9 +2443,6 @@ let less_or_equal ~resolution left right =
       | Reassignment, Reassignment ->
           Expression.equal left_target right_target
       | _, _ -> false )
-  | ImpossibleAssertion left, ImpossibleAssertion right when Expression.equal left.test right.test
-    ->
-      GlobalResolution.less_or_equal resolution ~left:left.annotation ~right:right.annotation
   | IncompatibleAsyncGeneratorReturnType left, IncompatibleAsyncGeneratorReturnType right ->
       GlobalResolution.less_or_equal resolution ~left ~right
   | IncompatibleAwaitableType left, IncompatibleAwaitableType right ->
@@ -2700,7 +2680,6 @@ let less_or_equal ~resolution left right =
   | DeadStore _, _
   | Deobfuscation _, _
   | IllegalAnnotationTarget _, _
-  | ImpossibleAssertion _, _
   | IncompatibleAsyncGeneratorReturnType _, _
   | IncompatibleAttributeType _, _
   | IncompatibleAwaitableType _, _
@@ -3127,7 +3106,6 @@ let join ~resolution left right =
     | DeadStore _, _
     | Deobfuscation _, _
     | IllegalAnnotationTarget _, _
-    | ImpossibleAssertion _, _
     | IncompatibleAsyncGeneratorReturnType _, _
     | IncompatibleAttributeType _, _
     | IncompatibleAwaitableType _, _
@@ -3415,6 +3393,9 @@ let suppress ~mode ~ignore_codes error =
     | InconsistentOverride
         { override = StrengthenedPrecondition (Found { expected = Type.Variable _; _ }); _ } ->
         true
+    | InvalidDecoration { reason = CouldNotResolve; _ }
+    | InvalidDecoration { reason = CouldNotResolveArgument _; _ } ->
+        true
     | InvalidTypeParameters
         { kind = AttributeResolution.IncorrectNumberOfParameters { actual = 0; _ }; _ } ->
         true
@@ -3576,8 +3557,6 @@ let dequalify
     | Deobfuscation left -> Deobfuscation left
     | IllegalAnnotationTarget { target = left; kind } ->
         IllegalAnnotationTarget { target = left; kind }
-    | ImpossibleAssertion ({ annotation; _ } as assertion) ->
-        ImpossibleAssertion { assertion with annotation = dequalify annotation }
     | IncompatibleAsyncGeneratorReturnType actual ->
         IncompatibleAsyncGeneratorReturnType (dequalify actual)
     | IncompatibleAwaitableType actual -> IncompatibleAwaitableType (dequalify actual)

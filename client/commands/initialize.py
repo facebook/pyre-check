@@ -11,7 +11,7 @@ import subprocess
 import sys
 from logging import Logger
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Union
 
 from .. import log
 from ..find_directories import (
@@ -29,6 +29,22 @@ from .command import CommandParser
 LOG: Logger = logging.getLogger(__name__)
 
 
+def _create_source_directory_element(source: str) -> Union[str, Dict[str, str]]:
+    if source == ".":
+        return source
+    if not Path(source).is_dir():
+        raise InitializationException(f"No directory found at `{source}`.")
+    # Imports are likely relative to the parent of the package.
+    package_root = find_parent_directory_containing_file(Path(source), "__init__.py")
+    if package_root is not None:
+        return {
+            "import_root": os.path.relpath(str(package_root.parent), "."),
+            "source": source,
+        }
+    else:
+        return source
+
+
 class InitializationException(Exception):
     pass
 
@@ -39,9 +55,7 @@ class Initialize(CommandParser):
     def __init__(self) -> None:
         super().__init__()
 
-    def _get_configuration(self) -> Dict[str, Any]:
-        configuration: Dict[str, Any] = {}
-
+    def _create_watchman_configuration(self) -> None:
         watchman_configuration_path = os.path.abspath(".watchmanconfig")
         watchman_path = shutil.which("watchman")
         if watchman_path is not None and log.get_yes_no_input(
@@ -68,6 +82,10 @@ class Initialize(CommandParser):
             except subprocess.CalledProcessError:
                 LOG.warning("Failed to run `watchman watch-project .`.")
 
+    def _get_configuration(self) -> Dict[str, Any]:
+        configuration: Dict[str, Any] = {}
+
+        self._create_watchman_configuration()
         binary_path = shutil.which(BINARY_NAME)
         if binary_path is None:
             binary_path = shutil.which(
@@ -100,11 +118,15 @@ class Initialize(CommandParser):
         if taint_models_path is not None:
             configuration["taint_models_path"] = str(taint_models_path)
 
-        analysis_directory = log.get_optional_input(
-            "Which directory should pyre be initialized in?", "."
+        source_directory_input = log.get_optional_input(
+            "Which directory(ies) should pyre analyze?", "."
         )
-
-        configuration["source_directories"] = [analysis_directory]
+        source_directory_paths = [
+            directory.strip() for directory in source_directory_input.split(",")
+        ]
+        configuration["source_directories"] = [
+            _create_source_directory_element(path) for path in source_directory_paths
+        ]
         return configuration
 
     def _get_local_configuration(

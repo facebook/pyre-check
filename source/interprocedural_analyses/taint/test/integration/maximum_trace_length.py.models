@@ -1,0 +1,318 @@
+@generated
+{
+  "kind": "issue",
+  "data": {
+    "callable": "maximum_trace_length.issue_source_one_sink_one",
+    "callable_line": 43,
+    "code": 1000,
+    "line": 44,
+    "start": 22,
+    "end": 43,
+    "filename": "maximum_trace_length.py",
+    "message": "[Test] to [Test]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "call": {
+              "position": {
+                "filename": "maximum_trace_length.py",
+                "line": 44,
+                "start": 22,
+                "end": 43
+              },
+              "resolves_to": [ "maximum_trace_length.source_distance_one" ],
+              "port": "result",
+              "length": 2
+            },
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "features": [ { "always-via": "special_source" } ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "call": {
+              "position": {
+                "filename": "maximum_trace_length.py",
+                "line": 44,
+                "start": 22,
+                "end": 43
+              },
+              "resolves_to": [ "maximum_trace_length.sink_distance_one" ],
+              "port": "formal(x)",
+              "length": 2
+            },
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "maximum_trace_length.issue_source_one_sink_zero",
+    "callable_line": 39,
+    "code": 1000,
+    "line": 40,
+    "start": 23,
+    "end": 44,
+    "filename": "maximum_trace_length.py",
+    "message": "[Test] to [Test]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "call": {
+              "position": {
+                "filename": "maximum_trace_length.py",
+                "line": 40,
+                "start": 23,
+                "end": 44
+              },
+              "resolves_to": [ "maximum_trace_length.source_distance_one" ],
+              "port": "result",
+              "length": 2
+            },
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "features": [ { "always-via": "special_source" } ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "call": {
+              "position": {
+                "filename": "maximum_trace_length.py",
+                "line": 40,
+                "start": 23,
+                "end": 44
+              },
+              "resolves_to": [ "maximum_trace_length.sink_distance_zero" ],
+              "port": "formal(x)",
+              "length": 1
+            },
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "maximum_trace_length.issue_source_zero_sink_zero",
+    "callable_line": 35,
+    "code": 1000,
+    "line": 36,
+    "start": 23,
+    "end": 45,
+    "filename": "maximum_trace_length.py",
+    "message": "[Test] to [Test]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "call": {
+              "position": {
+                "filename": "maximum_trace_length.py",
+                "line": 36,
+                "start": 23,
+                "end": 45
+              },
+              "resolves_to": [ "maximum_trace_length.source_distance_zero" ],
+              "port": "result",
+              "length": 1
+            },
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "features": [ { "always-via": "special_source" } ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "call": {
+              "position": {
+                "filename": "maximum_trace_length.py",
+                "line": 36,
+                "start": 23,
+                "end": 45
+              },
+              "resolves_to": [ "maximum_trace_length.sink_distance_zero" ],
+              "port": "formal(x)",
+              "length": 1
+            },
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "maximum_trace_length.multi_sink",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(x)[foo]",
+        "taint": [
+          {
+            "call": {
+              "position": {
+                "filename": "maximum_trace_length.py",
+                "line": 59,
+                "start": 22,
+                "end": 23
+              },
+              "resolves_to": [ "maximum_trace_length.sink_distance_one" ],
+              "port": "formal(x)",
+              "length": 55555
+            },
+            "tito": [ { "line": 58, "start": 18, "end": 23 } ],
+            "leaves": [ { "kind": "Test" } ]
+          }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "maximum_trace_length.sink_distance_one",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "call": {
+              "position": {
+                "filename": "maximum_trace_length.py",
+                "line": 27,
+                "start": 23,
+                "end": 24
+              },
+              "resolves_to": [ "maximum_trace_length.sink_distance_zero" ],
+              "port": "formal(x)",
+              "length": 1
+            },
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "maximum_trace_length.sink_distance_zero",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "root": {
+              "filename": "maximum_trace_length.py",
+              "line": 23,
+              "start": 16,
+              "end": 17
+            },
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "maximum_trace_length.source_distance_one",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "call": {
+              "position": {
+                "filename": "maximum_trace_length.py",
+                "line": 14,
+                "start": 11,
+                "end": 33
+              },
+              "resolves_to": [ "maximum_trace_length.source_distance_zero" ],
+              "port": "result",
+              "length": 1
+            },
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "features": [ { "always-via": "special_source" } ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "maximum_trace_length.source_distance_zero",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "maximum_trace_length.py",
+              "line": 10,
+              "start": 11,
+              "end": 26
+            },
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "features": [ { "always-via": "special_source" } ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}

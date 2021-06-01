@@ -95,19 +95,21 @@ module BuildMap : sig
     val empty : t
     (** An empty map. *)
 
-    val of_json_exn : Yojson.Safe.t -> t
+    val of_alist_exn : (string * string) list -> t
+    (** Create a partial build map from an associative list. The list must conform to `(source_path,
+        artifact_path)` format. Raise an exception if the given list contains duplicated keys. *)
+
+    val of_alist_ignoring_duplicates : (string * string) list -> t
+    (** Create a partial build map from an associative list. The list must conform to `(source_path,
+        artifact_path)` format. If duplicated keys exists, first item in the input list wins. *)
+
+    val of_json_exn_ignoring_duplicates : Yojson.Safe.t -> t
     (** Create a partial build map from a JSON. The JSON must conform to Buck's Python source-db
-        format. Raise an exception if the creation fails. *)
+        format. Raise an exception if the input JSON is malformed. *)
 
-    val of_json : Yojson.Safe.t -> (t, string) Result.t
-    (** Same as [of_json_exn] except failures are wrapped in a [Result.t]. *)
-
-    val of_json_file_exn : Pyre.Path.t -> t
-    (** Read JSON from the file at the given path, and invoke [of_json_exn] on it. Raise an
-        exception if the file reading fails. *)
-
-    val of_json_file : Pyre.Path.t -> (t, string) Result.t
-    (** Same as [of_json_file] except failures are wrapped in a [Result.t]. *)
+    val filter : t -> f:(key:string -> data:string -> bool) -> t
+    (** [filter ~f m] returns a new partial build map [m'] that contains all mappings in [m] except
+        the ones on which [f ~key ~data] returns [false]. *)
 
     val merge : t -> t -> MergeResult.t
     (** Given two partial build maps [l] and [r], [merge l r] returns [MergeResult.Ok m] where [m]
@@ -144,9 +146,19 @@ module BuildMap : sig
 
     type t [@@deriving sexp]
 
+    val of_alist_exn : (string * Kind.t) list -> t
+    (** Create a build map difference from an associative list. The list must conform to
+        `(artifact_path, kind)` format. Raise an exception if the given list contains duplicated
+        keys. *)
+
     val to_alist : t -> (string * Kind.t) list
     (** Convert a build map difference into an associated list. Each element in the list is a pair
         consisting of both the artifact path and the kind of the update. *)
+
+    val merge : t -> t -> (t, string) Result.t
+    (** [merge a b] returns [Result.Ok c] where [c] includes artifact paths from both [a] and [b].
+        If an artifact [path] is included in both [a] and [b] but the associated tags are different,
+        [Result.Error path] will be returned instead. *)
   end
 
   type t
@@ -160,6 +172,9 @@ module BuildMap : sig
   (** Create a index for the given build map and return a pair of constant-time lookup functions
       that utilizes the index. *)
 
+  val artifact_count : t -> int
+  (** Return the number of artifact files stored in the build map. *)
+
   val to_alist : t -> (string * string) list
   (** Convert a partial build map into an associated list. Each element in the list represent an
       (artifact_path, source_path) mapping. *)
@@ -168,6 +183,26 @@ module BuildMap : sig
   (** [difference ~original current] computes the difference between the [original] build map and
       the [current] build map. Time complexity of this operation is O(n + m), where n and m are the
       sizes of the two build maps. *)
+
+  val strict_apply_difference : difference:Difference.t -> t -> (t, string) Result.t
+  (** [strict_apply_difference ~difference:d original] tries to compute a new build map [current],
+      such that [difference ~original current] equals [d]. It can be seen as an inverse operation of
+      {!difference}.
+
+      If the computation succeeds, [Result.Ok d] is returned. Otherwise, [Result.Error p] is
+      returned, where [p] represents the artifact path that causes the operation to fail.
+
+      Potentail reasons of failure:
+
+      - [d] contains an artifact path [p] with tag [Deleted], but [p] cannot be found in [original].
+      - [d] contains an artifact path [p] with tag [New], but [p] already has an associated source
+        path in [original].
+      - [d] contains an aritfact path [p] with tag [Changed], but [p] already has an associated
+        source path in [original]. This is what makes this operation "strict": we do not allow {b
+        any} pre-existing bindings in [original] to be redirected, even with the [Changed] tag.
+
+      Time complexity of this operation is O(n + m), where n is the size of the original build map
+      and m is the size of the difference. *)
 end
 
 (** This module provide utility functions for populating and incrementally updating artifact roots.
@@ -253,8 +288,10 @@ module Raw : sig
     BuckError of {
       arguments: string list;
       description: string;
+      exit_code: int option;
     }
-  (** Raised when external invocation of `buck` returns an error. *)
+  (** Raised when external invocation of `buck` returns an error. The [exit_code] field is set to
+      [None] if the external `buck` process gets stopped by a signal. *)
 
   type t
 
@@ -345,6 +382,27 @@ module Builder : sig
       cleaness of the artifact directory is desirable, it is expected that the caller would take
       care of that before its invocation. *)
 
+  val restore : build_map:BuildMap.t -> t -> unit Lwt.t
+  (** Given a build map, create the corresponding Python link tree at the given artifact root
+      accordingly.
+
+      In most cases, downstream clients are discouraged from invoking this API. {!val:Builder.build}
+      should be used instead, since it does not force the clients to construct a build map by
+      themselves and risk having the build map and the link tree inconsistent with what the target
+      specification says. The only scenario where it makes sense to prefer {!val:restore} over
+      {!val:build} is saved state loading: in that case, we already load the old build map from
+      saved state so it is not needed (and not possible as well) to re-construct that build map from
+      scratch all over again.
+
+      The following exceptions may be raised by this API:
+
+      - {!exception: LinkTreeConstructionError} if any error is encountered when constructing the
+        link tree from the build map.
+
+      Note this API does not ensure the artifact root to be empty before the build starts. If
+      cleaness of the artifact directory is desirable, it is expected that the caller would take
+      care of that before its invocation. *)
+
   val full_incremental_build
     :  old_build_map:BuildMap.t ->
     targets:string list ->
@@ -370,7 +428,7 @@ module Builder : sig
       and incrementally update the Python link tree at the given artifact root according to how the
       new build map changed compared to the old build map. Return the new build map along with a
       list of targets that are covered by the build map. This API may raise the same set of
-      exceptions as {!full_build}.
+      exceptions as {!full_incremental_build}.
 
       The difference between this API and {!full_incremental_build} is that this API makes an
       additional assumption that the given incremental update does not change the set of targets to
@@ -378,6 +436,42 @@ module Builder : sig
       optimization. Such an assumption usually holds when the incremental update does not touch any
       `BUCK` or `TARGETS` file -- callers are encouraged to verify this before deciding which
       incremental build API to invoke. *)
+
+  val fast_incremental_build_with_normalized_targets
+    :  old_build_map:BuildMap.t ->
+    old_build_map_index:BuildMap.Indexed.t ->
+    targets:Target.t list ->
+    changed_paths:PyrePath.t list ->
+    removed_paths:PyrePath.t list ->
+    t ->
+    IncrementalBuildResult.t Lwt.t
+  (** Given a list of normalized targets and changed/removed files, incrementally construct a new
+      build map for the targets and incrementally update the Python link tree at the given artifact
+      root accordingly. Return the new build map along with a list of targets that are covered by
+      the build map. This API may raise the same set of exceptions as
+      {!incremental_build_with_normalized_targets}.
+
+      The difference between this API and {!incremental_build_with_normalized_targets} is that this
+      API makes an additional assumption that the given incremental update does not change the
+      contents of any generated file. As a result, it can skip both the target normalizing step and
+      the `buck build` step, which is usually a huge performance bottleneck for incremental checks. *)
+
+  val incremental_build_with_unchanged_build_map
+    :  build_map:BuildMap.t ->
+    build_map_index:BuildMap.Indexed.t ->
+    targets:Target.t list ->
+    changed_sources:PyrePath.t list ->
+    t ->
+    IncrementalBuildResult.t Lwt.t
+  (** Compute the incremental check result, assuming that the corresponding update does not change
+      the build map in any way. The return value is intended to be compatible with that of
+      {!full_incremental_build} and {!incremental_build_with_normalized_targets}.
+
+      Obviously, this API makes even stronger assumption than
+      {!incremental_build_with_normalized_targets} -- the assumption virtually allows it to
+      completely skip the rebuild. Callers are therefore strongly encouraged to verify the
+      assumption, by checking that all changed sources exists and are already included in the old
+      build map. *)
 
   (** {1 Lookup} *)
 

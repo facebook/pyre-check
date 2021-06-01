@@ -87,7 +87,7 @@ class MultiHeadAttention(Generic[N_HEADS, DIM]):
         mask_reshape = (bs, 1, qlen, klen) if mask.dim() == 3 else (bs, 1, 1, klen)
 
         def shape(x: Tensor[BS, Any, DIM]) -> Tensor[BS, N_HEADS, Any, DIM_PER_HEAD]:
-            """  projection """
+            """projection"""
             # variables defined outside of the body of the function are not typed
             bs: BS
             dim_per_head: DIM_PER_HEAD
@@ -96,7 +96,7 @@ class MultiHeadAttention(Generic[N_HEADS, DIM]):
         def unshape(
             x: Tensor[BS, N_HEADS, QLEN, DIM_PER_HEAD]
         ) -> Tensor[BS, QLEN, Any]:
-            """  compute context """
+            """compute context"""
             return (
                 x.transpose(1, 2)
                 .contiguous()

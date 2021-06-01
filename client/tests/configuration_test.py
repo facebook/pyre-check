@@ -16,7 +16,11 @@ from pathlib import Path
 
 import testslide
 
-from .. import command_arguments, find_directories
+from .. import (
+    command_arguments,
+    find_directories,
+    configuration as configuration_module,
+)
 from ..configuration import (
     PythonVersion,
     InvalidPythonVersion,
@@ -31,6 +35,7 @@ from ..configuration import (
     create_configuration,
     create_search_paths,
     merge_partial_configurations,
+    get_site_roots,
 )
 from ..find_directories import BINARY_NAME
 from .setup import (
@@ -92,6 +97,7 @@ class PartialConfigurationTest(unittest.TestCase):
         self.assertListEqual(list(configuration.excludes), ["excludes"])
         self.assertEqual(configuration.formatter, "formatter")
         self.assertEqual(configuration.logger, "logger")
+        self.assertEqual(configuration.oncall, None)
         self.assertListEqual(
             list(configuration.search_path),
             [SimpleSearchPathElement("x"), SimpleSearchPathElement("y")],
@@ -214,6 +220,10 @@ class PartialConfigurationTest(unittest.TestCase):
         )
         self.assertEqual(
             PartialConfiguration.from_string(json.dumps({"logger": "foo"})).logger,
+            "foo",
+        )
+        self.assertEqual(
+            PartialConfiguration.from_string(json.dumps({"oncall": "foo"})).oncall,
             "foo",
         )
         self.assertEqual(
@@ -353,6 +363,24 @@ class PartialConfigurationTest(unittest.TestCase):
                 SubdirectorySearchPathElement("bar", "baz"),
             ],
         )
+        source_directories = PartialConfiguration.from_string(
+            json.dumps(
+                {
+                    "source_directories": [
+                        "foo",
+                        {"import_root": "bar", "source": "baz"},
+                    ]
+                }
+            )
+        ).source_directories
+        self.assertIsNotNone(source_directories)
+        self.assertListEqual(
+            list(source_directories),
+            [
+                SimpleSearchPathElement("foo"),
+                SubdirectorySearchPathElement("bar", "baz"),
+            ],
+        )
 
         self.assertIsNone(PartialConfiguration.from_string("{}").targets)
         targets = PartialConfiguration.from_string(
@@ -391,6 +419,7 @@ class PartialConfigurationTest(unittest.TestCase):
         assert_raises(json.dumps({"ignore_all_errors": [1, 2, 3]}))
         assert_raises(json.dumps({"ignore_infer": [False, "bc"]}))
         assert_raises(json.dumps({"logger": []}))
+        assert_raises(json.dumps({"oncall": []}))
         assert_raises(json.dumps({"workers": "abc"}))
         assert_raises(json.dumps({"critical_files": "abc"}))
         assert_raises(json.dumps({"source_directories": "abc"}))
@@ -506,6 +535,7 @@ class PartialConfigurationTest(unittest.TestCase):
         assert_prepended("ignore_infer")
         assert_overwritten("logger")
         assert_overwritten("number_of_workers")
+        assert_overwritten("oncall")
         assert_prepended("other_critical_files")
         assert_overwritten("python_version")
         assert_prepended("search_path")
@@ -631,6 +661,7 @@ class ConfigurationTest(testslide.TestCase):
                 ignore_infer=["baz"],
                 logger="logger",
                 number_of_workers=3,
+                oncall="oncall",
                 other_critical_files=["critical"],
                 python_version=PythonVersion(major=3, minor=6, micro=7),
                 search_path=[SimpleSearchPathElement("search_path")],
@@ -663,6 +694,7 @@ class ConfigurationTest(testslide.TestCase):
         self.assertListEqual(list(configuration.ignore_infer), ["baz"])
         self.assertEqual(configuration.logger, "logger")
         self.assertEqual(configuration.number_of_workers, 3)
+        self.assertEqual(configuration.oncall, "oncall")
         self.assertListEqual(list(configuration.other_critical_files), ["critical"])
         self.assertListEqual(
             list(configuration.search_path), [SimpleSearchPathElement("search_path")]
@@ -680,13 +712,24 @@ class ConfigurationTest(testslide.TestCase):
         self.assertEqual(configuration.use_command_v2, False)
         self.assertEqual(configuration.version_hash, "abc")
 
+    def test_get_site_roots(self) -> None:
+        global_site_package = "/venv/lib/pythonX/site-packages"
+        user_site_package = "/user/lib/pythonX/site-packages"
+        self.mock_callable(site, "getsitepackages").to_return_value(
+            [global_site_package]
+        ).and_assert_called_once()
+        self.mock_callable(site, "getusersitepackages").to_return_value(
+            user_site_package
+        ).and_assert_called_once()
+        self.assertListEqual(get_site_roots(), [global_site_package, user_site_package])
+
     def test_from_partial_configuration_in_virtual_environment(self) -> None:
         with tempfile.TemporaryDirectory() as root:
             root_path = Path(root).resolve()
             ensure_directories_exists(root_path, ["venv/lib/pythonX/site-packages"])
 
             site_packages = str(root_path / "venv/lib/pythonX/site-packages")
-            self.mock_callable(site, "getsitepackages").to_return_value(
+            self.mock_callable(configuration_module, "get_site_roots").to_return_value(
                 [site_packages]
             ).and_assert_called_once()
 
@@ -778,7 +821,7 @@ class ConfigurationTest(testslide.TestCase):
                             site_root=str(root_path / "u/v"), package_name="w"
                         ),
                     ],
-                ).get_existent_search_paths(),
+                ).expand_and_get_existent_search_paths(),
                 [
                     SimpleSearchPathElement(str(root_path / "a")),
                     SubdirectorySearchPathElement(
@@ -787,6 +830,22 @@ class ConfigurationTest(testslide.TestCase):
                     SitePackageSearchPathElement(
                         site_root=str(root_path / "d/e"), package_name="f"
                     ),
+                ],
+            )
+
+    def test_existent_search_path_glob(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root).resolve()
+            ensure_directories_exists(root_path, ["a1", "a2", "b"])
+            self.assertListEqual(
+                Configuration(
+                    project_root="irrelevant",
+                    dot_pyre_directory=Path(".pyre"),
+                    search_path=[SimpleSearchPathElement(str(root_path / "a?"))],
+                ).expand_and_get_existent_search_paths(),
+                [
+                    SimpleSearchPathElement(str(root_path / "a1")),
+                    SimpleSearchPathElement(str(root_path / "a2")),
                 ],
             )
 
@@ -806,7 +865,7 @@ class ConfigurationTest(testslide.TestCase):
                         SimpleSearchPathElement(str(root_path / "a")),
                     ],
                     typeshed=str(root_path / "typeshed"),
-                ).get_existent_search_paths(),
+                ).expand_and_get_existent_search_paths(),
                 [
                     SimpleSearchPathElement(str(root_path / "a")),
                     SimpleSearchPathElement(str(root_path / "typeshed/stdlib")),
@@ -1342,6 +1401,32 @@ class ConfigurationTest(testslide.TestCase):
             except InvalidConfiguration:
                 self.fail("Nested local configuration check fails unexpectedly!")
 
+    def test_source_directories_glob(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root)
+            ensure_directories_exists(root_path, ["a1", "a2", "b", "c"])
+            source_directories = (
+                Configuration(
+                    project_root="irrelevant",
+                    dot_pyre_directory=Path(".pyre"),
+                    source_directories=[
+                        SimpleSearchPathElement(str(root_path / "a*")),
+                        SimpleSearchPathElement(str(root_path / "b")),
+                    ],
+                )
+                .expand_and_filter_nonexistent_paths()
+                .source_directories
+            )
+            self.assertIsNotNone(source_directories)
+            self.assertListEqual(
+                list(source_directories),
+                [
+                    SimpleSearchPathElement(str(root_path / "a1")),
+                    SimpleSearchPathElement(str(root_path / "a2")),
+                    SimpleSearchPathElement(str(root_path / "b")),
+                ],
+            )
+
 
 class SearchPathElementTest(unittest.TestCase):
     def test_create(self) -> None:
@@ -1350,6 +1435,10 @@ class SearchPathElementTest(unittest.TestCase):
         )
         self.assertListEqual(
             create_search_paths({"root": "foo", "subdirectory": "bar"}, site_roots=[]),
+            [SubdirectorySearchPathElement("foo", "bar")],
+        )
+        self.assertListEqual(
+            create_search_paths({"import_root": "foo", "source": "bar"}, site_roots=[]),
             [SubdirectorySearchPathElement("foo", "bar")],
         )
         self.assertListEqual(
@@ -1427,3 +1516,18 @@ class SearchPathElementTest(unittest.TestCase):
             ),
             SitePackageSearchPathElement("site_root", "package"),
         )
+
+    def test_expand_glob(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root)
+            ensure_directories_exists(root_path, ["a1", "a2", "b"])
+
+            search_path = SimpleSearchPathElement(str(root_path / "a*"))
+
+            self.assertListEqual(
+                search_path.expand_glob(),
+                [
+                    SimpleSearchPathElement(str(root_path / "a1")),
+                    SimpleSearchPathElement(str(root_path / "a2")),
+                ],
+            )

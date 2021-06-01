@@ -63,6 +63,8 @@ type call_model = {
   mode: Mode.t;
 }
 
+val is_empty_model : call_model -> bool
+
 val empty_skip_model : call_model (* Skips analysis *)
 
 type result = Flow.issue list
@@ -71,3 +73,9 @@ include
   Interprocedural.Result.ANALYSIS_RESULT_WITH_REGISTRATION
     with type result := result
      and type call_model := call_model
+
+val model_to_json
+  :  filename_lookup:(Ast.Reference.t -> string option) ->
+  Interprocedural.Callable.t ->
+  call_model ->
+  Yojson.Safe.t

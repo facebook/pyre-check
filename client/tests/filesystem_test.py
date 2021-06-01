@@ -29,8 +29,6 @@ from ..analysis_directory import (
 )
 from ..commands.command import __name__ as command_name
 from ..filesystem import (
-    Filesystem,
-    MercurialBackedFilesystem,
     __name__ as filesystem_name,
     _delete_symbolic_link,
     acquire_lock,
@@ -143,8 +141,6 @@ class FilesystemTest(unittest.TestCase):
                 pass
 
     @patch.object(builtins, "open")
-    # pyre-ignore[56]: Argument `fcntl` to decorator factory
-    # `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(fcntl, "lockf")
     def test_acquire_lock__release_even_on_exception(
         self, lock_file: MagicMock, open_file: MagicMock
@@ -179,145 +175,15 @@ class FilesystemTest(unittest.TestCase):
             fcntl.LOCK_EX | fcntl.LOCK_NB,
         )
 
-    # pyre-fixme[56]: Argument `tools.pyre.client.filesystem` to decorator factory
-    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(filesystem, "acquire_lock")
     def test_acquire_lock_if_needed(self, acquire_lock: MagicMock) -> None:
         acquire_lock_if_needed("/some/path", blocking=True, needed=True)
         acquire_lock.assert_called_once()
 
-    # pyre-fixme[56]: Argument `tools.pyre.client.filesystem` to decorator factory
-    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(filesystem, "acquire_lock")
     def test_acquire_lock_if_needed__not_needed(self, acquire_lock: MagicMock) -> None:
         acquire_lock_if_needed("/some/path", blocking=True, needed=False)
         acquire_lock.assert_not_called()
-
-    def test_filesystem_list_bare(self):
-        filesystem = Filesystem()
-
-        with patch.object(subprocess, "run") as run:
-            filesystem.list(".", [".pyre_configuration.local"])
-            run.assert_has_calls(
-                [
-                    call(
-                        ["find", ".", "(", "-path", "./.pyre_configuration.local", ")"],
-                        stdout=subprocess.PIPE,
-                        cwd=".",
-                    ),
-                    call().stdout.decode("utf-8"),
-                    call().stdout.decode().split(),
-                ]
-            )
-
-        with patch.object(subprocess, "run") as run:
-            filesystem.list("/root", ["**/*.py", "foo.cpp"], exclude=["bar/*.py"])
-            run.assert_has_calls(
-                [
-                    call(
-                        [
-                            "find",
-                            ".",
-                            "(",
-                            "-path",
-                            "./**/*.py",
-                            "-or",
-                            "-path",
-                            "./foo.cpp",
-                            ")",
-                            "-and",
-                            "!",
-                            "(",
-                            "-path",
-                            "./bar/*.py",
-                            ")",
-                        ],
-                        stdout=subprocess.PIPE,
-                        cwd="/root",
-                    ),
-                    call().stdout.decode("utf-8"),
-                    call().stdout.decode().split(),
-                ]
-            )
-
-        def fail_command(arguments, **kwargs):
-            return subprocess.CompletedProcess(
-                args=[], returncode=1, stdout="".encode("utf-8")
-            )
-
-        with patch.object(subprocess, "run") as run:
-            run.side_effect = fail_command
-            self.assertEqual([], filesystem.list(".", [".pyre_configuration.local"]))
-            run.assert_has_calls(
-                [
-                    call(
-                        ["find", ".", "(", "-path", "./.pyre_configuration.local", ")"],
-                        stdout=subprocess.PIPE,
-                        cwd=".",
-                    )
-                ]
-            )
-
-    def test_filesystem_list_mercurial(self):
-        filesystem = MercurialBackedFilesystem()
-
-        with patch.object(subprocess, "run") as run:
-            filesystem.list(".", [".pyre_configuration.local"])
-            run.assert_has_calls(
-                [
-                    call(
-                        ["hg", "files", "--include", ".pyre_configuration.local"],
-                        stdout=subprocess.PIPE,
-                        stderr=subprocess.DEVNULL,
-                        cwd=".",
-                    ),
-                    call().stdout.decode("utf-8"),
-                    call().stdout.decode().split(),
-                ]
-            )
-
-        with patch.object(subprocess, "run") as run:
-            filesystem.list("/root", ["**/*.py", "foo.cpp"], exclude=["bar/*.py"])
-            run.assert_has_calls(
-                [
-                    call(
-                        [
-                            "hg",
-                            "files",
-                            "--include",
-                            "**/*.py",
-                            "--include",
-                            "foo.cpp",
-                            "--exclude",
-                            "bar/*.py",
-                        ],
-                        stdout=subprocess.PIPE,
-                        stderr=subprocess.DEVNULL,
-                        cwd="/root",
-                    ),
-                    call().stdout.decode("utf-8"),
-                    call().stdout.decode().split(),
-                ]
-            )
-
-        def fail_command(arguments, **kwargs):
-            return subprocess.CompletedProcess(
-                args=[], returncode=1, stdout="".encode("utf-8")
-            )
-
-        with patch.object(subprocess, "run") as run:
-            run.side_effect = fail_command
-            self.assertEqual([], filesystem.list(".", [".pyre_configuration.local"]))
-            run.assert_has_calls(
-                [
-                    call(
-                        ["hg", "files", "--include", ".pyre_configuration.local"],
-                        stdout=subprocess.PIPE,
-                        stderr=subprocess.DEVNULL,
-                        cwd=".",
-                    )
-                ]
-            )
 
     @patch.object(filesystem, "_compute_symbolic_link_mapping")
     @patch("os.getcwd")
@@ -410,9 +276,6 @@ class FilesystemTest(unittest.TestCase):
             clear.assert_has_calls([call()])
 
     @patch(f"{command_name}.Path.mkdir")
-    # pyre-fixme[56]: Pyre was not able to infer the type of argument `lambda
-    #  ($parameter$path) ("realpath({path})"($parameter$path))` to decorator factory
-    #  `unittest.mock.patch`.
     @patch("os.path.realpath", side_effect=lambda path: f"realpath({path})")
     @patch("os.getcwd", return_value="/root")
     @patch("os.path.exists", return_value=True)

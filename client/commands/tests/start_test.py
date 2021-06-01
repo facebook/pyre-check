@@ -30,8 +30,6 @@ class StartTest(unittest.TestCase):
         return_value=find_directories.FoundRoot(Path(".")),
     )
     @patch("fcntl.lockf")
-    # pyre-fixme[56]: Argument `set()` to decorator factory
-    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(commands.Reporting, "_get_directories_to_analyze", return_value=set())
     @patch.object(configuration_monitor.ConfigurationMonitor, "daemonize")
     def test_start(
@@ -181,8 +179,6 @@ class StartTest(unittest.TestCase):
         f"{find_directories.__name__}.find_global_and_local_root",
         return_value=find_directories.FoundRoot(Path(".")),
     )
-    # pyre-fixme[56]: Argument `set()` to decorator factory
-    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(commands.Reporting, "_get_directories_to_analyze", return_value=set())
     def test_start_flags(
         self, get_directories_to_analyze, find_global_and_local_root
@@ -496,8 +492,6 @@ class StartTest(unittest.TestCase):
         f"{find_directories.__name__}.find_global_and_local_root",
         return_value=find_directories.FoundRoot(Path(".")),
     )
-    # pyre-fixme[56]: Argument `set()` to decorator factory
-    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(commands.Reporting, "_get_directories_to_analyze", return_value=set())
     def test_start_flags__ignore_all_errors(
         self,

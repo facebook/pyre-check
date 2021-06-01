@@ -4,11 +4,13 @@
 # LICENSE file in the root directory of this source tree.
 
 import ast
+import subprocess
 import unittest
 from textwrap import dedent
 from typing import List
+from unittest.mock import call, patch
 
-from ..filesystem import Target, TargetCollector
+from ..filesystem import Target, TargetCollector, Filesystem, MercurialBackedFilesystem
 
 
 class FilesystemTest(unittest.TestCase):
@@ -144,3 +146,133 @@ class FilesystemTest(unittest.TestCase):
         """
         expected_targets = [Target("target_name", strict=False, pyre=True)]
         self.assert_collector(source, expected_targets, True)
+
+    def test_filesystem_list_bare(self) -> None:
+        filesystem = Filesystem()
+
+        with patch.object(subprocess, "run") as run:
+            filesystem.list(".", [".pyre_configuration.local"])
+            run.assert_has_calls(
+                [
+                    call(
+                        ["find", ".", "(", "-path", "./.pyre_configuration.local", ")"],
+                        stdout=subprocess.PIPE,
+                        cwd=".",
+                    ),
+                    call().stdout.decode("utf-8"),
+                    call().stdout.decode().split(),
+                ]
+            )
+
+        with patch.object(subprocess, "run") as run:
+            filesystem.list("/root", ["**/*.py", "foo.cpp"], exclude=["bar/*.py"])
+            run.assert_has_calls(
+                [
+                    call(
+                        [
+                            "find",
+                            ".",
+                            "(",
+                            "-path",
+                            "./**/*.py",
+                            "-or",
+                            "-path",
+                            "./foo.cpp",
+                            ")",
+                            "-and",
+                            "!",
+                            "(",
+                            "-path",
+                            "./bar/*.py",
+                            ")",
+                        ],
+                        stdout=subprocess.PIPE,
+                        cwd="/root",
+                    ),
+                    call().stdout.decode("utf-8"),
+                    call().stdout.decode().split(),
+                ]
+            )
+
+        def fail_command(
+            *args: object, **kwargs: object
+        ) -> "subprocess.CompletedProcess[bytes]":
+            return subprocess.CompletedProcess(
+                args=[], returncode=1, stdout="".encode("utf-8")
+            )
+
+        with patch.object(subprocess, "run") as run:
+            run.side_effect = fail_command
+            self.assertEqual([], filesystem.list(".", [".pyre_configuration.local"]))
+            run.assert_has_calls(
+                [
+                    call(
+                        ["find", ".", "(", "-path", "./.pyre_configuration.local", ")"],
+                        stdout=subprocess.PIPE,
+                        cwd=".",
+                    )
+                ]
+            )
+
+    def test_filesystem_list_mercurial(self) -> None:
+        filesystem = MercurialBackedFilesystem()
+
+        with patch.object(subprocess, "run") as run:
+            filesystem.list(".", [".pyre_configuration.local"])
+            run.assert_has_calls(
+                [
+                    call(
+                        ["hg", "files", "--include", ".pyre_configuration.local"],
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.DEVNULL,
+                        cwd=".",
+                    ),
+                    call().stdout.decode("utf-8"),
+                    call().stdout.decode().split(),
+                ]
+            )
+
+        with patch.object(subprocess, "run") as run:
+            filesystem.list("/root", ["**/*.py", "foo.cpp"], exclude=["bar/*.py"])
+            run.assert_has_calls(
+                [
+                    call(
+                        [
+                            "hg",
+                            "files",
+                            "--include",
+                            "**/*.py",
+                            "--include",
+                            "foo.cpp",
+                            "--exclude",
+                            "bar/*.py",
+                        ],
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.DEVNULL,
+                        cwd="/root",
+                    ),
+                    call().stdout.decode("utf-8"),
+                    call().stdout.decode().split(),
+                ]
+            )
+
+        def fail_command(
+            *args: object, **kwargs: object
+        ) -> "subprocess.CompletedProcess[bytes]":
+            return subprocess.CompletedProcess(
+                args=[], returncode=1, stdout="".encode("utf-8")
+            )
+
+        with patch.object(subprocess, "run") as run:
+            run.side_effect = fail_command
+            self.assertEqual([], filesystem.list(".", [".pyre_configuration.local"]))
+            run.assert_has_calls(
+                [
+                    call(
+                        ["hg", "files", "--include", ".pyre_configuration.local"],
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.DEVNULL,
+                        cwd=".",
+                    )
+                ]
+            )

@@ -1,0 +1,21 @@
+ModelQuery(
+  find = "attributes",
+  where = [
+    parent.matches("Test1_"),
+    parent.extends("model_query_transitive_extends.Test1_C", is_transitive=True)
+  ],
+  model = [
+    AttributeModel(TaintSource[Test])
+  ]
+)
+
+ModelQuery(
+  find = "methods",
+  where = [
+    parent.matches("Test2_"),
+    Not(parent.extends("model_query_transitive_extends.Test2_C", is_transitive=True))
+  ],
+  model = [
+    AllParameters(TaintSink[Test], exclude="self")
+  ]
+)

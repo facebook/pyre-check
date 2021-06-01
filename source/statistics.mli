@@ -37,7 +37,6 @@ val performance
   ?randomly_log_every:int ->
   ?always_log_time_threshold:float ->
   ?section:Log.section ->
-  ?category:string ->
   name:string ->
   timer:Timer.t ->
   ?phase_name:string ->
@@ -57,6 +56,13 @@ val event
   unit
 
 val log_exception : exn -> fatal:bool -> origin:string -> unit
+
+val buck_event
+  :  ?flush:bool ->
+  ?integers:(string * int) list ->
+  ?normals:(string * string) list ->
+  unit ->
+  unit
 
 val log_worker_exception : pid:int -> origin:string -> Unix.process_status -> unit
 

@@ -342,6 +342,105 @@ let test_literal_alias context =
   ()
 
 
+let test_string_literal context =
+  let assert_type_errors = assert_type_errors ~context in
+  assert_type_errors
+    {|
+      from typing import Literal
+
+      def expect_literal_string(s: Literal[str]) -> None: ...
+
+      def bar() -> None:
+        expect_literal_string("hello")
+
+        s: str
+        expect_literal_string(s)
+        expect_literal_string(1)
+    |}
+    [
+      "Incompatible parameter type [6]: Expected `typing_extensions.Literal[str]` for 1st \
+       positional only parameter to call `expect_literal_string` but got `str`.";
+      "Incompatible parameter type [6]: Expected `typing_extensions.Literal[str]` for 1st \
+       positional only parameter to call `expect_literal_string` but got \
+       `typing_extensions.Literal[1]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Literal, TypeVar
+
+      TLiteral = TypeVar("TLiteral", bound=Literal[str])
+
+      def return_literal_string(s: TLiteral) -> TLiteral: ...
+
+      def bar() -> None:
+        y = return_literal_string("hello")
+        reveal_type(y)
+
+        s: Literal[str]
+        y2 = return_literal_string(s)
+        reveal_type(y2)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `y` is `typing_extensions.Literal['hello']`.";
+      "Revealed type [-1]: Revealed type for `y2` is `typing_extensions.Literal[str]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Literal, TypeVar
+
+      TLiteral = TypeVar("TLiteral", bound=Literal[str])
+
+      def return_literal_string(s: TLiteral) -> TLiteral: ...
+
+      def bar() -> None:
+        s: str
+        return_literal_string(s)
+    |}
+    [
+      "Incompatible parameter type [6]: Expected `Variable[TLiteral (bound to \
+       typing_extensions.Literal[str])]` for 1st positional only parameter to call \
+       `return_literal_string` but got `str`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Literal
+
+      def expect_str(s: str) -> None: ...
+
+      def bar(s: Literal[str]) -> None:
+        expect_str(s)
+    |}
+    [];
+  assert_type_errors
+    {|
+      from typing import Literal
+
+      def bar() -> None:
+        some_bool: bool
+        if some_bool:
+          x = "hello"
+        else:
+          x = "world"
+        reveal_type(x)
+    |}
+    [
+      (* TODO(T48477564): We don't join literals in general. *)
+      "Revealed type [-1]: Revealed type for `x` is `str`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Literal
+
+      def bar() -> None:
+        some_bool: bool
+        literal_string: Literal[str]
+        x = "hello" if some_bool else literal_string
+        reveal_type(x)
+    |}
+    ["Revealed type [-1]: Revealed type for `x` is `typing_extensions.Literal[str]`."];
+  ()
+
+
 let () =
   "literal"
   >::: [
@@ -351,5 +450,6 @@ let () =
          "bytes_literals" >:: test_bytes_literals;
          "literal_none" >:: test_literal_none;
          "literal_alias" >:: test_literal_alias;
+         "string_literal" >:: test_string_literal;
        ]
   |> Test.run

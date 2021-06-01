@@ -1,0 +1,26 @@
+{
+    "name": "Server Side Template Injection",
+    "description": "High signal filter for 6073 Server Side Template Injection",
+    "features": [
+        {
+            "mode": "none of",
+            "features": [
+                "always-type:bool",
+                "always-type:scalar",
+                "always-via:external_query",
+                "always-via-type:jinja2.sandbox.SandboxedEnvironment"
+            ]
+        }
+    ],
+    "codes": [
+        6073
+    ],
+    "traceLengthFromSources": [
+        0,
+        3
+    ],
+    "traceLengthToSinks": [
+        0,
+        5
+    ]
+}

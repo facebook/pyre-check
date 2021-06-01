@@ -10,6 +10,7 @@ import enum
 import json
 import logging
 import os
+import re
 import subprocess
 import tempfile
 from pathlib import Path
@@ -23,6 +24,7 @@ from typing import (
     Mapping,
     Optional,
     Sequence,
+    Set,
     Tuple,
     Union,
 )
@@ -39,11 +41,13 @@ from . import server_connection, server_event, stop, remote_logging
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
+ARTIFACT_ROOT_NAME: str = "link_trees"
 SERVER_LOG_FILE_FORMAT: str = "server.stderr.%Y_%m_%d_%H_%M_%S_%f"
 
 
 class MatchPolicy(enum.Enum):
     BASE_NAME = "base_name"
+    EXTENSION = "extension"
     FULL_PATH = "full_path"
 
     def __str__(self) -> str:
@@ -136,11 +140,15 @@ class SimpleSourcePath:
             "paths": [element.command_line_argument() for element in self.elements],
         }
 
+    def get_checked_directory_allowlist(self) -> Set[str]:
+        return {element.path() for element in self.elements}
+
 
 @dataclasses.dataclass(frozen=True)
 class BuckSourcePath:
     source_root: Path
     artifact_root: Path
+    checked_directory: Path
     targets: Sequence[str] = dataclasses.field(default_factory=list)
     mode: Optional[str] = None
     isolation_prefix: Optional[str] = None
@@ -161,6 +169,9 @@ class BuckSourcePath:
             "artifact_root": str(self.artifact_root),
         }
 
+    def get_checked_directory_allowlist(self) -> Set[str]:
+        return {str(self.checked_directory)}
+
 
 SourcePath = Union[SimpleSourcePath, BuckSourcePath]
 
@@ -174,6 +185,7 @@ class Arguments:
 
     log_path: str
     global_root: str
+    source_paths: SourcePath
 
     additional_logging_sections: Sequence[str] = dataclasses.field(default_factory=list)
     checked_directory_allowlist: Sequence[str] = dataclasses.field(default_factory=list)
@@ -196,9 +208,6 @@ class Arguments:
         default_factory=list
     )
     show_error_traces: bool = False
-    source_paths: Sequence[configuration_module.SearchPathElement] = dataclasses.field(
-        default_factory=list
-    )
     store_type_check_resolution: bool = False
     strict: bool = False
     taint_models_path: Sequence[str] = dataclasses.field(default_factory=list)
@@ -213,9 +222,7 @@ class Arguments:
     def serialize(self) -> Dict[str, Any]:
         local_root = self.local_root
         return {
-            "source_paths": [
-                element.command_line_argument() for element in self.source_paths
-            ],
+            "source_paths": self.source_paths.serialize(),
             "search_paths": [
                 element.command_line_argument() for element in self.search_paths
             ],
@@ -346,6 +353,61 @@ def find_watchman_root(base: Path) -> Optional[Path]:
     )
 
 
+def find_buck_root(base: Path) -> Optional[Path]:
+    return find_directories.find_parent_directory_containing_file(base, ".buckconfig")
+
+
+def get_source_path(configuration: configuration_module.Configuration) -> SourcePath:
+    source_directories = configuration.source_directories
+    targets = configuration.targets
+
+    if source_directories is not None and targets is None:
+        elements: Sequence[
+            configuration_module.SearchPathElement
+        ] = configuration.get_source_directories()
+        if len(elements) == 0:
+            LOG.warning("Pyre did not find an existent source directory.")
+        return SimpleSourcePath(elements)
+
+    if targets is not None and source_directories is None:
+        if len(targets) == 0:
+            LOG.warning("Pyre did not find any targets to check.")
+
+        search_base = Path(configuration.project_root)
+        artifact_root = configuration.dot_pyre_directory / ARTIFACT_ROOT_NAME
+
+        relative_local_root = configuration.relative_local_root
+        if relative_local_root is not None:
+            search_base = search_base / relative_local_root
+            artifact_root = artifact_root / relative_local_root
+
+        source_root = find_buck_root(search_base)
+        if source_root is None:
+            raise configuration_module.InvalidConfiguration(
+                "Cannot find a buck root for the specified targets. "
+                + "Make sure the project is covered by a `.buckconfig` file."
+            )
+
+        return BuckSourcePath(
+            source_root=source_root,
+            artifact_root=artifact_root,
+            checked_directory=search_base,
+            targets=targets,
+            mode=configuration.buck_mode,
+            isolation_prefix=configuration.isolation_prefix,
+        )
+
+    if source_directories is None and targets is not None:
+        raise configuration_module.InvalidConfiguration(
+            "`source_directory` and `targets` are mutually exclusive"
+        )
+
+    raise configuration_module.InvalidConfiguration(
+        "Cannot find any source files to analyze. "
+        + "Either `source_directory` or `targets` must be specified."
+    )
+
+
 def get_profiling_log_path(log_directory: Path) -> Path:
     return log_directory / "profiling.log"
 
@@ -362,13 +424,7 @@ def create_server_arguments(
     nonexistent directories. It is idempotent though, since it does not alter
     any filesystem state.
     """
-    source_directories: Sequence[
-        configuration_module.SearchPathElement
-    ] = configuration.get_existent_source_directories()
-    if len(source_directories) == 0:
-        raise configuration_module.InvalidConfiguration(
-            "New server does not have buck support yet."
-        )
+    source_paths = get_source_path(configuration)
 
     logging_sections = start_arguments.logging_sections
     additional_logging_sections = (
@@ -397,14 +453,14 @@ def create_server_arguments(
         else None
     )
 
-    check_directory_allowlist = [
-        search_path.path() for search_path in source_directories
-    ] + configuration.get_existent_do_not_ignore_errors_in_paths()
     return Arguments(
         log_path=configuration.log_directory,
         global_root=configuration.project_root,
         additional_logging_sections=additional_logging_sections,
-        checked_directory_allowlist=check_directory_allowlist,
+        checked_directory_allowlist=(
+            list(source_paths.get_checked_directory_allowlist())
+            + configuration.get_existent_do_not_ignore_errors_in_paths()
+        ),
         checked_directory_blocklist=(
             configuration.get_existent_ignore_all_errors_paths()
         ),
@@ -424,9 +480,9 @@ def create_server_arguments(
         else get_saved_state_action(
             start_arguments, relative_local_root=configuration.relative_local_root
         ),
-        search_paths=configuration.get_existent_search_paths(),
+        search_paths=configuration.expand_and_get_existent_search_paths(),
         show_error_traces=start_arguments.show_error_traces,
-        source_paths=source_directories,
+        source_paths=source_paths,
         store_type_check_resolution=start_arguments.store_type_check_resolution,
         strict=configuration.strict,
         taint_models_path=configuration.taint_models_path,
@@ -571,8 +627,7 @@ def server_argument_file(server_arguments: Arguments) -> Iterator[Path]:
         yield Path(argument_file.name)
 
 
-@remote_logging.log_usage(command_name="start")
-def run(
+def run_start(
     configuration: configuration_module.Configuration,
     start_arguments: command_arguments.StartArguments,
 ) -> commands.ExitCode:
@@ -613,3 +668,11 @@ def run(
                     wait_on_initialization=start_arguments.wait_on_initialization
                 ),
             )
+
+
+@remote_logging.log_usage(command_name="start")
+def run(
+    configuration: configuration_module.Configuration,
+    start_arguments: command_arguments.StartArguments,
+) -> commands.ExitCode:
+    return run_start(configuration, start_arguments)

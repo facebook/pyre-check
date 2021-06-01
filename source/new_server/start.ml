@@ -9,10 +9,20 @@ open Core
 module Path = Pyre.Path
 
 module ServerEvent = struct
+  module ErrorKind = struct
+    type t =
+      | Watchman
+      | BuckInternal
+      | BuckUser
+      | Pyre
+      | Unknown
+    [@@deriving sexp, compare, hash, to_yojson]
+  end
+
   type t =
     | SocketCreated of Path.t
     | ServerInitialized
-    | Exception of string
+    | Exception of string * ErrorKind.t
   [@@deriving sexp, compare, hash, to_yojson]
 
   let serialize event = to_yojson event |> Yojson.Safe.to_string
@@ -44,38 +54,6 @@ let socket_path_of log_path =
   Path.create_relative
     ~root:socket_directory
     ~relative:(Format.sprintf "pyre_server_%s.sock" log_path_digest)
-
-
-(* One of the biggest pain point of using a Unix-domain socket is that the socket file will not get
-   auto-deleted if the server process is force-killed or crashes with fatal signals. If that
-   happens, the now-defunct socket file on disk will block all future attempts at starting a new
-   server process, until the file gets manually removed.
-
-   It may seem that such an issue can be addressed by always removing the pre-existing socket file
-   on disk whenever a new server is started. But blind file removal will incur a race condition
-   among concurrent server starts: if the pre-existing socket file is not defunct (i.e. another
-   living server is still listening on the socket), removing it will render another living server
-   unreachable, leaking system resources unless the dangling server gets manually killed.
-
-   To determine whether it is safe to remove the pre-existing socket file, we resort to file lock
-   here. One nice property about file lock is that the lock is guaranteed to be automatically
-   released from a process even if it gets forced-killed or crashes unexpectedly (ideally we want
-   the same property to hold for the socket file itself -- but unfortunately Unix-domain sockets do
-   not work this way due to historical reasons). This means that if we cannot grab a lock, we know
-   that another living process may still own the socket file, in which case it's probably not a good
-   idea to remove the file.
-
-   Note that file locks are advisory, meaning that they cannot protect the socket file from being
-   removed by another server process that does not follow the same locking protocol. Besides, file
-   locks are not guaranteed to be functional on all OSes and all filesystems. Hence this function
-   may not be able to remove defunct sockets in some cases even though it is safe to do so. *)
-let remove_existing_socket_file_if_needed socket_path =
-  let lock_path = Path.with_suffix socket_path ~suffix:".lock" in
-  match
-    Lock_file_blocking.create ~close_on_exec:true ~unlink_on_exit:true (Path.absolute lock_path)
-  with
-  | true -> Path.remove_if_exists socket_path
-  | false -> ()
 
 
 let with_performance_logging ?(normals = []) ~name f =
@@ -114,19 +92,18 @@ module ClientRequest = struct
     | Yojson.Json_error message -> Error message
 end
 
-let handle_request ~server_state request =
+let handle_request ~state request =
   let open Lwt.Infix in
   let on_uncaught_server_exception exn =
     Log.info "Uncaught server exception: %s" (Exn.to_string exn);
-    let server_state = !server_state in
     let () =
-      let { ServerState.server_configuration; _ } = server_state in
+      let { ServerState.server_configuration; _ } = state in
       StartupNotification.produce_for_configuration
         ~server_configuration
         "Restarting Pyre server due to unexpected crash"
     in
     Statistics.log_exception exn ~fatal:true ~origin:"server";
-    Stop.log_and_stop_waiting_server ~reason:"uncaught exception" ~state:server_state ()
+    Stop.log_and_stop_waiting_server ~reason:"uncaught exception" ~state ()
   in
   Lwt.catch
     (fun () ->
@@ -134,15 +111,14 @@ let handle_request ~server_state request =
       with_performance_logging
         ~normals:["request kind", Request.name_of request]
         ~name:"server request"
-        (fun () -> RequestHandler.process_request ~state:!server_state request))
+        (fun () -> RequestHandler.process_request ~state request))
     on_uncaught_server_exception
   >>= fun (new_state, response) ->
-  Log.log ~section:`Server "Request processed";
-  server_state := new_state;
-  Lwt.return response
+  Log.log ~section:`Server "Request `%a` processed" Sexp.pp (Request.sexp_of_t request);
+  Lwt.return (new_state, response)
 
 
-let handle_subscription ~server_state:{ ServerState.subscriptions; _ } ~output_channel request =
+let handle_subscription ~state:{ ServerState.subscriptions; _ } ~output_channel request =
   match request with
   | Subscription.Request.SubscribeToTypeErrors subscriber_name ->
       let subscription = Subscription.create ~name:subscriber_name ~output_channel () in
@@ -170,8 +146,6 @@ end
 
 let handle_connection ~server_state _client_address (input_channel, output_channel) =
   let open Lwt.Infix in
-  Lazy.force server_state
-  >>= fun server_state ->
   Log.log ~section:`Server "Connection established";
   (* Raw request messages are processed line-by-line. *)
   let rec handle_line connection_state =
@@ -179,28 +153,31 @@ let handle_connection ~server_state _client_address (input_channel, output_chann
     >>= function
     | None ->
         Log.log ~section:`Server "Connection closed";
-        ConnectionState.cleanup ~server_state:!server_state connection_state;
-        Lwt.return_unit
+        ExclusiveLock.write server_state ~f:(fun server_state ->
+            ConnectionState.cleanup ~server_state connection_state;
+            Lwt.return (server_state, ()))
     | Some message ->
         let result =
           match ClientRequest.of_string message with
           | ClientRequest.Error message -> Lwt.return (connection_state, Response.Error message)
           | ClientRequest.Request request ->
-              handle_request ~server_state request
-              >>= fun response -> Lwt.return (connection_state, response)
+              ExclusiveLock.write server_state ~f:(fun state ->
+                  handle_request ~state request
+                  >>= fun (new_state, response) ->
+                  Lwt.return (new_state, (connection_state, response)))
           | ClientRequest.Subscription subscription ->
-              let subscription =
-                handle_subscription ~server_state:!server_state ~output_channel subscription
-              in
-              (* We send back the initial set of type errors when a subscription first gets
-                 established. *)
-              handle_request ~server_state (Request.DisplayTypeError [])
-              >>= fun response ->
-              Lwt.return
-                ( ConnectionState.add_subscription
-                    ~name:(Subscription.name_of subscription)
-                    connection_state,
-                  response )
+              ExclusiveLock.write server_state ~f:(fun state ->
+                  let subscription = handle_subscription ~state ~output_channel subscription in
+                  (* We send back the initial set of type errors when a subscription first gets
+                     established. *)
+                  handle_request ~state (Request.DisplayTypeError [])
+                  >>= fun (new_state, response) ->
+                  Lwt.return
+                    ( new_state,
+                      ( ConnectionState.add_subscription
+                          ~name:(Subscription.name_of subscription)
+                          connection_state,
+                        response ) ))
         in
         result
         >>= fun (new_connection_state, response) ->
@@ -246,6 +223,11 @@ let initialize_server_state
       ~type_environment:environment
       ~error_table
       ()
+  in
+  let build_and_start_from_scratch ~build_system_initializer () =
+    let open Lwt.Infix in
+    BuildSystem.Initializer.run build_system_initializer
+    >>= fun build_system -> Lwt.return (start_from_scratch ~build_system ())
   in
   let fetch_saved_state_from_files ~shared_memory_path ~changed_files_path () =
     try
@@ -368,11 +350,11 @@ let initialize_server_state
     try Result.Ok (Memory.load_shared_memory ~path:(Path.absolute path) ~configuration) with
     | Memory.SavedStateLoadingFailure message -> Result.Error message
   in
-  let load_from_saved_state ~build_system = function
+  let load_from_saved_state ~build_system_initializer = function
     | Result.Error message ->
         Log.warning "%s" message;
         Statistics.event ~name:"saved state failure" ~normals:["reason", message] ();
-        Lwt.return (start_from_scratch ~build_system ())
+        build_and_start_from_scratch ~build_system_initializer ()
     | Result.Ok { SavedState.Fetched.path; changed_files } -> (
         Log.info "Restoring environments from saved state...";
         match load_from_shared_memory path with
@@ -383,7 +365,7 @@ let initialize_server_state
               ~normals:["reason", "shared memory loading failure"]
               ();
             Memory.reset_shared_memory ();
-            Lwt.return (start_from_scratch ~build_system ())
+            build_and_start_from_scratch ~build_system_initializer ()
         | Result.Ok () -> (
             match
               configuration_equal configuration (Server.SavedState.StoredConfiguration.load ())
@@ -401,8 +383,11 @@ let initialize_server_state
                   ~normals:["reason", "configuration change"]
                   ();
                 Memory.reset_shared_memory ();
-                Lwt.return (start_from_scratch ~build_system ())
+                build_and_start_from_scratch ~build_system_initializer ()
             | true ->
+                let open Lwt.Infix in
+                BuildSystem.Initializer.load build_system_initializer
+                >>= fun build_system ->
                 let loaded_state =
                   let module_tracker = Analysis.ModuleTracker.SharedMemory.load () in
                   let ast_environment = Analysis.AstEnvironment.load module_tracker in
@@ -420,7 +405,6 @@ let initialize_server_state
                     ~error_table
                     ()
                 in
-                let open Lwt.Infix in
                 Log.info "Processing recent updates not included in saved state...";
                 Statistics.event ~name:"saved state success" ();
                 Request.IncrementalUpdate (List.map changed_files ~f:Path.absolute)
@@ -429,8 +413,6 @@ let initialize_server_state
   in
   let open Lwt.Infix in
   let get_initial_state ~build_system_initializer () =
-    BuildSystem.Initializer.run build_system_initializer
-    >>= fun build_system ->
     match saved_state_action with
     | Some
         (ServerConfiguration.SavedStateAction.LoadFromFile
@@ -440,7 +422,7 @@ let initialize_server_state
           ~name:"initialization"
           (fun _ ->
             fetch_saved_state_from_files ~shared_memory_path ~changed_files_path ()
-            >>= load_from_saved_state ~build_system)
+            >>= load_from_saved_state ~build_system_initializer)
     | Some (ServerConfiguration.SavedStateAction.LoadFromProject { project_name; project_metadata })
       ->
         let normals =
@@ -453,14 +435,16 @@ let initialize_server_state
         in
         with_performance_logging ~normals ~name:"initialization" (fun _ ->
             fetch_saved_state_from_project ~project_name ~project_metadata ()
-            >>= load_from_saved_state ~build_system)
+            >>= load_from_saved_state ~build_system_initializer)
     | _ ->
         with_performance_logging
           ~normals:["initialization method", "cold start"]
           ~name:"initialization"
-          (fun _ -> Lwt.return (start_from_scratch ~build_system ()))
+          (fun _ -> build_and_start_from_scratch ~build_system_initializer ())
   in
-  let store_initial_state { ServerState.configuration; type_environment; error_table; _ } =
+  let store_initial_state
+      { ServerState.configuration; type_environment; error_table; build_system; _ }
+    =
     match saved_state_action with
     | Some (ServerConfiguration.SavedStateAction.SaveToFile { shared_memory_path }) ->
         Memory.SharedMemory.collect `aggressive;
@@ -469,6 +453,7 @@ let initialize_server_state
         Analysis.TypeEnvironment.ast_environment type_environment |> Analysis.AstEnvironment.store;
         Server.SavedState.StoredConfiguration.store configuration;
         Server.SavedState.ServerErrors.store error_table;
+        BuildSystem.store build_system;
         Analysis.SharedMemoryKeys.DependencyKey.Registry.store ();
         Memory.save_shared_memory ~path:(Path.absolute shared_memory_path) ~configuration;
         Log.info "Initial server state written to %a" Path.pp shared_memory_path
@@ -488,7 +473,7 @@ let initialize_server_state
   >>= fun state ->
   Log.info "Server state initialized.";
   store_initial_state state;
-  Lwt.return (ref state)
+  Lwt.return (ExclusiveLock.create state)
 
 
 let get_watchman_subscriber
@@ -506,37 +491,12 @@ let get_watchman_subscriber
       get_raw_watchman watchman
       >>= fun raw ->
       let subscriber_setting =
-        let filter =
-          let base_names =
-            List.map critical_files ~f:ServerConfiguration.CriticalFile.base_name_of
-            |> String.Set.of_list
-            |> fun set ->
-            Set.add set ".pyre_configuration"
-            |> fun set ->
-            Set.add set ".pyre_configuration.local"
-            |> fun set ->
-            ( match source_paths with
-            | ServerConfiguration.SourcePaths.Buck _ ->
-                let set = Set.add set "TARGETS" in
-                Set.add set "BUCK"
-            | ServerConfiguration.SourcePaths.Simple _ -> set )
-            |> Set.to_list
-          in
-          let suffixes =
-            String.Set.of_list (List.map ~f:Configuration.Extension.suffix extensions)
-            |> fun set ->
-            Set.add set "py"
-            |> fun set ->
-            Set.add set "pyi"
-            |> fun set ->
-            ( match source_paths with
-            | ServerConfiguration.SourcePaths.Buck _ -> Set.add set "thrift"
-            | ServerConfiguration.SourcePaths.Simple _ -> set )
-            |> Set.to_list
-          in
-          { Watchman.Filter.base_names; suffixes }
-        in
-        { Watchman.Subscriber.Setting.raw; root; filter }
+        {
+          Watchman.Subscriber.Setting.raw;
+          root;
+          filter =
+            Watchman.Filter.from_server_configurations ~critical_files ~extensions ~source_paths ();
+        }
       in
       Watchman.Subscriber.subscribe subscriber_setting >>= Lwt.return_some
 
@@ -544,10 +504,11 @@ let get_watchman_subscriber
 let on_watchman_update ~server_state paths =
   let open Lwt.Infix in
   let update_request = Request.IncrementalUpdate (List.map paths ~f:Path.absolute) in
-  handle_request ~server_state update_request
-  >>= fun _ok_response ->
-  (* File watcher does not care about the content of the the response. *)
-  Lwt.return_unit
+  ExclusiveLock.write server_state ~f:(fun state ->
+      handle_request ~state update_request
+      >>= fun (new_state, _ok_response) ->
+      (* File watcher does not care about the content of the the response. *)
+      Lwt.return (new_state, ()))
 
 
 let with_server
@@ -558,34 +519,30 @@ let with_server
   =
   let open Lwt in
   let socket_path = socket_path_of log_path in
-  remove_existing_socket_file_if_needed socket_path;
   (* Watchman connection needs to be up before server can start -- otherwise we risk missing
      filesystem updates during server establishment. *)
   get_watchman_subscriber ?watchman server_configuration
   >>= fun watchman_subscriber ->
-  let server_state =
-    (* We do not want the expensive server initialization to happen before we start to listen on the
-       socket. Hence the use of `lazy` here to delay the initialization. *)
-    lazy
-      (initialize_server_state ?watchman_subscriber ?build_system_initializer server_configuration)
-  in
-  Lwt_io.establish_server_with_client_address
-    (Lwt_unix.ADDR_UNIX (Path.absolute socket_path))
-    (handle_connection ~server_state)
+  LwtSocketServer.PreparedSocket.create_from_path socket_path
+  >>= fun prepared_socket ->
+  (* We do not want the expensive server initialization to happen before we start to accept client
+     requests. *)
+  initialize_server_state ?watchman_subscriber ?build_system_initializer server_configuration
+  >>= fun server_state ->
+  LwtSocketServer.establish prepared_socket ~f:(handle_connection ~server_state)
   >>= fun server ->
   let server_waiter () = f (socket_path, server_state) in
   let server_destructor () =
     Log.info "Server is going down. Cleaning up...";
     let build_system_cleanup () =
-      if Lazy.is_val server_state then
-        Lazy.force server_state
-        >>= fun server_state ->
-        let { ServerState.build_system; _ } = !server_state in
-        BuildSystem.cleanup build_system
-      else
-        Lwt.return_unit
+      (* We can't use `ExclusiveLock.read` here because when we reach this point, some other thread
+         might still hold the lock on the server state (e.g. this can happen when the server
+         destructor is initiated from a request handler that received a `stop` request). In those
+         cases, trying to grab the lock on the server state would cause a deadlock. *)
+      let { ServerState.build_system; _ } = ExclusiveLock.unsafe_read server_state in
+      BuildSystem.cleanup build_system
     in
-    build_system_cleanup () >>= fun () -> Lwt_io.shutdown_server server
+    build_system_cleanup () >>= fun () -> LwtSocketServer.shutdown server
   in
   finalize
     (fun () ->
@@ -596,8 +553,6 @@ let with_server
           server_waiter ()
       | Some subscriber ->
           let watchman_waiter =
-            Lazy.force server_state
-            >>= fun server_state ->
             Watchman.Subscriber.listen ~f:(on_watchman_update ~server_state) subscriber
             >>= fun () ->
             (* Lost watchman connection is considered an error. *)
@@ -631,9 +586,8 @@ let start_server
     server_configuration
   =
   let open Lwt in
-  let f (socket_path, uninitialized_server_state) =
-    on_server_socket_ready socket_path
-    >>= fun _ -> Lazy.force uninitialized_server_state >>= on_started
+  let f (socket_path, server_state) =
+    on_server_socket_ready socket_path >>= fun _ -> on_started server_state
   in
   catch
     (fun () -> with_server ?watchman ?build_system_initializer server_configuration ~f)
@@ -670,34 +624,53 @@ let start_server_and_wait ?event_channel server_configuration =
           wait_on_signals
             [Signal.abrt; Signal.term; Signal.pipe; Signal.quit; Signal.segv]
             ~on_caught:(fun signal ->
-              Stop.log_stopped_server ~reason:(Signal.to_string signal) ~state:!state ();
+              let { ServerState.start_time; _ } =
+                (* The use of `unsafe_read` is justified because (1) we really do not want to block
+                   here, and (2) `start_time` is immutable anyway, which means no race condition can
+                   occur in the first place. *)
+                ExclusiveLock.unsafe_read state
+              in
+              Stop.log_stopped_server ~reason:(Signal.to_string signal) ~start_time ();
               return ExitStatus.Error);
         ])
     ~on_exception:(fun exn ->
-      let message =
+      let kind, message =
         match exn with
-        | Buck.Raw.BuckError { arguments; description } ->
-            Format.sprintf
-              "Cannot build the project: %s. To reproduce this error, run `%s`."
-              description
-              (String.concat ~sep:" " ("buck" :: arguments))
+        | Buck.Raw.BuckError { arguments; description; exit_code } ->
+            (* Buck exit code >=10 are considered internal:
+               https://buck.build/command/exit_codes.html *)
+            let kind =
+              match exit_code with
+              | Some exit_code when exit_code < 10 -> ServerEvent.ErrorKind.BuckUser
+              | _ -> ServerEvent.ErrorKind.BuckInternal
+            in
+            ( kind,
+              Format.sprintf
+                "Cannot build the project: %s. To reproduce this error, run `%s`."
+                description
+                (String.concat ~sep:" " ("buck" :: arguments)) )
         | Buck.Builder.JsonError message ->
-            Format.sprintf
-              "Cannot build the project because Buck returns malformed JSON: %s"
-              message
+            ( ServerEvent.ErrorKind.Pyre,
+              Format.sprintf
+                "Cannot build the project because Buck returns malformed JSON: %s"
+                message )
         | Buck.Builder.LinkTreeConstructionError message ->
-            Format.sprintf
-              "Cannot build the project because Pyre encounters a fatal error while constructing a \
-               link tree: %s"
-              message
-        | Watchman.ConnectionError message -> Format.sprintf "Watchman connection error: %s" message
+            ( ServerEvent.ErrorKind.Pyre,
+              Format.sprintf
+                "Cannot build the project because Pyre encounters a fatal error while constructing \
+                 a link tree: %s"
+                message )
+        | Watchman.ConnectionError message ->
+            ServerEvent.ErrorKind.Watchman, Format.sprintf "Watchman connection error: %s" message
         | Watchman.SubscriptionError message ->
-            Format.sprintf "Watchman subscription error: %s" message
-        | Watchman.QueryError message -> Format.sprintf "Watchman query error: %s" message
+            ServerEvent.ErrorKind.Watchman, Format.sprintf "Watchman subscription error: %s" message
+        | Watchman.QueryError message ->
+            ServerEvent.ErrorKind.Watchman, Format.sprintf "Watchman query error: %s" message
         | Unix.Unix_error (Unix.EADDRINUSE, _, _) ->
-            "A Pyre server is already running for the current project. Use `pyre stop` to stop it \
-             before starting another one."
-        | _ -> Exn.to_string exn
+            ( ServerEvent.ErrorKind.Pyre,
+              "A Pyre server is already running for the current project. Use `pyre stop` to stop \
+               it before starting another one." )
+        | _ -> ServerEvent.ErrorKind.Unknown, Exn.to_string exn
       in
       Log.info "%s" message;
-      write_event (ServerEvent.Exception message) >>= fun () -> return ExitStatus.Error)
+      write_event (ServerEvent.Exception (message, kind)) >>= fun () -> return ExitStatus.Error)

@@ -91,82 +91,6 @@ module rec Assert : sig
   val location_insensitive_compare : t -> t -> int
 end
 
-and Attribute : sig
-  type getter_property = {
-    self: Expression.t option;
-    return: Expression.t option;
-  }
-  [@@deriving compare, eq, sexp, show, hash]
-
-  type setter_property = {
-    self: Expression.t option;
-    value: Expression.t option;
-  }
-  [@@deriving compare, eq, sexp, show, hash]
-
-  type property_kind =
-    | ReadOnly of { getter: getter_property }
-    | ReadWrite of {
-        getter: getter_property;
-        setter: setter_property;
-      }
-  [@@deriving compare, eq, sexp, show, hash]
-
-  type origin =
-    | Explicit
-    | Implicit
-  [@@deriving compare, eq, sexp, show, hash]
-
-  type value_and_origin = {
-    value: Expression.t;
-    origin: origin;
-  }
-  [@@deriving compare, eq, sexp, show, hash]
-
-  type simple = {
-    annotation: Expression.t option;
-    values: value_and_origin list;
-    primitive: bool;
-    frozen: bool;
-    toplevel: bool;
-    implicit: bool;
-    nested_class: bool;
-  }
-  [@@deriving compare, eq, sexp, show, hash]
-
-  type method_ = {
-    signatures: Define.Signature.t list;
-    static: bool;
-    final: bool;
-  }
-  [@@deriving compare, eq, sexp, show, hash]
-
-  type property = {
-    async: bool;
-    class_property: bool;
-    kind: property_kind;
-  }
-  [@@deriving compare, eq, sexp, show, hash]
-
-  type kind =
-    | Simple of simple
-    | Method of method_
-    | Property of property
-  [@@deriving compare, eq, sexp, show, hash]
-
-  type attribute = {
-    kind: kind;
-    name: Identifier.t;
-  }
-  [@@deriving compare, eq, sexp, show, hash]
-
-  type t = attribute Node.t [@@deriving compare, eq, sexp, show, hash]
-
-  val location_insensitive_compare : t -> t -> int
-
-  val location_insensitive_compare_kind : kind -> kind -> int
-end
-
 and Class : sig
   type t = {
     name: Reference.t Node.t;
@@ -189,30 +113,7 @@ and Class : sig
 
   val is_frozen : t -> bool
 
-  val explicitly_assigned_attributes : t -> Attribute.t Identifier.SerializableMap.t
-
   type class_t = t [@@deriving compare, eq, sexp, show, hash, to_yojson]
-
-  module AttributeComponents : sig
-    type t [@@deriving compare, eq, sexp, show, hash]
-
-    val create : class_t -> t
-
-    val empty : unit -> t
-  end
-
-  val implicit_attributes
-    :  ?in_test:bool ->
-    AttributeComponents.t ->
-    Attribute.t Identifier.SerializableMap.t
-
-  val constructor_attributes : AttributeComponents.t -> Attribute.t Identifier.SerializableMap.t
-
-  val attributes
-    :  ?include_generated_attributes:bool ->
-    ?in_test:bool ->
-    AttributeComponents.t ->
-    Attribute.t Identifier.SerializableMap.t
 end
 
 and Define : sig
@@ -224,10 +125,10 @@ and Define : sig
       return_annotation: Expression.t option;
       async: bool;
       generator: bool;
-      parent: Reference.t option;
       (* The class owning the method. *)
+      parent: Reference.t option;
+      (* If the define is nested, this is the name of the nesting define. *)
       nesting_define: Reference.t option;
-          (* If the define is nested, this is the name of the nesting define. *)
     }
     [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
@@ -341,6 +242,8 @@ and Define : sig
 
   val is_constructor : ?in_test:bool -> t -> bool
 
+  val is_test_setup : t -> bool
+
   val is_property_setter : t -> bool
 
   val is_untyped : t -> bool
@@ -351,6 +254,8 @@ and Define : sig
 
   val is_class_toplevel : t -> bool
 
+  val is_async : t -> bool
+
   val dump : t -> bool
 
   val dump_cfg : t -> bool
@@ -360,8 +265,6 @@ and Define : sig
   val dump_call_graph : t -> bool
 
   val show_json : t -> string
-
-  val implicit_attributes : t -> definition:Class.t -> Attribute.t Identifier.SerializableMap.t
 
   val has_decorator : ?match_prefix:bool -> t -> string -> bool
 

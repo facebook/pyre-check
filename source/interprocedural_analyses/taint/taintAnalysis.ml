@@ -14,8 +14,40 @@ open Taint
 include Taint.Result.Register (struct
   include Taint.Result
 
-  let init ~configuration ~scheduler ~environment ~functions ~stubs =
-    let configuration = Configuration.StaticAnalysis.to_json configuration in
+  let initialize_configuration
+      ~static_analysis_configuration:
+        { Configuration.StaticAnalysis.configuration = { taint_model_paths; _ }; _ }
+    =
+    (* In order to save time, sanity check models before starting the analysis. *)
+    Log.info "Verifying model syntax and configuration.";
+    Taint.Model.get_model_sources ~paths:taint_model_paths
+    |> List.iter ~f:(fun (path, source) -> Taint.Model.verify_model_syntax ~path ~source);
+    let (_ : Taint.TaintConfiguration.t) =
+      Taint.TaintConfiguration.create
+        ~rule_filter:None
+        ~find_missing_flows:None
+        ~dump_model_query_results_path:None
+        ~maximum_trace_length:None
+        ~taint_model_paths
+    in
+    ()
+
+
+  let initialize_models
+      ~scheduler
+      ~static_analysis_configuration:
+        ( {
+            Configuration.StaticAnalysis.verify_models;
+            configuration = { taint_model_paths; _ };
+            rule_filter;
+            find_missing_flows;
+            maximum_trace_length;
+            _;
+          } as static_analysis_configuration )
+      ~environment
+      ~functions
+      ~stubs
+    =
     let global_resolution = Analysis.TypeEnvironment.ReadOnly.global_resolution environment in
     let resolution =
       Analysis.TypeCheck.resolution
@@ -24,29 +56,8 @@ include Taint.Result.Register (struct
         (module Analysis.TypeCheck.DummyContext)
     in
     let models = Model.infer_class_models ~environment in
-    let taint = Yojson.Safe.Util.member "taint" configuration in
-    let json_bool_member key value ~default =
-      Yojson.Safe.Util.member key value |> Yojson.Safe.Util.to_bool_option |> Option.value ~default
-    in
-    let verify = json_bool_member "verify_models" taint ~default:true in
     let find_missing_flows =
-      Yojson.Safe.Util.member "find_missing_flows" taint
-      |> Yojson.Safe.Util.to_string_option
-      >>= TaintConfiguration.missing_flows_kind_from_string
-    in
-    let dump_model_query_results_path =
-      Yojson.Safe.Util.member "dump_model_query_results_path" taint
-      |> Yojson.Safe.Util.to_string_option
-      >>| Path.create_absolute
-    in
-    let rule_filter =
-      if List.mem ~equal:String.equal (Yojson.Safe.Util.keys taint) "rule_filter" then
-        Some
-          ( Yojson.Safe.Util.member "rule_filter" taint
-          |> Yojson.Safe.Util.to_list
-          |> List.map ~f:Yojson.Safe.Util.to_int )
-      else
-        None
+      find_missing_flows >>= TaintConfiguration.missing_flows_kind_from_string
     in
 
     let create_models ~configuration sources =
@@ -133,35 +144,32 @@ include Taint.Result.Register (struct
       List.filter stubs ~f:(fun callable -> not (Callable.Map.mem models callable))
       |> List.fold ~init:models ~f:add_obscure_sink
     in
-    let model_paths =
-      Yojson.Safe.Util.member "model_paths" taint
-      |> Yojson.Safe.Util.to_list
-      |> List.map ~f:Yojson.Safe.Util.to_string
-    in
     let models, skip_overrides =
-      match model_paths with
+      match taint_model_paths with
       | [] -> models, Ast.Reference.Set.empty
       | _ -> (
           try
-            let paths =
-              List.map model_paths ~f:(Path.create_absolute ~follow_symbolic_links:true)
+            let dump_model_query_results_path =
+              Configuration.StaticAnalysis.dump_model_query_results_path
+                static_analysis_configuration
             in
             let configuration =
               TaintConfiguration.create
                 ~rule_filter
                 ~find_missing_flows
                 ~dump_model_query_results_path
-                ~paths
+                ~maximum_trace_length
+                ~taint_model_paths
             in
             TaintConfiguration.register configuration;
             let models, errors, skip_overrides, queries =
-              Model.get_model_sources ~paths |> create_models ~configuration
+              Model.get_model_sources ~paths:taint_model_paths |> create_models ~configuration
             in
             Model.register_verification_errors errors;
             let () =
               if not (List.is_empty errors) then
                 (* Exit or log errors, depending on whether models need to be verified. *)
-                if not verify then begin
+                if not verify_models then begin
                   Log.error "Found %d model verification errors!" (List.length errors);
                   List.iter errors ~f:(fun error ->
                       Log.error "%s" (Taint.Model.display_verification_error error))
@@ -189,6 +197,7 @@ include Taint.Result.Register (struct
                 ~rule_filter
                 ~rules:queries
                 ~callables
+                ~environment
                 ~models
             in
             let models =
@@ -207,7 +216,7 @@ include Taint.Result.Register (struct
     { Interprocedural.Result.initial_models = models; skip_overrides }
 
 
-  let analyze ~callable ~environment ~qualifier ~define ~mode existing_model =
+  let analyze ~environment ~callable ~qualifier ~define ~mode existing_model =
     let call_graph_of_define =
       Interprocedural.CallGraph.SharedMemory.get_or_compute
         ~callable
@@ -279,11 +288,34 @@ include Taint.Result.Register (struct
     result, model
 
 
-  let analyze ~callable ~environment ~qualifier ~define ~existing =
+  let analyze
+      ~environment
+      ~callable
+      ~qualifier
+      ~define:
+        ( {
+            Ast.Node.value =
+              { Ast.Statement.Define.signature = { name = { Ast.Node.value = name; _ }; _ }; _ };
+            _;
+          } as define )
+      ~existing
+    =
+    let define_qualifier = Ast.Reference.delocalize name in
+    let qualifier =
+      (* Pysa inlines decorators when a function is decorated. However, we want issues and models to
+         point to the lines in the module where the decorator was defined, not the module where it
+         was inlined. So, look up the originating module, if any, and use that as the module
+         qualifier. *)
+      Interprocedural.DecoratorHelper.DecoratorModule.get define_qualifier
+      |> Option.value ~default:qualifier
+    in
     match existing with
     | Some ({ mode = SkipAnalysis; _ } as model) ->
         let () = Log.info "Skipping taint analysis of %a" Callable.pretty_print callable in
         [], model
     | Some ({ mode; _ } as model) -> analyze ~callable ~environment ~qualifier ~define ~mode model
     | None -> analyze ~callable ~environment ~qualifier ~define ~mode:Normal empty_model
+
+
+  let report = Taint.Reporting.report
 end)

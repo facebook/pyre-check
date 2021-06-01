@@ -38,5 +38,46 @@
     "tslint-microsoft-contrib": "^5.0.1",
     "typescript": "^3.5.1",
     "vscode": "^1.1.7"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "pysa_model",
+        "aliases": [
+          "Pysa Model",
+          "pysa_model"
+        ],
+        "extensions": [
+          ".pysa"
+        ],
+        "configuration": "./model-language-configuration.json"
+      },
+      {
+        "id": "pysa_config",
+        "aliases": [
+          "Pysa Config",
+          "pysa_config"
+        ],
+        "extensions": [
+          "taint.config"
+        ],
+        "configuration": "./config-language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "pysa_model",
+        "scopeName": "source.pysa.model",
+        "path": "./syntaxes/PysaModel.tmLanguage"
+      },
+      {
+        "language": "pysa_config",
+        "scopeName": "source.pysa.config",
+        "path": "./syntaxes/PysaConfig.tmLanguage"
+      }
+    ]
   }
 }

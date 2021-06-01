@@ -14,7 +14,7 @@ module type BUCKETED_ELEMENT = sig
 
   val bucket : t -> bucket
 
-  val show_bucket : bucket -> string
+  val pp_bucket : Format.formatter -> bucket -> unit
 
   val compare_bucket : bucket -> bucket -> int
 end
@@ -30,7 +30,7 @@ module Make (Element : BUCKETED_ELEMENT) = struct
 
         let compare = Element.compare_bucket
 
-        let show = Element.show_bucket
+        let pp = Element.pp_bucket
 
         let absence_implicitly_maps_to_bottom = true
 
@@ -55,7 +55,7 @@ module Make (Element : BUCKETED_ELEMENT) = struct
 
   (* Note: we alias all the parts to the underlying set, but we handle the Set part here so we can
      provider a non-bucketed view *)
-  type _ part += Element = Set.Element | Set : Element.t list part
+  type _ part += Element = Set.Element
 
   module rec Base : (BASE with type t := Map.t) = MakeBase (Domain)
 
@@ -87,49 +87,29 @@ module Make (Element : BUCKETED_ELEMENT) = struct
 
     let pp formatter map = Format.fprintf formatter "%s" (show map)
 
-    let transform : type a f. a part -> (transform, a, f, t, t) operation -> f:f -> t -> t =
+    let transform : type a f. a part -> ([ `Transform ], a, f, _) operation -> f:f -> t -> t =
      fun part op ~f buckets ->
-      match part, op with
-      | Set, Map ->
-          (* Present the flattened set *)
-          f (elements buckets) |> of_list
-      | Set, Add -> ListLabels.fold_left f ~f:(fun result e -> add e result) ~init:buckets
-      | Set, Filter ->
-          if f (elements buckets) then
-            buckets
-          else
-            bottom
-      | (Set | Self), _ -> Base.transform part op ~f buckets
+      match part with
+      | Self -> Base.transform part op ~f buckets
       | _ -> Map.transform part op ~f buckets
 
 
     let reduce
-        : type a b f. a part -> using:(reduce, a, f, t, b) operation -> f:f -> init:b -> t -> b
+        : type a b f. a part -> using:([ `Reduce ], a, f, b) operation -> f:f -> init:b -> t -> b
       =
      fun part ~using:op ~f ~init buckets ->
-      match part, op with
-      | Set, Acc ->
-          (* Present the flattened set *)
-          f (elements buckets) init
-      | Set, Exists -> init || f (elements buckets)
-      | (Set | Self), _ -> Base.reduce part ~using:op ~f ~init buckets
+      match part with
+      | Self -> Base.reduce part ~using:op ~f ~init buckets
       | _ -> Map.reduce part ~using:op ~f ~init buckets
 
 
     let partition
         : type a f b.
-          a part -> (partition, a, f, t, b) operation -> f:f -> t -> (b, t) Core_kernel.Map.Poly.t
+          a part -> ([ `Partition ], a, f, b) operation -> f:f -> t -> (b, t) Core_kernel.Map.Poly.t
       =
      fun part op ~f buckets ->
-      match part, op with
-      | Set, By ->
-          let key = f (elements buckets) in
-          Core_kernel.Map.Poly.singleton key buckets
-      | Set, ByFilter -> (
-          match f (elements buckets) with
-          | None -> Core_kernel.Map.Poly.empty
-          | Some key -> Core_kernel.Map.Poly.singleton key buckets )
-      | (Set | Self), _ -> Base.partition part op ~f buckets
+      match part with
+      | Self -> Base.partition part op ~f buckets
       | _ -> Map.partition part op ~f buckets
 
 
@@ -137,14 +117,11 @@ module Make (Element : BUCKETED_ELEMENT) = struct
       match op with
       | GetParts f ->
           f#report Self;
-          f#report Element;
-          f#report Set;
           Map.introspect op
       | Structure -> Map.introspect op
       | Name part -> (
           match part with
           | Element -> Format.sprintf "BucketedSet(%s).Element" Element.name
-          | Set -> Format.sprintf "BucketedSet(%s).Set" Element.name
           | Self -> Format.sprintf "BucketedSet(%s).Self" Element.name
           | _ -> Base.introspect op )
 
@@ -152,8 +129,7 @@ module Make (Element : BUCKETED_ELEMENT) = struct
     let create parts =
       let create_part so_far (Part (part, value)) =
         match part with
-        | Set -> join so_far (of_list value)
-        | Set.Element ->
+        | Element ->
             join
               so_far
               (Map.create [Part (Map.KeyValue, (Element.bucket value, Set.singleton value))])

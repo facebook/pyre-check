@@ -135,13 +135,23 @@ def _sync_stubs(pyre_directory: Path, build_root: Path) -> None:
     )
 
 
+def _sync_sapp_filters(pyre_directory: Path, build_root: Path) -> None:
+    _rsync_files(
+        [],
+        pyre_directory / "tools" / "sapp" / "pysa_filters",
+        build_root,
+        [
+            "--recursive",
+            "--prune-empty-dirs",
+            "--verbose",
+        ],
+    )
+
+
 def _sync_typeshed(build_root: Path, typeshed_path: Path) -> None:
     typeshed_target = build_root / "typeshed"
     _rsync_files(
         ["+ */", "-! *.pyi"], typeshed_path / "stdlib", typeshed_target, ["-avm"]
-    )
-    _rsync_files(
-        ["+ */", "-! *.pyi"], typeshed_path / "third_party", typeshed_target, ["-avm"]
     )
     _rsync_files(
         ["+ */", "-! *.pyi"], typeshed_path / "stubs", typeshed_target, ["-avm"]
@@ -157,7 +167,6 @@ def _sync_typeshed(build_root: Path, typeshed_path: Path) -> None:
             "--verbose",
             "--chmod='+w'",
             "--include='stdlib/***'",
-            "--include='third_party/***'",
             "--exclude='*'",
         ],
     )
@@ -178,6 +187,13 @@ def _sync_binary(pyre_directory: Path, build_root: Path) -> None:
         pyre_directory / "source" / "_build/default/main.exe",
         build_root / "bin/pyre.bin",
     )
+
+
+def _strip_binary(build_root: Path) -> None:
+    binary_path = build_root / "bin/pyre.bin"
+    result = subprocess.run(["strip", str(binary_path)])
+    if result.returncode != 0:
+        LOG.warning("Unable to strip debugging info from binary.")
 
 
 def _sync_documentation_files(pyre_directory: Path, build_root: Path) -> None:
@@ -283,9 +299,10 @@ def build_pypi_package(
         _sync_pysa_stubs(pyre_directory, build_path)
         _sync_stubs(pyre_directory, build_path)
         _sync_typeshed(build_path, typeshed_path)
+        _sync_sapp_filters(pyre_directory, build_path)
         _sync_binary(pyre_directory, build_path)
+        _strip_binary(build_path)
         _sync_documentation_files(pyre_directory, build_path)
-        _sync_stubs(pyre_directory, build_path)
 
         _run_setup_command(pyre_directory, build_root, version, "sdist", nightly)
         _create_dist_directory(pyre_directory)

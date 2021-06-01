@@ -1,16 +1,16 @@
 # RCE sinks
 def eval(__source: TaintSink[RemoteCodeExecution], __globals, __locals): ...
 def exec(__object: TaintSink[RemoteCodeExecution], __globals, __locals): ...
-def importlib.import_module(name: TaintSink[RemoteCodeExecution], package): ...
+def importlib.import_module(name: TaintSink[ExecImportSink], package): ...
 def __import__(
-  name: TaintSink[RemoteCodeExecution],
+  name: TaintSink[ExecImportSink],
   globals,
   locals,
   fromlist,
   level,
 ): ...
 def pickle.loads(
-  data: TaintSink[RemoteCodeExecution],
+  data: TaintSink[ExecDeserializationSink],
   /,
   *,
   fix_imports,
@@ -19,7 +19,7 @@ def pickle.loads(
   buffers,
 ): ...
 def pickle.load(
-    file: TaintSink[RemoteCodeExecution],
+    file: TaintSink[ExecDeserializationSink],
     *,
     fix_imports,
     encoding,
@@ -28,27 +28,27 @@ def pickle.load(
   ): ...
 def pickle.Unpickler.__init__(
     self,
-    file: TaintSink[RemoteCodeExecution],
+    file: TaintSink[ExecDeserializationSink],
     fix_imports,
     encoding,
     errors
 ): ...
 def yaml.load(
-  stream: TaintSink[RemoteCodeExecution],
+  stream: TaintSink[ExecDeserializationSink],
   Loader,
 ): ...
-def yaml.load_all(stream: TaintSink[RemoteCodeExecution], Loader): ...
+def yaml.load_all(stream: TaintSink[ExecDeserializationSink], Loader): ...
 # Subprocess
 def subprocess.run(
-    args: TaintSink[ExecArgSink, ViaTypeOf[args]],
+    args: TaintSink[ExecArgSink, ViaTypeOf[args], ViaValueOf[shell, WithTag["shell"]]],
     bufsize: TaintSink[RemoteCodeExecution],
-    executable: TaintSink[RemoteCodeExecution],
+    executable: TaintSink[ExecArgSink],
     stdin,
     stdout,
     stderr,
     preexec_fn: TaintSink[RemoteCodeExecution],
     close_fds: TaintSink[RemoteCodeExecution],
-    shell: TaintSink[RemoteCodeExecution],
+    shell,
     cwd: TaintSink[ExecArgSink],
     env: TaintSink[ExecEnvSink],
     universal_newlines,
@@ -68,15 +68,15 @@ def subprocess.run(
 ): ...
 
 def subprocess.call(
-  args: TaintSink[ExecArgSink, ViaTypeOf[args]],
+  args: TaintSink[ExecArgSink, ViaTypeOf[args], ViaValueOf[shell, WithTag["shell"]]],
   bufsize: TaintSink[RemoteCodeExecution],
-  executable: TaintSink[RemoteCodeExecution],
+  executable: TaintSink[ExecArgSink],
   stdin,
   stdout,
   stderr,
   preexec_fn: TaintSink[RemoteCodeExecution],
   close_fds: TaintSink[RemoteCodeExecution],
-  shell: TaintSink[RemoteCodeExecution],
+  shell,
   cwd: TaintSink[ExecArgSink],
   env: TaintSink[ExecEnvSink],
   universal_newlines,
@@ -89,15 +89,15 @@ def subprocess.call(
 ): ...
 
 def subprocess.check_call(
-  args: TaintSink[ExecArgSink, ViaTypeOf[args]],
+  args: TaintSink[ExecArgSink, ViaTypeOf[args], ViaValueOf[shell, WithTag["shell"]]],
   bufsize: TaintSink[RemoteCodeExecution],
-  executable: TaintSink[RemoteCodeExecution],
+  executable: TaintSink[ExecArgSink],
   stdin: TaintSink[RemoteCodeExecution],
   stdout,
   stderr,
   preexec_fn: TaintSink[RemoteCodeExecution],
   close_fds: TaintSink[RemoteCodeExecution],
-  shell: TaintSink[RemoteCodeExecution],
+  shell,
   cwd: TaintSink[ExecArgSink],
   env: TaintSink[ExecEnvSink],
   universal_newlines,
@@ -110,14 +110,14 @@ def subprocess.check_call(
 ): ...
 
 def subprocess.check_output(
-  args: TaintSink[ExecArgSink, ViaTypeOf[args]],
+  args: TaintSink[ExecArgSink, ViaTypeOf[args], ViaValueOf[shell, WithTag["shell"]]],
   bufsize: TaintSink[RemoteCodeExecution],
-  executable: TaintSink[RemoteCodeExecution],
+  executable: TaintSink[ExecArgSink],
   stdin,
   stderr,
   preexec_fn: TaintSink[RemoteCodeExecution],
   close_fds: TaintSink[RemoteCodeExecution],
-  shell: TaintSink[RemoteCodeExecution],
+  shell,
   cwd: TaintSink[ExecArgSink],
   env: TaintSink[ExecEnvSink],
   universal_newlines,
@@ -138,16 +138,16 @@ def subprocess.getstatusoutput(cmd: TaintSink[RemoteCodeExecution, ViaTypeOf[cmd
 
 def subprocess.getoutput(cmd: TaintSink[RemoteCodeExecution, ViaTypeOf[cmd]]): ...
 
-def subprocess.Popen.__new__(self, args: TaintSink[ExecArgSink, ViaTypeOf[args]], bufsize, executable: TaintSink[RemoteCodeExecution],
+def subprocess.Popen.__new__(self, args: TaintSink[ExecArgSink, ViaTypeOf[args], ViaValueOf[shell, WithTag["shell"]]], bufsize, executable: TaintSink[ExecArgSink],
                  stdin, stdout, stderr,
                  preexec_fn: TaintSink[RemoteCodeExecution], close_fds,
-                 shell: TaintSink[RemoteCodeExecution], cwd: TaintSink[ExecArgSink], env: TaintSink[ExecEnvSink], universal_newlines,
+                 shell, cwd: TaintSink[ExecArgSink], env: TaintSink[ExecEnvSink], universal_newlines,
                  startupinfo, creationflags,
                  restore_signals, start_new_session,
                  pass_fds, *, encoding, errors): ...
 
 async def asyncio.subprocess.create_subprocess_exec(
-    program: TaintSink[RemoteCodeExecution, ViaTypeOf[program]],
+    program: TaintSink[ExecArgSink, ViaTypeOf[program]],
     *args: TaintSink[ExecArgSink],
     stdin,
     stdout,
@@ -168,30 +168,30 @@ async def asyncio.subprocess.create_subprocess_shell(
 ): ...
 
 # os module
-def os.execl(file: TaintSink[RemoteCodeExecution], __arg0, *args: TaintSink[ExecArgSink]): ...
-def os.execle(file: TaintSink[RemoteCodeExecution], __arg0, *args): ...
-def os.execlp(file: TaintSink[RemoteCodeExecution], __arg0, *args): ...
-def os.execlpe(file: TaintSink[RemoteCodeExecution], __arg0,*args): ...
-def os.execv(__path: TaintSink[RemoteCodeExecution], __argv: TaintSink[RemoteCodeExecution]): ...
-def os.execve(path: TaintSink[RemoteCodeExecution], argv: TaintSink[ExecArgSink], env: TaintSink[ExecEnvSink]): ...
-def os.execvp(file: TaintSink[RemoteCodeExecution], args: TaintSink[ExecArgSink]): ...
-def os.execvpe(file: TaintSink[RemoteCodeExecution], args: TaintSink[ExecArgSink], env: TaintSink[ExecEnvSink]): ...
+def os.execl(file: TaintSink[ExecArgSink], __arg0, *args: TaintSink[ExecArgSink]): ...
+def os.execle(file: TaintSink[ExecArgSink], __arg0, *args): ...
+def os.execlp(file: TaintSink[ExecArgSink], __arg0, *args): ...
+def os.execlpe(file: TaintSink[ExecArgSink], __arg0,*args): ...
+def os.execv(__path: TaintSink[ExecArgSink], __argv: TaintSink[ExecArgSink]): ...
+def os.execve(path: TaintSink[ExecArgSink], argv: TaintSink[ExecArgSink], env: TaintSink[ExecEnvSink]): ...
+def os.execvp(file: TaintSink[ExecArgSink], args: TaintSink[ExecArgSink]): ...
+def os.execvpe(file: TaintSink[ExecArgSink], args: TaintSink[ExecArgSink], env: TaintSink[ExecEnvSink]): ...
 def os.popen(cmd: TaintSink[RemoteCodeExecution], mode, buffering):...
-def os.spawnl(mode, file: TaintSink[RemoteCodeExecution], arg0, *args: TaintSink[ExecArgSink]): ...
-def os.spawnle(mode, file: TaintSink[RemoteCodeExecution], arg0, *args: TaintSink[ExecArgSink]): ...
-def os.spawnlp(mode, file: TaintSink[RemoteCodeExecution], arg0, *args: TaintSink[ExecArgSink]): ...
-def os.spawnlpe(mode, file: TaintSink[RemoteCodeExecution], arg0, *args: TaintSink[ExecArgSink]): ...
-def os.spawnv(mode, file: TaintSink[RemoteCodeExecution], args: TaintSink[ExecArgSink]): ...
-def os.spawnve(mode, file: TaintSink[RemoteCodeExecution], args: TaintSink[ExecArgSink], env: TaintSink[ExecEnvSink]): ...
-def os.spawnvp(mode, file: TaintSink[RemoteCodeExecution], args: TaintSink[ExecArgSink]): ...
+def os.spawnl(mode, file: TaintSink[ExecArgSink], arg0, *args: TaintSink[ExecArgSink]): ...
+def os.spawnle(mode, file: TaintSink[ExecArgSink], arg0, *args: TaintSink[ExecArgSink]): ...
+def os.spawnlp(mode, file: TaintSink[ExecArgSink], arg0, *args: TaintSink[ExecArgSink]): ...
+def os.spawnlpe(mode, file: TaintSink[ExecArgSink], arg0, *args: TaintSink[ExecArgSink]): ...
+def os.spawnv(mode, file: TaintSink[ExecArgSink], args: TaintSink[ExecArgSink]): ...
+def os.spawnve(mode, file: TaintSink[ExecArgSink], args: TaintSink[ExecArgSink], env: TaintSink[ExecEnvSink]): ...
+def os.spawnvp(mode, file: TaintSink[ExecArgSink], args: TaintSink[ExecArgSink]): ...
 def os.system(command: TaintSink[RemoteCodeExecution]): ...
 
 # marshaling
-def marshal.loads(__bytes: TaintSink[RemoteCodeExecution]): ...
+def marshal.loads(__bytes: TaintSink[ExecDeserializationSink]): ...
 def marshal.load(__file: TaintSink[FileSystem_Other]): ...
 
 # shelve library https://docs.python.org/3/library/shelve.html
-def shelve.open(filename: TaintSink[RemoteCodeExecution], flag, protocol, writeback): ...
+def shelve.open(filename: TaintSink[ExecDeserializationSink], flag, protocol, writeback): ...
 
 # Features https://docs.python.org/3/library/shlex.html#shlex.quote
 def shlex.quote(s: TaintInTaintOut[Via[shell_escape]]): ...

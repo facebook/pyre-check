@@ -5,22 +5,33 @@
 
 import io
 from pathlib import Path
+from typing import Type
 
 import testslide
 
 from ....tests import setup
 from ..async_server_connection import create_memory_text_reader
 from ..server_event import (
+    ErrorKind,
     ServerException,
     ServerInitialized,
     SocketCreated,
     create_from_string,
     Waiter,
     EventParsingException,
+    ServerStartException,
 )
 
 
 class ServerEventTest(testslide.TestCase):
+    def test_error_kind(self) -> None:
+        self.assertEqual(ErrorKind.from_string("Watchman"), ErrorKind.WATCHMAN)
+        self.assertEqual(ErrorKind.from_string("BuckInternal"), ErrorKind.BUCK_INTERNAL)
+        self.assertEqual(ErrorKind.from_string("BuckUser"), ErrorKind.BUCK_USER)
+        self.assertEqual(ErrorKind.from_string("Pyre"), ErrorKind.PYRE)
+        self.assertEqual(ErrorKind.from_string("Unknown"), ErrorKind.UNKNOWN)
+        self.assertEqual(ErrorKind.from_string("derp"), ErrorKind.UNKNOWN)
+
     def test_create(self) -> None:
         self.assertIsNone(create_from_string("derp"))
         self.assertIsNone(create_from_string("[]"))
@@ -36,7 +47,16 @@ class ServerEventTest(testslide.TestCase):
             create_from_string('["Exception", "Burn baby burn!"]'),
             ServerException("Burn baby burn!"),
         )
+        self.assertEqual(
+            create_from_string('["Exception", "Burn baby burn!", ["BuckUser"]]'),
+            ServerException(message="Burn baby burn!", kind=ErrorKind.BUCK_USER),
+        )
+        self.assertEqual(
+            create_from_string('["Exception", "Burn baby burn!", "derp"]'),
+            ServerException(message="Burn baby burn!", kind=ErrorKind.UNKNOWN),
+        )
         self.assertIsNone(create_from_string('["Exception"]'))
+        self.assertIsNone(create_from_string('["Exception", 42]'))
         self.assertIsNone(create_from_string('["UNRECOGNIZABLE", "message"]'))
 
     def test_waiter(self) -> None:
@@ -45,8 +65,12 @@ class ServerEventTest(testslide.TestCase):
                 io.StringIO(event_output)
             )
 
-        def assert_raises(event_output: str, wait_on_initialization: bool) -> None:
-            with self.assertRaises(EventParsingException):
+        def assert_raises(
+            event_output: str,
+            wait_on_initialization: bool,
+            exception: Type[Exception] = EventParsingException,
+        ) -> None:
+            with self.assertRaises(exception):
                 Waiter(wait_on_initialization=wait_on_initialization).wait_on(
                     io.StringIO(event_output)
                 )
@@ -55,14 +79,22 @@ class ServerEventTest(testslide.TestCase):
         assert_raises("[]", wait_on_initialization=False)
         assert_ok('["SocketCreated", "/path/to/socket"]', wait_on_initialization=False)
         assert_raises('["ServerInitialized"]', wait_on_initialization=False)
-        assert_raises('["ServerException", "message"]', wait_on_initialization=False)
+        assert_raises(
+            '["Exception", "message"]',
+            wait_on_initialization=False,
+            exception=ServerStartException,
+        )
 
         assert_raises("garbage", wait_on_initialization=True)
         assert_raises("[]", wait_on_initialization=True)
         assert_raises(
             '["SocketCreated", "/path/to/socket"]', wait_on_initialization=True
         )
-        assert_raises('["ServerException", "message"]', wait_on_initialization=True)
+        assert_raises(
+            '["Exception", "message"]',
+            wait_on_initialization=True,
+            exception=ServerStartException,
+        )
         assert_raises(
             '["SocketCreated", "/path/to/socket"]\n' + '["ServerException", "message"]',
             wait_on_initialization=True,
@@ -85,9 +117,11 @@ class ServerEventTest(testslide.TestCase):
             )
 
         async def assert_raises(
-            event_output: str, wait_on_initialization: bool
+            event_output: str,
+            wait_on_initialization: bool,
+            exception: Type[Exception] = EventParsingException,
         ) -> None:
-            with self.assertRaises(EventParsingException):
+            with self.assertRaises(exception):
                 await Waiter(
                     wait_on_initialization=wait_on_initialization
                 ).async_wait_on(create_memory_text_reader(event_output))
@@ -99,7 +133,9 @@ class ServerEventTest(testslide.TestCase):
         )
         await assert_raises('["ServerInitialized"]', wait_on_initialization=False)
         await assert_raises(
-            '["ServerException", "message"]', wait_on_initialization=False
+            '["Exception", "message"]',
+            wait_on_initialization=False,
+            exception=ServerStartException,
         )
 
         await assert_raises("garbage", wait_on_initialization=True)
@@ -108,7 +144,9 @@ class ServerEventTest(testslide.TestCase):
             '["SocketCreated", "/path/to/socket"]', wait_on_initialization=True
         )
         await assert_raises(
-            '["ServerException", "message"]', wait_on_initialization=True
+            '["Exception", "message"]',
+            wait_on_initialization=True,
+            exception=ServerStartException,
         )
         await assert_raises(
             '["SocketCreated", "/path/to/socket"]\n' + '["ServerException", "message"]',

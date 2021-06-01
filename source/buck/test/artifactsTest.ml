@@ -92,6 +92,14 @@ let test_artifacts_populate_ok context =
     ["foo/a.py", "a"; "foo/b.py", "b"]
     ~build_map:["a.py", "foo/a.py"; "bar/b.py", "foo/b.py"]
     ~expected:["a.py", "a"; "bar/b.py", "b"]
+  >>= fun () ->
+  (* Notice that the build map may point some artifacts to a nonexistent source file -- `populate`
+     will NOT fail when that happens and we do rely on this behavior downstream. *)
+  assert_populate
+    ~context
+    ["foo/a.py", "a"]
+    ~build_map:["a.py", "foo/a.py"; "bar/b.py", "foo/b.py"]
+    ~expected:["a.py", "a"]
   >>= fun () -> Lwt.return_unit
 
 
@@ -214,6 +222,33 @@ let test_artifact_update_ok context =
     ~build_map:["foo/a.py", "a.py"; "bar/b.py", "b.py"]
     ~difference:["foo/c.py", New "c.py"; "foo/a.py", Deleted; "bar/b.py", Changed "a.py"]
     ~expected:["foo/a.py", None; "bar/b.py", Some "a"; "foo/c.py", Some "c"]
+  >>= fun () ->
+  (* These tests make sure that `Delete` is idempotent. *)
+  assert_update ~context [] ~build_map:[] ~difference:[] ~expected:["a.py", None]
+  >>= fun () ->
+  assert_update ~context [] ~build_map:[] ~difference:["a.py", Deleted] ~expected:["a.py", None]
+  >>= fun () ->
+  (* These tests make sure that `New` and `Changed` are idempotent. *)
+  assert_update
+    ~context
+    ["a.py", "a"]
+    ~build_map:["foo/a.py", "a.py"]
+    ~difference:[]
+    ~expected:["foo/a.py", Some "a"]
+  >>= fun () ->
+  assert_update
+    ~context
+    ["a.py", "a"]
+    ~build_map:["foo/a.py", "a.py"]
+    ~difference:["foo/a.py", New "a.py"]
+    ~expected:["foo/a.py", Some "a"]
+  >>= fun () ->
+  assert_update
+    ~context
+    ["a.py", "a"]
+    ~build_map:["foo/a.py", "a.py"]
+    ~difference:["foo/a.py", Changed "a.py"]
+    ~expected:["foo/a.py", Some "a"]
   >>= fun () -> Lwt.return_unit
 
 

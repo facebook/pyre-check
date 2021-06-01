@@ -8,10 +8,17 @@
 open Domains
 open Ast
 open Expression
+open Analysis
 
 val forward_analyze_call
-  :  expression Node.t ->
-  Call.Argument.t list ->
-  ForwardState.Tree.t ->
-  ForwardState.t ->
+  :  analyze_expression:
+       (resolution:Resolution.t ->
+       state:ForwardState.t ->
+       expression:Expression.t ->
+       ForwardState.Tree.t * ForwardState.t) ->
+  resolution:Resolution.t ->
+  callee:expression Node.t ->
+  arguments:Call.Argument.t list ->
+  taint:ForwardState.Tree.t ->
+  state:ForwardState.t ->
   ForwardState.Tree.t * ForwardState.t

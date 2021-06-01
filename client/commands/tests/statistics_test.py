@@ -7,7 +7,7 @@
 import textwrap
 import unittest
 from pathlib import Path
-from typing import Dict
+from typing import Any, Dict
 from unittest.mock import MagicMock, patch
 
 from libcst import Module, parse_module
@@ -73,6 +73,7 @@ class StatisticsTest(unittest.TestCase):
             analysis_directory=analysis_directory,
             filter_paths=["a.py", "b.py"],
             log_results=False,
+            aggregate=False,
         )._run()
         log.assert_not_called()
 
@@ -83,6 +84,7 @@ class StatisticsTest(unittest.TestCase):
             analysis_directory=analysis_directory,
             filter_paths=["a.py", "b.py"],
             log_results=True,
+            aggregate=False,
         )._run()
         log.assert_called()
 
@@ -121,7 +123,7 @@ class AnnotationCountCollectorTest(unittest.TestCase):
         source_module.visit(collector)
         self.assertEqual(collector.build_json(), expected)
 
-    def test_annotate_functions(self) -> None:
+    def test_count_annotations(self) -> None:
         self.assert_counts(
             """
             def foo(x) -> int:
@@ -389,7 +391,7 @@ class FixmeCountCollectorTest(unittest.TestCase):
         source_module.visit(collector)
         self.assertEqual(collector.build_json(), expected)
 
-    def test_annotate_functions(self) -> None:
+    def test_count_fixmes(self) -> None:
         self.assert_counts("# pyre-fixme[2]: Example Error Message", {"2": 1})
         self.assert_counts(
             "# pyre-fixme[3]: Example Error Message \n\n\n # pyre-fixme[34]: Example",
@@ -412,7 +414,7 @@ class IgnoreCountCollectorTest(unittest.TestCase):
         source_module.visit(collector)
         self.assertEqual(collector.build_json(), expected)
 
-    def test_annotate_functions(self) -> None:
+    def test_count_modes(self) -> None:
         self.assert_counts("# pyre-ignore[2]: Example Error Message", {"2": 1})
         self.assert_counts(
             "# pyre-ignore[3]: Example Error Message \n\n\n # pyre-ignore[34]: Example",
@@ -481,4 +483,104 @@ class StrictCountCollectorTest(unittest.TestCase):
             """,
             {"strict_count": 0, "unsafe_count": 1},
             True,
+        )
+
+
+class AggregateStatisticsTest(unittest.TestCase):
+    @staticmethod
+    def format_files(source: str) -> Module:
+        return parse_module(textwrap.dedent(source.rstrip()))
+
+    def assert_aggregate_counts(
+        self, statistics: Statistics, sources: Dict[str, str], expected: Dict[str, Any]
+    ) -> None:
+        source_modules = {}
+        for path, source in sources.items():
+            source_modules[path] = self.format_files(source)
+        raw_data = statistics._collect_statistics(source_modules)
+        self.assertEqual(statistics._aggregate_data(raw_data), expected)
+
+    def test_aggregate_counts(self) -> None:
+        arguments = mock_arguments(local_configuration="example/path/client")
+        configuration = mock_configuration()
+        analysis_directory = AnalysisDirectory(
+            configuration_module.SimpleSearchPathElement(".")
+        )
+        original_directory = "/original/directory"
+        statistics = Statistics(
+            arguments,
+            original_directory,
+            configuration=configuration,
+            analysis_directory=analysis_directory,
+            filter_paths=["a.py", "b.py"],
+            log_results=False,
+            aggregate=True,
+        )
+
+        self.assert_aggregate_counts(
+            statistics,
+            {
+                "a.py": """
+            # pyre-unsafe
+
+            def foo():
+                return 1
+            """
+            },
+            {
+                "annotations": {
+                    "return_count": 1,
+                    "annotated_return_count": 0,
+                    "globals_count": 0,
+                    "annotated_globals_count": 0,
+                    "parameter_count": 0,
+                    "annotated_parameter_count": 0,
+                    "attribute_count": 0,
+                    "annotated_attribute_count": 0,
+                    "partially_annotated_function_count": 0,
+                    "fully_annotated_function_count": 0,
+                    "line_count": 6,
+                },
+                "fixmes": 0,
+                "ignores": 0,
+                "strict": 0,
+                "unsafe": 1,
+            },
+        )
+
+        self.assert_aggregate_counts(
+            statistics,
+            {
+                "a.py": """
+            # pyre-unsafe
+
+            def foo():
+                return 1
+            """,
+                "b.py": """
+            # pyre-strict
+
+            def foo(x: int) -> int:
+                return 1
+            """,
+            },
+            {
+                "annotations": {
+                    "return_count": 2,
+                    "annotated_return_count": 1,
+                    "globals_count": 0,
+                    "annotated_globals_count": 0,
+                    "parameter_count": 1,
+                    "annotated_parameter_count": 1,
+                    "attribute_count": 0,
+                    "annotated_attribute_count": 0,
+                    "partially_annotated_function_count": 0,
+                    "fully_annotated_function_count": 1,
+                    "line_count": 12,
+                },
+                "fixmes": 0,
+                "ignores": 0,
+                "strict": 1,
+                "unsafe": 1,
+            },
         )

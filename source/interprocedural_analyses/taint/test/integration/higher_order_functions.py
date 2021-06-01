@@ -64,3 +64,17 @@ def source_through_tito():
     x = __test_source()
     y = apply(has_tito, x)
     return y
+
+
+class Callable:
+    def __init__(self, value):
+        self.value = value
+
+    def __call__(self):
+        return
+
+
+def callable_class():
+    c = Callable(__test_source())
+    # Even if c is a callable, we should still propagate the taint on it.
+    __test_sink(c)

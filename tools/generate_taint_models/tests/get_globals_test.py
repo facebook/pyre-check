@@ -30,8 +30,6 @@ class GetGlobalsTest(unittest.TestCase):
         side_effect=lambda path: path in {"/root/a.py", "/root/a.pyi", "/root/b.py"}
         or "/stub_root" in path,
     )
-    # pyre-fixme[56]: Argument `lambda ($parameter$path) (path)` to decorator
-    #  factory `unittest.mock.patch` could not be resolved in a global scope.
     @patch("os.path.abspath", side_effect=lambda path: path)
     @patch("os.getcwd", return_value="/root")
     def test_get_globals(

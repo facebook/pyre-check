@@ -1,0 +1,19 @@
+<dict>
+	<key>fileTypes</key>
+	<array>
+		<string>taint.config</string>
+	</array>
+	<key>name</key>
+	<string>Pysa</string>
+	<key>patterns</key>
+	<array>
+		<dict>
+			<key>include</key>
+			<string>source.json</string>
+		</dict>
+	</array>
+	<key>scopeName</key>
+	<string>source.pysa.config</string>
+	<key>uuid</key>
+	<string>AC8086CB-C243-4DEE-9437-58D85118F584</string>
+</dict>

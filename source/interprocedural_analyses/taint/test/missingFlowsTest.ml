@@ -28,7 +28,7 @@ let assert_fixpoint
   let taint_configuration =
     TaintConfiguration.apply_missing_flows TaintConfiguration.default missing_flows
   in
-  let { all_callables; callgraph; environment; overrides } =
+  let { callables_to_analyze; callgraph; environment; overrides; _ } =
     initialize ?models ~taint_configuration ~handle ~context source
   in
   let dependencies =
@@ -44,7 +44,7 @@ let assert_fixpoint
       ~analyses
       ~dependencies
       ~filtered_callables:Callable.Set.empty
-      ~all_callables
+      ~all_callables:callables_to_analyze
       Fixpoint.Epoch.initial
   in
   assert_bool "Callgraph is empty!" (Callable.RealMap.length callgraph > 0);

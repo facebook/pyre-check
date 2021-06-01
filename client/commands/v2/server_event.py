@@ -4,6 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import dataclasses
+import enum
 import json
 from pathlib import Path
 from typing import List, Optional, Union, IO
@@ -21,9 +22,28 @@ class ServerInitialized:
     pass
 
 
+class ErrorKind(enum.Enum):
+    WATCHMAN = "Watchman"
+    BUCK_INTERNAL = "BuckInternal"
+    BUCK_USER = "BuckUser"
+    PYRE = "Pyre"
+    UNKNOWN = "Unknown"
+
+    def __str__(self) -> str:
+        return self.value
+
+    @staticmethod
+    def from_string(input_string: str) -> "ErrorKind":
+        for item in ErrorKind:
+            if input_string == str(item):
+                return item
+        return ErrorKind.UNKNOWN
+
+
 @dataclasses.dataclass
 class ServerException:
     message: str
+    kind: ErrorKind = ErrorKind.UNKNOWN
 
 
 Event = Union[SocketCreated, ServerInitialized, ServerException]
@@ -46,8 +66,18 @@ def create_from_string(input_string: str) -> Optional[Event]:
         elif input_kind == "Exception":
             if len(input_json) < 2:
                 return None
-            else:
-                return ServerException(message=input_json[1])
+            if not isinstance(input_json[1], str):
+                return None
+            if (
+                len(input_json) >= 3
+                and isinstance(input_json[2], list)
+                and len(input_json[2]) > 0
+                and isinstance(input_json[2][0], str)
+            ):
+                return ServerException(
+                    message=input_json[1], kind=ErrorKind.from_string(input_json[2][0])
+                )
+            return ServerException(message=input_json[1], kind=ErrorKind.UNKNOWN)
         else:
             return None
     except json.JSONDecodeError:
@@ -58,6 +88,14 @@ class EventParsingException(Exception):
     pass
 
 
+class ServerStartException(Exception):
+    kind: ErrorKind
+
+    def __init__(self, exception_event: ServerException) -> None:
+        super().__init__(exception_event.message)
+        self.kind = exception_event.kind
+
+
 def _parse_server_event(event_string: str) -> Event:
     event = create_from_string(event_string)
     if event is None:
@@ -65,7 +103,7 @@ def _parse_server_event(event_string: str) -> Event:
             f"Unrecognized status update from server: {event_string}"
         )
     elif isinstance(event, ServerException):
-        raise EventParsingException(f"Failed to start server: {event.message}")
+        raise ServerStartException(event)
     return event
 
 
@@ -82,8 +120,8 @@ class Waiter:
         creation and returns.
         Otherwise, block until server initialization has finished and returns.
         If data obtained from the input channel does not conform to the server
-        event format, or if an error event is received, raise
-        `EventParsingException`.
+        event format, raise `EventParsingException`. If an error event is received,
+        raise `ServerStartException`.
         """
         # The first event is expected to be socket creation
         initial_event = _parse_server_event(event_stream.readline().strip())

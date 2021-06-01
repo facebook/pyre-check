@@ -24,6 +24,10 @@ let test_apply_rule context =
     Model.Source
       { source; breadcrumbs = []; path = []; leaf_names = []; leaf_name_provided = false }
   in
+  let sink name =
+    let sink = Sinks.NamedSink name in
+    Model.Sink { sink; breadcrumbs = []; path = []; leaf_names = []; leaf_name_provided = false }
+  in
   let assert_applied_rules ~source ~rule ~callable ~expected =
     let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
@@ -33,11 +37,36 @@ let test_apply_rule context =
       |> Analysis.GlobalResolution.create
     in
     let actual =
-      TaintModelQuery.ModelQuery.apply_query_rule ~verbose:false ~resolution ~rule ~callable
+      TaintModelQuery.ModelQuery.apply_callable_query_rule
+        ~verbose:false
+        ~resolution
+        ~rule
+        ~callable
     in
     assert_equal
       ~cmp:(List.equal (fun left right -> compare_query_rule_element left right = 0))
       ~printer:(List.to_string ~f:show_query_rule_element)
+      expected
+      actual
+  in
+  let assert_applied_rules_for_attribute ~source ~rule ~attribute_name ~expected =
+    let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
+      ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
+    in
+    let resolution =
+      Analysis.AnnotatedGlobalEnvironment.read_only global_environment
+      |> Analysis.GlobalResolution.create
+    in
+    let actual =
+      TaintModelQuery.ModelQuery.apply_attribute_query_rule
+        ~verbose:false
+        ~resolution
+        ~rule
+        ~attribute:(Ast.Reference.create attribute_name)
+    in
+    assert_equal
+      ~cmp:(List.equal (fun left right -> Taint.Model.compare_taint_annotation left right = 0))
+      ~printer:(List.to_string ~f:Taint.Model.show_taint_annotation)
       expected
       actual
   in
@@ -48,7 +77,33 @@ let test_apply_rule context =
     ~rule:
       {
         name = None;
-        query = [NameConstraint "foo"];
+        query = [NameConstraint (Matches (Re2.create_exn "foo"))];
+        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
+        rule_kind = FunctionModel;
+      }
+    ~callable:(`Function "test.foo")
+    ~expected:[Taint.Model.ReturnAnnotation, source "Test"];
+  assert_applied_rules
+    ~source:{|
+      def foo(): ...
+      |}
+    ~rule:
+      {
+        name = None;
+        query = [NameConstraint (Equals "foo")];
+        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
+        rule_kind = FunctionModel;
+      }
+    ~callable:(`Function "test.foo")
+    ~expected:[];
+  assert_applied_rules
+    ~source:{|
+      def foo(): ...
+      |}
+    ~rule:
+      {
+        name = None;
+        query = [NameConstraint (Equals "test.foo")];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
       }
@@ -64,7 +119,11 @@ let test_apply_rule context =
     ~rule:
       {
         name = None;
-        query = [NameConstraint "foo"; NameConstraint "bar"];
+        query =
+          [
+            NameConstraint (Matches (Re2.create_exn "foo"));
+            NameConstraint (Matches (Re2.create_exn "bar"));
+          ];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
       }
@@ -78,7 +137,11 @@ let test_apply_rule context =
     ~rule:
       {
         name = None;
-        query = [NameConstraint "foo"; NameConstraint "bar"];
+        query =
+          [
+            NameConstraint (Matches (Re2.create_exn "foo"));
+            NameConstraint (Matches (Re2.create_exn "bar"));
+          ];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
       }
@@ -94,7 +157,7 @@ let test_apply_rule context =
     ~rule:
       {
         name = None;
-        query = [NameConstraint "foo"];
+        query = [NameConstraint (Matches (Re2.create_exn "foo"))];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
       }
@@ -109,7 +172,7 @@ let test_apply_rule context =
     ~rule:
       {
         name = None;
-        query = [NameConstraint "foo"];
+        query = [NameConstraint (Matches (Re2.create_exn "foo"))];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = MethodModel;
       }
@@ -125,7 +188,7 @@ let test_apply_rule context =
     ~rule:
       {
         name = None;
-        query = [NameConstraint "foo"];
+        query = [NameConstraint (Matches (Re2.create_exn "foo"))];
         productions =
           [
             ReturnTaint [TaintAnnotation (source "Test")];
@@ -151,7 +214,7 @@ let test_apply_rule context =
     ~rule:
       {
         name = None;
-        query = [NameConstraint "foo"];
+        query = [NameConstraint (Matches (Re2.create_exn "foo"))];
         productions =
           [AllParametersTaint { excludes = []; taint = [TaintAnnotation (source "Test")] }];
         rule_kind = MethodModel;
@@ -176,7 +239,7 @@ let test_apply_rule context =
     ~rule:
       {
         name = None;
-        query = [NameConstraint "foo"];
+        query = [NameConstraint (Matches (Re2.create_exn "foo"))];
         productions =
           [AllParametersTaint { excludes = ["x"]; taint = [TaintAnnotation (source "Test")] }];
         rule_kind = MethodModel;
@@ -197,7 +260,7 @@ let test_apply_rule context =
     ~rule:
       {
         name = None;
-        query = [NameConstraint "foo"];
+        query = [NameConstraint (Matches (Re2.create_exn "foo"))];
         productions =
           [AllParametersTaint { excludes = ["y"]; taint = [TaintAnnotation (source "Test")] }];
         rule_kind = MethodModel;
@@ -595,7 +658,7 @@ let test_apply_rule context =
     ~rule:
       {
         name = None;
-        query = [ParentConstraint (Matches (Re2.create_exn "C"))];
+        query = [ParentConstraint (NameSatisfies (Matches (Re2.create_exn "C")))];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = MethodModel;
       }
@@ -614,7 +677,7 @@ let test_apply_rule context =
     ~rule:
       {
         name = None;
-        query = [ParentConstraint (Matches (Re2.create_exn "C"))];
+        query = [ParentConstraint (NameSatisfies (Matches (Re2.create_exn "C")))];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = MethodModel;
       }
@@ -634,11 +697,427 @@ let test_apply_rule context =
     ~rule:
       {
         name = None;
-        query = [ParentConstraint (Matches (Re2.create_exn "C"))];
+        query = [ParentConstraint (NameSatisfies (Matches (Re2.create_exn "C")))];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = MethodModel;
       }
     ~callable:(`Method { Interprocedural.Callable.class_name = "test.DC"; method_name = "foo" })
+    ~expected:[Taint.Model.ReturnAnnotation, source "Test"];
+
+  (* Test attribute models. *)
+  assert_applied_rules_for_attribute
+    ~source:{|
+      class C:
+        x: ...
+      class D(C):
+        y: ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query = [ParentConstraint (NameSatisfies (Matches (Re2.create_exn "C")))];
+        productions = [AttributeTaint [TaintAnnotation (source "Test")]];
+        rule_kind = AttributeModel;
+      }
+    ~attribute_name:"test.C.x"
+    ~expected:[source "Test"];
+  assert_applied_rules_for_attribute
+    ~source:{|
+      class C:
+        x: ...
+      class D(C):
+        y: ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query = [ParentConstraint (NameSatisfies (Matches (Re2.create_exn "C")))];
+        productions = [AttributeTaint [TaintAnnotation (sink "Test")]];
+        rule_kind = AttributeModel;
+      }
+    ~attribute_name:"test.C.x"
+    ~expected:[sink "Test"];
+  assert_applied_rules_for_attribute
+    ~source:{|
+      class C:
+        x: ...
+      class D(C):
+        y: ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query = [ParentConstraint (NameSatisfies (Matches (Re2.create_exn "C")))];
+        productions = [AttributeTaint [TaintAnnotation (source "Test")]];
+        rule_kind = AttributeModel;
+      }
+    ~attribute_name:"test.D.y"
+    ~expected:[];
+  assert_applied_rules_for_attribute
+    ~source:{|
+      class C:
+        x: ...
+      class D(C):
+        y: ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query = [ParentConstraint (Extends { class_name = "test.C"; is_transitive = false })];
+        productions = [AttributeTaint [TaintAnnotation (source "Test")]];
+        rule_kind = AttributeModel;
+      }
+    ~attribute_name:"test.C.x"
+    ~expected:[source "Test"];
+  ();
+  assert_applied_rules_for_attribute
+    ~source:{|
+      class C:
+        x: ...
+      class D(C):
+        y: ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query = [ParentConstraint (Extends { class_name = "test.C"; is_transitive = false })];
+        productions = [AttributeTaint [TaintAnnotation (source "Test")]];
+        rule_kind = AttributeModel;
+      }
+    ~attribute_name:"test.D.y"
+    ~expected:[source "Test"];
+  assert_applied_rules_for_attribute
+    ~source:
+      {|
+      class C:
+        x: ...
+      class D(C):
+        y: ...
+      class E:
+        z: ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query = [ParentConstraint (Extends { class_name = "test.C"; is_transitive = false })];
+        productions = [AttributeTaint [TaintAnnotation (source "Test")]];
+        rule_kind = AttributeModel;
+      }
+    ~attribute_name:"test.E.z"
+    ~expected:[];
+
+  (* Test 'Not' clause *)
+  assert_applied_rules
+    ~source:{|
+      def foo(): ...
+      def barfoo(): ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query =
+          [
+            NameConstraint (Matches (Re2.create_exn "foo"));
+            Not (NameConstraint (Matches (Re2.create_exn "bar")));
+          ];
+        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
+        rule_kind = FunctionModel;
+      }
+    ~callable:(`Function "test.foo")
+    ~expected:[Taint.Model.ReturnAnnotation, source "Test"];
+  assert_applied_rules
+    ~source:{|
+      def foo(): ...
+      def barfoo(): ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query =
+          [
+            NameConstraint (Matches (Re2.create_exn "foo"));
+            Not (NameConstraint (Matches (Re2.create_exn "bar")));
+          ];
+        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
+        rule_kind = FunctionModel;
+      }
+    ~callable:(`Function "test.barfoo")
+    ~expected:[];
+  assert_applied_rules
+    ~source:
+      {|
+       def foo(a) -> typing.Annotated[int, DynamicSource(B)]: ...
+       def bar(b): ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query = [Not (ReturnConstraint IsAnnotatedTypeConstraint)];
+        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
+        rule_kind = FunctionModel;
+      }
+    ~callable:(`Function "test.foo")
+    ~expected:[];
+  assert_applied_rules
+    ~source:
+      {|
+      class C:
+        def foo(): ...
+      class D:
+        def foo(): ...
+      class DC:
+        def foo(): ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query =
+          [
+            ParentConstraint (NameSatisfies (Matches (Re2.create_exn "C")));
+            Not (ParentConstraint (NameSatisfies (Matches (Re2.create_exn "D"))));
+          ];
+        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
+        rule_kind = MethodModel;
+      }
+    ~callable:(`Method { Interprocedural.Callable.class_name = "test.C"; method_name = "foo" })
+    ~expected:[Taint.Model.ReturnAnnotation, source "Test"];
+  assert_applied_rules
+    ~source:
+      {|
+      class C:
+        def foo(): ...
+      class D:
+        def foo(): ...
+      class DC:
+        def foo(): ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query =
+          [
+            ParentConstraint (NameSatisfies (Matches (Re2.create_exn "C")));
+            Not (ParentConstraint (NameSatisfies (Matches (Re2.create_exn "D"))));
+          ];
+        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
+        rule_kind = MethodModel;
+      }
+    ~callable:(`Method { Interprocedural.Callable.class_name = "test.DC"; method_name = "foo" })
+    ~expected:[];
+  assert_applied_rules
+    ~source:
+      {|
+       def foo(a) -> typing.Annotated[int, DynamicSource(B)]: ...
+       def bar(b): ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query = [Not (ReturnConstraint IsAnnotatedTypeConstraint)];
+        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
+        rule_kind = FunctionModel;
+      }
+    ~callable:(`Function "test.bar")
+    ~expected:[Taint.Model.ReturnAnnotation, source "Test"];
+  assert_applied_rules_for_attribute
+    ~source:
+      {|
+      class C:
+        x: ...
+      class D(C):
+        y: ...
+      class E:
+        z: ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query = [Not (ParentConstraint (Extends { class_name = "test.C"; is_transitive = false }))];
+        productions = [AttributeTaint [TaintAnnotation (source "Test")]];
+        rule_kind = AttributeModel;
+      }
+    ~attribute_name:"test.C.x"
+    ~expected:[];
+  assert_applied_rules_for_attribute
+    ~source:
+      {|
+      class C:
+        x: ...
+      class D(C):
+        y: ...
+      class E:
+        z: ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query = [Not (ParentConstraint (Extends { class_name = "test.C"; is_transitive = false }))];
+        productions = [AttributeTaint [TaintAnnotation (source "Test")]];
+        rule_kind = AttributeModel;
+      }
+    ~attribute_name:"test.D.y"
+    ~expected:[];
+  assert_applied_rules_for_attribute
+    ~source:
+      {|
+      class C:
+        x: ...
+      class D(C):
+        y: ...
+      class E:
+        z: ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query = [Not (ParentConstraint (Extends { class_name = "test.C"; is_transitive = false }))];
+        productions = [AttributeTaint [TaintAnnotation (source "Test")]];
+        rule_kind = AttributeModel;
+      }
+    ~attribute_name:"test.E.z"
+    ~expected:[source "Test"];
+
+  (* Test transitive extends *)
+  assert_applied_rules_for_attribute
+    ~source:
+      {|
+      class C:
+        x: ...
+      class D(C):
+        y: ...
+      class E(D):
+        z: ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query = [ParentConstraint (Extends { class_name = "test.C"; is_transitive = true })];
+        productions = [AttributeTaint [TaintAnnotation (source "Test")]];
+        rule_kind = AttributeModel;
+      }
+    ~attribute_name:"test.E.z"
+    ~expected:[source "Test"];
+  assert_applied_rules_for_attribute
+    ~source:
+      {|
+      class C:
+        x: ...
+      class D(C):
+        y: ...
+      class E(D):
+        z: ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query = [ParentConstraint (Extends { class_name = "test.C"; is_transitive = true })];
+        productions = [AttributeTaint [TaintAnnotation (source "Test")]];
+        rule_kind = AttributeModel;
+      }
+    ~attribute_name:"test.D.y"
+    ~expected:[source "Test"];
+  assert_applied_rules_for_attribute
+    ~source:
+      {|
+      class C:
+        x: ...
+      class D(C):
+        y: ...
+      class E(D):
+        z: ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query = [ParentConstraint (Extends { class_name = "test.C"; is_transitive = true })];
+        productions = [AttributeTaint [TaintAnnotation (source "Test")]];
+        rule_kind = AttributeModel;
+      }
+    ~attribute_name:"test.C.x"
+    ~expected:[source "Test"];
+  assert_applied_rules
+    ~source:
+      {|
+      class A:
+        def foo(): ...
+      class B(A):
+        def foo(): ...
+      class C(B):
+        def foo(): ...
+      class D:
+        def foo(): ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query = [Not (ParentConstraint (Extends { class_name = "test.A"; is_transitive = true }))];
+        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
+        rule_kind = MethodModel;
+      }
+    ~callable:(`Method { Interprocedural.Callable.class_name = "test.A"; method_name = "foo" })
+    ~expected:[];
+  assert_applied_rules
+    ~source:
+      {|
+      class A:
+        def foo(): ...
+      class B(A):
+        def foo(): ...
+      class C(B):
+        def foo(): ...
+      class D:
+        def foo(): ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query = [Not (ParentConstraint (Extends { class_name = "test.A"; is_transitive = true }))];
+        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
+        rule_kind = MethodModel;
+      }
+    ~callable:(`Method { Interprocedural.Callable.class_name = "test.B"; method_name = "foo" })
+    ~expected:[];
+  assert_applied_rules
+    ~source:
+      {|
+      class A:
+        def foo(): ...
+      class B(A):
+        def foo(): ...
+      class C(B):
+        def foo(): ...
+      class D:
+        def foo(): ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query = [Not (ParentConstraint (Extends { class_name = "test.A"; is_transitive = true }))];
+        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
+        rule_kind = MethodModel;
+      }
+    ~callable:(`Method { Interprocedural.Callable.class_name = "test.C"; method_name = "foo" })
+    ~expected:[];
+  assert_applied_rules
+    ~source:
+      {|
+      class A:
+        def foo(): ...
+      class B(A):
+        def foo(): ...
+      class C(B):
+        def foo(): ...
+      class D:
+        def foo(): ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query = [Not (ParentConstraint (Extends { class_name = "test.A"; is_transitive = true }))];
+        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
+        rule_kind = MethodModel;
+      }
+    ~callable:(`Method { Interprocedural.Callable.class_name = "test.D"; method_name = "foo" })
     ~expected:[Taint.Model.ReturnAnnotation, source "Test"];
   ()
 

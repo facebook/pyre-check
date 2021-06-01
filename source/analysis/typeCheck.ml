@@ -135,7 +135,7 @@ let errors_from_not_found
               ~total:(Type.TypedDictionary.are_fields_total fields)
           then
             match actual with
-            | Type.Literal (Type.String field_name) ->
+            | Type.Literal (Type.String (Type.LiteralValue field_name)) ->
                 let required_field_exists =
                   List.exists
                     ~f:(fun { Type.Record.TypedDictionary.name; required; _ } ->
@@ -1563,55 +1563,17 @@ module State (Context : Context) = struct
                              { Type.Callable.Parameter.name; annotation; default = false })
                       |> Type.Callable.Parameter.create
                     in
-                    let check_parameter errors overridden_parameter =
-                      let validate_match ~expected = function
-                        | Some actual -> (
-                            let is_compatible =
-                              let expected = Type.Variable.mark_all_variables_as_bound expected in
-                              GlobalResolution.constraints_solution_exists
-                                global_resolution
-                                ~left:expected
-                                ~right:actual
-                            in
-                            try
-                              if (not (Type.is_top expected)) && not is_compatible then
-                                emit_error
-                                  ~errors
-                                  ~location
-                                  ~kind:
-                                    (Error.InconsistentOverride
-                                       {
-                                         overridden_method = StatementDefine.unqualified_name define;
-                                         parent =
-                                           Attribute.parent overridden_attribute |> Reference.create;
-                                         override_kind = Method;
-                                         override =
-                                           Error.StrengthenedPrecondition
-                                             (Error.Found
-                                                (Error.create_mismatch
-                                                   ~resolution:global_resolution
-                                                   ~actual
-                                                   ~expected
-                                                   ~covariant:false));
-                                       })
-                              else
-                                errors
-                            with
-                            | ClassHierarchy.Untracked _ ->
-                                (* TODO(T27409168): Error here. *)
-                                errors )
-                        | None ->
-                            let has_keyword_and_anonymous_starred_parameters =
-                              List.exists overriding_parameters ~f:(function
-                                  | Keywords _ -> true
-                                  | _ -> false)
-                              && List.exists overriding_parameters ~f:(function
-                                     | Variable _ -> true
-                                     | _ -> false)
-                            in
-                            if has_keyword_and_anonymous_starred_parameters then
-                              errors
-                            else
+                    let validate_match ~errors ~overridden_parameter ~expected = function
+                      | Some actual -> (
+                          let is_compatible =
+                            let expected = Type.Variable.mark_all_variables_as_bound expected in
+                            GlobalResolution.constraints_solution_exists
+                              global_resolution
+                              ~left:expected
+                              ~right:actual
+                          in
+                          try
+                            if (not (Type.is_top expected)) && not is_compatible then
                               emit_error
                                 ~errors
                                 ~location
@@ -1619,61 +1581,75 @@ module State (Context : Context) = struct
                                   (Error.InconsistentOverride
                                      {
                                        overridden_method = StatementDefine.unqualified_name define;
-                                       override_kind = Method;
                                        parent =
                                          Attribute.parent overridden_attribute |> Reference.create;
+                                       override_kind = Method;
                                        override =
                                          Error.StrengthenedPrecondition
-                                           (Error.NotFound overridden_parameter);
+                                           (Error.Found
+                                              (Error.create_mismatch
+                                                 ~resolution:global_resolution
+                                                 ~actual
+                                                 ~expected
+                                                 ~covariant:false));
                                      })
-                      in
-                      match overridden_parameter with
-                      | Type.Callable.Parameter.PositionalOnly { index; annotation; _ } ->
-                          List.nth overriding_parameters index
-                          >>= (function
-                                | PositionalOnly { annotation; _ }
-                                | Named { annotation; _ } ->
-                                    Some annotation
-                                | _ -> None)
-                          |> validate_match ~expected:annotation
-                      | KeywordOnly { name = overridden_name; annotation; _ }
-                      | Named { name = overridden_name; annotation; _ } ->
-                          (* TODO(T44178876): ensure index match as well for named parameters *)
-                          let equal_name = function
-                            | Type.Callable.Parameter.KeywordOnly { name; annotation; _ }
-                            | Type.Callable.Parameter.Named { name; annotation; _ } ->
-                                Option.some_if
-                                  (Identifier.equal
-                                     (Identifier.remove_leading_underscores name)
-                                     (Identifier.remove_leading_underscores overridden_name))
-                                  annotation
-                            | _ -> None
+                            else
+                              errors
+                          with
+                          | ClassHierarchy.Untracked _ ->
+                              (* TODO(T27409168): Error here. *)
+                              errors )
+                      | None ->
+                          let has_keyword_and_anonymous_starred_parameters =
+                            List.exists overriding_parameters ~f:(function
+                                | Keywords _ -> true
+                                | _ -> false)
+                            && List.exists overriding_parameters ~f:(function
+                                   | Variable _ -> true
+                                   | _ -> false)
                           in
-                          List.find_map overriding_parameters ~f:equal_name
-                          |> validate_match ~expected:annotation
-                      | Variable (Concrete annotation) ->
-                          let find_variable_parameter = function
-                            | Type.Callable.Parameter.Variable (Concrete annotation) ->
-                                Some annotation
-                            | _ -> None
-                          in
-                          List.find_map overriding_parameters ~f:find_variable_parameter
-                          |> validate_match ~expected:annotation
-                      | Variable (Concatenation _) ->
-                          (* TODO(T53997072): There is no reasonable way to compare either of these
-                             alone, which is the central issue with this comparison strategy. For
-                             now, let's just ignore this. *)
-                          errors
-                      | Keywords annotation ->
-                          let find_variable_parameter = function
-                            | Type.Callable.Parameter.Keywords annotation -> Some annotation
-                            | _ -> None
-                          in
-                          List.find_map overriding_parameters ~f:find_variable_parameter
-                          |> validate_match ~expected:annotation
+                          if has_keyword_and_anonymous_starred_parameters then
+                            errors
+                          else
+                            emit_error
+                              ~errors
+                              ~location
+                              ~kind:
+                                (Error.InconsistentOverride
+                                   {
+                                     overridden_method = StatementDefine.unqualified_name define;
+                                     override_kind = Method;
+                                     parent =
+                                       Attribute.parent overridden_attribute |> Reference.create;
+                                     override =
+                                       Error.StrengthenedPrecondition
+                                         (Error.NotFound overridden_parameter);
+                                   })
                     in
-                    Type.Callable.Overload.parameters implementation
-                    |> Option.value ~default:[]
+                    let check_parameter errors = function
+                      | `Both (overridden_parameter, overriding_parameter) -> (
+                          match
+                            ( Type.Callable.RecordParameter.annotation overridden_parameter,
+                              Type.Callable.RecordParameter.annotation overriding_parameter )
+                          with
+                          | Some expected, Some actual ->
+                              validate_match ~errors ~overridden_parameter ~expected (Some actual)
+                          | None, _
+                          | _, None ->
+                              (* TODO(T53997072): There is no reasonable way to compare Variable
+                                 (Concatenation _). For now, let's just ignore this. *)
+                              errors )
+                      | `Left overridden_parameter -> (
+                          match Type.Callable.RecordParameter.annotation overridden_parameter with
+                          | Some expected ->
+                              validate_match ~errors ~overridden_parameter ~expected None
+                          | None -> errors )
+                      | `Right _ -> errors
+                    in
+                    let overriden_parameters =
+                      Type.Callable.Overload.parameters implementation |> Option.value ~default:[]
+                    in
+                    Type.Callable.Parameter.zip overriden_parameters overriding_parameters
                     |> List.fold ~init:errors ~f:check_parameter
                 | _ -> errors )
             | _ -> None
@@ -2421,7 +2397,7 @@ module State (Context : Context) = struct
             emit_error
               ~errors
               ~location
-              ~kind:(Error.UnsafeCast { expression = value; annotation = resolved })
+              ~kind:(Error.UnsafeCast { expression = value; annotation = cast_annotation })
           else
             errors
         in
@@ -3166,7 +3142,7 @@ module State (Context : Context) = struct
           let reference = name_to_reference name in
           let access_as_attribute () =
             let find_attribute
-                ({ Type.instantiated; accessed_through_class; class_name } as resolved)
+                ({ Type.instantiated; accessed_through_class; class_name } as class_data)
               =
               let name = attribute in
               match
@@ -3198,10 +3174,7 @@ module State (Context : Context) = struct
                       Some instantiated
                   in
                   (* Collect @property's in the call graph. *)
-                  Some
-                    ( resolved,
-                      (attribute, undefined_target),
-                      Annotated.Attribute.annotation attribute )
+                  Some (class_data, attribute, undefined_target)
               | None -> None
             in
             match
@@ -3230,38 +3203,30 @@ module State (Context : Context) = struct
                   resolved_annotation = None;
                   base = None;
                 }
-            | Some (head :: tail) ->
+            | Some (_ :: _ as attribute_info) ->
                 let name = attribute in
-                let head_resolved_class, head_definition, head_resolved = head in
-                let tail_resolved_classes, tail_definitions, tail_resolveds = List.unzip3 tail in
+                let class_datas, attributes, undefined_targets = List.unzip3 attribute_info in
+                let head_annotation, tail_annotations =
+                  let annotations = attributes |> List.map ~f:Annotated.Attribute.annotation in
+                  List.hd_exn annotations, List.tl_exn annotations
+                in
                 begin
-                  let attributes =
-                    List.map (head_definition :: tail_definitions) ~f:fst
-                    |> fun definitions ->
+                  let attributes_with_instantiated =
                     List.zip_exn
-                      definitions
-                      (List.map
-                         (head_resolved_class :: tail_resolved_classes)
-                         ~f:(fun { Type.instantiated; _ } -> instantiated))
+                      attributes
+                      (class_datas |> List.map ~f:(fun { Type.instantiated; _ } -> instantiated))
                   in
                   Context.Builder.add_property_callees
                     ~global_resolution
                     ~resolved_base
-                    ~attributes
+                    ~attributes:attributes_with_instantiated
                     ~location
                     ~qualifier:Context.qualifier
                     ~name
                 end;
                 let errors =
-                  let definition =
-                    List.find (head_definition :: tail_definitions) ~f:(fun (_, undefined_target) ->
-                        match undefined_target with
-                        | None -> false
-                        | _ -> true)
-                    |> Option.value ~default:head_definition
-                  in
-                  match definition with
-                  | _, Some target ->
+                  match List.find undefined_targets ~f:Option.is_some |> Option.join with
+                  | Some target ->
                       if Option.is_some (inverse_operator name) then
                         (* Defer any missing attribute error until the inverse operator has been
                            typechecked. *)
@@ -3274,21 +3239,21 @@ module State (Context : Context) = struct
                             (Error.UndefinedAttribute
                                { attribute = name; origin = Error.Class target })
                   | _ ->
-                      let enclosing_class_reference =
-                        let open Annotated in
-                        Define.parent_definition
-                          ~resolution:(Resolution.global_resolution resolution)
-                          (Define.create Context.define)
-                        >>| Node.value
-                        >>| ClassSummary.name
-                      in
-                      let base_class =
-                        if Type.is_meta resolved_base then
-                          Type.class_name (Type.single_parameter resolved_base)
-                        else
-                          Type.class_name resolved_base
-                      in
                       let is_accessed_in_base_class =
+                        let enclosing_class_reference =
+                          let open Annotated in
+                          Define.parent_definition
+                            ~resolution:(Resolution.global_resolution resolution)
+                            (Define.create Context.define)
+                          >>| Node.value
+                          >>| ClassSummary.name
+                        in
+                        let base_class =
+                          if Type.is_meta resolved_base then
+                            Type.class_name (Type.single_parameter resolved_base)
+                          else
+                            Type.class_name resolved_base
+                        in
                         Option.value_map
                           ~default:false
                           ~f:(Reference.equal_sanitized base_class)
@@ -3304,19 +3269,19 @@ module State (Context : Context) = struct
                       else
                         errors
                 in
-                let resolved =
-                  let apply_global_override resolved =
-                    let annotation =
+                let resolved_annotation =
+                  let apply_local_override global_annotation =
+                    let local_override =
                       reference
                       >>= fun reference ->
                       Resolution.get_local_with_attributes
                         resolution
                         ~name:(create_name_from_reference ~location:Location.any reference)
-                        ~global_fallback:(Type.is_meta (Annotation.annotation resolved))
+                        ~global_fallback:(Type.is_meta (Annotation.annotation global_annotation))
                     in
-                    match annotation with
-                    | Some local -> local
-                    | None -> resolved
+                    match local_override with
+                    | Some local_annotation -> local_annotation
+                    | None -> global_annotation
                   in
                   let join sofar element =
                     let refined =
@@ -3329,13 +3294,13 @@ module State (Context : Context) = struct
                     in
                     { refined with annotation = Type.union [sofar.annotation; element.annotation] }
                   in
-                  List.fold tail_resolveds ~init:head_resolved ~f:join |> apply_global_override
+                  List.fold ~init:head_annotation ~f:join tail_annotations |> apply_local_override
                 in
                 {
                   resolution;
                   errors;
-                  resolved = Annotation.annotation resolved;
-                  resolved_annotation = Some resolved;
+                  resolved = Annotation.annotation resolved_annotation;
+                  resolved_annotation = Some resolved_annotation;
                   base = None;
                 }
           in
@@ -3508,6 +3473,9 @@ module State (Context : Context) = struct
           (* Joining Literals as their union is currently too expensive, so we do it only for
              ternary expressions. *)
           match target_resolved, alternative_resolved with
+          | Type.Literal (Type.String Type.AnyLiteral), Type.Literal (Type.String _)
+          | Type.Literal (Type.String _), Type.Literal (Type.String Type.AnyLiteral) ->
+              Type.Literal (Type.String Type.AnyLiteral)
           | Type.Literal (Type.Boolean _), Type.Literal (Type.Boolean _)
           | Type.Literal (Type.Integer _), Type.Literal (Type.Integer _)
           | Type.Literal (Type.String _), Type.Literal (Type.String _)
@@ -5956,13 +5924,8 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
         |> Option.value ~default:errors
       in
       let check_protocol definition errors = check_protocol_properties definition errors in
-      let check_overrides
-          ({ ClassSummary.attribute_components; name = class_name; _ } as definition)
-          errors
-        =
-        let components =
-          Ast.Statement.Class.attributes ~include_generated_attributes:true attribute_components
-        in
+      let check_overrides class_summary errors =
+        let attributes = ClassSummary.attributes ~include_generated_attributes:true class_summary in
 
         let override_errors_for_typed_dictionary class_name =
           let open Type.Record.TypedDictionary in
@@ -6019,7 +5982,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
                 }
             in
             let location =
-              Identifier.SerializableMap.find_opt class_name components
+              Identifier.SerializableMap.find_opt class_name attributes
               >>| Node.location
               |> Option.value ~default:location
             in
@@ -6032,7 +5995,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
         in
         let override_errors =
           let open Annotated in
-          let class_name = Reference.show class_name in
+          let class_name = ClassSummary.name class_summary |> Reference.show in
           if
             GlobalResolution.is_typed_dictionary
               ~resolution:global_resolution
@@ -6043,7 +6006,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
             GlobalResolution.attributes
               ~include_generated_attributes:false
               ~resolution:global_resolution
-              (Reference.show (ClassSummary.name definition))
+              class_name
             >>| List.filter_map ~f:(fun attribute ->
                     let annotation =
                       GlobalResolution.instantiate_attribute
@@ -6100,7 +6063,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
                               }
                         in
                         let location =
-                          Identifier.SerializableMap.find_opt name components
+                          Identifier.SerializableMap.find_opt name attributes
                           >>| Node.location
                           |> Option.value ~default:location
                         in

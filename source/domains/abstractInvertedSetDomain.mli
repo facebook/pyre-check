@@ -18,8 +18,7 @@ module Make (Element : ELEMENT) : sig
     elements: Element.t list;
   }
 
-  type _ AbstractDomainCore.part +=
-    | Element : Element.t AbstractDomainCore.part | Set : elements AbstractDomainCore.part
+  type _ AbstractDomainCore.part += Element : Element.t AbstractDomainCore.part
 
   val add : Element.t -> t -> t
 

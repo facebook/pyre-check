@@ -13,12 +13,12 @@ module Path = Pyre.Path
 module Client = struct
   type t = {
     context: test_ctxt;
-    server_state: ServerState.t ref;
+    server_state: ServerState.t;
     input_channel: Lwt_io.input_channel;
     output_channel: Lwt_io.output_channel;
   }
 
-  let current_server_state { server_state; _ } = !server_state
+  let current_server_state { server_state; _ } = server_state
 
   let send_raw_request { input_channel; output_channel; _ } raw_request =
     let open Lwt in
@@ -129,6 +129,7 @@ module ScratchProject = struct
         saved_state_action = None;
         parallel = false;
         number_of_workers = 1;
+        shared_memory = ServerConfiguration.SharedMemory.default;
         additional_logging_sections = [];
         remote_logging = None;
         profiling_output = None;
@@ -167,8 +168,10 @@ module ScratchProject = struct
             Lwt.return Start.ExitStatus.Error)
       ~on_started:(fun server_state ->
         (* Open a connection to the started server and send some test messages. *)
+        ExclusiveLock.read server_state ~f:Lwt.return
+        >>= fun server_state ->
         let socket_address =
-          let { ServerState.socket_path; _ } = !server_state in
+          let { ServerState.socket_path; _ } = server_state in
           Lwt_unix.ADDR_UNIX (Pyre.Path.absolute socket_path)
         in
         let test_client (input_channel, output_channel) =

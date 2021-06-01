@@ -11,6 +11,136 @@ open Ast
 open Analysis
 open Expression
 
+module DefinitionsCache (Type : sig
+  type t
+end) =
+struct
+  let cache : Type.t Reference.Table.t = Reference.Table.create ()
+
+  let set key value = Hashtbl.set cache ~key ~data:value
+
+  let get = Hashtbl.find cache
+
+  let invalidate () = Hashtbl.clear cache
+end
+
+module ClassDefinitionsCache = DefinitionsCache (struct
+  type t = Statement.Class.t Node.t list option
+end)
+
+let containing_source ~resolution reference =
+  let global_resolution = Resolution.global_resolution resolution in
+  let ast_environment = GlobalResolution.ast_environment global_resolution in
+  let rec qualifier ~lead ~tail =
+    match tail with
+    | head :: (_ :: _ as tail) ->
+        let new_lead = Reference.create ~prefix:lead head in
+        if not (GlobalResolution.module_exists global_resolution new_lead) then
+          lead
+        else
+          qualifier ~lead:new_lead ~tail
+    | _ -> lead
+  in
+  qualifier ~lead:Reference.empty ~tail:(Reference.as_list reference)
+  |> AstEnvironment.ReadOnly.get_processed_source ast_environment
+
+
+let class_definitions ~resolution reference =
+  match ClassDefinitionsCache.get reference with
+  | Some result -> result
+  | None ->
+      let open Option in
+      let result =
+        containing_source ~resolution reference
+        >>| Preprocessing.classes
+        >>| List.filter ~f:(fun { Node.value = { Statement.Class.name; _ }; _ } ->
+                Reference.equal reference (Node.value name))
+        (* Prefer earlier definitions. *)
+        >>| List.rev
+      in
+      ClassDefinitionsCache.set reference result;
+      result
+
+
+(* Find a method definition matching the given predicate. *)
+let find_method_definitions ~resolution ?(predicate = fun _ -> true) name =
+  let open Statement in
+  let get_matching_define = function
+    | {
+        Node.value =
+          Statement.Define
+            ({ signature = { name = { value = define_name; _ }; _ } as signature; _ } as define);
+        _;
+      } ->
+        if Reference.equal define_name name && predicate define then
+          let global_resolution = Resolution.global_resolution resolution in
+          let parser = GlobalResolution.annotation_parser global_resolution in
+          let variables = GlobalResolution.variables global_resolution in
+          Annotated.Define.Callable.create_overload_without_applying_decorators
+            ~parser
+            ~variables
+            signature
+          |> Option.some
+        else
+          None
+    | _ -> None
+  in
+  Reference.prefix name
+  >>= class_definitions ~resolution
+  >>= List.hd
+  >>| (fun definition -> definition.Node.value.Class.body)
+  >>| List.filter_map ~f:get_matching_define
+  |> Option.value ~default:[]
+
+
+module Global = struct
+  type t =
+    | Class
+    | Module
+    | Attribute of Type.t
+  [@@deriving show]
+end
+
+(* Resolve global symbols, ignoring decorators. *)
+let resolve_global ~resolution name =
+  let global_resolution = Resolution.global_resolution resolution in
+  (* Resolve undecorated functions. *)
+  match GlobalResolution.global global_resolution name with
+  | Some { AttributeResolution.Global.undecorated_signature = Some signature; _ } ->
+      Some (Global.Attribute (Type.Callable signature))
+  | _ -> (
+      (* Resolve undecorated methods. *)
+      match find_method_definitions ~resolution name with
+      | [callable] -> Some (Global.Attribute (Type.Callable.create_from_implementation callable))
+      | first :: _ :: _ as overloads ->
+          (* Note that we use the first overload as the base implementation, which might be unsound. *)
+          Some
+            (Global.Attribute
+               (Type.Callable.create
+                  ~overloads
+                  ~parameters:first.parameters
+                  ~annotation:first.annotation
+                  ()))
+      | [] -> (
+          (* Fall back for anything else. *)
+          let annotation =
+            from_reference name ~location:Location.any
+            |> Resolution.resolve_expression_to_annotation resolution
+          in
+          match Annotation.annotation annotation with
+          | Type.Parametric { name = "type"; _ }
+            when GlobalResolution.class_exists global_resolution (Reference.show name) ->
+              Some Global.Class
+          | Type.Top when GlobalResolution.module_exists global_resolution name ->
+              Some Global.Module
+          | Type.Top when not (Annotation.is_immutable annotation) ->
+              (* FIXME: We are relying on the fact that nonexistent functions & attributes resolve
+                 to mutable annotation, while existing ones resolve to immutable annotation. This is
+                 fragile! *)
+              None
+          | annotation -> Some (Global.Attribute annotation) ) )
+
+
 type parameter_requirements = {
   anonymous_parameters_count: int;
   parameter_set: String.Set.t;
@@ -56,6 +186,10 @@ let demangle_class_attribute name =
     name
 
 
+let model_verification_error ~path ~location kind =
+  { ModelVerificationError.T.kind; path; location }
+
+
 let model_compatible
     ~path
     ~location
@@ -71,22 +205,21 @@ let model_compatible
   let validate_model_parameter errors_and_requirements (model_parameter, _, original) =
     (* Ensure that the parameter's default value is either not present or `...` to catch common
        errors when declaring models. *)
-    let open ModelVerificationError.T in
     let errors_and_requirements =
       match Node.value original with
       | { Parameter.value = Some expression; name; _ } ->
           if not (Expression.equal_expression (Node.value expression) Expression.Ellipsis) then
             Error
-              {
-                ModelVerificationError.T.path;
-                location;
-                kind = InvalidDefaultValue { callable_name; name; expression };
-              }
+              (model_verification_error
+                 ~path
+                 ~location
+                 (InvalidDefaultValue { callable_name; name; expression }))
           else
             errors_and_requirements
       | _ -> errors_and_requirements
     in
     let open AccessPath.Root in
+    let open ModelVerificationError.T in
     errors_and_requirements
     >>| fun (errors, requirements) ->
     match model_parameter with
@@ -152,11 +285,10 @@ let model_compatible
     Result.Ok ()
   else
     Result.Error
-      {
-        path;
-        location;
-        kind = IncompatibleModelError { name = callable_name; callable_type; reasons = errors };
-      }
+      (model_verification_error
+         ~path
+         ~location
+         (IncompatibleModelError { name = callable_name; callable_type; reasons = errors }))
 
 
 let verify_signature ~path ~location ~normalized_model_parameters ~name callable_annotation =
@@ -166,16 +298,13 @@ let verify_signature ~path ~location ~normalized_model_parameters ~name callable
           Type.Callable.implementation =
             { Type.Callable.parameters = Type.Callable.Defined implementation_parameters; _ };
           kind;
+          overloads = [];
           _;
         } as callable ) -> (
       match kind with
       | Type.Callable.Named actual_name when not (Reference.equal name actual_name) ->
           Error
-            {
-              ModelVerificationError.T.location;
-              path;
-              kind = ImportedFunctionModel { name; actual_name };
-            }
+            (model_verification_error ~path ~location (ImportedFunctionModel { name; actual_name }))
       | _ ->
           model_compatible
             ~path
@@ -189,39 +318,54 @@ let verify_signature ~path ~location ~normalized_model_parameters ~name callable
 
 let verify_global ~path ~location ~resolution ~name =
   let name = demangle_class_attribute (Reference.show name) |> Reference.create in
-  let global_resolution = Resolution.global_resolution resolution in
-  let global = GlobalResolution.global global_resolution name in
-  if Option.is_some global then
-    Result.Ok ()
-  else
-    let class_summary, attribute_name =
-      ( Reference.as_list name
-        |> List.drop_last
-        >>| Reference.create_from_list
+  let global = resolve_global ~resolution name in
+  match global with
+  | Some Global.Class ->
+      Error
+        (model_verification_error ~path ~location (ModelingClassAsAttribute (Reference.show name)))
+  | Some Global.Module ->
+      Error
+        (model_verification_error ~path ~location (ModelingModuleAsAttribute (Reference.show name)))
+  | Some (Global.Attribute (Type.Callable _))
+  | Some
+      (Global.Attribute
+        (Type.Parametric
+          { name = "BoundMethod"; parameters = [Type.Parameter.Single (Type.Callable _); _] })) ->
+      Error
+        (model_verification_error
+           ~path
+           ~location
+           (ModelingCallableAsAttribute (Reference.show name)))
+  | Some (Global.Attribute _)
+  | None -> (
+      let global_resolution = Resolution.global_resolution resolution in
+      let class_summary =
+        Reference.prefix name
         >>| Reference.show
         >>| (fun class_name -> Type.Primitive class_name)
         >>= GlobalResolution.class_definition global_resolution
-        >>| Node.value,
-        Reference.last name )
-    in
-    match class_summary with
-    | Some { ClassSummary.attribute_components; name = class_name; _ } ->
-        let attributes, constructor_attributes =
-          ( Statement.Class.attributes ~include_generated_attributes:false attribute_components,
-            Statement.Class.constructor_attributes attribute_components )
-        in
-        if
-          Identifier.SerializableMap.mem attribute_name attributes
-          || Identifier.SerializableMap.mem attribute_name constructor_attributes
-        then
-          Result.Ok ()
-        else
+        >>| Node.value
+      in
+      match class_summary, global with
+      | Some ({ name = class_name; _ } as class_summary), _ ->
+          let attributes =
+            ClassSummary.attributes ~include_generated_attributes:false class_summary
+          in
+          let constructor_attributes = ClassSummary.constructor_attributes class_summary in
+          let attribute_name = Reference.last name in
+          if
+            Identifier.SerializableMap.mem attribute_name attributes
+            || Identifier.SerializableMap.mem attribute_name constructor_attributes
+          then
+            Result.Ok ()
+          else
+            Result.Error
+              (model_verification_error
+                 ~path
+                 ~location
+                 (MissingAttribute
+                    { class_name = Reference.show class_name; attribute_name = Reference.last name }))
+      | None, Some _ -> Ok ()
+      | None, None ->
           Result.Error
-            {
-              ModelVerificationError.T.path;
-              location;
-              kind = MissingAttribute { class_name = Reference.show class_name; attribute_name };
-            }
-    | _ ->
-        Result.Error
-          { ModelVerificationError.T.path; location; kind = NotInEnvironment (Reference.show name) }
+            (model_verification_error ~path ~location (NotInEnvironment (Reference.show name))) )

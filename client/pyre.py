@@ -3,6 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+from __future__ import annotations
 
 import json
 import logging
@@ -13,7 +14,7 @@ import time
 import traceback
 from dataclasses import replace
 from pathlib import Path
-from typing import Iterable, List, Optional
+from typing import Iterable, List
 
 import click
 
@@ -40,7 +41,7 @@ def _log_statistics(
     command: Command,
     start_time: float,
     client_exception_message: str,
-    error_message: Optional[str],
+    error_message: str | None,
     exit_code: int,
 ) -> None:
     configuration = command.configuration
@@ -63,17 +64,13 @@ def _log_statistics(
         )
 
 
-def _show_pyre_version_as_text(
-    binary_version: Optional[str], client_version: str
-) -> None:
+def _show_pyre_version_as_text(binary_version: str | None, client_version: str) -> None:
     if binary_version:
         log.stdout.write(f"Binary version: {binary_version}\n")
     log.stdout.write(f"Client version: {__version__}\n")
 
 
-def _show_pyre_version_as_json(
-    binary_version: Optional[str], client_version: str
-) -> None:
+def _show_pyre_version_as_json(binary_version: str | None, client_version: str) -> None:
     version_json = {
         **({} if binary_version is None else {"binary": binary_version}),
         "client": client_version,
@@ -82,7 +79,7 @@ def _show_pyre_version_as_json(
 
 
 def _show_pyre_version(arguments: command_arguments.CommandArguments) -> None:
-    binary_version: Optional[str] = None
+    binary_version: str | None = None
     client_version: str = __version__
     try:
         configuration = configuration_module.create_configuration(arguments, Path("."))
@@ -114,8 +111,10 @@ def run_pyre_command(
     except (buck.BuckException, EnvironmentException) as error:
         client_exception_message = str(error)
         exit_code = ExitCode.FAILURE
-        if isinstance(error, buck.BuckException):
-            exit_code = ExitCode.BUCK_ERROR
+        if isinstance(error, buck.BuckUserError):
+            exit_code = ExitCode.BUCK_USER_ERROR
+        elif isinstance(error, buck.BuckException):
+            exit_code = ExitCode.BUCK_INTERNAL_ERROR
     except (configuration_module.InvalidConfiguration) as error:
         client_exception_message = str(error)
         exit_code = ExitCode.CONFIGURATION_ERROR
@@ -351,7 +350,10 @@ def _check_configuration(configuration: configuration_module.Configuration) -> N
     "--enable-memory-profiling/--no-enable-memory-profiling", default=False, hidden=True
 )
 @click.option(
-    "-n", "--noninteractive", is_flag=True, help="Disable interactive logging."
+    "-n",
+    "--noninteractive",
+    is_flag=True,
+    help="Enable verbose non-interactive logging.",
 )
 @click.option("--logging-sections", type=str, hidden=True)
 @click.option("--log-identifier", type=str, default=None, hidden=True)
@@ -438,42 +440,42 @@ def _check_configuration(configuration: configuration_module.Configuration) -> N
 )
 def pyre(
     context: click.Context,
-    local_configuration: Optional[str],
+    local_configuration: str | None,
     version: bool,
     debug: bool,
-    sequential: Optional[bool],
-    strict: Optional[bool],
+    sequential: bool | None,
+    strict: bool | None,
     additional_check: Iterable[str],
     show_error_traces: bool,
     output: str,
     enable_profiling: bool,
     enable_memory_profiling: bool,
     noninteractive: bool,
-    logging_sections: Optional[str],
-    log_identifier: Optional[str],
-    dot_pyre_directory: Optional[str],
-    logger: Optional[str],
-    formatter: Optional[str],
+    logging_sections: str | None,
+    log_identifier: str | None,
+    dot_pyre_directory: str | None,
+    logger: str | None,
+    formatter: str | None,
     target: Iterable[str],
-    use_buck_builder: Optional[bool],
-    buck_mode: Optional[str],
-    use_buck_source_database: Optional[bool],
+    use_buck_builder: bool | None,
+    buck_mode: str | None,
+    use_buck_source_database: bool | None,
     source_directory: Iterable[str],
-    filter_directory: Optional[str],
+    filter_directory: str | None,
     no_saved_state: bool,
     search_path: Iterable[str],
-    binary: Optional[str],
-    buck_builder_binary: Optional[str],
+    binary: str | None,
+    buck_builder_binary: str | None,
     exclude: Iterable[str],
-    typeshed: Optional[str],
-    save_initial_state_to: Optional[str],
-    load_initial_state_from: Optional[str],
-    changed_files_path: Optional[str],
-    saved_state_project: Optional[str],
-    features: Optional[str],
-    use_command_v2: Optional[bool],
-    isolation_prefix: Optional[str],
-    python_version: Optional[str],
+    typeshed: str | None,
+    save_initial_state_to: str | None,
+    load_initial_state_from: str | None,
+    changed_files_path: str | None,
+    saved_state_project: str | None,
+    features: str | None,
+    use_command_v2: bool | None,
+    isolation_prefix: str | None,
+    python_version: str | None,
 ) -> int:
     arguments = command_arguments.CommandArguments(
         local_configuration=local_configuration,
@@ -573,19 +575,32 @@ def pyre(
     default=False,
     help="Store information in .pyre/pysa.cache for faster runs.",
 )
+@click.option(
+    "--inline-decorators",
+    is_flag=True,
+    default=False,
+    help="Inline decorators at use sites to catch flows through decorators.",
+)
+@click.option(
+    "--maximum-trace-length",
+    type=int,
+    help="Limit the trace length of taint flows.",
+)
 @click.pass_context
 def analyze(
     context: click.Context,
     analysis: str,
     taint_models_path: Iterable[str],
     no_verify: bool,
-    save_results_to: Optional[str],
+    save_results_to: str | None,
     dump_call_graph: bool,
-    repository_root: Optional[str],
+    repository_root: str | None,
     rule: Iterable[int],
-    find_missing_flows: Optional[str],
+    find_missing_flows: str | None,
     dump_model_query_results: bool,
     use_cache: bool,
+    inline_decorators: bool,
+    maximum_trace_length: int | None,
 ) -> int:
     """
     Run Pysa, the inter-procedural static analysis tool.
@@ -612,6 +627,8 @@ def analyze(
             ),
             dump_model_query_results=dump_model_query_results,
             use_cache=use_cache,
+            inline_decorators=inline_decorators,
+            maximum_trace_length=maximum_trace_length,
         ),
         configuration,
         command_argument.noninteractive,
@@ -874,6 +891,48 @@ def persistent(context: click.Context, no_watchman: bool) -> int:
 
 
 @pyre.command()
+@click.option("--no-watchman", is_flag=True, default=False, hidden=True)
+@click.pass_context
+def pysa_language_server(context: click.Context, no_watchman: bool) -> int:
+    """
+    Entry point for IDE integration to Pysa. Communicates with a Pysa server using
+    the Language Server Protocol, accepts input from stdin and writing diagnostics
+    and responses from the Pysa server to stdout.
+    """
+    command_argument: command_arguments.CommandArguments = context.obj["arguments"]
+    configuration = configuration_module.create_configuration(
+        command_argument, Path(".")
+    )
+    log.start_logging_to_directory(
+        # Always log to file regardless of whether `-n` is given
+        noninteractive=False,
+        log_directory=configuration.log_directory,
+    )
+    return v2.pysa_server.run(
+        configuration,
+        command_arguments.StartArguments(
+            changed_files_path=command_argument.changed_files_path,
+            debug=command_argument.debug,
+            enable_memory_profiling=command_argument.enable_memory_profiling,
+            enable_profiling=command_argument.enable_profiling,
+            load_initial_state_from=command_argument.load_initial_state_from,
+            log_identifier=command_argument.log_identifier,
+            logging_sections=command_argument.logging_sections,
+            no_saved_state=command_argument.no_saved_state,
+            no_watchman=no_watchman,
+            noninteractive=command_argument.noninteractive,
+            save_initial_state_to=command_argument.save_initial_state_to,
+            saved_state_project=command_argument.saved_state_project,
+            sequential=command_argument.sequential,
+            show_error_traces=command_argument.show_error_traces,
+            store_type_check_resolution=False,
+            terminal=False,
+            wait_on_initialization=True,
+        ),
+    )
+
+
+@pyre.command()
 @click.option(
     "--profile-output",
     type=click.Choice([str(x) for x in commands.ProfileOutput]),
@@ -952,9 +1011,7 @@ def query(context: click.Context, query: str) -> int:
     help="Number of server logs to include in the diagnositics. Default to 3.",
 )
 @click.pass_context
-def rage(
-    context: click.Context, output_file: Optional[str], server_log_count: int
-) -> int:
+def rage(context: click.Context, output_file: str | None, server_log_count: int) -> int:
     """
     Collects troubleshooting diagnostics for Pyre, and writes this information
     to the terminal or to a file.
@@ -1224,9 +1281,18 @@ def start(
     default=False,
     help="Log the statistics results to external tables.",
 )
+@click.option(
+    "--print-aggregates",
+    is_flag=True,
+    default=False,
+    help="Print aggregate instead of per-path data.",
+)
 @click.pass_context
 def statistics(
-    context: click.Context, filter_paths: Iterable[str], log_results: bool
+    context: click.Context,
+    filter_paths: Iterable[str],
+    log_results: bool,
+    print_aggregates: bool,
 ) -> int:
     """
     Collect various syntactic metrics on type coverage.
@@ -1240,6 +1306,7 @@ def statistics(
             configuration=configuration,
             filter_paths=list(filter_paths),
             log_results=log_results,
+            aggregate=print_aggregates,
         ),
         configuration,
         command_argument.noninteractive,

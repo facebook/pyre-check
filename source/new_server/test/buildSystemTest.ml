@@ -18,7 +18,8 @@ let test_initialize context =
       internal_state := "initialized";
       Lwt.return (BuildSystem.create_for_testing ())
     in
-    BuildSystem.Initializer.create_for_testing ~initialize ()
+    let load () = failwith "saved state loading is not supported" in
+    BuildSystem.Initializer.create_for_testing ~initialize ~load ()
   in
   let test_initialize _ =
     (* Verify that the build system has indeed been initiailzed. *)
@@ -44,7 +45,8 @@ let test_cleanup context =
       in
       Lwt.return (BuildSystem.create_for_testing ~cleanup ())
     in
-    BuildSystem.Initializer.create_for_testing ~initialize ()
+    let load () = failwith "saved state loading is not supported" in
+    BuildSystem.Initializer.create_for_testing ~initialize ~load ()
   in
   let open Lwt.Infix in
   let server_configuration =
@@ -87,7 +89,8 @@ let test_type_errors context =
       in
       Lwt.return (BuildSystem.create_for_testing ~lookup_source ~lookup_artifact ())
     in
-    BuildSystem.Initializer.create_for_testing ~initialize ()
+    let load () = failwith "saved state loading is not supported" in
+    BuildSystem.Initializer.create_for_testing ~initialize ~load ()
   in
   let test_type_errors client =
     let open Lwt.Infix in
@@ -174,7 +177,8 @@ let test_update context =
       in
       Lwt.return (BuildSystem.create_for_testing ~update ~lookup_source ~lookup_artifact ())
     in
-    BuildSystem.Initializer.create_for_testing ~initialize ()
+    let load () = failwith "saved state loading is not supported" in
+    BuildSystem.Initializer.create_for_testing ~initialize ~load ()
   in
   let test_update client =
     let open Lwt.Infix in
@@ -231,7 +235,7 @@ let test_update context =
   |> ScratchProject.test_server_with ~f:test_update
 
 
-let test_buck_update context =
+let test_buck_renormalize context =
   (* Count how many times target renormalization has happened. *)
   let query_counter = ref 0 in
   let assert_query_counter expected =
@@ -283,6 +287,165 @@ let test_buck_update context =
   Lwt.return_unit
 
 
+let test_buck_update context =
+  let assert_optional_path ~expected actual =
+    assert_equal
+      ~ctxt:context
+      ~cmp:[%compare.equal: Path.t option]
+      ~printer:(Option.value_map ~default:"NONE" ~f:Path.show)
+      expected
+      actual
+  in
+  let source_root = bracket_tmpdir context |> Path.create_absolute in
+  let artifact_root = bracket_tmpdir context |> Path.create_absolute in
+
+  let get_buck_build_system () =
+    let source_database_path =
+      let root = bracket_tmpdir context |> Path.create_absolute in
+      Path.create_relative ~root ~relative:"foo_target_sourcedb.json"
+    in
+    let raw =
+      (* Here's the set up: we have 2 files, `foo/bar.py` and `foo/baz.py`. If `is_rebuild` is
+         false, we'll only include `foo/bar.py` in the target. If `is_rebuild` is true, we'll
+         include both files. The `is_rebuild` flag is initially false but will be set to true after
+         the first build. This setup emulates an incremental Buck update where the user edits the
+         TARGET file to include another source in the target. *)
+      let is_rebuild = ref false in
+      let query _ = Lwt.return {| { "//foo:target": ["//foo:target"] } |} in
+      let build _ =
+        let content =
+          if !is_rebuild then
+            {| {
+                 "sources": { "bar.py": "foo/bar.py", "baz.py": "foo/baz.py" },
+                 "dependencies": {}
+               }
+            |}
+          else
+            {| { "sources": { "bar.py": "foo/bar.py" }, "dependencies": {} } |}
+        in
+        File.create source_database_path ~content |> File.write;
+        is_rebuild := true;
+        Format.asprintf {| { "//foo:bar#source-db": "%a" } |} Path.pp source_database_path
+        |> Lwt.return
+      in
+      Buck.Raw.create_for_testing ~query ~build ()
+    in
+    {
+      ServerConfiguration.Buck.mode = None;
+      isolation_prefix = None;
+      targets = ["//foo:target"];
+      source_root;
+      artifact_root;
+    }
+    |> BuildSystem.Initializer.buck ~raw
+    |> BuildSystem.Initializer.run
+  in
+  let open Lwt.Infix in
+  get_buck_build_system ()
+  >>= fun buck_build_system ->
+  let bar_source = Path.create_relative ~root:source_root ~relative:"foo/bar.py" in
+  let bar_artifact = Path.create_relative ~root:artifact_root ~relative:"bar.py" in
+  let baz_source = Path.create_relative ~root:source_root ~relative:"foo/baz.py" in
+  let baz_artifact = Path.create_relative ~root:artifact_root ~relative:"baz.py" in
+
+  (* Initially, we build bar.py but not baz.py. *)
+  assert_optional_path
+    ~expected:(Some bar_source)
+    (BuildSystem.lookup_source buck_build_system bar_artifact);
+  assert_optional_path ~expected:None (BuildSystem.lookup_source buck_build_system baz_artifact);
+  assert_optional_path
+    ~expected:(Some bar_artifact)
+    (BuildSystem.lookup_artifact buck_build_system bar_source |> List.hd);
+  assert_optional_path
+    ~expected:None
+    (BuildSystem.lookup_artifact buck_build_system baz_source |> List.hd);
+
+  (* Rebuild the project. The fake TARGET file is needed to force a full rebuild. *)
+  let fake_target_file = Path.create_relative ~root:source_root ~relative:"TARGETS" in
+  BuildSystem.update buck_build_system [bar_source; baz_source; fake_target_file]
+  >>= fun _ ->
+  (* After the rebuild, both bar.py and baz.py should be included in build map. *)
+  assert_optional_path
+    ~expected:(Some bar_source)
+    (BuildSystem.lookup_source buck_build_system bar_artifact);
+  assert_optional_path
+    ~expected:(Some baz_source)
+    (BuildSystem.lookup_source buck_build_system baz_artifact);
+  assert_optional_path
+    ~expected:(Some bar_artifact)
+    (BuildSystem.lookup_artifact buck_build_system bar_source |> List.hd);
+  assert_optional_path
+    ~expected:(Some baz_artifact)
+    (BuildSystem.lookup_artifact buck_build_system baz_source |> List.hd);
+
+  Lwt.return_unit
+
+
+let test_buck_update_without_rebuild context =
+  let assert_paths_no_order ~expected actual =
+    let compare = [%compare: Path.t] in
+    assert_equal
+      ~ctxt:context
+      ~cmp:[%compare.equal: Path.t list]
+      ~printer:(fun paths -> List.map paths ~f:Path.show |> String.concat ~sep:" ")
+      (List.sort ~compare expected)
+      (List.sort ~compare actual)
+  in
+  let source_root = bracket_tmpdir context |> Path.create_absolute in
+  let artifact_root = bracket_tmpdir context |> Path.create_absolute in
+
+  let get_buck_build_system () =
+    let source_database_path =
+      let root = bracket_tmpdir context |> Path.create_absolute in
+      Path.create_relative ~root ~relative:"foo_target_sourcedb.json"
+    in
+    let raw =
+      let is_rebuild = ref false in
+      let query _ = Lwt.return {| { "//foo:target": ["//foo:target"] } |} in
+      let build _ =
+        if not !is_rebuild then (
+          let content =
+            {| {
+                 "sources": { "bar.py": "foo/bar.py", "baz.py": "foo/baz.py" },
+                 "dependencies": {}
+               }
+            |}
+          in
+          File.create source_database_path ~content |> File.write;
+          is_rebuild := true;
+          Format.asprintf {| { "//foo:bar#source-db": "%a" } |} Path.pp source_database_path
+          |> Lwt.return )
+        else
+          assert_failure "`buck build` is not expected to be invoked again after the initial build"
+      in
+      Buck.Raw.create_for_testing ~query ~build ()
+    in
+    {
+      ServerConfiguration.Buck.mode = None;
+      isolation_prefix = None;
+      targets = ["//foo:target"];
+      source_root;
+      artifact_root;
+    }
+    |> BuildSystem.Initializer.buck ~raw
+    |> BuildSystem.Initializer.run
+  in
+  let open Lwt.Infix in
+  get_buck_build_system ()
+  >>= fun buck_build_system ->
+  let bar_source = Path.create_relative ~root:source_root ~relative:"foo/bar.py" in
+  let baz_source = Path.create_relative ~root:source_root ~relative:"foo/baz.py" in
+  File.create bar_source ~content:"" |> File.write;
+  File.create baz_source ~content:"" |> File.write;
+  BuildSystem.update buck_build_system [bar_source; baz_source]
+  >>= fun changed_artifacts ->
+  (* After the rebuild, both bar.py and baz.py should be included in build map. *)
+  let bar_artifact = Path.create_relative ~root:artifact_root ~relative:"bar.py" in
+  let baz_artifact = Path.create_relative ~root:artifact_root ~relative:"baz.py" in
+  assert_paths_no_order changed_artifacts ~expected:[bar_artifact; baz_artifact];
+  Lwt.return_unit
+
+
 let () =
   "build_system_test"
   >::: [
@@ -290,6 +453,8 @@ let () =
          "cleanup" >:: OUnitLwt.lwt_wrapper test_cleanup;
          "type_errors" >:: OUnitLwt.lwt_wrapper test_type_errors;
          "update" >:: OUnitLwt.lwt_wrapper test_update;
+         "buck_renormalize" >:: OUnitLwt.lwt_wrapper test_buck_renormalize;
          "buck_update" >:: OUnitLwt.lwt_wrapper test_buck_update;
+         "buck_update_without_rebuild" >:: OUnitLwt.lwt_wrapper test_buck_update_without_rebuild;
        ]
   |> Test.run

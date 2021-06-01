@@ -1,0 +1,5 @@
+@generated
+Overrides
+lineage_analysis.DataFrame::__init__ (override) -> [lineage_analysis.DataFrame::__init__ (method)]
+lineage_analysis.Series::__init__ (override) -> [lineage_analysis.Series::__init__ (method)]
+object::__init__ (override) -> [lineage_analysis.DataFrame::__init__ (override) lineage_analysis.Series::__init__ (override) object::__init__ (method)]

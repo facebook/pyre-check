@@ -990,10 +990,14 @@ module Primitive = struct
 end
 
 module T = struct
-  type literal =
+  type literal_string =
+    | LiteralValue of string
+    | AnyLiteral
+
+  and literal =
     | Boolean of bool
     | Integer of int
-    | String of string
+    | String of literal_string
     | Bytes of string
     | EnumerationMember of {
         enumeration_type: t;
@@ -1410,7 +1414,9 @@ let rec pp format annotation =
   | Literal (Boolean literal) ->
       Format.fprintf format "typing_extensions.Literal[%s]" (if literal then "True" else "False")
   | Literal (Integer literal) -> Format.fprintf format "typing_extensions.Literal[%d]" literal
-  | Literal (String literal) -> Format.fprintf format "typing_extensions.Literal['%s']" literal
+  | Literal (String (LiteralValue literal)) ->
+      Format.fprintf format "typing_extensions.Literal['%s']" literal
+  | Literal (String AnyLiteral) -> Format.fprintf format "typing_extensions.Literal[str]"
   | Literal (Bytes literal) -> Format.fprintf format "typing_extensions.Literal[b'%s']" literal
   | Literal (EnumerationMember { enumeration_type; member_name }) ->
       Format.fprintf format "typing_extensions.Literal[%s.%s]" (show enumeration_type) member_name
@@ -1500,7 +1506,9 @@ and pp_concise format annotation =
   | Literal (Boolean literal) ->
       Format.fprintf format "typing_extensions.Literal[%s]" (if literal then "True" else "False")
   | Literal (Integer literal) -> Format.fprintf format "typing_extensions.Literal[%d]" literal
-  | Literal (String literal) -> Format.fprintf format "typing_extensions.Literal['%s']" literal
+  | Literal (String (LiteralValue literal)) ->
+      Format.fprintf format "typing_extensions.Literal['%s']" literal
+  | Literal (String AnyLiteral) -> Format.fprintf format "typing_extensions.Literal[str]"
   | Literal (Bytes literal) -> Format.fprintf format "typing_extensions.Literal[b'%s']" literal
   | Literal (EnumerationMember { enumeration_type; member_name }) ->
       Format.fprintf format "typing_extensions.Literal[%s.%s]" (show enumeration_type) member_name
@@ -1621,7 +1629,7 @@ let set parameter = Parametric { name = "set"; parameters = [Single parameter] }
 
 let string = Primitive "str"
 
-let literal_string literal = Literal (String literal)
+let literal_string literal = Literal (String (LiteralValue literal))
 
 let literal_bytes literal = Literal (Bytes literal)
 
@@ -1839,7 +1847,9 @@ let rec expression annotation =
           | Boolean true -> Expression.True
           | Boolean false -> Expression.False
           | Integer literal -> Expression.Integer literal
-          | String literal -> Expression.String { value = literal; kind = StringLiteral.String }
+          | String (LiteralValue literal) ->
+              Expression.String { value = literal; kind = StringLiteral.String }
+          | String AnyLiteral -> create_name "str"
           | Bytes literal -> Expression.String { value = literal; kind = StringLiteral.Bytes }
           | EnumerationMember { enumeration_type; member_name } ->
               Expression.Name
@@ -2219,6 +2229,66 @@ module Callable = struct
           let right = Identifier.remove_leading_underscores right in
           Identifier.equal left right
       | _ -> false
+
+
+    (* Match parameters from two parameter lists `left_parameters` and `right_parameters`.
+     *
+     * This returns a list of [`Both | `Left | `Right], where:
+     * `Both (left, right)` means the parameter `left` from `left_parameters` matches the parameter `right` from `right_parameters`.
+     * `Left left` means the parameter `left` from `left_parameters` does not match any parameter in `right_parameters`.
+     * `Right right` means the parameter `right` from `right_parameters` does not match any parameters in `left_parameters`.
+     *
+     * All parameters from `left_parameters` and `right_parameters` only appear once in the result.
+     *)
+    let zip left_parameters right_parameters =
+      let find_positional_parameter index parameters = List.nth parameters index in
+      let find_named_parameter name =
+        let equal_name parameter =
+          match parameter with
+          | KeywordOnly { name = parameter_name; _ }
+          | Named { name = parameter_name; _ }
+            when Identifier.equal
+                   (Identifier.remove_leading_underscores parameter_name)
+                   (Identifier.remove_leading_underscores name) ->
+              Some parameter
+          | _ -> None
+        in
+        List.find_map ~f:equal_name
+      in
+      let find_variable_parameter =
+        let is_variable = function
+          | Variable _ as parameter -> Some parameter
+          | _ -> None
+        in
+        List.find_map ~f:is_variable
+      in
+      let find_keywords_parameter =
+        let is_keywords = function
+          | Keywords _ as parameter -> Some parameter
+          | _ -> None
+        in
+        List.find_map ~f:is_keywords
+      in
+      let find_matching_parameter given_parameters = function
+        | PositionalOnly { index; _ } -> find_positional_parameter index given_parameters
+        | KeywordOnly { name; _ }
+        | Named { name; _ } ->
+            (* TODO(T44178876): ensure index match as well for named parameters *)
+            find_named_parameter name given_parameters
+        | Variable _ -> find_variable_parameter given_parameters
+        | Keywords _ -> find_keywords_parameter given_parameters
+      in
+      let process_left left_parameter =
+        match find_matching_parameter right_parameters left_parameter with
+        | Some right_parameter -> `Both (left_parameter, right_parameter)
+        | None -> `Left left_parameter
+      in
+      let process_right right_parameter =
+        match find_matching_parameter left_parameters right_parameter with
+        | Some _ -> None
+        | None -> Some (`Right right_parameter)
+      in
+      List.map ~f:process_left left_parameters @ List.filter_map ~f:process_right right_parameters
   end
 
   include Record.Callable
@@ -2446,7 +2516,7 @@ let create_literal = function
   | Expression.False -> Some (Literal (Boolean false))
   | Expression.Integer literal -> Some (Literal (Integer literal))
   | Expression.String { StringLiteral.kind = StringLiteral.String; value } ->
-      Some (Literal (String value))
+      Some (Literal (String (LiteralValue value)))
   | Expression.String { StringLiteral.kind = StringLiteral.Bytes; value } ->
       Some (Literal (Bytes value))
   | Expression.Name
@@ -2462,6 +2532,7 @@ let create_literal = function
                   }))
       | _ -> None )
   | Expression.Name (Identifier "None") -> Some none
+  | Expression.Name (Identifier "str") -> Some (Literal (String AnyLiteral))
   | _ -> None
 
 
@@ -3297,7 +3368,13 @@ let elements annotation =
         match annotation with
         | Annotated _ -> "typing.Annotated" :: sofar, recursive_type_names
         | Callable _ -> "typing.Callable" :: sofar, recursive_type_names
-        | Literal _ -> "typing_extensions.Literal" :: sofar, recursive_type_names
+        | Literal literal ->
+            let sofar =
+              match literal with
+              | String AnyLiteral -> "str" :: sofar
+              | _ -> sofar
+            in
+            "typing_extensions.Literal" :: sofar, recursive_type_names
         | Union [NoneType; _]
         | Union [_; NoneType] ->
             "typing.Optional" :: sofar, recursive_type_names

@@ -50,13 +50,13 @@ def parse_query_response(text: str) -> Response:
 
 def _send_query_request(output_channel: TextIO, query_text: str) -> None:
     query_message = json.dumps(["Query", query_text])
-    LOG.debug(f"Sending `{query_message}`")
+    LOG.debug(f"Sending `{log.truncate(query_message, 400)}`")
     output_channel.write(f"{query_message}\n")
 
 
 def _receive_query_response(input_channel: TextIO) -> Response:
     query_message = input_channel.readline().strip()
-    LOG.debug(f"Received `{query_message}`")
+    LOG.debug(f"Received `{log.truncate(query_message, 400)}`")
     return parse_query_response(query_message)
 
 

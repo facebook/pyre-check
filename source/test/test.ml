@@ -14,8 +14,8 @@ open PyreParser
 open Statement
 
 let initialize () =
-  Memory.initialize_for_tests ();
   Log.GlobalState.initialize_for_tests ();
+  Memory.initialize_for_tests ();
   Statistics.disable ()
 
 
@@ -983,6 +983,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         ClassVar: _SpecialForm = ...
         # TODO(T76821797): This is wrong. But it's what typeshed says
         NoReturn = Union[None]
+        TypeGuard: _SpecialForm = ...
 
         if sys.version_info < (3, 7):
             class GenericMeta(type): ...
@@ -2671,6 +2672,7 @@ module ScratchProject = struct
       ?(show_error_traces = false)
       ?(include_typeshed_stubs = true)
       ?(include_helper_builtins = true)
+      ?(infer = false)
       sources
     =
     let add_source ~root (relative, content) =
@@ -2696,6 +2698,7 @@ module ScratchProject = struct
         ~features:{ Configuration.Features.default with go_to_definition = true }
         ~show_error_traces
         ~parallel:false
+        ~infer
         ()
     in
     let external_sources =
