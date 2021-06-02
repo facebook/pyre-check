@@ -257,6 +257,7 @@ type decorator_data = {
   helper_defines: Define.t list;
   higher_order_function_parameter_name: Identifier.t;
   decorator_reference: Reference.t;
+  outer_decorator_reference: Reference.t;
   decorator_call_location: Location.t;
   module_reference: Reference.t option;
 }
@@ -264,7 +265,12 @@ type decorator_data = {
 let extract_decorator_data
     ~decorator_call_location
     ~is_decorator_factory
-    { decorator_define = { Define.body; _ } as decorator_define; module_reference }
+    {
+      decorator_define =
+        { Define.signature = { name = { Node.value = outer_decorator_reference; _ }; _ }; body; _ }
+        as decorator_define;
+      module_reference;
+    }
   =
   let get_nested_defines body =
     List.filter_map body ~f:(function
@@ -311,6 +317,7 @@ let extract_decorator_data
             helper_defines;
             higher_order_function_parameter_name = name;
             decorator_reference;
+            outer_decorator_reference;
             decorator_call_location;
             module_reference;
           }
@@ -554,6 +561,7 @@ let make_wrapper_define
       helper_defines;
       higher_order_function_parameter_name;
       decorator_reference;
+      outer_decorator_reference;
       module_reference;
       _;
     }
@@ -570,9 +578,10 @@ let make_wrapper_define
     | None -> wrapper_define, wrapper_signature
   in
   let outer_signature = { outer_signature with parent } in
-  let wrapper_qualifier =
-    Reference.delocalize wrapper_define_name |> Reference.last |> Reference.create ~prefix:qualifier
+  let wrapper_function_name =
+    Format.asprintf "__inlined_%s" (Reference.last (Reference.delocalize outer_decorator_reference))
   in
+  let wrapper_qualifier = Reference.create ~prefix:qualifier wrapper_function_name in
   let make_helper_define
       ( { Define.signature = { name = { Node.value = helper_function_name; _ }; _ }; _ } as
       helper_define )
@@ -598,7 +607,6 @@ let make_wrapper_define
   let helper_define_statements =
     List.map helper_defines ~f:(fun define -> Statement.Define define |> Node.create ~location)
   in
-  let wrapper_function_name = Reference.last (Reference.delocalize wrapper_define_name) in
   let wrapper_define =
     sanitize_define
       ~strip_parent:true
