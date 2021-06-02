@@ -252,6 +252,17 @@ module FlowDetails = struct
   let pp formatter = Format.fprintf formatter "FlowDetails(%a)" product_pp
 
   let show = Format.asprintf "%a" pp
+
+  let subtract to_remove ~from =
+    (* Do not partially subtract slots, since this is unsound. *)
+    if to_remove == from then
+      bottom
+    else if is_bottom to_remove then
+      from
+    else if less_or_equal ~left:from ~right:to_remove then
+      bottom
+    else
+      from
 end
 
 module type TAINT_DOMAIN = sig

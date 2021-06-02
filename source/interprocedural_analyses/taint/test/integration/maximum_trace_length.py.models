@@ -179,36 +179,6 @@
 {
   "kind": "model",
   "data": {
-    "callable": "maximum_trace_length.multi_sink",
-    "sources": [],
-    "sinks": [
-      {
-        "port": "formal(x)[foo]",
-        "taint": [
-          {
-            "call": {
-              "position": {
-                "filename": "maximum_trace_length.py",
-                "line": 59,
-                "start": 22,
-                "end": 23
-              },
-              "resolves_to": [ "maximum_trace_length.sink_distance_one" ],
-              "port": "formal(x)",
-              "length": 55555
-            },
-            "tito": [ { "line": 58, "start": 18, "end": 23 } ],
-            "leaves": [ { "kind": "Test" } ]
-          }
-        ]
-      }
-    ],
-    "tito": []
-  }
-}
-{
-  "kind": "model",
-  "data": {
     "callable": "maximum_trace_length.sink_distance_one",
     "sources": [],
     "sinks": [
