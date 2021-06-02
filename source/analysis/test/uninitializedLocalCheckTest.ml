@@ -48,7 +48,6 @@ let test_simple context =
     |}
     ["Unbound name [10]: Name `y` is used but not defined in the current scope."];
 
-  (* line 4, in f: local variable 'y' referenced before assignment *)
   assert_uninitialized_errors
     {|
       def f(x):
@@ -58,7 +57,17 @@ let test_simple context =
     |}
     ["Unbound name [10]: Name `y` is used but not defined in the current scope."];
 
-  (* TODO (T69630394): Tests below document errors we do not report, but would like this check to. *)
+  (* TODO (T69630394): Tests below document either errors we do not report, but would like this
+     check to; or non-errors this check is currently reporting *)
+
+  (* no error *)
+  assert_uninitialized_errors
+    {|
+       x: int = 5
+       def f():
+         return x
+    |}
+    ["Unbound name [10]: Name `x` is used but not defined in the current scope."];
 
   (* line 4, in increment: local variable 'counter' referenced before assignment *)
   assert_uninitialized_errors
