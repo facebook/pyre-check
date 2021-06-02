@@ -21,6 +21,12 @@ type define_and_originating_module = {
 }
 [@@deriving compare, hash, sexp, eq, show]
 
+val uniquify_names
+  :  get_reference:('a -> Reference.t) ->
+  set_reference:(Reference.t -> 'a -> 'a) ->
+  'a list ->
+  'a list
+
 val all_decorators : TypeEnvironment.ReadOnly.t -> decorator_reference_and_module list
 
 val all_decorator_bodies

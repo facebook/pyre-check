@@ -133,6 +133,23 @@ let sanitize_defines ~strip_decorators source =
   source
 
 
+(* Rename [my_decorator] to [my_decoratorN] if it appears multiple times in the list. *)
+let uniquify_names ~get_reference ~set_reference input_list =
+  let number_if_needed (sofar, seen_map) input =
+    let reference = get_reference input in
+    let seen_map = Map.add_multi seen_map ~key:reference ~data:reference in
+    let count = Map.find_multi seen_map reference |> List.length in
+    let updated_input =
+      set_reference
+        (Reference.map_last reference ~f:(fun s ->
+             s ^ if count = 1 then "" else Format.asprintf "%d" count))
+        input
+    in
+    updated_input :: sofar, seen_map
+  in
+  List.rev input_list |> List.fold ~init:([], Reference.Map.empty) ~f:number_if_needed |> fst
+
+
 let rename_local_variables ~pairs define =
   let rename_map = Identifier.Map.of_alist pairs in
   match rename_map with

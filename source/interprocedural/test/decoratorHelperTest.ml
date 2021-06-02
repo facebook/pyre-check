@@ -1639,6 +1639,23 @@ let test_rename_local_variables _ =
   ()
 
 
+let test_uniquify_names _ =
+  let assert_uniquified given expected =
+    assert_equal
+      ~cmp:[%equal: Reference.t list]
+      ~printer:[%show: Reference.t list]
+      (List.map expected ~f:Reference.create)
+      ( List.map given ~f:Reference.create
+      |> DecoratorHelper.uniquify_names ~get_reference:Fn.id ~set_reference:(fun reference _ ->
+             reference) )
+  in
+  assert_uniquified
+    ["a.b"; "a.c"; "a.b"; "a.b"; "a.c"; "foo"]
+    ["a.b3"; "a.c2"; "a.b2"; "a.b"; "a.c"; "foo"];
+  assert_uniquified [] [];
+  ()
+
+
 let () =
   "decoratorHelper"
   >::: [
@@ -1648,5 +1665,6 @@ let () =
          "requalify_name" >:: test_requalify_name;
          "replace_signature" >:: test_replace_signature;
          "rename_local_variables" >:: test_rename_local_variables;
+         "uniquify_names" >:: test_uniquify_names;
        ]
   |> Test.run
