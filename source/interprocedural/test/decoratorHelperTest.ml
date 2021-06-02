@@ -136,8 +136,11 @@ let test_inline_decorators context =
       def __original_function(z: str) -> None:
         print(z)
 
-      __test_sink(y)
-      __original_function(y)
+      def inner(y: str) -> None:
+        __test_sink(y)
+        __original_function(y)
+
+      return inner(y)
   |};
   (* Leave decorators as such if none can be inlined. *)
   assert_inlined
@@ -253,9 +256,12 @@ let test_inline_decorators context =
         result = None
         return result
 
-      __test_sink(y)
-      result = __original_function(y)
-      return result
+      def inner(y: str) -> None:
+        __test_sink(y)
+        result = __original_function(y)
+        return result
+
+      return inner(y)
   |};
   (* `async` decorator. *)
   assert_inlined
@@ -296,11 +302,14 @@ let test_inline_decorators context =
       async def __original_function(x: str) -> int:
         print(x)
 
-      try:
-        result = await __original_function(y)
-        return result
-      except Exception:
-        return 42
+      async def inner(y: str) -> int:
+        try:
+          result = await __original_function(y)
+          return result
+        except Exception:
+          return 42
+
+      return await inner(y)
   |};
   (* Decorator that types the function parameter as `f: Callable`. *)
   assert_inlined
@@ -337,8 +346,11 @@ let test_inline_decorators context =
       def __original_function(x: str) -> int:
         print(x)
 
-      __test_sink(y)
-      __original_function(y)
+      def inner(y: str) -> int:
+        __test_sink(y)
+        __original_function(y)
+
+      return inner(y)
   |};
   (* Wrapper function with default values for parameters. *)
   assert_inlined
@@ -374,8 +386,11 @@ let test_inline_decorators context =
       def __original_function(z: str) -> None:
         print(z)
 
-      __test_sink(y)
-      __original_function(y + z)
+      def inner(y: str, z: int = 4) -> None:
+        __test_sink(y)
+        __original_function(y + z)
+
+      return inner(y, z)
   |};
   (* Wrapper function with `*args` and `**kwargs`. *)
   assert_inlined
@@ -412,10 +427,13 @@ let test_inline_decorators context =
       def __original_function(x: str) -> None:
         print(x)
 
-      __args = (x,)
-      __kwargs = {"x": x}
-      __test_sink(__args)
-      __original_function(x)
+      def inner(x: str) -> None:
+        __args = (x,)
+        __kwargs = {"x": x}
+        __test_sink(__args)
+        __original_function(x)
+
+      return inner(x)
   |};
   (* ParamSpec. *)
   assert_inlined
@@ -456,9 +474,12 @@ let test_inline_decorators context =
       def __original_function(x: str, y: int) -> None:
         print(x, y)
 
-      __args = (x, y)
-      __kwargs = {"x": x, "y": y}
-      __original_function(x, y)
+      def inner(x: str, y: int) -> None:
+        __args = (x, y)
+        __kwargs = {"x": x, "y": y}
+        __original_function(x, y)
+
+      return inner(x, y)
   |};
   assert_inlined
     {|
@@ -494,10 +515,13 @@ let test_inline_decorators context =
       def __original_function(x: str) -> None:
         print(x)
 
-      __args = (x,)
-      __kwargs = {"x": x}
-      __original_function(x)
-      return 1
+      def inner(x: str) -> int:
+        __args = (x,)
+        __kwargs = {"x": x}
+        __original_function(x)
+        return 1
+
+      return inner(x)
   |};
   (* Multiple decorators. *)
   assert_inlined
@@ -549,10 +573,16 @@ let test_inline_decorators context =
         def __original_function(z: str) -> None:
           print(z)
 
-        __test_sink(y)
-        __original_function(y)
+        def inner(y: str) -> None:
+          __test_sink(y)
+          __original_function(y)
 
-      __original_function(y + __test_source())
+        return inner(y)
+
+      def inner(y: str) -> None:
+        __original_function(y + __test_source())
+
+      return inner(y)
   |};
   (* Multiple decorators where one decorator fails to apply. *)
   assert_inlined
@@ -613,10 +643,16 @@ let test_inline_decorators context =
         def __original_function(z: str) -> None:
           print(z)
 
-        __test_sink(y)
-        __original_function(y)
+        def inner(y: str) -> None:
+          __test_sink(y)
+          __original_function(y)
 
-      __original_function(y + __test_source())
+        return inner(y)
+
+      def inner(y: str) -> None:
+        __original_function(y + __test_source())
+
+      return inner(y)
   |};
   (* Decorator factory. *)
   assert_inlined
@@ -662,12 +698,15 @@ let test_inline_decorators context =
       def __original_function(x: str) -> None:
         print(x)
 
-      __args = (x, )
-      __kwargs = {"x": x}
+      def inner(x: str) -> None:
+        __args = (x, )
+        __kwargs = {"x": x}
 
-      print($parameter$logger_name)
-      __test_sink(__args)
-      __original_function(x)
+        print($parameter$logger_name)
+        __test_sink(__args)
+        __original_function(x)
+
+      return inner(x)
   |};
   (* Decorator that uses helper functions. *)
   assert_inlined
@@ -729,6 +768,12 @@ let test_inline_decorators context =
       def __original_function(z: str) -> None:
         print(z)
 
+      def inner(y: str) -> None:
+        __test_sink(y)
+        before(y)
+        __original_function(y)
+        after(y)
+
       def my_print(y: str) -> None:
         print("before", y)
 
@@ -740,10 +785,7 @@ let test_inline_decorators context =
         message = "after"
         my_print(message, y)
 
-      __test_sink(y)
-      before(y)
-      __original_function(y)
-      after(y)
+      return inner(y)
   |};
   (* Decorator factory with helper functions. *)
   assert_inlined
@@ -813,6 +855,12 @@ let test_inline_decorators context =
       def __original_function(z: str) -> None:
         print(z)
 
+      def inner(y: str) -> None:
+        __test_sink(y)
+        before(y)
+        __original_function(y)
+        after(y)
+
       def my_print(y: str) -> None:
         print("before", y)
 
@@ -826,10 +874,7 @@ let test_inline_decorators context =
         $parameter$callable(y)
         my_print(message, y)
 
-      __test_sink(y)
-      before(y)
-      __original_function(y)
-      after(y)
+      return inner(y)
   |};
   assert_inlined
     {|
@@ -877,11 +922,14 @@ let test_inline_decorators context =
       def __original_function(x: int, y: str, z: bool) -> None:
         print(x, y, z)
 
-      __args = (y, z)
-      __kwargs = {"y": y, "z": z}
-      __original_function(x, y, z)
-      print(x)
-      print(__args, __kwargs)
+      def inner(x: int, y: str, z: bool) -> None:
+        __args = (y, z)
+        __kwargs = {"y": y, "z": z}
+        __original_function(x, y, z)
+        print(x)
+        print(__args, __kwargs)
+
+      return inner(x, y, z)
   |};
   (* Decorator used on a method. *)
   assert_inlined
@@ -946,38 +994,47 @@ let test_inline_decorators context =
         def __original_function(self: Foo, x: str) -> None:
           self.bar(x)
 
+        def inner(self: Foo, x: str) -> None:
+          __args = (self, x)
+          __kwargs = {"self": self, "x": x}
+          helper(__args)
+          __original_function(self, x)
+
         def helper(args) -> None:
           __test_sink(args)
 
-        __args = (self, x)
-        __kwargs = {"self": self, "x": x}
-        helper(__args)
-        __original_function(self, x)
+        return inner(self, x)
 
       def self_has_type(self: Base, x: str) -> None:
         def __original_function(self: Base, x: str) -> None:
           self.bar(x)
 
+        def inner(self: Base, x: str) -> None:
+          __args = (self, x)
+          __kwargs = {"self": self, "x": x}
+          helper(__args)
+          __original_function(self, x)
+
         def helper(args) -> None:
           __test_sink(args)
 
-        __args = (self, x)
-        __kwargs = {"self": self, "x": x}
-        helper(__args)
-        __original_function(self, x)
+        return inner(self, x)
 
       def self_has_generic_type(self: T, other: T, x: str) -> None:
         def __original_function(self: T, other: T, x: str) -> None:
           self.bar(x)
           other.bar(x)
 
+        def inner(self: T, other: T, x: str) -> None:
+          __args = (self, other, x)
+          __kwargs = {"self": self, "other": other, "x": x}
+          helper(__args)
+          __original_function(self, other, x)
+
         def helper(args) -> None:
           __test_sink(args)
 
-        __args = (self, other, x)
-        __kwargs = {"self": self, "other": other, "x": x}
-        helper(__args)
-        __original_function(self, other, x)
+        return inner(self, other, x)
   |};
   (* Decorator used on a classmethod. *)
   assert_inlined
@@ -1041,10 +1098,13 @@ let test_inline_decorators context =
           cls.some_class_method(x)
           cls().some_method(x)
 
-        __args = (cls, x)
-        __kwargs = {"cls": cls, "x": x}
-        __test_sink(__args)
-        __original_function(cls, x)
+        def inner(cls: typing.Type[Foo], x: int) -> None:
+          __args = (cls, x)
+          __kwargs = {"cls": cls, "x": x}
+          __test_sink(__args)
+          __original_function(cls, x)
+
+        return inner(cls, x)
   |};
   (* TODO(T69755379): Correctly inline decorator used on a staticmethod. Right now, we're missing
      the @staticmethod decorator. *)
@@ -1091,10 +1151,13 @@ let test_inline_decorators context =
         def __original_function(x: int) -> None:
           print(x)
 
-        __args = (x,)
-        __kwargs = {"x": x}
-        __test_sink(__args)
-        __original_function(x)
+        def inner(x: int) -> None:
+          __args = (x,)
+          __kwargs = {"x": x}
+          __test_sink(__args)
+          __original_function(x)
+
+        return inner(x)
   |};
   ()
 
@@ -1192,15 +1255,19 @@ let test_decorator_location context =
   |}
     ~expected_function_module_pairs:
       [
+        !&"test.baz.inner", Some !&"test";
         !&"test.baz.__original_function", None;
-        !&"test.baz", Some !&"test";
-        !&"test.bar.__original_function", Some !&"some_module.identity_decorator";
-        !&"test.bar.__original_function.__original_function", None;
+        !&"test.baz", None;
+        !&"test.bar.inner", Some !&"logging_decorator";
         !&"test.bar.helper", Some !&"logging_decorator";
-        !&"test.bar", Some !&"logging_decorator";
-        !&"test.foo", Some !&"logging_decorator";
-        !&"test.foo.__original_function", None;
+        !&"test.bar", None;
+        !&"test.bar.__original_function", None;
+        !&"test.bar.__original_function.inner", Some !&"some_module.identity_decorator";
+        !&"test.bar.__original_function.__original_function", None;
+        !&"test.foo.inner", Some !&"logging_decorator";
         !&"test.foo.helper", Some !&"logging_decorator";
+        !&"test.foo", None;
+        !&"test.foo.__original_function", None;
       ]
     {|
     from builtins import __test_sink
@@ -1218,12 +1285,15 @@ let test_decorator_location context =
       def __original_function(z: str) -> None:
         print(z)
 
+      def inner(y: str) -> None:
+        __test_sink(y)
+        __original_function(y)
+        helper(y)
+
       def helper(y: str) -> None:
         print(y)
 
-      __test_sink(y)
-      __original_function(y)
-      helper(y)
+      return inner(y)
 
     def bar(y: str) -> None:
       def __original_function(y: str) -> None:
@@ -1231,21 +1301,29 @@ let test_decorator_location context =
         def __original_function(z: str) -> None:
           print(z)
 
+        def inner(y: str) -> None:
+          __original_function(y)
+
+        return inner(y)
+
+      def inner(y: str) -> None:
+        __test_sink(y)
         __original_function(y)
+        helper(y)
 
       def helper(y: str) -> None:
         print(y)
-
-      __test_sink(y)
-      __original_function(y)
-      helper(y)
+      return inner(y)
 
 
     def baz(y: str) -> None:
       def __original_function(z: str) -> None:
         print(z)
 
-      __original_function(y)
+      def inner(y: str) -> None:
+        __original_function(y)
+
+      return inner(y)
   |};
   ()
 
