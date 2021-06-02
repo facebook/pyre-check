@@ -250,7 +250,7 @@
                 "start": 20,
                 "end": 21
               },
-              "resolves_to": [ "decorator_location.foo.some_helper" ],
+              "resolves_to": [ "decorator_location.foo.inner.some_helper" ],
               "port": "formal(x)",
               "length": 1
             },
@@ -269,7 +269,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "decorator_location.foo.some_helper",
+    "callable": "decorator_location.foo.inner.some_helper",
     "sources": [],
     "sinks": [
       {

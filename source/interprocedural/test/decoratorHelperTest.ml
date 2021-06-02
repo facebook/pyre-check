@@ -769,21 +769,22 @@ let test_inline_decorators context =
         print(z)
 
       def inner(y: str) -> None:
+
+        def my_print(y: str) -> None:
+          print("before", y)
+
+        def before(y: str) -> None:
+          message = "before"
+          my_print(message, y)
+
+        def after(y: str) -> None:
+          message = "after"
+          my_print(message, y)
+
         __test_sink(y)
         before(y)
         __original_function(y)
         after(y)
-
-      def my_print(y: str) -> None:
-        print("before", y)
-
-      def before(y: str) -> None:
-        message = "before"
-        my_print(message, y)
-
-      def after(y: str) -> None:
-        message = "after"
-        my_print(message, y)
 
       return inner(y)
   |};
@@ -856,23 +857,23 @@ let test_inline_decorators context =
         print(z)
 
       def inner(y: str) -> None:
+
+        def my_print(y: str) -> None:
+          print("before", y)
+
+        def before(y: str) -> None:
+          message = "before"
+          my_print(message, y)
+
+        def after(y: str) -> None:
+          message = "after"
+          __original_function(y)
+          my_print(message, y)
+
         __test_sink(y)
         before(y)
         __original_function(y)
         after(y)
-
-      def my_print(y: str) -> None:
-        print("before", y)
-
-      def before(y: str) -> None:
-        message = "before"
-        my_print(message, y)
-
-      def after(y: str) -> None:
-        message = "after"
-        # Uses of `callable` in the helper functions treat it as an unknown variable.
-        $parameter$callable(y)
-        my_print(message, y)
 
       return inner(y)
   |};
@@ -995,13 +996,14 @@ let test_inline_decorators context =
           self.bar(x)
 
         def inner(self: Foo, x: str) -> None:
+
+          def helper(args) -> None:
+            __test_sink(args)
+
           __args = (self, x)
           __kwargs = {"self": self, "x": x}
           helper(__args)
           __original_function(self, x)
-
-        def helper(args) -> None:
-          __test_sink(args)
 
         return inner(self, x)
 
@@ -1010,13 +1012,14 @@ let test_inline_decorators context =
           self.bar(x)
 
         def inner(self: Base, x: str) -> None:
+
+          def helper(args) -> None:
+            __test_sink(args)
+
           __args = (self, x)
           __kwargs = {"self": self, "x": x}
           helper(__args)
           __original_function(self, x)
-
-        def helper(args) -> None:
-          __test_sink(args)
 
         return inner(self, x)
 
@@ -1026,13 +1029,14 @@ let test_inline_decorators context =
           other.bar(x)
 
         def inner(self: T, other: T, x: str) -> None:
+
+          def helper(args) -> None:
+            __test_sink(args)
+
           __args = (self, other, x)
           __kwargs = {"self": self, "other": other, "x": x}
           helper(__args)
           __original_function(self, other, x)
-
-        def helper(args) -> None:
-          __test_sink(args)
 
         return inner(self, other, x)
   |};
@@ -1259,13 +1263,13 @@ let test_decorator_location context =
         !&"test.baz.__original_function", None;
         !&"test.baz", None;
         !&"test.bar.inner", Some !&"logging_decorator";
-        !&"test.bar.helper", Some !&"logging_decorator";
+        !&"test.bar.inner.helper", Some !&"logging_decorator";
         !&"test.bar", None;
         !&"test.bar.__original_function", None;
         !&"test.bar.__original_function.inner", Some !&"some_module.identity_decorator";
         !&"test.bar.__original_function.__original_function", None;
         !&"test.foo.inner", Some !&"logging_decorator";
-        !&"test.foo.helper", Some !&"logging_decorator";
+        !&"test.foo.inner.helper", Some !&"logging_decorator";
         !&"test.foo", None;
         !&"test.foo.__original_function", None;
       ]
@@ -1286,12 +1290,13 @@ let test_decorator_location context =
         print(z)
 
       def inner(y: str) -> None:
+
+        def helper(y: str) -> None:
+          print(y)
+
         __test_sink(y)
         __original_function(y)
         helper(y)
-
-      def helper(y: str) -> None:
-        print(y)
 
       return inner(y)
 
@@ -1307,12 +1312,13 @@ let test_decorator_location context =
         return inner(y)
 
       def inner(y: str) -> None:
+
+        def helper(y: str) -> None:
+          print(y)
+
         __test_sink(y)
         __original_function(y)
         helper(y)
-
-      def helper(y: str) -> None:
-        print(y)
       return inner(y)
 
 

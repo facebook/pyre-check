@@ -1,10 +1,10 @@
 @generated
 Call dependencies
 $local_decorator_location?foo$__original_function (fun) -> [$local_decorator_location?foo?__original_function$inner (fun)]
-$local_decorator_location?foo$inner (fun) -> [$local_decorator_location?foo$__original_function (fun) $local_decorator_location?foo$some_helper (fun) __test_sink (fun)]
-$local_decorator_location?foo$some_helper (fun) -> [__test_sink (fun) print (fun)]
+$local_decorator_location?foo$inner (fun) -> [$local_decorator_location?foo$__original_function (fun) $local_decorator_location?foo?inner$some_helper (fun) __test_sink (fun)]
 $local_decorator_location?foo?__original_function$__original_function (fun) -> [__test_sink (fun)]
 $local_decorator_location?foo?__original_function$inner (fun) -> [$local_decorator_location?foo?__original_function$__original_function (fun) __test_sink (fun)]
+$local_decorator_location?foo?inner$some_helper (fun) -> [__test_sink (fun) print (fun)]
 $local_decorator_location?with_logging$inner (fun) -> [$local_decorator_location?with_logging$some_helper (fun) __test_sink (fun)]
 $local_decorator_location?with_logging$some_helper (fun) -> [__test_sink (fun) print (fun)]
 $local_decorator_location?with_logging2$inner (fun) -> [__test_sink (fun)]

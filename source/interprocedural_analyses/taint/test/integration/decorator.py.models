@@ -1708,31 +1708,6 @@
 {
   "kind": "model",
   "data": {
-    "callable": "decorator.foo_with_helper_function.after",
-    "sources": [],
-    "sinks": [
-      {
-        "port": "formal(*rest0)",
-        "taint": [
-          {
-            "root": {
-              "filename": "decorator.py",
-              "line": 164,
-              "start": 20,
-              "end": 24
-            },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
-          }
-        ]
-      }
-    ],
-    "tito": []
-  }
-}
-{
-  "kind": "model",
-  "data": {
     "callable": "decorator.foo_with_helper_function.inner",
     "sources": [],
     "sinks": [
@@ -1747,7 +1722,9 @@
                 "start": 18,
                 "end": 23
               },
-              "resolves_to": [ "decorator.foo_with_helper_function.after" ],
+              "resolves_to": [
+                "decorator.foo_with_helper_function.inner.after"
+              ],
               "port": "formal(*rest0)",
               "length": 1
             },
@@ -1767,7 +1744,9 @@
                 "start": 18,
                 "end": 23
               },
-              "resolves_to": [ "decorator.foo_with_helper_function.after" ],
+              "resolves_to": [
+                "decorator.foo_with_helper_function.inner.after"
+              ],
               "port": "formal(*rest0)",
               "length": 1
             },
@@ -1776,6 +1755,31 @@
               { "always-type": "scalar" },
               { "always-via": "special_sink" }
             ]
+          }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "decorator.foo_with_helper_function.inner.after",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(*rest0)",
+        "taint": [
+          {
+            "root": {
+              "filename": "decorator.py",
+              "line": 164,
+              "start": 20,
+              "end": 24
+            },
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "features": [ { "always-via": "special_sink" } ]
           }
         ]
       }
