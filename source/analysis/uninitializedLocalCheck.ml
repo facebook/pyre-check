@@ -22,8 +22,11 @@ module State = struct
     uninitialized_usage: Identifier.t Node.t list;
   }
 
-  (* TODO: implement *)
-  let show _ = "unsupported"
+  let show state =
+    InitializedVariables.elements state.initialized_variables
+    |> String.concat ~sep:", "
+    |> Format.sprintf "[%s]"
+
 
   let pp format state = Format.fprintf format "%s" (show state)
 
