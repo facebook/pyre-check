@@ -1968,6 +1968,21 @@ let test_replace_all _ =
        (fun _ -> Some Type.integer)
        (Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation free_variable)))
     (Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation Type.integer));
+  assert_equal
+    (Type.Variable.GlobalTransforms.Unary.replace_all
+       (fun _ -> None)
+       (Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation free_variable)))
+    (Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation free_variable));
+  assert_equal
+    (Type.Variable.GlobalTransforms.Unary.replace_all
+       (fun variable -> Some (Type.Annotated (Type.Variable variable)))
+       free_variable)
+    (Type.annotated free_variable);
+  assert_equal
+    (Type.Variable.GlobalTransforms.Unary.replace_all
+       (fun _ -> Some Type.float)
+       (Type.union [Type.literal_integer 2; Type.integer; free_variable]))
+    (Type.union [Type.literal_integer 2; Type.integer; Type.float]);
   let free_variable_callable =
     let parameter_variadic = Type.Variable.Variadic.Parameters.create "T" in
     Type.Callable.create
