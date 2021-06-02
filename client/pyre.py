@@ -120,7 +120,7 @@ def run_pyre_command(
         exit_code = ExitCode.CONFIGURATION_ERROR
     except commands.ClientException as error:
         client_exception_message = str(error)
-        exit_code = ExitCode.FAILURE
+        exit_code = error.exit_code
     except Exception:
         client_exception_message = traceback.format_exc()
         exit_code = ExitCode.FAILURE
@@ -1378,6 +1378,9 @@ def main(argv: List[str] = sys.argv[1:]) -> int:
         except click.ClickException as error:
             error.show()
             return_code = ExitCode.FAILURE
+        except commands.ClientException as error:
+            LOG.error(str(error))
+            return_code = error.exit_code
         except Exception as error:
             LOG.error(str(error))
             return_code = ExitCode.FAILURE

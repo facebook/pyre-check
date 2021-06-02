@@ -30,10 +30,6 @@ from ..socket_connection import SocketConnection, SocketException
 LOG: logging.Logger = logging.getLogger(__name__)
 
 
-class ClientException(Exception):
-    pass
-
-
 class State(enum.IntEnum):
     DEAD = 0
     RUNNING = 1
@@ -48,8 +44,17 @@ class ExitCode(enum.IntEnum):
     INCONSISTENT_SERVER = 5
     CONFIGURATION_ERROR = 6
     BUCK_USER_ERROR = 7
+    WATCHMAN_ERROR = 8
     # If the process exited due to a signal, this will be the negative signal number.
     SIGSEGV = -signal.SIGSEGV
+
+
+class ClientException(Exception):
+    exit_code: ExitCode
+
+    def __init__(self, message: str, exit_code: ExitCode = ExitCode.FAILURE) -> None:
+        super().__init__(message)
+        self.exit_code = exit_code
 
 
 class IncrementalStyle(enum.Enum):

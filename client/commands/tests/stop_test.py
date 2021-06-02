@@ -97,7 +97,7 @@ class StopTest(unittest.TestCase):
             def fail_on_stop(command: str, flags: Optional[List[str]] = None) -> Mock:
                 flags = flags or []
                 if command == Stop.NAME:
-                    raise commands.ClientException
+                    raise commands.ClientException("Intentional exception")
                 return Mock()
 
             call_client.side_effect = fail_on_stop

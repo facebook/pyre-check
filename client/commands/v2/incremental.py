@@ -121,6 +121,16 @@ def run_incremental(
         )
 
 
+def _exit_code_from_error_kind(error_kind: server_event.ErrorKind) -> commands.ExitCode:
+    if error_kind == server_event.ErrorKind.WATCHMAN:
+        return commands.ExitCode.WATCHMAN_ERROR
+    elif error_kind == server_event.ErrorKind.BUCK_INTERNAL:
+        return commands.ExitCode.BUCK_INTERNAL_ERROR
+    elif error_kind == server_event.ErrorKind.BUCK_USER:
+        return commands.ExitCode.BUCK_USER_ERROR
+    return commands.ExitCode.FAILURE
+
+
 @remote_logging.log_usage_with_additional_info(command_name="incremental")
 def run(
     configuration: configuration_module.Configuration,
@@ -129,6 +139,8 @@ def run(
     try:
         return run_incremental(configuration, incremental_arguments)
     except server_event.ServerStartException as error:
-        raise commands.ClientException(f"{error}") from error
+        raise commands.ClientException(
+            f"{error}", exit_code=_exit_code_from_error_kind(error.kind)
+        )
     except Exception as error:
         raise commands.ClientException(f"{error}") from error
