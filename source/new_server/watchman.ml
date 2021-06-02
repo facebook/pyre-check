@@ -190,15 +190,7 @@ module Filter = struct
       |> fun set ->
       List.filter_map critical_files ~f:extension_of
       |> List.fold ~init:set ~f:String.Set.add
-      |> fun set ->
-      Set.add set "py"
-      |> fun set ->
-      Set.add set "pyi"
-      |> fun set ->
-      ( match source_paths with
-      | SourcePaths.Buck _ -> Set.add set "thrift"
-      | SourcePaths.Simple _ -> set )
-      |> Set.to_list
+      |> fun set -> Set.add set "py" |> fun set -> Set.add set "pyi" |> Set.to_list
     in
     { base_names; suffixes }
 

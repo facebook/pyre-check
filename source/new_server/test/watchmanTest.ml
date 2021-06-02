@@ -364,7 +364,7 @@ let test_filter_creation context =
     ~expected:
       {
         base_names = [".pyre_configuration"; ".pyre_configuration.local"; "TARGETS"; "BUCK"];
-        suffixes = ["py"; "pyi"; "thrift"];
+        suffixes = ["py"; "pyi"];
       };
   ()
 
