@@ -128,5 +128,8 @@ module.exports = {
       copyright: `Copyright &#169; ${new Date().getFullYear()} Facebook, Inc.`,
     },
     image: 'img/docusaurus.png',
+    gtag: {
+      trackingID: 'G-8CK1L365DB',
+    },
   },
 };
