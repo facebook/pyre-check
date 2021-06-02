@@ -674,6 +674,36 @@ let inline_decorator_in_define
   |> rename_define ~new_name:qualifier
 
 
+let postprocess
+    ~define
+    ~location
+    ({ Define.signature = { decorators; _ } as signature; _ } as decorated_define)
+  =
+  let signature =
+    if Define.is_class_method define then
+      {
+        signature with
+        decorators =
+          {
+            Decorator.name = Node.create_with_default_location (Reference.create "classmethod");
+            arguments = None;
+          }
+          :: decorators;
+      }
+    else
+      signature
+  in
+  let statement = { Node.location; value = Statement.Define { decorated_define with signature } } in
+  Source.create [statement]
+  |> Preprocessing.qualify
+  |> Preprocessing.populate_nesting_defines
+  |> Preprocessing.populate_captures
+  |> Source.statements
+  |> function
+  | [statement] -> Some statement
+  | _ -> None
+
+
 let inline_decorators ~environment:_ ~decorator_bodies source =
   let module Transform = Transform.Make (struct
     type t = unit
@@ -713,36 +743,6 @@ let inline_decorators ~environment:_ ~decorator_bodies source =
             match inlinable_decorators with
             | [] -> statement
             | _ ->
-                let postprocess
-                    ({ Define.signature = { decorators; _ } as signature; _ } as decorated_define)
-                  =
-                  let signature =
-                    if Define.is_class_method define then
-                      {
-                        signature with
-                        decorators =
-                          {
-                            Decorator.name =
-                              Node.create_with_default_location (Reference.create "classmethod");
-                            arguments = None;
-                          }
-                          :: decorators;
-                      }
-                    else
-                      signature
-                  in
-                  let statement =
-                    { statement with value = Statement.Define { decorated_define with signature } }
-                  in
-                  Source.create [statement]
-                  |> Preprocessing.qualify
-                  |> Preprocessing.populate_nesting_defines
-                  |> Preprocessing.populate_captures
-                  |> Source.statements
-                  |> function
-                  | [statement] -> Some statement
-                  | _ -> None
-                in
                 let apply_decorator_with_qualifier index define_sofar decorator_data =
                   let qualifier =
                     Reference.combine
@@ -762,7 +762,7 @@ let inline_decorators ~environment:_ ~decorator_bodies source =
                   (List.rev inlinable_decorators)
                   ~init:define
                   ~f:apply_decorator_with_qualifier
-                |> postprocess
+                |> postprocess ~define ~location
                 |> Option.value ~default:statement )
         | _ -> statement
       in
