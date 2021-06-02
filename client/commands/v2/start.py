@@ -309,6 +309,13 @@ def get_critical_files(
             ]
         ),
         *(
+            # TODO(T92070475): This is a temporary hack until generated code can be
+            # fully supported.
+            []
+            if configuration.targets is None
+            else [CriticalFile(policy=MatchPolicy.EXTENSION, path="thrift")]
+        ),
+        *(
             [
                 CriticalFile(
                     policy=MatchPolicy.FULL_PATH,

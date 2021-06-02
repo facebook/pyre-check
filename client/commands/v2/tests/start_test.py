@@ -340,6 +340,30 @@ class StartTest(testslide.TestCase):
                 ],
             )
 
+    def test_get_critical_files_with_buck(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root).resolve()
+            setup.ensure_directories_exists(root_path, [".pyre", "project/local"])
+            setup.write_configuration_file(root_path, {"targets": ["//foo:bar"]})
+
+            self.assertCountEqual(
+                get_critical_files(
+                    configuration.create_configuration(
+                        command_arguments.CommandArguments(),
+                        root_path,
+                    )
+                ),
+                [
+                    CriticalFile(
+                        MatchPolicy.FULL_PATH, str(root_path / ".pyre_configuration")
+                    ),
+                    CriticalFile(
+                        MatchPolicy.EXTENSION,
+                        "thrift",
+                    ),
+                ],
+            )
+
     def test_get_saved_state_action(self) -> None:
         self.assertIsNone(get_saved_state_action(command_arguments.StartArguments()))
         self.assertEqual(
