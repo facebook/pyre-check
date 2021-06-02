@@ -2130,6 +2130,96 @@ let test_replace_all _ =
   ()
 
 
+let test_less_or_equal _ =
+  let assert_solve ~left ~right expected =
+    let impossible = [] in
+    let rec solve ~left ~right =
+      match left, right with
+      | Type.Variable variable1, Type.Variable variable2 ->
+          List.sort
+            [[variable1, Type.Variable variable2]; [variable2, Type.Variable variable1]]
+            ~compare:[%compare: (Type.Variable.Unary.t * Type.t) list]
+      | Type.Variable variable, bound
+      | bound, Type.Variable variable ->
+          [[variable, bound]]
+      | IntExpression _, _
+      | _, IntExpression _ ->
+          Type.solve_less_or_equal_polynomial ~left ~right ~solve ~impossible
+      | _ when Type.equal left right -> [[]]
+      | _ -> impossible
+    in
+
+    assert_equal
+      ~cmp:[%equal: (Type.t Type.Variable.Unary.record * Type.t) list list]
+      ~printer:[%show: (Type.t Type.Variable.Unary.record * Type.t) list list]
+      expected
+      (solve ~left ~right);
+    assert_equal
+      ~cmp:[%equal: (Type.t Type.Variable.Unary.record * Type.t) list list]
+      ~printer:[%show: (Type.t Type.Variable.Unary.record * Type.t) list list]
+      expected
+      (solve ~left:right ~right:left)
+  in
+  let assert_impossible ~left ~right = assert_solve ~left ~right [] in
+  let x = Type.Variable.Unary.create "x" in
+  let y = Type.Variable.Unary.create "y" in
+  let z = Type.Variable.Unary.create "z" in
+  let variable_list_to_type variable_list =
+    polynomial_create_from_variables_list variable_list |> Type.polynomial_to_type
+  in
+  let very_complicated_type =
+    Type.tuple
+      [
+        Type.Any;
+        Type.Union [Type.Bottom; Type.bool];
+        Type.Variable x;
+        variable_list_to_type [3, [x, 2; y, 1; z, 42]];
+      ]
+  in
+  assert_solve
+    ~left:(Type.literal_integer 6)
+    ~right:(variable_list_to_type [1, []; 1, [x, 1]])
+    [[x, Type.literal_integer 5]];
+  assert_solve
+    ~left:(Type.literal_integer 1)
+    ~right:(variable_list_to_type [6, []; 1, [x, 1]])
+    [[x, Type.literal_integer (-5)]];
+  assert_impossible
+    ~left:(variable_list_to_type [1, [x, 2]])
+    ~right:(variable_list_to_type [1, [x, 3]]);
+
+  assert_solve ~left:very_complicated_type ~right:(Type.Variable x) [[x, very_complicated_type]];
+
+  assert_impossible ~left:(Type.literal_integer 5) ~right:very_complicated_type;
+
+  assert_impossible
+    ~left:(variable_list_to_type [1, [x, 1]; 1, [y, 1]])
+    ~right:(Type.literal_integer 5);
+
+  assert_impossible ~left:(variable_list_to_type [1, [x, 1; y, 1]]) ~right:(Type.literal_integer 5);
+
+  assert_solve
+    ~left:(variable_list_to_type [6, [x, 1]])
+    ~right:(Type.literal_integer 18)
+    [[x, Type.literal_integer 3]];
+
+  assert_solve
+    ~left:(variable_list_to_type [2, []; 4, [x, 1]])
+    ~right:(Type.literal_integer 18)
+    [[x, Type.literal_integer 4]];
+
+  assert_impossible ~left:(variable_list_to_type [1, [x, 2]]) ~right:(Type.literal_integer 9);
+
+  assert_solve
+    ~left:(variable_list_to_type [1, [x, 1]])
+    ~right:(variable_list_to_type [1, [y, 1]])
+    [[x, Type.Variable y]; [y, Type.Variable x]];
+  assert_impossible
+    ~left:(variable_list_to_type [2, []; 3, [x, 1]])
+    ~right:(variable_list_to_type [2, []; 9, [y, 1]]);
+  ()
+
+
 let test_collect_all _ =
   let free_variable = Type.Variable (Type.Variable.Unary.create "T") in
   let annotation = Type.parametric "p" ![free_variable; Type.integer] in
@@ -3372,6 +3462,7 @@ let () =
          "convert_all_escaped_free_variables_to_anys"
          >:: test_convert_all_escaped_free_variables_to_anys;
          "replace_all" >:: test_replace_all;
+         "less_or_equal_polynomial" >:: test_less_or_equal;
          "collect_all" >:: test_collect_all;
          "parse_type_variable_declarations" >:: test_parse_type_variable_declarations;
          "starred_annotation_expression" >:: test_starred_annotation_expression;
