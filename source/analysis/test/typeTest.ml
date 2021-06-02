@@ -1914,6 +1914,10 @@ let test_contains_escaped_free_variable _ =
   ()
 
 
+let polynomial_create_from_variables_list =
+  Type.Polynomial.create_from_variables_list ~compare_t:Type.compare
+
+
 let test_convert_all_escaped_free_variables_to_anys _ =
   let free_variable = Type.Variable (Type.Variable.Unary.create "T") in
   let escaped_free =
@@ -1983,6 +1987,58 @@ let test_replace_all _ =
        (fun _ -> Some Type.float)
        (Type.union [Type.literal_integer 2; Type.integer; free_variable]))
     (Type.union [Type.literal_integer 2; Type.integer; Type.float]);
+
+  let x = Type.Variable.Unary.create "x" in
+  let y = Type.Variable.Unary.create "y" in
+  let z = Type.Variable.Unary.create "z" in
+  let w = Type.Variable.Unary.create "w" in
+  let variable_list_to_type variable_list =
+    polynomial_create_from_variables_list variable_list |> Type.polynomial_to_type
+  in
+  (* TODO: Task T90507423. This needs to be normalized before output. *)
+  assert_equal
+    (Type.Variable.GlobalTransforms.Unary.replace_all
+       (fun _ -> Some (Type.literal_integer 4))
+       (variable_list_to_type [2, [x, 3]; 3, [y, 1; z, 1]]))
+    (Type.IntExpression (polynomial_create_from_variables_list [176, []]));
+  assert_equal
+    (Type.Variable.GlobalTransforms.Unary.replace_all
+       (function
+         | variable when [%equal: Type.Variable.Unary.t] variable x -> Some (Type.literal_integer 5)
+         | _ -> None)
+       (variable_list_to_type [3, [x, 2]; 5, [y, 1]]))
+    (variable_list_to_type [75, []; 5, [y, 1]]);
+  assert_equal
+    (Type.Variable.GlobalTransforms.Unary.replace_all
+       (fun _ -> Some (variable_list_to_type [3, [x, 2]; 5, [y, 2; z, 7]]))
+       (variable_list_to_type [15150, []]))
+    (variable_list_to_type [15150, []]);
+  assert_equal
+    (Type.Variable.GlobalTransforms.Unary.replace_all
+       (fun _ -> Some Type.integer)
+       (variable_list_to_type [2, [x, 3]]))
+    Type.integer;
+  assert_equal
+    (Type.Variable.GlobalTransforms.Unary.replace_all
+       (fun _ -> Some (Type.Variable x))
+       (variable_list_to_type [2, [x, 1; y, 2]; 3, [x, 2; y, 1]]))
+    (variable_list_to_type [5, [x, 3]]);
+  assert_equal
+    (Type.Variable.GlobalTransforms.Unary.replace_all
+       (fun _ -> Some (variable_list_to_type [3, [y, 2; z, 1]; 5, [y, 1; z, 3]]))
+       (variable_list_to_type [2, [x, 2]; 5, [x, 1]]))
+    (variable_list_to_type
+       [18, [y, 4; z, 2]; 60, [y, 3; z, 4]; 50, [y, 2; z, 6]; 15, [y, 2; z, 1]; 25, [y, 1; z, 3]]);
+  assert_equal
+    (Type.Variable.GlobalTransforms.Unary.replace_all
+       (fun _ -> Some (variable_list_to_type [3, [w, 1]; 1, [z, 2]]))
+       (variable_list_to_type [2, [x, 1]; 1, [y, 1]]))
+    (variable_list_to_type [9, [w, 1]; 3, [z, 2]]);
+  assert_equal
+    (Type.Variable.GlobalTransforms.Unary.replace_all
+       (fun _ -> Some (variable_list_to_type [1, [x, 1; y, 1]]))
+       (variable_list_to_type [1, [x, 1]; 1, [y, 1]]))
+    (variable_list_to_type [1, [x, 1; y, 1]; 1, [x, 2; y, 1]]);
   let free_variable_callable =
     let parameter_variadic = Type.Variable.Variadic.Parameters.create "T" in
     Type.Callable.create
@@ -2870,10 +2926,6 @@ let polynomial_subtract = Type.Polynomial.subtract ~compare_t:Type.compare
 let polynomial_multiply = Type.Polynomial.multiply ~compare_t:Type.compare
 
 let polynomial_divide = Type.Polynomial.divide ~compare_t:Type.compare
-
-let polynomial_create_from_variables_list =
-  Type.Polynomial.create_from_variables_list ~compare_t:Type.compare
-
 
 let test_polynomial_create_from_list _ =
   let assert_create given expected =
