@@ -14,6 +14,26 @@ module Error = AnalysisError
 
 let name = "UninitializedLocal"
 
+let identifiers { Node.value; location } =
+  match value with
+  | Expression.Name (Name.Identifier identifier) -> [{ Node.value = identifier; location }]
+  | _ -> []
+
+
+let extract_reads statement =
+  match statement with
+  | Statement.Assign { value = expression; _ } -> identifiers expression
+  | Return { expression = Some expression; _ } -> identifiers expression
+  | _ -> []
+
+
+let extract_writes statement =
+  ( match statement with
+  | Statement.Assign { target = expression; _ } -> identifiers expression
+  | _ -> [] )
+  |> List.map ~f:Node.value
+
+
 module State = struct
   module InitializedVariables = Identifier.Set
 
@@ -62,42 +82,19 @@ module State = struct
 
   let widen ~previous ~next ~iteration:_ = join previous next
 
-  let forward
-      ~key:_
-      ({ initialized_variables; uninitialized_usage } as state)
-      ~statement:{ Node.value; _ }
-    =
-    match value with
-    | Statement.Assign
-        {
-          Assign.value =
-            { Node.value = Expression.Name (Name.Identifier indentifier_read); location };
-          target = { Node.value = Expression.Name (Name.Identifier identifier_target); _ };
-          _;
-        } ->
-        if InitializedVariables.mem initialized_variables indentifier_read then
-          {
-            initialized_variables = InitializedVariables.add initialized_variables identifier_target;
-            uninitialized_usage;
-          }
-        else
-          {
-            initialized_variables = InitializedVariables.add initialized_variables identifier_target;
-            uninitialized_usage = { Node.value = indentifier_read; location } :: uninitialized_usage;
-          }
-    | Statement.Return
-        {
-          expression = Some { Node.value = Expression.Name (Name.Identifier identifier); location };
-          _;
-        } ->
-        if InitializedVariables.mem initialized_variables identifier then
-          state
-        else
-          {
-            initialized_variables;
-            uninitialized_usage = { Node.value = identifier; location } :: uninitialized_usage;
-          }
-    | _ -> state
+  let forward ~key:_ { initialized_variables; uninitialized_usage } ~statement:{ Node.value; _ } =
+    (* TODO: move uninitialized_usage out of fixpoint computation *)
+    let is_uninitialized { Node.value = identifier; _ } =
+      not (InitializedVariables.mem initialized_variables identifier)
+    in
+    {
+      uninitialized_usage =
+        extract_reads value |> List.filter ~f:is_uninitialized |> List.append uninitialized_usage;
+      initialized_variables =
+        extract_writes value
+        |> InitializedVariables.of_list
+        |> InitializedVariables.union initialized_variables;
+    }
 
 
   let backward ~key:_ _ ~statement:_ = failwith "Not implemented"
