@@ -2911,6 +2911,85 @@ let test_polynomial_to_type _ =
   ()
 
 
+let test_polynomial_replace _ =
+  let x = Type.Variable.Unary.create "x" in
+  let y = Type.Variable.Unary.create "y" in
+  let z = Type.Variable.Unary.create "z" in
+  let w = Type.Variable.Unary.create "w" in
+  let assert_polynomial_replace given ~replacements:(variable, by) expected =
+    let replaced =
+      Type.Polynomial.replace
+        ~compare_t:Type.compare
+        (polynomial_create_from_variables_list given)
+        ~by:(polynomial_create_from_variables_list by)
+        ~variable:(Type.Monomial.create_variable variable)
+    in
+    let expected_polynomial = polynomial_create_from_variables_list expected in
+    assert_equal
+      ~printer:Fn.id
+      (polynomial_show_normal expected_polynomial)
+      (polynomial_show_normal replaced)
+  in
+  (* [y/x] 0 => 0 *)
+  assert_polynomial_replace [] ~replacements:(x, [1, [y, 1]]) [];
+  (* [0/x] 2x => 0 *)
+  assert_polynomial_replace [2, [x, 1]] ~replacements:(x, []) [];
+  (* [x/x] 2x => 2x *)
+  assert_polynomial_replace [2, [x, 1]] ~replacements:(x, [1, [x, 1]]) [2, [x, 1]];
+  (* [0/x] 3y^2 => 3y^2 *)
+  assert_polynomial_replace [3, [y, 2]] ~replacements:(x, []) [3, [y, 2]];
+  (* [3y/x] 2x => 6y *)
+  assert_polynomial_replace [2, [x, 1]] ~replacements:(x, [3, [y, 1]]) [6, [y, 1]];
+  (* [2y^3/x] 5x^2 => 20y^6 *)
+  assert_polynomial_replace [5, [x, 2]] ~replacements:(x, [2, [y, 3]]) [20, [y, 6]];
+  (* [2z^4/y] 2x^2y^3 => 16x^2z^12 *)
+  assert_polynomial_replace [2, [x, 2; y, 3]] ~replacements:(y, [2, [z, 4]]) [16, [x, 2; z, 12]];
+
+  (* [3yz + 6x^3/x] 2x => 6yz + 12x^3 *)
+  assert_polynomial_replace
+    [2, [x, 1]]
+    ~replacements:(x, [3, [y, 2; z, 1]; 6, [x, 3]])
+    [6, [y, 2; z, 1]; 12, [x, 3]];
+  (* [2x^2 + 3yz^3/x] 4x^2y^3z => 16x^4y^3z + 48x^2y^4z^4 + 36y^5z^7 *)
+  assert_polynomial_replace
+    [4, [x, 2; y, 3; z, 1]]
+    ~replacements:(x, [2, [x, 2]; 3, [y, 1; z, 3]])
+    [16, [x, 4; y, 3; z, 1]; 48, [x, 2; y, 4; z, 4]; 36, [y, 5; z, 7]];
+
+  (* [0/z] 2xy + 3z => 2xy *)
+  assert_polynomial_replace [2, [x, 1; y, 1]; 3, [z, 1]] ~replacements:(z, []) [2, [x, 1; y, 1]];
+  (* [2/y] 2x^2y^3 + 3y^2z => 16x^2 + 12z *)
+  assert_polynomial_replace
+    [2, [x, 2; y, 3]; 3, [y, 2; z, 1]]
+    ~replacements:(y, [2, []])
+    [16, [x, 2]; 12, [z, 1]];
+  (* [3x^2/z] 8xy^2z^2 + 3x^3y^2z => 81x^5y^2 *)
+  assert_polynomial_replace
+    [8, [x, 1; y, 2; z, 2]; 3, [x, 3; y, 2; z, 1]]
+    ~replacements:(z, [3, [x, 2]])
+    [81, [x, 5; y, 2]];
+
+  (* [2x^2 + 5y^4/z] 3yz^2 + 2x^2yz => 35x^4y + 15y^9 + 10x^2y^5 *)
+  assert_polynomial_replace
+    [3, [y, 1; z, 2]; 2, [x, 2; y, 1; z, 1]]
+    ~replacements:(z, [2, [x, 2]; 5, [y, 4]])
+    [16, [x, 4; y, 1]; 70, [x, 2; y, 5]; 75, [y, 9]];
+  (* [2x^2 + 5y^4z/x] 3xyz^2 + 2x^2yz + 2w^2 => 6x^2yz^2 + 15y^5z^3 + 8x^4yz + 40x^2y^5z^2 +
+     50y^9z^3 + 2w^2 *)
+  assert_polynomial_replace
+    [3, [x, 1; y, 1; z, 2]; 2, [x, 2; y, 1; z, 1]; 2, [w, 2]]
+    ~replacements:(x, [2, [x, 2]; 5, [y, 4; z, 1]])
+    [
+      6, [x, 2; y, 1; z, 2];
+      15, [y, 5; z, 3];
+      8, [x, 4; y, 1; z, 1];
+      40, [x, 2; y, 5; z, 2];
+      50, [y, 9; z, 3];
+      2, [w, 2];
+    ];
+  ()
+
+
 let test_add_polynomials _ =
   let assert_add given1 given2 expected =
     let given1 = polynomial_create_from_variables_list given1 in
@@ -3240,6 +3319,7 @@ let () =
          "type_parameters_for_bounded_tuple_union" >:: test_type_parameters_for_bounded_tuple_union;
          "polynomial_create_from_list" >:: test_polynomial_create_from_list;
          "polynomial_to_type" >:: test_polynomial_to_type;
+         "polynomial_replace" >:: test_polynomial_replace;
          "add_polynomials" >:: test_add_polynomials;
          "subtract_polynomials" >:: test_subtract_polynomials;
          "multiply_polynomial" >:: test_multiply_polynomial;

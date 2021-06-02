@@ -554,6 +554,8 @@ module rec Monomial : sig
   }
   [@@deriving eq, sexp, compare, hash, show]
 
+  val create_variable : 'a Record.Variable.RecordUnary.record -> 'a variable
+
   val equal_variable_id : compare_t:('a -> 'a -> int) -> 'a variable -> 'a variable -> bool
 
   val has_variable : compare_t:('a -> 'a -> int) -> 'a t -> variable:'a variable -> bool
@@ -587,6 +589,8 @@ end = struct
     variables: 'a variable_degree list;
   }
   [@@deriving eq, sexp, compare, hash, show]
+
+  let create_variable variable = Variable variable
 
   let equal_variable_id ~compare_t left right =
     let compare = compare_variable compare_t in

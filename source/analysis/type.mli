@@ -223,6 +223,8 @@ module Monomial : sig
   type 'a variable [@@deriving compare, eq, sexp, show, hash]
 
   type 'a t [@@deriving eq, sexp, compare, hash, show]
+
+  val create_variable : 'a Record.Variable.RecordUnary.record -> 'a variable
 end
 
 module Polynomial : sig
