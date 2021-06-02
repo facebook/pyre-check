@@ -569,18 +569,16 @@ let test_inline_decorators context =
       return inner
 
     def foo(y: str) -> None:
-      def __original_function(y: str) -> None:
-        def __original_function(z: str) -> None:
-          print(z)
 
-        def __inlined_with_logging_sink(y: str) -> None:
-          __test_sink(y)
-          __original_function(y)
+      def __original_function(z: str) -> None:
+        print(z)
 
-        return __inlined_with_logging_sink(y)
+      def __inlined_with_logging_sink(y: str) -> None:
+        __test_sink(y)
+        __original_function(y)
 
       def __inlined_with_logging_source(y: str) -> None:
-        __original_function(y + __test_source())
+        __inlined_with_logging_sink(y + __test_source())
 
       return __inlined_with_logging_source(y)
   |};
@@ -639,18 +637,16 @@ let test_inline_decorators context =
       return f
 
     def foo(y: str) -> None:
-      def __original_function(y: str) -> None:
-        def __original_function(z: str) -> None:
-          print(z)
 
-        def __inlined_with_logging_sink(y: str) -> None:
-          __test_sink(y)
-          __original_function(y)
+      def __original_function(z: str) -> None:
+        print(z)
 
-        return __inlined_with_logging_sink(y)
+      def __inlined_with_logging_sink(y: str) -> None:
+        __test_sink(y)
+        __original_function(y)
 
       def __inlined_with_logging_source(y: str) -> None:
-        __original_function(y + __test_source())
+        __inlined_with_logging_sink(y + __test_source())
 
       return __inlined_with_logging_source(y)
   |};
@@ -1163,6 +1159,68 @@ let test_inline_decorators context =
 
         return __inlined_with_logging(x)
   |};
+  (* Same decorator applied multiple times. *)
+  assert_inlined
+    {|
+    from builtins import __test_sink
+    from typing import Callable
+
+    def with_logging(callable: Callable[[str], None]) -> Callable[[str], None]:
+
+      def inner(y: str) -> None:
+        __test_sink(y)
+        callable(y)
+
+      return inner
+
+    def identity(f):
+      def inner(y: str) -> None:
+        f(y)
+
+      return inner
+
+    @with_logging
+    @identity
+    @with_logging
+    def foo(z: str) -> None:
+      print(z)
+  |}
+    {|
+    from builtins import __test_sink
+    from typing import Callable
+
+    def with_logging(callable: Callable[[str], None]) -> Callable[[str], None]:
+
+      def inner(y: str) -> None:
+        __test_sink(y)
+        callable(y)
+
+      return inner
+
+
+    def identity(f):
+      def inner(y: str) -> None:
+        f(y)
+
+      return inner
+
+    def foo(y: str) -> None:
+      def __original_function(z: str) -> None:
+        print(z)
+
+      def __inlined_with_logging(y: str) -> None:
+        __test_sink(y)
+        __original_function(y)
+
+      def __inlined_identity(y: str) -> None:
+        __inlined_with_logging(y)
+
+      def __inlined_with_logging2(y: str) -> None:
+        __test_sink(y)
+        __inlined_identity(y)
+
+      return __inlined_with_logging2(y)
+  |};
   ()
 
 
@@ -1256,6 +1314,11 @@ let test_decorator_location context =
     @same_module_decorator
     def baz(z: str) -> None:
       print(z)
+
+    @identity
+    @identity
+    def same_decorator_twice(z: str) -> None:
+      print(z)
   |}
     ~expected_function_module_pairs:
       [
@@ -1266,12 +1329,15 @@ let test_decorator_location context =
         !&"test.bar.__inlined_with_logging.helper", Some !&"logging_decorator";
         !&"test.bar", None;
         !&"test.bar.__original_function", None;
-        !&"test.bar.__original_function.__inlined_identity", Some !&"some_module.identity_decorator";
-        !&"test.bar.__original_function.__original_function", None;
+        !&"test.bar.__inlined_identity", Some !&"some_module.identity_decorator";
         !&"test.foo.__inlined_with_logging", Some !&"logging_decorator";
         !&"test.foo.__inlined_with_logging.helper", Some !&"logging_decorator";
         !&"test.foo", None;
         !&"test.foo.__original_function", None;
+        !&"test.same_decorator_twice.__inlined_identity", Some !&"some_module.identity_decorator";
+        !&"test.same_decorator_twice.__inlined_identity2", Some !&"some_module.identity_decorator";
+        !&"test.same_decorator_twice.__original_function", None;
+        !&"test.same_decorator_twice", None;
       ]
     {|
     from builtins import __test_sink
@@ -1301,15 +1367,12 @@ let test_decorator_location context =
       return __inlined_with_logging(y)
 
     def bar(y: str) -> None:
-      def __original_function(y: str) -> None:
 
-        def __original_function(z: str) -> None:
-          print(z)
+      def __original_function(z: str) -> None:
+        print(z)
 
-        def __inlined_identity(y: str) -> None:
-          __original_function(y)
-
-        return __inlined_identity(y)
+      def __inlined_identity(y: str) -> None:
+        __original_function(y)
 
       def __inlined_with_logging(y: str) -> None:
 
@@ -1317,8 +1380,9 @@ let test_decorator_location context =
           print(y)
 
         __test_sink(y)
-        __original_function(y)
+        __inlined_identity(y)
         helper(y)
+
       return __inlined_with_logging(y)
 
 
@@ -1330,6 +1394,20 @@ let test_decorator_location context =
         __original_function(y)
 
       return __inlined_same_module_decorator(y)
+
+
+    def same_decorator_twice(y: str) -> None:
+
+      def __original_function(z: str) -> None:
+        print(z)
+
+      def __inlined_identity(y: str) -> None:
+        __original_function(y)
+
+      def __inlined_identity2(y: str) -> None:
+        __inlined_identity(y)
+
+      return __inlined_identity2(y)
   |};
   ()
 
