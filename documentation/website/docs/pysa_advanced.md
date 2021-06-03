@@ -262,3 +262,42 @@ This option can also be added in the `taint.config` as follows:
 
 Note that this is not a silver bullet and that this might hide security
 vulnerabilities. Use it with caution.
+
+## Limit the tito depth for better signal and performance
+
+Pysa infers automatically when a function propagate the taint from one argument
+to its return value. This is called tito, for Taint In Taint Out. In practice,
+infering it can be very expensive since the taint can go through an arbitrary
+number of hops (i.e, depth).
+
+For instance:
+
+```python
+def foo(x):
+  return x
+def bar(x):
+  return foo(x)
+def baz(x):
+  return bar(x)
+```
+
+In this example, `baz` propagates the taint on its argument to the return value
+using 3 hops.
+
+Pysa provides a `--maximum-tito-depth <integer>` command line argument which
+limints the depth of inferred propagations. In combination with the trace length
+limit, this usually makes Pysa faster.
+
+This option can also be added in the `taint.config` as follows:
+
+```json
+{
+  "sources": [],
+  "sinks": [],
+  "features": [],
+  "rules": [],
+  "options": {
+    "maximum_tito_depth": 20
+  }
+}
+```

@@ -610,6 +610,11 @@ def pyre(
     type=int,
     help="Limit the trace length of taint flows.",
 )
+@click.option(
+    "--maximum-tito-depth",
+    type=int,
+    help="Limit the depth of inferred taint-in-taint-out in taint flows.",
+)
 @click.pass_context
 def analyze(
     context: click.Context,
@@ -625,6 +630,7 @@ def analyze(
     use_cache: bool,
     inline_decorators: bool,
     maximum_trace_length: int | None,
+    maximum_tito_depth: int | None,
 ) -> int:
     """
     Run Pysa, the inter-procedural static analysis tool.
@@ -653,6 +659,7 @@ def analyze(
             use_cache=use_cache,
             inline_decorators=inline_decorators,
             maximum_trace_length=maximum_trace_length,
+            maximum_tito_depth=maximum_tito_depth,
         ),
         configuration,
         command_argument.noninteractive,

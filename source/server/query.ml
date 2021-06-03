@@ -675,6 +675,7 @@ let rec process_request ~environment ~configuration request =
               ~find_missing_flows:None
               ~dump_model_query_results_path:None
               ~maximum_trace_length:None
+              ~maximum_tito_depth:None
               ~taint_model_paths:paths
           in
           let get_model_errors sources =

@@ -301,6 +301,7 @@ module StaticAnalysis = struct
     dump_model_query_results: bool;
     use_cache: bool;
     maximum_trace_length: int option;
+    maximum_tito_depth: int option;
   }
 
   let dump_model_query_results_path

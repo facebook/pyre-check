@@ -56,6 +56,7 @@ class AnalyzeTest(unittest.TestCase):
                 use_cache=False,
                 inline_decorators=False,
                 maximum_trace_length=None,
+                maximum_tito_depth=None,
             )
             self.assertEqual(
                 command._flags(),
@@ -105,6 +106,7 @@ class AnalyzeTest(unittest.TestCase):
                 use_cache=False,
                 inline_decorators=False,
                 maximum_trace_length=None,
+                maximum_tito_depth=None,
             )
             self.assertEqual(
                 command._flags(),
@@ -156,6 +158,7 @@ class AnalyzeTest(unittest.TestCase):
                 use_cache=False,
                 inline_decorators=False,
                 maximum_trace_length=None,
+                maximum_tito_depth=None,
             )
             self.assertEqual(
                 command._flags(),
@@ -209,6 +212,7 @@ class AnalyzeTest(unittest.TestCase):
                 use_cache=False,
                 inline_decorators=False,
                 maximum_trace_length=None,
+                maximum_tito_depth=None,
             )
             self.assertEqual(
                 command._flags(),
@@ -261,6 +265,7 @@ class AnalyzeTest(unittest.TestCase):
                 use_cache=False,
                 inline_decorators=False,
                 maximum_trace_length=None,
+                maximum_tito_depth=None,
             )
             self.assertEqual(
                 command._flags(),
@@ -314,6 +319,7 @@ class AnalyzeTest(unittest.TestCase):
                 use_cache=False,
                 inline_decorators=False,
                 maximum_trace_length=None,
+                maximum_tito_depth=None,
             )
             self.assertEqual(
                 command._flags(),
@@ -367,6 +373,7 @@ class AnalyzeTest(unittest.TestCase):
                 use_cache=False,
                 inline_decorators=False,
                 maximum_trace_length=None,
+                maximum_tito_depth=None,
             )
             self.assertEqual(
                 command._flags(),
@@ -420,6 +427,7 @@ class AnalyzeTest(unittest.TestCase):
                 use_cache=False,
                 inline_decorators=False,
                 maximum_trace_length=None,
+                maximum_tito_depth=None,
             )
             self.assertEqual(
                 command._flags(),
@@ -476,6 +484,7 @@ class AnalyzeTest(unittest.TestCase):
                 use_cache=False,
                 inline_decorators=False,
                 maximum_trace_length=None,
+                maximum_tito_depth=None,
             )
             self.assertEqual(
                 command._flags(),
@@ -529,6 +538,7 @@ class AnalyzeTest(unittest.TestCase):
                 use_cache=False,
                 inline_decorators=False,
                 maximum_trace_length=None,
+                maximum_tito_depth=None,
             )
             self.assertEqual(
                 command._flags(),
@@ -580,6 +590,7 @@ class AnalyzeTest(unittest.TestCase):
                 use_cache=True,
                 inline_decorators=False,
                 maximum_trace_length=None,
+                maximum_tito_depth=None,
             )
             self.assertEqual(
                 command._flags(),
@@ -632,6 +643,7 @@ class AnalyzeTest(unittest.TestCase):
                 use_cache=True,
                 inline_decorators=True,
                 maximum_trace_length=None,
+                maximum_tito_depth=None,
             )
             self.assertEqual(
                 command._flags(),
@@ -659,6 +671,108 @@ class AnalyzeTest(unittest.TestCase):
                     "-dump-call-graph",
                     "-use-cache",
                     "-inline-decorators",
+                ],
+            )
+            command.run()
+            call_client.assert_called_once_with(command=commands.Analyze.NAME)
+
+        arguments = mock_arguments()
+        with patch.object(
+            commands.Command, "_call_client", return_value=result
+        ) as call_client, patch("json.loads", return_value=[]):
+            command = commands.Analyze(
+                arguments,
+                original_directory,
+                configuration=configuration,
+                analysis_directory=AnalysisDirectory(
+                    configuration_module.SimpleSearchPathElement(".")
+                ),
+                analysis="taint",
+                taint_models_path=[],
+                no_verify=False,
+                save_results_to=None,
+                dump_call_graph=False,
+                repository_root=None,
+                rules=None,
+                use_cache=False,
+                inline_decorators=False,
+                maximum_trace_length=2,
+                maximum_tito_depth=None,
+            )
+            self.assertEqual(
+                command._flags(),
+                [
+                    "-logging-sections",
+                    "-progress",
+                    "-project-root",
+                    "/root",
+                    "-log-directory",
+                    ".pyre",
+                    "-python-major-version",
+                    "3",
+                    "-python-minor-version",
+                    "6",
+                    "-python-micro-version",
+                    "0",
+                    "-workers",
+                    "5",
+                    "-analysis",
+                    "taint",
+                    "-taint-models",
+                    "taint_models",
+                    "-maximum-trace-length",
+                    "2",
+                ],
+            )
+            command.run()
+            call_client.assert_called_once_with(command=commands.Analyze.NAME)
+
+        arguments = mock_arguments()
+        with patch.object(
+            commands.Command, "_call_client", return_value=result
+        ) as call_client, patch("json.loads", return_value=[]):
+            command = commands.Analyze(
+                arguments,
+                original_directory,
+                configuration=configuration,
+                analysis_directory=AnalysisDirectory(
+                    configuration_module.SimpleSearchPathElement(".")
+                ),
+                analysis="taint",
+                taint_models_path=[],
+                no_verify=False,
+                save_results_to=None,
+                dump_call_graph=False,
+                repository_root=None,
+                rules=None,
+                use_cache=False,
+                inline_decorators=False,
+                maximum_trace_length=None,
+                maximum_tito_depth=3,
+            )
+            self.assertEqual(
+                command._flags(),
+                [
+                    "-logging-sections",
+                    "-progress",
+                    "-project-root",
+                    "/root",
+                    "-log-directory",
+                    ".pyre",
+                    "-python-major-version",
+                    "3",
+                    "-python-minor-version",
+                    "6",
+                    "-python-micro-version",
+                    "0",
+                    "-workers",
+                    "5",
+                    "-analysis",
+                    "taint",
+                    "-taint-models",
+                    "taint_models",
+                    "-maximum-tito-depth",
+                    "3",
                 ],
             )
             command.run()

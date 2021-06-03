@@ -33,6 +33,7 @@ let static_analysis_configuration { ScratchProject.configuration; _ } =
     dump_model_query_results = false;
     use_cache = false;
     maximum_trace_length = None;
+    maximum_tito_depth = None;
   }
 
 

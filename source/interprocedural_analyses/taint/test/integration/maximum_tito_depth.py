@@ -4,6 +4,9 @@
 # LICENSE file in the root directory of this source tree.
 
 
+from builtins import __test_sink, __test_source
+
+
 def tito_zero(x):
     return x
 
@@ -14,6 +17,10 @@ def tito_one(x):
 
 def tito_two(x):
     return tito_one(x)
+
+
+def tito_three(x):
+    return tito_two(x)
 
 
 def tito_max_consecutive(x):
@@ -50,3 +57,20 @@ def tito_obscure(x):
     # Obscure calls are treated as tito depth 0.
     c = C()
     return c.tito(x)
+
+
+def tito_four(x):
+    # Ignored because too far.
+    return tito_three(x)
+
+
+def issue():
+    x = __test_source()
+    y = tito_three(x)
+    __test_sink(y)
+
+
+def non_issue():
+    x = __test_source()
+    y = tito_four(x)
+    __test_sink(y)

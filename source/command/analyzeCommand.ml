@@ -67,6 +67,7 @@ let run_analysis
     use_cache
     inline_decorators
     maximum_trace_length
+    maximum_tito_depth
     _verbose
     expected_version
     sections
@@ -167,6 +168,7 @@ let run_analysis
         dump_model_query_results;
         use_cache;
         maximum_trace_length;
+        maximum_tito_depth;
       }
     in
     let analysis_kind = get_analysis_kind analysis in
@@ -290,5 +292,9 @@ let command =
            no_arg
            ~doc:"Inline decorators at use sites to catch flows through the decorators."
       +> flag "-maximum-trace-length" (optional int) ~doc:"Limit the trace length of taint flows."
+      +> flag
+           "-maximum-tito-depth"
+           (optional int)
+           ~doc:"Limit the depth of inferred taint-in-taint-out in taint flows."
       ++ Specification.base_command_line_arguments)
     run_analysis

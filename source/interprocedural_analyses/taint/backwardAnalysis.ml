@@ -1370,7 +1370,13 @@ let extract_tito_and_sink_models define ~is_constructor ~resolution ~existing_ba
   let { Statement.Define.signature = { parameters; _ }; _ } = define in
   let {
     TaintConfiguration.analysis_model_constraints =
-      { maximum_model_width; maximum_complex_access_path_length; maximum_trace_length; _ };
+      {
+        maximum_model_width;
+        maximum_complex_access_path_length;
+        maximum_trace_length;
+        maximum_tito_depth;
+        _;
+      };
     _;
   }
     =
@@ -1418,6 +1424,12 @@ let extract_tito_and_sink_models define ~is_constructor ~resolution ~existing_ba
         Map.Poly.find partition Sinks.LocalReturn
         |> Option.value ~default:BackwardState.Tree.empty
         |> simplify annotation
+      in
+      let candidate_tree =
+        match maximum_tito_depth with
+        | Some maximum_tito_depth ->
+            BackwardState.Tree.prune_maximum_length maximum_tito_depth candidate_tree
+        | _ -> candidate_tree
       in
       let candidate_tree =
         if Features.SimpleSet.is_bottom features_to_attach then
