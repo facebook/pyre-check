@@ -243,7 +243,7 @@
           {
             "decl": null,
             "tito": [ { "line": 64, "start": 16, "end": 25 } ],
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 1 } ],
             "features": [
               { "always-via": "tito" },
               { "always-via-value": "by_backwards" }
@@ -632,7 +632,7 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
           }
         ]
       }

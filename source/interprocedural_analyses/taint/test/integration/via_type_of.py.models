@@ -70,7 +70,7 @@
           {
             "decl": null,
             "tito": [ { "line": 52, "start": 16, "end": 25 } ],
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 1 } ],
             "features": [
               { "always-via": "tito" },
               { "always-via-type": "str" }
@@ -275,7 +275,7 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
           }
         ]
       }

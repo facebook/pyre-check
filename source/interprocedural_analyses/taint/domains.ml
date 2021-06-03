@@ -415,7 +415,8 @@ end = struct
           match feature with
           | Features.Complex.ReturnAccessPath path ->
               let path_name = Abstract.TreeDomain.Label.show_path path in
-              `Assoc ["kind", leaf_kind_json; "name", `String path_name] :: leaves
+              `Assoc ["kind", leaf_kind_json; "name", `String path_name; "depth", `Int trace_length]
+              :: leaves
         in
         let breadcrumbs =
           FlowDetails.(fold simple_feature_element ~f:gather_json ~init:[] features)
@@ -740,6 +741,7 @@ let local_return_taint =
     [
       Part (BackwardTaint.trace_info, TraceInfo.Declaration { leaf_name_provided = false });
       Part (BackwardTaint.leaf, Sinks.LocalReturn);
+      Part (TraceLength.Self, 0);
       Part (BackwardTaint.complex_feature, Features.Complex.ReturnAccessPath []);
       Part (Features.SimpleSet.Self, Features.SimpleSet.empty);
     ]

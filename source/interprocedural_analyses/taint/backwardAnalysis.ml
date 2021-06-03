@@ -216,6 +216,13 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                   ~f:Features.gather_breadcrumbs
                   ~init:Features.SimpleSet.bottom
               in
+              let tito_depth =
+                BackwardTaint.fold
+                  TraceLength.Self
+                  element
+                  ~f:TraceLength.join
+                  ~init:TraceLength.bottom
+              in
               let taint_to_propagate =
                 match kind with
                 | Sinks.LocalReturn -> call_taint
@@ -227,6 +234,11 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                     | Some argument -> get_argument_taint ~resolution ~argument state )
                 | _ -> failwith "unexpected tito sink"
               in
+              let compute_tito_depth leaf depth =
+                match leaf with
+                | Sinks.LocalReturn -> max depth (1 + tito_depth)
+                | _ -> depth
+              in
               List.fold
                 extra_paths
                 ~f:(fun taint extra_path ->
@@ -237,6 +249,10 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                        BackwardTaint.simple_feature_self
                        Abstract.Domain.Add
                        ~f:breadcrumbs
+                  |> BackwardTaint.transform
+                       TraceLength.Self
+                       (Context (BackwardTaint.leaf, Map))
+                       ~f:compute_tito_depth
                   |> BackwardState.Tree.create_leaf
                   |> BackwardState.Tree.prepend tito_path
                   |> BackwardState.Tree.join taint)

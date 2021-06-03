@@ -410,7 +410,7 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ],
             "features": [ { "via": "dynamic_feature" } ]
           }
         ]
@@ -430,7 +430,7 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ],
             "features": [ { "always-type": "scalar" } ]
           }
         ]
@@ -450,7 +450,7 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
           }
         ]
       },
@@ -459,7 +459,7 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ],
             "features": [ { "always-type": "scalar" } ]
           }
         ]
@@ -479,7 +479,7 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ],
             "features": [ { "always-type": "scalar" } ]
           }
         ]
@@ -573,7 +573,7 @@
           {
             "decl": null,
             "tito": [ { "line": 46, "start": 15, "end": 16 } ],
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ],
             "features": [
               { "always-type": "scalar" },
               { "always-via": "obscure" }
@@ -597,7 +597,7 @@
           {
             "decl": null,
             "tito": [ { "line": 23, "start": 15, "end": 16 } ],
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 1 } ],
             "features": [
               { "always-type": "scalar" },
               { "always-via": "tito" }
@@ -621,7 +621,7 @@
           {
             "decl": null,
             "tito": [ { "line": 27, "start": 15, "end": 16 } ],
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 1 } ],
             "features": [
               { "always-type": "scalar" },
               { "always-via": "tito" }
@@ -645,7 +645,7 @@
           {
             "decl": null,
             "tito": [ { "line": 40, "start": 19, "end": 20 } ],
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ],
             "features": [ { "type": "scalar" }, { "via": "tito" } ]
           }
         ]
@@ -666,7 +666,7 @@
           {
             "decl": null,
             "tito": [ { "line": 31, "start": 18, "end": 19 } ],
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 1 } ],
             "features": [ { "always-via": "tito" } ]
           }
         ]
@@ -687,7 +687,7 @@
           {
             "decl": null,
             "tito": [ { "line": 35, "start": 33, "end": 34 } ],
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 1 } ],
             "features": [
               { "always-type": "scalar" },
               { "always-via": "tito" }
@@ -715,8 +715,8 @@
               { "line": 84, "start": 34, "end": 35 }
             ],
             "leaves": [
-              { "kind": "LocalReturn", "name": "[1]" },
-              { "kind": "LocalReturn", "name": "[0]" }
+              { "kind": "LocalReturn", "name": "[1]", "depth": 0 },
+              { "kind": "LocalReturn", "name": "[0]", "depth": 0 }
             ],
             "features": [ { "type": "scalar" }, { "via": "tito" } ]
           }

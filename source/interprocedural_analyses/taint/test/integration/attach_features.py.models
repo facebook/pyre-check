@@ -378,7 +378,7 @@
           },
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ],
             "features": [ { "always-via": "string_concat_lhs" } ]
           }
         ]
@@ -427,7 +427,7 @@
           },
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ],
             "features": [ { "always-via": "string_concat_lhs" } ]
           }
         ]
@@ -448,7 +448,7 @@
           {
             "decl": null,
             "tito": [ { "line": 42, "start": 30, "end": 33 } ],
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 1 } ],
             "features": [
               { "always-via": "tito" },
               { "always-via": "string_concat_lhs" }

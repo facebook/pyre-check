@@ -130,7 +130,9 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "[bad]" } ],
+            "leaves": [
+              { "kind": "LocalReturn", "name": "[bad]", "depth": 0 }
+            ],
             "features": [ { "always-type": "scalar" } ]
           }
         ]
@@ -140,7 +142,7 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
           }
         ]
       },
@@ -149,7 +151,9 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "[bad]" } ]
+            "leaves": [
+              { "kind": "LocalReturn", "name": "[bad]", "depth": 0 }
+            ]
           }
         ]
       }
@@ -220,7 +224,9 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "[bad_sink]" } ],
+            "leaves": [
+              { "kind": "LocalReturn", "name": "[bad_sink]", "depth": 0 }
+            ],
             "features": [ { "always-type": "scalar" } ]
           }
         ]
@@ -230,7 +236,9 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "[bad_sink]" } ]
+            "leaves": [
+              { "kind": "LocalReturn", "name": "[bad_sink]", "depth": 0 }
+            ]
           }
         ]
       },
@@ -239,7 +247,9 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "[bad]" } ],
+            "leaves": [
+              { "kind": "LocalReturn", "name": "[bad]", "depth": 0 }
+            ],
             "features": [ { "always-type": "scalar" } ]
           }
         ]
@@ -249,7 +259,7 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
           }
         ]
       },
@@ -258,7 +268,9 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "[bad]" } ]
+            "leaves": [
+              { "kind": "LocalReturn", "name": "[bad]", "depth": 0 }
+            ]
           }
         ]
       }
@@ -347,7 +359,9 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "[bad_sink]" } ],
+            "leaves": [
+              { "kind": "LocalReturn", "name": "[bad_sink]", "depth": 0 }
+            ],
             "features": [ { "always-type": "scalar" } ]
           }
         ]
@@ -357,7 +371,9 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "[bad_sink]" } ]
+            "leaves": [
+              { "kind": "LocalReturn", "name": "[bad_sink]", "depth": 0 }
+            ]
           }
         ]
       },
@@ -366,7 +382,9 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "[bad]" } ],
+            "leaves": [
+              { "kind": "LocalReturn", "name": "[bad]", "depth": 0 }
+            ],
             "features": [ { "always-type": "scalar" } ]
           }
         ]
@@ -376,7 +394,7 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
           }
         ]
       },
@@ -385,7 +403,9 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "[bad]" } ]
+            "leaves": [
+              { "kind": "LocalReturn", "name": "[bad]", "depth": 0 }
+            ]
           }
         ]
       }
@@ -404,7 +424,9 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "[benign]" } ]
+            "leaves": [
+              { "kind": "LocalReturn", "name": "[benign]", "depth": 0 }
+            ]
           }
         ]
       },
@@ -413,7 +435,9 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "[bad]" } ]
+            "leaves": [
+              { "kind": "LocalReturn", "name": "[bad]", "depth": 0 }
+            ]
           }
         ]
       }
@@ -451,7 +475,9 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "[bad]" } ],
+            "leaves": [
+              { "kind": "LocalReturn", "name": "[bad]", "depth": 0 }
+            ],
             "features": [ { "always-type": "scalar" } ]
           }
         ]
@@ -461,7 +487,7 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
           }
         ]
       },
@@ -470,7 +496,9 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "[bad]" } ]
+            "leaves": [
+              { "kind": "LocalReturn", "name": "[bad]", "depth": 0 }
+            ]
           }
         ]
       }
@@ -489,7 +517,9 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "[tainted]" } ]
+            "leaves": [
+              { "kind": "LocalReturn", "name": "[tainted]", "depth": 0 }
+            ]
           }
         ]
       },
@@ -498,7 +528,9 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "[not_tainted]" } ]
+            "leaves": [
+              { "kind": "LocalReturn", "name": "[not_tainted]", "depth": 0 }
+            ]
           }
         ]
       }
@@ -517,7 +549,9 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "[tainted]" } ]
+            "leaves": [
+              { "kind": "LocalReturn", "name": "[tainted]", "depth": 0 }
+            ]
           }
         ]
       },
@@ -526,7 +560,9 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "[not_tainted]" } ]
+            "leaves": [
+              { "kind": "LocalReturn", "name": "[not_tainted]", "depth": 0 }
+            ]
           }
         ]
       }
@@ -597,7 +633,9 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "[bad_sink]" } ],
+            "leaves": [
+              { "kind": "LocalReturn", "name": "[bad_sink]", "depth": 0 }
+            ],
             "features": [ { "always-type": "scalar" } ]
           }
         ]
@@ -607,7 +645,9 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "[bad_sink]" } ]
+            "leaves": [
+              { "kind": "LocalReturn", "name": "[bad_sink]", "depth": 0 }
+            ]
           }
         ]
       },
@@ -616,7 +656,9 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "[bad]" } ],
+            "leaves": [
+              { "kind": "LocalReturn", "name": "[bad]", "depth": 0 }
+            ],
             "features": [ { "always-type": "scalar" } ]
           }
         ]
@@ -626,7 +668,7 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
           }
         ]
       },
@@ -635,7 +677,9 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "[bad]" } ]
+            "leaves": [
+              { "kind": "LocalReturn", "name": "[bad]", "depth": 0 }
+            ]
           }
         ]
       }

@@ -122,7 +122,7 @@
               { "line": 49, "start": 42, "end": 85 },
               { "line": 49, "start": 59, "end": 71 }
             ],
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ],
             "features": [ { "via": "tito" }, { "always-via": "obscure" } ]
           }
         ]
@@ -139,7 +139,7 @@
               { "line": 49, "start": 42, "end": 85 },
               { "line": 49, "start": 56, "end": 57 }
             ],
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ],
             "features": [ { "via": "tito" }, { "via": "obscure" } ]
           }
         ]
@@ -187,7 +187,7 @@
           {
             "decl": null,
             "tito": [ { "line": 34, "start": 30, "end": 42 } ],
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 1 } ],
             "features": [
               { "always-via": "tito" },
               { "always-via": "obscure" }
@@ -201,7 +201,7 @@
           {
             "decl": null,
             "tito": [ { "line": 34, "start": 25, "end": 28 } ],
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 1 } ],
             "features": [ { "always-via": "tito" }, { "via": "obscure" } ]
           }
         ]
@@ -249,7 +249,7 @@
           {
             "decl": null,
             "tito": [ { "line": 75, "start": 18, "end": 21 } ],
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 2 } ],
             "features": [ { "always-via": "tito" }, { "via": "obscure" } ]
           }
         ]
@@ -290,7 +290,7 @@
           {
             "decl": null,
             "tito": [ { "line": 79, "start": 16, "end": 19 } ],
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ],
             "features": [ { "always-via": "obscure" } ]
           }
         ]

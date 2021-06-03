@@ -331,7 +331,9 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "[b]" } ]
+            "leaves": [
+              { "kind": "LocalReturn", "name": "[b]", "depth": 0 }
+            ]
           }
         ]
       },
@@ -340,7 +342,9 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "[a]" } ]
+            "leaves": [
+              { "kind": "LocalReturn", "name": "[a]", "depth": 0 }
+            ]
           }
         ]
       },
@@ -349,7 +353,7 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
           }
         ]
       }
@@ -368,7 +372,9 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "[b]" } ]
+            "leaves": [
+              { "kind": "LocalReturn", "name": "[b]", "depth": 0 }
+            ]
           }
         ]
       },
@@ -377,7 +383,9 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "[a]" } ]
+            "leaves": [
+              { "kind": "LocalReturn", "name": "[a]", "depth": 0 }
+            ]
           }
         ]
       },
@@ -386,7 +394,7 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
           }
         ]
       }
@@ -405,7 +413,9 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "[b]" } ]
+            "leaves": [
+              { "kind": "LocalReturn", "name": "[b]", "depth": 0 }
+            ]
           }
         ]
       },
@@ -414,7 +424,9 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "[a]" } ]
+            "leaves": [
+              { "kind": "LocalReturn", "name": "[a]", "depth": 0 }
+            ]
           }
         ]
       },
@@ -423,7 +435,7 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
           }
         ]
       }
@@ -459,7 +471,7 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
           }
         ]
       }
@@ -683,7 +695,7 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
           }
         ]
       }
@@ -719,7 +731,7 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
           }
         ]
       }
@@ -868,7 +880,7 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
           }
         ]
       }
@@ -904,7 +916,7 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
           }
         ]
       }

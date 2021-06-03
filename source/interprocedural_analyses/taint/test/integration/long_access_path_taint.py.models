@@ -11,7 +11,9 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "[request]" } ]
+            "leaves": [
+              { "kind": "LocalReturn", "name": "[request]", "depth": 0 }
+            ]
           }
         ]
       },
@@ -20,7 +22,9 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "[kind]" } ]
+            "leaves": [
+              { "kind": "LocalReturn", "name": "[kind]", "depth": 0 }
+            ]
           }
         ]
       },
@@ -30,8 +34,8 @@
           {
             "decl": null,
             "leaves": [
-              { "kind": "LocalReturn", "name": "[timestamp]" },
-              { "kind": "LocalReturn", "name": "[app_id]" }
+              { "kind": "LocalReturn", "name": "[timestamp]", "depth": 1 },
+              { "kind": "LocalReturn", "name": "[app_id]", "depth": 1 }
             ],
             "features": [
               { "has": "first-index" },
@@ -47,7 +51,9 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "[id]" } ],
+            "leaves": [
+              { "kind": "LocalReturn", "name": "[id]", "depth": 0 }
+            ],
             "features": [ { "always-type": "scalar" } ]
           }
         ]
@@ -57,7 +63,7 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
           }
         ]
       }
@@ -76,7 +82,9 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "[request]" } ]
+            "leaves": [
+              { "kind": "LocalReturn", "name": "[request]", "depth": 0 }
+            ]
           }
         ]
       },
@@ -85,7 +93,9 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "[kind]" } ]
+            "leaves": [
+              { "kind": "LocalReturn", "name": "[kind]", "depth": 0 }
+            ]
           }
         ]
       },
@@ -95,8 +105,8 @@
           {
             "decl": null,
             "leaves": [
-              { "kind": "LocalReturn", "name": "[timestamp]" },
-              { "kind": "LocalReturn", "name": "[app_id]" }
+              { "kind": "LocalReturn", "name": "[timestamp]", "depth": 1 },
+              { "kind": "LocalReturn", "name": "[app_id]", "depth": 1 }
             ],
             "features": [
               { "has": "first-index" },
@@ -112,7 +122,9 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "[id]" } ],
+            "leaves": [
+              { "kind": "LocalReturn", "name": "[id]", "depth": 0 }
+            ],
             "features": [ { "always-type": "scalar" } ]
           }
         ]
@@ -122,7 +134,7 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
           }
         ]
       }
@@ -141,7 +153,9 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "[request]" } ]
+            "leaves": [
+              { "kind": "LocalReturn", "name": "[request]", "depth": 0 }
+            ]
           }
         ]
       },
@@ -150,7 +164,9 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "[kind]" } ]
+            "leaves": [
+              { "kind": "LocalReturn", "name": "[kind]", "depth": 0 }
+            ]
           }
         ]
       },
@@ -164,8 +180,8 @@
               { "line": 16, "start": 22, "end": 28 }
             ],
             "leaves": [
-              { "kind": "LocalReturn", "name": "[timestamp]" },
-              { "kind": "LocalReturn", "name": "[app_id]" }
+              { "kind": "LocalReturn", "name": "[timestamp]", "depth": 1 },
+              { "kind": "LocalReturn", "name": "[app_id]", "depth": 1 }
             ],
             "features": [
               { "has": "first-index" },
@@ -181,7 +197,9 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "[id]" } ],
+            "leaves": [
+              { "kind": "LocalReturn", "name": "[id]", "depth": 0 }
+            ],
             "features": [ { "always-type": "scalar" } ]
           }
         ]
@@ -191,7 +209,7 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
           }
         ]
       }
@@ -211,7 +229,9 @@
           {
             "decl": null,
             "tito": [ { "line": 31, "start": 37, "end": 44 } ],
-            "leaves": [ { "kind": "LocalReturn", "name": "[request]" } ],
+            "leaves": [
+              { "kind": "LocalReturn", "name": "[request]", "depth": 1 }
+            ],
             "features": [ { "always-via": "tito" } ]
           }
         ]
@@ -229,10 +249,10 @@
               { "line": 31, "start": 37, "end": 44 }
             ],
             "leaves": [
-              { "kind": "LocalReturn", "name": "[timestamp]" },
-              { "kind": "LocalReturn", "name": "[request]" },
-              { "kind": "LocalReturn", "name": "[kind]" },
-              { "kind": "LocalReturn", "name": "[app_id]" }
+              { "kind": "LocalReturn", "name": "[timestamp]", "depth": 1 },
+              { "kind": "LocalReturn", "name": "[request]", "depth": 1 },
+              { "kind": "LocalReturn", "name": "[kind]", "depth": 1 },
+              { "kind": "LocalReturn", "name": "[app_id]", "depth": 1 }
             ],
             "features": [ { "always-via": "tito" }, { "via": "obscure" } ]
           }
@@ -244,7 +264,9 @@
           {
             "decl": null,
             "tito": [ { "line": 31, "start": 19, "end": 21 } ],
-            "leaves": [ { "kind": "LocalReturn", "name": "[id]" } ],
+            "leaves": [
+              { "kind": "LocalReturn", "name": "[id]", "depth": 1 }
+            ],
             "features": [
               { "always-type": "scalar" },
               { "always-via": "tito" }
@@ -258,7 +280,7 @@
           {
             "decl": null,
             "tito": [ { "line": 31, "start": 15, "end": 18 } ],
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 1 } ],
             "features": [ { "always-via": "tito" } ]
           }
         ]
