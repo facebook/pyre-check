@@ -57,6 +57,17 @@ let test_simple context =
     |}
     ["Unbound name [10]: Name `y` is used but not defined in the current scope."];
 
+  assert_uninitialized_errors
+    {|
+      def f() -> int:
+          try:
+              bad = 0 / 0
+              x = 1  # `x` is defined here
+          except ZeroDivisionError:
+              return x
+    |}
+    ["Unbound name [10]: Name `x` is used but not defined in the current scope."];
+
   (* TODO (T69630394): Tests below document either errors we do not report, but would like this
      check to; or non-errors this check is currently reporting *)
 
@@ -76,18 +87,6 @@ let test_simple context =
 
       def increment() -> None:
         counter += 1
-    |}
-    [];
-
-  (* line 6, in f: local variable 'x' referenced before assignment *)
-  assert_uninitialized_errors
-    {|
-      def f() -> int:
-          try:
-              bad = 0 / 0
-              x = 1  # `x` is defined here
-          except ZeroDivisionError:
-              return x
     |}
     [];
 
