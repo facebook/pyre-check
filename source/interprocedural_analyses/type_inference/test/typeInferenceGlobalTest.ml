@@ -136,8 +136,8 @@ let type_inference_integration_test context =
               "parent": null,
               "return": "int",
               "parameters": [
-                { "name": "x", "annotation": "int", "value": null },
-                { "name": "y", "annotation": "int", "value": null }
+                { "name": "y", "annotation": "int", "value": null, "index": 0 },
+                { "name": "x", "annotation": "int", "value": null, "index": 1 }
               ],
               "decorators": [],
               "location": { "qualifier": "test", "path": "test.py", "line": 10 },

@@ -47,7 +47,7 @@ module AnnotationLocation = struct
     path: string;
     line: int;
   }
-  [@@deriving show, eq, to_yojson]
+  [@@deriving show, eq, compare, to_yojson]
 
   let create ~lookup ~qualifier ~line =
     { qualifier; path = lookup qualifier |> Option.value ~default:"*"; line }
@@ -106,7 +106,7 @@ end
 module AnnotationsByName = struct
   module Base = struct
     module type S = sig
-      type t [@@deriving show, eq, to_yojson]
+      type t [@@deriving show, eq, compare, to_yojson]
 
       val identifying_name : t -> SerializableReference.t
     end
@@ -120,7 +120,7 @@ module AnnotationsByName = struct
 
       let find = SerializableReference.Map.find
 
-      let data = SerializableReference.Map.data
+      let data map = SerializableReference.Map.data map |> List.sort ~compare:Value.compare
 
       let show map =
         map |> data |> List.map ~f:Value.show |> String.concat ~sep:"," |> Format.asprintf "[%s]"
@@ -135,6 +135,14 @@ module AnnotationsByName = struct
       let add_exn map value =
         let identifying_name = Value.identifying_name value in
         SerializableReference.Map.add_exn map ~key:identifying_name ~data:value
+
+
+      let update_exn map value transform =
+        let transform_or_raise = function
+          | Some value -> transform value
+          | None -> failwith "Did not expect to update with a missing name"
+        in
+        SerializableReference.Map.update map value ~f:transform_or_raise
     end
   end
 
@@ -178,6 +186,10 @@ module GlobalAnnotation = struct
     }
     [@@deriving show, eq, to_yojson]
 
+    let compare { location = left; _ } { location = right; _ } =
+      AnnotationLocation.compare left right
+
+
     let qualified_name { name; location = { qualifier; _ }; _ } =
       [qualifier; name] |> List.bind ~f:Reference.as_list |> Reference.create_from_list
 
@@ -205,6 +217,10 @@ module AttributeAnnotation = struct
     }
     [@@deriving show, eq, to_yojson]
 
+    let compare { location = left; _ } { location = right; _ } =
+      AnnotationLocation.compare left right
+
+
     let qualified_name { parent; name; location = { qualifier; _ }; _ } =
       [qualifier; parent; name] |> List.bind ~f:Reference.as_list |> Reference.create_from_list
 
@@ -229,8 +245,12 @@ module DefineAnnotation = struct
         name: SerializableReference.t;
         annotation: TypeAnnotation.t;
         value: DefaultValue.t;
+        index: int;
       }
       [@@deriving show, eq, to_yojson]
+
+      (* Assumption: we never have two parameters with the same index *)
+      let compare { index = left; _ } { index = right; _ } = Int.compare left right
 
       let identifying_name parameter = parameter.name
 
@@ -250,13 +270,13 @@ module DefineAnnotation = struct
   type t = {
     name: SerializableReference.t;
     parent: SerializableReference.t option;
-    return: TypeAnnotation.t;
-    parameters: Parameters.ByName.t;
+    return: TypeAnnotation.t; [@compare.ignore]
+    parameters: Parameters.ByName.t; [@compare.ignore]
     decorators: Ast.Statement.Decorator.t list;
     location: AnnotationLocation.t;
     async: bool;
   }
-  [@@deriving show, eq, to_yojson]
+  [@@deriving show, eq, compare, to_yojson]
 
   let is_inferred { return; parameters; _ } =
     TypeAnnotation.is_inferred return || Parameters.any_inferred parameters
@@ -270,14 +290,12 @@ module DefineAnnotation = struct
     }
 
 
-  let add_inferred_parameter ~global_resolution define name type_ =
+  let add_inferred_parameter define name type_ =
     {
       define with
       parameters =
-        Parameters.ByName.add
-          ~global_resolution
-          define.parameters
-          { name; annotation = TypeAnnotation.from_inferred type_; value = None };
+        Parameters.ByName.update_exn define.parameters name (fun parameter ->
+            { parameter with annotation = TypeAnnotation.from_inferred type_ });
     }
 end
 
@@ -320,6 +338,7 @@ module LocalResult = struct
       let return = TypeAnnotation.from_given ~global_resolution return_annotation in
       let parameters =
         let initialize_parameter
+            index
             { Node.value = Expression.Parameter.{ name; annotation; value }; _ }
           =
           DefineAnnotation.Parameters.Value.
@@ -327,10 +346,11 @@ module LocalResult = struct
               name = name |> Reference.create;
               annotation = TypeAnnotation.from_given ~global_resolution annotation;
               value;
+              index;
             }
         in
         parameters
-        |> List.map ~f:initialize_parameter
+        |> List.mapi ~f:initialize_parameter
         |> List.fold ~init:Parameters.ByName.empty ~f:(Parameters.ByName.add ~global_resolution)
       in
       {
@@ -379,10 +399,7 @@ module LocalResult = struct
         }
     | MissingParameterAnnotation { name; annotation = Some type_; _ }
       when not (ignore type_ || Type.equal type_ NoneType) ->
-        {
-          result with
-          define = DefineAnnotation.add_inferred_parameter ~global_resolution define name type_;
-        }
+        { result with define = DefineAnnotation.add_inferred_parameter define name type_ }
     | MissingAttributeAnnotation
         { parent; missing_annotation = { name; annotation = Some type_; _ } }
       when not (ignore type_) ->
@@ -421,7 +438,7 @@ end
 module GlobalResult = struct
   module DefineAnnotationsByName = struct
     module Value = struct
-      type t = DefineAnnotation.t [@@deriving show, eq, to_yojson]
+      type t = DefineAnnotation.t [@@deriving show, eq, compare, to_yojson]
 
       let identifying_name { DefineAnnotation.name; _ } = name
     end
