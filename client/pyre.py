@@ -636,6 +636,41 @@ def analyze(
 
 
 @pyre.command()
+@click.option("--dump-call-graph", is_flag=True, default=False, hidden=True)
+@click.option("--repository-root", type=os.path.abspath)
+@click.option(
+    "--use-cache",
+    is_flag=True,
+    default=False,
+    help="Store information in .pyre/pysa.cache for faster runs.",
+)
+@click.pass_context
+def infer_v2(
+    context: click.Context,
+    dump_call_graph: bool,
+    repository_root: str | None,
+    use_cache: bool,
+) -> int:
+    """
+    Run the (under construction) interprocedural version of pyre infer.
+    """
+    command_argument: command_arguments.CommandArguments = context.obj["arguments"]
+    configuration = _create_configuration_with_retry(command_argument, Path("."))
+    return run_pyre_command(
+        commands.infer_v2.Infer(
+            command_argument,
+            original_directory=os.getcwd(),
+            configuration=configuration,
+            dump_call_graph=dump_call_graph,
+            repository_root=repository_root,
+            use_cache=use_cache,
+        ),
+        configuration,
+        command_argument.noninteractive,
+    )
+
+
+@pyre.command()
 @click.pass_context
 def check(context: click.Context) -> int:
     """
