@@ -202,6 +202,9 @@ class Arguments:
     python_version: configuration_module.PythonVersion = (
         configuration_module.PythonVersion(major=3)
     )
+    shared_memory: configuration_module.SharedMemory = (
+        configuration_module.SharedMemory()
+    )
     remote_logging: Optional[RemoteLogging] = None
     saved_state_action: Optional[SavedStateAction] = None
     search_paths: Sequence[configuration_module.SearchPathElement] = dataclasses.field(
@@ -246,6 +249,7 @@ class Arguments:
                 "minor": self.python_version.minor,
                 "micro": self.python_version.micro,
             },
+            "shared_memory": self.shared_memory.to_json(),
             "show_error_traces": self.show_error_traces,
             "critical_files": [
                 critical_file.serialize() for critical_file in self.critical_files
@@ -481,6 +485,7 @@ def create_server_arguments(
         parallel=not start_arguments.sequential,
         profiling_output=profiling_output,
         python_version=configuration.get_python_version(),
+        shared_memory=configuration.shared_memory,
         remote_logging=remote_logging,
         saved_state_action=None
         if start_arguments.no_saved_state

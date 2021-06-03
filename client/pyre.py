@@ -438,6 +438,24 @@ def _check_configuration(configuration: configuration_module.Configuration) -> N
     ),
     hidden=True,
 )
+@click.option(
+    "--shared-memory-heap-size",
+    type=int,
+    help="Size of the shared memory heap, in bytes.",
+    hidden=True,
+)
+@click.option(
+    "--shared-memory-dependency-table-power",
+    type=int,
+    help="Power of the dependency table in shared memory.",
+    hidden=True,
+)
+@click.option(
+    "--shared-memory-hash-table-power",
+    type=int,
+    help="Power of the hash table in shared memory.",
+    hidden=True,
+)
 def pyre(
     context: click.Context,
     local_configuration: str | None,
@@ -476,6 +494,9 @@ def pyre(
     use_command_v2: bool | None,
     isolation_prefix: str | None,
     python_version: str | None,
+    shared_memory_heap_size: int | None,
+    shared_memory_dependency_table_power: int | None,
+    shared_memory_hash_table_power: int | None,
 ) -> int:
     arguments = command_arguments.CommandArguments(
         local_configuration=local_configuration,
@@ -516,6 +537,9 @@ def pyre(
         use_command_v2=use_command_v2,
         isolation_prefix=isolation_prefix,
         python_version=python_version,
+        shared_memory_heap_size=shared_memory_heap_size,
+        shared_memory_dependency_table_power=shared_memory_dependency_table_power,
+        shared_memory_hash_table_power=shared_memory_hash_table_power,
     )
     if arguments.version:
         _show_pyre_version(arguments)

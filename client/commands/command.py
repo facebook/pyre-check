@@ -269,6 +269,19 @@ class Command(CommandParser, ABC):
                 str(python_version.micro),
             ]
         )
+        heap_size = self._configuration.shared_memory.heap_size
+        if heap_size:
+            flags.extend(["-shared-memory-heap-size", str(heap_size)])
+        dependency_table_power = (
+            self._configuration.shared_memory.dependency_table_power
+        )
+        if dependency_table_power:
+            flags.extend(
+                ["-shared-memory-dependency-table-power", str(dependency_table_power)]
+            )
+        hash_table_power = self._configuration.shared_memory.hash_table_power
+        if hash_table_power:
+            flags.extend(["-shared-memory-hash-table-power", str(hash_table_power)])
         return flags
 
     # temporarily always return empty list to unblock client release

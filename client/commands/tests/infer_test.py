@@ -810,6 +810,8 @@ class InferTest(unittest.TestCase):
                     "6",
                     "-python-micro-version",
                     "0",
+                    "-shared-memory-heap-size",
+                    "1073741824",
                 ],
             )
             command.run()
@@ -849,6 +851,8 @@ class InferTest(unittest.TestCase):
                     "6",
                     "-python-micro-version",
                     "0",
+                    "-shared-memory-heap-size",
+                    "1073741824",
                 ],
             )
             command.run()
@@ -888,6 +892,8 @@ class InferTest(unittest.TestCase):
                         "6",
                         "-python-micro-version",
                         "0",
+                        "-shared-memory-heap-size",
+                        "1073741824",
                     ],
                 )
                 command.run()
@@ -927,6 +933,8 @@ class InferTest(unittest.TestCase):
                         "6",
                         "-python-micro-version",
                         "0",
+                        "-shared-memory-heap-size",
+                        "1073741824",
                         "-ignore-infer",
                         "path1.py;path2.py",
                     ],

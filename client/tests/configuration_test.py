@@ -24,6 +24,7 @@ from .. import (
 from ..configuration import (
     PythonVersion,
     InvalidPythonVersion,
+    SharedMemory,
     Configuration,
     ExtensionElement,
     InvalidConfiguration,
@@ -88,6 +89,7 @@ class PartialConfigurationTest(unittest.TestCase):
                 typeshed="typeshed",
                 dot_pyre_directory=Path(".pyre"),
                 python_version="3.6.7",
+                shared_memory_heap_size=42,
             )
         )
         self.assertEqual(configuration.binary, "binary")
@@ -112,6 +114,7 @@ class PartialConfigurationTest(unittest.TestCase):
         self.assertEqual(
             configuration.python_version, PythonVersion(major=3, minor=6, micro=7)
         )
+        self.assertEqual(configuration.shared_memory, SharedMemory(heap_size=42))
 
     def test_create_from_string_success(self) -> None:
         self.assertEqual(
@@ -327,6 +330,25 @@ class PartialConfigurationTest(unittest.TestCase):
             PythonVersion(major=3, minor=6, micro=7),
         )
 
+        self.assertEqual(
+            PartialConfiguration.from_string(
+                json.dumps({"shared_memory": {"heap_size": 1}})
+            ).shared_memory,
+            SharedMemory(heap_size=1),
+        )
+        self.assertEqual(
+            PartialConfiguration.from_string(
+                json.dumps({"shared_memory": {"dependency_table_power": 2}})
+            ).shared_memory,
+            SharedMemory(dependency_table_power=2),
+        )
+        self.assertEqual(
+            PartialConfiguration.from_string(
+                json.dumps({"shared_memory": {"hash_table_power": 3}})
+            ).shared_memory,
+            SharedMemory(hash_table_power=3),
+        )
+
         self.assertIsNone(PartialConfiguration.from_string("{}").source_directories)
         source_directories = PartialConfiguration.from_string(
             json.dumps({"source_directories": ["foo", "bar"]})
@@ -434,6 +456,8 @@ class PartialConfigurationTest(unittest.TestCase):
         assert_raises(json.dumps({"version": 123}))
         assert_raises(json.dumps({"python_version": "abc"}))
         assert_raises(json.dumps({"python_version": 42}))
+        assert_raises(json.dumps({"shared_memory": "abc"}))
+        assert_raises(json.dumps({"shared_memory": {"heap_size": "abc"}}))
 
     def test_merge(self) -> None:
         # Unsafe features like `getattr` has to be used in this test to reduce boilerplates.
@@ -664,6 +688,7 @@ class ConfigurationTest(testslide.TestCase):
                 oncall="oncall",
                 other_critical_files=["critical"],
                 python_version=PythonVersion(major=3, minor=6, micro=7),
+                shared_memory=SharedMemory(heap_size=1024),
                 search_path=[SimpleSearchPathElement("search_path")],
                 source_directories=None,
                 strict=None,
@@ -702,6 +727,7 @@ class ConfigurationTest(testslide.TestCase):
         self.assertEqual(
             configuration.python_version, PythonVersion(major=3, minor=6, micro=7)
         )
+        self.assertEqual(configuration.shared_memory, SharedMemory(heap_size=1024))
         self.assertEqual(configuration.source_directories, None)
         self.assertEqual(configuration.strict, False)
         self.assertEqual(configuration.taint_models_path, ["taint"])

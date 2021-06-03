@@ -100,6 +100,8 @@ class CommandTest(unittest.TestCase):
                 "6",
                 "-python-micro-version",
                 "0",
+                "-shared-memory-heap-size",
+                "1073741824",
             ],
         )
 
@@ -124,6 +126,8 @@ class CommandTest(unittest.TestCase):
                 "6",
                 "-python-micro-version",
                 "0",
+                "-shared-memory-heap-size",
+                "1073741824",
             ],
         )
         with patch.object(
@@ -152,5 +156,7 @@ class CommandTest(unittest.TestCase):
                     "6",
                     "-python-micro-version",
                     "0",
+                    "-shared-memory-heap-size",
+                    "1073741824",
                 ],
             )

@@ -50,6 +50,9 @@ class CommandArguments:
     use_command_v2: Optional[bool] = None
     isolation_prefix: Optional[str] = None
     python_version: Optional[str] = None
+    shared_memory_heap_size: Optional[int] = None
+    shared_memory_dependency_table_power: Optional[int] = None
+    shared_memory_hash_table_power: Optional[int] = None
 
 
 @dataclass(frozen=True)
