@@ -93,7 +93,7 @@ let type_inference_integration_test context =
           def no_errors(x: int) -> int:
               return x
 
-          def needs_return(x: int):
+          def needs_return(y: int, x: int):
               return x
         |}
       );
@@ -135,7 +135,10 @@ let type_inference_integration_test context =
               "name": "test.needs_return",
               "parent": null,
               "return": "int",
-              "parameters": [ { "name": "x", "annotation": "int", "value": null } ],
+              "parameters": [
+                { "name": "x", "annotation": "int", "value": null },
+                { "name": "y", "annotation": "int", "value": null }
+              ],
               "decorators": [],
               "location": { "qualifier": "test", "path": "test.py", "line": 10 },
               "async": false
