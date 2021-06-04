@@ -42,8 +42,7 @@ let run_server configuration_file =
           let logger, log_identifier =
             match remote_logging with
             | None -> None, ""
-            | Some { Newserver.ServerConfiguration.RemoteLogging.logger; identifier } ->
-                Some logger, identifier
+            | Some { Configuration.RemoteLogging.logger; identifier } -> Some logger, identifier
           in
           let relative_local_root =
             match local_root with

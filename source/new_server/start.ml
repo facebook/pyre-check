@@ -461,8 +461,8 @@ let initialize_server_state
   in
   let build_system_initializer =
     let from_source_paths = function
-      | ServerConfiguration.SourcePaths.Simple _ -> BuildSystem.Initializer.null
-      | ServerConfiguration.SourcePaths.Buck buck_options ->
+      | Configuration.SourcePaths.Simple _ -> BuildSystem.Initializer.null
+      | Configuration.SourcePaths.Buck buck_options ->
           let raw = Buck.Raw.create () in
           BuildSystem.Initializer.buck ~raw buck_options
     in

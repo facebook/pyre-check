@@ -171,10 +171,10 @@ module Filter = struct
       Set.add set ".pyre_configuration.local"
       |> fun set ->
       ( match source_paths with
-      | SourcePaths.Buck _ ->
+      | Configuration.SourcePaths.Buck _ ->
           let set = Set.add set "TARGETS" in
           Set.add set "BUCK"
-      | SourcePaths.Simple _ -> set )
+      | Configuration.SourcePaths.Simple _ -> set )
       |> Set.to_list
     in
     let extension_of = function

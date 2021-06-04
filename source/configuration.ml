@@ -20,6 +20,153 @@ let default_shared_memory_dependency_table_power = 27
 
 let default_shared_memory_hash_table_power = 26
 
+module Buck = struct
+  type t = {
+    mode: string option;
+    isolation_prefix: string option;
+    targets: string list;
+    (* This is the buck root of the source directory, i.e. output of `buck root`. *)
+    source_root: Path.t;
+    (* This is the root of directory where built artifacts will be placed. *)
+    artifact_root: Path.t;
+  }
+  [@@deriving sexp, compare, hash]
+
+  let of_yojson json =
+    let open JsonParsing in
+    try
+      let mode = optional_string_member "mode" json in
+      let isolation_prefix = optional_string_member "isolation_prefix" json in
+      let targets = string_list_member "targets" json ~default:[] in
+      let source_root = path_member "source_root" json in
+      let artifact_root = path_member "artifact_root" json in
+      Result.Ok { mode; isolation_prefix; targets; source_root; artifact_root }
+    with
+    | Yojson.Safe.Util.Type_error (message, _)
+    | Yojson.Safe.Util.Undefined (message, _) ->
+        Result.Error message
+    | other_exception -> Result.Error (Exn.to_string other_exception)
+
+
+  let to_yojson { mode; isolation_prefix; targets; source_root; artifact_root } =
+    let result =
+      [
+        "targets", `List (List.map targets ~f:(fun target -> `String target));
+        "source_root", `String (Path.absolute source_root);
+        "artifact_root", `String (Path.absolute artifact_root);
+      ]
+    in
+    let result =
+      match mode with
+      | None -> result
+      | Some mode -> ("mode", `String mode) :: result
+    in
+    let result =
+      match isolation_prefix with
+      | None -> result
+      | Some isolation_prefix -> ("isolation_prefix", `String isolation_prefix) :: result
+    in
+    `Assoc result
+end
+
+module SourcePaths = struct
+  type t =
+    | Simple of SearchPath.t list
+    | Buck of Buck.t
+  [@@deriving sexp, compare, hash]
+
+  let of_yojson json =
+    let open Yojson.Safe.Util in
+    let parsing_failed () =
+      let message = Format.sprintf "Malformed source path JSON: %s" (Yojson.Safe.to_string json) in
+      Result.Error message
+    in
+    let parse_search_path_jsons search_path_jsons =
+      try
+        Result.Ok
+          (Simple (List.map search_path_jsons ~f:(fun json -> to_string json |> SearchPath.create)))
+      with
+      | Type_error _ -> parsing_failed ()
+    in
+    match json with
+    | `List search_path_jsons ->
+        (* Recognize this as a shortcut for simple source paths. *)
+        parse_search_path_jsons search_path_jsons
+    | `Assoc _ -> (
+        match member "kind" json with
+        | `String "simple" -> (
+            match member "paths" json with
+            | `List search_path_jsons -> parse_search_path_jsons search_path_jsons
+            | _ -> parsing_failed () )
+        | `String "buck" -> (
+            match Buck.of_yojson json with
+            | Result.Ok buck -> Result.Ok (Buck buck)
+            | Result.Error error -> Result.Error error )
+        | _ -> parsing_failed () )
+    | _ -> parsing_failed ()
+
+
+  let to_yojson = function
+    | Simple search_paths ->
+        `Assoc
+          [
+            "kind", `String "simple";
+            "paths", [%to_yojson: string list] (List.map search_paths ~f:SearchPath.show);
+          ]
+    | Buck buck -> Buck.to_yojson buck |> Yojson.Safe.Util.combine (`Assoc ["kind", `String "buck"])
+end
+
+module RemoteLogging = struct
+  type t = {
+    logger: string;
+    identifier: (string[@default ""]);
+  }
+  [@@deriving sexp, compare, hash, yojson]
+end
+
+module PythonVersion = struct
+  type t = {
+    major: int;
+    minor: int;
+    micro: int;
+  }
+  [@@deriving sexp, compare, hash, yojson]
+
+  let default =
+    {
+      major = default_python_major_version;
+      minor = default_python_minor_version;
+      micro = default_python_micro_version;
+    }
+end
+
+module SharedMemory = struct
+  type t = {
+    heap_size: int;
+    dependency_table_power: int;
+    hash_table_power: int;
+  }
+  [@@deriving sexp, compare, hash, yojson]
+
+  let default =
+    {
+      heap_size = default_shared_memory_heap_size;
+      dependency_table_power = default_shared_memory_dependency_table_power;
+      hash_table_power = default_shared_memory_hash_table_power;
+    }
+
+
+  let of_yojson json =
+    let open JsonParsing in
+    Ok
+      {
+        heap_size = int_member "heap_size" ~default:default.heap_size json;
+        dependency_table_power =
+          int_member "dependency_table_power" ~default:default.dependency_table_power json;
+        hash_table_power = int_member "hash_table_power" ~default:default.hash_table_power json;
+      }
+end
+
 module Features = struct
   type t = {
     click_to_fix: bool;

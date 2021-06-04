@@ -254,7 +254,7 @@ let test_buck_renormalize context =
     let source_root = bracket_tmpdir context |> Path.create_absolute in
     let artifact_root = bracket_tmpdir context |> Path.create_absolute in
     {
-      ServerConfiguration.Buck.mode = None;
+      Configuration.Buck.mode = None;
       isolation_prefix = None;
       targets = ["//foo:target"];
       source_root;
@@ -331,7 +331,7 @@ let test_buck_update context =
       Buck.Raw.create_for_testing ~query ~build ()
     in
     {
-      ServerConfiguration.Buck.mode = None;
+      Configuration.Buck.mode = None;
       isolation_prefix = None;
       targets = ["//foo:target"];
       source_root;
@@ -421,7 +421,7 @@ let test_buck_update_without_rebuild context =
       Buck.Raw.create_for_testing ~query ~build ()
     in
     {
-      ServerConfiguration.Buck.mode = None;
+      Configuration.Buck.mode = None;
       isolation_prefix = None;
       targets = ["//foo:target"];
       source_root;

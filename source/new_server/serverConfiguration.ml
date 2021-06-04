@@ -8,102 +8,6 @@
 open Core
 open Pyre
 
-module Buck = struct
-  type t = {
-    mode: string option;
-    isolation_prefix: string option;
-    targets: string list;
-    (* This is the buck root of the source directory, i.e. output of `buck root`. *)
-    source_root: Path.t;
-    (* This is the root of directory where built artifacts will be placed. *)
-    artifact_root: Path.t;
-  }
-  [@@deriving sexp, compare, hash]
-
-  let of_yojson json =
-    let open JsonParsing in
-    try
-      let mode = optional_string_member "mode" json in
-      let isolation_prefix = optional_string_member "isolation_prefix" json in
-      let targets = string_list_member "targets" json ~default:[] in
-      let source_root = path_member "source_root" json in
-      let artifact_root = path_member "artifact_root" json in
-      Result.Ok { mode; isolation_prefix; targets; source_root; artifact_root }
-    with
-    | Yojson.Safe.Util.Type_error (message, _)
-    | Yojson.Safe.Util.Undefined (message, _) ->
-        Result.Error message
-    | other_exception -> Result.Error (Exn.to_string other_exception)
-
-
-  let to_yojson { mode; isolation_prefix; targets; source_root; artifact_root } =
-    let result =
-      [
-        "targets", `List (List.map targets ~f:(fun target -> `String target));
-        "source_root", `String (Path.absolute source_root);
-        "artifact_root", `String (Path.absolute artifact_root);
-      ]
-    in
-    let result =
-      match mode with
-      | None -> result
-      | Some mode -> ("mode", `String mode) :: result
-    in
-    let result =
-      match isolation_prefix with
-      | None -> result
-      | Some isolation_prefix -> ("isolation_prefix", `String isolation_prefix) :: result
-    in
-    `Assoc result
-end
-
-module SourcePaths = struct
-  type t =
-    | Simple of SearchPath.t list
-    | Buck of Buck.t
-  [@@deriving sexp, compare, hash]
-
-  let of_yojson json =
-    let open Yojson.Safe.Util in
-    let parsing_failed () =
-      let message = Format.sprintf "Malformed source path JSON: %s" (Yojson.Safe.to_string json) in
-      Result.Error message
-    in
-    let parse_search_path_jsons search_path_jsons =
-      try
-        Result.Ok
-          (Simple (List.map search_path_jsons ~f:(fun json -> to_string json |> SearchPath.create)))
-      with
-      | Type_error _ -> parsing_failed ()
-    in
-    match json with
-    | `List search_path_jsons ->
-        (* Recognize this as a shortcut for simple source paths. *)
-        parse_search_path_jsons search_path_jsons
-    | `Assoc _ -> (
-        match member "kind" json with
-        | `String "simple" -> (
-            match member "paths" json with
-            | `List search_path_jsons -> parse_search_path_jsons search_path_jsons
-            | _ -> parsing_failed () )
-        | `String "buck" -> (
-            match Buck.of_yojson json with
-            | Result.Ok buck -> Result.Ok (Buck buck)
-            | Result.Error error -> Result.Error error )
-        | _ -> parsing_failed () )
-    | _ -> parsing_failed ()
-
-
-  let to_yojson = function
-    | Simple search_paths ->
-        `Assoc
-          [
-            "kind", `String "simple";
-            "paths", [%to_yojson: string list] (List.map search_paths ~f:SearchPath.show);
-          ]
-    | Buck buck -> Buck.to_yojson buck |> Yojson.Safe.Util.combine (`Assoc ["kind", `String "buck"])
-end
-
 module CriticalFile = struct
   type t =
     | BaseName of string
@@ -235,60 +139,9 @@ module SavedStateAction = struct
         `List [`String "save_to_file"; `Assoc save_to_file_options]
 end
 
-module RemoteLogging = struct
-  type t = {
-    logger: string;
-    identifier: (string[@default ""]);
-  }
-  [@@deriving sexp, compare, hash, yojson]
-end
-
-module PythonVersion = struct
-  type t = {
-    major: int;
-    minor: int;
-    micro: int;
-  }
-  [@@deriving sexp, compare, hash, yojson]
-
-  let default =
-    {
-      major = Configuration.default_python_major_version;
-      minor = Configuration.default_python_minor_version;
-      micro = Configuration.default_python_micro_version;
-    }
-end
-
-module SharedMemory = struct
-  type t = {
-    heap_size: int;
-    dependency_table_power: int;
-    hash_table_power: int;
-  }
-  [@@deriving sexp, compare, hash, yojson]
-
-  let default =
-    {
-      heap_size = Configuration.default_shared_memory_heap_size;
-      dependency_table_power = Configuration.default_shared_memory_dependency_table_power;
-      hash_table_power = Configuration.default_shared_memory_hash_table_power;
-    }
-
-
-  let of_yojson json =
-    let open JsonParsing in
-    Ok
-      {
-        heap_size = int_member "heap_size" ~default:default.heap_size json;
-        dependency_table_power =
-          int_member "dependency_table_power" ~default:default.dependency_table_power json;
-        hash_table_power = int_member "hash_table_power" ~default:default.hash_table_power json;
-      }
-end
-
 type t = {
   (* Source file discovery *)
-  source_paths: SourcePaths.t;
+  source_paths: Configuration.SourcePaths.t;
   search_paths: SearchPath.t list;
   excludes: string list;
   checked_directory_allowlist: Path.t list;
@@ -303,7 +156,7 @@ type t = {
   (* Type checking controls *)
   debug: bool;
   strict: bool;
-  python_version: PythonVersion.t;
+  python_version: Configuration.PythonVersion.t;
   show_error_traces: bool;
   store_type_check_resolution: bool;
   critical_files: CriticalFile.t list;
@@ -312,10 +165,10 @@ type t = {
   parallel: bool;
   number_of_workers: int;
   (* Memory controls *)
-  shared_memory: SharedMemory.t;
+  shared_memory: Configuration.SharedMemory.t;
   (* Logging controls *)
   additional_logging_sections: string list;
-  remote_logging: RemoteLogging.t option;
+  remote_logging: Configuration.RemoteLogging.t option;
   profiling_output: string option;
   memory_profiling_output: string option;
 }
@@ -332,7 +185,7 @@ let of_yojson json =
 
     (* Parsing logic *)
     let source_paths =
-      json |> member "source_paths" |> SourcePaths.of_yojson |> Result.ok_or_failwith
+      json |> member "source_paths" |> Configuration.SourcePaths.of_yojson |> Result.ok_or_failwith
     in
     let search_paths =
       json
@@ -364,8 +217,8 @@ let of_yojson json =
       json
       |> member "python_version"
       |> function
-      | `Null -> PythonVersion.default
-      | _ as json -> PythonVersion.of_yojson json |> Result.ok_or_failwith
+      | `Null -> Configuration.PythonVersion.default
+      | _ as json -> Configuration.PythonVersion.of_yojson json |> Result.ok_or_failwith
     in
     let show_error_traces = json |> bool_member "show_error_traces" ~default:false in
     let critical_files = json |> critial_file_list_member "critical_files" ~default:[] in
@@ -385,8 +238,8 @@ let of_yojson json =
       json
       |> member "shared_memory"
       |> function
-      | `Null -> SharedMemory.default
-      | _ as json -> SharedMemory.of_yojson json |> Result.ok_or_failwith
+      | `Null -> Configuration.SharedMemory.default
+      | _ as json -> Configuration.SharedMemory.of_yojson json |> Result.ok_or_failwith
     in
     let additional_logging_sections =
       json |> string_list_member "additional_logging_sections" ~default:[]
@@ -396,7 +249,8 @@ let of_yojson json =
       |> member "remote_logging"
       |> function
       | `Null -> None
-      | _ as json -> RemoteLogging.of_yojson json |> Result.ok_or_failwith |> Option.some
+      | _ as json ->
+          Configuration.RemoteLogging.of_yojson json |> Result.ok_or_failwith |> Option.some
     in
     let profiling_output = json |> optional_string_member "profiling_output" in
     let memory_profiling_output = json |> optional_string_member "memory_profiling_output" in
@@ -466,7 +320,7 @@ let to_yojson
   =
   let result =
     [
-      "source_paths", [%to_yojson: SourcePaths.t] source_paths;
+      "source_paths", [%to_yojson: Configuration.SourcePaths.t] source_paths;
       "search_paths", [%to_yojson: string list] (List.map search_paths ~f:SearchPath.show);
       "excludes", [%to_yojson: string list] excludes;
       ( "checked_directory_allowlist",
@@ -479,13 +333,13 @@ let to_yojson
       "taint_model_paths", [%to_yojson: string list] (List.map taint_model_paths ~f:Path.absolute);
       "debug", [%to_yojson: bool] debug;
       "strict", [%to_yojson: bool] strict;
-      "python_version", [%to_yojson: PythonVersion.t] python_version;
+      "python_version", [%to_yojson: Configuration.PythonVersion.t] python_version;
       "show_error_traces", [%to_yojson: bool] show_error_traces;
       "critical_files", [%to_yojson: CriticalFile.t list] critical_files;
       "store_type_check_resolution", [%to_yojson: bool] store_type_check_resolution;
       "parallel", [%to_yojson: bool] parallel;
       "number_of_workers", [%to_yojson: int] number_of_workers;
-      "shared_memory", [%to_yojson: SharedMemory.t] shared_memory;
+      "shared_memory", [%to_yojson: Configuration.SharedMemory.t] shared_memory;
       "additional_logging_sections", [%to_yojson: string list] additional_logging_sections;
     ]
   in
@@ -509,7 +363,8 @@ let to_yojson
   let result =
     match remote_logging with
     | None -> result
-    | Some remote_logging -> ("remote_logging", RemoteLogging.to_yojson remote_logging) :: result
+    | Some remote_logging ->
+        ("remote_logging", Configuration.RemoteLogging.to_yojson remote_logging) :: result
   in
   let result =
     match profiling_output with
@@ -540,14 +395,15 @@ let analysis_configuration_of
       taint_model_paths;
       debug;
       strict;
-      python_version = { PythonVersion.major; minor; micro };
+      python_version = { Configuration.PythonVersion.major; minor; micro };
       show_error_traces;
       critical_files = _;
       saved_state_action = _;
       store_type_check_resolution;
       parallel;
       number_of_workers;
-      shared_memory = { SharedMemory.heap_size; dependency_table_power; hash_table_power };
+      shared_memory =
+        { Configuration.SharedMemory.heap_size; dependency_table_power; hash_table_power };
       additional_logging_sections = _;
       remote_logging = _;
       profiling_output = _;
@@ -556,8 +412,8 @@ let analysis_configuration_of
   =
   let source_path =
     match source_paths with
-    | SourcePaths.Simple source_paths -> source_paths
-    | Buck { Buck.artifact_root; _ } -> [SearchPath.Root artifact_root]
+    | Configuration.SourcePaths.Simple source_paths -> source_paths
+    | Buck { Configuration.Buck.artifact_root; _ } -> [SearchPath.Root artifact_root]
   in
   Configuration.Analysis.create
     ~infer:false

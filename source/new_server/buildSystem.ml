@@ -240,7 +240,7 @@ module BuckBuildSystem = struct
   let initialize_from_options
       ~raw
       ~buck_options:
-        { ServerConfiguration.Buck.mode; isolation_prefix; targets; source_root; artifact_root }
+        { Configuration.Buck.mode; isolation_prefix; targets; source_root; artifact_root }
       ()
     =
     let open Lwt.Infix in
@@ -259,8 +259,7 @@ module BuckBuildSystem = struct
 
   let initialize_from_saved_state
       ~raw
-      ~buck_options:
-        { ServerConfiguration.Buck.mode; isolation_prefix; source_root; artifact_root; _ }
+      ~buck_options:{ Configuration.Buck.mode; isolation_prefix; source_root; artifact_root; _ }
       ()
     =
     let open Lwt.Infix in

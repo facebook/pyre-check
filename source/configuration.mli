@@ -7,17 +7,55 @@
 
 open Pyre
 
-val default_python_major_version : int
+module Buck : sig
+  type t = {
+    mode: string option;
+    isolation_prefix: string option;
+    targets: string list;
+    (* This is the buck root of the source directory, i.e. output of `buck root`. *)
+    source_root: Path.t;
+    (* This is the root of directory where built artifacts will be placed. *)
+    artifact_root: Path.t;
+  }
+  [@@deriving sexp, compare, hash, yojson]
+end
 
-val default_python_minor_version : int
+module SourcePaths : sig
+  type t =
+    | Simple of SearchPath.t list
+    | Buck of Buck.t
+  [@@deriving sexp, compare, hash, yojson]
+end
 
-val default_python_micro_version : int
+module RemoteLogging : sig
+  type t = {
+    logger: string;
+    identifier: string;
+  }
+  [@@deriving sexp, compare, hash, yojson]
+end
 
-val default_shared_memory_heap_size : int
+module PythonVersion : sig
+  type t = {
+    major: int;
+    minor: int;
+    micro: int;
+  }
+  [@@deriving sexp, compare, hash, yojson]
 
-val default_shared_memory_dependency_table_power : int
+  val default : t
+end
 
-val default_shared_memory_hash_table_power : int
+module SharedMemory : sig
+  type t = {
+    heap_size: int;
+    dependency_table_power: int;
+    hash_table_power: int;
+  }
+  [@@deriving sexp, compare, hash, yojson]
+
+  val default : t
+end
 
 module Features : sig
   type t = {
