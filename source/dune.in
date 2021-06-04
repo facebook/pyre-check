@@ -140,6 +140,12 @@
  (libraries core sexplib ppxlib ppx_deriving pyrelib.log pyrelib.path))
 
 (library
+ (name jsonParsing)
+ (public_name pyrelib.json_parsing)
+ (modules jsonParsing)
+ (libraries yojson pyrePath))
+
+(library
  (name file)
  (modules file)
  (public_name pyrelib.file)
