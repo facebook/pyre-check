@@ -13,15 +13,22 @@ exception
   }
 
 type t = {
-  query: string list -> string Lwt.t;
-  build: string list -> string Lwt.t;
+  query: ?isolation_prefix:string -> string list -> string Lwt.t;
+  build: ?isolation_prefix:string -> string list -> string Lwt.t;
 }
 
 let create_for_testing ~query ~build () = { query; build }
 
+let isolation_prefix_to_buck_arguments = function
+  | None
+  | Some "" ->
+      []
+  | Some isolation_prefix -> ["--isolation_prefix"; isolation_prefix]
+
+
 let create () =
   let open Lwt.Infix in
-  let invoke_buck arguments =
+  let invoke_buck ?isolation_prefix arguments =
     let consume_stderr stderr_channel =
       (* Forward the buck progress message from subprocess stderr to our users, so they get a sense
          of what is being done under the hood. *)
@@ -45,10 +52,18 @@ let create () =
         >>= fun () ->
         Lwt_io.flush output_channel
         >>= fun () ->
-        LwtSubprocess.run "buck" ~arguments:[Format.sprintf "@%s" filename] ~consume_stderr)
+        let arguments =
+          List.append
+            (isolation_prefix_to_buck_arguments isolation_prefix)
+            [Format.sprintf "@%s" filename]
+        in
+        LwtSubprocess.run "buck" ~arguments ~consume_stderr)
     >>= function
     | { LwtSubprocess.Completed.status; stdout; _ } -> (
         let fail_with_error ?exit_code description =
+          let arguments =
+            List.append (isolation_prefix_to_buck_arguments isolation_prefix) arguments
+          in
           Lwt.fail (BuckError { arguments; description; exit_code })
         in
         match status with
@@ -70,8 +85,8 @@ let create () =
             in
             fail_with_error description )
   in
-  let query arguments = invoke_buck ("query" :: arguments) in
-  let build arguments = invoke_buck ("build" :: arguments) in
+  let query ?isolation_prefix arguments = invoke_buck ?isolation_prefix ("query" :: arguments) in
+  let build ?isolation_prefix arguments = invoke_buck ?isolation_prefix ("build" :: arguments) in
   { query; build }
 
 

@@ -299,20 +299,26 @@ module Raw : sig
   (** Create an instance of [Raw.t] based on system-installed Buck. *)
 
   val create_for_testing
-    :  query:(string list -> string Lwt.t) ->
-    build:(string list -> string Lwt.t) ->
+    :  query:(?isolation_prefix:string -> string list -> string Lwt.t) ->
+    build:(?isolation_prefix:string -> string list -> string Lwt.t) ->
     unit ->
     t
   (** Create an instance of [Raw.t] from custom [query] and [build] behavior. Useful for unit
       testing. *)
 
-  val query : t -> string list -> string Lwt.t
+  val query : t -> ?isolation_prefix:string -> string list -> string Lwt.t
   (** Shell out to `buck query` with the given cli arguments. Returns the content of stdout. If the
-      return code is not 0, raise [BuckError]. *)
+      return code is not 0, raise [BuckError].
 
-  val build : t -> string list -> string Lwt.t
+      Note that isolation prefix is intentionally required to be specified separately, since Buck
+      interpret it a bit differently from the rest of the arguments. *)
+
+  val build : t -> ?isolation_prefix:string -> string list -> string Lwt.t
   (** Shell out to `buck build` with the given cli arguments. Returns the content of stdout. If the
-      return code is not 0, raise [BuckError]. *)
+      return code is not 0, raise [BuckError].
+
+      Note that isolation prefix is intentionally required to be specified separately, since Buck
+      interpret it a bit differently from the rest of the arguments. *)
 end
 
 (** This module contains high-level interfaces for invoking `buck` as an external tool. *)

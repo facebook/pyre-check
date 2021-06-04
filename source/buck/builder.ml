@@ -47,13 +47,6 @@ let create ?mode ?isolation_prefix ~source_root ~artifact_root raw =
   { buck_options = { BuckOptions.raw; mode; isolation_prefix }; source_root; artifact_root }
 
 
-let isolation_prefix_to_buck_arguments = function
-  | None
-  | Some "" ->
-      []
-  | Some isolation_prefix -> ["--isolation_prefix"; isolation_prefix]
-
-
 let query_buck_for_normalized_targets
     { BuckOptions.raw; mode; isolation_prefix }
     target_specifications
@@ -67,7 +60,6 @@ let query_buck_for_normalized_targets
           ["--json"];
           (* Mark the query as coming from `pyre` for `buck`, to make troubleshooting easier. *)
           ["--config"; "client.id=pyre"];
-          isolation_prefix_to_buck_arguments isolation_prefix;
           Option.value_map mode ~default:[] ~f:(fun mode -> ["@mode/" ^ mode]);
           [
             "kind(\"python_binary|python_library|python_test\", %s)"
@@ -82,7 +74,7 @@ let query_buck_for_normalized_targets
           ];
           target_specifications;
         ]
-      |> Raw.query raw
+      |> Raw.query ?isolation_prefix raw
 
 
 let query_buck_for_changed_targets ~targets { BuckOptions.raw; mode; isolation_prefix } source_paths
@@ -98,7 +90,6 @@ let query_buck_for_changed_targets ~targets { BuckOptions.raw; mode; isolation_p
             [
               ["--json"];
               ["--config"; "client.id=pyre"];
-              isolation_prefix_to_buck_arguments isolation_prefix;
               Option.value_map mode ~default:[] ~f:(fun mode -> ["@mode/" ^ mode]);
               [
                 (* This will get only those owner targets that are beneath our targets or the
@@ -109,7 +100,7 @@ let query_buck_for_changed_targets ~targets { BuckOptions.raw; mode; isolation_p
               (* These attributes are all we need to locate the source and artifact relative paths. *)
               ["--output-attributes"; "srcs"; "buck.base_path"; "buck.base_module"; "base_module"];
             ]
-          |> Raw.query raw )
+          |> Raw.query ?isolation_prefix raw )
 
 
 let run_buck_build_for_targets { BuckOptions.raw; mode; isolation_prefix } targets =
@@ -122,12 +113,11 @@ let run_buck_build_for_targets { BuckOptions.raw; mode; isolation_prefix } targe
           ["--show-full-json-output"];
           (* Mark the query as coming from `pyre` for `buck`, to make troubleshooting easier. *)
           ["--config"; "client.id=pyre"];
-          isolation_prefix_to_buck_arguments isolation_prefix;
           Option.value_map mode ~default:[] ~f:(fun mode -> ["@mode/" ^ mode]);
           List.map targets ~f:(fun target ->
               Format.sprintf "%s%s" (Target.show target) source_database_suffix);
         ]
-      |> Raw.build raw
+      |> Raw.build ?isolation_prefix raw
 
 
 let parse_buck_normalized_targets_query_output query_output =
