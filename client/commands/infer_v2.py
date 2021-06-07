@@ -18,6 +18,7 @@ from typing_extensions import Final
 
 from .. import command_arguments, log
 from ..analysis_directory import AnalysisDirectory, resolve_analysis_directory
+from ..annotation_collector import AnnotationCollector
 from ..configuration import Configuration
 from .check import Check
 from .infer import dequalify_and_fix_pathlike, split_imports
@@ -131,6 +132,13 @@ class FunctionAnnotation:
             ]
         )
 
+    @property
+    def complete(self) -> bool:
+        missing = self.return_annotation.missing or any(
+            parameter.annotation.missing for parameter in self.parameters
+        )
+        return not missing
+
 
 @dataclass(frozen=True)
 class MethodAnnotation(FunctionAnnotation):
@@ -141,6 +149,10 @@ class MethodAnnotation(FunctionAnnotation):
 class FieldAnnotation(ABC):
     name: str
     annotation: TypeAnnotation
+
+    def __post_init__(self) -> None:
+        if self.annotation.missing:
+            raise RuntimeError(f"Illegal missing FieldAnnotation for {self.name}")
 
     def to_stub(self) -> str:
         name = _sanitize_name(self.name)
@@ -169,7 +181,16 @@ class ModuleAnnotations:
     methods: list[MethodAnnotation]
 
     @staticmethod
-    def from_infer_output(path: str, infer_output: RawInferOutput) -> ModuleAnnotations:
+    def empty(path: str) -> ModuleAnnotations:
+        return ModuleAnnotations(
+            path=path, globals_=[], attributes=[], functions=[], methods=[]
+        )
+
+    @staticmethod
+    def from_infer_output(
+        path: str,
+        infer_output: RawInferOutput,
+    ) -> ModuleAnnotations:
         return ModuleAnnotations(
             path=path,
             globals_=[
@@ -225,6 +246,15 @@ class ModuleAnnotations:
                 for define in infer_output["defines"]
                 if define.get("parent") is not None
             ],
+        )
+
+    def filter_for_complete(self) -> ModuleAnnotations:
+        return ModuleAnnotations(
+            path=self.path,
+            globals_=self.globals_,
+            attributes=self.attributes,
+            functions=[function for function in self.functions if function.complete],
+            methods=[method for method in self.methods if method.complete],
         )
 
     @property
@@ -315,14 +345,22 @@ class ModuleAnnotations:
 
 def _create_module_annotations(
     infer_output: RawInferOutput,
+    complete_only: bool = False,
 ) -> Sequence[ModuleAnnotations]:
-    infer_output_by_path = RawInferOutput.split_by_path(infer_output)
-    return [
+    infer_output_by_path = RawInferOutput.split_by_path(
+        infer_output=infer_output,
+    )
+    modules = [
         ModuleAnnotations.from_infer_output(
-            path=path, infer_output=infer_output_for_path
+            path=path,
+            infer_output=infer_output_for_path,
         )
         for path, infer_output_for_path in infer_output_by_path.items()
     ]
+    if complete_only:
+        return [module.filter_for_complete() for module in modules]
+    else:
+        return modules
 
 
 class Infer(Check):

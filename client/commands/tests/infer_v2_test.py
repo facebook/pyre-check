@@ -16,14 +16,15 @@ from ...commands.infer_v2 import (
 
 
 class StubGenerationTest(unittest.TestCase):
-    def assert_stubs(self, data, expected) -> None:
+    def assert_stubs(self, data, expected, complete_only=False) -> None:
         # auto-generate a bit of boilerplate
         for category in RawInferOutput.categories:
             data[category] = data.get(category, [])
             for annotation in data[category]:
                 annotation["location"] = {"path": "test.py"}
         all_module_annotations = _create_module_annotations(
-            infer_output=RawInferOutput(data=data)
+            infer_output=RawInferOutput(data=data),
+            complete_only=complete_only,
         )
         self.assertEqual(len(all_module_annotations), 1)
         module_annotations = all_module_annotations[0]
@@ -410,7 +411,6 @@ class StubGenerationTest(unittest.TestCase):
             """,
         )
 
-    @unittest.skip("Not yet implemented")
     def test_stubs_complete_only(self) -> None:
         """
         Make sure we correctly filter out incomplete annotations when desired
@@ -432,7 +432,7 @@ class StubGenerationTest(unittest.TestCase):
                 ]
             },
             "",
-            # complete_only=True,
+            complete_only=True,
         )
 
         self.assert_stubs(
@@ -440,7 +440,7 @@ class StubGenerationTest(unittest.TestCase):
                 "defines": [
                     {
                         "return": "int",
-                        "name": "test._only",
+                        "name": "test.complete_only",
                         "parent": None,
                         "parameters": [
                             {"name": "x", "annotation": "int", "value": "5"}
@@ -451,7 +451,7 @@ class StubGenerationTest(unittest.TestCase):
                 ]
             },
             "def complete_only(x: int = 5) -> int: ...",
-            # complete_only=True,
+            complete_only=True,
         )
 
         self.assert_stubs(
@@ -471,7 +471,27 @@ class StubGenerationTest(unittest.TestCase):
                 ],
             },
             "def with_params(y: int = 7, x: int = 5) -> int: ...",
-            # complete_only=True,
+            complete_only=True,
+        )
+
+        self.assert_stubs(
+            {
+                "defines": [
+                    {
+                        "return": "int",
+                        "name": "test.Test.with_params",
+                        "parent": None,
+                        "parameters": [
+                            {"name": "y", "annotation": None, "value": "7"},
+                            {"name": "x", "annotation": "int", "value": "5"},
+                        ],
+                        "decorators": [],
+                        "async": False,
+                    }
+                ]
+            },
+            "",
+            complete_only=True,
         )
 
     def test_stubs_no_typing_import(self) -> None:
