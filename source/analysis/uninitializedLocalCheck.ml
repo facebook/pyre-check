@@ -20,11 +20,43 @@ let identifiers { Node.value; location } =
   | _ -> []
 
 
-let extract_reads statement =
-  match statement with
-  | Statement.Assign { value = expression; _ } -> identifiers expression
-  | Return { expression = Some expression; _ } -> identifiers expression
-  | _ -> []
+let extract_reads_expression expression =
+  let name_access_to_identifier_node { Define.NameAccess.name; location } =
+    { Node.value = name; location }
+  in
+  Preprocessing.AccessCollector.from_expression Preprocessing.NameAccessSet.empty expression
+  |> Preprocessing.NameAccessSet.to_list
+  |> List.map ~f:name_access_to_identifier_node
+
+
+let extract_reads_statement statement =
+  let expressions =
+    match statement with
+    | Statement.Assign { Assign.value = expression; _ }
+    | Delete expression
+    | Expression expression
+    | Yield expression
+    | YieldFrom expression
+    | If { If.test = expression; _ }
+    | While { While.test = expression; _ } ->
+        [expression]
+    | Assert { Assert.test; message; _ } -> [test] @ Option.to_list message
+    | For { For.target; iterator; _ } -> [target; iterator]
+    | Raise { Raise.expression; from } -> Option.to_list expression @ Option.to_list from
+    | Return { Return.expression; _ } -> Option.to_list expression
+    | With { With.items; _ } -> items |> List.map ~f:(fun (value, _) -> value)
+    | Break
+    | Class _
+    | Continue
+    | Define _
+    | Global _
+    | Import _
+    | Nonlocal _
+    | Pass
+    | Try _ ->
+        []
+  in
+  expressions |> List.concat_map ~f:extract_reads_expression
 
 
 let extract_writes statement =
@@ -73,7 +105,7 @@ module State (Context : Context) = struct
     let is_uninitialized { Node.value = identifier; _ } =
       not (InitializedVariables.mem state identifier)
     in
-    let uninitialized_usage = extract_reads value |> List.filter ~f:is_uninitialized in
+    let uninitialized_usage = extract_reads_statement value |> List.filter ~f:is_uninitialized in
     Hashtbl.set Context.uninitialized_usage ~key ~data:uninitialized_usage;
     extract_writes value |> InitializedVariables.of_list |> InitializedVariables.union state
 

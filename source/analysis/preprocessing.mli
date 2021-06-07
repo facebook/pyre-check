@@ -8,7 +8,7 @@
 open Ast
 open Core
 
-module NameAccessSet : Set.S
+module NameAccessSet : Set.S with type Elt.t = Statement.Define.NameAccess.t
 
 module AccessCollector : sig
   val from_expression : NameAccessSet.t -> Expression.t -> NameAccessSet.t
