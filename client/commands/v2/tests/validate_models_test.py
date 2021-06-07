@@ -52,10 +52,28 @@ class ValidateModelsTest(testslide.TestCase):
                                     "description": "Some description",
                                     "code": 1001,
                                 },
+                                {
+                                    "line": 3,
+                                    "column": 3,
+                                    "stop_line": 4,
+                                    "stop_column": 4,
+                                    "path": None,
+                                    "description": "Some description",
+                                    "code": 1001,
+                                },
                             ]
                         }
                     },
                     expected=[
+                        ModelVerificationError(
+                            line=3,
+                            column=3,
+                            stop_line=4,
+                            stop_column=4,
+                            path=None,
+                            description="Some description",
+                            code=1001,
+                        ),
                         ModelVerificationError(
                             line=1,
                             column=1,
@@ -64,6 +82,6 @@ class ValidateModelsTest(testslide.TestCase):
                             path=Path("test.py"),
                             description="Some description",
                             code=1001,
-                        )
+                        ),
                     ],
                 )

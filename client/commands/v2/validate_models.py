@@ -52,7 +52,7 @@ def parse_validation_errors(
             _relativize_error_path(error_module.ModelVerificationError.from_json(item))
             for item in errors_payload
         ),
-        key=lambda error: (error.path, error.line, error.code),
+        key=lambda error: (error.path or Path(), error.line, error.code),
     )
 
 
