@@ -57,7 +57,6 @@ let test_simple context =
     |}
     ["Unbound name [10]: Name `y` is used but not defined in the current scope."];
 
-  (* should be: only 1 error: x not defined *)
   assert_uninitialized_errors
     {|
       def f() -> int:
@@ -67,10 +66,7 @@ let test_simple context =
           except ZeroDivisionError:
               return x
     |}
-    [
-      "Unbound name [10]: Name `ZeroDivisionError` is used but not defined in the current scope.";
-      "Unbound name [10]: Name `x` is used but not defined in the current scope.";
-    ];
+    ["Unbound name [10]: Name `x` is used but not defined in the current scope."];
 
   assert_uninitialized_errors
     {|
@@ -81,16 +77,12 @@ let test_simple context =
     |}
     ["Unbound name [10]: Name `counter` is used but not defined in the current scope."];
 
-  (* should be: no error *)
-  assert_uninitialized_errors
-    {|
+  assert_uninitialized_errors {|
        x: int = 5
        def f():
          return x
-    |}
-    ["Unbound name [10]: Name `x` is used but not defined in the current scope."];
+    |} [];
 
-  (* should be: no error *)
   assert_uninitialized_errors
     {|
        class Foo(object):
@@ -98,7 +90,7 @@ let test_simple context =
        def f():
          return Foo()
     |}
-    ["Unbound name [10]: Name `test` is used but not defined in the current scope."];
+    [];
 
   (* Extracted from a real-world example. should be: In foo(harness_config), harness_config might
      not be defined. *)
@@ -129,7 +121,7 @@ let test_simple context =
                       harness_config = task.harness_config
                   foo(harness_config)
       |}
-    ["Unbound name [10]: Name `test` is used but not defined in the current scope."];
+    [];
 
   ()
 

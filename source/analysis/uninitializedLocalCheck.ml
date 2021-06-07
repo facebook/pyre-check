@@ -92,7 +92,21 @@ module State (Context : Context) = struct
         ~kind:(Error.UnboundName value)
         ~define
     in
-    Int.Table.data Context.uninitialized_usage |> List.concat |> List.map ~f:emit_error
+    let all_locals =
+      let { Scope.Scope.bindings; _ } = Scope.Scope.of_define_exn define.value in
+      Identifier.Map.keys bindings
+      (* Santitization is needed to remove (some) scope information that is (sometimes, but not
+         consistently) added into the identifiers themselves (e.g. $local_test?f$y). *)
+      |> List.map ~f:Identifier.sanitized
+      |> Identifier.Set.of_list
+    in
+    let in_local_scope { Node.value = identifier; _ } =
+      identifier |> Identifier.sanitized |> Identifier.Set.mem all_locals
+    in
+    Int.Table.data Context.uninitialized_usage
+    |> List.concat
+    |> List.filter ~f:in_local_scope
+    |> List.map ~f:emit_error
 
 
   let less_or_equal ~left ~right = InitializedVariables.is_subset right ~of_:left
@@ -129,4 +143,4 @@ let run
     let fixpoint = Fixpoint.forward ~cfg ~initial:(State.initial ~define) in
     Fixpoint.exit fixpoint >>| State.errors ~qualifier ~define |> Option.value ~default:[]
   in
-  source |> Preprocessing.defines ~include_toplevels:true |> List.map ~f:check |> List.concat
+  source |> Preprocessing.defines ~include_toplevels:false |> List.map ~f:check |> List.concat
