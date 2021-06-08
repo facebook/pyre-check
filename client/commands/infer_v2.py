@@ -32,6 +32,7 @@ def _sanitize_name(name: str) -> str:
     return name.split(".")[-1]
 
 
+# pyre-fixme[11]: Annotation `TypeAlias` is not defined as a type.
 RawInferOutputDict: TypeAlias = Dict[str, List[Dict[str, object]]]
 
 

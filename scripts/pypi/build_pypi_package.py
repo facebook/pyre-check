@@ -304,11 +304,13 @@ def build_pypi_package(
         _strip_binary(build_path)
         _sync_documentation_files(pyre_directory, build_path)
 
+        # pyre-fixme[6]: Expected `Path` for 2nd param but got `str`.
         _run_setup_command(pyre_directory, build_root, version, "sdist", nightly)
         _create_dist_directory(pyre_directory)
         _create_setup_configuration(build_path)
         twine_check([path.as_posix() for path in (build_path / "dist").iterdir()])
 
+        # pyre-fixme[6]: Expected `Path` for 2nd param but got `str`.
         _run_setup_command(pyre_directory, build_root, version, "bdist_wheel", nightly)
         wheel_destination, distribution_destination = _rename_and_move_artifacts(
             pyre_directory, build_path
