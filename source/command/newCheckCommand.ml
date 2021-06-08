@@ -132,9 +132,105 @@ module CheckConfiguration = struct
     | Undefined (message, _) ->
         Result.Error message
     | other_exception -> Result.Error (Exn.to_string other_exception)
+
+
+  let analysis_configuration_of
+      {
+        source_paths;
+        search_paths;
+        excludes;
+        checked_directory_allowlist;
+        checked_directory_blocklist;
+        extensions;
+        log_path;
+        global_root;
+        local_root;
+        debug;
+        strict;
+        python_version = { Configuration.PythonVersion.major; minor; micro };
+        show_error_traces;
+        parallel;
+        number_of_workers;
+        shared_memory =
+          { Configuration.SharedMemory.heap_size; dependency_table_power; hash_table_power };
+        additional_logging_sections = _;
+        remote_logging = _;
+        profiling_output = _;
+        memory_profiling_output = _;
+      }
+    =
+    let source_path =
+      match source_paths with
+      | Configuration.SourcePaths.Simple source_paths -> source_paths
+      | Buck { Configuration.Buck.artifact_root; _ } -> [SearchPath.Root artifact_root]
+    in
+    Configuration.Analysis.create
+      ~infer:false
+      ~parallel
+      ~analyze_external_sources:false
+      ~filter_directories:checked_directory_allowlist
+      ~ignore_all_errors:checked_directory_blocklist
+      ~number_of_workers
+      ~local_root:(Option.value local_root ~default:global_root)
+      ~project_root:global_root
+      ~search_path:(List.map search_paths ~f:SearchPath.normalize)
+      ~strict
+      ~debug
+      ~show_error_traces
+      ~excludes
+      ~extensions
+      ~incremental_style:Configuration.Analysis.FineGrained
+      ~include_hints:false
+      ~perform_autocompletion:false
+      ~log_directory:(Path.absolute log_path)
+      ~python_major_version:major
+      ~python_minor_version:minor
+      ~python_micro_version:micro
+      ~shared_memory_heap_size:heap_size
+      ~shared_memory_dependency_table_power:dependency_table_power
+      ~shared_memory_hash_table_power:hash_table_power
+      ~source_path
+      ()
 end
 
-let run_check _configuration_file = Log.warning "Coming soon..."
+let run_check check_configuration =
+  let _analysis_configuration = CheckConfiguration.analysis_configuration_of check_configuration in
+  Log.warning "Coming soon...";
+  Lwt.return 0
+
+
+let run_check configuration_file =
+  match
+    NewCommandStartup.read_and_parse_json configuration_file ~f:CheckConfiguration.of_yojson
+  with
+  | Result.Error message ->
+      Log.error "%s" message;
+      exit 1
+  | Result.Ok
+      ( {
+          CheckConfiguration.global_root;
+          local_root;
+          debug;
+          additional_logging_sections;
+          remote_logging;
+          profiling_output;
+          memory_profiling_output;
+          _;
+        } as check_configuration ) ->
+      NewCommandStartup.setup_global_states
+        ~global_root
+        ~local_root
+        ~debug
+        ~additional_logging_sections
+        ~remote_logging
+        ~profiling_output
+        ~memory_profiling_output
+        ();
+
+      let exit_code = Lwt_main.run (run_check check_configuration) in
+      Statistics.flush ();
+      exit exit_code
+
 
 let command =
   let filename_argument = Command.Param.(anon ("filename" %: Filename.arg_type)) in
