@@ -1958,6 +1958,27 @@ let test_convert_all_escaped_free_variables_to_anys _ =
   ()
 
 
+let test_int_expression_create _ =
+  let x = Type.Variable.Unary.create "x" in
+  let y = Type.Variable.Unary.create "y" in
+  let assert_create_list_list given expected =
+    match Type.IntExpression.create (polynomial_create_from_variables_list given) with
+    | Type.IntExpression (Data result_polynomial) ->
+        assert_equal
+          ~printer:[%show: Type.type_t Type.Polynomial.t]
+          ~cmp:[%equal: Type.type_t Type.Polynomial.t]
+          result_polynomial
+          (polynomial_create_from_variables_list expected)
+    | _ -> assert false
+  in
+  assert_create_list_list [1, [x, 1]; 1, []; -1, []] [1, [x, 1]; 1, []; -1, []];
+  assert_create_list_list [1, [y, 1; y, 1]] [1, [y, 1; y, 1]];
+  assert_create_list_list [0, [x, 1; y, 1]; 0, []; 1, []] [1, []];
+  assert_create_list_list [1, [x, 1]; 1, [y, 1]] [1, [y, 1]; 1, [x, 1]];
+  assert_create_list_list [1, [x, 1; y, 1]] [1, [y, 1; x, 1]];
+  ()
+
+
 let test_replace_all _ =
   let free_variable = Type.Variable (Type.Variable.Unary.create "T") in
   let annotation = Type.parametric "p" ![free_variable; Type.integer] in
@@ -3572,6 +3593,7 @@ let () =
          "contains_escaped_free_variable" >:: test_contains_escaped_free_variable;
          "convert_all_escaped_free_variables_to_anys"
          >:: test_convert_all_escaped_free_variables_to_anys;
+         "int_expression_create" >:: test_int_expression_create;
          "replace_all" >:: test_replace_all;
          "less_or_equal_polynomial" >:: test_less_or_equal;
          "collect_all" >:: test_collect_all;

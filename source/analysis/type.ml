@@ -728,6 +728,8 @@ and Polynomial : sig
 
   val create_from_int : int -> 'a t
 
+  val normalize : compare_t:('a -> 'a -> int) -> 'a t -> 'a t
+
   val create_from_variables_list
     :  compare_t:('a -> 'a -> int) ->
     (int * ('a Record.Variable.RecordUnary.record * int) list) list ->
@@ -994,7 +996,8 @@ end = struct
     | NonPolynomial of 'a Polynomial.t
     | Polynomial of 'a t
 
-  let normalize_variant ~compare_t:_ polynomial = Polynomial (Data polynomial)
+  let normalize_variant ~compare_t polynomial =
+    Polynomial (Data (Polynomial.normalize ~compare_t polynomial))
 end
 
 open Record.Callable
