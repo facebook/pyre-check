@@ -469,7 +469,7 @@ let record_overrides_for_qualifiers
 
 let analyze
     ~scheduler
-    ~analysis_kind
+    ~analysis
     ~static_analysis_configuration:
       ({ Configuration.StaticAnalysis.configuration; use_cache; _ } as static_analysis_configuration)
     ~filename_lookup
@@ -508,7 +508,6 @@ let analyze
         new_callables, new_stubs, new_filtered_callables
   in
   let stubs = (stubs :> Callable.t list) in
-  let analyses = [analysis_kind] in
   let timer = Timer.start () in
   (* Initialize and add initial models of analyses to shared mem. We do this prior to computing
      overrides because models can optionally specify overrides to skip *)
@@ -517,7 +516,7 @@ let analyze
     let functions = (List.map callables_with_dependency_information ~f:fst :> Callable.t list) in
     let { Interprocedural.Analysis.initial_models = models; skip_overrides } =
       Analysis.initialize_models
-        analyses
+        analysis
         ~static_analysis_configuration
         ~scheduler
         ~environment
@@ -641,7 +640,7 @@ let analyze
     Interprocedural.Analysis.compute_fixpoint
       ~scheduler
       ~environment
-      ~analyses
+      ~analysis
       ~dependencies
       ~filtered_callables
       ~all_callables:callables_to_analyze
@@ -656,7 +655,7 @@ let analyze
       ~static_analysis_configuration
       ~environment
       ~filename_lookup
-      ~analyses
+      ~analysis
       ~callables
       ~skipped_overrides
       ~fixpoint_timer

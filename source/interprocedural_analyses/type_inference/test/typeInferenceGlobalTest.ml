@@ -34,7 +34,7 @@ let static_analysis_configuration { ScratchProject.configuration; _ } =
   }
 
 
-let analyses = [TypeInference.Analysis.abstract_kind]
+let analysis = TypeInference.Analysis.abstract_kind
 
 let fixpoint_result ~context ~callables ~sources =
   let scratch_project = ScratchProject.setup ~context ~infer:true sources in
@@ -44,7 +44,7 @@ let fixpoint_result ~context ~callables ~sources =
   in
   let scheduler = Test.mock_scheduler () in
   let static_analysis_configuration = static_analysis_configuration scratch_project in
-  Analysis.initialize_configuration ~static_analysis_configuration analyses;
+  Analysis.initialize_configuration ~static_analysis_configuration analysis;
   Analysis.record_initial_models ~functions:callables ~stubs:[] Callable.Map.empty;
   let fixpoint_iterations =
     let iteration_limit = 1 in
@@ -52,7 +52,7 @@ let fixpoint_result ~context ~callables ~sources =
       (Analysis.compute_fixpoint
          ~scheduler
          ~environment
-         ~analyses
+         ~analysis
          ~dependencies:DependencyGraph.empty
          ~filtered_callables
          ~all_callables:callables
@@ -62,7 +62,7 @@ let fixpoint_result ~context ~callables ~sources =
     ~scheduler
     ~static_analysis_configuration
     ~environment
-    ~analyses
+    ~analysis
     ~filename_lookup:(fun _ -> None)
     ~callables:filtered_callables
     ~skipped_overrides:[]

@@ -36,12 +36,11 @@ let assert_fixpoint
     |> DependencyGraph.union overrides
     |> DependencyGraph.reverse
   in
-  let analyses = [TaintAnalysis.abstract_kind] in
   let iterations =
     Analysis.compute_fixpoint
       ~scheduler
       ~environment
-      ~analyses
+      ~analysis:TaintAnalysis.abstract_kind
       ~dependencies
       ~filtered_callables:Callable.Set.empty
       ~all_callables:callables_to_analyze

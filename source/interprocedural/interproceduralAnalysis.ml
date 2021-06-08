@@ -12,13 +12,10 @@ open Statement
 module Kind = AnalysisKind
 module Result = InterproceduralResult
 
-let initialize_configuration kinds ~static_analysis_configuration =
-  let initialize_kind kind =
-    let (Result.Analysis { analysis; _ }) = Result.get_abstract_analysis kind in
-    let module Analysis = (val analysis) in
-    Analysis.initialize_configuration ~static_analysis_configuration
-  in
-  List.iter kinds ~f:initialize_kind
+let initialize_configuration kind ~static_analysis_configuration =
+  let (Result.Analysis { analysis; _ }) = Result.get_abstract_analysis kind in
+  let module Analysis = (val analysis) in
+  Analysis.initialize_configuration ~static_analysis_configuration
 
 
 type initialize_result = {
@@ -26,8 +23,7 @@ type initialize_result = {
   skip_overrides: Ast.Reference.Set.t;
 }
 
-let initialize_models kinds ~scheduler ~static_analysis_configuration ~environment ~functions ~stubs
-  =
+let initialize_models kind ~scheduler ~static_analysis_configuration ~environment ~functions ~stubs =
   let initialize_each
       { initial_models = models; skip_overrides }
       (Result.Analysis { kind; analysis })
@@ -57,10 +53,7 @@ let initialize_models kinds ~scheduler ~static_analysis_configuration ~environme
     }
   in
   let accumulate model kind = initialize_each model (Result.get_abstract_analysis kind) in
-  List.fold
-    kinds
-    ~init:{ initial_models = Callable.Map.empty; skip_overrides = Reference.Set.empty }
-    ~f:accumulate
+  accumulate { initial_models = Callable.Map.empty; skip_overrides = Reference.Set.empty } kind
 
 
 let record_initial_models ~functions ~stubs models =
@@ -103,7 +96,7 @@ let get_empty_model (type a) (kind : < model : a ; .. > Result.storable_kind) : 
   Analysis.empty_model
 
 
-let get_obscure_models analyses =
+let get_obscure_models analysis =
   let get_analysis_specific_obscure_model map abstract_analysis =
     let (Result.Analysis { kind; analysis }) = abstract_analysis in
     let module Analysis = (val analysis) in
@@ -113,7 +106,7 @@ let get_obscure_models analyses =
       (Result.Pkg { kind = ModelPart kind; value = obscure_model })
       map
   in
-  let models = List.fold ~f:get_analysis_specific_obscure_model ~init:Kind.Map.empty analyses in
+  let models = get_analysis_specific_obscure_model Kind.Map.empty analysis in
   Result.{ models; is_obscure = true }
 
 
@@ -289,7 +282,7 @@ let widen_if_necessary step callable ~old_model ~new_model result =
 
 let analyze_define
     step
-    analyses
+    analysis
     callable
     environment
     qualifier
@@ -329,12 +322,7 @@ let analyze_define
       let akind, model, result = analyze analysis in
       Result.Kind.Map.add akind model models, Result.Kind.Map.add akind result results
     in
-    (* Run all the analyses *)
-    try
-      let init = Result.Kind.Map.(empty, empty) in
-      let models, results = List.fold ~f:accumulate analyses ~init in
-      models, results
-    with
+    try accumulate Result.Kind.Map.(empty, empty) analysis with
     | Analysis.ClassHierarchy.Untracked annotation ->
         Log.log
           ~section:`Info
@@ -407,7 +395,7 @@ let callables_to_dump =
   ref Callable.Set.empty
 
 
-let analyze_callable analyses step callable environment =
+let analyze_callable analysis step callable environment =
   let resolution = Analysis.TypeEnvironment.ReadOnly.global_resolution environment in
   let () =
     (* Verify invariants *)
@@ -446,13 +434,13 @@ let analyze_callable analyses step callable environment =
           Fixpoint.
             {
               is_partial = false;
-              model = get_obscure_models analyses;
+              model = get_obscure_models analysis;
               result = Result.empty_result;
             }
       | Some (qualifier, ({ Node.value; _ } as define)) ->
           if Define.dump value then
             callables_to_dump := Callable.Set.add callable !callables_to_dump;
-          analyze_define step analyses callable environment qualifier define )
+          analyze_define step analysis callable environment qualifier define )
   | #Callable.override_target as callable -> analyze_overrides step callable
   | #Callable.object_target as path ->
       Format.asprintf "Found object %a in fixpoint analysis" Callable.pp path |> failwith
@@ -470,11 +458,11 @@ type result = {
 }
 
 (* Called on a worker with a set of functions to analyze. *)
-let one_analysis_pass ~analyses ~step ~environment ~callables =
-  let analyses = List.map ~f:Result.get_abstract_analysis analyses in
+let one_analysis_pass ~analysis ~step ~environment ~callables =
+  let analysis = Result.get_abstract_analysis analysis in
   let analyze_and_cache expensive_callables callable =
     let timer = Timer.start () in
-    let result = analyze_callable analyses step callable environment in
+    let result = analyze_callable analysis step callable environment in
     Fixpoint.add_state step callable result;
     (* Log outliers. *)
     if Timer.stop_in_ms timer > 500 then begin
@@ -564,7 +552,7 @@ let compute_callables_to_reanalyze
 let compute_fixpoint
     ~scheduler
     ~environment
-    ~analyses
+    ~analysis
     ~dependencies
     ~filtered_callables
     ~all_callables
@@ -635,7 +623,7 @@ let compute_fixpoint
           Scheduler.map_reduce
             scheduler
             ~policy:(Scheduler.Policy.legacy_fixed_chunk_size 1000)
-            ~map:(fun _ callables -> one_analysis_pass ~analyses ~step ~environment ~callables)
+            ~map:(fun _ callables -> one_analysis_pass ~analysis ~step ~environment ~callables)
             ~initial:
               {
                 callables_processed = 0;
@@ -722,7 +710,7 @@ let report_results
     ~static_analysis_configuration
     ~environment
     ~filename_lookup
-    ~analyses
+    ~analysis
     ~callables
     ~skipped_overrides
     ~fixpoint_timer
@@ -740,5 +728,4 @@ let report_results
       ~fixpoint_timer
       ~fixpoint_iterations
   in
-  let analyses = List.map ~f:Result.get_abstract_analysis analyses in
-  analyses |> List.concat_map ~f:report_analysis
+  Result.get_abstract_analysis analysis |> report_analysis

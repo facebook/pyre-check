@@ -177,7 +177,7 @@ let run_analysis
       Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->
           Interprocedural.Analysis.initialize_configuration
             ~static_analysis_configuration
-            [analysis_kind];
+            analysis_kind;
           let cached_environment =
             if use_cache then Service.StaticAnalysis.Cache.load_environment ~configuration else None
           in
@@ -234,7 +234,7 @@ let run_analysis
           in
           Service.StaticAnalysis.analyze
             ~scheduler
-            ~analysis_kind
+            ~analysis:analysis_kind
             ~static_analysis_configuration
             ~filename_lookup
             ~environment:(Analysis.TypeEnvironment.read_only environment)
