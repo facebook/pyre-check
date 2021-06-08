@@ -569,10 +569,15 @@ class StubGenerationTest(unittest.TestCase):
 
 
 class ExistingAnnotationsTest(unittest.TestCase):
-    def _assert_stubs(self, code: str, expected: str) -> None:
+    def _assert_stubs(self, code: str, expected: str, data: dict | None = None) -> None:
         module_annotations = ModuleAnnotations.from_module(
             path=PATH, module=libcst.parse_module(textwrap.dedent(code))
         )
+        if data is not None:
+            module_annotations += _create_test_module_annotations(
+                data=data,
+                complete_only=False,
+            )
         actual = module_annotations.to_stubs()
         _assert_stubs_equal(actual, expected)
 
@@ -640,5 +645,70 @@ class ExistingAnnotationsTest(unittest.TestCase):
             """\
             class Foo:
                 x: Any = ...
+            """,
+        )
+
+    def test_stubs_combining_annotations(self) -> None:
+        self._assert_stubs(
+            """
+            x: object = 1 + 1
+            y: int = 1 + 1
+            def f() -> object: return 10
+            def g() -> str: return "hello"
+            class Foo:
+                x: object = 10
+                y: int = 10
+                def f(self) -> object: return 10
+                def g(self) -> str: return "hello"
+            """,
+            data={
+                "globals": [
+                    {
+                        "name": "test.x",
+                        "annotation": "int",
+                    }
+                ],
+                "attributes": [
+                    {
+                        "name": "test.Foo.x",
+                        "parent": "test.Foo",
+                        "annotation": "int",
+                    }
+                ],
+                "defines": [
+                    {
+                        "name": "test.f",
+                        "parent": None,
+                        "return": "int",
+                        "parameters": [],
+                        "decorators": [],
+                        "async": False,
+                    },
+                    {
+                        "name": "test.Foo.f",
+                        "parent": "Foo",
+                        "return": "int",
+                        "parameters": [
+                            {
+                                "name": "self",
+                                "annotation": None,
+                                "value": None,
+                            }
+                        ],
+                        "decorators": [],
+                        "async": False,
+                    },
+                ],
+            },
+            expected="""\
+            x: int = ...
+            y: int = ...
+            def f() -> int: ...
+            def g() -> str: ...
+            class Foo:
+                x: int = ...
+                y: int = ...
+                def f(self) -> int: ...
+                def g(self) -> str: ...
             """,
         )

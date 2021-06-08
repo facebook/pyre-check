@@ -372,6 +372,45 @@ class ModuleAnnotations:
             methods=collector.methods,
         )
 
+    def __add__(self, other: ModuleAnnotations) -> ModuleAnnotations:
+        """
+        Combine two sets of annotations for the same module, preferring
+        those from the right where there are collisions.
+
+        One use for this is to add existing annotations to those from infer
+        when generating full stub files.
+        """
+        if self.path != other.path:
+            raise ValueError(
+                "Cannot add ModuleAnnotations from different paths "
+                + f"{self.path!r} vs {other.path!r}"
+            )
+        other_names: set[str] = {
+            annotation.name
+            for annotation in
+            # pyre-ignore[58] : list[A] + list[B] = list[A | B]
+            other.globals_ + other.attributes + other.functions + other.methods
+        }
+        return ModuleAnnotations(
+            path=self.path,
+            globals_=other.globals_
+            + [global_ for global_ in self.globals_ if global_.name not in other_names],
+            attributes=other.attributes
+            + [
+                attribute
+                for attribute in self.attributes
+                if attribute.name not in other_names
+            ],
+            functions=other.functions
+            + [
+                function
+                for function in self.functions
+                if function.name not in other_names
+            ],
+            methods=other.methods
+            + [method for method in self.methods if method.name not in other_names],
+        )
+
     def filter_for_complete(self) -> ModuleAnnotations:
         return ModuleAnnotations(
             path=self.path,
