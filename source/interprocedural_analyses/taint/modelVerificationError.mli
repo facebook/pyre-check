@@ -18,6 +18,7 @@ module T : sig
 
   type kind =
     | ParseError
+    | UnexpectedStatement of Statement.t
     | InvalidDefaultValue of {
         callable_name: string;
         name: string;
@@ -68,7 +69,6 @@ module T : sig
         unexpected_decorators: Statement.Decorator.t list;
       }
     | InvalidIdentifier of Expression.t
-    | UnexpectedStatement of Statement.t
     | ClassBodyNotEllipsis of string
     | DefineBodyNotEllipsis of string
     | UnclassifiedError of {

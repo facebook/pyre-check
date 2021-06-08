@@ -20,6 +20,7 @@ module T = struct
 
   type kind =
     | ParseError
+    | UnexpectedStatement of Statement.t
     | InvalidDefaultValue of {
         callable_name: string;
         name: string;
@@ -70,7 +71,6 @@ module T = struct
         unexpected_decorators: Statement.Decorator.t list;
       }
     | InvalidIdentifier of Expression.t
-    | UnexpectedStatement of Statement.t
     | ClassBodyNotEllipsis of string
     | DefineBodyNotEllipsis of string
     (* TODO(T81363867): Remove this variant. *)
@@ -93,6 +93,7 @@ include T
 let description error =
   match error with
   | ParseError -> "Syntax error."
+  | UnexpectedStatement _ -> "Unexpected statement."
   | InvalidDefaultValue { callable_name; name; expression } ->
       Format.sprintf
         "Default values of `%s`'s parameters must be `...`. Did you mean to write `%s: %s`?"
@@ -179,7 +180,6 @@ let description error =
       Format.sprintf
         "Invalid identifier: `%s`. Expected a fully-qualified name."
         (Expression.show expression)
-  | UnexpectedStatement _ -> "Unexpected statement."
   | ClassBodyNotEllipsis class_name ->
       Format.sprintf "Class model for `%s` must have a body of `...`." class_name
   | DefineBodyNotEllipsis model_name ->
