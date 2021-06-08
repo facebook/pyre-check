@@ -19,6 +19,7 @@ module T = struct
   [@@deriving sexp, compare, eq, show]
 
   type kind =
+    | ParseError
     | InvalidDefaultValue of {
         callable_name: string;
         name: string;
@@ -91,6 +92,7 @@ include T
 
 let description error =
   match error with
+  | ParseError -> "Syntax error."
   | InvalidDefaultValue { callable_name; name; expression } ->
       Format.sprintf
         "Default values of `%s`'s parameters must be `...`. Did you mean to write `%s: %s`?"
@@ -177,7 +179,7 @@ let description error =
       Format.sprintf
         "Invalid identifier: `%s`. Expected a fully-qualified name."
         (Expression.show expression)
-  | UnexpectedStatement _ -> "Unexpected statement"
+  | UnexpectedStatement _ -> "Unexpected statement."
   | ClassBodyNotEllipsis class_name ->
       Format.sprintf "Class model for `%s` must have a body of `...`." class_name
   | DefineBodyNotEllipsis model_name ->
@@ -241,6 +243,7 @@ let code { kind; _ } =
   | ClassBodyNotEllipsis _ -> 22
   | DefineBodyNotEllipsis _ -> 23
   | InvalidNameClause _ -> 24
+  | ParseError -> 25
 
 
 let display { kind = error; path; location } =

@@ -2371,17 +2371,21 @@ let create_model_from_attribute
 
 
 let create ~resolution ~path ~configuration ~rule_filter source =
+  let open Core.Result in
   let sources_to_keep, sinks_to_keep =
     compute_sources_and_sinks_to_keep ~configuration ~rule_filter
   in
   let signatures_and_queries, errors =
     String.split ~on:'\n' source
-    |> Parser.parse_exn
-    |> Source.create
-    |> Source.statements
-    |> List.map ~f:(parse_statement ~resolution ~path ~configuration)
-    |> List.partition_result
-    |> fun (results, errors) -> List.concat results, errors
+    |> Parser.parse
+    >>| Source.create
+    >>| Source.statements
+    >>| List.map ~f:(parse_statement ~resolution ~path ~configuration)
+    >>| List.partition_result
+    |> function
+    | Ok (results, errors) -> List.concat results, errors
+    | Error { Parser.Error.location; _ } ->
+        [], [model_verification_error ~path ~location ParseError]
   in
   let create_model_or_query = function
     | ParsedSignature parsed_signature ->

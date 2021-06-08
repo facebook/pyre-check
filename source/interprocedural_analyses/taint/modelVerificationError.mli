@@ -17,6 +17,7 @@ module T : sig
   [@@deriving sexp, compare, eq]
 
   type kind =
+    | ParseError
     | InvalidDefaultValue of {
         callable_name: string;
         name: string;
