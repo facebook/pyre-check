@@ -179,9 +179,11 @@ module OrderImplementation = struct
               union
             else
               List.map elements ~f:(join order other) |> List.fold ~f:(join order) ~init:Type.Bottom
-        | Type.IntExpression polynomial, other when Type.Polynomial.is_base_case polynomial ->
+        | Type.IntExpression (Data polynomial), other when Type.Polynomial.is_base_case polynomial
+          ->
             join order other (Type.polynomial_to_type polynomial)
-        | other, Type.IntExpression polynomial when Type.Polynomial.is_base_case polynomial ->
+        | other, Type.IntExpression (Data polynomial) when Type.Polynomial.is_base_case polynomial
+          ->
             join order other (Type.polynomial_to_type polynomial)
         | Type.IntExpression _, other
         | other, Type.IntExpression _ ->

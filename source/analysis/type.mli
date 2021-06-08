@@ -262,6 +262,10 @@ module Polynomial : sig
     'a t
 end
 
+module RecordIntExpression : sig
+  type 'a t = private Data of 'a Polynomial.t [@@deriving compare, eq, sexp, show, hash]
+end
+
 module Primitive : sig
   type t = Identifier.t [@@deriving compare, eq, sexp, show, hash]
 
@@ -304,8 +308,12 @@ and t =
   | Tuple of t Record.OrderedTypes.record
   | Union of t list
   | Variable of t Record.Variable.RecordUnary.record
-  | IntExpression of t Polynomial.t
+  | IntExpression of t RecordIntExpression.t
 [@@deriving compare, eq, sexp, show, hash]
+
+module IntExpression : sig
+  val create : t Polynomial.t -> t
+end
 
 type class_data = {
   instantiated: t;

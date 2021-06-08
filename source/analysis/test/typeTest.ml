@@ -1996,7 +1996,7 @@ let test_replace_all _ =
     polynomial_create_from_variables_list variable_list |> Type.polynomial_to_type
   in
   let divide_to_type numerator denominator =
-    Type.IntExpression (Type.Polynomial.divide ~compare_t:Type.compare numerator denominator)
+    Type.IntExpression.create (Type.Polynomial.divide ~compare_t:Type.compare numerator denominator)
   in
   (* TODO: Task T90507423. This needs to be normalized before output. *)
   assert_equal
@@ -2014,14 +2014,14 @@ let test_replace_all _ =
     (Type.Variable.GlobalTransforms.Unary.replace_all
        (fun _ -> Some (Type.literal_integer 7))
        (divide_to_type (Type.Polynomial.create_from_int 7) (Type.Polynomial.create_from_variable x)))
-    (Type.IntExpression (polynomial_create_from_variables_list [1, []]));
+    (Type.IntExpression.create (polynomial_create_from_variables_list [1, []]));
   assert_equal
     (Type.Variable.GlobalTransforms.Unary.replace_all
        (fun _ -> Some (Type.literal_integer 6))
        (divide_to_type
           (Type.Polynomial.create_from_int 10)
           (Type.Polynomial.create_from_variable x)))
-    (Type.IntExpression (polynomial_create_from_variables_list [1, []]));
+    (Type.IntExpression.create (polynomial_create_from_variables_list [1, []]));
   assert_equal
     (Type.Variable.GlobalTransforms.Unary.replace_all
        (function
@@ -2032,7 +2032,7 @@ let test_replace_all _ =
                   (polynomial_create_from_variables_list [1, [y, 1]]))
          | _ -> None)
        (variable_list_to_type [1, [x, 1; y, 1]]))
-    (Type.IntExpression
+    (Type.IntExpression.create
        (Type.Polynomial.multiply
           ~compare_t:Type.compare
           (Type.Polynomial.create_from_variable y)
@@ -2045,7 +2045,7 @@ let test_replace_all _ =
        (function
          | variable when not ([%equal: Type.Variable.Unary.t] variable z) -> Some (Type.Variable z)
          | _ -> None)
-       (Type.IntExpression
+       (Type.IntExpression.create
           (Type.Polynomial.add
              ~compare_t:Type.compare
              (Type.Polynomial.divide
@@ -2056,7 +2056,7 @@ let test_replace_all _ =
                 ~compare_t:Type.compare
                 (Type.Polynomial.create_from_int 7)
                 (polynomial_create_from_variables_list [1, [y, 1; z, 1]])))))
-    (Type.IntExpression
+    (Type.IntExpression.create
        (Type.Polynomial.multiply
           ~compare_t:Type.compare
           (Type.Polynomial.create_from_int 2)
@@ -2069,7 +2069,7 @@ let test_replace_all _ =
        (function
          | variable when [%equal: Type.Variable.Unary.t] variable x -> Some (Type.Variable y)
          | _ -> None)
-       (Type.IntExpression
+       (Type.IntExpression.create
           (Type.Polynomial.add
              ~compare_t:Type.compare
              (Type.Polynomial.create_from_int 1)
@@ -2077,7 +2077,7 @@ let test_replace_all _ =
                 ~compare_t:Type.compare
                 (Type.Polynomial.create_from_variable x)
                 (Type.Polynomial.create_from_variable y)))))
-    (Type.IntExpression (polynomial_create_from_variables_list [2, []]));
+    (Type.IntExpression.create (polynomial_create_from_variables_list [2, []]));
   assert_equal
     (Type.Variable.GlobalTransforms.Unary.replace_all
        (fun _ -> Some (Type.literal_integer 0))
@@ -2088,7 +2088,7 @@ let test_replace_all _ =
     (Type.Variable.GlobalTransforms.Unary.replace_all
        (fun _ -> Some (Type.literal_integer 4))
        (variable_list_to_type [2, [x, 3]; 3, [y, 1; z, 1]]))
-    (Type.IntExpression (polynomial_create_from_variables_list [176, []]));
+    (Type.IntExpression.create (polynomial_create_from_variables_list [176, []]));
   assert_equal
     (Type.Variable.GlobalTransforms.Unary.replace_all
        (function
@@ -2256,7 +2256,7 @@ let test_less_or_equal _ =
     polynomial_create_from_variables_list variable_list |> Type.polynomial_to_type
   in
   let divide_to_type numerator denominator =
-    Type.IntExpression (Type.Polynomial.divide ~compare_t:Type.compare numerator denominator)
+    Type.IntExpression.create (Type.Polynomial.divide ~compare_t:Type.compare numerator denominator)
   in
   let very_complicated_type =
     Type.tuple
