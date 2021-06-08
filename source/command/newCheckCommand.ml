@@ -193,13 +193,69 @@ module CheckConfiguration = struct
       ()
 end
 
+let with_performance_tracking ~debug f =
+  let timer = Timer.start () in
+  let result = f () in
+  let { Caml.Gc.minor_collections; major_collections; compactions; _ } = Caml.Gc.stat () in
+  Statistics.performance
+    ~name:"check"
+    ~timer
+    ~integers:
+      [
+        "gc_minor_collections", minor_collections;
+        "gc_major_collections", major_collections;
+        "gc_compactions", compactions;
+      ]
+    ~normals:["request kind", "FullCheck"]
+    ();
+  if debug then
+    Memory.report_statistics ();
+  result
+
+
+let do_check configuration =
+  Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->
+      with_performance_tracking ~debug:configuration.debug (fun () ->
+          let { Service.Check.errors; environment } =
+            Service.Check.check
+              ~scheduler
+              ~configuration
+              ~call_graph_builder:(module Analysis.Callgraph.DefaultBuilder)
+          in
+          ( errors,
+            Analysis.TypeEnvironment.ast_environment environment
+            |> Analysis.AstEnvironment.read_only )))
+
+
+let compute_errors ~configuration ~build_system () =
+  let errors, ast_environment = do_check configuration in
+  List.map
+    errors
+    ~f:(Newserver.RequestHandler.instantiate_error ~build_system ~configuration ~ast_environment)
+
+
+let print_errors errors =
+  Yojson.Safe.to_string
+    (`Assoc
+      [
+        ( "errors",
+          `List
+            (List.map ~f:(fun error -> Analysis.AnalysisError.Instantiated.to_yojson error) errors)
+        );
+      ])
+  |> Log.print "%s"
+
+
 let run_check check_configuration =
   let { CheckConfiguration.source_paths; _ } = check_configuration in
-  Newserver.BuildSystem.with_build_system source_paths ~f:(fun _build_system ->
-      let _analysis_configuration =
-        CheckConfiguration.analysis_configuration_of check_configuration
+  Newserver.BuildSystem.with_build_system source_paths ~f:(fun build_system ->
+      let errors =
+        compute_errors
+          ~configuration:(CheckConfiguration.analysis_configuration_of check_configuration)
+          ~build_system
+          ()
       in
-      Log.warning "Coming soon...";
+      print_errors errors;
       Lwt.return 0)
 
 

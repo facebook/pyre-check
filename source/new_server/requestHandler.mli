@@ -5,4 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+val instantiate_error
+  :  build_system:BuildSystem.t ->
+  configuration:Configuration.Analysis.t ->
+  ast_environment:Analysis.AstEnvironment.ReadOnly.t ->
+  Analysis.AnalysisError.t ->
+  Analysis.AnalysisError.Instantiated.t
+
 val process_request : state:ServerState.t -> Request.t -> (ServerState.t * Response.t) Lwt.t
