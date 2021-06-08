@@ -4,47 +4,80 @@
 # LICENSE file in the root directory of this source tree.
 
 # pyre-unsafe
+from __future__ import annotations
 
 import textwrap
 import unittest
 from pathlib import Path
+from typing import cast
 
 from ...commands.infer_v2 import (
     _create_module_annotations,
     RawInferOutput,
+    RawInferOutputDict,
+    ModuleAnnotations,
 )
 
 
+PATH = "test.py"
+
+
+def _raw_infer_output(
+    data: dict | None,
+) -> RawInferOutput:
+    data = data or {}
+    for category in RawInferOutput.categories:
+        data[category] = data.get(category, [])
+        for annotation in data[category]:
+            annotation["location"] = {"path": PATH}
+    return RawInferOutput(data=cast(RawInferOutputDict, data))
+
+
+def _create_test_module_annotations(
+    data: dict | None,
+    complete_only: bool,
+) -> ModuleAnnotations:
+    all_module_annotations = _create_module_annotations(
+        infer_output=_raw_infer_output(data=data),
+        complete_only=complete_only,
+    )
+    if len(all_module_annotations) != 1:
+        raise AssertionError("Expected exactly one module!")
+    module_annotations = all_module_annotations[0]
+    assert module_annotations.stubs_path(Path("code")) == Path(f"code/{PATH}i")
+    return module_annotations
+
+
+def _assert_stubs_equal(actual, expected):
+    actual = actual.strip()
+    expected = textwrap.dedent(expected.rstrip())
+    if actual != expected:
+        print(f"---\nactual\n---\n{actual}")
+        print(f"---\nexpected\n---\n{expected}")
+        raise AssertionError("Stubs not as expected, see stdout")
+
+
 class StubGenerationTest(unittest.TestCase):
-    def assert_stubs(self, data, expected, complete_only=False) -> None:
-        # auto-generate a bit of boilerplate
-        for category in RawInferOutput.categories:
-            data[category] = data.get(category, [])
-            for annotation in data[category]:
-                annotation["location"] = {"path": "test.py"}
-        all_module_annotations = _create_module_annotations(
-            infer_output=RawInferOutput(data=data),
+    def _assert_stubs(
+        self,
+        data: dict,
+        expected: str,
+        complete_only: bool = False,
+    ) -> None:
+        module_annotations = _create_test_module_annotations(
+            data=data,
             complete_only=complete_only,
         )
-        self.assertEqual(len(all_module_annotations), 1)
-        module_annotations = all_module_annotations[0]
-        self.assertEqual(
-            module_annotations.stubs_path(Path("code")), Path("code/test.pyi")
-        )
-        actual = module_annotations.to_stubs().strip()
-        expected = textwrap.dedent(expected.rstrip())
-        if actual != expected:
-            print(f"---\nactual\n---\n{actual}")
-            print(f"---\nexpected\n---\n{expected}")
-            raise AssertionError("Stubs not as expected, see stdout")
+        actual = module_annotations.to_stubs()
+        _assert_stubs_equal(actual, expected)
 
     def test_stubs_defines(self) -> None:
-        self.assert_stubs(
+        self._assert_stubs(
             {
                 "defines": [
                     {
                         "return": "int",
-                        "name": "ret_int",
+                        "name": "test.Test.ret_int",
                         "parent": "test.Test",
                         "parameters": [
                             {"name": "self", "annotation": None, "value": None}
@@ -61,7 +94,7 @@ class StubGenerationTest(unittest.TestCase):
             """,
         )
 
-        self.assert_stubs(
+        self._assert_stubs(
             {
                 "defines": [
                     {
@@ -80,7 +113,7 @@ class StubGenerationTest(unittest.TestCase):
             """,
         )
 
-        self.assert_stubs(
+        self._assert_stubs(
             {
                 "defines": [
                     {
@@ -99,7 +132,7 @@ class StubGenerationTest(unittest.TestCase):
             "def with_params(y=7, x: int = 5) -> int: ...",
         )
 
-        self.assert_stubs(
+        self._assert_stubs(
             {
                 "defines": [
                     {
@@ -115,7 +148,7 @@ class StubGenerationTest(unittest.TestCase):
             "def returns_string() -> str: ...",
         )
 
-        self.assert_stubs(
+        self._assert_stubs(
             {
                 "defines": [
                     {
@@ -131,7 +164,7 @@ class StubGenerationTest(unittest.TestCase):
             "def returns_bool() -> bool: ...",
         )
 
-        self.assert_stubs(
+        self._assert_stubs(
             {
                 "defines": [
                     {
@@ -147,7 +180,7 @@ class StubGenerationTest(unittest.TestCase):
             "def returns_float() -> float: ...",
         )
 
-        self.assert_stubs(
+        self._assert_stubs(
             {
                 "defines": [
                     {
@@ -164,7 +197,7 @@ class StubGenerationTest(unittest.TestCase):
             "def missing_param_test(x: int = 5): ...",
         )
 
-        self.assert_stubs(
+        self._assert_stubs(
             {
                 "defines": [
                     {
@@ -180,7 +213,7 @@ class StubGenerationTest(unittest.TestCase):
             "def another_fun() -> float: ...",
         )
 
-        self.assert_stubs(
+        self._assert_stubs(
             {
                 "defines": [
                     {
@@ -198,7 +231,7 @@ class StubGenerationTest(unittest.TestCase):
             "",
         )
 
-        self.assert_stubs(
+        self._assert_stubs(
             {
                 "defines": [
                     {
@@ -216,7 +249,7 @@ class StubGenerationTest(unittest.TestCase):
             "",
         )
 
-        self.assert_stubs(
+        self._assert_stubs(
             {
                 "defines": [
                     {
@@ -249,7 +282,7 @@ class StubGenerationTest(unittest.TestCase):
                 def ret_dict(self) -> Dict[int, str]: ...
             """,
         )
-        self.assert_stubs(
+        self._assert_stubs(
             {
                 "defines": [
                     {
@@ -285,7 +318,7 @@ class StubGenerationTest(unittest.TestCase):
         )
 
     def test_stubs_attributes_and_globals(self) -> None:
-        self.assert_stubs(
+        self._assert_stubs(
             {
                 "globals": [{"annotation": "int", "name": "global", "parent": None}],
             },
@@ -294,7 +327,7 @@ class StubGenerationTest(unittest.TestCase):
             """,
         )
 
-        self.assert_stubs(
+        self._assert_stubs(
             {
                 "attributes": [
                     {
@@ -311,7 +344,7 @@ class StubGenerationTest(unittest.TestCase):
         )
 
     def test_stubs_with_pathlike(self) -> None:
-        self.assert_stubs(
+        self._assert_stubs(
             {
                 "defines": [
                     {
@@ -331,7 +364,7 @@ class StubGenerationTest(unittest.TestCase):
             + " 'os.PathLike[str]', bytes, str]: ...",
         )
 
-        self.assert_stubs(
+        self._assert_stubs(
             {
                 "defines": [
                     {
@@ -348,7 +381,7 @@ class StubGenerationTest(unittest.TestCase):
             },
             "def bar(x: int) -> 'os.PathLike[str]': ...",
         )
-        self.assert_stubs(
+        self._assert_stubs(
             {
                 "defines": [
                     {
@@ -365,7 +398,7 @@ class StubGenerationTest(unittest.TestCase):
             },
             "def bar(x: int) -> os.PathLike[str]: ...",
         )
-        self.assert_stubs(
+        self._assert_stubs(
             {
                 "defines": [
                     {
@@ -387,7 +420,7 @@ class StubGenerationTest(unittest.TestCase):
             def bar(x: int) -> Union[os.PathLike[str]]: ...
             """,
         )
-        self.assert_stubs(
+        self._assert_stubs(
             {
                 "defines": [
                     {
@@ -415,7 +448,7 @@ class StubGenerationTest(unittest.TestCase):
         """
         Make sure we correctly filter out incomplete annotations when desired
         """
-        self.assert_stubs(
+        self._assert_stubs(
             {
                 "defines": [
                     {
@@ -435,7 +468,7 @@ class StubGenerationTest(unittest.TestCase):
             complete_only=True,
         )
 
-        self.assert_stubs(
+        self._assert_stubs(
             {
                 "defines": [
                     {
@@ -454,7 +487,7 @@ class StubGenerationTest(unittest.TestCase):
             complete_only=True,
         )
 
-        self.assert_stubs(
+        self._assert_stubs(
             {
                 "defines": [
                     {
@@ -474,7 +507,7 @@ class StubGenerationTest(unittest.TestCase):
             complete_only=True,
         )
 
-        self.assert_stubs(
+        self._assert_stubs(
             {
                 "defines": [
                     {
@@ -498,13 +531,13 @@ class StubGenerationTest(unittest.TestCase):
         """
         Make sure we don't spuriously import from typing
 
-        NOTE: this logic is almost certainly incomplete - if another function
+        NOTE: This logic is almost certainly incomplete - if another function
         in the same module used typing.Union, we would produce incorrect stubs.
 
         We should determine whether it is truly necessary to import from typing,
         because doing it correctly in edge cases is nontrivial.
         """
-        self.assert_stubs(
+        self._assert_stubs(
             {
                 "defines": [
                     {

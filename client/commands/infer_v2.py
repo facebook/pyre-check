@@ -12,9 +12,10 @@ from abc import ABC
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
-from typing import cast, Dict, Optional, Sequence
+from typing import cast, Dict, List, Optional, Sequence
 
 from typing_extensions import Final
+from typing_extensions import TypeAlias
 
 from .. import command_arguments, log
 from ..analysis_directory import AnalysisDirectory, resolve_analysis_directory
@@ -31,6 +32,9 @@ def _sanitize_name(name: str) -> str:
     return name.split(".")[-1]
 
 
+RawInferOutputDict: TypeAlias = Dict[str, List[Dict[str, object]]]
+
+
 class RawInferOutput:
     """
     Class encapsulating the raw json output from infer.
@@ -38,7 +42,7 @@ class RawInferOutput:
     This is converted into a list[ModuleAnnotation] to produce stubs.
     """
 
-    def __init__(self, data: dict[str, list[dict[str, object]]]) -> None:
+    def __init__(self, data: RawInferOutputDict) -> None:
         self.data = data
 
     categories: Sequence[str] = ["globals", "attributes", "defines"]
