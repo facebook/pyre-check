@@ -3,7 +3,6 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-unsafe
 from __future__ import annotations
 
 import textwrap
@@ -25,18 +24,19 @@ PATH = "test.py"
 
 
 def _raw_infer_output(
-    data: dict | None,
+    data: dict[str, object] | None,
 ) -> RawInferOutput:
     data = data or {}
     for category in RawInferOutput.categories:
         data[category] = data.get(category, [])
+        # pyre-ignore[16]: Converting raw dicts to dataclasses.
         for annotation in data[category]:
             annotation["location"] = {"path": PATH}
     return RawInferOutput(data=cast(RawInferOutputDict, data))
 
 
 def _create_test_module_annotations(
-    data: dict | None,
+    data: dict[str, object] | None,
     complete_only: bool,
 ) -> ModuleAnnotations:
     all_module_annotations = _create_module_annotations(
@@ -50,7 +50,7 @@ def _create_test_module_annotations(
     return module_annotations
 
 
-def _assert_stubs_equal(actual, expected):
+def _assert_stubs_equal(actual: str, expected: str) -> None:
     actual = actual.strip()
     expected = textwrap.dedent(expected.rstrip())
     if actual != expected:
@@ -62,7 +62,7 @@ def _assert_stubs_equal(actual, expected):
 class StubGenerationTest(unittest.TestCase):
     def _assert_stubs(
         self,
-        data: dict,
+        data: dict[str, object],
         expected: str,
         complete_only: bool = False,
     ) -> None:
@@ -569,7 +569,9 @@ class StubGenerationTest(unittest.TestCase):
 
 
 class ExistingAnnotationsTest(unittest.TestCase):
-    def _assert_stubs(self, code: str, expected: str, data: dict | None = None) -> None:
+    def _assert_stubs(
+        self, code: str, expected: str, data: dict[str, object] | None = None
+    ) -> None:
         module_annotations = ModuleAnnotations.from_module(
             path=PATH, module=libcst.parse_module(textwrap.dedent(code))
         )
