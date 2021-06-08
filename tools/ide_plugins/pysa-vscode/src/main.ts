@@ -39,7 +39,7 @@ export async function activate(_: vscode.ExtensionContext) {
     };
     
     let clientOptions: LanguageClientOptions = {
-        documentSelector: [{scheme: 'file', language: 'python'}],
+        documentSelector: [{scheme: 'file', language: 'pysa_model'}],
         synchronize: {
             // Notify the server about file changes to '.clientrc files contain in the workspace
             fileEvents: vscode.workspace.createFileSystemWatcher('**/.clientrc'),

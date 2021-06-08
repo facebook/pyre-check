@@ -17,7 +17,7 @@
   ],
   "main": "./out/main",
   "activationEvents": [
-    "workspaceContains:.pyre_configuration"
+    "workspaceContains:*.pysa"
   ],
   "scripts": {
     "vscode:prepublish": "npm run compile",
