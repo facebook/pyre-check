@@ -610,14 +610,18 @@ end = struct
     let total_degree_compare =
       Int.compare (sum_degrees left_variables) (sum_degrees right_variables)
     in
+    let compare_variable_and_degree
+        { Monomial.variable = left_variable; degree = left_degree }
+        { Monomial.variable = right_variable; degree = right_degree }
+      =
+      match compare_variable compare_t left_variable right_variable with
+      | result when not (Int.equal result 0) -> result
+      | _ -> Int.compare left_degree right_degree
+    in
     if total_degree_compare <> 0 then
       total_degree_compare
     else
-      let variable_list variables = List.map variables ~f:(fun { variable; _ } -> variable) in
-      List.compare
-        (compare_variable compare_t)
-        (variable_list left_variables)
-        (variable_list right_variables)
+      List.compare compare_variable_and_degree left_variables right_variables
 
 
   let normalize ~compare_t { constant_factor; variables } =

@@ -3150,7 +3150,7 @@ let test_polynomial_create_from_list _ =
     [
       2, [y, 1]; 1, [x, 1]; 1, [x, 2; y, 1]; 1, [z, 1]; 1, [y, 1; z, 1; x, 1]; 1, [x, 1; y, 2]; 2, [];
     ]
-    "2 + x + 2y + z + x^2y + xy^2 + xyz";
+    "2 + x + 2y + z + xyz + xy^2 + x^2y";
   ()
 
 
@@ -3270,6 +3270,7 @@ let test_add_polynomials _ =
   assert_add [3, []] [2, []] "5";
   assert_add [3, []] [-3, []; 2, [x, 2]] "2x^2";
   assert_add [1, []; 3, [x, 1]; 2, [y, 1]] [2, []; 1, [x, 1]; 1, [z, 1]] "3 + 4x + 2y + z";
+  assert_add [1, []; 1, [x, 1; y, 2]] [1, [x, 2; y, 1]] "1 + xy^2 + x^2y";
   ()
 
 
