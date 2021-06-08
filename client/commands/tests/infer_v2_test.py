@@ -11,6 +11,8 @@ import unittest
 from pathlib import Path
 from typing import cast
 
+import libcst
+
 from ...commands.infer_v2 import (
     _create_module_annotations,
     RawInferOutput,
@@ -562,5 +564,81 @@ class StubGenerationTest(unittest.TestCase):
 
 
             def with_params(y=7, x: List[int] = [5]) -> Union[int, str]: ...
+            """,
+        )
+
+
+class ExistingAnnotationsTest(unittest.TestCase):
+    def _assert_stubs(self, code: str, expected: str) -> None:
+        module_annotations = ModuleAnnotations.from_module(
+            path=PATH, module=libcst.parse_module(textwrap.dedent(code))
+        )
+        actual = module_annotations.to_stubs()
+        _assert_stubs_equal(actual, expected)
+
+    def test_stubs_from_existing_annotations(self) -> None:
+        self._assert_stubs(
+            """
+            def foo() -> int:
+                return 1 + 1
+            """,
+            "def foo() -> int: ...",
+        )
+
+        # methods
+        self._assert_stubs(
+            """
+            class Foo:
+                def bar(self, x: int) -> Union[int, str]:
+                    return ""
+            """,
+            """\
+            class Foo:
+                def bar(self, x: int) -> Union[int, str]: ...
+            """,
+        )
+
+        # with async
+        self._assert_stubs(
+            """
+            async def foo() -> int:
+                return 1 + 1
+            """,
+            "async def foo() -> int: ...",
+        )
+
+        # with decorators
+        self._assert_stubs(
+            """
+            @click
+            def foo() -> int:
+                return 1 + 1
+            """,
+            "@@click\n\ndef foo() -> int: ...",
+        )
+
+        # globals
+        self._assert_stubs(
+            """
+            x: int = 10
+            """,
+            "x: int = ...",
+        )
+
+        # attributes
+        self._assert_stubs(
+            # TODO (T92336996)
+            # libcst does not produce fully-qualified typenames when extracting
+            # annotations (unlike the pyre parser). As a result, we're producing
+            # incorrect stubs here.
+            """
+            from typing import Any
+
+            class Foo:
+                x: Any = 10
+            """,
+            """\
+            class Foo:
+                x: Any = ...
             """,
         )
