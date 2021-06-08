@@ -3262,7 +3262,10 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
         let expression =
           try
             let parsed =
-              Parser.parse [value] |> Source.create |> Preprocessing.preprocess |> Source.statements
+              Parser.parse_exn [value]
+              |> Source.create
+              |> Preprocessing.preprocess
+              |> Source.statements
             in
             match parsed with
             | [{ Node.value = Expression { Node.value; _ }; _ }] -> Some value

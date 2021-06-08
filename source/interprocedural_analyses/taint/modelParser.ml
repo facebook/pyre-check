@@ -2376,7 +2376,7 @@ let create ~resolution ~path ~configuration ~rule_filter source =
   in
   let signatures_and_queries, errors =
     String.split ~on:'\n' source
-    |> Parser.parse
+    |> Parser.parse_exn
     |> Source.create
     |> Source.statements
     |> List.map ~f:(parse_statement ~resolution ~path ~configuration)

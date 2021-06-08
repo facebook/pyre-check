@@ -294,17 +294,19 @@ let help () =
 let rec parse_request_exn query =
   let open Expression in
   match PyreParser.Parser.parse [query] with
-  | [
-   {
-     Node.value =
-       Expression
-         {
-           Node.value = Call { callee = { Node.value = Name (Name.Identifier name); _ }; arguments };
-           _;
-         };
-     _;
-   };
-  ] -> (
+  | Ok
+      [
+        {
+          Node.value =
+            Expression
+              {
+                Node.value =
+                  Call { callee = { Node.value = Name (Name.Identifier name); _ }; arguments };
+                _;
+              };
+          _;
+        };
+      ] -> (
       let expression { Call.Argument.value; _ } = value in
       let access = function
         | { Call.Argument.value; _ } when has_identifier_base value -> value
@@ -352,9 +354,9 @@ let rec parse_request_exn query =
       | "validate_taint_models", [] -> ValidateTaintModels None
       | "validate_taint_models", [argument] -> Request.ValidateTaintModels (Some (string argument))
       | _ -> raise (InvalidQuery "unexpected query") )
-  | _ when String.equal query "help" -> Help (help ())
-  | _ -> raise (InvalidQuery "unexpected query")
-  | exception PyreParser.Parser.Error _ -> raise (InvalidQuery "failed to parse query")
+  | Ok _ when String.equal query "help" -> Help (help ())
+  | Ok _ -> raise (InvalidQuery "unexpected query")
+  | Error _ -> raise (InvalidQuery "failed to parse query")
 
 
 let parse_request query =

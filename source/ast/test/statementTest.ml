@@ -384,7 +384,7 @@ let test_pp _ =
     let pretty_print_of_source =
       source
       |> String.split_on_chars ~on:['\n']
-      |> Parser.parse
+      |> Parser.parse_exn
       |> List.map ~f:show
       |> String.concat ~sep:"\n"
       |> String.rstrip ~drop:(Char.equal '\n')
